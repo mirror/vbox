@@ -183,6 +183,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--cpuhotplug on|off]\n"
                      "                            [--plugcpu <id>]\n"
                      "                            [--unplugcpu <id>]\n"
+                     "                            [--cpuexecutioncap <1-100>]\n"
                      "                            [--rtcuseutc on|off]\n"
                      "                            [--monitorcount <number>]\n"
                      "                            [--accelerate3d on|off]\n"
@@ -417,6 +418,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                   [--maxdowntime <msec>] [--password password]\n"
                      "                            plugcpu <id>\n"
                      "                            unplugcpu <id>\n"
+                     "                            cpuexecutioncap <1-100>\n"
                      "\n");
     }
 

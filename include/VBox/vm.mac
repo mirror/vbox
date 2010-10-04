@@ -52,7 +52,7 @@ struc VM
     .pVMRC                  RTRCPTR_RES 1
     .hSelf                  resd 1
     .cCpus                  resd 1
-    .uCpuPriority           resd 1
+    .uCpuExecutionCap       resd 1
     .cbSelf                 resd 1
     .offVMCPU               resd 1
     .u32Reserved            resd 5

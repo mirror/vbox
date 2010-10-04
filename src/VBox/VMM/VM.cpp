@@ -589,7 +589,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);
-        AssertRelease(pVM->uCpuPriority == 100);
+        AssertRelease(pVM->uCpuExecutionCap == 100);
         AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
 
         Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCpus=%RU32\n",
@@ -652,8 +652,8 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
             }
             if (RT_SUCCESS(rc))
             {
-                rc = CFGMR3QueryU32Def(pRoot, "CpuPriority", &pVM->uCpuPriority, 100);
-                AssertLogRelMsgRC(rc, ("Configuration error: Querying \"CpuPriority\" as integer failed, rc=%Rrc\n", rc));
+                rc = CFGMR3QueryU32Def(pRoot, "CpuExecutionCap", &pVM->uCpuExecutionCap, 100);
+                AssertLogRelMsgRC(rc, ("Configuration error: Querying \"CpuExecutionCap\" as integer failed, rc=%Rrc\n", rc));
 
                 /*
                  * Init the ring-3 components and ring-3 per cpu data, finishing it off
@@ -4271,18 +4271,18 @@ VMMR3DECL(int) VMR3HotPlugCpu(PVM pVM, VMCPUID idCpu)
 
 
 /**
- * Changes the VCPU priority.
+ * Changes the VMM execution cap.
  *
  * @returns VBox status code.
- * @param   pVM             The VM to operate on.
- * @param   ulCpuPriority   New CPU priority
+ * @param   pVM                 The VM to operate on.
+ * @param   ulCpuExecutionCap   New CPU execution cap
  */
-VMMR3DECL(int) VMR3SetCpuPriority(PVM pVM, unsigned ulCpuPriority)
+VMMR3DECL(int) VMR3SetCpuExecutionCap(PVM pVM, unsigned ulCpuExecutionCap)
 {
-    AssertReturn(ulCpuPriority > 0 && ulCpuPriority <= 100, VERR_INVALID_PARAMETER);
+    AssertReturn(ulCpuExecutionCap > 0 && ulCpuExecutionCap <= 100, VERR_INVALID_PARAMETER);
 
-    Log(("VMR3SetCpuPriority: new priority = %d\n", ulCpuPriority));
+    Log(("VMR3SetCpuExecutionCap: new priority = %d\n", ulCpuExecutionCap));
     /* Note: not called from EMT. */
-    pVM->uCpuPriority = ulCpuPriority;
+    pVM->uCpuExecutionCap = ulCpuExecutionCap;
     return VINF_SUCCESS;
 }

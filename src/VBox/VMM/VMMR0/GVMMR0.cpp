@@ -799,14 +799,14 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                         {
                             PVM pVM = (PVM)RTR0MemObjAddress(pGVM->gvmm.s.VMMemObj); AssertPtr(pVM);
                             memset(pVM, 0, cPages << PAGE_SHIFT);
-                            pVM->enmVMState     = VMSTATE_CREATING;
-                            pVM->pVMR0          = pVM;
-                            pVM->pSession       = pSession;
-                            pVM->hSelf          = iHandle;
-                            pVM->cbSelf         = cbVM;
-                            pVM->cCpus          = cCpus;
-                            pVM->uCpuPriority   = 100; /* default is maximum priority. */
-                            pVM->offVMCPU       = RT_UOFFSETOF(VM, aCpus);
+                            pVM->enmVMState       = VMSTATE_CREATING;
+                            pVM->pVMR0            = pVM;
+                            pVM->pSession         = pSession;
+                            pVM->hSelf            = iHandle;
+                            pVM->cbSelf           = cbVM;
+                            pVM->cCpus            = cCpus;
+                            pVM->uCpuExecutionCap = 100; /* default is no cap. */
+                            pVM->offVMCPU         = RT_UOFFSETOF(VM, aCpus);
 
                             rc = RTR0MemObjAllocPage(&pGVM->gvmm.s.VMPagesMemObj, cPages * sizeof(SUPPAGE), false /* fExecutable */);
                             if (RT_SUCCESS(rc))

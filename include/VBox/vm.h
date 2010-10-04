@@ -712,8 +712,8 @@ typedef struct VM
     uint32_t                    hSelf;
     /** Number of virtual CPUs. */
     uint32_t                    cCpus;
-    /** CPU priority (1-100) */
-    uint32_t                    uCpuPriority;
+    /** CPU excution cap (1-100) */
+    uint32_t                    uCpuExecutionCap;
 
     /** Size of the VM structure including the VMCPU array. */
     uint32_t                    cbSelf;

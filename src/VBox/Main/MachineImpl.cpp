@@ -195,8 +195,8 @@ Machine::HWData::HWData()
     mIoCacheEnabled = true;
     mIoCacheSize    = 5; /* 5MB */
 
-    /* Maximum CPU priority by default. */
-    mCpuPriority = 100;
+    /* Maximum CPU execution cap by default. */
+    mCpuExecutionCap = 100;
 }
 
 Machine::HWData::~HWData()
@@ -1313,9 +1313,9 @@ STDMETHODIMP Machine::COMSETTER(CPUCount)(ULONG CPUCount)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(CPUPriority)(ULONG *aPriority)
+STDMETHODIMP Machine::COMGETTER(CPUExecutionCap)(ULONG *aExecutionCap)
 {
-    if (!aPriority)
+    if (!aExecutionCap)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
@@ -1323,22 +1323,22 @@ STDMETHODIMP Machine::COMGETTER(CPUPriority)(ULONG *aPriority)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aPriority = mHWData->mCpuPriority;
+    *aExecutionCap = mHWData->mCpuExecutionCap;
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(CPUPriority)(ULONG aPriority)
+STDMETHODIMP Machine::COMSETTER(CPUExecutionCap)(ULONG aExecutionCap)
 {
     HRESULT rc = S_OK;
 
-    /* check priority limits */
-    if (    aPriority < 1
-         || aPriority > 100
+    /* check throttle limits */
+    if (    aExecutionCap < 1
+         || aExecutionCap > 100
        )
         return setError(E_INVALIDARG,
-                        tr("Invalid CPU priority: %lu (must be in range [%lu, %lu])"),
-                        aPriority, 1, 100);
+                        tr("Invalid CPU execution cap value: %lu (must be in range [%lu, %lu])"),
+                        aExecutionCap, 1, 100);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1346,13 +1346,13 @@ STDMETHODIMP Machine::COMSETTER(CPUPriority)(ULONG aPriority)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     alock.release();
-    rc = onCPUPriorityChange(aPriority);
+    rc = onCpuExecutionCapChange(aExecutionCap);
     alock.acquire();
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mCpuPriority = aPriority;
+    mHWData->mCpuExecutionCap = aExecutionCap;
 
     /* Save settings if online - todo why is this required?? */
     if (Global::IsOnline(mData->mMachineState))
@@ -7020,7 +7020,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 
         mHWData->mCPUCount                    = data.cCPUs;
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
-        mHWData->mCpuPriority                 = data.ulCpuPriority;
+        mHWData->mCpuExecutionCap             = data.ulCpuExecutionCap;
 
         // cpu
         if (mHWData->mCPUHotPlugEnabled)
@@ -8069,9 +8069,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
                 data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
         }
 
-        data.cCPUs         = mHWData->mCPUCount;
-        data.fCpuHotPlug   = !!mHWData->mCPUHotPlugEnabled;
-        data.ulCpuPriority = mHWData->mCpuPriority;
+        data.cCPUs             = mHWData->mCPUCount;
+        data.fCpuHotPlug       = !!mHWData->mCPUHotPlugEnabled;
+        data.ulCpuExecutionCap = mHWData->mCpuExecutionCap;
 
         data.llCpus.clear();
         if (data.fCpuHotPlug)
@@ -10990,7 +10990,7 @@ HRESULT SessionMachine::onCPUChange(ULONG aCPU, BOOL aRemove)
     return directControl->OnCPUChange(aCPU, aRemove);
 }
 
-HRESULT SessionMachine::onCPUPriorityChange(ULONG aCpuPriority)
+HRESULT SessionMachine::onCPUExecutionCapChange(ULONG aExecutionCap)
 {
     LogFlowThisFunc(("\n"));
 
@@ -11007,7 +11007,7 @@ HRESULT SessionMachine::onCPUPriorityChange(ULONG aCpuPriority)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnCPUPriorityChange(aCpuPriority);
+    return directControl->OnCPUExecutionCapChange(aExecutionCap);
 }
 
 /**

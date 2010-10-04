@@ -262,7 +262,7 @@ public:
         BOOL                 mSyntheticCpu;
         ULONG                mCPUCount;
         BOOL                 mCPUHotPlugEnabled;
-        ULONG                mCpuPriority;
+        ULONG                mCpuExecutionCap;
         BOOL                 mAccelerate3DEnabled;
         BOOL                 mHpetEnabled;
 
@@ -384,8 +384,8 @@ public:
     STDMETHOD(COMSETTER(CPUCount))(ULONG cpuCount);
     STDMETHOD(COMGETTER(CPUHotPlugEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(CPUHotPlugEnabled))(BOOL enabled);
-    STDMETHOD(COMGETTER(CPUPriority))(ULONG *aPriority);
-    STDMETHOD(COMSETTER(CPUPriority))(ULONG aPriority);
+    STDMETHOD(COMGETTER(CPUExecutionCap))(ULONG *aExecutionCap);
+    STDMETHOD(COMSETTER(CPUExecutionCap))(ULONG aExecutionCap);
     STDMETHOD(COMGETTER(HpetEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(HpetEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);
@@ -622,7 +622,7 @@ public:
     virtual HRESULT onUSBControllerChange() { return S_OK; }
     virtual HRESULT onStorageControllerChange() { return S_OK; }
     virtual HRESULT onCPUChange(ULONG /* aCPU */, BOOL /* aRemove */) { return S_OK; }
-    virtual HRESULT onCPUPriorityChange(ULONG /* aCpuPriority */) { return S_OK; }
+    virtual HRESULT onCPUExecutionCapChange(ULONG /* aExecutionCap */) { return S_OK; }
     virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
 
@@ -957,7 +957,7 @@ public:
     HRESULT onSerialPortChange(ISerialPort *serialPort);
     HRESULT onParallelPortChange(IParallelPort *parallelPort);
     HRESULT onCPUChange(ULONG aCPU, BOOL aRemove);
-    HRESULT onCPUPriorityChange(ULONG aCpuPriority);
+    HRESULT onCPUExecutionCapChange(ULONG aCpuExecutionCap);
     HRESULT onVRDPServerChange(BOOL aRestart);
     HRESULT onUSBControllerChange();
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice,

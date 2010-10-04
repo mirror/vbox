@@ -181,7 +181,7 @@ public:
     HRESULT onStorageControllerChange();
     HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT onCPUChange(ULONG aCPU, BOOL aRemove);
-    HRESULT onCPUPriorityChange(ULONG aCpuPriority);
+    HRESULT onCPUExecutionCapChange(ULONG aExecutionCap);
     HRESULT onVRDPServerChange(BOOL aRestart);
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange(BOOL aGlobal);

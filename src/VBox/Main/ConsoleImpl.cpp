@@ -274,7 +274,7 @@ public:
         kOnStorageControllerChanged,
         kOnMediumChanged,
         kOnCPUChanged,
-        kOnCPUPriorityChanged,
+        kOnCPUExecutionCapChanged,
         kOnVRDPServerChanged,
         kOnRemoteDisplayInfoChanged,
         kOnUSBControllerChanged,
@@ -3353,10 +3353,11 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
             break;
 
         case VMSTATE_RUNNING_LS:
+        case VMSTATE_RUNNING_FT:
             return setErrorInternal(VBOX_E_INVALID_VM_STATE,
                                     COM_IIDOF(IConsole),
                                     getStaticComponentName(),
-                                    Utf8Str(tr("Cannot change drive during live migration")),
+                                    (enmVMState == VMSTATE_RUNNING_LS) ? Utf8Str(tr("Cannot change drive during live migration")) : Utf8Str(tr("Cannot change drive during fault tolerant syncing")),
                                     false /*aWarning*/,
                                     true /*aLogIt*/);
 
@@ -3366,8 +3367,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
 
     /* Determine the base path for the device instance. */
     PCFGMNODE pCtlInst;
-    pCtlInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice,
- uInstance);
+    pCtlInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%u/", pcszDevice, uInstance);
     AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
 
     int rc = VINF_SUCCESS;
@@ -3905,11 +3905,11 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
 }
 
 /**
- * Called by IInternalSessionControl::OnCPUPriorityChange().
+ * Called by IInternalSessionControl::OnCpuExecutionCapChange().
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onCPUPriorityChange(ULONG aCpuPriority)
+HRESULT Console::onCPUExecutionCapChange(ULONG aExecutionCap)
 {
     LogFlowThisFunc(("\n"));
 
@@ -3933,7 +3933,7 @@ HRESULT Console::onCPUPriorityChange(ULONG aCpuPriority)
             )
         {
             /* No need to call in the EMT thread. */
-            rc = VMR3SetCpuPriority(mpVM, aCpuPriority);
+            rc = VMR3SetCpuExecutionCap(mpVM, aExecutionCap);
         }
         else
             rc = setInvalidMachineStateError();
@@ -3941,7 +3941,7 @@ HRESULT Console::onCPUPriorityChange(ULONG aCpuPriority)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnCPUPriorityChanged, aCpuPriority);
+        CONSOLE_DO_CALLBACKS1(OnCPUExecutionCapChanged, aExecutionCap);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
