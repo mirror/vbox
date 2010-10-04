@@ -692,6 +692,7 @@ NTSTATUS vboxWddmRegDisplaySettingsQueryRelY(HANDLE hKey, int * pResult)
 
 NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PDEVICE_EXTENSION pDeviceExtension, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, POINT * pPos)
 {
+    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
     HANDLE hKey;
     NTSTATUS Status = vboxWddmRegOpenDisplaySettingsKey(pDeviceExtension, VidPnSourceId, &hKey);
     Assert(Status == STATUS_SUCCESS);

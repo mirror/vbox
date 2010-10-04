@@ -5363,6 +5363,11 @@ static HRESULT APIENTRY vboxWddmDDevSetDisplayMode(HANDLE hDevice, CONST D3DDDIA
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
 }
+
+#ifdef VBOXWDDM_TEST_UHGSMI
+int vboxUhgsmiTst(PVBOXUHGSMI pUhgsmi, uint32_t cbBuf, uint32_t cNumCals, uint64_t * pTimeMs);
+#endif
+
 static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRESENT* pData)
 {
     VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE();
@@ -5373,6 +5378,18 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     HRESULT hr = S_OK;
     if (VBOXDISPMODE_IS_3D(pDevice->pAdapter))
     {
+#ifdef VBOXWDDM_TEST_UHGSMI
+        {
+            Assert(0);
+            static uint32_t cCals = 10000;
+            static uint32_t cbData = 8 * 1024 * 1024;
+            uint64_t TimeMs;
+            int rc = vboxUhgsmiTst(&pDevice->Uhgsmi.Base, cbData, cCals, &TimeMs);
+            uint32_t cCPS = (((uint64_t)cCals) * 1000ULL)/TimeMs;
+            Assert(0);
+            vboxVDbgDoMpPrintF(pDevice, "Time : %I64u ms, calls: %d, cps: %d\n", TimeMs, cCals, cCPS);
+        }
+#endif
 #if 1
         PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
         Assert(pRc);
@@ -7121,56 +7138,61 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
             if (!pCreateData->AllocationListSize
                     && !pCreateData->PatchLocationListSize)
             {
-                hr = vboxDispCmCtxCreate(pDevice, &pDevice->DefaultContext);
+                hr = vboxUhgsmiD3DInit(&pDevice->Uhgsmi, pDevice);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-#ifdef VBOXDISP_EARLYCREATEDEVICE
-                    PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(2);
-                    Assert(pRc);
-                    if (pRc)
+                    hr = vboxDispCmCtxCreate(pDevice, &pDevice->DefaultContext);
+                    Assert(hr == S_OK);
+                    if (hr == S_OK)
                     {
-                        D3DPRESENT_PARAMETERS params;
-                        memset(&params, 0, sizeof (params));
-//                        params.BackBufferWidth = 640;
-//                        params.BackBufferHeight = 480;
-                        params.BackBufferWidth = 0x400;
-                        params.BackBufferHeight = 0x300;
-                        params.BackBufferFormat = D3DFMT_A8R8G8B8;
-//                        params.BackBufferCount = 0;
-                        params.BackBufferCount = 1;
-                        params.MultiSampleType = D3DMULTISAMPLE_NONE;
-                        params.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    //                    params.hDeviceWindow = hWnd;
-                                    /* @todo: it seems there should be a way to detect this correctly since
-                                     * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
-                        params.Windowed = TRUE;
-                        //            params.EnableAutoDepthStencil = FALSE;
-                        //            params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
-                        //            params.Flags;
-                        //            params.FullScreen_RefreshRateInHz;
-                        //            params.FullScreen_PresentationInterval;
+    #ifdef VBOXDISP_EARLYCREATEDEVICE
+                        PVBOXWDDMDISP_RESOURCE pRc = vboxResourceAlloc(2);
+                        Assert(pRc);
+                        if (pRc)
+                        {
+                            D3DPRESENT_PARAMETERS params;
+                            memset(&params, 0, sizeof (params));
+    //                        params.BackBufferWidth = 640;
+    //                        params.BackBufferHeight = 480;
+                            params.BackBufferWidth = 0x400;
+                            params.BackBufferHeight = 0x300;
+                            params.BackBufferFormat = D3DFMT_A8R8G8B8;
+    //                        params.BackBufferCount = 0;
+                            params.BackBufferCount = 1;
+                            params.MultiSampleType = D3DMULTISAMPLE_NONE;
+                            params.SwapEffect = D3DSWAPEFFECT_DISCARD;
+        //                    params.hDeviceWindow = hWnd;
+                                        /* @todo: it seems there should be a way to detect this correctly since
+                                         * our vboxWddmDDevSetDisplayMode will be called in case we are using full-screen */
+                            params.Windowed = TRUE;
+                            //            params.EnableAutoDepthStencil = FALSE;
+                            //            params.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
+                            //            params.Flags;
+                            //            params.FullScreen_RefreshRateInHz;
+                            //            params.FullScreen_PresentationInterval;
 
-                        hr = vboxWddmD3DDeviceCreate(pDevice, 0, pRc, &params, TRUE /*BOOL bLockable*/);
-                        Assert(hr == S_OK);
-                        if (hr == S_OK)
-                            break;
-                        vboxResourceFree(pRc);
-                    }
-                    else
-                    {
-                        hr = E_OUTOFMEMORY;
-                    }
-#else
-//# define VBOXDISP_TEST_SWAPCHAIN
-# ifdef VBOXDISP_TEST_SWAPCHAIN
-                    VBOXDISP_D3DEV(pDevice);
-# endif
-                    break;
-#endif
+                            hr = vboxWddmD3DDeviceCreate(pDevice, 0, pRc, &params, TRUE /*BOOL bLockable*/);
+                            Assert(hr == S_OK);
+                            if (hr == S_OK)
+                                break;
+                            vboxResourceFree(pRc);
+                        }
+                        else
+                        {
+                            hr = E_OUTOFMEMORY;
+                        }
+    #else
+    //# define VBOXDISP_TEST_SWAPCHAIN
+    # ifdef VBOXDISP_TEST_SWAPCHAIN
+                        VBOXDISP_D3DEV(pDevice);
+    # endif
+                        break;
+    #endif
 
-                    HRESULT tmpHr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);
-                    Assert(tmpHr == S_OK);
+                        HRESULT tmpHr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);
+                        Assert(tmpHr == S_OK);
+                    }
                 }
             }
             else

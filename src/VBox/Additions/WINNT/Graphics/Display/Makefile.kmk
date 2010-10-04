@@ -87,6 +87,9 @@ endif
 ifdef VBOX_WDDMDISP_WITH_PROFILE
  VBoxDispD3D_DEFS   += VBOX_WDDMDISP_WITH_PROFILE
 endif
+ifdef VBOXWDDM_TEST_UHGSMI
+ VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
+endif
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
     wddm/VBoxDispD3DIf.cpp \

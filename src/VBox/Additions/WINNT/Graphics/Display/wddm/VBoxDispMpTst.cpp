@@ -15,8 +15,11 @@
 #include "VBoxDispMp.h"
 
 #include <iprt/thread.h>
+#include <iprt/err.h>
 
 #include "VBoxDispD3DCmn.h"
+
+#include "VBoxDispProfile.h"
 
 static RTTHREAD g_VBoxDispMpTstThread;
 static VBOXDISPMP_CALLBACKS g_VBoxDispMpTstCallbacks;
@@ -142,3 +145,53 @@ HRESULT vboxDispMpTstStop()
     return hr;
 }
 
+int vboxUhgsmiTst(PVBOXUHGSMI pUhgsmi, uint32_t cbBuf, uint32_t cNumCals, uint64_t * pTimeMs)
+{
+    PVBOXUHGSMI_BUFFER pBuf;
+    int rc = pUhgsmi->pfnBufferCreate(pUhgsmi, cbBuf, VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT, NULL, &pBuf);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t TimeMs = VBOXDISPPROFILE_GET_TIME_MILLI();
+        do
+        {
+            VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags;
+            fFlags.Value = 0;
+            fFlags.bLockEntire = 1;
+            fFlags.bDiscard = 1;
+
+            void *pvLock;
+            rc = pBuf->pfnLock(pBuf, 0, cbBuf, fFlags, &pvLock);
+            AssertRC(rc);
+            if (!RT_SUCCESS(rc))
+                break;
+
+            rc = pBuf->pfnUnlock(pBuf);
+            AssertRC(rc);
+            if (!RT_SUCCESS(rc))
+                break;
+
+            VBOXUHGSMI_BUFFER_SUBMIT SubmitData;
+            SubmitData.pBuf = pBuf;
+            SubmitData.fFlags.Value = 0;
+            SubmitData.fFlags.bDoNotRetire = 1;
+            SubmitData.fFlags.bEntireBuffer = 1;
+
+            rc = pUhgsmi->pfnBufferSubmitAsynch(pUhgsmi, &SubmitData, 1);
+            AssertRC(rc);
+            if (!RT_SUCCESS(rc))
+                break;
+
+            DWORD dw = WaitForSingleObject(pBuf->hSynch, INFINITE);
+            Assert(dw == WAIT_OBJECT_0);
+            if (dw)
+                break;
+        } while (--cNumCals);
+
+        TimeMs = VBOXDISPPROFILE_GET_TIME_MILLI() - TimeMs;
+        *pTimeMs = TimeMs;
+
+        pBuf->pfnDestroy(pBuf);
+    }
+    return rc;
+}
