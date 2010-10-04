@@ -19,7 +19,9 @@
 
 #include "VBoxDispD3DCmn.h"
 
+#ifdef VBOXWDDM_TEST_UHGSMI
 #include "VBoxDispProfile.h"
+#endif
 
 static RTTHREAD g_VBoxDispMpTstThread;
 static VBOXDISPMP_CALLBACKS g_VBoxDispMpTstCallbacks;
