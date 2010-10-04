@@ -1199,6 +1199,7 @@ static void vmdkFreeGrainDirectory(PVMDKEXTENT pExtent)
  */
 static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 {
+    int rc = VINF_SUCCESS;
     size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
     uint32_t *pGD = NULL, *pRGD = NULL;
 
@@ -1261,38 +1262,37 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         goto out;
 
     rc = vmdkAllocGrainDirectory(pImage, pExtent);
-    if (RT_FAILED(rc))
+    if (RT_FAILURE(rc))
         goto out;
 
     /* The VMDK 1.1 spec seems to talk about compressed grain directories,
      * but in reality they are not compressed. */
     rc = vmdkFileReadSync(pImage, pExtent->pFile,
                           VMDK_SECTOR2BYTE(pExtent->uSectorGD),
-                          pGD, cbGD, NULL);
+                          pExtent->pGD, cbGD, NULL);
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
         rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not read grain directory in '%s': %Rrc"), pExtent->pszFullname);
         goto out;
     }
-    for (i = 0, pGDTmp = pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
+    for (i = 0, pGDTmp = pExtent->pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
         *pGDTmp = RT_LE2H_U32(*pGDTmp);
 
     if (pExtent->uSectorRGD)
     {
-        pExtent->pRGD = pRGD;
         /* The VMDK 1.1 spec seems to talk about compressed grain directories,
          * but in reality they are not compressed. */
         rc = vmdkFileReadSync(pImage, pExtent->pFile,
                               VMDK_SECTOR2BYTE(pExtent->uSectorRGD),
-                              pRGD, cbGD, NULL);
+                              pExtent->pRGD, cbGD, NULL);
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not read redundant grain directory in '%s'"), pExtent->pszFullname);
             goto out;
         }
-        for (i = 0, pRGDTmp = pRGD; i < pExtent->cGDEntries; i++, pRGDTmp++)
+        for (i = 0, pRGDTmp = pExtent->pRGD; i < pExtent->cGDEntries; i++, pRGDTmp++)
             *pRGDTmp = RT_LE2H_U32(*pRGDTmp);
 
         /* Check grain table and redundant grain table for consistency. */
@@ -1311,7 +1311,7 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
             goto out;
         }
 
-        for (i = 0, pGDTmp = pGD, pRGDTmp = pRGD;
+        for (i = 0, pGDTmp = pExtent->pGD, pRGDTmp = pExtent->pRGD;
              i < pExtent->cGDEntries;
              i++, pGDTmp++, pRGDTmp++)
         {
@@ -1378,7 +1378,7 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
             rc = VERR_NO_MEMORY;
             goto out;
         }
-        for (i = 0, pGDTmp = pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
+        for (i = 0, pGDTmp = pExtent->pGD; i < pExtent->cGDEntries; i++, pGDTmp++)
         {
             /* If no grain table is allocated skip the entry. */
             if (*pGDTmp == 0)
@@ -1497,7 +1497,7 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     }
 
     rc = vmdkAllocGrainDirectory(pImage, pExtent);
-    if (RT_FAILED(rc))
+    if (RT_FAILURE(rc))
         goto out;
 
     if (fPreAlloc)
@@ -1505,12 +1505,12 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         uint32_t uGTSectorLE;
         uint64_t uOffsetSectors;
 
-        if (pRGD)
+        if (pExtent->pRGD)
         {
             uOffsetSectors = pExtent->uSectorRGD + VMDK_BYTE2SECTOR(cbGDRounded);
             for (i = 0; i < pExtent->cGDEntries; i++)
             {
-                pRGD[i] = uOffsetSectors;
+                pExtent->pRGD[i] = uOffsetSectors;
                 uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
                 /* Write the redundant grain directory entry to disk. */
                 rc = vmdkFileWriteSync(pImage, pExtent->pFile,
@@ -1528,7 +1528,7 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         uOffsetSectors = pExtent->uSectorGD + VMDK_BYTE2SECTOR(cbGDRounded);
         for (i = 0; i < pExtent->cGDEntries; i++)
         {
-            pGD[i] = uOffsetSectors;
+            pExtent->pGD[i] = uOffsetSectors;
             uGTSectorLE = RT_H2LE_U64(uOffsetSectors);
             /* Write the grain directory entry to disk. */
             rc = vmdkFileWriteSync(pImage, pExtent->pFile,
