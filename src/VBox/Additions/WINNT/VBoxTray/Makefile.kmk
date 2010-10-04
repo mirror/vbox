@@ -58,6 +58,7 @@ ifdef VBOX_WITH_WDDM
  VBoxTray_DEFS   += VBOX_WITH_WDDM
  # VBoxTray_DEFS   += LOG_ENABLED
  # we need only includes for PFND3DKMT stuff as all we link dynamicaly to it
+ include $(KBUILD_PATH)/sdks/WINDDK.kmk
  VBoxTray_INCS   += $(PATH_SDK_WINDDK_INC_API) $(PATH_SDK_WINDDK_INC_DDK)
 endif
 # VBoxTray.cpp uses VBOX_SVN_REV.
