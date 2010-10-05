@@ -69,7 +69,7 @@ void GuestOSType::FinalRelease()
  * @param aVRAMSize          recommended video memory size in megabytes
  * @param aHDDSize           recommended HDD size in bytes
  */
-HRESULT GuestOSType::init(const char *aFamilyId, const char *aFamilyDescription,
+HRESULT GuestOSType::init(const Global::OSType &ostype)/*const char *aFamilyId, const char *aFamilyDescription,
                           const char *aId, const char *aDescription,
                           VBOXOSTYPE aOSType, uint32_t aOSHint,
                           uint32_t aRAMSize, uint32_t aVRAMSize, uint64_t aHDDSize,
@@ -79,7 +79,7 @@ HRESULT GuestOSType::init(const char *aFamilyId, const char *aFamilyDescription,
                           StorageBus_T aDvdStorageBusType,
                           StorageControllerType_T aHdStorageControllerType,
                           StorageBus_T aHdStorageBusType,
-                          ChipsetType_T aChipsetType)
+                          ChipsetType_T aChipsetType*/
 {
 #if 0
     LogFlowThisFunc(("aFamilyId='%s', aFamilyDescription='%s', "
@@ -97,28 +97,28 @@ HRESULT GuestOSType::init(const char *aFamilyId, const char *aFamilyDescription,
                       aStorageControllerType));
 #endif
 
-    ComAssertRet(aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
+    ComAssertRet(ostype.familyId && ostype.familyDescription && ostype.id && ostype.description, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst(mFamilyID) = aFamilyId;
-    unconst(mFamilyDescription) = aFamilyDescription;
-    unconst(mID) = aId;
-    unconst(mDescription) = aDescription;
-    unconst(mOSType) = aOSType;
-    unconst(mOSHint) = aOSHint;
-    unconst(mRAMSize) = aRAMSize;
-    unconst(mVRAMSize) = aVRAMSize;
-    unconst(mHDDSize) = aHDDSize;
-    unconst(mNetworkAdapterType)       = aNetworkAdapterType;
-    unconst(mNumSerialEnabled)         = aNumSerialEnabled;
-    unconst(mDvdStorageControllerType) = aDvdStorageControllerType;
-    unconst(mDvdStorageBusType)        = aDvdStorageBusType;
-    unconst(mHdStorageControllerType)  = aHdStorageControllerType;
-    unconst(mHdStorageBusType)         = aHdStorageBusType;
-    unconst(mChipsetType)              = aChipsetType;
+    unconst(mFamilyID)                  = ostype.familyId;
+    unconst(mFamilyDescription)         = ostype.familyDescription;
+    unconst(mID)                        = ostype.id;
+    unconst(mDescription)               = ostype.description;
+    unconst(mOSType)                    = ostype.osType;
+    unconst(mOSHint)                    = ostype.osHint;
+    unconst(mRAMSize)                   = ostype.recommendedRAM;
+    unconst(mVRAMSize)                  = ostype.recommendedVRAM;
+    unconst(mHDDSize)                   = ostype.recommendedHDD;
+    unconst(mNetworkAdapterType)        = ostype.networkAdapterType;
+    unconst(mNumSerialEnabled)          = ostype.numSerialEnabled;
+    unconst(mDvdStorageControllerType)  = ostype.dvdStorageControllerType;
+    unconst(mDvdStorageBusType)         = ostype.dvdStorageBusType;
+    unconst(mHdStorageControllerType)   = ostype.hdStorageControllerType;
+    unconst(mHdStorageBusType)          = ostype.hdStorageBusType;
+    unconst(mChipsetType)               = ostype.chipsetType;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
