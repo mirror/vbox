@@ -654,12 +654,11 @@ RTDECL(RTTHREADNATIVESTATE) RTThreadGetNativeState(RTTHREAD hThread);
  * Get the execution times of the specified thread
  *
  * @returns IPRT status code.
- * @param   hThread             The thread handle.
  * @param   pKernelTime         Kernel execution time in ms (out)
  * @param   pUserTime           User execution time in ms (out)
  *
  */
-RTR3DECL(int) RTThreadGetExecutionTimeMilli(RTTHREAD hThread, uint64_t *pKernelTime, uint64_t *pUserTime);
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime);
 
 /** @name Thread Local Storage
  * @{

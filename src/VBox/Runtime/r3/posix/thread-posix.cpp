@@ -386,7 +386,7 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread)
 }
 #endif
 
-RTR3DECL(int) RTThreadGetExecutionTimeMilli(RTTHREAD hThread, uint64_t *pKernelTime, uint64_t *pUserTime)
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
 {
     return VERR_NOT_IMPLEMENTED;
 }
