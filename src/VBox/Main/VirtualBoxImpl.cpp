@@ -441,28 +441,13 @@ HRESULT VirtualBox::init()
         if (FAILED(rc)) throw rc;
 
         /* guest OS type objects, needed by machines */
-        for (size_t i = 0; i < RT_ELEMENTS(Global::sOSTypes); ++ i)
+        for (size_t i = 0; i < RT_ELEMENTS(Global::sOSTypes); ++i)
         {
-            ComObjPtr <GuestOSType> guestOSTypeObj;
+            ComObjPtr<GuestOSType> guestOSTypeObj;
             rc = guestOSTypeObj.createObject();
             if (SUCCEEDED(rc))
             {
-                rc = guestOSTypeObj->init(Global::sOSTypes[i].familyId,
-                                          Global::sOSTypes[i].familyDescription,
-                                          Global::sOSTypes[i].id,
-                                          Global::sOSTypes[i].description,
-                                          Global::sOSTypes[i].osType,
-                                          Global::sOSTypes[i].osHint,
-                                          Global::sOSTypes[i].recommendedRAM,
-                                          Global::sOSTypes[i].recommendedVRAM,
-                                          Global::sOSTypes[i].recommendedHDD,
-                                          Global::sOSTypes[i].networkAdapterType,
-                                          Global::sOSTypes[i].numSerialEnabled,
-                                          Global::sOSTypes[i].dvdStorageControllerType,
-                                          Global::sOSTypes[i].dvdStorageBusType,
-                                          Global::sOSTypes[i].hdStorageControllerType,
-                                          Global::sOSTypes[i].hdStorageBusType,
-                                          Global::sOSTypes[i].chipsetType);
+                rc = guestOSTypeObj->init(Global::sOSTypes[i]);
                 if (SUCCEEDED(rc))
                     m->allGuestOSTypes.addChild(guestOSTypeObj);
             }

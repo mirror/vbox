@@ -46,16 +46,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(const char *aFamilyId, const char *aFamilyDescription,
-                 const char *aId, const char *aDescription,
-                 VBOXOSTYPE aOSType, uint32_t aOSHint,
-                 uint32_t aRAMSize, uint32_t aVRAMSize, uint64_t aHDDSize,
-                 NetworkAdapterType_T aNetworkAdapterType, uint32_t numSerialEnabled,
-                 StorageControllerType_T aDvdStorageControllerType,
-                 StorageBus_T aDvdStorageBusType,
-                 StorageControllerType_T aHdStorageControllerType,
-                 StorageBus_T aHdStorageBusType,
-                 ChipsetType_T aChipsetType);
+    HRESULT init(const Global::OSType &ostype);
     void uninit();
 
     // IGuestOSType properties
