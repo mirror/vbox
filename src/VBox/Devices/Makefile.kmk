@@ -129,9 +129,6 @@ endif
 # VBoxDD (shared object)
 #
 VBoxDD_TEMPLATE         = VBOXR3
-ifdef VBOX_WITH_DTRACE_R3
- VBoxDD_TEMPLATE        = VBOXR3OSX105
-endif
 VBoxDD_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
 VBoxDD_SOURCES          = \
 	Builtins.cpp
