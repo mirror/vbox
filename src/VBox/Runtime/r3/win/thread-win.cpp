@@ -227,7 +227,7 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(RTTHREAD hThread, uint64_t *pKernelT
 {
     uint64_t u64CreationTime, u64ExitTime, u64KernelTime, u64UserTime;
 
-    if (GetThreadTimes(hThread, (LPFILETIME)&u64CreationTime, (LPFILETIME)&u64ExitTime, (LPFILETIME)&u64KernelTime, (LPFILETIME)&u64UserTime))
+    if (GetThreadTimes((HANDLE)RTThreadGetNative(hThread), (LPFILETIME)&u64CreationTime, (LPFILETIME)&u64ExitTime, (LPFILETIME)&u64KernelTime, (LPFILETIME)&u64UserTime))
     {
         *pKernelTime = u64KernelTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
         *pUserTime   = u64UserTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
