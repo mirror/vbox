@@ -2729,8 +2729,9 @@ static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
 
     if (RT_SUCCESS(rc))
     {
-        rc = vmdkFileWriteSync(pImage, pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, NULL);
-        if (RT_FAILURE(rc))
+        rc = vmdkFileWriteMetaAsync(pImage, pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, pIoCtx, NULL, NULL);
+        if (   RT_FAILURE(rc)
+            && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
     }
 
@@ -4872,8 +4873,9 @@ static int vmdkFlushImageAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
     /* Update descriptor if changed. */
     if (pImage->Descriptor.fDirty)
     {
-        rc = vmdkWriteDescriptor(pImage);
-        if (RT_FAILURE(rc))
+        rc = vmdkWriteDescriptorAsync(pImage, pIoCtx);
+        if (   RT_FAILURE(rc)
+            && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
             goto out;
     }
 
