@@ -147,7 +147,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        uint8_t             padding[1408];      /* multiple of 64 */
+        uint8_t             padding[1536];      /* multiple of 64 */
     } em;
 
     /** TRPM part. */
