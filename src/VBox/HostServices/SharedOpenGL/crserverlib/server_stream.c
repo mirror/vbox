@@ -330,6 +330,11 @@ crServerDispatchMessage(CRMessage *msg)
     msg_opcodes = (const CRMessageOpcodes *) msg;
     opcodeBytes = (msg_opcodes->numOpcodes + 3) & ~0x03;
 
+#ifdef VBOXCR_LOGFPS
+    CRASSERT(cr_server.curClient && cr_server.curClient->conn && cr_server.curClient->conn->id == msg->header.conn_id);
+    cr_server.curClient->conn->opcodes_count += msg_opcodes->numOpcodes;
+#endif
+
     data_ptr = (const char *) msg_opcodes + sizeof(CRMessageOpcodes) + opcodeBytes;
     crUnpack(data_ptr,                 /* first command's operands */
              data_ptr - 1,             /* first command's opcode */
