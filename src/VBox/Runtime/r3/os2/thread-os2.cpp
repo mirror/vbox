@@ -292,3 +292,8 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue)
     return RTErrConvertFromErrno(errno);
 }
 
+
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(RTTHREAD hThread, uint64_t *pKernelTime, uint64_t *pUserTime)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
