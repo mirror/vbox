@@ -1679,7 +1679,7 @@ bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
     uint64_t u64UserTime, u64KernelTime;
 
     if (    pVM->uCpuExecutionCap != 100
-        &&  RT_SUCCESS(RTThreadGetExecutionTimeMilli(RTThreadSelf(), &u64KernelTime, &u64UserTime)))
+        &&  RT_SUCCESS(RTThreadGetExecutionTimeMilli(&u64KernelTime, &u64UserTime)))
     {
         uint64_t u64TimeNow = RTTimeMilliTS();
         if (pVCpu->em.s.u64TimeSliceStart + EM_TIME_SLICE < u64TimeNow)

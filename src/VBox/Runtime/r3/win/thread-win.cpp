@@ -223,11 +223,11 @@ RTR3DECL(uint64_t) RTThreadGetAffinity(void)
 }
 
 
-RTR3DECL(int) RTThreadGetExecutionTimeMilli(RTTHREAD hThread, uint64_t *pKernelTime, uint64_t *pUserTime)
+RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
 {
     uint64_t u64CreationTime, u64ExitTime, u64KernelTime, u64UserTime;
 
-    if (GetThreadTimes((HANDLE)RTThreadGetNative(hThread), (LPFILETIME)&u64CreationTime, (LPFILETIME)&u64ExitTime, (LPFILETIME)&u64KernelTime, (LPFILETIME)&u64UserTime))
+    if (GetThreadTimes(GetCurrentThread(), (LPFILETIME)&u64CreationTime, (LPFILETIME)&u64ExitTime, (LPFILETIME)&u64KernelTime, (LPFILETIME)&u64UserTime))
     {
         *pKernelTime = u64KernelTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
         *pUserTime   = u64UserTime / 10000;    /* GetThreadTimes returns time in 100 ns units */
