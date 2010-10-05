@@ -3065,7 +3065,7 @@ void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
 
         if (aHD->getParent().isNull())
         {
-            HRESULT rc = aHD->UnlockWrite(NULL);;
+            HRESULT rc = aHD->UnlockWrite(NULL);
             AssertComRC(rc);
         }
         else
