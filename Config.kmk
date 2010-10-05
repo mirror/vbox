@@ -527,6 +527,18 @@ VBOX_X11_SEAMLESS_GUEST = 1
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Set this to skip installing the redistributable compiler runtime.
 #VBOX_WITHOUT_COMPILER_REDIST = 1
+# Set this to enable user mode dtrace probes (darwin & solaris only).
+if1of ($(KBUILD_TARGET), darwin)
+ VBOX_WITH_DTRACE_R3 = 1
+endif
+# Set this to enable kernel driver dtrace probes (darwin & solaris only).
+#VBOX_WITH_DTRACE_R0DRV = 1
+# Set this to enable dtrace probes in platform agnostic kernel code.
+#VBOX_WITH_DTRACE_R0 = 1
+# Set this to enable dtrace probes raw-mode context code.
+#VBOX_WITH_DTRACE_RC = 1
+# Set this to enable support for dtrace probes guest code.
+#VBOX_WITH_DTRACE_GST = 1
 ## @}
 
 
