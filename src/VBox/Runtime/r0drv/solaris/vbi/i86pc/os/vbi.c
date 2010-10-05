@@ -1302,7 +1302,7 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 			{
 				/*
 				 * get pages from kseg, the 'virtAddr' here is only for colouring but unforuntately
-				 * we dont' have the 'virtAddr' to which this memory may be mapped.
+				 * we don't have the 'virtAddr' to which this memory may be mapped.
 				 */
 				seg_t kernseg;
 				kernseg.s_as = &kas;

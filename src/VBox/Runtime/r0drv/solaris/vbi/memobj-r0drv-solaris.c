@@ -178,13 +178,13 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     /* Allocate physically non-contiguous page-aligned memory. */
     uint64_t physAddr = PhysHighest;
 
-#if 0
+# if 0
     /*
      * The contig_alloc() way of allocating NC pages is broken or does not match our semantics. Refer #4716 for details.
      */
-#if 0
+#  if 0
     /* caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */);
-#endif
+#  endif
     caddr_t virtAddr = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
     if (RT_UNLIKELY(virtAddr == NULL))
     {
@@ -195,7 +195,7 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     pMemSolaris->Core.u.Phys.PhysBase = physAddr;
     pMemSolaris->Core.u.Phys.fAllocated = true;
     pMemSolaris->pvHandle = NULL;
-#else
+# else
     void *pvPages = vbi_pages_alloc(&physAddr, cb);
     if (!pvPages)
     {
@@ -207,7 +207,7 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     pMemSolaris->Core.u.Phys.PhysBase = physAddr;
     pMemSolaris->Core.u.Phys.fAllocated = false;
     pMemSolaris->pvHandle = pvPages;
-#endif
+# endif
 
     Assert(!(physAddr & PAGE_OFFSET_MASK));
     *ppMem = &pMemSolaris->Core;
@@ -455,14 +455,12 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_MAP_FAILED;
     }
-    else
-        rc = VINF_SUCCESS;
 
     pMemSolaris->Core.u.Mapping.R0Process = (RTR0PROCESS)vbi_proc();
     pMemSolaris->Core.pv = virtAddr;
     *ppMem = &pMemSolaris->Core;
     kmem_free(paPhysAddrs, sizeof(uint64_t) * cPages);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
