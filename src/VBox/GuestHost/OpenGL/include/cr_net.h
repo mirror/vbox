@@ -166,6 +166,7 @@ struct CRConnection {
     /* logging */
     int total_bytes_sent;
     int total_bytes_recv;
+    int recv_count;
 
     /* credits for flow control */
     int send_credits;

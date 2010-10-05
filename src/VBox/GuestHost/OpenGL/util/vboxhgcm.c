@@ -716,6 +716,7 @@ static void crVBoxHGCMReceiveMessage(CRConnection *conn)
 
     conn->recv_credits     -= len;
     conn->total_bytes_recv += len;
+    conn->recv_count++;
 
     crNetDispatchMessage( g_crvboxhgcm.recv_list, conn, msg, len );
 
