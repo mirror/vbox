@@ -391,7 +391,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
 
         EM_REG_COUNTER(&pVCpu->em.s.StatForcedActions,     "/PROF/CPU%d/EM/ForcedActions",     "Profiling forced action execution.");
         EM_REG_COUNTER(&pVCpu->em.s.StatHalted,            "/PROF/CPU%d/EM/Halted",            "Profiling halted state (VMR3WaitHalted).");
-        EM_REG_COUNTER(&pVCpu->em.s.StatCapped,            "/PROF/CPU%d/EM/Capped",            "Profiling capped state (sleep).");
+        EM_REG_PROFILE_ADV(&pVCpu->em.s.StatCapped,        "/PROF/CPU%d/EM/Capped",            "Profiling capped state (sleep).");
         EM_REG_COUNTER(&pVCpu->em.s.StatREMTotal,          "/PROF/CPU%d/EM/REMTotal",          "Profiling emR3RemExecute (excluding FFs).");
         EM_REG_COUNTER(&pVCpu->em.s.StatRAWTotal,          "/PROF/CPU%d/EM/RAWTotal",          "Profiling emR3RawExecute (excluding FFs).");
 
