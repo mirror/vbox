@@ -310,6 +310,23 @@ static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRea
     return rc;
 }
 
+static uint32_t computeHyperHeapSize(ChipsetType_T chipsetType, uint32_t cCpus, bool fHwVirtExtForced)
+{
+    uint32_t singleCpuBaseSize;
+
+    if (cCpus > 1)
+        return _2M + cCpus * _64K;
+
+    if (chipsetType == ChipsetType_PIIX3)
+    {
+        /* Size must be kept like this for saved state compatibility */
+        return fHwVirtExtForced ? 640*_1K : 1280*_1K;
+    }
+
+
+    return 1280*_1K;
+}
+
 class ConfigError : public iprt::Error
 {
 public:
@@ -677,6 +694,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
         InsertConfigInteger(pRoot, "HwVirtExtForced",      fHwVirtExtForced);
 
+
+        /*
+         * MM values.
+         */
+        PCFGMNODE pMM;
+        uint32_t cbHyperHeap = computeHyperHeapSize(chipsetType, cCpus, fHwVirtExtForced);
+        InsertConfigNode(pRoot, "MM", &pMM);
+        InsertConfigInteger(pMM, "cbHyperHeap", cbHyperHeap);
+
+        /*
+         * Hardware virtualization settings.
+         */
         PCFGMNODE pHWVirtExt;
         InsertConfigNode(pRoot, "HWVirtExt", &pHWVirtExt);
         if (fHWVirtExEnabled)
