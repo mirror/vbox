@@ -510,6 +510,11 @@ NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PDEVICE_EXTENSION pDevExt, D3DDD
     bool bFallback = false;
     const WCHAR* pKeyPrefix;
     UINT cbKeyPrefix;
+    UNICODE_STRING* pVGuid = vboxWddmVGuidGet(pDevExt);
+    Assert(pVGuid);
+    if (!pVGuid)
+        return STATUS_UNSUCCESSFUL;
+
     winVersion_t ver = vboxQueryWinVersion();
     if (ver == WINVISTA)
     {
@@ -523,13 +528,13 @@ NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PDEVICE_EXTENSION pDevExt, D3DDD
         cbKeyPrefix = sizeof (VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_WIN7);
     }
 
-    ULONG cbResult = cbKeyPrefix + pDevExt->VideoGuid.Length + 2 + 8; // L"\\" + "XXXX"
+    ULONG cbResult = cbKeyPrefix + pVGuid->Length + 2 + 8; // L"\\" + "XXXX"
     if (cbBuf >= cbResult)
     {
         wcscpy(pBuf, pKeyPrefix);
         pSuffix = pBuf + (cbKeyPrefix-2)/2;
-        memcpy(pSuffix, pDevExt->VideoGuid.Buffer, pDevExt->VideoGuid.Length);
-        pSuffix += pDevExt->VideoGuid.Length/2;
+        memcpy(pSuffix, pVGuid->Buffer, pVGuid->Length);
+        pSuffix += pVGuid->Length/2;
         pSuffix[0] = L'\\';
         pSuffix += 1;
         swprintf(pSuffix, L"%04d", VidPnSourceId);
@@ -755,4 +760,38 @@ NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT DWORD val
             REG_DWORD,
             &val,
             sizeof(val));
+}
+
+UNICODE_STRING* vboxWddmVGuidGet(PDEVICE_EXTENSION pDevExt)
+{
+    if (pDevExt->VideoGuid.Buffer)
+        return &pDevExt->VideoGuid;
+
+    Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
+    WCHAR VideoGuidBuf[512];
+    ULONG cbVideoGuidBuf = sizeof (VideoGuidBuf);
+    NTSTATUS Status = vboxWddmRegQueryVideoGuidString(cbVideoGuidBuf, VideoGuidBuf, &cbVideoGuidBuf);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        PWCHAR pBuf = (PWCHAR)vboxWddmMemAllocZero(cbVideoGuidBuf);
+        Assert(pBuf);
+        if (pBuf)
+        {
+            memcpy(pBuf, VideoGuidBuf, cbVideoGuidBuf);
+            RtlInitUnicodeString(&pDevExt->VideoGuid, pBuf);
+            return &pDevExt->VideoGuid;
+        }
+    }
+
+    return NULL;
+}
+
+VOID vboxWddmVGuidFree(PDEVICE_EXTENSION pDevExt)
+{
+    if (pDevExt->VideoGuid.Buffer)
+    {
+        vboxWddmMemFree(pDevExt->VideoGuid.Buffer);
+        pDevExt->VideoGuid.Buffer = NULL;
+    }
 }

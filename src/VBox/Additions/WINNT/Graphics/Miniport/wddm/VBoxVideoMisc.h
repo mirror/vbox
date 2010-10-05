@@ -92,4 +92,8 @@ NTSTATUS vboxWddmRegQueryDrvKeyName(PDEVICE_EXTENSION pDevExt, ULONG cbBuf, PWCH
 NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess);
 NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD pDword);
 NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT DWORD val);
+
+UNICODE_STRING* vboxWddmVGuidGet(PDEVICE_EXTENSION pDevExt);
+VOID vboxWddmVGuidFree(PDEVICE_EXTENSION pDevExt);
+
 #endif /* #ifndef ___VBoxVideoMisc_h__ */

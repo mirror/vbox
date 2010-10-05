@@ -7380,7 +7380,7 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 #ifdef VBOXWDDMDISP_DEBUG_PRINT
 VOID vboxVDbgDoMpPrint(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString)
 {
-    uint32_t cbString = strlen(szString) + 1;
+    uint32_t cbString = (uint32_t)strlen(szString) + 1;
     uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
     PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)RTMemAllocZ(cbCmd);
     Assert(pCmd);
