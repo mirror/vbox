@@ -537,7 +537,7 @@ endif
 #VBOX_WITH_DTRACE_R0 = 1
 # Set this to enable dtrace probes raw-mode context code.
 #VBOX_WITH_DTRACE_RC = 1
-# Set this to enable support for dtrace probes guest code.
+# Set this to enable support for dtrace probes in guest code.
 #VBOX_WITH_DTRACE_GST = 1
 ## @}
 
