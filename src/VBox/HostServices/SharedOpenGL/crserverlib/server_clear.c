@@ -26,6 +26,9 @@ typedef struct VBOXCRFPS
     uint64_t mBytesSum;
     uint32_t *mpaBytes;
 
+    uint64_t mBytesSentSum;
+    uint32_t *mpaBytesSent;
+
     uint64_t mCallsSum;
     uint32_t *mpaCalls;
 } VBOXCRFPS, *PVBOXCRFPS;
@@ -36,6 +39,7 @@ void vboxCrFpsInit(PVBOXCRFPS pFps, uint32_t cPeriods)
     pFps->mcPeriods = cPeriods;
     pFps->mpaPeriods = crCalloc(sizeof (pFps->mpaPeriods[0]) * cPeriods);
     pFps->mpaBytes = crCalloc(sizeof (pFps->mpaBytes[0]) * cPeriods);
+    pFps->mpaBytesSent = crCalloc(sizeof (pFps->mpaBytesSent[0]) * cPeriods);
     pFps->mpaCalls = crCalloc(sizeof (pFps->mpaCalls[0]) * cPeriods);
 }
 
@@ -49,10 +53,11 @@ void vboxCrFpsTerm(PVBOXCRFPS pFps)
 void vboxCrFpsReportFrame(PVBOXCRFPS pFps)
 {
     uint64_t cur = RTTimeNanoTS();
-    uint64_t curBytes, curCalls;
+    uint64_t curBytes, curBytesSent, curCalls;
     int i;
 
     curBytes = 0;
+    curBytesSent = 0;
     curCalls = 0;
 
     for (i = 0; i < cr_server.numClients; i++)
@@ -60,8 +65,10 @@ void vboxCrFpsReportFrame(PVBOXCRFPS pFps)
         if (cr_server.clients[i] && cr_server.clients[i]->conn)
         {
             curBytes += cr_server.clients[i]->conn->total_bytes_recv;
+            curBytesSent += cr_server.clients[i]->conn->total_bytes_sent;
             curCalls += cr_server.clients[i]->conn->recv_count;
             cr_server.clients[i]->conn->total_bytes_recv = 0;
+            cr_server.clients[i]->conn->total_bytes_sent = 0;
             cr_server.clients[i]->conn->recv_count = 0;
         }
     }
@@ -75,6 +82,9 @@ void vboxCrFpsReportFrame(PVBOXCRFPS pFps)
 
         pFps->mBytesSum += curBytes - pFps->mpaBytes[pFps->miPeriod];
         pFps->mpaBytes[pFps->miPeriod] = curBytes;
+
+        pFps->mBytesSentSum += curBytesSent - pFps->mpaBytesSent[pFps->miPeriod];
+        pFps->mpaBytesSent[pFps->miPeriod] = curBytesSent;
 
         pFps->mCallsSum += curCalls - pFps->mpaCalls[pFps->miPeriod];
         pFps->mpaCalls[pFps->miPeriod] = curCalls;
@@ -99,6 +109,11 @@ double vboxCrFpsGetFps(PVBOXCRFPS pFps)
 double vboxCrFpsGetBps(PVBOXCRFPS pFps)
 {
     return vboxCrFpsGetFps(pFps) * pFps->mBytesSum / pFps->mcPeriods;
+}
+
+double vboxCrFpsGetBpsSent(PVBOXCRFPS pFps)
+{
+    return vboxCrFpsGetFps(pFps) * pFps->mBytesSentSum / pFps->mcPeriods;
 }
 
 double vboxCrFpsGetCps(PVBOXCRFPS pFps)
@@ -163,8 +178,9 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
   {
       double fps = vboxCrFpsGetFps(&Fps);
       double bps = vboxCrFpsGetBps(&Fps);
+      double bpsSent = vboxCrFpsGetBpsSent(&Fps);
       double cps = vboxCrFpsGetCps(&Fps);
-      crDebug("fps: %f, Mbps: %.1f, cps: %.1f", fps, bps/(1024.0*1024.0), cps);
+      crDebug("fps: %f, rec Mbps: %.1f, send Mbps: %.1f, cps: %.1f", fps, bps/(1024.0*1024.0), bpsSent/(1024.0*1024.0), cps);
   }
 #endif
 	mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
