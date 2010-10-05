@@ -3877,7 +3877,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                                 tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
                                 &parentId, location.c_str(),
                                 m->pVirtualBox->settingsFilePath().c_str());
-                        DebugBreakThrow(S_OK);
+                        throw S_OK;
                     }
 
                     /* we set mParent & children() */
