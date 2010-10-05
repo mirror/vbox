@@ -915,7 +915,7 @@ VOID VBoxVideoHGSMIDpc(
     IN PVOID  Context
     );
 
-void HGSMIClearIrq (PDEVICE_EXTENSION PrimaryExtension);
+void HGSMIClearIrq (PHGSMI_GUEST_INFO pInfo);
 
 #endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */

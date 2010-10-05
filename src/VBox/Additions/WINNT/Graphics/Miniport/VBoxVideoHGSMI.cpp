@@ -32,23 +32,23 @@
 
 #define MEM_TAG 'HVBV'
 
-void HGSMINotifyHostCmdComplete (PDEVICE_EXTENSION PrimaryExtension, HGSMIOFFSET offt)
+void HGSMINotifyHostCmdComplete (PHGSMI_GUEST_INFO pInfo, HGSMIOFFSET offt)
 {
-    VBoxHGSMIHostWrite(hgsmiFromDeviceExt(PrimaryExtension), offt);
+    VBoxHGSMIHostWrite(pInfo, offt);
 }
 
-void HGSMIClearIrq (PDEVICE_EXTENSION PrimaryExtension)
+void HGSMIClearIrq (PHGSMI_GUEST_INFO pInfo)
 {
-    VBoxHGSMIHostWrite(hgsmiFromDeviceExt(PrimaryExtension), HGSMIOFFSET_VOID);
+    VBoxHGSMIHostWrite(pInfo, HGSMIOFFSET_VOID);
 }
 
-static void HGSMIHostCmdComplete (PDEVICE_EXTENSION PrimaryExtension, void * pvMem)
+static void HGSMIHostCmdComplete (PHGSMI_GUEST_INFO pInfo, void * pvMem)
 {
-    HGSMIOFFSET offMem = HGSMIPointerToOffset (&hgsmiFromDeviceExt(PrimaryExtension)->areaHostHeap, HGSMIBufferHeaderFromData (pvMem));
+    HGSMIOFFSET offMem = HGSMIPointerToOffset (&pInfo->areaHostHeap, HGSMIBufferHeaderFromData (pvMem));
     Assert(offMem != HGSMIOFFSET_VOID);
     if(offMem != HGSMIOFFSET_VOID)
     {
-        HGSMINotifyHostCmdComplete (PrimaryExtension, offMem);
+        HGSMINotifyHostCmdComplete (pInfo, offMem);
     }
 }
 
@@ -62,7 +62,7 @@ static void hgsmiHostCmdProcess(PDEVICE_EXTENSION PrimaryExtension, HGSMIOFFSET 
     {
         /* failure means the command was not submitted to the handler for some reason
          * it's our responsibility to notify its completion in this case */
-        HGSMINotifyHostCmdComplete(PrimaryExtension, offBuffer);
+        HGSMINotifyHostCmdComplete(hgsmiFromDeviceExt(PrimaryExtension), offBuffer);
     }
     /* if the cmd succeeded it's responsibility of the callback to complete it */
 }
@@ -1352,7 +1352,7 @@ static VBVADISP_CHANNELCONTEXT* vboxVBVAFindHandlerInfo(VBVA_CHANNELCONTEXTS *pC
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd)
 {
     PDEVICE_EXTENSION PrimaryExtension = ((PDEVICE_EXTENSION)hHGSMI)->pPrimary;
-    HGSMIHostCmdComplete (PrimaryExtension, pCmd);
+    HGSMIHostCmdComplete (hgsmiFromDeviceExt(PrimaryExtension), pCmd);
 }
 
 DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd)
@@ -1466,7 +1466,7 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                                 pLast->u.pNext = pCur->u.pNext;
                             VBVAHOSTCMD * pNext = pCur->u.pNext;
                             pCur->u.pNext = NULL;
-                            HGSMIHostCmdComplete(pCallbacks->PrimaryExtension, pCur);
+                            HGSMIHostCmdComplete(hgsmiFromDeviceExt(pCallbacks->PrimaryExtension), pCur);
                             pCur = pNext;
                             Assert(!pCur);
                             Assert(!pFirst);
@@ -1535,7 +1535,7 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
         }
     }
     /* no handlers were found, need to complete the command here */
-    HGSMIHostCmdComplete(pCallbacks->PrimaryExtension, pvBuffer);
+    HGSMIHostCmdComplete(hgsmiFromDeviceExt(pCallbacks->PrimaryExtension), pvBuffer);
     return VINF_SUCCESS;
 }
 

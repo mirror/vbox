@@ -895,7 +895,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
         if (bOur)
         {
-            HGSMIClearIrq (pDevExt);
+            HGSMIClearIrq (hgsmiFromDeviceExt(pDevExt));
 #ifdef DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
              * still this allows to check that the host flags are correctly cleared after the ISR */
