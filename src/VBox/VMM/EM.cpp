@@ -2006,9 +2006,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     else
                     {
                         /* Give up this time slice; virtual time continues */
-                        STAM_REL_PROFILE_START(&pVCpu->em.s.StatCapped, u);
+                        STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
                         RTThreadSleep(2);
-                        STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatCapped, u);
+                        STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
                         rc = VINF_SUCCESS;
                     }
                     break;
@@ -2024,9 +2024,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     else
                     {
                         /* Give up this time slice; virtual time continues */
-                        STAM_REL_PROFILE_START(&pVCpu->em.s.StatCapped, u);
+                        STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
                         RTThreadSleep(2);
-                        STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatCapped, u);
+                        STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
                         rc = VINF_SUCCESS;
                     }
                     break;
@@ -2043,9 +2043,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     else
                     {
                         /* Give up this time slice; virtual time continues */
-                        STAM_REL_PROFILE_START(&pVCpu->em.s.StatCapped, u);
+                        STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
                         RTThreadSleep(2);
-                        STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatCapped, u);
+                        STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
                         rc = VINF_SUCCESS;
                     }
                     break;

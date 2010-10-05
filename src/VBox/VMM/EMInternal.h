@@ -400,7 +400,7 @@ typedef struct EMCPU
      * @{ */
     STAMPROFILE             StatForcedActions;
     STAMPROFILE             StatHalted;
-    STAMPROFILE             StatCapped;
+    STAMPROFILEADV          StatCapped;
     STAMPROFILEADV          StatHwAccEntry;
     STAMPROFILE             StatHwAccExec;
     STAMPROFILE             StatREMEmu;
