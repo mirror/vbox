@@ -474,8 +474,6 @@ static void vboxWddmDevExtZeroinit(PDEVICE_EXTENSION pDevExt, CONST PDEVICE_OBJE
     pDevExt->pPDO = pPDO;
     PWCHAR pName = (PWCHAR)(((uint8_t*)pDevExt) + VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8));
     RtlInitUnicodeString(&pDevExt->RegKeyName, pName);
-    pName += (pDevExt->RegKeyName.Length + 2)/2;
-    RtlInitUnicodeString(&pDevExt->VideoGuid, pName);
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
     for (int i = 0; i < RT_ELEMENTS(pDevExt->aSources); ++i)
     {
@@ -511,28 +509,18 @@ NTSTATUS DxgkDdiAddDevice(
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
-        WCHAR VideoGuidBuf[512];
-        ULONG cbVideoGuidBuf = sizeof (VideoGuidBuf);
-
-        Status = vboxWddmRegQueryVideoGuidString(cbVideoGuidBuf, VideoGuidBuf, &cbVideoGuidBuf);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status == STATUS_SUCCESS)
+        pDevExt = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8) + cbRegKeyBuf);
+        if (pDevExt)
         {
-            pDevExt = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8) + cbRegKeyBuf + cbVideoGuidBuf);
-            if (pDevExt)
-            {
-                PWCHAR pName = (PWCHAR)(((uint8_t*)pDevExt) + VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8));
-                memcpy(pName, RegKeyBuf, cbRegKeyBuf);
-                pName += cbRegKeyBuf/2;
-                memcpy(pName, VideoGuidBuf, cbVideoGuidBuf);
-                vboxWddmDevExtZeroinit(pDevExt, PhysicalDeviceObject);
-                *MiniportDeviceContext = pDevExt;
-            }
-            else
-            {
-                Status  = STATUS_NO_MEMORY;
-                drprintf(("VBoxVideoWddm: ERROR, failed to create context\n"));
-            }
+            PWCHAR pName = (PWCHAR)(((uint8_t*)pDevExt) + VBOXWDDM_ROUNDBOUND(sizeof (DEVICE_EXTENSION), 8));
+            memcpy(pName, RegKeyBuf, cbRegKeyBuf);
+            vboxWddmDevExtZeroinit(pDevExt, PhysicalDeviceObject);
+            *MiniportDeviceContext = pDevExt;
+        }
+        else
+        {
+            Status  = STATUS_NO_MEMORY;
+            drprintf(("VBoxVideoWddm: ERROR, failed to create context\n"));
         }
     }
 
@@ -566,6 +554,8 @@ NTSTATUS DxgkDdiStartDevice(
         )
     {
         PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)MiniportDeviceContext;
+
+        vboxWddmVGuidGet(pContext);
 
         /* Save DeviceHandle and function pointers supplied by the DXGKRNL_INTERFACE structure passed to DxgkInterface. */
         memcpy(&pContext->u.primary.DxgkInterface, DxgkInterface, sizeof (DXGKRNL_INTERFACE));
@@ -664,6 +654,8 @@ NTSTATUS DxgkDdiStopDevice(
     if (RT_SUCCESS(rc))
     {
         VbglTerminate();
+
+        vboxWddmVGuidFree(pDevExt);
 
         /* revert back to the state we were right after the DxgkDdiAddDevice */
         vboxWddmDevExtZeroinit(pDevExt, pDevExt->pPDO);
@@ -3437,9 +3429,14 @@ DxgkDdiSetVidPnSourceAddress(
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     Assert((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceAddress->VidPnSourceId);
+
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
+    Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId, &pSource->VScreenPos);
+    Assert(Status == STATUS_SUCCESS);
+    Status = STATUS_SUCCESS;
+
     if ((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceAddress->VidPnSourceId)
     {
-        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
         PVBOXWDDM_ALLOCATION pAllocation;
         Assert(pSetVidPnSourceAddress->hAllocation);
         Assert(pSetVidPnSourceAddress->hAllocation || pSource->pPrimaryAllocation);
@@ -3462,6 +3459,7 @@ DxgkDdiSetVidPnSourceAddress(
             Assert (!pAllocation->bVisible);
             Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE
                     || pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_UMD_RC_GENERIC);
+
             if (
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
                     /* this is the case of full-screen d3d, ensure we notify host */
@@ -3472,14 +3470,13 @@ DxgkDdiSetVidPnSourceAddress(
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
                 /* to ensure the resize request gets issued in case we exit a full-screen D3D mode */
                 pSource->offVram = VBOXVIDEOOFFSET_VOID;
-#endif
-                Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId, &pSource->VScreenPos);
-                Assert(Status == STATUS_SUCCESS);
+#else
                 /* should not generally happen, but still inform host*/
                 Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, pSetVidPnSourceAddress->VidPnSourceId);
                 Assert(Status == STATUS_SUCCESS);
                 if (Status != STATUS_SUCCESS)
                     drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
+#endif
             }
         }
         else
@@ -3516,9 +3513,14 @@ DxgkDdiSetVidPnSourceVisibility(
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     Assert((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceVisibility->VidPnSourceId);
+
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
+    Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId, &pSource->VScreenPos);
+    Assert(Status == STATUS_SUCCESS);
+    Status = STATUS_SUCCESS;
+
     if ((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceVisibility->VidPnSourceId)
     {
-        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
         PVBOXWDDM_ALLOCATION pAllocation = pSource->pPrimaryAllocation;
         if (pAllocation)
         {
@@ -3540,13 +3542,12 @@ DxgkDdiSetVidPnSourceVisibility(
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
                         /* to ensure the resize request gets issued in case we exit a full-screen D3D mode */
                         pSource->offVram = VBOXVIDEOOFFSET_VOID;
-#endif
-                        Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId, &pSource->VScreenPos);
-                        Assert(Status == STATUS_SUCCESS);
+#else
                         Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource, pSetVidPnSourceVisibility->VidPnSourceId);
                         Assert(Status == STATUS_SUCCESS);
                         if (Status != STATUS_SUCCESS)
                             drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
+#endif
                     }
                 }
 #ifdef VBOX_WITH_VDMA
@@ -4716,8 +4717,8 @@ DxgkDdiCreateContext(
             for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
             {
                 pDevExt->aSources[i].offVram = VBOXVIDEOOFFSET_VOID;
-                Status= vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pDevExt->aSources[i].VScreenPos);
-                Assert(Status == STATUS_SUCCESS);
+                NTSTATUS tmpStatus= vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pDevExt->aSources[i].VScreenPos);
+                Assert(tmpStatus == STATUS_SUCCESS);
             }
         }
         else
