@@ -291,6 +291,21 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
         {
             case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
             {
+#ifdef VBOXWDDM_TEST_UHGSMI
+                static int count = 0;
+                static uint64_t start, end;
+                if (count==0)
+                {
+                    start = RTTimeNanoTS();
+                }
+                ++count;
+                if (count==100000)
+                {
+                    end = RTTimeNanoTS();
+                    float ems = (end-start)/1000000.f;
+                    LogRel(("100000 calls took %i ms, %i cps\n", (int)ems, (int)(100000.f*1000.f/ems) ));
+                }
+#endif
                 /* todo: post the buffer to chromium */
                 return VINF_SUCCESS;
             }

@@ -352,6 +352,9 @@ ifdef VBOX_WITH_VDMA
  DevicesR3_SOURCES      += \
 	Graphics/DevVGA_VDMA.cpp
 endif
+ifdef VBOXWDDM_TEST_UHGSMI
+ DevicesR3_DEFS   += VBOXWDDM_TEST_UHGSMI
+endif
 ifdef VBOXWDDM_WITH_VBVA
  DevicesR3_DEFS        += VBOXWDDM_WITH_VBVA
 endif

@@ -5380,14 +5380,14 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
     {
 #ifdef VBOXWDDM_TEST_UHGSMI
         {
-            Assert(0);
-            static uint32_t cCals = 10000;
+//            Assert(0);
+            static uint32_t cCals = 100000;
             static uint32_t cbData = 8 * 1024 * 1024;
             uint64_t TimeMs;
             int rc = vboxUhgsmiTst(&pDevice->Uhgsmi.Base, cbData, cCals, &TimeMs);
             uint32_t cCPS = (((uint64_t)cCals) * 1000ULL)/TimeMs;
-            Assert(0);
-            vboxVDbgDoMpPrintF(pDevice, "Time : %I64u ms, calls: %d, cps: %d\n", TimeMs, cCals, cCPS);
+//            Assert(0);
+//            vboxVDbgDoMpPrintF(pDevice, "Time : %I64u ms, calls: %d, cps: %d\n", TimeMs, cCals, cCPS);
         }
 #endif
 #if 1
