@@ -2081,7 +2081,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
                     Assert(bResult);
                 }
                 /* clear the IRQ */
-                HGSMIClearIrq (PrimaryExtension);
+                HGSMIClearIrq (hgsmiFromDeviceExt(PrimaryExtension));
                 return TRUE;
             }
         }
