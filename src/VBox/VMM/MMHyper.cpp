@@ -44,6 +44,17 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
+DECLINLINE(uint32_t) computeHyperHeapSize(bool fCanUseLargerHeap, uint32_t cCpus, bool fHwVirtExtForced)
+{
+    if (cCpus > 1)
+        return _2M + cCpus * _64K;
+
+    if (fCanUseLargerHeap)
+        return 1280*_1K;
+    else
+        /* Size must be kept like this for saved state compatibility */
+        return fHwVirtExtForced ? 640*_1K : 1280*_1K;
+}
 
 
 /**
@@ -72,9 +83,13 @@ int mmR3HyperInit(PVM pVM)
      *        depending on whether VT-x/AMD-V is enabled or not! Don't waste
      *        precious kernel space on heap for the PATM.
      */
-    uint32_t cbHyperHeap;
-    int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "cbHyperHeap", &cbHyperHeap);
+    PCFGMNODE pMM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM");
+    bool fCanUseLargerHeap = false;
+    int rc = CFGMR3QueryBoolDef(pMM, "CanUseLargerHeap", &fCanUseLargerHeap, false);
+    uint32_t cbHyperHeap = computeHyperHeapSize(fCanUseLargerHeap, pVM->cCpus, VMMIsHwVirtExtForced(pVM));
+    rc = CFGMR3QueryU32Def(pMM, "cbHyperHeap", &cbHyperHeap, cbHyperHeap);
     AssertLogRelRCReturn(rc, rc);
+
     cbHyperHeap = RT_ALIGN_32(cbHyperHeap, PAGE_SIZE);
     LogRel(("MM: cbHyperHeap=%#x (%u)\n", cbHyperHeap, cbHyperHeap));
 
@@ -1374,4 +1389,3 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
         pLookup = (PMMLOOKUPHYPER)((uint8_t *)pLookup + pLookup->offNext);
     }
 }
-
