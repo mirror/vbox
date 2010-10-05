@@ -521,6 +521,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_CPU_EXECTUION_CAP:
             {
                 CHECK_ERROR(machine, COMSETTER(CPUExecutionCap)(ValueUnion.u32));
+                break;
             }
 
             case MODIFYVM_MONITORCOUNT:
