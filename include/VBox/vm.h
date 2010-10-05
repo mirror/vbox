@@ -147,7 +147,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        uint8_t             padding[1536];      /* multiple of 64 */
+        uint8_t             padding[1472];      /* multiple of 64 */
     } em;
 
     /** TRPM part. */
@@ -205,8 +205,10 @@ typedef struct VMCPU
         uint8_t             padding[64];        /* multiple of 64 */
     } dbgf;
 
+#if 0
     /** Align the following members on page boundrary. */
-    uint8_t                 abAlignment2[64];
+    uint8_t                 abAlignment2[32];
+#endif
 
     /** PGM part. */
     union

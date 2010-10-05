@@ -227,7 +227,9 @@ int main()
     CHECK_PADDING_VMCPU(64, pdm);
     CHECK_PADDING_VMCPU(64, iom);
     CHECK_PADDING_VMCPU(64, dbgf);
+#if 0
     PRINT_OFFSET(VMCPU, abAlignment2);
+#endif
     PRINT_OFFSET(VMCPU, pgm);
     CHECK_PADDING_VMCPU(4096, pgm);
 #ifdef VBOX_WITH_STATISTICS
