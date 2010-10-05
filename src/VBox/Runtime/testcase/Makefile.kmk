@@ -82,6 +82,7 @@ PROGRAMS += \
 	tstRTPath \
 	tstRTPipe \
 	tstRTPoll \
+	tstRTPrfIO \
 	tstRTProcCreateEx \
 	tstPrfRT \
 	tstRand \
@@ -382,6 +383,9 @@ tstPrfRT_SOURCES = tstPrfRT.cpp
 tstRand_SOURCES = tstRand.cpp
 
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
+
+tstRTPrfIO_TEMPLATE = VBOXR3TSTEXE
+tstRTPrfIO_SOURCES = tstRTPrfIO.cpp
 
 tstRTProcCreateEx_TEMPLATE = VBOXR3TSTEXE
 tstRTProcCreateEx_SOURCES = tstRTProcCreateEx.cpp
