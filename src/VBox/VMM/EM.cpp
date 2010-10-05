@@ -63,6 +63,7 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************
@@ -143,6 +144,9 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.pCtx         = CPUMQueryGuestCtxPtr(pVCpu);
         pVCpu->em.s.pPatmGCState = PATMR3QueryGCStateHC(pVM);
         AssertMsg(pVCpu->em.s.pPatmGCState, ("PATMR3QueryGCStateHC failed!\n"));
+
+        /* Force reset of the time slice. */
+        pVCpu->em.s.u64TimeSliceStart = 0;
 
 # define EM_REG_COUNTER(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, i); \
@@ -387,6 +391,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
 
         EM_REG_COUNTER(&pVCpu->em.s.StatForcedActions,     "/PROF/CPU%d/EM/ForcedActions",     "Profiling forced action execution.");
         EM_REG_COUNTER(&pVCpu->em.s.StatHalted,            "/PROF/CPU%d/EM/Halted",            "Profiling halted state (VMR3WaitHalted).");
+        EM_REG_COUNTER(&pVCpu->em.s.StatCapped,            "/PROF/CPU%d/EM/Capped",            "Profiling capped state (sleep).");
         EM_REG_COUNTER(&pVCpu->em.s.StatREMTotal,          "/PROF/CPU%d/EM/REMTotal",          "Profiling emR3RemExecute (excluding FFs).");
         EM_REG_COUNTER(&pVCpu->em.s.StatRAWTotal,          "/PROF/CPU%d/EM/RAWTotal",          "Profiling emR3RawExecute (excluding FFs).");
 
@@ -1662,6 +1667,38 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
 
 /**
+ * Check if the preset execution time cap restricts guest execution scheduling.
+ *
+ * @returns true if allowed, false otherwise
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
+ *
+ */
+bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
+{
+    uint64_t u64UserTime, u64KernelTime;
+
+    if (    pVM->uCpuExecutionCap != 100
+        &&  RT_SUCCESS(RTThreadGetExecutionTimeMilli(RTThreadSelf(), &u64KernelTime, &u64UserTime)))
+    {
+        uint64_t u64TimeNow = RTTimeMilliTS();
+        if (pVCpu->em.s.u64TimeSliceStart + EM_TIME_SLICE < u64TimeNow)
+        {
+            /* New time slice. */
+            pVCpu->em.s.u64TimeSliceStart     = u64TimeNow;
+            pVCpu->em.s.u64TimeSliceStartExec = u64KernelTime + u64UserTime;
+            pVCpu->em.s.u64TimeSliceExec      = 0;
+        }
+        pVCpu->em.s.u64TimeSliceExec = u64KernelTime + u64UserTime - pVCpu->em.s.u64TimeSliceStartExec;
+
+        if (pVCpu->em.s.u64TimeSliceExec >= (EM_TIME_SLICE * 100) / pVM->uCpuExecutionCap)
+            return false;
+    }
+    return true;
+}
+
+
+/**
  * Execute VM.
  *
  * This function is the main loop of the VM. The emulation thread
@@ -1962,22 +1999,55 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute raw.
                  */
                 case EMSTATE_RAW:
-                    rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
+                    if (emR3IsExecutionAllowed(pVM, pVCpu))
+                    {
+                        rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
+                    }
+                    else
+                    {
+                        /* Give up this time slice; virtual time continues */
+                        STAM_REL_PROFILE_START(&pVCpu->em.s.StatCapped, u);
+                        RTThreadSleep(2);
+                        STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatCapped, u);
+                        rc = VINF_SUCCESS;
+                    }
                     break;
 
                 /*
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HWACC:
-                    rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
+                    if (emR3IsExecutionAllowed(pVM, pVCpu))
+                    {
+                        rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
+                    }
+                    else
+                    {
+                        /* Give up this time slice; virtual time continues */
+                        STAM_REL_PROFILE_START(&pVCpu->em.s.StatCapped, u);
+                        RTThreadSleep(2);
+                        STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatCapped, u);
+                        rc = VINF_SUCCESS;
+                    }
                     break;
 
                 /*
                  * Execute recompiled.
                  */
                 case EMSTATE_REM:
-                    rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
-                    Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
+                    if (emR3IsExecutionAllowed(pVM, pVCpu))
+                    {
+                        rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
+                        Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
+                    }
+                    else
+                    {
+                        /* Give up this time slice; virtual time continues */
+                        STAM_REL_PROFILE_START(&pVCpu->em.s.StatCapped, u);
+                        RTThreadSleep(2);
+                        STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatCapped, u);
+                        rc = VINF_SUCCESS;
+                    }
                     break;
 
                 /*

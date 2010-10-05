@@ -20,7 +20,7 @@
 
 #include <VBox/em.h>
 
-VMMR3DECL(int) EMR3NotifyResume(PVM pVM);
-VMMR3DECL(int) EMR3NotifySuspend(PVM pVM);
+VMMR3DECL(int)  EMR3NotifyResume(PVM pVM);
+VMMR3DECL(int)  EMR3NotifySuspend(PVM pVM);
 
 #endif

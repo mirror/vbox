@@ -53,6 +53,8 @@ RT_C_DECLS_BEGIN
 /* Monitor instruction was executed previously. */
 #define EMMWAIT_FLAG_MONITOR_ACTIVE     RT_BIT(2)
 
+/** EM time slice in ms; used for capping execution time. */
+#define EM_TIME_SLICE                   1000
 
 /**
  * Cli node structure
@@ -351,6 +353,14 @@ typedef struct EMCPU
     RTGCPTR                 aPadding1;
 #endif
 
+    /** Start of the current time slice in ms. */
+    uint64_t                u64TimeSliceStart;
+    /** Start of the current time slice in thread execution time (ms). */
+    uint64_t                u64TimeSliceStartExec;
+    /** Current time slice value. */
+    uint64_t                u64TimeSliceExec;
+    uint64_t                u64Alignment;
+
     /* MWait halt state. */
     struct
     {
@@ -390,6 +400,7 @@ typedef struct EMCPU
      * @{ */
     STAMPROFILE             StatForcedActions;
     STAMPROFILE             StatHalted;
+    STAMPROFILE             StatCapped;
     STAMPROFILEADV          StatHwAccEntry;
     STAMPROFILE             StatHwAccExec;
     STAMPROFILE             StatREMEmu;
