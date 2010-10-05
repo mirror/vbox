@@ -2301,7 +2301,7 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
     if (    disp_width     != (int)s->last_width
         ||  height         != (int)s->last_height
         ||  s->get_bpp(s)  != (int)s->last_bpp
-        ||  offsets_changed)
+        || (offsets_changed && !s->fRenderVRAM))
     {
         if (fFailOnResize)
         {
