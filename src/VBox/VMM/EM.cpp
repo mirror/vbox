@@ -897,7 +897,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     if (pCtx->eflags.Bits.u1VM)
         Log(("EMV86: %04X:%08X IF=%d\n", pCtx->cs, pCtx->eip, pCtx->eflags.Bits.u1IF));
     else
-        Log(("EMR%d: %04X:%08X ESP=%08X IF=%d CR0=%x\n", cpl, pCtx->cs, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0));
+        Log(("EMR%d: %04X:%08X ESP=%08X IF=%d CR0=%x eflags=%x\n", cpl, pCtx->cs, pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, (uint32_t)pCtx->cr0, pCtx->eflags.u));
 #endif
     STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatREMTotal, a);
 
@@ -1691,7 +1691,7 @@ bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
         }
         pVCpu->em.s.u64TimeSliceExec = u64KernelTime + u64UserTime - pVCpu->em.s.u64TimeSliceStartExec;
 
-        if (pVCpu->em.s.u64TimeSliceExec >= (EM_TIME_SLICE * 100) / pVM->uCpuExecutionCap)
+        if (pVCpu->em.s.u64TimeSliceExec >= (EM_TIME_SLICE * pVM->uCpuExecutionCap) / 100)
             return false;
     }
     return true;
