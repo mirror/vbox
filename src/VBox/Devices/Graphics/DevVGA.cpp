@@ -827,6 +827,39 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
     return val;
 }
 
+#define VBE_PITCH_ALIGN     8       /* Align pitch to 64 bits. */
+
+/* Calculate scanline pitch based on bit depth and width in pixels. */
+static uint32_t calc_line_pitch(uint16_t bpp, uint16_t width)
+{
+    uint32_t    pitch, aligned_pitch;
+
+    if (bpp <= 4)
+        pitch = width >> 1;
+    else
+        pitch = width * ((bpp + 7) >> 3);
+
+    /* Align the pitch to some sensible value. */
+    aligned_pitch = (pitch + (VBE_PITCH_ALIGN - 1)) & ~(VBE_PITCH_ALIGN - 1);
+    if (aligned_pitch != pitch)
+        Log(("VBE: Line pitch %d aligned to %d bytes\n", pitch, aligned_pitch));
+
+    return aligned_pitch;
+}
+
+/* Calculate line width in pixels based on bit depth and pitch. */
+static uint32_t calc_line_width(uint16_t bpp, uint32_t pitch)
+{
+    uint32_t    width;
+
+    if (bpp <= 4)
+        width = pitch << 1;
+    else
+        width = pitch / ((bpp + 7) >> 3);
+
+    return width;
+}
+
 static void vbe_ioport_write_index(void *opaque, uint32_t addr, uint32_t val)
 {
     VGAState *s = (VGAState*)opaque;
@@ -863,15 +896,12 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 #endif /* VBOX */
             break;
         case VBE_DISPI_INDEX_XRES:
-            if ((val <= VBE_DISPI_MAX_XRES) && ((val & 7) == 0)) {
+            if (val <= VBE_DISPI_MAX_XRES) {
                 s->vbe_regs[s->vbe_index] = val;
 #ifdef KEEP_SCAN_LINE_LENGTH
-                if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4)
-                    s->vbe_line_offset = val >> 1;
-                else
-                    s->vbe_line_offset = val * ((s->vbe_regs[VBE_DISPI_INDEX_BPP] + 7) >> 3);
+                s->vbe_line_offset = calc_line_pitch(s->vbe_regs[VBE_DISPI_INDEX_BPP], val);
                 /* XXX: support weird bochs semantics ? */
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = val;
+                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = calc_line_width(s->vbe_regs[VBE_DISPI_INDEX_BPP], s->vbe_line_offset);
                 s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
                 s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
                 s->vbe_start_addr = 0;
@@ -896,12 +926,9 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 val == 16 || val == 24 || val == 32) {
                 s->vbe_regs[s->vbe_index] = val;
 #ifdef KEEP_SCAN_LINE_LENGTH
-                if (val == 4)
-                    s->vbe_line_offset = s->vbe_regs[VBE_DISPI_INDEX_XRES] >> 1;
-                else
-                    s->vbe_line_offset = s->vbe_regs[VBE_DISPI_INDEX_XRES] * ((val + 7) >> 3);
+                s->vbe_line_offset = calc_line_pitch(val, s->vbe_regs[VBE_DISPI_INDEX_XRES]);
                 /* XXX: support weird bochs semantics ? */
-                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = val;
+                s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] = calc_line_width(val, s->vbe_line_offset);
                 s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
                 s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
                 s->vbe_start_addr = 0;
@@ -972,11 +999,8 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET] = 0;
                 s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET] = 0;
 
-                if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4)
-                    s->vbe_line_offset = s->vbe_regs[VBE_DISPI_INDEX_XRES] >> 1;
-                else
-                    s->vbe_line_offset = s->vbe_regs[VBE_DISPI_INDEX_XRES] *
-                        ((s->vbe_regs[VBE_DISPI_INDEX_BPP] + 7) >> 3);
+                s->vbe_line_offset = calc_line_pitch(s->vbe_regs[VBE_DISPI_INDEX_BPP],
+                                                      s->vbe_regs[VBE_DISPI_INDEX_XRES]);
                 s->vbe_start_addr = 0;
 #endif  /* KEEP_SCAN_LINE_LENGTH not defined */
 
@@ -1064,10 +1088,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 if (val < s->vbe_regs[VBE_DISPI_INDEX_XRES])
                     return VINF_SUCCESS;
                 w = val;
-                if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4)
-                    line_offset = w >> 1;
-                else
-                    line_offset = w * ((s->vbe_regs[VBE_DISPI_INDEX_BPP] + 7) >> 3);
+                line_offset = calc_line_pitch(s->vbe_regs[VBE_DISPI_INDEX_BPP], w);
                 h = s->vram_size / line_offset;
                 /* XXX: support weird bochs semantics ? */
                 if (h < s->vbe_regs[VBE_DISPI_INDEX_YRES])
@@ -6120,6 +6141,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #ifdef VBE_NEW_DYN_LIST
     uint32_t    cCustomModes;
     uint32_t    cyReduction;
+    uint32_t    cbPitch;
+    int         nPages;
     PVBEHEADER  pVBEDataHdr;
     ModeInfoListItem *pCurMode;
     unsigned    cb;
@@ -6588,10 +6611,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                     AssertMsgFailed(("Configuration error: Invalid mode data '%s' for '%s'! cBits=%d\n", pszExtraData, szExtraDataKey, cBits));
                     return VERR_VGA_INVALID_CUSTOM_MODE;
                 }
-                /* Round up the X resolution to a multiple of eight. */
-                cx = (cx + 7) & ~7;
+                cbPitch = calc_line_pitch(cBits, cx);
 # ifdef VRAM_SIZE_FIX
-                if (cx * cy * cBits / 8 >= pThis->vram_size)
+                if (cy * cbPitch >= pThis->vram_size)
                 {
                     AssertMsgFailed(("Configuration error: custom video mode %dx%dx%dbits is too large for the virtual video memory of %dMb.  Please increase the video memory size.\n",
                                      cx, cy, cBits, pThis->vram_size / _1M));
@@ -6629,26 +6651,17 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 pCurMode->mode = u16CurMode++;
 
                 /* adjust defaults */
+                /* The "number of image pages" is really the max page index... */
+                nPages = pThis->vram_size / (cy * cbPitch) - 1;
+                Assert(nPages);
+                if (nPages > 255)
+                    nPages = 255;   /* 8-bit value. */
                 pCurMode->info.XResolution = cx;
                 pCurMode->info.YResolution = cy;
-
-                switch (cBits)
-                {
-                    case 16:
-                        pCurMode->info.BytesPerScanLine = cx * 2;
-                        pCurMode->info.LinBytesPerScanLine = cx * 2;
-                        break;
-
-                    case 24:
-                        pCurMode->info.BytesPerScanLine = cx * 3;
-                        pCurMode->info.LinBytesPerScanLine = cx * 3;
-                        break;
-
-                    case 32:
-                        pCurMode->info.BytesPerScanLine = cx * 4;
-                        pCurMode->info.LinBytesPerScanLine = cx * 4;
-                        break;
-                }
+                pCurMode->info.BytesPerScanLine    = cbPitch;
+                pCurMode->info.LinBytesPerScanLine = cbPitch;
+                pCurMode->info.NumberOfImagePages  = nPages;
+                pCurMode->info.LinNumberOfPages    = nPages;
 
                 /* commit it */
                 pCurMode++;
