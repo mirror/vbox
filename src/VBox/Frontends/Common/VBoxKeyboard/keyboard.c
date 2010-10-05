@@ -106,7 +106,7 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
     unsigned scan;
     KeySym keysym = XKeycodeToKeysym(display, code, 0);
     scan = 0;
-    if (keysym != 0)  /* otherwise, keycode not used */
+    if (keyc2scan[code] == 0 && keysym != 0)
     {
         if ((keysym >> 8) == 0xFF)          /* non-character key */
             scan = nonchar_key_scan[keysym & 0xff];
@@ -119,8 +119,7 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
         else if (keysym == 0xFE03)          /* ISO level3 shift, aka AltGr */
             scan = 0x138;
     }
-    /* Disabled "keysym != 0" as we can now match keycodes with no keysym */
-    if (/* keysym != 0 && */ scan == 0)
+    if (keyc2scan[code])
         scan = keyc2scan[code];
 
     return scan;
@@ -633,7 +632,7 @@ unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK,
         for (; (*remapScancodes)[0] != (*remapScancodes)[1]; remapScancodes++)
             keyc2scan[(*remapScancodes)[0]] = (*remapScancodes)[1];
 
-    return (byLayout || byType) ? 1 : 0;
+    return (byLayout || byType || byXkb) ? 1 : 0;
 }
 
 /**
