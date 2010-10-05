@@ -1840,8 +1840,6 @@ HRESULT Console::doCPURemove(ULONG aCpu)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /** @todo r=klaus holding the lock while triggering VMMDev/EMT activity is
-     * asking for deadlocks. Code MUST drop any lock before touching VMMDev. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(m_pVMMDev, E_FAIL);
@@ -1866,6 +1864,9 @@ HRESULT Console::doCPURemove(ULONG aCpu)
     if (!fCpuAttached)
         return setError(E_FAIL,
                         tr("CPU %d is not attached"), aCpu);
+
+    /* Leave the lock before any EMT/VMMDev call. */
+    alock.leave();
 
     /* Check if the CPU is unlocked */
     PPDMIBASE pBase;
@@ -1912,16 +1913,12 @@ HRESULT Console::doCPURemove(ULONG aCpu)
     {
         /*
          * Call worker in EMT, that's faster and safer than doing everything
-         * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
-         * here to make requests from under the lock in order to serialize them.
+         * using VMR3ReqCall.
          */
         PVMREQ pReq;
         vrc = VMR3ReqCall(mpVM, 0, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                           (PFNRT)Console::unplugCpu, 2,
                           this, aCpu);
-
-        /* leave the lock before a VMR3* call (EMT will call us back)! */
-        alock.leave();
 
         if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
         {
@@ -1998,8 +1995,6 @@ HRESULT Console::doCPUAdd(ULONG aCpu)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /** @todo r=klaus holding the lock while triggering VMMDev/EMT activity is
-     * asking for deadlocks. Code MUST drop any lock before touching VMMDev. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (   mMachineState != MachineState_Running
@@ -3879,17 +3874,11 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     HRESULT rc = S_OK;
 
     /* don't trigger CPU change if the VM isn't running */
     if (mpVM)
     {
-        /* protect mpVM */
-        AutoVMCaller autoVMCaller(this);
-        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
-
         if (aRemove)
             rc = doCPURemove(aCPU);
         else
