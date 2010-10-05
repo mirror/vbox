@@ -457,7 +457,7 @@ ifdef VBOX_WITH_DTRACE_R3
  DevicesR3_DEFS        += VBOX_WITH_DTRACE
  DevicesR3_INCS        += $(DevicesR3_0_OUTDIR)
  DevicesR3_INTERMEDIATES += $(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.h
- $$(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.h: $(PATH_CURRENT)/VBoxDD-dtrace.d | $$(dir $$@)
+ $$(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.h: $(PATH_SUB_CURRENT)/VBoxDD-dtrace.d | $$(dir $$@)
 	dtrace -C -h -o $@ -s $<
 endif
 
@@ -587,7 +587,7 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_VDMA
   VBoxDDGC_DEFS        += VBOX_WITH_VDMA
  endif
- 
+
  ifdef VBOXWDDM_WITH_VBVA
   VBoxDDGC_DEFS         += VBOXWDDM_WITH_VBVA
  endif
