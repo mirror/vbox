@@ -70,6 +70,9 @@
  * This was before the config was added and ahciIOTasks was dropped. */
 #define AHCI_SAVED_STATE_VERSION_VBOX_30        2
 
+/* If AHCI shall emulate MSI support */
+#define AHCI_WITH_MSI
+
 /**
  * Maximum number of sectors to transfer in a READ/WRITE MULTIPLE request.
  * Set to 1 to disable multi-sector read support. According to the ATA
@@ -7667,16 +7670,17 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetVendorId    (&pThis->dev, 0x8086); /* Intel */
     PCIDevSetDeviceId    (&pThis->dev, 0x2829); /* ICH-8M */
     PCIDevSetCommand     (&pThis->dev, 0x0000);
-    // @todo: must be set, to use caps list
-    //PCIDevSetStatus      (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST);
+#ifdef AHCI_WITH_MSI
+    PCIDevSetStatus      (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST);
+    PCIDevSetCapabilityList(&pThis->dev, 0x80);
+#else
+    PCIDevSetCapabilityList(&pThis->dev, 0x70);
+#endif
     PCIDevSetRevisionId  (&pThis->dev, 0x02);
     PCIDevSetClassProg   (&pThis->dev, 0x01);
     PCIDevSetClassSub    (&pThis->dev, 0x06);
     PCIDevSetClassBase   (&pThis->dev, 0x01);
     PCIDevSetBaseAddress (&pThis->dev, 5, false, false, false, 0x00000000);
-
-    // @todo: maybe 0x70, as MSI currently not implemented
-    PCIDevSetCapabilityList(&pThis->dev, 0x80);
 
     PCIDevSetInterruptLine(&pThis->dev, 0x00);
     PCIDevSetInterruptPin (&pThis->dev, 0x01);
@@ -7684,11 +7688,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->dev.config[0x70] = VBOX_PCI_CAP_ID_PM; /* Capability ID: PCI Power Management Interface */
     pThis->dev.config[0x71] = 0x00; /* next */
     pThis->dev.config[0x72] = 0x03; /* version ? */
-
-    // @todo: this way it claims MSI *enabled*, not disabled, which is only
-    // compensated by above lack of VBOX_PCI_STATUS_CAP_LIST in status
-    pThis->dev.config[0x80] = VBOX_PCI_CAP_ID_MSI; /* Capability ID: Message Signaled Interrupts. Disabled. */
-    pThis->dev.config[0x81] = 0x70; /* next. */
 
     pThis->dev.config[0x90] = 0x40; /* AHCI mode. */
     pThis->dev.config[0x92] = 0x3f;
@@ -7702,6 +7701,21 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIRegister (pDevIns, &pThis->dev);
     if (RT_FAILURE(rc))
         return rc;
+
+#ifdef AHCI_WITH_MSI
+    PDMMSIREG aMsiReg;
+    aMsiReg.cVectors = 1;
+    aMsiReg.iCapOffset = 0x80;
+    aMsiReg.iNextOffset = 0x70;
+    aMsiReg.iMsiFlags = 0;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
+    if (RT_FAILURE (rc))
+    {
+        LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
+        PCIDevSetCapabilityList(&pThis->dev, 0x70);
+        /* That's OK, we can work without MSI */
+    }
+#endif
 
     /*
      * Solaris 10 U5 fails to map the AHCI register space when the sets (0..5) for the legacy
