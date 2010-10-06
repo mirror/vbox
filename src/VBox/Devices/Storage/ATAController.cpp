@@ -4169,7 +4169,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                     pCtl->fRedo = fRedo;
                     if (RT_UNLIKELY(fRedo))
                     {
-                        LogRel(("AHCI ATA: Ctl#%d: redo PIO operation\n"));
+                        LogRel(("AHCI ATA: Ctl: redo PIO operation\n"));
                         ataAsyncIOPutRequest(pCtl, &ataPIORequest);
                         break;
                     }
