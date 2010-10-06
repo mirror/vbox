@@ -457,15 +457,21 @@ static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
     PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel);
 }
 
-
 /** @interface_method_impl{PDMPCIHLPR3,pfnIoApicSetIrq} */
 static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmR3PciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
+    Log4(("pdmR3PciHlp_IoApicSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     PDMIoApicSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel);
 }
 
+/** @interface_method_impl{PDMPCIHLPR3,pfnIoApicSendMsi} */
+static DECLCALLBACK(void) pdmR3PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    Log4(("pdmR3PciHlp_IoApicSendMsi: address=%p value=%x\n", GCAddr, uValue));
+    PDMIoApicSendMsi(pDevIns->Internal.s.pVMR3, GCAddr, uValue);
+}
 
 /** @interface_method_impl{PDMPCIHLPR3,pfnIsMMIO2Base} */
 static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys)
@@ -534,6 +540,7 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
     PDM_PCIHLPR3_VERSION,
     pdmR3PciHlp_IsaSetIrq,
     pdmR3PciHlp_IoApicSetIrq,
+    pdmR3PciHlp_IoApicSendMsi,
     pdmR3PciHlp_IsMMIO2Base,
     pdmR3PciHlp_GetRCHelpers,
     pdmR3PciHlp_GetR0Helpers,

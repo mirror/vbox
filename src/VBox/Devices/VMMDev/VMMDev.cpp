@@ -3194,4 +3194,3 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     PDM_DEVREG_VERSION
 };
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-

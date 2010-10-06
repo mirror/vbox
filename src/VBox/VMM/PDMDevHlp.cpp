@@ -2042,8 +2042,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     }
     else
     {
-        pPciBus->pfnSetIrqRC = 0;
-        pPciBus->pDevInsRC   = 0;
+        pPciBus->pfnSetIrqRC  = 0;
+        pPciBus->pDevInsRC    = 0;
     }
 
     /*
@@ -2554,7 +2554,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
-    if (!pIoApicReg->pfnSetIrqR3)
+    if (!pIoApicReg->pfnSetIrqR3 || !pIoApicReg->pfnSendMsiR3)
     {
         Assert(pIoApicReg->pfnSetIrqR3);
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (R3 callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
@@ -2567,10 +2567,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
+    if (    pIoApicReg->pszSendMsiRC
+        &&  !VALID_PTR(pIoApicReg->pszSendMsiRC))
+    {
+        Assert(VALID_PTR(pIoApicReg->pszSendMsiRC));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
     if (    pIoApicReg->pszSetIrqR0
         &&  !VALID_PTR(pIoApicReg->pszSetIrqR0))
     {
         Assert(VALID_PTR(pIoApicReg->pszSetIrqR0));
+        LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+    if (    pIoApicReg->pszSendMsiR0
+        &&  !VALID_PTR(pIoApicReg->pszSendMsiR0))
+    {
+        Assert(VALID_PTR(pIoApicReg->pszSendMsiR0));
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (GC callbacks)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
@@ -2630,6 +2644,21 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         pVM->pdm.s.IoApic.pfnSetIrqRC = 0;
     }
 
+    if (pIoApicReg->pszSendMsiRC)
+    {
+        int rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pReg->szRCMod, pIoApicReg->pszSetIrqRC, &pVM->pdm.s.IoApic.pfnSendMsiRC);
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pIoApicReg->pszSendMsiRC, rc));
+        if (RT_FAILURE(rc))
+        {
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+            return rc;
+        }
+    }
+    else
+    {
+        pVM->pdm.s.IoApic.pfnSendMsiRC = 0;
+    }
+
     /*
      * Resolve & initialize the R0 bits.
      */
@@ -2651,11 +2680,28 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         pVM->pdm.s.IoApic.pDevInsR0   = 0;
     }
 
+    if (pIoApicReg->pszSendMsiR0)
+    {
+        int rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDevIns->pReg->szR0Mod, pIoApicReg->pszSetIrqR0, &pVM->pdm.s.IoApic.pfnSendMsiR0);
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pIoApicReg->pszSendMsiR0, rc));
+        if (RT_FAILURE(rc))
+        {
+            LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+            return rc;
+        }
+    }
+    else
+    {
+        pVM->pdm.s.IoApic.pfnSendMsiR0 = 0;
+    }
+
+
     /*
      * Initialize the R3 bits.
      */
     pVM->pdm.s.IoApic.pDevInsR3   = pDevIns;
     pVM->pdm.s.IoApic.pfnSetIrqR3 = pIoApicReg->pfnSetIrqR3;
+    pVM->pdm.s.IoApic.pfnSendMsiR3 = pIoApicReg->pfnSendMsiR3;
     Log(("PDM: Registered I/O APIC device '%s'/%d pDevIns=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pDevIns));
 
     /* set the helper pointer and return. */

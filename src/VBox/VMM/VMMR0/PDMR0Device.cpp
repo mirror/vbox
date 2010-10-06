@@ -56,7 +56,7 @@ RT_C_DECLS_END
 *******************************************************************************/
 static void pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel);
 static void pdmR0IoApicSetIrq(PVM pVM, int iIrq, int iLevel);
-
+static void pdmR0IoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue);
 
 
 
@@ -591,6 +591,13 @@ static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
     pdmR0IoApicSetIrq(pDevIns->Internal.s.pVMR0, iIrq, iLevel);
 }
 
+/** @interface_method_impl{PDMPCIHLPR0,pfnIoApicSendMsi} */
+static DECLCALLBACK(void) pdmR0PciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    Log4(("pdmR0PciHlp_IoApicSendMsi: Address=%p Value=%d\n", GCAddr, uValue));
+    pdmR0IoApicSendMsi(pDevIns->Internal.s.pVMR0, GCAddr, uValue);
+}
 
 /** @interface_method_impl{PDMPCIHLPR0,pfnLock} */
 static DECLCALLBACK(int) pdmR0PciHlp_Lock(PPDMDEVINS pDevIns, int rc)
@@ -616,6 +623,7 @@ extern DECLEXPORT(const PDMPCIHLPR0) g_pdmR0PciHlp =
     PDM_PCIHLPR0_VERSION,
     pdmR0PciHlp_IsaSetIrq,
     pdmR0PciHlp_IoApicSetIrq,
+    pdmR0PciHlp_IoApicSendMsi,
     pdmR0PciHlp_Lock,
     pdmR0PciHlp_Unlock,
     PDM_PCIHLPR0_VERSION, /* the end */
@@ -843,5 +851,22 @@ VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PVM pVM, PPDMDEVICECALLREQHANDLERR
     AssertPtrReturn(pfnReqHandlerR0, VERR_INVALID_POINTER);
 
     return pfnReqHandlerR0(pDevIns, pReq->uOperation, pReq->u64Arg);
+}
+
+/**
+ * Sends an MSI to I/O APIC.
+ *
+ * @param   pVM     The VM handle.
+ * @param   GCAddr  Address of the message.
+ * @param   uValue  Value of the message.
+ */
+static void pdmR0IoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue)
+{
+    if (pVM->pdm.s.IoApic.pDevInsR0)
+    {
+        pdmLock(pVM);
+        pVM->pdm.s.IoApic.pfnSendMsiR0(pVM->pdm.s.IoApic.pDevInsR0, GCAddr, uValue);
+        pdmUnlock(pVM);
+    }
 }
 

@@ -547,16 +547,24 @@ typedef struct PDMIOAPIC
     PPDMDEVINSR3                    pDevInsR3;
     /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+    DECLR3CALLBACKMEMBER(void,      pfnSendMsiR3,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue));
 
     /** Pointer to the PIC device instance - R0. */
     PPDMDEVINSR0                    pDevInsR0;
     /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+    /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+    DECLR0CALLBACKMEMBER(void,      pfnSendMsiR0,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue));
 
     /** Pointer to the APIC device instance - RC Ptr. */
     PPDMDEVINSRC                    pDevInsRC;
     /** @copydoc PDMIOAPICREG::pfnSetIrqR3 */
     DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+     /** @copydoc PDMIOAPICREG::pfnSendMsiR3 */
+    DECLRCCALLBACKMEMBER(void,      pfnSendMsiRC,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue));
+
+    uint8_t                         Alignment[4];
 } PDMIOAPIC;
 
 /** Maximum number of PCI busses for a VM. */
