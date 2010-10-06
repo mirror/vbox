@@ -35,13 +35,14 @@ typedef struct CODECVERB
 } CODECVERB;
 
 #define CODECNODE_F0_PARAM_LENGTH 0x14
+#define CODECNODE_F02_PARAM_LENGTH 16
 typedef struct CODECCOMMONNODE
 {
     uint8_t id; /* 7 - bit format */
     const char    *name;
     /* RPM 5.3.6 */
     uint32_t au32F00_param[CODECNODE_F0_PARAM_LENGTH];
-    uint8_t    au8F02_param[16];
+    uint32_t au32F02_param[CODECNODE_F02_PARAM_LENGTH];
 } CODECCOMMONNODE, *PCODECCOMMONNODE;
 
 typedef struct ROOTCODECNODE
@@ -79,6 +80,7 @@ typedef struct ADCNODE
     uint32_t    u32F09_param;
 
     uint32_t    u32A_param;
+    uint32_t    u32F01_param;
     AMPLIFIER   B_params;
 } ADCNODE, *PADCNODE;
 
@@ -118,7 +120,9 @@ typedef struct PORTNODE
     uint32_t u32F07_param;
     uint32_t u32F08_param;
     uint32_t u32F09_param;
+    uint32_t u32F01_param;
     uint32_t u32F1c_param;
+    AMPLIFIER   B_params;
 } PORTNODE, *PPORTNODE;
 
 typedef struct DIGOUTNODE
@@ -220,7 +224,8 @@ typedef enum
 
 typedef enum
 {
-    STAC9220_CODEC
+    STAC9220_CODEC,
+    ALC885_CODEC
 } ENMCODEC;
 typedef struct CODECState
 {

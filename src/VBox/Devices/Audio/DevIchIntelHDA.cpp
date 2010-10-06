@@ -1668,8 +1668,13 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetVendorId           (&pThis->dev, 0x103c); /* HP. */
     PCIDevSetDeviceId           (&pThis->dev, 0x30f7); /* HP Pavilion dv4t-1300 */
 #else
+#if 1 
     PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */
     PCIDevSetDeviceId           (&pThis->dev, 0x2668); /* 02 ro - 82801 / 82801aa(?). */
+#else
+    PCIDevSetVendorId           (&pThis->dev, 0x10de); /* nVidia */
+    PCIDevSetDeviceId           (&pThis->dev, 0x0028); /* HDA */
+#endif
 #endif
     PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */
     PCIDevSetStatus             (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
