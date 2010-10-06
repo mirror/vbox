@@ -531,6 +531,11 @@ typedef struct AHCIPort
     /** Error counter */
     uint32_t                        cErrors;
 
+    /** Tasks to process */
+    uint32_t                        cTasksToProcess;
+    /** Flag whether we need to redo a task. */
+    bool                            fRedo;
+
 } AHCIPort;
 /** Pointer to the state of an AHCI port. */
 typedef AHCIPort *PAHCIPort;
@@ -4596,7 +4601,7 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, bool fI
 
         sdbFis[1] = pAhciPort->u32QueuedTasksFinished | uFinishedTasks;
 
-         ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_SETDEVBITS, (uint8_t *)sdbFis);
+        ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_SETDEVBITS, (uint8_t *)sdbFis);
 
         if (RT_UNLIKELY(pTaskErr))
         {
@@ -5666,6 +5671,55 @@ static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterfa
     return rc;
 }
 
+static void ahciWarningDiskFull(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("AHCI: Host disk full\n"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevAHCI_DISKFULL",
+                                    N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
+    AssertRC(rc);
+}
+
+static void ahciWarningFileTooBig(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("AHCI: File too big\n"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevAHCI_FILETOOBIG",
+                                    N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
+    AssertRC(rc);
+}
+
+static void ahciWarningISCSI(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("AHCI: iSCSI target unavailable\n"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevAHCI_ISCSIDOWN",
+                                    N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
+    AssertRC(rc);
+}
+
+bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
+{
+    if (rc == VERR_DISK_FULL)
+    {
+        ahciWarningDiskFull(pAhciPort->CTX_SUFF(pDevIns));
+        return true;
+    }
+    if (rc == VERR_FILE_TOO_BIG)
+    {
+        ahciWarningFileTooBig(pAhciPort->CTX_SUFF(pDevIns));
+        return true;
+    }
+    if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
+    {
+        /* iSCSI connection abort (first error) or failure to reestablish
+         * connection (second error). Pause VM. On resume we'll retry. */
+        ahciWarningISCSI(pAhciPort->CTX_SUFF(pDevIns));
+        return true;
+    }
+    return false;
+}
+
 /**
  * Process an non read/write ATA command.
  *
@@ -6198,11 +6252,25 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     uint64_t u64StopTime  = 0;
     uint32_t uIORequestsProcessed = 0;
     uint32_t uIOsPerSec = 0;
+    uint32_t cTasksToProcess = 0;
+    bool fRedoDontWait = false;
 
     ahciLog(("%s: Port %d entering async IO loop.\n", __FUNCTION__, pAhciPort->iLUN));
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
+
+    if (pAhciPort->fRedo)
+    {
+        /*
+         * We entered again after the VM was suspended due to a task failing.
+         * Use that task and try to process it again.
+         */
+        ahciLog(("%s: Port %d redo task\n", __FUNCTION__, pAhciPort->iLUN));
+        cTasksToProcess = pAhciPort->cTasksToProcess;
+        pAhciPort->cTasksToProcess = 0;
+        fRedoDontWait = true;
+    }
 
     /* We use only one task structure. */
     pAhciPortTaskState = (PAHCIPORTTASKSTATE)RTMemAllocZ(sizeof(AHCIPORTTASKSTATE));
@@ -6212,93 +6280,110 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         return VERR_NO_MEMORY;
     }
 
-    while(pThread->enmState == PDMTHREADSTATE_RUNNING)
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        uint32_t uQueuedTasksFinished = 0;
 
-        /* New run to get number of I/O requests per second?. */
-        if (!u64StartTime)
-            u64StartTime = RTTimeMilliTS();
-
-        ASMAtomicXchgBool(&pAhciPort->fAsyncIOThreadIdle, true);
-        if (pAhci->fSignalIdle)
-            PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
-
-        rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, 1000);
-        if (rc == VERR_TIMEOUT)
+        if (!fRedoDontWait)
         {
-            /* No I/O requests inbetween. Reset statistics and wait again. */
-            pAhciPort->StatIORequestsPerSecond.c = 0;
-            rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, RT_INDEFINITE_WAIT);
+            /* New run to get number of I/O requests per second?. */
+            if (!u64StartTime)
+                u64StartTime = RTTimeMilliTS();
+
+            ASMAtomicXchgBool(&pAhciPort->fAsyncIOThreadIdle, true);
+            if (pAhci->fSignalIdle)
+                PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
+
+            rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, 1000);
+            if (rc == VERR_TIMEOUT)
+            {
+                /* No I/O requests inbetween. Reset statistics and wait again. */
+                pAhciPort->StatIORequestsPerSecond.c = 0;
+                rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, RT_INDEFINITE_WAIT);
+            }
+
+            if (RT_FAILURE(rc) || (pThread->enmState != PDMTHREADSTATE_RUNNING))
+                break;
+
+            /*
+             * Don't process further tasks if the redo flag is set but wait again
+             * until we got suspended.
+             */
+            if (pAhciPort->fRedo)
+                continue;
+
+            AssertMsg(pAhciPort->pDrvBase, ("I/O thread without attached device?!\n"));
         }
-
-        if (RT_FAILURE(rc) || (pThread->enmState != PDMTHREADSTATE_RUNNING))
-            break;
-
-        AssertMsg(pAhciPort->pDrvBase, ("I/O thread without attached device?!\n"));
+        else
+            fRedoDontWait = false;
 
         ASMAtomicXchgBool(&pAhciPort->fAsyncIOThreadIdle, false);
 
-        /*
-         * To maximize the throughput of the controller we try to minimize the
-         * number of world switches during interrupts by grouping as many
-         * I/O requests together as possible.
-         * On the other side we want to get minimal latency if the I/O load is low.
-         * Thatswhy the number of I/O requests per second is measured and if it is over
-         * a threshold the thread waits for other requests from the guest.
-         */
-        if (uIOsPerSec >= pAhci->cHighIOThreshold)
+        if (!pAhciPort->fRedo)
         {
-            uint8_t uActWritePosPrev = pAhciPort->uActWritePos;
-
-            Log(("%s: Waiting for more tasks to get queued\n", __FUNCTION__));
-
-            do
+            /*
+             * To maximize the throughput of the controller we try to minimize the
+             * number of world switches during interrupts by grouping as many
+             * I/O requests together as possible.
+             * On the other side we want to get minimal latency if the I/O load is low.
+             * Thatswhy the number of I/O requests per second is measured and if it is over
+             * a threshold the thread waits for other requests from the guest.
+             */
+            if (uIOsPerSec >= pAhci->cHighIOThreshold)
             {
-                /* Sleep some time. */
-                RTThreadSleep(pAhci->cMillisToSleep);
-                /* Check if we got some new requests inbetween. */
-                if (uActWritePosPrev != pAhciPort->uActWritePos)
+                uint8_t uActWritePosPrev = pAhciPort->uActWritePos;
+
+                Log(("%s: Waiting for more tasks to get queued\n", __FUNCTION__));
+
+                do
                 {
-                    uActWritePosPrev = pAhciPort->uActWritePos;
-                    /*
-                     * Check if the queue is full. If that is the case
-                     * there is no point waiting another round.
-                     */
-                    if (   (   (pAhciPort->uActReadPos < uActWritePosPrev)
-                            && (uActWritePosPrev - pAhciPort->uActReadPos) == AHCI_NR_COMMAND_SLOTS)
-                        || (   (pAhciPort->uActReadPos > uActWritePosPrev)
-                            && (RT_ELEMENTS(pAhciPort->ahciIOTasks) - pAhciPort->uActReadPos + uActWritePosPrev) == AHCI_NR_COMMAND_SLOTS)  )
+                    /* Sleep some time. */
+                    RTThreadSleep(pAhci->cMillisToSleep);
+                    /* Check if we got some new requests inbetween. */
+                    if (uActWritePosPrev != pAhciPort->uActWritePos)
                     {
-                        Log(("%s: Queue full -> leaving\n", __FUNCTION__));
+                        uActWritePosPrev = pAhciPort->uActWritePos;
+                        /*
+                         * Check if the queue is full. If that is the case
+                         * there is no point waiting another round.
+                         */
+                        if (   (   (pAhciPort->uActReadPos < uActWritePosPrev)
+                                && (uActWritePosPrev - pAhciPort->uActReadPos) == AHCI_NR_COMMAND_SLOTS)
+                            || (   (pAhciPort->uActReadPos > uActWritePosPrev)
+                                && (RT_ELEMENTS(pAhciPort->ahciIOTasks) - pAhciPort->uActReadPos + uActWritePosPrev) == AHCI_NR_COMMAND_SLOTS)  )
+                        {
+                            Log(("%s: Queue full -> leaving\n", __FUNCTION__));
+                            break;
+                        }
+                        Log(("%s: Another round\n", __FUNCTION__));
+                    }
+                    else /* No change break out of the loop. */
+                    {
+#ifdef DEBUG
+                        uint8_t uQueuedTasks;
+                        if (pAhciPort->uActReadPos < uActWritePosPrev)
+                            uQueuedTasks = uActWritePosPrev - pAhciPort->uActReadPos;
+                        else
+                            uQueuedTasks = RT_ELEMENTS(pAhciPort->ahciIOTasks) - pAhciPort->uActReadPos + uActWritePosPrev;
+
+                        Log(("%s: %u Tasks are queued\n", __FUNCTION__, uQueuedTasks));
+#endif
                         break;
                     }
-                    Log(("%s: Another round\n", __FUNCTION__));
-                }
-                else /* No change break out of the loop. */
-                {
-#ifdef DEBUG
-                    uint8_t uQueuedTasks;
-                    if (pAhciPort->uActReadPos < uActWritePosPrev)
-                        uQueuedTasks = uActWritePosPrev - pAhciPort->uActReadPos;
-                    else
-                        uQueuedTasks = RT_ELEMENTS(pAhciPort->ahciIOTasks) - pAhciPort->uActReadPos + uActWritePosPrev;
+                } while (true);
+            }
 
-                    Log(("%s: %u Tasks are queued\n", __FUNCTION__, uQueuedTasks));
-#endif
-                    break;
-                }
-            } while (true);
-        }
+            cTasksToProcess = ASMAtomicXchgU32(&pAhciPort->uActTasksActive, 0);
+
+            ahciLog(("%s: Processing %u requests\n", __FUNCTION__, cTasksToProcess));
+        } /* fRedo */
+        else
+            pAhciPort->fRedo = false;
 
         ASMAtomicXchgBool(&pAhciPort->fNotificationSend, false);
 
-        uint32_t cTasksToProcess = ASMAtomicXchgU32(&pAhciPort->uActTasksActive, 0);
-
-        ahciLog(("%s: Processing %u requests\n", __FUNCTION__, cTasksToProcess));
-
         /* Process commands. */
         while (   (cTasksToProcess > 0)
+               && RT_LIKELY(!pAhciPort->fRedo)
                && RT_LIKELY(!pAhciPort->fPortReset))
         {
             AHCITXDIR enmTxDir;
@@ -6367,8 +6452,16 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     if (RT_FAILURE(rc))
                     {
-                        pAhciPortTaskState->uATARegError = ID_ERR;
-                        pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                        if (!ahciIsRedoSetWarning(pAhciPort, rc))
+                        {
+                            pAhciPortTaskState->uATARegError = ID_ERR;
+                            pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                        }
+                        else
+                        {
+                            pAhciPort->fRedo = true;
+                            pAhciPort->cTasksToProcess = cTasksToProcess;
+                        }
                     }
                     else
                     {
@@ -6376,12 +6469,15 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
                     }
 
-                    if (pAhciPortTaskState->fQueued)
-                        uQueuedTasksFinished |= (1 << pAhciPortTaskState->uTag);
-                    else
+                    if (!pAhciPort->fRedo)
                     {
-                        /* Task is not queued send D2H FIS */
-                        ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
+                        if (pAhciPortTaskState->fQueued)
+                            ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
+                        else
+                        {
+                            /* Task is not queued send D2H FIS */
+                            ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
+                        }
                     }
                 }
                 else if (enmTxDir != AHCITXDIR_NONE)
@@ -6467,27 +6563,39 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer - cbTransfer;
                         if (RT_FAILURE(rc))
                         {
-                            pAhciPortTaskState->uATARegError = ID_ERR;
-                            pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                            if (!ahciIsRedoSetWarning(pAhciPort, rc))
+                            {
+                                pAhciPortTaskState->uATARegError = ID_ERR;
+                                pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                            }
+                            else
+                            {
+                                pAhciPort->cTasksToProcess = cTasksToProcess;
+                                pAhciPort->fRedo = true;
+                            }
                         }
                         else
                         {
                             pAhciPortTaskState->uATARegError = 0;
                             pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
                         }
-                        /* Write updated command header into memory of the guest. */
-                        PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
-                                           &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
 
-                        if (pAhciPortTaskState->fQueued)
-                            uQueuedTasksFinished |= (1 << pAhciPortTaskState->uTag);
-                        else
+                        if (!pAhciPort->fRedo)
                         {
-                            /* Task is not queued send D2H FIS */
-                            ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
-                        }
+                            /* Write updated command header into memory of the guest. */
+                            PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
+                                               &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
 
-                        uIORequestsProcessed++;
+                            if (pAhciPortTaskState->fQueued)
+                                ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
+                            else
+                            {
+                                /* Task is not queued send D2H FIS */
+                                ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
+                            }
+
+                            uIORequestsProcessed++;
+                        }
                     }
                 }
                 else
@@ -6499,38 +6607,40 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 STAM_PROFILE_STOP(&pAhciPort->StatProfileProcessTime, a);
             }
 
+            if (!pAhciPort->fRedo)
+            {
 #ifdef DEBUG
-            /* Be paranoid. */
-            memset(&pAhciPortTaskState->cmdHdr, 0, sizeof(CmdHdr));
-            memset(&pAhciPortTaskState->cmdFis, 0, AHCI_CMDFIS_TYPE_H2D_SIZE);
-            pAhciPortTaskState->GCPhysCmdHdrAddr = 0;
-            pAhciPortTaskState->uOffset = 0;
-            pAhciPortTaskState->cbTransfer = 0;
-            /* Make the port number invalid making it easier to track down bugs. */
-            pAhciPort->ahciIOTasks[pAhciPort->uActReadPos] = 0xff;
+                /* Be paranoid. */
+                memset(&pAhciPortTaskState->cmdHdr, 0, sizeof(CmdHdr));
+                memset(&pAhciPortTaskState->cmdFis, 0, AHCI_CMDFIS_TYPE_H2D_SIZE);
+                pAhciPortTaskState->GCPhysCmdHdrAddr = 0;
+                pAhciPortTaskState->uOffset = 0;
+                pAhciPortTaskState->cbTransfer = 0;
+                /* Make the port number invalid making it easier to track down bugs. */
+                pAhciPort->ahciIOTasks[pAhciPort->uActReadPos] = 0xff;
 #endif
 
-            pAhciPort->uActReadPos++;
-            pAhciPort->uActReadPos %= RT_ELEMENTS(pAhciPort->ahciIOTasks);
-            ahciLog(("%s: After uActReadPos=%u\n", __FUNCTION__, pAhciPort->uActReadPos));
-            cTasksToProcess--;
+                pAhciPort->uActReadPos++;
+                pAhciPort->uActReadPos %= RT_ELEMENTS(pAhciPort->ahciIOTasks);
+                ahciLog(("%s: After uActReadPos=%u\n", __FUNCTION__, pAhciPort->uActReadPos));
+                cTasksToProcess--;
 
-            /* If we encountered an error notify the guest and continue with the next task. */
-            if (RT_FAILURE(rc))
-            {
-                if (uQueuedTasksFinished && RT_LIKELY(!pAhciPort->fPortReset))
-                    ahciSendSDBFis(pAhciPort, uQueuedTasksFinished, true);
-
-                uQueuedTasksFinished = 0;
+                /* If we encountered an error notify the guest and continue with the next task. */
+                if (RT_FAILURE(rc))
+                {
+                    if (   ASMAtomicReadU32(&pAhciPort->u32QueuedTasksFinished) != 0
+                        && RT_LIKELY(!pAhciPort->fPortReset))
+                        ahciSendSDBFis(pAhciPort, 0, true);
+                }
+                else if (!cTasksToProcess)
+                    cTasksToProcess = ASMAtomicXchgU32(&pAhciPort->uActTasksActive, 0);
             }
-            else if (!cTasksToProcess)
-                cTasksToProcess = ASMAtomicXchgU32(&pAhciPort->uActTasksActive, 0);
         }
 
-        if (uQueuedTasksFinished && RT_LIKELY(!pAhciPort->fPortReset))
-            ahciSendSDBFis(pAhciPort, uQueuedTasksFinished, true);
-
-        uQueuedTasksFinished = 0;
+        if (   ASMAtomicReadU32(&pAhciPort->u32QueuedTasksFinished) != 0
+            && RT_LIKELY(!pAhciPort->fPortReset)
+            && RT_LIKELY(!pAhciPort->fRedo))
+            ahciSendSDBFis(pAhciPort, 0, true);
 
         u64StopTime = RTTimeMilliTS();
         /* Check if one second has passed. */
@@ -6558,8 +6668,8 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         RTMemPageFree(pAhciPortTaskState->pvBufferUnaligned, pAhciPortTaskState->cbBufferUnaligned);
     RTMemFree(pAhciPortTaskState);
 
-    ahciLog(("%s: Port %d async IO thread exiting rc=%Rrc\n", __FUNCTION__, pAhciPort->iLUN, rc));
-    return rc;
+    ahciLog(("%s: Port %d async IO thread exiting\n", __FUNCTION__, pAhciPort->iLUN));
+    return VINF_SUCCESS;
 }
 
 /**
@@ -6676,7 +6786,7 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
             if (pThisPort->fAsyncInterface)
                 fFinished = (pThisPort->uActTasksActive == 0);
             else
-                fFinished = ((pThisPort->uActTasksActive == 0) && (pThisPort->fAsyncIOThreadIdle));
+                fFinished = ((pThisPort->uActTasksActive == 0 || pThisPort->fRedo) && (pThisPort->fAsyncIOThreadIdle));
             if (!fFinished)
                return false;
         }
@@ -6977,6 +7087,42 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             }
             else if (pThis->ahciPort[i].fATAPI)
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=%false config=true"));
+
+            if (   pThis->ahciPort[i].uActWritePos != pThis->ahciPort[i].uActReadPos
+                && !pThis->ahciPort[i].fAsyncInterface)
+            {
+                /*
+                 * There are tasks pending. The VM was saved after a task failed
+                 * because of non-fatal error. Set the redo flag
+                 * and the correct cTasksToProcess number based on the difference
+                 * of the FIFO counters.
+                 */
+                PAHCIPort pAhciPort = &pThis->ahciPort[i];
+
+                pAhciPort->fRedo = true;
+                /*
+                 * Because we don't save the task FIFO we have to reconstruct it by using the
+                 * SACT and CI registers along with the shadowed variables containing the
+                 * completed tasks and placing them in the FIFO again.
+                 */
+                uint32_t fTasksOutstanding = pAhciPort->regCI & ~pAhciPort->u32TasksFinished;
+                uint32_t fQueuedTasksOutstanding = pAhciPort->regSACT & ~pAhciPort->u32QueuedTasksFinished;
+
+                pAhciPort->uActWritePos = 0;
+                pAhciPort->uActReadPos  = 0;
+
+                for (unsigned uTag = 0; uTag < AHCI_NR_COMMAND_SLOTS; uTag++)
+                {
+                    if (   fTasksOutstanding & (1 << uTag)
+                        || fQueuedTasksOutstanding & (1 << uTag))
+                    {
+                        pAhciPort->ahciIOTasks[pAhciPort->uActWritePos] = AHCI_TASK_SET(uTag, (fQueuedTasksOutstanding & (1 << uTag)) ? 1 : 0);
+                        pAhciPort->uActWritePos++;
+                        pAhciPort->uActWritePos %= RT_ELEMENTS(pAhciPort->ahciIOTasks);
+                        pAhciPort->cTasksToProcess++;
+                    }
+                }
+            }
         }
 
         /* Now the emulated ata controllers. */
