@@ -1448,14 +1448,6 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr)
     int index;
 
     index = (addr >> 4) & 0xff;
-    addr -= (s->apicbase & ~0xfff);
-
-    if (addr > 0xfff || (index == 0))
-    {
-        /* MSR area read, undefined result by spec */
-        Log(("APIC: MSR area read: %x\n", index));
-        return 0;
-    }
 
     switch(index) {
     case 0x02: /* id */
@@ -1541,7 +1533,7 @@ static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr, uin
     Log(("CPU%d: APIC write: %08x = %08x\n", s->phys_id, (uint32_t)addr, val));
 #endif
 
-    index = (addr >> 4) & 0xff;  
+    index = (addr >> 4) & 0xff;
 
     switch(index) {
     case 0x02:
@@ -2849,7 +2841,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register the IOAPIC and get helpers.
      */
     IoApicReg.u32Version  = PDM_IOAPICREG_VERSION;
-    IoApicReg.pfnSetIrqR3 = ioapicSetIrq;    
+    IoApicReg.pfnSetIrqR3 = ioapicSetIrq;
     IoApicReg.pszSetIrqRC = fGCEnabled ? "ioapicSetIrq" : NULL;
     IoApicReg.pszSetIrqR0 = fR0Enabled ? "ioapicSetIrq" : NULL;
     IoApicReg.pfnSendMsiR3 = ioapicSendMsi;

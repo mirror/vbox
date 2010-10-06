@@ -192,7 +192,7 @@ DECLINLINE(void) ich9pciPhysToPciAddr(PPCIGLOBALS pGlobals, RTGCPHYS GCPhysAddr,
 {
     GCPhysAddr = GCPhysAddr - pGlobals->u64PciConfigMMioAddress;
     pPciAddr->iBus          = (GCPhysAddr >> 20) & ((1<<8)       - 1);
-    pPciAddr->iDeviceFunc   = (GCPhysAddr >> 15) & ((1<<(5+3))   - 1); // 5 bits - device, 3 bits - function
+    pPciAddr->iDeviceFunc   = (GCPhysAddr >> 12) & ((1<<(5+3))   - 1); // 5 bits - device, 3 bits - function
     pPciAddr->iRegister     = (GCPhysAddr >>  0) & ((1<<(6+4+2)) - 1); // 6 bits - register, 4 bits - extended register, 2 bits -Byte Enable
 }
 
@@ -572,6 +572,8 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
     PciAddress aDest;
     uint32_t u32 = 0;
 
+    Log2(("ich9pciMcfgMMIOWrite: %p(%d) \n", GCPhysAddr, cb));
+
     PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
 
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
@@ -603,7 +605,9 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCP
     PciAddress  aDest;
     uint32_t    rv = 0xffffffff;
 
-    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+    Log2(("ich9pciMcfgMMIORead: %p(%d) \n", GCPhysAddr, cb));
+
+    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
 
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
@@ -2205,8 +2209,14 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
     if (pGlobals->u64PciConfigMMioAddress != 0)
     {
-        rc = PDMDevHlpMMIORegister(pDevIns, pGlobals->u64PciConfigMMioAddress, pGlobals->u64PciConfigMMioLength, pGlobals,
-                                   ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead, NULL, "MCFG ranges");
+        rc = PDMDevHlpMMIORegister(pDevIns,
+                                   pGlobals->u64PciConfigMMioAddress,
+                                   pGlobals->u64PciConfigMMioLength,
+                                   0,
+                                   ich9pciMcfgMMIOWrite,
+                                   ich9pciMcfgMMIORead,
+                                   NULL /* fill */,
+                                   "MCFG ranges");
         if (RT_FAILURE(rc))
         {
             AssertMsgRC(rc, ("Cannot register MCFG MMIO: %Rrc\n", rc));
@@ -2222,7 +2232,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
                                           0,
                                           "ich9pciMcfgMMIOWrite",
                                           "ich9pciMcfgMMIORead",
-                                          NULL);
+                                          NULL /* fill */);
              if (RT_FAILURE(rc))
              {
                  AssertMsgRC(rc, ("Cannot register MCFG MMIO (GC): %Rrc\n", rc));
@@ -2240,7 +2250,7 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
                                           0,
                                           "ich9pciMcfgMMIOWrite",
                                           "ich9pciMcfgMMIORead",
-                                          NULL);
+                                          NULL /* fill */);
              if (RT_FAILURE(rc))
              {
                  AssertMsgRC(rc, ("Cannot register MCFG MMIO (R0): %Rrc\n", rc));
