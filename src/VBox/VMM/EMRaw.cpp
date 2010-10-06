@@ -53,6 +53,7 @@
 #include <VBox/pdmqueue.h>
 #include <VBox/patm.h>
 #include "EMInternal.h"
+#include "include/internal/em.h"
 #include <VBox/vm.h>
 #include <VBox/cpumdis.h>
 #include <VBox/dis.h>
@@ -1527,9 +1528,19 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Execute the code.
          */
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWEntry, b);
-        STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
-        rc = VMMR3RawRunGC(pVM, pVCpu);
-        STAM_PROFILE_STOP(&pVCpu->em.s.StatRAWExec, c);
+        if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
+        {
+            STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
+            rc = VMMR3RawRunGC(pVM, pVCpu);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatRAWExec, c);
+        }
+        else
+        {
+            /* Give up this time slice; virtual time continues */
+            STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
+            RTThreadSleep(2);
+            STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
+        }
         STAM_PROFILE_ADV_START(&pVCpu->em.s.StatRAWTail, d);
 
         LogFlow(("RR0-E: %08X ESP=%08X IF=%d VMFlags=%x PIF=%d CPL=%d\n", pCtx->eip, pCtx->esp, pCtx->eflags.Bits.u1IF, pGCState->uVMFlags, pGCState->fPIF, (pCtx->ss & X86_SEL_RPL)));

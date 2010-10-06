@@ -52,6 +52,7 @@
 #include <VBox/pdmqueue.h>
 #include <VBox/hwaccm.h>
 #include "EMInternal.h"
+#include "include/internal/em.h"
 #include <VBox/vm.h>
 #include <VBox/cpumdis.h>
 #include <VBox/dis.h>
@@ -543,9 +544,21 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Execute the code.
          */
         STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatHwAccEntry, a);
-        STAM_PROFILE_START(&pVCpu->em.s.StatHwAccExec, x);
-        rc = VMMR3HwAccRunGC(pVM, pVCpu);
-        STAM_PROFILE_STOP(&pVCpu->em.s.StatHwAccExec, x);
+
+        if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
+        {
+            STAM_PROFILE_START(&pVCpu->em.s.StatHwAccExec, x);
+            rc = VMMR3HwAccRunGC(pVM, pVCpu);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatHwAccExec, x);
+        }
+        else
+        {
+            /* Give up this time slice; virtual time continues */
+            STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
+            RTThreadSleep(2);
+            STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
+        }
+        
 
         /*
          * Deal with high priority post execution FFs before doing anything else.
