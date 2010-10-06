@@ -52,9 +52,6 @@
 /**
  * MSI region, actually same as LAPIC MMIO region, but listens on bus,
  * not CPU, accesses.
- * Works for us (as we don't differentiate who originated access)
- * as MSI registers are reserved in LAPIC, and vice versa, so we
- * can just use same handler.
  */
 #define VBOX_MSI_ADDR_BASE                   0xfee00000
 #define VBOX_MSI_ADDR_SIZE                   0x100000

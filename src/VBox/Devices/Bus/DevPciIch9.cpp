@@ -527,14 +527,18 @@ static void ich9pciApicSetIrq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, 
 
 static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel)
 {
-    if (MsiIsEnabled(pPciDev))
+
+    if (PCIDevIsIntxDisabled(pPciDev))
     {
-        Log2(("Raise a MSI interrupt: %d\n", iIrq));
-        /* We only trigger MSI on level up, as technically it's matching flip-flop best (maybe even assert that level == PDM_IRQ_LEVEL_FLIP_FLOP) */
-        if ((iLevel & PDM_IRQ_LEVEL_HIGH) != 0)
+        if (MsiIsEnabled(pPciDev))
         {
-            PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
-            MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq);
+            Log2(("Raise a MSI interrupt: %d\n", iIrq));
+            /* We only trigger MSI on level up, as technically it's matching flip-flop best (maybe even assert that level == PDM_IRQ_LEVEL_FLIP_FLOP) */
+            if ((iLevel & PDM_IRQ_LEVEL_HIGH) != 0)
+            {
+                PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
+                MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq);
+            }
         }
         return;
     }
@@ -568,9 +572,10 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
     PciAddress aDest;
     uint32_t u32 = 0;
 
+    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
-    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
     switch (cb)
     {
         case 1:
@@ -596,29 +601,28 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCP
 {
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     PciAddress  aDest;
-    uint32_t    rv = 0;
+    uint32_t    rv = 0xffffffff;
+
+    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
 
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
-    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
     int rc = ich9pciDataReadAddr(pGlobals, &aDest, cb, &rv);
-    if (rc == VINF_SUCCESS)
+
+    switch (cb)
     {
-        switch (cb)
-        {
-            case 1:
-                *(uint8_t*)pv   = (uint8_t)rv;
-                break;
-            case 2:
-                *(uint16_t*)pv  = (uint16_t)rv;
-                break;
-            case 4:
-                *(uint32_t*)pv  = (uint32_t)rv;
-                break;
-            default:
-                Assert(false);
-                break;
-        }
+        case 1:
+            *(uint8_t*)pv   = (uint8_t)rv;
+            break;
+        case 2:
+            *(uint16_t*)pv  = (uint16_t)rv;
+            break;
+        case 4:
+            *(uint32_t*)pv  = (uint32_t)rv;
+            break;
+        default:
+            Assert(false);
+            break;
     }
     PCI_UNLOCK(pDevIns);
 
@@ -1698,7 +1702,7 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         case 1:
             return PCIDevGetByte(aDev,  u32Address);
         case 2:
-            return PCIDevGetWord(aDev,  u32Address);        
+            return PCIDevGetWord(aDev,  u32Address);
         case 4:
             return PCIDevGetDWord(aDev, u32Address);
         default:
@@ -2262,6 +2266,36 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
     return VINF_SUCCESS;
 }
 
+static void ich9pciResetDevice(PPCIDEVICE pDev)
+{
+    pDev->config[VBOX_PCI_COMMAND] &= ~(VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY |
+                                        VBOX_PCI_COMMAND_MASTER);
+
+    if (!PCIIsPci2PciBridge(pDev))
+    {
+        pDev->config[VBOX_PCI_CACHE_LINE_SIZE] = 0x0;
+        pDev->config[VBOX_PCI_INTERRUPT_LINE] = 0x0;
+    }
+    /* Regions ? */
+}
+
+
+/**
+ * @copydoc FNPDMDEVRESET
+ */
+static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
+{
+    PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+    PPCIBUS     pBus     = &pGlobals->aPciBus;
+
+    /* Relocate RC pointers for the attached pci devices. */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
+    {
+        if (pBus->apDevices[i])
+            ich9pciResetDevice(pBus->apDevices[i]);
+    }
+}
+
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
@@ -2472,7 +2506,7 @@ const PDMDEVREG g_DevicePciIch9 =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    ich9pciReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */

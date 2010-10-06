@@ -44,7 +44,7 @@ typedef struct PCIDevice *PPCIDEVICE;
 typedef enum PCICONFIGCOMMAND
 {
     /** Supports/uses memory accesses. */
-    PCI_COMMAND_IOACCESS = 0x0001,
+    PCI_COMMAND_IOACCESS  = 0x0001,
     PCI_COMMAND_MEMACCESS = 0x0002,
     PCI_COMMAND_BUSMASTER = 0x0004
 } PCICONFIGCOMMAND;
@@ -639,6 +639,15 @@ DECLINLINE(uint16_t) PCIDevGetCommand(PPCIDEVICE pPciDev)
     return PCIDevGetWord(pPciDev, VBOX_PCI_COMMAND);
 }
 
+/**
+ * Checks if INTx interrupts disabled in the command config register.
+ * @returns true if disabled.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(bool) PCIDevIsIntxDisabled(PPCIDEVICE pPciDev)
+{
+    return (PCIDevGetCommand(pPciDev) & VBOX_PCI_COMMAND_INTX_DISABLE) != 0;
+}
 
 /**
  * Sets the status config register.
