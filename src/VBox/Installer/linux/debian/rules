@@ -333,7 +333,7 @@ endif
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
-	  -Vdkms=$(if $(filter _Ubuntu_hardy _Ubuntu_intrepid _Ubuntu_jaunty _Ubuntu_karmic _Ubuntu_lucid,$(debrel)),dkms,)
+	  -Vdkms=$(if $(filter _Debian_etch _Debian_lenny),,dkms)
 	dh_md5sums
 	dh_builddeb --destdir $(pkgdir)
 endif
