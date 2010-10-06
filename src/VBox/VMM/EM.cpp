@@ -1691,6 +1691,7 @@ bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
         }
         pVCpu->em.s.u64TimeSliceExec = u64KernelTime + u64UserTime - pVCpu->em.s.u64TimeSliceStartExec;
 
+        Log2(("emR3IsExecutionAllowed: start=%RX64 startexec=%RX64 exec=%RX64 (cap=%x)\n", pVCpu->em.s.u64TimeSliceStart, pVCpu->em.s.u64TimeSliceStartExec, pVCpu->em.s.u64TimeSliceExec, (EM_TIME_SLICE * pVM->uCpuExecutionCap) / 100));
         if (pVCpu->em.s.u64TimeSliceExec >= (EM_TIME_SLICE * pVM->uCpuExecutionCap) / 100)
             return false;
     }
@@ -2007,7 +2008,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     {
                         /* Give up this time slice; virtual time continues */
                         STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
-                        RTThreadSleep(2);
+                        RTThreadSleep(10);
                         STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
                         rc = VINF_SUCCESS;
                     }
@@ -2025,7 +2026,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     {
                         /* Give up this time slice; virtual time continues */
                         STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
-                        RTThreadSleep(2);
+                        RTThreadSleep(10);
                         STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
                         rc = VINF_SUCCESS;
                     }
@@ -2044,7 +2045,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     {
                         /* Give up this time slice; virtual time continues */
                         STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
-                        RTThreadSleep(2);
+                        RTThreadSleep(10);
                         STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
                         rc = VINF_SUCCESS;
                     }
