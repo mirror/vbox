@@ -1698,10 +1698,12 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         case 1:
             return PCIDevGetByte(aDev,  u32Address);
         case 2:
-            return PCIDevGetWord(aDev,  u32Address);
-        default:
+            return PCIDevGetWord(aDev,  u32Address);        
         case 4:
             return PCIDevGetDWord(aDev, u32Address);
+        default:
+            Assert(false);
+            return 0;
     }
 }
 
@@ -1713,6 +1715,8 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
 static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Address,
                                                 uint32_t val, unsigned len)
 {
+    Assert(len <= 4);
+
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
         AssertMsgReturnVoid(false, ("Write to extended registers falled back to generic code\n"));
@@ -1823,33 +1827,35 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
             break;
         }
 
+        uint8_t u8Val = (uint8_t)val;
+
         switch (addr)
         {
             case VBOX_PCI_COMMAND: /* Command register, bits 0-7. */
                 fUpdateMappings = true;
-                aDev->config[addr] = val;
+                aDev->config[addr] = u8Val;
                 break;
             case VBOX_PCI_COMMAND+1: /* Command register, bits 8-15. */
                 /* don't change reserved bits (11-15) */
-                val &= UINT32_C(~0xf8);
+                u8Val &= UINT32_C(~0xf8);
                 fUpdateMappings = true;
-                aDev->config[addr] = val;
+                aDev->config[addr] = u8Val;
                 break;
             case VBOX_PCI_STATUS:  /* Status register, bits 0-7. */
                 /* don't change read-only bits => actually all lower bits are read-only */
-                val &= UINT32_C(~0xff);
+                u8Val &= UINT32_C(~0xff);
                 /* status register, low part: clear bits by writing a '1' to the corresponding bit */
-                aDev->config[addr] &= ~val;
+                aDev->config[addr] &= ~u8Val;
                 break;
             case VBOX_PCI_STATUS+1:  /* Status register, bits 8-15. */
                 /* don't change read-only bits */
-                val &= UINT32_C(~0x06);
+                u8Val &= UINT32_C(~0x06);
                 /* status register, high part: clear bits by writing a '1' to the corresponding bit */
-                aDev->config[addr] &= ~val;
+                aDev->config[addr] &= ~u8Val;
                 break;
             default:
                 if (fWritable)
-                    aDev->config[addr] = val;
+                    aDev->config[addr] = u8Val;
         }
         addr++;
         val >>= 8;
