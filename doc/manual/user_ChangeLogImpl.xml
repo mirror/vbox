@@ -90,6 +90,13 @@
       </listitem>
 
       <listitem>
+        <para>Audio: the DirectSound backend now allows VMs to be audible when
+            another DirectSound application is active, including another VM (bug
+            #5578)
+        </para>
+      </listitem>
+
+      <listitem>
         <para>OVF: creation of the manifest file on export is optional now</para>
       </listitem>
 
