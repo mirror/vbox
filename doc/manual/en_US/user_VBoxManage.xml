@@ -492,7 +492,7 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--hwvirtex on|off|default</computeroutput>:
+            <para><computeroutput>--hwvirtex on|off</computeroutput>:
             This enables or disables the use of hardware virtualization
             extensions (Intel VT-x or AMD-V) in the processor of your host
             system; see <xref linkend="hwvirt" />.</para>
