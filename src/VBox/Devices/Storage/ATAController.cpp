@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -307,12 +307,12 @@ static void ataAsyncIODumpRequests(PAHCIATACONTROLLER pCtl)
 
     rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
     AssertRC(rc);
-    LogRel(("ATA: Ctl: request queue dump (topmost is current):\n"));
+    LogRel(("AHCI ATA: Ctl: request queue dump (topmost is current):\n"));
     curr = pCtl->AsyncIOReqTail;
     do
     {
         if (curr == pCtl->AsyncIOReqHead)
-            LogRel(("ATA: Ctl: processed requests (topmost is oldest):\n"));
+            LogRel(("AHCI ATA: Ctl: processed requests (topmost is oldest):\n"));
         switch (pCtl->aAsyncIORequests[curr].ReqType)
         {
             case AHCIATA_AIO_NEW:
@@ -962,7 +962,63 @@ static void ataSetSector(AHCIATADevState *s, uint64_t iLBA)
 }
 
 
-static int ataReadSectors(AHCIATADevState *s, uint64_t u64Sector, void *pvBuf, uint32_t cSectors)
+static void ataWarningDiskFull(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("AHCI ATA: Host disk full\n"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevATA_DISKFULL",
+                                    N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
+    AssertRC(rc);
+}
+
+static void ataWarningFileTooBig(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("AHCI ATA: File too big\n"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevATA_FILETOOBIG",
+                                    N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
+    AssertRC(rc);
+}
+
+static void ataWarningISCSI(PPDMDEVINS pDevIns)
+{
+    int rc;
+    LogRel(("AHCI ATA: iSCSI target unavailable\n"));
+    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevATA_ISCSIDOWN",
+                                    N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
+    AssertRC(rc);
+}
+
+static bool ataIsRedoSetWarning(AHCIATADevState *s, int rc)
+{
+    PAHCIATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
+    Assert(!PDMCritSectIsOwner(&pCtl->lock));
+    if (rc == VERR_DISK_FULL)
+    {
+        pCtl->fRedoIdle = true;
+        ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+        return true;
+    }
+    if (rc == VERR_FILE_TOO_BIG)
+    {
+        pCtl->fRedoIdle = true;
+        ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
+        return true;
+    }
+    if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
+    {
+        pCtl->fRedoIdle = true;
+        /* iSCSI connection abort (first error) or failure to reestablish
+         * connection (second error). Pause VM. On resume we'll retry. */
+        ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
+        return true;
+    }
+    return false;
+}
+
+
+static int ataReadSectors(AHCIATADevState *s, uint64_t u64Sector, void *pvBuf,
+                          uint32_t cSectors, bool *pfRedo)
 {
     PAHCIATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
@@ -977,6 +1033,11 @@ static int ataReadSectors(AHCIATADevState *s, uint64_t u64Sector, void *pvBuf, u
 
     STAM_REL_COUNTER_ADD(s->pStatBytesRead, cSectors * 512);
 
+    if (RT_SUCCESS(rc))
+        *pfRedo = false;
+    else
+        *pfRedo = ataIsRedoSetWarning(s, rc);
+
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
     PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
     STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
@@ -984,7 +1045,8 @@ static int ataReadSectors(AHCIATADevState *s, uint64_t u64Sector, void *pvBuf, u
 }
 
 
-static int ataWriteSectors(AHCIATADevState *s, uint64_t u64Sector, const void *pvBuf, uint32_t cSectors)
+static int ataWriteSectors(AHCIATADevState *s, uint64_t u64Sector,
+                           const void *pvBuf, uint32_t cSectors, bool *pfRedo)
 {
     PAHCIATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
@@ -998,6 +1060,11 @@ static int ataWriteSectors(AHCIATADevState *s, uint64_t u64Sector, const void *p
     STAM_PROFILE_ADV_STOP(&s->StatWrites, w);
 
     STAM_REL_COUNTER_ADD(s->pStatBytesWritten, cSectors * 512);
+
+    if (RT_SUCCESS(rc))
+        *pfRedo = false;
+    else
+        *pfRedo = ataIsRedoSetWarning(s, rc);
 
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
     PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
@@ -1020,47 +1087,18 @@ static void ataReadWriteSectorsBT(AHCIATADevState *s)
 }
 
 
-static void ataWarningDiskFull(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("ATA: Host disk full\n"));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_DISKFULL",
-                                    N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
-    AssertRC(rc);
-}
-
-
-static void ataWarningFileTooBig(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("ATA: File too big\n"));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_FILETOOBIG",
-                                    N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
-    AssertRC(rc);
-}
-
-
-static void ataWarningISCSI(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("ATA: iSCSI target unavailable\n"));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "DevATA_ISCSIDOWN",
-                                    N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
-    AssertRC(rc);
-}
-
-
 static bool ataReadSectorsSS(AHCIATADevState *s)
 {
     int rc;
     uint32_t cSectors;
     uint64_t iLBA;
+    bool fRedo;
 
     cSectors = s->cbElementaryTransfer / 512;
     Assert(cSectors);
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
-    rc = ataReadSectors(s, iLBA, s->CTXALLSUFF(pbIOBuffer), cSectors);
+    rc = ataReadSectors(s, iLBA, s->CTXALLSUFF(pbIOBuffer), cSectors, &fRedo);
     if (RT_SUCCESS(rc))
     {
         ataSetSector(s, iLBA + cSectors);
@@ -1070,29 +1108,13 @@ static bool ataReadSectorsSS(AHCIATADevState *s)
     }
     else
     {
-        if (rc == VERR_DISK_FULL)
-        {
-            ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+        if (fRedo)
             return true;
-        }
-        if (rc == VERR_FILE_TOO_BIG)
-        {
-            ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
-        if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
-        {
-            /* iSCSI connection abort (first error) or failure to reestablish
-             * connection (second error). Pause VM. On resume we'll retry. */
-            ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
             LogRel(("AHCI ATA: LUN#%d: disk read error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
         ataCmdError(s, ID_ERR);
     }
-    /** @todo implement redo for iSCSI */
     return false;
 }
 
@@ -1102,12 +1124,13 @@ static bool ataWriteSectorsSS(AHCIATADevState *s)
     int rc;
     uint32_t cSectors;
     uint64_t iLBA;
+    bool fRedo;
 
     cSectors = s->cbElementaryTransfer / 512;
     Assert(cSectors);
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
-    rc = ataWriteSectors(s, iLBA, s->CTXALLSUFF(pbIOBuffer), cSectors);
+    rc = ataWriteSectors(s, iLBA, s->CTXALLSUFF(pbIOBuffer), cSectors, &fRedo);
     if (RT_SUCCESS(rc))
     {
         ataSetSector(s, iLBA + cSectors);
@@ -1117,29 +1140,13 @@ static bool ataWriteSectorsSS(AHCIATADevState *s)
     }
     else
     {
-        if (rc == VERR_DISK_FULL)
-        {
-            ataWarningDiskFull(ATADEVSTATE_2_DEVINS(s));
+        if (fRedo)
             return true;
-        }
-        if (rc == VERR_FILE_TOO_BIG)
-        {
-            ataWarningFileTooBig(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
-        if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
-        {
-            /* iSCSI connection abort (first error) or failure to reestablish
-             * connection (second error). Pause VM. On resume we'll retry. */
-            ataWarningISCSI(ATADEVSTATE_2_DEVINS(s));
-            return true;
-        }
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
             LogRel(("AHCI ATA: LUN#%d: disk write error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
                     s->iLUN, rc, iLBA, cSectors));
         ataCmdError(s, ID_ERR);
     }
-    /** @todo implement redo for iSCSI */
     return false;
 }
 
@@ -2766,7 +2773,7 @@ static DECLCALLBACK(void) ataMountNotify(PPDMIMOUNTNOTIFY pInterface)
     if (!pIf->pDrvBlock)
         return;
 
-    LogRel(("ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough unchanged\n", pIf->iLUN, pIf->cTotalSectors));
+    LogRel(("AHCI ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough unchanged\n", pIf->iLUN, pIf->cTotalSectors));
 
     if (pIf->fATAPI)
         pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 2048;
@@ -3404,7 +3411,7 @@ static int ataControlWrite(PAHCIATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             uCmdWait0 = (uNow - pCtl->aIfs[0].u64CmdTS) / 1000;
         if (pCtl->aIfs[1].u64CmdTS)
             uCmdWait1 = (uNow - pCtl->aIfs[1].u64CmdTS) / 1000;
-        LogRel(("ATA: Ctl: RESET, DevSel=%d AIOIf=%d CmdIf0=%#04x (%d usec ago) CmdIf1=%#04x (%d usec ago)\n",
+        LogRel(("AHCI ATA: Ctl: RESET, DevSel=%d AIOIf=%d CmdIf0=%#04x (%d usec ago) CmdIf1=%#04x (%d usec ago)\n",
                     pCtl->iSelectedIf, pCtl->iAIOIf,
                     pCtl->aIfs[0].uATARegCommand, uCmdWait0,
                     pCtl->aIfs[1].uATARegCommand, uCmdWait1));
@@ -3822,7 +3829,7 @@ static void ataDMATransfer(PAHCIATACONTROLLER pCtl)
 
         if (!(pCtl->BmDma.u8Cmd & BM_CMD_START) || pCtl->fReset)
         {
-            LogRel(("ATA: Ctl: ABORT DMA%s\n", pCtl->fReset ? " due to RESET" : ""));
+            LogRel(("AHCI ATA: Ctl: ABORT DMA%s\n", pCtl->fReset ? " due to RESET" : ""));
             if (!pCtl->fReset)
                 ataDMATransferStop(s);
             /* This forces the loop to exit immediately. */
@@ -3847,26 +3854,6 @@ static void ataDMATransfer(PAHCIATACONTROLLER pCtl)
     s->cbElementaryTransfer = cbElementaryTransfer;
     s->iIOBufferCur = iIOBufferCur;
     s->iIOBufferEnd = iIOBufferEnd;
-}
-
-
-/**
- * Suspend I/O operations on a controller. Also suspends EMT, because it's
- * waiting for I/O to make progress. The next attempt to perform an I/O
- * operation will be made when EMT is resumed up again (as the resume
- * callback below restarts I/O).
- *
- * @param pCtl      Controller for which to suspend I/O.
- */
-static void ataSuspendRedo(PAHCIATACONTROLLER pCtl)
-{
-    PPDMDEVINS  pDevIns = CONTROLLER_2_DEVINS(pCtl);
-    int         rc;
-
-    pCtl->fRedoIdle = true;
-    rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
-                         (PFNRT)PDMDevHlpVMSuspend, 1, pDevIns);
-    AssertReleaseRC(rc);
 }
 
 
@@ -4035,7 +4022,6 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                              * request. Occurs very rarely, not worth optimizing. */
                             LogRel(("%s: Ctl: redo entire operation\n", __FUNCTION__));
                             ataAsyncIOPutRequest(pCtl, pReq);
-                            ataSuspendRedo(pCtl);
                             break;
                         }
                     }
@@ -4138,9 +4124,8 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
 
                 if (RT_UNLIKELY(pCtl->fRedo))
                 {
-                    LogRel(("ATA: Ctl: redo DMA operation\n"));
+                    LogRel(("AHCI ATA: Ctl: redo DMA operation\n"));
                     ataAsyncIOPutRequest(pCtl, &ataDMARequest);
-                    ataSuspendRedo(pCtl);
                     break;
                 }
 
@@ -4184,9 +4169,8 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                     pCtl->fRedo = fRedo;
                     if (RT_UNLIKELY(fRedo))
                     {
-                        LogRel(("ATA: Ctl#%d: redo PIO operation\n"));
+                        LogRel(("AHCI ATA: Ctl#%d: redo PIO operation\n"));
                         ataAsyncIOPutRequest(pCtl, &ataPIORequest);
-                        ataSuspendRedo(pCtl);
                         break;
                     }
                     s->iIOBufferCur = 0;
@@ -4257,7 +4241,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
             case AHCIATA_AIO_RESET_CLEARED:
                 pCtl->uAsyncIOState = AHCIATA_AIO_NEW;
                 pCtl->fReset = false;
-                LogRel(("ATA: Ctl: finished processing RESET\n"));
+                LogRel(("AHCI ATA: Ctl: finished processing RESET\n"));
                 for (uint32_t i = 0; i < RT_ELEMENTS(pCtl->aIfs); i++)
                 {
                     if (pCtl->aIfs[i].fATAPI)
@@ -4867,7 +4851,7 @@ static bool ataWaitForAllAsyncIOIsIdle(PAHCIATACONTROLLER pCtl, RTMSINTERVAL cMi
     }
 
     if (!fAllIdle)
-        LogRel(("ATA: Ctl is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",
+        LogRel(("AHCI ATA: Ctl is still executing, DevSel=%d AIOIf=%d CmdIf0=%#04x CmdIf1=%#04x\n",
                 pCtl->iSelectedIf, pCtl->iAIOIf,
                 pCtl->aIfs[0].uATARegCommand, pCtl->aIfs[1].uATARegCommand));
 
@@ -4920,6 +4904,8 @@ int ataControllerDestroy(PAHCIATACONTROLLER pCtl)
     {
         ASMAtomicWriteU32(&pCtl->fShutdown, true);
         rc = RTSemEventSignal(pCtl->AsyncIOSem);
+        AssertRC(rc);
+        rc = RTSemEventSignal(pCtl->SuspendIOSem);
         AssertRC(rc);
 
         rc = RTThreadWait(pCtl->AsyncIOThread, 30000 /* 30 s*/, NULL);
@@ -5082,7 +5068,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, AHCIATADevState *pIf)
         pIf->PCHSGeometry.cCylinders = 0; /* dummy */
         pIf->PCHSGeometry.cHeads     = 0; /* dummy */
         pIf->PCHSGeometry.cSectors   = 0; /* dummy */
-        LogRel(("ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n", pIf->iLUN, pIf->cTotalSectors, (pIf->fATAPIPassthrough ? "enabled" : "disabled")));
+        LogRel(("AHCI ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough %s\n", pIf->iLUN, pIf->cTotalSectors, (pIf->fATAPIPassthrough ? "enabled" : "disabled")));
     }
     else
     {
@@ -5402,7 +5388,7 @@ int ataControllerLoadExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
                 SSMR3GetMem(pSSM, pCtl->aIfs[j].CTX_SUFF(pbIOBuffer), pCtl->aIfs[j].cbIOBuffer);
             else
             {
-                LogRel(("ATA: No buffer for %d\n", j));
+                LogRel(("AHCI ATA: No buffer for %d\n", j));
                 if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                     return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("No buffer for %d"), j);
 
