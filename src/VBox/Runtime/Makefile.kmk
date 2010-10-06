@@ -544,6 +544,8 @@ ifdef IPRT_WITH_FUTEX_BASED_SEMS
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp \
  	r3/linux/semmutex-linux.cpp
+# 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+# 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp
 else
  RuntimeR3_SOURCES.linux.x86 += \
  	r3/posix/semevent-posix.cpp \
@@ -552,6 +554,8 @@ else
  RuntimeR3_SOURCES.linux.amd64 += \
  	r3/linux/semevent-linux.cpp \
  	r3/linux/semeventmulti-linux.cpp
+# 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+# 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp
  ifdef RT_NEW_LINUX_MUTEX_CODE
   RuntimeR3_SOURCES.linux.amd64 += \
  	r3/linux/semmutex-linux.cpp

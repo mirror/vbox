@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -247,16 +247,16 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 }
 
 
-static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies, bool fAutoResume)
-{
-    PCRTLOCKVALSRCPOS pSrcPos = NULL;
 
+DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, uint32_t fFlags, uint64_t uTimeout,
+                                       PCRTLOCKVALSRCPOS pSrcPos)
+{
     /*
      * Validate input.
      */
-    struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
-    AssertReturn(VALID_PTR(pThis) && pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                 VERR_INVALID_HANDLE);
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Quickly check whether it's signaled.
@@ -267,20 +267,42 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
         return VINF_SUCCESS;
 
     /*
-     * Convert the timeout value.
+     * Check and convert the timeout value.
      */
     struct timespec ts;
     struct timespec *pTimeout = NULL;
-    uint64_t u64End = 0; /* shut up gcc */
-    if (cMillies != RT_INDEFINITE_WAIT)
+    uint64_t u64Deadline = 0; /* shut up gcc */
+    if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
     {
         /* If the timeout is zero, then we're done. */
-        if (!cMillies)
+        if (!uTimeout)
             return VERR_TIMEOUT;
-        ts.tv_sec  = cMillies / 1000;
-        ts.tv_nsec = (cMillies % 1000) * UINT32_C(1000000);
-        u64End = RTTimeSystemNanoTS() + cMillies * UINT64_C(1000000);
-        pTimeout = &ts;
+
+        /* Convert it to a deadline + interval timespec. */
+        if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
+            uTimeout = uTimeout < UINT64_MAX / UINT32_C(1000000) * UINT32_C(1000000)
+                     ? uTimeout * UINT32_C(1000000)
+                     : UINT64_MAX;
+        if (uTimeout != UINT64_MAX) /* unofficial way of indicating an indefinite wait */
+        {
+            if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
+                u64Deadline = RTTimeSystemNanoTS();
+            else
+            {
+                uint64_t u64Now = RTTimeSystemNanoTS();
+                if (uTimeout <= u64Now)
+                    return VERR_TIMEOUT;
+                u64Deadline = uTimeout;
+                uTimeout   -= u64Now;
+            }
+            if (   sizeof(ts.tv_sec) >= sizeof(uint64_t)
+                || uTimeout <= UINT64_C(1000000000) * UINT32_MAX)
+            {
+                ts.tv_nsec = uTimeout % UINT32_C(1000000000);
+                ts.tv_sec  = uTimeout / UINT32_C(1000000000);
+                pTimeout = &ts;
+            }
+        }
     }
 
     /*
@@ -305,7 +327,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
             /* adjust the relative timeout */
             if (pTimeout)
             {
-                int64_t i64Diff = u64End - RTTimeSystemNanoTS();
+                int64_t i64Diff = u64Deadline - RTTimeSystemNanoTS();
                 if (i64Diff < 1000)
                     return VERR_TIMEOUT;
                 ts.tv_sec  = (uint64_t)i64Diff / UINT32_C(1000000000);
@@ -315,7 +337,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
             if (pThis->fEverHadSignallers)
             {
                 int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                                cMillies, RTTHREADSTATE_EVENT_MULTI, true);
+                                                                uTimeout / UINT32_C(1000000), RTTHREADSTATE_EVENT_MULTI, true);
                 if (RT_FAILURE(rc9))
                     return rc9;
             }
@@ -343,7 +365,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
                 /* retry, the value changed. */;
             else if (rc == -EINTR)
             {
-                if (!fAutoResume)
+                if (fFlags & RTSEMWAIT_FLAGS_NORESUME)
                     return VERR_INTERRUPTED;
             }
             else
@@ -359,17 +381,23 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMil
 }
 
 
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
+#undef RTSemEventMultiWaitEx
+RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout)
 {
-    int rc = rtSemEventMultiWait(hEventMultiSem, cMillies, true);
-    Assert(rc != VERR_INTERRUPTED);
-    return rc;
+#ifndef RTSEMEVENT_STRICT
+    return rtSemEventLnxMultiWait(hEventMultiSem, fFlags, uTimeout, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemEventLnxMultiWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
+#endif
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
+RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return rtSemEventMultiWait(hEventMultiSem, cMillies, false);
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemEventLnxMultiWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
 }
 
 
@@ -409,6 +437,9 @@ RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTH
     RTLockValidatorRecSharedRemoveOwner(&pThis->Signallers, hThread);
 #endif
 }
+
+#include "../../generic/RTSemEventMultiWait-2-ex-generic.cpp"
+#include "../../generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp"
 
 #endif /* glibc < 2.6 || IPRT_WITH_FUTEX_BASED_SEMS */
 

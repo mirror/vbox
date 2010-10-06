@@ -24,143 +24,237 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/semaphore.h>
-#include <iprt/string.h>
-#include <iprt/thread.h>
-#include <iprt/stream.h>
-#include <iprt/time.h>
-#include <iprt/initterm.h>
-#include <iprt/rand.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/rand.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <iprt/test.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static RTSEMEVENTMULTI      g_hSemEM = NIL_RTSEMEVENTMULTI;
-static uint32_t volatile    g_cErrors;
+/** The test handle. */
+static RTTEST  g_hTest;
 
 
-int PrintError(const char *pszFormat, ...)
+static DECLCALLBACK(int) test1Thread1(RTTHREAD ThreadSelf, void *pvUser)
 {
-    ASMAtomicIncU32(&g_cErrors);
+    RTSEMEVENTMULTI hSem = *(PRTSEMEVENTMULTI)pvUser;
 
-    RTPrintf("tstSemEvent: FAILURE - ");
-    va_list va;
-    va_start(va, pszFormat);
-    RTPrintfV(pszFormat, va);
-    va_end(va);
+    uint64_t u64 = RTTimeSystemMilliTS();
+    RTTEST_CHECK_RC_RET(g_hTest, RTSemEventMultiWait(hSem, 1000), VERR_TIMEOUT, rcCheck);
+    u64 = RTTimeSystemMilliTS() - u64;
+    RTTEST_CHECK_MSG(g_hTest, u64 < 1500 && u64 > 950, (g_hTest, "u64=%llu\n", u64));
 
-    return 1;
-}
-
-
-int ThreadTest1(RTTHREAD ThreadSelf, void *pvUser)
-{
-    int rc;
-    rc = RTSemEventMultiWait(g_hSemEM, 1000);
-    if (rc != VERR_TIMEOUT)
-    {
-        PrintError("Thread 1: unexpected result of first RTSemEventMultiWait %Rrc\n", rc);
-        return VINF_SUCCESS;
-    }
-
-    rc = RTSemEventMultiWait(g_hSemEM, 1000);
-    if (RT_FAILURE(rc))
-    {
-        PrintError("Thread 1: unexpected result of second RTSemEventMultiWait %Rrc\n", rc);
-        return VINF_SUCCESS;
-    }
-
-    RTPrintf("tstSemEvent: Thread 1 normal exit...\n");
+    RTTEST_CHECK_RC_RET(g_hTest, RTSemEventMultiWait(hSem, 2000), VINF_SUCCESS, rcCheck);
     return VINF_SUCCESS;
 }
 
 
-int ThreadTest2(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) test1Thread2(RTTHREAD ThreadSelf, void *pvUser)
 {
-    int rc;
-    rc = RTSemEventMultiWait(g_hSemEM, RT_INDEFINITE_WAIT);
-    if (RT_FAILURE(rc))
-    {
-        PrintError("Thread 2: unexpected result of RTSemEventMultiWait %Rrc\n", rc);
-        return VINF_SUCCESS;
-    }
-
-    RTPrintf("tstSemEvent: Thread 2 normal exit...\n");
+    RTSEMEVENTMULTI hSem = *(PRTSEMEVENTMULTI)pvUser;
+    RTTEST_CHECK_RC_RET(g_hTest, RTSemEventMultiWait(hSem, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
     return VINF_SUCCESS;
 }
 
 
-static int Test1()
+static void test1(void)
 {
-    int rc;
-    RTTHREAD Thread1, Thread2;
-
-    rc = RTSemEventMultiCreate(&g_hSemEM);
-    if (RT_FAILURE(rc))
-        return PrintError("RTSemEventMultiCreate failed (rc=%Rrc)\n", rc);
+    RTTestISub("Three threads");
 
     /*
      * Create the threads and let them block on the event multi semaphore.
      */
-    rc = RTSemEventMultiReset(g_hSemEM);
-    if (RT_FAILURE(rc))
-        return PrintError("RTSemEventMultiReset failed (rc=%Rrc)\n", rc);
+    RTSEMEVENTMULTI hSem;
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiCreate(&hSem), VINF_SUCCESS);
 
-    rc = RTThreadCreate(&Thread2, ThreadTest2, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test2");
-    if (RT_FAILURE(rc))
-        return PrintError("RTThreadCreate failed for thread 2 (rc=%Rrc)\n", rc);
+    RTTHREAD hThread2;
+    RTTESTI_CHECK_RC_RETV(RTThreadCreate(&hThread2, test1Thread2, &hSem, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test2"), VINF_SUCCESS);
     RTThreadSleep(100);
 
-    rc = RTThreadCreate(&Thread1, ThreadTest1, NULL, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test1");
-    if (RT_FAILURE(rc))
-        return PrintError("RTThreadCreate failed for thread 1 (rc=%Rrc)\n", rc);
+    RTTHREAD hThread1;
+    RTTESTI_CHECK_RC_RETV(RTThreadCreate(&hThread1, test1Thread1, &hSem, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "test1"), VINF_SUCCESS);
 
     /* Force first thread (which has a timeout of 1 second) to timeout in the
      * first wait, and the second wait will succeed. */
-    RTThreadSleep(1500);
-    rc = RTSemEventMultiSignal(g_hSemEM);
-    if (RT_FAILURE(rc))
-        PrintError("RTSemEventMultiSignal failed (rc=%Rrc)\n", rc);
+    RTTESTI_CHECK_RC(RTThreadSleep(1500), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTThreadWait(hThread1, 5000, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTThreadWait(hThread2, 5000, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTSemEventMultiDestroy(hSem), VINF_SUCCESS);
+}
 
-    rc = RTThreadWait(Thread1, 5000, NULL);
-    if (RT_FAILURE(rc))
-        PrintError("RTThreadWait failed for thread 1 (rc=%Rrc)\n", rc);
 
-    rc = RTThreadWait(Thread2, 5000, NULL);
-    if (RT_FAILURE(rc))
-        PrintError("RTThreadWait failed for thread 2 (rc=%Rrc)\n", rc);
+static void testBasicsWaitTimeout(RTSEMEVENTMULTI hSem, unsigned i)
+{
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWait(hSem, 0), VERR_TIMEOUT);
+#if 1
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitNoResume(hSem, 0), VERR_TIMEOUT);
+#else
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_RELATIVE,
+                                                0),
+                          VERR_TIMEOUT);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                RTTimeSystemNanoTS() + 1000*i),
+                          VERR_TIMEOUT);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                RTTimeNanoTS() + 1000*i),
+                          VERR_TIMEOUT);
 
-    rc = RTSemEventMultiDestroy(g_hSemEM);
-    if (RT_FAILURE(rc))
-        PrintError("RTSemEventMultiDestroy failed - %Rrc\n", rc);
-    g_hSemEM = NIL_RTSEMEVENTMULTI;
-    if (g_cErrors)
-        RTThreadSleep(100);
-    return 0;
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_RELATIVE,
+                                                0),
+                          VERR_TIMEOUT);
+#endif
+}
+
+
+static void testBasicsWaitSuccess(RTSEMEVENTMULTI hSem, unsigned i)
+{
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWait(hSem, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWait(hSem, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+#if 1
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitNoResume(hSem, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitNoResume(hSem, RT_INDEFINITE_WAIT), VINF_SUCCESS);
+#else
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_RELATIVE,
+                                                0),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem, RTSEMWAIT_FLAGS_RESUME   | RTSEMWAIT_FLAGS_INDEFINITE, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem, RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_INDEFINITE, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                RTTimeSystemNanoTS() + 1000*i),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                RTTimeNanoTS() + 1000*i),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                0),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                _1G),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                UINT64_MAX),
+                          VINF_SUCCESS);
+
+
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                RTTimeSystemMilliTS() + 1000*i),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                RTTimeMilliTS() + 1000*i),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                0),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                _1M),
+                          VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
+                                                RTSEMWAIT_FLAGS_RESUME | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_ABSOLUTE,
+                                                UINT64_MAX),
+                          VINF_SUCCESS);
+#endif
+}
+
+
+static void testBasics(void)
+{
+    RTTestISub("Basics");
+
+    RTSEMEVENTMULTI hSem;
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiCreate(&hSem), VINF_SUCCESS);
+
+    /* The semaphore is created in a reset state, calling reset explicitly
+       shouldn't make any difference. */
+    testBasicsWaitTimeout(hSem, 0);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiReset(hSem), VINF_SUCCESS);
+    testBasicsWaitTimeout(hSem, 1);
+    if (RTTestIErrorCount())
+        return;
+
+    /* When signalling the semaphore all successive wait calls shall
+       succeed, signalling it again should make no difference. */
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    testBasicsWaitSuccess(hSem, 2);
+    if (RTTestIErrorCount())
+        return;
+
+    /* After resetting it we should time out again. */
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiReset(hSem), VINF_SUCCESS);
+    testBasicsWaitTimeout(hSem, 3);
+    if (RTTestIErrorCount())
+        return;
+
+    /* The number of resets or signal calls shouldn't matter. */
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiReset(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiReset(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiReset(hSem), VINF_SUCCESS);
+    testBasicsWaitTimeout(hSem, 4);
+
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    testBasicsWaitSuccess(hSem, 5);
+
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiReset(hSem), VINF_SUCCESS);
+    testBasicsWaitTimeout(hSem, 6);
+
+    /* Destroy it. */
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiDestroy(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiDestroy(NIL_RTSEMEVENTMULTI), VINF_SUCCESS);
+
+    /* Whether it is reset (above), signalled or not used shouldn't matter.  */
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiCreate(&hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiSignal(hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiDestroy(hSem), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiCreate(&hSem), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTSemEventMultiDestroy(hSem), VINF_SUCCESS);
+
+    RTTestISubDone();
 }
 
 
 int main(int argc, char **argv)
 {
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstSemEvent: RTR3Init failed (rc=%Rrc)\n", rc);
-        return 1;
-    }
-    RTPrintf("tstSemEvent: TESTING...\n");
-    Test1();
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstSemEventMulti", &g_hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
 
-    if (!g_cErrors)
-        RTPrintf("tstSemEvent: SUCCESS\n");
-    else
-        RTPrintf("tstSemEvent: FAILURE - %u errors\n", g_cErrors);
-    return g_cErrors != 0;
+    testBasics();
+    if (!RTTestErrorCount(g_hTest))
+    {
+        test1();
+    }
+
+    return RTTestSummaryAndDestroy(g_hTest);
 }
 
