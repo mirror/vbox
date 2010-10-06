@@ -87,11 +87,10 @@ PROGRAMS += \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
-	tstSemEvent \
+	tstRTSemEventMulti \
 	tstSemMutex \
 	tstSemPingPong \
 	tstRTSemRW \
-	tstSems \
 	tstRTSemXRoads \
 	tstRTSort \
 	tstRTStrAlloc \
@@ -115,7 +114,7 @@ PROGRAMS += \
 	tstRTTimeSpec \
 	tstUtf8 \
 	tstRTUuid
-# tstSems
+
 PROGRAMS.win += \
 	tstRTProcWait \
 	tstRTCritSectW32 \
@@ -398,14 +397,13 @@ tstRTS3_SOURCES = tstRTS3.cpp
 
 tstSemMutex_SOURCES = tstSemMutex.cpp
 
-tstSemEvent_SOURCES = tstSemEvent.cpp
+tstRTSemEventMulti_TEMPLATE = VBOXR3TSTEXE
+tstRTSemEventMulti_SOURCES = tstRTSemEventMulti.cpp
 
 tstRTSemRW_TEMPLATE = VBOXR3TSTEXE
 tstRTSemRW_SOURCES = tstRTSemRW.cpp
 
 tstSemPingPong_SOURCES = tstSemPingPong.cpp
-
-tstSems_SOURCES = tstSems.cpp
 
 tstRTSemXRoads_TEMPLATE = VBOXR3TSTEXE
 tstRTSemXRoads_SOURCES = tstRTSemXRoads.cpp
