@@ -286,7 +286,7 @@ DECLINLINE(int) rtSemEventLnxMultiWait(struct RTSEMEVENTMULTIINTERNAL *pThis, ui
         if (uTimeout != UINT64_MAX) /* unofficial way of indicating an indefinite wait */
         {
             if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
-                u64Deadline = RTTimeSystemNanoTS();
+                u64Deadline = RTTimeSystemNanoTS() + uTimeout;
             else
             {
                 uint64_t u64Now = RTTimeSystemNanoTS();
