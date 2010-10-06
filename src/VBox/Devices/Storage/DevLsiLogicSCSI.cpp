@@ -48,6 +48,9 @@
 /** Maximum number of entries in the release log. */
 #define MAX_REL_LOG_ERRORS 1024
 
+/* If LSI shall emulate MSI support */
+#define LSILOGIC_WITH_MSI
+
 /**
  * Reply data.
  */
@@ -4847,6 +4850,11 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PCIDevSetClassBase   (&pThis->PciDev,   0x01); /* Mass storage */
     PCIDevSetInterruptPin(&pThis->PciDev,   0x01); /* Interrupt pin A */
 
+#ifdef LSILOGIC_WITH_MSI
+    PCIDevSetStatus(&pThis->PciDev,   VBOX_PCI_STATUS_CAP_LIST);
+    PCIDevSetCapabilityList(&pThis->PciDev, 0x80);
+#endif
+
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -4859,6 +4867,18 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = PDMDevHlpPCIRegister (pDevIns, &pThis->PciDev);
     if (RT_FAILURE(rc))
         return rc;
+
+#ifdef LSILOGIC_WITH_MSI
+    PDMMSIREG aMsiReg;
+    aMsiReg.cVectors = 1;
+    aMsiReg.iCapOffset = 0x80;
+    aMsiReg.iNextOffset = 0x0;
+    aMsiReg.iMsiFlags = 0;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
+    AssertRC(rc);
+    if (RT_FAILURE (rc))
+        return rc;
+#endif
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, LSILOGIC_PCI_SPACE_IO_SIZE, PCI_ADDRESS_SPACE_IO, lsilogicMap);
     if (RT_FAILURE(rc))
@@ -5149,4 +5169,3 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-

@@ -578,6 +578,17 @@ typedef struct PDMPCIHLPRC
     DECLRCCALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
+     * Send an MSI.
+     *
+     * @param   pDevIns         PCI device instance.
+     * @param   GCAddr          Physical address MSI request was written.
+     * @param   uValue          Value written.
+     * @thread  EMT only.
+     */
+    DECLRCCALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue));
+
+
+    /**
      * Acquires the PDM lock.
      *
      * @returns VINF_SUCCESS on success.
@@ -602,8 +613,8 @@ typedef RCPTRTYPE(PDMPCIHLPRC *) PPDMPCIHLPRC;
 /** Pointer to const PCI helpers. */
 typedef RCPTRTYPE(const PDMPCIHLPRC *) PCPDMPCIHLPRC;
 
-/** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPRC_VERSION                    PDM_VERSION_MAKE(0xfffd, 1, 0)
+/** Current PDMPCIHLPRC version number. */
+#define PDM_PCIHLPRC_VERSION                    PDM_VERSION_MAKE(0xfffd, 2, 0)
 
 
 /**
@@ -635,6 +646,17 @@ typedef struct PDMPCIHLPR0
     DECLR0CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
 
     /**
+     * Send an MSI.
+     *
+     * @param   pDevIns         PCI device instance.
+     * @param   GCAddr          Physical address MSI request was written.
+     * @param   uValue          Value written.
+     * @thread  EMT only.
+     */
+    DECLR0CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue));
+
+
+    /**
      * Acquires the PDM lock.
      *
      * @returns VINF_SUCCESS on success.
@@ -660,7 +682,7 @@ typedef R0PTRTYPE(PDMPCIHLPR0 *) PPDMPCIHLPR0;
 typedef R0PTRTYPE(const PDMPCIHLPR0 *) PCPDMPCIHLPR0;
 
 /** Current PDMPCIHLPR0 version number. */
-#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 1, 0)
+#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 2, 0)
 
 /**
  * PCI device helpers.
@@ -689,6 +711,16 @@ typedef struct PDMPCIHLPR3
      * @thread  EMT only.
      */
     DECLR3CALLBACKMEMBER(void,  pfnIoApicSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+
+    /**
+     * Send an MSI.
+     *
+     * @param   pDevIns         PCI device instance.
+     * @param   GCAddr          Physical address MSI request was written.
+     * @param   uValue          Value written.
+     * @thread  EMT only.
+     */
+    DECLR3CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue));
 
     /**
      * Checks if the given address is an MMIO2 base address or not.
@@ -750,7 +782,7 @@ typedef R3PTRTYPE(PDMPCIHLPR3 *) PPDMPCIHLPR3;
 typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 /** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 1, 0)
+#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 2, 0)
 
 
 /**
@@ -1448,12 +1480,27 @@ typedef struct PDMIOAPICREG
 
     /** The name of the R0 SetIrq entry point. */
     const char         *pszSetIrqR0;
+
+    /**
+     * Send a MSI.
+     *
+     * @param   pDevIns         Device instance of the I/O APIC.
+     * @param   GCPhys          Request address.
+     * @param   uValue          Request value.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnSendMsiR3,(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue));
+
+    /** The name of the GC SendMsi entry point. */
+    const char         *pszSendMsiRC;
+
+    /** The name of the R0 SendMsi entry point. */
+    const char         *pszSendMsiR0;
 } PDMIOAPICREG;
 /** Pointer to an APIC registration structure. */
 typedef PDMIOAPICREG *PPDMIOAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 1, 0)
+#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 2, 0)
 
 
 /**

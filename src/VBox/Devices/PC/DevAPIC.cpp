@@ -355,6 +355,7 @@ PDMBOTHCBDECL(int)  apicReadMSR(PPDMDEVINS pDevIns, VMCPUID iCpu, uint32_t u32Re
 PDMBOTHCBDECL(int)  ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(int)  ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
 PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
+PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue);
 
 static void apic_update_tpr(APICDeviceInfo *dev, APICState* s, uint32_t val);
 RT_C_DECLS_END
@@ -1530,29 +1531,6 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr)
 #endif
     return val;
 }
-/**
- * See chapter 10.11 MESSAGE SIGNALLED INTERRUPTS of IA-32 Intel Architecture
- * Software Developer's Manual, Volume 3A: System Programming Guide, Part 1
- * for details on MSI and LAPIC interaction.
- */
-static int apicSendMsi(APICDeviceInfo* dev, RTGCPHYS addr, uint32_t val)
-{
-    uint8_t  dest = (addr & VBOX_MSI_ADDR_DEST_ID_MASK) >> VBOX_MSI_ADDR_DEST_ID_SHIFT;
-    uint8_t  vector_num = (val & VBOX_MSI_DATA_VECTOR_MASK) >> VBOX_MSI_DATA_VECTOR_SHIFT;
-    uint8_t  dest_mode = (addr >> VBOX_MSI_ADDR_DEST_MODE_SHIFT) & 0x1;
-    uint8_t  trigger_mode = (val >> VBOX_MSI_DATA_TRIGGER_SHIFT) & 0x1;
-    uint8_t  delivery_mode = (val >> VBOX_MSI_DATA_DELIVERY_MODE_SHIFT) & 0x7;
-    /**
-     * This bit indicates whether the message should be directed to the
-     * processor with the lowest interrupt priority among
-     * processors that can receive the interrupt, ignored ATM.
-     */
-    uint8_t  redir_hint = (addr >> VBOX_MSI_ADDR_REDIRECTION_SHIFT) & 0x1;
-    uint32_t deliver_bitmask = apic_get_delivery_bitmask(dev, dest, dest_mode);
-
-    return apic_bus_deliver(dev, deliver_bitmask, delivery_mode,
-                            vector_num, 0 /* polarity */, trigger_mode);
-}
 
 static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr, uint32_t val)
 {
@@ -1563,11 +1541,7 @@ static int apic_mem_writel(APICDeviceInfo* dev, APICState *s, RTGCPHYS addr, uin
     Log(("CPU%d: APIC write: %08x = %08x\n", s->phys_id, (uint32_t)addr, val));
 #endif
 
-    index = (addr >> 4) & 0xff;
-    addr -= (s->apicbase & ~0xfff);
-
-    if (addr > 0xfff || (index == 0))
-        return apicSendMsi(dev, addr, val);
+    index = (addr >> 4) & 0xff;  
 
     switch(index) {
     case 0x02:
@@ -2502,8 +2476,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * @todo: shall reregister, if base changes.
      */
     uint32_t ApicBase = pThis->paLapicsR3[0].apicbase & ~0xfff;
-    /* See comment in msi.h, on why LAPIC and MSI share same region */
-    rc = PDMDevHlpMMIORegister(pDevIns, ApicBase, VBOX_MSI_ADDR_SIZE, pThis,
+    rc = PDMDevHlpMMIORegister(pDevIns, ApicBase, 0x1000, pThis,
                                apicMMIOWrite, apicMMIORead, NULL, "APIC Memory");
     if (RT_FAILURE(rc))
         return rc;
@@ -2512,7 +2485,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pThis->pApicHlpRC  = pThis->pApicHlpR3->pfnGetRCHelpers(pDevIns);
         pThis->pCritSectRC = pThis->pApicHlpR3->pfnGetRCCritSect(pDevIns);
 
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, ApicBase, VBOX_MSI_ADDR_SIZE, 0,
+        rc = PDMDevHlpMMIORegisterRC(pDevIns, ApicBase, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
         if (RT_FAILURE(rc))
             return rc;
@@ -2522,7 +2495,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pThis->pApicHlpR0  = pThis->pApicHlpR3->pfnGetR0Helpers(pDevIns);
         pThis->pCritSectR0 = pThis->pApicHlpR3->pfnGetR0CritSect(pDevIns);
 
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, ApicBase, VBOX_MSI_ADDR_SIZE, 0,
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, ApicBase, 0x1000, 0,
                                      "apicMMIOWrite", "apicMMIORead", NULL);
         if (RT_FAILURE(rc))
             return rc;
@@ -2703,6 +2676,35 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
     ioapic_set_irq(pThis, iIrq, iLevel);
 }
 
+PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue)
+{
+    IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
+
+    LogFlow(("ioapicSendMsi: Address=%p uValue=%\n", GCAddr, uValue));
+
+    uint8_t  dest = (GCAddr & VBOX_MSI_ADDR_DEST_ID_MASK) >> VBOX_MSI_ADDR_DEST_ID_SHIFT;
+    uint8_t  vector_num = (uValue & VBOX_MSI_DATA_VECTOR_MASK) >> VBOX_MSI_DATA_VECTOR_SHIFT;
+    uint8_t  dest_mode = (GCAddr >> VBOX_MSI_ADDR_DEST_MODE_SHIFT) & 0x1;
+    uint8_t  trigger_mode = (uValue >> VBOX_MSI_DATA_TRIGGER_SHIFT) & 0x1;
+    uint8_t  delivery_mode = (uValue >> VBOX_MSI_DATA_DELIVERY_MODE_SHIFT) & 0x7;
+    /**
+     * This bit indicates whether the message should be directed to the
+     * processor with the lowest interrupt priority among
+     * processors that can receive the interrupt, ignored ATM.
+     */
+    uint8_t  redir_hint = (GCAddr >> VBOX_MSI_ADDR_REDIRECTION_SHIFT) & 0x1;
+
+    int rc = pThis->CTX_SUFF(pIoApicHlp)->pfnApicBusDeliver(pDevIns,
+                                                            dest,
+                                                            dest_mode,
+                                                            delivery_mode,
+                                                            vector_num,
+                                                            0 /* polarity, n/a */,
+                                                            trigger_mode);
+    /* We must be sure that attempts to reschedule in R3
+       never get here */
+    Assert(rc == VINF_SUCCESS);
+}
 
 #ifdef IN_RING3
 
@@ -2847,9 +2849,13 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Register the IOAPIC and get helpers.
      */
     IoApicReg.u32Version  = PDM_IOAPICREG_VERSION;
-    IoApicReg.pfnSetIrqR3 = ioapicSetIrq;
+    IoApicReg.pfnSetIrqR3 = ioapicSetIrq;    
     IoApicReg.pszSetIrqRC = fGCEnabled ? "ioapicSetIrq" : NULL;
     IoApicReg.pszSetIrqR0 = fR0Enabled ? "ioapicSetIrq" : NULL;
+    IoApicReg.pfnSendMsiR3 = ioapicSendMsi;
+    IoApicReg.pszSendMsiRC = fGCEnabled ? "ioapicSendMsi" : NULL;
+    IoApicReg.pszSendMsiR0 = fR0Enabled ? "ioapicSendMsi" : NULL;
+
     rc = PDMDevHlpIOAPICRegister(pDevIns, &IoApicReg, &s->pIoApicHlpR3);
     if (RT_FAILURE(rc))
     {

@@ -54,9 +54,7 @@ RT_C_DECLS_END
 *******************************************************************************/
 static void pdmRCIsaSetIrq(PVM pVM, int iIrq, int iLevel);
 static void pdmRCIoApicSetIrq(PVM pVM, int iIrq, int iLevel);
-
-
-
+static void pdmRCIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue);
 
 /** @name Raw-Mode Context Device Helpers
  * @{
@@ -552,8 +550,16 @@ static DECLCALLBACK(void) pdmRCPciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 static DECLCALLBACK(void) pdmRCPciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmRCPciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
+    Log4(("pdmRCPciHlp_IoApicSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     pdmRCIoApicSetIrq(pDevIns->Internal.s.pVMRC, iIrq, iLevel);
+}
+
+/** @interface_method_impl{PDMPCIHLPRC,pfnIoApicSendMsi} */
+static DECLCALLBACK(void) pdmRCPciHlp_IoApicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    Log4(("pdmRCPciHlp_IoApicSendMsi: Address=%p Value=%d\n", GCAddr, uValue));
+    pdmRCIoApicSendMsi(pDevIns->Internal.s.pVMRC, GCAddr, uValue);
 }
 
 
@@ -581,6 +587,7 @@ extern DECLEXPORT(const PDMPCIHLPRC) g_pdmRCPciHlp =
     PDM_PCIHLPRC_VERSION,
     pdmRCPciHlp_IsaSetIrq,
     pdmRCPciHlp_IoApicSetIrq,
+    pdmRCPciHlp_IoApicSendMsi,
     pdmRCPciHlp_Lock,
     pdmRCPciHlp_Unlock,
     PDM_PCIHLPRC_VERSION, /* the end */
@@ -783,5 +790,23 @@ static void pdmRCIoApicSetIrq(PVM pVM, int iIrq, int iLevel)
         }
         else
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
+    }
+}
+
+
+/**
+ * Sends an MSI to I/O APIC.
+ *
+ * @param   pVM     The VM handle.
+ * @param   GCAddr  Address of the message.
+ * @param   uValue  Value of the message.
+ */
+static void pdmRCIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue)
+{
+    if (pVM->pdm.s.IoApic.pDevInsRC)
+    {
+        pdmLock(pVM);
+        pVM->pdm.s.IoApic.pfnSendMsiRC(pVM->pdm.s.IoApic.pDevInsRC, GCAddr, uValue);
+        pdmUnlock(pVM);
     }
 }

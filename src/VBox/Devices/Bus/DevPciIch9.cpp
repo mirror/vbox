@@ -527,12 +527,15 @@ static void ich9pciApicSetIrq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, 
 
 static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel)
 {
-    if (MSIIsEnabled(pPciDev))
+    if (MsiIsEnabled(pPciDev))
     {
         Log2(("Raise a MSI interrupt: %d\n", iIrq));
         /* We only trigger MSI on level up, as technically it's matching flip-flop best (maybe even assert that level == PDM_IRQ_LEVEL_FLIP_FLOP) */
         if ((iLevel & PDM_IRQ_LEVEL_HIGH) != 0)
-            MSINotify(pGlobals->aPciBus.CTX_SUFF(pDevIns), pPciDev, iIrq);
+        {
+            PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
+            MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq);
+        }
         return;
     }
 
@@ -785,7 +788,7 @@ static DECLCALLBACK(int) ich9pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev,
 
 static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg)
 {
-    return MSIInit(pPciDev, pMsiReg);
+    return MsiInit(pPciDev, pMsiReg);
 }
 
 
@@ -1685,7 +1688,7 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
        )
     {
-        return MSIPciConfigRead(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, len);
+        return MsiPciConfigRead(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, len);
     }
 
     AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
@@ -1722,7 +1725,9 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
         && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
        )
     {
-        MSIPciConfigWrite(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, val, len);
+        MsiPciConfigWrite(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
+                          aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
+                          aDev, u32Address, val, len);
         return;
     }
 

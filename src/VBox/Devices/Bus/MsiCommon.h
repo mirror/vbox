@@ -14,14 +14,28 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Maybe belongs to types.h */
+#ifdef IN_RING3
+typedef PCPDMPCIHLPR3 PCPDMPCIHLP;
+#endif
+
+#ifdef IN_RING0
+typedef PCPDMPCIHLPR0 PCPDMPCIHLP;
+#endif
+
+#ifdef IN_RC
+typedef PCPDMPCIHLPRC PCPDMPCIHLP;
+#endif
+
 /* Init MSI support in the device. */
-int      MSIInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
+int      MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
 
 /* If MSI is enabled, so that MSINotify() shall be used for notifications.  */
-bool     MSIIsEnabled(PPCIDEVICE pDev);
+bool     MsiIsEnabled(PPCIDEVICE pDev);
+
 /* Device notification (aka interrupt). */
-void     MSINotify(PPDMDEVINS pDevIns, PPCIDEVICE pDev, int iVector);
+void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector);
 
 /* PCI config space accessors for MSI registers */
-void     MSIPciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
-uint32_t MSIPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);
+void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
+uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);

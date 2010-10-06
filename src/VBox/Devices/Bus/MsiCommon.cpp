@@ -91,7 +91,7 @@ DECLINLINE(bool) msiBitJustCleared(uint32_t u32OldValue,
 }
 
 
-void     MSIPciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
+void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
     Assert(iOff >= 0 && (PCIIsMsiCapable(pDev) && iOff < pDev->Int.s.u8MsiCapSize));
@@ -112,7 +112,7 @@ void     MSIPciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
             case VBOX_MSI_CAP_MESSAGE_CONTROL:
                 /* don't change read-only bits: 1-3,7 */
                 val &= UINT32_C(~0x8e);
-                pDev->config[uAddr] &= ~val;
+                pDev->config[uAddr] = val;
                 break;
             case VBOX_MSI_CAP_MESSAGE_CONTROL + 1:
                 /* don't change read-only bit 8, and reserved 9-15 */
@@ -148,7 +148,7 @@ void     MSIPciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
                             {
                                 /* To ensure that we're no longer masked */
                                 pDev->config[uAddr] &= ~iBit;
-                                MSINotify(pDevIns, pDev, maskUpdated*8 + iBitNum);
+                                MsiNotify(pDevIns, pPciHlp, pDev, maskUpdated*8 + iBitNum);
                             }
                         }
                     }
@@ -161,7 +161,7 @@ void     MSIPciConfigWrite(PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
     }
 }
 
-uint32_t MSIPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len)
+uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
 
@@ -171,10 +171,10 @@ uint32_t MSIPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
     switch (len)
     {
         case 1:
-            rv = PCIDevGetByte(pDev, u32Address);
+            rv = PCIDevGetByte(pDev,  u32Address);
             break;
         case 2:
-            rv = PCIDevGetWord(pDev, u32Address);
+            rv = PCIDevGetWord(pDev,  u32Address);
             break;
         case 4:
             rv = PCIDevGetDWord(pDev, u32Address);
@@ -189,7 +189,7 @@ uint32_t MSIPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
 }
 
 
-int MSIInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
+int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 {
     uint16_t   cVectors    = pMsiReg->cVectors;
     uint8_t    iCapOffset  = pMsiReg->iCapOffset;
@@ -224,12 +224,12 @@ int MSIInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 }
 
 
-bool     MSIIsEnabled(PPCIDEVICE pDev)
+bool     MsiIsEnabled(PPCIDEVICE pDev)
 {
     return PCIIsMsiCapable(pDev) && msiIsEnabled(pDev);
 }
 
-void MSINotify(PPDMDEVINS pDevIns, PPCIDEVICE pDev, int iVector)
+void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector)
 {
     Log2(("MSINotify: %d\n", iVector));
 
@@ -249,5 +249,6 @@ void MSINotify(PPDMDEVINS pDevIns, PPCIDEVICE pDev, int iVector)
 
     *upPending &= ~(1<<iVector);
 
-    PDMDevHlpPhysWrite(pDevIns, GCAddr, &u32Value, sizeof(u32Value));
+    Assert(pPciHlp->pfnIoApicSendMsi != NULL);
+    pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value);
 }
