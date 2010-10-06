@@ -5826,7 +5826,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
  * @note Locks this object for writing.
  */
 HRESULT Console::setMachineState(MachineState_T aMachineState,
-                                  bool aUpdateServer /* = true */)
+                                 bool aUpdateServer /* = true */)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
