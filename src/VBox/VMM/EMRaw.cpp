@@ -1540,6 +1540,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
             RTThreadSleep(2);
             STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
+            rc = VINF_SUCCESS;
         }
         STAM_PROFILE_ADV_START(&pVCpu->em.s.StatRAWTail, d);
 
