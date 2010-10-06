@@ -23,4 +23,6 @@
 VMMR3DECL(int)  EMR3NotifyResume(PVM pVM);
 VMMR3DECL(int)  EMR3NotifySuspend(PVM pVM);
 
+VMMR3DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu);
+
 #endif

@@ -54,6 +54,7 @@
 #include <VBox/hwaccm.h>
 #include <VBox/patm.h>
 #include "EMInternal.h"
+#include "include/internal/em.h"
 #include <VBox/vm.h>
 #include <VBox/cpumdis.h>
 #include <VBox/dis.h>
@@ -959,10 +960,19 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         /*
          * Execute REM.
          */
-        STAM_PROFILE_START(&pVCpu->em.s.StatREMExec, c);
-        rc = REMR3Run(pVM, pVCpu);
-        STAM_PROFILE_STOP(&pVCpu->em.s.StatREMExec, c);
-
+        if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
+        {
+            STAM_PROFILE_START(&pVCpu->em.s.StatREMExec, c);
+            rc = REMR3Run(pVM, pVCpu);
+            STAM_PROFILE_STOP(&pVCpu->em.s.StatREMExec, c);
+        }
+        else
+        {
+            /* Give up this time slice; virtual time continues */
+            STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
+            RTThreadSleep(2);
+            STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
+        }
 
         /*
          * Deal with high priority post execution FFs before doing anything
@@ -1674,7 +1684,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
  * @param   pVCpu       The VMCPU to operate on.
  *
  */
-bool emR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
+VMMR3DECL(bool) EMR3IsExecutionAllowed(PVM pVM, PVMCPU pVCpu)
 {
     uint64_t u64UserTime, u64KernelTime;
 
@@ -2000,55 +2010,22 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute raw.
                  */
                 case EMSTATE_RAW:
-                    if (emR3IsExecutionAllowed(pVM, pVCpu))
-                    {
-                        rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
-                    }
-                    else
-                    {
-                        /* Give up this time slice; virtual time continues */
-                        STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
-                        RTThreadSleep(10);
-                        STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
-                        rc = VINF_SUCCESS;
-                    }
+                    rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
                     break;
 
                 /*
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HWACC:
-                    if (emR3IsExecutionAllowed(pVM, pVCpu))
-                    {
-                        rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
-                    }
-                    else
-                    {
-                        /* Give up this time slice; virtual time continues */
-                        STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
-                        RTThreadSleep(10);
-                        STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
-                        rc = VINF_SUCCESS;
-                    }
+                    rc = emR3HwAccExecute(pVM, pVCpu, &fFFDone);
                     break;
 
                 /*
                  * Execute recompiled.
                  */
                 case EMSTATE_REM:
-                    if (emR3IsExecutionAllowed(pVM, pVCpu))
-                    {
-                        rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
-                        Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
-                    }
-                    else
-                    {
-                        /* Give up this time slice; virtual time continues */
-                        STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatCapped, u);
-                        RTThreadSleep(10);
-                        STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
-                        rc = VINF_SUCCESS;
-                    }
+                    rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
+                    Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
                     break;
 
                 /*
