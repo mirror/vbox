@@ -81,6 +81,9 @@ typedef struct _crclient {
     CRMuralInfo *currentMural;
     GLint windowList[CR_MAX_WINDOWS];
     GLint contextList[CR_MAX_CONTEXTS];
+#ifdef VBOXCR_LOGFPS
+    uint64_t timeUsed;
+#endif
 } CRClient;
 
 typedef struct CRPoly_t {
