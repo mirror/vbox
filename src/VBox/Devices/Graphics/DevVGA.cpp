@@ -1793,6 +1793,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
     int cx_min, cx_max, linesize, x_incr;
+    int cx_min_upd, cx_max_upd, cy_start;
     uint32_t offset, fgcol, bgcol, v, cursor_offset;
     uint8_t *d1, *d, *src, *s1, *dest, *cursor_ptr;
     const uint8_t *font_ptr, *font_base[2];
@@ -1941,6 +1942,9 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
     linesize = s->pDrv->cbScanline;
 #endif /* VBOX */
     ch_attr_ptr = s->last_ch_attr;
+    cy_start = -1;
+    cx_max_upd = -1;
+    cx_min_upd = width;
 
     for(cy = 0; cy < height; cy++) {
         d1 = dest;
@@ -2013,13 +2017,27 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
                        (cx_max - cx_min + 1) * cw, cheight);
         }
 #else
-        if (cx_max != -1)
-            s->pDrv->pfnUpdateRect(s->pDrv, cx_min * cw, cy * cheight, (cx_max - cx_min + 1) * cw, cheight);
+        if (cx_max != -1) {
+            /* Keep track of the bounding rectangle for updates. */
+            if (cy_start == -1)
+                cy_start = cy;
+            if (cx_min_upd > cx_min)
+                cx_min_upd = cx_min;
+            if (cx_max_upd < cx_max)
+                cx_max_upd = cx_max;
+        } else if (cy_start >= 0)
+            /* Flush updates to display. */
+            s->pDrv->pfnUpdateRect(s->pDrv, cx_min_upd * cw, cy_start * cheight,
+                                   (cx_max_upd - cx_min_upd + 1) * cw, (cy - cy_start) * cheight);
 #endif
         dest += linesize * cheight;
         s1 += line_offset;
     }
 #ifdef VBOX
+    if (cy_start >= 0)
+        /* Flush any remaining changes to display. */
+        s->pDrv->pfnUpdateRect(s->pDrv, cx_min_upd * cw, cy_start * cheight,
+                               (cx_max_upd - cx_min_upd + 1) * cw, (cy - cy_start) * cheight);
         return VINF_SUCCESS;
 #endif /* VBOX */
 }
