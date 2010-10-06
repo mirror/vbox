@@ -1118,11 +1118,16 @@ none     /proc/bus/usb     usbfs      devgid=85,devmode=664    0    0</screen>Re
     <sect2>
       <title>VM aborts with out of memory errors on Solaris 10 hosts</title>
 
-      <para>Solaris 10 hosts (bug 1225025) requires swap space equal to, or
+      <para>32-bit Solaris 10 hosts (bug 1225025) require swap space equal to, or
       greater than the host's physical memory size. For example, 8 GB physical
       memory would require at least 8 GB swap. This can be configured during a
       Solaris 10 install by choosing a 'custom install' and changing the
       default partitions.</para>
+
+      <note>
+        <para>This restriction applies only to 32-bit Solaris hosts, 64-bit
+          hosts are not affected!</para>
+      </note>
 
       <para>For existing Solaris 10 installs, an additional swap image needs
       to be mounted and used as swap. Hence if you have 1 GB swap and 8 GB of
