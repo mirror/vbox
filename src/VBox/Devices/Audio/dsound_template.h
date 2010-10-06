@@ -215,7 +215,7 @@ static int dsound_init_out (HWVoiceOut *hw, audsettings_t *as)
         NULL
         );
 #else
-    bd.dwFlags = DSBCAPS_STICKYFOCUS | DSBCAPS_GETCURRENTPOSITION2;
+    bd.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_GETCURRENTPOSITION2;
     bd.dwBufferBytes = conf.bufsize_out;
     hr = IDirectSound_CreateSoundBuffer (
         s->dsound,
