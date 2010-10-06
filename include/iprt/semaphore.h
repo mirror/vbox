@@ -47,6 +47,55 @@ RT_C_DECLS_BEGIN
  */
 
 
+/** @name Generic Semaphore Wait Flags.
+ *
+ * @remarks Exactly one of RTSEMWAIT_FLAGS_RELATIVE and
+ *          RTSEMWAIT_FLAGS_ABSOLUTE must be set, unless
+ *          RTSEMWAIT_FLAGS_INDEFINITE is used.
+ *
+ *          Exactly one of RTSEMWAIT_FLAGS_NANOSECS and
+ *          RTSEMWAIT_FLAGS_MILLISECS must be set, unless
+ *          RTSEMWAIT_FLAGS_INDEFINITE is used.
+ *
+ *          Exactly one of RTSEMWAIT_FLAGS_RESUME and RTSEMWAIT_FLAGS_NORESUME
+ *          must be set.
+ *
+ *          The interruptible vs resume stuff is ring-0 vs ring-3 semantics.
+ *
+ * @{ */
+/** The timeout is relative. */
+#define RTSEMWAIT_FLAGS_RELATIVE            RT_BIT_32(0)
+/** The timeout is absolute. */
+#define RTSEMWAIT_FLAGS_ABSOLUTE            RT_BIT_32(1)
+/** The timeout is specified in nanoseconds. */
+#define RTSEMWAIT_FLAGS_NANOSECS            RT_BIT_32(2)
+/** The timeout is specified in milliseconds. */
+#define RTSEMWAIT_FLAGS_MILLISECS           RT_BIT_32(3)
+/** Indefinite wait.
+ * The relative/absolute and nano-/millisecond flags are ignored. */
+#define RTSEMWAIT_FLAGS_INDEFINITE          RT_BIT_32(4)
+/** Mask covering the time related bits. */
+#define RTSEMWAIT_FLAGS_TIME_MASK           UINT32_C(0x0000001f)
+
+/** Interruptible wait. */
+#define RTSEMWAIT_FLAGS_INTERRUPTIBLE       RT_BIT_32(5)
+/** No automatic resume, same as interruptible. */
+#define RTSEMWAIT_FLAGS_NORESUME            RTSEMWAIT_FLAGS_INTERRUPTIBLE
+/** Uninterruptible wait. */
+#define RTSEMWAIT_FLAGS_UNINTERRUPTIBLE     RT_BIT_32(6)
+/** Resume on interrupt, same as uninterruptible. */
+#define RTSEMWAIT_FLAGS_RESUME              RTSEMWAIT_FLAGS_UNINTERRUPTIBLE
+
+/** Macro for validate the flags. */
+#define RTSEMWAIT_FLAGS_ARE_VALID(fFlags) \
+    (   !((fFlags) & UINT32_C(0xffffff80)) \
+     &&  (  ((fFlags) & RTSEMWAIT_FLAGS_INDEFINITE) \
+          ? ( (((fFlags) & UINT32_C(0x20))) ^ (((fFlags) >> 1) & UINT32_C(0x20)) ) == UINT32_C(0x20) \
+          : ( (((fFlags) & UINT32_C(0x25))) ^ (((fFlags) >> 1) & UINT32_C(0x25)) ) == UINT32_C(0x25) ))
+/** @}  */
+
+
+
 /** @defgroup grp_rt_sems_event    RTSemEvent - Single Release Event Semaphores
  *
  * Event semaphores can be used for inter-thread communication when one thread
@@ -93,7 +142,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
  * Destroy an event semaphore.
  *
  * @returns iprt status code.
- * @param   hEventSem           Handle of the event sempahore.  NIL_RTSEMEVENT
+ * @param   hEventSem           Handle of the event semaphore.  NIL_RTSEMEVENT
  *                              is quitely ignored (VINF_SUCCESS).
  */
 RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem);
@@ -137,6 +186,39 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies);
  * @param   cMillies            Number of milliseconds to wait.
  */
 RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies);
+
+/**
+ * Extended API for waiting on an event semaphore to be signaled.
+ *
+ * @returns IPRT status code.
+ * @param   hEventSem           The event semaphore to wait on.
+ * @param   fFlags              Combination of RTSEMWAIT_FLAGS_XXX.
+ * @param   uTimeout            The timeout, ignored if
+ *                              RTSEMWAIT_FLAGS_INDEFINITE is set in @a flags.
+ *                              Whether this is absolute or relative,
+ *                              milliseconds or nanoseconds depends on the @a
+ *                              fFlags value.  Do not pass RT_INDEFINITE_WAIT
+ *                              here, use RTSEMWAIT_FLAGS_INDEFINITE instead.
+ */
+RTDECL(int)  RTSemEventWaitEx(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout);
+
+/**
+ * Debug version of RTSemEventWaitEx that tracks the location.
+ *
+ * @returns IPRT status code, see RTSemEventWaitEx.
+ * @param   hEventSem           The event semaphore to wait on.
+ * @param   fFlags              See RTSemEventWaitEx.
+ * @param   uTimeout            See RTSemEventWaitEx.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The function where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout,
+                                   RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Sets the signaller thread to one specific thread.
@@ -221,7 +303,7 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
  * Destroy an event multi semaphore.
  *
  * @returns iprt status code.
- * @param   hEventMultiSem      The multiple release event sempahore.  NIL is
+ * @param   hEventMultiSem      The multiple release event semaphore.  NIL is
  *                              quietly ignored (VINF_SUCCESS).
  */
 RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem);
@@ -230,7 +312,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem);
  * Signal an event multi semaphore.
  *
  * @returns iprt status code.
- * @param   hEventMultiSem      The multiple release event sempahore.
+ * @param   hEventMultiSem      The multiple release event semaphore.
  *
  * @remarks ring-0: This works when preemption is disabled.  However it is
  *          system specific whether it works in interrupt context or with
@@ -242,7 +324,7 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem);
  * Resets an event multi semaphore to non-signaled state.
  *
  * @returns iprt status code.
- * @param   hEventMultiSem      The multiple release event sempahore.
+ * @param   hEventMultiSem      The multiple release event semaphore.
  */
 RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem);
 
@@ -254,11 +336,10 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem);
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
- * @param   hEventMultiSem      The multiple release event sempahore.
+ * @param   hEventMultiSem      The multiple release event semaphore.
  * @param   cMillies            Number of milliseconds to wait.
  */
 RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies);
-
 
 /**
  * Wait for the event multi semaphore to be signaled, return on interruption.
@@ -266,10 +347,44 @@ RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cM
  * This function will not resume the wait if interrupted.
  *
  * @returns iprt status code.
- * @param   hEventMultiSem      The multiple release event sempahore.
+ * @param   hEventMultiSem      The multiple release event semaphore.
  * @param   cMillies            Number of milliseconds to wait.
  */
 RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies);
+
+/**
+ * Extended API for waiting on an event semaphore to be signaled.
+ *
+ * @returns IPRT status code.
+ * @param   hEventMultiSem      The multiple release event semaphore to wait
+ *                              on.
+ * @param   fFlags              Combination of the RTSEMWAIT_FLAGS_XXX.
+ * @param   uTimeout            The timeout, ignored if
+ *                              RTSEMWAIT_FLAGS_INDEFINITE is set in @a flags.
+ *                              Whether this is absolute or relative,
+ *                              milliseconds or nanoseconds depends on the @a
+ *                              fFlags value.  Do not pass RT_INDEFINITE_WAIT
+ *                              here, use RTSEMWAIT_FLAGS_INDEFINITE instead.
+ */
+RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout);
+
+/**
+ * Debug version of RTSemEventMultiWaitEx that tracks the location.
+
+ * @returns IPRT status code, see RTSemEventMultiWaitEx.
+ * @param   hEventMultiSem      The multiple release event semaphore handle.
+ * @param   fFlags              See RTSemEventMultiWaitEx.
+ * @param   uTimeout            See RTSemEventMultiWaitEx.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The function where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Sets the signaller thread to one specific thread.
@@ -369,7 +484,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem);
 /**
  * Changes the lock validator sub-class of the mutex semaphore.
  *
- * It is recommended to try make sure that nobody is using this sempahore while
+ * It is recommended to try make sure that nobody is using this semaphore while
  * changing the value.
  *
  * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
@@ -424,7 +539,7 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMilli
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
@@ -440,10 +555,47 @@ RTDECL(int)  RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies,
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 RTDECL(int)  RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
+ * Request ownership of a mutex semaphore, extended edition.
+ *
+ * The same thread may request a mutex semaphore multiple times,
+ * a nested counter is kept to make sure it's released on the right
+ * RTSemMutexRelease() call.
+ *
+ * @returns iprt status code.
+ * @param   hMutexSem           The mutex semaphore to request ownership over.
+ * @param   fFlags              Combination of the RTSEMWAIT_FLAGS_XXX.
+ * @param   uTimeout            The timeout, ignored if
+ *                              RTSEMWAIT_FLAGS_INDEFINITE is set in @a flags.
+ *                              Whether this is absolute or relative,
+ *                              milliseconds or nanoseconds depends on the @a
+ *                              fFlags value.  Do not pass RT_INDEFINITE_WAIT
+ *                              here, use RTSEMWAIT_FLAGS_INDEFINITE instead.
+ */
+RTDECL(int)  RTSemMutexRequestEx(RTSEMMUTEX hMutexSem, uint32_t fFlags, uint64_t uTimeout);
+
+/**
+ * Debug version of RTSemMutexRequestEx that tracks the location.
+ *
+ * @returns iprt status code.
+ * @param   hMutexSem           The mutex semaphore to request ownership over.
+ * @param   fFlags              See RTSemMutexRequestEx.
+ * @param   uTimeout            See RTSemMutexRequestEx.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The function where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemMutexRequestExDebug(RTSEMMUTEX hMutexSem, uint32_t fFlags, uint64_t uTimeout,
+                                      RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Release the ownership of a mutex semaphore.
@@ -466,11 +618,13 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
 /* Strict build: Remap the two request calls to the debug versions. */
 #ifdef RT_STRICT
 # ifdef ___iprt_asm_h
-#  define RTSemMutexRequest(pCritSect, cMillies)            RTSemMutexRequestDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define RTSemMutexRequestNoResume(pCritSect, cMillies)    RTSemMutexRequestNoResumeDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemMutexRequest(hMutexSem, cMillies)            RTSemMutexRequestDebug((hMutexSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemMutexRequestNoResume(hMutexSem, cMillies)    RTSemMutexRequestNoResumeDebug((hMutexSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemMutexRequestEx(hMutexSem, fFlags, uTimeout)  RTSemMutexRequestExDebug((hMutexSem), (fFlags), (uTimeout), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 # else
-#  define RTSemMutexRequest(pCritSect, cMillies)            RTSemMutexRequestDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
-#  define RTSemMutexRequestNoResume(pCritSect, cMillies)    RTSemMutexRequestNoResumeDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+#  define RTSemMutexRequest(hMutexSem, cMillies)            RTSemMutexRequestDebug((hMutexSem), (cMillies), 0, RT_SRC_POS)
+#  define RTSemMutexRequestNoResume(hMutexSem, cMillies)    RTSemMutexRequestNoResumeDebug((hMutexSem), (cMillies), 0, RT_SRC_POS)
+#  define RTSemMutexRequestEx(hMutexSem, fFlags, uTimeout)  RTSemMutexRequestExDebug((hMutexSem), (fFlags), (uTimeout), 0, RT_SRC_POS)
 # endif
 #endif
 
@@ -690,7 +844,7 @@ RTDECL(int)   RTSemRWDestroy(RTSEMRW hRWSem);
 /**
  * Changes the lock validator sub-class of the read/write semaphore.
  *
- * It is recommended to try make sure that nobody is using this sempahore while
+ * It is recommended to try make sure that nobody is using this semaphore while
  * changing the value.
  *
  * @returns The old sub-class.  RTLOCKVAL_SUB_CLASS_INVALID is returns if the
@@ -742,7 +896,7 @@ RTDECL(int)   RTSemRWRequestReadNoResume(RTSEMRW hRWSem, RTMSINTERVAL cMillies);
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 RTDECL(int)   RTSemRWRequestReadDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
@@ -762,10 +916,54 @@ RTDECL(int)   RTSemRWRequestReadDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTH
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 RTDECL(int)   RTSemRWRequestReadNoResumeDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
+ * Request read access to a read/write semaphore, extended edition.
+ *
+ * @returns iprt status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPT if the wait was interrupted.
+ * @retval  VERR_TIMEOUT if the wait timed out.
+ * @retval  VERR_INVALID_HANDLE if hRWSem is invalid.
+ *
+ * @param   hRWSem              Handle to the read/write semaphore.
+ * @param   fFlags              Combination of the RTSEMWAIT_FLAGS_XXX.
+ * @param   uTimeout            The timeout, ignored if
+ *                              RTSEMWAIT_FLAGS_INDEFINITE is set in @a flags.
+ *                              Whether this is absolute or relative,
+ *                              milliseconds or nanoseconds depends on the @a
+ *                              fFlags value.  Do not pass RT_INDEFINITE_WAIT
+ *                              here, use RTSEMWAIT_FLAGS_INDEFINITE instead.
+ */
+RTDECL(int)   RTSemRWRequestReadEx(RTSEMRW hRWSem, uint32_t fFlags, uint64_t uTimeout);
+
+
+/**
+ * Debug version of RTSemRWRequestReadEx that tracks the location.
+ *
+ * @returns iprt status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPT if the wait was interrupted.
+ * @retval  VERR_TIMEOUT if the wait timed out.
+ * @retval  VERR_INVALID_HANDLE if hRWSem is invalid.
+ *
+ * @param   hRWSem              Handle to the read/write semaphore.
+ * @param   fFlags              See RTSemRWRequestReadEx.
+ * @param   uTimeout            See RTSemRWRequestReadEx.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The function where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)   RTSemRWRequestReadExDebug(RTSEMRW hRWSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Release read access to a read/write semaphore.
@@ -815,7 +1013,7 @@ RTDECL(int)   RTSemRWRequestWriteNoResume(RTSEMRW hRWSem, RTMSINTERVAL cMillies)
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 RTDECL(int)  RTSemRWRequestWriteDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
@@ -831,10 +1029,50 @@ RTDECL(int)  RTSemRWRequestWriteDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTH
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 RTDECL(int)  RTSemRWRequestWriteNoResumeDebug(RTSEMRW hRWSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
+ * Request write access to a read/write semaphore, extended edition.
+ *
+ * @returns iprt status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INTERRUPTED if the wait was interrupted.
+ * @retval  VERR_TIMEOUT if the wait timed out.
+ * @retval  VERR_DEADLOCK if the caller owned the read lock.  Do not depend on
+ *          this as it is implementation specific.
+ * @retval  VERR_INVALID_HANDLE if hRWSem is invalid.
+ *
+ * @param   hRWSem              Handle to the read/write semaphore.
+ * @param   fFlags              Combination of the RTSEMWAIT_FLAGS_XXX.
+ * @param   uTimeout            The timeout, ignored if
+ *                              RTSEMWAIT_FLAGS_INDEFINITE is set in @a flags.
+ *                              Whether this is absolute or relative,
+ *                              milliseconds or nanoseconds depends on the @a
+ *                              fFlags value.  Do not pass RT_INDEFINITE_WAIT
+ *                              here, use RTSEMWAIT_FLAGS_INDEFINITE instead.
+ */
+RTDECL(int)   RTSemRWRequestWriteEx(RTSEMRW hRWSem, uint32_t fFlags, uint64_t uTimeout);
+
+/**
+ * Debug version of RTSemRWRequestWriteEx that tracks the location.
+ *
+ * @returns IPRT status code, see RTSemRWRequestWriteEx.
+ * @param   hRWSem              Handle to the read/write semaphore.
+ * @param   fFlags              See RTSemRWRequestWriteEx.
+ * @param   uTimeout            See RTSemRWRequestWriteEx.
+ * @param   uId                 Some kind of locking location ID.  Typically a
+ *                              return address up the stack.  Optional (0).
+ * @param   pszFile             The file where the lock is being acquired from.
+ *                              Optional.
+ * @param   iLine               The line number in that file.  Optional (0).
+ * @param   pszFunction         The function where the lock is being acquired
+ *                              from.  Optional.
+ */
+RTDECL(int)  RTSemRWRequestWriteExDebug(RTSEMRW hRWSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
  * Release write access to a read/write semaphore.
@@ -855,7 +1093,7 @@ RTDECL(int)   RTSemRWReleaseWrite(RTSEMRW hRWSem);
 RTDECL(bool)  RTSemRWIsWriteOwner(RTSEMRW hRWSem);
 
 /**
- * Checks if the caller is one of the read owners of the sempahore.
+ * Checks if the caller is one of the read owners of the semaphore.
  *
  * @note    !CAUTION!  This API doesn't work reliably if lock validation isn't
  *          enabled. Meaning, the answer is not trustworhty unless
@@ -905,15 +1143,17 @@ RTDECL(uint32_t) RTSemRWGetReadCount(RTSEMRW hRWSem);
 /* Strict build: Remap the four request calls to the debug versions. */
 #ifdef RT_STRICT
 # ifdef ___iprt_asm_h
-#  define RTSemRWRequestRead(pCritSect, cMillies)           RTSemRWRequestReadDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define RTSemRWRequestReadNoResume(pCritSect, cMillies)   RTSemRWRequestReadNoResumeDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define RTSemRWRequestWrite(pCritSect, cMillies)          RTSemRWRequestWriteDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
-#  define RTSemRWRequestWriteNoResume(pCritSect, cMillies)  RTSemRWRequestWriteNoResumeDebug((pCritSect), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestRead(hRWSem, cMillies)              RTSemRWRequestReadDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestReadNoResume(hRWSem, cMillies)      RTSemRWRequestReadNoResumeDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestWrite(hRWSem, cMillies)             RTSemRWRequestWriteDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestWriteNoResume(hRWSem, cMillies)     RTSemRWRequestWriteNoResumeDebug((hRWSem), (cMillies), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
+#  define RTSemRWRequestWriteEx(hRWSem, fFlags, uTimeout)   RTSemRWRequestWriteExDebug((hRWSem), (fFlags), (uTimeout), (uintptr_t)ASMReturnAddress(), RT_SRC_POS)
 # else
-#  define RTSemRWRequestRead(pCritSect, cMillies)           RTSemRWRequestReadDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
-#  define RTSemRWRequestReadNoResume(pCritSect, cMillies)   RTSemRWRequestReadNoResumeDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
-#  define RTSemRWRequestWrite(pCritSect, cMillies)          RTSemRWRequestWriteDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
-#  define RTSemRWRequestWriteNoResume(pCritSect, cMillies)  RTSemRWRequestWriteNoResumeDebug((pCritSect), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestRead(hRWSem, cMillies)              RTSemRWRequestReadDebug((hRWSem), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestReadNoResume(hRWSem, cMillies)      RTSemRWRequestReadNoResumeDebug((hRWSem), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestWrite(hRWSem, cMillies)             RTSemRWRequestWriteDebug((hRWSem), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestWriteNoResume(hRWSem, cMillies)     RTSemRWRequestWriteNoResumeDebug((hRWSem), (cMillies), 0, RT_SRC_POS)
+#  define RTSemRWRequestWriteEx(hRWSem, fFlags, uTimeout)   RTSemRWRequestWriteExDebug((hRWSem), (fFlags), (uTimeout), 0, RT_SRC_POS)
 # endif
 #endif
 
