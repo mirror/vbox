@@ -1979,6 +1979,13 @@ static struct wined3d_context *findThreadContextForSwapChain(IWineD3DSwapChain *
     }
 #endif
 
+#ifdef VBOX_WITH_WDDM
+    while (device->numContexts)
+    {
+        context_destroy(device, device->contexts[0]);
+    }
+#endif
+
     /* Create a new context for the thread */
     return swapchain_create_context_for_thread(swapchain);
 }

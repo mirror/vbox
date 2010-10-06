@@ -28,21 +28,74 @@
 
 #ifdef VBOX_WDDMDISP_WITH_PROFILE
 #include "VBoxDispProfile.h"
+
+/* uncomment to enable particular logging */
+#define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_ENABLE
+//#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_ENABLE
+
+#ifdef VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_ENABLE
 static VBoxDispProfileSet g_VBoxDispProfileDDI("D3D_DDI");
-//static BOOL g_VBoxDispPrifileDDIDumpAndReset = FALSE;
-#define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE() VBOXDISPPROFILE_FUNCTION_PROLOGUE(g_VBoxDispProfileDDI)
+#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE() VBOXDISPPROFILE_FUNCTION_LOGGER_DEFINE(g_VBoxDispProfileDDI)
+#define VBOXDDIROFILE_FUNCTION_LOGGER_DUMP() do {\
+        g_VBoxDispProfileDDI.dump(_pDev); \
+    } while (0)
+#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_RESET() do {\
+        g_VBoxDispProfileDDI.resetEntries();\
+    } while (0)
+#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DISABLE_CURRENT() do {\
+        VBOXDISPPROFILE_FUNCTION_LOGGER_DISABLE_CURRENT();\
+    } while (0)
+
+
+#else
+#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE() do {} while(0)
+#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DUMP() do {} while(0)
+#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_RESET() do {} while(0)
+#define VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DISABLE_CURRENT() do {} while (0)
+#endif
+
+#ifdef VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_ENABLE
+static VBoxDispProfileFpsCounter g_VBoxDispFpsDDI(64);
+#define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_PROLOGUE() VBOXDISPPROFILE_STATISTIC_LOGGER_DEFINE(&g_VBoxDispFpsDDI)
+#define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_DISABLE_CURRENT() do {\
+        VBOXDISPPROFILE_STATISTIC_LOGGER_DISABLE_CURRENT();\
+    } while (0)
+#define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_REPORT_FRAME(_pDev) do { \
+        VBOXDISPPROFILE_STATISTIC_LOGGER_LOG_AND_DISABLE_CURRENT(); \
+        g_VBoxDispFpsDDI.ReportFrame(); \
+        if(!(g_VBoxDispFpsDDI.GetNumFrames() % 31)) \
+        { \
+            double fps = g_VBoxDispFpsDDI.GetFps(); \
+            double cps = g_VBoxDispFpsDDI.GetCps(); \
+            double tup = g_VBoxDispFpsDDI.GetTimeProcPercent(); \
+            VBOXDISPPROFILE_DUMP((_pDev, "fps: %f, cps: %.1f, host %.1f%%\n", fps, cps, tup)); \
+        } \
+    } while (0)
+#else
+#define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_PROLOGUE() do {} while(0)
+#define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_DISABLE_CURRENT() do {} while (0)
+#define VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_REPORT_FRAME(_pDev) do {} while (0)
+#endif
+
+#define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE() \
+        VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_PROLOGUE(); \
+        VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_PROLOGUE();
 
 #define VBOXDISPPROFILE_DDI_DUMPRESET(_pDev) do {\
-        AssertRelease(0); \
-        g_VBoxDispProfileDDI.dump(_pDev);\
-        g_VBoxDispProfileDDI.resetEntries();\
-        VBOXDISPPROFILE_FUNCTION_LOGGER_DISABLE_CURRENT();\
+        VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DUMP(); \
+        VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_RESET(); \
+        VBOXDISPPROFILE_DDI_FUNCTION_LOGGER_DISABLE_CURRENT();\
+    } while (0)
+
+#define VBOXDISPPROFILE_DDI_REPORT_FRAME(_pDev) do {\
+        VBOXDISPPROFILE_DDI_STATISTIC_LOGGER_REPORT_FRAME(_pDev); \
     } while (0)
 
 
 #else
 #define VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE() do {} while (0)
 #define VBOXDISPPROFILE_DDI_DUMPRESET(_pDev) do {} while (0)
+#define VBOXDISPPROFILE_DDI_REPORT_FRAME(_pDev) do {} while (0)
 #endif
 
 #ifdef VBOXDISPMP_TEST
@@ -5494,6 +5547,9 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
         hr = pDevice->RtCallbacks.pfnPresentCb(pDevice->hDevice, &DdiPresent);
         Assert(hr == S_OK);
     }
+
+    VBOXDISPPROFILE_DDI_REPORT_FRAME(pDevice);
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
