@@ -24,6 +24,10 @@
 #endif
 #include <iprt/assert.h>
 
+#ifdef VBOXCR_LOGFPS
+#include <iprt/timer.h>
+#endif
+
 /**
  * \mainpage CrServerLib
  *
@@ -379,6 +383,9 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
 {
     CRClient *pClient = NULL;
     int32_t i;
+#ifdef VBOXCR_LOGFPS
+    uint64_t tstart, tend;
+#endif
 
     /*crDebug("=>crServer: ClientWrite u32ClientID=%d", u32ClientID);*/
 
@@ -394,6 +401,10 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
     if (!pClient) return VERR_INVALID_PARAMETER;
 
     if (!pClient->conn->vMajor) return VERR_NOT_SUPPORTED;
+
+#ifdef VBOXCR_LOGFPS
+    tstart = RTTimeNanoTS();
+#endif
 
     CRASSERT(pBuffer);
 
@@ -451,6 +462,10 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
 
     CRASSERT(!pClient->conn->allow_redir_ptr || crNetNumMessages(pClient->conn)==0);
 
+#ifdef VBOXCR_LOGFPS
+    tend = RTTimeNanoTS();
+    pClient->timeUsed += tend-tstart;
+#endif
     /*crDebug("<=crServer: ClientWrite u32ClientID=%d", u32ClientID);*/
 
     return VINF_SUCCESS;
