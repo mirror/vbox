@@ -200,7 +200,7 @@ typedef struct VBOXWDDM_TARGET
 #endif
 
 #ifdef VBOX_WITH_HGSMI
-typedef struct HGSMI_GUEST_INFO
+typedef struct VBOXVIDEO_COMMON
 {
     BOOLEAN bHGSMI;                     /* Whether HGSMI is enabled. */
 
@@ -215,7 +215,7 @@ typedef struct HGSMI_GUEST_INFO
 
     /* The IO Port Number for guest commands. */
     RTIOPORT IOPortGuest;
-} HGSMI_GUEST_INFO, *PHGSMI_GUEST_INFO;
+} VBOXVIDEO_COMMON, *PVBOXVIDEO_COMMON;
 #endif
 
 typedef struct _DEVICE_EXTENSION
@@ -289,7 +289,7 @@ typedef struct _DEVICE_EXTENSION
 #endif /* !VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_HGSMI
-           HGSMI_GUEST_INFO hgsmiInfo;
+           VBOXVIDEO_COMMON hgsmiInfo;
 # ifndef VBOX_WITH_WDDM
            /* Video Port API dynamically picked up at runtime for binary backwards compatibility with older NT versions */
            VBOXVIDEOPORTPROCS VideoPortProcs;
@@ -343,7 +343,7 @@ typedef struct _DEVICE_EXTENSION
 #endif
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
-static inline PHGSMI_GUEST_INFO hgsmiFromDeviceExt(PDEVICE_EXTENSION pExt)
+static inline PVBOXVIDEO_COMMON commonFromDeviceExt(PDEVICE_EXTENSION pExt)
 {
 #ifndef VBOX_WITH_WDDM
     return &pExt->pPrimary->u.primary.hgsmiInfo;
@@ -797,12 +797,12 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOUR
 
 #endif
 
-void* vboxHGSMIBufferAlloc(PDEVICE_EXTENSION PrimaryExtension,
+void* vboxHGSMIBufferAlloc(PVBOXVIDEO_COMMON pCommon,
                          HGSMISIZE cbData,
                          uint8_t u8Ch,
                          uint16_t u16Op);
-void vboxHGSMIBufferFree (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer);
-int vboxHGSMIBufferSubmit (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer);
+void vboxHGSMIBufferFree (PVBOXVIDEO_COMMON pCommon, void *pvBuffer);
+int vboxHGSMIBufferSubmit (PVBOXVIDEO_COMMON pCommon, void *pvBuffer);
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtension,
         USHORT width, USHORT height, USHORT bpp
@@ -867,24 +867,24 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
 /*
  * Host and Guest port IO helpers.
  */
-DECLINLINE(void) VBoxHGSMIHostWrite(PHGSMI_GUEST_INFO pInfo, ULONG data)
+DECLINLINE(void) VBoxHGSMIHostWrite(PVBOXVIDEO_COMMON pCommon, ULONG data)
 {
-    VBoxVideoCmnPortWriteUlong((PULONG)pInfo->IOPortHost, data);
+    VBoxVideoCmnPortWriteUlong((PULONG)pCommon->IOPortHost, data);
 }
 
-DECLINLINE(ULONG) VBoxHGSMIHostRead(PHGSMI_GUEST_INFO pInfo)
+DECLINLINE(ULONG) VBoxHGSMIHostRead(PVBOXVIDEO_COMMON pCommon)
 {
-    return VBoxVideoCmnPortReadUlong((PULONG)pInfo->IOPortHost);
+    return VBoxVideoCmnPortReadUlong((PULONG)pCommon->IOPortHost);
 }
 
-DECLINLINE(void) VBoxHGSMIGuestWrite(PHGSMI_GUEST_INFO pInfo, ULONG data)
+DECLINLINE(void) VBoxHGSMIGuestWrite(PVBOXVIDEO_COMMON pCommon, ULONG data)
 {
-    VBoxVideoCmnPortWriteUlong((PULONG)pInfo->IOPortGuest, data);
+    VBoxVideoCmnPortWriteUlong((PULONG)pCommon->IOPortGuest, data);
 }
 
-DECLINLINE(ULONG) VBoxHGSMIGuestRead(PHGSMI_GUEST_INFO pInfo)
+DECLINLINE(ULONG) VBoxHGSMIGuestRead(PVBOXVIDEO_COMMON pCommon)
 {
-    return VBoxVideoCmnPortReadUlong((PULONG)pInfo->IOPortGuest);
+    return VBoxVideoCmnPortReadUlong((PULONG)pCommon->IOPortGuest);
 }
 
 BOOLEAN VBoxHGSMIIsSupported (PDEVICE_EXTENSION PrimaryExtension);
@@ -915,7 +915,7 @@ VOID VBoxVideoHGSMIDpc(
     IN PVOID  Context
     );
 
-void HGSMIClearIrq (PHGSMI_GUEST_INFO pInfo);
+void HGSMIClearIrq (PVBOXVIDEO_COMMON pCommon);
 
 #endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */
