@@ -152,6 +152,30 @@ static void benchmarkFileOpenClose(void)
 }
 
 
+static void benchmarkFileWriteByte(void)
+{
+    RTTestSub(g_hTest, "RTFileWrite(byte)");
+
+    RTFILE hFile;
+
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile, g_szTestFile1,
+                                     RTFILE_O_WRITE | RTFILE_O_DENY_NONE | RTFILE_O_CREATE_REPLACE
+                                     | (0655 << RTFILE_O_CREATE_MODE_SHIFT)),
+                          VINF_SUCCESS);
+    static const char   s_szContent[] = "0123456789abcdef";
+    uint32_t            offContent = 0;
+    int rc;;
+    RTTESTI_CHECK_RC(rc = RTFileWrite(hFile, &s_szContent[offContent++ % RT_ELEMENTS(s_szContent)], 1, NULL), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        TIME_OP(RTFileWrite(hFile, &s_szContent[offContent++ % RT_ELEMENTS(s_szContent)], 1, NULL), "RTFileWrite(byte)");
+    }
+    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+
+    RTTestSubDone(g_hTest);
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -168,6 +192,7 @@ int main(int argc, char **argv)
         { "--test-dir",     'd',    RTGETOPT_REQ_STRING },
     };
     bool fFileOpenCloseTest = true;
+    bool fFileWriteByteTest = true;
     bool fPathQueryInfoTest = true;
     //bool fFileTests = true;
     //bool fDirTests  = true;
@@ -224,10 +249,14 @@ int main(int argc, char **argv)
      */
     if (RTTestIErrorCount() == 0)
     {
+#if 1
         if (fPathQueryInfoTest)
             benchmarkPathQueryInfo();
         if (fFileOpenCloseTest)
             benchmarkFileOpenClose();
+#endif
+        if (fFileWriteByteTest)
+            benchmarkFileWriteByte();
         //if (fFileTests)
         //    benchmarkFile();
         //if (fDirTests)
