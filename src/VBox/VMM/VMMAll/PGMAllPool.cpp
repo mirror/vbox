@@ -4787,7 +4787,8 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, bool fFlush)
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD
                   || pPage->enmKind == PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD
-                  || pPage->enmKind == PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD,
+                  || pPage->enmKind == PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD
+                  || pPage->enmKind == PGMPOOLKIND_ROOT_NESTED,
                   ("Can't free the shadow CR3! (%RHp vs %RHp kind=%d\n", PGMGetHyperCR3(VMMGetCpu(pVM)), pPage->Core.Key, pPage->enmKind));
         Log(("pgmPoolFlushPage: current active shadow CR3, rejected. enmKind=%s idx=%d\n", pgmPoolPoolKindToStr(pPage->enmKind), pPage->idx));
         pgmUnlock(pVM);
