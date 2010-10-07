@@ -63,6 +63,12 @@ extern char **environ;
 static PRLock *_pr_vms_fork_lock = NULL;
 #endif
 
+#ifdef VBOX
+#include <iprt/err.h>
+#include <iprt/env.h>
+#include <iprt/process.h>
+#endif
+
 /*
  **********************************************************************
  *
@@ -178,7 +184,7 @@ ForkAndExec(
     int flags;
 #ifdef VMS
     char VMScurdir[FILENAME_MAX+1] = { '\0' } ;
-#endif	
+#endif
 
     process = PR_NEW(PRProcess);
     if (!process) {
@@ -530,6 +536,56 @@ _MD_CreateUnixProcess(
 
 #endif  /* _PR_SHARE_CLONES */
 
+#ifdef VBOX
+PRStatus
+_MD_CreateUnixProcessDetached(
+    const char *path,
+    char *const *argv,
+    char *const *envp,
+    const PRProcessAttr *attr)
+{
+    int vrc;
+    int nEnv, idx;
+    RTENV childEnv;
+    RTENV newEnv = RTENV_DEFAULT;
+
+    if (PR_CallOnce(&pr_wp.once, _MD_InitProcesses) == PR_FAILURE) {
+	    return PR_FAILURE;
+    }
+    /* this code doesn't support all attributes */
+    PR_ASSERT(!attr || !attr->currentDirectory);
+    PR_ASSERT(!attr || !attr->stdinFd);
+    PR_ASSERT(!attr || !attr->stdoutFd);
+    PR_ASSERT(!attr || !attr->stderrFd);
+    /* no custom environment, please */
+    PR_ASSERT(!envp);
+
+    childEnv = RTENV_DEFAULT;
+    if (attr && attr->fdInheritBuffer) {
+        vrc = RTEnvClone(&newEnv, childEnv);
+        if (RT_FAILURE(vrc))
+            return PR_FAILURE;
+        vrc = RTEnvPutEx(newEnv, attr->fdInheritBuffer);
+        if (RT_FAILURE(vrc))
+        {
+            RTEnvDestroy(newEnv);
+            return PR_FAILURE;
+        }
+        childEnv = newEnv;
+    }
+
+    vrc = RTProcCreate(path, (const char **)argv, childEnv,
+                       RTPROC_FLAGS_DETACHED, NULL);
+    if (newEnv != RTENV_DEFAULT) {
+        RTEnvDestroy(newEnv);
+    }
+    if (RT_SUCCESS(vrc))
+        return PR_SUCCESS;
+    else
+        return PR_FAILURE;
+}  /* _MD_CreateUnixProcessDetached */
+#endif
+
 /*
  * The pid table is a hashtable.
  *
@@ -687,7 +743,7 @@ static void WaitPidDaemonThread(void *unused)
             /*
              * waitpid() cannot return 0 because we did not invoke it
              * with the WNOHANG option.
-             */ 
+             */
 	    PR_ASSERT(0 != pid);
 
             /*
@@ -744,7 +800,7 @@ static void WaitPidDaemonThread(void *unused)
         }
 	PR_Lock(pr_wp.ml);
 #endif
-	    
+
         do {
             rv = read(pr_wp.pipefd[0], buf, sizeof(buf));
         } while (sizeof(buf) == rv || (-1 == rv && EINTR == errno));
