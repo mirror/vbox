@@ -21,7 +21,7 @@
 static int vboxVBVAInformHost (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO * pVbva, BOOL bEnable)
 {
     int rc = VERR_NO_MEMORY;
-    void *p = vboxHGSMIBufferAlloc (pDevExt,
+    void *p = vboxHGSMIBufferAlloc (commonFromDeviceExt(pDevExt),
                                   sizeof (VBVAENABLE_EX),
                                   HGSMI_CH_VBVA,
                                   VBVA_ENABLE);
@@ -42,7 +42,7 @@ static int vboxVBVAInformHost (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO * pVbva, 
         pEnable->u32Offset = (uint32_t)pVbva->offVBVA;
         pEnable->i32Result = VERR_NOT_SUPPORTED;
 
-        vboxHGSMIBufferSubmit (pDevExt, p);
+        vboxHGSMIBufferSubmit (commonFromDeviceExt(pDevExt), p);
 
         if (bEnable)
         {
@@ -52,7 +52,7 @@ static int vboxVBVAInformHost (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO * pVbva, 
         else
             rc = VINF_SUCCESS;
 
-        vboxHGSMIBufferFree (pDevExt, p);
+        vboxHGSMIBufferFree (commonFromDeviceExt(pDevExt), p);
     }
     return rc;
 }
@@ -150,7 +150,7 @@ static uint32_t vboxHwBufferAvail (const VBVABUFFER *pVBVA)
 static void vboxHwBufferFlush (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva)
 {
     /* Issue the flush command. */
-    void *p = vboxHGSMIBufferAlloc (pDevExt,
+    void *p = vboxHGSMIBufferAlloc (commonFromDeviceExt(pDevExt),
                               sizeof (VBVAFLUSH),
                               HGSMI_CH_VBVA,
                               VBVA_FLUSH);
@@ -165,9 +165,9 @@ static void vboxHwBufferFlush (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva)
 
         pFlush->u32Reserved = 0;
 
-        vboxHGSMIBufferSubmit (pDevExt, p);
+        vboxHGSMIBufferSubmit (commonFromDeviceExt(pDevExt), p);
 
-        vboxHGSMIBufferFree (pDevExt, p);
+        vboxHGSMIBufferFree (commonFromDeviceExt(pDevExt), p);
     }
 
     return;
