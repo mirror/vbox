@@ -196,6 +196,10 @@ struct PCNetState_st
     uint16_t                            aCSR[CSR_MAX_REG];
     uint16_t                            aBCR[BCR_MAX_RAP];
     uint16_t                            aMII[MII_MAX_REG];
+    /** Holds the bits which were really seen by the guest. Relevant are bits
+     * 8..14 (IDON, TINT, RINT, MERR, MISS, CERR, BABL). We don't allow the
+     * guest to clear any of these bits (by writing a ONE) before a bit was
+     * seen by the guest. */
     uint16_t                            u16CSR0LastSeenByGuest;
     uint16_t                            Alignment2[HC_ARCH_BITS == 32 ? 2 : 2];
     /** Last time we polled the queues */
@@ -2538,6 +2542,8 @@ static int pcnetAsyncTransmit(PCNetState *pThis, bool fOnWorkerThread)
                      */
                     tmd.tmd2.buff = tmd.tmd2.uflo = tmd.tmd1.err = 1;
                     pThis->aCSR[0] |= 0x0200;        /* set TINT */
+                    /* Don't allow the guest to clear TINT before reading it */
+                    pThis->u16CSR0LastSeenByGuest &= ~0x0200;
                     if (!CSR_DXSUFLO(pThis))         /* stop on xmit underflow */
                         pThis->aCSR[0] &= ~0x0010;   /* clear TXON */
                     pcnetTmdStorePassHost(pThis, &tmd, GCPhysPrevTmd);
@@ -2625,7 +2631,14 @@ static int pcnetAsyncTransmit(PCNetState *pThis, bool fOnWorkerThread)
     if (cFlushIrq)
     {
         STAM_COUNTER_INC(&pThis->aStatXmitFlush[RT_MIN(cFlushIrq, RT_ELEMENTS(pThis->aStatXmitFlush)) - 1]);
+        /* The WinXP PCnet driver has apparently a bug: It sets CSR0.TDMD _before_
+         * it clears CSR0.TINT. This can lead to a race where the driver clears
+         * CSR0.TINT right after it was set by the device. The driver waits until
+         * CSR0.TINT is set again but this will never happen. So prevent clearing
+         * this bit as long as the driver didn't read it. */
         pThis->aCSR[0] |= 0x0200;    /* set TINT */
+        /* Don't allow the guest to clear TINT before reading it */
+        pThis->u16CSR0LastSeenByGuest &= ~0x0200;
         pcnetUpdateIrq(pThis);
     }
 
