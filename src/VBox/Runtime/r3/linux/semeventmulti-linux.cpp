@@ -438,8 +438,5 @@ RTDECL(void) RTSemEventMultiRemoveSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTH
 #endif
 }
 
-#include "../../generic/RTSemEventMultiWait-2-ex-generic.cpp"
-#include "../../generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp"
-
 #endif /* glibc < 2.6 || IPRT_WITH_FUTEX_BASED_SEMS */
 
