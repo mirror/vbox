@@ -216,13 +216,14 @@ bool UIMachineViewScale::event(QEvent *pEvent)
             double yRatio = (double)scaledSize.height() / frameBuffer()->height();
             AssertMsg(contentsX() == 0, ("Thats can't be, else notify Dsen!\n"));
             AssertMsg(contentsY() == 0, ("Thats can't be, else notify Dsen!\n"));
+
             /* Make sure we update always a bigger rectangle than requested to
              * catch all rounding errors. (use 1 time the ratio factor and
              * round down on top/left, but round up for the width/height) */
-            viewport()->repaint((int)(pPaintEvent->x() * xRatio) - ((int)xRatio) - 1,
-                                (int)(pPaintEvent->y() * yRatio) - ((int)yRatio) - 1,
-                                (int)(pPaintEvent->width() * xRatio) + ((int)xRatio + 2) * 2,
-                                (int)(pPaintEvent->height() * yRatio) + ((int)yRatio + 2) * 2);
+            viewport()->update((int)(pPaintEvent->x() * xRatio) - ((int)xRatio) - 1,
+                               (int)(pPaintEvent->y() * yRatio) - ((int)yRatio) - 1,
+                               (int)(pPaintEvent->width() * xRatio) + ((int)xRatio + 2) * 2,
+                               (int)(pPaintEvent->height() * yRatio) + ((int)yRatio + 2) * 2);
             pEvent->accept();
             return true;
         }
