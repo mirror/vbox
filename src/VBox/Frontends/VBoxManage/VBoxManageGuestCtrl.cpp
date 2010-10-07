@@ -36,7 +36,11 @@
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
+#include <iprt/list.h>
+#include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -553,8 +557,544 @@ static void ctrlCopySignalHandler(int iSignal)
     ASMAtomicWriteBool(&g_fCopyCanceled, true);
 }
 
+#ifdef VBOX_WITH_COPYTOGUEST
+
+#define VBOX_ISO9660_MAX_SYSTEM_ID 32
+#define VBOX_ISO9660_MAX_VOLUME_ID 32
+#define VBOX_ISO9660_MAX_PUBLISHER_ID   128
+#define VBOX_ISO9660_MAX_VOLUME_ID   32
+#define VBOX_ISO9660_MAX_VOLUMESET_ID   128
+#define VBOX_ISO9660_MAX_PREPARER_ID   128
+#define VBOX_ISO9660_MAX_APPLICATION_ID   128
+#define VBOX_ISO9660_STANDARD_ID "CD001"
+#define VBOX_ISO9660_SECTOR_SIZE 2048
+
+#pragma pack(1)
+typedef struct VBoxISO9660DateShort
+{
+    uint8_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+    int8_t 	gmt_offset;
+} VBoxISO9660DateShort;
+
+typedef struct VBoxISO9660DateLong
+{
+    char year[4];
+    char month[2];
+    char day[2];
+    char hour[2];
+    char minute[2];
+    char second[2];
+    char hseconds[2];
+    int8_t gmt_offset;
+} VBoxISO9660DateLong;
+
+typedef struct VBoxISO9660DirRecord
+{
+	uint8_t record_length;
+	uint8_t extented_attr_length;
+	uint32_t extent_location;
+    uint32_t extent_location_big;
+	uint32_t extent_data_length; /* Number of bytes (file) / len (directory). */
+    uint32_t extent_data_length_big;
+    VBoxISO9660DateShort date;
+	uint8_t flags;
+	uint8_t interleave_unit_size;
+    uint8_t interleave_gap_size;
+	uint16_t volume_sequence_number;
+    uint16_t volume_sequence_number_big;
+	uint8_t name_len;
+    /* Starting here there will be the actual directory entry name
+     * and a padding of 1 byte if name_len is odd. */
+} VBoxISO9660DirRecord;
+
+typedef struct VBoxISO9660PriVolDesc
+{
+	uint8_t type;
+	char name_id[6];
+	uint8_t version;
+	char system_id[VBOX_ISO9660_MAX_SYSTEM_ID];
+	char volume_id[VBOX_ISO9660_MAX_VOLUME_ID];
+	uint8_t unused2[8];
+	uint32_t volume_space_size; /* Number of sectors, Little Endian. */
+	uint32_t volume_space_size_big; /* Number of sectors Big Endian. */
+    uint8_t unused3[32];
+	uint16_t volume_set_size;
+    uint16_t volume_set_size_big;
+    uint16_t volume_sequence_number;
+    uint16_t volume_sequence_number_big;
+    uint16_t logical_block_size; /* 2048. */
+    uint16_t logical_block_size_big;
+	uint32_t path_table_size; /* Size in bytes. */
+	uint32_t path_table_size_big; /* Size in bytes. */
+    uint32_t path_table_start_first;
+    uint32_t path_table_start_second;
+    uint32_t path_table_start_first_big;
+    uint32_t path_table_start_second_big;
+    VBoxISO9660DirRecord root_directory_record;
+    uint8_t directory_padding;
+    char volume_set_id[VBOX_ISO9660_MAX_VOLUMESET_ID];
+    char publisher_id[VBOX_ISO9660_MAX_PUBLISHER_ID];
+    char preparer_id[VBOX_ISO9660_MAX_PREPARER_ID];
+    char application_id[VBOX_ISO9660_MAX_APPLICATION_ID];
+    char copyright_file_id[37];
+    char abstract_file_id[37];
+    char bibliographic_file_id[37];
+    VBoxISO9660DateLong creation_date;
+    VBoxISO9660DateLong modification_date;
+    VBoxISO9660DateLong expiration_date;
+    VBoxISO9660DateLong effective_date;
+    uint8_t file_structure_version;
+    uint8_t unused4[1];
+    char application_data[512];
+    uint8_t unused5[653];
+} VBoxISO9660PriVolDesc;
+
+typedef struct VBoxISO9660PathTableHeader
+{
+    uint8_t length;
+    uint8_t extended_attr_sectors;
+    /** Sector of starting directory table. */
+    uint32_t sector_dir_table;
+    /** Index of parent directory (1 for the root). */
+    uint16_t parent_index;
+    /* Starting here there will be the name of the directory,
+     * specified by length above. */
+} VBoxISO9660PathTableHeader;
+
+typedef struct VBoxISO9660PathTableEntry
+{
+    char       *path;
+    char       *path_full;
+    VBoxISO9660PathTableHeader header;
+    RTLISTNODE  Node;
+} VBoxISO9660PathTableEntry;
+
+typedef struct VBoxISO9660File
+{
+    RTFILE file;
+    RTLISTNODE listPaths;
+    VBoxISO9660PriVolDesc priVolDesc;
+} VBoxISO9660File;
+#pragma pack()
+
+void rtISO9660DestroyPathCache(VBoxISO9660File *pFile)
+{
+    VBoxISO9660PathTableEntry *pNode = RTListNodeGetFirst(&pFile->listPaths, VBoxISO9660PathTableEntry, Node);
+    while (pNode)
+    {
+        VBoxISO9660PathTableEntry *pNext = RTListNodeGetNext(&pNode->Node, VBoxISO9660PathTableEntry, Node);
+        bool fLast = RTListNodeIsLast(&pFile->listPaths, &pNode->Node);
+
+        if (pNode->path)
+            RTStrFree(pNode->path);
+        if (pNode->path_full)
+            RTStrFree(pNode->path_full);
+        RTListNodeRemove(&pNode->Node);
+        RTMemFree(pNode);
+
+        if (fLast)
+            break;
+
+        pNode = pNext;
+    }
+}
+
+void RTISO9660Close(VBoxISO9660File *pFile)
+{
+    if (pFile)
+    {
+        rtISO9660DestroyPathCache(pFile);
+        RTFileClose(pFile->file);
+    }
+}
+
+int rtISO9660AddToPathCache(PRTLISTNODE pList, const char *pszPath,
+                            VBoxISO9660PathTableHeader *pHeader)
+{
+    AssertPtrReturn(pList, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pHeader, VERR_INVALID_PARAMETER);
+
+    VBoxISO9660PathTableEntry *pNode = (VBoxISO9660PathTableEntry*)RTMemAlloc(sizeof(VBoxISO9660PathTableEntry));
+    if (pNode == NULL)
+        return VERR_NO_MEMORY;
+
+    pNode->path = NULL;
+    if (RT_SUCCESS(RTStrAAppend(&pNode->path, pszPath)))
+    {
+        memcpy((VBoxISO9660PathTableHeader*)&pNode->header,
+               (VBoxISO9660PathTableHeader*)pHeader, sizeof(pNode->header));
+
+        pNode->path_full = NULL;
+        pNode->Node.pPrev = NULL;
+        pNode->Node.pNext = NULL;
+        RTListAppend(pList, &pNode->Node);
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
+}
+
+int rtISO9660GetParentPathSub(PRTLISTNODE pList, VBoxISO9660PathTableEntry *pNode,
+                              char *pszPathNode, char **ppszPath)
+{
+    int rc = VINF_SUCCESS;
+    if (pNode->header.parent_index > 1)
+    {
+        uint16_t idx = 1;
+        VBoxISO9660PathTableEntry *pNodeParent = RTListNodeGetFirst(pList, VBoxISO9660PathTableEntry, Node);
+        while (idx++ < pNode->header.parent_index)
+            pNodeParent =  RTListNodeGetNext(&pNodeParent->Node, VBoxISO9660PathTableEntry, Node);
+        char *pszPath;
+        if (RTStrAPrintf(&pszPath, "%s/%s", pNodeParent->path, pszPathNode))
+        {
+            rc = rtISO9660GetParentPathSub(pList, pNodeParent, pszPath, ppszPath);
+            RTStrFree(pszPath);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+    {
+        char *pszPath = RTStrDup(pszPathNode);
+        *ppszPath = pszPath;
+    }
+    return rc;
+}
+
+/* Is a *flat* structure! */
+int rtISO9660UpdatePathCache(VBoxISO9660File *pFile)
+{
+    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
+    rtISO9660DestroyPathCache(pFile);
+
+    RTListInit(&pFile->listPaths);
+
+    /* Seek to path tables. */
+    int rc = VINF_SUCCESS;
+    Assert(pFile->priVolDesc.path_table_start_first > 16);
+    uint64_t uTableStart = (pFile->priVolDesc.path_table_start_first * VBOX_ISO9660_SECTOR_SIZE);
+    Assert(uTableStart % VBOX_ISO9660_SECTOR_SIZE == 0); /* Make sure it's aligned. */
+    if (RTFileTell(pFile->file) != uTableStart)
+        rc = RTFileSeek(pFile->file, uTableStart, RTFILE_SEEK_BEGIN, &uTableStart);
+
+    /*
+     * Since this is a sequential format, for performance it's best to read the
+     * complete path table (every entry can have its own level (directory depth) first
+     * and the actual directories of the path table afterwards.
+     */
+
+    /* Read in the path table ... */
+    uint32_t cbLeft = pFile->priVolDesc.path_table_size;
+    VBoxISO9660PathTableHeader header;
+    while ((cbLeft > 0) && RT_SUCCESS(rc))
+    {
+        size_t cbRead;
+        rc = RTFileRead(pFile->file, (VBoxISO9660PathTableHeader*)&header, sizeof(VBoxISO9660PathTableHeader), &cbRead);
+        if (RT_FAILURE(rc))
+            break;
+        cbLeft -= cbRead;
+        if (header.length)
+        {
+            Assert(cbLeft >= header.length);
+            Assert(header.length <= 31);
+            /* Allocate and read in the actual path name. */
+            char *pszName = RTStrAlloc(header.length + 1);
+            rc = RTFileRead(pFile->file, (char*)pszName, header.length, &cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                cbLeft -= cbRead;
+                pszName[cbRead] = '\0'; /* Terminate string. */
+                /* Add entry to cache ... */
+                rc = rtISO9660AddToPathCache(&pFile->listPaths, pszName, &header);
+            }
+            RTStrFree(pszName);
+            /* Read padding if required ... */
+            if ((header.length % 2) != 0) /* If we have an odd length, read/skip the padding byte. */
+            {
+                rc = RTFileSeek(pFile->file, 1, RTFILE_SEEK_CURRENT, NULL);
+                cbLeft--;
+            }
+        }
+    }
+
+    /* Transform path names into full paths. This is a bit ugly right now. */
+    VBoxISO9660PathTableEntry *pNode = RTListNodeGetLast(&pFile->listPaths, VBoxISO9660PathTableEntry, Node);
+    while (   pNode
+           && !RTListNodeIsFirst(&pFile->listPaths, &pNode->Node)
+           && RT_SUCCESS(rc))
+    {
+        rc = rtISO9660GetParentPathSub(&pFile->listPaths, pNode,
+                                       pNode->path, &pNode->path_full);
+        if (RT_SUCCESS(rc))
+            pNode = RTListNodeGetPrev(&pNode->Node, VBoxISO9660PathTableEntry, Node);
+    }
+
+    return rc;
+}
+
+int RTISO9660Open(const char *pszFileName, VBoxISO9660File *pFile)
+{
+    AssertPtrReturn(pszFileName, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
+
+    RTListInit(&pFile->listPaths);
+#if 1
+    Assert(sizeof(VBoxISO9660DateShort) == 7);
+    Assert(sizeof(VBoxISO9660DateLong) == 17);
+    int l = sizeof(VBoxISO9660DirRecord);
+    RTPrintf("VBoxISO9660DirRecord=%ld\n", l);
+    Assert(l == 33);
+    /* Each volume descriptor exactly occupies one sector. */
+    l = sizeof(VBoxISO9660PriVolDesc);
+    RTPrintf("VBoxISO9660PriVolDesc=%ld\n", l);
+    Assert(l == VBOX_ISO9660_SECTOR_SIZE);
+#endif
+    int rc = RTFileOpen(&pFile->file, pszFileName, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t cbSize;
+        rc = RTFileGetSize(pFile->file, &cbSize);
+        if (   RT_SUCCESS(rc)
+            && cbSize > 16 * VBOX_ISO9660_SECTOR_SIZE)
+        {
+            uint64_t cbOffset = 16 * VBOX_ISO9660_SECTOR_SIZE; /* Start reading at 32k. */
+            size_t cbRead;
+            VBoxISO9660PriVolDesc volDesc;
+            bool fFoundPrimary = false;
+            bool fIsValid = false;
+            while (cbOffset < _1M)
+            {
+                /* Get primary descriptor. */
+                rc = RTFileRead(pFile->file, (VBoxISO9660PriVolDesc*)&volDesc, sizeof(VBoxISO9660PriVolDesc), &cbRead);
+                if (RT_FAILURE(rc) || cbRead < sizeof(VBoxISO9660PriVolDesc))
+                    break;
+                if (   RTStrStr((char*)volDesc.name_id, VBOX_ISO9660_STANDARD_ID)
+                    && volDesc.type    == 0x1 /* Primary Volume Descriptor */)
+                {
+                    memcpy((VBoxISO9660PriVolDesc*)&pFile->priVolDesc,
+                           (VBoxISO9660PriVolDesc*)&volDesc, sizeof(VBoxISO9660PriVolDesc));
+                    fFoundPrimary = true;
+                }
+                else if(volDesc.type == 0xff /* Termination Volume Descriptor */)
+                {
+                    if (fFoundPrimary)
+                        fIsValid = true;
+                    break;
+                }
+                cbOffset += sizeof(VBoxISO9660PriVolDesc);
+            }
+
+            if (fIsValid)
+                rc = rtISO9660UpdatePathCache(pFile);
+            else
+                rc = VERR_INVALID_PARAMETER;
+        }
+        if (RT_FAILURE(rc))
+            RTISO9660Close(pFile);
+    }
+    return rc;
+}
+
+/* Parses the extent content given at a specified sector. */
+int rtISO9660FindEntry(VBoxISO9660File *pFile, const char *pszFileName,
+                       uint32_t uExtentSector, uint32_t cbExtent /* Bytes */,
+                       VBoxISO9660DirRecord **ppRec)
+{
+    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
+    Assert(uExtentSector > 16);
+
+    int rc = RTFileSeek(pFile->file, uExtentSector * VBOX_ISO9660_SECTOR_SIZE,
+                        RTFILE_SEEK_BEGIN, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VERR_FILE_NOT_FOUND;
+
+        uint8_t uBuffer[VBOX_ISO9660_SECTOR_SIZE];
+        uint32_t cbLeft = cbExtent;
+        while (!RT_SUCCESS(rc) && cbLeft > 0)
+        {
+            size_t cbRead;
+            int rc2 = RTFileRead(pFile->file, (void*)&uBuffer, sizeof(uBuffer), &cbRead);
+            Assert(RT_SUCCESS(rc2) && cbRead == VBOX_ISO9660_SECTOR_SIZE);
+            cbLeft -= cbRead;
+
+            uint32_t idx = 0;
+            while (idx < cbRead)
+            {
+                VBoxISO9660DirRecord *pCurRecord = (VBoxISO9660DirRecord*)&uBuffer[idx];
+                if (pCurRecord->record_length == 0)
+                    break;
+
+                Assert(pCurRecord->name_len > 0);
+                char *pszName = RTStrAlloc(pCurRecord->name_len + 1);
+                AssertPtr(pszName);
+                Assert(idx + sizeof(VBoxISO9660DirRecord) < cbRead);
+                memcpy(pszName, &uBuffer[idx + sizeof(VBoxISO9660DirRecord)], pCurRecord->name_len);
+
+                if (   pCurRecord->name_len == 1
+                    && pszName[0] == 0x0)
+                {
+                    /* This is a "." directory (self). */
+                }
+                else if (   pCurRecord->name_len == 1
+                         && pszName[0] == 0x1)
+                {
+                    /* This is a ".." directory (parent). */
+                }
+                else /* Regular directory or file */
+                {
+                    if (pCurRecord->flags & RT_BIT(1)) /* Directory */
+                    {
+                        /* We don't recursively go into directories
+                         * because we already have the cached path table. */
+                        pszName[pCurRecord->name_len] = 0;
+                        /*rc = rtISO9660ParseDir(pFile, pszFileName,
+                                                 pDirHdr->extent_location, pDirHdr->extent_data_length);*/
+                    }
+                    else /* File */
+                    {
+                        /* Get last occurence of ";" and cut it off. */
+                        char *pTerm = strrchr(pszName, ';');
+                        if (pTerm)
+                            pszName[pTerm - pszName] = 0;
+
+                        /* Don't use case sensitive comparison here, in IS0 9660 all
+                         * file / directory names are UPPERCASE. */
+                        if (!RTStrICmp(pszName, pszFileName))
+                        {
+                            VBoxISO9660DirRecord *pRec = (VBoxISO9660DirRecord*)RTMemAlloc(sizeof(VBoxISO9660DirRecord));
+                            if (pRec)
+                            {
+                                memcpy(pRec, pCurRecord, sizeof(VBoxISO9660DirRecord));
+                                *ppRec = pRec;
+                                rc = VINF_SUCCESS;
+                                break;
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                        }
+                    }
+                }
+                idx += pCurRecord->record_length;
+            }
+        }
+    }
+    return rc;
+}
+
+int rtISO9660ResolvePath(VBoxISO9660File *pFile, const char *pszPath, uint32_t *puSector)
+{
+    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puSector, VERR_INVALID_PARAMETER);
+
+    int rc = VERR_FILE_NOT_FOUND;
+    char *pszTemp = RTStrDup(pszPath);
+    if (pszTemp)
+    {
+        RTPathStripFilename(pszTemp);
+
+        bool bFound = false;
+        VBoxISO9660PathTableEntry *pNode;
+        if (!RTStrCmp(pszTemp, ".")) /* Root directory? Use first node! */
+        {
+            pNode = RTListNodeGetFirst(&pFile->listPaths, VBoxISO9660PathTableEntry, Node);
+            bFound = true;
+        }
+        else
+        {
+            RTListForEach(&pFile->listPaths, pNode, VBoxISO9660PathTableEntry, Node)
+            {
+                if (   pNode->path_full != NULL /* Root does not have a path! */
+                    && !RTStrICmp(pNode->path_full, pszTemp))
+                {
+                    bFound = true;
+                    break;
+                }
+            }
+        }
+        if (bFound)
+        {
+            *puSector = pNode->header.sector_dir_table;
+            rc = VINF_SUCCESS;
+        }
+        RTStrFree(pszTemp);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+int rtISO9660ReadFileInternal(VBoxISO9660File *pFile, const char *pszPath,
+                              uint32_t cbOffset, size_t cbToRead, size_t *pcbRead)
+{
+    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
+
+    uint32_t uSector;
+    int rc = rtISO9660ResolvePath(pFile, pszPath, &uSector);
+    if (RT_SUCCESS(rc))
+    {
+        /* Seek to directory table. */
+        rc = RTFileSeek(pFile->file, uSector * VBOX_ISO9660_SECTOR_SIZE,
+                        RTFILE_SEEK_BEGIN, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            size_t cbRead;
+            VBoxISO9660DirRecord dir_table;
+            rc = RTFileRead(pFile->file, (VBoxISO9660DirRecord*)&dir_table, sizeof(VBoxISO9660DirRecord), &cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(cbRead == sizeof(VBoxISO9660DirRecord));
+                VBoxISO9660DirRecord *pRecord = NULL;
+                rc = rtISO9660FindEntry(pFile,
+                                        RTPathFilename(pszPath),
+                                        dir_table.extent_location,
+                                        dir_table.extent_data_length,
+                                        &pRecord);
+                if (   RT_SUCCESS(rc)
+                    && pRecord)
+                {
+                    RTMemFree(pRecord);
+                }
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+        }
+    }
+    return rc;
+}
+
+int RTISO9660ReadFile(VBoxISO9660File *pFile, const char *pszFileName,
+                      uint32_t cbOffset, size_t cbToRead, size_t *pcbRead)
+{
+    return rtISO9660ReadFileInternal(pFile, pszFileName, cbOffset, cbToRead, pcbRead);
+}
+#endif
+
 static int handleCtrlCopyTo(HandlerArg *a)
 {
+    VBoxISO9660File file;
+    int vrc = RTISO9660Open("c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso", &file);
+    if (RT_SUCCESS(vrc))
+    {
+        uint32_t uOffset = 0;
+        size_t cbRead;
+        while (RT_SUCCESS(vrc))
+        {
+            vrc = RTISO9660ReadFile(&file, "32BIT/OS2/readme.txt",
+                                    uOffset, _4K, &cbRead);
+            uOffset += cbRead;
+        }
+        RTISO9660Close(&file);
+    }
+    return vrc;
+
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
