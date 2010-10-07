@@ -46,6 +46,24 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK
+ * Set if the platform implements pthread_condattr_setclock().
+ * Enables the use of the monotonic clock for waiting on condition variables. */
+#ifndef IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK
+/* Linux detection */
+# if defined(RT_OS_LINUX) && defined(__USE_XOPEN2K)
+#  include <features.h>
+#  if __GLIBC_PREREQ(2,6) /** @todo figure the exact version where this was added */
+#   define IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK
+#  endif
+# endif
+/** @todo check other platforms */
+#endif
+
+
+/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /** Posix internal representation of a Mutex Multi semaphore.
@@ -109,9 +127,7 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
         rc = pthread_condattr_init(&CondAttr);
         if (!rc)
         {
-#if defined(CLOCK_MONOTONIC) \
- && (   (defined(RT_OS_LINUX) && defined(__USE_XOPEN2K) /** @todo check ancient glibc versions */) \
-     || /** @todo check other platforms */ 0)
+#if defined(CLOCK_MONOTONIC) && defined(IPRT_HAVE_PTHREAD_CONDATTR_SETCLOCK)
             /* ASSUMES RTTimeSystemNanoTS() == RTTimeNanoTS() == clock_gettime(CLOCK_MONOTONIC). */
             rc = pthread_condattr_setclock(&CondAttr, CLOCK_MONOTONIC);
             pThis->fMonotonicClock = rc == 0;
