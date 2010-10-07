@@ -52,6 +52,12 @@
 #ifdef RT_OS_DARWIN
 # include <mach-o/dyld.h>
 #endif
+#ifdef RT_OS_SOLARIS
+# include <limits.h>
+# include <sys/ctfs.h>
+# include <sys/contract/process.h>
+# include <libcontract.h>
+#endif
 
 #include <iprt/process.h>
 #include "internal/iprt.h"
@@ -133,6 +139,107 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
     return VERR_PERMISSION_DENIED;
 #endif
 }
+
+
+#ifdef RT_OS_SOLARIS
+/** @todo the error reporting of the Solaris process contract code could be
+ * a lot better, but essentially it is not meant to run into errors after
+ * the debugging phase. */
+static int rtSolarisContractPreFork(void)
+{
+    int templateFd = open64(CTFS_ROOT "/process/template", O_RDWR);
+    if (templateFd < 0)
+        return -1;
+
+    /* Set template parameters and event sets. */
+    if (ct_pr_tmpl_set_param(templateFd, CT_PR_PGRPONLY))
+    {
+        close(templateFd);
+        return -1;
+    }
+    if (ct_pr_tmpl_set_fatal(templateFd, CT_PR_EV_HWERR))
+    {
+        close(templateFd);
+        return -1;
+    }
+    if (ct_tmpl_set_critical(templateFd, 0))
+    {
+        close(templateFd);
+        return -1;
+    }
+    if (ct_tmpl_set_informative(templateFd, CT_PR_EV_HWERR))
+    {
+        close(templateFd);
+        return -1;
+    }
+
+    /* Make this the active template for the process. */
+    if (ct_tmpl_activate(templateFd))
+    {
+        close(templateFd);
+        return -1;
+    }
+
+    return templateFd;
+}
+
+static void rtSolarisContractPostForkChild(int templateFd)
+{
+    if (templateFd == -1)
+        return;
+
+    /* Clear the active template. */
+    ct_tmpl_clear(templateFd);
+    close(templateFd);
+}
+
+static void rtSolarisContractPostForkParent(int templateFd, pid_t pid)
+{
+    if (templateFd == -1)
+        return;
+
+    /* Clear the active template. */
+    int cleared = ct_tmpl_clear(templateFd);
+    close(templateFd);
+
+    /* If the clearing failed or the fork failed there's nothing more to do. */
+    if (cleared || pid <= 0)
+        return;
+
+    /* Look up the contract which was created by this thread. */
+    int statFd = open64(CTFS_ROOT "/process/latest", O_RDONLY);
+    if (statFd == -1)
+        return;
+    ct_stathdl_t statHdl;
+    if (ct_status_read(statFd, CTD_COMMON, &statHdl))
+    {
+        close(statFd);
+        return;
+    }
+    ctid_t ctId = ct_status_get_id(statHdl);
+    ct_status_free(statHdl);
+    close(statFd);
+    if (ctId < 0)
+        return;
+
+    /* Abandon this contract we just created. */
+    char ctlPath[PATH_MAX];
+    size_t len = snprintf(ctlPath, sizeof(ctlPath),
+                          CTFS_ROOT "/process/%d/ctl", ctId);
+    if (len >= sizeof(ctlPath))
+        return;
+    int ctlFd = open64(ctlPath, O_WRONLY);
+    if (statFd == -1)
+        return;
+    if (ct_ctl_abandon(ctlFd) < 0)
+    {
+        close(ctlFd);
+        return;
+    }
+    close(ctlFd);
+}
+
+#endif /* RT_OS_SOLARIS */
 
 
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
@@ -326,9 +433,17 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     else
 #endif
     {
+#ifdef RT_OS_SOLARIS
+        int templateFd = rtSolarisContractPreFork();
+        if (templateFd == -1)
+            return VERR_OPEN_FAILED;
+#endif /* RT_OS_SOLARIS */
         pid = fork();
         if (!pid)
         {
+#ifdef RT_OS_SOLARIS
+            rtSolarisContractPostForkChild(templateFd);
+#endif /* RT_OS_SOLARIS */
             setpgid(0, 0); /* see comment above */
 
             /*
@@ -403,6 +518,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             RTAssertReleasePanic();
             exit(127);
         }
+#ifdef RT_OS_SOLARIS
+        rtSolarisContractPostForkParent(templateFd, pid);
+#endif /* RT_OS_SOLARIS */
         if (pid > 0)
         {
             if (phProcess)
