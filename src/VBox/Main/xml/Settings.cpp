@@ -357,25 +357,15 @@ ConfigFileBase::~ConfigFileBase()
 
 /**
  * Helper function that parses a UUID in string form into
- * a com::Guid item. Since that uses an IPRT function which
- * does not accept "{}" characters around the UUID string,
- * we handle that here. Throws on errors.
+ * a com::Guid item. Accepts UUIDs both with and without
+ * "{}" brackets. Throws on errors.
  * @param guid
  * @param strUUID
  */
 void ConfigFileBase::parseUUID(Guid &guid,
                                const Utf8Str &strUUID) const
 {
-    // {5f102a55-a51b-48e3-b45a-b28d33469488}
-    // 01234567890123456789012345678901234567
-    //           1         2         3
-    if (    (strUUID[0] == '{')
-         && (strUUID[37] == '}')
-       )
-        guid = strUUID.substr(1, 36).c_str();
-    else
-        guid = strUUID.c_str();
-
+    guid = strUUID.c_str();
     if (guid.isEmpty())
         throw ConfigFileError(this, NULL, N_("UUID \"%s\" has invalid format"), strUUID.c_str());
 }
