@@ -248,13 +248,15 @@ RT_EXPORT_SYMBOL(RTUuidToStr);
 
 RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
 {
+    bool fHaveBraces;
+
     /*
      * Validate parameters.
      */
     AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszString, VERR_INVALID_PARAMETER);
 
-    bool fHaveBraces = (pszString[0] == '{' && pszString[37] == '}');
+    fHaveBraces = (pszString[0] == '{' && pszString[37] == '}');
     if (fHaveBraces)
         pszString++;
 
@@ -417,6 +419,7 @@ RT_EXPORT_SYMBOL(RTUuidToUtf16);
 
 RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString)
 {
+    bool fHaveBraces;
 
     /*
      * Validate parameters.
@@ -424,7 +427,7 @@ RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString)
     AssertPtrReturn(pUuid, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pwszString, VERR_INVALID_PARAMETER);
 
-    bool fHaveBraces = (pwszString[0] == '{' && pwszString[37] == '}');
+    fHaveBraces = (pwszString[0] == '{' && pwszString[37] == '}');
     if (fHaveBraces)
         pwszString++;
 
