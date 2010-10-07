@@ -583,16 +583,19 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
  * Disassembles a block of memory.
  *
  * @returns VBox status code.
- * @param   argv0       Program name (for errors and warnings).
- * @param   enmCpuMode  The cpu mode to disassemble in.
- * @param   uAddress    The address we're starting to disassemble at.
- * @param   pbFile      Where to start disassemble.
- * @param   cbFile      How much to disassemble.
- * @param   enmStyle    The assembly output style.
- * @param   fListing    Whether to print in a listing like mode.
- * @param   enmUndefOp  How to deal with undefined opcodes.
+ * @param   argv0           Program name (for errors and warnings).
+ * @param   enmCpuMode      The cpu mode to disassemble in.
+ * @param   uAddress        The address we're starting to disassemble at.
+ * @param   uHighlightAddr  The address of the instruction that should be
+ *                          highlighted.  Pass UINT64_MAX to keep quiet.
+ * @param   pbFile          Where to start disassemble.
+ * @param   cbFile          How much to disassemble.
+ * @param   enmStyle        The assembly output style.
+ * @param   fListing        Whether to print in a listing like mode.
+ * @param   enmUndefOp      How to deal with undefined opcodes.
  */
-static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAddress, uint8_t *pbFile, size_t cbFile,
+static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAddress,
+                         uint64_t uHighlightAddr, uint8_t *pbFile, size_t cbFile,
                          ASMSTYLE enmStyle, bool fListing, UNDEFOPHANDLING enmUndefOp)
 {
     /*
@@ -716,6 +719,9 @@ static int MyDisasmBlock(const char *argv0, DISCPUMODE enmCpuMode, uint64_t uAdd
             }
         }
 
+        /* Highlight this instruction? */
+        if (uHighlightAddr - State.uAddress < State.cbInstr)
+            RTPrintf("; ^^^^^^^^^^^^^^^^^^^^^\n");
 
         /* next */
         State.uAddress += State.cbInstr;
@@ -803,6 +809,7 @@ int main(int argc, char **argv)
 
     /* options */
     uint64_t uAddress = 0;
+    uint64_t uHighlightAddr = UINT64_MAX;
     ASMSTYLE enmStyle = kAsmStyle_Default;
     UNDEFOPHANDLING enmUndefOp = kUndefOp_Fail;
     bool fListing = true;
@@ -932,21 +939,26 @@ int main(int argc, char **argv)
         uint8_t    *pb = NULL;
         for ( ; iArg < argc; iArg++)
         {
+            char ch2;
             const char *psz = argv[iArg];
             while (*psz)
             {
                 /** @todo this stuff belongs in IPRT, same stuff as mac address reading. Could be reused for IPv6 with a different item size.*/
-                /* skip white space */
-                while (RT_C_IS_SPACE(*psz))
+                /* skip white space, and for the benfit of linux panics '<' and '>'. */
+                while (RT_C_IS_SPACE(ch2 = *psz) || ch2 == '<' || ch2 == '>')
+                {
+                    if (ch2 == '<')
+                        uHighlightAddr = uAddress + cb;
                     psz++;
-                if (!*psz)
+                }
+                if (!ch2)
                     break;
 
                 /* one digit followed by a space or EOS, or two digits. */
                 int iNum = HexDigitToNum(*psz++);
                 if (iNum == -1)
                     return 1;
-                if (!RT_C_IS_SPACE(*psz) && *psz)
+                if (!RT_C_IS_SPACE(ch2 = *psz) && ch2 != '\0' && ch2 != '>')
                 {
                     int iDigit = HexDigitToNum(*psz++);
                     if (iDigit == -1)
@@ -971,7 +983,7 @@ int main(int argc, char **argv)
         /*
          * Disassemble it.
          */
-        rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, pb, cb, enmStyle, fListing, enmUndefOp);
+        rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, uHighlightAddr, pb, cb, enmStyle, fListing, enmUndefOp);
     }
     else
     {
@@ -995,7 +1007,7 @@ int main(int argc, char **argv)
             /*
              * Disassemble it.
              */
-            rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, (uint8_t *)pvFile, cbFile, enmStyle, fListing, enmUndefOp);
+            rc = MyDisasmBlock(argv0, enmCpuMode, uAddress, uHighlightAddr, (uint8_t *)pvFile, cbFile, enmStyle, fListing, enmUndefOp);
             if (RT_FAILURE(rc))
                 break;
         }
