@@ -52,11 +52,11 @@ static DECLCALLBACK(int) test1Thread1(RTTHREAD ThreadSelf, void *pvUser)
     RTSEMEVENTMULTI hSem = *(PRTSEMEVENTMULTI)pvUser;
 
     uint64_t u64 = RTTimeSystemMilliTS();
-    RTTEST_CHECK_RC_RET(g_hTest, RTSemEventMultiWait(hSem, 1000), VERR_TIMEOUT, rcCheck);
+    RTTEST_CHECK_RC(g_hTest, RTSemEventMultiWait(hSem, 1000), VERR_TIMEOUT);
     u64 = RTTimeSystemMilliTS() - u64;
     RTTEST_CHECK_MSG(g_hTest, u64 < 1500 && u64 > 950, (g_hTest, "u64=%llu\n", u64));
 
-    RTTEST_CHECK_RC_RET(g_hTest, RTSemEventMultiWait(hSem, 2000), VINF_SUCCESS, rcCheck);
+    RTTEST_CHECK_RC(g_hTest, RTSemEventMultiWait(hSem, 2000), VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -64,7 +64,7 @@ static DECLCALLBACK(int) test1Thread1(RTTHREAD ThreadSelf, void *pvUser)
 static DECLCALLBACK(int) test1Thread2(RTTHREAD ThreadSelf, void *pvUser)
 {
     RTSEMEVENTMULTI hSem = *(PRTSEMEVENTMULTI)pvUser;
-    RTTEST_CHECK_RC_RET(g_hTest, RTSemEventMultiWait(hSem, RT_INDEFINITE_WAIT), VINF_SUCCESS, rcCheck);
+    RTTEST_CHECK_RC(g_hTest, RTSemEventMultiWait(hSem, RT_INDEFINITE_WAIT), VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -245,7 +245,7 @@ static void testBasics(void)
 
 int main(int argc, char **argv)
 {
-    RTEXITCODE rcExit = RTTestInitAndCreate("tstSemEventMulti", &g_hTest);
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTSemEventMulti", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
