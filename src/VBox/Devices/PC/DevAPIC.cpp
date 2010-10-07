@@ -1104,7 +1104,7 @@ static void apic_init_ipi(APICDeviceInfo* dev, APICState *s)
     s->esr = 0;
     memset(s->icr, 0, sizeof(s->icr));
     s->divide_conf = 0;
-    s->count_shift = 0;
+    s->count_shift = 1;
     s->initial_count = 0;
     s->initial_count_load_time = 0;
     s->next_time = 0;
