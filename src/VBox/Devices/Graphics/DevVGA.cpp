@@ -2025,10 +2025,14 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
                 cx_min_upd = cx_min;
             if (cx_max_upd < cx_max)
                 cx_max_upd = cx_max;
-        } else if (cy_start >= 0)
+        } else if (cy_start >= 0) {
             /* Flush updates to display. */
             s->pDrv->pfnUpdateRect(s->pDrv, cx_min_upd * cw, cy_start * cheight,
                                    (cx_max_upd - cx_min_upd + 1) * cw, (cy - cy_start) * cheight);
+            cy_start = -1;
+            cx_max_upd = -1;
+            cx_min_upd = width;
+        }
 #endif
         dest += linesize * cheight;
         s1 += line_offset;
