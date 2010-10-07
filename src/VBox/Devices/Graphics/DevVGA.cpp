@@ -6150,6 +6150,27 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+/**
+ * Adjust VBE mode information
+ *
+ * Depending on the configured VRAM size, certain parts of VBE mode
+ * information must be updated.
+ *
+ * @param   pThis       The device instance data.
+ * @param   pMode       The mode information structure.
+ */
+static void vgaAdjustModeInfo(PVGASTATE pThis, ModeInfoListItem *pMode)
+{
+    int         nPages;
+
+    /* The "number of image pages" is really the max page index... */
+    nPages = pThis->vram_size / (pMode->info.YResolution * pMode->info.BytesPerScanLine) - 1;
+    Assert(nPages);
+    if (nPages > 255)
+        nPages = 255;   /* 8-bit value. */
+    pMode->info.NumberOfImagePages  = nPages;
+    pMode->info.LinNumberOfPages    = nPages;
+}
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -6164,7 +6185,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     uint32_t    cCustomModes;
     uint32_t    cyReduction;
     uint32_t    cbPitch;
-    int         nPages;
     PVBEHEADER  pVBEDataHdr;
     ModeInfoListItem *pCurMode;
     unsigned    cb;
@@ -6568,6 +6588,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (reqSize >= pThis->vram_size)
             continue;
         *pCurMode = mode_info_list[i];
+        vgaAdjustModeInfo(pThis, pCurMode);
         pCurMode++;
     }
 # endif  /* VRAM_SIZE_FIX defined */
@@ -6673,17 +6694,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 pCurMode->mode = u16CurMode++;
 
                 /* adjust defaults */
-                /* The "number of image pages" is really the max page index... */
-                nPages = pThis->vram_size / (cy * cbPitch) - 1;
-                Assert(nPages);
-                if (nPages > 255)
-                    nPages = 255;   /* 8-bit value. */
                 pCurMode->info.XResolution = cx;
                 pCurMode->info.YResolution = cy;
                 pCurMode->info.BytesPerScanLine    = cbPitch;
                 pCurMode->info.LinBytesPerScanLine = cbPitch;
-                pCurMode->info.NumberOfImagePages  = nPages;
-                pCurMode->info.LinNumberOfPages    = nPages;
+                vgaAdjustModeInfo(pThis, pCurMode);
 
                 /* commit it */
                 pCurMode++;
