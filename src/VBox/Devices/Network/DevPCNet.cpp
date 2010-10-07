@@ -2635,7 +2635,7 @@ static int pcnetAsyncTransmit(PCNetState *pThis, bool fOnWorkerThread)
          * it clears CSR0.TINT. This can lead to a race where the driver clears
          * CSR0.TINT right after it was set by the device. The driver waits until
          * CSR0.TINT is set again but this will never happen. So prevent clearing
-         * this bit as long as the driver didn't read it. */
+         * this bit as long as the driver didn't read it. xtracker #5288. */
         pThis->aCSR[0] |= 0x0200;    /* set TINT */
         /* Don't allow the guest to clear TINT before reading it */
         pThis->u16CSR0LastSeenByGuest &= ~0x0200;
