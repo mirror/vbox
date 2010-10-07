@@ -1252,10 +1252,15 @@ DECLINLINE(void) apicDoFrequencyHinting(APICState *pThis)
         pThis->uHintedInitialCount  = pThis->initial_count;
         pThis->uHintedCountShift    = pThis->count_shift;
 
-        uint64_t cTickPerPeriod = (uint64_t)pThis->initial_count << pThis->count_shift;
-        uint32_t uHz = cTickPerPeriod > 0
-                     ? TMTimerGetFreq(pThis->CTX_SUFF(pTimer)) / cTickPerPeriod
-                     : 100 /*whatever*/;
+        uint32_t uHz;
+        if (pThis->initial_count > 0)
+        {
+            Assert((unsigned)pThis->count_shift < 30);
+            uint64_t cTickPerPeriod = ((uint64_t)pThis->initial_count + 1) << pThis->count_shift;
+            uHz = TMTimerGetFreq(pThis->CTX_SUFF(pTimer)) / cTickPerPeriod;
+        }
+        else
+            uHz = 0;
         TMTimerSetFrequencyHint(pThis->CTX_SUFF(pTimer), uHz);
         Log(("apic: %u Hz\n", uHz));
     }
@@ -1277,11 +1282,8 @@ static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *pThis, uint
      * Don't (re-)arm the timer if the it's masked or if it's
      * a zero length one-shot timer.
      */
-    /** @todo check the correct behavior of setting a 0 initial_count for a one-shot
-     *        timer. This is just copying the behavior of the original code. */
     if (    !(pThis->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)
-        &&  (   (pThis->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC)
-             || u32NewInitialCount != 0))
+        &&  u32NewInitialCount > 0)
     {
         /*
          * Calculate the relative next time and perform a combined timer get/set
@@ -1295,6 +1297,7 @@ static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *pThis, uint
         pThis->fTimerArmed = true;
         apicDoFrequencyHinting(pThis);
         STAM_COUNTER_INC(&pThis->StatTimerSetInitialCountArm);
+        Log(("apicTimerSetInitialCount: cTicksNext=%'llu (%#llx) ic=%#x sh=%#x nxt=%#llx\n", cTicksNext, cTicksNext, u32NewInitialCount, pThis->count_shift, pThis->next_time));
     }
     else
     {
@@ -1307,6 +1310,7 @@ static void apicTimerSetInitialCount(APICDeviceInfo *dev, APICState *pThis, uint
             pThis->uHintedCountShift = pThis->uHintedInitialCount = 0;
         }
         pThis->initial_count_load_time = TMTimerGet(pThis->CTX_SUFF(pTimer));
+        Log(("apicTimerSetInitialCount: ic=%#x sh=%#x iclt=%#llx\n", u32NewInitialCount, pThis->count_shift, pThis->initial_count_load_time));
     }
 }
 
@@ -1364,11 +1368,14 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
         else if (pThis->fTimerArmed)
             STAM_COUNTER_INC(&pThis->StatTimerSetLvtArmed);
         /*
-         * If unmasked and not armed, we have to rearm the timer so it will
-         * fire at the end of the current period.
-         * This is code is currently RACING the virtual sync clock!
+         * If unmasked, not armed and with a valid initial count value (according
+         * to our interpretation of the spec), we will have to rearm the timer so
+         * it will fire at the end of the current period.
+         *
+         * N.B. This is code is currently RACING the virtual sync clock!
          */
-        else if (fOld & APIC_LVT_MASKED)
+        else if (   (fOld & APIC_LVT_MASKED)
+                 && pThis->initial_count > 0)
         {
             STAM_COUNTER_INC(&pThis->StatTimerSetLvtArm);
             for (unsigned cTries = 0; ; cTries++)
@@ -1394,6 +1401,7 @@ static void apicTimerSetLvt(APICDeviceInfo *dev, APICState *pThis, uint32_t fNew
                     pThis->next_time = NextTS;
                     pThis->fTimerArmed = true;
                     apicDoFrequencyHinting(pThis);
+                    Log(("apicTimerSetLvt: ic=%#x sh=%#x nxt=%#llx\n", pThis->initial_count, pThis->count_shift, pThis->next_time));
                     break;
                 }
                 STAM_COUNTER_INC(&pThis->StatTimerSetLvtArmRetries);
@@ -1423,14 +1431,16 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
         LogFlow(("apic_timer: trigger irq\n"));
         apic_set_irq(dev, pThis, pThis->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE);
 
-        if (pThis->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC) {
+        if (   (pThis->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC)
+            && pThis->initial_count > 0) {
             /* new interval. */
             pThis->next_time += (((uint64_t)pThis->initial_count + 1) << pThis->count_shift);
             TMTimerSet(pThis->CTX_SUFF(pTimer), pThis->next_time);
             pThis->fTimerArmed = true;
             apicDoFrequencyHinting(pThis);
+            Log2(("apicTimerCallback: ic=%#x sh=%#x nxt=%#llx\n", pThis->initial_count, pThis->count_shift, pThis->next_time));
         } else {
-            /* single shot. */
+            /* single shot or disabled. */
             pThis->fTimerArmed = false;
             pThis->uHintedCountShift = pThis->uHintedInitialCount = 0;
         }
