@@ -126,7 +126,7 @@ ifdef VBOX_WITH_GUEST_PROPS
  	WtsApi32.lib \
  	Psapi.lib
  VBoxService_LIBS.solaris += \
- 	nsl kstat
+ 	nsl kstat contract
 endif
 
 #
