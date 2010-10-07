@@ -1029,17 +1029,9 @@ HRESULT Appliance::importImpl(const LocationInfo &locInfo,
     if (locInfo.storageType == VFSType_File)
     {
         mode = ImportFileNoManifest;
-        Utf8Str strMfFile = manifestFileName(locInfo.strPath);
-        if (!locInfo.strPath.endsWith(".ova", Utf8Str::CaseInsensitive))
-        {
-            if (RTPathExists(strMfFile.c_str()))
-                mode = ImportFileWithManifest;
-        }
-        else
-        {
-            if (RTTarFileExists(locInfo.strPath.c_str(), RTPathFilename(strMfFile.c_str())) == VINF_SUCCESS)
-                mode = ImportFileWithManifest;
-        }
+        Utf8Str strMfFile = queryManifestFileName(locInfo.strPath);
+        if (!strMfFile.isEmpty())
+            mode = ImportFileWithManifest;
     }
     else
          mode = ImportS3;
@@ -1062,6 +1054,23 @@ HRESULT Appliance::importImpl(const LocationInfo &locInfo,
     return rc;
 }
 
+Utf8Str Appliance::queryManifestFileName(const Utf8Str& aPath) const
+{
+    Utf8Str strMfFile = manifestFileName(aPath);
+    if (!aPath.endsWith(".ova", Utf8Str::CaseInsensitive))
+    {
+        if (RTPathExists(strMfFile.c_str()))
+            return strMfFile;
+
+    }
+    else
+    {
+        if (RTTarFileExists(aPath.c_str(), RTPathFilename(strMfFile.c_str())) == VINF_SUCCESS)
+            return strMfFile;
+    }
+    return Utf8Str();
+}
+
 /**
  * Checks if a manifest file exists in the given location and, if so, verifies
  * that the relevant files (the OVF XML and the disks referenced by it, as
@@ -1078,7 +1087,7 @@ HRESULT Appliance::manifestVerify(const LocationInfo &locInfo,
 {
     HRESULT rc = S_OK;
 
-    Utf8Str strManifestFile = manifestFileName(locInfo.strPath);
+    Utf8Str strManifestFile = queryManifestFileName(locInfo.strPath);
     if (!strManifestFile.isEmpty())
     {
         const char *pcszManifestFileOnly = RTPathFilename(strManifestFile.c_str());
@@ -1391,9 +1400,8 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask)
         Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
         /* Add the manifest file to the list of files to extract, but only if
            one is in the archive. */
-        Utf8Str strManifestFile = manifestFileName(strTmpOvf);
-        vrc = RTTarFileExists(pTask->locInfo.strPath.c_str(), RTPathFilename(strManifestFile.c_str()));
-        if (RT_SUCCESS(vrc))
+        Utf8Str strManifestFile = queryManifestFileName(strTmpOvf);
+        if (!strManifestFile.isEmpty())
             filesList.push_back(pair<Utf8Str, ULONG>(strManifestFile.c_str(), 1));
 
         ULONG ulWeight = m->ulWeightForXmlOperation;
@@ -2465,7 +2473,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
          * figure out where the disk images/manifest file are located. */
         Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
         /* Now check if there is an manifest file. This is optional. */
-        Utf8Str strManifestFile = manifestFileName(strTmpOvf);
+        Utf8Str strManifestFile = queryManifestFileName(strTmpOvf);
         char *pszFilename = RTPathFilename(strManifestFile.c_str());
         if (!pTask->pProgress.isNull())
             pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename).raw(), 1);
