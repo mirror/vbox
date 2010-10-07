@@ -178,6 +178,7 @@ typedef enum SCSISVCACTIONIN
 
 /* additional sense keys */
 #define SCSI_ASC_NONE                               0x00
+#define SCSI_ASC_WRITE_ERROR                        0x0c
 #define SCSI_ASC_READ_ERROR                         0x11
 #define SCSI_ASC_ILLEGAL_OPCODE                     0x20
 #define SCSI_ASC_LOGICAL_BLOCK_OOR                  0x21

@@ -2638,12 +2638,19 @@ typedef struct PDMISCSIPORT
      * @param   pInterface    Pointer to this interface.
      * @param   pSCSIRequest  Pointer to the finished SCSI request.
      * @param   rcCompletion  SCSI_STATUS_* code for the completed request.
+     * @param   fRedo         Flag whether the request can to be redone
+     *                        when it failed.
+     * @param   rcReq         The status code the request completed with (VERR_*)
+     *                        Should be only used to choose the correct error message
+     *                        displayed to the user if the error can be fixed by him
+     *                        (fRedo is true).
      */
-     DECLR3CALLBACKMEMBER(int, pfnSCSIRequestCompleted, (PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest, int rcCompletion));
+     DECLR3CALLBACKMEMBER(int, pfnSCSIRequestCompleted, (PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest,
+                                                         int rcCompletion, bool fRedo, int rcReq));
 
 } PDMISCSIPORT;
 /** PDMISCSIPORT interface ID. */
-#define PDMISCSIPORT_IID                        "0f894add-714d-4a77-818e-a32fe3586ba4"
+#define PDMISCSIPORT_IID                        "9d185b3b-1051-41f6-83ad-2a2a23f04e40"
 
 
 /** Pointer to a SCSI connector interface. */

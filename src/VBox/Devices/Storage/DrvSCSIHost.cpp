@@ -315,7 +315,7 @@ static int drvscsihostProcessRequestOne(PDRVSCSIHOST pThis, PPDMSCSIREQUEST pReq
 #endif
     }
     /* Notify device that request finished. */
-    rc = pThis->pDevScsiPort->pfnSCSIRequestCompleted(pThis->pDevScsiPort, pRequest, SCSI_STATUS_OK);
+    rc = pThis->pDevScsiPort->pfnSCSIRequestCompleted(pThis->pDevScsiPort, pRequest, SCSI_STATUS_OK, false, VINF_SUCCESS);
     AssertMsgRC(rc, ("Notifying device above failed rc=%Rrc\n", rc));
 
     return rc;

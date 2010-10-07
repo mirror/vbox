@@ -745,7 +745,8 @@ static int usbMsdResetWorker(PUSBMSD pThis, PVUSBURB pUrb, bool fSetConfig)
 /**
  * @interface_method_impl{PDMISCSIPORT,pfnSCSIRequestCompleted}
  */
-static DECLCALLBACK(int) usbMsdLun0ScsiRequestCompleted(PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest, int rcCompletion)
+static DECLCALLBACK(int) usbMsdLun0ScsiRequestCompleted(PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest,
+                                                        int rcCompletion, bool fRedo, int rcReq)
 {
     PUSBMSD     pThis = RT_FROM_MEMBER(pInterface, USBMSD, Lun0.IScsiPort);
     PUSBMSDREQ  pReq  = RT_FROM_MEMBER(pSCSIRequest, USBMSDREQ, ScsiReq);
@@ -893,7 +894,7 @@ static int usbMsdScsiIllegalRequest(PUSBMSD pThis, PUSBMSDREQ pReq, uint8_t bAsc
     pReq->ScsiReqSense[12] = SCSI_ASC_INVALID_MESSAGE;
     pReq->ScsiReqSense[13] = 0; /* Should be ASCQ but it has the same value for success. */
 
-    usbMsdLun0ScsiRequestCompleted(&pThis->Lun0.IScsiPort, &pReq->ScsiReq, SCSI_STATUS_CHECK_CONDITION);
+    usbMsdLun0ScsiRequestCompleted(&pThis->Lun0.IScsiPort, &pReq->ScsiReq, SCSI_STATUS_CHECK_CONDITION, false, VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -945,7 +946,7 @@ static int usbMsdHandleScsiReqestSense(PUSBMSD pThis, PUSBMSDREQ pReq, PCUSBCBW 
     usbMsdReqPrepare(pReq, pCbw);
 
     /* Do normal completion.  */
-    usbMsdLun0ScsiRequestCompleted(&pThis->Lun0.IScsiPort, &pReq->ScsiReq, SCSI_STATUS_OK);
+    usbMsdLun0ScsiRequestCompleted(&pThis->Lun0.IScsiPort, &pReq->ScsiReq, SCSI_STATUS_OK, false, VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
@@ -1273,7 +1274,7 @@ static int usbMsdHandleBulkDevToHost(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 usbMsdQueueAddTail(&pThis->ToHostQueue, pUrb);
                 LogFlow(("usbMsdHandleBulkDevToHost: Added %p:%s to the to-host queue\n", pUrb, pUrb->pszDesc));
 
-                usbMsdLun0ScsiRequestCompleted(&pThis->Lun0.IScsiPort, &pReq->ScsiReq, SCSI_STATUS_OK);
+                usbMsdLun0ScsiRequestCompleted(&pThis->Lun0.IScsiPort, &pReq->ScsiReq, SCSI_STATUS_OK, false, VINF_SUCCESS);
                 return VINF_SUCCESS;
             }
 

@@ -188,11 +188,13 @@ typedef struct VSCSILUNDESC
  * @returns nothing.
  * @param   pVScsiDevice    The virtual SCSI device.
  * @param   pVScsiReq       The request which completed.
- * @param   rcReq           The status code
+ * @param   rcScsiCode      The status code
  *                          One of the SCSI_STATUS_* #defines.
+ * @param   fRedoPossible   Flag whether redo is possible.
+ * @param   rcReq           Informational return code of the request.
  */
 void vscsiDeviceReqComplete(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq,
-                            int rcReq);
+                            int rcScsiCode, bool fRedoPossible, int rcReq);
 
 /**
  * Initialize a I/O memory context.

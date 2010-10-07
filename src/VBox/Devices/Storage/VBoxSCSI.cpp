@@ -270,13 +270,15 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
 
     if (pVBoxSCSI->uTxDir == VBOXSCSI_TXDIR_FROM_DEVICE)
     {
-        Assert(!pVBoxSCSI->pBuf);
+        if (pVBoxSCSI->pBuf)
+            RTMemFree(pVBoxSCSI->pBuf);
+
         pVBoxSCSI->pBuf = (uint8_t *)RTMemAllocZ(pVBoxSCSI->cbBuf);
         if (!pVBoxSCSI->pBuf)
             return VERR_NO_MEMORY;
     }
 
-    /** Allocate scatter gather element. */
+    /* Allocate scatter gather element. */
     pScsiRequest->paScatterGatherHead = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 1); /* Only one element. */
     if (!pScsiRequest->paScatterGatherHead)
     {
@@ -285,7 +287,7 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
         return VERR_NO_MEMORY;
     }
 
-    /** Allocate sense buffer. */
+    /* Allocate sense buffer. */
     pScsiRequest->cbSenseBuffer = 18;
     pScsiRequest->pbSenseBuffer = (uint8_t *)RTMemAllocZ(pScsiRequest->cbSenseBuffer);
 
@@ -382,5 +384,18 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     *pcTransfer = 0;
 
     return VERR_MORE_DATA;
+}
+
+void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest)
+{
+    AssertMsg(pVBoxSCSI->fBusy, ("No request to redo\n"));
+
+    RTMemFree(pScsiRequest->paScatterGatherHead);
+    RTMemFree(pScsiRequest->pbSenseBuffer);
+
+    if (pVBoxSCSI->uTxDir == VBOXSCSI_TXDIR_FROM_DEVICE)
+    {
+        AssertPtr(pVBoxSCSI->pBuf);
+    }
 }
 
