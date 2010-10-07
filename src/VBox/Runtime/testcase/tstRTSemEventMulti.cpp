@@ -99,7 +99,7 @@ static void test1(void)
 static void testBasicsWaitTimeout(RTSEMEVENTMULTI hSem, unsigned i)
 {
     RTTESTI_CHECK_RC_RETV(RTSemEventMultiWait(hSem, 0), VERR_TIMEOUT);
-#if 1
+#if 0
     RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitNoResume(hSem, 0), VERR_TIMEOUT);
 #else
     RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitEx(hSem,
@@ -127,7 +127,7 @@ static void testBasicsWaitSuccess(RTSEMEVENTMULTI hSem, unsigned i)
 {
     RTTESTI_CHECK_RC_RETV(RTSemEventMultiWait(hSem, 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTSemEventMultiWait(hSem, RT_INDEFINITE_WAIT), VINF_SUCCESS);
-#if 1
+#if 0
     RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitNoResume(hSem, 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTSemEventMultiWaitNoResume(hSem, RT_INDEFINITE_WAIT), VINF_SUCCESS);
 #else

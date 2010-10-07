@@ -43,6 +43,7 @@
 #include <iprt/lockvalidator.h>
 #include <iprt/mem.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 #include "internal/magics.h"
 #include "internal/strict.h"
 
@@ -201,13 +202,14 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 
 
 /** Goto avoidance. */
-DECL_FORCE_INLINE(int) rtSemEventWaitHandleStatus(struct RTSEMEVENTMULTIINTERNAL *pThis, DWORD rc)
+DECL_FORCE_INLINE(int)
+rtSemEventWaitHandleStatus(struct RTSEMEVENTMULTIINTERNAL *pThis, uint32_t fFlags, DWORD rc)
 {
     switch (rc)
     {
         case WAIT_OBJECT_0:         return VINF_SUCCESS;
         case WAIT_TIMEOUT:          return VERR_TIMEOUT;
-        case WAIT_IO_COMPLETION:    return VERR_INTERRUPTED;
+        case WAIT_IO_COMPLETION:    return fFlags & RTSEMWAIT_FLAGS_RESUME ? VERR_TIMEOUT : VERR_INTERRUPTED;
         case WAIT_ABANDONED:        return VERR_SEM_OWNER_DIED;
         default:
             AssertMsgFailed(("%u\n", rc));
@@ -225,32 +227,67 @@ DECL_FORCE_INLINE(int) rtSemEventWaitHandleStatus(struct RTSEMEVENTMULTIINTERNAL
 }
 
 
-#undef RTSemEventMultiWaitNoResume
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
+DECLINLINE(int) rtSemEventMultiWinWait(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
+                                       PCRTLOCKVALSRCPOS pSrcPos)
 {
-    PCRTLOCKVALSRCPOS pSrcPos = NULL;
-
     /*
      * Validate input.
      */
     struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
 
     /*
-     * Wait for condition.
+     * Convert the timeout to a millisecond count.
      */
+    uint64_t uAbsDeadline;
+    DWORD    dwMsTimeout;
+    if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
+    {
+        dwMsTimeout  = INFINITE;
+        uAbsDeadline = UINT64_MAX;
+    }
+    else
+    {
+        if (fFlags & RTSEMWAIT_FLAGS_NANOSECS)
+            uTimeout = uTimeout < UINT64_MAX - UINT32_C(1000000) / 2
+                     ? (uTimeout + UINT32_C(1000000) / 2) / UINT32_C(1000000)
+                     : UINT64_MAX / UINT32_C(1000000);
+        if (fFlags & RTSEMWAIT_FLAGS_ABSOLUTE)
+        {
+            uAbsDeadline = uTimeout;
+            uint64_t u64Now = RTTimeSystemMilliTS();
+            if (u64Now < uTimeout)
+                uTimeout -= u64Now;
+            else
+                uTimeout = 0;
+        }
+        else if (fFlags & RTSEMWAIT_FLAGS_RESUME)
+            uAbsDeadline = RTTimeSystemMilliTS() + uTimeout;
+        else
+            uAbsDeadline = UINT64_MAX;
+
+        dwMsTimeout = uTimeout < UINT32_MAX
+                    ? (DWORD)uTimeout
+                    : INFINITE;
+    }
+
+    /*
+     * Do the wait.
+     */
+    DWORD rc;
 #ifdef RTSEMEVENT_STRICT
     RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
     if (pThis->fEverHadSignallers)
     {
-        DWORD rc = WaitForSingleObjectEx(pThis->hev,
-                                         0 /*Timeout*/,
-                                         TRUE /*fAlertable*/);
-        if (rc != WAIT_TIMEOUT || cMillies == 0)
-            return rtSemEventWaitHandleStatus(pThis, rc);
+        do
+            rc = WaitForSingleObjectEx(pThis->hev, 0 /*Timeout*/, TRUE /*fAlertable*/);
+        while (rc == WAIT_IO_COMPLETION && (fFlags & RTSEMWAIT_FLAGS_RESUME));
+        if (rc != WAIT_TIMEOUT || dwMsTimeout == 0)
+            return rtSemEventWaitHandleStatus(pThis, fFlags, rc);
         int rc9 = RTLockValidatorRecSharedCheckBlocking(&pThis->Signallers, hThreadSelf, pSrcPos, false,
-                                                        cMillies, RTTHREADSTATE_EVENT_MULTI, true);
+                                                        dwMsTimeout, RTTHREADSTATE_EVENT_MULTI, true);
         if (RT_FAILURE(rc9))
             return rc9;
     }
@@ -258,12 +295,39 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINT
     RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
     RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
-    DWORD rc = WaitForSingleObjectEx(pThis->hev,
-                                     cMillies == RT_INDEFINITE_WAIT ? INFINITE : cMillies,
-                                     TRUE /*fAlertable*/);
+    rc = WaitForSingleObjectEx(pThis->hev, dwMsTimeout, TRUE /*fAlertable*/);
+    if (rc == WAIT_IO_COMPLETION && (fFlags & RTSEMWAIT_FLAGS_RESUME))
+    {
+        while (   rc == WAIT_IO_COMPLETION
+               && RTTimeSystemMilliTS() < uAbsDeadline)
+            rc = WaitForSingleObjectEx(pThis->hev, dwMsTimeout, TRUE /*fAlertable*/);
+
+    }
     RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
-    return rtSemEventWaitHandleStatus(pThis, rc);
+    return rtSemEventWaitHandleStatus(pThis, fFlags, rc);
 }
+
+
+
+#undef RTSemEventMultiWaitEx
+RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout)
+{
+#ifndef RTSEMEVENT_STRICT
+    return rtSemEventMultiWinWait(hEventMultiSem, fFlags, uTimeout, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtSemEventMultiWinWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
+#endif
+}
+
+
+RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtSemEventMultiWinWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
+}
+
 
 
 RTDECL(void) RTSemEventMultiSetSignaller(RTSEMEVENTMULTI hEventMultiSem, RTTHREAD hThread)

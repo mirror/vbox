@@ -452,7 +452,8 @@ RuntimeR3_SOURCES.win = \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTSemEventWait-generic.cpp \
-	generic/RTSemEventMultiWait-generic.cpp \
+ 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+ 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
 	generic/mppresent-generic.cpp \
