@@ -108,20 +108,13 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
     return fProcessed;
 }
 
-/**
- * Completesa SCSI request and calls the completion handler.
- *
- * @returns nothing.
- * @param   pVScsiDevice    The virtual SCSI device.
- * @param   pVScsiReq       The request which completed.
- * @param   rcReq           The status code
- *                          One of the SCSI_STATUS_* #defines.
- */
+
 void vscsiDeviceReqComplete(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq,
-                            int rcReq)
+                            int rcScsiCode, bool fRedoPossible, int rcReq)
 {
     pVScsiDevice->pfnVScsiReqCompleted(pVScsiDevice, pVScsiDevice->pvVScsiDeviceUser,
-                                       pVScsiReq->pvVScsiReqUser, rcReq);
+                                       pVScsiReq->pvVScsiReqUser, rcScsiCode, fRedoPossible,
+                                       rcReq);
 
     RTMemCacheFree(pVScsiDevice->hCacheReq, pVScsiReq);
 }
@@ -293,12 +286,12 @@ VBOXDDU_DECL(int) VSCSIDeviceReqEnqueue(VSCSIDEVICE hVScsiDevice, VSCSIREQ hVScs
                                   SCSI_ASC_LOGICAL_UNIT_DOES_NOT_RESPOND_TO_SELECTION);
 
             vscsiDeviceReqComplete(pVScsiDevice, pVScsiReq,
-                                   SCSI_STATUS_CHECK_CONDITION);
+                                   SCSI_STATUS_CHECK_CONDITION, false, VINF_SUCCESS);
         }
     }
     else
         vscsiDeviceReqComplete(pVScsiDevice, pVScsiReq,
-                               rcReq);
+                               rcReq, false, VINF_SUCCESS);
 
     return rc;
 }

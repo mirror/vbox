@@ -92,7 +92,7 @@ uint32_t vscsiIoReqOutstandingCountGet(PVSCSILUNINT pVScsiLun)
 }
 
 
-VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq)
+VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq, bool fRedoPossible)
 {
     PVSCSIIOREQINT pVScsiIoReq = hVScsiIoReq;
     PVSCSILUNINT pVScsiLun;
@@ -114,12 +114,23 @@ VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq)
     /** @todo error reporting */
     if (RT_SUCCESS(rcIoReq))
         rcReq = vscsiReqSenseOkSet(pVScsiReq);
+    else if (!fRedoPossible)
+    {
+        /** @todo Not 100% correct for the write case as the 0x00 ASCQ for write errors
+         * is not used for SBC devices. */
+        rcReq = vscsiReqSenseErrorSet(pVScsiReq, SCSI_SENSE_MEDIUM_ERROR,
+                                      pVScsiIoReq->enmTxDir == VSCSIIOREQTXDIR_READ
+                                      ? SCSI_ASC_READ_ERROR
+                                      : SCSI_ASC_WRITE_ERROR);
+    }
+    else
+        rcReq = SCSI_STATUS_CHECK_CONDITION;
 
     /* Free the I/O request */
     RTMemFree(pVScsiIoReq);
 
     /* Notify completion of the SCSI request. */
-    vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq);
+    vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, fRedoPossible, rcIoReq);
 
     return VINF_SUCCESS;
 }

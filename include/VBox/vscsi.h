@@ -134,6 +134,8 @@ typedef VSCSILUNIOCALLBACKS *PVSCSILUNIOCALLBACKS;
 typedef DECLCALLBACK(void) FNVSCSIREQCOMPLETED(VSCSIDEVICE hVScsiDevice,
                                                void *pvVScsiDeviceUser,
                                                void *pvVScsiReqUser,
+                                               int rcScsiCode,
+                                               bool fRedoPossible,
                                                int rcReq);
 /** Pointer to a virtual SCSI request completed callback. */
 typedef FNVSCSIREQCOMPLETED *PFNVSCSIREQCOMPLETED;
@@ -252,8 +254,11 @@ VBOXDDU_DECL(int) VSCSILunDestroy(VSCSILUN hVScsiLun);
  *                                  This is given when a I/O callback for
  *                                  the LUN is called by the virtual SCSI layer.
  * @param   rcIoReq                 The status code the I/O request completed with.
+ * @param   fRedoPossible           Flag whether it is possible to redo the request.
+ *                                  If true setting any sense code will be omitted
+ *                                  in case of an error to not alter the device state.
  */
-VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq);
+VBOXDDU_DECL(int) VSCSIIoReqCompleted(VSCSIIOREQ hVScsiIoReq, int rcIoReq, bool fRedoPossible);
 
 /**
  * Query the transfer direction of the I/O request.
