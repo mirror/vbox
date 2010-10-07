@@ -74,6 +74,42 @@ int main(int argc, char **argv)
     rc = RTUuidFromStr(&Uuid2, sz); CHECK_RC();
     RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
 
+    char *psz = (char *)RTTestGuardedAllocTail(hTest, RTUUID_STR_LENGTH);
+    if (psz)
+    {
+        RTStrPrintf(psz, RTUUID_STR_LENGTH, "%s", sz);
+        RTTESTI_CHECK_RC(RTUuidFromStr(&Uuid2, psz), VINF_SUCCESS);
+        RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
+        for (unsigned off = 1; off < RTUUID_STR_LENGTH; off++)
+        {
+            char *psz2 = psz + off;
+            RTStrPrintf(psz2, RTUUID_STR_LENGTH - off, "%s", sz);
+            RTTESTI_CHECK_RC(RTUuidFromStr(&Uuid2, psz2), VERR_INVALID_UUID_FORMAT);
+        }
+        RTTestGuardedFree(hTest, psz);
+    }
+
+    RTUuidClear(&Uuid2);
+    char sz2[RTUUID_STR_LENGTH + 2];
+    RTStrPrintf(sz2, sizeof(sz2), "{%s}", sz);
+    rc = RTUuidFromStr(&Uuid2, sz2); CHECK_RC();
+    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
+
+    psz = (char *)RTTestGuardedAllocTail(hTest, RTUUID_STR_LENGTH + 2);
+    if (psz)
+    {
+        RTStrPrintf(psz, RTUUID_STR_LENGTH + 2, "{%s}", sz);
+        RTTESTI_CHECK_RC(RTUuidFromStr(&Uuid2, psz), VINF_SUCCESS);
+        RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
+        for (unsigned off = 1; off < RTUUID_STR_LENGTH + 2; off++)
+        {
+            char *psz2 = psz + off;
+            RTStrPrintf(psz2, RTUUID_STR_LENGTH + 2 - off, "{%s}", sz);
+            RTTESTI_CHECK_RC(RTUuidFromStr(&Uuid2, psz2), VERR_INVALID_UUID_FORMAT);
+        }
+        RTTestGuardedFree(hTest, psz);
+    }
+
     RTTestSub(hTest, "RTUuidToUtf16");
     RTUTF16 wsz[RTUUID_STR_LENGTH];
     rc = RTUuidToUtf16(&Uuid, wsz, sizeof(wsz)); CHECK_RC();
