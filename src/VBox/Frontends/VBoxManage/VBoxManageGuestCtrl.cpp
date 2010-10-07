@@ -1030,51 +1030,106 @@ int rtISO9660ResolvePath(VBoxISO9660File *pFile, const char *pszPath, uint32_t *
     return rc;
 }
 
-int rtISO9660ReadFileInternal(VBoxISO9660File *pFile, const char *pszPath,
-                              uint32_t cbOffset, size_t cbToRead, size_t *pcbRead)
+int rtISO9660GetDirectoryRecord(VBoxISO9660File *pFile, const char *pszPath,
+                                VBoxISO9660DirRecord **ppRecord)
 {
     AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppRecord, VERR_INVALID_PARAMETER);
 
     uint32_t uSector;
     int rc = rtISO9660ResolvePath(pFile, pszPath, &uSector);
     if (RT_SUCCESS(rc))
     {
-        /* Seek to directory table. */
+        /* Seek and read the directory record of given file. */
         rc = RTFileSeek(pFile->file, uSector * VBOX_ISO9660_SECTOR_SIZE,
                         RTFILE_SEEK_BEGIN, NULL);
         if (RT_SUCCESS(rc))
         {
             size_t cbRead;
-            VBoxISO9660DirRecord dir_table;
-            rc = RTFileRead(pFile->file, (VBoxISO9660DirRecord*)&dir_table, sizeof(VBoxISO9660DirRecord), &cbRead);
-            if (RT_SUCCESS(rc))
+            VBoxISO9660DirRecord *pRecord = (VBoxISO9660DirRecord*)RTMemAlloc(sizeof(VBoxISO9660DirRecord));
+            if (pRecord)
             {
-                Assert(cbRead == sizeof(VBoxISO9660DirRecord));
-                VBoxISO9660DirRecord *pRecord = NULL;
-                rc = rtISO9660FindEntry(pFile,
-                                        RTPathFilename(pszPath),
-                                        dir_table.extent_location,
-                                        dir_table.extent_data_length,
-                                        &pRecord);
-                if (   RT_SUCCESS(rc)
-                    && pRecord)
+                rc = RTFileRead(pFile->file, (VBoxISO9660DirRecord*)pRecord, sizeof(VBoxISO9660DirRecord), &cbRead);
+                if (RT_SUCCESS(rc))
                 {
-                    RTMemFree(pRecord);
+                    Assert(cbRead == sizeof(VBoxISO9660DirRecord));
+                    *ppRecord = pRecord;
                 }
+                if (RT_FAILURE(rc))
+                    RTMemFree(pRecord);
             }
             else
-                rc = VERR_INVALID_PARAMETER;
+                rc = VERR_NO_MEMORY;
         }
     }
     return rc;
 }
 
-int RTISO9660ReadFile(VBoxISO9660File *pFile, const char *pszFileName,
-                      uint32_t cbOffset, size_t cbToRead, size_t *pcbRead)
+int RTISO9660GetFileInfo(VBoxISO9660File *pFile, const char *pszPath,
+                         uint32_t *pcbOffset, uint32_t *pcbLength)
 {
-    return rtISO9660ReadFileInternal(pFile, pszFileName, cbOffset, cbToRead, pcbRead);
+    AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbOffset, VERR_INVALID_PARAMETER);
+
+    VBoxISO9660DirRecord *pDirRecord;
+    int rc = rtISO9660GetDirectoryRecord(pFile, pszPath, &pDirRecord);
+    if (RT_SUCCESS(rc))
+    {
+        /* Get actual file record. */
+        VBoxISO9660DirRecord *pFileRecord;
+        rc = rtISO9660FindEntry(pFile,
+                                RTPathFilename(pszPath),
+                                pDirRecord->extent_location,
+                                pDirRecord->extent_data_length,
+                                &pFileRecord);
+        if (RT_SUCCESS(rc))
+        {
+            *pcbOffset = pFileRecord->extent_location * VBOX_ISO9660_SECTOR_SIZE;
+            *pcbLength = pFileRecord->extent_data_length;
+            RTMemFree(pFileRecord);
+        }
+        RTMemFree(pDirRecord);
+    }
+    return rc;
 }
+
+int RTISO9660ExtractFile(VBoxISO9660File *pFile, const char *pszSource,
+                         const char *pszDest)
+{
+    uint32_t cbOffset, cbLength;
+    int rc = RTISO9660GetFileInfo(pFile, pszSource, &cbOffset, &cbLength);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileSeek(pFile->file, cbOffset, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            RTFILE fileDest;
+            rc = RTFileOpen(&fileDest, pszDest, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+            if (RT_SUCCESS(rc))
+            {
+                size_t cbToRead, cbRead, cbWritten;
+                uint8_t byBuffer[_4K];
+                while (   cbLength > 0
+                       && RT_SUCCESS(rc))
+                {
+                    cbToRead = RT_MIN(cbLength, _4K);
+                    rc = RTFileRead(pFile->file, (uint8_t*)byBuffer, cbToRead, &cbRead);
+                    if (RT_FAILURE(rc))
+                        break;
+                    rc = RTFileWrite(fileDest, (uint8_t*)byBuffer, cbRead, &cbWritten);
+                    if (RT_FAILURE(rc))
+                        break;
+                    cbLength -= cbRead;
+                }
+                RTFileClose(fileDest);
+            }
+        }
+    }
+    return rc;
+}
+
 #endif
 
 static int handleCtrlCopyTo(HandlerArg *a)
@@ -1083,14 +1138,8 @@ static int handleCtrlCopyTo(HandlerArg *a)
     int vrc = RTISO9660Open("c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso", &file);
     if (RT_SUCCESS(vrc))
     {
-        uint32_t uOffset = 0;
-        size_t cbRead;
-        while (RT_SUCCESS(vrc))
-        {
-            vrc = RTISO9660ReadFile(&file, "32BIT/OS2/readme.txt",
-                                    uOffset, _4K, &cbRead);
-            uOffset += cbRead;
-        }
+        //vrc = RTISO9660ExtractFile(&file, "VBOXWINDOWSADDITIONS_X86.EXE", "C:\\VBOXWINDOWSADDITIONS_X86.EXE");
+        vrc = RTISO9660ExtractFile(&file, "32BIT/OS2/README.TXT", "C:\\OS2-Readme.txt");
         RTISO9660Close(&file);
     }
     return vrc;
