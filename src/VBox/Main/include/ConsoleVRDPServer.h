@@ -153,7 +153,7 @@ private:
     /** Static because will never load this more than once! */
     static RTLDRMOD mVRDPLibrary;
 
-    static PFNVRDECREATESERVER mpfnVRDPCreateServer;
+    static PFNVRDECREATESERVER mpfnVRDECreateServer;
 
     static VRDEENTRYPOINTS_1 *mpEntryPoints;
     static VRDECALLBACKS_1 mCallbacks;
