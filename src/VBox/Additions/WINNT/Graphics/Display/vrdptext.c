@@ -18,7 +18,7 @@
  */
 
 #include "driver.h"
-#include <VBox/VRDPOrders.h>
+#include <VBox/RemoteDesktop/VRDEOrders.h>
 #include <iprt/crc.h>
 
 /*
@@ -70,7 +70,7 @@
  *       the cache space. But reporting that the glyph actually
  *       represents a 'space' character might allow some optimizations.
  *
- * The VRDPORDERTEXT consists of the string info and glyph infos.
+ * The VRDEORDERTEXT consists of the string info and glyph infos.
  *
  */
 
@@ -79,7 +79,7 @@ static BOOL vboxReportGlyph (GLYPHPOS *pGlyphPos, uint8_t **ppu8Ptr, uint8_t *pu
     uint32_t cbOrder;
     uint32_t cbBitmap;
 
-    VRDPORDERGLYPH *pOrder = (VRDPORDERGLYPH *)*ppu8Ptr;
+    VRDEORDERGLYPH *pOrder = (VRDEORDERGLYPH *)*ppu8Ptr;
 
     GLYPHBITS *pgb = pGlyphPos->pgdf->pgb;
 
@@ -123,9 +123,9 @@ static BOOL vboxReportGlyph (GLYPHPOS *pGlyphPos, uint8_t **ppu8Ptr, uint8_t *pu
 
 static uint32_t vboxSizeofTextOrder (ULONG cGlyphs, ULONG cbMaxGlyph)
 {
-    uint32_t cb = sizeof (VRDPORDERTEXT);
+    uint32_t cb = sizeof (VRDEORDERTEXT);
 
-    cb += cGlyphs * (sizeof (VRDPORDERGLYPH) + cbMaxGlyph);
+    cb += cGlyphs * (sizeof (VRDEORDERGLYPH) + cbMaxGlyph);
 
     return cb;
 }
@@ -141,7 +141,7 @@ BOOL vboxReportText (PPDEV ppdev,
 {
     FONTINFO fi;
     uint32_t cbOrderMax;
-    VRDPORDERTEXT *pOrder;
+    VRDEORDERTEXT *pOrder;
     BOOL fResult;
     uint8_t *pu8GlyphPtr;
     uint8_t *pu8GlyphEnd;
@@ -179,7 +179,7 @@ BOOL vboxReportText (PPDEV ppdev,
 
     DISPDBG((1, "VRDP::vrdpReportText: pstro->cGlyphs = %d, fi.cjMaxGlyph1 = 0x%x, cbOrderMax = 0x%x.\n", pstro->cGlyphs, fi.cjMaxGlyph1, cbOrderMax));
 
-    pOrder = (VRDPORDERTEXT *)EngAllocMem (0, cbOrderMax, ALLOC_TAG);
+    pOrder = (VRDEORDERTEXT *)EngAllocMem (0, cbOrderMax, ALLOC_TAG);
 
     if (!pOrder)
     {
@@ -260,7 +260,7 @@ BOOL vboxReportText (PPDEV ppdev,
     {
         pOrder->cbOrder = (uint32_t)(pu8GlyphPtr - (uint8_t *)pOrder);
 
-        vrdpReportOrderGeneric (ppdev, pClipRects, pOrder, pOrder->cbOrder, VRDP_ORDER_TEXT);
+        vrdpReportOrderGeneric (ppdev, pClipRects, pOrder, pOrder->cbOrder, VRDE_ORDER_TEXT);
     }
 
     EngFreeMem (pOrder);

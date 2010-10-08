@@ -22,7 +22,7 @@
 #include "Logging.h"
 
 #include <VBox/pdmdrv.h>
-#include <VBox/vrdpapi.h>
+#include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/cfgm.h>
 #include <VBox/err.h>
 
@@ -98,7 +98,7 @@ DECLCALLBACK(void) iface_AudioSamplesOut (PPDMIAUDIOSNIFFERCONNECTOR pInterface,
     /*
      * Just call the VRDP server with the data.
      */
-    VRDPAUDIOFORMAT format = VRDP_AUDIO_FMT_MAKE(samplesPerSec, nChannels, bitsPerSample, !fUnsigned);
+    VRDEAUDIOFORMAT format = VRDE_AUDIO_FMT_MAKE(samplesPerSec, nChannels, bitsPerSample, !fUnsigned);
     pDrv->pAudioSniffer->getParent()->consoleVRDPServer()->SendAudioSamples(pvSamples, cSamples, format);
 }
 

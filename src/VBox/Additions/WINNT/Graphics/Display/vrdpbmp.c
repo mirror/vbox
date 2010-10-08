@@ -21,7 +21,7 @@
 #include "driver.h"
 #include "vrdpbmp.h"
 #include <iprt/crc.h>
-#include <VBox/VRDPOrders.h>
+#include <VBox/RemoteDesktop/VRDEOrders.h>
 
 /*
  * Cache has a fixed number of preallocated entries. Entries are linked in the MRU
@@ -210,7 +210,7 @@ void vrdpbmpReset (VRDPBC *pCache)
 {
     int i;
 
-    VBVA_ASSERT(sizeof (VRDPBCHASH) == sizeof (VRDPBITMAPHASH));
+    VBVA_ASSERT(sizeof (VRDPBCHASH) == sizeof (VRDEBITMAPHASH));
 
     /* Reinitialize the cache structure. */
     memset (pCache, 0, sizeof (VRDPBC));

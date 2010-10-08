@@ -1020,18 +1020,18 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
     mDisplay->VideoAccelVRDP(false);
 #endif /* VBOX_WITH_VRDP */
 
-    if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_USB)
+    if (fu32Intercepted & VRDE_CLIENT_INTERCEPT_USB)
     {
         mConsoleVRDPServer->USBBackendDelete(u32ClientId);
     }
 
 #ifdef VBOX_WITH_VRDP
-    if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_CLIPBOARD)
+    if (fu32Intercepted & VRDE_CLIENT_INTERCEPT_CLIPBOARD)
     {
         mConsoleVRDPServer->ClipboardDelete(u32ClientId);
     }
 
-    if (fu32Intercepted & VRDP_CLIENT_INTERCEPT_AUDIO)
+    if (fu32Intercepted & VRDE_CLIENT_INTERCEPT_AUDIO)
     {
         mcAudioRefs--;
 
@@ -7173,7 +7173,7 @@ void Console::detachAllUSBDevices(bool aDone)
 /**
  * @note Locks this object for writing.
  */
-void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *pDevList, uint32_t cbDevList)
+void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevList, uint32_t cbDevList)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("u32ClientId = %d, pDevList=%p, cbDevList = %d\n", u32ClientId, pDevList, cbDevList));
@@ -7204,7 +7204,7 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
      * Process the pDevList and add devices those are not already in the mRemoteUSBDevices list.
      */
     /** @todo (sunlover) REMOTE_USB Strict validation of the pDevList. */
-    VRDPUSBDEVICEDESC *e = pDevList;
+    VRDEUSBDEVICEDESC *e = pDevList;
 
     /* The cbDevList condition must be checked first, because the function can
      * receive pDevList = NULL and cbDevList = 0 on client disconnect.
@@ -7276,7 +7276,7 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDPUSBDEVICEDESC *p
 
         cbDevList -= e->oNext;
 
-        e = (VRDPUSBDEVICEDESC *)((uint8_t *)e + e->oNext);
+        e = (VRDEUSBDEVICEDESC *)((uint8_t *)e + e->oNext);
     }
 
     /*
