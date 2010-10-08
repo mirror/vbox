@@ -248,6 +248,8 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
 
         /* Do *not* unlock this page as we have two of them floating around in the 32-bit host & 64-bit guest case.
          * We currently assert when you try to free one of them; don't bother to really allow this.
+         *
+         * Note that this is two nested paging root pages max. This isn't a leak. They are reused.
          */
         /* pgmPoolUnlockPage(pPool, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)); */
 
