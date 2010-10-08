@@ -346,5 +346,16 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 # include <iprt/param.h>
 #endif
 
+/*
+ * Some global indicator macros.
+ */
+/** @def IPRT_LINUX_HAS_HRTIMER
+ * Whether the kernel support high resolution timers (Linux kernel versions
+ * 2.6.28 and later (hrtimer_add_expires_ns() & schedule_hrtimeout). */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+# define IPRT_LINUX_HAS_HRTIMER
+#endif
+
+
 #endif
 

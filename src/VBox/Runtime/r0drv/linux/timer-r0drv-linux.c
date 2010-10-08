@@ -43,17 +43,10 @@
 
 #include "internal/magics.h"
 
-/** @def RTTIMER_LINUX_HAVE_HRTIMER
- * Whether the kernel support high resolution timers (Linux kernel versions
- * 2.6.28 and later (hrtimer_add_expires_ns()). */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
-# define RTTIMER_LINUX_HAVE_HRTIMER
-#endif
-
 /** @def RTTIMER_LINUX_WITH_HRTIMER
  * Whether to use high resolution timers.  */
 #if !defined(RTTIMER_LINUX_WITH_HRTIMER) \
-    && defined(RTTIMER_LINUX_HAVE_HRTIMER)
+    && defined(IPRT_LINUX_HAS_HRTIMER)
 # define RTTIMER_LINUX_WITH_HRTIMER
 #endif
 
