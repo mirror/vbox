@@ -96,7 +96,7 @@ public:
 
     void EnableConnections (void);
     void DisconnectClient (uint32_t u32ClientId, bool fReconnect);
-    void MousePointerUpdate (const VRDPCOLORPOINTER *pPointer);
+    void MousePointerUpdate (const VRDECOLORPOINTER *pPointer);
     void MousePointerHide (void);
 
     void Stop (void);
@@ -133,7 +133,7 @@ public:
     void SendResize (void) const;
     void SendUpdateBitmap (unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const;
 
-    void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDPAUDIOFORMAT format) const;
+    void SendAudioSamples (void *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const;
     void SendAudioVolume (uint16_t left, uint16_t right) const;
     void SendUSBRequest (uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const;
 
@@ -146,17 +146,17 @@ private:
     Console *mConsole;
 
 #ifdef VBOX_WITH_VRDP
-    HVRDPSERVER mhServer;
+    HVRDESERVER mhServer;
 
     static bool loadVRDPLibrary (void);
 
     /** Static because will never load this more than once! */
     static RTLDRMOD mVRDPLibrary;
 
-    static PFNVRDPCREATESERVER mpfnVRDPCreateServer;
+    static PFNVRDECREATESERVER mpfnVRDPCreateServer;
 
-    static VRDPENTRYPOINTS_1 *mpEntryPoints;
-    static VRDPCALLBACKS_1 mCallbacks;
+    static VRDEENTRYPOINTS_1 *mpEntryPoints;
+    static VRDECALLBACKS_1 mCallbacks;
 
     static DECLCALLBACK(int)  VRDPCallbackQueryProperty     (void *pvCallback, uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut);
     static DECLCALLBACK(int)  VRDPCallbackClientLogon       (void *pvCallback, uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
@@ -165,7 +165,7 @@ private:
     static DECLCALLBACK(int)  VRDPCallbackIntercept         (void *pvCallback, uint32_t u32ClientId, uint32_t fu32Intercept, void **ppvIntercept);
     static DECLCALLBACK(int)  VRDPCallbackUSB               (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint8_t u8Code, const void *pvRet, uint32_t cbRet);
     static DECLCALLBACK(int)  VRDPCallbackClipboard         (void *pvCallback, void *pvIntercept, uint32_t u32ClientId, uint32_t u32Function, uint32_t u32Format, const void *pvData, uint32_t cbData);
-    static DECLCALLBACK(bool) VRDPCallbackFramebufferQuery  (void *pvCallback, unsigned uScreenId, VRDPFRAMEBUFFERINFO *pInfo);
+    static DECLCALLBACK(bool) VRDPCallbackFramebufferQuery  (void *pvCallback, unsigned uScreenId, VRDEFRAMEBUFFERINFO *pInfo);
     static DECLCALLBACK(void) VRDPCallbackFramebufferLock   (void *pvCallback, unsigned uScreenId);
     static DECLCALLBACK(void) VRDPCallbackFramebufferUnlock (void *pvCallback, unsigned uScreenId);
     static DECLCALLBACK(void) VRDPCallbackInput             (void *pvCallback, int type, const void *pvInput, unsigned cbInput);

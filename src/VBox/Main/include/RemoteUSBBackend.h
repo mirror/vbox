@@ -20,7 +20,7 @@
 
 #include "RemoteUSBDeviceImpl.h"
 
-#include <VBox/vrdpapi.h>
+#include <VBox/RemoteDesktop/VRDE.h>
 #include <VBox/vrdpusb.h>
 
 #include <iprt/critsect.h>
@@ -77,14 +77,14 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
 
         int saveDeviceList (const void *pvList, uint32_t cbList);
 
-        int negotiateResponse (const VRDPUSBREQNEGOTIATERET *pret, uint32_t cbRet);
+        int negotiateResponse (const VRDEUSBREQNEGOTIATERET *pret, uint32_t cbRet);
 
         int reapURB (const void *pvBody, uint32_t cbBody);
 
         void request (void);
         void release (void);
 
-        PREMOTEUSBDEVICE deviceFromId (VRDPUSBDEVID id);
+        PREMOTEUSBDEVICE deviceFromId (VRDEUSBDEVID id);
 
         void addDevice (PREMOTEUSBDEVICE pDevice);
         void removeDevice (PREMOTEUSBDEVICE pDevice);

@@ -31,9 +31,6 @@ using namespace com;
 
 #include <VBox/log.h>
 #include <VBox/version.h>
-#ifdef VBOX_WITH_VRDP
-# include <VBox/vrdpapi.h>
-#endif
 #include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/initterm.h>

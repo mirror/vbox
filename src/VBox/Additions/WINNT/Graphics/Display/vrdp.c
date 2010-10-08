@@ -19,7 +19,7 @@
 
 #include "driver.h"
 #include "vrdpbmp.h"
-#include <VBox/VRDPOrders.h>
+#include <VBox/RemoteDesktop/VRDEOrders.h>
 
 #define VRDP_MAKE_OP(__c) (__c)
 
@@ -371,7 +371,7 @@ static BOOL vrdpWriteBits (PPDEV ppdev, uint8_t *pu8Bits, int lDelta, int32_t x,
 {
     BOOL bRc = FALSE;
 
-    VRDPDATABITS bits;
+    VRDEDATABITS bits;
 
     bits.cb      = cHeight * cWidth * bytesPerPixel;
     bits.x       = (int16_t)x;
@@ -435,7 +435,7 @@ void vrdpReportDirtyRect (PPDEV ppdev, RECTL *prcl)
 
     if (bytesPerPixel > 0)
     {
-        bRc = vrdpWriteHdr (ppdev, VRDP_MAKE_OP(VRDP_ORDER_DIRTY_RECT));
+        bRc = vrdpWriteHdr (ppdev, VRDP_MAKE_OP(VRDE_ORDER_DIRTY_RECT));
 
         if (bRc)
         {
@@ -511,14 +511,14 @@ static BOOL vrdpReportOrder (PPDEV ppdev,
 static BOOL vrdpReportBounds (PPDEV ppdev,
                               const RECTL *prcl)
 {
-    VRDPORDERBOUNDS bounds;
+    VRDEORDERBOUNDS bounds;
 
     bounds.pt1.x = (int16_t)(prcl->left);
     bounds.pt1.y = (int16_t)(prcl->top);
     bounds.pt2.x = (int16_t)(prcl->right);
     bounds.pt2.y = (int16_t)(prcl->bottom);
 
-    return vrdpReportOrder (ppdev, &bounds, sizeof (bounds), VRDP_ORDER_BOUNDS);
+    return vrdpReportOrder (ppdev, &bounds, sizeof (bounds), VRDE_ORDER_BOUNDS);
 }
 
 static BOOL vrdpReportRepeat (PPDEV ppdev,
@@ -534,14 +534,14 @@ static BOOL vrdpReportRepeat (PPDEV ppdev,
 
         for (; i < pRects->c; i++, prcl++)
         {
-            VRDPORDERREPEAT repeat;
+            VRDEORDERREPEAT repeat;
 
             repeat.bounds.pt1.x = (int16_t)(prcl->left);
             repeat.bounds.pt1.y = (int16_t)(prcl->top);
             repeat.bounds.pt2.x = (int16_t)(prcl->right);
             repeat.bounds.pt2.y = (int16_t)(prcl->bottom);
 
-            bRc = vrdpReportOrder (ppdev, &repeat, sizeof (repeat), VRDP_ORDER_REPEAT);
+            bRc = vrdpReportOrder (ppdev, &repeat, sizeof (repeat), VRDE_ORDER_REPEAT);
 
             if (!bRc)
             {
@@ -555,7 +555,7 @@ static BOOL vrdpReportRepeat (PPDEV ppdev,
 
 static BOOL vrdpIntersectRectWithBounds (RECTL *prclIntersect,
                                          const RECTL *prcl,
-                                         const VRDPORDERBOUNDS *pBounds)
+                                         const VRDEORDERBOUNDS *pBounds)
 {
     if (   prcl->left   < pBounds->pt2.x     /* left < bounds_right */
         && prcl->right  > pBounds->pt1.x     /* right < bounds_left */
@@ -581,7 +581,7 @@ static BOOL vrdpIntersectRectWithBounds (RECTL *prclIntersect,
 
 static BOOL vrdpGetIntersectingRects (CLIPRECTS *pRects,
                                       const VRDPCLIPRECTS *pClipRects,
-                                      const VRDPORDERBOUNDS *pBounds)
+                                      const VRDEORDERBOUNDS *pBounds)
 {
     BOOL fReportOrder = TRUE;
 
@@ -662,7 +662,7 @@ BOOL vrdpReportOrderGeneric (PPDEV ppdev,
 
 static void vrdpReportOrderGenericBounds (PPDEV ppdev,
                                           const VRDPCLIPRECTS *pClipRects,
-                                          const VRDPORDERBOUNDS *pBounds,
+                                          const VRDEORDERBOUNDS *pBounds,
                                           const void *pvOrder,
                                           unsigned cbOrder,
                                           unsigned code)
@@ -680,7 +680,7 @@ static void vrdpReportSolidRect (PPDEV ppdev,
                                  VRDPCLIPRECTS *pClipRects,
                                  ULONG rgb)
 {
-    VRDPORDERSOLIDRECT order;
+    VRDEORDERSOLIDRECT order;
 
     order.x     = (int16_t)prclTrg->left;
     order.y     = (int16_t)prclTrg->top;
@@ -688,7 +688,7 @@ static void vrdpReportSolidRect (PPDEV ppdev,
     order.h     = (uint16_t)(prclTrg->bottom - prclTrg->top);
     order.rgb   = rgb;
 
-    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDP_ORDER_SOLIDRECT);
+    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDE_ORDER_SOLIDRECT);
 }
 
 static void vrdpReportSolidBlt (PPDEV ppdev,
@@ -697,7 +697,7 @@ static void vrdpReportSolidBlt (PPDEV ppdev,
                                 ULONG rgb,
                                 uint8_t rop3)
 {
-    VRDPORDERSOLIDBLT order;
+    VRDEORDERSOLIDBLT order;
 
     order.x     = (int16_t)prclTrg->left;
     order.y     = (int16_t)prclTrg->top;
@@ -706,7 +706,7 @@ static void vrdpReportSolidBlt (PPDEV ppdev,
     order.rgb   = rgb;
     order.rop   = rop3;
 
-    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDP_ORDER_SOLIDBLT);
+    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDE_ORDER_SOLIDBLT);
 }
 
 static void vrdpReportPatBlt (PPDEV ppdev,
@@ -716,7 +716,7 @@ static void vrdpReportPatBlt (PPDEV ppdev,
                               POINTL *pptlBrush,
                               uint8_t rop3)
 {
-    VRDPORDERPATBLTBRUSH order;
+    VRDEORDERPATBLTBRUSH order;
 
     int8_t xSrc = 0;
     int8_t ySrc = 0;
@@ -756,7 +756,7 @@ static void vrdpReportPatBlt (PPDEV ppdev,
 
     memcpy (order.pattern, pBrush->u.pat.au8Pattern, sizeof (order.pattern));
 
-    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDP_ORDER_PATBLTBRUSH);
+    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDE_ORDER_PATBLTBRUSH);
 }
 
 static void vrdpReportDstBlt (PPDEV ppdev,
@@ -764,7 +764,7 @@ static void vrdpReportDstBlt (PPDEV ppdev,
                               VRDPCLIPRECTS *pClipRects,
                               uint8_t rop3)
 {
-    VRDPORDERDSTBLT order;
+    VRDEORDERDSTBLT order;
 
     order.x     = (int16_t)prclTrg->left;
     order.y     = (int16_t)prclTrg->top;
@@ -772,7 +772,7 @@ static void vrdpReportDstBlt (PPDEV ppdev,
     order.h     = (uint16_t)(prclTrg->bottom - prclTrg->top);
     order.rop   = rop3;
 
-    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDP_ORDER_DSTBLT);
+    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDE_ORDER_DSTBLT);
 }
 
 static void vrdpReportScreenBlt (PPDEV ppdev,
@@ -781,7 +781,7 @@ static void vrdpReportScreenBlt (PPDEV ppdev,
                                  POINTL *pptlSrc,
                                  uint8_t rop3)
 {
-    VRDPORDERSCREENBLT order;
+    VRDEORDERSCREENBLT order;
 
     order.x     = (int16_t)prclTrg->left;
     order.y     = (int16_t)prclTrg->top;
@@ -791,7 +791,7 @@ static void vrdpReportScreenBlt (PPDEV ppdev,
     order.ySrc  = (int16_t)pptlSrc->y;
     order.rop   = rop3;
 
-    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDP_ORDER_SCREENBLT);
+    vrdpReportOrderGeneric (ppdev, pClipRects, &order, sizeof (order), VRDE_ORDER_SCREENBLT);
 }
 
 static void vrdpReportMemBltRect (PPDEV ppdev,
@@ -801,7 +801,7 @@ static void vrdpReportMemBltRect (PPDEV ppdev,
                                   uint8_t rop3,
                                   const VRDPBCHASH *phash)
 {
-    VRDPORDERMEMBLT order;
+    VRDEORDERMEMBLT order;
 
     order.x    = (int16_t)prcl->left;
     order.y    = (int16_t)prcl->top;
@@ -814,7 +814,7 @@ static void vrdpReportMemBltRect (PPDEV ppdev,
     VBVA_ASSERT(sizeof (*phash) == sizeof (order.hash));
     memcpy (order.hash, phash, sizeof (*phash));
 
-    vrdpReportOrder (ppdev, &order, sizeof (order), VRDP_ORDER_MEMBLT);
+    vrdpReportOrder (ppdev, &order, sizeof (order), VRDE_ORDER_MEMBLT);
 }
 
 static void vrdpReportMemBlt (PPDEV ppdev,
@@ -853,12 +853,12 @@ static void vrdpReportCachedBitmap (PPDEV ppdev,
 {
     BOOL bRc;
 
-    VRDPORDERCACHEDBITMAP order;
+    VRDEORDERCACHEDBITMAP order;
 
     VBVA_ASSERT(sizeof (*phash) == sizeof (order.hash));
     memcpy (order.hash, phash, sizeof (*phash));
 
-    bRc = vrdpReportOrder (ppdev, &order, sizeof (order), VRDP_ORDER_CACHED_BITMAP);
+    bRc = vrdpReportOrder (ppdev, &order, sizeof (order), VRDE_ORDER_CACHED_BITMAP);
 
     if (bRc)
     {
@@ -878,12 +878,12 @@ static void vrdpReportCachedBitmap (PPDEV ppdev,
 static void vrdpReportDeletedBitmap (PPDEV ppdev,
                                      const VRDPBCHASH *phash)
 {
-    VRDPORDERDELETEDBITMAP order;
+    VRDEORDERDELETEDBITMAP order;
 
     VBVA_ASSERT(sizeof (*phash) == sizeof (order.hash));
     memcpy (order.hash, phash, sizeof (*phash));
 
-    vrdpReportOrder (ppdev, &order, sizeof (order), VRDP_ORDER_DELETED_BITMAP);
+    vrdpReportOrder (ppdev, &order, sizeof (order), VRDE_ORDER_DELETED_BITMAP);
 }
 
 
@@ -1251,7 +1251,7 @@ void vrdpLineTo(
     }
     else
     {
-        VRDPORDERLINE order;
+        VRDEORDERLINE order;
 
         order.x1 = (int16_t)x1;
         order.y1 = (int16_t)y1;
@@ -1270,7 +1270,7 @@ void vrdpLineTo(
                     x1, y1, x2, y2, order.mix, order.rgb,
                     prclBounds->left, prclBounds->right, prclBounds->top, prclBounds->bottom, clipRects.rects.c));
 
-        vrdpReportOrderGeneric (ppdev, &clipRects, &order, sizeof (order), VRDP_ORDER_LINE);
+        vrdpReportOrderGeneric (ppdev, &clipRects, &order, sizeof (order), VRDE_ORDER_LINE);
     }
 }
 
@@ -1334,13 +1334,13 @@ void vrdpFillPath(
     vrdpReportDirtyPath (ppdev, pco, ppo);
 }
 
-static void vrdpPointFX2Point (const POINTFIX *pptfx, VRDPORDERPOINT *ppt)
+static void vrdpPointFX2Point (const POINTFIX *pptfx, VRDEORDERPOINT *ppt)
 {
     ppt->x = (int16_t)FXTOLROUND(pptfx->x);
     ppt->y = (int16_t)FXTOLROUND(pptfx->y);
 }
 
-static void vrdpPolyPointsAdd (VRDPORDERPOLYPOINTS *pPoints, const VRDPORDERPOINT *ppt)
+static void vrdpPolyPointsAdd (VRDEORDERPOLYPOINTS *pPoints, const VRDEORDERPOINT *ppt)
 {
     VBVA_ASSERT(pPoints->c < RT_ELEMENTS(pPoints->a));
 
@@ -1349,7 +1349,7 @@ static void vrdpPolyPointsAdd (VRDPORDERPOLYPOINTS *pPoints, const VRDPORDERPOIN
     pPoints->c++;
 }
 
-static void vrdpExtendOrderBounds (VRDPORDERBOUNDS *pBounds, const VRDPORDERPOINT *ppt)
+static void vrdpExtendOrderBounds (VRDEORDERBOUNDS *pBounds, const VRDEORDERPOINT *ppt)
 {
     /* Bounds have inclusive pt1 and exclusive pt2. */
 
@@ -1433,9 +1433,9 @@ void vrdpStrokePath(
     }
     else if (ppo->fl & PO_ELLIPSE)
     {
-        if (vboxOrderSupported (ppdev, VRDP_ORDER_ELLIPSE))
+        if (vboxOrderSupported (ppdev, VRDE_ORDER_ELLIPSE))
         {
-            VRDPORDERELLIPSE order;
+            VRDEORDERELLIPSE order;
 
             order.pt1.x = (int16_t)FXTOLROUND(rcfxBounds.xLeft   + 4);
             order.pt1.y = (int16_t)FXTOLROUND(rcfxBounds.yTop    + 4);
@@ -1446,7 +1446,7 @@ void vrdpStrokePath(
             order.fillMode = 0;
             order.rgb = vrdpColor2RGB (pso, pbo->iSolidColor);
 
-            vrdpReportOrderGeneric (ppdev, &clipRects, &order, sizeof (order), VRDP_ORDER_ELLIPSE);
+            vrdpReportOrderGeneric (ppdev, &clipRects, &order, sizeof (order), VRDE_ORDER_ELLIPSE);
         }
         else
         {
@@ -1461,9 +1461,9 @@ void vrdpStrokePath(
         unsigned i;
         PATHDATA pd;
         BOOL bMore;
-        VRDPORDERPOLYLINE order;
-        VRDPORDERPOINT ptStart;
-        VRDPORDERBOUNDS bounds;
+        VRDEORDERPOLYLINE order;
+        VRDEORDERPOINT ptStart;
+        VRDEORDERBOUNDS bounds;
 
         order.rgb = vrdpColor2RGB (pso, pbo->iSolidColor);
         order.mix = (uint8_t)(mix & 0x1F);
@@ -1474,7 +1474,7 @@ void vrdpStrokePath(
 
         do {
             POINTFIX *pptfx;
-            VRDPORDERPOINT pt;
+            VRDEORDERPOINT pt;
 
             bMore = PATHOBJ_bEnum (ppo, &pd);
 
@@ -1519,7 +1519,7 @@ void vrdpStrokePath(
                     /* Flush the order and start a new order. */
                     DISPDBG((1, "vrdpStrokePath: Report order, points overflow.\n"));
 
-                    vrdpReportOrderGenericBounds (ppdev, &clipRects, &bounds, &order, sizeof (order), VRDP_ORDER_POLYLINE);
+                    vrdpReportOrderGenericBounds (ppdev, &clipRects, &bounds, &order, sizeof (order), VRDE_ORDER_POLYLINE);
 
                     order.points.c = 0;
                     order.ptStart = pt;
@@ -1549,7 +1549,7 @@ void vrdpStrokePath(
 
                 if (order.points.c > 0)
                 {
-                    vrdpReportOrderGenericBounds (ppdev, &clipRects, &bounds, &order, sizeof (order), VRDP_ORDER_POLYLINE);
+                    vrdpReportOrderGenericBounds (ppdev, &clipRects, &bounds, &order, sizeof (order), VRDE_ORDER_POLYLINE);
                 }
 
                 order.points.c = 0;
@@ -1726,7 +1726,7 @@ void vrdpSaveScreenBits(
     {
         case SS_SAVE:
         {
-            VRDPORDERSAVESCREEN order;
+            VRDEORDERSAVESCREEN order;
 
             order.pt1.x = (int16_t)prcl->left;
             order.pt1.y = (int16_t)prcl->top;
@@ -1736,12 +1736,12 @@ void vrdpSaveScreenBits(
             order.ident = (uint8_t)ident;
             order.restore = 0;
 
-            vrdpReportOrderGeneric (ppdev, NULL, &order, sizeof (order), VRDP_ORDER_SAVESCREEN);
+            vrdpReportOrderGeneric (ppdev, NULL, &order, sizeof (order), VRDE_ORDER_SAVESCREEN);
         } break;
 
         case SS_RESTORE:
         {
-            VRDPORDERSAVESCREEN order;
+            VRDEORDERSAVESCREEN order;
 
             order.pt1.x = (int16_t)prcl->left;
             order.pt1.y = (int16_t)prcl->top;
@@ -1751,7 +1751,7 @@ void vrdpSaveScreenBits(
             order.ident = (uint8_t)ident;
             order.restore = 1;
 
-            if (vrdpReportOrderGeneric (ppdev, NULL, &order, sizeof (order), VRDP_ORDER_SAVESCREEN))
+            if (vrdpReportOrderGeneric (ppdev, NULL, &order, sizeof (order), VRDE_ORDER_SAVESCREEN))
             {
                 uint8_t *pu8Bits;
                 int32_t lDelta;
