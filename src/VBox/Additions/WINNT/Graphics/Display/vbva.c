@@ -304,21 +304,51 @@ void vboxReportDirtyRect (PPDEV ppdev, RECTL *pRectOrig)
     if (ppdev)
     {
         VBVACMDHDR hdr;
+        RECTL rect;
 
-        RECTL rect = *pRectOrig;
+        /* Ensure correct order. */
+        if (pRectOrig->left <= pRectOrig->right)
+        {
+            rect.left = pRectOrig->left;
+            rect.right = pRectOrig->right;
+        }
+        else
+        {
+            rect.left = pRectOrig->right;
+            rect.right = pRectOrig->left;
+        }
 
-        if (rect.left < 0) rect.left = 0;
-        if (rect.top < 0) rect.top = 0;
-        if (rect.right > (int)ppdev->cxScreen) rect.right = ppdev->cxScreen;
-        if (rect.bottom > (int)ppdev->cyScreen) rect.bottom = ppdev->cyScreen;
+        if (pRectOrig->top <= pRectOrig->bottom)
+        {
+            rect.top = pRectOrig->top;
+            rect.bottom = pRectOrig->bottom;
+        }
+        else
+        {
+            rect.top = pRectOrig->bottom;
+            rect.bottom = pRectOrig->top;
+        }
 
-        hdr.x = (int16_t)rect.left;
-        hdr.y = (int16_t)rect.top;
+        /* Clip the rectangle. */
+        rect.left   = RT_CLAMP(rect.left,   0, (LONG)ppdev->cxScreen);
+        rect.top    = RT_CLAMP(rect.top,    0, (LONG)ppdev->cyScreen);
+        rect.right  = RT_CLAMP(rect.right,  0, (LONG)ppdev->cxScreen);
+        rect.bottom = RT_CLAMP(rect.bottom, 0, (LONG)ppdev->cyScreen);
+
+        /* If the rectangle is empty, still report it. */
+        if (rect.right < rect.left)
+        {
+            rect.right = rect.left;
+        }
+        if (rect.bottom < rect.top)
+        {
+            rect.bottom = rect.top;
+        }
+
+        hdr.x = (int16_t)(rect.left + ppdev->ptlDevOrg.x);
+        hdr.y = (int16_t)(rect.top + ppdev->ptlDevOrg.y);
         hdr.w = (uint16_t)(rect.right - rect.left);
         hdr.h = (uint16_t)(rect.bottom - rect.top);
-
-        hdr.x += (int16_t)ppdev->ptlDevOrg.x;
-        hdr.y += (int16_t)ppdev->ptlDevOrg.y;
 
         vboxWrite (ppdev, &hdr, sizeof(hdr));
     }
