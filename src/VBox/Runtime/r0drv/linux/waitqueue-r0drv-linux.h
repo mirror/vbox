@@ -170,7 +170,7 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
     /*
      * Initialize the wait queue related bits.
      */
-    init_wait(&pWait->WaitQE);
+    init_wait((&pWait->WaitQE));
     pWait->pWaitQueue = pWaitQueue;
     pWait->iWaitState = fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE
                       ? TASK_INTERRUPTIBLE : TASK_UNINTERRUPTIBLE;
