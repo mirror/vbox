@@ -349,6 +349,8 @@ RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cM
  * @returns iprt status code.
  * @param   hEventMultiSem      The multiple release event semaphore.
  * @param   cMillies            Number of milliseconds to wait.
+ * @todo    Rename to RTSemEventMultiWaitIntr since it is mainly for
+ *          ring-0 consumption.
  */
 RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies);
 
