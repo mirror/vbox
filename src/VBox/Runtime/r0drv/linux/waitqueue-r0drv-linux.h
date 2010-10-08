@@ -170,7 +170,12 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
     /*
      * Initialize the wait queue related bits.
      */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 39)
     init_wait((&pWait->WaitQE));
+#else
+    RT_ZERO(pWait->WaitQE);
+    init_waitqueue_entry((&pWait->WaitQE), current);
+#endif
     pWait->pWaitQueue = pWaitQueue;
     pWait->iWaitState = fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE
                       ? TASK_INTERRUPTIBLE : TASK_UNINTERRUPTIBLE;
