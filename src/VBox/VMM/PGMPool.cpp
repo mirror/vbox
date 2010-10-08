@@ -143,12 +143,32 @@ int pgmR3PoolInit(PVM pVM)
      */
     PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/PGM/Pool");
 
+    /* Default pgm pool size equals 1024 pages. */
+    uint16_t cMaxPages = 4*_1M >> PAGE_SHIFT;
+
+#if HC_ARCH_BITS == 64
+    uint64_t cbRam = 0;
+    CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
+
+    /* We should increase the pgm pool size for guests with more than 2 GB of ram */
+    if (cbRam >= UINT64_C(2) * _1G)
+    {
+        /* In the nested paging case we require 2 + 513 * (cbRam/1GB) pages to
+         * store the entire page table descriptors.
+         */
+        uint64_t u64MaxPages = cbRam  / (_1G / UINT64_C(512));
+        if (u64MaxPages > PGMPOOL_IDX_LAST)
+            cMaxPages = PGMPOOL_IDX_LAST;
+        else
+            cMaxPages = (uint16_t)u64MaxPages;
+    }
+#endif
+
     /** @cfgm{/PGM/Pool/MaxPages, uint16_t, #pages, 16, 0x3fff, 1024}
      * The max size of the shadow page pool in pages. The pool will grow dynamically
      * up to this limit.
      */
-    uint16_t cMaxPages;
-    int rc = CFGMR3QueryU16Def(pCfg, "MaxPages", &cMaxPages, 4*_1M >> PAGE_SHIFT);
+    int rc = CFGMR3QueryU16Def(pCfg, "MaxPages", &cMaxPages, cMaxPages);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelMsgReturn(cMaxPages <= PGMPOOL_IDX_LAST && cMaxPages >= RT_ALIGN(PGMPOOL_IDX_FIRST, 16),
                           ("cMaxPages=%u (%#x)\n", cMaxPages, cMaxPages), VERR_INVALID_PARAMETER);
@@ -185,8 +205,8 @@ int pgmR3PoolInit(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfg, "CacheEnabled", &fCacheEnabled, true);
     AssertLogRelRCReturn(rc, rc);
 
-    Log(("pgmR3PoolInit: cMaxPages=%#RX16 cMaxUsers=%#RX16 cMaxPhysExts=%#RX16 fCacheEnable=%RTbool\n",
-         cMaxPages, cMaxUsers, cMaxPhysExts, fCacheEnabled));
+    LogRel(("pgmR3PoolInit: cMaxPages=%#RX16 cMaxUsers=%#RX16 cMaxPhysExts=%#RX16 fCacheEnable=%RTbool\n",
+             cMaxPages, cMaxUsers, cMaxPhysExts, fCacheEnabled));
 
     /*
      * Allocate the data structures.
