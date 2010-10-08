@@ -44,6 +44,9 @@
 # include <shadow.h>
 #endif
 #if defined(RT_OS_LINUX) || defined(RT_OS_OS2)
+/* While Solaris has posix_spawn() of course we don't want to use it as
+ * we need to have the child in a different process contract, no matter
+ * whether it is started detached or not. */
 # define HAVE_POSIX_SPAWN 1
 #endif
 #ifdef HAVE_POSIX_SPAWN
@@ -525,6 +528,14 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         {
             if (phProcess)
                 *phProcess = pid;
+            else if (fFlags & (RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED))
+            {
+                /* If the process is detached straight away wait for the
+                 * intermediate process to exit (it should do that quickly)
+                 * if the caller didn't want to know the PID. If it wants the
+                 * PID it's his job to wait for it or he gets a zombie. */
+                waitpid(pid, NULL, 0);
+            }
             return VINF_SUCCESS;
         }
         rc = errno;
@@ -560,7 +571,7 @@ RTR3DECL(int)   RTProcWaitNoResume(RTPROCESS Process, unsigned fFlags, PRTPROCST
     }
 
     /*
-     * Performe the wait.
+     * Perform the wait.
      */
     int iStatus = 0;
     int rc = waitpid(Process, &iStatus, fFlags & RTPROCWAIT_FLAGS_NOBLOCK ? WNOHANG : 0);
