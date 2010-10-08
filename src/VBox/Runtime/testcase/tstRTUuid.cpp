@@ -115,6 +115,10 @@ int main(int argc, char **argv)
     rc = RTUuidToUtf16(&Uuid, wsz, sizeof(wsz)); CHECK_RC();
     RTTEST_CHECK(hTest, RTUtf16Len(wsz) == RTUUID_STR_LENGTH - 1);
 
+    RTTestSub(hTest, "RTUuidFromUtf16");
+    rc = RTUuidFromUtf16(&Uuid2, wsz); CHECK_RC();
+    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
+
     RTUTF16 *pwsz;
     rc = RTStrToUtf16(sz2, &pwsz);
     RTTEST_CHECK(hTest, rc == VINF_SUCCESS);
@@ -139,10 +143,6 @@ int main(int argc, char **argv)
         }
         RTUtf16Free(pwsz);
     }
-
-    RTTestSub(hTest, "RTUuidFromUtf16");
-    rc = RTUuidFromUtf16(&Uuid2, wsz); CHECK_RC();
-    RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
 
     RTTestSub(hTest, "RTUuidCompareStr");
     RTTEST_CHECK(hTest, RTUuidCompareStr(&Uuid, sz) == 0);
