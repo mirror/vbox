@@ -47,7 +47,6 @@ RTDECL(int) RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTE
         rc = RTSemEventMultiWaitEx(hEventMultiSem,
                                    RTSEMWAIT_FLAGS_NORESUME | RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS,
                                    cMillies);
-    Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTSemEventMultiWaitNoResume);
