@@ -32,6 +32,7 @@
 
 #include <iprt/asm-math.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
 #include <iprt/time.h>
 
 
