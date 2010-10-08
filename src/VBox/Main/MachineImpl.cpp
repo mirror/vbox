@@ -10702,8 +10702,12 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
                 break;
 
             default:
+#ifndef DEBUG_sunlover
                 AssertMsgFailedReturn(("%s\n", Global::stringifyMachineState(mData->mMachineState)),
                                       VBOX_E_INVALID_VM_STATE);
+#else
+                return VBOX_E_INVALID_VM_STATE;
+#endif
         }
 
         setModified(IsModified_MachineData);
