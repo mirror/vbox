@@ -217,7 +217,7 @@ DECLINLINE(void) rtR0SemLnxWaitDoIt(PRTR0SEMLNXWAIT pWait)
         if (pWait->u.lTimeout <= 0)
             pWait->fTimedOut = true;
     }
-    after_wait(&WaitQE);
+    after_wait((&pWait->WaitQE));
 }
 
 
