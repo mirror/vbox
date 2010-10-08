@@ -70,7 +70,7 @@
 /** Converts a vga adaptor state pointer to a device instance pointer. */
 #define VGASTATE2DEVINS(pVgaState)    ((pVgaState)->CTX_SUFF(pDevIns))
 
-/** Use VBE bytewise I/O */
+/** Use VBE bytewise I/O. Only needed for Windows Longhorn/Vista betas. */
 #define VBE_BYTEWISE_IO
 
 /** Use VBE new dynamic mode list.

@@ -43,7 +43,7 @@
 // disable VESA/VBE2 check in vbe info
 //#define VBE2_NO_VESA_CHECK
 
-// use bytewise i/o by default (Longhorn issue)
+// use bytewise i/o by default (Longhorn beta issue, not in released Vista)
 #define VBE_BYTEWISE_IO
 
 // Use VBE new dynamic mode list.  Note that without this option, no
