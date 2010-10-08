@@ -386,6 +386,7 @@ RuntimeR3_SOURCES       = \
 	r3/fileio.cpp \
 	r3/fs.cpp \
 	r3/init.cpp \
+	r3/isofs.cpp \
 	r3/path.cpp \
 	r3/process.cpp \
 	r3/socket.cpp \
