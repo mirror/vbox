@@ -225,21 +225,22 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
         VSCSIIoReqCompleted(hVScsiIoReq, rc, false /* fRedoPossible */);
     else
     {
-        uint64_t  uOffset    = 0;
-        size_t    cbTransfer = 0;
-        size_t    cbSeg      = 0;
-        PCRTSGSEG paSeg      = NULL;
-        unsigned  cSeg       = 0;
-
-        VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer,
-                            &cSeg, &cbSeg, &paSeg);
-
         pThis->cErrors++;
         if (   pThis->cErrors < MAX_LOG_REL_ERRORS
             && enmTxDir == VSCSIIOREQTXDIR_FLUSH)
             LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
                     pThis->pDrvIns->iInstance, rc));
         else
+        {
+            uint64_t  uOffset    = 0;
+            size_t    cbTransfer = 0;
+            size_t    cbSeg      = 0;
+            PCRTSGSEG paSeg      = NULL;
+            unsigned  cSeg       = 0;
+
+            VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer,
+                                &cSeg, &cbSeg, &paSeg);
+
             LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
                     pThis->pDrvIns->iInstance,
                     enmTxDir == VSCSIIOREQTXDIR_READ
@@ -247,6 +248,7 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
                     : "Write",
                     uOffset,
                     cbTransfer, rc));
+        }
 
         VSCSIIoReqCompleted(hVScsiIoReq, rc, drvscsiIsRedoPossible(rc));
     }
