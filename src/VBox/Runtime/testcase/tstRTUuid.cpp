@@ -115,6 +115,31 @@ int main(int argc, char **argv)
     rc = RTUuidToUtf16(&Uuid, wsz, sizeof(wsz)); CHECK_RC();
     RTTEST_CHECK(hTest, RTUtf16Len(wsz) == RTUUID_STR_LENGTH - 1);
 
+    RTUTF16 *pwsz;
+    rc = RTStrToUtf16(sz2, &pwsz);
+    RTTEST_CHECK(hTest, rc == VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        RTTESTI_CHECK_RC(RTUuidFromUtf16(&Uuid2, pwsz), VINF_SUCCESS);
+        RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
+        RTUTF16 *pwsz2 = (RTUTF16*)RTTestGuardedAllocTail(hTest, 2 * (RTUUID_STR_LENGTH + 2));
+        if (pwsz2)
+        {
+            memcpy(pwsz2, pwsz, 2 * (RTUUID_STR_LENGTH + 2));
+            RTTESTI_CHECK_RC(RTUuidFromUtf16(&Uuid2, pwsz2), VINF_SUCCESS);
+            RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
+            for (unsigned off = 1; off < RTUUID_STR_LENGTH + 2; off++)
+            {
+                RTUTF16 *pwsz3 = pwsz2 + off;
+                memcpy(pwsz3, pwsz, 2 * (RTUUID_STR_LENGTH + 1 - off));
+                pwsz3[RTUUID_STR_LENGTH + 1 - off] = 0;
+                RTTESTI_CHECK_RC(RTUuidFromUtf16(&Uuid2, pwsz3), VERR_INVALID_UUID_FORMAT);
+            }
+            RTTestGuardedFree(hTest, pwsz2);
+        }
+        RTUtf16Free(pwsz);
+    }
+
     RTTestSub(hTest, "RTUuidFromUtf16");
     rc = RTUuidFromUtf16(&Uuid2, wsz); CHECK_RC();
     RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
