@@ -2161,7 +2161,7 @@ Value: 2006.01.01</screen>
     kernel modes by the virtual machine named "test", you can use the
     following command:</para>
 
-    <screen>VBoxManage query test CPU/Load/User,CPU/Load/Kernel</screen>
+    <screen>VBoxManage metrics query test CPU/Load/User,CPU/Load/Kernel</screen>
 
     <para>The following list summarizes the available subcommands:</para>
 
