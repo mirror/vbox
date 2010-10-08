@@ -273,12 +273,12 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
          * Check for alignment constraints. The physical address of memory allocated with
          * alloc_pages(flags, order) is always 2^(PAGE_SHIFT+order)-aligned.
          */
-        if (RT_UNLIKELY(page_to_phys(pMemLnx->apPages[0]) & ~(uAlignment - 1)))
+        if (RT_UNLIKELY(page_to_phys(pMemLnx->apPages[0]) & (uAlignment - 1)))
         {
             /*
              * This should never happen!
              */
-            printk("rtR0MemObjLinuxAllocPages(cb=%ld, uAlignment=%ld): alloc_pages(..., %d) returned physical memory at %lu!\n",
+            printk("rtR0MemObjLinuxAllocPages(cb=0x%lx, uAlignment=0x%lx): alloc_pages(..., %d) returned physical memory at 0x%lx!\n",
                     (unsigned long)cb, (unsigned long)uAlignment, rtR0MemObjLinuxOrder(cPages), (unsigned long)page_to_phys(pMemLnx->apPages[0]));
             rtR0MemObjLinuxFreePages(pMemLnx);
             return VERR_NO_MEMORY;
