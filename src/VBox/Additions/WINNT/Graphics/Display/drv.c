@@ -747,6 +747,7 @@ ULONG_PTR APIENTRY DrvSaveScreenBits(
                        (psoOrg, iMode, ident, &rcl));
     }
 
+    DISPDBG((1, "DrvSaveScreenBits: return %d\n", rc));
     return rc;
 }
 
