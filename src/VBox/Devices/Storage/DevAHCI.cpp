@@ -2619,7 +2619,9 @@ static void ahciPostFirstD2HFisIntoMemory(PAHCIPort pAhciPort)
     d2hFis[AHCI_CMDFIS_SECTN] = 0x01;
     d2hFis[AHCI_CMDFIS_SECTC] = 0x01;
 
-    pAhciPort->regTFD = (1 << 8) | ATA_STAT_READY | ATA_STAT_SEEK | ATA_STAT_WRERR;
+    pAhciPort->regTFD = (1 << 8) | ATA_STAT_SEEK | ATA_STAT_WRERR;
+    if (!pAhciPort->fATAPI)
+        pAhciPort->regTFD |= ATA_STAT_READY;
 
     ahciPostFisIntoMemory(pAhciPort, AHCI_CMDFIS_TYPE_D2H, d2hFis);
 }
@@ -4501,6 +4503,26 @@ static void ahciFinishStorageDeviceReset(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE
 }
 
 /**
+ * Initiates a device reset caused by ATA_DEVICE_RESET (ATAPI only).
+ *
+ * @returns nothing.
+ * @param   pAhciPort          The device to reset.
+ * @param   pAhciPortTaskState The task state.
+ */
+static void ahciDeviceReset(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
+{
+    ASMAtomicWriteBool(&pAhciPort->fResetDevice, true);
+
+    /*
+     * Because this ATAPI only and ATAPI can't have
+     * more than one command active at a time the task counter should be 0
+     * and it is possible to finish the reset now.
+     */
+    Assert(ASMAtomicReadU32(&pAhciPort->uActTasksActive) == 0);
+    ahciFinishStorageDeviceReset(pAhciPort, pAhciPortTaskState);
+}
+
+/**
  * Build a D2H FIS and post into the memory area of the guest.
  *
  * @returns Nothing
@@ -5812,6 +5834,20 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
                 default:
                     pAhciPortTaskState->uATARegError = ABRT_ERR;
                     pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+            }
+            break;
+        }
+        case ATA_DEVICE_RESET:
+        {
+            if (!pAhciPort->fATAPI)
+            {
+                pAhciPortTaskState->uATARegError = ABRT_ERR;
+                pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+            }
+            else
+            {
+                /* Reset the device. */
+                ahciDeviceReset(pAhciPort, pAhciPortTaskState);
             }
             break;
         }
