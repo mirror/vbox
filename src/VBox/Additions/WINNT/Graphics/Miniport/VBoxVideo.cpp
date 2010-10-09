@@ -1341,12 +1341,12 @@ NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool b
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 {
 #ifndef VBOX_WITH_HGSMI
-    ULONG ulAvailable = PrimaryExtension->u.primary.cbVRAM
-                        - PrimaryExtension->u.primary.cbMiniportHeap
+    ULONG ulAvailable = commonFromDeviceExt(PrimaryExtension)->cbVRAM
+                        - commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap
                         - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE;
 #else
-    ULONG ulAvailable = PrimaryExtension->u.primary.cbVRAM
-                        - PrimaryExtension->u.primary.cbMiniportHeap
+    ULONG ulAvailable = commonFromDeviceExt(PrimaryExtension)->cbVRAM
+                        - commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap
                         - VBVA_ADAPTER_INFORMATION_SIZE;
 #endif /* VBOX_WITH_HGSMI */
 
@@ -1358,7 +1358,7 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
     ulSize &= ~0xFFF;
 
     dprintf(("VBoxVideo::VBoxComputeFrameBufferSizes: cbVRAM = 0x%08X, cDisplays = %d, ulSize = 0x%08X, ulSize * cDisplays = 0x%08X, slack = 0x%08X\n",
-             PrimaryExtension->u.primary.cbVRAM, PrimaryExtension->u.primary.cDisplays,
+             commonFromDeviceExt(PrimaryExtension)->cbVRAM, PrimaryExtension->u.primary.cDisplays,
              ulSize, ulSize * PrimaryExtension->u.primary.cDisplays,
              ulAvailable - ulSize * PrimaryExtension->u.primary.cDisplays));
 
@@ -1456,7 +1456,7 @@ BOOLEAN VBoxUnmapAdpInfoCallback(PVOID ext)
     PDEVICE_EXTENSION   PrimaryExtension = (PDEVICE_EXTENSION)ext;
     Assert(PrimaryExtension);
 
-    PrimaryExtension->u.primary.pHostFlags = NULL;
+    commonFromDeviceExt(PrimaryExtension)->pHostFlags = NULL;
     return TRUE;
 }
 
@@ -1466,7 +1466,7 @@ void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
 
     dprintf(("VBoxVideo::VBoxUnmapAdapterInformation\n"));
 
-    ppv = PrimaryExtension->u.primary.pvAdapterInformation;
+    ppv = commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation;
     if (ppv)
     {
 #ifndef VBOX_WITH_WDDM
@@ -1486,7 +1486,7 @@ void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
                 ppv);
         Assert(ntStatus == STATUS_SUCCESS);
 #endif
-        PrimaryExtension->u.primary.pvAdapterInformation = NULL;
+        commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation = NULL;
     }
 }
 
@@ -1526,7 +1526,7 @@ static void vboxQueryConf (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32Index
         VBOXVIDEOINFOHDR hdrEnd;
     } VBOXVIDEOQCONF32;
 
-    VBOXVIDEOQCONF32 *p = (VBOXVIDEOQCONF32 *)PrimaryExtension->u.primary.pvAdapterInformation;
+    VBOXVIDEOQCONF32 *p = (VBOXVIDEOQCONF32 *)commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation;
 
     p->hdrQuery.u8Type     = VBOX_VIDEO_INFO_TYPE_QUERY_CONF32;
     p->hdrQuery.u8Reserved = 0;
@@ -1969,8 +1969,8 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
 
 #ifdef VBOX_WITH_HGSMI
       /* pPrimary is not yet set */
-      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.hgsmiInfo.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.hgsmiInfo.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.commonInfo.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.commonInfo.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 #endif /* VBOX_WITH_HGSMI */
 
       VIDEO_ACCESS_RANGE tmpRanges[4];
@@ -2069,9 +2069,9 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
     PDEVICE_EXTENSION PrimaryExtension = devExt->pPrimary;
     if (PrimaryExtension)
     {
-        if (PrimaryExtension->u.primary.pHostFlags) /* If HGSMI is enabled at all. */
+        if (commonFromDeviceExt(PrimaryExtension)->pHostFlags) /* If HGSMI is enabled at all. */
         {
-            uint32_t flags = PrimaryExtension->u.primary.pHostFlags->u32HostFlags;
+            uint32_t flags = commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags;
             if((flags & HGSMIHOSTFLAGS_IRQ) != 0)
             {
                 if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
@@ -2866,7 +2866,7 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 
     VbglTerminate ();
 
-    VBoxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvMiniportHeap, pDevExt->u.primary.cbMiniportHeap);
+    VBoxUnmapAdapterMemory (pDevExt, &commonFromDeviceExt(pDevExt)->pvMiniportHeap, commonFromDeviceExt(pDevExt)->cbMiniportHeap);
     VBoxUnmapAdapterInformation (pDevExt);
 
     return TRUE;

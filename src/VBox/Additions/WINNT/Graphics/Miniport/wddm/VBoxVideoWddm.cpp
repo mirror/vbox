@@ -418,7 +418,7 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
         * an ULONG from the data port without setting an index before.
         */
        *pAdapterMemorySize = VBoxVideoCmnPortReadUlong((PULONG)VBE_DISPI_IOPORT_DATA);
-       if (VBoxHGSMIIsSupported (pContext))
+       if (VBoxHGSMIIsSupported ())
        {
            commonFromDeviceExt(pContext)->IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
            commonFromDeviceExt(pContext)->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
@@ -770,7 +770,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
     BOOLEAN bOur = FALSE;
     BOOLEAN bNeedDpc = FALSE;
-    if (pDevExt->u.primary.pHostFlags) /* If HGSMI is enabled at all. */
+    if (commonFromDeviceExt(pDevExt)->pHostFlags) /* If HGSMI is enabled at all. */
     {
         VBOXSHGSMILIST CtlList;
 #ifdef VBOX_WITH_VDMA
@@ -786,7 +786,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
         vboxSHGSMIListInit(&VhwaCmdList);
 #endif
 
-        uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
+        uint32_t flags = commonFromDeviceExt(pDevExt)->pHostFlags->u32HostFlags;
         bOur = (flags & HGSMIHOSTFLAGS_IRQ);
         do
         {
@@ -856,7 +856,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
             else
                 break;
 
-            flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
+            flags = commonFromDeviceExt(pDevExt)->pHostFlags->u32HostFlags;
         } while (1);
 
         if (!vboxSHGSMIListIsEmpty(&CtlList))
