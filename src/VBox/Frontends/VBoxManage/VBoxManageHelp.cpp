@@ -192,6 +192,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--accelerate2dvideo on|off]\n"
 #endif
                      "                            [--firmware bios|efi|efi32|efi64]\n"
+                     "                            [--chipset ich9|piix3]\n"
                      "                            [--bioslogofadein on|off]\n"
                      "                            [--bioslogofadeout on|off]\n"
                      "                            [--bioslogodisplaytime <msec>]\n"
