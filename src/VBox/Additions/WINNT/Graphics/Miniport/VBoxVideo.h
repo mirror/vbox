@@ -199,9 +199,28 @@ typedef struct VBOXWDDM_TARGET
 
 #endif
 
-#ifdef VBOX_WITH_HGSMI
 typedef struct VBOXVIDEO_COMMON
 {
+    ULONG cbVRAM;                       /* The VRAM size. */
+
+    ULONG cbMiniportHeap;               /* The size of reserved VRAM for miniport driver heap.
+                                         * It is at offset:
+                                         *   cbAdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE - cbMiniportHeap
+                                         */
+    PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM.
+                                         * This is mapped by miniport separately.
+                                         */
+#ifdef VBOX_WITH_HGSMI
+    volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
+    volatile bool bHostCmdProcessing;
+    VBOXVCMNSPIN_LOCK pSynchLock;
+#endif
+
+    PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM.
+                                         * This is mapped by miniport separately.
+                                         */
+
+#ifdef VBOX_WITH_HGSMI
     BOOLEAN bHGSMI;                     /* Whether HGSMI is enabled. */
 
     HGSMIAREA areaHostHeap;             /* Host heap VRAM area. */
@@ -215,8 +234,8 @@ typedef struct VBOXVIDEO_COMMON
 
     /* The IO Port Number for guest commands. */
     RTIOPORT IOPortGuest;
-} VBOXVIDEO_COMMON, *PVBOXVIDEO_COMMON;
 #endif
+} VBOXVIDEO_COMMON, *PVBOXVIDEO_COMMON;
 
 typedef struct _DEVICE_EXTENSION
 {
@@ -252,31 +271,12 @@ typedef struct _DEVICE_EXTENSION
 
            int cDisplays;                      /* Number of displays. */
 
-           ULONG cbVRAM;                       /* The VRAM size. */
-
-           ULONG cbMiniportHeap;               /* The size of reserved VRAM for miniport driver heap.
-                                                * It is at offset:
-                                                *   cbAdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE - cbMiniportHeap
-                                                */
-           PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM.
-                                                * This is mapped by miniport separately.
-                                                */
 #ifdef VBOX_WITH_WDDM
            VBOXVDMAINFO Vdma;
 # ifdef VBOXVDMA_WITH_VBVA
            VBOXVBVAINFO Vbva;
 # endif
 #endif
-
-#ifdef VBOX_WITH_HGSMI
-           volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
-           volatile bool bHostCmdProcessing;
-           VBOXVCMNSPIN_LOCK pSynchLock;
-#endif
-
-           PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM.
-                                                * This is mapped by miniport separately.
-                                                */
 
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
 
@@ -288,8 +288,8 @@ typedef struct _DEVICE_EXTENSION
                                                 */
 #endif /* !VBOX_WITH_HGSMI */
 
+           VBOXVIDEO_COMMON commonInfo;
 #ifdef VBOX_WITH_HGSMI
-           VBOXVIDEO_COMMON hgsmiInfo;
 # ifndef VBOX_WITH_WDDM
            /* Video Port API dynamically picked up at runtime for binary backwards compatibility with older NT versions */
            VBOXVIDEOPORTPROCS VideoPortProcs;
@@ -346,9 +346,9 @@ typedef struct _DEVICE_EXTENSION
 static inline PVBOXVIDEO_COMMON commonFromDeviceExt(PDEVICE_EXTENSION pExt)
 {
 #ifndef VBOX_WITH_WDDM
-    return &pExt->pPrimary->u.primary.hgsmiInfo;
+    return &pExt->pPrimary->u.primary.commonInfo;
 #else
-    return &pExt->u.primary.hgsmiInfo;
+    return &pExt->u.primary.commonInfo;
 #endif
 }
 
@@ -887,7 +887,7 @@ DECLINLINE(ULONG) VBoxHGSMIGuestRead(PVBOXVIDEO_COMMON pCommon)
     return VBoxVideoCmnPortReadUlong((PULONG)pCommon->IOPortGuest);
 }
 
-BOOLEAN VBoxHGSMIIsSupported (PDEVICE_EXTENSION PrimaryExtension);
+BOOLEAN VBoxHGSMIIsSupported (void);
 
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
 #ifndef VBOX_WITH_WDDM
