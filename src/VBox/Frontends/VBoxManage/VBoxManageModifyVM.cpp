@@ -158,7 +158,8 @@ enum
     MODIFYVM_FAULT_TOLERANCE_PORT,
     MODIFYVM_FAULT_TOLERANCE_PASSWORD,
     MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL,
-    MODIFYVM_CPU_EXECTUION_CAP
+    MODIFYVM_CPU_EXECTUION_CAP,
+    MODIFYVM_CHIPSET
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -274,6 +275,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttoleranceport",       MODIFYVM_FAULT_TOLERANCE_PORT,      RTGETOPT_REQ_UINT32 },
     { "--faulttolerancepassword",   MODIFYVM_FAULT_TOLERANCE_PASSWORD,  RTGETOPT_REQ_STRING },
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
+    { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 };
 
 int handleModifyVM(HandlerArg *a)
@@ -2023,6 +2025,24 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_IOCACHESIZE:
             {
                 CHECK_ERROR(machine, COMSETTER(IoCacheSize)(ValueUnion.u32));
+                break;
+            }
+
+            case MODIFYVM_CHIPSET:
+            {
+                if (!strcmp(ValueUnion.psz, "piix3"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(ChipsetType)(ChipsetType_PIIX3));
+                }
+                else if (!strcmp(ValueUnion.psz, "ich9"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(ChipsetType)(ChipsetType_ICH9));
+                }
+                else
+                {
+                    errorArgument("Invalid --chipset argument '%s' (valid: piix3,ich9)", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
                 break;
             }
 

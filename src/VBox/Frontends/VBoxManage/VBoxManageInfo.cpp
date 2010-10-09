@@ -249,6 +249,59 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("HPET:            %s\n", fHpetEnabled ? "on" : "off");
 
+    ChipsetType_T chipsetType = ChipsetType_Null;
+    const char *pszChipsetType = NULL;
+    machine->COMGETTER(ChipsetType)(&chipsetType);
+    switch (chipsetType)
+    {
+        case ChipsetType_Null:
+            pszChipsetType = "invalid";
+            break;
+        case ChipsetType_PIIX3:
+            pszChipsetType = "piix3";
+            break;
+        case ChipsetType_ICH9:
+            pszChipsetType = "ich9";
+            break;
+        default:
+            Assert(false);
+            pszChipsetType = "unknown";
+    }
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("chipset=\"%s\"\n", pszChipsetType);
+    else
+        RTPrintf("Chipset:         %s\n", pszChipsetType);
+
+    FirmwareType_T firmwareType = FirmwareType_BIOS;
+    const char *pszFirmwareType = NULL;
+    machine->COMGETTER(FirmwareType)(&firmwareType);
+    switch (firmwareType)
+    {
+        case FirmwareType_BIOS:
+            pszFirmwareType = "BIOS";
+            break;
+        case FirmwareType_EFI:
+            pszFirmwareType = "EFI";
+            break;
+        case FirmwareType_EFI32:
+            pszFirmwareType = "EFI32";
+            break;
+        case FirmwareType_EFI64:
+            pszFirmwareType = "EFI64";
+            break;
+        case FirmwareType_EFIDUAL:
+            pszFirmwareType = "EFIDUAL";
+            break;
+        default:
+            Assert(false);
+            pszFirmwareType = "unknown";
+    }
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("firmware=\"%s\"\n", pszFirmwareType);
+    else
+        RTPrintf("Firmware:        %s\n", pszFirmwareType);
+
+
     ULONG numCpus;
     rc = machine->COMGETTER(CPUCount)(&numCpus);
     if (details == VMINFO_MACHINEREADABLE)
