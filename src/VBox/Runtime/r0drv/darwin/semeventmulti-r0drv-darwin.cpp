@@ -191,11 +191,17 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
     rtR0SemEventMultiDarwinRetain(pThis);
     lck_spin_lock(pThis->pSpinlock);
 
+    /*
+     * Set the signal and increment the generation counter.
+     */
     uint32_t fNew = ASMAtomicUoReadU32(&pThis->fStateAndGen);
     fNew += 1 << RTSEMEVENTMULTIDARWIN_GEN_SHIFT;
     fNew |= RTSEMEVENTMULTIDARWIN_STATE_MASK;
     ASMAtomicWriteU32(&pThis->fStateAndGen, fNew);
 
+    /*
+     * Wake up all sleeping threads.
+     */
     if (pThis->fHaveBlockedThreads)
     {
         ASMAtomicWriteBool(&pThis->fHaveBlockedThreads, false);
