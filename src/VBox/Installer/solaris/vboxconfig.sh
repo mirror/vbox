@@ -20,8 +20,8 @@
 
 # S10 or OpenSoalris
 HOST_OS_MAJORVERSION=`uname -r`
-# Which OpenSolaris version (snv_xxx)?
-HOST_OS_MINORVERSION=`uname -v | grep 'snv' | sed -e "s/snv_//" -e "s/[^0-9]//"`
+# Which OpenSolaris version (snv_xxx or oi_xxx)?
+HOST_OS_MINORVERSION=`uname -v | egrep 'snv|oi' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9]//"`
 
 DIR_VBOXBASE="$PKG_INSTALL_ROOT/opt/VirtualBox"
 DIR_CONF="$PKG_INSTALL_ROOT/platform/i86pc/kernel/drv"
@@ -224,13 +224,13 @@ get_sysinfo()
             if test -n "$HOST_OS_MAJORVERSION"; then
                 HOST_OS_MAJORVERSION="5.10"
             else
-                HOST_OS_MAJORVERSION=`cat $PKG_INSTALL_ROOT/etc/release | grep "snv_"`
+                HOST_OS_MAJORVERSION=`cat $PKG_INSTALL_ROOT/etc/release | egrep "snv_|oi_"`
                 if test -n "$HOST_OS_MAJORVERSION"; then
                     HOST_OS_MAJORVERSION="5.11"
                 fi
             fi
             if test "$HOST_OS_MAJORVERSION" != "5.10"; then
-                HOST_OS_MINORVERSION=`cat $PKG_INSTALL_ROOT/etc/release | tr ' ' '\n' | grep 'snv_' | sed -e "s/snv_//" -e "s/[^0-9]//"`
+                HOST_OS_MINORVERSION=`cat $PKG_INSTALL_ROOT/etc/release | tr ' ' '\n' | egrep 'snv_|oi_' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9]//"`
             else
                 HOST_OS_MINORVERSION=""
             fi
@@ -527,7 +527,7 @@ install_drivers()
             fi
         else
             if test -n "$HOST_OS_MINORVERSION"; then
-                warnprint "Solaris 5.11 snv_124 or higher required for USB support. Skipped installing USB support."
+                warnprint "Solaris 5.11 build 124 or higher required for USB support. Skipped installing USB support."
             else
                 warnprint "Failed to determine Solaris 5.11 snv version. Skipped installing USB support."
             fi
