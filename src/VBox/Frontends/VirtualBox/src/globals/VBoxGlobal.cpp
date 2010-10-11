@@ -482,28 +482,21 @@ void VBoxGlobal::setTrayMenu(bool aIsTrayMenu)
 void VBoxGlobal::trayIconShowSelector()
 {
     /* Get the path to the executable. */
-    char path [RTPATH_MAX];
-    RTPathAppPrivateArch (path, RTPATH_MAX);
-    size_t sz = strlen (path);
-    path [sz++] = RTPATH_DELIMITER;
-    path [sz] = 0;
+    char path[RTPATH_MAX];
+    RTPathAppPrivateArch(path, RTPATH_MAX);
+    size_t sz = strlen(path);
+    path[sz++] = RTPATH_DELIMITER;
+    path[sz] = 0;
     char *cmd = path + sz;
     sz = RTPATH_MAX - sz;
 
     int rc = 0;
-    RTPROCESS pid = NIL_RTPROCESS;
-    RTENV env = RTENV_DEFAULT;
-
     const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-    Assert (sz >= sizeof (VirtualBox_exe));
-    strcpy (cmd, VirtualBox_exe);
+    Assert(sz >= sizeof(VirtualBox_exe));
+    strcpy(cmd, VirtualBox_exe);
     const char * args[] = {path, 0 };
-# ifdef RT_OS_WINDOWS
-    rc = RTProcCreate (path, args, env, 0, &pid);
-# else
-    rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE_DEPRECATED, &pid);
-# endif
-    if (RT_FAILURE (rc))
+    rc = RTProcCreate(path, args, RTENV_DEFAULT, RTPROC_FLAGS_DETACHED, NULL);
+    if (RT_FAILURE(rc))
         LogRel(("Systray: Failed to start new selector window! Path=%s, rc=%Rrc\n", path, rc));
 }
 
@@ -514,15 +507,15 @@ void VBoxGlobal::trayIconShowSelector()
 bool VBoxGlobal::trayIconInstall()
 {
     int rc = 0;
-    QString strTrayWinID = mVBox.GetExtraData (VBoxDefs::GUI_TrayIconWinID);
+    QString strTrayWinID = mVBox.GetExtraData(VBoxDefs::GUI_TrayIconWinID);
     if (false == strTrayWinID.isEmpty())
     {
         /* Check if current tray icon is alive by writing some bogus value. */
-        mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, "0");
+        mVBox.SetExtraData(VBoxDefs::GUI_TrayIconWinID, "0");
         if (mVBox.isOk())
         {
             /* Current tray icon died - clean up. */
-            mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID, NULL);
+            mVBox.SetExtraData(VBoxDefs::GUI_TrayIconWinID, NULL);
             strTrayWinID.clear();
         }
     }
@@ -534,28 +527,20 @@ bool VBoxGlobal::trayIconInstall()
         && (strTrayWinID.isEmpty()))
     {
         /* Get the path to the executable. */
-        char path [RTPATH_MAX];
-        RTPathAppPrivateArch (path, RTPATH_MAX);
-        size_t sz = strlen (path);
-        path [sz++] = RTPATH_DELIMITER;
-        path [sz] = 0;
+        char path[RTPATH_MAX];
+        RTPathAppPrivateArch(path, RTPATH_MAX);
+        size_t sz = strlen(path);
+        path[sz++] = RTPATH_DELIMITER;
+        path[sz] = 0;
         char *cmd = path + sz;
         sz = RTPATH_MAX - sz;
 
-        RTPROCESS pid = NIL_RTPROCESS;
-        RTENV env = RTENV_DEFAULT;
-
         const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-        Assert (sz >= sizeof (VirtualBox_exe));
-        strcpy (cmd, VirtualBox_exe);
+        Assert(sz >= sizeof(VirtualBox_exe));
+        strcpy(cmd, VirtualBox_exe);
         const char * args[] = {path, "-systray", 0 };
-# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
-        rc = RTProcCreate (path, args, env, 0, &pid);
-# else
-        rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE_DEPRECATED, &pid);
-# endif
-
-        if (RT_FAILURE (rc))
+        rc = RTProcCreate(path, args, RTENV_DEFAULT, RTPROC_FLAGS_DETACHED, NULL);
+        if (RT_FAILURE(rc))
         {
             LogRel(("Systray: Failed to start systray window! Path=%s, rc=%Rrc\n", path, rc));
             return false;
@@ -565,8 +550,8 @@ bool VBoxGlobal::trayIconInstall()
     if (mIsTrayMenu)
     {
         // Use this selector for displaying the tray icon
-        mVBox.SetExtraData (VBoxDefs::GUI_TrayIconWinID,
-                            QString ("%1").arg ((qulonglong) vboxGlobal().mainWindow()->winId()));
+        mVBox.SetExtraData(VBoxDefs::GUI_TrayIconWinID,
+                           QString("%1").arg((qulonglong)vboxGlobal().mainWindow()->winId()));
 
         /* The first process which can grab this "mutex" will win ->
          * It will be the tray icon menu then. */
@@ -4934,9 +4919,9 @@ void VBoxGlobal::cleanup()
 
 /**
  * Initialize a debugger config variable.
- * 
+ *
  * @param   piDbgCfgVar         The debugger config variable to init.
- * @param   pszEnvVar           The environment variable name relating to this 
+ * @param   pszEnvVar           The environment variable name relating to this
  *                              variable.
  * @param   pszExtraDataName    The extra data name relating to this variable.
  * @param   fDefault            The default value.
@@ -4963,7 +4948,7 @@ void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const 
         *piDbgCfgVar = VBOXGLOBAL_DBG_CFG_VAR_DONE | VBOXGLOBAL_DBG_CFG_VAR_FALSE;
     else if (strEnvValue.isNull() && strExtraValue.isNull())
         *piDbgCfgVar = fDefault ? VBOXGLOBAL_DBG_CFG_VAR_TRUE : VBOXGLOBAL_DBG_CFG_VAR_FALSE;
-    else 
+    else
     {
         QString *pStr = !strEnvValue.isEmpty() ? &strEnvValue : &strExtraValue;
         if (   pStr->startsWith("y")  // yes
@@ -4979,7 +4964,7 @@ void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const 
                  || pStr->contains("veto")
                  || pStr->toLongLong() == 0)
             *piDbgCfgVar = VBOXGLOBAL_DBG_CFG_VAR_FALSE;
-        else 
+        else
         {
             LogFunc(("Ignoring unknown value '%s' for '%s'\n", pStr->toAscii().constData(), pStr == &strEnvValue ? pszEnvVar : pszExtraDataName));
             *piDbgCfgVar = fDefault ? VBOXGLOBAL_DBG_CFG_VAR_TRUE : VBOXGLOBAL_DBG_CFG_VAR_FALSE;
@@ -4987,23 +4972,23 @@ void VBoxGlobal::initDebuggerVar(int *piDbgCfgVar, const char *pszEnvVar, const 
     }
 }
 
-/** 
- * Set a debugger config variable according according to start up argument. 
- *  
- * @param   piDbgCfgVar         The debugger config variable to set. 
- * @param   fState              The value from the command line. 
- */ 
+/**
+ * Set a debugger config variable according according to start up argument.
+ *
+ * @param   piDbgCfgVar         The debugger config variable to set.
+ * @param   fState              The value from the command line.
+ */
 void VBoxGlobal::setDebuggerVar(int *piDbgCfgVar, bool fState)
 {
     if (!(*piDbgCfgVar & VBOXGLOBAL_DBG_CFG_VAR_DONE))
-        *piDbgCfgVar = (fState ? VBOXGLOBAL_DBG_CFG_VAR_TRUE : VBOXGLOBAL_DBG_CFG_VAR_FALSE) 
+        *piDbgCfgVar = (fState ? VBOXGLOBAL_DBG_CFG_VAR_TRUE : VBOXGLOBAL_DBG_CFG_VAR_FALSE)
                      | VBOXGLOBAL_DBG_CFG_VAR_CMD_LINE;
 }
 
 /**
- * Checks the state of a debugger config variable, updating it with the machine 
- * settings on the first invocation. 
- *  
+ * Checks the state of a debugger config variable, updating it with the machine
+ * settings on the first invocation.
+ *
  * @returns true / false.
  * @param   piDbgCfgVar         The debugger config variable to consult.
  * @param   rMachine            Reference to the machine object.

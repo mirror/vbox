@@ -862,6 +862,10 @@ _pl_SetupNativeNotifier(PLEventQueue* self)
     if (err != 0) {
         return PR_FAILURE;
     }
+#ifdef VBOX
+    fcntl(self->eventPipe[0], F_SETFD, FD_CLOEXEC);
+    fcntl(self->eventPipe[1], F_SETFD, FD_CLOEXEC);
+#endif
 
     /* make the pipe nonblocking */
     flags = fcntl(self->eventPipe[0], F_GETFL, 0);

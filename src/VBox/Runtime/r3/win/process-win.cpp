@@ -940,7 +940,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SERVICE)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SERVICE)), VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);

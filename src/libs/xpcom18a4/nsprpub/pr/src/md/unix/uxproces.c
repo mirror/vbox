@@ -466,6 +466,10 @@ _MD_CreateUnixProcess(
     char *const *envp,
     const PRProcessAttr *attr)
 {
+#ifdef VBOX
+    /* 2010-10-11 Block this for good. */
+    return NULL;
+#endif
     struct pr_CreateProcOp *op;
     PRProcess *proc;
     int rv;
@@ -528,6 +532,10 @@ _MD_CreateUnixProcess(
     char *const *envp,
     const PRProcessAttr *attr)
 {
+#ifdef VBOX
+    /* 2010-10-11 Block this for good. */
+    return NULL;
+#endif
     if (PR_CallOnce(&pr_wp.once, _MD_InitProcesses) == PR_FAILURE) {
 	return NULL;
     }
@@ -549,14 +557,8 @@ _MD_CreateUnixProcessDetached(
     RTENV childEnv;
     RTENV newEnv = RTENV_DEFAULT;
 
-    if (PR_CallOnce(&pr_wp.once, _MD_InitProcesses) == PR_FAILURE) {
-	    return PR_FAILURE;
-    }
     /* this code doesn't support all attributes */
     PR_ASSERT(!attr || !attr->currentDirectory);
-    PR_ASSERT(!attr || !attr->stdinFd);
-    PR_ASSERT(!attr || !attr->stdoutFd);
-    PR_ASSERT(!attr || !attr->stderrFd);
     /* no custom environment, please */
     PR_ASSERT(!envp);
 
@@ -574,8 +576,31 @@ _MD_CreateUnixProcessDetached(
         childEnv = newEnv;
     }
 
-    vrc = RTProcCreate(path, (const char **)argv, childEnv,
-                       RTPROC_FLAGS_DETACHED, NULL);
+    PRTHANDLE pStdIn = NULL, pStdOut = NULL, pStdErr = NULL;
+    RTHANDLE hStdIn, hStdOut, hStdErr;
+    if (attr && attr->stdinFd)
+    {
+        hStdIn.enmType = RTHANDLETYPE_FILE;
+        RTFileFromNative(&hStdIn.u.hFile, attr->stdinFd->secret->md.osfd);
+        pStdIn = &hStdIn;
+    }
+    if (attr && attr->stdoutFd)
+    {
+        hStdOut.enmType = RTHANDLETYPE_FILE;
+        RTFileFromNative(&hStdOut.u.hFile, attr->stdoutFd->secret->md.osfd);
+        pStdOut = &hStdOut;
+    }
+    if (attr && attr->stderrFd)
+    {
+        hStdErr.enmType = RTHANDLETYPE_FILE;
+        RTFileFromNative(&hStdErr.u.hFile, attr->stderrFd->secret->md.osfd);
+        pStdErr = &hStdErr;
+    }
+
+    vrc = RTProcCreateEx(path, (const char **)argv, childEnv,
+                         RTPROC_FLAGS_DETACHED, pStdIn, pStdOut, pStdErr,
+                         NULL /* pszAsUser */, NULL /* pszPassword */,
+                         NULL /* phProcess */);
     if (newEnv != RTENV_DEFAULT) {
         RTEnvDestroy(newEnv);
     }
@@ -685,7 +710,8 @@ ProcessReapedChildInternal(pid_t pid, int status)
          * variable. Treat it like a detached process. The proper fix would be
          * to port the NSPR to use IPRT, as currently this races with getting
          * the exit code, but that's pretty harmless. */
-        /** @todo fix this properly, by using IPRT for process management */
+        /* Since 2010-10-11 this code cannot be reached as IPRT took over
+         * what we need, and the rest is blocked. */
         if (_PR_PID_REAPED == pRec->state) {
             DeletePidTable(pRec);
             PR_DELETE(pRec);
@@ -734,6 +760,8 @@ static void WaitPidDaemonThread(void *unused)
 	         * make sure we wait only for child of our group
 	         * to ensure we do not interfere with RT
 	         */
+            /* Since 2010-10-11 this code cannot be reached as IPRT took over
+             * what we need, and the rest is blocked. */
 	        pid = waitpid((pid_t) 0, &status, 0);
 #else
 	        pid = waitpid((pid_t) -1, &status, 0);
@@ -832,6 +860,8 @@ static void WaitPidDaemonThread(void *unused)
 	         * make sure we wait only for child of our group
 	         * to ensure we do not interfere with RT
 	         */
+            /* Since 2010-10-11 this code cannot be reached as IPRT took over
+             * what we need, and the rest is blocked. */
 	        pid = waitpid((pid_t) 0, &status, WNOHANG);
 #else
 	        pid = waitpid((pid_t) -1, &status, WNOHANG);

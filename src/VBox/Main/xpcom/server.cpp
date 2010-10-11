@@ -1071,6 +1071,8 @@ int main(int argc, char **argv)
             RTPrintf("\nStarting event loop....\n[send TERM signal to quit]\n");
             /* now we're ready, signal the parent process */
             write(daemon_pipe_wr, "READY", strlen("READY"));
+            /* close writing end of the pipe, its job is done */
+            close(daemon_pipe_wr);
         }
         else
             RTPrintf("\nStarting event loop....\n[press Ctrl-C to quit]\n");
@@ -1148,10 +1150,6 @@ int main(int argc, char **argv)
 
     if (g_pszPidFile)
         RTFileDelete(g_pszPidFile);
-
-    /* close writing end of the pipe as well */
-    if (daemon_pipe_wr >= 0)
-        close(daemon_pipe_wr);
 
     return 0;
 }
