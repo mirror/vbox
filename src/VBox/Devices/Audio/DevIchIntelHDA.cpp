@@ -1630,7 +1630,6 @@ static DECLCALLBACK(void *) hdaQueryInterface (struct PDMIBASE *pInterface,
 }
 
 //#define HDA_AS_PCI_EXPRESS
-//#define HDA_WITH_MSI
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -1668,7 +1667,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetVendorId           (&pThis->dev, 0x103c); /* HP. */
     PCIDevSetDeviceId           (&pThis->dev, 0x30f7); /* HP Pavilion dv4t-1300 */
 #else
-#if 1 
+#if 1
     PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */
     PCIDevSetDeviceId           (&pThis->dev, 0x2668); /* 02 ro - 82801 / 82801aa(?). */
 #else
@@ -1694,7 +1693,7 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 
 #if defined(HDA_AS_PCI_EXPRESS)
     PCIDevSetCapabilityList     (&pThis->dev, 0x80);
-#elif defined(HDA_WITH_MSI)
+#elif defined(VBOX_WITH_MSI_DEVICES)
     PCIDevSetCapabilityList     (&pThis->dev, 0x60);
 #else
     PCIDevSetCapabilityList     (&pThis->dev, 0x50);   /* ICH6 datasheet 18.1.16 */
@@ -1766,16 +1765,18 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     if (RT_FAILURE (rc))
         return rc;
 
-#ifdef HDA_WITH_MSI
+#ifdef VBOX_WITH_MSI_DEVICES
     PDMMSIREG aMsiReg;
     aMsiReg.cVectors = 1;
     aMsiReg.iCapOffset = 0x60;
     aMsiReg.iNextOffset = 0x50;
     aMsiReg.iMsiFlags = 0;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
-    AssertRC(rc);
     if (RT_FAILURE (rc))
-        return rc;
+    {
+        LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
+        PCIDevSetCapabilityList     (&pThis->dev, 0x50);
+    }
 #endif
 
     rc = PDMDevHlpSSMRegister (pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaSaveExec, hdaLoadExec);
