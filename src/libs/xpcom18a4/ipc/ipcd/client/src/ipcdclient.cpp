@@ -1215,6 +1215,7 @@ IPC_SpawnDaemon(const char *path)
   PRFileDesc *readable = nsnull, *writable = nsnull;
   PRProcessAttr *attr = nsnull;
   nsresult rv = NS_ERROR_FAILURE;
+  PRFileDesc *devNull;
   char *const argv[] = { (char *const) path, nsnull };
   char c;
 
@@ -1232,11 +1233,21 @@ IPC_SpawnDaemon(const char *path)
     goto end;
 
   if (PR_ProcessAttrSetInheritableFD(attr, writable, IPC_STARTUP_PIPE_NAME) != PR_SUCCESS)
+  goto end;
+
+  devNull = PR_Open("/dev/null", PR_RDWR, 0);
+  if (!devNull)
     goto end;
+
+  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardInput, devNull);
+  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, devNull);
+  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardError, devNull);
 
   if (PR_CreateProcessDetached(path, argv, nsnull, attr) != PR_SUCCESS)
     goto end;
 
+  // Close /dev/null
+  PR_Close(devNull);
   // close the child end of the pipe in order to get notification on unexpected
   // child termination instead of being infinitely blocked in PR_Read().
   PR_Close(writable);

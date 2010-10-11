@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -185,11 +185,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * The new process will not be a direct decendent of the parent and it will not
  * be possible to wait for it, i.e. @a phProcess shall be NULL. */
 #define RTPROC_FLAGS_DETACHED               RT_BIT(0)
-
-/** Daemonize the child process, without changing the directory.
- * @deprecated Dont use this for new code, it is not portable.  Use
- *             RTProcDaemonize instead. */
-#define RTPROC_FLAGS_DAEMONIZE_DEPRECATED   RT_BIT(1)
 
 /** Use special code path for starting child processes from
  * a service (daemon). On Windows this is required for services

@@ -49,6 +49,10 @@
 # include <errno.h>
 #endif
 
+#ifdef VBOX
+# include <iprt/initterm.h>
+#endif
+
 #include "prio.h"
 #include "prerror.h"
 #include "prthread.h"
@@ -467,6 +471,11 @@ int main(int argc, char **argv)
     PRFileDesc *listenFD = NULL;
     PRNetAddr addr;
 
+#ifdef VBOX
+    /* Set up the runtime without loading the support driver. */
+    RTR3Init();
+#endif
+
     //
     // ignore SIGINT so <ctrl-c> from terminal only kills the client
     // which spawned this daemon.
@@ -536,6 +545,7 @@ int main(int argc, char **argv)
             LOG(("PR_Listen failed [%d]\n", PR_GetError()));
         }
         else {
+#ifndef VBOX
             // redirect all standard file descriptors to /dev/null for
             // proper daemonizing
             PR_Close(PR_STDIN);
@@ -544,6 +554,7 @@ int main(int argc, char **argv)
             PR_Open("/dev/null", O_WRONLY, 0);
             PR_Close(PR_STDERR);
             PR_Open("/dev/null", O_WRONLY, 0);
+#endif
 
             IPC_NotifyParent();
 
