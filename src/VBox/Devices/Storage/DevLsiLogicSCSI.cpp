@@ -48,9 +48,6 @@
 /** Maximum number of entries in the release log. */
 #define MAX_REL_LOG_ERRORS 1024
 
-/* If LSI shall emulate MSI support */
-#define LSILOGIC_WITH_MSI
-
 /**
  * Reply data.
  */
@@ -5016,7 +5013,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PCIDevSetClassBase   (&pThis->PciDev,   0x01); /* Mass storage */
     PCIDevSetInterruptPin(&pThis->PciDev,   0x01); /* Interrupt pin A */
 
-#ifdef LSILOGIC_WITH_MSI
+#ifdef VBOX_WITH_MSI_DEVICES
     PCIDevSetStatus(&pThis->PciDev,   VBOX_PCI_STATUS_CAP_LIST);
     PCIDevSetCapabilityList(&pThis->PciDev, 0x80);
 #endif
@@ -5034,7 +5031,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (RT_FAILURE(rc))
         return rc;
 
-#ifdef LSILOGIC_WITH_MSI
+#ifdef VBOX_WITH_MSI_DEVICES
     PDMMSIREG aMsiReg;
     aMsiReg.cVectors = 1;
     aMsiReg.iCapOffset = 0x80;
@@ -5045,6 +5042,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     {
         LogRel(("Chipset cannot do MSI: %Rrc\n", rc));
         /* That's OK, we can work without MSI */
+        PCIDevSetCapabilityList(&pThis->PciDev, 0x0);
     }
 #endif
 

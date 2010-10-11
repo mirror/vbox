@@ -396,6 +396,8 @@ VBOX_WITH_SCSI = 1
 VBOX_DYNAMIC_NET_ATTACH = 1
 # Enable this setting to force a fallback to default DMI data on configuration errors
 VBOX_BIOS_DMI_FALLBACK =
+# Enable MSI support in devices
+# VBOX_WITH_MSI_DEVICES = 1
 # Enable host network interface API.
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_HOSTNETIF_API = 1
