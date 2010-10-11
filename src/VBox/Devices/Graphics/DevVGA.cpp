@@ -6162,9 +6162,13 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
 static void vgaAdjustModeInfo(PVGASTATE pThis, ModeInfoListItem *pMode)
 {
     int         maxPage;
+    int         bpl;
+    
 
+    /* For 4bpp modes, the planes are "stacked" on top of each other. */
+    bpl = pMode->info.BytesPerScanLine * pMode->info.NumberOfPlanes;
     /* The "number of image pages" is really the max page index... */
-    maxPage = pThis->vram_size / (pMode->info.YResolution * pMode->info.BytesPerScanLine) - 1;
+    maxPage = pThis->vram_size / (pMode->info.YResolution * bpl) - 1;
     Assert(maxPage >= 0);
     if (maxPage > 255)
         maxPage = 255;  /* 8-bit value. */
