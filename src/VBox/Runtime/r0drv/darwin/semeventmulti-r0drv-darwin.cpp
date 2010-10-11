@@ -38,11 +38,31 @@
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/err.h>
+#include <iprt/lockvalidator.h>
 #include <iprt/mem.h>
 #include <iprt/mp.h>
 #include <iprt/thread.h>
+#include <iprt/time.h>
 
 #include "internal/magics.h"
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @name fStateAndGen values
+ * @{ */
+/** The state bit number. */
+#define RTSEMEVENTMULTIDARWIN_STATE_BIT         0
+/** The state mask. */
+#define RTSEMEVENTMULTIDARWIN_STATE_MASK        RT_BIT_32(RTSEMEVENTMULTIDARWIN_STATE_BIT)
+/** The generation mask. */
+#define RTSEMEVENTMULTIDARWIN_GEN_MASK          ~RTSEMEVENTMULTIDARWIN_STATE_MASK
+/** The generation shift. */
+#define RTSEMEVENTMULTIDARWIN_GEN_SHIFT         1
+/** The initial variable value. */
+#define RTSEMEVENTMULTIDARWIN_STATE_GEN_INIT    UINT32_C(0xfffffffc)
+/** @}  */
 
 
 /*******************************************************************************
@@ -55,12 +75,14 @@ typedef struct RTSEMEVENTMULTIINTERNAL
 {
     /** Magic value (RTSEMEVENTMULTI_MAGIC). */
     uint32_t volatile   u32Magic;
-    /** The number of waiting threads. */
-    uint32_t volatile   cWaiters;
-    /** Set if the event object is signaled. */
-    uint8_t volatile    fSignaled;
-    /** The number of threads in the process of waking up. */
-    uint32_t volatile   cWaking;
+    /** The object state bit and generation counter.
+     * The generation counter is incremented every time the object is
+     * signalled. */
+    uint32_t volatile   fStateAndGen;
+    /** Reference counter. */
+    uint32_t volatile   cRefs;
+    /** Set if there are blocked threads. */
+    bool volatile       fHaveBlockedThreads;
     /** The spinlock protecting us. */
     lck_spin_t         *pSpinlock;
 } RTSEMEVENTMULTIINTERNAL, *PRTSEMEVENTMULTIINTERNAL;
@@ -84,10 +106,10 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
     {
-        pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
-        pThis->cWaiters = 0;
-        pThis->cWaking = 0;
-        pThis->fSignaled = 0;
+        pThis->u32Magic             = RTSEMEVENTMULTI_MAGIC;
+        pThis->fStateAndGen         = RTSEMEVENTMULTIDARWIN_STATE_GEN_INIT;
+        pThis->cRefs                = 1;
+        pThis->fHaveBlockedThreads  = false;
         Assert(g_pDarwinLockGroup);
         pThis->pSpinlock = lck_spin_alloc_init(g_pDarwinLockGroup, LCK_ATTR_NULL);
         if (pThis->pSpinlock)
@@ -103,6 +125,34 @@ RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t 
 }
 
 
+/**
+ * Retain a reference to the semaphore.
+ *
+ * @param   pThis       The semaphore.
+ */
+DECLINLINE(void) rtR0SemEventMultiDarwinRetain(PRTSEMEVENTMULTIINTERNAL pThis)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs && cRefs < 100000);
+}
+
+
+/**
+ * Release a reference, destroy the thing if necessary.
+ *
+ * @param   pThis       The semaphore.
+ */
+DECLINLINE(void) rtR0SemEventMultiDarwinRelease(PRTSEMEVENTMULTIINTERNAL pThis)
+{
+    if (RT_UNLIKELY(ASMAtomicDecU32(&pThis->cRefs) == 0))
+    {
+        Assert(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC);
+        lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
+        RTMemFree(pThis);
+    }
+}
+
+
 RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
 {
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
@@ -110,26 +160,21 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
+    Assert(pThis->cRefs > 0);
     RT_ASSERT_INTS_ON();
 
     lck_spin_lock(pThis->pSpinlock);
-    ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
-    if (pThis->cWaiters > 0)
+
+    ASMAtomicWriteU32(&pThis->u32Magic, ~RTSEMEVENTMULTI_MAGIC); /* make the handle invalid */
+    ASMAtomicAndU32(&pThis->fStateAndGen, RTSEMEVENTMULTIDARWIN_GEN_MASK);
+    if (pThis->fHaveBlockedThreads)
     {
-        /* abort waiting thread, last man cleans up. */
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
+        /* abort waiting threads. */
         thread_wakeup_prim((event_t)pThis, FALSE /* all threads */, THREAD_RESTART);
-        lck_spin_unlock(pThis->pSpinlock);
     }
-    else if (pThis->cWaking)
-        /* the last waking thread is gonna do the cleanup */
-        lck_spin_unlock(pThis->pSpinlock);
-    else
-    {
-        lck_spin_unlock(pThis->pSpinlock);
-        lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
-        RTMemFree(pThis);
-    }
+
+    lck_spin_unlock(pThis->pSpinlock);
+    rtR0SemEventMultiDarwinRelease(pThis);
 
     return VINF_SUCCESS;
 }
@@ -143,17 +188,22 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
     RT_ASSERT_PREEMPT_CPUID_VAR();
     RT_ASSERT_INTS_ON();
 
+    rtR0SemEventMultiDarwinRetain(pThis);
     lck_spin_lock(pThis->pSpinlock);
 
-    ASMAtomicXchgU8(&pThis->fSignaled, true);
-    if (pThis->cWaiters > 0)
+    uint32_t fNew = ASMAtomicUoReadU32(&pThis->fStateAndGen);
+    fNew += 1 << RTSEMEVENTMULTIDARWIN_GEN_SHIFT;
+    fNew |= RTSEMEVENTMULTIDARWIN_STATE_MASK;
+    ASMAtomicWriteU32(&pThis->fStateAndGen, fNew);
+
+    if (pThis->fHaveBlockedThreads)
     {
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
-        ASMAtomicXchgU32(&pThis->cWaiters, 0);
+        ASMAtomicWriteBool(&pThis->fHaveBlockedThreads, false);
         thread_wakeup_prim((event_t)pThis, FALSE /* all threads */, THREAD_AWAKENED);
     }
 
     lck_spin_unlock(pThis->pSpinlock);
+    rtR0SemEventMultiDarwinRelease(pThis);
 
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
@@ -168,109 +218,181 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     RT_ASSERT_PREEMPT_CPUID_VAR();
     RT_ASSERT_INTS_ON();
 
+    rtR0SemEventMultiDarwinRetain(pThis);
     lck_spin_lock(pThis->pSpinlock);
-    ASMAtomicXchgU8(&pThis->fSignaled, false);
+
+    ASMAtomicAndU32(&pThis->fStateAndGen, ~RTSEMEVENTMULTIDARWIN_STATE_MASK);
+
     lck_spin_unlock(pThis->pSpinlock);
+    rtR0SemEventMultiDarwinRelease(pThis);
 
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
 
 
-static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies, wait_interrupt_t fInterruptible)
+/**
+ * Worker for RTSemEventMultiWaitEx and RTSemEventMultiWaitExDebug.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The event semaphore.
+ * @param   fFlags          See RTSemEventMultiWaitEx.
+ * @param   uTimeout        See RTSemEventMultiWaitEx.
+ * @param   pSrcPos         The source code position of the wait.
+ */
+static int rtR0SemEventMultiDarwinWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFlags, uint64_t uTimeout,
+                                       PCRTLOCKVALSRCPOS pSrcPos)
 {
-    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    /*
+     * Validate input.
+     */
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
-    if (cMillies)
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+    if (uTimeout != 0 || (fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
         RT_ASSERT_PREEMPTIBLE();
 
+    rtR0SemEventMultiDarwinRetain(pThis);
     lck_spin_lock(pThis->pSpinlock);
 
+    /*
+     * Is the event already signalled or do we have to wait?
+     */
     int rc;
-    if (pThis->fSignaled)
+    uint32_t const fOrgStateAndGen = ASMAtomicUoReadU32(&pThis->fStateAndGen);
+    if (fOrgStateAndGen & RTSEMEVENTMULTIDARWIN_STATE_MASK)
         rc = VINF_SUCCESS;
-    else if (!cMillies)
-        rc = VERR_TIMEOUT;
     else
     {
-        ASMAtomicIncU32(&pThis->cWaiters);
+        /*
+         * We have to wait. So, we'll need to convert the timeout and figure
+         * out if it's indefinite or not.
+         */
+        uint64_t uNsAbsTimeout = 1;
+        if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
+        {
+            if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
+                uTimeout = uTimeout < UINT64_MAX / UINT32_C(1000000) * UINT32_C(1000000)
+                         ? uTimeout * UINT32_C(1000000)
+                         : UINT64_MAX;
+            if (uTimeout == UINT64_MAX)
+                fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
+            else
+            {
+                uint64_t u64Now;
+                if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
+                {
+                    if (uTimeout != 0)
+                    {
+                        u64Now = RTTimeSystemNanoTS();
+                        uNsAbsTimeout = u64Now + uTimeout;
+                        if (uNsAbsTimeout < u64Now) /* overflow */
+                            fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
+                    }
+                }
+                else
+                {
+                    uNsAbsTimeout = uTimeout;
+                    u64Now        = RTTimeSystemNanoTS();
+                    uTimeout      = u64Now < uTimeout ? uTimeout - u64Now : 0;
+                }
+            }
+        }
 
-        wait_result_t rcWait;
-        if (cMillies == RT_INDEFINITE_WAIT)
-            rcWait = lck_spin_sleep(pThis->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pThis, fInterruptible);
+        if (   !(fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
+            && uTimeout == 0)
+        {
+            /*
+             * Poll call, we already checked the condition above so no need to
+             * wait for anything.
+             */
+            rc = VERR_TIMEOUT;
+        }
         else
         {
-            uint64_t u64AbsTime;
-            nanoseconds_to_absolutetime(cMillies * UINT64_C(1000000), &u64AbsTime);
-            u64AbsTime += mach_absolute_time();
-
-            rcWait = lck_spin_sleep_deadline(pThis->pSpinlock, LCK_SLEEP_DEFAULT,
-                                             (event_t)pThis, fInterruptible, u64AbsTime);
-        }
-        switch (rcWait)
-        {
-            case THREAD_AWAKENED:
-                Assert(pThis->cWaking > 0);
-                if (    !ASMAtomicDecU32(&pThis->cWaking)
-                    &&  pThis->u32Magic != RTSEMEVENTMULTI_MAGIC)
+            for (;;)
+            {
+                /*
+                 * Do the actual waiting.
+                 */
+                ASMAtomicWriteBool(&pThis->fHaveBlockedThreads, true);
+                wait_interrupt_t fInterruptible = fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE ? THREAD_ABORTSAFE : THREAD_UNINT;
+                wait_result_t    rcWait;
+                if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
+                    rcWait = lck_spin_sleep(pThis->pSpinlock, LCK_SLEEP_DEFAULT, (event_t)pThis, fInterruptible);
+                else
                 {
-                    /* the event was destroyed after we woke up, as the last thread do the cleanup. */
-                    lck_spin_unlock(pThis->pSpinlock);
-                    Assert(g_pDarwinLockGroup);
-                    lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
-                    RTMemFree(pThis);
-                    return VINF_SUCCESS;
-                }
-                rc = VINF_SUCCESS;
-                break;
-
-            case THREAD_TIMED_OUT:
-                Assert(cMillies != RT_INDEFINITE_WAIT);
-                ASMAtomicDecU32(&pThis->cWaiters);
-                rc = VERR_TIMEOUT;
-                break;
-
-            case THREAD_INTERRUPTED:
-                Assert(fInterruptible);
-                ASMAtomicDecU32(&pThis->cWaiters);
-                rc = VERR_INTERRUPTED;
-                break;
-
-            case THREAD_RESTART:
-                /* Last one out does the cleanup. */
-                if (!ASMAtomicDecU32(&pThis->cWaking))
-                {
-                    lck_spin_unlock(pThis->pSpinlock);
-                    Assert(g_pDarwinLockGroup);
-                    lck_spin_destroy(pThis->pSpinlock, g_pDarwinLockGroup);
-                    RTMemFree(pThis);
-                    return VERR_SEM_DESTROYED;
+                    uint64_t u64AbsTime;
+                    nanoseconds_to_absolutetime(uNsAbsTimeout, &u64AbsTime);
+                    rcWait = lck_spin_sleep_deadline(pThis->pSpinlock, LCK_SLEEP_DEFAULT,
+                                                     (event_t)pThis, fInterruptible, u64AbsTime);
                 }
 
-                rc = VERR_SEM_DESTROYED;
-                break;
+                /*
+                 * Deal with the wait result.
+                 */
+                if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
+                {
+                    switch (rcWait)
+                    {
+                        case THREAD_AWAKENED:
+                            if (RT_LIKELY(ASMAtomicUoReadU32(&pThis->fStateAndGen) != fOrgStateAndGen))
+                                rc = VINF_SUCCESS;
+                            else if (fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE)
+                                rc = VERR_INTERRUPTED;
+                            else
+                                continue; /* Seen this happen after fork/exec/something. */
+                            break;
 
-            default:
-                AssertMsgFailed(("rcWait=%d\n", rcWait));
-                rc = VERR_GENERAL_FAILURE;
+                        case THREAD_TIMED_OUT:
+                            Assert(!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE));
+                            rc = VERR_TIMEOUT;
+                            break;
+
+                        case THREAD_INTERRUPTED:
+                            Assert(fInterruptible != THREAD_UNINT);
+                            rc = VERR_INTERRUPTED;
+                            break;
+
+                        case THREAD_RESTART:
+                            AssertMsg(pThis->u32Magic == ~RTSEMEVENTMULTI_MAGIC, ("%#x\n", pThis->u32Magic));
+                            rc = VERR_SEM_DESTROYED;
+                            break;
+
+                        default:
+                            AssertMsgFailed(("rcWait=%d\n", rcWait));
+                            rc = VERR_INTERNAL_ERROR_3;
+                            break;
+                    }
+                }
+                else
+                    rc = VERR_SEM_DESTROYED;
                 break;
+            }
         }
     }
 
     lck_spin_unlock(pThis->pSpinlock);
+    rtR0SemEventMultiDarwinRelease(pThis);
     return rc;
 }
 
-
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
+#undef RTSemEventMultiWaitEx
+RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout)
 {
-    return rtSemEventMultiWait(hEventMultiSem, cMillies, THREAD_UNINT);
+#ifndef RTSEMEVENT_STRICT
+    return rtR0SemEventMultiDarwinWait(hEventMultiSem, fFlags, uTimeout, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtR0SemEventMultiDarwinWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
+#endif
 }
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
+RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return rtSemEventMultiWait(hEventMultiSem, cMillies, THREAD_ABORTSAFE);
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtR0SemEventMultiDarwinWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
 }
 
