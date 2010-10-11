@@ -2801,6 +2801,19 @@ static void ataPadString(uint8_t *pbDst, const char *pbSrc, uint32_t cbSize)
     }
 }
 
+static uint32_t ataChecksum(void* ptr, size_t count)
+{
+    uint8_t u8Sum = 0xa5, *p = (uint8_t*)ptr;
+    size_t i;
+
+    for (i = 0; i < count; i++)
+    {
+      u8Sum += *p++;
+    }
+
+    return (uint8_t)-(int32_t)u8Sum;
+}
+
 static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
 {
     uint16_t *p;
@@ -2871,6 +2884,9 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     /* The following are SATA specific */
     p[75] = RT_H2LE_U16(31); /* We support 32 commands */
     p[76] = RT_H2LE_U16((1 << 8) | (1 << 2)); /* Native command queuing and Serial ATA Gen2 (3.0 Gbps) speed supported */
+
+    uint32_t uCsum = ataChecksum(p, 510);
+    p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
 
     return VINF_SUCCESS;
 }
