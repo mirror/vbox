@@ -1941,6 +1941,7 @@ static void PRINTF_ATTR(8, 9) shader_glsl_gen_sample_code(const struct wined3d_s
     char dst_swizzle[6];
     struct color_fixup_desc fixup;
     BOOL np2_fixup = FALSE;
+    BOOL tmirror_tmp_reg = FALSE;
     va_list args;
 
     shader_glsl_swizzle_to_str(swizzle, FALSE, ins->dst[0].write_mask, dst_swizzle);
@@ -1951,11 +1952,40 @@ static void PRINTF_ATTR(8, 9) shader_glsl_gen_sample_code(const struct wined3d_s
         fixup = priv->cur_ps_args->color_fixup[sampler];
         sampler_base = "Psampler";
 
-        if(priv->cur_ps_args->np2_fixup & (1 << sampler)) {
+        if (priv->cur_ps_args->np2_fixup & (1 << sampler)) {
             if(bias) {
                 FIXME("Biased sampling from NP2 textures is unsupported\n");
             } else {
                 np2_fixup = TRUE;
+            }
+        }
+
+        if (priv->cur_ps_args->t_mirror & (1 << sampler))
+        {
+            if (ins->ctx->reg_maps->sampler_type[sampler]==WINED3DSTT_2D)
+            {
+                if (sample_function->coord_mask & WINED3DSP_WRITEMASK_1)
+                {
+                    glsl_src_param_t coord_param;
+                    shader_glsl_add_src_param(ins, &ins->src[0], sample_function->coord_mask, &coord_param);
+
+                    if (ins->src[0].reg.type != WINED3DSPR_INPUT)
+                    {
+                        shader_addline(ins->ctx->buffer, "%s.y=1.0-%s.y;\n",
+                                       coord_param.reg_name, coord_param.reg_name);
+                    }
+                    else
+                    {
+                        tmirror_tmp_reg = TRUE;
+                        shader_addline(ins->ctx->buffer, "tmp0.xy=vec2(%s.x, 1.0-%s.y).xy;\n",
+                                       coord_param.reg_name, coord_param.reg_name);
+                    }
+                }
+                else
+                {
+                    DebugBreak();
+                    FIXME("Unexpected coord_mask with t_mirror\n");
+                }
             }
         }
     } else {
@@ -1967,9 +1997,16 @@ static void PRINTF_ATTR(8, 9) shader_glsl_gen_sample_code(const struct wined3d_s
 
     shader_addline(ins->ctx->buffer, "%s(%s%u, ", sample_function->name, sampler_base, sampler);
 
-    va_start(args, coord_reg_fmt);
-    shader_vaddline(ins->ctx->buffer, coord_reg_fmt, args);
-    va_end(args);
+    if (tmirror_tmp_reg)
+    {
+        shader_addline(ins->ctx->buffer, "%s", "tmp0.xy");
+    }
+    else
+    {
+        va_start(args, coord_reg_fmt);
+        shader_vaddline(ins->ctx->buffer, coord_reg_fmt, args);
+        va_end(args);
+    }
 
     if(bias) {
         shader_addline(ins->ctx->buffer, ", %s)%s);\n", bias, dst_swizzle);
