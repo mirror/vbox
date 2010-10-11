@@ -183,7 +183,7 @@ IdeControllerSupported (
   //
   // Examine Ide PCI Configuration table fields
   //
-  if ((PciClass != PCI_CLASS_MASS_STORAGE) || (PciSubClass != PCI_CLASS_MASS_STORAGE_IDE)) {
+  if ((PciClass != PCI_CLASS_MASS_STORAGE) || ((PciSubClass != PCI_CLASS_MASS_STORAGE_IDE) && (PciSubClass != 0x06 /*SATA*/))) {
     Status = EFI_UNSUPPORTED;
   }
 
