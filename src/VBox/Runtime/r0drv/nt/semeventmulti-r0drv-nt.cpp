@@ -192,6 +192,8 @@ DECLINLINE(int) rtR0SemEventMultiNtWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+
     rtR0SemEventMultiNtRetain(pThis);
 
     /*
@@ -220,7 +222,6 @@ DECLINLINE(int) rtR0SemEventMultiNtWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t
             }
         }
     }
-
 
     /*
      * Wait for it.
