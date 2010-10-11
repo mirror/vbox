@@ -206,7 +206,7 @@ done
 if [ "$ACTION" = "install" ]; then
     # Find previous installation
     if [ ! -r $CONFIG_DIR/$CONFIG ]; then
-        mkdir -p $CONFIG_DIR
+        mkdir -p -m 755 $CONFIG_DIR
         touch $CONFIG_DIR/$CONFIG
     else
         . $CONFIG_DIR/$CONFIG
@@ -305,7 +305,7 @@ if [ "$ACTION" = "install" ]; then
     log ""
 
     # Verify the archive
-    mkdir -p $INSTALLATION_DIR
+    mkdir -p -m 755 $INSTALLATION_DIR
     bzip2 -d -c VirtualBox.tar.bz2 | tar -tf - > $CONFIG_DIR/$CONFIG_FILES
     RETVAL=$?
     if [ $RETVAL != 0 ]; then

@@ -245,9 +245,9 @@ rmdir "$CONFIG_DIR" 2>/dev/null
 test "$ACTION" = "install" || exit 0
 
 # install the new version
-mkdir -p "$CONFIG_DIR"
+mkdir -p -m 755 "$CONFIG_DIR"
 test ! -d "$INSTALLATION_DIR" && REMOVE_INSTALLATION_DIR=1
-mkdir -p "$INSTALLATION_DIR"
+mkdir -p -m 755 "$INSTALLATION_DIR"
 # Create a list of the files in the archive, skipping any directories which
 # already exist in the filesystem.
 bzip2 -d -c "$ARCH_PACKAGE" | tar -tf - |
