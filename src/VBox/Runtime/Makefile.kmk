@@ -1455,7 +1455,6 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/mpnotification-r0drv.c \
 	r0drv/powernotification-r0drv.c
-## @todo thread2-r0drv-linux.c and assert-r0drv-linux.c
 
 RuntimeR0Drv_SOURCES.win = \
 	common/misc/thread.cpp \
@@ -1469,6 +1468,10 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strpbrk.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
+ 	generic/RTSemEventWait-2-ex-generic.cpp \
+ 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
+ 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+ 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
