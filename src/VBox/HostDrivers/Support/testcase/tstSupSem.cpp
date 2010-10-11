@@ -284,6 +284,44 @@ int main(int argc, char **argv)
 
     if (RTTestErrorCount(hTest) == 0)
     {
+        RTTestSub(hTest, "SRE Timeout Accuracy");
+        RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
+
+        static unsigned const s_acMsIntervals[] = { 0, 1, 2, 3, 4, 8, 10, 16, 32 };
+        for (unsigned i = 0; i < RT_ELEMENTS(s_acMsIntervals); i++)
+        {
+            uint64_t cMs        = s_acMsIntervals[i];
+            uint64_t cNsMinSys  = UINT64_MAX;
+            uint64_t cNsMin     = UINT64_MAX;
+            uint64_t cNsTotalSys= 0;
+            uint64_t cNsTotal   = 0;
+            for (unsigned j = 0; j < 10; j++)
+            {
+                uint64_t u64StartSys = RTTimeSystemNanoTS();
+                uint64_t u64Start    = RTTimeNanoTS();
+                int rcX = SUPSemEventWaitNoResume(pSession, hEvent, cMs);
+                if (rc == VERR_TIMEOUT)
+                    RTTestFailed(hTest, "%Rrc j=%u cMs=%u", rcX, j, cMs);
+                uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
+                uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
+                if (cNsElapsedSys < cNsMinSys)
+                    cNsMinSys = cNsElapsedSys;
+                if (cNsElapsed < cNsMin)
+                    cNsMin = cNsElapsed;
+                cNsTotalSys += cNsElapsedSys;
+                cNsTotal    += cNsElapsed;
+            }
+            RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS, "%u ms min (clock=sys)", cMs);
+            RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%u ms avg - (clock=sys)", cMs);
+            RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS, "%u ms min (clock=gip)", cMs);
+            RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS, "%u ms avg - (clock=gip)", cMs);
+        }
+
+        RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+    }
+
+    if (RTTestErrorCount(hTest) == 0)
+    {
         RTTestSub(hTest, "MRE Timeout Accuracy");
         RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEvent), VINF_SUCCESS);
 

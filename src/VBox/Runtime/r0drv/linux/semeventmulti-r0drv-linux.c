@@ -225,6 +225,9 @@ RT_EXPORT_SYMBOL(RTSemEventMultiReset);
  *
  * @returns VBox status code.
  * @param   pThis           The event semaphore.
+ * @param   fFlags          See RTSemEventMultiWaitEx.
+ * @param   uTimeout        See RTSemEventMultiWaitEx.
+ * @param   pSrcPos         The source code position of the wait.
  */
 static int rtR0SemEventMultiLnxWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFlags, uint64_t uTimeout,
                                     PCRTLOCKVALSRCPOS pSrcPos)
