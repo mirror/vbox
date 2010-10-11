@@ -1244,29 +1244,6 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
     {
         DISPDBG((0, "%d,%d %dx%d\n", pDev->ddLock.rArea.left, pDev->ddLock.rArea.top, pDev->ddLock.rArea.right - pDev->ddLock.rArea.left, pDev->ddLock.rArea.bottom - pDev->ddLock.rArea.top));
 
-#ifndef VBOX_WITH_HGSMI
-        if (pDev->pInfo && vboxHwBufferBeginUpdate (pDev))
-        {
-            vbvaReportDirtyRect (pDev, &pDev->ddLock.rArea);
-
-            if (  pDev->pInfo->hostEvents.fu32Events
-                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
-            {
-                vrdpReset (pDev);
-
-                pDev->pInfo->hostEvents.fu32Events &=
-                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
-            }
-
-            if (pDev->vbva.pVbvaMemory->fu32ModeFlags
-                & VBVA_F_MODE_VRDP)
-            {
-                vrdpReportDirtyRect (pDev, &pDev->ddLock.rArea);
-            }
-
-            vboxHwBufferEndUpdate (pDev);
-        }
-#else
         if (pDev->bHGSMISupported && vboxHwBufferBeginUpdate (pDev))
         {
             vbvaReportDirtyRect (pDev, &pDev->ddLock.rArea);
@@ -1288,7 +1265,6 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 
             vboxHwBufferEndUpdate (pDev);
         }
-#endif /* VBOX_WITH_HGSMI */
 
         pDev->ddLock.bLocked = FALSE;
     }

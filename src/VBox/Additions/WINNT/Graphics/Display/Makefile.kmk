@@ -56,13 +56,8 @@ VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
 VBoxDisp_LDFLAGS.amd64 = /Entry:DrvEnableDriver
 VBoxDisp_LIBS = \
 	$(PATH_SDK_W2K3DDK_LIB)/win32k.lib \
-	$(VBOX_LIB_IPRT_GUEST_R0)
-
-ifdef VBOX_WITH_HGSMI
-VBoxDisp_LIBS         += \
+	$(VBOX_LIB_IPRT_GUEST_R0) \
 	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
-VBoxDisp_DEFS += VBOX_WITH_HGSMI
-endif
 
 ifdef VBOX_WITH_WDDM
 

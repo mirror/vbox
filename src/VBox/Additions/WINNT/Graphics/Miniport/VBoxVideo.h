@@ -19,13 +19,11 @@
 #include <VBox/types.h>
 #include <iprt/assert.h>
 
-#ifdef VBOX_WITH_HGSMI
 //#include <iprt/thread.h>
 
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
 #include "VBoxHGSMI.h"
-#endif /* VBOX_WITH_HGSMI */
 
 RT_C_DECLS_BEGIN
 #ifndef VBOX_WITH_WDDM
@@ -88,9 +86,7 @@ RT_C_DECLS_END
 #define VBE_DISPI_ID2                   0xB0C2
 /* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_VBOX_VIDEO. */
 #define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
-#ifdef VBOX_WITH_HGSMI
 #define VBE_DISPI_ID_HGSMI              0xBE01
-#endif /* VBOX_WITH_HGSMI */
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
 #define VBE_DISPI_LFB_ENABLED           0x40
@@ -99,10 +95,8 @@ RT_C_DECLS_END
 #define VBE_DISPI_TOTAL_VIDEO_MEMORY_KB         (VBE_DISPI_TOTAL_VIDEO_MEMORY_MB * 1024)
 #define VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES      (VBE_DISPI_TOTAL_VIDEO_MEMORY_KB * 1024)
 
-#ifdef VBOX_WITH_HGSMI
 #define VGA_PORT_HGSMI_HOST  0x3b0
 #define VGA_PORT_HGSMI_GUEST 0x3d0
-#endif /* VBOX_WITH_HGSMI */
 
 /* common API types */
 #ifndef VBOX_WITH_WDDM
@@ -210,17 +204,14 @@ typedef struct VBOXVIDEO_COMMON
     PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM.
                                          * This is mapped by miniport separately.
                                          */
-#ifdef VBOX_WITH_HGSMI
     volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
     volatile bool bHostCmdProcessing;
     VBOXVCMNSPIN_LOCK pSynchLock;
-#endif
 
     PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM.
                                          * This is mapped by miniport separately.
                                          */
 
-#ifdef VBOX_WITH_HGSMI
     BOOLEAN bHGSMI;                     /* Whether HGSMI is enabled. */
 
     HGSMIAREA areaHostHeap;             /* Host heap VRAM area. */
@@ -234,7 +225,6 @@ typedef struct VBOXVIDEO_COMMON
 
     /* The IO Port Number for guest commands. */
     RTIOPORT IOPortGuest;
-#endif
 } VBOXVIDEO_COMMON, *PVBOXVIDEO_COMMON;
 
 typedef struct _DEVICE_EXTENSION
@@ -282,24 +272,17 @@ typedef struct _DEVICE_EXTENSION
 
            BOOLEAN fMouseHidden;               /* Has the mouse cursor been hidden by the guest? */
 
-#ifndef VBOX_WITH_HGSMI
-           ULONG ulDisplayInformationSize;     /* The size of the Display information, which is at offset:
-                                                * ulFrameBufferOffset + ulMaxFrameBufferSize.
-                                                */
-#endif /* !VBOX_WITH_HGSMI */
 
            VBOXVIDEO_COMMON commonInfo;
-#ifdef VBOX_WITH_HGSMI
-# ifndef VBOX_WITH_WDDM
+#ifndef VBOX_WITH_WDDM
            /* Video Port API dynamically picked up at runtime for binary backwards compatibility with older NT versions */
            VBOXVIDEOPORTPROCS VideoPortProcs;
-# else
+#else
            /* committed VidPn handle */
            D3DKMDT_HVIDPN hCommittedVidPn;
            /* Display Port handle and callbacks */
            DXGKRNL_INTERFACE DxgkInterface;
-# endif
-#endif /* VBOX_WITH_HGSMI */
+#endif
        } primary;
 
        /* Secondary device information. */
@@ -308,9 +291,7 @@ typedef struct _DEVICE_EXTENSION
        } secondary;
    } u;
 
-#ifdef VBOX_WITH_HGSMI
    HGSMIAREA areaDisplay;                      /* Entire VRAM chunk for this display device. */
-#endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_WDDM
    PDEVICE_OBJECT pPDO;
@@ -509,7 +490,7 @@ BOOLEAN VBoxVideoStartIO(
    PVOID HwDeviceExtension,
    PVIDEO_REQUEST_PACKET RequestPacket);
 
-#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+#ifdef VBOX_WITH_VIDEOHWACCEL
 BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension);
 #endif
 
@@ -862,7 +843,6 @@ void VBoxUnmapAdapterInformation (PDEVICE_EXTENSION PrimaryExtension);
 
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
 
-#ifdef VBOX_WITH_HGSMI
 
 /*
  * Host and Guest port IO helpers.
@@ -917,7 +897,6 @@ VOID VBoxVideoHGSMIDpc(
 
 void HGSMIClearIrq (PVBOXVIDEO_COMMON pCommon);
 
-#endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */
 
 #endif /* VBOXVIDEO_H */

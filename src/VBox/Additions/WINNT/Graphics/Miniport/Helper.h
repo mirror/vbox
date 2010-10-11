@@ -36,9 +36,6 @@ ULONG vboxGetHeightReduction();
 BOOLEAN vboxQueryPointerPos(uint16_t *pointerXPos, uint16_t *pointerYPos);
 BOOLEAN vboxQueryHostWantsAbsolute();
 winVersion_t vboxQueryWinVersion();
-#ifndef VBOX_WITH_HGSMI
-BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t cbLength);
-#endif /* !VBOX_WITH_HGSMI */
 
 #include "vboxioctl.h"
 
@@ -47,7 +44,7 @@ int vboxVbvaEnable (ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 
 
 /* debug printf */
-# define OSDBGPRINT(a) DbgPrint a
+#define OSDBGPRINT(a) DbgPrint a
 
 /* dprintf */
 #if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)

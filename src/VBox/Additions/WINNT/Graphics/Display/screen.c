@@ -26,12 +26,10 @@
 
 #include "driver.h"
 
-#ifdef VBOX_WITH_HGSMI
 #include <iprt/asm.h>
 #include <VBox/log.h>
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
-#endif
 
 #define SYSTM_LOGFONT {16,7,0,0,700,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,VARIABLE_PITCH | FF_DONTCARE,L"System"}
 #define HELVE_LOGFONT {12,9,0,0,400,0,0,0,ANSI_CHARSET,OUT_DEFAULT_PRECIS,CLIP_STROKE_PRECIS,PROOF_QUALITY,VARIABLE_PITCH | FF_DONTCARE,L"MS Sans Serif"}
@@ -67,24 +65,6 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
     uint32_t u32DisplayInfoSize;
     uint32_t u32MinVBVABufferSize;
 
-#ifndef VBOX_WITH_HGSMI
-    QUERYDISPLAYINFORESULT DispInfo;
-    RtlZeroMemory(&DispInfo, sizeof (DispInfo));
-
-    ppdev->bVBoxVideoSupported = !EngDeviceIoControl(ppdev->hDriver,
-                                                     IOCTL_VIDEO_QUERY_DISPLAY_INFO,
-                                                     NULL,
-                                                     0,
-                                                     &DispInfo,
-                                                     sizeof(DispInfo),
-                                                     &returnedDataLength);
-    if (ppdev->bVBoxVideoSupported)
-    {
-        iDevice = DispInfo.iDevice;
-        u32DisplayInfoSize = DispInfo.u32DisplayInfoSize;
-        u32MinVBVABufferSize = 0; /* In old mode the buffer is not used at all. */
-    }
-#else
     QUERYHGSMIRESULT info;
     RtlZeroMemory(&info, sizeof (info));
 
@@ -165,15 +145,9 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             ppdev->bHGSMISupported = FALSE;
         }
     }
-#endif /* VBOX_WITH_HGSMI */
 
-#ifndef VBOX_WITH_HGSMI
-    if (ppdev->bVBoxVideoSupported)
-    {
-#else
     if (ppdev->bHGSMISupported)
     {
-#endif /* VBOX_WITH_HGSMI */
         ppdev->iDevice = iDevice;
 
         ppdev->layout.cbVRAM = pMemoryInformation->VideoRamLength;
@@ -185,11 +159,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
         if (cbAvailable <= u32DisplayInfoSize)
         {
-#ifndef VBOX_WITH_HGSMI
-            ppdev->bVBoxVideoSupported = FALSE;
-#else
             ppdev->bHGSMISupported = FALSE;
-#endif /* VBOX_WITH_HGSMI */
         }
         else
         {
@@ -200,11 +170,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
             /* Use minimum 64K and maximum the cbFrameBuffer for the VBVA buffer. */
             for (ppdev->layout.cbVBVABuffer = ppdev->layout.cbFrameBuffer;
-#ifndef VBOX_WITH_HGSMI
-                 ppdev->layout.cbVBVABuffer >= 0x10000;
-#else
                  ppdev->layout.cbVBVABuffer >= u32MinVBVABufferSize;
-#endif /* VBOX_WITH_HGSMI */
                  ppdev->layout.cbVBVABuffer /= 2)
             {
                 if (ppdev->layout.cbVBVABuffer < cbAvailable)
@@ -215,11 +181,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
             if (ppdev->layout.cbVBVABuffer >= cbAvailable)
             {
-#ifndef VBOX_WITH_HGSMI
-                ppdev->bVBoxVideoSupported = FALSE;
-#else
                 ppdev->bHGSMISupported = FALSE;
-#endif /* VBOX_WITH_HGSMI */
             }
             else
             {
@@ -234,11 +196,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         }
     }
 
-#ifndef VBOX_WITH_HGSMI
-    if (!ppdev->bVBoxVideoSupported)
-#else
     if (!ppdev->bHGSMISupported)
-#endif /* VBOX_WITH_HGSMI */
     {
         ppdev->iDevice = 0;
 
@@ -257,7 +215,6 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         ppdev->layout.offDisplayInformation = ppdev->layout.offVBVABuffer + ppdev->layout.cbVBVABuffer;
         ppdev->layout.cbDisplayInformation  = 0;
     }
-#ifdef VBOX_WITH_HGSMI
     else
     {
         /* Setup HGSMI heap in the display information area. The area has some space reserved for
@@ -284,7 +241,6 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             ppdev->IOPortGuestCommand = info.IOPortGuestCommand;
         }
     }
-#endif /* VBOX_WITH_HGSMI */
 
     DISPDBG((0, "vboxInitVBoxVideo:\n"
                 "    cbVRAM = 0x%X\n"
@@ -309,63 +265,6 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 }
 
 
-#ifndef VBOX_WITH_HGSMI
-/* Setup display information after remapping. */
-static void vboxSetupDisplayInfo (PPDEV ppdev, VIDEO_MEMORY_INFORMATION *pMemoryInformation)
-{
-    VBOXDISPLAYINFO *pInfo;
-    uint8_t *pu8;
-
-    pu8 = (uint8_t *)ppdev->pjScreen + ppdev->layout.offDisplayInformation;
-
-    pInfo = (VBOXDISPLAYINFO *)pu8;
-    pu8 += sizeof (VBOXDISPLAYINFO);
-
-    pInfo->hdrLink.u8Type     = VBOX_VIDEO_INFO_TYPE_LINK;
-    pInfo->hdrLink.u8Reserved = 0;
-    pInfo->hdrLink.u16Length  = sizeof (VBOXVIDEOINFOLINK);
-    pInfo->link.i32Offset = 0;
-
-    pInfo->hdrScreen.u8Type     = VBOX_VIDEO_INFO_TYPE_SCREEN;
-    pInfo->hdrScreen.u8Reserved = 0;
-    pInfo->hdrScreen.u16Length  = sizeof (VBOXVIDEOINFOSCREEN);
-    DISPDBG((1, "Setup: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
-    pInfo->screen.xOrigin      = ppdev->ptlDevOrg.x;
-    pInfo->screen.yOrigin      = ppdev->ptlDevOrg.y;
-    pInfo->screen.u32LineSize  = 0;
-    pInfo->screen.u16Width     = 0;
-    pInfo->screen.u16Height    = 0;
-    pInfo->screen.bitsPerPixel = 0;
-    pInfo->screen.u8Flags      = VBOX_VIDEO_INFO_SCREEN_F_NONE;
-
-    pInfo->hdrHostEvents.u8Type     = VBOX_VIDEO_INFO_TYPE_HOST_EVENTS;
-    pInfo->hdrHostEvents.u8Reserved = 0;
-    pInfo->hdrHostEvents.u16Length  = sizeof (VBOXVIDEOINFOHOSTEVENTS);
-    pInfo->hostEvents.fu32Events = VBOX_VIDEO_INFO_HOST_EVENTS_F_NONE;
-
-    pInfo->hdrEnd.u8Type     = VBOX_VIDEO_INFO_TYPE_END;
-    pInfo->hdrEnd.u8Reserved = 0;
-    pInfo->hdrEnd.u16Length  = 0;
-
-    ppdev->pInfo = pInfo;
-}
-
-
-static void vboxUpdateDisplayInfo (PPDEV ppdev)
-{
-    if (ppdev->pInfo)
-    {
-        ppdev->pInfo->screen.u32LineSize  = ppdev->lDeltaScreen;
-        ppdev->pInfo->screen.u16Width     = (uint16_t)ppdev->cxScreen;
-        ppdev->pInfo->screen.u16Height    = (uint16_t)ppdev->cyScreen;
-        ppdev->pInfo->screen.bitsPerPixel = (uint8_t)ppdev->ulBitCount;
-        ppdev->pInfo->screen.u8Flags      = VBOX_VIDEO_INFO_SCREEN_F_ACTIVE;
-
-        DISPDBG((1, "Update: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
-        VBoxProcessDisplayInfo(ppdev);
-    }
-}
-#endif /* !VBOX_WITH_HGSMI */
 
 
 /******************************Public*Routine******************************\
@@ -493,13 +392,6 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
 
         vboxInitVBoxVideo (ppdev, &videoMemoryInformation);
 
-#ifndef VBOX_WITH_HGSMI
-        if (ppdev->bVBoxVideoSupported)
-        {
-            /* Setup the display information. */
-            vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
-        }
-#endif /* !VBOX_WITH_HGSMI */
     }
 
 
@@ -509,32 +401,19 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         || ppdev->ulBitCount == 24
         || ppdev->ulBitCount == 32)
     {
-#ifndef VBOX_WITH_HGSMI
-        if (ppdev->pInfo) /* Do not use VBVA on old hosts. */
-        {
-            /* Enable VBVA for this video mode. */
-            vboxVbvaEnable (ppdev);
-        }
-#else
         if (ppdev->bHGSMISupported)
         {
             /* Enable VBVA for this video mode. */
             ppdev->bHGSMISupported = vboxVbvaEnable (ppdev);
             LogRel(("VBoxDisp[%d]: VBVA %senabled\n", ppdev->iDevice, ppdev->bHGSMISupported? "": "not "));
         }
-#endif /* VBOX_WITH_HGSMI */
     }
 
     DISPDBG((1, "DISP bInitSURF success\n"));
 
-#ifndef VBOX_WITH_HGSMI
-    /* Update the display information. */
-    vboxUpdateDisplayInfo (ppdev);
-#else
     /* Inform the host about this screen layout. */
     DISPDBG((1, "bInitSURF: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
     VBoxProcessDisplayInfo (ppdev);
-#endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* tells we can process host commands */

@@ -100,36 +100,6 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
     return FALSE;
 }
 
-#ifndef VBOX_WITH_HGSMI
-#define VBVA_OPERATION(__psoDest, __fn, __a) do {                     \
-    if (bIsScreenSurface(__psoDest))                                  \
-    {                                                                 \
-        PPDEV ppdev = (PPDEV)__psoDest->dhpdev;                       \
-                                                                      \
-        if (ppdev->pInfo && vboxHwBufferBeginUpdate (ppdev))          \
-        {                                                             \
-            vbva##__fn __a;                                           \
-                                                                      \
-            if (  ppdev->pInfo->hostEvents.fu32Events                 \
-                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)           \
-            {                                                         \
-                vrdpReset (ppdev);                                    \
-                                                                      \
-                ppdev->pInfo->hostEvents.fu32Events &=                \
-                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;  \
-            }                                                         \
-                                                                      \
-            if (ppdev->vbva.pVbvaMemory->fu32ModeFlags                \
-                & VBVA_F_MODE_VRDP)                                   \
-            {                                                         \
-                vrdp##__fn __a;                                       \
-            }                                                         \
-                                                                      \
-            vboxHwBufferEndUpdate (ppdev);                            \
-        }                                                             \
-    }                                                                 \
-} while (0)
-#else
 #define VBVA_OPERATION(__psoDest, __fn, __a) do {                      \
     if (bIsScreenSurface(__psoDest))                                   \
     {                                                                  \
@@ -158,7 +128,6 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
         }                                                              \
     }                                                                  \
 } while (0)
-#endif /* VBOX_WITH_HGSMI */
 
 //#undef VBVA_OPERATION
 //#define VBVA_OPERATION(_psoDest, __fn, __a) do { } while (0)
@@ -350,19 +319,10 @@ BOOL APIENTRY DrvCopyBits(
     {
         PPDEV ppdev = (PPDEV)psoDest->dhpdev;
 
-#ifndef VBOX_WITH_HGSMI
-        VBVAMEMORY *pVbvaMemory = ppdev->vbva.pVbvaMemory;
-
-        DISPDBG((1, "offscreen->screen\n"));
-
-        if (   pVbvaMemory
-            && (pVbvaMemory->fu32ModeFlags & VBVA_F_MODE_ENABLED))
-#else
         DISPDBG((1, "offscreen->screen\n"));
 
         if (   ppdev->pVBVA
             && (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
-#endif /* VBOX_WITH_HGSMI */
         {
             if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
                 || psoSrc->iUniq == 0)
@@ -768,26 +728,6 @@ BOOL APIENTRY DrvRealizeBrush(
     {
         PPDEV ppdev = (PPDEV)psoTarget->dhpdev;
 
-#ifndef VBOX_WITH_HGSMI
-        if (   ppdev->vbva.pVbvaMemory
-            && (ppdev->vbva.pVbvaMemory->fu32ModeFlags & VBVA_F_MODE_ENABLED))
-        {
-            if (ppdev->vbva.pVbvaMemory->fu32ModeFlags
-                & VBVA_F_MODE_VRDP_RESET)
-            {
-                vrdpReset (ppdev);
-
-                ppdev->vbva.pVbvaMemory->fu32ModeFlags &=
-                    ~VBVA_F_MODE_VRDP_RESET;
-            }
-
-            if (ppdev->vbva.pVbvaMemory->fu32ModeFlags
-                & VBVA_F_MODE_VRDP)
-            {
-                bRc = vrdpRealizeBrush (pbo, psoTarget, psoPattern, psoMask, pxlo, iHatch);
-            }
-        }
-#else
         if (   ppdev->pVBVA
             && (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
         {
@@ -806,7 +746,6 @@ BOOL APIENTRY DrvRealizeBrush(
                 bRc = vrdpRealizeBrush (pbo, psoTarget, psoPattern, psoMask, pxlo, iHatch);
             }
         }
-#endif /* VBOX_WITH_HGSMI */
     }
 
     return bRc;
