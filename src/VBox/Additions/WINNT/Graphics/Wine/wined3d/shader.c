@@ -2019,6 +2019,7 @@ void find_ps_compile_args(IWineD3DPixelShaderImpl *shader,
     memset(args, 0, sizeof(*args)); /* FIXME: Make sure all bits are set. */
     args->srgb_correction = stateblock->renderState[WINED3DRS_SRGBWRITEENABLE] ? 1 : 0;
     args->np2_fixup = 0;
+    args->t_mirror = 0;
 
     for (i = 0; i < MAX_FRAGMENT_SAMPLERS; ++i)
     {
@@ -2035,6 +2036,11 @@ void find_ps_compile_args(IWineD3DPixelShaderImpl *shader,
         if (!texture->baseTexture.pow2Matrix_identity)
         {
             args->np2_fixup |= (1 << i);
+        }
+
+        if (texture->baseTexture.t_mirror)
+        {
+            args->t_mirror |= (1 << i);
         }
     }
     if (shader->baseShader.reg_maps.shader_version.major >= 3)

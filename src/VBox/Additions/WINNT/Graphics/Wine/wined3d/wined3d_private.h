@@ -715,6 +715,7 @@ struct ps_compile_args {
     /* Bitmap for NP2 texcoord fixups (16 samplers max currently).
        D3D9 has a limit of 16 samplers and the fixup is superfluous
        in D3D10 (unconditional NP2 support mandatory). */
+    WORD                        t_mirror;
 };
 
 enum fog_src_type {
@@ -1906,6 +1907,7 @@ typedef struct IWineD3DBaseTextureClass
     DWORD                   sampler;
     BOOL                    is_srgb;
     BOOL                    pow2Matrix_identity;
+    BOOL                    t_mirror;
     const struct min_lookup *minMipLookup;
     const GLenum            *magLookup;
     void                    (*internal_preload)(IWineD3DBaseTexture *iface, enum WINED3DSRGB srgb);

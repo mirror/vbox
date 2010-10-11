@@ -4532,7 +4532,11 @@ static void vertexdeclaration(DWORD state, IWineD3DStateBlockImpl *stateblock, s
         if (useVertexShaderFunction)
         {
             GLfloat yoffset = -(63.0f / 64.0f) / stateblock->viewport.Height;
+#if !defined(VBOX_WITH_WDDM) || !defined(DEBUG_leo)
             device->posFixup[1] = context->render_offscreen ? -1.0f : 1.0f;
+#else
+            device->posFixup[1] = context->render_offscreen ? 1.0f : -1.0f;
+#endif
             device->posFixup[3] = device->posFixup[1] * yoffset;
         }
     }
