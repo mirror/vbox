@@ -18,7 +18,7 @@
 [Defines]
   INF_VERSION                    = 0x00010005
   BASE_NAME                      = IdeBusDxe
-  FILE_GUID                      = 69FD8E47-A161-4550-B01A-5594CEB2B2B2
+  FILE_GUID                      = 2f709c46-d2e7-11df-ad38-080027a4ca0d
   MODULE_TYPE                    = UEFI_DRIVER
   VERSION_STRING                 = 1.0
   EFI_SPECIFICATION_VERSION      = 0x00020000
@@ -52,6 +52,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  VBoxPkg/VBoxPkg.dec
   IntelFrameworkPkg/IntelFrameworkPkg.dec
   IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec  
 
