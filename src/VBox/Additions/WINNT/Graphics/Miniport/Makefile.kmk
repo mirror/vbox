@@ -31,9 +31,6 @@ ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxVideo_NOINST     = true
 endif
 VBoxVideo_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_8BPP_MODES
-ifdef VBOX_WITH_HGSMI
- VBoxVideo_DEFS      += VBOX_WITH_HGSMI
-endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxVideo_DEFS      += VBOX_WITH_VIDEOHWACCEL
 endif
@@ -46,11 +43,8 @@ VBoxVideo_SOURCES     = \
 	VBoxVideo.cpp \
 	Helper.cpp \
 	VBoxVideo.def \
-	VBoxVideo.rc
-ifdef VBOX_WITH_HGSMI
- VBoxVideo_SOURCES   += \
+	VBoxVideo.rc \
 	VBoxVideoHGSMI.cpp
-endif
 VBoxVideo_LIBS.x86    = \
 	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib
 VBoxVideo_LIBS        = \
@@ -58,11 +52,8 @@ VBoxVideo_LIBS        = \
 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
 	$(VBOX_LIB_VBGL_R0) \
-	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
-ifdef VBOX_WITH_HGSMI
- VBoxVideo_LIBS      += \
+	$(VBOX_LIB_IPRT_GUEST_R0_NT4) \
 	$(VBOX_PATH_ADDITIONS_LIB)/HGSMIGuestR0Lib$(VBOX_SUFF_LIB)
-endif
 
 
 
@@ -78,7 +69,7 @@ ifdef VBOX_WITH_WDDM
 
  VBoxVideoWddm_SDKS=WINDDKWLH
  VBoxVideoWddm_DEFS       += VBOX_WITH_8BPP_MODES
- VBoxVideoWddm_DEFS       += VBOX_WITH_HGSMI VBOX_WITH_WDDM
+ VBoxVideoWddm_DEFS       += VBOX_WITH_WDDM
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxVideoWddm_DEFS      += VBOX_WITH_VIDEOHWACCEL
  endif

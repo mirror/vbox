@@ -29,9 +29,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-#ifdef VBOX_WITH_HGSMI
 #include <VBox/VMMDev.h>
-#endif /* VBOX_WITH_HGSMI */
 
 /*
  * The last 4096 bytes of the guest VRAM contains the generic info for all
@@ -85,10 +83,6 @@
 #define VBOX_VIDEO_MAX_SCREENS 64
 
 /* The size of the information. */
-#ifndef VBOX_WITH_HGSMI
-#define VBOX_VIDEO_ADAPTER_INFORMATION_SIZE  4096
-#define VBOX_VIDEO_DISPLAY_INFORMATION_SIZE  4096
-#else
 /*
  * The minimum HGSMI heap size is PAGE_SIZE (4096 bytes) and is a restriction of the
  * runtime heapsimple API. Use minimum 2 pages here, because the info area also may
@@ -101,7 +95,6 @@
 #define VBVA_DISPLAY_INFORMATION_SIZE  (64*_1K)
 #endif
 #define VBVA_MIN_BUFFER_SIZE           (64*_1K)
-#endif /* VBOX_WITH_HGSMI */
 
 
 /* The value for port IO to let the adapter to interpret the adapter memory. */
@@ -255,7 +248,7 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 } VBOXVIDEOINFOQUERYCONF32;
 #pragma pack()
 
-# ifdef VBOX_WITH_VIDEOHWACCEL
+#ifdef VBOX_WITH_VIDEOHWACCEL
 #pragma pack(1)
 
 #define VBOXVHWA_VERSION_MAJ 0
@@ -789,9 +782,7 @@ typedef FNVBOXVHWA_HH_CALLBACK *PFNVBOXVHWA_HH_CALLBACK;
 #define VBOXVHWA_HH_CALLBACK_GET_ARG(_pCmd) ((void*)(_pCmd)->GuestVBVAReserved2)
 
 #pragma pack()
-# endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */
-
-#ifdef VBOX_WITH_HGSMI
+#endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */
 
 /* All structures are without alignment. */
 #pragma pack(1)
@@ -842,13 +833,13 @@ typedef struct _VBVABUFFER
 #define VBVA_INFO_CAPS   12 /* informs host about HGSMI caps. see _VBVACAPS below */
 
 /* host->guest commands */
-# define VBVAHG_EVENT              1
-# define VBVAHG_DISPLAY_CUSTOM     2
+#define VBVAHG_EVENT              1
+#define VBVAHG_DISPLAY_CUSTOM     2
 #ifdef VBOX_WITH_VDMA
-# define VBVAHG_SHGSMI_COMPLETION  3
+#define VBVAHG_SHGSMI_COMPLETION  3
 #endif
 
-# ifdef VBOX_WITH_VIDEOHWACCEL
+#ifdef VBOX_WITH_VIDEOHWACCEL
 #define VBVAHG_DCUSTOM_VHWA_CMDCOMPLETE 1
 #pragma pack(1)
 typedef struct _VBVAHOSTCMDVHWACMDCOMPLETE
@@ -856,7 +847,7 @@ typedef struct _VBVAHOSTCMDVHWACMDCOMPLETE
     uint32_t offCmd;
 }VBVAHOSTCMDVHWACMDCOMPLETE;
 #pragma pack()
-# endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
+#endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
 
 #pragma pack(1)
 typedef enum
@@ -1055,8 +1046,6 @@ typedef struct _VBVACAPS
 } VBVACAPS;
 
 #pragma pack()
-
-#endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_WDDM
 # pragma pack(1)
