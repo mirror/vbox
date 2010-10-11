@@ -143,7 +143,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderInfoLog(GLuint shader, GL
         crServerReturnValue(&zero, sizeof(zero));
     }
     cr_server.head_spu->dispatch_table.GetShaderInfoLog(crStateGetShaderHWID(shader), bufSize, pLocal, (char*)&pLocal[1]);
-    crServerReturnValue(pLocal, (*pLocal)+1+sizeof(GLsizei));
+    crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
     crFree(pLocal);
 }
 
@@ -158,7 +158,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetProgramInfoLog(GLuint program, 
         crServerReturnValue(&zero, sizeof(zero));
     }
     cr_server.head_spu->dispatch_table.GetProgramInfoLog(crStateGetProgramHWID(program), bufSize, pLocal, (char*)&pLocal[1]);
-    crServerReturnValue(pLocal, (*pLocal)+1+sizeof(GLsizei));
+    crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
     crFree(pLocal);
 }
 
@@ -173,7 +173,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderSource(GLuint shader, GLs
         crServerReturnValue(&zero, sizeof(zero));
     }
     cr_server.head_spu->dispatch_table.GetShaderSource(crStateGetShaderHWID(shader), bufSize, pLocal, (char*)&pLocal[1]);
-    crServerReturnValue(pLocal, (*pLocal)+1+sizeof(GLsizei));
+    crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
     crFree(pLocal);
 }
 
@@ -279,4 +279,40 @@ GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsProgram(GLuint program)
     return retval; /* ignored */
 }
 
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterfvARB( GLhandleARB obj, GLenum pname, GLfloat * params )
+{
+    GLfloat local_params[1];
+    GLuint hwid = crStateGetProgramHWID(obj);
+    (void) params;
+
+    if (!hwid)
+    {
+        hwid = crStateGetShaderHWID(obj);
+        if (!hwid)
+        {
+            crWarning("Unknown object %i, in crServerDispatchGetObjectParameterfvARB", obj);
+        }
+    }
+
+    cr_server.head_spu->dispatch_table.GetObjectParameterfvARB( hwid, pname, local_params );
+    crServerReturnValue( &(local_params[0]), 1*sizeof(GLfloat) );
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterivARB( GLhandleARB obj, GLenum pname, GLint * params )
+{
+    GLint local_params[1];
+    GLuint hwid = crStateGetProgramHWID(obj);
+    if (!hwid)
+    {
+        hwid = crStateGetShaderHWID(obj);
+        if (!hwid)
+        {
+            crWarning("Unknown object %i, in crServerDispatchGetObjectParameterivARB", obj);
+        }
+    }
+
+    (void) params;
+    cr_server.head_spu->dispatch_table.GetObjectParameterivARB( hwid, pname, local_params );
+    crServerReturnValue( &(local_params[0]), 1*sizeof(GLint) );
+}
 #endif /* #ifdef CR_OPENGL_VERSION_2_0 */

@@ -242,3 +242,5 @@ GetAttribLocation
 GetHandleARB
 GetUniformLocation
 CopyTexSubImage2D
+GetObjectParameterivARB
+GetObjectParameterfvARB
