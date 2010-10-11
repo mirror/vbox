@@ -59,6 +59,7 @@
 #define RTSEMEVENTMULTILNX_STATE_GEN_INIT   UINT32_C(0xfffffffc)
 /** @}  */
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -70,7 +71,8 @@ typedef struct RTSEMEVENTMULTIINTERNAL
     /** Magic value (RTSEMEVENTMULTI_MAGIC). */
     uint32_t volatile   u32Magic;
     /** The object state bit and generation counter.
-     * The generation counter is incremented every time the object is   */
+     * The generation counter is incremented every time the object is
+     * signalled. */
     uint32_t volatile   fStateAndGen;
     /** Reference counter. */
     uint32_t volatile   cRefs;
@@ -240,6 +242,7 @@ static int rtR0SemEventMultiLnxWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFl
      */
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
     rtR0SemEventMultiLnxRetain(pThis);
 
     /*
