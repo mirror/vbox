@@ -162,7 +162,7 @@ void PACKSPU_APIENTRY packspu_GetProgramInfoLog(GLuint program, GLsizei bufSize,
         crNetRecv();
 
     if (length) *length=*pLocal;
-    crMemcpy(infoLog, &pLocal[1], (*pLocal)+1);
+    crMemcpy(infoLog, &pLocal[1], (bufSize >= pLocal[0]) ? pLocal[0] : bufSize);
     crFree(pLocal);
 }
 
@@ -184,7 +184,7 @@ void PACKSPU_APIENTRY packspu_GetShaderInfoLog(GLuint shader, GLsizei bufSize, G
         crNetRecv();
 
     if (length) *length=*pLocal;
-    crMemcpy(infoLog, &pLocal[1], (*pLocal)+1);
+    crMemcpy(infoLog, &pLocal[1], (bufSize >= pLocal[0]) ? pLocal[0] : bufSize);
     crFree(pLocal);
 }
 
@@ -206,6 +206,6 @@ void PACKSPU_APIENTRY packspu_GetShaderSource(GLuint shader, GLsizei bufSize, GL
         crNetRecv();
 
     if (length) *length=*pLocal;
-    crMemcpy(source, &pLocal[1], (*pLocal)+1);
+    crMemcpy(source, &pLocal[1], (bufSize >= pLocal[0]) ? pLocal[0] : bufSize);
     crFree(pLocal);
 }
