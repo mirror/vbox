@@ -431,6 +431,10 @@ ifdef VBOX_WITH_EFI
  EFI/DevEFI.cpp_INCS.amd64 += EFI/tools/include/X64
 endif
 
+ifdef VBOX_WITH_MSI_DEVICES
+ DevicesR3_DEFS        += VBOX_WITH_MSI_DEVICES
+endif
+
 ifdef VBOX_WITH_DYNAMIC_DSDT
  DevicesR3_DEFS        += VBOX_WITH_DYNAMIC_DSDT
 endif
