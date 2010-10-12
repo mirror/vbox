@@ -14978,34 +14978,40 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IGuestMouseEvent" extends="IReusableEvent"
-    uuid="2ab6f43c-a111-4520-be63-5d560e8eb463"
+    uuid="1f85d35c-c524-40ff-8e98-307000df0992"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestMouseEvent"
     >
    <desc>
       Notification when guest mouse event happens.
    </desc>
 
+   <attribute name="absolute" type="boolean" readonly="yes">
+     <desc>
+       If this event is relative or absolute.
+     </desc>
+   </attribute>
+
    <attribute name="x" type="long" readonly="yes">
      <desc>
-       New X position.
+       New X position, or X delta.
      </desc>
    </attribute>
 
    <attribute name="y" type="long" readonly="yes">
      <desc>
-       New Y position.
+       New Y position, or Y delta.
      </desc>
    </attribute>
 
    <attribute name="z" type="long" readonly="yes">
      <desc>
-       New Z position.
+       Z delta.
      </desc>
    </attribute>
 
    <attribute name="w" type="long" readonly="yes">
      <desc>
-       New W position.
+       W delta.
      </desc>
    </attribute>
 

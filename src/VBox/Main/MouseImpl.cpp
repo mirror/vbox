@@ -332,12 +332,6 @@ HRESULT Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                             tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
                             vrc);
         mLastButtons = fButtons;
-#ifndef VBOXBFE_WITHOUT_COM
-#if 1
-        mMouseEvent.reinit(VBoxEventType_OnGuestMouseEvent, dx, dy, dz, dw, fButtons);
-        mMouseEvent.fire(0);
-#endif
-#endif
     }
     return S_OK;
 }
@@ -375,6 +369,7 @@ HRESULT Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
                             tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
                             vrc);
         mLastButtons = fButtons;
+
     }
     return S_OK;
 }
@@ -484,6 +479,11 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
         setVMMDevMouseCaps(mfHostCaps);
     rc = reportRelEventToMouseDev(dx, dy, dz, dw, fButtons);
 
+#ifndef VBOXBFE_WITHOUT_COM
+    mMouseEvent.reinit(VBoxEventType_OnGuestMouseEvent, false, dx, dy, dz, dw, fButtons);
+    mMouseEvent.fire(0);
+#endif
+
     return rc;
 }
 
@@ -577,6 +577,11 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
     rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
                         mouseCaps & VMMDEV_MOUSE_GUEST_USES_EVENT);
+
+#ifndef VBOXBFE_WITHOUT_COM
+    mMouseEvent.reinit(VBoxEventType_OnGuestMouseEvent, true, mouseXAbs, mouseYAbs, dz, dw, fButtons);
+    mMouseEvent.fire(0);
+#endif
 
     return rc;
 }
