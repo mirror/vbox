@@ -117,7 +117,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
 +        if (!(TableInfo[Index].Flags & FLAG_OPTIONAL))
 +             ASSERT(Ptr != NULL);
 +        DEBUG ((EFI_D_ERROR, "%a: %p\n", TableInfo[Index].Name, Ptr));
-+        Tables[Table++] = Ptr;
++        if (Ptr) Tables[Table++] = Ptr;
 +    }
 +
 +#if 0
