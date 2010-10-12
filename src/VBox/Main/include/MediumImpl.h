@@ -162,8 +162,6 @@ public:
     const ComObjPtr<Medium>& getParent() const;
     const MediaList& getChildren() const;
 
-    const Guid& getRegistryMachineId() const;
-
     const Guid& getId() const;
     MediumState_T getState() const;
     MediumVariant_T getVariant() const;
@@ -177,8 +175,9 @@ public:
     MediumType_T getType() const;
     Utf8Str getName();
 
-    void setRegistryIdIfFirst(const Guid& id);
-    const Guid& getRegistryId() const;
+    bool addRegistry(const Guid& id);
+    bool isInRegistry(const Guid& id);
+    const Guid& getFirstRegistryMachineId() const;
 
     HRESULT addBackReference(const Guid &aMachineId,
                              const Guid &aSnapshotId = Guid::Empty);

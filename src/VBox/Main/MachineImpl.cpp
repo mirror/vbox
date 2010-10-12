@@ -3592,7 +3592,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         rc = diff->init(mParent,
                         medium->getPreferredDiffFormat(),
                         Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
-                        medium->getRegistryMachineId(),         // store this diff in the same registry as the parent
+                        medium->getFirstRegistryMachineId(),         // store this diff in the same registry as the parent
                         &fNeedsGlobalSaveSettings);
         if (FAILED(rc)) return rc;
 
@@ -3670,9 +3670,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         // and decide which medium registry to use now that the medium is attached:
         if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
             // machine XML is VirtualBox 4.0 or higher:
-            medium->setRegistryIdIfFirst(getId());        // machine UUID
+            medium->addRegistry(getId());        // machine UUID
         else
-            medium->setRegistryIdIfFirst(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
+            medium->addRegistry(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
     }
 
     /* success: finally remember the attachment */
@@ -3860,7 +3860,15 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
             oldmedium->removeBackReference(mData->mUuid);
         if (!medium.isNull())
             medium->addBackReference(mData->mUuid);
-        pAttach->updateMedium(medium, false /* aImplicit */);
+        pAttach->updateMedium(medium);
+
+        // and decide which medium registry to use now that the medium is attached:
+        if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
+            // machine XML is VirtualBox 4.0 or higher:
+            medium->addRegistry(getId());        // machine UUID
+        else
+            medium->addRegistry(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
+
         setModified(IsModified_Storage);
     }
 
@@ -3877,14 +3885,14 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                  aControllerName,
                                  aControllerPort,
                                  aDevice);
-        /* If the attachment is gone in the mean time, bail out. */
+        /* If the attachment is gone in the meantime, bail out. */
         if (pAttach.isNull())
             return rc;
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
         /* For non-hard disk media, re-attach straight away. */
         if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
             oldmedium->addBackReference(mData->mUuid);
-        pAttach->updateMedium(oldmedium, false /* aImplicit */);
+        pAttach->updateMedium(oldmedium);
     }
 
     return rc;
@@ -7454,7 +7462,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
             if (puuidRegistry)
                 // caller wants registry ID to be set on all attached media (OVF import case)
-                medium->setRegistryIdIfFirst(*puuidRegistry);
+                medium->addRegistry(*puuidRegistry);
         }
 
         if (FAILED(rc))
@@ -8586,7 +8594,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             rc = diff->init(mParent,
                             pMedium->getPreferredDiffFormat(),
                             Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
-                            pMedium->getRegistryMachineId(),        // store the diff in the same registry as the parent
+                            pMedium->getFirstRegistryMachineId(),        // store the diff in the same registry as the parent
                             pfNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
 

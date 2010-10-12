@@ -83,7 +83,7 @@ public:
     bool matches(CBSTR aControllerName, LONG aPort, LONG aDevice);
 
     /** Must be called from under this object's write lock. */
-    void updateMedium(const ComObjPtr<Medium> &aMedium, bool aImplicit);
+    void updateMedium(const ComObjPtr<Medium> &aMedium);
 
     /** Must be called from under this object's write lock. */
     void updatePassthrough(bool aPassthrough);
