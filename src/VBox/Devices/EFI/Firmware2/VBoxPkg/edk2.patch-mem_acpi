@@ -95,7 +95,9 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
 +        // SSDT
 +        { SIGNATURE_32('S', 'S', 'D', 'T'), 0, "SSDT"},
 +        // HPET
-+        { SIGNATURE_32('H', 'P', 'E', 'T'), FLAG_OPTIONAL, "HPET"}
++        { SIGNATURE_32('H', 'P', 'E', 'T'), FLAG_OPTIONAL, "HPET"},
++        // MCFG
++        { SIGNATURE_32('M', 'C', 'F', 'G'), FLAG_OPTIONAL, "MCFG"}
 +    };
 +    UINT32 Index;
 +
