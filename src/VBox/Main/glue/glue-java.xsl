@@ -812,6 +812,10 @@
       </xsl:choose>
     </xsl:when>
 
+    <xsl:when test="($idltype='octet') and ($safearray='yes')">
+      <xsl:value-of select="$value"/>
+    </xsl:when>
+
     <xsl:otherwise>
       <xsl:choose>
         <xsl:when test="$safearray='yes'">
@@ -1021,6 +1025,10 @@
        </xsl:choose>
      </xsl:when>
 
+     <xsl:when test="($idltype='octet') and ($safearray='yes')">
+       <xsl:value-of select="concat('Helper.unwrapBytes(',$value,')')"/>
+     </xsl:when>
+
      <xsl:otherwise>
        <xsl:value-of select="$value"/>
      </xsl:otherwise>
@@ -1089,7 +1097,7 @@
              <xsl:value-of select="concat('tmp_', @name)" />
            </xsl:when>
            <xsl:when test="@dir='in'">
-             <xsl:if test="@safearray='yes'">
+             <xsl:if test="(@safearray='yes') and not(@type = 'octet')">
                 <xsl:value-of select="concat(@name,'.size(), ')" />
              </xsl:if>
              <xsl:variable name="unwrapped">
@@ -2926,7 +2934,7 @@ public class Helper {
         }
         return ret;
     }
-   
+
     /* We have very long invoke lists sometimes */
     public static Variant invoke(Dispatch d, String method, Object ... args)
     {
@@ -3208,7 +3216,7 @@ public class Helper {
             throw new AssertionError(e);
         }
     }
-    // temporary method, will bo away soon
+    // temporary methods, will bo away soon
     public static byte[] wrapBytes(List<Short> arr)
     {
        if (arr == null)
@@ -3218,6 +3226,17 @@ public class Helper {
        for (short s : arr)
            rv[i++] = (byte)(s & 0xff);
        return rv;
+    }
+
+    public static List<Short> unwrapBytes(byte[] arr)
+    {
+       if (arr == null)
+          return null;
+       List<Short> ret = new ArrayList<Short>(arr.length);
+       for (byte b : arr) {
+          ret.add((short)b);
+       }
+       return ret;
     }
 }
 ]]></xsl:text>
