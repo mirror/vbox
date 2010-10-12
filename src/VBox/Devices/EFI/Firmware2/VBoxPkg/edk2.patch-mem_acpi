@@ -1,7 +1,7 @@
-Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
+Index: ../edk2/MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
 ===================================================================
---- MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(revision 9332)
-+++ MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(working copy)
+--- ../edk2/MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(revision 9332)
++++ ../edk2/MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(working copy)
 @@ -10,7 +10,7 @@
    THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
    WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
@@ -11,7 +11,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
  
  #include <PiDxe.h>
  
-@@ -153,7 +153,134 @@
+@@ -153,7 +153,137 @@
    Buffer[ChecksumOffset] = CalculateCheckSum8(Buffer, Size);
  }
  
@@ -93,7 +93,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
 +        // DSDT
 +        { SIGNATURE_32('D', 'S', 'D', 'T'), 0, "DSDT"},
 +        // SSDT
-+        { SIGNATURE_32('S', 'S', 'D', 'T'), 0, "SSDT"},
++        { SIGNATURE_32('S', 'S', 'D', 'T'), FLAG_OPTIONAL, "SSDT"},
 +        // HPET
 +        { SIGNATURE_32('H', 'P', 'E', 'T'), FLAG_OPTIONAL, "HPET"},
 +        // MCFG
@@ -117,7 +117,8 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
 +        if (!(TableInfo[Index].Flags & FLAG_OPTIONAL))
 +             ASSERT(Ptr != NULL);
 +        DEBUG ((EFI_D_ERROR, "%a: %p\n", TableInfo[Index].Name, Ptr));
-+        if (Ptr) Tables[Table++] = Ptr;
++        if (Ptr)
++           Tables[Table++] = Ptr;
 +    }
 +
 +#if 0
@@ -148,7 +149,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
  /**
    Entrypoint of Acpi Platform driver.
  
-@@ -174,14 +301,21 @@
+@@ -174,14 +304,21 @@
  {
    EFI_STATUS                     Status;
    EFI_ACPI_TABLE_PROTOCOL        *AcpiTable;
@@ -170,7 +171,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
    Instance     = 0;
    CurrentTable = NULL;
    TableHandle  = 0;
-@@ -194,6 +327,18 @@
+@@ -194,6 +331,18 @@
      return EFI_ABORTED;
    }
  
@@ -189,7 +190,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
    //
    // Locate the firmware volume protocol
    //
-@@ -205,7 +350,6 @@
+@@ -205,7 +354,6 @@
    // Read tables from the storage file.
    //
    while (Status == EFI_SUCCESS) {
@@ -197,7 +198,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
      Status = FwVol->ReadSection (
                        FwVol,
                        (EFI_GUID*)FixedPcdGetPtr (PcdAcpiTableStorageFile),
-@@ -215,6 +359,7 @@
+@@ -215,6 +363,7 @@
                        &Size,
                        &FvStatus
                        );
@@ -205,7 +206,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
      if (!EFI_ERROR(Status)) {
        //
        // Add the table
-@@ -222,6 +367,7 @@
+@@ -222,6 +371,7 @@
        TableHandle = 0;
  
        TableSize = ((EFI_ACPI_DESCRIPTION_HEADER *) CurrentTable)->Length;
@@ -213,7 +214,7 @@ Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
        ASSERT (Size >= TableSize);
  
        //
-@@ -252,4 +398,3 @@
+@@ -252,4 +402,3 @@
  
    return EFI_SUCCESS;
  }
