@@ -401,7 +401,7 @@ void UIExportApplianceWzdPage4::retranslateUi()
 
     /* Translate the file selector */
     m_pFileSelector->setFileDialogTitle(tr("Select a file to export into"));
-    m_pFileSelector->setFileFilters(tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+    m_pFileSelector->setFileFilters(tr("Open Virtualization Format Archive (%1)").arg("*.ova")  + ";;" + tr("Open Virtualization Format (%1)").arg("*.ovf"));
 }
 
 void UIExportApplianceWzdPage4::initializePage()
