@@ -1131,7 +1131,9 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
 
     HRESULT rc = loadHardware(hardware);
     if (SUCCEEDED(rc))
-        rc = loadStorageControllers(storage, &mSnapshotId);
+        rc = loadStorageControllers(storage,
+                                    NULL, /* puuidRegistry */
+                                    &mSnapshotId);
 
     if (SUCCEEDED(rc))
         /* commit all changes made during the initialization */
