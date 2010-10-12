@@ -283,7 +283,7 @@ public:
      *
      * @returns Reference to the object.
      */
-    MiniString &upper()
+    MiniString &toUpper()
     {
         if (length())
             ::RTStrToUpper(m_psz);
@@ -295,7 +295,7 @@ public:
      *
      * @returns Reference to the object.
      */
-    MiniString &lower()
+    MiniString& toLower()
     {
         if (length())
             ::RTStrToLower(m_psz);
@@ -510,26 +510,6 @@ public:
      * @returns true if match, false if mismatch.
      */
     bool contains(const iprt::MiniString &that, CaseSensitivity cs = CaseSensitive) const;
-
-    /**
-     * Returns a upper case copy of this string.
-     *
-     * @returns the upper case string copy.
-     */
-    MiniString toUpper() const
-    {
-        return MiniString(*this).upper();
-    }
-
-    /**
-     * Returns a lower case copy of this string.
-     *
-     * @returns the lower case string copy.
-     */
-    MiniString toLower() const
-    {
-        return MiniString(*this).lower();
-    }
 
     /**
      * Attempts to convert the member string into an 64-bit integer.

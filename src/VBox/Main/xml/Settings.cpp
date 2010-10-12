@@ -660,7 +660,7 @@ void ConfigFileBase::readMedium(MediaType t,
         if ((elmMedium.getAttributeValue("type", strType)))
         {
             // pre-1.4 used lower case, so make this case-insensitive
-            strType.upper();
+            strType.toUpper();
             if (strType == "NORMAL")
                 med.hdType = MediumType_Normal;
             else if (strType == "IMMUTABLE")
@@ -2127,7 +2127,7 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
     if (elmAudioAdapter.getAttributeValue("driver", strTemp))
     {
         // settings before 1.3 used lower case so make sure this is case-insensitive
-        strTemp.upper();
+        strTemp.toUpper();
         if (strTemp == "NULL")
             aa.driverType = AudioDriverType_Null;
         else if (strTemp == "WINMM")
@@ -2438,7 +2438,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if (pelmHwChild->getAttributeValue("authType", strAuthType))
             {
                 // settings before 1.3 used lower case so make sure this is case-insensitive
-                strAuthType.upper();
+                strAuthType.toUpper();
                 if (strAuthType == "NULL")
                     hw.vrdpSettings.authType = VRDPAuthType_Null;
                 else if (strAuthType == "GUEST")
@@ -2481,7 +2481,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 if (pelmBIOSChild->getAttributeValue("mode", strBootMenuMode))
                 {
                     // settings before 1.3 used lower case so make sure this is case-insensitive
-                    strBootMenuMode.upper();
+                    strBootMenuMode.toUpper();
                     if (strBootMenuMode == "DISABLED")
                         hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_Disabled;
                     else if (strBootMenuMode == "MENUONLY")

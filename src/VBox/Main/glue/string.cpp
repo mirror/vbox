@@ -49,7 +49,7 @@ void Utf8Str::cloneTo(char **pstr) const
 }
 #endif
 
-Utf8Str &Utf8Str::stripTrailingSlash()
+Utf8Str& Utf8Str::stripTrailingSlash()
 {
     if (length())
     {
@@ -59,7 +59,7 @@ Utf8Str &Utf8Str::stripTrailingSlash()
     return *this;
 }
 
-Utf8Str &Utf8Str::stripFilename()
+Utf8Str& Utf8Str::stripFilename()
 {
     if (length())
     {
@@ -69,7 +69,7 @@ Utf8Str &Utf8Str::stripFilename()
     return *this;
 }
 
-Utf8Str &Utf8Str::stripPath()
+Utf8Str& Utf8Str::stripPath()
 {
     if (length())
     {
@@ -81,7 +81,7 @@ Utf8Str &Utf8Str::stripPath()
     return *this;
 }
 
-Utf8Str &Utf8Str::stripExt()
+Utf8Str& Utf8Str::stripExt()
 {
     if (length())
     {
