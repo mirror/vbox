@@ -1576,14 +1576,6 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
  */
 HRESULT Appliance::writeFS(TaskOVF *pTask)
 {
-    if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        return writeFSOVF(pTask);
-    else
-        return writeFSOVA(pTask);
-}
-
-HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
-{
     LogFlowFuncEnter();
     LogFlowFunc(("ENTER appliance %p\n", this));
 
@@ -1592,16 +1584,146 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
 
     HRESULT rc = S_OK;
 
+    // Lock the media tree early to make sure nobody else tries to make changes
+    // to the tree. Also lock the IAppliance object for writing.
+    AutoMultiWriteLock2 multiLock(&mVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    // Additional protect the IAppliance object, cause we leave the lock
+    // when starting the disk export and we don't won't block other
+    // callers on this lengthy operations.
+    m->state = Data::ApplianceExporting;
+
+    if (pTask->locInfo.strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+        rc = writeFSOVF(pTask, multiLock);
+    else
+        rc = writeFSOVA(pTask, multiLock);
+
+    // reset the state so others can call methods again
+    m->state = Data::ApplianceIdle;
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+    return rc;
+}
+
+HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
+{
+    LogFlowFuncEnter();
+
+    HRESULT rc = S_OK;
+
+    PVDINTERFACEIO pSha1Callbacks = 0;
+    PVDINTERFACEIO pRTFileCallbacks = 0;
+    do
+    {
+        pSha1Callbacks = Sha1CreateInterface();
+        if (!pSha1Callbacks)
+        {
+            rc = E_OUTOFMEMORY;
+            break;
+        }
+        pRTFileCallbacks = RTFileCreateInterface();
+        if (!pRTFileCallbacks)
+        {
+            rc = E_OUTOFMEMORY;
+            break;
+        }
+
+        SHA1STORAGE storage;
+        RT_ZERO(storage);
+        storage.fCreateDigest = m->fManifest;
+        VDINTERFACE VDInterfaceIO;
+        int vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IORTFile",
+                                 VDINTERFACETYPE_IO, pRTFileCallbacks,
+                                 0, &storage.pVDImageIfaces);
+        if (RT_FAILURE(vrc))
+        {
+            rc = E_FAIL;
+            break;
+        }
+        rc = writeFSImpl(pTask, writeLock, pSha1Callbacks, &storage);
+    }while(0);
+
+    /* Cleanup */
+    if (pSha1Callbacks)
+        RTMemFree(pSha1Callbacks);
+    if (pRTFileCallbacks)
+        RTMemFree(pRTFileCallbacks);
+
+    LogFlowFuncLeave();
+    return rc;
+}
+
+HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
+{
+    LogFlowFuncEnter();
+
+    RTTAR tar;
+    int vrc = RTTarOpen(&tar, pTask->locInfo.strPath.c_str(), RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL);
+    if (RT_FAILURE(vrc))
+        return setError(VBOX_E_FILE_ERROR,
+                        tr("Could not create OVA file '%s' (%Rrc)"),
+                        pTask->locInfo.strPath.c_str(), vrc);
+
+    HRESULT rc = S_OK;
+
+    PVDINTERFACEIO pSha1Callbacks = 0;
+    PVDINTERFACEIO pRTTarCallbacks = 0;
+    do
+    {
+        pSha1Callbacks = Sha1CreateInterface();
+        if (!pSha1Callbacks)
+        {
+            rc = E_OUTOFMEMORY;
+            break;
+        }
+        pRTTarCallbacks = RTTarCreateInterface();
+        if (!pRTTarCallbacks)
+        {
+            rc = E_OUTOFMEMORY;
+            break;
+        }
+        VDINTERFACE VDInterfaceIO;
+        SHA1STORAGE storage;
+        RT_ZERO(storage);
+        storage.fCreateDigest = m->fManifest;
+        vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IORTTar",
+                             VDINTERFACETYPE_IO, pRTTarCallbacks,
+                             tar, &storage.pVDImageIfaces);
+        if (RT_FAILURE(vrc))
+        {
+            rc = E_FAIL;
+            break;
+        }
+        rc = writeFSImpl(pTask, writeLock, pSha1Callbacks, &storage);
+    }while(0);
+
+    RTTarClose(tar);
+
+    /* Cleanup */
+    if (pSha1Callbacks)
+        RTMemFree(pSha1Callbacks);
+    if (pRTTarCallbacks)
+        RTMemFree(pRTTarCallbacks);
+
+    /* Delete ova file on error */
+    if(FAILED(rc))
+        RTFileDelete(pTask->locInfo.strPath.c_str());
+
+    LogFlowFuncLeave();
+    return rc;
+}
+
+HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage)
+{
+    LogFlowFuncEnter();
+
+    HRESULT rc = S_OK;
+
+    typedef pair<Utf8Str, Utf8Str> STRPAIR;
+    list<STRPAIR> fileList;
     try
     {
-        // Lock the media tree early to make sure nobody else tries to make changes
-        // to the tree. Also lock the IAppliance object for writing.
-        AutoMultiWriteLock2 multiLock(&mVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
-        // Additional protect the IAppliance object, cause we leave the lock
-        // when starting the disk export and we don't won't block other
-        // callers on this lengthy operations.
-        m->state = Data::ApplianceExporting;
-
+        int vrc;
         // the XML stack contains two maps for disks and networks, which allows us to
         // a) have a list of unique disk names (to make sure the same disk name is only added once)
         // and b) keep a list of all networks
@@ -1611,26 +1733,40 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             // Create a xml document
             xml::Document doc;
             // Now fully build a valid ovf document in memory
-            buildXML(multiLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
-            // Write the XML
-            xml::XmlFileWriter writer(doc);
-            writer.write(pTask->locInfo.strPath.c_str(), false /*fSafe*/);
+            buildXML(writeLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
+            // Create a memory buffer containing the XML. */
+            void *pvBuf;
+            size_t cbSize;
+            xml::XmlMemWriter writer;
+            writer.write(doc, &pvBuf, &cbSize);
+            /* Extract the path */
+            Utf8Str tmpPath = pTask->locInfo.strPath;
+            /* Remove the extension and add ovf. */
+            tmpPath.stripExt()
+                .append(".ovf");
+            /* Write the ovf file to disk. */
+            vrc = Sha1WriteBuf(tmpPath.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not create OVF file '%s' (%Rrc)"),
+                               tmpPath.c_str(), vrc);
+            fileList.push_back(STRPAIR(tmpPath, pStorage->strDigest));
         }
 
         // We need a proper format description
         ComObjPtr<MediumFormat> format;
-        { // Scope for the AutoReadLock
+        // Scope for the AutoReadLock
+        {
             SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
             AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
             // We are always exporting to VMDK stream optimized for now
-            format = pSysProps->mediumFormat("VMDK");
+            format = pSysProps->mediumFormat("VMDKstream");
             if (format.isNull())
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Invalid medium storage format"));
         }
 
         // Finally, write out the disks!
-        list<Utf8Str> diskList;
         map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
         for (itS = stack.mapDisks.begin();
              itS != stack.mapDisks.end();
@@ -1663,25 +1799,26 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
             Utf8Str strTargetFilePath(pTask->locInfo.strPath);
-            strTargetFilePath.stripFilename();
-            strTargetFilePath.append("/");
-            strTargetFilePath.append(strTargetFileNameOnly);
+            strTargetFilePath.stripFilename()
+                .append("/")
+                .append(strTargetFileNameOnly);
 
             // The exporting requests a lock on the media tree. So leave our lock temporary.
-            multiLock.release();
+            writeLock.release();
             try
             {
                 ComObjPtr<Progress> pProgress2;
                 pProgress2.createObject();
                 rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetFilePath.c_str()).raw(), TRUE);
                 if (FAILED(rc)) throw rc;
-                // create a flat copy of the source disk image
-                rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), format, MediumVariant_VmdkStreamOptimized, NULL, NULL, pProgress2);
-                if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
                 pTask->pProgress->SetNextOperation(BstrFmt(tr("Exporting to disk image '%s'"), RTPathFilename(strTargetFilePath.c_str())).raw(),
-                                                   pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                                                   pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally
+
+                // create a flat copy of the source disk image
+                rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), format, MediumVariant_VmdkStreamOptimized, pCallbacks, pStorage, pProgress2);
+                if (FAILED(rc)) throw rc;
 
                 ComPtr<IProgress> pProgress3(pProgress2);
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
@@ -1689,37 +1826,51 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
             }
             catch (HRESULT rc3)
             {
+                writeLock.acquire();
                 // Todo: file deletion on error? If not, we can remove that whole try/catch block.
                 throw rc3;
             }
             // Finished, lock again (so nobody mess around with the medium tree
             // in the meantime)
-            multiLock.acquire();
-            diskList.push_back(strTargetFilePath);
+            writeLock.acquire();
+            fileList.push_back(STRPAIR(strTargetFilePath, pStorage->strDigest));
         }
 
         if (m->fManifest)
         {
             // Create & write the manifest file
-            Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
-            const char *pcszManifestFileOnly = RTPathFilename(strMfFile.c_str());
-            pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), pcszManifestFileOnly).raw(),
+            Utf8Str strMfFilePath = manifestFileName(pTask->locInfo.strPath.c_str());
+            Utf8Str strMfFileName = Utf8Str(strMfFilePath)
+                .stripPath();
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), strMfFileName.c_str()).raw(),
                                                m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
-
-            const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
-            ppManifestFiles[0] = pTask->locInfo.strPath.c_str();
-            list<Utf8Str>::const_iterator it1;
-            size_t i = 1;
-            for (it1 = diskList.begin();
-                 it1 != diskList.end();
+            const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*) * fileList.size());
+            const char** ppManifestDigests = (const char**)RTMemAlloc(sizeof(char*) * fileList.size());
+            size_t i = 0;
+            list<STRPAIR>::const_iterator it1;
+            for (it1 = fileList.begin();
+                 it1 != fileList.end();
                  ++it1, ++i)
-                ppManifestFiles[i] = (*it1).c_str();
-            int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1, NULL, NULL);
+            {
+                ppManifestFiles[i] = (*it1).first.c_str();
+                ppManifestDigests[i] = (*it1).second.c_str();
+            }
+            void *pvBuf;
+            size_t cbSize;
+            vrc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, ppManifestFiles, ppManifestDigests, fileList.size());
             RTMemFree(ppManifestFiles);
+            RTMemFree(ppManifestDigests);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create manifest file '%s' (%Rrc)"),
-                               pcszManifestFileOnly, vrc);
+                               strMfFileName.c_str(), vrc);
+            /* Write the manifest file to disk. */
+            vrc = Sha1WriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            RTMemFree(pvBuf);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not create manifest file '%s' (%Rrc)"),
+                               strMfFilePath.c_str(), vrc);
         }
     }
     catch (iprt::Error &x)  // includes all XML exceptions
@@ -1732,158 +1883,15 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask)
         rc = aRC;
     }
 
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-    // reset the state so others can call methods again
-    m->state = Data::ApplianceIdle;
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return rc;
-}
-
-HRESULT Appliance::writeFSOVA(TaskOVF *pTask)
-{
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", this));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc = S_OK;
-
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
-    int vrc = VINF_SUCCESS;
-
-    char szOSTmpDir[RTPATH_MAX];
-    RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
-    /* The template for the temporary directory created below */
-    char *pszTmpDir;
-    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
-    list<Utf8Str> filesList;
-    const char** paFiles = 0;
-
-    try
+    /* Cleanup on error */
+    if (FAILED(rc))
     {
-        /* Extract the path */
-        Utf8Str tmpPath = pTask->locInfo.strPath;
-        /* Remove the ova extension */
-        tmpPath.stripExt();
-        tmpPath += ".ovf";
-
-        /* We need a temporary directory which we can put the OVF file & all
-         * disk images in */
-        vrc = RTDirCreateTemp(pszTmpDir);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot create temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-
-        /* The temporary name of the target OVF file */
-        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
-
-        /* Prepare the temporary writing of the OVF */
-        ComObjPtr<Progress> progress;
-        /* Create a temporary file based location info for the sub task */
-        LocationInfo li;
-        li.strPath = strTmpOvf;
-        rc = writeImpl(pTask->enFormat, li, progress);
-        if (FAILED(rc)) throw rc;
-
-        /* Unlock the appliance for the writing thread */
-        appLock.release();
-        /* Wait until the writing is done, but report the progress back to the
-           caller */
-        ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
-
-        /* Again lock the appliance for the next steps */
-        appLock.acquire();
-
-        vrc = RTPathExists(strTmpOvf.c_str()); /* Paranoid check */
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot find source file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
-        ULONG ulWeight = m->ulWeightForXmlOperation;
-        /* Add the OVF file */
-        filesList.push_back(strTmpOvf); /* Use 1% of the total for the OVF file upload */
-        /* Add the manifest file */
-        if (m->fManifest)
-        {
-            Utf8Str strMfFile = manifestFileName(strTmpOvf);
-            filesList.push_back(strMfFile); /* Use 1% of the total for the manifest file upload */
-            ulWeight += m->ulWeightForXmlOperation;
-        }
-
-        /* Now add every disks of every virtual system */
-        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
-        for (it = m->virtualSystemDescriptions.begin();
-             it != m->virtualSystemDescriptions.end();
-             ++it)
-        {
-            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
-            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
-            std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
-            for (itH = avsdeHDs.begin();
-                 itH != avsdeHDs.end();
-                 ++itH)
-            {
-                const Utf8Str &strTargetFileNameOnly = (*itH)->strOvf;
-                /* Target path needs to be composed from where the output OVF is */
-                Utf8Str strTargetFilePath(strTmpOvf);
-                strTargetFilePath.stripFilename();
-                strTargetFilePath.append("/");
-                strTargetFilePath.append(strTargetFileNameOnly);
-                vrc = RTPathExists(strTargetFilePath.c_str()); /* Paranoid check */
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_FILE_ERROR,
-                                   tr("Cannot find source file '%s' (%Rrc)"), strTargetFilePath.c_str(), vrc);
-                filesList.push_back(strTargetFilePath);
-                ulWeight += (*itH)->ulSizeMB;
-            }
-        }
-        ulWeight = m->ulTotalDisksMB;
-        paFiles = (const char**)RTMemAlloc(sizeof(char*) * filesList.size());
-        int i = 0;
-        for (list<Utf8Str>::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1, ++i)
-            paFiles[i] = (*it1).c_str();
-        pTask->pProgress->SetNextOperation(BstrFmt(tr("Packing into '%s'"), RTPathFilename(pTask->locInfo.strPath.c_str())).raw(), ulWeight);
-        /* Create the tar file out of our file list. */
-        vrc = RTTarCreate(pTask->locInfo.strPath.c_str(), paFiles, filesList.size(), pTask->updateProgress, &pTask);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Cannot create OVA file '%s' (%Rrc)"), pTask->locInfo.strPath.c_str(), vrc);
+        list<STRPAIR>::const_iterator it1;
+        for (it1 = fileList.begin();
+             it1 != fileList.end();
+             ++it1)
+             pCallbacks->pfnDelete(pStorage, (*it1).first.c_str());
     }
-    catch(HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    /* Delete the temporary files list */
-    if (paFiles)
-        RTMemFree(paFiles);
-    /* Delete all files which where temporary created */
-    for (list<Utf8Str>::const_iterator it1 = filesList.begin(); it1 != filesList.end(); ++it1)
-    {
-        const char *pszFilePath = (*it1).c_str();
-        if (RTPathExists(pszFilePath))
-        {
-            vrc = RTFileDelete(pszFilePath);
-            if (RT_FAILURE(vrc))
-                rc = setError(VBOX_E_FILE_ERROR,
-                              tr("Cannot delete file '%s' (%Rrc)"), pszFilePath, vrc);
-        }
-    }
-    /* Delete the temporary directory */
-    if (RTPathExists(pszTmpDir))
-    {
-        vrc = RTDirRemove(pszTmpDir);
-        if (RT_FAILURE(vrc))
-            rc = setError(VBOX_E_FILE_ERROR,
-                          tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
-    }
-    if (pszTmpDir)
-        RTStrFree(pszTmpDir);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();

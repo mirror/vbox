@@ -283,6 +283,7 @@ VBoxSVC_SOURCES = \
 	VirtualBoxErrorInfoImpl.cpp \
 	VirtualBoxImpl.cpp \
 	ApplianceImpl.cpp \
+	ApplianceImplIO.cpp \
 	ApplianceImplExport.cpp \
 	ApplianceImplImport.cpp \
 	xml/ovfreader.cpp \

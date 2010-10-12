@@ -213,4 +213,17 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
 
 ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
 
+typedef struct SHA1STORAGE
+{
+    PVDINTERFACE pVDImageIfaces;
+    bool         fCreateDigest;
+    Utf8Str      strDigest;
+} SHA1STORAGE, *PSHA1STORAGE;
+
+PVDINTERFACEIO Sha1CreateInterface();
+PVDINTERFACEIO RTFileCreateInterface();
+PVDINTERFACEIO RTTarCreateInterface();
+int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
+
 #endif // ____H_APPLIANCEIMPLPRIVATE
+
