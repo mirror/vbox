@@ -546,7 +546,7 @@ private:
     }
     STDMETHOD(Reuse) ()
     {
-       ASMAtomicIncU32(&mGeneration);
+       ASMAtomicIncU32((volatile uint32_t*)&mGeneration);
        return S_OK;
     }
 private:
