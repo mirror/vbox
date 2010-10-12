@@ -1173,7 +1173,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
         /* we use the non-full folder value below to keep the path relative */
         getDefaultMachineFolder(strSettingsFile);
 
-    strSettingsFile = Utf8StrFmt("%s%c%ls%c%ls.xml",
+    strSettingsFile = Utf8StrFmt("%s%c%ls%c%ls.vbox",
                                  strSettingsFile.c_str(),
                                  RTPATH_DELIMITER,
                                  aName,

@@ -474,7 +474,7 @@ HRESULT Machine::init(VirtualBox *aParent,
     strConfigFile.append(strName);
     strConfigFile.append(RTPATH_DELIMITER);
     strConfigFile.append(strName);
-    strConfigFile.append(".xml");
+    strConfigFile.append(".vbox");
 
     HRESULT rc = initImpl(aParent, strConfigFile);
     if (FAILED(rc)) return rc;
@@ -7641,7 +7641,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 }
             }
 
-            newConfigFile = Utf8StrFmt("%s%c%s.xml",
+            newConfigFile = Utf8StrFmt("%s%c%s.vbox",
                 newConfigDir.c_str(), RTPATH_DELIMITER, newName.c_str());
 
             /* then try to rename the settings file itself */
