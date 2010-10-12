@@ -23,6 +23,7 @@
 
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
+#include <VBox/VBoxVideo.h>
 #include "VBoxHGSMI.h"
 
 RT_C_DECLS_BEGIN
@@ -33,6 +34,12 @@ RT_C_DECLS_BEGIN
 #include "ntddvdeo.h"
 #include "video.h"
 #else
+#   ifdef PAGE_SIZE
+#    undef PAGE_SIZE
+#   endif
+#   ifdef PAGE_SHIFT
+#    undef PAGE_SHIFT
+#   endif
 #   define VBOX_WITH_WORKAROUND_MISSING_PACK
 #   if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
 #       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
@@ -868,6 +875,11 @@ DECLINLINE(ULONG) VBoxHGSMIGuestRead(PVBOXVIDEO_COMMON pCommon)
 }
 
 BOOLEAN VBoxHGSMIIsSupported (void);
+
+typedef int FNHGSMIFILLVIEWINFO (void *pvData, VBVAINFOVIEW *pInfo);
+typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
+
+int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData);
 
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
 #ifndef VBOX_WITH_WDDM
