@@ -104,125 +104,6 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
 }
 
 
-static int VBoxServiceControlHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms)
-{
-    uint32_t uContextID;
-    char szCmd[_1K];
-    uint32_t uFlags;
-    char szArgs[_1K];
-    uint32_t uNumArgs;
-    char szEnv[_64K];
-    uint32_t cbEnv = sizeof(szEnv);
-    uint32_t uNumEnvVars;
-    char szUser[128];
-    char szPassword[128];
-    uint32_t uTimeLimitMS;
-
-#if 0 /* for valgrind */
-    RT_ZERO(szCmd);
-    RT_ZERO(szArgs);
-    RT_ZERO(szEnv);
-    RT_ZERO(szUser);
-    RT_ZERO(szPassword);
-#endif
-
-    if (uNumParms != 11)
-        return VERR_INVALID_PARAMETER;
-
-    int rc = VbglR3GuestCtrlExecGetHostCmd(u32ClientId,
-                                           uNumParms,
-                                           &uContextID,
-                                           /* Command */
-                                           szCmd,      sizeof(szCmd),
-                                           /* Flags */
-                                           &uFlags,
-                                           /* Arguments */
-                                           szArgs,     sizeof(szArgs), &uNumArgs,
-                                           /* Environment */
-                                           szEnv, &cbEnv, &uNumEnvVars,
-                                           /* Credentials */
-                                           szUser,     sizeof(szUser),
-                                           szPassword, sizeof(szPassword),
-                                           /* Timelimit */
-                                           &uTimeLimitMS);
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("Control: Failed to retrieve exec start command! Error: %Rrc\n", rc);
-    }
-    else
-    {
-        rc = VBoxServiceControlExecProcess(uContextID, szCmd, uFlags, szArgs, uNumArgs,
-                                           szEnv, cbEnv, uNumEnvVars,
-                                           szUser, szPassword, uTimeLimitMS);
-    }
-
-    VBoxServiceVerbose(3, "Control: VBoxServiceControlHandleCmdStartProcess returned with %Rrc\n", rc);
-    return rc;
-}
-
-
-static int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms)
-{
-    uint32_t uContextID;
-    uint32_t uPID;
-    uint32_t uHandleID;
-    uint32_t uFlags;
-
-    int rc = VbglR3GuestCtrlExecGetHostCmdOutput(u32ClientId, uNumParms,
-                                                 &uContextID, &uPID, &uHandleID, &uFlags);
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("Control: Failed to retrieve exec output command! Error: %Rrc\n", rc);
-    }
-    else
-    {
-        /* Let's have a look if we have a running process with PID = uPID ... */
-        PVBOXSERVICECTRLTHREAD pNode;
-        bool fFound = false;
-        RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
-        {
-            if (   pNode->fStarted
-                && pNode->enmType == VBoxServiceCtrlThreadDataExec)
-            {
-                PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
-                if (pData && pData->uPID == uPID)
-                {
-                    fFound = true;
-                    break;
-                }
-            }
-        }
-
-        if (fFound)
-        {
-            PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
-            AssertPtr(pData);
-
-            const uint32_t cbSize = _4K;
-            uint32_t cbRead = cbSize;
-            uint8_t *pBuf = (uint8_t*)RTMemAlloc(cbSize);
-            if (pBuf)
-            {
-                rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbSize, &cbRead);
-                if (RT_SUCCESS(rc))
-                {
-                    /* cbRead now contains actual size. */
-                    rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, 0 /* handle ID */, 0 /* flags */,
-                                                    pBuf, cbRead);
-                }
-                RTMemFree(pBuf);
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-        else
-            rc = VERR_NOT_FOUND; /* PID not found! */
-    }
-    VBoxServiceVerbose(3, "Control: VBoxServiceControlHandleCmdGetOutput returned with %Rrc\n", rc);
-    return rc;
-}
-
-
 /** @copydoc VBOXSERVICE::pfnWorker */
 DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 {
@@ -262,16 +143,20 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
             VBoxServiceVerbose(3, "Control: Msg=%u (%u parms) retrieved\n", uMsg, uNumParms);
             switch(uMsg)
             {
-                case GETHOSTMSG_EXEC_HOST_CANCEL_WAIT:
+                case HOST_CANCEL_PENDING_WAITS:
                     VBoxServiceVerbose(3, "Control: Host asked us to quit ...\n");
                     break;
 
-                case GETHOSTMSG_EXEC_START_PROCESS:
-                    rc = VBoxServiceControlHandleCmdStartProcess(g_GuestControlSvcClientID, uNumParms);
+                case HOST_EXEC_CMD:
+                    rc = VBoxServiceControlExecHandleCmdStartProcess(g_GuestControlSvcClientID, uNumParms);
                     break;
 
-                case GETHOSTMSG_EXEC_GET_OUTPUT:
-                    rc = VBoxServiceControlHandleCmdGetOutput(g_GuestControlSvcClientID, uNumParms);
+                case HOST_EXEC_SET_INPUT:
+                    rc = VBoxServiceControlExecHandleCmdSetInput(g_GuestControlSvcClientID, uNumParms);
+                    break;
+
+                case HOST_EXEC_GET_OUTPUT:
+                    rc = VBoxServiceControlExecHandleCmdGetOutput(g_GuestControlSvcClientID, uNumParms);
                     break;
 
                 default:
@@ -286,7 +171,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 
         /* Do we need to shutdown? */
         if (   *pfShutdown
-            || uMsg == GETHOSTMSG_EXEC_HOST_CANCEL_WAIT)
+            || uMsg == HOST_CANCEL_PENDING_WAITS)
         {
             rc = VINF_SUCCESS;
             break;

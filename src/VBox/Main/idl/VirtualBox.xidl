@@ -7745,7 +7745,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="6e3113ac-ed90-4864-8c2c-942c8022324d"
+     uuid="c165a809-0882-4c76-9220-746da84b5ecf"
      wsmap="managed"
      >
     <desc>
@@ -8060,6 +8060,43 @@
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="setProcessInput">
+      <desc>
+        Sends input into a formerly started process.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not send input.
+        </result>
+
+      </desc>
+      <param name="pid" type="unsigned long" dir="in">
+        <desc>
+          Process id returned by earlier executeProcess() call.
+        </desc>
+      </param>
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>
+          Not used, must be set to zero.
+        </desc>
+      </param>
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>
+          The maximum timeout value (in msec) to wait for handling
+          the input data. Pass 0 for an infinite timeout.
+        </desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>
+          Buffer of input data to send to the started process to.
+        </desc>
+      </param>
+      <param name="written" type="unsigned long" dir="return">
+        <desc>
+          Number of bytes written.
+        </desc>
       </param>
     </method>
 

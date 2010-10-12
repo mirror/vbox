@@ -46,37 +46,46 @@ using namespace guestControl;
 
 extern RTLISTNODE g_GuestControlExecThreads;
 
+
 /**
  * Handle an error event on standard input.
  *
+ * @returns IPRT status code.
  * @param   hPollSet            The polling set.
  * @param   fPollEvt            The event mask returned by RTPollNoResume.
  * @param   phStdInW            The standard input pipe handle.
  * @param   pStdInBuf           The standard input buffer.
  */
-static void VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phStdInW,
-                                                            PVBOXSERVICECTRLSTDINBUF pStdInBuf)
+static int VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phStdInW,
+                                                           PVBOXSERVICECTRLEXECPIPEBUF pStdInBuf)
 {
-    int rc2;
-    if (pStdInBuf->off < pStdInBuf->cb)
+    int rc = RTCritSectEnter(&pStdInBuf->CritSect);
+    if (RT_SUCCESS(rc))
     {
-        rc2 = RTPollSetRemove(hPollSet, 4 /*TXSEXECHNDID_STDIN_WRITABLE*/);
+        int rc2;
+        /* If no data is to be processed anymore, remove the writable pipe from
+         * the poll set. */
+        if (pStdInBuf->cbProcessed <= pStdInBuf->cbSize)
+        {
+            rc2 = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
+            AssertRC(rc2);
+
+            rc2 = RTPipeClose(*phStdInW);
+            AssertRC(rc2);
+            *phStdInW = NIL_RTPIPE;
+
+            /* Mark the stdin buffer as dead; we're not using it anymore. */
+            pStdInBuf->fAlive = false;
+        }
+
+        rc2 = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_ERROR);
         AssertRC(rc2);
+
+        rc2 = RTCritSectLeave(&pStdInBuf->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
-
-    rc2 = RTPollSetRemove(hPollSet, 0 /*TXSEXECHNDID_STDIN*/);
-    AssertRC(rc2);
-
-    rc2 = RTPipeClose(*phStdInW);
-    AssertRC(rc2);
-    *phStdInW = NIL_RTPIPE;
-
-    RTMemFree(pStdInBuf->pch);
-    pStdInBuf->pch          = NULL;
-    pStdInBuf->off          = 0;
-    pStdInBuf->cb           = 0;
-    pStdInBuf->cbAllocated  = 0;
-    pStdInBuf->fBitBucket   = true;
+    return rc;
 }
 
 
@@ -87,15 +96,31 @@ static void VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, 
  * @param   pStdInBuf           The standard input buffer.
  * @param   hStdInW             The standard input pipe.
  */
-static int VBoxServiceControlExecProcWriteStdIn(PVBOXSERVICECTRLSTDINBUF pStdInBuf, RTPIPE hStdInW)
+static int VBoxServiceControlExecProcWriteStdIn(PVBOXSERVICECTRLEXECPIPEBUF pStdInBuf, RTPIPE hStdInW, size_t *pcbWritten)
 {
-    size_t  cbToWrite = pStdInBuf->cb - pStdInBuf->off;
-    size_t  cbWritten;
-    int     rc = RTPipeWrite(hStdInW, &pStdInBuf->pch[pStdInBuf->off], cbToWrite, &cbWritten);
+    AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
+
+    int rc = RTCritSectEnter(&pStdInBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
-        Assert(cbWritten == cbToWrite);
-        pStdInBuf->off += cbWritten;
+        size_t cbToWrite = pStdInBuf->cbSize - pStdInBuf->cbProcessed;
+        int rc = VINF_SUCCESS;
+        if (cbToWrite && pStdInBuf->fAlive)
+        {
+            rc = RTPipeWrite(hStdInW, &pStdInBuf->pbData[pStdInBuf->cbProcessed], cbToWrite, pcbWritten);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(*pcbWritten <= cbToWrite);
+                pStdInBuf->cbProcessed += *pcbWritten;
+            }
+            else
+                *pcbWritten = 0;
+        }
+        else
+            rc = VERR_BAD_PIPE;
+        int rc2 = RTCritSectLeave(&pStdInBuf->CritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
     }
     return rc;
 }
@@ -105,32 +130,52 @@ static int VBoxServiceControlExecProcWriteStdIn(PVBOXSERVICECTRLSTDINBUF pStdInB
  * Handle an event indicating we can write to the standard input pipe of the
  * child process.
  *
+ * @returns IPRT status code.
  * @param   hPollSet            The polling set.
  * @param   fPollEvt            The event mask returned by RTPollNoResume.
  * @param   phStdInW            The standard input pipe.
  * @param   pStdInBuf           The standard input buffer.
  */
-static void VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phStdInW,
-                                                               PVBOXSERVICECTRLSTDINBUF pStdInBuf)
+static int  VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phStdInW,
+                                                               PVBOXSERVICECTRLEXECPIPEBUF pStdInBuf)
 {
-    int rc;
+    VBoxServiceVerbose(4, "ControlExec: HandleStdInWritableEvent: fPollEvt=%#x\n", fPollEvt);
+
+    int rc = VINF_SUCCESS;
     if (!(fPollEvt & RTPOLL_EVT_ERROR))
     {
-        rc = VBoxServiceControlExecProcWriteStdIn(pStdInBuf, *phStdInW);
-        if (RT_FAILURE(rc) && rc != VERR_BAD_PIPE)
+        size_t cbWritten;
+        rc = VBoxServiceControlExecProcWriteStdIn(pStdInBuf, *phStdInW, &cbWritten);
+        if (   RT_FAILURE(rc)
+            && rc != VERR_BAD_PIPE)
         {
-            /** @todo do we need to do something about this error condition? */
+            /** @todo Do we need to do something about this error condition? */
             AssertRC(rc);
         }
 
-        if (pStdInBuf->off < pStdInBuf->cb)
+        /* No more data to write to stdin? Then remove stdin from poll set. */
+        if (   cbWritten <= 0
+            || rc == VERR_BAD_PIPE)
         {
-            rc = RTPollSetRemove(hPollSet, 4 /*TXSEXECHNDID_STDIN_WRITABLE*/);
+            rc = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
             AssertRC(rc);
         }
     }
     else
-        VBoxServiceControlExecProcHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW, pStdInBuf);
+        rc = VBoxServiceControlExecProcHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW, pStdInBuf);
+    return rc;
+}
+
+
+static int VBoxServiceControlExecProcHandleInputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phStdInW,
+                                                      uint32_t uHandleId, PVBOXSERVICECTRLEXECPIPEBUF pStdInBuf)
+{
+    VBoxServiceVerbose(4, "ControlExec: HandleInputEvent: fPollEvt=%#x\n", fPollEvt);
+
+    int rc = VINF_SUCCESS;
+    if (fPollEvt & RTPOLL_EVT_ERROR)
+        rc = VBoxServiceControlExecProcHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW, pStdInBuf);
+    return rc;
 }
 
 
@@ -145,15 +190,13 @@ static void VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSe
  * @param   phPipeR             The pipe handle.
  * @param   pu32Crc             The current CRC-32 of the stream. (In/Out)
  * @param   uHandleId           The handle ID.
- * @param   pszOpcode           The opcode for the data upload.
  *
  * @todo    Put the last 4 parameters into a struct!
  */
-static int VBoxServiceControlExecProcHandleOutputEvent(PVBOXSERVICECTRLTHREAD pThread,
-                                                       RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phPipeR,
-                                                       uint32_t *puCrc32 , uint32_t uHandleId)
+static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phPipeR,
+                                                       uint32_t uHandleId, PVBOXSERVICECTRLEXECPIPEBUF pStdOutBuf)
 {
-    Log(("VBoxServiceControlExecProcHandleOutputEvent: fPollEvt=%#x\n",  fPollEvt));
+    VBoxServiceVerbose(4, "ControlExec: HandleOutputEvent: fPollEvt=%#x\n", fPollEvt);
 
     /*
      * Try drain the pipe before acting on any errors.
@@ -161,10 +204,6 @@ static int VBoxServiceControlExecProcHandleOutputEvent(PVBOXSERVICECTRLTHREAD pT
     int rc = VINF_SUCCESS;
     size_t  cbRead;
     uint8_t abBuf[_64K];
-
-    AssertPtr(pThread);
-    PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData;
-    AssertPtr(pData);
 
     int rc2 = RTPipeRead(*phPipeR, abBuf, sizeof(abBuf), &cbRead);
     if (RT_SUCCESS(rc2) && cbRead)
@@ -182,7 +221,7 @@ static int VBoxServiceControlExecProcHandleOutputEvent(PVBOXSERVICECTRLTHREAD pT
         else
         {
 #endif
-            rc = VBoxServiceControlExecWritePipeBuffer(&pData->stdOut, abBuf, cbRead);
+            rc = VBoxServiceControlExecWritePipeBuffer(pStdOutBuf, abBuf, cbRead);
             if (RT_SUCCESS(rc))
             {
                 /* Make sure we go another poll round in case there was too much data
@@ -228,12 +267,9 @@ static int VBoxServiceControlExecProcHandleOutputEvent(PVBOXSERVICECTRLTHREAD pT
  * @param   pStdInBuf           The standard input buffer.
  */
 static int VBoxServiceControlExecProcHandleTransportEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, uint32_t idPollHnd,
-                                                          PRTPIPE phStdInW, PVBOXSERVICECTRLSTDINBUF pStdInBuf)
+                                                          PRTPIPE phStdInW, PVBOXSERVICECTRLEXECPIPEBUF pStdInBuf)
 {
-
-    int rc = RTPollSetAddPipe(hPollSet, *phStdInW, RTPOLL_EVT_WRITE, 4 /*TXSEXECHNDID_STDIN_WRITABLE*/);
-
-    return rc;
+    return 0; //RTPollSetAddPipe(hPollSet, *phStdInW, RTPOLL_EVT_WRITE, 4 /*TXSEXECHNDID_STDIN_WRITABLE*/);
 }
 
 
@@ -243,17 +279,14 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 {
     int                         rc;
     int                         rc2;
-    VBOXSERVICECTRLSTDINBUF     StdInBuf            = { 0, 0, NULL, 0, hStdInW == NIL_RTPIPE, RTCrc32Start() };
-    uint32_t                    uStdOutCrc32        = RTCrc32Start();
-    uint32_t                    uStdErrCrc32        = uStdOutCrc32;
     uint64_t const              MsStart             = RTTimeMilliTS();
     RTPROCSTATUS                ProcessStatus       = { 254, RTPROCEXITREASON_ABEND };
     bool                        fProcessAlive       = true;
     bool                        fProcessTimedOut    = false;
     uint64_t                    MsProcessKilled     = UINT64_MAX;
     RTMSINTERVAL const          cMsPollBase         = hStdInW != NIL_RTPIPE
-                                                      ? 100   /* need to poll for input */
-                                                      : 1000; /* need only poll for process exit and aborts */
+                                                      ? 100   /* Need to poll for input. */
+                                                      : 1000; /* Need only poll for process exit and aborts. */
     RTMSINTERVAL                cMsPollCur          = 0;
 
     AssertPtr(pThread);
@@ -289,40 +322,40 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
         if (pThread->fShutdown)
             continue;
 
-        cMsPollCur = 0;                 /* no rest until we've checked everything. */
+        cMsPollCur = 0; /* No rest until we've checked everything. */
 
         if (RT_SUCCESS(rc2))
         {
+            VBoxServiceVerbose(4, "ControlExec: RTPollNoResume idPollHnd=%u\n", idPollHnd);
             switch (idPollHnd)
             {
-                case 0 /* TXSEXECHNDID_STDIN */:
-                    VBoxServiceControlExecProcHandleStdInErrorEvent(hPollSet, fPollEvt, &hStdInW, &StdInBuf);
+                case VBOXSERVICECTRLPIPEID_STDIN_ERROR:
+                    rc = VBoxServiceControlExecProcHandleInputEvent(hPollSet, fPollEvt, &hStdInW,
+                                                                    VBOXSERVICECTRLPIPEID_STDIN_ERROR, &pData->stdIn);
                     break;
 
-                case 1 /* TXSEXECHNDID_STDOUT */:
-                    rc = VBoxServiceControlExecProcHandleOutputEvent(pThread, hPollSet, fPollEvt, &hStdOutR, &uStdOutCrc32, 1 /* TXSEXECHNDID_STDOUT */);
+                case VBOXSERVICECTRLPIPEID_STDIN_WRITABLE:
+                    rc = VBoxServiceControlExecProcHandleStdInWritableEvent(hPollSet, fPollEvt, &hStdInW, &pData->stdIn);
                     break;
 
-                case 2 /*TXSEXECHNDID_STDERR */:
-                    rc = VBoxServiceControlExecProcHandleOutputEvent(pThread, hPollSet, fPollEvt, &hStdErrR, &uStdErrCrc32, 2 /*TXSEXECHNDID_STDERR */);
+                case VBOXSERVICECTRLPIPEID_STDOUT:
+                    rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt, &hStdOutR,
+                                                                     VBOXSERVICECTRLPIPEID_STDOUT, &pData->stdOut);
                     break;
 
-                case 4 /* TXSEXECHNDID_STDIN_WRITABLE */:
-                    VBoxServiceControlExecProcHandleStdInWritableEvent(hPollSet, fPollEvt, &hStdInW, &StdInBuf);
+                case VBOXSERVICECTRLPIPEID_STDERR:
+                    rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt, &hStdErrR,
+                                                                     VBOXSERVICECTRLPIPEID_STDERR, &pData->stdOut);
                     break;
 
                 default:
-                    rc = VBoxServiceControlExecProcHandleTransportEvent(hPollSet, fPollEvt, idPollHnd, &hStdInW, &StdInBuf);
+                    //rc = VBoxServiceControlExecProcHandleTransportEvent(hPollSet, fPollEvt, idPollHnd, &hStdInW, &pData->stdIn);
                     break;
             }
             if (RT_FAILURE(rc) || rc == VINF_EOF)
-                break; /* abort command, or client dead or something */
+                break; /* Abort command, or client dead or something. */
             continue;
         }
-
-        /*
-         * Check for incoming data.
-         */
 
         /*
          * Check for process death.
@@ -500,7 +533,6 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
     }
     else
         VBoxServiceError("ControlExec: Process loop failed with rc=%Rrc\n", rc);
-    RTMemFree(StdInBuf.pch);
     return rc;
 }
 
@@ -509,7 +541,6 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
  * Sets up the redirection / pipe / nothing for one of the standard handles.
  *
  * @returns IPRT status code.  No client replies made.
- * @param   pszHowTo            How to set up this standard handle.
  * @param   fd                  Which standard handle it is (0 == stdin, 1 ==
  *                              stdout, 2 == stderr).
  * @param   ph                  The generic handle that @a pph may be set
@@ -559,11 +590,13 @@ int VBoxServiceControlExecInitPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
     AssertPtr(pBuf);
 
+    /** @todo Add allocation size as function parameter! */
     pBuf->pbData = (uint8_t*)RTMemAlloc(_64K); /* Start with a 64k buffer. */
     AssertReturn(pBuf->pbData, VERR_NO_MEMORY);
+    pBuf->cbAllocated = _64K;
     pBuf->cbSize = 0;
-    pBuf->cbOffset = 0;
-    pBuf->cbRead = 0;
+    pBuf->cbProcessed = 0;
+    pBuf->fAlive = true;
 
     return RTCritSectInit(&pBuf->CritSect);
 }
@@ -575,10 +608,11 @@ int VBoxServiceControlExecDestroyPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
         if (pBuf->pbData)
             RTMemFree(pBuf->pbData);
         pBuf->pbData = NULL;
+        pBuf->cbAllocated = 0;
         pBuf->cbSize = 0;
-        pBuf->cbOffset = 0;
-        pBuf->cbRead = 0;
+        pBuf->cbProcessed = 0;
     }
+    pBuf->fAlive = false;
     return RTCritSectDelete(&pBuf->CritSect);
 }
 
@@ -591,17 +625,17 @@ int VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
-        Assert(pBuf->cbOffset >= pBuf->cbRead);
-        if (*pcbToRead > pBuf->cbOffset - pBuf->cbRead)
-            *pcbToRead = pBuf->cbOffset - pBuf->cbRead;
+        Assert(pBuf->cbSize >= pBuf->cbProcessed);
+        if (*pcbToRead > pBuf->cbSize - pBuf->cbProcessed)
+            *pcbToRead = pBuf->cbSize - pBuf->cbProcessed;
 
         if (*pcbToRead > cbBuffer)
             *pcbToRead = cbBuffer;
 
         if (*pcbToRead > 0)
         {
-            memcpy(pbBuffer, pBuf->pbData + pBuf->cbRead, *pcbToRead);
-            pBuf->cbRead += *pcbToRead;
+            memcpy(pbBuffer, pBuf->pbData + pBuf->cbProcessed, *pcbToRead);
+            pBuf->cbProcessed += *pcbToRead;
         }
         else
         {
@@ -621,26 +655,31 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
     int rc = RTCritSectEnter(&pBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
-        /** @todo Use RTMemCache or RTMemObj here? */
-        uint8_t *pNewBuf;
-        while (pBuf->cbSize - pBuf->cbOffset < cbData)
+        if (pBuf->fAlive)
         {
-            pNewBuf = (uint8_t*)RTMemRealloc(pBuf->pbData, pBuf->cbSize + _4K);
-            if (pNewBuf == NULL)
-                break;
-            pBuf->cbSize += _4K;
-            pBuf->pbData = pNewBuf;
-        }
+            /** @todo Buffer size limit! 4MB */
 
-        rc = VINF_SUCCESS;
-        if (pBuf->pbData)
-        {
-            memcpy(pBuf->pbData + pBuf->cbOffset, pbData, cbData);
-            pBuf->cbOffset += cbData;
-            /** @todo Add offset clamping! */
+            /* Resize buffer if not enough space for storing the read in data left. */
+            uint8_t *pNewBuf;
+            while (pBuf->cbAllocated - pBuf->cbSize < cbData)
+            {
+                pNewBuf = (uint8_t*)RTMemRealloc(pBuf->pbData, pBuf->cbAllocated + _4K);
+                if (pNewBuf == NULL)
+                    break;
+                pBuf->cbAllocated += _4K;
+                pBuf->pbData = pNewBuf;
+            }
+
+            rc = VINF_SUCCESS;
+            if (pBuf->pbData)
+            {
+                memcpy(pBuf->pbData + pBuf->cbSize, pbData, cbData);
+                pBuf->cbSize += cbData;
+                /** @todo Add offset clamping! */
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
-        else
-            rc = VERR_NO_MEMORY;
         int rc2 = RTCritSectLeave(&pBuf->CritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
@@ -730,6 +769,8 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
         rc = VBoxServiceControlExecInitPipeBuffer(&pData->stdOut);
         if (RT_SUCCESS(rc))
             rc = VBoxServiceControlExecInitPipeBuffer(&pData->stdErr);
+            if (RT_SUCCESS(rc))
+                rc = VBoxServiceControlExecInitPipeBuffer(&pData->stdIn);
     }
 
     if (RT_FAILURE(rc))
@@ -762,6 +803,7 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
 
         VBoxServiceControlExecDestroyPipeBuffer(&pData->stdOut);
         VBoxServiceControlExecDestroyPipeBuffer(&pData->stdErr);
+        VBoxServiceControlExecDestroyPipeBuffer(&pData->stdIn);
 
         RTMemFree(pData);
         pData = NULL;
@@ -851,20 +893,19 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
             /** @todo consider supporting: gcc stuff.c >file 2>&1.  */
             RTHANDLE    hStdIn;
             PRTHANDLE   phStdIn;
-            RTPIPE      hStdInW;
-            rc = VBoxServiceControlExecSetupPipe(0 /* stdin */, &hStdIn, &phStdIn, &hStdInW);
+            rc = VBoxServiceControlExecSetupPipe(0 /*STDIN_FILENO*/, &hStdIn, &phStdIn, &pData->pipeStdInW);
             if (RT_SUCCESS(rc))
             {
                 RTHANDLE    hStdOut;
                 PRTHANDLE   phStdOut;
                 RTPIPE      hStdOutR;
-                rc = VBoxServiceControlExecSetupPipe(1 /* stdout */, &hStdOut, &phStdOut, &hStdOutR);
+                rc = VBoxServiceControlExecSetupPipe(1 /*STDOUT_FILENO*/, &hStdOut, &phStdOut, &hStdOutR);
                 if (RT_SUCCESS(rc))
                 {
                     RTHANDLE    hStdErr;
                     PRTHANDLE   phStdErr;
                     RTPIPE      hStdErrR;
-                    rc = VBoxServiceControlExecSetupPipe(2 /* stderr */, &hStdErr, &phStdErr, &hStdErrR);
+                    rc = VBoxServiceControlExecSetupPipe(2 /*STDERR_FILENO*/, &hStdErr, &phStdErr, &hStdErrR);
                     if (RT_SUCCESS(rc))
                     {
                         /*
@@ -875,11 +916,13 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                         rc = RTPollSetCreate(&hPollSet);
                         if (RT_SUCCESS(rc))
                         {
-                            rc = RTPollSetAddPipe(hPollSet, hStdInW, RTPOLL_EVT_ERROR, 0 /* TXSEXECHNDID_STDIN */);
+                            rc = RTPollSetAddPipe(hPollSet, pData->pipeStdInW, RTPOLL_EVT_ERROR, VBOXSERVICECTRLPIPEID_STDIN_ERROR);
                             if (RT_SUCCESS(rc))
-                                rc = RTPollSetAddPipe(hPollSet, hStdOutR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, 1 /* TXSEXECHNDID_STDOUT */);
+                                rc = RTPollSetAddPipe(hPollSet, hStdOutR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, VBOXSERVICECTRLPIPEID_STDOUT);
                             if (RT_SUCCESS(rc))
-                                rc = RTPollSetAddPipe(hPollSet, hStdErrR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, 2 /* TXSEXECHNDID_TESTPIPE */);
+                                rc = RTPollSetAddPipe(hPollSet, hStdErrR, RTPOLL_EVT_READ | RTPOLL_EVT_ERROR, VBOXSERVICECTRLPIPEID_STDERR);
+                            if (RT_SUCCESS(rc))
+                                rc = RTPollSetAddPipe(hPollSet, pData->pipeStdInW, RTPOLL_EVT_WRITE, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
                             if (RT_SUCCESS(rc))
                             {
                                 RTPROCESS hProcess;
@@ -914,7 +957,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                     /* Enter the process loop. */
                                     rc = VBoxServiceControlExecProcLoop(pThread,
                                                                         hProcess, pData->uTimeLimitMS, hPollSet,
-                                                                        hStdInW, hStdOutR, hStdErrR);
+                                                                        pData->pipeStdInW, hStdOutR, hStdErrR);
 
                                     /*
                                      * The handles that are no longer in the set have
@@ -923,7 +966,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                      * So, NIL the handles to avoid closing them again.
                                      */
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, 0 /* stdin */, NULL)))
-                                        hStdInW = NIL_RTPIPE;
+                                        pData->pipeStdInW = NIL_RTPIPE;
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, 1 /* stdout */, NULL)))
                                         hStdOutR = NIL_RTPIPE;
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, 2 /* stderr */, NULL)))
@@ -942,6 +985,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                                                          rc2, rc);
                                 }
                             }
+                            RTPollSetDestroy(hPollSet);
                         }
                         RTPipeClose(hStdErrR);
                         RTHandleClose(phStdErr);
@@ -949,7 +993,7 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
                     RTPipeClose(hStdOutR);
                     RTHandleClose(phStdOut);
                 }
-                RTPipeClose(hStdInW);
+                RTPipeClose(pData->pipeStdInW);
                 RTHandleClose(phStdIn);
             }
         }
@@ -967,6 +1011,25 @@ DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pTh
     if (RT_FAILURE(rc) && !fSignalled)
         RTThreadUserSignal(RTThreadSelf());
     return rc;
+}
+
+PVBOXSERVICECTRLTHREAD VBoxServiceControlExecFindProcess(uint32_t uPID)
+{
+    PVBOXSERVICECTRLTHREAD pNode;
+    bool fFound = false;
+    RTListForEach(&g_GuestControlExecThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+    {
+        if (   pNode->fStarted
+            && pNode->enmType == VBoxServiceCtrlThreadDataExec)
+        {
+            PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
+            if (pData && pData->uPID == uPID)
+            {
+                return pNode;
+            }
+        }
+    }
+    return NULL;
 }
 
 static DECLCALLBACK(int) VBoxServiceControlExecThread(RTTHREAD ThreadSelf, void *pvUser)
@@ -1029,6 +1092,177 @@ int VBoxServiceControlExecProcess(uint32_t uContextID, const char *pszCmd, uint3
     }
     else
         rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+
+/**
+ *
+ *
+ * @return  int
+ *
+ * @param   u32ClientId
+ * @param   uNumParms
+ */
+int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms)
+{
+    uint32_t uContextID;
+    char szCmd[_1K];
+    uint32_t uFlags;
+    char szArgs[_1K];
+    uint32_t uNumArgs;
+    char szEnv[_64K];
+    uint32_t cbEnv = sizeof(szEnv);
+    uint32_t uNumEnvVars;
+    char szUser[128];
+    char szPassword[128];
+    uint32_t uTimeLimitMS;
+
+#if 0 /* for valgrind */
+    RT_ZERO(szCmd);
+    RT_ZERO(szArgs);
+    RT_ZERO(szEnv);
+    RT_ZERO(szUser);
+    RT_ZERO(szPassword);
+#endif
+
+    if (uNumParms != 11)
+        return VERR_INVALID_PARAMETER;
+
+    int rc = VbglR3GuestCtrlExecGetHostCmd(u32ClientId,
+                                           uNumParms,
+                                           &uContextID,
+                                           /* Command */
+                                           szCmd,      sizeof(szCmd),
+                                           /* Flags */
+                                           &uFlags,
+                                           /* Arguments */
+                                           szArgs,     sizeof(szArgs), &uNumArgs,
+                                           /* Environment */
+                                           szEnv, &cbEnv, &uNumEnvVars,
+                                           /* Credentials */
+                                           szUser,     sizeof(szUser),
+                                           szPassword, sizeof(szPassword),
+                                           /* Timelimit */
+                                           &uTimeLimitMS);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("ControlExec: Failed to retrieve exec start command! Error: %Rrc\n", rc);
+    }
+    else
+    {
+        rc = VBoxServiceControlExecProcess(uContextID, szCmd, uFlags, szArgs, uNumArgs,
+                                           szEnv, cbEnv, uNumEnvVars,
+                                           szUser, szPassword, uTimeLimitMS);
+    }
+
+    VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdStartProcess returned with %Rrc\n", rc);
+    return rc;
+}
+
+
+/**
+ * Handles input for the started process by copying the received data into its
+ * stdin pipe.
+ *
+ * @return  int
+ *
+ * @param   u32ClientId
+ * @param   uNumParms
+ */
+int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms)
+{
+    uint32_t uContextID;
+    uint32_t uPID;
+    uint32_t uFlags;
+    uint8_t  aBuffer[_64K];
+    uint32_t cbSize;
+
+    if (uNumParms != 5)
+        return VERR_INVALID_PARAMETER;
+
+    int rc = VbglR3GuestCtrlExecGetHostCmdInput(u32ClientId, uNumParms,
+                                                &uContextID, &uPID, &uFlags,
+                                                aBuffer, sizeof(aBuffer), &cbSize);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("ControlExec: Failed to retrieve exec input command! Error: %Rrc\n", rc);
+    }
+    else
+    {
+        PVBOXSERVICECTRLTHREAD pNode = VBoxServiceControlExecFindProcess(uPID);
+        if (pNode)
+        {
+            PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
+            AssertPtr(pData);
+            rc = VBoxServiceControlExecWritePipeBuffer(&pData->stdIn, aBuffer, cbSize);
+            if (RT_SUCCESS(rc))
+            {
+                size_t cbWritten;
+                rc = VBoxServiceControlExecProcWriteStdIn(&pData->stdIn, pData->pipeStdInW, &cbWritten);
+                if (RT_SUCCESS(rc))
+                    rc = VbglR3GuestCtrlExecReportStatusIn(u32ClientId, uContextID, uPID, 0 /* Flags */,
+                                                           cbWritten);
+            }
+        }
+        else
+            rc = VERR_NOT_FOUND; /* PID not found! */
+    }
+    VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdSetInput returned with %Rrc\n", rc);
+    return rc;
+}
+
+
+/**
+ *
+ *
+ * @return  int
+ *
+ * @param   u32ClientId
+ * @param   uNumParms
+ */
+int VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms)
+{
+    uint32_t uContextID;
+    uint32_t uPID;
+    uint32_t uHandleID;
+    uint32_t uFlags;
+
+    int rc = VbglR3GuestCtrlExecGetHostCmdOutput(u32ClientId, uNumParms,
+                                                 &uContextID, &uPID, &uHandleID, &uFlags);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("ControlExec: Failed to retrieve exec output command! Error: %Rrc\n", rc);
+    }
+    else
+    {
+        PVBOXSERVICECTRLTHREAD pNode = VBoxServiceControlExecFindProcess(uPID);
+        if (pNode)
+        {
+            PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
+            AssertPtr(pData);
+
+            const uint32_t cbSize = _4K;
+            uint32_t cbRead = cbSize;
+            uint8_t *pBuf = (uint8_t*)RTMemAlloc(cbSize);
+            if (pBuf)
+            {
+                rc = VBoxServiceControlExecReadPipeBufferContent(&pData->stdOut, pBuf, cbSize, &cbRead);
+                if (RT_SUCCESS(rc))
+                {
+                    /* cbRead now contains actual size. */
+                    rc = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, 0 /* handle ID */, 0 /* flags */,
+                                                    pBuf, cbRead);
+                }
+                RTMemFree(pBuf);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_NOT_FOUND; /* PID not found! */
+    }
+    VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdGetOutput returned with %Rrc\n", rc);
     return rc;
 }
 

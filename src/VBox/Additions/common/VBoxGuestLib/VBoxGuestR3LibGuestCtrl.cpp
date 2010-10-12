@@ -104,8 +104,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t u32ClientId)
  */
 VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms)
 {
-    AssertPtr(puMsg);
-    AssertPtr(puNumParms);
+    AssertPtrReturn(puMsg, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puNumParms, VERR_INVALID_PARAMETER);
 
     VBoxGuestCtrlHGCMMsgType Msg;
 
@@ -177,17 +177,17 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
                                               char     *pszPassword,    uint32_t  cbPassword,
                                               uint32_t *puTimeLimit)
 {
-    AssertPtr(puContext);
-    AssertPtr(pszCmd);
-    AssertPtr(puFlags);
-    AssertPtr(pszArgs);
-    AssertPtr(puNumArgs);
-    AssertPtr(pszEnv);
-    AssertPtr(pcbEnv);
-    AssertPtr(puNumEnvVars);
-    AssertPtr(pszUser);
-    AssertPtr(pszPassword);
-    AssertPtr(puTimeLimit);
+    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszCmd, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszArgs, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puNumArgs, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszEnv, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbEnv, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puNumEnvVars, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszUser, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPassword, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puTimeLimit, VERR_INVALID_PARAMETER);
 
     VBoxGuestCtrlHGCMMsgExecCmd Msg;
 
@@ -196,7 +196,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
     Msg.hdr.cParms = uNumParms;
 
-    VbglHGCMParmUInt32Set(&Msg.context, 0); /** @todo Put this some header struct! */
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
     VbglHGCMParmUInt32Set(&Msg.num_args, 0);
@@ -244,8 +244,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
                                                     uint32_t *puContext,      uint32_t *puPID,
                                                     uint32_t *puHandle,       uint32_t *puFlags)
 {
-    AssertPtr(puContext);
-    AssertPtr(puPID);
+    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puPID, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puHandle, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
 
     VBoxGuestCtrlHGCMMsgExecOut Msg;
 
@@ -254,7 +256,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
     Msg.hdr.cParms = uNumParms;
 
-    VbglHGCMParmUInt32Set(&Msg.context, 0); /** @todo Put this some header struct! */
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
     VbglHGCMParmUInt32Set(&Msg.handle, 0);
     VbglHGCMParmUInt32Set(&Msg.flags, 0);
@@ -273,6 +275,62 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
             Msg.pid.GetUInt32(puPID);
             Msg.handle.GetUInt32(puHandle);
             Msg.flags.GetUInt32(puFlags);
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Retrieves the input data from host which then gets sent to the
+ * started process.
+ *
+ * This will block until data becomes available.
+ *
+ * @returns VBox status code.
+ * @param   u32ClientId     The client id returned by VbglR3GuestCtrlConnect().
+ * @param   uNumParms
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uint32_t   uNumParms,
+                                                   uint32_t *puContext,      uint32_t  *puPID,
+                                                   uint32_t *puFlags,
+                                                   void      *pvData,        uint32_t  cbData,
+                                                   uint32_t *pcbSize)
+{
+    AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puPID, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvData, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcbSize, VERR_INVALID_PARAMETER);
+
+    VBoxGuestCtrlHGCMMsgExecIn Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
+    Msg.hdr.cParms = uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmUInt32Set(&Msg.pid, 0);
+    VbglHGCMParmUInt32Set(&Msg.flags, 0);
+    VbglHGCMParmPtrSet(&Msg.data, pvData, cbData);
+    VbglHGCMParmUInt32Set(&Msg.size, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(puContext);
+            Msg.pid.GetUInt32(puPID);
+            Msg.flags.GetUInt32(puFlags);
+            Msg.size.GetUInt32(pcbSize);
         }
     }
     return rc;
@@ -354,3 +412,37 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecSendOut(uint32_t     u32ClientId,
     return rc;
 }
 
+
+/**
+ * Reports back the input status to the host.
+ *
+ * @returns VBox status code.
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
+                                                  uint32_t     u32Context,
+                                                  uint32_t     u32PID,
+                                                  uint32_t     u32Flags,
+                                                  uint32_t     cbWritten)
+{
+    VBoxGuestCtrlHGCMMsgExecStatusIn Msg;
+
+    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = u32ClientId;
+    Msg.hdr.u32Function = GUEST_EXEC_SEND_INPUT_STATUS;
+    Msg.hdr.cParms = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, u32Context);
+    VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
+    VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
+    VbglHGCMParmUInt32Set(&Msg.written, cbWritten);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
