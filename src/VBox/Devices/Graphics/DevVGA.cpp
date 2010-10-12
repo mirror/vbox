@@ -5172,6 +5172,8 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
             }
         }
     }
+    else
+        rc = VERR_NOT_SUPPORTED;
 
     PDMCritSectLeave(&pThis->lock);
 
