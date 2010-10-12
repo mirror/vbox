@@ -32,8 +32,6 @@
 #include <iprt/stream.h>
 #include <VBox/VBoxHDD.h>
 
-#include <openssl/sha.h>
-
 /******************************************************************************
  *   Structures and Typedefs                                                  *
  ******************************************************************************/
@@ -83,7 +81,7 @@ typedef struct SHA1STORAGEINTERNAL
     /** Event for signaling a finished SHA1 calculation. */
     RTSEMEVENT calcFinishedEvent;
     /** SHA1 calculation context. */
-    SHA_CTX ctx;
+    RTSHA1CONTEXT ctx;
 } SHA1STORAGEINTERNAL, *PSHA1STORAGEINTERNAL;
 
 /******************************************************************************
@@ -440,11 +438,7 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
             case STATUS_CALC:
             {
                 /* Update the SHA1 context with the next data block. */
-                if(!SHA1_Update(&pInt->ctx, pInt->pcBuf, pInt->cbCurBuf))
-                {
-                    rc = VERR_INTERNAL_ERROR;
-                    fLoop = false;
-                }
+                RTSha1Update(&pInt->ctx, pInt->pcBuf, pInt->cbCurBuf);
                 /* Reset the thread status and signal the main thread that we
                    are finished. */
                 ASMAtomicWriteU32(&pInt->u32Status, STATUS_WAIT);
@@ -568,11 +562,7 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
         if (pSha1Storage->fCreateDigest)
         {
             /* Create a sha1 context the sha1 worker thread will work with. */
-            if (!SHA1_Init(&pInt->ctx))
-            {
-                rc = VERR_INTERNAL_ERROR;
-                break;
-            }
+            RTSha1Init(&pInt->ctx);
             /* Create an event semaphore to indicate a state change for the sha1
                worker thread. */
             rc = RTSemEventCreate(&pInt->newStatusEvent);
@@ -650,8 +640,7 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
         /* Finally calculate & format the SHA1 sum */
         unsigned char auchDig[RTSHA1_HASH_SIZE];
         char *pszDigest;
-        if (!SHA1_Final(auchDig, &pInt->ctx))
-            rc = VERR_INTERNAL_ERROR;
+        RTSha1Final(&pInt->ctx, auchDig);
         rc = RTStrAllocEx(&pszDigest, RTSHA1_DIGEST_LEN + 1);
         if (RT_SUCCESS(rc))
         {
