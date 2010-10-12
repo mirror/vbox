@@ -566,6 +566,7 @@ public:
 private:
     friend class XmlMemParser;
     friend class XmlFileParser;
+    friend class XmlMemWriter;
     friend class XmlFileWriter;
 
     void refreshInternals();
@@ -623,6 +624,20 @@ private:
 
     static int ReadCallback(void *aCtxt, char *aBuf, int aLen);
     static int CloseCallback (void *aCtxt);
+};
+
+/*
+ * XmlMemParser
+ *
+ */
+
+class RT_DECL_CLASS XmlMemWriter
+{
+public:
+    XmlMemWriter();
+    ~XmlMemWriter();
+
+    void write(const Document &doc, void** ppvBuf, size_t *pcbSize);
 };
 
 /*
