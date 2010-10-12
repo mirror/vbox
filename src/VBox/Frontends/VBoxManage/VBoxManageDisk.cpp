@@ -669,15 +669,17 @@ int handleCloneHardDisk(HandlerArg *a)
                                                   AccessMode_ReadWrite,
                                                   srcDisk.asOutParam()));
         }
-        if (SUCCEEDED(rc))
+        else if (SUCCEEDED(rc))
             fSrcUnknown = true;
+        else
+        {
+            com::GluePrintRCMessage(rc);
+            return 1;
+        }
     }
 
     do
     {
-        if (!SUCCEEDED(rc))
-            break;
-
         /* open/create destination hard disk */
         if (fExisting)
         {
