@@ -372,7 +372,8 @@ int handleConvert(HandlerArg *a)
 
         /* Create the output image */
         rc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, pszDstFormat,
-                    pszDstFilename, false, 0, uImageFlags, NULL, NULL, NULL, NULL);
+                    pszDstFilename, false, 0, uImageFlags, NULL,
+                    VD_OPEN_FLAGS_NORMAL, NULL, NULL, NULL);
         if (RT_FAILURE(rc))
         {
             errorRuntime("Error while copying the image: %Rrc\n", rc);
