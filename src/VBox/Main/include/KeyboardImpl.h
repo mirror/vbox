@@ -20,6 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include "ConsoleEvents.h"
+#include "EventImpl.h"
 
 #include <VBox/pdmdrv.h>
 
@@ -75,6 +76,8 @@ public:
                             ULONG *codesStored);
     STDMETHOD(PutCAD)();
 
+    STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
+
     static const PDMDRVREG  DrvReg;
 
     Console *getParent() const
@@ -96,6 +99,8 @@ private:
     PPDMDEVINS              mpVMMDev;
     /** Set after the first attempt to find the VMM Device. */
     bool                    mfVMMDevInited;
+
+    const ComObjPtr<EventSource> mEventSource;
 };
 
 #endif // !____H_KEYBOARDIMPL
