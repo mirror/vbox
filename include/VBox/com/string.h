@@ -485,34 +485,28 @@ public:
     }
 
     /**
-     * Converts "this" to lower case by calling RTStrToLower().
-     * @return
-     */
-    Utf8Str& toLower();
-
-    /**
-     * Converts "this" to upper case by calling RTStrToUpper().
-     * @return
-     */
-    Utf8Str& toUpper();
-
-    /**
      * Removes a trailing slash from the member string, if present.
      * Calls RTPathStripTrailingSlash() without having to mess with mutableRaw().
      */
-    void stripTrailingSlash();
+    Utf8Str &stripTrailingSlash();
 
     /**
      * Removes a trailing filename from the member string, if present.
      * Calls RTPathStripFilename() without having to mess with mutableRaw().
      */
-    void stripFilename();
+    Utf8Str &stripFilename();
+
+    /**
+     * Removes the path component from the member string, if present.
+     * Calls RTPathFilename() without having to mess with mutableRaw().
+     */
+    Utf8Str &stripPath();
 
     /**
      * Removes a trailing file name extension from the member string, if present.
      * Calls RTPathStripExt() without having to mess with mutableRaw().
      */
-    void stripExt();
+    Utf8Str &stripExt();
 
     /**
      * Attempts to convert the member string into a 32-bit integer.
