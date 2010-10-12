@@ -98,6 +98,7 @@ public:
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     STDMETHOD(GetProcessOutput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, LONG64 aSize, ComSafeArrayOut(BYTE, aData));
+    STDMETHOD(SetProcessInput)(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten);
     STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ULONG *aStatus);
     STDMETHOD(CopyToGuest)(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags, IProgress **aProgress);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
@@ -152,9 +153,9 @@ private:
 
 #ifdef VBOX_WITH_COPYTOGUEST
     /*
-     *
+     * Structure holding a directory entry.
      */
-    struct DirEntry
+    struct VBoxGuestDirEntry
     {
         char       *pszPath;
         RTLISTNODE  Node;
@@ -169,6 +170,7 @@ private:
     int notifyCtrlClientDisconnected(uint32_t u32Function, PCALLBACKDATACLIENTDISCONNECTED pData);
     int notifyCtrlExecStatus(uint32_t u32Function, PCALLBACKDATAEXECSTATUS pData);
     int notifyCtrlExecOut(uint32_t u32Function, PCALLBACKDATAEXECOUT pData);
+    int notifyCtrlExecInStatus(uint32_t u32Function, PCALLBACKDATAEXECINSTATUS pData);
     CallbackMapIter getCtrlCallbackContextByID(uint32_t u32ContextID);
     GuestProcessMapIter getProcessByPID(uint32_t u32PID);
     void destroyCtrlCallbackContext(CallbackMapIter it);

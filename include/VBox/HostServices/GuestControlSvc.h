@@ -107,9 +107,21 @@ typedef struct _VBoxGuestCtrlCallbackDataExecOut
     uint32_t u32Flags;
     /** Optional data buffer. */
     void *pvData;
-    /** Size of optional data buffer. */
+    /** Size (in bytes) of optional data buffer. */
     uint32_t cbData;
 } CALLBACKDATAEXECOUT, *PCALLBACKDATAEXECOUT;
+
+typedef struct _VBoxGuestCtrlCallbackDataExecInStatus
+{
+    /** Callback data header. */
+    CALLBACKHEADER hdr;
+    /** The process ID (PID). */
+    uint32_t u32PID;
+    /** Optional flags (not used atm). */
+    uint32_t u32Flags;
+    /** Size (in bytes) of processed input data. */
+    uint32_t cbProcessed;
+} CALLBACKDATAEXECINSTATUS, *PCALLBACKDATAEXECINSTATUS;
 
 typedef struct _VBoxGuestCtrlCallbackDataClientDisconnected
 {
@@ -124,14 +136,17 @@ enum
     /** Magic number for sanity checking the CALLBACKDATAEXECSTATUS structure. */
     CALLBACKDATAMAGICEXECSTATUS = 0x26011982,
     /** Magic number for sanity checking the CALLBACKDATAEXECOUT structure. */
-    CALLBACKDATAMAGICEXECOUT = 0x11061949
+    CALLBACKDATAMAGICEXECOUT = 0x11061949,
+    /** Magic number for sanity checking the CALLBACKDATAEXECIN structure. */
+    CALLBACKDATAMAGICEXECINSTATUS = 0x19091951
 };
 
 enum eVBoxGuestCtrlCallbackType
 {
     VBOXGUESTCTRLCALLBACKTYPE_UNKNOWN = 0,
     VBOXGUESTCTRLCALLBACKTYPE_EXEC_START = 1,
-    VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT = 2
+    VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT = 2,
+    VBOXGUESTCTRLCALLBACKTYPE_EXEC_INPUT_STATUS = 3
 };
 
 /**
@@ -139,6 +154,10 @@ enum eVBoxGuestCtrlCallbackType
  */
 enum eHostFn
 {
+    /**
+     * The host asks the client to cancel all pending waits and exit.
+     */
+    HOST_CANCEL_PENDING_WAITS = 0,
     /**
      * The host wants to execute something in the guest. This can be a command line
      * or starting a program.
@@ -178,39 +197,17 @@ enum eGuestFn
      */
     GUEST_DISCONNECTED = 3,
     /**
-     * TODO
+     * Guests sends output from an executed process.
      */
     GUEST_EXEC_SEND_OUTPUT = 100,
     /**
-     * TODO
+     * Guest sends a status update of an executed process to the host.
      */
-    GUEST_EXEC_SEND_STATUS = 101
-};
-
-/**
- * Sub host commands.  These commands are stored as first (=0) parameter in a GUEST_GET_HOST_MSG
- * so that the guest can react dynamically to requests from the host.
- */
-enum eGetHostMsgFn
-{
+    GUEST_EXEC_SEND_STATUS = 101,
     /**
-     * Hosts wants the guest to stop waiting for new messages.
+     * Guests sends an input status notification to the host.
      */
-    GETHOSTMSG_EXEC_HOST_CANCEL_WAIT = 0,
-    /**
-     * The host wants to execute something in the guest. This can be a command line
-     * or starting a program.
-     */
-    GETHOSTMSG_EXEC_START_PROCESS = 100,
-    /**
-     * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
-     */
-    GETHOSTMSG_EXEC_SEND_INPUT = 101,
-    /**
-     * Host requests the so far collected stdout/stderr output
-     * from a running process executed by HOST_EXEC_CMD.
-     */
-    GETHOSTMSG_EXEC_GET_OUTPUT = 102
+    GUEST_EXEC_SEND_INPUT_STATUS = 102
 };
 
 /*
@@ -264,6 +261,22 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 
 } VBoxGuestCtrlHGCMMsgExecCmd;
 
+typedef struct _VBoxGuestCtrlHGCMMsgExecIn
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** The process ID (PID). */
+    HGCMFunctionParameter pid;
+    /** Optional flags. */
+    HGCMFunctionParameter flags;
+    /** Data buffer. */
+    HGCMFunctionParameter data;
+    /** Actual size of data. */
+    HGCMFunctionParameter size;
+
+} VBoxGuestCtrlHGCMMsgExecIn;
+
 typedef struct _VBoxGuestCtrlHGCMMsgExecOut
 {
     VBoxGuestHGCMCallInfo hdr;
@@ -271,7 +284,7 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecOut
     HGCMFunctionParameter context;
     /** The process ID (PID). */
     HGCMFunctionParameter pid;
-    /** The pipe handle ID. */
+    /** The pipe handle ID (stdout/stderr). */
     HGCMFunctionParameter handle;
     /** Optional flags. */
     HGCMFunctionParameter flags;
@@ -295,6 +308,20 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecStatus
     HGCMFunctionParameter data;
 
 } VBoxGuestCtrlHGCMMsgExecStatus;
+
+typedef struct _VBoxGuestCtrlHGCMMsgExecStatusIn
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** The process ID (PID). */
+    HGCMFunctionParameter pid;
+    /** Optional flags. */
+    HGCMFunctionParameter flags;
+    /** Data written. */
+    HGCMFunctionParameter written;
+
+} VBoxGuestCtrlHGCMMsgExecStatusIn;
 #pragma pack ()
 
 /* Structure for buffering execution requests in the host service. */

@@ -111,15 +111,30 @@ enum VBOXSERVICECTRLTHREADDATATYPE
     VBoxServiceCtrlThreadDataExec = 1
 };
 
+enum VBOXSERVICECTRLPIPEID
+{
+    VBOXSERVICECTRLPIPEID_STDIN_ERROR  = 0,
+    VBOXSERVICECTRLPIPEID_STDIN_WRITABLE = 1,
+    VBOXSERVICECTRLPIPEID_STDOUT = 10,
+    VBOXSERVICECTRLPIPEID_STDERR = 20
+};
+
+/* Structure for holding buffered pipe data. */
 typedef struct
 {
+    /** The data buffer. */
     uint8_t    *pbData;
+    /** The amount of allocated buffer space. */
+    uint32_t    cbAllocated;
+    /** The actual used/occupied buffer space. */
     uint32_t    cbSize;
-    uint32_t    cbOffset;
-    uint32_t    cbRead;
+    /** Helper variable for keeping track of what
+     *  already was processed and what not. */
+    uint32_t    cbProcessed;
     RTCRITSECT  CritSect;
+    bool        fAlive;
 } VBOXSERVICECTRLEXECPIPEBUF;
-/** Pointer to thread data. */
+/** Pointer to buffered pipe data. */
 typedef VBOXSERVICECTRLEXECPIPEBUF *PVBOXSERVICECTRLEXECPIPEBUF;
 
 /* Structure for holding guest exection relevant data. */
@@ -136,6 +151,8 @@ typedef struct
     char     *pszPassword;
     uint32_t  uTimeLimitMS;
 
+    RTPIPE                     pipeStdInW;
+    VBOXSERVICECTRLEXECPIPEBUF stdIn;
     VBOXSERVICECTRLEXECPIPEBUF stdOut;
     VBOXSERVICECTRLEXECPIPEBUF stdErr;
 
@@ -167,28 +184,6 @@ typedef struct VBOXSERVICECTRLTHREAD
 } VBOXSERVICECTRLTHREAD;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLTHREAD *PVBOXSERVICECTRLTHREAD;
-
-/**
- * For buffering process input supplied by the client.
- */
-typedef struct VBOXSERVICECTRLSTDINBUF
-{
-    /** The mount of buffered data. */
-    size_t  cb;
-    /** The current data offset. */
-    size_t  off;
-    /** The data buffer. */
-    char   *pch;
-    /** The amount of allocated buffer space. */
-    size_t  cbAllocated;
-    /** Send further input into the bit bucket (stdin is dead). */
-    bool    fBitBucket;
-    /** The CRC-32 for standard input (received part). */
-    uint32_t uCrc32;
-} VBOXSERVICECTRLSTDINBUF;
-/** Pointer to a standard input buffer. */
-typedef VBOXSERVICECTRLSTDINBUF *PVBOXSERVICECTRLSTDINBUF;
-
 #endif /* VBOX_WITH_GUEST_CONTROL */
 #ifdef VBOX_WITH_GUEST_PROPS
 
@@ -276,6 +271,11 @@ extern int VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+extern int  VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms);
+extern int  VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
+extern int  VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms);
+extern int  VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms);
+extern int  VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
 extern int  VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, uint32_t uFlags,
                                           const char *pszArgs, uint32_t uNumArgs,
                                           const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
@@ -285,7 +285,7 @@ extern int  VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPE
                                                         uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
 extern int  VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                                   uint8_t *pbData, uint32_t cbData);
-#endif
+#endif /* VBOX_WITH_GUEST_CONTROL */
 
 #ifdef VBOXSERVICE_MANAGEMENT
 extern uint32_t VBoxServiceBalloonQueryPages(uint32_t cbPage);

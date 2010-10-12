@@ -73,6 +73,8 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
                  "                            [--flags <flags>] [--timeout <msec>]\n"
                  "                            [--verbose] [--wait-for exit,stdout,stderr||]\n"
+                 /** @todo Add a "--" parameter (has to be last parameter) to directly execute
+                  *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
 #ifdef VBOX_WITH_COPYTOGUEST
                  "\n"
                  "                            copyto <vmname>|<uuid>\n"
@@ -446,6 +448,35 @@ static int handleCtrlExecProgram(HandlerArg *a)
                         }
                     }
 
+#if 0
+                    static int sent = 0;
+                    if (sent < 1)
+                    {
+                        ULONG cbWritten;
+                        SafeArray<BYTE> aInputData(_64K);
+                        RTStrPrintf((char*)aInputData.raw(), _64K, "dir c:\\windows\n");
+                        rc = guest->SetProcessInput(uPID, 0 /* aFlags */,
+                                                    u32TimeoutMS, ComSafeArrayAsInParam(aInputData), &cbWritten);
+                        if (FAILED(rc))
+                        {
+                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                             * because it contains more accurate info about what went wrong. */
+                            ErrorInfo info(guest, COM_IIDOF(IGuest));
+                            if (info.isFullAvailable())
+                            {
+                                if (rc == VBOX_E_IPRT_ERROR)
+                                    RTMsgError("%ls.", info.getText().raw());
+                                else
+                                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+                            }
+                        }
+                        else
+                        {
+                            RTPrintf("sent\n");
+                        }
+                    }
+                    sent++;
+#endif
                     if (cbOutputData <= 0) /* No more output data left? */
                     {
                         if (fCompleted)
@@ -551,6 +582,7 @@ static void ctrlCopySignalHandler(int iSignal)
 
 static int handleCtrlCopyTo(HandlerArg *a)
 {
+#if 0
     RTISOFSFILE file;
     int vrc = RTIsoFsOpen(&file, "c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso");
     if (RT_SUCCESS(vrc))
@@ -561,6 +593,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
         RTIsoFsClose(&file);
     }
     return vrc;
+#endif
 
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
