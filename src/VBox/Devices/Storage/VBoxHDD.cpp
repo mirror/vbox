@@ -5445,6 +5445,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
  *                          This parameter is used if and only if a true copy is created.
  *                          In all rename/move cases the UUIDs are copied over.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ *                          Only used if the destination image is created.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
  *                          destination image.
@@ -5455,7 +5457,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          const char *pszBackend, const char *pszFilename,
                          bool fMoveByRename, uint64_t cbSize,
                          unsigned uImageFlags, PCRTUUID pDstUuid,
-                         PVDINTERFACE pVDIfsOperation,
+                         unsigned uOpenFlags, PVDINTERFACE pVDIfsOperation,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation)
 {
@@ -5465,8 +5467,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
     void *pvBuf = NULL;
     PVDIMAGE pImageTo = NULL;
 
-    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
-                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
+    LogFlowFunc(("pDiskFrom=%#p nImage=%u pDiskTo=%#p pszBackend=\"%s\" pszFilename=\"%s\" fMoveByRename=%d cbSize=%llu uImageFlags=%#x pDstUuid=%#p uOpenFlags=%#x pVDIfsOperation=%#p pDstVDIfsImage=%#p pDstVDIfsOperation=%#p\n",
+                 pDiskFrom, nImage, pDiskTo, pszBackend, pszFilename, fMoveByRename, cbSize, uImageFlags, pDstUuid, uOpenFlags, pVDIfsOperation, pDstVDIfsImage, pDstVDIfsOperation));
 
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);
@@ -5567,9 +5569,6 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         else
             szComment[sizeof(szComment) - 1] = '\0';
 
-        unsigned uOpenFlagsFrom;
-        uOpenFlagsFrom = pImageFrom->Backend->pfnGetOpenFlags(pImageFrom->pBackendData);
-
         rc2 = vdThreadFinishRead(pDiskFrom);
         AssertRC(rc2);
         fLockReadFrom = false;
@@ -5594,7 +5593,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename,
                                   uImageFlags, szComment, &ImageUuid,
                                   NULL /* pParentUuid */,
-                                  uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY,
+                                  uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
                                   pDstVDIfsImage, NULL);
 
                 rc2 = vdThreadStartWrite(pDiskTo);
@@ -5624,7 +5623,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, cbSize,
                                   uImageFlags, szComment,
                                   &PCHSGeometryFrom, &LCHSGeometryFrom,
-                                  NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, pDstVDIfsImage, NULL);
+                                  NULL, uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
+                                  pDstVDIfsImage, NULL);
 
                 rc2 = vdThreadStartWrite(pDiskTo);
                 AssertRC(rc2);
@@ -5758,6 +5758,13 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
              * backend might not provide a valid modification UUID. */
             if (!RTUuidIsNull(&ImageModificationUuid))
                 pImageTo->Backend->pfnSetModificationUuid(pImageTo->pBackendData, &ImageModificationUuid);
+
+            /* Set the requested open flags if they differ from the value
+             * required for creating the image and copying the contents. */
+            if (   pImageTo && pszFilename
+                && uOpenFlags != (uOpenFlags & ~VD_OPEN_FLAGS_READONLY))
+                rc = pImageTo->Backend->pfnSetOpenFlags(pImageTo->pBackendData,
+                                                        uOpenFlags);
         }
     } while (0);
 

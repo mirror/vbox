@@ -1555,7 +1555,9 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
         }
         else
         {
-            vrc = VDCopy(pDisk, 0, pDisk, "VMDK", dst.c_str(), true, 0, VD_IMAGE_FLAGS_NONE, NULL, NULL, NULL, NULL);
+            vrc = VDCopy(pDisk, 0, pDisk, "VMDK", dst.c_str(), true, 0,
+                         VD_IMAGE_FLAGS_NONE, NULL, VD_OPEN_FLAGS_NORMAL,
+                         NULL, NULL, NULL);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError("Cannot rename the image: %Rrc", vrc);
@@ -1837,7 +1839,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         /* Create the output image */
         vrc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, dstformat.c_str(),
                      dst.c_str(), false, 0, VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED,
-                     NULL, NULL, NULL, NULL);
+                     NULL, VD_OPEN_FLAGS_NORMAL, NULL, NULL, NULL);
         if (RT_FAILURE(vrc))
         {
             RTMsgError("Cannot copy the image: %Rrc", vrc);

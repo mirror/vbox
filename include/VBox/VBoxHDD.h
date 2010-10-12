@@ -2176,6 +2176,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * @param   pDstUuid        New UUID of the destination image. If NULL, a new UUID is created.
  *                          This parameter is used if and only if a true copy is created.
  *                          In all rename/move cases or copy to existing image cases the modification UUIDs are copied over.
+ * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
+ *                          Only used if the destination image is created.
  * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
  * @param   pDstVDIfsImage  Pointer to the per-image VD interface list, for the
  *                          destination image.
@@ -2186,7 +2188,7 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          const char *pszBackend, const char *pszFilename,
                          bool fMoveByRename, uint64_t cbSize,
                          unsigned uImageFlags, PCRTUUID pDstUuid,
-                         PVDINTERFACE pVDIfsOperation,
+                         unsigned uOpenFlags, PVDINTERFACE pVDIfsOperation,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation);
 
