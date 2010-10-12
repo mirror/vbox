@@ -677,7 +677,7 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
             pProgressAsync->Cancel();
             break;
         }
-        /* Check if the current operation have changed. It is also possible
+        /* Check if the current operation has changed. It is also possible
            that in the meantime more than one async operation was finished. So
            we have to loop as long as we reached the same operation count. */
         ULONG curOp;
@@ -842,21 +842,13 @@ HRESULT Appliance::setUpProgress(const LocationInfo &locInfo,
         }
         case WriteFile:
         {
-            // assume that creating the manifest will take 10% of the time it takes to export the disks
+            // assume that creating the manifest will take .1% of the time it takes to export the disks
             if (m->fManifest)
             {
                 ++cOperations;          // another one for creating the manifest
 
-                m->ulWeightForManifestOperation = m->ulTotalDisksMB / 10;
+                m->ulWeightForManifestOperation = (ULONG)((double)m->ulTotalDisksMB * .1 / 100);    // use .5% of the progress for the manifest
                 ulTotalOperationsWeight += m->ulWeightForManifestOperation;
-            }
-            if (fOVA)
-            {
-                // Another operation for packing
-                ++cOperations;
-
-                // assume that packing the files into the archive has the same weight than creating all files in the ovf exporting step
-                ulTotalOperationsWeight += m->ulTotalDisksMB;
             }
             break;
         }
