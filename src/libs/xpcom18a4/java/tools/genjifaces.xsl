@@ -440,6 +440,9 @@ public interface nsILocalFile extends nsIFile
         <xsl:when test="(@safearray='yes') and (@dir='out')">
           <xsl:value-of select="concat('long[] ', @name, 'Size, ', $paramtype, '[] ', @name)" />
         </xsl:when>
+        <xsl:when test="(@safearray='yes') and (@dir='in') and (@type='octet')">
+          <xsl:value-of select="concat($paramtype, ' ', @name)" />
+        </xsl:when>
         <xsl:when test="(@safearray='yes') and (@dir='in')">
           <xsl:value-of select="concat('long ', @name, 'Size, ', $paramtype, ' ', @name)" />
         </xsl:when>
