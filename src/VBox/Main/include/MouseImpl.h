@@ -21,6 +21,9 @@
 #include "VirtualBoxBase.h"
 #include "ConsoleEvents.h"
 #include "ConsoleImpl.h"
+#ifndef VBOXBFE_WITHOUT_COM
+#include "EventImpl.h"
+#endif
 #include <VBox/pdmdrv.h>
 
 /** Maximum number of devices supported */
@@ -67,6 +70,9 @@ public:
                              LONG buttonState);
     STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG buttonState);
+#ifndef VBOXBFE_WITHOUT_COM
+    STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
+#endif
 
     static const PDMDRVREG  DrvReg;
 
@@ -124,6 +130,11 @@ private:
     uint32_t mLastAbsX;
     uint32_t mLastAbsY;
     uint32_t mLastButtons;
+
+#ifndef VBOXBFE_WITHOUT_COM
+    const ComObjPtr<EventSource> mEventSource;
+    VBoxEventDesc                mMouseEvent;
+#endif
 };
 
 #ifdef VBOXBFE_WITHOUT_COM

@@ -296,6 +296,12 @@ def perfStats(ctx,mach):
 def guestExec(ctx, machine, console, cmds):
     exec cmds
 
+def printMouseEvent(ctx, mev):
+    print "Mouse: x=%d y=%d z=%d" %(mev.x, mev.y, mev.z)
+
+def printKbdEvent(ctx, kev):
+    print "Kbd: ", ctx['global'].getArray(kev, 'scancodes')
+
 def monitorSource(ctx, es, active, dur):
     def handleEventImpl(ev):
          type = ev.type
@@ -316,6 +322,14 @@ def monitorSource(ctx, es, active, dur):
                      print "pointer shape event - empty shape"
                  else:
                      print "pointer shape event: w=%d h=%d shape len=%d" %(psev.width, psev.height, len(shape))
+         elif type == ctx['global'].constants.VBoxEventType_OnGuestMouseEvent:
+             mev = ctx['global'].queryInterface(ev, 'IGuestMouseEvent')
+             if mev:
+                 printMouseEvent(ctx, mev)
+         elif type == ctx['global'].constants.VBoxEventType_OnGuestKeyboardEvent:
+             kev = ctx['global'].queryInterface(ev, 'IGuestKeyboardEvent')
+             if kev:
+                 printKbdEvent(ctx, kev)
 
     class EventListener:
      def __init__(self, arg):
@@ -1344,6 +1358,33 @@ def monitorGuestCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  monitorSource(ctx, console.eventSource, active, dur)])
     return 0
 
+def monitorGuestKbdCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: monitorGuestKbd name (duration)"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    dur = 5
+    if len(args) > 2:
+        dur = float(args[2])
+    active = False
+    cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  monitorSource(ctx, console.keyboard.eventSource, active, dur)])
+    return 0
+
+def monitorGuestMouseCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: monitorGuestMouse name (duration)"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    dur = 5
+    if len(args) > 2:
+        dur = float(args[2])
+    active = False
+    cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  monitorSource(ctx, console.mouse.eventSource, active, dur)])
+    return 0
 
 def monitorVBoxCmd(ctx, args):
     if (len(args) > 2):
@@ -2824,6 +2865,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'host':['Show host information', hostCmd, 0],
             'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0, 0)\'', guestCmd, 0],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
+            'monitorGuestKbd':['Monitor guest keyboardfor some time: monitorGuestKbd Win32 10', monitorGuestKbdCmd, 0],
+            'monitorGuestMouse':['Monitor guest keyboardfor some time: monitorGuestMouse Win32 10', monitorGuestMouseCmd, 0],
             'monitorVBox':['Monitor what happens with Virtual Box for some time: monitorVBox 10', monitorVBoxCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],

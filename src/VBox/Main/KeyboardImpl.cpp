@@ -110,6 +110,10 @@ HRESULT Keyboard::init(Console *aParent)
 
     unconst(mParent) = aParent;
 
+    unconst(mEventSource).createObject();
+    HRESULT rc = mEventSource->init(static_cast<IKeyboard*>(this));
+    AssertComRCReturnRC(rc);
+
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
 
@@ -140,6 +144,7 @@ void Keyboard::uninit()
     mfVMMDevInited = true;
 
     unconst(mParent) = NULL;
+    unconst(mEventSource).setNull();
 }
 
 /**
@@ -237,6 +242,17 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
     /// @todo is it actually possible that not all scancodes can be transmitted?
     if (codesStored)
         *codesStored = (uint32_t)keys.size();
+#if 1
+    VBoxEventDesc evDesc;
+    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboardEvent,
+#ifdef RT_OS_WINDOWS
+                scancodes
+#else
+                scancodesSize, scancodes
+#endif
+                );
+    evDesc.fire(0);
+#endif
 
     return rc;
 }
@@ -260,6 +276,19 @@ STDMETHODIMP Keyboard::PutCAD()
     cadSequence[5] = 0x9d; // Ctrl up
 
     return PutScancodes(ComSafeArrayAsInParam(cadSequence), NULL);
+}
+
+STDMETHODIMP Keyboard::COMGETTER(EventSource)(IEventSource ** aEventSource)
+{
+    CheckComArgOutPointerValid(aEventSource);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    // no need to lock - lifetime constant
+    mEventSource.queryInterfaceTo(aEventSource);
+
+    return S_OK;
 }
 
 //

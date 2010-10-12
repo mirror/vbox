@@ -1226,6 +1226,21 @@ inline void com::SafeArray<BYTE>::initFrom(const BYTE* aPtr, size_t aSize)
 }
 
 
+template<>
+inline void com::SafeArray<LONG>::initFrom(const com::SafeArray<LONG> & aRef)
+{
+    size_t sSize = aRef.size();
+    resize(sSize);
+    ::memcpy(raw(), aRef.raw(), sSize * sizeof(LONG));
+}
+template<>
+inline void com::SafeArray<LONG>::initFrom(const LONG* aPtr, size_t aSize)
+{
+    resize(aSize);
+    ::memcpy(raw(), aPtr, aSize * sizeof(LONG));
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined (VBOX_WITH_XPCOM)

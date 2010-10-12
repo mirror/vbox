@@ -109,6 +109,14 @@ HRESULT Mouse::init (Console *parent)
 
     unconst(mParent) = parent;
 
+#ifndef VBOXBFE_WITHOUT_COM
+    unconst(mEventSource).createObject();
+    HRESULT rc = mEventSource->init(static_cast<IMouse*>(this));
+    AssertComRCReturnRC(rc);
+    mMouseEvent.init(mEventSource, VBoxEventType_OnGuestMouseEvent,
+                     0, 0, 0, 0, 0);
+#endif
+
     mfHostCaps = 0;
 
     /* Confirm a successful initialization */
@@ -140,6 +148,8 @@ void Mouse::uninit()
 #ifdef VBOXBFE_WITHOUT_COM
     mParent = NULL;
 #else
+    mMouseEvent.uninit();
+    unconst(mEventSource).setNull();
     unconst(mParent) = NULL;
 #endif
 }
@@ -276,6 +286,20 @@ static uint32_t mouseButtonsToPDM(LONG buttonState)
     return fButtons;
 }
 
+#ifndef VBOXBFE_WITHOUT_COM
+STDMETHODIMP Mouse::COMGETTER(EventSource)(IEventSource ** aEventSource)
+{
+    CheckComArgOutPointerValid(aEventSource);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    // no need to lock - lifetime constant
+    mEventSource.queryInterfaceTo(aEventSource);
+
+    return S_OK;
+}
+#endif
 
 /**
  * Send a relative pointer event to the relative device we deem most
@@ -308,6 +332,12 @@ HRESULT Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                             tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
                             vrc);
         mLastButtons = fButtons;
+#ifndef VBOXBFE_WITHOUT_COM
+#if 1
+        mMouseEvent.reinit(VBoxEventType_OnGuestMouseEvent, dx, dy, dz, dw, fButtons);
+        mMouseEvent.fire(0);
+#endif
+#endif
     }
     return S_OK;
 }

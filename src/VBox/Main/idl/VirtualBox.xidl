@@ -3622,8 +3622,8 @@
 
     <attribute name="CPUExecutionCap" type="unsigned long">
        <desc>
-         Means to limit the number of CPU cycles a guest can use. The unit 
-         is percentage of host CPU cycles per second. The valid range 
+         Means to limit the number of CPU cycles a guest can use. The unit
+         is percentage of host CPU cycles per second. The valid range
          is 1 - 100. 100 (the default) implies no limit.
        </desc>
     </attribute>
@@ -10246,7 +10246,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IKeyboard" extends="$unknown"
-     uuid="2d1a531b-4c6e-49cc-8af6-5c857b78b5d7"
+     uuid="f6916ec5-a881-4237-898f-7de58cf88672"
      wsmap="managed"
      >
     <desc>
@@ -10292,6 +10292,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for keyboard events.
+      </desc>
+    </attribute>
+
   </interface>
 
 
@@ -10320,7 +10326,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IMouse" extends="$unknown"
-     uuid="7c0f2eae-f92d-498c-b802-e1a3763774dc"
+     uuid="05044a52-7811-4f00-ae3a-0ab7ff707b10"
      wsmap="managed"
      >
     <desc>
@@ -10485,6 +10491,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
     </method>
+
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for mouse events.
+      </desc>
+    </attribute>
 
   </interface>
 
@@ -13933,7 +13945,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
      name="VBoxEventType"
-     uuid="d00980f3-bfcb-4e7d-a20e-08cabf3eb89f">
+     uuid="1728bb3b-4843-4f12-af67-f7a1f69f3a52">
 
     <desc>
       Type of an event.
@@ -14150,8 +14162,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ICPUExecutionCapChangedEvent">ICPUExecutionCapChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnGuestKeyboardEvent" value="64">
+      <desc>
+        See <link to="IGuestKeyboardEvent">IGuestKeyboardEvent</link>.
+      </desc>
+    </const>
+    <const name="OnGuestMouseEvent" value="65">
+      <desc>
+        See <link to="IGuestMouseEvent">IGuestMouseEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="64">
+    <const name="Last" value="66">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -14867,7 +14889,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
   </interface>
 
-   <interface
+  <interface
      name="ICPUChangedEvent" extends="IEvent"
      uuid="D0F0BECC-EE17-4D17-A8CC-383B0EB55E9D"
      wsmap="managed" autogen="VBoxEvent" id="OnCPUChanged"
@@ -14901,6 +14923,63 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
        </desc>
      </attribute>
   </interface>
+
+  <interface
+    name="IGuestKeyboardEvent" extends="IEvent"
+    uuid="88394258-7006-40d4-b339-472ee3801844"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestKeyboardEvent"
+    >
+   <desc>
+      Notification when guest keyboard event happens.
+   </desc>
+     <attribute name="scancodes"  type="long" safearray="yes" readonly="yes">
+       <desc>
+         Array of scancodes.
+       </desc>
+     </attribute>
+  </interface>
+
+  <interface
+    name="IGuestMouseEvent" extends="IReusableEvent"
+    uuid="2ab6f43c-a111-4520-be63-5d560e8eb463"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestMouseEvent"
+    >
+   <desc>
+      Notification when guest mouse event happens.
+   </desc>
+
+   <attribute name="x" type="long" readonly="yes">
+     <desc>
+       New X position.
+     </desc>
+   </attribute>
+
+   <attribute name="y" type="long" readonly="yes">
+     <desc>
+       New Y position.
+     </desc>
+   </attribute>
+
+   <attribute name="z" type="long" readonly="yes">
+     <desc>
+       New Z position.
+     </desc>
+   </attribute>
+
+   <attribute name="w" type="long" readonly="yes">
+     <desc>
+       New W position.
+     </desc>
+   </attribute>
+
+   <attribute name="buttons" type="long" readonly="yes">
+     <desc>
+       Button state bitmask.
+     </desc>
+   </attribute>
+
+   </interface>
+
 
    <interface
      name="IVRDPServerChangedEvent" extends="IEvent"
