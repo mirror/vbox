@@ -855,12 +855,21 @@ void ConfigFileBase::createStubDocument()
          && (m->svRead < m->sv)                     // we're upgrading?
        )
     {
-        // compose new filename: strip off trailing ".xml"
-        Utf8Str strFilenameNew = m->strFilename.substr(0, m->strFilename.length() - 4);
+        // compose new filename: strip off trailing ".xml"/".vbox"
+        Utf8Str strFilenameNew;
+        Utf8Str strExt = ".xml";
+        if (m->strFilename.endsWith(".xml"))
+            strFilenameNew = m->strFilename.substr(0, m->strFilename.length() - 4);
+        else if (m->strFilename.endsWith(".vbox"))
+        {
+            strFilenameNew = m->strFilename.substr(0, m->strFilename.length() - 5);
+            strExt = ".vbox";
+        }
+
         // and append something likd "-1.3-linux.xml"
         strFilenameNew.append("-");
         strFilenameNew.append(m->strSettingsVersionFull);       // e.g. "1.3-linux"
-        strFilenameNew.append(".xml");
+        strFilenameNew.append(strExt);                          // .xml for main config, .vbox for machine config
 
         RTFileMove(m->strFilename.c_str(),
                    strFilenameNew.c_str(),
