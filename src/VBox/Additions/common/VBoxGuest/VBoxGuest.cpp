@@ -1371,6 +1371,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
     RTSPINLOCKTMP           Tmp   = RTSPINLOCKTMP_INITIALIZER;
     PVBOXGUESTWAIT          pWait;
     PVBOXGUESTWAIT          pSafe;
+    int                     rc = 0;
 
     Log(("VBoxGuestCommonIOCtl: CANCEL_ALL_WAITEVENTS\n"));
 
@@ -1393,6 +1394,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
         }
     }
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+    Assert(rc == 0);
 
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
     VBoxGuestWaitDoWakeUps(pDevExt);
@@ -2302,6 +2304,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
     bool                    fMousePositionChanged = false;
     RTSPINLOCKTMP           Tmp                   = RTSPINLOCKTMP_INITIALIZER;
     VMMDevEvents volatile  *pReq                  = pDevExt->pIrqAckEvents;
+    int                     rc                    = 0;
     bool                    fOurIrq;
 
     /*
@@ -2419,6 +2422,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
         VBoxGuestNativeISRMousePollEvent(pDevExt);
     }
 
+    Assert(rc == 0);
     return fOurIrq;
 }
 
