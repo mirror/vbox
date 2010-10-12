@@ -742,7 +742,8 @@ static int tstVmdkRename(const char *src, const char *dst)
 
     rc = VDOpen(pVD, "VMDK", src, VD_OPEN_FLAGS_NORMAL, NULL);
     CHECK("VDOpen()");
-    rc = VDCopy(pVD, 0, pVD, "VMDK", dst, true, 0, VD_IMAGE_FLAGS_NONE, NULL, NULL, NULL, NULL);
+    rc = VDCopy(pVD, 0, pVD, "VMDK", dst, true, 0, VD_IMAGE_FLAGS_NONE, NULL,
+                VD_OPEN_FLAGS_NORMAL, NULL, NULL, NULL);
     CHECK("VDCopy()");
 
     VDDestroy(pVD);
