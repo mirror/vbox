@@ -26,6 +26,10 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed guru meditation when running Minix (VT-x only; bug #6557)</para>
+      </listitem>
+
+      <listitem>
         <para>Settings: Deleting a machine now automatically deletes all
         snapshots and saved states as well, it is no longer necessary
         to manually delete snapshots first; VBoxManage unregistervm --delete
