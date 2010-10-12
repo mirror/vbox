@@ -175,10 +175,10 @@ BOOLEAN VBoxHGSMIIsSupported (void)
     return (DispiId == VBE_DISPI_ID_HGSMI);
 }
 
-typedef int FNHGSMICALLINIT (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData);
+typedef int FNHGSMICALLINIT (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData);
 typedef FNHGSMICALLINIT *PFNHGSMICALLINIT;
 
-typedef int FNHGSMICALLFINALIZE (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData);
+typedef int FNHGSMICALLFINALIZE (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData);
 typedef FNHGSMICALLFINALIZE *PFNHGSMICALLFINALIZE;
 
 void* vboxHGSMIBufferAlloc(PVBOXVIDEO_COMMON pCommon,
@@ -216,7 +216,7 @@ int vboxHGSMIBufferSubmit (PVBOXVIDEO_COMMON pCommon, void *pvBuffer)
     return VERR_INVALID_PARAMETER;
 }
 
-static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
+static int vboxCallChannel (PVBOXVIDEO_COMMON pCommon,
                          uint8_t u8Ch,
                          uint16_t u16Op,
                          HGSMISIZE cbData,
@@ -227,15 +227,7 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-#ifndef VBOX_WITH_WDDM
-    if (PrimaryExtension->pPrimary != PrimaryExtension)
-    {
-        dprintf(("VBoxVideo::vboxCallChannel: not primary extension %p!!!\n", PrimaryExtension));
-        return VERR_INVALID_PARAMETER;
-    }
-#endif
-
-    void *p = HGSMIHeapAlloc (&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap, cbData, u8Ch, u16Op);
+    void *p = HGSMIHeapAlloc (&pCommon->hgsmiAdapterHeap, cbData, u8Ch, u16Op);
 
     if (!p)
     {
@@ -246,21 +238,21 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
         /* Prepare data to be sent to the host. */
         if (pfnInit)
         {
-            rc = pfnInit (PrimaryExtension, pvContext, p);
+            rc = pfnInit (pCommon, pvContext, p);
         }
 
         if (RT_SUCCESS (rc))
         {
             /* Initialize the buffer and get the offset for port IO. */
-            HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap,
+            HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pCommon->hgsmiAdapterHeap,
                                                            p);
 
             /* Submit the buffer to the host. */
-            VBoxHGSMIGuestWrite(commonFromDeviceExt(PrimaryExtension), offBuffer);
+            VBoxHGSMIGuestWrite(pCommon, offBuffer);
 
             if (pfnFinalize)
             {
-                rc = pfnFinalize (PrimaryExtension, pvContext, p);
+                rc = pfnFinalize (pCommon, pvContext, p);
             }
         }
         else
@@ -270,20 +262,20 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
         }
 
         /* Free the IO buffer. */
-        HGSMIHeapFree (&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap, p);
+        HGSMIHeapFree (&pCommon->hgsmiAdapterHeap, p);
     }
 
     return rc;
 }
 
-static int vboxCallVBVA (PDEVICE_EXTENSION PrimaryExtension,
+static int vboxCallVBVA (PVBOXVIDEO_COMMON pCommon,
                          uint16_t u16Op,
                          HGSMISIZE cbData,
                          PFNHGSMICALLINIT pfnInit,
                          PFNHGSMICALLFINALIZE pfnFinalize,
                          void *pvContext)
 {
-    return vboxCallChannel (PrimaryExtension,
+    return vboxCallChannel (pCommon,
                             HGSMI_CH_VBVA,
                             u16Op,
                             cbData,
@@ -298,10 +290,8 @@ typedef struct _QUERYCONFCTX
     ULONG *pulValue;
 } QUERYCONFCTX;
 
-static int vbvaInitQueryConf (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+static int vbvaInitQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
 {
-    NOREF (PrimaryExtension);
-
     QUERYCONFCTX *pCtx = (QUERYCONFCTX *)pvContext;
     VBVACONF32 *p = (VBVACONF32 *)pvData;
 
@@ -311,10 +301,8 @@ static int vbvaInitQueryConf (PDEVICE_EXTENSION PrimaryExtension, void *pvContex
     return VINF_SUCCESS;
 }
 
-static int vbvaFinalizeQueryConf (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+static int vbvaFinalizeQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
 {
-    NOREF (PrimaryExtension);
-
     QUERYCONFCTX *pCtx = (QUERYCONFCTX *)pvContext;
     VBVACONF32 *p = (VBVACONF32 *)pvData;
 
@@ -336,7 +324,7 @@ static int vboxQueryConfHGSMI (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32I
     context.u32Index = u32Index;
     context.pulValue = pulValue;
 
-    int rc = vboxCallVBVA (PrimaryExtension,
+    int rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
                            VBVA_QUERY_CONF32,
                            sizeof (VBVACONF32),
                            vbvaInitQueryConf,
@@ -347,11 +335,31 @@ static int vboxQueryConfHGSMI (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32I
 
     return rc;
 }
-#ifndef VBOX_WITH_WDDM
-static int vbvaInitInfoDisplay (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+
+int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData)
 {
-    NOREF (pvContext);
-    VBVAINFOVIEW *p = (VBVAINFOVIEW *)pvData;
+    int rc;
+    /* Issue the screen info command. */
+    void *p = vboxHGSMIBufferAlloc (pCommon, sizeof(VBVAINFOVIEW) * u32Count,
+                                    HGSMI_CH_VBVA, VBVA_INFO_VIEW);
+    Assert(p);
+    if (p)
+    {
+        VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
+        rc = pfnFill(pvData, pInfo);
+        if (RT_SUCCESS(rc))
+            vboxHGSMIBufferSubmit (pCommon, p);
+        vboxHGSMIBufferFree (pCommon, p);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+#ifndef VBOX_WITH_WDDM
+static int vbvaInitInfoDisplay (void *pvData, VBVAINFOVIEW *p)
+{
+    PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION) pvData;
 
     int i;
     PDEVICE_EXTENSION Extension;
@@ -381,7 +389,7 @@ static int vbvaInitInfoDisplay (PDEVICE_EXTENSION PrimaryExtension, void *pvCont
     return VERR_INTERNAL_ERROR;
 }
 #else
-int vbvaInitInfoCaps (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+int vbvaInitInfoCaps (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
 {
     VBVACAPS *pCaps = (VBVACAPS*)pvData;
     pCaps->rc = VERR_NOT_IMPLEMENTED;
@@ -390,7 +398,7 @@ int vbvaInitInfoCaps (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void 
 }
 
 
-int vbvaFinalizeInfoCaps (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+int vbvaFinalizeInfoCaps (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
 {
     VBVACAPS *pCaps = (VBVACAPS*)pvData;
     AssertRC(pCaps->rc);
@@ -398,25 +406,25 @@ int vbvaFinalizeInfoCaps (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, v
 }
 #endif
 
-static int vbvaInitInfoHeap (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+static int vbvaInitInfoHeap (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
 {
     NOREF (pvContext);
     VBVAINFOHEAP *p = (VBVAINFOHEAP *)pvData;
 
-    p->u32HeapOffset = commonFromDeviceExt(PrimaryExtension)->cbVRAM
-                       - commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap
+    p->u32HeapOffset = pCommon->cbVRAM
+                       - pCommon->cbMiniportHeap
                        - VBVA_ADAPTER_INFORMATION_SIZE;
-    p->u32HeapSize = commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap;
+    p->u32HeapSize = pCommon->cbMiniportHeap;
 
     return VINF_SUCCESS;
 }
 
-static int hgsmiInitFlagsLocation (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+static int hgsmiInitFlagsLocation (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
 {
     NOREF (pvContext);
     HGSMIBUFFERLOCATION *p = (HGSMIBUFFERLOCATION *)pvData;
 
-    p->offLocation = commonFromDeviceExt(PrimaryExtension)->cbVRAM - sizeof (HGSMIHOSTFLAGS);
+    p->offLocation = pCommon->cbVRAM - sizeof (HGSMIHOSTFLAGS);
     p->cbLocation = sizeof (HGSMIHOSTFLAGS);
 
     return VINF_SUCCESS;
@@ -428,7 +436,7 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
     dprintf(("VBoxVideo::vboxSetupAdapterInfo\n"));
 
     /* setup the flags first to ensure they are initialized by the time the host heap is ready */
-    int rc = vboxCallChannel(PrimaryExtension,
+    int rc = vboxCallChannel(commonFromDeviceExt(PrimaryExtension),
             HGSMI_CH_HGSMI,
             HGSMI_CC_HOST_FLAGS_LOCATION,
                        sizeof (HGSMIBUFFERLOCATION),
@@ -439,12 +447,10 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
     if(RT_SUCCESS (rc))
     {
 #ifndef VBOX_WITH_WDDM
-        rc = vboxCallVBVA (PrimaryExtension,
-                               VBVA_INFO_VIEW,
-                               sizeof (VBVAINFOVIEW) * PrimaryExtension->u.primary.cDisplays,
+        rc = VBoxHGSMISendViewInfo (commonFromDeviceExt(PrimaryExtension),
+                               PrimaryExtension->u.primary.cDisplays,
                                vbvaInitInfoDisplay,
-                               NULL,
-                               NULL);
+                               (void *) PrimaryExtension);
         AssertRC(rc);
         if (RT_SUCCESS (rc))
 #else
@@ -453,7 +459,7 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
          * The FB information should be passed to guest from our DxgkDdiSetVidPnSourceAddress callback */
 
         /* Inform about caps */
-        rc = vboxCallVBVA (PrimaryExtension,
+        rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
                                VBVA_INFO_CAPS,
                                sizeof (VBVACAPS),
                                vbvaInitInfoCaps,
@@ -464,7 +470,7 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
 #endif
         {
             /* Report the host heap location. */
-            rc = vboxCallVBVA (PrimaryExtension,
+            rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
                                VBVA_INFO_HEAP,
                                sizeof (VBVAINFOHEAP),
                                vbvaInitInfoHeap,
@@ -1127,10 +1133,8 @@ typedef struct _MOUSEPOINTERSHAPECTX
     int32_t i32Result;
 } MOUSEPOINTERSHAPECTX;
 
-static int vbvaInitMousePointerShape (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+static int vbvaInitMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
 {
-    NOREF (PrimaryExtension);
-
     MOUSEPOINTERSHAPECTX *pCtx = (MOUSEPOINTERSHAPECTX *)pvContext;
     VBVAMOUSEPOINTERSHAPE *p = (VBVAMOUSEPOINTERSHAPE *)pvData;
 
@@ -1159,10 +1163,8 @@ static int vbvaInitMousePointerShape (PDEVICE_EXTENSION PrimaryExtension, void *
     return VINF_SUCCESS;
 }
 
-static int vbvaFinalizeMousePointerShape (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
+static int vbvaFinalizeMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
 {
-    NOREF (PrimaryExtension);
-
     MOUSEPOINTERSHAPECTX *pCtx = (MOUSEPOINTERSHAPECTX *)pvContext;
     VBVAMOUSEPOINTERSHAPE *p = (VBVAMOUSEPOINTERSHAPE *)pvData;
 
@@ -1231,7 +1233,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
     ctx.cbData = cbData;
     ctx.i32Result = VERR_NOT_SUPPORTED;
 
-    int rc = vboxCallVBVA (PrimaryExtension,
+    int rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
                            VBVA_MOUSE_POINTER_SHAPE,
                            sizeof (VBVAMOUSEPOINTERSHAPE) + cbData,
                            vbvaInitMousePointerShape,
