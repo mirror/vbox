@@ -295,7 +295,7 @@ public:
      *
      * @returns Reference to the object.
      */
-    MiniString& toLower()
+    MiniString &toLower()
     {
         if (length())
             ::RTStrToLower(m_psz);
