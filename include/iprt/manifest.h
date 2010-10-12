@@ -104,6 +104,21 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
 RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles,
                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
+/**
+ * Creates a manifest file in memory for a set of files. The manifest file
+ * contains SHA1 sums of every provided file and could be used to verify the
+ * data integrity of them.
+ *
+ * @returns iprt status code.
+ *
+ * @param   ppvBuf               Pointer to resulting memory buffer.
+ * @param   pcbSize              Pointer for the size of the memory buffer.
+ * @param   papszFileNames       Array of file names.
+ * @param   papszFileDigests     Array of file digests.
+ * @param   cFiles               Number of entries in papszFileNames and papszFileDigests.
+ */
+RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, const char * const *papszFileNames, const char * const *papszFileDigests, size_t cFiles);
+
 /** @} */
 
 RT_C_DECLS_END
