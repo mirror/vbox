@@ -394,14 +394,17 @@ bool MediumAttachment::matches(CBSTR aControllerName, LONG aPort, LONG aDevice)
              && aDevice == m->bd->lDevice);
 }
 
-/** Must be called from under this object's write lock. */
-void MediumAttachment::updateMedium(const ComObjPtr<Medium> &aMedium, bool aImplicit)
+/**
+ * Sets the medium of this attachment and unsets the "implicit" flag.
+ * @param aMedium
+ */
+void MediumAttachment::updateMedium(const ComObjPtr<Medium> &aMedium)
 {
     Assert(isWriteLockOnCurrentThread());
 
     m->bd.backup();
     m->bd->pMedium = aMedium;
-    m->bd->fImplicit = aImplicit;
+    m->bd->fImplicit = false;
 }
 
 /** Must be called from under this object's write lock. */

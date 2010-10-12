@@ -46,6 +46,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef std::list<Guid> GuidList;
+
 /** Describes how a machine refers to this medium. */
 struct BackRef
 {
@@ -61,8 +63,6 @@ struct BackRef
 
         const Guid machineId;
     };
-
-    typedef std::list<Guid> GuidList;
 
     BackRef(const Guid &aMachineId,
             const Guid &aSnapshotId = Guid::Empty)
@@ -110,7 +110,7 @@ struct Medium::Data
     ComObjPtr<Medium> pParent;
     MediaList llChildren;           // to add a child, just call push_back; to remove a child, call child->deparent() which does a lookup
 
-    Guid uuidRegistryMachine;       // machine in whose registry this medium is listed or NULL; see getRegistryMachine()
+    GuidList llRegistryIDs;         // media registries in which this medium is listed
 
     const Guid id;
     Utf8Str strDescription;
@@ -865,7 +865,9 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     HRESULT rc = S_OK;
 
     unconst(m->pVirtualBox) = aVirtualBox;
-    m->uuidRegistryMachine = uuidMachineRegistry;
+
+    if (!uuidMachineRegistry.isEmpty())
+        m->llRegistryIDs.push_back(uuidMachineRegistry);
 
     /* no storage yet */
     m->state = MediumState_NotCreated;
@@ -1035,7 +1037,9 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     HRESULT rc = S_OK;
 
     unconst(m->pVirtualBox) = aVirtualBox;
-    m->uuidRegistryMachine = uuidMachineRegistry;
+
+    if (!uuidMachineRegistry.isEmpty())
+        m->llRegistryIDs.push_back(uuidMachineRegistry);
 
     /* register with VirtualBox/parent early, since uninit() will
      * unconditionally unregister on failure */
@@ -1862,7 +1866,7 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
                 if (it->fInCurState)
                     it->machineId.toUtf16().detachTo(&snapshotIds[j++]);
 
-                for (BackRef::GuidList::const_iterator jt = it->llSnapshotIds.begin();
+                for (GuidList::const_iterator jt = it->llSnapshotIds.begin();
                      jt != it->llSnapshotIds.end();
                      ++jt, ++j)
                 {
@@ -2780,19 +2784,6 @@ const MediaList& Medium::getChildren() const
 }
 
 /**
- * Internal method to return the medium's registry machine (i.e. the machine in whose
- * machine XML this medium is listed), or NULL if the medium is registered globally.
- *
- * Must have caller + locking!
- *
- * @return
- */
-const Guid& Medium::getRegistryMachineId() const
-{
-    return m->uuidRegistryMachine;
-}
-
-/**
  * Internal method to return the medium's GUID. Must have caller + locking!
  * @return
  */
@@ -2937,7 +2928,7 @@ HRESULT Medium::addBackReference(const Guid &aMachineId,
     // otherwise: a snapshot medium is being attached
 
     /* sanity: no duplicate attachments */
-    for (BackRef::GuidList::const_iterator jt = it->llSnapshotIds.begin();
+    for (GuidList::const_iterator jt = it->llSnapshotIds.begin();
          jt != it->llSnapshotIds.end();
          ++jt)
     {
@@ -2996,8 +2987,9 @@ HRESULT Medium::removeBackReference(const Guid &aMachineId,
     else
     {
         /* remove the snapshot attachment */
-        BackRef::GuidList::iterator jt =
-            std::find(it->llSnapshotIds.begin(), it->llSnapshotIds.end(), aSnapshotId);
+        GuidList::iterator jt = std::find(it->llSnapshotIds.begin(),
+                                          it->llSnapshotIds.end(),
+                                          aSnapshotId);
 
         AssertReturn(jt != it->llSnapshotIds.end(), E_FAIL);
         it->llSnapshotIds.erase(jt);
@@ -3053,7 +3045,7 @@ void Medium::dumpBackRefs()
         const BackRef &ref = *it2;
         LogFlowThisFunc(("  Backref from machine {%RTuuid} (fInCurState: %d)\n", ref.machineId.raw(), ref.fInCurState));
 
-        for (BackRef::GuidList::const_iterator jt2 = it2->llSnapshotIds.begin();
+        for (GuidList::const_iterator jt2 = it2->llSnapshotIds.begin();
              jt2 != it2->llSnapshotIds.end();
              ++jt2)
         {
@@ -3452,25 +3444,82 @@ Utf8Str Medium::getName()
 }
 
 /**
- * This sets the UUID of the machine in whose registry this medium should
- * be registered, or the UUID of the global VirtualBox.xml registry, but
- * only if no registry ID had been previously set.
+ * This adds the given UUID to the list of media registries in which this
+ * medium should be registered. The UUID can either be a machine UUID,
+ * to add a machine registry, or the global registry UUID as returned by
+ * VirtualBox::getGlobalRegistryId().
+ *
+ * Note that for hard disks, this method does nothing if the medium is
+ * already in another registry to avoid having hard disks in more than
+ * one registry, which causes trouble with keeping diff images in sync.
+ * See getFirstRegistryMachineId() for details.
+ *
  * @param id
+ * @return true if the registry was added.
  */
-void Medium::setRegistryIdIfFirst(const Guid& id)
+bool Medium::addRegistry(const Guid& id)
 {
-    if (m->uuidRegistryMachine.isEmpty())
-        m->uuidRegistryMachine = id;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return false;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (    m->devType == DeviceType_HardDisk
+         && m->llRegistryIDs.size() > 0
+       )
+        return false;
+
+    m->llRegistryIDs.push_back(id);
+    return true;
 }
 
 /**
- * Returns the UUID of the machine in whose registry this medium is registered,
- * or the UUID of the global VirtualBox.xml registry.
+ * Returns true if id is in the list of media registries for this medium.
+ * @param id
  * @return
  */
-const Guid& Medium::getRegistryId() const
+bool Medium::isInRegistry(const Guid& id)
 {
-    return m->uuidRegistryMachine;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return false;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
+         it != m->llRegistryIDs.end();
+         ++it)
+    {
+        if (*it == id)
+            return true;
+    }
+
+    return false;
+}
+
+/**
+ * Internal method to return the medium's first registry machine (i.e. the machine in whose
+ * machine XML this medium is listed).
+ *
+ * Every medium must now (4.0) reside in at least one media registry, which is identified by
+ * a UUID. This is either a machine UUID if the machine is from 4.0 or newer, in which case
+ * machines have their own media registries, or it is the pseudo-UUID of the VirtualBox
+ * object if the machine is old and still needs the global registry in VirtualBox.xml.
+ *
+ * By definition, hard disks may only be in one media registry, in which all its children
+ * will be stored as well. Otherwise we run into problems with having keep multiple registries
+ * in sync. (This is the "cloned VM" case in which VM1 may link to the disks of VM2; in this
+ * case, only VM2's registry is used for the disk in question.)
+ *
+ * ISOs and RAWs, by contrast, can be in more than one repository to make things easier for
+ * the user.
+ *
+ * Must have caller + locking!
+ *
+ * @return
+ */
+const Guid& Medium::getFirstRegistryMachineId() const
+{
+    return m->llRegistryIDs.front();
 }
 
 /**

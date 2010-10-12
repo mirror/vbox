@@ -280,10 +280,10 @@ private:
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
 
-    Utf8Str getRegistryPath(Medium *pMedium);
-
-    HRESULT checkMediaForConflicts2(const Guid &aId, const Utf8Str &aLocation,
-                                    Utf8Str &aConflictType);
+    HRESULT checkMediaForConflicts(const Guid &aId,
+                                   const Utf8Str &aLocation,
+                                   Utf8Str &aConflictType,
+                                   bool &fIdentical);
 
     HRESULT registerMachine(Machine *aMachine);
 

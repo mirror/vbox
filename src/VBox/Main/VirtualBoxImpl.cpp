@@ -2911,20 +2911,6 @@ void VirtualBox::copyPathRelativeToConfig(const Utf8Str &strSource,
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-Utf8Str VirtualBox::getRegistryPath(Medium *pMedium)
-{
-    const Guid &rid = pMedium->getRegistryId();
-
-    if (!rid.isEmpty())
-    {
-        if (rid == getGlobalRegistryId())
-            return settingsFilePath();
-
-        return rid.toString();
-    }
-    return "[null]";
-}
-
 /**
  * Checks if there is a hard disk, DVD or floppy image with the given ID or
  * location already registered.
@@ -2939,9 +2925,10 @@ Utf8Str VirtualBox::getRegistryPath(Medium *pMedium)
  *
  * @note Locks the media tree and media objects for reading.
  */
-HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
-                                            const Utf8Str &aLocation,
-                                            Utf8Str &aConflict)
+HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
+                                           const Utf8Str &aLocation,
+                                           Utf8Str &aConflict,
+                                           bool &fIdentical)
 {
     aConflict.setNull();
 
@@ -2952,47 +2939,49 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
     HRESULT rc = S_OK;
 
     Bstr bstrLocation(aLocation);
+    aConflict.setNull();
+    fIdentical = false;
+
+    ComObjPtr<Medium> pMediumFound;
+    const char *pcszType = NULL;
 
     {
-        ComObjPtr<Medium> hardDisk;
-        rc = findHardDisk(&aId, bstrLocation, false /* aSetError */, &hardDisk);
+        rc = findHardDisk(&aId, bstrLocation, false /* aSetError */, &pMediumFound);
         if (SUCCEEDED(rc))
-        {
-            /* Note: no AutoCaller since bound to this */
-            AutoReadLock mediaLock(hardDisk COMMA_LOCKVAL_SRC_POS);
-            aConflict = Utf8StrFmt(tr("hard disk '%s' with UUID {%RTuuid}"),
-                                   hardDisk->getLocationFull().c_str(),
-                                   hardDisk->getId().raw());
-            return S_OK;
-        }
+            pcszType = tr("hard disk");
     }
 
+    if (!pcszType)
     {
-        ComObjPtr<Medium> image;
-        rc = findDVDOrFloppyImage(DeviceType_DVD, &aId, bstrLocation, false /* aSetError */, &image);
+        rc = findDVDOrFloppyImage(DeviceType_DVD, &aId, bstrLocation, false /* aSetError */, &pMediumFound);
         if (SUCCEEDED(rc))
-        {
-            /* Note: no AutoCaller since bound to this */
-            AutoReadLock mediaLock(image COMMA_LOCKVAL_SRC_POS);
-            aConflict = Utf8StrFmt(tr("CD/DVD image '%s' with UUID {%RTuuid}"),
-                                   image->getLocationFull().c_str(),
-                                   image->getId().raw());
-            return S_OK;
-        }
+            pcszType = tr("CD/DVD image");
     }
 
+    if (!pcszType)
     {
-        ComObjPtr<Medium> image;
-        rc = findDVDOrFloppyImage(DeviceType_Floppy, &aId, bstrLocation, false /* aSetError */, &image);
+        rc = findDVDOrFloppyImage(DeviceType_Floppy, &aId, bstrLocation, false /* aSetError */, &pMediumFound);
         if (SUCCEEDED(rc))
-        {
-            /* Note: no AutoCaller since bound to this */
-            AutoReadLock mediaLock(image COMMA_LOCKVAL_SRC_POS);
-            aConflict = Utf8StrFmt(tr("floppy image '%s' with UUID {%RTuuid}"),
-                                   image->getLocationFull().c_str(),
-                                   image->getId().raw());
-            return S_OK;
-        }
+            pcszType = tr("floppy image");
+    }
+
+    if (pcszType && pMediumFound)
+    {
+        /* Note: no AutoCaller since bound to this */
+        AutoReadLock mlock(pMediumFound COMMA_LOCKVAL_SRC_POS);
+
+        Utf8Str strLocFound = pMediumFound->getLocationFull();
+        Guid idFound = pMediumFound->getId();
+
+        if (    (strLocFound == aLocation)
+             && (idFound == aId)
+           )
+            fIdentical = true;
+
+        aConflict = Utf8StrFmt(tr("%s '%s' with UUID {%RTuuid}"),
+                               pcszType,
+                               strLocFound.c_str(),
+                               idFound.raw());
     }
 
     return S_OK;
@@ -3059,8 +3048,7 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
          ++it)
     {
         Medium *pMedium = *it;
-        // is medium in global registry:?
-        if (pMedium->getRegistryId() == uuidRegistry)
+        if (pMedium->isInRegistry(uuidRegistry))
         {
             settings::Medium med;
             rc = pMedium->saveSettings(med);     // this recurses into its children
@@ -3076,8 +3064,7 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
          ++it)
     {
         Medium *pMedium = *it;
-        // is medium in global registry:?
-        if (pMedium->getRegistryId() == uuidRegistry)
+        if (pMedium->isInRegistry(uuidRegistry))
         {
             settings::Medium med;
             rc = pMedium->saveSettings(med);
@@ -3093,8 +3080,7 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
          ++it)
     {
         Medium *pMedium = *it;
-        // is medium in global registry:?
-        if (pMedium->getRegistryId() == uuidRegistry)
+        if (pMedium->isInRegistry(uuidRegistry))
         {
             settings::Medium med;
             rc = pMedium->saveSettings(med);
@@ -3168,7 +3154,7 @@ HRESULT VirtualBox::saveSettings()
                      ++it2)
                 {
                     // is medium in global registry:?
-                    if (pMedium->getRegistryId() == m->uuidMediaRegistry)
+                    if (pMedium->isInRegistry(m->uuidMediaRegistry))
                     {
                         const Data::PendingMachineRename &pmr = *it2;
                         pMedium->updatePath(pmr.strConfigDirOld,
@@ -3326,31 +3312,36 @@ HRESULT VirtualBox::registerHardDisk(Medium *pMedium,
     HRESULT rc;
 
     Utf8Str strConflict;
-    rc = checkMediaForConflicts2(id,
-                                 strLocationFull,
-                                 strConflict);
+    bool fIdentical;
+    rc = checkMediaForConflicts(id,
+                                strLocationFull,
+                                strConflict,
+                                fIdentical);
     if (FAILED(rc)) return rc;
 
-    if (strConflict.length())
-        return setError(E_INVALIDARG,
-                        tr("Cannot register the hard disk '%s' {%RTuuid} because a %s already exists"),
-                        strLocationFull.c_str(),
-                        id.raw(),
-                        strConflict.c_str(),
-                        m->strSettingsFilePath.c_str());
+    if (!fIdentical)
+    {
+        if (strConflict.length())
+            return setError(E_INVALIDARG,
+                            tr("Cannot register the hard disk '%s' {%RTuuid} because a %s already exists"),
+                            strLocationFull.c_str(),
+                            id.raw(),
+                            strConflict.c_str(),
+                            m->strSettingsFilePath.c_str());
 
-    // store base (root) hard disks in the list
-    if (pParent.isNull())
-        m->allHardDisks.getList().push_back(pMedium);
-                // access the list directly because we already locked the list above
+        // store base (root) hard disks in the list
+        if (pParent.isNull())
+            m->allHardDisks.getList().push_back(pMedium);
+                    // access the list directly because we already locked the list above
 
-    // store all hard disks (even differencing images) in the map
-    m->mapHardDisks[id] = pMedium;
+        // store all hard disks (even differencing images) in the map
+        m->mapHardDisks[id] = pMedium;
 
-    if (pfNeedsGlobalSaveSettings)
-        // global settings need saving only if the medium is to be saved in the global registry
-        if (pMedium->getRegistryId() == m->uuidMediaRegistry)
-            *pfNeedsGlobalSaveSettings = true;
+        if (pfNeedsGlobalSaveSettings)
+            // global settings need saving only if the medium is to be saved in the global registry
+            if (pMedium->isInRegistry(m->uuidMediaRegistry))
+                *pfNeedsGlobalSaveSettings = true;
+    }
 
     return rc;
 }
@@ -3398,7 +3389,7 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
 
     if (pfNeedsGlobalSaveSettings)
         // global settings need saving only if the medium is to be saved in the global registry
-        if (aHardDisk->getRegistryId() == m->uuidMediaRegistry)
+        if (aHardDisk->isInRegistry(m->uuidMediaRegistry))
             *pfNeedsGlobalSaveSettings = true;
 
     return S_OK;
@@ -3448,27 +3439,31 @@ HRESULT VirtualBox::registerImage(Medium *pMedium,
     AutoWriteLock al(all.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     Utf8Str strConflict;
-    rc = checkMediaForConflicts2(id,
-                                 strLocationFull,
-                                 strConflict);
+    bool fIdentical;
+    rc = checkMediaForConflicts(id,
+                                strLocationFull,
+                                strConflict,
+                                fIdentical);
     if (FAILED(rc)) return rc;
 
-    if (strConflict.length())
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the image '%s' with UUID {%RTuuid} from '%s' because a %s already exists"),
-                        strLocationFull.c_str(),
-                        id.raw(),
-                        getRegistryPath(pMedium).c_str(),
-                        strConflict.c_str());
+    if (!fIdentical)
+    {
+        if (strConflict.length())
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot register the image '%s' with UUID {%RTuuid} because a %s already exists"),
+                            strLocationFull.c_str(),
+                            id.raw(),
+                            strConflict.c_str());
 
-    // add to the collection
-    all.getList().push_back(pMedium);
-            // access the list directly because we already locked the list above
+        // add to the collection
+        all.getList().push_back(pMedium);
+                // access the list directly because we already locked the list above
 
-    if (pfNeedsGlobalSaveSettings)
-        // global settings need saving only if the medium is to be saved in the global registry
-        if (pMedium->getRegistryId() == m->uuidMediaRegistry)
-            *pfNeedsGlobalSaveSettings = true;
+        if (pfNeedsGlobalSaveSettings)
+            // global settings need saving only if the medium is to be saved in the global registry
+            if (pMedium->isInRegistry(m->uuidMediaRegistry))
+                *pfNeedsGlobalSaveSettings = true;
+    }
 
     return rc;
 }
@@ -3516,7 +3511,7 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
 
     if (pfNeedsGlobalSaveSettings)
         // global settings need saving only if the medium is to be saved in the global registry
-        if (argImage->getRegistryId() == m->uuidMediaRegistry)
+        if (argImage->isInRegistry(m->uuidMediaRegistry))
             *pfNeedsGlobalSaveSettings = true;
 
     return rc;
@@ -3575,14 +3570,9 @@ HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
         {
             ComObjPtr<Medium> pMedium = *it;
 
-            const Guid &uuidRegistryThis = pMedium->getRegistryId();
-            if (    !uuidRegistryThis.isEmpty()
-                 && (uuidRegistryThis == uuidMachine)
-               )
-            {
+            if (pMedium->isInRegistry(uuidMachine))
                 // recursively with children first
                 pushMediumToListWithChildren(llMedia2Close, pMedium);
-            }
         }
     }
 

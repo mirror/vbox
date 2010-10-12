@@ -2687,7 +2687,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 if (pAtt)
                 {
                     AutoWriteLock attLock(pAtt COMMA_LOCKVAL_SRC_POS);
-                    pAtt->updateMedium(it->mpTarget, false /* aImplicit */);
+                    pAtt->updateMedium(it->mpTarget);
                     it->mpTarget->addBackReference(pMachine->mData->mUuid, childSnapshotId);
                 }
             }
@@ -3261,8 +3261,6 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
 
     if (aMergeForward)
     {
-        Guid uuidRegistry = pTarget->getRegistryId();
-
         // first, unregister the target since it may become a base
         // hard disk which needs re-registration
         rc = mParent->unregisterHardDisk(pTarget, NULL /*&fNeedsGlobalSaveSettings*/);
