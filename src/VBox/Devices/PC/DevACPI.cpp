@@ -1537,7 +1537,7 @@ PDMBOTHCBDECL(int) acpiSysInfoIndexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             else
             {
                 /* see comment at the declaration of u8IndexShift */
-                if (s->u8IndexShift == 0)
+                if ((u32 > SYSTEM_INFO_INDEX_END) && (s->u8IndexShift == 0))
                 {
                     if (((u32 >> 2) < SYSTEM_INFO_INDEX_END) && ((u32 & 0x3)) == 0)
                     {
