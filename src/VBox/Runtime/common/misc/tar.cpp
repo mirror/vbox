@@ -107,6 +107,7 @@ typedef struct RTTARFILEINTERNAL
     char           *pszFilename;
     uint64_t        uStart;
     uint64_t        cbSize;
+    uint64_t        cbSetSize;
     uint64_t        uCurrentPos;
     uint32_t        fOpenMode;
 } RTTARFILEINTERNAL;
@@ -245,6 +246,34 @@ DECLINLINE(void*) rtTarMemTmpAlloc(size_t *pcbSize)
     }
     *pcbSize = cbTmp;
     return pvTmp;
+}
+
+DECLINLINE(int) rtTarAppendZeros(RTTARFILE hFile, uint64_t cbSize)
+{
+    /* Allocate a temporary buffer for copying the tar content in blocks. */
+    size_t cbTmp = 0;
+    void *pvTmp = rtTarMemTmpAlloc(&cbTmp);
+    if (!pvTmp)
+        return VERR_NO_MEMORY;
+    RT_BZERO(pvTmp, cbTmp);
+
+    int rc = VINF_SUCCESS;
+    uint64_t cbAllWritten = 0;
+    size_t cbWritten = 0;
+    for (;;)
+    {
+        if (cbAllWritten >= cbSize)
+            break;
+        size_t cbToWrite = RT_MIN(cbSize - cbAllWritten, cbTmp);
+        rc = RTTarFileWrite(hFile, pvTmp, cbToWrite, &cbWritten);
+        if (RT_FAILURE(rc))
+            break;
+        cbAllWritten += cbWritten;
+    }
+
+    RTMemTmpFree(pvTmp);
+
+    return rc;
 }
 
 static int rtTarExtractFileToFile(RTTARFILE hFile, const char *pszTargetName, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
@@ -626,6 +655,7 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
         pFileInt->pszFilename = RTStrDup(pszFilename);
         pFileInt->uStart = 0;
         pFileInt->cbSize = 0;
+        pFileInt->cbSetSize = 0;
         pFileInt->fOpenMode = fOpen;
         pFileInt->uCurrentPos = 0;
 
@@ -692,13 +722,22 @@ RTR3DECL(int) RTTarFileClose(RTTARFILE hFile)
         pFileInt->pTar->fFileOpenForWrite = false;
         do
         {
+            /* If the user has called RTTarFileSetSize in the meantime, we have
+               to make sure the file has the right size. */
+            if (pFileInt->cbSetSize > pFileInt->cbSize)
+            {
+                rc = rtTarAppendZeros(hFile, pFileInt->cbSetSize - pFileInt->cbSize);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            /* If the written size isn't 512 byte aligned, we need to fix this. */
             RTTARRECORD record;
             RT_ZERO(record);
-            /* If the written size isn't 512 byte aligned, we need to fix this. */
             uint64_t cbSizeAligned = RT_ALIGN(pFileInt->cbSize, sizeof(RTTARRECORD));
             if (cbSizeAligned != pFileInt->cbSize)
             {
-                rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + 512 + pFileInt->cbSize, &record, cbSizeAligned - pFileInt->cbSize, NULL);
+                /* Note the RTFile method. We didn't increase the cbSize or cbCurrentPos here. */
+                rc = RTFileWriteAt(pFileInt->pTar->hTarFile, pFileInt->uStart + sizeof(RTTARRECORD) + pFileInt->cbSize, &record, cbSizeAligned - pFileInt->cbSize, NULL);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -820,10 +859,13 @@ RTR3DECL(int) RTTarFileWriteAt(RTTARFILE hFile, uint64_t uOffset, const void *pv
 
 RTR3DECL(int) RTTarFileGetSize(RTTARFILE hFile, uint64_t *pcbSize)
 {
+    /* Validate input */
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
+
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
 
-    *pcbSize = pFileInt->cbSize;
+    *pcbSize = RT_MAX(pFileInt->cbSetSize, pFileInt->cbSize);
 
     return VINF_SUCCESS;
 }
@@ -836,37 +878,11 @@ RTR3DECL(int) RTTarFileSetSize(RTTARFILE hFile, uint64_t cbSize)
     if ((pFileInt->fOpenMode & RTFILE_O_WRITE) != RTFILE_O_WRITE)
         return VERR_WRITE_ERROR;
 
-    /* Check if we already have that size. */
-    /* Todo: shrink files!!!! */
-    if ((int64_t)cbSize - (int64_t)pFileInt->cbSize <= 0)
-        return VINF_SUCCESS;
-    uint64_t cbToCopy = cbSize - pFileInt->cbSize;
+    /* Todo: if cbSize is smaller than pFileInt->cbSize we have to truncate the
+       current file. */
+    pFileInt->cbSetSize = cbSize;
 
-    /* Allocate a temporary buffer for copying the tar content in blocks. */
-    size_t cbTmp = 0;
-    void *pvTmp = rtTarMemTmpAlloc(&cbTmp);
-    if (!pvTmp)
-        return VERR_NO_MEMORY;
-    RT_BZERO(pvTmp, cbTmp);
-
-    int rc = VINF_SUCCESS;
-    uint64_t cbAllWritten = 0;
-    size_t cbToWrite = 0;
-    size_t cbWritten = 0;
-    for (;;)
-    {
-        if (cbAllWritten >= cbToCopy)
-            break;
-        cbToWrite = RT_MIN(cbToCopy - cbAllWritten, cbTmp);
-        rc = RTTarFileWrite(hFile, pvTmp, cbToWrite, &cbWritten);
-        if (RT_FAILURE(rc))
-            break;
-        cbAllWritten += cbWritten;
-    }
-
-    RTMemTmpFree(pvTmp);
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 RTR3DECL(int) RTTarFileGetMode(RTTARFILE hFile, uint32_t *pfMode)
