@@ -673,10 +673,7 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
         rc = pProgressThis->COMGETTER(Canceled)(&fCanceled);
         if (FAILED(rc)) throw rc;
         if (fCanceled)
-        {
             pProgressAsync->Cancel();
-            break;
-        }
         /* Check if the current operation has changed. It is also possible
            that in the meantime more than one async operation was finished. So
            we have to loop as long as we reached the same operation count. */
