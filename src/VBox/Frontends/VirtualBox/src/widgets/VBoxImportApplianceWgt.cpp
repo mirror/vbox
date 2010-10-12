@@ -135,6 +135,8 @@ bool VBoxImportApplianceWgt::import()
         {
             /* Show some progress, so the user know whats going on */
             vboxProblem().showModalProgressDialog (progress, tr ("Importing Appliance ..."), this);
+            if (progress.GetCanceled())
+                return false;
             if (!progress.isOk() || progress.GetResultCode() != 0)
             {
                 vboxProblem().cannotImportAppliance (progress, mAppliance, this);
