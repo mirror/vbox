@@ -721,16 +721,19 @@ protected:
                              bool aSetError = false);
 
     HRESULT loadSettings(bool aRegistered);
-    HRESULT loadMachineDataFromSettings(const settings::MachineConfigFile &config);
+    HRESULT loadMachineDataFromSettings(const settings::MachineConfigFile &config,
+                                        const Guid *puuidRegistry);
     HRESULT loadSnapshot(const settings::Snapshot &data,
                          const Guid &aCurSnapshotId,
                          Snapshot *aParentSnapshot);
     HRESULT loadHardware(const settings::Hardware &data);
     HRESULT loadStorageControllers(const settings::Storage &data,
-                                   const Guid *aSnapshotId = NULL);
+                                   const Guid *puuidRegistry,
+                                   const Guid *puuidSnapshot);
     HRESULT loadStorageDevices(StorageController *aStorageController,
                                const settings::StorageController &data,
-                               const Guid *aSnapshotId = NULL);
+                               const Guid *puuidRegistry,
+                               const Guid *puuidSnapshot);
 
     HRESULT findSnapshot(const Guid &aId, ComObjPtr<Snapshot> &aSnapshot,
                          bool aSetError = false);

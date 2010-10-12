@@ -405,7 +405,8 @@ HRESULT Machine::init(VirtualBox *aParent,
                 // use UUID from machine config
                 unconst(mData->mUuid) = mData->pMachineConfigFile->uuid;
 
-                rc = loadMachineDataFromSettings(*mData->pMachineConfigFile);
+                rc = loadMachineDataFromSettings(*mData->pMachineConfigFile,
+                                                 NULL /* puuidRegistry */);
                 if (FAILED(rc)) throw rc;
 
                 commit();
@@ -495,7 +496,8 @@ HRESULT Machine::init(VirtualBox *aParent,
         // generate fresh UUID, ignore machine config
         unconst(mData->mUuid).create();
 
-        rc = loadMachineDataFromSettings(config);
+        rc = loadMachineDataFromSettings(config,
+                                         &mData->mUuid); // puuidRegistry: initialize media with this registry ID
 
         // override VM name as well, it may be different
         mUserData->s.strName = strName;
@@ -654,7 +656,8 @@ HRESULT Machine::registeredInit()
                                mData->mUuid.toString().c_str(),
                                mParent->settingsFilePath().c_str());
 
-            rc = loadMachineDataFromSettings(*mData->pMachineConfigFile);
+            rc = loadMachineDataFromSettings(*mData->pMachineConfigFile,
+                                             NULL /* const Guid *puuidRegistry */);
             if (FAILED(rc)) throw rc;
         }
         catch (HRESULT err)
@@ -6812,10 +6815,24 @@ HRESULT Machine::findSharedFolder(CBSTR aName,
  * from XML. The exception is the machine UUID which needs special handling
  * depending on the caller's use case, so the caller needs to set that herself.
  *
- * @param config
- * @param fAllowStorage
+ * This gets called in several contexts during machine initialization:
+ *
+ * -- When machine XML exists on disk already and needs to be loaded into memory,
+ *    for example, from registeredInit() to load all registered machines on
+ *    VirtualBox startup. In this case, puuidRegistry is NULL because the media
+ *    attached to the machine should be part of some media registry already.
+ *
+ * -- During OVF import, when a machine config has been constructed from an
+ *    OVF file. In this case, puuidRegistry is set to the machine UUID to
+ *    ensure that the media listed as attachments in the config (which have
+ *    been imported from the OVF) receive the correct registry ID.
+ *
+ * @param config Machine settings from XML.
+ * @param puuidRegistry If != NULL, Medium::setRegistryIdIfFirst() gets called with this registry ID for each attached medium in the config.
+ * @return
  */
-HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &config)
+HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &config,
+                                             const Guid *puuidRegistry)
 {
     // copy name, description, OS type, teleporter, UTC etc.
     mUserData->s = config.machineUserData;
@@ -6885,15 +6902,17 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     if (FAILED(rc)) return rc;
 
     // load storage controllers
-    rc = loadStorageControllers(config.storageMachine);
+    rc = loadStorageControllers(config.storageMachine,
+                                puuidRegistry,
+                                NULL /* puuidSnapshot */);
     if (FAILED(rc)) return rc;
 
     /*
-        *  NOTE: the assignment below must be the last thing to do,
-        *  otherwise it will be not possible to change the settings
-        *  somewehere in the code above because all setters will be
-        *  blocked by checkStateDependency(MutableStateDep).
-        */
+     *  NOTE: the assignment below must be the last thing to do,
+     *  otherwise it will be not possible to change the settings
+     *  somewehere in the code above because all setters will be
+     *  blocked by checkStateDependency(MutableStateDep).
+     */
 
     /* set the machine state to Aborted or Saved when appropriate */
     if (config.fAborted)
@@ -7204,11 +7223,17 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
     return rc;
 }
 
-  /**
-   *  @param aNode    <StorageControllers> node.
-   */
+/**
+ *  Called from loadMachineDataFromSettings() for the storage controller data, including media.
+ *
+ * @param data
+ * @param puuidRegistry media registry ID to set media to or NULL; see Machine::loadMachineDataFromSettings()
+ * @param puuidSnapshot
+ * @return
+ */
 HRESULT Machine::loadStorageControllers(const settings::Storage &data,
-                                        const Guid *aSnapshotId /* = NULL */)
+                                        const Guid *puuidRegistry,
+                                        const Guid *puuidSnapshot)
 {
     AssertReturn(!isSessionMachine(), E_FAIL);
 
@@ -7260,7 +7285,8 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
         /* Load the attached devices now. */
         rc = loadStorageDevices(pCtl,
                                 ctlData,
-                                aSnapshotId);
+                                puuidRegistry,
+                                puuidSnapshot);
         if (FAILED(rc)) return rc;
     }
 
@@ -7268,16 +7294,18 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
 }
 
 /**
- * @param aNode        <HardDiskAttachments> node.
- * @param fAllowStorage if false, we produce an error if the config requests media attachments
- *                      (used with importing unregistered machines which cannot have media attachments)
- * @param aSnapshotId  pointer to the snapshot ID if this is a snapshot machine
+ * Called from loadStorageControllers for a controller's devices.
  *
- * @note Lock mParent  for reading and hard disks for writing before calling.
+ * @param aStorageController
+ * @param data
+ * @param puuidRegistry media registry ID to set media to or NULL; see Machine::loadMachineDataFromSettings()
+ * @param aSnapshotId  pointer to the snapshot ID if this is a snapshot machine
+ * @return
  */
 HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     const settings::StorageController &data,
-                                    const Guid *aSnapshotId /*= NULL*/)
+                                    const Guid *puuidRegistry,
+                                    const Guid *puuidSnapshot)
 {
     HRESULT rc = S_OK;
 
@@ -7339,7 +7367,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                         com::ErrorInfo info;
                         return setError(E_FAIL,
                                         tr("A differencing image of snapshot {%RTuuid} could not be found. %ls"),
-                                        aSnapshotId->raw(),
+                                        puuidSnapshot->raw(),
                                         info.getText().raw());
                     }
                     else
@@ -7356,7 +7384,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                            "of the virtual machine '%s' ('%s')"),
                                         medium->getLocationFull().c_str(),
                                         dev.uuid.raw(),
-                                        aSnapshotId->raw(),
+                                        puuidSnapshot->raw(),
                                         mUserData->s.strName.c_str(),
                                         mData->m_strConfigFileFull.c_str());
 
@@ -7420,9 +7448,13 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         if (!medium.isNull())
         {
             if (isSnapshotMachine())
-                rc = medium->addBackReference(mData->mUuid, *aSnapshotId);
+                rc = medium->addBackReference(mData->mUuid, *puuidSnapshot);
             else
                 rc = medium->addBackReference(mData->mUuid);
+
+            if (puuidRegistry)
+                // caller wants registry ID to be set on all attached media (OVF import case)
+                medium->setRegistryIdIfFirst(*puuidRegistry);
         }
 
         if (FAILED(rc))
