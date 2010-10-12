@@ -279,6 +279,30 @@ public:
     }
 
     /**
+     * Converts the member string to upper case.
+     *
+     * @returns Reference to the object.
+     */
+    MiniString &upper()
+    {
+        if (length())
+            ::RTStrToUpper(m_psz);
+        return *this;
+    }
+
+    /**
+     * Converts the member string to lower case.
+     *
+     * @returns Reference to the object.
+     */
+    MiniString &lower()
+    {
+        if (length())
+            ::RTStrToLower(m_psz);
+        return *this;
+    }
+
+    /**
      * Index operator.
      *
      * Returns the byte at the given index, or a null byte if the index is not
@@ -486,6 +510,26 @@ public:
      * @returns true if match, false if mismatch.
      */
     bool contains(const iprt::MiniString &that, CaseSensitivity cs = CaseSensitive) const;
+
+    /**
+     * Returns a upper case copy of this string.
+     *
+     * @returns the upper case string copy.
+     */
+    MiniString toUpper() const
+    {
+        return MiniString(*this).upper();
+    }
+
+    /**
+     * Returns a lower case copy of this string.
+     *
+     * @returns the lower case string copy.
+     */
+    MiniString toLower() const
+    {
+        return MiniString(*this).lower();
+    }
 
     /**
      * Attempts to convert the member string into an 64-bit integer.
