@@ -1,7 +1,7 @@
-Index: ../edk2/MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
+Index: MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c
 ===================================================================
---- ../edk2/MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(revision 9332)
-+++ ../edk2/MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(working copy)
+--- MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(revision 9332)
++++ MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatform.c	(working copy)
 @@ -10,7 +10,7 @@
    THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
    WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
