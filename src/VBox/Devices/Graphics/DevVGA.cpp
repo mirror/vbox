@@ -809,14 +809,21 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
                 val = VBE_DISPI_MAX_BPP;
                 break;
             default:
+                Assert(s->vbe_index < VBE_DISPI_INDEX_NB_SAVED);
                 val = s->vbe_regs[s->vbe_index];
                 break;
           }
-      } else if (s->vbe_index == VBE_DISPI_INDEX_VBOX_VIDEO) {
-        /* Reading from the port means that the old additions are requesting the number of monitors. */
-        val = 1;
       } else {
-        val = s->vbe_regs[s->vbe_index];
+          switch(s->vbe_index) {
+          case VBE_DISPI_INDEX_VBOX_VIDEO:
+              /* Reading from the port means that the old additions are requesting the number of monitors. */
+              val = 1;
+              break;
+          default:
+              Assert(s->vbe_index < VBE_DISPI_INDEX_NB_SAVED);
+              val = s->vbe_regs[s->vbe_index];
+              break;
+          }
       }
     } else {
         val = 0;
@@ -827,7 +834,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
     return val;
 }
 
-#define VBE_PITCH_ALIGN     8       /* Align pitch to 64 bits. */
+#define VBE_PITCH_ALIGN     4       /* Align pitch to 32 bits - Qt requires that. */
 
 /* Calculate scanline pitch based on bit depth and width in pixels. */
 static uint32_t calc_line_pitch(uint16_t bpp, uint16_t width)
@@ -2710,7 +2717,7 @@ static void vga_save(QEMUFile *f, void *opaque)
 #ifdef CONFIG_BOCHS_VBE
     qemu_put_byte(f, 1);
     qemu_put_be16s(f, &s->vbe_index);
-    for(i = 0; i < VBE_DISPI_INDEX_NB; i++)
+    for(i = 0; i < VBE_DISPI_INDEX_NB_SAVED; i++)
         qemu_put_be16s(f, &s->vbe_regs[i]);
     qemu_put_be32s(f, &s->vbe_start_addr);
     qemu_put_be32s(f, &s->vbe_line_offset);
@@ -2765,7 +2772,7 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     }
 # endif /* VBOX */
     qemu_get_be16s(f, &s->vbe_index);
-    for(i = 0; i < VBE_DISPI_INDEX_NB; i++)
+    for(i = 0; i < VBE_DISPI_INDEX_NB_SAVED; i++)
         qemu_get_be16s(f, &s->vbe_regs[i]);
     qemu_get_be32s(f, &s->vbe_start_addr);
     qemu_get_be32s(f, &s->vbe_line_offset);
@@ -4867,6 +4874,8 @@ static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
                     s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH], s->vbe_regs[VBE_DISPI_INDEX_VIRT_HEIGHT]);
     pHlp->pfnPrintf(pHlp, " Display start addr: %d, %d\n",
                     s->vbe_regs[VBE_DISPI_INDEX_X_OFFSET], s->vbe_regs[VBE_DISPI_INDEX_Y_OFFSET]);
+    pHlp->pfnPrintf(pHlp, " Linear scanline pitch: 0x%04x\n", s->vbe_line_offset);
+    pHlp->pfnPrintf(pHlp, " Linear display start : 0x%04x\n", s->vbe_start_addr);
     pHlp->pfnPrintf(pHlp, " Selected bank: 0x%04x\n", s->vbe_regs[VBE_DISPI_INDEX_BANK]);
 }
 
@@ -5741,15 +5750,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     int         rc;
 
-    if (    uVersion != VGA_SAVEDSTATE_VERSION
-#ifdef VBOX_WITH_WDDM
-        &&  uVersion != VGA_SAVEDSTATE_VERSION_PRE_WDDM
-#endif
-        &&  uVersion != VGA_SAVEDSTATE_VERSION_HOST_HEAP
-        &&  uVersion != VGA_SAVEDSTATE_VERSION_WITH_CONFIG
-        &&  uVersion != VGA_SAVEDSTATE_VERSION_HGSMI
-        &&  uVersion != VGA_SAVEDSTATE_VERSION_PRE_HGSMI
-        &&  uVersion != VGA_SAVEDSTATE_VERSION_ANCIENT)
+    if (uVersion < VGA_SAVEDSTATE_VERSION_ANCIENT || uVersion > VGA_SAVEDSTATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     if (uVersion > VGA_SAVEDSTATE_VERSION_HGSMI)
