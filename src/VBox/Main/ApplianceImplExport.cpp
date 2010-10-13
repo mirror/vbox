@@ -800,11 +800,10 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
         // source path: where the VBox image is
         const Utf8Str &strSrcFilePath = pDiskEntry->strVboxCurrent;
         Bstr bstrSrcFilePath(strSrcFilePath);
-        if (!RTPathExists(strSrcFilePath.c_str()))
-            /* This isn't allowed */
-            throw setError(VBOX_E_FILE_ERROR,
-                           tr("Source virtual disk image file '%s' doesn't exist"),
-                           strSrcFilePath.c_str());
+
+        // Do NOT check here whether the file exists. FindMedium will figure
+        // that out, and filesystem-based tests are simply wrong in the
+        // general case (think of iSCSI).
 
         // We need some info from the source disks
         ComPtr<IMedium> pSourceDisk;
@@ -1777,11 +1776,10 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             // source path: where the VBox image is
             const Utf8Str &strSrcFilePath = pDiskEntry->strVboxCurrent;
             Bstr bstrSrcFilePath(strSrcFilePath);
-            if (!RTPathExists(strSrcFilePath.c_str()))
-                /* This isn't allowed */
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Source virtual disk image file '%s' doesn't exist"),
-                               strSrcFilePath.c_str());
+
+            // Do NOT check here whether the file exists. findHardDisk will
+            // figure that out, and filesystem-based tests are simply wrong
+            // in the general case (think of iSCSI).
 
             // clone the disk:
             ComObjPtr<Medium> pSourceDisk;
