@@ -19,4 +19,6 @@ LIBRARY VBoxDispD3D
 EXPORTS
 	OpenAdapter
 	VBoxDispMpGetCallbacks
-
+    VBoxDispCrHgsmiInit
+    VBoxDispCrHgsmiTerm
+    VBoxDispCrHgsmiQueryClient

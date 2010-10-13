@@ -17,7 +17,9 @@
 
 #include "VBoxDispD3DIf.h"
 #include "../../Miniport/wddm/VBoxVideoIf.h"
+#ifdef VBOX_WITH_CRHGSMI
 #include "VBoxUhgsmiDisp.h"
+#endif
 
 #include <iprt/cdefs.h>
 #include <iprt/list.h>
@@ -177,7 +179,9 @@ typedef struct VBOXWDDMDISP_DEVICE
      * is split into two calls : SetViewport & SetZRange */
     D3DVIEWPORT9 ViewPort;
     VBOXWDDMDISP_CONTEXT DefaultContext;
+#ifdef VBOX_WITH_CRHGSMI
     VBOXUHGSMI_PRIVATE_D3D Uhgsmi;
+#endif
 
     CRITICAL_SECTION DirtyAllocListLock;
     RTLISTNODE DirtyAllocList;
@@ -260,6 +264,11 @@ typedef struct VBOXWDDMDISP_OVERLAY
     D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
     PVBOXWDDMDISP_RESOURCE *pResource;
 } VBOXWDDMDISP_OVERLAY, *PVBOXWDDMDISP_OVERLAY;
+
+#ifdef VBOX_WITH_CRHGSMI
+int vboxUhgsmiGlobalSetCurrent();
+int vboxUhgsmiGlobalClearCurrent();
+#endif
 
 #define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
 #ifdef VBOXDISP_EARLYCREATEDEVICE

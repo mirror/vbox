@@ -23,13 +23,13 @@
 
 #include <VBox/VBoxVideo.h>
 #include "../../../include/VBoxDisplay.h"
-#include "VBoxUhgsmi.h"
+#include <VBox/VBoxUhgsmi.h>
 
 #include <iprt/assert.h>
 
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 6
+#define VBOXVIDEOIF_VERSION 7
 
 /* create allocation func */
 typedef enum
@@ -205,12 +205,23 @@ typedef struct VBOXWDDM_OVERLAYFLIP_INFO
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- the dirty region of the overlay surface */
 } VBOXWDDM_OVERLAYFLIP_INFO, *PVBOXWDDM_OVERLAYFLIP_INFO;
 
+
+typedef enum
+{
+    VBOXWDDM_CONTEXT_TYPE_UNDEFINED = 0,
+    VBOXWDDM_CONTEXT_TYPE_SYSTEM,
+    VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D,
+    VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D,
+    VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D,
+    VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL
+} VBOXWDDM_CONTEXT_TYPE;
+
 typedef struct VBOXWDDM_CREATECONTEXT_INFO
 {
     /* interface version, i.e. 9 for d3d9, 8 for d3d8, etc. */
     uint32_t u32IfVersion;
     /* true if d3d false if ddraw */
-    uint32_t u32IsD3D;
+    VBOXWDDM_CONTEXT_TYPE enmType;
     /* we use uint64_t instead of HANDLE to ensure structure def is the same for both 32-bit and 64-bit
      * since x64 kernel driver can be called by 32-bit UMD */
     uint64_t hUmEvent;
