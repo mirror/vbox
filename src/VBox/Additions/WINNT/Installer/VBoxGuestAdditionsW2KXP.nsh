@@ -132,8 +132,10 @@ FunctionEnd
 
 Function W2K_Prepare
 
-  ; Stop / kill VBoxService
-  Call StopVBoxService
+  ${If} $g_bNoVBoxServiceExit == "false"
+    ; Stop / kill VBoxService
+    Call StopVBoxService
+  ${EndIf}
 
   ; Stop / kill VBoxTray
   Call StopVBoxTray

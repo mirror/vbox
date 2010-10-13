@@ -158,31 +158,32 @@ ShowInstDetails show
 ShowUnInstDetails show
 RequestExecutionLevel highest
 
-Var g_iSystemMode       ; Current system mode (0 = Normal boot, 1 = Fail-safe boot, 2 = Fail-safe with network boot)
-Var g_strSystemDir      ; Windows system directory
-Var g_strCurUser        ; Current user using the system
-Var g_strAddVerMaj      ; Installed Guest Additions: Major version
-Var g_strAddVerMin      ; Installed Guest Additions: Minor version
-Var g_strAddVerBuild    ; Installed Guest Additions: Build number
-Var g_strAddVerRev      ; Installed Guest Additions: SVN revision
-Var g_strWinVersion     ; Current Windows version we're running on
-Var g_bLogEnable        ; Do logging when installing? "true" or "false"
-Var g_bFakeWHQL         ; Cmd line: Fake Windows to install non WHQL certificated drivers (only for W2K and XP currently!!) ("/unsig_drv")
-Var g_bForceInstall     ; Cmd line: Force installation on unknown Windows OS version.
-Var g_bUninstall        ; Cmd line: Just uninstall any previous Guest Additions and exit
-Var g_bRebootOnExit     ; Cmd line: Auto-Reboot on successful installation. Good for unattended installations ("/reboot")
-Var g_iScreenBpp        ; Cmd line: Screen depth ("/depth=X")
-Var g_iScreenX          ; Cmd line: Screen resolution X ("/resx=X")
-Var g_iScreenY          ; Cmd line: Screen resolution Y ("/resy=Y")
-Var g_iSfOrder          ; Cmd line: Order of Shared Folders network provider (0=first, 1=second, ...)
-Var g_bNoVideoDrv       ; Cmd line: Do not install the VBoxVideo driver
-Var g_bNoGuestDrv       ; Cmd line: Do not install the VBoxGuest driver
-Var g_bNoMouseDrv       ; Cmd line: Do not install the VBoxMouse driver
-Var g_bWithAutoLogon    ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
-Var g_bWithD3D          ; Cmd line: Install Direct3D support
-Var g_bWithWDDM         ; Install the WDDM driver instead of the normal one
-Var g_bOnlyExtract      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
-Var g_bCapWDDM          ; Capability: Is the guest able to handle/use our WDDM driver?
+Var g_iSystemMode           ; Current system mode (0 = Normal boot, 1 = Fail-safe boot, 2 = Fail-safe with network boot)
+Var g_strSystemDir          ; Windows system directory
+Var g_strCurUser            ; Current user using the system
+Var g_strAddVerMaj          ; Installed Guest Additions: Major version
+Var g_strAddVerMin          ; Installed Guest Additions: Minor version
+Var g_strAddVerBuild        ; Installed Guest Additions: Build number
+Var g_strAddVerRev          ; Installed Guest Additions: SVN revision
+Var g_strWinVersion         ; Current Windows version we're running on
+Var g_bLogEnable            ; Do logging when installing? "true" or "false"
+Var g_bFakeWHQL             ; Cmd line: Fake Windows to install non WHQL certificated drivers (only for W2K and XP currently!!) ("/unsig_drv")
+Var g_bForceInstall         ; Cmd line: Force installation on unknown Windows OS version.
+Var g_bUninstall            ; Cmd line: Just uninstall any previous Guest Additions and exit
+Var g_bRebootOnExit         ; Cmd line: Auto-Reboot on successful installation. Good for unattended installations ("/reboot")
+Var g_iScreenBpp            ; Cmd line: Screen depth ("/depth=X")
+Var g_iScreenX              ; Cmd line: Screen resolution X ("/resx=X")
+Var g_iScreenY              ; Cmd line: Screen resolution Y ("/resy=Y")
+Var g_iSfOrder              ; Cmd line: Order of Shared Folders network provider (0=first, 1=second, ...)
+Var g_bNoVBoxServiceExit    ; Cmd line: Do not quit VBoxService before updating - install on next reboot
+Var g_bNoVideoDrv           ; Cmd line: Do not install the VBoxVideo driver
+Var g_bNoGuestDrv           ; Cmd line: Do not install the VBoxGuest driver
+Var g_bNoMouseDrv           ; Cmd line: Do not install the VBoxMouse driver
+Var g_bWithAutoLogon        ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
+Var g_bWithD3D              ; Cmd line: Install Direct3D support
+Var g_bWithWDDM             ; Install the WDDM driver instead of the normal one
+Var g_bOnlyExtract          ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
+Var g_bCapWDDM              ; Capability: Is the guest able to handle/use our WDDM driver?
 
 ; Platform parts of this installer
 !include "VBoxGuestAdditionsCommon.nsh"
@@ -259,22 +260,26 @@ Function HandleCommandLine
       ${Case} '/log'
       ${Case} '/logging'
         StrCpy $g_bLogEnable "true"
-      ${Break}
+        ${Break}
 
       ${Case} '/ncrc' ; NSIS: /NCRC switch, skip
         ${Break}
 
-      ${Case} '/no_videodrv'
+      ${Case} '/no_vboxservice_exit' ; Not officially documented
+        StrCpy $g_bNoVBoxServiceExit "true"
+        ${Break}
+
+      ${Case} '/no_videodrv' ; Not officially documented
         StrCpy $g_bNoVideoDrv "true"
-      ${Break}
+        ${Break}
 
-      ${Case} '/no_guestdrv'
+      ${Case} '/no_guestdrv' ; Not officially documented
         StrCpy $g_bNoGuestDrv "true"
-      ${Break}
+        ${Break}
 
-      ${Case} '/no_mousedrv'
+      ${Case} '/no_mousedrv' ; Not officially documented
         StrCpy $g_bNoMouseDrv "true"
-      ${Break}
+        ${Break}
 
       ${Case} '/reboot'
         StrCpy $g_bRebootOnExit "true"
@@ -320,6 +325,10 @@ Function HandleCommandLine
         ${Break}
 
       ${Default} ; Unknown parameter, print usage message
+        ; Prevent popping up usage message on (yet) unknown parameters
+        ; in silent mode, just skip
+        IfSilent 0 +2
+          ${Break}
         goto usage
         ${Break}
 
@@ -969,6 +978,7 @@ Function .onInit
   StrCpy $g_iScreenY "0"
   StrCpy $g_iScreenBpp "0"
   StrCpy $g_iSfOrder "0"
+  StrCpy $g_bNoVBoxServiceExit "false"
   StrCpy $g_bNoVideoDrv "false"
   StrCpy $g_bNoGuestDrv "false"
   StrCpy $g_bNoMouseDrv "false"
