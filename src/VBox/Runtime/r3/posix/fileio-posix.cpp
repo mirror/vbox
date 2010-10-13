@@ -138,6 +138,11 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
     if (!(fOpen & RTFILE_O_INHERIT))
         fOpenMode |= O_NOINHERIT;
 #endif
+#ifdef O_CLOEXEC
+    static int s_fHave_O_CLOEXEC = 0; /* {-1,0,1}; since Linux 2.6.23 */
+    if (!(fOpen & RTFILE_O_INHERIT) && s_fHave_O_CLOEXEC >= 0)
+        fOpenMode |= O_CLOEXEC;
+#endif
 #ifdef O_NONBLOCK
     if (fOpen & RTFILE_O_NON_BLOCK)
         fOpenMode |= O_NONBLOCK;
@@ -201,6 +206,22 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 
     int fh = open(pszNativeFilename, fOpenMode, fMode);
     int iErr = errno;
+
+#ifdef O_CLOEXEC
+    if (   (fOpenMode & O_CLOEXEC)
+        && s_fHave_O_CLOEXEC == 0)
+    {
+        if (fh < 0 && iErr == EINVAL)
+        {
+            s_fHave_O_CLOEXEC = -1;
+            fh = open(pszNativeFilename, fOpenMode, fMode);
+            iErr = errno;
+        }
+        else if (fh >= 0)
+            s_fHave_O_CLOEXEC = fcntl(fh, F_GETFD, 0) > 0 ? 1 : -1;
+    }
+#endif
+
     rtPathFreeNative(pszNativeFilename, pszFilename);
     if (fh >= 0)
     {
@@ -212,6 +233,9 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
         if (    !(fOpen & RTFILE_O_INHERIT)
 #ifdef O_NOINHERIT
             &&  !(fOpenMode & O_NOINHERIT)  /* Take care since it might be a zero value dummy. */
+#endif
+#ifdef O_CLOEXEC
+            &&  s_fHave_O_CLOEXEC <= 0
 #endif
             )
             iErr = fcntl(fh, F_SETFD, FD_CLOEXEC) >= 0 ? 0 : errno;
