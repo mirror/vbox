@@ -298,11 +298,44 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
 
         if (siHavePBO==0 && siHaveFBO==0)
         {
+#if 1
             GLint dRow, sRow;
             for (dRow=yoffset, sRow=y-height-1; dRow<yoffset-height; dRow++, sRow--)
             {
                 gl->CopyTexSubImage2D(target, level, xoffset, dRow, x, sRow, width, 1);
             }
+#else
+            {
+                GLint w, h, i;
+                char *img1, *img2, *sPtr, *dPtr;
+                CRContext *ctx = crStateGetCurrent();
+
+                w = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->level[0][level].width;
+                h = ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->level[0][level].height;
+
+                img1 = crAlloc(4*w*h);
+                img2 = crAlloc(4*width*(-height));
+                CRASSERT(img1 && img2);
+
+                gl->CopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, -height);
+                gl->GetTexImage(target, level, GL_RGBA, GL_UNSIGNED_BYTE, img1);
+
+                sPtr=img1+4*xoffset+4*w*yoffset;
+                dPtr=img2+4*width*(-height-1);
+
+                for (i=0; i<-height; ++i)
+                {
+                    crMemcpy(dPtr, sPtr, 4*width);
+                    sPtr += 4*w;
+                    dPtr -= 4*width;
+                }
+
+                gl->TexSubImage2D(target, level, xoffset, yoffset, width, -height, GL_RGBA, GL_UNSIGNED_BYTE, img2);
+
+                crFree(img1);
+                crFree(img2);
+            }
+#endif
         }
         else if (siHaveFBO==1) /*@todo more states to set and restore here*/
         {

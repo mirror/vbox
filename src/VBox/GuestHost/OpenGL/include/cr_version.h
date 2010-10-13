@@ -127,4 +127,6 @@
 #define CR_ARB_pixel_buffer_object 1
 #define CR_EXT_texture_sRGB 1
 
+#define CR_EXT_framebuffer_blit 1
+
 #endif /* CR_VERSION_H */

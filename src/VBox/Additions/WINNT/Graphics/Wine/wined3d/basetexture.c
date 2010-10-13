@@ -67,7 +67,7 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
     texture->baseTexture.is_srgb = FALSE;
     texture->baseTexture.pow2Matrix_identity = TRUE;
 #if defined(VBOX_WITH_WDDM) && defined(DEBUG_leo)
-    texture->baseTexture.t_mirror = TRUE;
+    texture->baseTexture.t_mirror = FALSE;
 #else
     texture->baseTexture.t_mirror = FALSE;
 #endif

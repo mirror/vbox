@@ -10123,7 +10123,7 @@ chromium    extpack
 name        BindFramebufferEXT
 return      void
 param       target          GLenum
-paramprop   target          GL_FRAMEBUFFER_EXT
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
 param       framebuffer     GLuint
 category    GL_EXT_framebuffer_object
 chromium    extpack
@@ -10146,7 +10146,7 @@ chromium    extpack
 name        CheckFramebufferStatusEXT
 return      GLenum
 param       target          GLenum
-paramprop   target          GL_FRAMEBUFFER_EXT
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
 category    GL_EXT_framebuffer_object
 props       get
 chromium    extpack
@@ -10154,7 +10154,7 @@ chromium    extpack
 name        FramebufferTexture1DEXT
 return      void
 param       target          GLenum
-paramprop   target          GL_FRAMEBUFFER_EXT
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
 param       attachment      GLenum
 paramprop   attachment      GL_COLOR_ATTACHMENT0_EXT GL_COLOR_ATTACHMENT1_EXT GL_COLOR_ATTACHMENT2_EXT GL_COLOR_ATTACHMENT3_EXT GL_COLOR_ATTACHMENT4_EXT GL_COLOR_ATTACHMENT5_EXT GL_COLOR_ATTACHMENT6_EXT GL_COLOR_ATTACHMENT7_EXT GL_COLOR_ATTACHMENT8_EXT GL_COLOR_ATTACHMENT9_EXT GL_COLOR_ATTACHMENT10_EXT GL_COLOR_ATTACHMENT11_EXT GL_COLOR_ATTACHMENT12_EXT GL_COLOR_ATTACHMENT13_EXT GL_COLOR_ATTACHMENT14_EXT GL_COLOR_ATTACHMENT15_EXT GL_DEPTH_ATTACHMENT_EXT GL_STENCIL_ATTACHMENT_EXT
 param       textarget       GLenum
@@ -10167,7 +10167,7 @@ chromium    extpack
 name        FramebufferTexture2DEXT
 return      void
 param       target          GLenum
-paramprop   target          GL_FRAMEBUFFER_EXT
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
 param       attachment      GLenum
 paramprop   attachment      GL_COLOR_ATTACHMENT0_EXT GL_COLOR_ATTACHMENT1_EXT GL_COLOR_ATTACHMENT2_EXT GL_COLOR_ATTACHMENT3_EXT GL_COLOR_ATTACHMENT4_EXT GL_COLOR_ATTACHMENT5_EXT GL_COLOR_ATTACHMENT6_EXT GL_COLOR_ATTACHMENT7_EXT GL_COLOR_ATTACHMENT8_EXT GL_COLOR_ATTACHMENT9_EXT GL_COLOR_ATTACHMENT10_EXT GL_COLOR_ATTACHMENT11_EXT GL_COLOR_ATTACHMENT12_EXT GL_COLOR_ATTACHMENT13_EXT GL_COLOR_ATTACHMENT14_EXT GL_COLOR_ATTACHMENT15_EXT GL_DEPTH_ATTACHMENT_EXT GL_STENCIL_ATTACHMENT_EXT
 param       textarget       GLenum
@@ -10180,7 +10180,7 @@ chromium    extpack
 name        FramebufferTexture3DEXT
 return      void
 param       target          GLenum
-paramprop   target          GL_FRAMEBUFFER_EXT
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
 param       attachment      GLenum
 paramprop   attachment      GL_COLOR_ATTACHMENT0_EXT GL_COLOR_ATTACHMENT1_EXT GL_COLOR_ATTACHMENT2_EXT GL_COLOR_ATTACHMENT3_EXT GL_COLOR_ATTACHMENT4_EXT GL_COLOR_ATTACHMENT5_EXT GL_COLOR_ATTACHMENT6_EXT GL_COLOR_ATTACHMENT7_EXT GL_COLOR_ATTACHMENT8_EXT GL_COLOR_ATTACHMENT9_EXT GL_COLOR_ATTACHMENT10_EXT GL_COLOR_ATTACHMENT11_EXT GL_COLOR_ATTACHMENT12_EXT GL_COLOR_ATTACHMENT13_EXT GL_COLOR_ATTACHMENT14_EXT GL_COLOR_ATTACHMENT15_EXT GL_DEPTH_ATTACHMENT_EXT GL_STENCIL_ATTACHMENT_EXT
 param       textarget       GLenum
@@ -10194,6 +10194,7 @@ chromium    extpack
 name        FramebufferRenderbufferEXT
 return      void
 param       target          GLenum
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
 param       attachment      GLenum
 paramprop   attachment      GL_COLOR_ATTACHMENT0_EXT GL_COLOR_ATTACHMENT1_EXT GL_COLOR_ATTACHMENT2_EXT GL_COLOR_ATTACHMENT3_EXT GL_COLOR_ATTACHMENT4_EXT GL_COLOR_ATTACHMENT5_EXT GL_COLOR_ATTACHMENT6_EXT GL_COLOR_ATTACHMENT7_EXT GL_COLOR_ATTACHMENT8_EXT GL_COLOR_ATTACHMENT9_EXT GL_COLOR_ATTACHMENT10_EXT GL_COLOR_ATTACHMENT11_EXT GL_COLOR_ATTACHMENT12_EXT GL_COLOR_ATTACHMENT13_EXT GL_COLOR_ATTACHMENT14_EXT GL_COLOR_ATTACHMENT15_EXT GL_DEPTH_ATTACHMENT_EXT GL_STENCIL_ATTACHMENT_EXT
 param       renderbuffertarget GLenum
@@ -10204,7 +10205,7 @@ chromium    extpack
 name        GetFramebufferAttachmentParameterivEXT
 return      void
 param       target          GLenum
-paramprop   target          GL_FRAMEBUFFER_EXT
+paramprop   target          GL_FRAMEBUFFER_EXT GL_READ_FRAMEBUFFER_EXT GL_DRAW_FRAMEBUFFER_EXT
 param       attachment      GLenum
 paramprop   attachment      GL_COLOR_ATTACHMENT0_EXT GL_COLOR_ATTACHMENT1_EXT GL_COLOR_ATTACHMENT2_EXT GL_COLOR_ATTACHMENT3_EXT GL_COLOR_ATTACHMENT4_EXT GL_COLOR_ATTACHMENT5_EXT GL_COLOR_ATTACHMENT6_EXT GL_COLOR_ATTACHMENT7_EXT GL_COLOR_ATTACHMENT8_EXT GL_COLOR_ATTACHMENT9_EXT GL_COLOR_ATTACHMENT10_EXT GL_COLOR_ATTACHMENT11_EXT GL_COLOR_ATTACHMENT12_EXT GL_COLOR_ATTACHMENT13_EXT GL_COLOR_ATTACHMENT14_EXT GL_COLOR_ATTACHMENT15_EXT GL_DEPTH_ATTACHMENT_EXT GL_STENCIL_ATTACHMENT_EXT
 param       pname           GLenum
@@ -10298,6 +10299,23 @@ param       count       GLsizei
 param       transpose   GLboolean
 param       value       const GLfloat *
 category    2.1
+chromium    extpack
+
+# GL_EXT_framebuffer_blit
+name        BlitFramebufferEXT
+return      void
+param       srcX0       GLint
+param       srcY0       GLint
+param       srcX1       GLint
+param       srcY1       GLint
+param       dstX0       GLint
+param       dstY0       GLint
+param       dstX1       GLint
+param       dstY1       GLint
+param       mask        GLbitfield
+param       filter      GLenum
+paramprop   filter      GL_LINEAR GL_NEAREST
+category    GL_EXT_framebuffer_blit
 chromium    extpack
 
 # end of file sentinel

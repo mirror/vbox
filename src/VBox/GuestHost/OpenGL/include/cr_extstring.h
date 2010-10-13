@@ -213,6 +213,9 @@ static const char *crExtensions =
 #ifdef CR_EXT_texture_sRGB
     "GL_EXT_texture_sRGB "
 #endif
+#ifdef CR_EXT_framebuffer_blit
+    "GL_EXT_framebuffer_blit "
+#endif
 	"";
 
 /*
