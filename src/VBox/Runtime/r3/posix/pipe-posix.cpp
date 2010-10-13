@@ -46,6 +46,9 @@
 #include <sys/poll.h>
 #include <sys/stat.h>
 #include <signal.h>
+#ifdef RT_OS_LINUX
+# include <sys/syscall.h>
+#endif
 
 
 /*******************************************************************************
@@ -81,6 +84,38 @@ typedef struct RTPIPEINTERNAL
 /** @} */
 
 
+
+/**
+ * Wrapper for calling pipe2() or pipe().
+ *
+ * When using pipe2() the returned handles are marked close-on-exec and does
+ * not risk racing process creation calls on other threads.
+ *
+ * @returns See pipe().
+ * @param   paFds               See pipe().
+ * @param   piNewPipeSyscall    Where to cache which call we should used. -1 if
+ *                              pipe(), 1 if pipe2(), 0 if not yet decided.
+ */
+static int my_pipe_wrapper(int *paFds, int *piNewPipeSyscall)
+{
+    if (*piNewPipeSyscall >= 0)
+    {
+#if defined(RT_OS_LINUX) && defined(__NR_pipe2)
+        long rc = syscall(__NR_pipe2, paFds, O_CLOEXEC);
+        if (rc >= 0)
+        {
+            if (*piNewPipeSyscall == 0)
+                *piNewPipeSyscall = 1;
+            return (int)rc;
+        }
+#endif
+        *piNewPipeSyscall = -1;
+    }
+
+    return pipe(paFds);
+}
+
+
 RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFlags)
 {
     AssertPtrReturn(phPipeRead, VERR_INVALID_POINTER);
@@ -88,23 +123,43 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
     AssertReturn(!(fFlags & ~RTPIPE_C_VALID_MASK), VERR_INVALID_PARAMETER);
 
     /*
-     * Create the pipe and set the close-on-exec flag if requested.
+     * Create the pipe and clear/set the close-on-exec flag as required.
      */
     int aFds[2] = {-1, -1};
-    if (pipe(aFds))
+    static int s_iNewPipeSyscall = 0;
+    if (my_pipe_wrapper(aFds, &s_iNewPipeSyscall))
         return RTErrConvertFromErrno(errno);
 
     int rc = VINF_SUCCESS;
-    if (!(fFlags & RTPIPE_C_INHERIT_READ))
+    if (s_iNewPipeSyscall > 0)
     {
-        if (fcntl(aFds[0], F_SETFD, FD_CLOEXEC))
-            rc = RTErrConvertFromErrno(errno);
-    }
+        /* created with close-on-exec set. */
+        if (fFlags & RTPIPE_C_INHERIT_READ)
+        {
+            if (fcntl(aFds[0], F_SETFD, 0))
+                rc = RTErrConvertFromErrno(errno);
+        }
 
-    if (!(fFlags & RTPIPE_C_INHERIT_WRITE))
+        if (fFlags & RTPIPE_C_INHERIT_WRITE)
+        {
+            if (fcntl(aFds[1], F_SETFD, 0))
+                rc = RTErrConvertFromErrno(errno);
+        }
+    }
+    else
     {
-        if (fcntl(aFds[1], F_SETFD, FD_CLOEXEC))
-            rc = RTErrConvertFromErrno(errno);
+        /* created with close-on-exec cleared. */
+        if (!(fFlags & RTPIPE_C_INHERIT_READ))
+        {
+            if (fcntl(aFds[0], F_SETFD, FD_CLOEXEC))
+                rc = RTErrConvertFromErrno(errno);
+        }
+
+        if (!(fFlags & RTPIPE_C_INHERIT_WRITE))
+        {
+            if (fcntl(aFds[1], F_SETFD, FD_CLOEXEC))
+                rc = RTErrConvertFromErrno(errno);
+        }
     }
 
     if (RT_SUCCESS(rc))
