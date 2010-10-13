@@ -71,7 +71,7 @@
 //
 // Cirrus Logic Graphical Mode Data
 //
-#define VBOX_VGA_MODE_COUNT         5
+#define VBOX_VGA_MODE_COUNT         6
 
 typedef struct {
   UINT32  ModeNumber;
