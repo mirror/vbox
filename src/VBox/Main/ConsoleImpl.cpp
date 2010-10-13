@@ -3309,7 +3309,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
                                                  bool fForce)
 {
     LogFlowFunc(("pConsole=%p uInstance=%u pszDevice=%p:{%s} enmBus=%u, aMediumAtt=%p, fForce=%d\n",
-                 pConsole, uInstance, pcszDevice, enmBus, fForce));
+                 pConsole, uInstance, pcszDevice, pcszDevice, enmBus, aMediumAtt, fForce));
 
     AssertReturn(pConsole, VERR_INVALID_PARAMETER);
 
