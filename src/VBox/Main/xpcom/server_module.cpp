@@ -33,6 +33,9 @@
 #include <ipcCID.h>
 #include <ipcdclient.h>
 
+#include "prio.h"
+#include "prproces.h"
+
 // official XPCOM headers don't define it yet
 #define IPC_DCONNECTSERVICE_CONTRACTID \
     "@mozilla.org/ipc/dconnect-service;1"
@@ -90,6 +93,66 @@ static bool IsVBoxSVCPathSet = false;
 
 NS_DECL_CLASSINFO (VirtualBox)
 NS_IMPL_CI_INTERFACE_GETTER1 (VirtualBox, IVirtualBox)
+
+static nsresult vboxsvcSpawnDaemon(void)
+{
+    PRFileDesc *readable = nsnull, *writable = nsnull;
+    PRProcessAttr *attr = nsnull;
+    nsresult rv = NS_ERROR_FAILURE;
+    PRFileDesc *devNull;
+    // The ugly casts are necessary because the PR_CreateProcessDetached has
+    // a const array of writable strings as a parameter. It won't write. */
+    char * const args[] = { (char *)VBoxSVCPath, (char *)"--auto-shutdown", 0 };
+
+    // Use a pipe to determine when the daemon process is in the position
+    // to actually process requests. The daemon will write "READY" to the pipe.
+    if (PR_CreatePipe(&readable, &writable) != PR_SUCCESS)
+        goto end;
+    PR_SetFDInheritable(writable, PR_TRUE);
+
+    attr = PR_NewProcessAttr();
+    if (!attr)
+        goto end;
+
+    if (PR_ProcessAttrSetInheritableFD(attr, writable, VBOXSVC_STARTUP_PIPE_NAME) != PR_SUCCESS)
+        goto end;
+
+    devNull = PR_Open("/dev/null", PR_RDWR, 0);
+    if (!devNull)
+        goto end;
+
+    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardInput, devNull);
+    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, devNull);
+    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardError, devNull);
+
+    if (PR_CreateProcessDetached(VBoxSVCPath, args, nsnull, attr) != PR_SUCCESS)
+        goto end;
+
+    // Close /dev/null
+    PR_Close(devNull);
+    // Close the child end of the pipe to make it the only owner of the
+    // file descriptor, so that unexpected closing can be detected.
+    PR_Close(writable);
+    writable = nsnull;
+
+    char msg[10];
+    memset(msg, '\0', sizeof(msg));
+    if (   PR_Read(readable, msg, sizeof(msg)-1) != 5
+        || strcmp(msg, "READY"))
+        goto end;
+
+    rv = NS_OK;
+
+end:
+    if (readable)
+        PR_Close(readable);
+    if (writable)
+        PR_Close(writable);
+    if (attr)
+        PR_DestroyProcessAttr(attr);
+    return rv;
+}
+
 
 /**
  *  VirtualBox component constructor.
@@ -180,34 +243,9 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
                 startedOnce = true;
 
-#ifdef RT_OS_OS2
-                char * const args[] = { VBoxSVCPath, "--automate", 0 };
-                /* use NSPR because we want the process to be detached right
-                 * at startup (it isn't possible to detach it later on),
-                 * RTProcCreate() isn't yet capable of doing that. */
-                PRStatus rv = PR_CreateProcessDetached (VBoxSVCPath,
-                                                        args, NULL, NULL);
-                if (rv != PR_SUCCESS)
-                {
-                    rc = NS_ERROR_FAILURE;
+                rc = vboxsvcSpawnDaemon();
+                if (NS_FAILED(rc))
                     break;
-                }
-#else
-                const char *args[] = { VBoxSVCPath, "--automate", 0 };
-                RTPROCESS pid = NIL_RTPROCESS;
-                vrc = RTProcCreate (VBoxSVCPath, args, RTENV_DEFAULT, 0, &pid);
-                if (RT_FAILURE(vrc))
-                {
-                    rc = NS_ERROR_FAILURE;
-                    break;
-                }
-
-                /* need to wait for the pid to avoid zombie VBoxSVC.
-                 * ignore failure since it just means we'll have a zombie
-                 * VBoxSVC until we exit */
-                int vrc2 = RTProcWait(pid, RTPROCWAIT_FLAGS_BLOCK, NULL);
-                AssertRC(vrc2);
-#endif
 
                 /* wait for the server process to establish a connection */
                 do
