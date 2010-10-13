@@ -142,7 +142,7 @@ int scsi_cmd_data_out(io_base, device_id, cdb_segment, aCDB, cbCDB, segment, off
     for (i = 0; i < cbCDB; i++)
         outb(io_base+VBOXSCSI_REGISTER_COMMAND, read_byte(cdb_segment, aCDB + i));
 
-#if 1
+#if 0
     /* Write data to I/O port. */
     for (i = 0; i < cbBuffer; i++)
     {
