@@ -383,6 +383,7 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     *pGCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCSrc + cbTransfer);
     *pcTransfer = 0;
 
+    ASMAtomicXchgBool(&pVBoxSCSI->fBusy, true);
     return VERR_MORE_DATA;
 }
 
