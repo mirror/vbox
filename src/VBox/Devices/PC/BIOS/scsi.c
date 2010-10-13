@@ -142,6 +142,7 @@ int scsi_cmd_data_out(io_base, device_id, cdb_segment, aCDB, cbCDB, segment, off
     for (i = 0; i < cbCDB; i++)
         outb(io_base+VBOXSCSI_REGISTER_COMMAND, read_byte(cdb_segment, aCDB + i));
 
+#if 1
     /* Write data to I/O port. */
     for (i = 0; i < cbBuffer; i++)
     {
@@ -152,6 +153,26 @@ int scsi_cmd_data_out(io_base, device_id, cdb_segment, aCDB, cbCDB, segment, off
 
         VBOXSCSI_DEBUG("buffer[%d]=%x\n", i, data);
     }
+#else
+ASM_START
+        push bp
+        mov  bp, sp
+        mov  si, _scsi_cmd_data_out.offset + 2[bp]
+        mov  ax, _scsi_cmd_data_out.segment + 2[bp]
+        mov  cx, _scsi_cmd_data_out.cbBuffer + 2[bp]
+
+        mov   dx, _scsi_cmd_data_out.io_base + 2[bp] ;; SCSI data write port
+        add   dx, #VBOXSCSI_REGISTER_DATA_IN
+        push  ds
+        mov   ds, ax      ;; segment in ds
+
+        rep
+          outsb ;; CX bytes transfered from DS:[SI] to port(DX)
+
+        pop  ds
+        pop  bp
+ASM_END
+#endif
 
     /* Now wait for the command to complete. */
     do
