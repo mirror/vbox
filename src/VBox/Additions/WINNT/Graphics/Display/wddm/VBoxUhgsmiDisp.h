@@ -15,14 +15,17 @@
 #ifndef ___VBoxUhgsmiDisp_h__
 #define ___VBoxUhgsmiDisp_h__
 
-#include "../../Miniport/wddm/VBoxUhgsmi.h"
+#include "VBoxUhgsmiBase.h"
 #include "VBoxDispD3DCmn.h"
 
 typedef struct VBOXUHGSMI_PRIVATE_D3D
 {
-    VBOXUHGSMI Base;
+    VBOXUHGSMI_PRIVATE_BASE BasePrivate;
     struct VBOXWDDMDISP_DEVICE *pDevice;
 } VBOXUHGSMI_PRIVATE_D3D, *PVBOXUHGSMI_PRIVATE_D3D;
 
 HRESULT vboxUhgsmiD3DInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, struct VBOXWDDMDISP_DEVICE *pDevice);
+
+
+
 #endif /* #ifndef ___VBoxUhgsmiDisp_h__ */

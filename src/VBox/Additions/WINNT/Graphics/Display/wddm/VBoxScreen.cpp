@@ -363,7 +363,7 @@ HRESULT vboxScreenMonInit()
 
         pMon->pfnD3DKMTEscape = (PFND3DKMT_ESCAPE)GetProcAddress(pMon->hGdi32, "D3DKMTEscape");
         Log((__FUNCTION__": pfnD3DKMTEscape = %p\n", pMon->pfnD3DKMTEscape));
-        bSupported &= !!(pMon->pfnD3DKMTCloseAdapter);
+        bSupported &= !!(pMon->pfnD3DKMTEscape);
 
         Assert(bSupported);
         if (bSupported)

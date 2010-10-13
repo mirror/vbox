@@ -22,7 +22,7 @@ typedef void* HVBOXUHGSMI_SYNCHOBJECT;
 
 typedef enum
 {
-    VBOXUHGSMI_SYNCHOBJECT_TYPE_UNKNOWN = 0,
+    VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE = 0,
     VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
     VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE
 } VBOXUHGSMI_SYNCHOBJECT_TYPE;
@@ -52,9 +52,9 @@ typedef struct VBOXUHGSMI_BUFFER_SUBMIT_FLAGS
         {
             uint32_t bHostReadOnly          : 1;
             uint32_t bHostWriteOnly         : 1;
-            uint32_t bDoNotRetire           : 1; /* <- the buffer will be used in a subsequent command */
+            uint32_t bDoNotRetire           : 1; /* <- the buffer will be uset in a subsequent command */
             uint32_t bDoNotSignalCompletion : 1; /* <- do not signal notification object on completion for this alloc */
-            uint32_t bEntireBuffer          : 1; /* <- do not signal notification object on completion for this alloc */
+            uint32_t bEntireBuffer          : 1;
             uint32_t Reserved               : 27;
         };
         uint32_t Value;
@@ -92,6 +92,8 @@ typedef struct VBOXUHGSMI
 {
     PFNVBOXUHGSMI_BUFFER_CREATE pfnBufferCreate;
     PFNVBOXUHGSMI_BUFFER_SUBMIT_ASYNCH pfnBufferSubmitAsynch;
+    /* user custom data */
+    void *pvUserData;
 } VBOXUHGSMI, *PVBOXUHGSMI;
 
 typedef struct VBOXUHGSMI_BUFFER
@@ -106,6 +108,8 @@ typedef struct VBOXUHGSMI_BUFFER
     VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
     uint32_t cbBuffer;
     bool bSynchCreated;
+    /* user custom data */
+    void *pvUserData;
 } VBOXUHGSMI_BUFFER, *PVBOXUHGSMI_BUFFER;
 
 #endif /* #ifndef ___VBoxUhgsmi_h__ */

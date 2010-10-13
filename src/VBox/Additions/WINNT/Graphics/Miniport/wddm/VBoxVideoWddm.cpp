@@ -891,8 +891,8 @@ BOOLEAN DxgkDdiInterruptRoutine(
 #ifdef DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
              * still this allows to check that the host flags are correctly cleared after the ISR */
-            Assert(pDevExt->u.primary.pHostFlags);
-            uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
+            Assert(commonFromDeviceExt(pDevExt)->pHostFlags);
+            uint32_t flags = commonFromDeviceExt(pDevExt)->pHostFlags->u32HostFlags;
             Assert(flags == 0);
 #endif
         }
@@ -4729,32 +4729,45 @@ DxgkDdiCreateContext(
             if (pCreateContext->PrivateDriverDataSize == sizeof (VBOXWDDM_CREATECONTEXT_INFO))
             {
                 PVBOXWDDM_CREATECONTEXT_INFO pInfo = (PVBOXWDDM_CREATECONTEXT_INFO)pCreateContext->pPrivateDriverData;
-                if (pInfo->u32IsD3D)
+                switch (pInfo->enmType)
                 {
-                    ExInitializeFastMutex(&pContext->SwapchainMutex);
-                    Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
-                    Assert(Status == STATUS_SUCCESS);
-                    if (Status == STATUS_SUCCESS)
+                    case VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D:
                     {
-                        pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
-                        Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                        ExInitializeFastMutex(&pContext->SwapchainMutex);
+                        Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
                         Assert(Status == STATUS_SUCCESS);
                         if (Status == STATUS_SUCCESS)
                         {
-//                            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-//                            ExAcquireFastMutex(&pDevExt->ContextMutex);
-                            ASMAtomicIncU32(&pDevExt->cContexts3D);
-//                            ExReleaseFastMutex(&pDevExt->ContextMutex);
+                            pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
+                            Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                            Assert(Status == STATUS_SUCCESS);
+                            if (Status == STATUS_SUCCESS)
+                            {
+    //                            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    //                            ExAcquireFastMutex(&pDevExt->ContextMutex);
+                                ASMAtomicIncU32(&pDevExt->cContexts3D);
+    //                            ExReleaseFastMutex(&pDevExt->ContextMutex);
+                            }
+                            else
+                            {
+                                vboxWddmHTableDestroy(&pContext->Swapchains);
+                            }
                         }
-                        else
-                        {
-                            vboxWddmHTableDestroy(&pContext->Swapchains);
-                        }
+                        break;
                     }
-                }
-                else
-                {
-                    pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D;
+                    case VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D:
+                    case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D:
+                    case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL:
+                    {
+                        pContext->enmType = pInfo->enmType;
+                        break;
+                    }
+                    default:
+                    {
+                        Assert(0);
+                        Status = STATUS_INVALID_PARAMETER;
+                        break;
+                    }
                 }
             }
         }
