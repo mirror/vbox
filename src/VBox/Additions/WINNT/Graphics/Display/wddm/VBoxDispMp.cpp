@@ -61,6 +61,9 @@ DECLCALLBACK(HRESULT) vboxDispMpEnableEvents()
     g_VBoxDispMp.pEscapeCmd = NULL;
     g_VBoxDispMp.cbEscapeCmd = 0;
     vboxVideoCmIterInit(&g_VBoxDispMp.Iterator, NULL, 0);
+#ifdef VBOX_WITH_CRHGSMI
+    vboxUhgsmiGlobalSetCurrent();
+#endif
     return S_OK;
 }
 
@@ -69,6 +72,9 @@ DECLCALLBACK(HRESULT) vboxDispMpDisableEvents()
 {
     if (g_VBoxDispMp.pEscapeCmd)
         RTMemFree(g_VBoxDispMp.pEscapeCmd);
+#ifdef VBOX_WITH_CRHGSMI
+    vboxUhgsmiGlobalClearCurrent();
+#endif
     return S_OK;
 }
 
