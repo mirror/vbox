@@ -44,6 +44,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/statfs.h>
 #include <sys/poll.h>
@@ -180,23 +181,35 @@ int USBProxyServiceLinux::initUsbfs(void)
                 int pipes[2];
                 if (!pipe(pipes))
                 {
-                    mWakeupPipeR = pipes[0];
-                    mWakeupPipeW = pipes[1];
-                    /*
-                     * Start the poller thread.
-                     */
-                    rc = start();
-                    if (RT_SUCCESS(rc))
+                    /* Set close on exec (race here!) */
+                    if (   fcntl(pipes[0], F_SETFD, FD_CLOEXEC) >= 0
+                        && fcntl(pipes[1], F_SETFD, FD_CLOEXEC) >= 0)
                     {
-                        RTStrFree(pszDevices);
-                        LogFlowThisFunc(("returns successfully - mWakeupPipeR/W=%d/%d\n",
-                                         mWakeupPipeR, mWakeupPipeW));
-                        return VINF_SUCCESS;
-                    }
+                        mWakeupPipeR = pipes[0];
+                        mWakeupPipeW = pipes[1];
+                        /*
+                         * Start the poller thread.
+                         */
+                        rc = start();
+                        if (RT_SUCCESS(rc))
+                        {
+                            RTStrFree(pszDevices);
+                            LogFlowThisFunc(("returns successfully - mWakeupPipeR/W=%d/%d\n",
+                                             mWakeupPipeR, mWakeupPipeW));
+                            return VINF_SUCCESS;
+                        }
 
-                    RTFileClose(mWakeupPipeR);
-                    RTFileClose(mWakeupPipeW);
-                    mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
+                        RTFileClose(mWakeupPipeR);
+                        RTFileClose(mWakeupPipeW);
+                        mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
+                    }
+                    else
+                    {
+                        rc = RTErrConvertFromErrno(errno);
+                        Log(("USBProxyServiceLinux::USBProxyServiceLinux: fcntl failed, errno=%d\n", errno));
+                        close(pipes[0]);
+                        close(pipes[1]);
+                    }
                 }
                 else
                 {
