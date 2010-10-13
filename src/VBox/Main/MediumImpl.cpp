@@ -610,6 +610,65 @@ private:
     VDINTERFACE mVDInterfaceIO;
 };
 
+class Medium::ImportTask : public Medium::Task
+{
+public:
+    ImportTask(Medium *aMedium,
+               Progress *aProgress,
+               const char *aFilename,
+               MediumFormat *aFormat,
+               MediumVariant_T aVariant,
+               void *aVDImageIOCallbacks,
+               void *aVDImageIOUser,
+               Medium *aParent,
+               MediumLockList *aTargetMediumLockList,
+               bool fKeepTargetMediumLockList = false)
+        : Medium::Task(aMedium, aProgress),
+          mFilename(aFilename),
+          mFormat(aFormat),
+          mVariant(aVariant),
+          mParent(aParent),
+          mpTargetMediumLockList(aTargetMediumLockList),
+          mParentCaller(aParent),
+          mfKeepTargetMediumLockList(fKeepTargetMediumLockList)
+    {
+        AssertReturnVoidStmt(aTargetMediumLockList != NULL, mRC = E_FAIL);
+        /* aParent may be NULL */
+        mRC = mParentCaller.rc();
+        if (FAILED(mRC))
+            return;
+
+        mVDImageIfaces = aMedium->m->vdImageIfaces;
+        if (aVDImageIOCallbacks)
+        {
+            int vrc = VDInterfaceAdd(&mVDInterfaceIO, "Medium::vdInterfaceIO",
+                                     VDINTERFACETYPE_IO, aVDImageIOCallbacks,
+                                     aVDImageIOUser, &mVDImageIfaces);
+            AssertRCReturnVoidStmt(vrc, mRC = E_FAIL);
+        }
+    }
+
+    ~ImportTask()
+    {
+        if (!mfKeepTargetMediumLockList && mpTargetMediumLockList)
+            delete mpTargetMediumLockList;
+    }
+
+    Utf8Str mFilename;
+    ComObjPtr<MediumFormat> mFormat;
+    MediumVariant_T mVariant;
+    const ComObjPtr<Medium> mParent;
+    MediumLockList *mpTargetMediumLockList;
+    PVDINTERFACE mVDImageIfaces;
+
+private:
+    virtual HRESULT handler();
+
+    AutoCaller mParentCaller;
+    bool mfKeepTargetMediumLockList;
+    VDINTERFACE mVDInterfaceIO;
+};
+
 /**
  * Thread function for time-consuming medium tasks.
  *
@@ -741,6 +800,14 @@ HRESULT Medium::MergeTask::handler()
 HRESULT Medium::ExportTask::handler()
 {
     return mMedium->taskExportHandler(*this);
+}
+
+/**
+ * Implementation code for the "import" task.
+ */
+HRESULT Medium::ImportTask::handler()
+{
+    return mMedium->taskImportHandler(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5168,10 +5235,10 @@ void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
 
 
 HRESULT Medium::exportFile(const char *aFilename,
-                           ComObjPtr<MediumFormat> aFormat,
+                           const ComObjPtr<MediumFormat> &aFormat,
                            MediumVariant_T aVariant,
                            void *aVDImageIOCallbacks, void *aVDImageIOUser,
-                           ComObjPtr<Progress> aProgress)
+                           const ComObjPtr<Progress> &aProgress)
 {
     AssertPtrReturn(aFilename, E_INVALIDARG);
     AssertReturn(!aFormat.isNull(), E_INVALIDARG);
@@ -5219,6 +5286,78 @@ HRESULT Medium::exportFile(const char *aFilename,
         AssertComRC(rc);
         if (FAILED(rc))
             throw rc;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+        rc = startThread(pTask);
+    else if (pTask != NULL)
+        delete pTask;
+
+    return rc;
+}
+
+HRESULT Medium::importFile(const char *aFilename,
+                           const ComObjPtr<MediumFormat> &aFormat,
+                           MediumVariant_T aVariant,
+                           void *aVDImageIOCallbacks, void *aVDImageIOUser,
+                           const ComObjPtr<Medium> &aParent,
+                           const ComObjPtr<Progress> &aProgress)
+{
+    AssertPtrReturn(aFilename, E_INVALIDARG);
+    AssertReturn(!aFormat.isNull(), E_INVALIDARG);
+    AssertReturn(!aProgress.isNull(), E_INVALIDARG);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc = S_OK;
+    Medium::Task *pTask = NULL;
+
+    try
+    {
+        // locking: we need the tree lock first because we access parent pointers
+        AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        // and we need to write-lock the media involved
+        AutoMultiWriteLock2 alock(this, aParent COMMA_LOCKVAL_SRC_POS);
+
+        if (   m->state != MediumState_NotCreated
+            && m->state != MediumState_Created)
+            throw setStateError();
+
+        /* Build the target lock list. */
+        MediumLockList *pTargetMediumLockList(new MediumLockList());
+        rc = createMediumLockList(true /* fFailIfInaccessible */,
+                                  true /* fMediumLockWrite */,
+                                  aParent,
+                                  *pTargetMediumLockList);
+        if (FAILED(rc))
+        {
+            delete pTargetMediumLockList;
+            throw rc;
+        }
+
+        rc = pTargetMediumLockList->Lock();
+        if (FAILED(rc))
+        {
+            delete pTargetMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock target media '%s'"),
+                           getLocationFull().c_str());
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::ImportTask(this, aProgress, aFilename, aFormat,
+                                       aVariant, aVDImageIOCallbacks,
+                                       aVDImageIOUser, aParent,
+                                       pTargetMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc))
+            throw rc;
+
+        if (m->state == MediumState_NotCreated)
+            m->state = MediumState_Creating;
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -6446,10 +6585,11 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             Utf8Str targetFormat(pTarget->m->strFormat);
             Utf8Str targetLocation(pTarget->m->strLocationFull);
 
-            Assert(    pTarget->m->state == MediumState_Creating
-                    || pTarget->m->state == MediumState_LockedWrite);
+            Assert(   pTarget->m->state == MediumState_Creating
+                   || pTarget->m->state == MediumState_LockedWrite);
             Assert(m->state == MediumState_LockedRead);
-            Assert(pParent.isNull() || pParent->m->state == MediumState_LockedRead);
+            Assert(   pParent.isNull()
+                   || pParent->m->state == MediumState_LockedRead);
 
             /* unlock before the potentially lengthy operation */
             thisLock.release();
@@ -7066,7 +7206,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
                 /* sanity check */
                 Assert(pMedium->m->state == MediumState_LockedRead);
 
-                /** Open all media in read-only mode. */
+                /* Open all media in read-only mode. */
                 vrc = VDOpen(hdd,
                              pMedium->m->strFormat.c_str(),
                              pMedium->m->strLocationFull.c_str(),
@@ -7132,6 +7272,237 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
     /* Make sure the source chain is released early, otherwise it can
      * lead to deadlocks with concurrent IAppliance activities. */
     task.mpSourceMediumLockList->Clear();
+
+    return rc;
+}
+
+/**
+ * Implementation code for the "import" task.
+ *
+ * This only gets started from Medium::importFile() and always runs
+ * asynchronously. It potentially touches the media registry, so we
+ * always save the VirtualBox.xml file when we're done here.
+ *
+ * @param task
+ * @return
+ */
+HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
+{
+    HRESULT rc = S_OK;
+
+    const ComObjPtr<Medium> &pParent = task.mParent;
+
+    bool fCreatingTarget = false;
+
+    uint64_t size = 0, logicalSize = 0;
+    MediumVariant_T variant = MediumVariant_Standard;
+    bool fGenerateUuid = false;
+
+    try
+    {
+        /* Lock all in {parent,child} order. The lock is also used as a
+         * signal from the task initiator (which releases it only after
+         * RTThreadCreate()) that we can start the job. */
+        AutoMultiWriteLock2 thisLock(this, pParent COMMA_LOCKVAL_SRC_POS);
+
+        fCreatingTarget = m->state == MediumState_Creating;
+
+        /* The object may request a specific UUID (through a special form of
+         * the setLocation() argument). Otherwise we have to generate it */
+        Guid targetId = m->id;
+        fGenerateUuid = targetId.isEmpty();
+        if (fGenerateUuid)
+        {
+            targetId.create();
+            /* VirtualBox::registerHardDisk() will need UUID */
+            unconst(m->id) = targetId;
+        }
+
+
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            /* Open source medium. */
+            rc = VDOpen(hdd,
+                        task.mFormat->getId().c_str(),
+                        task.mFilename.c_str(),
+                        VD_OPEN_FLAGS_READONLY,
+                        task.mVDImageIfaces);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not open the medium storage unit '%s'%s"),
+                               task.mFilename.c_str(),
+                               vdError(vrc).c_str());
+
+            Utf8Str targetFormat(m->strFormat);
+            Utf8Str targetLocation(m->strLocationFull);
+
+            Assert(   m->state == MediumState_Creating
+                   || m->state == MediumState_LockedWrite);
+            Assert(   pParent.isNull()
+                   || pParent->m->state == MediumState_LockedRead);
+
+            /* unlock before the potentially lengthy operation */
+            thisLock.release();
+
+            /* ensure the target directory exists */
+            rc = VirtualBox::ensureFilePathExists(targetLocation);
+            if (FAILED(rc))
+                throw rc;
+
+            PVBOXHDD targetHdd;
+            vrc = VDCreate(m->vdDiskIfaces, &targetHdd);
+            ComAssertRCThrow(vrc, E_FAIL);
+
+            try
+            {
+                /* Open all media in the target chain. */
+                MediumLockList::Base::const_iterator targetListBegin =
+                    task.mpTargetMediumLockList->GetBegin();
+                MediumLockList::Base::const_iterator targetListEnd =
+                    task.mpTargetMediumLockList->GetEnd();
+                for (MediumLockList::Base::const_iterator it = targetListBegin;
+                     it != targetListEnd;
+                     ++it)
+                {
+                    const MediumLock &mediumLock = *it;
+                    const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+
+                    /* If the target medium is not created yet there's no
+                     * reason to open it. */
+                    if (pMedium == this && fCreatingTarget)
+                        continue;
+
+                    AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                    /* sanity check */
+                    Assert(    pMedium->m->state == MediumState_LockedRead
+                            || pMedium->m->state == MediumState_LockedWrite);
+
+                    unsigned uOpenFlags = VD_OPEN_FLAGS_NORMAL;
+                    if (pMedium->m->state != MediumState_LockedWrite)
+                        uOpenFlags = VD_OPEN_FLAGS_READONLY;
+                    if (pMedium->m->type == MediumType_Shareable)
+                        uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
+
+                    /* Open all media in appropriate mode. */
+                    vrc = VDOpen(targetHdd,
+                                 pMedium->m->strFormat.c_str(),
+                                 pMedium->m->strLocationFull.c_str(),
+                                 uOpenFlags,
+                                 pMedium->m->vdImageIfaces);
+                    if (RT_FAILURE(vrc))
+                        throw setError(VBOX_E_FILE_ERROR,
+                                       tr("Could not open the medium storage unit '%s'%s"),
+                                       pMedium->m->strLocationFull.c_str(),
+                                       vdError(vrc).c_str());
+                }
+
+                /** @todo r=klaus target isn't locked, race getting the state */
+                vrc = VDCopy(hdd,
+                             VD_LAST_IMAGE,
+                             targetHdd,
+                             targetFormat.c_str(),
+                             (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
+                             false /* fMoveByRename */,
+                             0 /* cbSize */,
+                             task.mVariant,
+                             targetId.raw(),
+                             VD_OPEN_FLAGS_NORMAL,
+                             NULL /* pVDIfsOperation */,
+                             task.mVDImageIfaces,
+                             task.mVDOperationIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not create the clone medium '%s'%s"),
+                                   targetLocation.c_str(), vdError(vrc).c_str());
+
+                size = VDGetFileSize(targetHdd, VD_LAST_IMAGE);
+                logicalSize = VDGetSize(targetHdd, VD_LAST_IMAGE);
+                unsigned uImageFlags;
+                vrc = VDGetImageFlags(targetHdd, 0, &uImageFlags);
+                if (RT_SUCCESS(vrc))
+                    variant = (MediumVariant_T)uImageFlags;
+            }
+            catch (HRESULT aRC) { rc = aRC; }
+
+            VDDestroy(targetHdd);
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    /* Only do the parent changes for newly created media. */
+    if (SUCCEEDED(rc) && fCreatingTarget)
+    {
+        /* we set mParent & children() */
+        AutoWriteLock alock2(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        Assert(m->pParent.isNull());
+
+        if (pParent)
+        {
+            /* associate the clone with the parent and deassociate
+             * from VirtualBox */
+            m->pParent = pParent;
+            pParent->m->llChildren.push_back(this);
+
+            /* register with mVirtualBox as the last step and move to
+             * Created state only on success (leaving an orphan file is
+             * better than breaking media registry consistency) */
+            rc = pParent->m->pVirtualBox->registerHardDisk(this, NULL /* pfNeedsGlobalSaveSettings */);
+
+            if (FAILED(rc))
+                /* break parent association on failure to register */
+                this->deparent();     // removes target from parent
+        }
+        else
+        {
+            /* just register  */
+            rc = m->pVirtualBox->registerHardDisk(this, NULL /* pfNeedsGlobalSaveSettings */);
+        }
+    }
+
+    if (fCreatingTarget)
+    {
+        AutoWriteLock mLock(this COMMA_LOCKVAL_SRC_POS);
+
+        if (SUCCEEDED(rc))
+        {
+            m->state = MediumState_Created;
+
+            m->size = size;
+            m->logicalSize = logicalSize;
+            m->variant = variant;
+        }
+        else
+        {
+            /* back to NotCreated on failure */
+            m->state = MediumState_NotCreated;
+
+            /* reset UUID to prevent it from being reused next time */
+            if (fGenerateUuid)
+                unconst(m->id).clear();
+        }
+    }
+
+    // now, at the end of this task (always asynchronous), save the settings
+    {
+        AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+        m->pVirtualBox->saveSettings();
+    }
+
+    /* Everything is explicitly unlocked when the task exits,
+     * as the task destruction also destroys the target chain. */
+
+    /* Make sure the target chain is released early, otherwise it can
+     * lead to deadlocks with concurrent IAppliance activities. */
+    task.mpTargetMediumLockList->Clear();
 
     return rc;
 }

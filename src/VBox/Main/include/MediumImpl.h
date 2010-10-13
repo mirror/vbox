@@ -245,7 +245,7 @@ public:
      * Used by IAppliance to export disk images.
      *
      * @param aFilename             Filename to create (UTF8).
-     * @param aFormat               Which medium format to use.
+     * @param aFormat               Which medium format to use for export.
      * @param aVariant              Which exact image format variant to use.
      * @param aVDImageIOCallbacks   Pointer to the callback table for a
      *                              VDINTERFACEIO interface. May be NULL.
@@ -254,10 +254,29 @@ public:
      * @return
      */
     HRESULT exportFile(const char *aFilename,
-                       ComObjPtr<MediumFormat> aFormat,
+                       const ComObjPtr<MediumFormat> &aFormat,
                        MediumVariant_T aVariant,
                        void *aVDImageIOCallbacks, void *aVDImageIOUser,
-                       ComObjPtr<Progress> aProgress);
+                       const ComObjPtr<Progress> &aProgress);
+    /**
+     * Used by IAppliance to import disk images.
+     *
+     * @param aFilename             Filename to read (UTF8).
+     * @param aFormat               Which medium format to use for import.
+     * @param aVariant              Which exact image format variant to use.
+     * @param aVDImageIOCallbacks   Pointer to the callback table for a
+     *                              VDINTERFACEIO interface. May be NULL.
+     * @param aVDImageIOUser        Opaque data for the callbacks.
+     * @param aParent               Parent medium. May be NULL.
+     * @param aProgress             Progress object to use.
+     * @return
+     */
+    HRESULT importFile(const char *aFilename,
+                       const ComObjPtr<MediumFormat> &aFormat,
+                       MediumVariant_T aVariant,
+                       void *aVDImageIOCallbacks, void *aVDImageIOUser,
+                       const ComObjPtr<Medium> &aParent,
+                       const ComObjPtr<Progress> &aProgress);
 
     /** Returns a preferred format for a differencing hard disk. */
     Utf8Str getPreferredDiffFormat();
@@ -310,6 +329,7 @@ private:
     class DeleteTask;
     class MergeTask;
     class ExportTask;
+    class ImportTask;
     friend class Task;
     friend class CreateBaseTask;
     friend class CreateDiffTask;
@@ -320,6 +340,7 @@ private:
     friend class DeleteTask;
     friend class MergeTask;
     friend class ExportTask;
+    friend class ImportTask;
 
     HRESULT startThread(Medium::Task *pTask);
     HRESULT runNow(Medium::Task *pTask, bool *pfNeedsGlobalSaveSettings);
@@ -333,6 +354,7 @@ private:
     HRESULT taskCompactHandler(Medium::CompactTask &task);
     HRESULT taskResizeHandler(Medium::ResizeTask &task);
     HRESULT taskExportHandler(Medium::ExportTask &task);
+    HRESULT taskImportHandler(Medium::ImportTask &task);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;
