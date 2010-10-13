@@ -432,7 +432,6 @@ typedef struct VDMETAXFER
 
 extern VBOXHDDBACKEND g_RawBackend;
 extern VBOXHDDBACKEND g_VmdkBackend;
-extern VBOXHDDBACKEND g_VmdkStreamBackend;
 extern VBOXHDDBACKEND g_VDIBackend;
 extern VBOXHDDBACKEND g_VhdBackend;
 extern VBOXHDDBACKEND g_ParallelsBackend;
@@ -449,7 +448,6 @@ static PVBOXHDDBACKEND aStaticBackends[] =
 {
     &g_RawBackend,
     &g_VmdkBackend,
-    &g_VmdkStreamBackend,
     &g_VDIBackend,
     &g_VhdBackend,
     &g_ParallelsBackend
