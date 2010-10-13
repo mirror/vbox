@@ -192,7 +192,7 @@ static int rtFileGetSizeCallback(void * /* pvUser */, void *pvStorage, uint64_t 
 
     PRTFILESTORAGEINTERNAL pInt = (PRTFILESTORAGEINTERNAL)pvStorage;
 
-//    DEBUG_PRINT_FLOW();
+    DEBUG_PRINT_FLOW();
 
     return RTFileGetSize(pInt->file, pcbSize);
 }
@@ -350,7 +350,7 @@ static int rtTarGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize
 
     PRTTARSTORAGEINTERNAL pInt = (PRTTARSTORAGEINTERNAL)pvStorage;
 
-//    DEBUG_PRINT_FLOW();
+    DEBUG_PRINT_FLOW();
 
     return RTTarFileGetSize(pInt->file, pcbSize);
 }
@@ -751,7 +751,7 @@ static int sha1GetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
-//    DEBUG_PRINT_FLOW();
+    DEBUG_PRINT_FLOW();
 
     uint64_t cbSize;
     int rc = pCallbacks->pfnGetSize(pIO->pvUser, pInt->pvStorage, &cbSize);
@@ -796,7 +796,7 @@ static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
-//    DEBUG_PRINT_FLOW();
+    DEBUG_PRINT_FLOW();
 
     /* Check that the write is linear */
     AssertMsgReturn(pInt->cbCurAll <= uOffset, ("Backward seeking is not allowed (uOffset: %7lu cbCurAll: %7lu)!", uOffset, pInt->cbCurAll), VERR_INVALID_PARAMETER);

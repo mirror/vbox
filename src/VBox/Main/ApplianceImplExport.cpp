@@ -1864,6 +1864,8 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create manifest file '%s' (%Rrc)"),
                                strMfFileName.c_str(), vrc);
+            /* Disable digest creation for the manifest file. */
+            pStorage->fCreateDigest = false;
             /* Write the manifest file to disk. */
             vrc = Sha1WriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
             RTMemFree(pvBuf);
