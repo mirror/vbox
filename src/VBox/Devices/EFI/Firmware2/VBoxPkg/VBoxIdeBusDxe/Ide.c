@@ -303,6 +303,7 @@ GetIdeRegistersBaseAddr (
   PCI_TYPE00  PciData;
   UINT8       PciClass;
   UINT8       PciSubClass;
+  BOOLEAN     fIDEAhciEmulation = FALSE;
 
   Status = PciIo->Pci.Read (
                         PciIo,
@@ -336,101 +337,58 @@ GetIdeRegistersBaseAddr (
   if (EFI_ERROR (Status)) {
     return Status;
   }
+  switch (PciSubClass)
+  {
+     case PCI_CLASS_MASS_STORAGE_IDE:
+        fIDEAhciEmulation = FALSE;
+	break;
+     case 0x6:
+        fIDEAhciEmulation = TRUE;
+	break;
+     default:
+	ASSERT_EFI_ERROR((EFI_UNSUPPORTED)); 
+	return EFI_UNSUPPORTED;
+  }
   DEBUG((DEBUG_INFO, "class primary code: %x\n", PciData.Hdr.ClassCode[0] & IDE_PRIMARY_OPERATING_MODE));
   DEBUG((DEBUG_INFO, "class secondary code: %x\n", PciData.Hdr.ClassCode[0] & IDE_SECONDARY_OPERATING_MODE));
   if ((PciData.Hdr.ClassCode[0] & IDE_PRIMARY_OPERATING_MODE) == 0) {
-    switch (PciSubClass)
-    {
-       case PCI_CLASS_MASS_STORAGE_IDE:
-          IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  = 0x1f0;
-          IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  = 0x3f6;
-          IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     =
-          (UINT16)((PciData.Device.Bar[4] & 0x0000fff0));
-          break;
-       case 0x6:
-          IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  = 0x1e8;
-          IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  = 0x3e6;
-          IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     = 0;
-          break;
-        default:
-	  ASSERT_EFI_ERROR((EFI_UNSUPPORTED)); 
-    }
+     IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  = fIDEAhciEmulation ? 0x1e8 : 0x1f0;
+     IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  = fIDEAhciEmulation ? 0x3e6 :0x3f6;
   } else {
     //
     // The BARs should be of IO type
     //
     if ((PciData.Device.Bar[0] & BIT0) == 0 ||
         (PciData.Device.Bar[1] & BIT0) == 0) {
-      DEBUG((DEBUG_INFO, "%a:%d\n", __FILE__, __LINE__));
       return EFI_UNSUPPORTED;
     }
 
-    switch (PciSubClass)
-    {
-       case PCI_CLASS_MASS_STORAGE_IDE:
-          IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  =
-          (UINT16) (PciData.Device.Bar[0] & 0x0000fff8);
-          IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  =
-          (UINT16) ((PciData.Device.Bar[1] & 0x0000fffc) + 2);
-    	  IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     =
-    	  (UINT16) ((PciData.Device.Bar[4] & 0x0000fff0));
-	  break;
-       case 0x6:
-          IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  = 0x168;
-          IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  = 0x366;
-          IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     = 0;
-          break;
-        default:
-	  ASSERT_EFI_ERROR((EFI_UNSUPPORTED)); 
-    }
+    IdeRegsBaseAddr[IdePrimary].CommandBlockBaseAddr  =
+    fIDEAhciEmulation ? 0x1e8 : (UINT16) (PciData.Device.Bar[0] & 0x0000fff8);
+    IdeRegsBaseAddr[IdePrimary].ControlBlockBaseAddr  =
+    fIDEAhciEmulation ? 0x3e6 :(UINT16) ((PciData.Device.Bar[1] & 0x0000fffc) + 2);
   }
+  IdeRegsBaseAddr[IdePrimary].BusMasterBaseAddr     = 
+  fIDEAhciEmulation ? 0 : (UINT16)((PciData.Device.Bar[4] & 0x0000fff0));
 
   if ((PciData.Hdr.ClassCode[0] & IDE_SECONDARY_OPERATING_MODE) == 0) {
-    switch (PciSubClass)
-    {
-       case PCI_CLASS_MASS_STORAGE_IDE:
-          IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  = 0x170;
-          IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  = 0x376;
-          IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     =
-          (UINT16) ((PciData.Device.Bar[4] & 0x0000fff0));
-	  break;
-       case 0x6:
-          IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  = 0x1e8;
-          IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  = 0x3e6;
-    	  IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     = 0;
-          break;
-        default:
-	  ASSERT_EFI_ERROR((EFI_UNSUPPORTED)); 
-    }
+    IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  = fIDEAhciEmulation ? 0x168 : 0x170;
+    IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  = fIDEAhciEmulation ? 0x366 : 0x376;
   } else {
     //
     // The BARs should be of IO type
     //
     if ((PciData.Device.Bar[2] & BIT0) == 0 ||
         (PciData.Device.Bar[3] & BIT0) == 0) {
-      DEBUG((DEBUG_INFO, "%a:%d\n", __FILE__, __LINE__));
       return EFI_UNSUPPORTED;
     }
-
-    switch (PciSubClass)
-    {
-       case PCI_CLASS_MASS_STORAGE_IDE:
-          IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  =
-          (UINT16) (PciData.Device.Bar[2] & 0x0000fff8);
-          IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  =
-          (UINT16) ((PciData.Device.Bar[3] & 0x0000fffc) + 2);
-          IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     =
-          (UINT16) ((PciData.Device.Bar[4] & 0x0000fff0));
-	  break;
-	case 0x6:
-          IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  = 0x168;
-          IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  = 0x366;
-    	  IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     = 0;
-          break;
-        default:
-	  ASSERT_EFI_ERROR((EFI_UNSUPPORTED)); 
-     }
+    IdeRegsBaseAddr[IdeSecondary].CommandBlockBaseAddr  =
+    fIDEAhciEmulation ? 0x168 : (UINT16) (PciData.Device.Bar[2] & 0x0000fff8);
+    IdeRegsBaseAddr[IdeSecondary].ControlBlockBaseAddr  =
+    fIDEAhciEmulation ? 0x366 : (UINT16) ((PciData.Device.Bar[3] & 0x0000fffc) + 2);
   }
+  IdeRegsBaseAddr[IdeSecondary].BusMasterBaseAddr     =
+  (UINT16) ((PciData.Device.Bar[fIDEAhciEmulation ? 5 : 4] & 0x0000fff0));
 
   DEBUG((DEBUG_INFO, "%a:%d CommandBlockBaseAddr:%x, "
 		     "ControlBlockBaseAddr:%x, "
