@@ -225,6 +225,7 @@ AssertCompileSize(MptMessageHdr, 12);
 #define MPT_MESSAGE_HDR_FUNCTION_TARGET_ASSIST          (0x0B)
 #define MPT_MESSAGE_HDR_FUNCTION_TARGET_STATUS_SEND     (0x0C)
 #define MPT_MESSAGE_HDR_FUNCTION_TARGET_MODE_ABORT      (0x0D)
+#define MPT_MESSAGE_HDR_FUNCTION_FW_UPLOAD              (0x12)
 
 #ifdef DEBUG
 /**
@@ -626,6 +627,119 @@ AssertCompileSize(MptEventNotificationReply, 32);
 #define MPT_EVENT_EVENT_CHANGE (0x0000000a)
 
 /**
+ * FW download request.
+ */
+#pragma pack(1)
+typedef struct MptFWDownloadRequest
+{
+    /** Switch - Turns event notification on and off. */
+    uint8_t     u8ImageType;
+    /** Reserved. */
+    uint8_t     u8Reserved1;
+    /** Chain offset. */
+    uint8_t     u8ChainOffset;
+    /** Function number. */
+    uint8_t     u8Function;
+    /** Reserved. */
+    uint8_t     u8Reserved2[3];
+    /** Message flags. */
+    uint8_t     u8MessageFlags;
+    /** Message context ID. */
+    uint32_t    u32MessageContext;
+} MptFWDownloadRequest, *PMptFWDownloadRequest;
+#pragma pack()
+AssertCompileSize(MptFWDownloadRequest, 12);
+
+#define MPT_FW_DOWNLOAD_REQUEST_IMAGE_TYPE_RESERVED 0
+#define MPT_FW_DOWNLOAD_REQUEST_IMAGE_TYPE_FIRMWARE 1
+#define MPT_FW_DOWNLOAD_REQUEST_IMAGE_TYPE_MPI_BIOS 2
+#define MPT_FW_DOWNLOAD_REQUEST_IMAGE_TYPE_NVDATA   3
+
+/**
+ * FW download reply.
+ */
+#pragma pack(1)
+typedef struct MptFWDownloadReply
+{
+    /** Reserved. */
+    uint16_t    u16Reserved1;
+    /** Message length. */
+    uint8_t     u8MessageLength;
+    /** Function number. */
+    uint8_t     u8Function;
+    /** Reserved. */
+    uint8_t     u8Reserved2[3];
+    /** Message flags. */
+    uint8_t     u8MessageFlags;
+    /** Message context ID. */
+    uint32_t    u32MessageContext;
+    /** Reserved. */
+    uint16_t    u16Reserved2;
+    /** IO controller status. */
+    uint16_t    u16IOCStatus;
+    /** IO controller log information. */
+    uint32_t    u32IOCLogInfo;
+} MptFWDownloadReply, *PMptFWDownloadReply;
+#pragma pack()
+AssertCompileSize(MptFWDownloadReply, 20);
+
+/**
+ * FW upload request.
+ */
+#pragma pack(1)
+typedef struct MptFWUploadRequest
+{
+    /** Requested image type. */
+    uint8_t     u8ImageType;
+    /** Reserved. */
+    uint8_t     u8Reserved1;
+    /** Chain offset. */
+    uint8_t     u8ChainOffset;
+    /** Function number. */
+    uint8_t     u8Function;
+    /** Reserved. */
+    uint8_t     u8Reserved2[3];
+    /** Message flags. */
+    uint8_t     u8MessageFlags;
+    /** Message context ID. */
+    uint32_t    u32MessageContext;
+} MptFWUploadRequest, *PMptFWUploadRequest;
+#pragma pack()
+AssertCompileSize(MptFWUploadRequest, 12);
+
+/**
+ * FW upload reply.
+ */
+#pragma pack(1)
+typedef struct MptFWUploadReply
+{
+    /** Image type. */
+    uint8_t     u8ImageType;
+    /** Reserved. */
+    uint8_t     u8Reserved1;
+    /** Message length. */
+    uint8_t     u8MessageLength;
+    /** Function number. */
+    uint8_t     u8Function;
+    /** Reserved. */
+    uint8_t     u8Reserved2[3];
+    /** Message flags. */
+    uint8_t     u8MessageFlags;
+    /** Message context ID. */
+    uint32_t    u32MessageContext;
+    /** Reserved. */
+    uint16_t    u16Reserved2;
+    /** IO controller status. */
+    uint16_t    u16IOCStatus;
+    /** IO controller log information. */
+    uint32_t    u32IOCLogInfo;
+    /** Uploaded image size. */
+    uint32_t    u32ActualImageSize;
+} MptFWUploadReply, *PMptFWUploadReply;
+#pragma pack()
+AssertCompileSize(MptFWUploadReply, 24);
+
+/**
  * SCSI IO Request
  */
 #pragma pack(1)
@@ -1012,6 +1126,8 @@ typedef union MptRequestUnion
     MptSCSIIORequest             SCSIIO;
     MptSCSITaskManagementRequest SCSITaskManagement;
     MptConfigurationRequest      Configuration;
+    MptFWDownloadRequest         FWDownload;
+    MptFWUploadRequest           FWUpload;
 } MptRequestUnion, *PMptRequestUnion;
 
 /**
@@ -1030,6 +1146,8 @@ typedef union MptReplyUnion
     MptSCSIIOErrorReply        SCSIIOError;
     MptSCSITaskManagementReply SCSITaskManagement;
     MptConfigurationReply      Configuration;
+    MptFWDownloadReply         FWDownload;
+    MptFWUploadReply           FWUpload;
 } MptReplyUnion, *PMptReplyUnion;
 
 
