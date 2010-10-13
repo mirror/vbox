@@ -258,9 +258,6 @@ typedef union HostAdapterLocalRam
 AssertCompileSize(HostAdapterLocalRam, 256);
 #pragma pack()
 
-/** Pointer to a task state. */
-typedef struct BUSLOGICTASKSTATE *PBUSLOGICTASKSTATE;
-
 /**
  * Main BusLogic device state.
  *
@@ -393,10 +390,6 @@ typedef struct BUSLOGIC
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                   fSignalIdle;
-    /** Flag whether we have tasks which need to be processed again- */
-    bool volatile                   fRedo;
-    /** List of tasks which can be redone. */
-    R3PTRTYPE(volatile PBUSLOGICTASKSTATE) pTasksRedoHead;
 
 } BUSLOGIC, *PBUSLOGIC;
 
@@ -743,23 +736,21 @@ AssertCompileSize(ScatterGatherEntry, 8);
  */
 typedef struct BUSLOGICTASKSTATE
 {
-    /** Pointer to the next task to redo. */
-    PBUSLOGICTASKSTATE         pTaskRedoNext;
     /** Device this task is assigned to. */
-    R3PTRTYPE(PBUSLOGICDEVICE) pTargetDeviceR3;
+    R3PTRTYPE(PBUSLOGICDEVICE)     pTargetDeviceR3;
     /** The command control block from the guest. */
-    CommandControlBlock        CommandControlBlockGuest;
+    CommandControlBlock CommandControlBlockGuest;
     /** Mailbox read from guest memory. */
-    Mailbox                    MailboxGuest;
+    Mailbox             MailboxGuest;
     /** The SCSI request we pass to the underlying SCSI engine. */
-    PDMSCSIREQUEST             PDMScsiRequest;
+    PDMSCSIREQUEST      PDMScsiRequest;
     /** Data buffer segment */
-    RTSGSEG                    DataSeg;
+    RTSGSEG             DataSeg;
     /** Pointer to the R3 sense buffer. */
-    uint8_t                   *pbSenseBuffer;
+    uint8_t            *pbSenseBuffer;
     /** Flag whether this is a request from the BIOS. */
-    bool                       fBIOS;
-} BUSLOGICTASKSTATE;
+    bool                fBIOS;
+} BUSLOGICTASKSTATE, *PBUSLOGICTASKSTATE;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -1869,14 +1860,7 @@ static int buslogicPrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
 
         rc = pTaskState->CTX_SUFF(pTargetDevice)->pDrvSCSIConnector->pfnSCSIRequestSend(pTaskState->CTX_SUFF(pTargetDevice)->pDrvSCSIConnector,
                                                                                         &pTaskState->PDMScsiRequest);
-        AssertMsgRC(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc));
-
-        if (rc == VINF_VD_ASYNC_IO_FINISHED)
-        {
-            vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest);
-            RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
-            rc = VINF_SUCCESS;
-        }
+        AssertMsgRCReturn(rc, ("Sending request to SCSI layer failed rc=%Rrc\n", rc), rc);
     }
 
     return rc;
@@ -2028,59 +2012,6 @@ static DECLCALLBACK(int) buslogicMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iR
     return rc;
 }
 
-static void buslogicWarningDiskFull(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("BusLogic#%d: Host disk full\n", pDevIns->iInstance));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevBusLogic_DISKFULL",
-                                    N_("Host system reported disk full. VM execution is suspended. You can resume after freeing some space"));
-    AssertRC(rc);
-}
-
-static void buslogicWarningFileTooBig(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("BusLogic#%d: File too big\n", pDevIns->iInstance));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevBusLogic_FILETOOBIG",
-                                    N_("Host system reported that the file size limit of the host file system has been exceeded. VM execution is suspended. You need to move your virtual hard disk to a filesystem which allows bigger files"));
-    AssertRC(rc);
-}
-
-static void buslogicWarningISCSI(PPDMDEVINS pDevIns)
-{
-    int rc;
-    LogRel(("BusLogic#%d: iSCSI target unavailable\n", pDevIns->iInstance));
-    rc = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevBusLogic_ISCSIDOWN",
-                                    N_("The iSCSI target has stopped responding. VM execution is suspended. You can resume when it is available again"));
-    AssertRC(rc);
-}
-
-static void buslogicWarningUnknown(PPDMDEVINS pDevIns, int rc)
-{
-    int rc2;
-    LogRel(("BusLogic#%d: Unknown but recoverable error has occurred (rc=%Rrc)\n", pDevIns->iInstance, rc));
-    rc2 = PDMDevHlpVMSetRuntimeError(pDevIns, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "DevBusLogic_UNKNOWN",
-                                     N_("An unknown but recoverable I/O error has occurred (rc=%Rrc). VM execution is suspended. You can resume when the error is fixed"), rc);
-    AssertRC(rc2);
-}
-
-static void buslogicRedoSetWarning(PBUSLOGIC pThis, int rc)
-{
-    if (rc == VERR_DISK_FULL)
-        buslogicWarningDiskFull(pThis->CTX_SUFF(pDevIns));
-    else if (rc == VERR_FILE_TOO_BIG)
-        buslogicWarningFileTooBig(pThis->CTX_SUFF(pDevIns));
-    else if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
-    {
-        /* iSCSI connection abort (first error) or failure to reestablish
-         * connection (second error). Pause VM. On resume we'll retry. */
-        buslogicWarningISCSI(pThis->CTX_SUFF(pDevIns));
-    }
-    else
-        buslogicWarningUnknown(pThis->CTX_SUFF(pDevIns), rc);
-}
-
-
 static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest,
                                                             int rcCompletion, bool fRedo, int rcReq)
 {
@@ -2089,35 +2020,30 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     PBUSLOGICDEVICE pBusLogicDevice = pTaskState->CTX_SUFF(pTargetDevice);
     PBUSLOGIC pBusLogic = pBusLogicDevice->CTX_SUFF(pBusLogic);
 
-    if (fRedo)
+    LogFlowFunc(("before decrement %u\n", pBusLogicDevice->cOutstandingRequests));
+    ASMAtomicDecU32(&pBusLogicDevice->cOutstandingRequests);
+    LogFlowFunc(("after decrement %u\n", pBusLogicDevice->cOutstandingRequests));
+
+    if (pTaskState->fBIOS)
     {
-        
+        rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, pSCSIRequest);
+        AssertMsgRC(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc));
     }
     else
     {
-        if (pTaskState->fBIOS)
-        {
-            rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, pSCSIRequest);
-            AssertMsgRC(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc));
-        }
-        else
-        {
-            buslogicDataBufferFree(pTaskState);
+        buslogicDataBufferFree(pTaskState);
 
-            if (pTaskState->pbSenseBuffer)
-                buslogicSenseBufferFree(pTaskState, (rcCompletion != SCSI_STATUS_OK));
+        if (pTaskState->pbSenseBuffer)
+            buslogicSenseBufferFree(pTaskState, (rcCompletion != SCSI_STATUS_OK));
 
-            buslogicSendIncomingMailbox(pBusLogic, pTaskState,
-                                        BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
-                                        BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
-                                        BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR);
-        }
-
-        /* Add task to the cache. */
-        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
+        buslogicSendIncomingMailbox(pBusLogic, pTaskState,
+                                    BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
+                                    BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
+                                    BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR);
     }
 
-    ASMAtomicDecU32(&pBusLogicDevice->cOutstandingRequests);
+    /* Add task to the cache. */
+    RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
 
     if (pBusLogicDevice->cOutstandingRequests == 0 && pBusLogic->fSignalIdle)
         PDMDevHlpAsyncNotificationCompleted(pBusLogic->pDevInsR3);
