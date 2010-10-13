@@ -277,7 +277,7 @@ RTDECL(int) RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     return VINF_SUCCESS;
 }
 
-#if 0 /* NEW_STUFF - not working yet :-) */
+/* -------- Move to header ---------- */
 
 typedef struct RTR0SEMSOLWAIT
 {
@@ -306,7 +306,10 @@ typedef struct RTR0SEMSOLWAIT
     bool            fInterruptible;
     /** The thread to wake up. */
     kthread_t      *pThread;
+    /** Cylic timer ID (used by the timeout callback). */
+    cyclic_id_t     idCy;
 } RTR0SEMSOLWAIT;
+/** Pointer to a solaris semaphore wait structure.  */
 typedef RTR0SEMSOLWAIT *PRTR0SEMSOLWAIT;
 
 
@@ -397,6 +400,7 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
     pWait->fInterrupted     = false;
     pWait->fInterruptible   = !!(fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE);
     pWait->pThread          = curthread;
+    pWait->idCy             = CYCLIC_NONE;
 
     return VINF_SUCCESS;
 }
@@ -414,6 +418,12 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
     kthread_t      *pThread = pWait->pThread;
     if (VALID_PTR(pThread)) /* paranoia */
     {
+        /* Note: Trying to take the cpu_lock here doesn't work. */
+        if (mutex_owner(&cpu_lock) == curthread)
+        {
+            cyclic_remove(pWait->idCy);
+            pWait->idCy = CYCLIC_NONE;
+        }
         ASMAtomicWriteBool(&pWait->fTimedOut, true);
         setrun(pThread);
     }
@@ -454,10 +464,10 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
 
         cyc_time_t      Cyt;
         Cyt.cyt_when     = pWait->uNsAbsTimeout;
-        Cyt.cyt_interval = 0;
+        Cyt.cyt_interval = UINT64_C(1000000000) * 60;
 
         mutex_enter(&cpu_lock);
-        cyclic_id_t     idCy = cyclic_add(&Cyh, &Cyt);
+        pWait->idCy = cyclic_add(&Cyh, &Cyt);
         mutex_exit(&cpu_lock);
 
         if (pWait->fInterruptible)
@@ -466,7 +476,11 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
             cv_wait(pCnd, pMtx);
 
         mutex_enter(&cpu_lock);
-        cyclic_remove(idCy);
+        if (pWait->idCy != CYCLIC_NONE)
+        {
+            cyclic_remove(pWait->idCy);
+            pWait->idCy = CYCLIC_NONE;
+        }
         mutex_exit(&cpu_lock);
     }
     else
@@ -531,6 +545,7 @@ DECLINLINE(void) rtR0SemSolWaitDelete(PRTR0SEMSOLWAIT pWait)
     pWait->pThread = NULL;
 }
 
+/* -------- End ---------- */
 
 
 /**
@@ -569,33 +584,36 @@ static int rtR0SemEventMultiSolWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFl
          * We have to wait.
          */
         RTR0SEMSOLWAIT Wait;
-        rtR0SemSolWaitInit(&Wait, fFlags, uTimeout);
-        for (;;)
+        rc = rtR0SemSolWaitInit(&Wait, fFlags, uTimeout);
+        if (RT_SUCCESS(rc))
         {
-            /* The destruction test. */
-            if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC))
-                rc = VERR_SEM_DESTROYED;
-            else
+            for (;;)
             {
-                /* Check the exit conditions. */
+                /* The destruction test. */
                 if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC))
                     rc = VERR_SEM_DESTROYED;
-                else if (ASMAtomicUoReadU32(&pThis->fStateAndGen) != fOrgStateAndGen)
-                    rc = VINF_SUCCESS;
-                else if (rtR0SemSolWaitHasTimedOut(&Wait))
-                    rc = VERR_TIMEOUT;
-                else if (rtR0SemSolWaitWasInterrupted(&Wait))
-                    rc = VERR_INTERRUPTED;
                 else
                 {
-                    /* Do the wait and then recheck the conditions. */
-                    rtR0SemSolWaitDoIt(&Wait, &pThis->Cnd, &pThis->Mtx);
-                    continue;
+                    /* Check the exit conditions. */
+                    if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC))
+                        rc = VERR_SEM_DESTROYED;
+                    else if (ASMAtomicUoReadU32(&pThis->fStateAndGen) != fOrgStateAndGen)
+                        rc = VINF_SUCCESS;
+                    else if (rtR0SemSolWaitHasTimedOut(&Wait))
+                        rc = VERR_TIMEOUT;
+                    else if (rtR0SemSolWaitWasInterrupted(&Wait))
+                        rc = VERR_INTERRUPTED;
+                    else
+                    {
+                        /* Do the wait and then recheck the conditions. */
+                        rtR0SemSolWaitDoIt(&Wait, &pThis->Cnd, &pThis->Mtx);
+                        continue;
+                    }
                 }
+                break;
             }
-            break;
+            rtR0SemSolWaitDelete(&Wait);
         }
-        rtR0SemSolWaitDelete(&Wait);
     }
 
     mutex_exit(&pThis->Mtx);
@@ -625,110 +643,3 @@ RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t
 }
 
 
-#include "../../generic/RTSemEventMultiWait-2-ex-generic.cpp"
-#include "../../generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp"
-
-#else /* OLD_STUFF */
-
-/**
- * Translate milliseconds into ticks and go to sleep using the right method.
- *
- * @retval  >0 on normal or spurious wake-up.
- * @retval  -1 on timeout.
- * @retval  0 on signal.
- */
-static int rtSemEventMultiWaitWorker(PRTSEMEVENTMULTIINTERNAL pThis, RTMSINTERVAL cMillies, bool fInterruptible)
-{
-    int rc;
-    if (cMillies != RT_INDEFINITE_WAIT)
-    {
-        clock_t cTicks = drv_usectohz((clock_t)(cMillies * 1000L));
-        clock_t cTimeout = ddi_get_lbolt();
-        cTimeout += cTicks;
-        if (fInterruptible)
-            rc = cv_timedwait_sig(&pThis->Cnd, &pThis->Mtx, cTimeout);
-        else
-            rc = cv_timedwait(&pThis->Cnd, &pThis->Mtx, cTimeout);
-    }
-    else
-    {
-        if (fInterruptible)
-            rc = cv_wait_sig(&pThis->Cnd, &pThis->Mtx);
-        else
-        {
-            cv_wait(&pThis->Cnd, &pThis->Mtx);
-            rc = 1;
-        }
-    }
-    return rc;
-}
-
-
-static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies, bool fInterruptible)
-{
-    int rc;
-    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
-                    VERR_INVALID_HANDLE);
-    rtR0SemEventMultiSolRetain(pThis);
-    if (cMillies)
-        RT_ASSERT_PREEMPTIBLE();
-
-    mutex_enter(&pThis->Mtx);
-    Assert(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC);
-
-    if (pThis->fStateAndGen & RTSEMEVENTMULTISOL_STATE_MASK)
-        rc = VINF_SUCCESS;
-    else if (!cMillies)
-        rc = VERR_TIMEOUT;
-    else
-    {
-        /* This loop is only for continuing after a spurious wake-up. */
-        for (;;)
-        {
-            uint32_t const uSignalGenBeforeWait = pThis->fStateAndGen;
-            rc = rtSemEventMultiWaitWorker(pThis, cMillies, fInterruptible);
-            if (rc > 0)
-            {
-                if (RT_LIKELY(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC))
-                {
-                    if (pThis->fStateAndGen == uSignalGenBeforeWait)
-                        continue; /* Spurious wake-up, go back to waiting. */
-
-                    /* Retured due to call to cv_signal() or cv_broadcast(). */
-                    rc = VINF_SUCCESS;
-                }
-                else
-                    /* We're being destroyed. */
-                    rc = VERR_SEM_DESTROYED;
-            }
-            else if (rc == -1)
-                /* Returned due to timeout being reached. */
-                rc = VERR_TIMEOUT;
-            else
-                rc = VERR_INTERRUPTED;
-                /* Returned due to pending signal. */
-            break;
-        }
-    }
-
-    mutex_exit(&pThis->Mtx);
-    rtR0SemEventMultiSolRelease(pThis);
-    return rc;
-}
-
-
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
-{
-    return rtSemEventMultiWait(hEventMultiSem, cMillies, false /* not interruptible */);
-}
-
-
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
-{
-    return rtSemEventMultiWait(hEventMultiSem, cMillies, true /* interruptible */);
-}
-
-#endif
