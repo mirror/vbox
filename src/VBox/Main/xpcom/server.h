@@ -27,4 +27,10 @@
  */
 #define VBOXSVC_IPC_NAME "VBoxSVC-" VBOX_VERSION_STRING
 
+
+/**
+ * Tag for the file descriptor passing for the daemonizing control.
+ */
+#define VBOXSVC_STARTUP_PIPE_NAME "vboxsvc:startup-pipe"
+
 #endif /* ____H_LINUX_SERVER */

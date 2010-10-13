@@ -27,6 +27,9 @@
 #include <nsEventQueueUtils.h>
 #include <nsGenericFactory.h>
 
+#include "prio.h"
+#include "prproces.h"
+
 #include "xpcom/server.h"
 
 #include "Logging.h"
@@ -42,6 +45,7 @@
 #include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/timer.h>
+#include <iprt/env.h>
 
 #include <signal.h>     // for the signal handler
 #include <stdlib.h>
@@ -755,6 +759,65 @@ static void signal_handler(int sig)
     }
 }
 
+static nsresult vboxsvcSpawnDaemonByReExec(const char *pszPath)
+{
+    PRFileDesc *readable = nsnull, *writable = nsnull;
+    PRProcessAttr *attr = nsnull;
+    nsresult rv = NS_ERROR_FAILURE;
+    PRFileDesc *devNull;
+    // The ugly casts are necessary because the PR_CreateProcessDetached has
+    // a const array of writable strings as a parameter. It won't write. */
+    char * const args[] = { (char *)pszPath, (char *)"--auto-shutdown", 0 };
+
+    // Use a pipe to determine when the daemon process is in the position
+    // to actually process requests. The daemon will write "READY" to the pipe.
+    if (PR_CreatePipe(&readable, &writable) != PR_SUCCESS)
+        goto end;
+    PR_SetFDInheritable(writable, PR_TRUE);
+
+    attr = PR_NewProcessAttr();
+    if (!attr)
+        goto end;
+
+    if (PR_ProcessAttrSetInheritableFD(attr, writable, VBOXSVC_STARTUP_PIPE_NAME) != PR_SUCCESS)
+        goto end;
+
+    devNull = PR_Open("/dev/null", PR_RDWR, 0);
+    if (!devNull)
+        goto end;
+
+    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardInput, devNull);
+    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, devNull);
+    PR_ProcessAttrSetStdioRedirect(attr, PR_StandardError, devNull);
+
+    if (PR_CreateProcessDetached(pszPath, args, nsnull, attr) != PR_SUCCESS)
+        goto end;
+
+    // Close /dev/null
+    PR_Close(devNull);
+    // Close the child end of the pipe to make it the only owner of the
+    // file descriptor, so that unexpected closing can be detected.
+    PR_Close(writable);
+    writable = nsnull;
+
+    char msg[10];
+    memset(msg, '\0', sizeof(msg));
+    if (   PR_Read(readable, msg, sizeof(msg)-1) != 5
+        || strcmp(msg, "READY"))
+        goto end;
+
+    rv = NS_OK;
+
+end:
+    if (readable)
+        PR_Close(readable);
+    if (writable)
+        PR_Close(writable);
+    if (attr)
+        PR_DestroyProcessAttr(attr);
+    return rv;
+}
+
 int main(int argc, char **argv)
 {
     /*
@@ -769,11 +832,10 @@ int main(int argc, char **argv)
         { "--auto-shutdown",  'A', RTGETOPT_REQ_NOTHING },
         { "--daemonize",      'd', RTGETOPT_REQ_NOTHING },
         { "--pidfile",        'p', RTGETOPT_REQ_STRING  },
-        { "--pipe",           'P', RTGETOPT_REQ_UINT32  },
     };
 
     bool            fDaemonize = false;
-    int             daemon_pipe_wr = -1;
+    PRFileDesc      *daemon_pipe_wr = nsnull;
 
     RTGETOPTSTATE   GetOptState;
     int vrc = RTGetOptInit(&GetOptState, argc, argv, &s_aOptions[0], RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
@@ -813,14 +875,6 @@ int main(int argc, char **argv)
                 break;
             }
 
-            /* This is just an internal hack for passing the pipe write fd
-               along to the final child.  Internal use only. */
-            case 'P':
-            {
-                daemon_pipe_wr = ValueUnion.u32;
-                break;
-            }
-
             case 'h':
             {
                 RTPrintf("no help\n");
@@ -838,143 +892,16 @@ int main(int argc, char **argv)
         }
     }
 
-#ifdef RT_OS_OS2 /** @todo There is almost no need to make a special case of OS/2 here. Just the execv call needs to be told to create a background process... */
-
-    /* nothing to do here, the process is supposed to be already
-     * started daemonized when it is necessary */
-    NOREF(fDaemonize);
-
-#else // !RT_OS_OS2
-
     if (fDaemonize)
     {
-        /* create a pipe for communication between child and parent */
-        int daemon_pipe_fds[2] = {-1, -1};
-        if (pipe(daemon_pipe_fds) < 0)
-        {
-            RTMsgError("pipe() failed (errno = %d)", errno);
-            return 1;
-        }
-        daemon_pipe_wr = daemon_pipe_fds[1];
-        int daemon_pipe_rd = daemon_pipe_fds[0];
-
-        pid_t childpid = fork();
-        if (childpid == -1)
-        {
-            RTMsgError("fork() failed (errno = %d)", errno);
-            return 1;
-        }
-
-        if (childpid != 0)
-        {
-            /* we're the parent process */
-            bool fSuccess = false;
-
-            /* close the writing end of the pipe */
-            close(daemon_pipe_wr);
-
-            /* try to read a message from the pipe */
-            char msg[10 + 1];
-            RT_ZERO(msg); /* initialize so it's NULL terminated */
-            if (read(daemon_pipe_rd, msg, sizeof(msg) - 1) > 0)
-            {
-                if (strcmp(msg, "READY") == 0)
-                    fSuccess = true;
-                else
-                    RTMsgError("Unknown message from child process (%s)", msg);
-            }
-            else
-                RTMsgError("0 bytes read from child process");
-
-            /* close the reading end of the pipe as well and exit */
-            close(daemon_pipe_rd);
-            return fSuccess ? 0 : 1;
-        }
-        /* we're the child process */
-
-        /* Create a new SID for the child process */
-        pid_t sid = setsid();
-        if (sid < 0)
-        {
-            RTMsgError("setsid() failed (errno = %d)", errno);
-            return 1;
-        }
-
-        /* Need to do another for to get rid of the session leader status.
-         * Otherwise any accidentally opened tty will automatically become a
-         * controlling tty for the daemon process. */
-        childpid = fork();
-        if (childpid == -1)
-        {
-            RTMsgError("second fork() failed (errno = %d)", errno);
-            return 1;
-        }
-
-        if (childpid != 0)
-        {
-            /* we're the parent process, just a dummy so terminate now */
-            exit(0);
-        }
-
-        /* Close all file handles except for the write end of the pipe. */
-        int fdMax;
-        struct rlimit lim;
-        if (getrlimit(RLIMIT_NOFILE, &lim) == 0)
-            fdMax = (int)RT_MIN(lim.rlim_cur, 65535); /* paranoia */
-        else
-            fdMax = 1024;
-        for (int fd = 0; fd < fdMax; fd++)
-            if (fd != daemon_pipe_wr)
-                close(fd);
-
-        /* Make sure the pipe isn't any of the standard handles. */
-        if (daemon_pipe_wr <= 2)
-        {
-            if (dup2(daemon_pipe_wr, 3) == 3)
-            {
-                close(daemon_pipe_wr);
-                daemon_pipe_wr = 3;
-            }
-        }
-
-        /* Redirect the standard handles to NULL by opening /dev/null three times. */
-        open("/dev/null", O_RDWR, 0);
-        open("/dev/null", O_RDWR, 0);
-        open("/dev/null", O_RDWR, 0);
-
-        /*
-         * On leopard we're no longer allowed to use some of the core API's
-         * after forking - this will cause us to hit an int3.
-         * So, we'll have to execv VBoxSVC once again and hand it the pipe
-         * and all other relevant options.
-         *
-         * On FreeBSD the fork approach doesn't work. The child fails
-         * during initialization of XPCOM for some unknown reason and
-         * exits making it impossible to autostart VBoxSVC when starting
-         * a frontend (debugger and strace don't contain any useful info).
-         */
-        const char *apszArgs[7 + 2];
-        unsigned i = 0;
-        apszArgs[i++] = argv[0];
-        apszArgs[i++] = "--pipe";
-        char szPipeArg[32];
-        RTStrPrintf(szPipeArg, sizeof(szPipeArg), "%d", daemon_pipe_wr);
-        apszArgs[i++] = szPipeArg;
-        if (g_pszPidFile)
-        {
-            apszArgs[i++] = "--pidfile";
-            apszArgs[i++] = g_pszPidFile;
-        }
-        if (gAutoShutdown)
-            apszArgs[i++] = "--auto-shutdown";
-        apszArgs[i++] = NULL;   Assert(i <= RT_ELEMENTS(apszArgs));
-        execv(apszArgs[0], (char * const *)apszArgs);
+        vboxsvcSpawnDaemonByReExec(argv[0]);
         exit(126);
     }
 
-#endif // !RT_OS_OS2
-
     nsresult    rc;
+
+    daemon_pipe_wr = PR_GetInheritedFD(VBOXSVC_STARTUP_PIPE_NAME);
+    RTEnvUnset("NSPR_INHERIT_FDS");
 
     do
     {
@@ -1066,13 +993,13 @@ int main(int argc, char **argv)
 #endif
         }
 
-        if (daemon_pipe_wr >= 0)
+        if (daemon_pipe_wr != nsnull)
         {
             RTPrintf("\nStarting event loop....\n[send TERM signal to quit]\n");
             /* now we're ready, signal the parent process */
-            write(daemon_pipe_wr, "READY", strlen("READY"));
+            PR_Write(daemon_pipe_wr, "READY", strlen("READY"));
             /* close writing end of the pipe, its job is done */
-            close(daemon_pipe_wr);
+            PR_Close(daemon_pipe_wr);
         }
         else
             RTPrintf("\nStarting event loop....\n[press Ctrl-C to quit]\n");
