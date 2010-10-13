@@ -4678,6 +4678,44 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 }
 
 /**
+ * Info handler, device version. Dumps several interesting bits of the
+ * VGA state that are difficult to decode from the registers.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    int         is_graph;
+    int         w, h, char_height;
+    int         val;
+
+    is_graph = s->gr[6] & 1;
+    pHlp->pfnPrintf(pHlp, "double scanning %s\n", s->cr[9] & 0x80 ? "on" : "off");
+    val = s->cr[0] + 5;
+    pHlp->pfnPrintf(pHlp, "htotal: %d px (%d cclk)\n", val * 8, val);
+    val = s->cr[6] + ((s->cr[7] & 1) << 8) + ((s->cr[7] & 0x20) << 4) + 2;
+    pHlp->pfnPrintf(pHlp, "vtotal: %d px\n", val);
+    val = s->cr[1] + 1;
+    w   = val * 8;
+    pHlp->pfnPrintf(pHlp, "hdisp : %d px (%d cclk)\n", w, val);
+    val = s->cr[0x12] + ((s->cr[7] & 2) << 7) + ((s->cr[7] & 0x40) << 4) + 1;
+    h   = val;
+    pHlp->pfnPrintf(pHlp, "vdisp : %d px\n", val);
+    val = (s->cr[0xc] << 8) + s->cr[0xd];
+    pHlp->pfnPrintf(pHlp, "start : %#x\n", val);
+    if (!is_graph)
+    {   
+        val = (s->cr[9] & 0x1f) + 1;
+        char_height = val;
+        pHlp->pfnPrintf(pHlp, "char height %d\n", val);
+        pHlp->pfnPrintf(pHlp, "text mode %dx%d\n", w / 8, h / char_height);
+    }
+}
+
+/**
  * Info handler, device version. Dumps VGA memory formatted as
  * ASCII text, no attributes. Only looks at the first page.
  *
@@ -4704,11 +4742,21 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
             uint32_t cbLine;
             uint32_t offStart;
             uint32_t uLineCompareIgn;
+            uint32_t uVDisp;
+            uint32_t uCharHeight;
+            uint32_t uLines;
+
             vga_get_offsets(pThis, &cbLine, &offStart, &uLineCompareIgn);
             if (!cbLine)
                 cbLine = 80 * 8;
 
-            uint32_t cRows = offStart / cbLine + 25;
+            uVDisp = pThis->cr[0x12] + ((pThis->cr[7] & 2) << 7) + ((pThis->cr[7] & 0x40) << 4) + 1;
+            uCharHeight = (pThis->cr[9] & 0x1f) + 1;
+            uLines = uVDisp / uCharHeight;
+            if (uLines < 25)
+                uLines = 25;
+
+            uint32_t cRows = offStart / cbLine + uLines;
             uint32_t cCols = cbLine / 8;
             if (cRows * cCols * 8 <= pThis->vram_size)
             {
@@ -6742,6 +6790,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register debugger info callbacks.
      */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vga", "Display basic VGA state.", vgaInfoState);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgatext", "Display VGA memory formatted as text.", vgaInfoText);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgacr", "Dump VGA CRTC registers.", vgaInfoCR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgasr", "Dump VGA Sequencer registers.", vgaInfoSR);
