@@ -82,7 +82,8 @@
 #define VBE_DISPI_INDEX_X_OFFSET        0x8
 #define VBE_DISPI_INDEX_Y_OFFSET        0x9
 #define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
-#define VBE_DISPI_INDEX_NB              0xb
+#define VBE_DISPI_INDEX_NB_SAVED        0xb /* Number of saved registers (vbe_regs array) */
+#define VBE_DISPI_INDEX_NB              0xb /* Total number of VBE registers */
 
 #define VBE_DISPI_ID0                   0xB0C0
 #define VBE_DISPI_ID1                   0xB0C1
@@ -112,7 +113,7 @@
 
 #define VGA_STATE_COMMON_BOCHS_VBE              \
     uint16_t vbe_index;                         \
-    uint16_t vbe_regs[VBE_DISPI_INDEX_NB];      \
+    uint16_t vbe_regs[VBE_DISPI_INDEX_NB_SAVED];\
     uint32_t vbe_start_addr;                    \
     uint32_t vbe_line_offset;                   \
     uint32_t vbe_bank_max;
