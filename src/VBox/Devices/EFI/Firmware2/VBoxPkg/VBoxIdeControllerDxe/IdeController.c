@@ -81,6 +81,8 @@ EFI_ATA_COLLECTIVE_MODE  gEfiAtaCollectiveModeTemplate = {
   }
 };
 
+static BOOLEAN gfIdeAhciEmulation = FALSE;
+
 EFI_STATUS
 EFIAPI
 InitializeIdeControllerDriver (
@@ -203,6 +205,8 @@ IdeControllerSupported (
   if ((PciClass != PCI_CLASS_MASS_STORAGE) || ((PciSubClass != PCI_CLASS_MASS_STORAGE_IDE) && (PciSubClass != 0x06 /*SATA*/))) {
     Status = EFI_UNSUPPORTED;
   }
+  if (PciSubClass == 0x6)
+    gfIdeAhciEmulation = TRUE;
 
 Done:
   gBS->CloseProtocol (
@@ -511,6 +515,13 @@ Returns:
   *SupportedModes = AllocateCopyPool (sizeof (EFI_ATA_COLLECTIVE_MODE), &gEfiAtaCollectiveModeTemplate);
   if (*SupportedModes == NULL) {
     return EFI_OUT_OF_RESOURCES;
+  }
+  EFI_ATA_COLLECTIVE_MODE *pSupportedModes = (*SupportedModes);
+  pSupportedModes->PioMode.Mode = 3; /* AtaPioMode4 see VBoxIdeBusDxe/IdeData.h */
+  if (gfIdeAhciEmulation)
+  {
+     pSupportedModes->UdmaMode.Valid = FALSE;
+     pSupportedModes->MultiWordDmaMode.Valid = FALSE;
   }
 
   return EFI_SUCCESS;
