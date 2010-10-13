@@ -3859,15 +3859,17 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
             oldmedium->removeBackReference(mData->mUuid);
         if (!medium.isNull())
+        {
             medium->addBackReference(mData->mUuid);
-        pAttach->updateMedium(medium);
+            // and decide which medium registry to use now that the medium is attached:
+            if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
+                // machine XML is VirtualBox 4.0 or higher:
+                medium->addRegistry(getId());        // machine UUID
+            else
+                medium->addRegistry(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
+        }
 
-        // and decide which medium registry to use now that the medium is attached:
-        if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
-            // machine XML is VirtualBox 4.0 or higher:
-            medium->addRegistry(getId());        // machine UUID
-        else
-            medium->addRegistry(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
+        pAttach->updateMedium(medium);
 
         setModified(IsModified_Storage);
     }
