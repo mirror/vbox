@@ -58,6 +58,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/include/iprt/time.h=>include/iprt/time.h \
     ${PATH_ROOT}/include/iprt/timer.h=>include/iprt/timer.h \
     ${PATH_ROOT}/include/iprt/types.h=>include/iprt/types.h \
+    ${PATH_ROOT}/include/iprt/uni.h=>include/iprt/uni.h \
     ${PATH_ROOT}/include/iprt/uuid.h=>include/iprt/uuid.h \
     ${PATH_ROOT}/include/iprt/crc.h=>include/iprt/crc.h \
     ${PATH_ROOT}/include/iprt/net.h=>include/iprt/net.h \

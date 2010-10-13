@@ -51,6 +51,7 @@
 # ifdef PAGE_SIZE
 #  define _AMD64_INCLUDE_PARAM_H_
 #  define _I386_INCLUDE_PARAM_H_
+#  define _MACHINE_PARAM_H_
 # endif
 # include <sys/param.h> /* __FreeBSD_version */
 # undef PVM
