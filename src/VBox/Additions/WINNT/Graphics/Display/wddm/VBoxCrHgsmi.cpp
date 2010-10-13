@@ -5,7 +5,7 @@
 
 static VBOXCRHGSMI_CALLBACKS g_VBoxCrHgsmiCallbacks;
 static HMODULE g_hVBoxCrHgsmiProvider = NULL;
-//static uint32_t g_cVBoxCrHgsmiProvider = 0;
+static uint32_t g_cVBoxCrHgsmiProvider = 0;
 
 typedef VBOXWDDMDISP_DECL(int) FNVBOXDISPCRHGSMI_INIT(PVBOXCRHGSMI_CALLBACKS pCallbacks);
 typedef FNVBOXDISPCRHGSMI_INIT *PFNVBOXDISPCRHGSMI_INIT;
@@ -25,16 +25,15 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
     g_VBoxCrHgsmiCallbacks = *pCallbacks;
     if (!g_hVBoxCrHgsmiProvider)
     {
-//        BOOL bRc = GetModuleHandleEx(0, "VBoxDispD3D", &g_hVBoxCrHgsmiProvider);
-        g_hVBoxCrHgsmiProvider = GetModuleHandle(L"VBoxDispD3D");
-        if (g_hVBoxCrHgsmiProvider)
+        BOOL bRc = GetModuleHandleEx(0, "VBoxDispD3D", &g_hVBoxCrHgsmiProvider);
+//        g_hVBoxCrHgsmiProvider = GetModuleHandle(L"VBoxDispD3D");
+        if (bRc)
         {
             g_pfnVBoxDispCrHgsmiInit = (PFNVBOXDISPCRHGSMI_INIT)GetProcAddress(g_hVBoxCrHgsmiProvider, "VBoxDispCrHgsmiInit");
             Assert(g_pfnVBoxDispCrHgsmiInit);
             if (g_pfnVBoxDispCrHgsmiInit)
             {
                 g_pfnVBoxDispCrHgsmiInit(pCallbacks);
-//                g_cVBoxCrHgsmiProvider = 1;
             }
 
             g_pfnVBoxDispCrHgsmiTerm = (PFNVBOXDISPCRHGSMI_TERM)GetProcAddress(g_hVBoxCrHgsmiProvider, "VBoxDispCrHgsmiTerm");
@@ -51,13 +50,10 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
         }
 #endif
     }
-//    else
-//    {
-//        ++g_cVBoxCrHgsmiProvider;
-//    }
 
     if (g_hVBoxCrHgsmiProvider)
     {
+        ++g_cVBoxCrHgsmiProvider;
         return VINF_SUCCESS;
     }
 
