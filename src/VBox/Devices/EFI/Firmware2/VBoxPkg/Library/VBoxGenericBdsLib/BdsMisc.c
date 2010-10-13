@@ -594,7 +594,12 @@ BdsLibBuildOptionFromVar (
     }
 
     Option              = BdsLibVariableToOption (BdsCommonOptionList, OptionName);
-    ASSERT (Option != NULL);
+    //ASSERT (Option != NULL);
+    if (!Option)
+    {
+	DEBUG((DEBUG_INFO, "%a:%d Option %s wasn't found \n", __FILE__, __LINE__, Option));
+	continue;
+    }
     Option->BootCurrent = OptionOrder[Index];
 
   }
