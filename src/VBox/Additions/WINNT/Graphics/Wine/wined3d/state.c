@@ -4535,7 +4535,7 @@ static void vertexdeclaration(DWORD state, IWineD3DStateBlockImpl *stateblock, s
 #if !defined(VBOX_WITH_WDDM) || !defined(DEBUG_leo)
             device->posFixup[1] = context->render_offscreen ? -1.0f : 1.0f;
 #else
-            device->posFixup[1] = context->render_offscreen ? 1.0f : -1.0f;
+            device->posFixup[1] = context->render_offscreen ? -1.0f : 1.0f;
 #endif
             device->posFixup[3] = device->posFixup[1] * yoffset;
         }

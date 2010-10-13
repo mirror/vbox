@@ -5799,9 +5799,16 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, const
         if(buffer == GL_FRONT) {
             RECT windowsize;
             UINT h;
+            
             ClientToScreen(context->win_handle, &offset);
             GetClientRect(context->win_handle, &windowsize);
             h = windowsize.bottom - windowsize.top;
+#ifdef DEBUG_leo
+            if (offset.x!=0 || offset.y!=0 || h!=((IWineD3DSurfaceImpl *)src_surface)->currentDesc.Height)
+            {
+                DebugBreak();
+            }
+#endif
             src_rect.left -= offset.x; src_rect.right -=offset.x;
             src_rect.top =  offset.y + h - src_rect.top;
             src_rect.bottom =  offset.y + h - src_rect.bottom;
@@ -5838,6 +5845,12 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, const
             ClientToScreen(context->win_handle, &offset);
             GetClientRect(context->win_handle, &windowsize);
             h = windowsize.bottom - windowsize.top;
+#ifdef DEBUG_leo
+            if (offset.x!=0 || offset.y!=0 || h!=((IWineD3DSurfaceImpl *)src_surface)->currentDesc.Height)
+            {
+                DebugBreak();
+            }
+#endif
             dst_rect.left -= offset.x; dst_rect.right -=offset.x;
             dst_rect.top =  offset.y + h - dst_rect.top;
             dst_rect.bottom =  offset.y + h - dst_rect.bottom;

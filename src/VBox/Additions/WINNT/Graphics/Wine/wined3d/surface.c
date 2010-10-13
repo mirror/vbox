@@ -3053,7 +3053,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_Flip(IWineD3DSurface *iface, IWineD3DS
  * with single pixel copy calls
  */
 static inline void fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3DSurface *SrcSurface,
-        const RECT *src_rect, const RECT *dst_rect_in, WINED3DTEXTUREFILTERTYPE Filter)
+        const RECT *src_rect, const RECT *dst_rect_in, WINED3DTEXTUREFILTERTYPE Filter, BOOL doit)
 {
     IWineD3DDeviceImpl *myDevice = This->resource.device;
     float xrel, yrel;
@@ -3132,10 +3132,13 @@ static inline void fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3D
         {
             /* No stretching involved, so just pass negative height and let host side take care of inverting */
 
-            glCopyTexSubImage2D(This->texture_target, This->texture_level,
-                dst_rect.left /*xoffset */, dst_rect.top /* y offset */,
-                src_rect->left, Src->currentDesc.Height - src_rect->bottom,
-                dst_rect.right - dst_rect.left, -(dst_rect.bottom-dst_rect.top));
+            if (doit)
+            {
+                glCopyTexSubImage2D(This->texture_target, This->texture_level,
+                    dst_rect.left /*xoffset */, dst_rect.top /* y offset */,
+                    src_rect->left, Src->currentDesc.Height - src_rect->bottom,
+                    dst_rect.right - dst_rect.left, -(dst_rect.bottom-dst_rect.top));
+            }
         }
         else
         {
@@ -3647,14 +3650,21 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
          */
         if (fbo_blit_supported(&myDevice->adapter->gl_info, BLIT_OP_BLIT,
                                &src_rect, Src->resource.usage, Src->resource.pool, Src->resource.format_desc,
-                               &dst_rect, This->resource.usage, This->resource.pool, This->resource.format_desc))
+                               &dst_rect, This->resource.usage, This->resource.pool, This->resource.format_desc)
+            && ((!stretchx) || dst_rect.right - dst_rect.left > Src->currentDesc.Width
+                || dst_rect.bottom - dst_rect.top > Src->currentDesc.Height)
+            && (dst_rect.right==This->currentDesc.Width)
+            && (dst_rect.bottom==This->currentDesc.Height)
+            && (dst_rect.left==0)
+            && (dst_rect.top==0)
+           )
         {
             stretch_rect_fbo((IWineD3DDevice *)myDevice, SrcSurface, &src_rect,
                     (IWineD3DSurface *)This, &dst_rect, Filter);
         } else if((!stretchx) || dst_rect.right - dst_rect.left > Src->currentDesc.Width ||
                                     dst_rect.bottom - dst_rect.top > Src->currentDesc.Height) {
             TRACE("No stretching in x direction, using direct framebuffer -> texture copy\n");
-            fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter);
+            fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter, TRUE);
         } else {
             TRACE("Using hardware stretching to flip / stretch the texture\n");
             fb_copy_to_texture_hwstretch(This, SrcSurface, &src_rect, &dst_rect, Filter);
@@ -3680,7 +3690,8 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
         if (!(Flags & (WINEDDBLT_KEYSRC | WINEDDBLT_KEYSRCOVERRIDE))
             && fbo_blit_supported(&myDevice->adapter->gl_info, BLIT_OP_BLIT,
                                   &src_rect, Src->resource.usage, Src->resource.pool, Src->resource.format_desc,
-                                  &dst_rect, This->resource.usage, This->resource.pool, This->resource.format_desc))
+                                  &dst_rect, This->resource.usage, This->resource.pool, This->resource.format_desc)
+            && 0)
         {
             TRACE("Using stretch_rect_fbo\n");
             /* The source is always a texture, but never the currently active render target, and the texture
