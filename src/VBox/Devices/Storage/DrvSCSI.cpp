@@ -340,6 +340,7 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
                 AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
 
             VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS, false);
+            rc = VINF_SUCCESS;
         }
         else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
             rc = VINF_SUCCESS;
