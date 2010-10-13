@@ -200,13 +200,13 @@ struct VBOXHDD
     RTMEMCACHE          hMemCacheIoTask;
     /** Critical section protecting the disk against concurrent access. */
     RTCRITSECT          CritSect;
-    /** Flag whether the last image is currently written to and needs to grow.
-     * Other write requests which will grow the image too need to be deferred to
-     * prevent data corruption. - Protected by the critical section.
+    /** Flag whether the disk is currently locked by growing write or a flush
+     * request. Other flush or growing write requests need to wait until
+     * the current one completes.
      */
-    volatile bool       fGrowing;
+    volatile bool       fLocked;
     /** List of waiting requests. - Protected by the critical section. */
-    RTLISTNODE          ListWriteGrowing;
+    RTLISTNODE          ListWriteLocked;
 
     /** Pointer to the L2 disk cache if any. */
     PVDCACHE            pCache;
@@ -1064,6 +1064,24 @@ DECLINLINE(PVDMETAXFER) vdMetaXferAlloc(PVDIMAGE pImage, PVDIOSTORAGE pIoStorage
     return pMetaXfer;
 }
 
+DECLINLINE(int) vdIoCtxDefer(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+{
+    PVDIOCTXDEFERRED pDeferred = (PVDIOCTXDEFERRED)RTMemAllocZ(sizeof(VDIOCTXDEFERRED));
+
+    if (!pDeferred)
+        return VERR_NO_MEMORY;
+
+    LogFlowFunc(("Deferring write pIoCtx=%#p\n", pIoCtx));
+
+    Assert(!pIoCtx->pIoCtxParent && !pIoCtx->fBlocked);
+
+    RTListInit(&pDeferred->NodeDeferred);
+    pDeferred->pIoCtx = pIoCtx;
+    RTListAppend(&pDisk->ListWriteLocked, &pDeferred->NodeDeferred);
+    pIoCtx->fBlocked = true;
+    return VINF_SUCCESS;
+}
+
 static size_t vdIoCtxCopy(PVDIOCTX pIoCtxDst, PVDIOCTX pIoCtxSrc, size_t cbData)
 {
     return RTSgBufCopy(&pIoCtxDst->SgBuf, &pIoCtxSrc->SgBuf, cbData);
@@ -1177,6 +1195,69 @@ out:
                  pIoCtx->fComplete));
 
     return rc;
+}
+
+static int vdIoCtxLockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!ASMAtomicCmpXchgBool(&pDisk->fLocked, true, false))
+    {
+        rc = vdIoCtxDefer(pDisk, pIoCtx);
+        if (RT_SUCCESS(rc))
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+    }
+
+    return rc;
+}
+
+static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
+{
+    Assert(pDisk->fLocked);
+    ASMAtomicXchgBool(&pDisk->fLocked, false);
+
+    /* Process any pending writes if the current request didn't caused another growing. */
+    RTCritSectEnter(&pDisk->CritSect);
+
+    if (!RTListIsEmpty(&pDisk->ListWriteLocked))
+    {
+        RTLISTNODE ListTmp;
+
+        RTListMove(&ListTmp, &pDisk->ListWriteLocked);
+        RTCritSectLeave(&pDisk->CritSect);
+
+        /* Process the list. */
+        do
+        {
+            int rc;
+            PVDIOCTXDEFERRED pDeferred = RTListNodeGetFirst(&ListTmp, VDIOCTXDEFERRED, NodeDeferred);
+            PVDIOCTX pIoCtxWait = pDeferred->pIoCtx;
+
+            AssertPtr(pIoCtxWait);
+
+            RTListNodeRemove(&pDeferred->NodeDeferred);
+            RTMemFree(pDeferred);
+
+            Assert(!pIoCtxWait->pIoCtxParent);
+
+            pIoCtxWait->fBlocked = false;
+            LogFlowFunc(("Processing waiting I/O context pIoCtxWait=%#p\n", pIoCtxWait));
+
+            rc = vdIoCtxProcess(pIoCtxWait);
+            if (   rc == VINF_VD_ASYNC_IO_FINISHED
+                && ASMAtomicCmpXchgBool(&pIoCtxWait->fComplete, true, false))
+            {
+                LogFlowFunc(("Waiting I/O context completed pIoCtxWait=%#p\n", pIoCtxWait));
+                vdThreadFinishWrite(pDisk);
+                pIoCtxWait->Type.Root.pfnComplete(pIoCtxWait->Type.Root.pvUser1,
+                                                  pIoCtxWait->Type.Root.pvUser2,
+                                                  pIoCtxWait->rcReq);
+                vdIoCtxFree(pDisk, pIoCtxWait);
+            }
+        } while (!RTListIsEmpty(&ListTmp));
+    }
+    else
+        RTCritSectLeave(&pDisk->CritSect);
 }
 
 /**
@@ -1846,27 +1927,9 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                                             &cbPostRead, fWrite);
         if (rc == VERR_VD_BLOCK_FREE)
         {
-            /*
-             * If there is a growing request already put this one onto the waiting list.
-             * It will be restarted if the current request completes.
-             */
-            if (ASMAtomicReadBool(&pDisk->fGrowing))
-            {
-                PVDIOCTXDEFERRED pDeferred = (PVDIOCTXDEFERRED)RTMemAllocZ(sizeof(VDIOCTXDEFERRED));
-                AssertPtr(pDeferred);
-
-                LogFlowFunc(("Deferring write pIoCtx=%#p\n", pIoCtx));
-
-                Assert(!pIoCtx->pIoCtxParent && !pIoCtx->fBlocked);
-
-                RTListInit(&pDeferred->NodeDeferred);
-                pDeferred->pIoCtx = pIoCtx;
-                RTListAppend(&pDisk->ListWriteGrowing, &pDeferred->NodeDeferred);
-                pIoCtx->fBlocked = true;
-                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-                break;
-            }
-            else
+            /* Lock the disk .*/
+            rc = vdIoCtxLockDisk(pDisk, pIoCtx);
+            if (RT_SUCCESS(rc))
             {
                 /*
                  * Allocate segment and buffer in one go.
@@ -1894,11 +1957,8 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     break;
                 }
 
-                /* Set the state to growing. */
                 LogFlowFunc(("Disk is growing because of pIoCtx=%#p pIoCtxWrite=%#p\n",
-
                              pIoCtx, pIoCtxWrite));
-                ASMAtomicWriteBool(&pDisk->fGrowing, true);
 
                 pIoCtxWrite->pImage                = pImage;
                 pIoCtxWrite->Type.Child.cbPreRead  = cbPreRead;
@@ -1918,7 +1978,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     LogFlow(("Child write request completed\n"));
                     Assert(pIoCtx->cbTransferLeft >= cbThisWrite);
                     ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisWrite);
-                    ASMAtomicWriteBool(&pDisk->fGrowing, false);
+                    ASMAtomicWriteBool(&pDisk->fLocked, false);
                     vdIoCtxFree(pDisk, pIoCtxWrite);
 
                     rc = VINF_SUCCESS;
@@ -1932,6 +1992,11 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     uOffset += cbThisWrite;
                     break;
                 }
+            }
+            else
+            {
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+                break;
             }
         }
 
@@ -1976,10 +2041,14 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
     PVBOXHDD pDisk = pIoCtx->pDisk;
     PVDIMAGE pImage = pIoCtx->pImage;
 
-    vdResetModifiedFlag(pDisk);
-    rc = pImage->Backend->pfnAsyncFlush(pImage->pBackendData, pIoCtx);
-    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
-        rc = VINF_SUCCESS;
+    rc = vdIoCtxLockDisk(pDisk, pIoCtx);
+    if (RT_SUCCESS(rc))
+    {
+        vdResetModifiedFlag(pDisk);
+        rc = pImage->Backend->pfnAsyncFlush(pImage->pBackendData, pIoCtx);
+        if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+            rc = VINF_SUCCESS;
+    }
 
     return rc;
 }
@@ -2411,8 +2480,8 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                  * A completed child write means that we finished growing the image.
                  * We have to process any pending writes now.
                  */
-                Assert(pDisk->fGrowing);
-                ASMAtomicWriteBool(&pDisk->fGrowing, false);
+                Assert(pDisk->fLocked);
+                ASMAtomicWriteBool(&pDisk->fLocked, false);
 
                 /* Unblock the parent */
                 pIoCtxParent->fBlocked = false;
@@ -2433,17 +2502,17 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                 /* Process any pending writes if the current request didn't caused another growing. */
                 RTCritSectEnter(&pDisk->CritSect);
 
-                if (!RTListIsEmpty(&pDisk->ListWriteGrowing) && !pDisk->fGrowing)
+                if (!RTListIsEmpty(&pDisk->ListWriteLocked) && !pDisk->fLocked)
                 {
                     RTLISTNODE ListTmp;
 
-                    LogFlowFunc(("Before: pNext=%#p pPrev=%#p\n", pDisk->ListWriteGrowing.pNext,
-                                 pDisk->ListWriteGrowing.pPrev));
+                    LogFlowFunc(("Before: pNext=%#p pPrev=%#p\n", pDisk->ListWriteLocked.pNext,
+                                 pDisk->ListWriteLocked.pPrev));
 
-                    RTListMove(&ListTmp, &pDisk->ListWriteGrowing);
+                    RTListMove(&ListTmp, &pDisk->ListWriteLocked);
 
-                    LogFlowFunc(("After: pNext=%#p pPrev=%#p\n", pDisk->ListWriteGrowing.pNext,
-                                 pDisk->ListWriteGrowing.pPrev));
+                    LogFlowFunc(("After: pNext=%#p pPrev=%#p\n", pDisk->ListWriteLocked.pNext,
+                                 pDisk->ListWriteLocked.pPrev));
 
                     RTCritSectLeave(&pDisk->CritSect);
 
@@ -2481,15 +2550,18 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
             }
             else
             {
-                if (pIoCtx->enmTxDir != VDIOCTXTXDIR_READ)
+                if (pIoCtx->enmTxDir == VDIOCTXTXDIR_FLUSH)
                 {
-                    AssertMsg(   pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE
-                              || pIoCtx->enmTxDir == VDIOCTXTXDIR_FLUSH,
-                              ("Invalid transfer direction\n"));
+                    vdIoCtxUnlockDisk(pDisk, pIoCtx);
                     vdThreadFinishWrite(pDisk);
                 }
+                else if (pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE)
+                    vdThreadFinishWrite(pDisk);
                 else
+                {
+                    Assert(pIoCtx->enmTxDir == VDIOCTXTXDIR_READ);
                     vdThreadFinishRead(pDisk);
+                }
 
                 LogFlowFunc(("I/O context completed pIoCtx=%#p rcReq=%Rrc\n", pIoCtx, pIoCtx->rcReq));
                 pIoCtx->Type.Root.pfnComplete(pIoCtx->Type.Root.pvUser1,
@@ -3588,8 +3660,8 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
             pDisk->pInterfaceErrorCallbacks = NULL;
             pDisk->pInterfaceThreadSync = NULL;
             pDisk->pInterfaceThreadSyncCallbacks = NULL;
-            pDisk->fGrowing = false;
-            RTListInit(&pDisk->ListWriteGrowing);
+            pDisk->fLocked = false;
+            RTListInit(&pDisk->ListWriteLocked);
 
             /* Create the I/O ctx cache */
             rc = RTMemCacheCreate(&pDisk->hMemCacheIoCtx, sizeof(VDIOCTX), 0, UINT32_MAX,
