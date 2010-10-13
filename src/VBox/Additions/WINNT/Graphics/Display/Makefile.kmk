@@ -85,13 +85,17 @@ endif
 ifdef VBOXWDDM_TEST_UHGSMI
  VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
 endif
+ifdef VBOX_WITH_CRHGSMI
+ VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
+endif
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
     wddm/VBoxDispD3DIf.cpp \
     wddm/VBoxDispCm.cpp \
     wddm/VBoxDispMp.cpp \
     wddm/VBoxScreen.cpp \
-    wddm/VBoxUhgsmiDisp.cpp \
+    $(if $(VBOX_WITH_CRHGSMI),wddm/VBoxUhgsmiDisp.cpp,) \
+    $(if $(VBOX_WITH_CRHGSMI),wddm/VBoxUhgsmiKmt.cpp,) \
     wddm/VBoxDispMpTst.cpp \
 	wddm/VBoxDispD3D.def \
 	wddm/VBoxDispD3D.rc
@@ -106,6 +110,19 @@ DLLS += VBoxDispD3D64
 VBoxDispD3D64_EXTENDS  = VBoxDispD3D
 VBoxDispD3D64_SOURCES  = $(subst VBoxDispD3D.def,VBoxDispD3D64.def,$(VBoxDispD3D_SOURCES))
  endif
+endif
+
+ifdef VBOX_WITH_CRHGSMI
+#
+# VBoxCrHgsmi
+#
+LIBRARIES += VBoxCrHgsmi
+VBoxCrHgsmi_TEMPLATE    = VBOXGUESTR3LIB
+VBoxCrHgsmi_DEFS        = UNICODE _UNICODE VBOX_WITH_CRHGSMI IN_VBOXCRHGSMI VBOX_WITH_WDDM VBOX_WITH_VDMA
+VBoxCrHgsmi_SOURCES     = \
+	wddm/VBoxCrHgsmi.cpp \
+	wddm/VBoxUhgsmiKmt.cpp
+VBoxCrHgsmi_SDKS        = WINDDKWLH
 endif
 
 ifdef VBOXVIDEOWINDBG

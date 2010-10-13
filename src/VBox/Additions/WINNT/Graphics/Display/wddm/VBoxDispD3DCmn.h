@@ -32,7 +32,11 @@
 #include "VBoxDispD3DIf.h"
 #include "../../Miniport/wddm/VBoxVideoIf.h"
 #include "VBoxDispCm.h"
+#ifdef VBOX_WITH_CRHGSMI
+#include "VBoxUhgsmiBase.h"
 #include "VBoxUhgsmiDisp.h"
+#include "VBoxUhgsmiKmt.h"
+#endif
 #include "VBoxDispD3D.h"
 
 #ifdef DEBUG
@@ -116,5 +120,11 @@ void vboxVDbgVEHandlerUnregister();
 #define vboxVDbgPrintR vboxVDbgPrint
 #define vboxVDbgPrintF vboxVDbgPrint
 #endif
+
+# ifdef VBOXWDDMDISP
+#  define VBOXWDDMDISP_DECL(_type) DECLEXPORT(_type)
+# else
+#  define VBOXWDDMDISP_DECL(_type) DECLIMPORT(_type)
+# endif
 
 #endif /* #ifndef ___VBoxDispD3DCmn_h___ */
