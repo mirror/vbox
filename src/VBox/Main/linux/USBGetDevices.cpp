@@ -92,10 +92,10 @@ static const USBSUFF s_aIntervalSuff[] =
 
 int USBProxyLinuxCheckForUsbfs(const char *pcszDevices)
 {
-    int fd;
+    int fd, rc = VINF_SUCCESS;
 
     fd = open(pcszDevices, O_RDONLY, 00600);
-    if (fd)
+    if (fd >= 0)
     {
         /*
          * Check that we're actually on the usbfs.
@@ -103,17 +103,16 @@ int USBProxyLinuxCheckForUsbfs(const char *pcszDevices)
         struct statfs StFS;
         if (!fstatfs(fd, &StFS))
         {
-            if (StFS.f_type == USBDEVICE_SUPER_MAGIC)
-                return VINF_SUCCESS;
-            else
-                return VERR_NOT_FOUND;
+            if (StFS.f_type != USBDEVICE_SUPER_MAGIC)
+                rc = VERR_NOT_FOUND;
         }
         else
-            return RTErrConvertFromErrno(errno);
+            rc = RTErrConvertFromErrno(errno);
+        close(fd);
     }
     else
-        return RTErrConvertFromErrno(errno);
-    return 0;
+        rc = RTErrConvertFromErrno(errno);
+    return rc;
 }
 
 
@@ -547,7 +546,10 @@ static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot)
         RT_ZERO(Dev);
         Dev.enmState = USBDEVICESTATE_UNUSED;
 
-        rc = VINF_SUCCESS;
+        /* Set close on exit and hope no one is racing us. */
+        rc =   fcntl(fileno(pFile), F_SETFD, FD_CLOEXEC) >= 0
+             ? VINF_SUCCESS
+             : RTErrConvertFromErrno(errno);
         while (     RT_SUCCESS(rc)
                &&   fgets(szLine, sizeof(szLine), pFile))
         {
@@ -780,6 +782,7 @@ static PUSBDEVICE getDevicesFromUsbfs(const char *pcszUsbfsRoot)
             }
 #undef PREFIX
         } /* parse loop */
+        fclose(pFile);
 
         /*
          * Add the current entry.

@@ -1122,7 +1122,8 @@ static int iwInit(inotifyWatch *pSelf)
 
     flags = fcntl(fd, F_GETFL, NULL);
     if (   flags < 0
-        || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+        || fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0
+        || fcntl(fd, F_SETFD, FD_CLOEXEC) < 0 /* race here */)
     {
         Assert(errno > 0);
         rc = RTErrConvertFromErrno(errno);
@@ -1226,11 +1227,19 @@ static int pipeCreateSimple(int *phPipeRead, int *phPipeWrite)
     AssertPtrReturn(phPipeWrite, VERR_INVALID_POINTER);
 
     /*
-     * Create the pipe and set the close-on-exec flag if requested.
+     * Create the pipe and set the close-on-exec flag.
      */
     int aFds[2] = {-1, -1};
     if (pipe(aFds))
         return RTErrConvertFromErrno(errno);
+    if (   fcntl(aFds[0], F_SETFD, FD_CLOEXEC) < 0
+        || fcntl(aFds[1], F_SETFD, FD_CLOEXEC) < 0)
+    {
+        int rc = RTErrConvertFromErrno(errno);
+        close(aFds[0]);
+        close(aFds[1]);
+        return rc;
+    }
 
     *phPipeRead  = aFds[0];
     *phPipeWrite = aFds[1];
