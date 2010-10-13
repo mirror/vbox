@@ -178,35 +178,45 @@ static kmutex_t             g_IrqMtx;
  */
 int _init(void)
 {
-    LogFlow((DEVICE_NAME ":_init\n"));
-
-    PRTLOGGER pRelLogger;
-    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    int rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
-                     "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                     RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
-    if (RT_SUCCESS(rc))
-        RTLogRelSetDefaultInstance(pRelLogger);
-    else
-        cmn_err(CE_NOTE, "failed to initialize driver logging rc=%d!\n", rc);
-
     /*
-     * Prevent module autounloading.
+     * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
      */
-    modctl_t *pModCtl = mod_getctl(&g_VBoxGuestSolarisModLinkage);
-    if (pModCtl)
-        pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
-    else
-        LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
-
-
-    rc = ddi_soft_state_init(&g_pVBoxGuestSolarisState, sizeof(vboxguest_state_t), 1);
-    if (!rc)
+    int rc = RTR0Init(0);
+    if (RT_SUCCESS(rc))
     {
-        rc = mod_install(&g_VBoxGuestSolarisModLinkage);
-        if (rc)
-            ddi_soft_state_fini(&g_pVBoxGuestSolarisState);
+        PRTLOGGER pRelLogger;
+        static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+        rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
+                         "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                         RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
+        if (RT_SUCCESS(rc))
+            RTLogRelSetDefaultInstance(pRelLogger);
+        else
+            cmn_err(CE_NOTE, "failed to initialize driver logging rc=%d!\n", rc);
+
+        /*
+         * Prevent module autounloading.
+         */
+        modctl_t *pModCtl = mod_getctl(&g_VBoxGuestSolarisModLinkage);
+        if (pModCtl)
+            pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
+        else
+            LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
+
+        rc = ddi_soft_state_init(&g_pVBoxGuestSolarisState, sizeof(vboxguest_state_t), 1);
+        if (!rc)
+        {
+            rc = mod_install(&g_VBoxGuestSolarisModLinkage);
+            if (rc)
+                ddi_soft_state_fini(&g_pVBoxGuestSolarisState);
+        }
     }
+    else
+    {
+        cmn_err(CE_NOTE, "_init: RTR0Init failed. rc=%d\n", rc);
+        return EINVAL;
+    }
+
     return rc;
 }
 
@@ -221,6 +231,7 @@ int _fini(void)
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
 
+    RTR0Term();
     return rc;
 }
 
@@ -253,26 +264,13 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 return DDI_FAILURE;
             }
 
-            int rc;
-            int instance;
-
-            instance = ddi_get_instance(pDip);
-
-            /*
-             * Initialize IPRT R0 driver, which internally calls OS-specific r0 init.
-             */
-            rc = RTR0Init(0);
-            if (RT_FAILURE(rc))
-            {
-                Log((DEVICE_NAME "::Attach: RTR0Init failed.\n"));
-                return DDI_FAILURE;
-            }
+            int instance = ddi_get_instance(pDip);
 
             /*
              * Enable resources for PCI access.
              */
             ddi_acc_handle_t PciHandle;
-            rc = pci_config_setup(pDip, &PciHandle);
+            int rc = pci_config_setup(pDip, &PciHandle);
             if (rc == DDI_SUCCESS)
             {
                 /*
@@ -344,8 +342,6 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             }
             else
                 LogRel((DEVICE_NAME "::Attach: pci_config_setup failed rc=%d.\n", rc));
-
-            RTR0Term();
             return DDI_FAILURE;
         }
 
@@ -381,7 +377,6 @@ static int VBoxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             ddi_regs_map_free(&g_PciMMIOHandle);
             ddi_remove_minor_node(pDip, NULL);
             VBoxGuestDeleteDevExt(&g_DevExt);
-            RTR0Term();
             g_pDip = NULL;
             return DDI_SUCCESS;
         }
