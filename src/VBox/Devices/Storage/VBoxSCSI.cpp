@@ -372,10 +372,11 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     RTGCPTR  GCSrc      = *pGCPtrSrc;
     uint32_t cbTransfer = *pcTransfer * cb;
 
-    /* Read string only valid for data in register. */
-    AssertMsg(iRegister == 1, ("Hey only register 1 can be read from with string\n"));
-    AssertMsg(cbTransfer == 512, ("Only 512 byte transfers are allowed\n"));
-
+    /* Write string only valid for data in/out register. */
+    AssertMsg(iRegister == 1, ("Hey only register 1 can be written to with string\n"));
+    Assert(cbTransfer == pVBoxSCSI->cbBuf);
+    if (cbTransfer > pVBoxSCSI->cbBuf)
+        cbTransfer = pVBoxSCSI->cbBuf;  /* Ignore excess data (not supposed to happen). */
 
     int rc = PDMDevHlpPhysReadGCVirt(pDevIns, pVBoxSCSI->pBuf, GCSrc, cbTransfer);
     AssertRC(rc);
