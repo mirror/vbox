@@ -2258,10 +2258,11 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                     }
                 }
                 /* VT-x also chokes on invalid tr or ldtr selectors (minix) */
-                if (    pCtx->tr > pCtx->gdtr.cbGdt
-                    ||  pCtx->ldtr > pCtx->gdtr.cbGdt)
+                if (    pCtx->gdtr.cbGdt
+                    &&  (   pCtx->tr > pCtx->gdtr.cbGdt
+                         || pCtx->ldtr > pCtx->gdtr.cbGdt))
                 {
-                    return false;
+                        return false;
                 }
             }
         }
