@@ -6448,7 +6448,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             uActTag = pAhciPort->ahciIOTasks[pAhciPort->uActReadPos];
 
             pAhciPortTaskState->uTag = AHCI_TASK_GET_TAG(uActTag);
-            AssertMsg(pAhciPortTaskState->uTag < AHCI_NR_COMMAND_SLOTS, ("%s: Invalid Tag number!!\n", __FUNCTION__));
+            AssertMsg(pAhciPortTaskState->uTag < AHCI_NR_COMMAND_SLOTS, ("%s: Invalid Tag number %u!!\n", __FUNCTION__, pAhciPortTaskState->uTag));
 
             /** Set current command slot */
             pAhciPort->regCMD |= (AHCI_PORT_CMD_CCS_SHIFT(pAhciPortTaskState->uTag));
