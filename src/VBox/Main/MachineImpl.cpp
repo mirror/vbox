@@ -3326,7 +3326,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     // if this becomes true then we need to call saveSettings in the end
     // @todo r=dj there is no error handling so far...
-    bool fNeedsGlobalSaveSettings = false;
+    bool fNeedsMachineSaveSettings = false,
+         fNeedsGlobalSaveSettings = false;
 
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
@@ -3670,15 +3671,20 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         // and decide which medium registry to use now that the medium is attached:
         if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
             // machine XML is VirtualBox 4.0 or higher:
-            medium->addRegistry(getId());        // machine UUID
+            medium->addRegistry(getId(),         // machine UUID
+                                &fNeedsMachineSaveSettings);
         else
-            medium->addRegistry(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
+            medium->addRegistry(mParent->getGlobalRegistryId(), // VirtualBox global registry UUID
+                                &fNeedsGlobalSaveSettings);
     }
 
     /* success: finally remember the attachment */
     setModified(IsModified_Storage);
     mMediaData.backup();
     mMediaData->mAttachments.push_back(attachment);
+
+    if (fNeedsMachineSaveSettings)
+        saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force);
 
     if (fNeedsGlobalSaveSettings)
     {
@@ -3797,7 +3803,7 @@ STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControlle
 STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                   LONG aControllerPort,
                                   LONG aDevice,
-                                  IN_BSTR aId,
+                                  IMedium *aMedium,
                                   BOOL aForce)
 {
     int rc = S_OK;
@@ -3809,8 +3815,11 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    // we're calling host methods for getting DVD and floppy drives so lock host first
-    AutoMultiWriteLock2 alock(mParent->host(), this COMMA_LOCKVAL_SRC_POS);
+    // request the host lock first, since might be calling Host methods for getting host drives;
+    // next, protect the media tree all the while we're in here, as well as our member variables
+    AutoMultiWriteLock3 multiLock(mParent->host()->lockHandle(),
+                                  this->lockHandle(),
+                                  &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<MediumAttachment> pAttach = findAttachment(mMediaData->mAttachments,
                                                          aControllerName,
@@ -3826,63 +3835,79 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     ComObjPtr<Medium> oldmedium;
     oldmedium = pAttach->getMedium();
 
-    Guid uuid(aId);
-    ComObjPtr<Medium> medium;
-    DeviceType_T mediumType = pAttach->getType();
-    switch (mediumType)
-    {
-        case DeviceType_DVD:
-        case DeviceType_Floppy:
-            rc = mParent->findRemoveableMedium(mediumType, uuid, true /* fRefresh */, medium);
-            if (FAILED(rc)) return rc;
-        break;
+    ComObjPtr<Medium> pMedium = static_cast<Medium*>(aMedium);
+    if (aMedium && pMedium.isNull())
+        return setError(E_INVALIDARG, "The given medium pointer is invalid");
 
-        default:
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot change medium attached to device slot %d on port %d of controller '%ls'"),
-                            aDevice, aControllerPort, aControllerName);
+    AutoCaller mediumCaller(pMedium);
+    if (FAILED(mediumCaller.rc())) return mediumCaller.rc();
+
+    AutoWriteLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
+    if (pMedium)
+    {
+        DeviceType_T mediumType = pAttach->getType();
+        switch (mediumType)
+        {
+            case DeviceType_DVD:
+            case DeviceType_Floppy:
+            break;
+
+            default:
+                return setError(VBOX_E_INVALID_OBJECT_STATE,
+                                tr("The device at port %d, device %d of controller '%ls' of this virtual machine is not removeable"),
+                                aControllerPort,
+                                aDevice,
+                                aControllerName);
+        }
     }
 
-    if (SUCCEEDED(rc))
-    {
-        setModified(IsModified_Storage);
-        mMediaData.backup();
+    setModified(IsModified_Storage);
+    mMediaData.backup();
 
-        /* The backup operation makes the pAttach reference point to the
-         * old settings. Re-get the correct reference. */
+    bool fNeedsMachineSaveSettings = false,
+         fNeedsGlobalSaveSettings = false;
+
+    {
+        // The backup operation makes the pAttach reference point to the
+        // old settings. Re-get the correct reference.
         pAttach = findAttachment(mMediaData->mAttachments,
                                  aControllerName,
                                  aControllerPort,
                                  aDevice);
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
-        /* For non-hard disk media, detach straight away. */
-        if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
+        if (!oldmedium.isNull())
             oldmedium->removeBackReference(mData->mUuid);
-        if (!medium.isNull())
+        if (!pMedium.isNull())
         {
-            medium->addBackReference(mData->mUuid);
+            pMedium->addBackReference(mData->mUuid);
+
             // and decide which medium registry to use now that the medium is attached:
             if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
-                // machine XML is VirtualBox 4.0 or higher:
-                medium->addRegistry(getId());        // machine UUID
+                // machine XML is VirtualBox 4.0 or higher: machine UUID
+                pMedium->addRegistry(getId(),
+                                     &fNeedsMachineSaveSettings);
             else
-                medium->addRegistry(mParent->getGlobalRegistryId()); // VirtualBox global registry UUID
+                // VirtualBox global registry UUID
+                pMedium->addRegistry(mParent->getGlobalRegistryId(),
+                                     &fNeedsGlobalSaveSettings);
         }
 
-        pAttach->updateMedium(medium);
-
-        setModified(IsModified_Storage);
+        pAttach->updateMedium(pMedium);
     }
 
-    alock.leave();
+    setModified(IsModified_Storage);
+
+    mediumLock.release();
+    multiLock.release();
     rc = onMediumChange(pAttach, aForce);
-    alock.enter();
+    multiLock.acquire();
+    mediumLock.acquire();
 
     /* On error roll back this change only. */
     if (FAILED(rc))
     {
-        if (!medium.isNull())
-            medium->removeBackReference(mData->mUuid);
+        if (!pMedium.isNull())
+            pMedium->removeBackReference(mData->mUuid);
         pAttach = findAttachment(mMediaData->mAttachments,
                                  aControllerName,
                                  aControllerPort,
@@ -3891,10 +3916,25 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         if (pAttach.isNull())
             return rc;
         AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
-        /* For non-hard disk media, re-attach straight away. */
-        if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
+        if (!oldmedium.isNull())
             oldmedium->addBackReference(mData->mUuid);
         pAttach->updateMedium(oldmedium);
+    }
+
+    mediumLock.release();
+    multiLock.release();
+
+    if (fNeedsMachineSaveSettings)
+    {
+        AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
+        saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force);
+    }
+
+    if (fNeedsGlobalSaveSettings)
+    {
+        // save the global settings; for that we should hold only the VirtualBox lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        mParent->saveSettings();
     }
 
     return rc;
@@ -7464,7 +7504,8 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
             if (puuidRegistry)
                 // caller wants registry ID to be set on all attached media (OVF import case)
-                medium->addRegistry(*puuidRegistry);
+                medium->addRegistry(*puuidRegistry,
+                                    NULL /* pfNeedsSaveSettings */);
         }
 
         if (FAILED(rc))

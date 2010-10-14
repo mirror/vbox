@@ -4512,13 +4512,12 @@
       <param name="device" type="long" dir="in">
         <desc>Device slot in the given port to attach the medium to.</desc>
       </param>
-      <param name="medium" type="uuid" mod="string" dir="in">
-        <desc>UUID of the medium to attach. A zero UUID means unmount the
-          currently mounted medium.</desc>
+      <param name="medium" type="IMedium" dir="in">
+        <desc>Medium to mount or NULL for an empty drive.</desc>
       </param>
       <param name="force" type="boolean" dir="in">
         <desc>Allows to force unmount/mount of a medium which is locked by
-          theDevice slot in the given port to attach the medium to.</desc>
+          the device slot in the given port to attach the medium to.</desc>
       </param>
     </method>
 

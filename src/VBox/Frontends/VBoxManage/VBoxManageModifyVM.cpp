@@ -873,7 +873,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_DVD: // deprecated
             {
                 ComPtr<IMedium> dvdMedium;
-                Bstr uuid(ValueUnion.psz);
 
                 /* unmount? */
                 if (!strcmp(ValueUnion.psz, "none"))
@@ -930,17 +929,15 @@ int handleModifyVM(HandlerArg *a)
                     }
                 }
 
-                if (dvdMedium)
-                    dvdMedium->COMGETTER(Id)(uuid.asOutParam());
                 CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller").raw(),
-                                                 1, 0, uuid.raw(),
+                                                 1, 0,
+                                                 dvdMedium,
                                                  FALSE /* aForce */));
                 break;
             }
 
             case MODIFYVM_FLOPPY: // deprecated
             {
-                Bstr uuid(ValueUnion.psz);
                 ComPtr<IMedium> floppyMedium;
                 ComPtr<IMediumAttachment> floppyAttachment;
                 machine->GetMediumAttachment(Bstr("Floppy Controller").raw(),
@@ -1004,9 +1001,9 @@ int handleModifyVM(HandlerArg *a)
                             break;
                         }
                     }
-                    floppyMedium->COMGETTER(Id)(uuid.asOutParam());
                     CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller").raw(),
-                                                     0, 0, uuid.raw(),
+                                                     0, 0,
+                                                     floppyMedium,
                                                      FALSE /* aForce */));
                 }
                 break;

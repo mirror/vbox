@@ -1305,9 +1305,12 @@ void UIMachineLogic::sltMountStorageMedium()
 
     bool fMount = !newId.isEmpty();
 
+    VBoxMedium vmedium = vboxGlobal().findMedium(newId);
+    CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
+
     /* Remount medium to the predefined port/device: */
     bool fWasMounted = false;
-    machine.MountMedium(target.name, target.port, target.device, newId, false /* force */);
+    machine.MountMedium(target.name, target.port, target.device, medium, false /* force */);
     if (machine.isOk())
         fWasMounted = true;
     else
@@ -1316,7 +1319,7 @@ void UIMachineLogic::sltMountStorageMedium()
         if (vboxProblem().cannotRemountMedium(0, machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, true /* retry? */) == QIMessageBox::Ok)
         {
             /* Force remount medium to the predefined port/device: */
-            machine.MountMedium(target.name, target.port, target.device, newId, true /* force */);
+            machine.MountMedium(target.name, target.port, target.device, medium, true /* force */);
             if (machine.isOk())
                 fWasMounted = true;
             else

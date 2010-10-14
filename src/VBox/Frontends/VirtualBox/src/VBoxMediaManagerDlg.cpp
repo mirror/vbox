@@ -1233,7 +1233,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                 VBoxMedium medium = vboxGlobal().findMedium (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
                 if (medium.id() == aMedium.id())
                 {
-                    machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), QString(""), false /* force */);
+                    machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
                     if (!machine.isOk())
                     {
                         vboxProblem().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);
@@ -1254,7 +1254,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium, const QS
                 VBoxMedium medium = vboxGlobal().findMedium (attachment.GetMedium().isNull() ? QString() : attachment.GetMedium().GetId());
                 if (medium.id() == aMedium.id())
                 {
-                    machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), QString(""), false /* force */);
+                    machine.MountMedium (attachment.GetController(), attachment.GetPort(), attachment.GetDevice(), CMedium(), false /* force */);
                     if (!machine.isOk())
                     {
                         vboxProblem().cannotRemountMedium (this, machine, aMedium, false /* mount? */, false /* retry? */);

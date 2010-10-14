@@ -362,12 +362,10 @@ void createVM(IVirtualBox *virtualBox)
         /*
          * Now assign it to our VM
          */
-        nsXPIDLString isoUUID;
-        dvdImage->GetId(getter_Copies(isoUUID));
         rc = machine->MountMedium(NS_LITERAL_STRING("IDE Controller").get(), // controller identifier
                                   2,                              // channel number on the controller
                                   0,                              // device number on the controller
-                                  isoUUID,
+                                  dvdImage,
                                   PR_FALSE);                      // aForce
         if (NS_FAILED(rc))
         {

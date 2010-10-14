@@ -1514,9 +1514,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
 
-        Bstr id;
         Bstr storageCtlName;
-        floppyMedium->COMGETTER(Id)(id.asOutParam());
 
         /* get the first floppy controller to attach the floppy to
          * and if there is none, add one temporarily
@@ -1559,7 +1557,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
 
-        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 0, 0, id.raw(),
+        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 0, 0, floppyMedium,
                                           FALSE /* aForce */));
     }
     while (0);
@@ -1604,9 +1602,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
 
-        Bstr id;
         Bstr storageCtlName;
-        dvdMedium->COMGETTER(Id)(id.asOutParam());
 
         /* get the first IDE controller to attach the DVD Drive to
          * and if there is none, add one temporarily
@@ -1647,7 +1643,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
 
-        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 1, 0, id.raw(),
+        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 1, 0, dvdMedium,
                                           FALSE /*aForce */));
     }
     while (0);

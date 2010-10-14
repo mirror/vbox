@@ -3522,9 +3522,11 @@ Utf8Str Medium::getName()
  * See getFirstRegistryMachineId() for details.
  *
  * @param id
+ * @param pfNeedsSaveSettings If != NULL, is set to true if a new reference was added and saveSettings for either the machine or global XML is needed.
  * @return true if the registry was added.
  */
-bool Medium::addRegistry(const Guid& id)
+bool Medium::addRegistry(const Guid& id,
+                         bool *pfNeedsSaveSettings)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return false;
@@ -3536,7 +3538,18 @@ bool Medium::addRegistry(const Guid& id)
        )
         return false;
 
+    // no need to add the UUID twice
+    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
+         it != m->llRegistryIDs.end();
+         ++it)
+    {
+        if ((*it) == id)
+            return false;
+    }
+
     m->llRegistryIDs.push_back(id);
+    if (pfNeedsSaveSettings)
+        *pfNeedsSaveSettings = true;
     return true;
 }
 
