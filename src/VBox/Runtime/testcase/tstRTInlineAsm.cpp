@@ -46,10 +46,10 @@
 #endif
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/initterm.h>
 #include <iprt/param.h>
 #include <iprt/thread.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
 
 
 
@@ -61,8 +61,7 @@
     { \
         if ((val) != (expect)) \
         { \
-            RTTestIErrorInc(); \
-            RTPrintf("%s, %d: " #val ": expected " fmt " got " fmt "\n", __FUNCTION__, __LINE__, (expect), (val)); \
+            RTTestFailed(g_hTest, "%s, %d: " #val ": expected " fmt " got " fmt "\n", __FUNCTION__, __LINE__, (expect), (val)); \
         } \
     } while (0)
 
@@ -72,10 +71,38 @@
         type val = op; \
         if (val != (type)(expect)) \
         { \
-            RTTestIErrorInc(); \
-            RTPrintf("%s, %d: " #op ": expected " fmt " got " fmt "\n", __FUNCTION__, __LINE__, (type)(expect), val); \
+            RTTestFailed(g_hTest, "%s, %d: " #op ": expected " fmt " got " fmt "\n", __FUNCTION__, __LINE__, (type)(expect), val); \
         } \
     } while (0)
+
+/**
+ * Calls a worker function with different worker variable storage types.
+ */
+#define DO_SIMPLE_TEST(name, type) \
+    do \
+    { \
+        RTTestISub(#name); \
+        type StackVar; \
+        tst ## name ## Worker(&StackVar); \
+        \
+        type *pVar = (type *)RTTestGuardedAllocHead(g_hTest, sizeof(type)); \
+        RTTEST_CHECK_BREAK(g_hTest, pVar); \
+        tst ## name ## Worker(pVar); \
+        RTTestGuardedFree(g_hTest, pVar); \
+        \
+        pVar = (type *)RTTestGuardedAllocTail(g_hTest, sizeof(type)); \
+        RTTEST_CHECK_BREAK(g_hTest, pVar); \
+        tst ## name ## Worker(pVar); \
+        RTTestGuardedFree(g_hTest, pVar); \
+    } while (0)
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** The test instance. */
+static RTTEST g_hTest;
+
 
 
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
@@ -129,6 +156,8 @@ const char *getL2CacheAss(unsigned u)
  */
 void tstASMCpuId(void)
 {
+    RTTestISub("ASMCpuId");
+
     unsigned    iBit;
     struct
     {
@@ -136,7 +165,7 @@ void tstASMCpuId(void)
     } s;
     if (!ASMHasCpuId())
     {
-        RTPrintf("tstInlineAsm: warning! CPU doesn't support CPUID\n");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "warning! CPU doesn't support CPUID\n");
         return;
     }
 
@@ -165,21 +194,22 @@ void tstASMCpuId(void)
     /*
      * Done testing, dump the information.
      */
-    RTPrintf("tstInlineAsm: CPUID Dump\n");
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "CPUID Dump\n");
     ASMCpuId(0, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
     const uint32_t cFunctions = s.uEAX;
 
     /* raw dump */
-    RTPrintf("\n"
-             "         RAW Standard CPUIDs\n"
-             "Function  eax      ebx      ecx      edx\n");
+    RTTestIPrintf(RTTESTLVL_ALWAYS,
+                  "\n"
+                  "         RAW Standard CPUIDs\n"
+                  "Function  eax      ebx      ecx      edx\n");
     for (unsigned iStd = 0; iStd <= cFunctions + 3; iStd++)
     {
         if (iStd == 4)
             continue; /* Leaf 04 output depends on the initial value of ECX */
         ASMCpuId(iStd, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("%08x  %08x %08x %08x %08x%s\n",
-                 iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%08x  %08x %08x %08x %08x%s\n",
+                      iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
 
         u32 = ASMCpuId_EAX(iStd);
         CHECKVAL(u32, s.uEAX, "%x");
@@ -201,9 +231,10 @@ void tstASMCpuId(void)
      * Understandable output
      */
     ASMCpuId(0, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-    RTPrintf("Name:                            %.04s%.04s%.04s\n"
-             "Support:                         0-%u\n",
-             &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
+    RTTestIPrintf(RTTESTLVL_ALWAYS,
+                  "Name:                            %.04s%.04s%.04s\n"
+                  "Support:                         0-%u\n",
+                  &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
     bool const fIntel = ASMIsIntelCpuEx(s.uEBX, s.uECX, s.uEDX);
 
     /*
@@ -213,69 +244,70 @@ void tstASMCpuId(void)
     {
         static const char * const s_apszTypes[4] = { "primary", "overdrive", "MP", "reserved" };
         ASMCpuId(1, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("Family:                          %#x \tExtended: %#x \tEffective: %#x\n"
-                 "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
-                 "Stepping:                        %d\n"
-                 "Type:                            %d (%s)\n"
-                 "APIC ID:                         %#04x\n"
-                 "Logical CPUs:                    %d\n"
-                 "CLFLUSH Size:                    %d\n"
-                 "Brand ID:                        %#04x\n",
-                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
-                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
-                 ASMGetCpuStepping(s.uEAX),
-                 (s.uEAX >> 12) & 0x3, s_apszTypes[(s.uEAX >> 12) & 0x3],
-                 (s.uEBX >> 24) & 0xff,
-                 (s.uEBX >> 16) & 0xff,
-                 (s.uEBX >>  8) & 0xff,
-                 (s.uEBX >>  0) & 0xff);
+        RTTestIPrintf(RTTESTLVL_ALWAYS,
+                      "Family:                          %#x \tExtended: %#x \tEffective: %#x\n"
+                      "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
+                      "Stepping:                        %d\n"
+                      "Type:                            %d (%s)\n"
+                      "APIC ID:                         %#04x\n"
+                      "Logical CPUs:                    %d\n"
+                      "CLFLUSH Size:                    %d\n"
+                      "Brand ID:                        %#04x\n",
+                      (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
+                      (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
+                      ASMGetCpuStepping(s.uEAX),
+                      (s.uEAX >> 12) & 0x3, s_apszTypes[(s.uEAX >> 12) & 0x3],
+                      (s.uEBX >> 24) & 0xff,
+                      (s.uEBX >> 16) & 0xff,
+                      (s.uEBX >>  8) & 0xff,
+                      (s.uEBX >>  0) & 0xff);
 
-        RTPrintf("Features EDX:                   ");
-        if (s.uEDX & RT_BIT(0))   RTPrintf(" FPU");
-        if (s.uEDX & RT_BIT(1))   RTPrintf(" VME");
-        if (s.uEDX & RT_BIT(2))   RTPrintf(" DE");
-        if (s.uEDX & RT_BIT(3))   RTPrintf(" PSE");
-        if (s.uEDX & RT_BIT(4))   RTPrintf(" TSC");
-        if (s.uEDX & RT_BIT(5))   RTPrintf(" MSR");
-        if (s.uEDX & RT_BIT(6))   RTPrintf(" PAE");
-        if (s.uEDX & RT_BIT(7))   RTPrintf(" MCE");
-        if (s.uEDX & RT_BIT(8))   RTPrintf(" CX8");
-        if (s.uEDX & RT_BIT(9))   RTPrintf(" APIC");
-        if (s.uEDX & RT_BIT(10))  RTPrintf(" 10");
-        if (s.uEDX & RT_BIT(11))  RTPrintf(" SEP");
-        if (s.uEDX & RT_BIT(12))  RTPrintf(" MTRR");
-        if (s.uEDX & RT_BIT(13))  RTPrintf(" PGE");
-        if (s.uEDX & RT_BIT(14))  RTPrintf(" MCA");
-        if (s.uEDX & RT_BIT(15))  RTPrintf(" CMOV");
-        if (s.uEDX & RT_BIT(16))  RTPrintf(" PAT");
-        if (s.uEDX & RT_BIT(17))  RTPrintf(" PSE36");
-        if (s.uEDX & RT_BIT(18))  RTPrintf(" PSN");
-        if (s.uEDX & RT_BIT(19))  RTPrintf(" CLFSH");
-        if (s.uEDX & RT_BIT(20))  RTPrintf(" 20");
-        if (s.uEDX & RT_BIT(21))  RTPrintf(" DS");
-        if (s.uEDX & RT_BIT(22))  RTPrintf(" ACPI");
-        if (s.uEDX & RT_BIT(23))  RTPrintf(" MMX");
-        if (s.uEDX & RT_BIT(24))  RTPrintf(" FXSR");
-        if (s.uEDX & RT_BIT(25))  RTPrintf(" SSE");
-        if (s.uEDX & RT_BIT(26))  RTPrintf(" SSE2");
-        if (s.uEDX & RT_BIT(27))  RTPrintf(" SS");
-        if (s.uEDX & RT_BIT(28))  RTPrintf(" HTT");
-        if (s.uEDX & RT_BIT(29))  RTPrintf(" 29");
-        if (s.uEDX & RT_BIT(30))  RTPrintf(" 30");
-        if (s.uEDX & RT_BIT(31))  RTPrintf(" 31");
-        RTPrintf("\n");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Features EDX:                   ");
+        if (s.uEDX & RT_BIT(0))   RTTestIPrintf(RTTESTLVL_ALWAYS, " FPU");
+        if (s.uEDX & RT_BIT(1))   RTTestIPrintf(RTTESTLVL_ALWAYS, " VME");
+        if (s.uEDX & RT_BIT(2))   RTTestIPrintf(RTTESTLVL_ALWAYS, " DE");
+        if (s.uEDX & RT_BIT(3))   RTTestIPrintf(RTTESTLVL_ALWAYS, " PSE");
+        if (s.uEDX & RT_BIT(4))   RTTestIPrintf(RTTESTLVL_ALWAYS, " TSC");
+        if (s.uEDX & RT_BIT(5))   RTTestIPrintf(RTTESTLVL_ALWAYS, " MSR");
+        if (s.uEDX & RT_BIT(6))   RTTestIPrintf(RTTESTLVL_ALWAYS, " PAE");
+        if (s.uEDX & RT_BIT(7))   RTTestIPrintf(RTTESTLVL_ALWAYS, " MCE");
+        if (s.uEDX & RT_BIT(8))   RTTestIPrintf(RTTESTLVL_ALWAYS, " CX8");
+        if (s.uEDX & RT_BIT(9))   RTTestIPrintf(RTTESTLVL_ALWAYS, " APIC");
+        if (s.uEDX & RT_BIT(10))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 10");
+        if (s.uEDX & RT_BIT(11))  RTTestIPrintf(RTTESTLVL_ALWAYS, " SEP");
+        if (s.uEDX & RT_BIT(12))  RTTestIPrintf(RTTESTLVL_ALWAYS, " MTRR");
+        if (s.uEDX & RT_BIT(13))  RTTestIPrintf(RTTESTLVL_ALWAYS, " PGE");
+        if (s.uEDX & RT_BIT(14))  RTTestIPrintf(RTTESTLVL_ALWAYS, " MCA");
+        if (s.uEDX & RT_BIT(15))  RTTestIPrintf(RTTESTLVL_ALWAYS, " CMOV");
+        if (s.uEDX & RT_BIT(16))  RTTestIPrintf(RTTESTLVL_ALWAYS, " PAT");
+        if (s.uEDX & RT_BIT(17))  RTTestIPrintf(RTTESTLVL_ALWAYS, " PSE36");
+        if (s.uEDX & RT_BIT(18))  RTTestIPrintf(RTTESTLVL_ALWAYS, " PSN");
+        if (s.uEDX & RT_BIT(19))  RTTestIPrintf(RTTESTLVL_ALWAYS, " CLFSH");
+        if (s.uEDX & RT_BIT(20))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 20");
+        if (s.uEDX & RT_BIT(21))  RTTestIPrintf(RTTESTLVL_ALWAYS, " DS");
+        if (s.uEDX & RT_BIT(22))  RTTestIPrintf(RTTESTLVL_ALWAYS, " ACPI");
+        if (s.uEDX & RT_BIT(23))  RTTestIPrintf(RTTESTLVL_ALWAYS, " MMX");
+        if (s.uEDX & RT_BIT(24))  RTTestIPrintf(RTTESTLVL_ALWAYS, " FXSR");
+        if (s.uEDX & RT_BIT(25))  RTTestIPrintf(RTTESTLVL_ALWAYS, " SSE");
+        if (s.uEDX & RT_BIT(26))  RTTestIPrintf(RTTESTLVL_ALWAYS, " SSE2");
+        if (s.uEDX & RT_BIT(27))  RTTestIPrintf(RTTESTLVL_ALWAYS, " SS");
+        if (s.uEDX & RT_BIT(28))  RTTestIPrintf(RTTESTLVL_ALWAYS, " HTT");
+        if (s.uEDX & RT_BIT(29))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 29");
+        if (s.uEDX & RT_BIT(30))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 30");
+        if (s.uEDX & RT_BIT(31))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 31");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "\n");
 
         /** @todo check intel docs. */
-        RTPrintf("Features ECX:                   ");
-        if (s.uECX & RT_BIT(0))   RTPrintf(" SSE3");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Features ECX:                   ");
+        if (s.uECX & RT_BIT(0))   RTTestIPrintf(RTTESTLVL_ALWAYS, " SSE3");
         for (iBit = 1; iBit < 13; iBit++)
             if (s.uECX & RT_BIT(iBit))
-                RTPrintf(" %d", iBit);
-        if (s.uECX & RT_BIT(13))  RTPrintf(" CX16");
+                RTTestIPrintf(RTTESTLVL_ALWAYS, " %d", iBit);
+        if (s.uECX & RT_BIT(13))  RTTestIPrintf(RTTESTLVL_ALWAYS, " CX16");
         for (iBit = 14; iBit < 32; iBit++)
             if (s.uECX & RT_BIT(iBit))
-                RTPrintf(" %d", iBit);
-        RTPrintf("\n");
+                RTTestIPrintf(RTTESTLVL_ALWAYS, " %d", iBit);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "\n");
     }
 
     /*
@@ -286,20 +318,21 @@ void tstASMCpuId(void)
     ASMCpuId(0x80000000, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
     if (!s.uEAX && !s.uEBX && !s.uECX && !s.uEDX)
     {
-        RTPrintf("No extended CPUID info? Check the manual on how to detect this...\n");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "No extended CPUID info? Check the manual on how to detect this...\n");
         return;
     }
     const uint32_t cExtFunctions = s.uEAX | 0x80000000;
 
     /* raw dump */
-    RTPrintf("\n"
-             "         RAW Extended CPUIDs\n"
-             "Function  eax      ebx      ecx      edx\n");
+    RTTestIPrintf(RTTESTLVL_ALWAYS,
+                  "\n"
+                  "         RAW Extended CPUIDs\n"
+                  "Function  eax      ebx      ecx      edx\n");
     for (unsigned iExt = 0x80000000; iExt <= cExtFunctions + 3; iExt++)
     {
         ASMCpuId(iExt, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("%08x  %08x %08x %08x %08x%s\n",
-                 iExt, s.uEAX, s.uEBX, s.uECX, s.uEDX, iExt <= cExtFunctions ? "" : "*");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%08x  %08x %08x %08x %08x%s\n",
+                      iExt, s.uEAX, s.uEBX, s.uECX, s.uEDX, iExt <= cExtFunctions ? "" : "*");
 
         u32 = ASMCpuId_EAX(iExt);
         CHECKVAL(u32, s.uEAX, "%x");
@@ -321,67 +354,69 @@ void tstASMCpuId(void)
      * Understandable output
      */
     ASMCpuId(0x80000000, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-    RTPrintf("Ext Name:                        %.4s%.4s%.4s\n"
-             "Ext Supports:                    0x80000000-%#010x\n",
-             &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
+    RTTestIPrintf(RTTESTLVL_ALWAYS,
+                  "Ext Name:                        %.4s%.4s%.4s\n"
+                  "Ext Supports:                    0x80000000-%#010x\n",
+                  &s.uEBX, &s.uEDX, &s.uECX, s.uEAX);
 
     if (cExtFunctions >= 0x80000001)
     {
         ASMCpuId(0x80000001, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-        RTPrintf("Family:                          %#x \tExtended: %#x \tEffective: %#x\n"
-                 "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
-                 "Stepping:                        %d\n"
-                 "Brand ID:                        %#05x\n",
-                 (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
-                 (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
-                 ASMGetCpuStepping(s.uEAX),
-                 s.uEBX & 0xfff);
+        RTTestIPrintf(RTTESTLVL_ALWAYS,
+                      "Family:                          %#x \tExtended: %#x \tEffective: %#x\n"
+                      "Model:                           %#x \tExtended: %#x \tEffective: %#x\n"
+                      "Stepping:                        %d\n"
+                      "Brand ID:                        %#05x\n",
+                      (s.uEAX >> 8) & 0xf, (s.uEAX >> 20) & 0x7f, ASMGetCpuFamily(s.uEAX),
+                      (s.uEAX >> 4) & 0xf, (s.uEAX >> 16) & 0x0f, ASMGetCpuModel(s.uEAX, fIntel),
+                      ASMGetCpuStepping(s.uEAX),
+                      s.uEBX & 0xfff);
 
-        RTPrintf("Features EDX:                   ");
-        if (s.uEDX & RT_BIT(0))   RTPrintf(" FPU");
-        if (s.uEDX & RT_BIT(1))   RTPrintf(" VME");
-        if (s.uEDX & RT_BIT(2))   RTPrintf(" DE");
-        if (s.uEDX & RT_BIT(3))   RTPrintf(" PSE");
-        if (s.uEDX & RT_BIT(4))   RTPrintf(" TSC");
-        if (s.uEDX & RT_BIT(5))   RTPrintf(" MSR");
-        if (s.uEDX & RT_BIT(6))   RTPrintf(" PAE");
-        if (s.uEDX & RT_BIT(7))   RTPrintf(" MCE");
-        if (s.uEDX & RT_BIT(8))   RTPrintf(" CMPXCHG8B");
-        if (s.uEDX & RT_BIT(9))   RTPrintf(" APIC");
-        if (s.uEDX & RT_BIT(10))  RTPrintf(" 10");
-        if (s.uEDX & RT_BIT(11))  RTPrintf(" SysCallSysRet");
-        if (s.uEDX & RT_BIT(12))  RTPrintf(" MTRR");
-        if (s.uEDX & RT_BIT(13))  RTPrintf(" PGE");
-        if (s.uEDX & RT_BIT(14))  RTPrintf(" MCA");
-        if (s.uEDX & RT_BIT(15))  RTPrintf(" CMOV");
-        if (s.uEDX & RT_BIT(16))  RTPrintf(" PAT");
-        if (s.uEDX & RT_BIT(17))  RTPrintf(" PSE36");
-        if (s.uEDX & RT_BIT(18))  RTPrintf(" 18");
-        if (s.uEDX & RT_BIT(19))  RTPrintf(" 19");
-        if (s.uEDX & RT_BIT(20))  RTPrintf(" NX");
-        if (s.uEDX & RT_BIT(21))  RTPrintf(" 21");
-        if (s.uEDX & RT_BIT(22))  RTPrintf(" MmxExt");
-        if (s.uEDX & RT_BIT(23))  RTPrintf(" MMX");
-        if (s.uEDX & RT_BIT(24))  RTPrintf(" FXSR");
-        if (s.uEDX & RT_BIT(25))  RTPrintf(" FastFXSR");
-        if (s.uEDX & RT_BIT(26))  RTPrintf(" 26");
-        if (s.uEDX & RT_BIT(27))  RTPrintf(" RDTSCP");
-        if (s.uEDX & RT_BIT(28))  RTPrintf(" 28");
-        if (s.uEDX & RT_BIT(29))  RTPrintf(" LongMode");
-        if (s.uEDX & RT_BIT(30))  RTPrintf(" 3DNowExt");
-        if (s.uEDX & RT_BIT(31))  RTPrintf(" 3DNow");
-        RTPrintf("\n");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Features EDX:                   ");
+        if (s.uEDX & RT_BIT(0))   RTTestIPrintf(RTTESTLVL_ALWAYS, " FPU");
+        if (s.uEDX & RT_BIT(1))   RTTestIPrintf(RTTESTLVL_ALWAYS, " VME");
+        if (s.uEDX & RT_BIT(2))   RTTestIPrintf(RTTESTLVL_ALWAYS, " DE");
+        if (s.uEDX & RT_BIT(3))   RTTestIPrintf(RTTESTLVL_ALWAYS, " PSE");
+        if (s.uEDX & RT_BIT(4))   RTTestIPrintf(RTTESTLVL_ALWAYS, " TSC");
+        if (s.uEDX & RT_BIT(5))   RTTestIPrintf(RTTESTLVL_ALWAYS, " MSR");
+        if (s.uEDX & RT_BIT(6))   RTTestIPrintf(RTTESTLVL_ALWAYS, " PAE");
+        if (s.uEDX & RT_BIT(7))   RTTestIPrintf(RTTESTLVL_ALWAYS, " MCE");
+        if (s.uEDX & RT_BIT(8))   RTTestIPrintf(RTTESTLVL_ALWAYS, " CMPXCHG8B");
+        if (s.uEDX & RT_BIT(9))   RTTestIPrintf(RTTESTLVL_ALWAYS, " APIC");
+        if (s.uEDX & RT_BIT(10))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 10");
+        if (s.uEDX & RT_BIT(11))  RTTestIPrintf(RTTESTLVL_ALWAYS, " SysCallSysRet");
+        if (s.uEDX & RT_BIT(12))  RTTestIPrintf(RTTESTLVL_ALWAYS, " MTRR");
+        if (s.uEDX & RT_BIT(13))  RTTestIPrintf(RTTESTLVL_ALWAYS, " PGE");
+        if (s.uEDX & RT_BIT(14))  RTTestIPrintf(RTTESTLVL_ALWAYS, " MCA");
+        if (s.uEDX & RT_BIT(15))  RTTestIPrintf(RTTESTLVL_ALWAYS, " CMOV");
+        if (s.uEDX & RT_BIT(16))  RTTestIPrintf(RTTESTLVL_ALWAYS, " PAT");
+        if (s.uEDX & RT_BIT(17))  RTTestIPrintf(RTTESTLVL_ALWAYS, " PSE36");
+        if (s.uEDX & RT_BIT(18))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 18");
+        if (s.uEDX & RT_BIT(19))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 19");
+        if (s.uEDX & RT_BIT(20))  RTTestIPrintf(RTTESTLVL_ALWAYS, " NX");
+        if (s.uEDX & RT_BIT(21))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 21");
+        if (s.uEDX & RT_BIT(22))  RTTestIPrintf(RTTESTLVL_ALWAYS, " MmxExt");
+        if (s.uEDX & RT_BIT(23))  RTTestIPrintf(RTTESTLVL_ALWAYS, " MMX");
+        if (s.uEDX & RT_BIT(24))  RTTestIPrintf(RTTESTLVL_ALWAYS, " FXSR");
+        if (s.uEDX & RT_BIT(25))  RTTestIPrintf(RTTESTLVL_ALWAYS, " FastFXSR");
+        if (s.uEDX & RT_BIT(26))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 26");
+        if (s.uEDX & RT_BIT(27))  RTTestIPrintf(RTTESTLVL_ALWAYS, " RDTSCP");
+        if (s.uEDX & RT_BIT(28))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 28");
+        if (s.uEDX & RT_BIT(29))  RTTestIPrintf(RTTESTLVL_ALWAYS, " LongMode");
+        if (s.uEDX & RT_BIT(30))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 3DNowExt");
+        if (s.uEDX & RT_BIT(31))  RTTestIPrintf(RTTESTLVL_ALWAYS, " 3DNow");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "\n");
 
-        RTPrintf("Features ECX:                   ");
-        if (s.uECX & RT_BIT(0))   RTPrintf(" LahfSahf");
-        if (s.uECX & RT_BIT(1))   RTPrintf(" CmpLegacy");
-        if (s.uECX & RT_BIT(2))   RTPrintf(" SVM");
-        if (s.uECX & RT_BIT(3))   RTPrintf(" 3");
-        if (s.uECX & RT_BIT(4))   RTPrintf(" AltMovCr8");
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "Features ECX:                   ");
+        if (s.uECX & RT_BIT(0))   RTTestIPrintf(RTTESTLVL_ALWAYS, " LahfSahf");
+        if (s.uECX & RT_BIT(1))   RTTestIPrintf(RTTESTLVL_ALWAYS, " CmpLegacy");
+        if (s.uECX & RT_BIT(2))   RTTestIPrintf(RTTESTLVL_ALWAYS, " SVM");
+        if (s.uECX & RT_BIT(3))   RTTestIPrintf(RTTESTLVL_ALWAYS, " 3");
+        if (s.uECX & RT_BIT(4))   RTTestIPrintf(RTTESTLVL_ALWAYS, " AltMovCr8");
         for (iBit = 5; iBit < 32; iBit++)
             if (s.uECX & RT_BIT(iBit))
-                RTPrintf(" %d", iBit);
-        RTPrintf("\n");
+                RTTestIPrintf(RTTESTLVL_ALWAYS, " %d", iBit);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "\n");
     }
 
      char szString[4*4*3+1] = {0};
@@ -392,539 +427,698 @@ void tstASMCpuId(void)
      if (cExtFunctions >= 0x80000004)
          ASMCpuId(0x80000004, &szString[32 + 0], &szString[32 + 4], &szString[32 + 8], &szString[32 + 12]);
      if (cExtFunctions >= 0x80000002)
-         RTPrintf("Full Name:                       %s\n", szString);
+         RTTestIPrintf(RTTESTLVL_ALWAYS, "Full Name:                       %s\n", szString);
 
      if (cExtFunctions >= 0x80000005)
      {
          ASMCpuId(0x80000005, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-         RTPrintf("TLB 2/4M Instr/Uni:              %s %3d entries\n"
-                  "TLB 2/4M Data:                   %s %3d entries\n",
-                  getCacheAss((s.uEAX >>  8) & 0xff), (s.uEAX >>  0) & 0xff,
-                  getCacheAss((s.uEAX >> 24) & 0xff), (s.uEAX >> 16) & 0xff);
-         RTPrintf("TLB 4K Instr/Uni:                %s %3d entries\n"
-                  "TLB 4K Data:                     %s %3d entries\n",
-                  getCacheAss((s.uEBX >>  8) & 0xff), (s.uEBX >>  0) & 0xff,
-                  getCacheAss((s.uEBX >> 24) & 0xff), (s.uEBX >> 16) & 0xff);
-         RTPrintf("L1 Instr Cache Line Size:        %d bytes\n"
-                  "L1 Instr Cache Lines Per Tag:    %d\n"
-                  "L1 Instr Cache Associativity:    %s\n"
-                  "L1 Instr Cache Size:             %d KB\n",
-                  (s.uEDX >> 0) & 0xff,
-                  (s.uEDX >> 8) & 0xff,
-                  getCacheAss((s.uEDX >> 16) & 0xff),
-                  (s.uEDX >> 24) & 0xff);
-         RTPrintf("L1 Data Cache Line Size:         %d bytes\n"
-                  "L1 Data Cache Lines Per Tag:     %d\n"
-                  "L1 Data Cache Associativity:     %s\n"
-                  "L1 Data Cache Size:              %d KB\n",
-                  (s.uECX >> 0) & 0xff,
-                  (s.uECX >> 8) & 0xff,
-                  getCacheAss((s.uECX >> 16) & 0xff),
-                  (s.uECX >> 24) & 0xff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "TLB 2/4M Instr/Uni:              %s %3d entries\n"
+                       "TLB 2/4M Data:                   %s %3d entries\n",
+                       getCacheAss((s.uEAX >>  8) & 0xff), (s.uEAX >>  0) & 0xff,
+                       getCacheAss((s.uEAX >> 24) & 0xff), (s.uEAX >> 16) & 0xff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "TLB 4K Instr/Uni:                %s %3d entries\n"
+                       "TLB 4K Data:                     %s %3d entries\n",
+                       getCacheAss((s.uEBX >>  8) & 0xff), (s.uEBX >>  0) & 0xff,
+                       getCacheAss((s.uEBX >> 24) & 0xff), (s.uEBX >> 16) & 0xff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "L1 Instr Cache Line Size:        %d bytes\n"
+                       "L1 Instr Cache Lines Per Tag:    %d\n"
+                       "L1 Instr Cache Associativity:    %s\n"
+                       "L1 Instr Cache Size:             %d KB\n",
+                       (s.uEDX >> 0) & 0xff,
+                       (s.uEDX >> 8) & 0xff,
+                       getCacheAss((s.uEDX >> 16) & 0xff),
+                       (s.uEDX >> 24) & 0xff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "L1 Data Cache Line Size:         %d bytes\n"
+                       "L1 Data Cache Lines Per Tag:     %d\n"
+                       "L1 Data Cache Associativity:     %s\n"
+                       "L1 Data Cache Size:              %d KB\n",
+                       (s.uECX >> 0) & 0xff,
+                       (s.uECX >> 8) & 0xff,
+                       getCacheAss((s.uECX >> 16) & 0xff),
+                       (s.uECX >> 24) & 0xff);
      }
 
      if (cExtFunctions >= 0x80000006)
      {
          ASMCpuId(0x80000006, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-         RTPrintf("L2 TLB 2/4M Instr/Uni:           %s %4d entries\n"
-                  "L2 TLB 2/4M Data:                %s %4d entries\n",
-                  getL2CacheAss((s.uEAX >> 12) & 0xf),  (s.uEAX >>  0) & 0xfff,
-                  getL2CacheAss((s.uEAX >> 28) & 0xf),  (s.uEAX >> 16) & 0xfff);
-         RTPrintf("L2 TLB 4K Instr/Uni:             %s %4d entries\n"
-                  "L2 TLB 4K Data:                  %s %4d entries\n",
-                  getL2CacheAss((s.uEBX >> 12) & 0xf),  (s.uEBX >>  0) & 0xfff,
-                  getL2CacheAss((s.uEBX >> 28) & 0xf),  (s.uEBX >> 16) & 0xfff);
-         RTPrintf("L2 Cache Line Size:              %d bytes\n"
-                  "L2 Cache Lines Per Tag:          %d\n"
-                  "L2 Cache Associativity:          %s\n"
-                  "L2 Cache Size:                   %d KB\n",
-                  (s.uEDX >> 0) & 0xff,
-                  (s.uEDX >> 8) & 0xf,
-                  getL2CacheAss((s.uEDX >> 12) & 0xf),
-                  (s.uEDX >> 16) & 0xffff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "L2 TLB 2/4M Instr/Uni:           %s %4d entries\n"
+                       "L2 TLB 2/4M Data:                %s %4d entries\n",
+                       getL2CacheAss((s.uEAX >> 12) & 0xf),  (s.uEAX >>  0) & 0xfff,
+                       getL2CacheAss((s.uEAX >> 28) & 0xf),  (s.uEAX >> 16) & 0xfff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "L2 TLB 4K Instr/Uni:             %s %4d entries\n"
+                       "L2 TLB 4K Data:                  %s %4d entries\n",
+                       getL2CacheAss((s.uEBX >> 12) & 0xf),  (s.uEBX >>  0) & 0xfff,
+                       getL2CacheAss((s.uEBX >> 28) & 0xf),  (s.uEBX >> 16) & 0xfff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "L2 Cache Line Size:              %d bytes\n"
+                       "L2 Cache Lines Per Tag:          %d\n"
+                       "L2 Cache Associativity:          %s\n"
+                       "L2 Cache Size:                   %d KB\n",
+                       (s.uEDX >> 0) & 0xff,
+                       (s.uEDX >> 8) & 0xf,
+                       getL2CacheAss((s.uEDX >> 12) & 0xf),
+                       (s.uEDX >> 16) & 0xffff);
      }
 
      if (cExtFunctions >= 0x80000007)
      {
          ASMCpuId(0x80000007, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-         RTPrintf("APM Features:                   ");
-         if (s.uEDX & RT_BIT(0))   RTPrintf(" TS");
-         if (s.uEDX & RT_BIT(1))   RTPrintf(" FID");
-         if (s.uEDX & RT_BIT(2))   RTPrintf(" VID");
-         if (s.uEDX & RT_BIT(3))   RTPrintf(" TTP");
-         if (s.uEDX & RT_BIT(4))   RTPrintf(" TM");
-         if (s.uEDX & RT_BIT(5))   RTPrintf(" STC");
-         if (s.uEDX & RT_BIT(6))   RTPrintf(" 6");
-         if (s.uEDX & RT_BIT(7))   RTPrintf(" 7");
-         if (s.uEDX & RT_BIT(8))   RTPrintf(" TscInvariant");
+         RTTestIPrintf(RTTESTLVL_ALWAYS, "APM Features:                   ");
+         if (s.uEDX & RT_BIT(0))   RTTestIPrintf(RTTESTLVL_ALWAYS, " TS");
+         if (s.uEDX & RT_BIT(1))   RTTestIPrintf(RTTESTLVL_ALWAYS, " FID");
+         if (s.uEDX & RT_BIT(2))   RTTestIPrintf(RTTESTLVL_ALWAYS, " VID");
+         if (s.uEDX & RT_BIT(3))   RTTestIPrintf(RTTESTLVL_ALWAYS, " TTP");
+         if (s.uEDX & RT_BIT(4))   RTTestIPrintf(RTTESTLVL_ALWAYS, " TM");
+         if (s.uEDX & RT_BIT(5))   RTTestIPrintf(RTTESTLVL_ALWAYS, " STC");
+         if (s.uEDX & RT_BIT(6))   RTTestIPrintf(RTTESTLVL_ALWAYS, " 6");
+         if (s.uEDX & RT_BIT(7))   RTTestIPrintf(RTTESTLVL_ALWAYS, " 7");
+         if (s.uEDX & RT_BIT(8))   RTTestIPrintf(RTTESTLVL_ALWAYS, " TscInvariant");
          for (iBit = 9; iBit < 32; iBit++)
              if (s.uEDX & RT_BIT(iBit))
-                 RTPrintf(" %d", iBit);
-         RTPrintf("\n");
+                 RTTestIPrintf(RTTESTLVL_ALWAYS, " %d", iBit);
+         RTTestIPrintf(RTTESTLVL_ALWAYS, "\n");
      }
 
      if (cExtFunctions >= 0x80000008)
      {
          ASMCpuId(0x80000008, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-         RTPrintf("Physical Address Width:          %d bits\n"
-                  "Virtual Address Width:           %d bits\n"
-                  "Guest Physical Address Width:    %d bits\n",
-                  (s.uEAX >> 0) & 0xff,
-                  (s.uEAX >> 8) & 0xff,
-                  (s.uEAX >> 16) & 0xff);
-         RTPrintf("Physical Core Count:             %d\n",
-                  ((s.uECX >> 0) & 0xff) + 1);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "Physical Address Width:          %d bits\n"
+                       "Virtual Address Width:           %d bits\n"
+                       "Guest Physical Address Width:    %d bits\n",
+                       (s.uEAX >> 0) & 0xff,
+                       (s.uEAX >> 8) & 0xff,
+                       (s.uEAX >> 16) & 0xff);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "Physical Core Count:             %d\n",
+                       ((s.uECX >> 0) & 0xff) + 1);
          if ((s.uECX >> 12) & 0xf)
-             RTPrintf("ApicIdCoreIdSize:                %d bits\n", (s.uECX >> 12) & 0xf);
+             RTTestIPrintf(RTTESTLVL_ALWAYS, "ApicIdCoreIdSize:                %d bits\n", (s.uECX >> 12) & 0xf);
      }
 
      if (cExtFunctions >= 0x8000000a)
      {
          ASMCpuId(0x8000000a, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
-         RTPrintf("SVM Revision:                    %d (%#x)\n"
-                  "Number of Address Space IDs:     %d (%#x)\n",
-                  s.uEAX & 0xff, s.uEAX & 0xff,
-                  s.uEBX, s.uEBX);
+         RTTestIPrintf(RTTESTLVL_ALWAYS,
+                       "SVM Revision:                    %d (%#x)\n"
+                       "Number of Address Space IDs:     %d (%#x)\n",
+                       s.uEAX & 0xff, s.uEAX & 0xff,
+                       s.uEBX, s.uEBX);
      }
 }
 
 #endif /* AMD64 || X86 */
 
+DECLINLINE(void) tstASMAtomicXchgU8Worker(uint8_t volatile *pu8)
+{
+    *pu8 = 0;
+    CHECKOP(ASMAtomicXchgU8(pu8, 1), 0, "%#x", uint8_t);
+    CHECKVAL(*pu8, 1, "%#x");
+
+    CHECKOP(ASMAtomicXchgU8(pu8, 0), 1, "%#x", uint8_t);
+    CHECKVAL(*pu8, 0, "%#x");
+
+    CHECKOP(ASMAtomicXchgU8(pu8, 0xff), 0, "%#x", uint8_t);
+    CHECKVAL(*pu8, 0xff, "%#x");
+
+    CHECKOP(ASMAtomicXchgU8(pu8, 0x87), 0xffff, "%#x", uint8_t);
+    CHECKVAL(*pu8, 0x87, "%#x");
+}
+
+
 static void tstASMAtomicXchgU8(void)
 {
-    struct
-    {
-        uint8_t u8Dummy0;
-        uint8_t u8;
-        uint8_t u8Dummy1;
-    } s;
+    DO_SIMPLE_TEST(ASMAtomicXchgU8, uint8_t);
+}
 
-    s.u8 = 0;
-    s.u8Dummy0 = s.u8Dummy1 = 0x42;
-    CHECKOP(ASMAtomicXchgU8(&s.u8, 1), 0, "%#x", uint8_t);
-    CHECKVAL(s.u8, 1, "%#x");
 
-    CHECKOP(ASMAtomicXchgU8(&s.u8, 0), 1, "%#x", uint8_t);
-    CHECKVAL(s.u8, 0, "%#x");
+DECLINLINE(void) tstASMAtomicXchgU16Worker(uint16_t volatile *pu16)
+{
+    *pu16 = 0;
 
-    CHECKOP(ASMAtomicXchgU8(&s.u8, 0xff), 0, "%#x", uint8_t);
-    CHECKVAL(s.u8, 0xff, "%#x");
+    CHECKOP(ASMAtomicXchgU16(pu16, 1), 0, "%#x", uint16_t);
+    CHECKVAL(*pu16, 1, "%#x");
 
-    CHECKOP(ASMAtomicXchgU8(&s.u8, 0x87), 0xffff, "%#x", uint8_t);
-    CHECKVAL(s.u8, 0x87, "%#x");
-    CHECKVAL(s.u8Dummy0, 0x42, "%#x");
-    CHECKVAL(s.u8Dummy1, 0x42, "%#x");
+    CHECKOP(ASMAtomicXchgU16(pu16, 0), 1, "%#x", uint16_t);
+    CHECKVAL(*pu16, 0, "%#x");
+
+    CHECKOP(ASMAtomicXchgU16(pu16, 0xffff), 0, "%#x", uint16_t);
+    CHECKVAL(*pu16, 0xffff, "%#x");
+
+    CHECKOP(ASMAtomicXchgU16(pu16, 0x8765), 0xffff, "%#x", uint16_t);
+    CHECKVAL(*pu16, 0x8765, "%#x");
 }
 
 
 static void tstASMAtomicXchgU16(void)
 {
-    struct
-    {
-        uint16_t u16Dummy0;
-        uint16_t u16;
-        uint16_t u16Dummy1;
-    } s;
+    DO_SIMPLE_TEST(ASMAtomicXchgU16, uint16_t);
+}
 
-    s.u16 = 0;
-    s.u16Dummy0 = s.u16Dummy1 = 0x1234;
-    CHECKOP(ASMAtomicXchgU16(&s.u16, 1), 0, "%#x", uint16_t);
-    CHECKVAL(s.u16, 1, "%#x");
 
-    CHECKOP(ASMAtomicXchgU16(&s.u16, 0), 1, "%#x", uint16_t);
-    CHECKVAL(s.u16, 0, "%#x");
+DECLINLINE(void) tstASMAtomicXchgU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = 0;
 
-    CHECKOP(ASMAtomicXchgU16(&s.u16, 0xffff), 0, "%#x", uint16_t);
-    CHECKVAL(s.u16, 0xffff, "%#x");
+    CHECKOP(ASMAtomicXchgU32(pu32, 1), 0, "%#x", uint32_t);
+    CHECKVAL(*pu32, 1, "%#x");
 
-    CHECKOP(ASMAtomicXchgU16(&s.u16, 0x8765), 0xffff, "%#x", uint16_t);
-    CHECKVAL(s.u16, 0x8765, "%#x");
-    CHECKVAL(s.u16Dummy0, 0x1234, "%#x");
-    CHECKVAL(s.u16Dummy1, 0x1234, "%#x");
+    CHECKOP(ASMAtomicXchgU32(pu32, 0), 1, "%#x", uint32_t);
+    CHECKVAL(*pu32, 0, "%#x");
+
+    CHECKOP(ASMAtomicXchgU32(pu32, ~UINT32_C(0)), 0, "%#x", uint32_t);
+    CHECKVAL(*pu32, ~UINT32_C(0), "%#x");
+
+    CHECKOP(ASMAtomicXchgU32(pu32, 0x87654321), ~UINT32_C(0), "%#x", uint32_t);
+    CHECKVAL(*pu32, 0x87654321, "%#x");
 }
 
 
 static void tstASMAtomicXchgU32(void)
 {
-    struct
-    {
-        uint32_t u32Dummy0;
-        uint32_t u32;
-        uint32_t u32Dummy1;
-    } s;
+    DO_SIMPLE_TEST(ASMAtomicXchgU32, uint32_t);
+}
 
-    s.u32 = 0;
-    s.u32Dummy0 = s.u32Dummy1 = 0x11223344;
 
-    CHECKOP(ASMAtomicXchgU32(&s.u32, 1), 0, "%#x", uint32_t);
-    CHECKVAL(s.u32, 1, "%#x");
+DECLINLINE(void) tstASMAtomicXchgU64Worker(uint64_t volatile *pu64)
+{
+    *pu64 = 0;
 
-    CHECKOP(ASMAtomicXchgU32(&s.u32, 0), 1, "%#x", uint32_t);
-    CHECKVAL(s.u32, 0, "%#x");
+    CHECKOP(ASMAtomicXchgU64(pu64, 1), UINT64_C(0), "%#llx", uint64_t);
+    CHECKVAL(*pu64, UINT64_C(1), "%#llx");
 
-    CHECKOP(ASMAtomicXchgU32(&s.u32, ~0U), 0, "%#x", uint32_t);
-    CHECKVAL(s.u32, ~0U, "%#x");
+    CHECKOP(ASMAtomicXchgU64(pu64, 0), UINT64_C(1), "%#llx", uint64_t);
+    CHECKVAL(*pu64, UINT64_C(0), "%#llx");
 
-    CHECKOP(ASMAtomicXchgU32(&s.u32, 0x87654321), ~0U, "%#x", uint32_t);
-    CHECKVAL(s.u32, 0x87654321, "%#x");
+    CHECKOP(ASMAtomicXchgU64(pu64, ~UINT64_C(0)), UINT64_C(0), "%#llx", uint64_t);
+    CHECKVAL(*pu64, ~UINT64_C(0), "%#llx");
 
-    CHECKVAL(s.u32Dummy0, 0x11223344, "%#x");
-    CHECKVAL(s.u32Dummy1, 0x11223344, "%#x");
+    CHECKOP(ASMAtomicXchgU64(pu64, UINT64_C(0xfedcba0987654321)),  ~UINT64_C(0), "%#llx", uint64_t);
+    CHECKVAL(*pu64, UINT64_C(0xfedcba0987654321), "%#llx");
 }
 
 
 static void tstASMAtomicXchgU64(void)
 {
-    struct
-    {
-        uint64_t u64Dummy0;
-        uint64_t u64;
-        uint64_t u64Dummy1;
-    } s;
+    DO_SIMPLE_TEST(ASMAtomicXchgU64, uint64_t);
+}
 
-    s.u64 = 0;
-    s.u64Dummy0 = s.u64Dummy1 = 0x1122334455667788ULL;
 
-    CHECKOP(ASMAtomicXchgU64(&s.u64, 1), 0ULL, "%#llx", uint64_t);
-    CHECKVAL(s.u64, 1ULL, "%#llx");
+DECLINLINE(void) tstASMAtomicXchgPtrWorker(void * volatile *ppv)
+{
+    *ppv = NULL;
 
-    CHECKOP(ASMAtomicXchgU64(&s.u64, 0), 1ULL, "%#llx", uint64_t);
-    CHECKVAL(s.u64, 0ULL, "%#llx");
+    CHECKOP(ASMAtomicXchgPtr(ppv, (void *)(~(uintptr_t)0)), NULL, "%p", void *);
+    CHECKVAL(*ppv, (void *)(~(uintptr_t)0), "%p");
 
-    CHECKOP(ASMAtomicXchgU64(&s.u64, ~0ULL), 0ULL, "%#llx", uint64_t);
-    CHECKVAL(s.u64, ~0ULL, "%#llx");
+    CHECKOP(ASMAtomicXchgPtr(ppv, (void *)0x87654321), (void *)(~(uintptr_t)0), "%p", void *);
+    CHECKVAL(*ppv, (void *)0x87654321, "%p");
 
-    CHECKOP(ASMAtomicXchgU64(&s.u64, 0xfedcba0987654321ULL),  ~0ULL, "%#llx", uint64_t);
-    CHECKVAL(s.u64, 0xfedcba0987654321ULL, "%#llx");
-
-    CHECKVAL(s.u64Dummy0, 0x1122334455667788ULL, "%#llx");
-    CHECKVAL(s.u64Dummy1, 0x1122334455667788ULL, "%#llx");
+    CHECKOP(ASMAtomicXchgPtr(ppv, NULL), (void *)0x87654321, "%p", void *);
+    CHECKVAL(*ppv, NULL, "%p");
 }
 
 
 static void tstASMAtomicXchgPtr(void)
 {
-    void *pv = NULL;
+    DO_SIMPLE_TEST(ASMAtomicXchgPtr, void *);
+}
 
-    CHECKOP(ASMAtomicXchgPtr(&pv, (void *)(~(uintptr_t)0)), NULL, "%p", void *);
-    CHECKVAL(pv, (void *)(~(uintptr_t)0), "%p");
 
-    CHECKOP(ASMAtomicXchgPtr(&pv, (void *)0x87654321), (void *)(~(uintptr_t)0), "%p", void *);
-    CHECKVAL(pv, (void *)0x87654321, "%p");
+DECLINLINE(void) tstASMAtomicCmpXchgU8Worker(uint8_t volatile *pu8)
+{
+    *pu8 = 0xff;
 
-    CHECKOP(ASMAtomicXchgPtr(&pv, NULL), (void *)0x87654321, "%p", void *);
-    CHECKVAL(pv, NULL, "%p");
+    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0, 0), false, "%d", bool);
+    CHECKVAL(*pu8, 0xff, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0, 0xff), true, "%d", bool);
+    CHECKVAL(*pu8, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0x79, 0xff), false, "%d", bool);
+    CHECKVAL(*pu8, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU8(pu8, 0x97, 0), true, "%d", bool);
+    CHECKVAL(*pu8, 0x97, "%x");
 }
 
 
 static void tstASMAtomicCmpXchgU8(void)
 {
-    struct
-    {
-        uint8_t u8Before;
-        uint8_t u8;
-        uint8_t u8After;
-    } u = { 0xcc, 0xff, 0xaa };
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgU8, uint8_t);
+}
 
-    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0, 0), false, "%d", bool);
-    CHECKVAL(u.u8, 0xff, "%x"); CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
 
-    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0, 0xff), true, "%d", bool);
-    CHECKVAL(u.u8, 0, "%x");    CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
+DECLINLINE(void) tstASMAtomicCmpXchgU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = UINT32_C(0xffffffff);
 
-    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0x79, 0xff), false, "%d", bool);
-    CHECKVAL(u.u8, 0, "%x");    CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
+    CHECKOP(ASMAtomicCmpXchgU32(pu32, 0, 0), false, "%d", bool);
+    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
 
-    CHECKOP(ASMAtomicCmpXchgU8(&u.u8, 0x97, 0), true, "%d", bool);
-    CHECKVAL(u.u8, 0x97, "%x"); CHECKVAL(u.u8Before, 0xcc, "%x"); CHECKVAL(u.u8After, 0xaa, "%x");
+    CHECKOP(ASMAtomicCmpXchgU32(pu32, 0, UINT32_C(0xffffffff)), true, "%d", bool);
+    CHECKVAL(*pu32, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU32(pu32, UINT32_C(0x8008efd), UINT32_C(0xffffffff)), false, "%d", bool);
+    CHECKVAL(*pu32, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU32(pu32, UINT32_C(0x8008efd), 0), true, "%d", bool);
+    CHECKVAL(*pu32, UINT32_C(0x8008efd), "%x");
 }
 
 
 static void tstASMAtomicCmpXchgU32(void)
 {
-    uint32_t u32 = 0xffffffff;
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgU32, uint32_t);
+}
 
-    CHECKOP(ASMAtomicCmpXchgU32(&u32, 0, 0), false, "%d", bool);
-    CHECKVAL(u32, 0xffffffff, "%x");
 
-    CHECKOP(ASMAtomicCmpXchgU32(&u32, 0, 0xffffffff), true, "%d", bool);
-    CHECKVAL(u32, 0, "%x");
 
-    CHECKOP(ASMAtomicCmpXchgU32(&u32, 0x8008efd, 0xffffffff), false, "%d", bool);
-    CHECKVAL(u32, 0, "%x");
+DECLINLINE(void) tstASMAtomicCmpXchgU64Worker(uint64_t volatile *pu64)
+{
+    *pu64 = UINT64_C(0xffffffffffffff);
 
-    CHECKOP(ASMAtomicCmpXchgU32(&u32, 0x8008efd, 0), true, "%d", bool);
-    CHECKVAL(u32, 0x8008efd, "%x");
+    CHECKOP(ASMAtomicCmpXchgU64(pu64, 0, 0), false, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0xffffffffffffff), "%#llx");
+
+    CHECKOP(ASMAtomicCmpXchgU64(pu64, 0, UINT64_C(0xffffffffffffff)), true, "%d", bool);
+    CHECKVAL(*pu64, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), UINT64_C(0xffffffff)), false, "%d", bool);
+    CHECKVAL(*pu64, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), UINT64_C(0xffffffff00000000)), false, "%d", bool);
+    CHECKVAL(*pu64, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgU64(pu64, UINT64_C(0x80040008008efd), 0), true, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0x80040008008efd), "%#llx");
 }
 
 
 static void tstASMAtomicCmpXchgU64(void)
 {
-    uint64_t u64 = 0xffffffffffffffULL;
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgU64, uint64_t);
+}
 
-    CHECKOP(ASMAtomicCmpXchgU64(&u64, 0, 0), false, "%d", bool);
-    CHECKVAL(u64, 0xffffffffffffffULL, "%#llx");
 
-    CHECKOP(ASMAtomicCmpXchgU64(&u64, 0, 0xffffffffffffffULL), true, "%d", bool);
-    CHECKVAL(u64, 0, "%x");
+DECLINLINE(void) tstASMAtomicCmpXchgExU32Worker(uint32_t volatile *pu32)
+{
+    *pu32           = UINT32_C(0xffffffff);
+    uint32_t u32Old = UINT32_C(0x80005111);
 
-    CHECKOP(ASMAtomicCmpXchgU64(&u64, 0x80040008008efdULL, 0xffffffff), false, "%d", bool);
-    CHECKVAL(u64, 0, "%x");
+    CHECKOP(ASMAtomicCmpXchgExU32(pu32, 0, 0, &u32Old), false, "%d", bool);
+    CHECKVAL(*pu32,  UINT32_C(0xffffffff), "%x");
+    CHECKVAL(u32Old, UINT32_C(0xffffffff), "%x");
 
-    CHECKOP(ASMAtomicCmpXchgU64(&u64, 0x80040008008efdULL, 0xffffffff00000000ULL), false, "%d", bool);
-    CHECKVAL(u64, 0, "%x");
+    CHECKOP(ASMAtomicCmpXchgExU32(pu32, 0, UINT32_C(0xffffffff), &u32Old), true, "%d", bool);
+    CHECKVAL(*pu32, 0, "%x");
+    CHECKVAL(u32Old, UINT32_C(0xffffffff), "%x");
 
-    CHECKOP(ASMAtomicCmpXchgU64(&u64, 0x80040008008efdULL, 0), true, "%d", bool);
-    CHECKVAL(u64, 0x80040008008efdULL, "%#llx");
+    CHECKOP(ASMAtomicCmpXchgExU32(pu32, UINT32_C(0x8008efd), UINT32_C(0xffffffff), &u32Old), false, "%d", bool);
+    CHECKVAL(*pu32, 0, "%x");
+    CHECKVAL(u32Old, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgExU32(pu32, UINT32_C(0x8008efd), 0, &u32Old), true, "%d", bool);
+    CHECKVAL(*pu32, UINT32_C(0x8008efd), "%x");
+    CHECKVAL(u32Old, 0, "%x");
+
+    CHECKOP(ASMAtomicCmpXchgExU32(pu32, 0, UINT32_C(0x8008efd), &u32Old), true, "%d", bool);
+    CHECKVAL(*pu32, 0, "%x");
+    CHECKVAL(u32Old, UINT32_C(0x8008efd), "%x");
 }
 
 
 static void tstASMAtomicCmpXchgExU32(void)
 {
-    uint32_t u32 = 0xffffffff;
-    uint32_t u32Old = 0x80005111;
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgExU32, uint32_t);
+}
 
-    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0, 0, &u32Old), false, "%d", bool);
-    CHECKVAL(u32, 0xffffffff, "%x");
-    CHECKVAL(u32Old, 0xffffffff, "%x");
 
-    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0, 0xffffffff, &u32Old), true, "%d", bool);
-    CHECKVAL(u32, 0, "%x");
-    CHECKVAL(u32Old, 0xffffffff, "%x");
+DECLINLINE(void) tstASMAtomicCmpXchgExU64Worker(uint64_t volatile *pu64)
+{
+    *pu64 = UINT64_C(0xffffffffffffffff);
+    uint64_t u64Old = UINT64_C(0x8000000051111111);
 
-    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0x8008efd, 0xffffffff, &u32Old), false, "%d", bool);
-    CHECKVAL(u32, 0, "%x");
-    CHECKVAL(u32Old, 0, "%x");
+    CHECKOP(ASMAtomicCmpXchgExU64(pu64, 0, 0, &u64Old), false, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%llx");
+    CHECKVAL(u64Old, UINT64_C(0xffffffffffffffff), "%llx");
 
-    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0x8008efd, 0, &u32Old), true, "%d", bool);
-    CHECKVAL(u32, 0x8008efd, "%x");
-    CHECKVAL(u32Old, 0, "%x");
+    CHECKOP(ASMAtomicCmpXchgExU64(pu64, 0, UINT64_C(0xffffffffffffffff), &u64Old), true, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0), "%llx");
+    CHECKVAL(u64Old, UINT64_C(0xffffffffffffffff), "%llx");
 
-    CHECKOP(ASMAtomicCmpXchgExU32(&u32, 0, 0x8008efd, &u32Old), true, "%d", bool);
-    CHECKVAL(u32, 0, "%x");
-    CHECKVAL(u32Old, 0x8008efd, "%x");
+    CHECKOP(ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x80040008008efd), 0xffffffff, &u64Old), false, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0), "%llx");
+    CHECKVAL(u64Old, UINT64_C(0), "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x80040008008efd), UINT64_C(0xffffffff00000000), &u64Old), false, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0), "%llx");
+    CHECKVAL(u64Old, UINT64_C(0), "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(pu64, UINT64_C(0x80040008008efd), 0, &u64Old), true, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0x80040008008efd), "%llx");
+    CHECKVAL(u64Old, UINT64_C(0), "%llx");
+
+    CHECKOP(ASMAtomicCmpXchgExU64(pu64, 0, UINT64_C(0x80040008008efd), &u64Old), true, "%d", bool);
+    CHECKVAL(*pu64, UINT64_C(0), "%llx");
+    CHECKVAL(u64Old, UINT64_C(0x80040008008efd), "%llx");
 }
 
 
 static void tstASMAtomicCmpXchgExU64(void)
 {
-    uint64_t u64 = 0xffffffffffffffffULL;
-    uint64_t u64Old = 0x8000000051111111ULL;
+    DO_SIMPLE_TEST(ASMAtomicCmpXchgExU64, uint64_t);
+}
 
-    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0, 0, &u64Old), false, "%d", bool);
-    CHECKVAL(u64, 0xffffffffffffffffULL, "%llx");
-    CHECKVAL(u64Old, 0xffffffffffffffffULL, "%llx");
 
-    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0, 0xffffffffffffffffULL, &u64Old), true, "%d", bool);
-    CHECKVAL(u64, 0ULL, "%llx");
-    CHECKVAL(u64Old, 0xffffffffffffffffULL, "%llx");
+DECLINLINE(void) tstASMAtomicReadU64Worker(uint64_t volatile *pu64)
+{
+    *pu64 = 0;
 
-    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0x80040008008efdULL, 0xffffffff, &u64Old), false, "%d", bool);
-    CHECKVAL(u64, 0ULL, "%llx");
-    CHECKVAL(u64Old, 0ULL, "%llx");
+    CHECKOP(ASMAtomicReadU64(pu64), UINT64_C(0), "%#llx", uint64_t);
+    CHECKVAL(*pu64, UINT64_C(0), "%#llx");
 
-    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0x80040008008efdULL, 0xffffffff00000000ULL, &u64Old), false, "%d", bool);
-    CHECKVAL(u64, 0ULL, "%llx");
-    CHECKVAL(u64Old, 0ULL, "%llx");
+    *pu64 = ~UINT64_C(0);
+    CHECKOP(ASMAtomicReadU64(pu64), ~UINT64_C(0), "%#llx", uint64_t);
+    CHECKVAL(*pu64, ~UINT64_C(0), "%#llx");
 
-    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0x80040008008efdULL, 0, &u64Old), true, "%d", bool);
-    CHECKVAL(u64, 0x80040008008efdULL, "%llx");
-    CHECKVAL(u64Old, 0ULL, "%llx");
-
-    CHECKOP(ASMAtomicCmpXchgExU64(&u64, 0, 0x80040008008efdULL, &u64Old), true, "%d", bool);
-    CHECKVAL(u64, 0ULL, "%llx");
-    CHECKVAL(u64Old, 0x80040008008efdULL, "%llx");
+    *pu64 = UINT64_C(0xfedcba0987654321);
+    CHECKOP(ASMAtomicReadU64(pu64), UINT64_C(0xfedcba0987654321), "%#llx", uint64_t);
+    CHECKVAL(*pu64, UINT64_C(0xfedcba0987654321), "%#llx");
 }
 
 
 static void tstASMAtomicReadU64(void)
 {
-    uint64_t u64 = 0;
+    DO_SIMPLE_TEST(ASMAtomicReadU64, uint64_t);
+}
 
-    CHECKOP(ASMAtomicReadU64(&u64), 0ULL, "%#llx", uint64_t);
-    CHECKVAL(u64, 0ULL, "%#llx");
 
-    u64 = ~0ULL;
-    CHECKOP(ASMAtomicReadU64(&u64), ~0ULL, "%#llx", uint64_t);
-    CHECKVAL(u64, ~0ULL, "%#llx");
+DECLINLINE(void) tstASMAtomicUoReadU64Worker(uint64_t volatile *pu64)
+{
+    *pu64 = 0;
 
-    u64 = 0xfedcba0987654321ULL;
-    CHECKOP(ASMAtomicReadU64(&u64), 0xfedcba0987654321ULL, "%#llx", uint64_t);
-    CHECKVAL(u64, 0xfedcba0987654321ULL, "%#llx");
+    CHECKOP(ASMAtomicUoReadU64(pu64), UINT64_C(0), "%#llx", uint64_t);
+    CHECKVAL(*pu64, UINT64_C(0), "%#llx");
+
+    *pu64 = ~UINT64_C(0);
+    CHECKOP(ASMAtomicUoReadU64(pu64), ~UINT64_C(0), "%#llx", uint64_t);
+    CHECKVAL(*pu64, ~UINT64_C(0), "%#llx");
+
+    *pu64 = UINT64_C(0xfedcba0987654321);
+    CHECKOP(ASMAtomicUoReadU64(pu64), UINT64_C(0xfedcba0987654321), "%#llx", uint64_t);
+    CHECKVAL(*pu64, UINT64_C(0xfedcba0987654321), "%#llx");
 }
 
 
 static void tstASMAtomicUoReadU64(void)
 {
-    uint64_t u64 = 0;
-
-    CHECKOP(ASMAtomicUoReadU64(&u64), 0ULL, "%#llx", uint64_t);
-    CHECKVAL(u64, 0ULL, "%#llx");
-
-    u64 = ~0ULL;
-    CHECKOP(ASMAtomicUoReadU64(&u64), ~0ULL, "%#llx", uint64_t);
-    CHECKVAL(u64, ~0ULL, "%#llx");
-
-    u64 = 0xfedcba0987654321ULL;
-    CHECKOP(ASMAtomicUoReadU64(&u64), 0xfedcba0987654321ULL, "%#llx", uint64_t);
-    CHECKVAL(u64, 0xfedcba0987654321ULL, "%#llx");
+    DO_SIMPLE_TEST(ASMAtomicUoReadU64, uint64_t);
 }
 
 
-static void tstASMAtomicAddS32(void)
+DECLINLINE(void) tstASMAtomicAddS32Worker(int32_t *pi32)
 {
     int32_t i32Rc;
-    int32_t i32 = 10;
+    *pi32 = 10;
 #define MYCHECK(op, rc, val) \
     do { \
         i32Rc = op; \
         if (i32Rc != (rc)) \
-        { \
-            RTPrintf("%s, %d: FAILURE: %s -> %d expected %d\n", __FUNCTION__, __LINE__, #op, i32Rc, rc); \
-            RTTestIErrorInc(); \
-        } \
-        if (i32 != (val)) \
-        { \
-            RTPrintf("%s, %d: FAILURE: %s => i32=%d expected %d\n", __FUNCTION__, __LINE__, #op, i32, val); \
-            RTTestIErrorInc(); \
-        } \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %d expected %d\n", __FUNCTION__, __LINE__, #op, i32Rc, rc); \
+        if (*pi32 != (val)) \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi32=%d expected %d\n", __FUNCTION__, __LINE__, #op, *pi32, val); \
     } while (0)
-    MYCHECK(ASMAtomicAddS32(&i32, 1),               10,             11);
-    MYCHECK(ASMAtomicAddS32(&i32, -2),              11,             9);
-    MYCHECK(ASMAtomicAddS32(&i32, -9),              9,              0);
-    MYCHECK(ASMAtomicAddS32(&i32, -0x7fffffff),     0,              -0x7fffffff);
-    MYCHECK(ASMAtomicAddS32(&i32, 0),               -0x7fffffff,    -0x7fffffff);
-    MYCHECK(ASMAtomicAddS32(&i32, 0x7fffffff),      -0x7fffffff,    0);
-    MYCHECK(ASMAtomicAddS32(&i32, 0),               0,              0);
+    MYCHECK(ASMAtomicAddS32(pi32, 1),               10,             11);
+    MYCHECK(ASMAtomicAddS32(pi32, -2),              11,             9);
+    MYCHECK(ASMAtomicAddS32(pi32, -9),              9,              0);
+    MYCHECK(ASMAtomicAddS32(pi32, -0x7fffffff),     0,              -0x7fffffff);
+    MYCHECK(ASMAtomicAddS32(pi32, 0),               -0x7fffffff,    -0x7fffffff);
+    MYCHECK(ASMAtomicAddS32(pi32, 0x7fffffff),      -0x7fffffff,    0);
+    MYCHECK(ASMAtomicAddS32(pi32, 0),               0,              0);
+#undef MYCHECK
+}
+
+static void tstASMAtomicAddS32(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicAddS32, int32_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicAddS64Worker(int64_t volatile *pi64)
+{
+    int64_t i64Rc;
+    *pi64 = 10;
+#define MYCHECK(op, rc, val) \
+    do { \
+        i64Rc = op; \
+        if (i64Rc != (rc)) \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %lld expected %lld\n", __FUNCTION__, __LINE__, #op, i64Rc, (int64_t)rc); \
+        if (*pi64 != (val)) \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi64=%lld expected %lld\n", __FUNCTION__, __LINE__, #op, *pi64, (int64_t)(val)); \
+    } while (0)
+    MYCHECK(ASMAtomicAddS64(pi64, 1),               10,             11);
+    MYCHECK(ASMAtomicAddS64(pi64, -2),              11,             9);
+    MYCHECK(ASMAtomicAddS64(pi64, -9),              9,              0);
+    MYCHECK(ASMAtomicAddS64(pi64, -INT64_MAX),      0,              -INT64_MAX);
+    MYCHECK(ASMAtomicAddS64(pi64, 0),               -INT64_MAX,     -INT64_MAX);
+    MYCHECK(ASMAtomicAddS64(pi64, -1),              -INT64_MAX,     INT64_MIN);
+    MYCHECK(ASMAtomicAddS64(pi64, INT64_MAX),       INT64_MIN,      -1);
+    MYCHECK(ASMAtomicAddS64(pi64, 1),               -1,             0);
+    MYCHECK(ASMAtomicAddS64(pi64, 0),               0,              0);
+#undef MYCHECK
+}
+
+
+static void tstASMAtomicAddS64(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicAddS64, int64_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicDecIncS32Worker(int32_t volatile *pi32)
+{
+    int32_t i32Rc;
+    *pi32 = 10;
+#define MYCHECK(op, rc) \
+    do { \
+        i32Rc = op; \
+        if (i32Rc != (rc)) \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %d expected %d\n", __FUNCTION__, __LINE__, #op, i32Rc, rc); \
+        if (*pi32 != (rc)) \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi32=%d expected %d\n", __FUNCTION__, __LINE__, #op, *pi32, rc); \
+    } while (0)
+    MYCHECK(ASMAtomicDecS32(pi32), 9);
+    MYCHECK(ASMAtomicDecS32(pi32), 8);
+    MYCHECK(ASMAtomicDecS32(pi32), 7);
+    MYCHECK(ASMAtomicDecS32(pi32), 6);
+    MYCHECK(ASMAtomicDecS32(pi32), 5);
+    MYCHECK(ASMAtomicDecS32(pi32), 4);
+    MYCHECK(ASMAtomicDecS32(pi32), 3);
+    MYCHECK(ASMAtomicDecS32(pi32), 2);
+    MYCHECK(ASMAtomicDecS32(pi32), 1);
+    MYCHECK(ASMAtomicDecS32(pi32), 0);
+    MYCHECK(ASMAtomicDecS32(pi32), -1);
+    MYCHECK(ASMAtomicDecS32(pi32), -2);
+    MYCHECK(ASMAtomicIncS32(pi32), -1);
+    MYCHECK(ASMAtomicIncS32(pi32), 0);
+    MYCHECK(ASMAtomicIncS32(pi32), 1);
+    MYCHECK(ASMAtomicIncS32(pi32), 2);
+    MYCHECK(ASMAtomicIncS32(pi32), 3);
+    MYCHECK(ASMAtomicDecS32(pi32), 2);
+    MYCHECK(ASMAtomicIncS32(pi32), 3);
+    MYCHECK(ASMAtomicDecS32(pi32), 2);
+    MYCHECK(ASMAtomicIncS32(pi32), 3);
 #undef MYCHECK
 }
 
 
 static void tstASMAtomicDecIncS32(void)
 {
-    int32_t i32Rc;
-    int32_t i32 = 10;
+    DO_SIMPLE_TEST(ASMAtomicDecIncS32, int32_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicDecIncS64Worker(int64_t volatile *pi64)
+{
+    int64_t i64Rc;
+    *pi64 = 10;
 #define MYCHECK(op, rc) \
     do { \
-        i32Rc = op; \
-        if (i32Rc != (rc)) \
-        { \
-            RTPrintf("%s, %d: FAILURE: %s -> %d expected %d\n", __FUNCTION__, __LINE__, #op, i32Rc, rc); \
-            RTTestIErrorInc(); \
-        } \
-        if (i32 != (rc)) \
-        { \
-            RTPrintf("%s, %d: FAILURE: %s => i32=%d expected %d\n", __FUNCTION__, __LINE__, #op, i32, rc); \
-            RTTestIErrorInc(); \
-        } \
+        i64Rc = op; \
+        if (i64Rc != (rc)) \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %lld expected %lld\n", __FUNCTION__, __LINE__, #op, i64Rc, rc); \
+        if (*pi64 != (rc)) \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi64=%lld expected %lld\n", __FUNCTION__, __LINE__, #op, *pi64, rc); \
     } while (0)
-    MYCHECK(ASMAtomicDecS32(&i32), 9);
-    MYCHECK(ASMAtomicDecS32(&i32), 8);
-    MYCHECK(ASMAtomicDecS32(&i32), 7);
-    MYCHECK(ASMAtomicDecS32(&i32), 6);
-    MYCHECK(ASMAtomicDecS32(&i32), 5);
-    MYCHECK(ASMAtomicDecS32(&i32), 4);
-    MYCHECK(ASMAtomicDecS32(&i32), 3);
-    MYCHECK(ASMAtomicDecS32(&i32), 2);
-    MYCHECK(ASMAtomicDecS32(&i32), 1);
-    MYCHECK(ASMAtomicDecS32(&i32), 0);
-    MYCHECK(ASMAtomicDecS32(&i32), -1);
-    MYCHECK(ASMAtomicDecS32(&i32), -2);
-    MYCHECK(ASMAtomicIncS32(&i32), -1);
-    MYCHECK(ASMAtomicIncS32(&i32), 0);
-    MYCHECK(ASMAtomicIncS32(&i32), 1);
-    MYCHECK(ASMAtomicIncS32(&i32), 2);
-    MYCHECK(ASMAtomicIncS32(&i32), 3);
-    MYCHECK(ASMAtomicDecS32(&i32), 2);
-    MYCHECK(ASMAtomicIncS32(&i32), 3);
-    MYCHECK(ASMAtomicDecS32(&i32), 2);
-    MYCHECK(ASMAtomicIncS32(&i32), 3);
+    MYCHECK(ASMAtomicDecS64(pi64), 9);
+    MYCHECK(ASMAtomicDecS64(pi64), 8);
+    MYCHECK(ASMAtomicDecS64(pi64), 7);
+    MYCHECK(ASMAtomicDecS64(pi64), 6);
+    MYCHECK(ASMAtomicDecS64(pi64), 5);
+    MYCHECK(ASMAtomicDecS64(pi64), 4);
+    MYCHECK(ASMAtomicDecS64(pi64), 3);
+    MYCHECK(ASMAtomicDecS64(pi64), 2);
+    MYCHECK(ASMAtomicDecS64(pi64), 1);
+    MYCHECK(ASMAtomicDecS64(pi64), 0);
+    MYCHECK(ASMAtomicDecS64(pi64), -1);
+    MYCHECK(ASMAtomicDecS64(pi64), -2);
+    MYCHECK(ASMAtomicIncS64(pi64), -1);
+    MYCHECK(ASMAtomicIncS64(pi64), 0);
+    MYCHECK(ASMAtomicIncS64(pi64), 1);
+    MYCHECK(ASMAtomicIncS64(pi64), 2);
+    MYCHECK(ASMAtomicIncS64(pi64), 3);
+    MYCHECK(ASMAtomicDecS64(pi64), 2);
+    MYCHECK(ASMAtomicIncS64(pi64), 3);
+    MYCHECK(ASMAtomicDecS64(pi64), 2);
+    MYCHECK(ASMAtomicIncS64(pi64), 3);
 #undef MYCHECK
+}
+
+
+static void tstASMAtomicDecIncS64(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicDecIncS64, int64_t);
+}
+
+
+DECLINLINE(void) tstASMAtomicAndOrU32Worker(uint32_t volatile *pu32)
+{
+    *pu32 = UINT32_C(0xffffffff);
+
+    ASMAtomicOrU32(pu32, UINT32_C(0xffffffff));
+    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
+
+    ASMAtomicAndU32(pu32, UINT32_C(0xffffffff));
+    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
+
+    ASMAtomicAndU32(pu32, UINT32_C(0x8f8f8f8f));
+    CHECKVAL(*pu32, UINT32_C(0x8f8f8f8f), "%x");
+
+    ASMAtomicOrU32(pu32, UINT32_C(0x70707070));
+    CHECKVAL(*pu32, UINT32_C(0xffffffff), "%x");
+
+    ASMAtomicAndU32(pu32, UINT32_C(1));
+    CHECKVAL(*pu32, UINT32_C(1), "%x");
+
+    ASMAtomicOrU32(pu32, UINT32_C(0x80000000));
+    CHECKVAL(*pu32, UINT32_C(0x80000001), "%x");
+
+    ASMAtomicAndU32(pu32, UINT32_C(0x80000000));
+    CHECKVAL(*pu32, UINT32_C(0x80000000), "%x");
+
+    ASMAtomicAndU32(pu32, UINT32_C(0));
+    CHECKVAL(*pu32, UINT32_C(0), "%x");
+
+    ASMAtomicOrU32(pu32, UINT32_C(0x42424242));
+    CHECKVAL(*pu32, UINT32_C(0x42424242), "%x");
 }
 
 
 static void tstASMAtomicAndOrU32(void)
 {
-    uint32_t u32 = 0xffffffff;
-
-    ASMAtomicOrU32(&u32, 0xffffffff);
-    CHECKVAL(u32, 0xffffffff, "%x");
-
-    ASMAtomicAndU32(&u32, 0xffffffff);
-    CHECKVAL(u32, 0xffffffff, "%x");
-
-    ASMAtomicAndU32(&u32, 0x8f8f8f8f);
-    CHECKVAL(u32, 0x8f8f8f8f, "%x");
-
-    ASMAtomicOrU32(&u32, 0x70707070);
-    CHECKVAL(u32, 0xffffffff, "%x");
-
-    ASMAtomicAndU32(&u32, 1);
-    CHECKVAL(u32, 1, "%x");
-
-    ASMAtomicOrU32(&u32, 0x80000000);
-    CHECKVAL(u32, 0x80000001, "%x");
-
-    ASMAtomicAndU32(&u32, 0x80000000);
-    CHECKVAL(u32, 0x80000000, "%x");
-
-    ASMAtomicAndU32(&u32, 0);
-    CHECKVAL(u32, 0, "%x");
-
-    ASMAtomicOrU32(&u32, 0x42424242);
-    CHECKVAL(u32, 0x42424242, "%x");
+    DO_SIMPLE_TEST(ASMAtomicAndOrU32, uint32_t);
 }
 
 
-void tstASMMemZeroPage(void)
+DECLINLINE(void) tstASMAtomicAndOrU64Worker(uint64_t volatile *pu64)
 {
-    struct
-    {
-        uint64_t    u64Magic1;
-        uint8_t     abPage[PAGE_SIZE];
-        uint64_t    u64Magic2;
-    } Buf1, Buf2, Buf3;
+    *pu64 = UINT64_C(0xffffffff);
 
-    Buf1.u64Magic1 = UINT64_C(0xffffffffffffffff);
-    memset(Buf1.abPage, 0x55, sizeof(Buf1.abPage));
-    Buf1.u64Magic2 = UINT64_C(0xffffffffffffffff);
-    Buf2.u64Magic1 = UINT64_C(0xffffffffffffffff);
-    memset(Buf2.abPage, 0x77, sizeof(Buf2.abPage));
-    Buf2.u64Magic2 = UINT64_C(0xffffffffffffffff);
-    Buf3.u64Magic1 = UINT64_C(0xffffffffffffffff);
-    memset(Buf3.abPage, 0x99, sizeof(Buf3.abPage));
-    Buf3.u64Magic2 = UINT64_C(0xffffffffffffffff);
-    ASMMemZeroPage(Buf1.abPage);
-    ASMMemZeroPage(Buf2.abPage);
-    ASMMemZeroPage(Buf3.abPage);
-    if (    Buf1.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf1.u64Magic2 != UINT64_C(0xffffffffffffffff)
-        ||  Buf2.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff)
-        ||  Buf3.u64Magic1 != UINT64_C(0xffffffffffffffff)
-        ||  Buf3.u64Magic2 != UINT64_C(0xffffffffffffffff))
+    ASMAtomicOrU64(pu64, UINT64_C(0xffffffff));
+    CHECKVAL(*pu64, UINT64_C(0xffffffff), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0xffffffff));
+    CHECKVAL(*pu64, UINT64_C(0xffffffff), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0x8f8f8f8f));
+    CHECKVAL(*pu64, UINT64_C(0x8f8f8f8f), "%x");
+
+    ASMAtomicOrU64(pu64, UINT64_C(0x70707070));
+    CHECKVAL(*pu64, UINT64_C(0xffffffff), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(1));
+    CHECKVAL(*pu64, UINT64_C(1), "%x");
+
+    ASMAtomicOrU64(pu64, UINT64_C(0x80000000));
+    CHECKVAL(*pu64, UINT64_C(0x80000001), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0x80000000));
+    CHECKVAL(*pu64, UINT64_C(0x80000000), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0));
+    CHECKVAL(*pu64, UINT64_C(0), "%x");
+
+    ASMAtomicOrU64(pu64, UINT64_C(0x42424242));
+    CHECKVAL(*pu64, UINT64_C(0x42424242), "%x");
+
+    // Same as above, but now 64-bit wide.
+    ASMAtomicAndU64(pu64, UINT64_C(0));
+    CHECKVAL(*pu64, UINT64_C(0), "%x");
+
+    ASMAtomicOrU64(pu64, UINT64_C(0xffffffffffffffff));
+    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0xffffffffffffffff));
+    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0x8f8f8f8f8f8f8f8f));
+    CHECKVAL(*pu64, UINT64_C(0x8f8f8f8f8f8f8f8f), "%x");
+
+    ASMAtomicOrU64(pu64, UINT64_C(0x7070707070707070));
+    CHECKVAL(*pu64, UINT64_C(0xffffffffffffffff), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(1));
+    CHECKVAL(*pu64, UINT64_C(1), "%x");
+
+    ASMAtomicOrU64(pu64, UINT64_C(0x8000000000000000));
+    CHECKVAL(*pu64, UINT64_C(0x8000000000000001), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0x8000000000000000));
+    CHECKVAL(*pu64, UINT64_C(0x8000000000000000), "%x");
+
+    ASMAtomicAndU64(pu64, UINT64_C(0));
+    CHECKVAL(*pu64, UINT64_C(0), "%x");
+
+    ASMAtomicOrU64(pu64, UINT64_C(0x4242424242424242));
+    CHECKVAL(*pu64, UINT64_C(0x4242424242424242), "%x");
+}
+
+
+static void tstASMAtomicAndOrU64(void)
+{
+    DO_SIMPLE_TEST(ASMAtomicAndOrU64, uint64_t);
+}
+
+
+typedef struct
+{
+    uint8_t ab[PAGE_SIZE];
+} TSTPAGE;
+
+
+DECLINLINE(void) tstASMMemZeroPageWorker(TSTPAGE *pPage)
+{
+    for (unsigned j = 0; j < 16; j++)
     {
-        RTPrintf("tstInlineAsm: ASMMemZeroPage violated one/both magic(s)!\n");
-        RTTestIErrorInc();
+        memset(pPage, 0x11 * j, sizeof(*pPage));
+        ASMMemZeroPage(pPage);
+        for (unsigned i = 0; i < sizeof(pPage->ab); i++)
+            if (pPage->ab[i])
+                RTTestFailed(g_hTest, "ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
     }
-    for (unsigned i = 0; i < sizeof(Buf1.abPage); i++)
-        if (Buf1.abPage[i])
-        {
-            RTPrintf("tstInlineAsm: ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
-            RTTestIErrorInc();
-        }
-    for (unsigned i = 0; i < sizeof(Buf2.abPage); i++)
-        if (Buf2.abPage[i])
-        {
-            RTPrintf("tstInlineAsm: ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
-            RTTestIErrorInc();
-        }
-    for (unsigned i = 0; i < sizeof(Buf3.abPage); i++)
-        if (Buf3.abPage[i])
-        {
-            RTPrintf("tstInlineAsm: ASMMemZeroPage didn't clear byte at offset %#x!\n", i);
-            RTTestIErrorInc();
-        }
+}
+
+
+static void tstASMMemZeroPage(void)
+{
+    DO_SIMPLE_TEST(ASMMemZeroPage, TSTPAGE);
 }
 
 
@@ -965,6 +1159,8 @@ void tstASMMemIsZeroPage(RTTEST hTest)
 
 void tstASMMemZero32(void)
 {
+    RTTestSub(g_hTest, "ASMMemFill32");
+
     struct
     {
         uint64_t    u64Magic1;
@@ -991,32 +1187,24 @@ void tstASMMemZero32(void)
         ||  Buf3.u64Magic1 != UINT64_C(0xffffffffffffffff)
         ||  Buf3.u64Magic2 != UINT64_C(0xffffffffffffffff))
     {
-        RTPrintf("tstInlineAsm: ASMMemZero32 violated one/both magic(s)!\n");
-        RTTestIErrorInc();
+        RTTestFailed(g_hTest, "ASMMemZero32 violated one/both magic(s)!\n");
     }
     for (unsigned i = 0; i < RT_ELEMENTS(Buf1.abPage); i++)
         if (Buf1.abPage[i])
-        {
-            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
-            RTTestIErrorInc();
-        }
+            RTTestFailed(g_hTest, "ASMMemZero32 didn't clear byte at offset %#x!\n", i);
     for (unsigned i = 0; i < RT_ELEMENTS(Buf2.abPage); i++)
         if (Buf2.abPage[i])
-        {
-            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
-            RTTestIErrorInc();
-        }
+            RTTestFailed(g_hTest, "ASMMemZero32 didn't clear byte at offset %#x!\n", i);
     for (unsigned i = 0; i < RT_ELEMENTS(Buf3.abPage); i++)
         if (Buf3.abPage[i])
-        {
-            RTPrintf("tstInlineAsm: ASMMemZero32 didn't clear byte at offset %#x!\n", i);
-            RTTestIErrorInc();
-        }
+            RTTestFailed(g_hTest, "ASMMemZero32 didn't clear byte at offset %#x!\n", i);
 }
 
 
 void tstASMMemFill32(void)
 {
+    RTTestSub(g_hTest, "ASMMemFill32");
+
     struct
     {
         uint64_t    u64Magic1;
@@ -1054,34 +1242,24 @@ void tstASMMemFill32(void)
         ||  Buf2.u64Magic2 != UINT64_C(0xffffffffffffffff)
         ||  Buf3.u64Magic1 != UINT64_C(0xffffffffffffffff)
         ||  Buf3.u64Magic2 != UINT64_C(0xffffffffffffffff))
-    {
-        RTPrintf("tstInlineAsm: ASMMemFill32 violated one/both magic(s)!\n");
-        RTTestIErrorInc();
-    }
+        RTTestFailed(g_hTest, "ASMMemFill32 violated one/both magic(s)!\n");
     for (unsigned i = 0; i < RT_ELEMENTS(Buf1.au32Page); i++)
         if (Buf1.au32Page[i] != 0xdeadbeef)
-        {
-            RTPrintf("tstInlineAsm: ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf1.au32Page[i], 0xdeadbeef);
-            RTTestIErrorInc();
-        }
+            RTTestFailed(g_hTest, "ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf1.au32Page[i], 0xdeadbeef);
     for (unsigned i = 0; i < RT_ELEMENTS(Buf2.au32Page); i++)
         if (Buf2.au32Page[i] != 0xcafeff01)
-        {
-            RTPrintf("tstInlineAsm: ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf2.au32Page[i], 0xcafeff01);
-            RTTestIErrorInc();
-        }
+            RTTestFailed(g_hTest, "ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf2.au32Page[i], 0xcafeff01);
     for (unsigned i = 0; i < RT_ELEMENTS(Buf3.au32Page); i++)
         if (Buf3.au32Page[i] != 0xf00dd00f)
-        {
-            RTPrintf("tstInlineAsm: ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf3.au32Page[i], 0xf00dd00f);
-            RTTestIErrorInc();
-        }
+            RTTestFailed(g_hTest, "ASMMemFill32 %#x: %#x exepcted %#x\n", i, Buf3.au32Page[i], 0xf00dd00f);
 }
 
 
 
 void tstASMMath(void)
 {
+    RTTestSub(g_hTest, "Math");
+
     uint64_t u64 = ASMMult2xU32RetU64(UINT32_C(0x80000000), UINT32_C(0x10000000));
     CHECKVAL(u64, UINT64_C(0x0800000000000000), "%#018RX64");
 
@@ -1157,7 +1335,7 @@ void tstASMMath(void)
 
 void tstASMByteSwap(void)
 {
-    RTPrintf("tstInlineASM: TESTING - ASMByteSwap*\n");
+    RTTestSub(g_hTest, "ASMByteSwap*");
 
     uint64_t u64In  = UINT64_C(0x0011223344556677);
     uint64_t u64Out = ASMByteSwapU64(u64In);
@@ -1232,12 +1410,12 @@ void tstASMBench(void)
     static uint64_t volatile s_u64;
     static int64_t  volatile s_i64;
     register unsigned i;
-    const unsigned cRounds = 2000000;
+    const unsigned cRounds = _2M;
     register uint64_t u64Elapsed;
 
-    RTPrintf("tstInlineASM: Benchmarking:\n");
+    RTTestSub(g_hTest, "Benchmarking");
 
-#if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+#if 0 && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # define BENCH(op, str) \
     do { \
         RTThreadYield(); \
@@ -1245,7 +1423,7 @@ void tstASMBench(void)
         for (i = cRounds; i > 0; i--) \
             op; \
         u64Elapsed = ASMReadTSC() - u64Elapsed; \
-        RTPrintf(" %-30s %3llu cycles\n", str, u64Elapsed / cRounds); \
+        RTTestValue(g_hTest, str, u64Elapsed / cRounds, RTTESTUNIT_TICKS_PER_CALL); \
     } while (0)
 #else
 # define BENCH(op, str) \
@@ -1255,71 +1433,69 @@ void tstASMBench(void)
         for (i = cRounds; i > 0; i--) \
             op; \
         u64Elapsed = RTTimeNanoTS() - u64Elapsed; \
-        RTPrintf(" %-30s %3llu ns\n", str, u64Elapsed / cRounds); \
+        RTTestValue(g_hTest, str, u64Elapsed / cRounds, RTTESTUNIT_NS_PER_CALL); \
     } while (0)
 #endif
 
-    BENCH(s_u32 = 0,                            "s_u32 = 0:");
-    BENCH(ASMAtomicUoReadU8(&s_u8),             "ASMAtomicUoReadU8:");
-    BENCH(ASMAtomicUoReadS8(&s_i8),             "ASMAtomicUoReadS8:");
-    BENCH(ASMAtomicUoReadU16(&s_u16),           "ASMAtomicUoReadU16:");
-    BENCH(ASMAtomicUoReadS16(&s_i16),           "ASMAtomicUoReadS16:");
-    BENCH(ASMAtomicUoReadU32(&s_u32),           "ASMAtomicUoReadU32:");
-    BENCH(ASMAtomicUoReadS32(&s_i32),           "ASMAtomicUoReadS32:");
-    BENCH(ASMAtomicUoReadU64(&s_u64),           "ASMAtomicUoReadU64:");
-    BENCH(ASMAtomicUoReadS64(&s_i64),           "ASMAtomicUoReadS64:");
-    BENCH(ASMAtomicReadU8(&s_u8),               "ASMAtomicReadU8:");
-    BENCH(ASMAtomicReadS8(&s_i8),               "ASMAtomicReadS8:");
-    BENCH(ASMAtomicReadU16(&s_u16),             "ASMAtomicReadU16:");
-    BENCH(ASMAtomicReadS16(&s_i16),             "ASMAtomicReadS16:");
-    BENCH(ASMAtomicReadU32(&s_u32),             "ASMAtomicReadU32:");
-    BENCH(ASMAtomicReadS32(&s_i32),             "ASMAtomicReadS32:");
-    BENCH(ASMAtomicReadU64(&s_u64),             "ASMAtomicReadU64:");
-    BENCH(ASMAtomicReadS64(&s_i64),             "ASMAtomicReadS64:");
-    BENCH(ASMAtomicUoWriteU8(&s_u8, 0),         "ASMAtomicUoWriteU8:");
-    BENCH(ASMAtomicUoWriteS8(&s_i8, 0),         "ASMAtomicUoWriteS8:");
-    BENCH(ASMAtomicUoWriteU16(&s_u16, 0),       "ASMAtomicUoWriteU16:");
-    BENCH(ASMAtomicUoWriteS16(&s_i16, 0),       "ASMAtomicUoWriteS16:");
-    BENCH(ASMAtomicUoWriteU32(&s_u32, 0),       "ASMAtomicUoWriteU32:");
-    BENCH(ASMAtomicUoWriteS32(&s_i32, 0),       "ASMAtomicUoWriteS32:");
-    BENCH(ASMAtomicUoWriteU64(&s_u64, 0),       "ASMAtomicUoWriteU64:");
-    BENCH(ASMAtomicUoWriteS64(&s_i64, 0),       "ASMAtomicUoWriteS64:");
-    BENCH(ASMAtomicWriteU8(&s_u8, 0),           "ASMAtomicWriteU8:");
-    BENCH(ASMAtomicWriteS8(&s_i8, 0),           "ASMAtomicWriteS8:");
-    BENCH(ASMAtomicWriteU16(&s_u16, 0),         "ASMAtomicWriteU16:");
-    BENCH(ASMAtomicWriteS16(&s_i16, 0),         "ASMAtomicWriteS16:");
-    BENCH(ASMAtomicWriteU32(&s_u32, 0),         "ASMAtomicWriteU32:");
-    BENCH(ASMAtomicWriteS32(&s_i32, 0),         "ASMAtomicWriteS32:");
-    BENCH(ASMAtomicWriteU64(&s_u64, 0),         "ASMAtomicWriteU64:");
-    BENCH(ASMAtomicWriteS64(&s_i64, 0),         "ASMAtomicWriteS64:");
-    BENCH(ASMAtomicXchgU8(&s_u8, 0),            "ASMAtomicXchgU8:");
-    BENCH(ASMAtomicXchgS8(&s_i8, 0),            "ASMAtomicXchgS8:");
-    BENCH(ASMAtomicXchgU16(&s_u16, 0),          "ASMAtomicXchgU16:");
-    BENCH(ASMAtomicXchgS16(&s_i16, 0),          "ASMAtomicXchgS16:");
-    BENCH(ASMAtomicXchgU32(&s_u32, 0),          "ASMAtomicXchgU32:");
-    BENCH(ASMAtomicXchgS32(&s_i32, 0),          "ASMAtomicXchgS32:");
-    BENCH(ASMAtomicXchgU64(&s_u64, 0),          "ASMAtomicXchgU64:");
-    BENCH(ASMAtomicXchgS64(&s_i64, 0),          "ASMAtomicXchgS64:");
-    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 0),    "ASMAtomicCmpXchgU32:");
-    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 0),    "ASMAtomicCmpXchgS32:");
-    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 0),    "ASMAtomicCmpXchgU64:");
-    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 0),    "ASMAtomicCmpXchgS64:");
-    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 1),    "ASMAtomicCmpXchgU32/neg:");
-    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 1),    "ASMAtomicCmpXchgS32/neg:");
-    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 1),    "ASMAtomicCmpXchgU64/neg:");
-    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 1),    "ASMAtomicCmpXchgS64/neg:");
-    BENCH(ASMAtomicIncU32(&s_u32),              "ASMAtomicIncU32:");
-    BENCH(ASMAtomicIncS32(&s_i32),              "ASMAtomicIncS32:");
-    BENCH(ASMAtomicDecU32(&s_u32),              "ASMAtomicDecU32:");
-    BENCH(ASMAtomicDecS32(&s_i32),              "ASMAtomicDecS32:");
-    BENCH(ASMAtomicAddU32(&s_u32, 5),           "ASMAtomicAddU32:");
-    BENCH(ASMAtomicAddS32(&s_i32, 5),           "ASMAtomicAddS32:");
+    BENCH(s_u32 = 0,                            "s_u32 = 0");
+    BENCH(ASMAtomicUoReadU8(&s_u8),             "ASMAtomicUoReadU8");
+    BENCH(ASMAtomicUoReadS8(&s_i8),             "ASMAtomicUoReadS8");
+    BENCH(ASMAtomicUoReadU16(&s_u16),           "ASMAtomicUoReadU16");
+    BENCH(ASMAtomicUoReadS16(&s_i16),           "ASMAtomicUoReadS16");
+    BENCH(ASMAtomicUoReadU32(&s_u32),           "ASMAtomicUoReadU32");
+    BENCH(ASMAtomicUoReadS32(&s_i32),           "ASMAtomicUoReadS32");
+    BENCH(ASMAtomicUoReadU64(&s_u64),           "ASMAtomicUoReadU64");
+    BENCH(ASMAtomicUoReadS64(&s_i64),           "ASMAtomicUoReadS64");
+    BENCH(ASMAtomicReadU8(&s_u8),               "ASMAtomicReadU8");
+    BENCH(ASMAtomicReadS8(&s_i8),               "ASMAtomicReadS8");
+    BENCH(ASMAtomicReadU16(&s_u16),             "ASMAtomicReadU16");
+    BENCH(ASMAtomicReadS16(&s_i16),             "ASMAtomicReadS16");
+    BENCH(ASMAtomicReadU32(&s_u32),             "ASMAtomicReadU32");
+    BENCH(ASMAtomicReadS32(&s_i32),             "ASMAtomicReadS32");
+    BENCH(ASMAtomicReadU64(&s_u64),             "ASMAtomicReadU64");
+    BENCH(ASMAtomicReadS64(&s_i64),             "ASMAtomicReadS64");
+    BENCH(ASMAtomicUoWriteU8(&s_u8, 0),         "ASMAtomicUoWriteU8");
+    BENCH(ASMAtomicUoWriteS8(&s_i8, 0),         "ASMAtomicUoWriteS8");
+    BENCH(ASMAtomicUoWriteU16(&s_u16, 0),       "ASMAtomicUoWriteU16");
+    BENCH(ASMAtomicUoWriteS16(&s_i16, 0),       "ASMAtomicUoWriteS16");
+    BENCH(ASMAtomicUoWriteU32(&s_u32, 0),       "ASMAtomicUoWriteU32");
+    BENCH(ASMAtomicUoWriteS32(&s_i32, 0),       "ASMAtomicUoWriteS32");
+    BENCH(ASMAtomicUoWriteU64(&s_u64, 0),       "ASMAtomicUoWriteU64");
+    BENCH(ASMAtomicUoWriteS64(&s_i64, 0),       "ASMAtomicUoWriteS64");
+    BENCH(ASMAtomicWriteU8(&s_u8, 0),           "ASMAtomicWriteU8");
+    BENCH(ASMAtomicWriteS8(&s_i8, 0),           "ASMAtomicWriteS8");
+    BENCH(ASMAtomicWriteU16(&s_u16, 0),         "ASMAtomicWriteU16");
+    BENCH(ASMAtomicWriteS16(&s_i16, 0),         "ASMAtomicWriteS16");
+    BENCH(ASMAtomicWriteU32(&s_u32, 0),         "ASMAtomicWriteU32");
+    BENCH(ASMAtomicWriteS32(&s_i32, 0),         "ASMAtomicWriteS32");
+    BENCH(ASMAtomicWriteU64(&s_u64, 0),         "ASMAtomicWriteU64");
+    BENCH(ASMAtomicWriteS64(&s_i64, 0),         "ASMAtomicWriteS64");
+    BENCH(ASMAtomicXchgU8(&s_u8, 0),            "ASMAtomicXchgU8");
+    BENCH(ASMAtomicXchgS8(&s_i8, 0),            "ASMAtomicXchgS8");
+    BENCH(ASMAtomicXchgU16(&s_u16, 0),          "ASMAtomicXchgU16");
+    BENCH(ASMAtomicXchgS16(&s_i16, 0),          "ASMAtomicXchgS16");
+    BENCH(ASMAtomicXchgU32(&s_u32, 0),          "ASMAtomicXchgU32");
+    BENCH(ASMAtomicXchgS32(&s_i32, 0),          "ASMAtomicXchgS32");
+    BENCH(ASMAtomicXchgU64(&s_u64, 0),          "ASMAtomicXchgU64");
+    BENCH(ASMAtomicXchgS64(&s_i64, 0),          "ASMAtomicXchgS64");
+    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 0),    "ASMAtomicCmpXchgU32");
+    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 0),    "ASMAtomicCmpXchgS32");
+    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 0),    "ASMAtomicCmpXchgU64");
+    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 0),    "ASMAtomicCmpXchgS64");
+    BENCH(ASMAtomicCmpXchgU32(&s_u32, 0, 1),    "ASMAtomicCmpXchgU32/neg");
+    BENCH(ASMAtomicCmpXchgS32(&s_i32, 0, 1),    "ASMAtomicCmpXchgS32/neg");
+    BENCH(ASMAtomicCmpXchgU64(&s_u64, 0, 1),    "ASMAtomicCmpXchgU64/neg");
+    BENCH(ASMAtomicCmpXchgS64(&s_i64, 0, 1),    "ASMAtomicCmpXchgS64/neg");
+    BENCH(ASMAtomicIncU32(&s_u32),              "ASMAtomicIncU32");
+    BENCH(ASMAtomicIncS32(&s_i32),              "ASMAtomicIncS32");
+    BENCH(ASMAtomicDecU32(&s_u32),              "ASMAtomicDecU32");
+    BENCH(ASMAtomicDecS32(&s_i32),              "ASMAtomicDecS32");
+    BENCH(ASMAtomicAddU32(&s_u32, 5),           "ASMAtomicAddU32");
+    BENCH(ASMAtomicAddS32(&s_i32, 5),           "ASMAtomicAddS32");
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId:");
+    BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId");
 #endif
-
-    RTPrintf("Done.\n");
 
 #undef BENCH
 }
@@ -1327,11 +1503,10 @@ void tstASMBench(void)
 
 int main(int argc, char *argv[])
 {
-    RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTInlineAsm", &hTest);
+    int rc = RTTestInitAndCreate("tstRTInlineAsm", &g_hTest);
     if (rc)
         return rc;
-    RTTestBanner(hTest);
+    RTTestBanner(g_hTest);
 
     /*
      * Execute the tests.
@@ -1351,20 +1526,28 @@ int main(int argc, char *argv[])
     tstASMAtomicCmpXchgExU64();
     tstASMAtomicReadU64();
     tstASMAtomicUoReadU64();
+
     tstASMAtomicAddS32();
+    tstASMAtomicAddS64();
     tstASMAtomicDecIncS32();
+    tstASMAtomicDecIncS64();
     tstASMAtomicAndOrU32();
+    tstASMAtomicAndOrU64();
+
     tstASMMemZeroPage();
-    tstASMMemIsZeroPage(hTest);
+    tstASMMemIsZeroPage(g_hTest);
     tstASMMemZero32();
     tstASMMemFill32();
+
     tstASMMath();
+
     tstASMByteSwap();
+
     tstASMBench();
 
     /*
      * Show the result.
      */
-    return RTTestSummaryAndDestroy(hTest);
+    return RTTestSummaryAndDestroy(g_hTest);
 }
 

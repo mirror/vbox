@@ -69,6 +69,11 @@
 #  pragma intrinsic(__stosq)
 #  pragma intrinsic(_byteswap_uint64)
 #  pragma intrinsic(_InterlockedExchange64)
+#  pragma intrinsic(_InterlockedExchangeAdd64)
+#  pragma intrinsic(_InterlockedAnd64)
+#  pragma intrinsic(_InterlockedOr64)
+#  pragma intrinsic(_InterlockedIncrement64)
+#  pragma intrinsic(_InterlockedDecrement64)
 # endif
 #endif
 
@@ -180,6 +185,59 @@ DECLINLINE(void) ASMCompilerBarrier(void)
 }
 #endif
 
+
+/** @def ASMBreakpoint
+ * Debugger Breakpoint.
+ * @remark  In the gnu world we add a nop instruction after the int3 to
+ *          force gdb to remain at the int3 source line.
+ * @remark  The L4 kernel will try make sense of the breakpoint, thus the jmp.
+ * @internal
+ */
+#if RT_INLINE_ASM_GNU_STYLE
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  ifndef __L4ENV__
+#   define ASMBreakpoint()      do { __asm__ __volatile__("int3\n\tnop"); } while (0)
+#  else
+#   define ASMBreakpoint()      do { __asm__ __volatile__("int3; jmp 1f; 1:"); } while (0)
+#  endif
+# elif defined(RT_ARCH_SPARC64)
+#  define ASMBreakpoint()       do { __asm__ __volatile__("illtrap 0\n\t") } while (0)  /** @todo Sparc64: this is just a wild guess. */
+# elif defined(RT_ARCH_SPARC)
+#  define ASMBreakpoint()       do { __asm__ __volatile__("unimp 0\n\t"); } while (0)   /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
+# else
+#  error "PORTME"
+# endif
+#else
+# define ASMBreakpoint()        __debugbreak()
+#endif
+
+
+/**
+ * Spinloop hint for platforms that have these, empty function on the other
+ * platforms.
+ *
+ * x86 & AMD64: The PAUSE variant of NOP for helping hyperthreaded CPUs detecing
+ * spin locks.
+ */
+#if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+DECLASM(void) ASMNopPause(void);
+#else
+DECLINLINE(void) ASMNopPause(void)
+{
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__(".byte 0xf3,0x90\n\t");
+#  else
+    __asm {
+        _emit 0f3h
+        _emit 090h
+    }
+#  endif
+# else
+    /* dummy */
+# endif
+}
+#endif
 
 
 /**
@@ -1273,294 +1331,6 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void * volatile *ppv, const void *pvN
 
 
 /**
- * Atomically exchanges and adds to a 32-bit value, ordered.
- *
- * @returns The old value.
- * @param   pu32        Pointer to the value.
- * @param   u32         Number to add.
- */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(uint32_t) ASMAtomicAddU32(uint32_t volatile *pu32, uint32_t u32);
-#else
-DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile *pu32, uint32_t u32)
-{
-# if RT_INLINE_ASM_USES_INTRIN
-    u32 = _InterlockedExchangeAdd((long *)pu32, u32);
-    return u32;
-
-# elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("lock; xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (u32),
-                           "m" (*pu32)
-                         : "memory");
-    return u32;
-# else
-    __asm
-    {
-        mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
-        mov     rdx, [pu32]
-        lock xadd [rdx], eax
-#  else
-        mov     edx, [pu32]
-        lock xadd [edx], eax
-#  endif
-        mov     [u32], eax
-    }
-    return u32;
-# endif
-}
-#endif
-
-
-/**
- * Atomically exchanges and adds to a signed 32-bit value, ordered.
- *
- * @returns The old value.
- * @param   pi32        Pointer to the value.
- * @param   i32         Number to add.
- */
-DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile *pi32, int32_t i32)
-{
-    return (int32_t)ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)i32);
-}
-
-
-/**
- * Atomically exchanges and subtracts to an unsigned 32-bit value, ordered.
- *
- * @returns The old value.
- * @param   pu32        Pointer to the value.
- * @param   u32         Number to subtract.
- */
-DECLINLINE(uint32_t) ASMAtomicSubU32(uint32_t volatile *pu32, uint32_t u32)
-{
-    return ASMAtomicAddU32(pu32, (uint32_t)-(int32_t)u32);
-}
-
-
-/**
- * Atomically exchanges and subtracts to a signed 32-bit value, ordered.
- *
- * @returns The old value.
- * @param   pi32        Pointer to the value.
- * @param   i32         Number to subtract.
- */
-DECLINLINE(int32_t) ASMAtomicSubS32(int32_t volatile *pi32, int32_t i32)
-{
-    return (int32_t)ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)-i32);
-}
-
-
-/**
- * Atomically increment a 32-bit value, ordered.
- *
- * @returns The new value.
- * @param   pu32        Pointer to the value to increment.
- */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32);
-#else
-DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32)
-{
-    uint32_t u32;
-# if RT_INLINE_ASM_USES_INTRIN
-    u32 = _InterlockedIncrement((long *)pu32);
-    return u32;
-
-# elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("lock; xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (1),
-                           "m" (*pu32)
-                         : "memory");
-    return u32+1;
-# else
-    __asm
-    {
-        mov     eax, 1
-#  ifdef RT_ARCH_AMD64
-        mov     rdx, [pu32]
-        lock xadd [rdx], eax
-#  else
-        mov     edx, [pu32]
-        lock xadd [edx], eax
-#  endif
-        mov     u32, eax
-    }
-    return u32+1;
-# endif
-}
-#endif
-
-
-/**
- * Atomically increment a signed 32-bit value, ordered.
- *
- * @returns The new value.
- * @param   pi32        Pointer to the value to increment.
- */
-DECLINLINE(int32_t) ASMAtomicIncS32(int32_t volatile *pi32)
-{
-    return (int32_t)ASMAtomicIncU32((uint32_t volatile *)pi32);
-}
-
-
-/**
- * Atomically decrement an unsigned 32-bit value, ordered.
- *
- * @returns The new value.
- * @param   pu32        Pointer to the value to decrement.
- */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32);
-#else
-DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32)
-{
-    uint32_t u32;
-# if RT_INLINE_ASM_USES_INTRIN
-    u32 = _InterlockedDecrement((long *)pu32);
-    return u32;
-
-# elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("lock; xaddl %0, %1\n\t"
-                         : "=r" (u32),
-                           "=m" (*pu32)
-                         : "0" (-1),
-                           "m" (*pu32)
-                         : "memory");
-    return u32-1;
-# else
-    __asm
-    {
-        mov     eax, -1
-#  ifdef RT_ARCH_AMD64
-        mov     rdx, [pu32]
-        lock xadd [rdx], eax
-#  else
-        mov     edx, [pu32]
-        lock xadd [edx], eax
-#  endif
-        mov     u32, eax
-    }
-    return u32-1;
-# endif
-}
-#endif
-
-
-/**
- * Atomically decrement a signed 32-bit value, ordered.
- *
- * @returns The new value.
- * @param   pi32        Pointer to the value to decrement.
- */
-DECLINLINE(int32_t) ASMAtomicDecS32(int32_t volatile *pi32)
-{
-    return (int32_t)ASMAtomicDecU32((uint32_t volatile *)pi32);
-}
-
-
-/**
- * Atomically Or an unsigned 32-bit value, ordered.
- *
- * @param   pu32   Pointer to the pointer variable to OR u32 with.
- * @param   u32    The value to OR *pu32 with.
- */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32);
-#else
-DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
-{
-# if RT_INLINE_ASM_USES_INTRIN
-    _InterlockedOr((long volatile *)pu32, (long)u32);
-
-# elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("lock; orl %1, %0\n\t"
-                         : "=m" (*pu32)
-                         : "ir" (u32),
-                           "m" (*pu32));
-# else
-    __asm
-    {
-        mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
-        mov     rdx, [pu32]
-        lock    or [rdx], eax
-#  else
-        mov     edx, [pu32]
-        lock    or [edx], eax
-#  endif
-    }
-# endif
-}
-#endif
-
-
-/**
- * Atomically Or a signed 32-bit value, ordered.
- *
- * @param   pi32   Pointer to the pointer variable to OR u32 with.
- * @param   i32    The value to OR *pu32 with.
- */
-DECLINLINE(void) ASMAtomicOrS32(int32_t volatile *pi32, int32_t i32)
-{
-    ASMAtomicOrU32((uint32_t volatile *)pi32, i32);
-}
-
-
-/**
- * Atomically And an unsigned 32-bit value, ordered.
- *
- * @param   pu32   Pointer to the pointer variable to AND u32 with.
- * @param   u32    The value to AND *pu32 with.
- */
-#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
-DECLASM(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32);
-#else
-DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32)
-{
-# if RT_INLINE_ASM_USES_INTRIN
-    _InterlockedAnd((long volatile *)pu32, u32);
-
-# elif RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("lock; andl %1, %0\n\t"
-                         : "=m" (*pu32)
-                         : "ir" (u32),
-                           "m" (*pu32));
-# else
-    __asm
-    {
-        mov     eax, [u32]
-#  ifdef RT_ARCH_AMD64
-        mov     rdx, [pu32]
-        lock and [rdx], eax
-#  else
-        mov     edx, [pu32]
-        lock and [edx], eax
-#  endif
-    }
-# endif
-}
-#endif
-
-
-/**
- * Atomically And a signed 32-bit value, ordered.
- *
- * @param   pi32   Pointer to the pointer variable to AND i32 with.
- * @param   i32    The value to AND *pi32 with.
- */
-DECLINLINE(void) ASMAtomicAndS32(int32_t volatile *pi32, int32_t i32)
-{
-    ASMAtomicAndU32((uint32_t volatile *)pi32, (uint32_t)i32);
-}
-
-
-/**
  * Serialize Instruction.
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
@@ -2644,6 +2414,547 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 
 
 
+/**
+ * Atomically exchanges and adds to a 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu32        Pointer to the value.
+ * @param   u32         Number to add.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint32_t) ASMAtomicAddU32(uint32_t volatile *pu32, uint32_t u32);
+#else
+DECLINLINE(uint32_t) ASMAtomicAddU32(uint32_t volatile *pu32, uint32_t u32)
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    u32 = _InterlockedExchangeAdd((long *)pu32, u32);
+    return u32;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lock; xaddl %0, %1\n\t"
+                         : "=r" (u32),
+                           "=m" (*pu32)
+                         : "0" (u32),
+                           "m" (*pu32)
+                         : "memory");
+    return u32;
+# else
+    __asm
+    {
+        mov     eax, [u32]
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        lock xadd [rdx], eax
+#  else
+        mov     edx, [pu32]
+        lock xadd [edx], eax
+#  endif
+        mov     [u32], eax
+    }
+    return u32;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically exchanges and adds to a signed 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pi32        Pointer to the value.
+ * @param   i32         Number to add.
+ */
+DECLINLINE(int32_t) ASMAtomicAddS32(int32_t volatile *pi32, int32_t i32)
+{
+    return (int32_t)ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)i32);
+}
+
+
+/**
+ * Atomically exchanges and adds to a 64-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu64        Pointer to the value.
+ * @param   u64         Number to add.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint64_t) ASMAtomicAddU64(uint64_t volatile *pu64, uint64_t u64);
+#else
+DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile *pu64, uint64_t u64)
+{
+# if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
+    u64 = _InterlockedExchangeAdd64((__int64 *)pu64, u64);
+    return u64;
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("lock; xaddq %0, %1\n\t"
+                         : "=r" (u64),
+                           "=m" (*pu64)
+                         : "0" (u64),
+                           "m" (*pu64)
+                         : "memory");
+    return u64;
+# else
+    uint64_t u64New;
+    for (;;)
+    {
+        uint64_t u64Old = ASMAtomicUoReadU64(pu64);
+        u64New = u64Old + u64;
+        if (ASMAtomicCmpXchgU64(pu64, u64New, u64Old))
+            break;
+        ASMNopPause();
+    }
+    return u64New;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically exchanges and adds to a signed 64-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pi64        Pointer to the value.
+ * @param   i64         Number to add.
+ */
+DECLINLINE(int64_t) ASMAtomicAddS64(int64_t volatile *pi64, int64_t i64)
+{
+    return (int64_t)ASMAtomicAddU64((uint64_t volatile *)pi64, (uint64_t)i64);
+}
+
+
+/**
+ * Atomically exchanges and subtracts to an unsigned 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu32        Pointer to the value.
+ * @param   u32         Number to subtract.
+ */
+DECLINLINE(uint32_t) ASMAtomicSubU32(uint32_t volatile *pu32, uint32_t u32)
+{
+    return ASMAtomicAddU32(pu32, (uint32_t)-(int32_t)u32);
+}
+
+
+/**
+ * Atomically exchanges and subtracts to a signed 32-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pi32        Pointer to the value.
+ * @param   i32         Number to subtract.
+ */
+DECLINLINE(int32_t) ASMAtomicSubS32(int32_t volatile *pi32, int32_t i32)
+{
+    return (int32_t)ASMAtomicAddU32((uint32_t volatile *)pi32, (uint32_t)-i32);
+}
+
+
+/**
+ * Atomically exchanges and subtracts to an unsigned 64-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pu64        Pointer to the value.
+ * @param   u64         Number to subtract.
+ */
+DECLINLINE(uint64_t) ASMAtomicSubU64(uint64_t volatile *pu64, uint64_t u64)
+{
+    return ASMAtomicAddU64(pu64, (uint64_t)-(int64_t)u64);
+}
+
+
+/**
+ * Atomically exchanges and subtracts to a signed 64-bit value, ordered.
+ *
+ * @returns The old value.
+ * @param   pi64        Pointer to the value.
+ * @param   i64         Number to subtract.
+ */
+DECLINLINE(int64_t) ASMAtomicSubS64(int64_t volatile *pi64, int64_t i64)
+{
+    return (int64_t)ASMAtomicAddU64((uint64_t volatile *)pi64, (uint64_t)-i64);
+}
+
+
+/**
+ * Atomically increment a 32-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pu32        Pointer to the value to increment.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32);
+#else
+DECLINLINE(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32)
+{
+    uint32_t u32;
+# if RT_INLINE_ASM_USES_INTRIN
+    u32 = _InterlockedIncrement((long *)pu32);
+    return u32;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lock; xaddl %0, %1\n\t"
+                         : "=r" (u32),
+                           "=m" (*pu32)
+                         : "0" (1),
+                           "m" (*pu32)
+                         : "memory");
+    return u32+1;
+# else
+    __asm
+    {
+        mov     eax, 1
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        lock xadd [rdx], eax
+#  else
+        mov     edx, [pu32]
+        lock xadd [edx], eax
+#  endif
+        mov     u32, eax
+    }
+    return u32+1;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically increment a signed 32-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pi32        Pointer to the value to increment.
+ */
+DECLINLINE(int32_t) ASMAtomicIncS32(int32_t volatile *pi32)
+{
+    return (int32_t)ASMAtomicIncU32((uint32_t volatile *)pi32);
+}
+
+
+/**
+ * Atomically increment a 64-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pu64        Pointer to the value to increment.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint64_t) ASMAtomicIncU64(uint64_t volatile *pu64);
+#else
+DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile *pu64)
+{
+    uint64_t u64;
+# if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
+    u64 = _InterlockedIncrement64((__int64 *)pu64);
+    return u64;
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("lock; xaddq %0, %1\n\t"
+                         : "=r" (u64),
+                           "=m" (*pu64)
+                         : "0" (1),
+                           "m" (*pu64)
+                         : "memory");
+    return u64 + 1;
+# else
+    return ASMAtomicAddU64(pu64, 1) + 1;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically increment a signed 64-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pi64        Pointer to the value to increment.
+ */
+DECLINLINE(int64_t) ASMAtomicIncS64(int64_t volatile *pi64)
+{
+    return (int64_t)ASMAtomicIncU64((uint64_t volatile *)pi64);
+}
+
+
+/**
+ * Atomically decrement an unsigned 32-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pu32        Pointer to the value to decrement.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32);
+#else
+DECLINLINE(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32)
+{
+    uint32_t u32;
+# if RT_INLINE_ASM_USES_INTRIN
+    u32 = _InterlockedDecrement((long *)pu32);
+    return u32;
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lock; xaddl %0, %1\n\t"
+                         : "=r" (u32),
+                           "=m" (*pu32)
+                         : "0" (-1),
+                           "m" (*pu32)
+                         : "memory");
+    return u32-1;
+# else
+    __asm
+    {
+        mov     eax, -1
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        lock xadd [rdx], eax
+#  else
+        mov     edx, [pu32]
+        lock xadd [edx], eax
+#  endif
+        mov     u32, eax
+    }
+    return u32-1;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically decrement a signed 32-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pi32        Pointer to the value to decrement.
+ */
+DECLINLINE(int32_t) ASMAtomicDecS32(int32_t volatile *pi32)
+{
+    return (int32_t)ASMAtomicDecU32((uint32_t volatile *)pi32);
+}
+
+
+/**
+ * Atomically decrement an unsigned 64-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pu64        Pointer to the value to decrement.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(uint64_t) ASMAtomicDecU64(uint64_t volatile *pu64);
+#else
+DECLINLINE(uint64_t) ASMAtomicDecU64(uint64_t volatile *pu64)
+{
+# if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
+    uint64_t u64 = _InterlockedDecrement64((__int64 volatile *)pu64);
+    return u64;
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    uint64_t u64;
+    __asm__ __volatile__("lock; xaddq %q0, %1\n\t"
+                         : "=r" (u64),
+                           "=m" (*pu64)
+                         : "0" (~(uint64_t)0),
+                           "m" (*pu64)
+                         : "memory");
+    return u64-1;
+# else
+    return ASMAtomicAddU64(pu64, UINT64_MAX) - 1;
+# endif
+}
+#endif
+
+
+/**
+ * Atomically decrement a signed 64-bit value, ordered.
+ *
+ * @returns The new value.
+ * @param   pi64        Pointer to the value to decrement.
+ */
+DECLINLINE(int64_t) ASMAtomicDecS64(int64_t volatile *pi64)
+{
+    return (int64_t)ASMAtomicDecU64((uint64_t volatile *)pi64);
+}
+
+
+/**
+ * Atomically Or an unsigned 32-bit value, ordered.
+ *
+ * @param   pu32   Pointer to the pointer variable to OR u32 with.
+ * @param   u32    The value to OR *pu32 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32);
+#else
+DECLINLINE(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    _InterlockedOr((long volatile *)pu32, (long)u32);
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lock; orl %1, %0\n\t"
+                         : "=m" (*pu32)
+                         : "ir" (u32),
+                           "m" (*pu32));
+# else
+    __asm
+    {
+        mov     eax, [u32]
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        lock    or [rdx], eax
+#  else
+        mov     edx, [pu32]
+        lock    or [edx], eax
+#  endif
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically Or a signed 32-bit value, ordered.
+ *
+ * @param   pi32   Pointer to the pointer variable to OR u32 with.
+ * @param   i32    The value to OR *pu32 with.
+ */
+DECLINLINE(void) ASMAtomicOrS32(int32_t volatile *pi32, int32_t i32)
+{
+    ASMAtomicOrU32((uint32_t volatile *)pi32, i32);
+}
+
+
+/**
+ * Atomically Or an unsigned 64-bit value, ordered.
+ *
+ * @param   pu64   Pointer to the pointer variable to OR u64 with.
+ * @param   u64    The value to OR *pu64 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMAtomicOrU64(uint64_t volatile *pu64, uint64_t u64);
+#else
+DECLINLINE(void) ASMAtomicOrU64(uint64_t volatile *pu64, uint64_t u64)
+{
+# if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
+    _InterlockedOr64((__int64 volatile *)pu64, (__int64)u64);
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("lock; orq %1, %q0\n\t"
+                         : "=m" (*pu64)
+                         : "r" (u64),
+                           "m" (*pu64));
+# else
+    for (;;)
+    {
+        uint64_t u64Old = ASMAtomicUoReadU64(pu64);
+        uint64_t u64New = u64Old | u64;
+        if (ASMAtomicCmpXchgU64(pu64, u64New, u64Old))
+            break;
+        ASMNopPause();
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically Or a signed 64-bit value, ordered.
+ *
+ * @param   pi64   Pointer to the pointer variable to OR u64 with.
+ * @param   i64    The value to OR *pu64 with.
+ */
+DECLINLINE(void) ASMAtomicOrS64(int64_t volatile *pi64, int64_t i64)
+{
+    ASMAtomicOrU64((uint64_t volatile *)pi64, i64);
+}
+/**
+ * Atomically And an unsigned 32-bit value, ordered.
+ *
+ * @param   pu32   Pointer to the pointer variable to AND u32 with.
+ * @param   u32    The value to AND *pu32 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32);
+#else
+DECLINLINE(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32)
+{
+# if RT_INLINE_ASM_USES_INTRIN
+    _InterlockedAnd((long volatile *)pu32, u32);
+
+# elif RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__("lock; andl %1, %0\n\t"
+                         : "=m" (*pu32)
+                         : "ir" (u32),
+                           "m" (*pu32));
+# else
+    __asm
+    {
+        mov     eax, [u32]
+#  ifdef RT_ARCH_AMD64
+        mov     rdx, [pu32]
+        lock and [rdx], eax
+#  else
+        mov     edx, [pu32]
+        lock and [edx], eax
+#  endif
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically And a signed 32-bit value, ordered.
+ *
+ * @param   pi32   Pointer to the pointer variable to AND i32 with.
+ * @param   i32    The value to AND *pi32 with.
+ */
+DECLINLINE(void) ASMAtomicAndS32(int32_t volatile *pi32, int32_t i32)
+{
+    ASMAtomicAndU32((uint32_t volatile *)pi32, (uint32_t)i32);
+}
+
+
+/**
+ * Atomically And an unsigned 64-bit value, ordered.
+ *
+ * @param   pu64   Pointer to the pointer variable to AND u64 with.
+ * @param   u64    The value to AND *pu64 with.
+ */
+#if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
+DECLASM(void) ASMAtomicAndU64(uint64_t volatile *pu64, uint64_t u64);
+#else
+DECLINLINE(void) ASMAtomicAndU64(uint64_t volatile *pu64, uint64_t u64)
+{
+# if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
+    _InterlockedAnd64((__int64 volatile *)pu64, u64);
+
+# elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    __asm__ __volatile__("lock; andq %1, %0\n\t"
+                         : "=m" (*pu64)
+                         : "r" (u64),
+                           "m" (*pu64));
+# else
+    for (;;)
+    {
+        uint64_t u64Old = ASMAtomicUoReadU64(pu64);
+        uint64_t u64New = u64Old & u64;
+        if (ASMAtomicCmpXchgU64(pu64, u64New, u64Old))
+            break;
+        ASMNopPause();
+    }
+# endif
+}
+#endif
+
+
+/**
+ * Atomically And a signed 64-bit value, ordered.
+ *
+ * @param   pi64   Pointer to the pointer variable to AND i64 with.
+ * @param   i64    The value to AND *pi64 with.
+ */
+DECLINLINE(void) ASMAtomicAndS64(int64_t volatile *pi64, int64_t i64)
+{
+    ASMAtomicAndU64((uint64_t volatile *)pi64, (uint64_t)i64);
+}
+
+
 
 /** @def RT_ASM_PAGE_SIZE
  * We try avoid dragging in iprt/param.h here.
@@ -2997,60 +3308,6 @@ DECLINLINE(void) ASMProbeReadBuffer(const void *pvBuf, size_t cbBuf)
     /* the last byte */
     ASMProbeReadByte(pu8 + cbBuf - 1);
 }
-
-
-/** @def ASMBreakpoint
- * Debugger Breakpoint.
- * @remark  In the gnu world we add a nop instruction after the int3 to
- *          force gdb to remain at the int3 source line.
- * @remark  The L4 kernel will try make sense of the breakpoint, thus the jmp.
- * @internal
- */
-#if RT_INLINE_ASM_GNU_STYLE
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  ifndef __L4ENV__
-#   define ASMBreakpoint()      do { __asm__ __volatile__("int3\n\tnop"); } while (0)
-#  else
-#   define ASMBreakpoint()      do { __asm__ __volatile__("int3; jmp 1f; 1:"); } while (0)
-#  endif
-# elif defined(RT_ARCH_SPARC64)
-#  define ASMBreakpoint()       do { __asm__ __volatile__("illtrap 0\n\t") } while (0)  /** @todo Sparc64: this is just a wild guess. */
-# elif defined(RT_ARCH_SPARC)
-#  define ASMBreakpoint()       do { __asm__ __volatile__("unimp 0\n\t"); } while (0)   /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
-# else
-#  error "PORTME"
-# endif
-#else
-# define ASMBreakpoint()        __debugbreak()
-#endif
-
-
-/**
- * Spinloop hint for platforms that have these, empty function on the other
- * platforms.
- *
- * x86 & AMD64: The PAUSE variant of NOP for helping hyperthreaded CPUs detecing
- * spin locks.
- */
-#if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-DECLASM(void) ASMNopPause(void);
-#else
-DECLINLINE(void) ASMNopPause(void)
-{
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__(".byte 0xf3,0x90\n\t");
-#  else
-    __asm {
-        _emit 0f3h
-        _emit 090h
-    }
-#  endif
-# else
-    /* dummy */
-# endif
-}
-#endif
 
 
 
