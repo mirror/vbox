@@ -1328,7 +1328,7 @@ void tstASMBench(void)
 int main(int argc, char *argv[])
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstInlineAsm", &hTest);
+    int rc = RTTestInitAndCreate("tstRTInlineAsm", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
