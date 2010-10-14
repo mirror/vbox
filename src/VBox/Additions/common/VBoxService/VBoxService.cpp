@@ -559,6 +559,12 @@ int main(int argc, char **argv)
     }
 #endif
 
+#ifdef VBOXSERVICE_TOOLBOX
+    rc = VBoxServiceToolboxMain(argc, argv);
+    if (rc != VERR_NOT_FOUND) /* Internal tool found? Then bail out. */
+        return rc;
+#endif
+
     /*
      * Parse the arguments.
      */
