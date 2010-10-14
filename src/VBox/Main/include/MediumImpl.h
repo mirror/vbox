@@ -175,7 +175,8 @@ public:
     MediumType_T getType() const;
     Utf8Str getName();
 
-    bool addRegistry(const Guid& id);
+    bool addRegistry(const Guid& id,
+                     bool *pfNeedsSaveSettings);
     bool isInRegistry(const Guid& id);
     const Guid& getFirstRegistryMachineId() const;
 

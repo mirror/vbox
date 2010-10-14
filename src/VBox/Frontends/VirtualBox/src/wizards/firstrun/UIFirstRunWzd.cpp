@@ -340,13 +340,15 @@ bool UIFirstRunWzdPage3::insertDevice()
     AssertMsg(!cda.isNull(), ("Storage Controller is NOT properly configured!\n"));
     /* Get chosen 'dvd' medium to mount: */
     QString mediumId = field("id").toString();
+    VBoxMedium vmedium = vboxGlobal().findMedium(mediumId);
+    CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
     /* Mount medium to the predefined port/device: */
-    m_Machine.MountMedium(cda.GetController(), cda.GetPort(), cda.GetDevice(), mediumId, false /* force */);
+    m_Machine.MountMedium(cda.GetController(), cda.GetPort(), cda.GetDevice(), medium, false /* force */);
     if (m_Machine.isOk())
         return true;
     else
     {
-        vboxProblem().cannotRemountMedium(this, m_Machine, vboxGlobal().findMedium(mediumId),
+        vboxProblem().cannotRemountMedium(this, m_Machine, vmedium,
                                           true /* mount? */, false /* retry? */);
         return false;
     }
