@@ -415,7 +415,6 @@ static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int l
     return VINF_SUCCESS;
 }
 
-
 static int ich9pciDataRead(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t *pu32)
 {
     PciAddress aPciAddr;
@@ -1352,7 +1351,7 @@ static DECLCALLBACK(int) ich9pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE 
 
 static uint32_t ich9pciConfigRead(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, uint32_t addr, uint32_t len)
 {
-    uint32_t u32Val;
+    uint32_t   u32Val = 0xffffffff;
     PciAddress aPciAddr;
 
     aPciAddr.iBus = uBus;
@@ -1861,9 +1860,6 @@ static const struct {
     int32_t     iFunction;
 } PciSlotAssignments[] = {
     {
-        "piix3ide", 1, 1 // do we really need it?
-    },
-    {
         "lan",      25, 0 /* LAN controller */
     },
     {
@@ -1872,12 +1868,22 @@ static const struct {
     {
         "i82801",   30, 0 /* Host Controller */
     },
+    /**
+     *  Please note, that for devices being functions, like we do here, device 0
+     *  must be multifunction, i.e. have header type 0x80. Our LPC device is.
+     *  Alternative approach is to assign separate slot to each device.
+     */
     {
         "lpc",      31, 0 /* Low Pin Count bus */
     },
     {
+        "piix3ide", 31, 1 /* IDE controller */
+    },
+#if 0
+    {
         "ahci",     31, 2 /* SATA controller */
     },
+#endif
     {
         "smbus",    31, 3 /* System Management Bus */
     },
@@ -1938,7 +1944,7 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
     /*
      * Find device position
      */
-    if (iDev < 0)
+    if (iDev < 0 || !strcmp(pszName, "piix3ide"))
     {
         iDev = assignPosition(pBus, pPciDev, pszName);
         if (iDev < 0)
