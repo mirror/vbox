@@ -705,8 +705,13 @@ int handleCloneHardDisk(HandlerArg *a)
                                                                 AccessMode_ReadWrite,
                                                                 dstDisk.asOutParam()));
                 }
-                if (SUCCEEDED(rc))
+                else if (SUCCEEDED(rc))
                     fDstUnknown = true;
+                else
+                {
+                    com::GluePrintRCMessage(rc);
+                    break;
+                }
             }
             else
                 fRemember = true;
@@ -715,8 +720,8 @@ int handleCloneHardDisk(HandlerArg *a)
                 /* Perform accessibility check now. */
                 MediumState_T state;
                 CHECK_ERROR_BREAK(dstDisk, RefreshState(&state));
+                CHECK_ERROR_BREAK(dstDisk, COMGETTER(Format)(format.asOutParam()));
             }
-            CHECK_ERROR_BREAK(dstDisk, COMGETTER(Format)(format.asOutParam()));
         }
         else
         {
@@ -1217,14 +1222,17 @@ int handleShowHardDiskInfo(HandlerArg *a)
                                                   AccessMode_ReadWrite,
                                                   hardDisk.asOutParam()));
         }
-        if (SUCCEEDED(rc))
+        else if (SUCCEEDED(rc))
             unknown = true;
+        else
+        {
+            com::GluePrintRCMessage(rc);
+            return 1;
+        }
     }
+
     do
     {
-        if (!SUCCEEDED(rc))
-            break;
-
         Bstr uuid;
         hardDisk->COMGETTER(Id)(uuid.asOutParam());
         RTPrintf("UUID:                 %s\n", Utf8Str(uuid).c_str());
