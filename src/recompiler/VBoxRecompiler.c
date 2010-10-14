@@ -1231,6 +1231,11 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
         Ctx.trHid.u32Limit = env->tr.limit;
         Ctx.trHid.Attr.u   = (env->tr.flags >> 8) & 0xF0FF;
 
+        Ctx.ldtr              = env->ldt.selector;
+        Ctx.ldtrHid.u64Base   = env->ldt.base;
+        Ctx.ldtrHid.u32Limit  = env->ldt.limit;
+        Ctx.ldtrHid.Attr.u    = (env->ldt.flags >> 8) & 0xF0FF;
+
         Ctx.idtr.cbIdt     = env->idt.limit;
         Ctx.idtr.pIdt      = env->idt.base;
 
