@@ -872,7 +872,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
     rc = vhdFileReadSync(pImage, uDynamicDiskHeaderOffset,
                          &vhdDynamicDiskHeader, sizeof(VHDDynamicDiskHeader),
                          NULL);
-    if (!memcmp(vhdDynamicDiskHeader.Cookie, VHD_DYNAMIC_DISK_HEADER_COOKIE, VHD_DYNAMIC_DISK_HEADER_COOKIE_SIZE))
+    if (memcmp(vhdDynamicDiskHeader.Cookie, VHD_DYNAMIC_DISK_HEADER_COOKIE, VHD_DYNAMIC_DISK_HEADER_COOKIE_SIZE))
         return VERR_INVALID_PARAMETER;
 
     pImage->cbDataBlock = RT_BE2H_U32(vhdDynamicDiskHeader.BlockSize);
