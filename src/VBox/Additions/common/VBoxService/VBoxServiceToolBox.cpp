@@ -116,7 +116,7 @@ int VBoxServiceToolboxMain(int argc, char **argv)
             if (RT_SUCCESS(rc))
             {
                 uint8_t cBuf[_64K];
-                uint32_t cbRead;
+                size_t cbRead;
                 do
                 {
                     rc = RTStrmReadEx(pStream, cBuf, sizeof(cBuf), &cbRead);
