@@ -3334,8 +3334,14 @@ static DECLCALLBACK(int) iscsiIoThreadWorker(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     case ISCSICMDTYPE_REQ:
                     {
-                        rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
-                        AssertRC(rc);
+                        /* If there is no connection complete the command with an error. */
+                        if (RT_LIKELY(iscsiIsClientConnected(pImage)))
+                        {
+                            rc = iscsiPDUTxPrepare(pImage, pIScsiCmd);
+                            AssertRC(rc);
+                        }
+                        else
+                            iscsiCmdComplete(pImage, pIScsiCmd, VERR_NET_CONNECTION_REFUSED);
                         break;
                     }
                     case ISCSICMDTYPE_EXEC:
@@ -3693,6 +3699,8 @@ static int iscsiFreeImage(PISCSIIMAGE pImage, bool fDelete)
             RTMemFree(pImage->pvRecvPDUBuf);
             pImage->pvRecvPDUBuf = NULL;
         }
+
+        pImage->cbRecvPDUResidual = 0;
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -3718,11 +3726,6 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     rc = RTStrToUInt64Full(s_iscsiConfigDefaultHostIPStack, 0, &uHostIPTmp);
     AssertRC(rc);
     fHostIPDef = !!uHostIPTmp;
-
-#if 0
-    if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
-        return VERR_NOT_SUPPORTED;
-#endif
 
     pImage->uOpenFlags      = uOpenFlags;
 
@@ -3956,6 +3959,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     }
 
     memset(pImage->aCmdsWaiting, 0, sizeof(pImage->aCmdsWaiting));
+    pImage->cbRecvPDUResidual = 0;
 
     /* Create the socket structure. */
     rc = pImage->pInterfaceNetCallbacks->pfnSocketCreate(VD_INTERFACETCPNET_CONNECT_EXTENDED_SELECT,
@@ -4559,7 +4563,7 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     rc = iscsiCommandSync(pImage, &sr, true, VERR_READ_ERROR);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
+        LogFlow(("iscsiCommandSync(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
         *pcbActuallyRead = 0;
     }
     else
@@ -4663,7 +4667,7 @@ static int iscsiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     rc = iscsiCommandSync(pImage, &sr, true, VERR_WRITE_ERROR);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
+        LogFlow(("iscsiCommandSync(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
         *pcbWriteProcess = 0;
     }
     else
