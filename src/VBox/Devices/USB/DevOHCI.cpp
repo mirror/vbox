@@ -5384,6 +5384,10 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetClassSub     (&pOhci->PciDev, 0x03);
     PCIDevSetClassBase    (&pOhci->PciDev, 0x0c);
     PCIDevSetInterruptPin (&pOhci->PciDev, 0x01);
+#ifdef VBOX_WITH_MSI_DEVICES
+    PCIDevSetStatus       (&pOhci->PciDev, VBOX_PCI_STATUS_CAP_LIST);
+    PCIDevSetCapabilityList(&pOhci->PciDev, 0x80);
+#endif
 
     pOhci->RootHub.pOhci                         = pOhci;
     pOhci->RootHub.IBase.pfnQueryInterface       = ohciRhQueryInterface;
@@ -5405,6 +5409,20 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIRegister(pDevIns, &pOhci->PciDev);
     if (RT_FAILURE(rc))
         return rc;
+
+#ifdef VBOX_WITH_MSI_DEVICES
+    PDMMSIREG aMsiReg;
+    aMsiReg.cVectors = 1;
+    aMsiReg.iCapOffset = 0x80;
+    aMsiReg.iNextOffset = 0x0;
+    aMsiReg.iMsiFlags = 0;
+    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
+    if (RT_FAILURE (rc))
+    {
+        PCIDevSetCapabilityList(&pOhci->PciDev, 0x0);
+        /* That's OK, we can work without MSI */
+    }
+#endif
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 4096, PCI_ADDRESS_SPACE_MEM, ohciR3Map);
     if (RT_FAILURE(rc))
