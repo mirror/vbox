@@ -44,6 +44,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include "internal/magics.h"
+#include "semeventwait-r0drv-solaris.h"
 
 
 /*******************************************************************************
@@ -194,25 +195,7 @@ RTDECL(int) RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
                     VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
     rtR0SemEventMultiSolRetain(pThis);
-
-    /*
-     * If we're in interrupt context we need to unpin the underlying current
-     * thread as this could lead to a deadlock (see #4259 for the full explanation)
-     *
-     * Note! See remarks about preemption in RTSemEventSignal.
-     */
-    int fAcquired = mutex_tryenter(&pThis->Mtx);
-    if (!fAcquired)
-    {
-        if (curthread->t_intr && getpil() < DISP_LEVEL)
-        {
-            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-            RTThreadPreemptDisable(&PreemptState);
-            preempt();
-            RTThreadPreemptRestore(&PreemptState);
-        }
-        mutex_enter(&pThis->Mtx);
-    }
+    rtR0SemSolWaitEnterMutexWithUnpinningHack(&pThis->Mtx);
     Assert(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC);
 
     /*
@@ -243,26 +226,9 @@ RTDECL(int) RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
                     ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
                     VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
-    rtR0SemEventMultiSolRetain(pThis);
 
-    /*
-     * If we're in interrupt context we need to unpin the underlying current
-     * thread as this could lead to a deadlock (see #4259 for the full explanation)
-     *
-     * Note! See remarks about preemption in RTSemEventSignal.
-     */
-    int fAcquired = mutex_tryenter(&pThis->Mtx);
-    if (!fAcquired)
-    {
-        if (curthread->t_intr && getpil() < DISP_LEVEL)
-        {
-            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-            RTThreadPreemptDisable(&PreemptState);
-            preempt();
-            RTThreadPreemptRestore(&PreemptState);
-        }
-        mutex_enter(&pThis->Mtx);
-    }
+    rtR0SemEventMultiSolRetain(pThis);
+    rtR0SemSolWaitEnterMutexWithUnpinningHack(&pThis->Mtx);
     Assert(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC);
 
     /*
@@ -271,281 +237,11 @@ RTDECL(int) RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     ASMAtomicAndU32(&pThis->fStateAndGen, ~RTSEMEVENTMULTISOL_STATE_MASK);
 
     mutex_exit(&pThis->Mtx);
-
     rtR0SemEventMultiSolRelease(pThis);
+
     RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
-
-/* -------- Move to header ---------- */
-
-typedef struct RTR0SEMSOLWAIT
-{
-    /** The absolute timeout given as nano seconds since the start of the
-     *  monotonic clock. */
-    uint64_t        uNsAbsTimeout;
-    /** The timeout in nano seconds relative to the start of the wait. */
-    uint64_t        cNsRelTimeout;
-    /** The native timeout value. */
-    union
-    {
-        /** The timeout (abs lbolt) when fHighRes is false.  */
-        clock_t     lTimeout;
-    } u;
-    /** Set if we use high resolution timeouts. */
-    bool            fHighRes;
-    /** Set if it's an indefinite wait. */
-    bool            fIndefinite;
-    /** Set if we've already timed out.
-     * Set by rtR0SemSolWaitDoIt or rtR0SemSolWaitHighResTimeout, read by
-     * rtR0SemSolWaitHasTimedOut. */
-    bool volatile   fTimedOut;
-    /** Whether the wait was interrupted. */
-    bool            fInterrupted;
-    /** Interruptible or uninterruptible wait. */
-    bool            fInterruptible;
-    /** The thread to wake up. */
-    kthread_t      *pThread;
-    /** Cylic timer ID (used by the timeout callback). */
-    cyclic_id_t     idCy;
-} RTR0SEMSOLWAIT;
-/** Pointer to a solaris semaphore wait structure.  */
-typedef RTR0SEMSOLWAIT *PRTR0SEMSOLWAIT;
-
-
-/**
- * Initializes a wait.
- *
- * The caller MUST check the wait condition BEFORE calling this function or the
- * timeout logic will be flawed.
- *
- * @returns VINF_SUCCESS or VERR_TIMEOUT.
- * @param   pWait               The wait structure.
- * @param   fFlags              The wait flags.
- * @param   uTimeout            The timeout.
- * @param   pWaitQueue          The wait queue head.
- */
-DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint64_t uTimeout)
-{
-    /*
-     * Process the flags and timeout.
-     */
-    if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
-    {
-        if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-            uTimeout = uTimeout < UINT64_MAX / UINT32_C(1000000) * UINT32_C(1000000)
-                     ? uTimeout * UINT32_C(1000000)
-                     : UINT64_MAX;
-        if (uTimeout == UINT64_MAX)
-            fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
-        else
-        {
-            uint64_t u64Now;
-            if (fFlags & RTSEMWAIT_FLAGS_RELATIVE)
-            {
-                if (uTimeout == 0)
-                    return VERR_TIMEOUT;
-
-                u64Now = RTTimeSystemNanoTS();
-                pWait->cNsRelTimeout = uTimeout;
-                pWait->uNsAbsTimeout = u64Now + uTimeout;
-                if (pWait->uNsAbsTimeout < u64Now) /* overflow */
-                    fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
-            }
-            else
-            {
-                u64Now = RTTimeSystemNanoTS();
-                if (u64Now >= uTimeout)
-                    return VERR_TIMEOUT;
-
-                pWait->cNsRelTimeout = uTimeout - u64Now;
-                pWait->uNsAbsTimeout = uTimeout;
-            }
-        }
-    }
-
-    if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
-    {
-        pWait->fIndefinite      = false;
-        if (   (fFlags & (RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE))
-            || pWait->cNsRelTimeout < UINT32_C(1000000000) / 100 /*Hz*/ * 4)
-            pWait->fHighRes     = true;
-        else
-        {
-#if 1
-            uint64_t cTicks     = NSEC_TO_TICK_ROUNDUP(uTimeout);
-#else
-            uint64_t cTicks     = drv_usectohz((clock_t)(uTimeout / 1000));
-#endif
-            if (cTicks >= LONG_MAX)
-                fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
-            else
-            {
-                pWait->u.lTimeout = ddi_get_lbolt() + cTicks;
-                pWait->fHighRes = false;
-            }
-        }
-    }
-
-    if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
-    {
-        pWait->fIndefinite      = true;
-        pWait->fHighRes         = false;
-        pWait->uNsAbsTimeout    = UINT64_MAX;
-        pWait->cNsRelTimeout    = UINT64_MAX;
-        pWait->u.lTimeout       = LONG_MAX;
-    }
-
-    pWait->fTimedOut        = false;
-    pWait->fInterrupted     = false;
-    pWait->fInterruptible   = !!(fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE);
-    pWait->pThread          = curthread;
-    pWait->idCy             = CYCLIC_NONE;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Cyclic timeout callback that sets the timeout indicator and wakes up the
- * waiting thread.
- *
- * @param   pvUser              The wait structure.
- */
-static void rtR0SemSolWaitHighResTimeout(void *pvUser)
-{
-    PRTR0SEMSOLWAIT pWait   = (PRTR0SEMSOLWAIT)pvUser;
-    kthread_t      *pThread = pWait->pThread;
-    if (VALID_PTR(pThread)) /* paranoia */
-    {
-        /* Note: Trying to take the cpu_lock here doesn't work. */
-        if (mutex_owner(&cpu_lock) == curthread)
-        {
-            cyclic_remove(pWait->idCy);
-            pWait->idCy = CYCLIC_NONE;
-        }
-        ASMAtomicWriteBool(&pWait->fTimedOut, true);
-        setrun(pThread);
-    }
-}
-
-
-/**
- * Do the actual wait.
- *
- * @param   pWait               The wait structure.
- * @param   pCnd                The condition variable to wait on.
- * @param   pMtx                The mutex related to the condition variable.
- *                              The caller has entered this.
- */
-DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmutex_t *pMtx)
-{
-    int rc = 1;
-    if (pWait->fIndefinite)
-    {
-        /*
-         * No timeout - easy.
-         */
-        if (pWait->fInterruptible)
-            rc = cv_wait_sig(pCnd, pMtx);
-        else
-            cv_wait(pCnd, pMtx);
-    }
-    else if (pWait->fHighRes)
-    {
-        /*
-         * High resolution timeout - arm a one-shot cyclic for waking up
-         * the thread at the desired time.
-         */
-        cyc_handler_t   Cyh;
-        Cyh.cyh_arg      = pWait;
-        Cyh.cyh_func     = rtR0SemSolWaitHighResTimeout;
-        Cyh.cyh_level    = CY_LOW_LEVEL; /// @todo try CY_LOCK_LEVEL and CY_HIGH_LEVEL?
-
-        cyc_time_t      Cyt;
-        Cyt.cyt_when     = pWait->uNsAbsTimeout;
-        Cyt.cyt_interval = UINT64_C(1000000000) * 60;
-
-        mutex_enter(&cpu_lock);
-        pWait->idCy = cyclic_add(&Cyh, &Cyt);
-        mutex_exit(&cpu_lock);
-
-        if (pWait->fInterruptible)
-            rc = cv_wait_sig(pCnd, pMtx);
-        else
-            cv_wait(pCnd, pMtx);
-
-        mutex_enter(&cpu_lock);
-        if (pWait->idCy != CYCLIC_NONE)
-        {
-            cyclic_remove(pWait->idCy);
-            pWait->idCy = CYCLIC_NONE;
-        }
-        mutex_exit(&cpu_lock);
-    }
-    else
-    {
-        /*
-         * Normal timeout.
-         */
-        if (pWait->fInterruptible)
-            rc = cv_timedwait_sig(pCnd, pMtx, pWait->u.lTimeout);
-        else
-            rc = cv_timedwait(pCnd, pMtx, pWait->u.lTimeout);
-    }
-
-    /* Above zero means normal wake-up. */
-    if (rc > 0)
-        return;
-
-    /* Timeout is signalled by -1. */
-    if (rc == -1)
-        pWait->fTimedOut = true;
-    /* Interruption is signalled by 0. */
-    else
-    {
-        AssertMsg(rc == 0, ("rc=%d\n", rc));
-        pWait->fInterrupted = true;
-    }
-}
-
-
-/**
- * Checks if a solaris wait was interrupted.
- *
- * @returns true / false
- * @param   pWait               The wait structure.
- * @remarks This shall be called before the first rtR0SemSolWaitDoIt().
- */
-DECLINLINE(bool) rtR0SemSolWaitWasInterrupted(PRTR0SEMSOLWAIT pWait)
-{
-    return pWait->fInterrupted;
-}
-
-
-/**
- * Checks if a solaris wait has timed out.
- *
- * @returns true / false
- * @param   pWait               The wait structure.
- */
-DECLINLINE(bool) rtR0SemSolWaitHasTimedOut(PRTR0SEMSOLWAIT pWait)
-{
-    return pWait->fTimedOut;
-}
-
-
-/**
- * Deletes a solaris wait.
- *
- * @param   pWait               The wait structure.
- */
-DECLINLINE(void) rtR0SemSolWaitDelete(PRTR0SEMSOLWAIT pWait)
-{
-    pWait->pThread = NULL;
-}
-
-/* -------- End ---------- */
 
 
 /**
