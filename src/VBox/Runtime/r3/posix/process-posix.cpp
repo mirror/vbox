@@ -383,7 +383,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             if (pid > 0)
             {
                 /* Must wait for the temporary process to avoid a zombie. */
-                int status;
+                int status = 0;
                 waitpid(pid, &status, 0);
                 /* Assume that something wasn't found. No detailed info. */
                 if (status)
