@@ -207,7 +207,7 @@ typedef struct VBOXNETFLTINS
             /** The MAC address of the interface. */
             RTMAC MacAddr;
             /** Mutex protection used for loopback. */
-            RTSEMFASTMUTEX hFastMtx;
+            kmutex_t hMtx;
             /** Mutex protection used for dynamic IPv6 attaches. */
             RTSEMFASTMUTEX hPollMtx;
 #  endif
