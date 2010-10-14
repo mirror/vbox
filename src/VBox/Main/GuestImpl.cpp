@@ -1380,15 +1380,15 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
     try
     {
         /* Search for existing PID. */
-        GuestProcessMapIterConst it = getProcessByPID(aPID);
-        if (it != mGuestProcessMap.end())
+        GuestProcessMapIterConst itProc = getProcessByPID(aPID);
+        if (itProc != mGuestProcessMap.end())
         {
             /* PID exists; check if process is still running. */
-            if (it->second.mStatus != PROC_STS_STARTED)
+            if (itProc->second.mStatus != PROC_STS_STARTED)
             {
                 rc = setError(VBOX_E_IPRT_ERROR,
                               tr("Process (PID %u) does not run anymore! Status: %ld, Flags: %u, Exit Code: %u"),
-                              aPID, it->second.mStatus, it->second.mFlags, it->second.mExitCode);
+                              aPID, itProc->second.mStatus, itProc->second.mFlags, itProc->second.mExitCode);
             }
         }
         else
