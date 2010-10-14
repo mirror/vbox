@@ -2641,12 +2641,13 @@ DECLASM(uint64_t) ASMAtomicIncU64(uint64_t volatile *pu64);
 #else
 DECLINLINE(uint64_t) ASMAtomicIncU64(uint64_t volatile *pu64)
 {
-    uint64_t u64;
 # if RT_INLINE_ASM_USES_INTRIN && defined(RT_ARCH_AMD64)
+    uint64_t u64;
     u64 = _InterlockedIncrement64((__int64 *)pu64);
     return u64;
 
 # elif RT_INLINE_ASM_GNU_STYLE && defined(RT_ARCH_AMD64)
+    uint64_t u64;
     __asm__ __volatile__("lock; xaddq %0, %1\n\t"
                          : "=r" (u64),
                            "=m" (*pu64)
