@@ -859,7 +859,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 break;
             case ChipsetType_ICH9:
                 InsertConfigNode(pDevices, "ich9pci", &pDev);
-                u32HbcPciAddress = (0x1d << 16) | 0;
+                u32HbcPciAddress = (0x1e << 16) | 0;
                 u32IocPciAddress = (0x1f << 16) | 0; // LPC controller
                 break;
         }
