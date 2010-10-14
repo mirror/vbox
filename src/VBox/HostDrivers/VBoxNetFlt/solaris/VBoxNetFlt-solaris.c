@@ -908,8 +908,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     {
         vboxnetflt_promisc_stream_t *pPromiscStream = (vboxnetflt_promisc_stream_t *)pStream;
 
-        int rc = RTSemFastMutexRequest(pStream->pThis->u.s.hFastMtx);
-        AssertRCReturn(rc, rc);
+        mutex_enter(&pStream->pThis->u.s.hMtx);
 
         /*
          * Free-up loopback buffers.
@@ -937,7 +936,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         }
 #endif
 
-        RTSemFastMutexRelease(pStream->pThis->u.s.hFastMtx);
+        mutex_exit(&pStream->pThis->u.s.hMtx);
     }
 
     /*
@@ -3063,8 +3062,8 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
     if (RT_UNLIKELY(cbMsg < sizeof(RTNETETHERHDR)))
         return VERR_NET_MSG_SIZE;
 
-    int rc = RTSemFastMutexRequest(pThis->u.s.hFastMtx);
-    AssertRCReturn(rc, rc);
+    int rc = VINF_SUCCESS;
+    mutex_enter(&pThis->u.s.hMtx);
 
     PVBOXNETFLTPACKETID pCur = NULL;
     if (pPromiscStream->cLoopback < VBOXNETFLT_LOOPBACK_SIZE
@@ -3155,7 +3154,7 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
                 pPromiscStream->cLoopback));
     }
 
-    RTSemFastMutexRelease(pThis->u.s.hFastMtx);
+    mutex_exit(&pThis->u.s.hMtx);
 
     return rc;
 }
@@ -3188,8 +3187,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
     if (cbMsg < sizeof(RTNETETHERHDR))
         return false;
 
-    int rc = RTSemFastMutexRequest(pThis->u.s.hFastMtx);
-    AssertRCReturn(rc, rc);
+    mutex_enter(&pThis->u.s.hMtx);
 
     PVBOXNETFLTPACKETID pPrev = NULL;
     PVBOXNETFLTPACKETID pCur = pPromiscStream->pHead;
@@ -3246,7 +3244,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
     }
 
     LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk returns %d.\n", fIsOurPacket));
-    RTSemFastMutexRelease(pThis->u.s.hFastMtx);
+    mutex_exit(&pThis->u.s.hMtx);
     return fIsOurPacket;
 }
 
@@ -3696,20 +3694,6 @@ int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 
     vboxNetFltSolarisDetachFromInterface(pThis);
 
-    if (pThis->u.s.hFastMtx != NIL_RTSEMFASTMUTEX)
-    {
-        RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
-        pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
-    }
-
-#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
-    if (pThis->u.s.hPollMtx != NIL_RTSEMFASTMUTEX)
-    {
-        RTSemFastMutexDestroy(pThis->u.s.hPollMtx);
-        pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
-    }
-#endif
-
     return VINF_SUCCESS;
 }
 
@@ -3724,7 +3708,17 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
     LogFlowFunc((DEVICE_NAME ":vboxNetFltOsDeleteInstance pThis=%p\n", pThis));
-    /* Nothing to do here. */
+
+    mutex_destroy(&pThis->u.s.hMtx);
+
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+    if (pThis->u.s.hPollMtx != NIL_RTSEMFASTMUTEX)
+    {
+        RTSemFastMutexDestroy(pThis->u.s.hPollMtx);
+        pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
+    }
+#endif
+
 }
 
 
@@ -3735,33 +3729,28 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     /*
      * Mutex used for loopback lockouts.
      */
-    int rc = RTSemFastMutexCreate(&pThis->u.s.hFastMtx);
+    int rc = VINF_SUCCESS;
+    mutex_init(&pThis->u.s.hMtx, NULL /* name */, MUTEX_DRIVER, NULL /* cookie */);
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+    rc = RTSemFastMutexCreate(&pThis->u.s.hPollMtx);
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
-        rc = RTSemFastMutexCreate(&pThis->u.s.hPollMtx);
+#endif
+        rc = vboxNetFltSolarisAttachToInterface(pThis);
         if (RT_SUCCESS(rc))
-        {
-#endif
-            rc = vboxNetFltSolarisAttachToInterface(pThis);
-            if (RT_SUCCESS(rc))
-                return rc;
+            return rc;
 
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Rrc\n", rc));
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Rrc\n", rc));
 
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
-            RTSemFastMutexDestroy(pThis->u.s.hPollMtx);
-            pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
-        }
-        else
-            LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to create poll mutex. rc=%Rrc\n", rc));
-#endif
-
-        RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
-        pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
+        RTSemFastMutexDestroy(pThis->u.s.hPollMtx);
+        pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
     }
     else
-        LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to create mutex. rc=%Rrc\n", rc));
+        LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to create poll mutex. rc=%Rrc\n", rc));
+#endif
+
+    mutex_destroy(&pThis->u.s.hMtx);
 
     NOREF(pvContext);
     return rc;
@@ -3780,7 +3769,6 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.pPromiscStream = NULL;
     pThis->u.s.fAttaching = false;
     pThis->u.s.fVLAN = false;
-    pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
     pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
 #endif
