@@ -841,6 +841,7 @@ static PISCSICMD iscsiCmdRemoveAll(PISCSIIMAGE pImage)
             pIScsiCmdHead = pHead;
         }
     }
+    pImage->cCmdsWaiting = 0;
 
     return pIScsiCmdHead;
 }
