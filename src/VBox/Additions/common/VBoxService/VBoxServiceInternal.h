@@ -263,6 +263,10 @@ extern RTEXITCODE   VBoxServiceWinEnterCtrlDispatcher(void);
 extern void         VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint);
 #endif
 
+#ifdef VBOXSERVICE_TOOLBOX
+extern int VBoxServiceToolboxMain(int argc, char **argv);
+#endif
+
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_GUEST_PROPS
 extern int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList);
