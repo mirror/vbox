@@ -34,15 +34,20 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 
+
+/** The resolution (nanoseconds) specified when using timeout_generic. */
+#define RTR0SEMSOLWAIT_RESOLUTION   50000
+
+
 /**
  * Solaris semaphore wait structure.
  */
 typedef struct RTR0SEMSOLWAIT
 {
-    /** The absolute timeout given as nano seconds since the start of the
+    /** The absolute timeout given as nanoseconds since the start of the
      *  monotonic clock. */
     uint64_t        uNsAbsTimeout;
-    /** The timeout in nano seconds relative to the start of the wait. */
+    /** The timeout in nanoseconds relative to the start of the wait. */
     uint64_t        cNsRelTimeout;
     /** The native timeout value. */
     union
@@ -212,7 +217,6 @@ static void rtR0SemSolWaitTimeout(void *pvUser)
  */
 DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmutex_t *pMtx)
 {
-    int rc = 1;
     union
     {
         callout_id_t    idCo;
@@ -234,7 +238,7 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
                  * for waking up the thread at the desired time.
                  */
                 u.idCo = g_pfnrtR0Sol_timeout_generic(CALLOUT_REALTIME, rtR0SemSolWaitTimeout, pWait,
-                                                      pWait->uNsAbsTimeout, 50000 /*res*/,
+                                                      pWait->uNsAbsTimeout, RTR0SEMSOLWAIT_RESOLUTION,
                                                       CALLOUT_FLAG_ABSOLUTE);
             }
             else
@@ -270,9 +274,20 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
 
     /*
      * Do the waiting.
+     * (rc > 0 - normal wake-up; rc == 0 - interruption; rc == -1 - timeout)
      */
+    int rc;
     if (pWait->fInterruptible)
-        rc = cv_wait_sig(pCnd, pMtx);
+    {
+        int rc = cv_wait_sig(pCnd, pMtx);
+        if (RT_UNLIKELY(rc <= 0))
+        {
+            if (RT_LIKELY(rc == 0))
+                pWait->fInterrupted = true;
+            else
+                AssertMsgFailed(("rc=%d\n", rc)); /* no timeouts, see above! */
+        }
+    }
     else
         cv_wait(pCnd, pMtx);
 
@@ -304,18 +319,6 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
             untimeout(u.idTom);
 
         mutex_enter(pMtx);
-    }
-
-    /*
-     * Above zero means normal wake-up.
-     * Interruption is signalled by 0, timeouts by -1.
-     */
-    if (RT_UNLIKELY(rc <= 0))
-    {
-        if (RT_LIKELY(rc == 0))
-            pWait->fInterrupted = true;
-        else
-            AssertMsgFailed(("rc=%d\n", rc)); /* no timeouts, see above! */
     }
 }
 
@@ -355,6 +358,7 @@ DECLINLINE(void) rtR0SemSolWaitDelete(PRTR0SEMSOLWAIT pWait)
     pWait->pThread = NULL;
 }
 
+
 /**
  * Enters the mutex, unpinning the underlying current thread if contended and
  * we're on an interrupt thread.
@@ -387,6 +391,19 @@ DECLINLINE(void) rtR0SemSolWaitEnterMutexWithUnpinningHack(kmutex_t *pMtx)
         }
         mutex_enter(pMtx);
     }
+}
+
+
+/**
+ * Gets the max resolution of the timeout machinery.
+ *
+ * @returns Resolution specified in nanoseconds.
+ */
+DECLINLINE(uint32_t) rtR0SemSolWaitGetResolution(void)
+{
+    return g_pfnrtR0Sol_timeout_generic != NULL
+         ? RTR0SEMSOLWAIT_RESOLUTION
+         : cyclic_getres();
 }
 
 #endif
