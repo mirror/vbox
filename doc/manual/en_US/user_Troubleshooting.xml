@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="Troubleshooting">
   <title>Troubleshooting</title>
 
@@ -193,20 +193,19 @@
             <para>Set the
             <computeroutput>VBOX_GUI_DBG_ENABLED</computeroutput> or
             <computeroutput>VBOX_GUI_DBG_AUTO_SHOW</computeroutput>
-            environment variable to <computeroutput>true</computeroutput> 
-            before launching the VirtualBox process. Setting these variables 
+            environment variable to <computeroutput>true</computeroutput>
+            before launching the VirtualBox process. Setting these variables
             (only their presence is checked) is effective even when the first
-            VirtualBox process is the VM selector window. VMs subsequently 
+            VirtualBox process is the VM selector window. VMs subsequently
             launched from the selector will have the debugger enabled.</para>
           </listitem>
 
           <listitem>
-            <para>Set the
-            <computeroutput>GUI/Dbg/Enabled</computeroutput> extra data item to
-            <computeroutput>true</computeroutput> before launching the
-            VM.  This can be set globally or on a per VM basis.</para>
+            <para>Set the <computeroutput>GUI/Dbg/Enabled</computeroutput>
+            extra data item to <computeroutput>true</computeroutput> before
+            launching the VM. This can be set globally or on a per VM
+            basis.</para>
           </listitem>
-
         </itemizedlist></para>
 
       <para>A new 'Debug' menu entry will be added to the VirtualBox
@@ -299,6 +298,12 @@
           <listitem>
             <para><computeroutput>bc</computeroutput> -- clear a
             breakpoint</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>writecore</computeroutput> -- writes a VM
+            core file to disk, refer <xref linkend="guestcoreformat" />
+            </para>
           </listitem>
         </itemizedlist></para>
 
@@ -396,6 +401,51 @@
       generally requires in-depth knowledge of the emulated device and/or
       VirtualBox VMM internals. However, when used properly, the information
       provided can be invaluable.</para>
+    </sect2>
+
+    <sect2 id="guestcoreformat">
+      <title>VM core format</title>
+
+      <para>VirtualBox uses the 64-bit ELF format for its VM core files. The
+      VM core file contain the memory and CPU dumps of the VM and can be
+      useful for debugging your guest OS. The 64-bit ELF object format
+      specficiation can be obtained here: <literal><ulink
+      url="http://www.tkk.fi/Misc/Electronics/faq/vga2rgb/calc.html">http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf</ulink></literal>.</para>
+
+      <para>The overall layout of the VM core format is as follows:</para>
+
+      <para><screen>[ ELF 64 Header]
+[ Program Header, type PT_NOTE ]
+  -&gt; offset to COREDESCRIPTOR
+[ Program Header, type PT_LOAD ] - one for each contiguous physical memory range
+  -&gt; Memory offset of range
+  -&gt; File offset
+[ Note Header, type NT_VBOXCORE ]
+[ COREDESCRIPTOR ]
+  -&gt; Magic
+  -&gt; VM core file version
+  -&gt; VBox version
+  -&gt; Number of vCPUs etc.
+[ Note Header, type NT_VBOXCPU ] - one for each vCPU
+[ vCPU 1 Note Header ]
+  [ CPUMCTX - vCPU 1 dump ]
+[ Additional Notes + Data ] - currently unused
+[ Memory dump ]</screen></para>
+
+      <para>The memory descriptors contain physical addresses relative to the
+      guest and not virtual addresses. Regions of memory such as MMIO regions
+      are not included in the core file.</para>
+
+      <para>The relevant data structures and definitions can be found in the
+      VirtualBox sources under the following header files:
+      <computeroutput>include/VBox/dbgfcorefmt.h</computeroutput>,
+      <computeroutput>include/VBox/cpumctx.h</computeroutput> and
+      <computeroutput>src/VBox/Runtime/include/internal/ldrELFCommon.h</computeroutput>.</para>
+
+      <para>The VM core file can be inspected using
+      <computeroutput>elfdump</computeroutput> and GNU
+      <computeroutput>readelf</computeroutput> or other similar
+      utilities.</para>
     </sect2>
   </sect1>
 
@@ -647,19 +697,22 @@
       url="http://www.realtek.com.tw/downloads">http://www.realtek.com.tw/downloads</ulink>
       for download instructions.</para>
     </sect2>
+
     <sect2>
       <title>Long delays when accessing shared folders</title>
-      <para>The performance for accesses to shared folders from a Windows guest
-        might be decreased due to delays during the resolution of the VirtualBox
-        shared folders name service. To fix these delays, add the following entries
-        to the file
-        <computeroutput>\windows\system32\drivers\etc\lmhosts</computeroutput>
-        of the Windows guest:</para>
-        <screen>255.255.255.255        VBOXSVR #PRE
+
+      <para>The performance for accesses to shared folders from a Windows
+      guest might be decreased due to delays during the resolution of the
+      VirtualBox shared folders name service. To fix these delays, add the
+      following entries to the file
+      <computeroutput>\windows\system32\drivers\etc\lmhosts</computeroutput>
+      of the Windows guest:</para>
+
+      <screen>255.255.255.255        VBOXSVR #PRE
 255.255.255.255        VBOXSRV #PRE</screen>
-        <para>After doing this change, a reboot of the guest is required.</para>
-      </sect2>
-        
+
+      <para>After doing this change, a reboot of the guest is required.</para>
+    </sect2>
   </sect1>
 
   <sect1>
@@ -732,9 +785,9 @@ apic=debug and send a report.  Then try booting with the 'noapic' option</screen
       the user who started the desktop session and is automatically started
       using the following command lines <screen>VBoxClient --clipboard
 VBoxClient --display
-VBoxClient --seamless</screen> when your X11 user session is started
-      if you are using a common desktop environment (Gnome, KDE and others).
-      If a particular desktop service is not working correctly, it is worth
+VBoxClient --seamless</screen> when your X11 user session is started if you
+      are using a common desktop environment (Gnome, KDE and others). If a
+      particular desktop service is not working correctly, it is worth
       checking whether the process which should provide it is running.</para>
 
       <para>The <computeroutput>VBoxClient</computeroutput> processes create
@@ -1118,15 +1171,15 @@ none     /proc/bus/usb     usbfs      devgid=85,devmode=664    0    0</screen>Re
     <sect2>
       <title>VM aborts with out of memory errors on Solaris 10 hosts</title>
 
-      <para>32-bit Solaris 10 hosts (bug 1225025) require swap space equal to, or
-      greater than the host's physical memory size. For example, 8 GB physical
-      memory would require at least 8 GB swap. This can be configured during a
-      Solaris 10 install by choosing a 'custom install' and changing the
-      default partitions.</para>
+      <para>32-bit Solaris 10 hosts (bug 1225025) require swap space equal to,
+      or greater than the host's physical memory size. For example, 8 GB
+      physical memory would require at least 8 GB swap. This can be configured
+      during a Solaris 10 install by choosing a 'custom install' and changing
+      the default partitions.</para>
 
       <note>
         <para>This restriction applies only to 32-bit Solaris hosts, 64-bit
-          hosts are not affected!</para>
+        hosts are not affected!</para>
       </note>
 
       <para>For existing Solaris 10 installs, an additional swap image needs
