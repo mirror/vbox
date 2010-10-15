@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Semaphores, Ring-0 Driver, Solaris.
+ * IPRT - Single Release Event Semaphores, Ring-0 Driver, Solaris.
  */
 
 /*
