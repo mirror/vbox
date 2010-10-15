@@ -53,6 +53,10 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
 
     if (g_hVBoxCrHgsmiProvider)
     {
+        if (g_pfnVBoxDispCrHgsmiInit)
+        {
+            g_pfnVBoxDispCrHgsmiInit(pCallbacks);
+        }
         ++g_cVBoxCrHgsmiProvider;
         return VINF_SUCCESS;
     }
@@ -72,21 +76,30 @@ VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient()
     if (g_pfnVBoxDispCrHgsmiQueryClient)
     {
         hClient = g_pfnVBoxDispCrHgsmiQueryClient();
+#ifdef DEBUG_misha
+        Assert(hClient);
+#endif
         if (hClient)
             return hClient;
     }
     PVBOXUHGSMI_PRIVATE_KMT pHgsmiGL = gt_pHgsmiGL;
     if (pHgsmiGL)
+    {
+        Assert(pHgsmiGL->BasePrivate.hClient);
         return pHgsmiGL->BasePrivate.hClient;
+    }
     pHgsmiGL = (PVBOXUHGSMI_PRIVATE_KMT)RTMemAllocZ(sizeof (*pHgsmiGL));
     if (pHgsmiGL)
     {
         HRESULT hr = vboxUhgsmiKmtCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
         Assert(hr == S_OK);
-        hClient = g_VBoxCrHgsmiCallbacks.pfnClientCreate(&pHgsmiGL->BasePrivate.Base);
-        Assert(hClient);
-        pHgsmiGL->BasePrivate.hClient = hClient;
-        gt_pHgsmiGL = pHgsmiGL;
+        if (hr == S_OK)
+        {
+            hClient = g_VBoxCrHgsmiCallbacks.pfnClientCreate(&pHgsmiGL->BasePrivate.Base);
+            Assert(hClient);
+            pHgsmiGL->BasePrivate.hClient = hClient;
+            gt_pHgsmiGL = pHgsmiGL;
+        }
     }
     else
         hClient = NULL;

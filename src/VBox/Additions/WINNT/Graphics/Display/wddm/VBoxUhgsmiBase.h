@@ -92,7 +92,7 @@ DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock
     fLockFlags.ReadOnly = fFlags.bReadOnly;
     fLockFlags.WriteOnly = fFlags.bWriteOnly;
     fLockFlags.DonotWait = fFlags.bDonotWait;
-    fLockFlags.Discard = fFlags.bDiscard;
+//    fLockFlags.Discard = fFlags.bDiscard;
     *pfFlags = fLockFlags;
     return VINF_SUCCESS;
 }
@@ -128,7 +128,7 @@ DECLINLINE(int) vboxUhgsmiBaseEventChkCreate(VBOXUHGSMI_SYNCHOBJECT_TYPE enmSync
                 *phSynch = CreateSemaphore(
                   NULL, /* LPSECURITY_ATTRIBUTES lpSemaphoreAttributes */
                   0, /* LONG lInitialCount */
-                  ~0L, /* LONG lMaximumCount */
+                  (LONG)((~0UL) >> 1), /* LONG lMaximumCount */
                   NULL /* LPCTSTR lpName */
                 );
                 Assert(*phSynch);
@@ -186,6 +186,7 @@ DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32
 
         memset(pAllocationList, 0, sizeof (D3DDDI_ALLOCATIONLIST));
         pAllocationList->hAllocation = pBuffer->hAllocation;
+        pAllocationList->Value = 0;
         pAllocationList->WriteOperation = !pBufInfo->fFlags.bHostReadOnly;
         pAllocationList->DoNotRetireInstance = pBufInfo->fFlags.bDoNotRetire;
         pBufSubmInfo->fSubFlags = pBufInfo->fFlags;
