@@ -233,7 +233,7 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
         /* Destroy thread specific data. */
         switch (pNode->enmType)
         {
-            case VBoxServiceCtrlThreadDataExec:
+            case kVBoxServiceCtrlThreadDataExec:
                 VBoxServiceControlExecDestroyThreadData((PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData);
                 break;
 
