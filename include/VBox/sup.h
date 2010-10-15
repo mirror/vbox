@@ -384,6 +384,35 @@ SUPDECL(int) SUPSemEventWait(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32
  */
 SUPDECL(int) SUPSemEventWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies);
 
+/**
+ * Waits on a single release event semaphore, interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEvent              The semaphore handle.
+ * @param   uNsTimeout          The deadline given on the RTTimeNanoTS() clock.
+ */
+SUPDECL(int) SUPSemEventWaitNsAbsIntr(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint64_t uNsTimeout);
+
+/**
+ * Waits on a single release event semaphore, interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEvent              The semaphore handle.
+ * @param   cNsTimeout          The number of nanoseconds to wait.
+ */
+SUPDECL(int) SUPSemEventWaitNsRelIntr(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint64_t cNsTimeout);
+
+/**
+ * Gets the best timeout resolution that SUPSemEventWaitNsAbsIntr and
+ * SUPSemEventWaitNsAbsIntr can do.
+ *
+ * @returns The resolution in nanoseconds.
+ * @param   pSession            The session handle of the caller.
+ */
+SUPDECL(uint32_t) SUPSemEventGetResolution(PSUPDRVSESSION pSession);
+
 
 /** Multiple release event semaphore handle. Ring-0 / ring-3. */
 typedef R0PTRTYPE(struct SUPSEMEVENTMULTIHANDLE *)  SUPSEMEVENTMULTI;
@@ -454,6 +483,35 @@ SUPDECL(int) SUPSemEventMultiWait(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEve
  * @param   cMillies            The number of milliseconds to wait.
  */
 SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies);
+
+/**
+ * Waits on a multiple release event semaphore, interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEventMulti         The semaphore handle.
+ * @param   uNsTimeout          The deadline given on the RTTimeNanoTS() clock.
+ */
+SUPDECL(int) SUPSemEventMultiWaitNsAbsIntr(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint64_t uNsTimeout);
+
+/**
+ * Waits on a multiple release event semaphore, interruptible.
+ *
+ * @returns VBox status code.
+ * @param   pSession            The session handle of the caller.
+ * @param   hEventMulti         The semaphore handle.
+ * @param   cNsTimeout          The number of nanoseconds to wait.
+ */
+SUPDECL(int) SUPSemEventMultiWaitNsRelIntr(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint64_t cNsTimeout);
+
+/**
+ * Gets the best timeout resolution that SUPSemEventMultiWaitNsAbsIntr and
+ * SUPSemEventMultiWaitNsRelIntr can do.
+ *
+ * @returns The resolution in nanoseconds.
+ * @param   pSession            The session handle of the caller.
+ */
+SUPDECL(uint32_t) SUPSemEventMultiGetResolution(PSUPDRVSESSION pSession);
 
 
 #ifdef IN_RING3

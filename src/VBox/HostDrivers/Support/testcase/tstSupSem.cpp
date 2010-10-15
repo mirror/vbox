@@ -69,6 +69,12 @@ static DECLCALLBACK(int) tstSupSemInterruptibleMRE(RTTHREAD hSelf, void *pvUser)
 
 int main(int argc, char **argv)
 {
+    bool fSys = true;
+    bool fGip = false;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    fGip = true;
+#endif
+
     /*
      * Init.
      */
@@ -282,80 +288,280 @@ int main(int argc, char **argv)
 
 #endif /* !OS2 && !WINDOWS */
 
-    if (RTTestErrorCount(hTest) == 0)
     {
-        RTTestSub(hTest, "SRE Timeout Accuracy");
-        RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
-
         static unsigned const s_acMsIntervals[] = { 0, 1, 2, 3, 4, 8, 10, 16, 32 };
-        for (unsigned i = 0; i < RT_ELEMENTS(s_acMsIntervals); i++)
+        if (RTTestErrorCount(hTest) == 0)
         {
-            uint64_t cMs        = s_acMsIntervals[i];
-            uint64_t cNsMinSys  = UINT64_MAX;
-            uint64_t cNsMin     = UINT64_MAX;
-            uint64_t cNsTotalSys= 0;
-            uint64_t cNsTotal   = 0;
-            for (unsigned j = 0; j < 10; j++)
+            RTTestSub(hTest, "SRE Timeout Accuracy (ms)");
+            RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
+
+            for (unsigned i = 0; i < RT_ELEMENTS(s_acMsIntervals); i++)
             {
-                uint64_t u64StartSys = RTTimeSystemNanoTS();
-                uint64_t u64Start    = RTTimeNanoTS();
-                int rcX = SUPSemEventWaitNoResume(pSession, hEvent, cMs);
-                if (rc == VERR_TIMEOUT)
-                    RTTestFailed(hTest, "%Rrc j=%u cMs=%u", rcX, j, cMs);
-                uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
-                uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
-                if (cNsElapsedSys < cNsMinSys)
-                    cNsMinSys = cNsElapsedSys;
-                if (cNsElapsed < cNsMin)
-                    cNsMin = cNsElapsed;
-                cNsTotalSys += cNsElapsedSys;
-                cNsTotal    += cNsElapsed;
+                uint64_t cMs        = s_acMsIntervals[i];
+                uint64_t cNsMinSys  = UINT64_MAX;
+                uint64_t cNsMin     = UINT64_MAX;
+                uint64_t cNsTotalSys= 0;
+                uint64_t cNsTotal   = 0;
+                for (unsigned j = 0; j < 10; j++)
+                {
+                    uint64_t u64StartSys = RTTimeSystemNanoTS();
+                    uint64_t u64Start    = RTTimeNanoTS();
+                    int rcX = SUPSemEventWaitNoResume(pSession, hEvent, cMs);
+                    if (rc == VERR_TIMEOUT)
+                        RTTestFailed(hTest, "%Rrc j=%u cMs=%u", rcX, j, cMs);
+                    uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
+                    uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
+                    if (cNsElapsedSys < cNsMinSys)
+                        cNsMinSys = cNsElapsedSys;
+                    if (cNsElapsed < cNsMin)
+                        cNsMin = cNsElapsed;
+                    cNsTotalSys += cNsElapsedSys;
+                    cNsTotal    += cNsElapsed;
+                }
+                if (fSys)
+                {
+                    RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS,        "%u ms min (clock=sys)", cMs);
+                    RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%u ms avg (clock=sys)", cMs);
+                }
+                if (fGip)
+                {
+                    RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS,           "%u ms min (clock=gip)", cMs);
+                    RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS,    "%u ms avg (clock=gip)", cMs);
+                }
             }
-            RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS, "%u ms min (clock=sys)", cMs);
-            RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%u ms avg - (clock=sys)", cMs);
-            RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS, "%u ms min (clock=gip)", cMs);
-            RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS, "%u ms avg - (clock=gip)", cMs);
+
+            RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
         }
 
-        RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+        if (RTTestErrorCount(hTest) == 0)
+        {
+            RTTestSub(hTest, "MRE Timeout Accuracy (ms)");
+            RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEvent), VINF_SUCCESS);
+
+            for (unsigned i = 0; i < RT_ELEMENTS(s_acMsIntervals); i++)
+            {
+                uint64_t cMs        = s_acMsIntervals[i];
+                uint64_t cNsMinSys  = UINT64_MAX;
+                uint64_t cNsMin     = UINT64_MAX;
+                uint64_t cNsTotalSys= 0;
+                uint64_t cNsTotal   = 0;
+                for (unsigned j = 0; j < 10; j++)
+                {
+                    uint64_t u64StartSys = RTTimeSystemNanoTS();
+                    uint64_t u64Start    = RTTimeNanoTS();
+                    int rcX = SUPSemEventMultiWaitNoResume(pSession, hEvent, cMs);
+                    if (rc == VERR_TIMEOUT)
+                        RTTestFailed(hTest, "%Rrc j=%u cMs=%u", rcX, j, cMs);
+                    uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
+                    uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
+                    if (cNsElapsedSys < cNsMinSys)
+                        cNsMinSys = cNsElapsedSys;
+                    if (cNsElapsed < cNsMin)
+                        cNsMin = cNsElapsed;
+                    cNsTotalSys += cNsElapsedSys;
+                    cNsTotal    += cNsElapsed;
+                }
+                if (fSys)
+                {
+                    RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS,        "%u ms min (clock=sys)", cMs);
+                    RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%u ms avg (clock=sys)", cMs);
+                }
+                if (fGip)
+                {
+                    RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS,           "%u ms min (clock=gip)", cMs);
+                    RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS,    "%u ms avg (clock=gip)", cMs);
+                }
+            }
+
+            RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+        }
     }
 
-    if (RTTestErrorCount(hTest) == 0)
     {
-        RTTestSub(hTest, "MRE Timeout Accuracy");
-        RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEvent), VINF_SUCCESS);
-
-        static unsigned const s_acMsIntervals[] = { 0, 1, 2, 3, 4, 8, 10, 16, 32 };
-        for (unsigned i = 0; i < RT_ELEMENTS(s_acMsIntervals); i++)
+        static uint32_t const s_acNsIntervals[] =
         {
-            uint64_t cMs        = s_acMsIntervals[i];
-            uint64_t cNsMinSys  = UINT64_MAX;
-            uint64_t cNsMin     = UINT64_MAX;
-            uint64_t cNsTotalSys= 0;
-            uint64_t cNsTotal   = 0;
-            for (unsigned j = 0; j < 10; j++)
+            0, 1000, 5000, 15000, 30000, 50000, 100000, 250000, 500000, 750000, 900000, 1500000, 2200000
+        };
+
+        if (RTTestErrorCount(hTest) == 0)
+        {
+            RTTestSub(hTest, "SUPSemEventWaitNsRelIntr Accuracy");
+            RTTestValueF(hTest, SUPSemEventGetResolution(pSession), RTTESTUNIT_NS, "SRE resolution");
+            RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
+
+            for (unsigned i = 0; i < RT_ELEMENTS(s_acNsIntervals); i++)
             {
-                uint64_t u64StartSys = RTTimeSystemNanoTS();
-                uint64_t u64Start    = RTTimeNanoTS();
-                int rcX = SUPSemEventMultiWaitNoResume(pSession, hEvent, cMs);
-                if (rc == VERR_TIMEOUT)
-                    RTTestFailed(hTest, "%Rrc j=%u cMs=%u", rcX, j, cMs);
-                uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
-                uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
-                if (cNsElapsedSys < cNsMinSys)
-                    cNsMinSys = cNsElapsedSys;
-                if (cNsElapsed < cNsMin)
-                    cNsMin = cNsElapsed;
-                cNsTotalSys += cNsElapsedSys;
-                cNsTotal    += cNsElapsed;
+                uint64_t cNs        = s_acNsIntervals[i];
+                uint64_t cNsMinSys  = UINT64_MAX;
+                uint64_t cNsMin     = UINT64_MAX;
+                uint64_t cNsTotalSys= 0;
+                uint64_t cNsTotal   = 0;
+                for (unsigned j = 0; j < 10; j++)
+                {
+                    uint64_t u64StartSys = RTTimeSystemNanoTS();
+                    uint64_t u64Start    = RTTimeNanoTS();
+                    int rcX = SUPSemEventWaitNsRelIntr(pSession, hEvent, cNs);
+                    if (rc == VERR_TIMEOUT)
+                        RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
+                    uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
+                    uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
+                    if (cNsElapsedSys < cNsMinSys)
+                        cNsMinSys = cNsElapsedSys;
+                    if (cNsElapsed < cNsMin)
+                        cNsMin = cNsElapsed;
+                    cNsTotalSys += cNsElapsedSys;
+                    cNsTotal    += cNsElapsed;
+                }
+                if (fSys)
+                {
+                    RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS,        "%'u ns min (clock=sys)", cNs);
+                    RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%'u ns avg (clock=sys)", cNs);
+                }
+                if (fGip)
+                {
+                    RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS,           "%'u ns min (clock=gip)", cNs);
+                    RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS,    "%'u ns avg (clock=gip)", cNs);
+                }
             }
-            RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS, "%u ms min (clock=sys)", cMs);
-            RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%u ms avg - (clock=sys)", cMs);
-            RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS, "%u ms min (clock=gip)", cMs);
-            RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS, "%u ms avg - (clock=gip)", cMs);
+
+            RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
         }
 
-        RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+        if (RTTestErrorCount(hTest) == 0)
+        {
+            RTTestSub(hTest, "SUPSemEventMultiWaitNsRelIntr Accuracy");
+            RTTestValueF(hTest, SUPSemEventMultiGetResolution(pSession), RTTESTUNIT_NS, "MRE resolution");
+            RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEvent), VINF_SUCCESS);
+
+            for (unsigned i = 0; i < RT_ELEMENTS(s_acNsIntervals); i++)
+            {
+                uint64_t cNs        = s_acNsIntervals[i];
+                uint64_t cNsMinSys  = UINT64_MAX;
+                uint64_t cNsMin     = UINT64_MAX;
+                uint64_t cNsTotalSys= 0;
+                uint64_t cNsTotal   = 0;
+                for (unsigned j = 0; j < 10; j++)
+                {
+                    uint64_t u64StartSys = RTTimeSystemNanoTS();
+                    uint64_t u64Start    = RTTimeNanoTS();
+                    int rcX = SUPSemEventMultiWaitNsRelIntr(pSession, hEvent, cNs);
+                    if (rc == VERR_TIMEOUT)
+                        RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
+                    uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
+                    uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
+                    if (cNsElapsedSys < cNsMinSys)
+                        cNsMinSys = cNsElapsedSys;
+                    if (cNsElapsed < cNsMin)
+                        cNsMin = cNsElapsed;
+                    cNsTotalSys += cNsElapsedSys;
+                    cNsTotal    += cNsElapsed;
+                }
+                if (fSys)
+                {
+                    RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS,        "%'u ns min (clock=sys)", cNs);
+                    RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%'u ns avg (clock=sys)", cNs);
+                }
+                if (fGip)
+                {
+                    RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS,           "%'u ns min (clock=gip)", cNs);
+                    RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS,    "%'u ns avg (clock=gip)", cNs);
+                }
+            }
+
+            RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+        }
+
+        if (RTTestErrorCount(hTest) == 0)
+        {
+            RTTestSub(hTest, "SUPSemEventWaitNsAbsIntr Accuracy");
+            RTTestValueF(hTest, SUPSemEventGetResolution(pSession), RTTESTUNIT_NS, "MRE resolution");
+            RTTESTI_CHECK_RC(SUPSemEventCreate(pSession, &hEvent), VINF_SUCCESS);
+
+            for (unsigned i = 0; i < RT_ELEMENTS(s_acNsIntervals); i++)
+            {
+                uint64_t cNs        = s_acNsIntervals[i];
+                uint64_t cNsMinSys  = UINT64_MAX;
+                uint64_t cNsMin     = UINT64_MAX;
+                uint64_t cNsTotalSys= 0;
+                uint64_t cNsTotal   = 0;
+                for (unsigned j = 0; j < 10; j++)
+                {
+                    uint64_t u64StartSys   = RTTimeSystemNanoTS();
+                    uint64_t u64Start      = RTTimeNanoTS();
+                    uint64_t uAbsDeadline  = (fGip ? u64Start : u64StartSys) + cNs;
+                    int rcX = SUPSemEventWaitNsAbsIntr(pSession, hEvent, uAbsDeadline);
+                    if (rc == VERR_TIMEOUT)
+                        RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
+                    uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
+                    uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
+                    if (cNsElapsedSys < cNsMinSys)
+                        cNsMinSys = cNsElapsedSys;
+                    if (cNsElapsed < cNsMin)
+                        cNsMin = cNsElapsed;
+                    cNsTotalSys += cNsElapsedSys;
+                    cNsTotal    += cNsElapsed;
+                }
+                if (fSys)
+                {
+                    RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS,        "%'u ns min (clock=sys)", cNs);
+                    RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%'u ns avg (clock=sys)", cNs);
+                }
+                if (fGip)
+                {
+                    RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS,           "%'u ns min (clock=gip)", cNs);
+                    RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS,    "%'u ns avg (clock=gip)", cNs);
+                }
+            }
+
+            RTTESTI_CHECK_RC(SUPSemEventClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+        }
+
+
+        if (RTTestErrorCount(hTest) == 0)
+        {
+            RTTestSub(hTest, "SUPSemEventMultiWaitNsAbsIntr Accuracy");
+            RTTestValueF(hTest, SUPSemEventMultiGetResolution(pSession), RTTESTUNIT_NS, "MRE resolution");
+            RTTESTI_CHECK_RC(SUPSemEventMultiCreate(pSession, &hEvent), VINF_SUCCESS);
+
+            for (unsigned i = 0; i < RT_ELEMENTS(s_acNsIntervals); i++)
+            {
+                uint64_t cNs        = s_acNsIntervals[i];
+                uint64_t cNsMinSys  = UINT64_MAX;
+                uint64_t cNsMin     = UINT64_MAX;
+                uint64_t cNsTotalSys= 0;
+                uint64_t cNsTotal   = 0;
+                for (unsigned j = 0; j < 10; j++)
+                {
+                    uint64_t u64StartSys   = RTTimeSystemNanoTS();
+                    uint64_t u64Start      = RTTimeNanoTS();
+                    uint64_t uAbsDeadline  = (fGip ? u64Start : u64StartSys) + cNs;
+                    int rcX = SUPSemEventMultiWaitNsAbsIntr(pSession, hEvent, uAbsDeadline);
+                    if (rc == VERR_TIMEOUT)
+                        RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
+                    uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
+                    uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
+                    if (cNsElapsedSys < cNsMinSys)
+                        cNsMinSys = cNsElapsedSys;
+                    if (cNsElapsed < cNsMin)
+                        cNsMin = cNsElapsed;
+                    cNsTotalSys += cNsElapsedSys;
+                    cNsTotal    += cNsElapsed;
+                }
+                if (fSys)
+                {
+                    RTTestValueF(hTest, cNsMinSys, RTTESTUNIT_NS,        "%'u ns min (clock=sys)", cNs);
+                    RTTestValueF(hTest, cNsTotalSys / 10, RTTESTUNIT_NS, "%'u ns avg (clock=sys)", cNs);
+                }
+                if (fGip)
+                {
+                    RTTestValueF(hTest, cNsMin, RTTESTUNIT_NS,           "%'u ns min (clock=gip)", cNs);
+                    RTTestValueF(hTest, cNsTotal / 10, RTTESTUNIT_NS,    "%'u ns avg (clock=gip)", cNs);
+                }
+            }
+
+            RTTESTI_CHECK_RC(SUPSemEventMultiClose(pSession, hEvent), VINF_OBJECT_DESTROYED);
+        }
+
     }
 
 

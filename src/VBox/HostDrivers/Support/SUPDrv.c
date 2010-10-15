@@ -175,12 +175,18 @@ static SUPFUNC g_aFunctions[] =
     { "SUPSemEventSignal",                      (void *)SUPSemEventSignal },
     { "SUPSemEventWait",                        (void *)SUPSemEventWait },
     { "SUPSemEventWaitNoResume",                (void *)SUPSemEventWaitNoResume },
+    { "SUPSemEventWaitNsAbsIntr",               (void *)SUPSemEventWaitNsAbsIntr },
+    { "SUPSemEventWaitNsRelIntr",               (void *)SUPSemEventWaitNsRelIntr },
+    { "SUPSemEventGetResolution",               (void *)SUPSemEventGetResolution },
     { "SUPSemEventMultiCreate",                 (void *)SUPSemEventMultiCreate },
     { "SUPSemEventMultiClose",                  (void *)SUPSemEventMultiClose },
     { "SUPSemEventMultiSignal",                 (void *)SUPSemEventMultiSignal },
     { "SUPSemEventMultiReset",                  (void *)SUPSemEventMultiReset },
     { "SUPSemEventMultiWait",                   (void *)SUPSemEventMultiWait },
     { "SUPSemEventMultiWaitNoResume",           (void *)SUPSemEventMultiWaitNoResume },
+    { "SUPSemEventMultiWaitNsAbsIntr",          (void *)SUPSemEventMultiWaitNsAbsIntr },
+    { "SUPSemEventMultiWaitNsRelIntr",          (void *)SUPSemEventMultiWaitNsRelIntr },
+    { "SUPSemEventMultiGetResolution",          (void *)SUPSemEventMultiGetResolution },
     { "SUPR0GetPagingMode",                     (void *)SUPR0GetPagingMode },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "SUPGetGIP",                              (void *)SUPGetGIP },
@@ -233,12 +239,18 @@ static SUPFUNC g_aFunctions[] =
     { "RTSemEventSignal",                       (void *)RTSemEventSignal },
     { "RTSemEventWait",                         (void *)RTSemEventWait },
     { "RTSemEventWaitNoResume",                 (void *)RTSemEventWaitNoResume },
+    { "RTSemEventWaitEx",                       (void *)RTSemEventWaitEx },
+    { "RTSemEventWaitExDebug",                  (void *)RTSemEventWaitExDebug },
+    { "RTSemEventGetResolution",                (void *)RTSemEventGetResolution },
     { "RTSemEventDestroy",                      (void *)RTSemEventDestroy },
     { "RTSemEventMultiCreate",                  (void *)RTSemEventMultiCreate },
     { "RTSemEventMultiSignal",                  (void *)RTSemEventMultiSignal },
     { "RTSemEventMultiReset",                   (void *)RTSemEventMultiReset },
     { "RTSemEventMultiWait",                    (void *)RTSemEventMultiWait },
     { "RTSemEventMultiWaitNoResume",            (void *)RTSemEventMultiWaitNoResume },
+    { "RTSemEventMultiWaitEx",                  (void *)RTSemEventMultiWaitEx },
+    { "RTSemEventMultiWaitExDebug",             (void *)RTSemEventMultiWaitExDebug },
+    { "RTSemEventMultiGetResolution",           (void *)RTSemEventMultiGetResolution },
     { "RTSemEventMultiDestroy",                 (void *)RTSemEventMultiDestroy },
     { "RTSpinlockCreate",                       (void *)RTSpinlockCreate },
     { "RTSpinlockDestroy",                      (void *)RTSpinlockDestroy },
@@ -1612,6 +1624,143 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                             break;
                         case SUPSEMOP_RESET:
                             pReq->Hdr.rc = SUPSemEventMultiReset(pSession, hEventMulti);
+                            break;
+                        default:
+                            pReq->Hdr.rc = VERR_INVALID_FUNCTION;
+                            break;
+                    }
+                    break;
+                }
+
+                default:
+                    pReq->Hdr.rc = VERR_INVALID_PARAMETER;
+                    break;
+            }
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_SEM_OP2):
+        {
+            /* validate */
+            PSUPSEMOP2 pReq = (PSUPSEMOP2)pReqHdr;
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_SEM_OP2, SUP_IOCTL_SEM_OP2_SIZE_IN, SUP_IOCTL_SEM_OP2_SIZE_OUT);
+            REQ_CHECK_EXPR(SUP_IOCTL_SEM_OP2, pReq->u.In.uReserved == 0);
+
+            /* execute */
+            switch (pReq->u.In.uType)
+            {
+                case SUP_SEM_TYPE_EVENT:
+                {
+                    SUPSEMEVENT hEvent = (SUPSEMEVENT)(uintptr_t)pReq->u.In.hSem;
+                    switch (pReq->u.In.uOp)
+                    {
+                        case SUPSEMOP2_WAIT_MS_REL:
+                            pReq->Hdr.rc = SUPSemEventWaitNoResume(pSession, hEvent, pReq->u.In.uArg.cRelMsTimeout);
+                            break;
+                        case SUPSEMOP2_WAIT_NS_ABS:
+                            pReq->Hdr.rc = SUPSemEventWaitNsAbsIntr(pSession, hEvent, pReq->u.In.uArg.uAbsNsTimeout);
+                            break;
+                        case SUPSEMOP2_WAIT_NS_REL:
+                            pReq->Hdr.rc = SUPSemEventWaitNsRelIntr(pSession, hEvent, pReq->u.In.uArg.cRelNsTimeout);
+                            break;
+                        case SUPSEMOP2_SIGNAL:
+                            pReq->Hdr.rc = SUPSemEventSignal(pSession, hEvent);
+                            break;
+                        case SUPSEMOP2_CLOSE:
+                            pReq->Hdr.rc = SUPSemEventClose(pSession, hEvent);
+                            break;
+                        case SUPSEMOP2_RESET:
+                        default:
+                            pReq->Hdr.rc = VERR_INVALID_FUNCTION;
+                            break;
+                    }
+                    break;
+                }
+
+                case SUP_SEM_TYPE_EVENT_MULTI:
+                {
+                    SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)(uintptr_t)pReq->u.In.hSem;
+                    switch (pReq->u.In.uOp)
+                    {
+                        case SUPSEMOP2_WAIT_MS_REL:
+                            pReq->Hdr.rc = SUPSemEventMultiWaitNoResume(pSession, hEventMulti, pReq->u.In.uArg.cRelMsTimeout);
+                            break;
+                        case SUPSEMOP2_WAIT_NS_ABS:
+                            pReq->Hdr.rc = SUPSemEventMultiWaitNsAbsIntr(pSession, hEventMulti, pReq->u.In.uArg.uAbsNsTimeout);
+                            break;
+                        case SUPSEMOP2_WAIT_NS_REL:
+                            pReq->Hdr.rc = SUPSemEventMultiWaitNsRelIntr(pSession, hEventMulti, pReq->u.In.uArg.cRelNsTimeout);
+                            break;
+                        case SUPSEMOP2_SIGNAL:
+                            pReq->Hdr.rc = SUPSemEventMultiSignal(pSession, hEventMulti);
+                            break;
+                        case SUPSEMOP2_CLOSE:
+                            pReq->Hdr.rc = SUPSemEventMultiClose(pSession, hEventMulti);
+                            break;
+                        case SUPSEMOP2_RESET:
+                            pReq->Hdr.rc = SUPSemEventMultiReset(pSession, hEventMulti);
+                            break;
+                        default:
+                            pReq->Hdr.rc = VERR_INVALID_FUNCTION;
+                            break;
+                    }
+                    break;
+                }
+
+                default:
+                    pReq->Hdr.rc = VERR_INVALID_PARAMETER;
+                    break;
+            }
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_SEM_OP3):
+        {
+            /* validate */
+            PSUPSEMOP3 pReq = (PSUPSEMOP3)pReqHdr;
+            REQ_CHECK_SIZES_EX(SUP_IOCTL_SEM_OP3, SUP_IOCTL_SEM_OP3_SIZE_IN, SUP_IOCTL_SEM_OP3_SIZE_OUT);
+            REQ_CHECK_EXPR(SUP_IOCTL_SEM_OP3, pReq->u.In.u32Reserved == 0 && pReq->u.In.u64Reserved == 0);
+
+            /* execute */
+            switch (pReq->u.In.uType)
+            {
+                case SUP_SEM_TYPE_EVENT:
+                {
+                    SUPSEMEVENT hEvent = (SUPSEMEVENT)(uintptr_t)pReq->u.In.hSem;
+                    switch (pReq->u.In.uOp)
+                    {
+                        case SUPSEMOP3_CREATE:
+                            REQ_CHECK_EXPR(SUP_IOCTL_SEM_OP3, hEvent == NIL_SUPSEMEVENT);
+                            pReq->Hdr.rc = SUPSemEventCreate(pSession, &hEvent);
+                            pReq->u.Out.hSem = (uint32_t)(uintptr_t)hEvent;
+                            break;
+                        case SUPSEMOP3_GET_RESOLUTION:
+                            REQ_CHECK_EXPR(SUP_IOCTL_SEM_OP3, hEvent == NIL_SUPSEMEVENT);
+                            pReq->Hdr.rc = VINF_SUCCESS;
+                            pReq->Hdr.cbOut = sizeof(*pReq);
+                            pReq->u.Out.cNsResolution = SUPSemEventGetResolution(pSession);
+                            break;
+                        default:
+                            pReq->Hdr.rc = VERR_INVALID_FUNCTION;
+                            break;
+                    }
+                    break;
+                }
+
+                case SUP_SEM_TYPE_EVENT_MULTI:
+                {
+                    SUPSEMEVENTMULTI hEventMulti = (SUPSEMEVENTMULTI)(uintptr_t)pReq->u.In.hSem;
+                    switch (pReq->u.In.uOp)
+                    {
+                        case SUPSEMOP3_CREATE:
+                            REQ_CHECK_EXPR(SUP_IOCTL_SEM_OP3, hEventMulti == NIL_SUPSEMEVENTMULTI);
+                            pReq->Hdr.rc = SUPSemEventMultiCreate(pSession, &hEventMulti);
+                            pReq->u.Out.hSem = (uint32_t)(uintptr_t)hEventMulti;
+                            break;
+                        case SUPSEMOP3_GET_RESOLUTION:
+                            REQ_CHECK_EXPR(SUP_IOCTL_SEM_OP3, hEventMulti == NIL_SUPSEMEVENTMULTI);
+                            pReq->Hdr.rc = VINF_SUCCESS;
+                            pReq->u.Out.cNsResolution = SUPSemEventMultiGetResolution(pSession);
                             break;
                         default:
                             pReq->Hdr.rc = VERR_INVALID_FUNCTION;
