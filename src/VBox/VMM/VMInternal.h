@@ -277,6 +277,15 @@ typedef struct VMINTUSERPERVM
             /** When to stop spinning (lag / nano secs). */
             uint32_t                u32StopSpinningCfg;
         }                           Method12;
+
+       /**
+        * The GVMM manages halted and waiting EMTs.
+        */
+        struct
+        {
+            /** The threshold between spinning and blocking. */
+            uint32_t                cNsSpinBlockThresholdCfg;
+        }                           Global1;
     }                               Halt;
 
     /** Pointer to the DBGC instance data. */
@@ -397,6 +406,9 @@ typedef struct VMINTUSERPERVMCPU
      * @{ */
     STAMPROFILE                     StatHaltYield;
     STAMPROFILE                     StatHaltBlock;
+    STAMPROFILE                     StatHaltBlockOverslept;
+    STAMPROFILE                     StatHaltBlockInsomnia;
+    STAMPROFILE                     StatHaltBlockOnTime;
     STAMPROFILE                     StatHaltTimers;
     STAMPROFILE                     StatHaltPoll;
     /** @} */

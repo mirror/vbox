@@ -323,9 +323,10 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
          * The poll call gives us the ticks left to the next event in
          * addition to perhaps set an FF.
          */
-        STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltTimers, b);
+        uint64_t const u64StartTimers   = RTTimeNanoTS();
         TMR3TimerQueuesDo(pVM);
-        STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltTimers, b);
+        uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedTimers);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
@@ -351,23 +352,26 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
             if (u64NanoTS <  870000) /* this is a bit speculative... works fine on linux. */
             {
                 //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d yield", u64NanoTS, cLoops++);
-                STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltYield, a);
+                uint64_t const u64StartSchedYield   = RTTimeNanoTS();
                 RTThreadYield(); /* this is the best we can do here */
-                STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltYield, a);
+                uint64_t const cNsElapsedSchedYield = RTTimeNanoTS() - u64StartSchedYield;
+                STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedSchedYield);
             }
             else if (u64NanoTS < 2000000)
             {
                 //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep 1ms", u64NanoTS, cLoops++);
-                STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltBlock, a);
+                uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
                 rc = RTSemEventWait(pUVCpu->vm.s.EventSemWait, 1);
-                STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltBlock, a);
+                uint64_t const cNsElapsedSchedHalt = RTTimeNanoTS() - u64StartSchedHalt;
+                STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlock, cNsElapsedSchedHalt);
             }
             else
             {
                 //RTLogPrintf("u64NanoTS=%RI64 cLoops=%d sleep %dms", u64NanoTS, cLoops++, (uint32_t)RT_MIN((u64NanoTS - 500000) / 1000000, 15));
-                STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltBlock, a);
+                uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
                 rc = RTSemEventWait(pUVCpu->vm.s.EventSemWait, RT_MIN((u64NanoTS - 1000000) / 1000000, 15));
-                STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltBlock, a);
+                uint64_t const cNsElapsedSchedHalt = RTTimeNanoTS() - u64StartSchedHalt;
+                STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlock, cNsElapsedSchedHalt);
             }
             //uint64_t u64Slept = RTTimeNanoTS() - u64Start;
             //RTLogPrintf(" -> rc=%Rrc in %RU64 ns / %RI64 ns delta\n", rc, u64Slept, u64NanoTS - u64Slept);
@@ -518,9 +522,10 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         /*
          * Work the timers and check if we can exit.
          */
-        STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltTimers, b);
+        uint64_t const u64StartTimers   = RTTimeNanoTS();
         TMR3TimerQueuesDo(pVM);
-        STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltTimers, b);
+        uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedTimers);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
@@ -553,10 +558,13 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
                 cMilliSecs = 1;
             else
                 cMilliSecs -= pUVCpu->vm.s.Halt.Method12.cNSBlockedTooLongAvg;
+
             //RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
-            STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltBlock, a);
+            uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
             rc = RTSemEventWait(pUVCpu->vm.s.EventSemWait, cMilliSecs);
-            STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltBlock, a);
+            uint64_t const cNsElapsedSchedHalt = RTTimeNanoTS() - u64StartSchedHalt;
+            STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlock, cNsElapsedSchedHalt);
+
             if (rc == VERR_TIMEOUT)
                 rc = VINF_SUCCESS;
             else if (RT_FAILURE(rc))
@@ -608,6 +616,32 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
  */
 static DECLCALLBACK(int) vmR3HaltGlobal1Init(PUVM pUVM)
 {
+    /*
+     * The defaults.
+     */
+    pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = 50000;
+    uint32_t cNsResolution = SUPSemEventMultiGetResolution(pUVM->vm.s.pSession);
+    if (cNsResolution < 5*RT_NS_100US)
+    {
+        cNsResolution = RT_MAX(cNsResolution, 20000);
+        pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = cNsResolution / 2;
+    }
+
+    /*
+     * Query overrides.
+     *
+     * I don't have time to bother with niceities such as invalid value checks
+     * here right now. sorry.
+     */
+    PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pUVM->pVM), "/VMM/HaltedGlobal1");
+    if (pCfg)
+    {
+        uint32_t u32;
+        if (RT_SUCCESS(CFGMR3QueryU32(pCfg, "SpinBlockThreshold", &u32)))
+            pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = u32;
+    }
+    LogRel(("HaltedGlobal1 config: cNsSpinBlockThresholdCfg=%u\n",
+            pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg));
     return VINF_SUCCESS;
 }
 
@@ -626,6 +660,8 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
     /*
      * Halt loop.
      */
+    //uint64_t u64NowLog, u64Start;
+    //u64Start = u64NowLog = RTTimeNanoTS();
     int rc = VINF_SUCCESS;
     ASMAtomicWriteBool(&pUVCpu->vm.s.fWait, true);
     unsigned cLoops = 0;
@@ -634,9 +670,10 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         /*
          * Work the timers and check if we can exit.
          */
-        STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltTimers, b);
+        uint64_t const u64StartTimers   = RTTimeNanoTS();
         TMR3TimerQueuesDo(pVM);
-        STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltTimers, b);
+        uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
+        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedTimers);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
@@ -644,6 +681,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         /*
          * Estimate time left to the next event.
          */
+        //u64NowLog = RTTimeNanoTS();
         uint64_t u64Delta;
         uint64_t u64GipTime = TMTimerPollGIP(pVM, pVCpu, &u64Delta);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
@@ -653,23 +691,36 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         /*
          * Block if we're not spinning and the interval isn't all that small.
          */
-        if (u64Delta > 50000 /* 0.050ms */)
+        if (u64Delta >= pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg)
         {
             VMMR3YieldStop(pVM);
             if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
                 ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
-                    break;
+                break;
 
-            //RTLogRelPrintf("u64NanoTS=%RI64 cLoops=%3d sleep %02dms (%7RU64) ", u64NanoTS, cLoops, cMilliSecs, u64NanoTS);
-            STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltBlock, c);
+            //RTLogPrintf("loop=%-3d  u64GipTime=%'llu / %'llu   now=%'llu / %'llu\n", cLoops, u64GipTime, u64Delta, u64NowLog, u64GipTime - u64NowLog);
+            uint64_t const u64StartSchedHalt   = RTTimeNanoTS();
             rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_HALT, u64GipTime, NULL);
-            STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltBlock, c);
+            uint64_t const u64EndSchedHalt     = RTTimeNanoTS();
+            uint64_t const cNsElapsedSchedHalt = u64EndSchedHalt - u64StartSchedHalt;
+            STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlock, cNsElapsedSchedHalt);
+
             if (rc == VERR_INTERRUPTED)
                 rc = VINF_SUCCESS;
             else if (RT_FAILURE(rc))
             {
                 rc = vmR3FatalWaitError(pUVCpu, "VMMR0_DO_GVMM_SCHED_HALT->%Rrc\n", rc);
                 break;
+            }
+            else
+            {
+                int64_t const cNsOverslept = u64EndSchedHalt - u64GipTime;
+                if (cNsOverslept > 50000)
+                    STAM_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockOverslept, cNsOverslept);
+                else if (cNsOverslept < -50000)
+                    STAM_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockInsomnia,  cNsElapsedSchedHalt);
+                else
+                    STAM_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltBlockOnTime,    cNsElapsedSchedHalt);
             }
         }
         /*
@@ -678,12 +729,13 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
          */
         else if (!(cLoops & 0x1fff))
         {
-            STAM_REL_PROFILE_START(&pUVCpu->vm.s.StatHaltYield, d);
+            uint64_t const u64StartSchedYield   = RTTimeNanoTS();
             rc = SUPR3CallVMMR0Ex(pVM->pVMR0, pVCpu->idCpu, VMMR0_DO_GVMM_SCHED_POLL, false /* don't yield */, NULL);
-            STAM_REL_PROFILE_STOP(&pUVCpu->vm.s.StatHaltYield, d);
+            uint64_t const cNsElapsedSchedYield = RTTimeNanoTS() - u64StartSchedYield;
+            STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedSchedYield);
         }
     }
-    //if (fSpinning) RTLogRelPrintf("spun for %RU64 ns %u loops; lag=%RU64 pct=%d\n", RTTimeNanoTS() - u64Now, cLoops, TMVirtualSyncGetLag(pVM), u32CatchUpPct);
+    //RTLogPrintf("*** %u loops %'llu;  lag=%RU64\n", cLoops, u64NowLog - u64Start, TMVirtualSyncGetLag(pVM));
 
     ASMAtomicUoWriteBool(&pUVCpu->vm.s.fWait, false);
     return rc;

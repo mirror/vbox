@@ -200,10 +200,18 @@ typedef struct GVMM
     uint16_t volatile   iUsedHead;
     /** The number of VMs. */
     uint16_t volatile   cVMs;
-//    /** The number of halted EMT threads. */
-//    uint16_t volatile   cHaltedEMTs;
+    /** Alignment padding. */
+    uint16_t            u16Reserved;
     /** The number of EMTs. */
     uint32_t volatile   cEMTs;
+    /** The number of EMTs that have halted in GVMMR0SchedHalt. */
+    uint32_t volatile   cHaltedEMTs;
+    /** Alignment padding. */
+    uint32_t            u32Alignment;
+    /** When the next halted or sleeping EMT will wake up.
+     * This is set to 0 when it needs recalculating and to UINT64_MAX when
+     * there are no halted or sleeping EMTs in the GVMM. */
+    uint64_t            uNsNextEmtWakeup;
     /** The lock used to serialize VM creation, destruction and associated events that
      * isn't performance critical. Owners may acquire the list lock. */
     RTSEMFASTMUTEX      CreateDestroyLock;
@@ -344,11 +352,23 @@ GVMMR0DECL(int) GVMMR0Init(void)
             }
 
             /* The default configuration values. */
-            pGVMM->cEMTsMeansCompany = 1;                           /** @todo should be adjusted to relative to the cpu count or something... */
-            pGVMM->nsMinSleepAlone   = 750000 /* ns (0.750 ms) */;  /** @todo this should be adjusted to be 75% (or something) of the scheduler granularity... */
-            pGVMM->nsMinSleepCompany =  15000 /* ns (0.015 ms) */;
-            pGVMM->nsEarlyWakeUp1    =  25000 /* ns (0.025 ms) */;
-            pGVMM->nsEarlyWakeUp2    =  50000 /* ns (0.050 ms) */;
+            uint32_t cNsResolution = RTSemEventMultiGetResolution();
+            pGVMM->cEMTsMeansCompany     = 1;                           /** @todo should be adjusted to relative to the cpu count or something... */
+            if (cNsResolution >= 5*RT_NS_100US)
+            {
+                pGVMM->nsMinSleepAlone   = 750000 /* ns (0.750 ms) */;  /** @todo this should be adjusted to be 75% (or something) of the scheduler granularity... */
+                pGVMM->nsMinSleepCompany =  15000 /* ns (0.015 ms) */;
+                pGVMM->nsEarlyWakeUp1    =  25000 /* ns (0.025 ms) */;
+                pGVMM->nsEarlyWakeUp2    =  50000 /* ns (0.050 ms) */;
+            }
+            else
+            {
+                cNsResolution = RT_MIN(cNsResolution, 10000);
+                pGVMM->nsMinSleepAlone   = cNsResolution - cNsResolution / 3;
+                pGVMM->nsMinSleepCompany = cNsResolution - cNsResolution / 3;
+                pGVMM->nsEarlyWakeUp1    = 0;
+                pGVMM->nsEarlyWakeUp2    = 0;
+            }
 
             /* The host CPU data. */
             pGVMM->cHostCpus = cHostCpus;
@@ -527,28 +547,28 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
     }
     else if (!strcmp(pszName, "MinSleepAlone"))
     {
-        if (u64Value <= 100000000)
+        if (u64Value <= RT_NS_100MS)
             pGVMM->nsMinSleepAlone = u64Value;
         else
             rc = VERR_OUT_OF_RANGE;
     }
     else if (!strcmp(pszName, "MinSleepCompany"))
     {
-        if (u64Value <= 100000000)
+        if (u64Value <= RT_NS_100MS)
             pGVMM->nsMinSleepCompany = u64Value;
         else
             rc = VERR_OUT_OF_RANGE;
     }
     else if (!strcmp(pszName, "EarlyWakeUp1"))
     {
-        if (u64Value <= 100000000)
+        if (u64Value <= RT_NS_100MS)
             pGVMM->nsEarlyWakeUp1 = u64Value;
         else
             rc = VERR_OUT_OF_RANGE;
     }
     else if (!strcmp(pszName, "EarlyWakeUp2"))
     {
-        if (u64Value <= 100000000)
+        if (u64Value <= RT_NS_100MS)
             pGVMM->nsEarlyWakeUp2 = u64Value;
         else
             rc = VERR_OUT_OF_RANGE;
@@ -1582,16 +1602,34 @@ GVMMR0DECL(PVM) GVMMR0GetVMByEMT(RTNATIVETHREAD hEMT)
  */
 static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
 {
+    /*
+     * Skip this if we've got disabled because of high resolution wakeups or by
+     * the user.
+     */
+    if (   !pGVMM->nsEarlyWakeUp1
+        && !pGVMM->nsEarlyWakeUp2)
+        return 0;
+
 /** @todo Rewrite this algorithm. See performance defect XYZ. */
+
+    /*
+     * A cheap optimization to stop wasting so much time here on big setups.
+     */
+    const uint64_t  uNsEarlyWakeUp2 = u64Now + pGVMM->nsEarlyWakeUp2;
+    if (   pGVMM->cHaltedEMTs == 0
+        || uNsEarlyWakeUp2 > pGVMM->uNsNextEmtWakeup)
+        return 0;
 
     /*
      * The first pass will wake up VMs which have actually expired
      * and look for VMs that should be woken up in the 2nd and 3rd passes.
      */
-    unsigned cWoken = 0;
-    unsigned cHalted = 0;
-    unsigned cTodo2nd = 0;
-    unsigned cTodo3rd = 0;
+    const uint64_t  uNsEarlyWakeUp1 = u64Now + pGVMM->nsEarlyWakeUp1;
+    uint64_t        u64Min          = UINT64_MAX;
+    unsigned        cWoken          = 0;
+    unsigned        cHalted         = 0;
+    unsigned        cTodo2nd        = 0;
+    unsigned        cTodo3rd        = 0;
     for (unsigned i = pGVMM->iUsedHead, cGuard = 0;
          i != NIL_GVM_HANDLE && i < RT_ELEMENTS(pGVMM->aHandles);
          i = pGVMM->aHandles[i].iNext)
@@ -1602,9 +1640,8 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
         {
             for (VMCPUID idCpu = 0; idCpu < pCurGVM->cCpus; idCpu++)
             {
-                PGVMCPU pCurGVCpu = &pCurGVM->aCpus[idCpu];
-
-                uint64_t u64 = pCurGVCpu->gvmm.s.u64HaltExpire;
+                PGVMCPU     pCurGVCpu = &pCurGVM->aCpus[idCpu];
+                uint64_t    u64       = ASMAtomicUoReadU64(&pCurGVCpu->gvmm.s.u64HaltExpire);
                 if (u64)
                 {
                     if (u64 <= u64Now)
@@ -1619,10 +1656,12 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
                     else
                     {
                         cHalted++;
-                        if (u64 <= u64Now + pGVMM->nsEarlyWakeUp1)
+                        if (u64 <= uNsEarlyWakeUp1)
                             cTodo2nd++;
-                        else if (u64 <= u64Now + pGVMM->nsEarlyWakeUp2)
+                        else if (u64 <= uNsEarlyWakeUp2)
                             cTodo3rd++;
+                        else if (u64 < u64Min)
+                            u64 = u64Min;
                     }
                 }
             }
@@ -1642,10 +1681,10 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
             {
                 for (VMCPUID idCpu = 0; idCpu < pCurGVM->cCpus; idCpu++)
                 {
-                    PGVMCPU pCurGVCpu = &pCurGVM->aCpus[idCpu];
-
-                    if (    pCurGVCpu->gvmm.s.u64HaltExpire
-                        &&  pCurGVCpu->gvmm.s.u64HaltExpire <= u64Now + pGVMM->nsEarlyWakeUp1)
+                    PGVMCPU     pCurGVCpu = &pCurGVM->aCpus[idCpu];
+                    uint64_t    u64       = ASMAtomicUoReadU64(&pCurGVCpu->gvmm.s.u64HaltExpire);
+                    if (   u64
+                        && u64 <= uNsEarlyWakeUp1)
                     {
                         if (ASMAtomicXchgU64(&pCurGVCpu->gvmm.s.u64HaltExpire, 0))
                         {
@@ -1672,10 +1711,10 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
             {
                 for (VMCPUID idCpu = 0; idCpu < pCurGVM->cCpus; idCpu++)
                 {
-                    PGVMCPU pCurGVCpu = &pCurGVM->aCpus[idCpu];
-
-                    if (    pCurGVCpu->gvmm.s.u64HaltExpire
-                        &&  pCurGVCpu->gvmm.s.u64HaltExpire <= u64Now + pGVMM->nsEarlyWakeUp2)
+                    PGVMCPU     pCurGVCpu = &pCurGVM->aCpus[idCpu];
+                    uint64_t    u64       = ASMAtomicUoReadU64(&pCurGVCpu->gvmm.s.u64HaltExpire);
+                    if (   u64
+                        && u64 <= uNsEarlyWakeUp2)
                     {
                         if (ASMAtomicXchgU64(&pCurGVCpu->gvmm.s.u64HaltExpire, 0))
                         {
@@ -1689,6 +1728,11 @@ static unsigned gvmmR0SchedDoWakeUps(PGVMM pGVMM, uint64_t u64Now)
             AssertLogRelBreak(cGuard++ < RT_ELEMENTS(pGVMM->aHandles));
         }
     }
+
+    /*
+     * Set the minimum value.
+     */
+    pGVMM->uNsNextEmtWakeup = u64Min;
 
     return cWoken;
 }
@@ -1731,28 +1775,44 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
 
     pCurGVCpu->gvmm.s.iCpuEmt = ASMGetApicId();
 
+    /* GIP hack: We might are frequently sleeping for short intervals where the
+       difference between GIP and system time matters on systems with high resolution
+       system time. So, convert the input from GIP to System time in that case. */
     Assert(ASMGetFlags() & X86_EFL_IF);
-    const uint64_t u64Now = RTTimeNanoTS(); /* (GIP time) */
-    pGVM->gvmm.s.StatsSched.cHaltWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64Now);
+    const uint64_t u64NowSys = RTTimeSystemNanoTS();
+    const uint64_t u64NowGip = RTTimeNanoTS();
+    pGVM->gvmm.s.StatsSched.cHaltWakeUps += gvmmR0SchedDoWakeUps(pGVMM, u64NowGip);
 
     /*
      * Go to sleep if we must...
+     * Cap the sleep time to 1 second to be on the safe side.
      */
-    if (    u64Now < u64ExpireGipTime
-        &&  u64ExpireGipTime - u64Now > (pGVMM->cEMTs > pGVMM->cEMTsMeansCompany
-                                         ? pGVMM->nsMinSleepCompany
-                                         : pGVMM->nsMinSleepAlone))
+    uint64_t cNsInterval = u64ExpireGipTime - u64NowGip;
+    if (    u64NowGip < u64ExpireGipTime
+        &&  cNsInterval >= (pGVMM->cEMTs > pGVMM->cEMTsMeansCompany
+                            ? pGVMM->nsMinSleepCompany
+                            : pGVMM->nsMinSleepAlone))
     {
         pGVM->gvmm.s.StatsSched.cHaltBlocking++;
-        ASMAtomicXchgU64(&pCurGVCpu->gvmm.s.u64HaltExpire, u64ExpireGipTime);
+        if (cNsInterval > RT_NS_1SEC)
+            u64ExpireGipTime = u64NowGip + RT_NS_1SEC;
+        if (u64ExpireGipTime < pGVMM->uNsNextEmtWakeup)
+            pGVMM->uNsNextEmtWakeup = u64ExpireGipTime;
+        ASMAtomicWriteU64(&pCurGVCpu->gvmm.s.u64HaltExpire, u64ExpireGipTime);
+        ASMAtomicIncU32(&pGVMM->cHaltedEMTs);
         gvmmR0UsedUnlock(pGVMM);
 
-        uint32_t cMillies = (u64ExpireGipTime - u64Now) / 1000000;
-        /* Cap the timeout to one second. */
-        cMillies = RT_MIN(1000, cMillies);
-        rc = RTSemEventMultiWaitNoResume(pCurGVCpu->gvmm.s.HaltEventMulti, cMillies ? cMillies : 1);
-        ASMAtomicXchgU64(&pCurGVCpu->gvmm.s.u64HaltExpire, 0);
-        if (rc == VERR_TIMEOUT)
+        rc = RTSemEventMultiWaitEx(pCurGVCpu->gvmm.s.HaltEventMulti,
+                                   RTSEMWAIT_FLAGS_ABSOLUTE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE,
+                                   u64NowGip > u64NowSys ? u64ExpireGipTime : u64NowSys + cNsInterval);
+
+        ASMAtomicWriteU64(&pCurGVCpu->gvmm.s.u64HaltExpire, 0);
+        ASMAtomicDecU32(&pGVMM->cHaltedEMTs);
+
+        /* Reset the semaphore to try prevent a few false wake-ups. */
+        if (rc == VINF_SUCCESS)
+            RTSemEventMultiReset(pCurGVCpu->gvmm.s.HaltEventMulti);
+        else if (rc == VERR_TIMEOUT)
         {
             pGVM->gvmm.s.StatsSched.cHaltTimeouts++;
             rc = VINF_SUCCESS;
@@ -1762,10 +1822,8 @@ GVMMR0DECL(int) GVMMR0SchedHalt(PVM pVM, VMCPUID idCpu, uint64_t u64ExpireGipTim
     {
         pGVM->gvmm.s.StatsSched.cHaltNotBlocking++;
         gvmmR0UsedUnlock(pGVMM);
+        RTSemEventMultiReset(pCurGVCpu->gvmm.s.HaltEventMulti);
     }
-
-    /* Make sure false wake up calls (gvmmR0SchedDoWakeUps) cause us to spin. */
-    RTSemEventMultiReset(pCurGVCpu->gvmm.s.HaltEventMulti);
 
     return rc;
 }
@@ -1798,7 +1856,7 @@ DECLINLINE(int) gvmmR0SchedWakeUpOne(PGVM pGVM, PGVMCPU pGVCpu)
     if (pGVCpu->gvmm.s.u64HaltExpire)
     {
         rc = VINF_SUCCESS;
-        ASMAtomicXchgU64(&pGVCpu->gvmm.s.u64HaltExpire, 0);
+        ASMAtomicWriteU64(&pGVCpu->gvmm.s.u64HaltExpire, 0);
     }
     else
     {
@@ -2131,7 +2189,7 @@ static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pT
             pCpu->Ppt.cChanges++;
             pCpu->Ppt.iTickHistorization    = 0;
             pCpu->Ppt.uTimerHz              = uHistMaxHz;
-            uint32_t const cNsInterval      = UINT32_C(1000000000) / uHistMaxHz;
+            uint32_t const cNsInterval      = RT_NS_1SEC / uHistMaxHz;
             pCpu->Ppt.cNsInterval           = cNsInterval;
             if (cNsInterval < GVMMHOSTCPU_PPT_HIST_INTERVAL_NS)
                 pCpu->Ppt.cTicksHistoriziationInterval = (  GVMMHOSTCPU_PPT_HIST_INTERVAL_NS
@@ -2217,7 +2275,7 @@ GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHos
             pCpu->Ppt.fStarting             = true;
             pCpu->Ppt.iTickHistorization    = 0;
             pCpu->Ppt.uTimerHz              = uHz;
-            pCpu->Ppt.cNsInterval           = cNsInterval = UINT32_C(1000000000) / uHz;
+            pCpu->Ppt.cNsInterval           = cNsInterval = RT_NS_1SEC / uHz;
             if (cNsInterval < GVMMHOSTCPU_PPT_HIST_INTERVAL_NS)
                 pCpu->Ppt.cTicksHistoriziationInterval = (  GVMMHOSTCPU_PPT_HIST_INTERVAL_NS
                                                           + GVMMHOSTCPU_PPT_HIST_INTERVAL_NS / 2 - 1)
