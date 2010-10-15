@@ -130,11 +130,7 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
             pWait->fHighRes     = true;
         else
         {
-#if 1
             uint64_t cTicks     = NSEC_TO_TICK_ROUNDUP(uTimeout);
-#else
-            uint64_t cTicks     = drv_usectohz((clock_t)(uTimeout / 1000));
-#endif
             if (cTicks >= LONG_MAX)
                 fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
             else
@@ -189,6 +185,24 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
 
 
 /**
+ * Timeout callback that sets the timeout indicator and wakes up the waiting
+ * thread.
+ *
+ * @param   pvUser              The wait structure.
+ */
+static void rtR0SemSolWaitTimeout(void *pvUser)
+{
+    PRTR0SEMSOLWAIT pWait   = (PRTR0SEMSOLWAIT)pvUser;
+    kthread_t      *pThread = pWait->pThread;
+    if (VALID_PTR(pThread)) /* paranoia */
+    {
+        ASMAtomicWriteBool(&pWait->fTimedOut, true);
+        setrun(pThread);
+    }
+}
+
+
+/**
  * Do the actual wait.
  *
  * @param   pWait               The wait structure.
@@ -199,72 +213,109 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
 DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmutex_t *pMtx)
 {
     int rc = 1;
-    if (pWait->fIndefinite)
+    union
     {
-        /*
-         * No timeout - easy.
-         */
-        if (pWait->fInterruptible)
-            rc = cv_wait_sig(pCnd, pMtx);
-        else
-            cv_wait(pCnd, pMtx);
-    }
-/** @todo Use the new cv_*hires* stuff here when available. */
-    else if (pWait->fHighRes)
+        callout_id_t    idCo;
+        timeout_id_t    idTom;
+    } u;
+
+    /*
+     * Arm the timeout callback.
+     */
+    bool const fHasTimeout = !pWait->fIndefinite;
+    if (fHasTimeout)
     {
-        /*
-         * High resolution timeout - arm a one-shot cyclic for waking up
-         * the thread at the desired time.
-         */
-        cyc_handler_t   Cyh;
-        Cyh.cyh_arg      = pWait;
-        Cyh.cyh_func     = rtR0SemSolWaitHighResTimeout;
-        Cyh.cyh_level    = CY_LOW_LEVEL; /// @todo try CY_LOCK_LEVEL and CY_HIGH_LEVEL?
-
-        cyc_time_t      Cyt;
-        Cyt.cyt_when     = pWait->uNsAbsTimeout;
-        Cyt.cyt_interval = UINT64_C(1000000000) * 60;
-
-        mutex_enter(&cpu_lock);
-        pWait->idCy = cyclic_add(&Cyh, &Cyt);
-        mutex_exit(&cpu_lock);
-
-        if (pWait->fInterruptible)
-            rc = cv_wait_sig(pCnd, pMtx);
-        else
-            cv_wait(pCnd, pMtx);
-
-        mutex_enter(&cpu_lock);
-        if (pWait->idCy != CYCLIC_NONE)
+        if (pWait->fHighRes)
         {
-            cyclic_remove(pWait->idCy);
-            pWait->idCy = CYCLIC_NONE;
+            if (g_pfnrtR0Sol_timeout_generic != NULL)
+            {
+                /*
+                 * High resolution timeout - arm a high resolution timeout callback
+                 * for waking up the thread at the desired time.
+                 */
+                u.idCo = g_pfnrtR0Sol_timeout_generic(CALLOUT_REALTIME, rtR0SemSolWaitTimeout, pWait,
+                                                      pWait->uNsAbsTimeout, 50000 /*res*/,
+                                                      CALLOUT_FLAG_ABSOLUTE);
+            }
+            else
+            {
+                /*
+                 * High resolution timeout - arm a one-shot cyclic for waking up
+                 * the thread at the desired time.
+                 */
+                cyc_handler_t   Cyh;
+                Cyh.cyh_arg      = pWait;
+                Cyh.cyh_func     = rtR0SemSolWaitHighResTimeout;
+                Cyh.cyh_level    = CY_LOW_LEVEL; /// @todo try CY_LOCK_LEVEL and CY_HIGH_LEVEL?
+
+                cyc_time_t      Cyt;
+                Cyt.cyt_when     = pWait->uNsAbsTimeout;
+                Cyt.cyt_interval = UINT64_C(1000000000) * 60;
+
+                mutex_enter(&cpu_lock);
+                pWait->idCy = cyclic_add(&Cyh, &Cyt);
+                mutex_exit(&cpu_lock);
+            }
         }
-        mutex_exit(&cpu_lock);
-    }
-    else
-    {
-        /*
-         * Normal timeout.
-         */
-        if (pWait->fInterruptible)
-            rc = cv_timedwait_sig(pCnd, pMtx, pWait->u.lTimeout);
         else
-            rc = cv_timedwait(pCnd, pMtx, pWait->u.lTimeout);
+        {
+            /*
+             * Normal timeout.
+             * We're better off with our own callback like on the timeout man page,
+             * than calling cv_timedwait[_sig]().
+             */
+            u.idTom = realtime_timeout(rtR0SemSolWaitTimeout, pWait, pWait->u.lTimeout);
+        }
     }
 
-    /* Above zero means normal wake-up. */
-    if (rc > 0)
-        return;
-
-    /* Timeout is signalled by -1. */
-    if (rc == -1)
-        pWait->fTimedOut = true;
-    /* Interruption is signalled by 0. */
+    /*
+     * Do the waiting.
+     */
+    if (pWait->fInterruptible)
+        rc = cv_wait_sig(pCnd, pMtx);
     else
+        cv_wait(pCnd, pMtx);
+
+    /*
+     * Remove the timeout callback.  Drop the lock while we're doing that
+     * to reduce lock contention - we don't need it yet anyway.  (Too bad we
+     * are stuck with the cv_* API here, it's doing a little bit too much.)
+     */
+    if (fHasTimeout)
     {
-        AssertMsg(rc == 0, ("rc=%d\n", rc));
-        pWait->fInterrupted = true;
+        mutex_exit(pMtx);
+
+        if (pWait->fHighRes)
+        {
+            if (g_pfnrtR0Sol_timeout_generic != NULL)
+                g_pfnrtR0Sol_untimeout_generic(u.idCo, 0 /*nowait*/);
+            else
+            {
+                mutex_enter(&cpu_lock);
+                if (pWait->idCy != CYCLIC_NONE)
+                {
+                    cyclic_remove(pWait->idCy);
+                    pWait->idCy = CYCLIC_NONE;
+                }
+                mutex_exit(&cpu_lock);
+            }
+        }
+        else
+            untimeout(u.idTom);
+
+        mutex_enter(pMtx);
+    }
+
+    /*
+     * Above zero means normal wake-up.
+     * Interruption is signalled by 0, timeouts by -1.
+     */
+    if (RT_UNLIKELY(rc <= 0))
+    {
+        if (RT_LIKELY(rc == 0))
+            pWait->fInterrupted = true;
+        else
+            AssertMsgFailed(("rc=%d\n", rc)); /* no timeouts, see above! */
     }
 }
 
