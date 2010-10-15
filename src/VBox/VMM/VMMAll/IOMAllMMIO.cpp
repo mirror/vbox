@@ -751,6 +751,11 @@ static int iomInterpretCMP(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault
 
     if (rc == VINF_SUCCESS)
     {
+#if HC_ARCH_BITS == 32
+        /* Can't deal with 8 byte operands in our 32-bit emulation code. */
+        if (cb > 4)
+            return VINF_IOM_HC_MMIO_READ_WRITE;
+#endif
         /* Emulate CMP and update guest flags. */
         uint32_t eflags = EMEmulateCmp(uData1, uData2, cb);
         pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
@@ -803,6 +808,11 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
 
     if (iomGetRegImmData(pCpu, &pCpu->param1, pRegFrame, &uData1, &cb))
     {
+#if HC_ARCH_BITS == 32
+        /* Can't deal with 8 byte operands in our 32-bit emulation code. */
+        if (cb > 4)
+            return VINF_IOM_HC_MMIO_READ_WRITE;
+#endif
         /* and reg, [MMIO]. */
         Assert(pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3);
         fAndWrite = false;
@@ -810,6 +820,11 @@ static int iomInterpretOrXorAnd(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhys
     }
     else if (iomGetRegImmData(pCpu, &pCpu->param2, pRegFrame, &uData2, &cb))
     {
+#if HC_ARCH_BITS == 32
+        /* Can't deal with 8 byte operands in our 32-bit emulation code. */
+        if (cb > 4)
+            return VINF_IOM_HC_MMIO_READ_WRITE;
+#endif
         /* and [MMIO], reg|imm. */
         fAndWrite = true;
         if (    (pRange->CTX_SUFF(pfnReadCallback) || !pRange->pfnReadCallbackR3)
@@ -895,6 +910,12 @@ static int iomInterpretTEST(PVM pVM, PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFaul
 
     if (rc == VINF_SUCCESS)
     {
+#if HC_ARCH_BITS == 32
+        /* Can't deal with 8 byte operands in our 32-bit emulation code. */
+        if (cb > 4)
+            return VINF_IOM_HC_MMIO_READ_WRITE;
+#endif
+
         /* Emulate TEST (=AND without write back) and update guest EFLAGS. */
         uint32_t eflags = EMEmulateAnd((uint32_t *)&uData1, uData2, cb);
         pRegFrame->eflags.u32 = (pRegFrame->eflags.u32 & ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF))
