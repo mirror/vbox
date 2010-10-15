@@ -105,21 +105,24 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 #endif /* RT_OS_WINDOWS */
 #ifdef VBOX_WITH_GUEST_CONTROL
 
-enum VBOXSERVICECTRLTHREADDATATYPE
+typedef enum VBOXSERVICECTRLTHREADDATATYPE
 {
-    VBoxServiceCtrlThreadDataUnknown = 0,
-    VBoxServiceCtrlThreadDataExec = 1
-};
+    kVBoxServiceCtrlThreadDataUnknown = 0,
+    kVBoxServiceCtrlThreadDataExec
+} VBOXSERVICECTRLTHREADDATATYPE;
 
-enum VBOXSERVICECTRLPIPEID
+typedef enum VBOXSERVICECTRLPIPEID
 {
     VBOXSERVICECTRLPIPEID_STDIN_ERROR  = 0,
-    VBOXSERVICECTRLPIPEID_STDIN_WRITABLE = 1,
-    VBOXSERVICECTRLPIPEID_STDOUT = 10,
-    VBOXSERVICECTRLPIPEID_STDERR = 20
-};
+    VBOXSERVICECTRLPIPEID_STDIN_WRITABLE,
+    VBOXSERVICECTRLPIPEID_STDIN_INPUT_NOTIFY,
+    VBOXSERVICECTRLPIPEID_STDOUT,
+    VBOXSERVICECTRLPIPEID_STDERR
+} VBOXSERVICECTRLPIPEID;
 
-/* Structure for holding buffered pipe data. */
+/**
+ * Structure for holding buffered pipe data.
+ */
 typedef struct
 {
     /** The data buffer. */
@@ -131,13 +134,24 @@ typedef struct
     /** Helper variable for keeping track of what
      *  already was processed and what not. */
     uint32_t    cbProcessed;
+    /** Cirtical section protecting this buffer structure. */
     RTCRITSECT  CritSect;
+    /** Indicates the health condition of the child process. */
     bool        fAlive;
+    /** Set if it's necessary to write to the notification pipe. */
+    bool        fNeedNotification;
+    /** The notification pipe associated with this buffer.
+     * This is NIL_RTPIPE for output pipes. */
+    RTPIPE      hNotificationPipeW;
+    /** The other end of hNotificationPipeW. */
+    RTPIPE      hNotificationPipeR;
 } VBOXSERVICECTRLEXECPIPEBUF;
 /** Pointer to buffered pipe data. */
 typedef VBOXSERVICECTRLEXECPIPEBUF *PVBOXSERVICECTRLEXECPIPEBUF;
 
-/* Structure for holding guest exection relevant data. */
+/**
+ * Structure for holding guest exection relevant data.
+ */
 typedef struct
 {
     uint32_t  uPID;
@@ -275,8 +289,6 @@ extern int VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-extern int  VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms);
-extern int  VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
 extern int  VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms);
 extern int  VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms);
 extern int  VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
