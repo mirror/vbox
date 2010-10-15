@@ -155,7 +155,7 @@ SUPDECL(int) SUPSemEventSignal(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent)
 }
 
 
-SUPDECL(int) SUPSemEventWait(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies)
+static int supR0SemEventWaitEx(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t fFlags, uint64_t uTimeout)
 {
     int         rc;
     uint32_t    h32;
@@ -175,37 +175,49 @@ SUPDECL(int) SUPSemEventWait(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32
     /*
      * Do the job.
      */
-    rc = RTSemEventWait((RTSEMEVENT)pObj->pvUser1, cMillies);
+    rc = RTSemEventWaitEx((RTSEMEVENT)pObj->pvUser1, fFlags, uTimeout);
 
     SUPR0ObjRelease(pObj, pSession);
     return rc;
 }
 
 
+SUPDECL(int) SUPSemEventWait(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies)
+{
+    uint32_t fFlags = RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_UNINTERRUPTIBLE;
+    if (cMillies == RT_INDEFINITE_WAIT)
+        fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
+    return supR0SemEventWaitEx(pSession, hEvent, fFlags, cMillies);
+}
+
+
 SUPDECL(int) SUPSemEventWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint32_t cMillies)
 {
-    int         rc;
-    uint32_t    h32;
-    PSUPDRVOBJ  pObj;
+    uint32_t fFlags = RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE;
+    if (cMillies == RT_INDEFINITE_WAIT)
+        fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
+    return supR0SemEventWaitEx(pSession, hEvent, fFlags, cMillies);
+}
 
-    /*
-     * Input validation.
-     */
-    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    h32 = (uint32_t)(uintptr_t)hEvent;
-    if (h32 != (uintptr_t)hEvent)
-        return VERR_INVALID_HANDLE;
-    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT);
-    if (!pObj)
-        return VERR_INVALID_HANDLE;
 
-    /*
-     * Do the job.
-     */
-    rc = RTSemEventWaitNoResume((RTSEMEVENT)pObj->pvUser1, cMillies);
+SUPDECL(int) SUPSemEventWaitNsAbsIntr(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint64_t uNsTimeout)
+{
+    uint32_t fFlags = RTSEMWAIT_FLAGS_ABSOLUTE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE;
+    return supR0SemEventWaitEx(pSession, hEvent, fFlags, uNsTimeout);
+}
 
-    SUPR0ObjRelease(pObj, pSession);
-    return rc;
+
+SUPDECL(int) SUPSemEventWaitNsRelIntr(PSUPDRVSESSION pSession, SUPSEMEVENT hEvent, uint64_t cNsTimeout)
+{
+    uint32_t fFlags = RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE;
+    return supR0SemEventWaitEx(pSession, hEvent, fFlags, cNsTimeout);
+}
+
+
+SUPDECL(uint32_t) SUPSemEventGetResolution(PSUPDRVSESSION pSession)
+{
+    Assert(SUP_IS_SESSION_VALID(pSession));
+    return RTSemEventGetResolution();
 }
 
 
@@ -342,7 +354,7 @@ SUPDECL(int) SUPSemEventMultiReset(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEv
 }
 
 
-SUPDECL(int) SUPSemEventMultiWait(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies)
+static int supR0SemEventMultiWaitEx(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t fFlags, uint64_t uTimeout)
 {
     int         rc;
     uint32_t    h32;
@@ -362,36 +374,48 @@ SUPDECL(int) SUPSemEventMultiWait(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEve
     /*
      * Do the job.
      */
-    rc = RTSemEventMultiWait((RTSEMEVENTMULTI)pObj->pvUser1, cMillies);
+    rc = RTSemEventMultiWaitEx((RTSEMEVENTMULTI)pObj->pvUser1, fFlags, uTimeout);
 
     SUPR0ObjRelease(pObj, pSession);
     return rc;
 }
 
+SUPDECL(int) SUPSemEventMultiWait(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies)
+{
+    uint32_t fFlags = RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_UNINTERRUPTIBLE;
+    if (cMillies == RT_INDEFINITE_WAIT)
+        fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
+    return supR0SemEventMultiWaitEx(pSession, hEventMulti, fFlags, cMillies);
+}
+
+
 
 SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies)
 {
-    int         rc;
-    uint32_t    h32;
-    PSUPDRVOBJ  pObj;
+    uint32_t fFlags = RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE;
+    if (cMillies == RT_INDEFINITE_WAIT)
+        fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
+    return supR0SemEventMultiWaitEx(pSession, hEventMulti, fFlags, cMillies);
+}
 
-    /*
-     * Input validation.
-     */
-    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    h32 = (uint32_t)(uintptr_t)hEventMulti;
-    if (h32 != (uintptr_t)hEventMulti)
-        return VERR_INVALID_HANDLE;
-    pObj = (PSUPDRVOBJ)RTHandleTableLookupWithCtx(pSession->hHandleTable, h32, SUPDRV_HANDLE_CTX_EVENT_MULTI);
-    if (!pObj)
-        return VERR_INVALID_HANDLE;
 
-    /*
-     * Do the job.
-     */
-    rc = RTSemEventMultiWaitNoResume((RTSEMEVENTMULTI)pObj->pvUser1, cMillies);
+SUPDECL(int) SUPSemEventMultiWaitNsAbsIntr(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint64_t uNsTimeout)
+{
+    uint32_t fFlags = RTSEMWAIT_FLAGS_ABSOLUTE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE;
+    return supR0SemEventMultiWaitEx(pSession, hEventMulti, fFlags, uNsTimeout);
+}
 
-    SUPR0ObjRelease(pObj, pSession);
-    return rc;
+
+SUPDECL(int) SUPSemEventMultiWaitNsRelIntr(PSUPDRVSESSION pSession, SUPSEMEVENTMULTI hEventMulti, uint64_t cNsTimeout)
+{
+    uint32_t fFlags = RTSEMWAIT_FLAGS_RELATIVE | RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_INTERRUPTIBLE;
+    return supR0SemEventMultiWaitEx(pSession, hEventMulti, fFlags, cNsTimeout);
+}
+
+
+SUPDECL(uint32_t) SUPSemEventMultiGetResolution(PSUPDRVSESSION pSession)
+{
+    Assert(SUP_IS_SESSION_VALID(pSession));
+    return RTSemEventMultiGetResolution();
 }
 

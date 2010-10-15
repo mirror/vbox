@@ -55,12 +55,18 @@ EXPORTS
     SUPSemEventSignal
     SUPSemEventWait
     SUPSemEventWaitNoResume
+    SUPSemEventWaitNsAbsIntr
+    SUPSemEventWaitNsRelIntr
+    SUPSemEventGetResolution
     SUPSemEventMultiCreate
     SUPSemEventMultiClose
     SUPSemEventMultiSignal
     SUPSemEventMultiReset
     SUPSemEventMultiWait
     SUPSemEventMultiWaitNoResume
+    SUPSemEventMultiWaitNsAbsIntr
+    SUPSemEventMultiWaitNsRelIntr
+    SUPSemEventMultiGetResolution
     SUPR0GetPagingMode
     SUPR0EnableVTx
     SUPGetGIP
@@ -100,12 +106,18 @@ EXPORTS
     RTSemEventSignal
     RTSemEventWait
     RTSemEventWaitNoResume
+    RTSemEventWaitEx
+    RTSemEventWaitExDebug
+    RTSemEventGetResolution
     RTSemEventDestroy
     RTSemEventMultiCreate
     RTSemEventMultiSignal
     RTSemEventMultiReset
     RTSemEventMultiWait
     RTSemEventMultiWaitNoResume
+    RTSemEventMultiWaitEx
+    RTSemEventMultiWaitExDebug
+    RTSemEventMultiGetResolution
     RTSemEventMultiDestroy
     RTSemFastMutexCreate
     RTSemFastMutexDestroy
