@@ -289,3 +289,9 @@ RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t
     return rtR0SemEventMultiNtWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
 }
 
+
+RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
+{
+    return RTTimerGetSystemGranularity();
+}
+

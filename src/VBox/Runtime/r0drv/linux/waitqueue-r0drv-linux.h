@@ -35,6 +35,10 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 
+/** The resolution (nanoseconds) specified when using
+ *  schedule_hrtimeout_range. */
+#define RTR0SEMLNXWAIT_RESOLUTION   50000
+
 
 /**
  * Kernel mode Linux wait state structure.
@@ -212,7 +216,7 @@ DECLINLINE(void) rtR0SemLnxWaitDoIt(PRTR0SEMLNXWAIT pWait)
 #ifdef IPRT_LINUX_HAS_HRTIMER
     else if (pWait->fHighRes)
     {
-        int rc = schedule_hrtimeout(&pWait->u.KtTimeout, HRTIMER_MODE_ABS);
+        int rc = schedule_hrtimeout_range(&pWait->u.KtTimeout, HRTIMER_MODE_ABS, RTR0SEMLNXWAIT_RESOLUTION);
         if (!rc)
             pWait->fTimedOut = true;
     }
@@ -263,6 +267,20 @@ DECLINLINE(void) rtR0SemLnxWaitDelete(PRTR0SEMLNXWAIT pWait)
     finish_wait(pWait->pWaitQueue, &pWait->WaitQE);
 }
 
+
+/**
+ * Gets the max resolution of the timeout machinery.
+ *
+ * @returns Resolution specified in nanoseconds.
+ */
+DECLINLINE(uint32_t) rtR0SemLnxWaitGetResolution(void)
+{
+#ifdef IPRT_LINUX_HAS_HRTIMER
+    return RTR0SEMLNXWAIT_RESOLUTION;
+#else
+    return 1000000000 / HZ; /* ns */
+#endif
+}
 
 #endif
 

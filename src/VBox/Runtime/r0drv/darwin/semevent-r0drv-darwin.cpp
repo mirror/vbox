@@ -388,3 +388,12 @@ RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64
     return rtR0SemEventDarwinWait(hEventSem, fFlags, uTimeout, &SrcPos);
 }
 
+
+RTDECL(uint32_t) RTSemEventGetResolution(void)
+{
+    uint32_t cNs = absolutetime_to_nanoseconds(1);
+    if (cNs == 0)
+        cNs = 1;
+    return cNs;
+}
+

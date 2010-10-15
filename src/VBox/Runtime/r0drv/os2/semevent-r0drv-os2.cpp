@@ -231,3 +231,9 @@ RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
     return rtSemEventWait(hEventSem, cMillies, true /* interruptible */);
 }
 
+
+RTDECL(uint32_t) RTSemEventGetResolution(void)
+{
+    return 32000000; /* 32ms */
+}
+
