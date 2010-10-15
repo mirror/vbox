@@ -737,10 +737,19 @@ sorecvfrom(PNATState pData, struct socket *so)
         * 3. attach buffer to allocated header mbuf
         */
         rc = ioctlsocket(so->s, FIONREAD, &n);
-        if (rc == -1 && signalled == 0)
+        if (rc == -1)
         {
-            LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
-            signalled = 1;
+            if (  errno == EAGAIN
+               || errno == EWOULDBLOCK
+               || errno == EINPROGRESS
+               || errno == ENOTCONN)
+                return;
+            else if (signalled == 0)
+            {
+                LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
+                signalled = 1;
+            }
+            return;
         }
 
         len = sizeof(struct udpiphdr);
@@ -909,6 +918,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     m_copydata(m, 0, mlen, buf);
     ret = sendto(so->s, buf, mlen, 0,
                  (struct sockaddr *)&addr, sizeof (struct sockaddr));
+    RTMemFree(buf);
     if (ret < 0)
     {
         Log2(("UDP: sendto fails (%s)\n", strerror(errno)));
