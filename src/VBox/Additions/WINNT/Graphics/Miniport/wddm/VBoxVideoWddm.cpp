@@ -1591,6 +1591,10 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                                     NULL);
                             Assert(Status == STATUS_SUCCESS);
                             break;
+                        case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
+                            pAllocation->pSynchEvent = NULL;
+                            Status == STATUS_SUCCESS;
+                            break;
                         default:
                             drprintf((__FUNCTION__ ": ERROR: invalid synch info type(%d)\n", pAllocInfo->enmSynchType));
                             AssertBreakpoint();
@@ -2158,8 +2162,8 @@ DECLCALLBACK(VOID) vboxWddmDmaCompleteChromiumCmd(PDEVICE_EXTENSION pDevExt, PVB
 {
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvContext;
     PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
-    UINT cBufs = pHdr->u32CmdSpecific;
     VBOXVDMACMD_CHROMIUM_CMD *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHROMIUM_CMD);
+    UINT cBufs = pBody->cBuffers;
     for (UINT i = 0; i < cBufs; ++i)
     {
         VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[i];
@@ -2178,6 +2182,8 @@ DECLCALLBACK(VOID) vboxWddmDmaCompleteChromiumCmd(PDEVICE_EXTENSION pDevExt, PVB
                         1,
                         FALSE);
                     break;
+                case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
+                    break;
                 default:
                     Assert(0);
             }
@@ -2186,8 +2192,8 @@ DECLCALLBACK(VOID) vboxWddmDmaCompleteChromiumCmd(PDEVICE_EXTENSION pDevExt, PVB
 
     vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
 }
-
 #endif
+
 NTSTATUS
 APIENTRY
 DxgkDdiSubmitCommand(
@@ -2378,8 +2384,9 @@ DxgkDdiSubmitCommand(
 
             PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
             pHdr->enmType = VBOXVDMACMD_TYPE_CHROMIUM_CMD;
-            pHdr->u32CmdSpecific = pChromiumCmd->Base.u32CmdReserved;
+            pHdr->u32CmdSpecific = 0;
             VBOXVDMACMD_CHROMIUM_CMD *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHROMIUM_CMD);
+            pBody->cBuffers = pChromiumCmd->Base.u32CmdReserved;
             for (UINT i = 0; i < pChromiumCmd->Base.u32CmdReserved; ++i)
             {
                 VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[i];

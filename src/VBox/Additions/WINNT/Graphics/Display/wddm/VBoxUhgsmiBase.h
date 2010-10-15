@@ -68,10 +68,10 @@ DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock
             return VERR_INVALID_PARAMETER;
         }
 
-        uint32_t iFirstPage = offLock >> 0x1000;
-        uint32_t iAfterLastPage = (cbLock + 0xfff) >> 0x1000;
+        uint32_t iFirstPage = offLock >> 12;
+        uint32_t iAfterLastPage = (cbLock + 0xfff) >> 12;
         uint32_t cPages = iAfterLastPage - iFirstPage;
-        uint32_t cBufPages = pBuf->cbBuffer >> 0x1000;
+        uint32_t cBufPages = pBuf->cbBuffer >> 12;
         Assert(cPages <= (cBufPages));
 
         if (cPages == cBufPages)

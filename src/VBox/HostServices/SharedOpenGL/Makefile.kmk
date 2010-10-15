@@ -90,6 +90,9 @@ ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_LIBS += \
 	$(LIB_XPCOM)
 endif
+ifdef VBOX_WITH_CRHGSMI
+VBoxSharedCrOpenGL_DEFS += VBOX_WITH_CRHGSMI
+endif
 
 #
 # VBoxOGLcrserverlib

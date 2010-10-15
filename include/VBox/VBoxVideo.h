@@ -1047,6 +1047,10 @@ typedef struct _VBVACAPS
 
 #pragma pack()
 
+typedef uint64_t VBOXVIDEOOFFSET;
+
+#define VBOXVIDEOOFFSET_VOID ((VBOXVIDEOOFFSET)~0)
+
 #ifdef VBOX_WITH_WDDM
 # pragma pack(1)
 
@@ -1099,10 +1103,6 @@ DECLINLINE(PVBOXSHGSMIHEADER) VBoxSHGSMIBufferHeader (const void *pvData)
 {
     return (PVBOXSHGSMIHEADER)((uint8_t *)pvData - sizeof (VBOXSHGSMIHEADER));
 }
-
-typedef uint64_t VBOXVIDEOOFFSET;
-
-#define VBOXVIDEOOFFSET_VOID ((VBOXVIDEOOFFSET)~0)
 
 typedef enum
 {
@@ -1236,6 +1236,7 @@ typedef struct VBOXVDMACBUF_DR
 } VBOXVDMACBUF_DR, *PVBOXVDMACBUF_DR;
 
 #define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )
+#define VBOXVDMACBUF_DR_FROM_TAIL(_pCmd) ( (VBOXVDMACBUF_DR*)(((uint8_t*)(_pCmd)) - sizeof (VBOXVDMACBUF_DR)) )
 
 typedef struct VBOXVDMACMD
 {
@@ -1247,6 +1248,7 @@ typedef struct VBOXVDMACMD
 #define VBOXVDMACMD_SIZE_FROMBODYSIZE(_s) (VBOXVDMACMD_HEADER_SIZE() + (_s))
 #define VBOXVDMACMD_SIZE(_t) (VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (_t)))
 #define VBOXVDMACMD_BODY(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
+#define VBOXVDMACMD_FROM_BODY(_pCmd) ( (VBOXVDMACMD*)(((uint8_t*)(_pCmd)) - VBOXVDMACMD_HEADER_SIZE()) )
 #define VBOXVDMACMD_BODY_FIELD_OFFSET(_ot, _t, _f) ( (_ot)( VBOXVDMACMD_BODY(0, uint8_t) + RT_OFFSETOF(_t, _f) ) )
 
 typedef struct VBOXVDMACMD_DMA_PRESENT_BLT
@@ -1292,6 +1294,11 @@ typedef struct VBOXVDMACMD_DMA_BPB_FILL
     uint32_t u32FillPattern;
 } VBOXVDMACMD_DMA_BPB_FILL, *PVBOXVDMACMD_DMA_BPB_FILL;
 
+# pragma pack()
+#endif /* #ifdef VBOX_WITH_VDMA */
+
+#ifdef VBOX_WITH_CRHGSMI
+# pragma pack(1)
 typedef struct VBOXVDMACMD_CHROMIUM_BUFFER
 {
     VBOXVIDEOOFFSET offBuffer;
@@ -1302,12 +1309,35 @@ typedef struct VBOXVDMACMD_CHROMIUM_BUFFER
 
 typedef struct VBOXVDMACMD_CHROMIUM_CMD
 {
-    /* the number of buffers is specified in the VBOXVDMACMD::u32CmdSpecific*/
+    uint32_t cBuffers;
+    uint32_t u32Reserved;
     VBOXVDMACMD_CHROMIUM_BUFFER aBuffers[1];
 } VBOXVDMACMD_CHROMIUM_CMD, *PVBOXVDMACMD_CHROMIUM_CMD;
 
+typedef enum
+{
+    VBOXVDMACMD_CHROMIUM_CTL_TYPE_UNKNOWN = 0,
+    VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP,
+    VBOXVDMACMD_CHROMIUM_CTL_TYPE_SIZEHACK = 0xfffffffe
+} VBOXVDMACMD_CHROMIUM_CTL_TYPE;
+
+typedef struct VBOXVDMACMD_CHROMIUM_CTL
+{
+    VBOXVDMACMD_CHROMIUM_CTL_TYPE enmType;
+    uint32_t cbCmd;
+} VBOXVDMACMD_CHROMIUM_CTL, *PVBOXVDMACMD_CHROMIUM_CTL;
+
+typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
+{
+    VBOXVDMACMD_CHROMIUM_CTL Hdr;
+    union
+    {
+        void *pvRamBase;
+        uint64_t uAlignment;
+    };
+} VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP;
 # pragma pack()
-#endif /* #ifdef VBOX_WITH_VDMA */
+#endif
 
 #ifdef VBOXVDMA_WITH_VBVA
 # pragma pack(1)
