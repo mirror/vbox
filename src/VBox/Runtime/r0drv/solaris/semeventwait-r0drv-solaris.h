@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Linux Ring-0 Driver Helpers for Abstracting Wait Queues,
+ * IPRT - Solaris Ring-0 Driver Helpers for Event Semaphore Waits.
  */
 
 /*
