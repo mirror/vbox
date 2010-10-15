@@ -326,7 +326,7 @@ static DECLCALLBACK(int) vmR3HaltOldDoHalt(PUVMCPU pUVCpu, const uint32_t fMask,
         uint64_t const u64StartTimers   = RTTimeNanoTS();
         TMR3TimerQueuesDo(pVM);
         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
-        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedTimers);
+        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
@@ -525,7 +525,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         uint64_t const u64StartTimers   = RTTimeNanoTS();
         TMR3TimerQueuesDo(pVM);
         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
-        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedTimers);
+        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
@@ -619,13 +619,13 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Init(PUVM pUVM)
     /*
      * The defaults.
      */
-    pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = 50000;
     uint32_t cNsResolution = SUPSemEventMultiGetResolution(pUVM->vm.s.pSession);
-    if (cNsResolution < 5*RT_NS_100US)
-    {
-        cNsResolution = RT_MAX(cNsResolution, 20000);
-        pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = cNsResolution / 2;
-    }
+    if (cNsResolution > 5*RT_NS_100US)
+        pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = 50000;
+    else if (cNsResolution > RT_NS_100US)
+        pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = cNsResolution / 4;
+    else
+        pUVM->vm.s.Halt.Global1.cNsSpinBlockThresholdCfg = 2000;
 
     /*
      * Query overrides.
@@ -673,7 +673,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
         uint64_t const u64StartTimers   = RTTimeNanoTS();
         TMR3TimerQueuesDo(pVM);
         uint64_t const cNsElapsedTimers = RTTimeNanoTS() - u64StartTimers;
-        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltYield, cNsElapsedTimers);
+        STAM_REL_PROFILE_ADD_PERIOD(&pUVCpu->vm.s.StatHaltTimers, cNsElapsedTimers);
         if (    VM_FF_ISPENDING(pVM, VM_FF_EXTERNAL_HALTED_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, fMask))
             break;
