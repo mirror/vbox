@@ -339,3 +339,8 @@ RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t
 }
 
 
+RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
+{
+    return rtR0SemSolWaitGetResolution();
+}
+

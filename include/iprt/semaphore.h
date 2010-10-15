@@ -221,6 +221,13 @@ RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64
                                    RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
 /**
+ * Gets the best timeout resolution that RTSemEventWaitEx can do.
+ *
+ * @returns The resolution in nanoseconds.
+ */
+RTDECL(uint32_t) RTSemEventGetResolution(void);
+
+/**
  * Sets the signaller thread to one specific thread.
  *
  * This is only used for validating usage and deadlock detection.  When used
@@ -387,6 +394,13 @@ RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFla
  */
 RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
                                         RTHCUINTPTR uId, RT_SRC_POS_DECL);
+
+/**
+ * Gets the best timeout resolution that RTSemEventMultiWaitEx can do.
+ *
+ * @returns The resolution in nanoseconds.
+ */
+RTDECL(uint32_t) RTSemEventMultiGetResolution(void);
 
 /**
  * Sets the signaller thread to one specific thread.

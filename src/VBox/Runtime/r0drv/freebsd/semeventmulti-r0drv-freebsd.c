@@ -303,3 +303,9 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINT
     return rtSemEventMultiWait(hEventMultiSem, cMillies, true /* interruptible */);
 }
 
+
+RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
+{
+    return 1000000000 / hz;
+}
+

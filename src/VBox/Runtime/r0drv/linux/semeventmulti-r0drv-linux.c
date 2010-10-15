@@ -320,3 +320,10 @@ RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t
 }
 RT_EXPORT_SYMBOL(RTSemEventMultiWaitExDebug);
 
+
+RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
+{
+    return rtR0SemLnxWaitGetResolution();
+}
+RT_EXPORT_SYMBOL(RTSemEventMultiGetResolution);
+

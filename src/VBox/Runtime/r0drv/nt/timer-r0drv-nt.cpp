@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -407,28 +407,6 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;
-}
-
-
-RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
-{
-    /*
-     * Get the default/max timer increment value, return it if ExSetTimerResolution
-     * isn't available. Accoring to the sysinternals guys NtQueryTimerResolution
-     * is only available in userland and they find it equally annoying.
-     */
-    ULONG ulTimeInc = KeQueryTimeIncrement();
-    if (!g_pfnrtNtExSetTimerResolution)
-        return ulTimeInc * 100; /* The value is in 100ns, the funny NT unit. */
-
-    /*
-     * Use the value returned by ExSetTimerResolution. Since the kernel is keeping
-     * count of these calls, we have to do two calls that cancel each other out.
-     */
-    ULONG ulResolution1 = g_pfnrtNtExSetTimerResolution(ulTimeInc, TRUE);
-    ULONG ulResolution2 = g_pfnrtNtExSetTimerResolution(0 /*ignored*/, FALSE);
-    AssertMsg(ulResolution1 == ulResolution2, ("%ld, %ld\n", ulResolution1, ulResolution2)); /* not supposed to change it! */
-    return ulResolution2 * 100; /* NT -> ns */
 }
 
 

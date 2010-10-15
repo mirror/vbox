@@ -402,3 +402,12 @@ RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t
     return rtR0SemEventMultiDarwinWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
 }
 
+
+RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
+{
+    uint32_t cNs = absolutetime_to_nanoseconds(1);
+    if (cNs == 0)
+        cNs = 1;
+    return cNs;
+}
+

@@ -333,3 +333,10 @@ RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64
     return rtR0SemEventSolWait(hEventSem, fFlags, uTimeout, &SrcPos);
 }
 
+
+RTDECL(uint32_t) RTSemEventGetResolution(void)
+{
+    return rtR0SemSolWaitGetResolution();
+}
+
+

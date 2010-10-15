@@ -255,3 +255,10 @@ RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64
 }
 RT_EXPORT_SYMBOL(RTSemEventWaitExDebug);
 
+
+RTDECL(uint32_t) RTSemEventGetResolution(void)
+{
+    return rtR0SemLnxWaitGetResolution();
+}
+RT_EXPORT_SYMBOL(RTSemEventGetResolution);
+
