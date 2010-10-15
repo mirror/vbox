@@ -71,6 +71,8 @@ typedef struct RTR0SEMSOLWAIT
     kthread_t      *pThread;
     /** Cylic timer ID (used by the timeout callback). */
     cyclic_id_t     idCy;
+    /** The mutex associated with the condition variable wait. */
+    void volatile  *pvMtx;
 } RTR0SEMSOLWAIT;
 /** Pointer to a solaris semaphore wait structure.  */
 typedef RTR0SEMSOLWAIT *PRTR0SEMSOLWAIT;
@@ -159,6 +161,7 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
     pWait->fInterrupted     = false;
     pWait->fInterruptible   = !!(fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE);
     pWait->pThread          = curthread;
+    pWait->pvMtx            = NULL;
     pWait->idCy             = CYCLIC_NONE;
 
     return VINF_SUCCESS;
@@ -175,15 +178,20 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
 {
     PRTR0SEMSOLWAIT pWait   = (PRTR0SEMSOLWAIT)pvUser;
     kthread_t      *pThread = pWait->pThread;
-    if (VALID_PTR(pThread)) /* paranoia */
+    kmutex_t       *pMtx    = (kmutex_t *)ASMAtomicReadPtr(&pWait->pvMtx);
+    if (VALID_PTR(pMtx))
     {
-        /* Note: Trying to take the cpu_lock here doesn't work. */
+        /* Enter the mutex here to make sure the thread has gone to sleep
+           before we wake it up.
+           Note: Trying to take the cpu_lock here doesn't work. */
+        mutex_enter(pMtx);
         if (mutex_owner(&cpu_lock) == curthread)
         {
             cyclic_remove(pWait->idCy);
             pWait->idCy = CYCLIC_NONE;
         }
         ASMAtomicWriteBool(&pWait->fTimedOut, true);
+        mutex_exit(pMtx);
         setrun(pThread);
     }
 }
@@ -199,9 +207,14 @@ static void rtR0SemSolWaitTimeout(void *pvUser)
 {
     PRTR0SEMSOLWAIT pWait   = (PRTR0SEMSOLWAIT)pvUser;
     kthread_t      *pThread = pWait->pThread;
-    if (VALID_PTR(pThread)) /* paranoia */
+    kmutex_t       *pMtx    = (kmutex_t *)ASMAtomicReadPtr(&pWait->pvMtx);
+    if (VALID_PTR(pMtx))
     {
+        /* Enter the mutex here to make sure the thread has gone to sleep
+           before we wake it up. */
+        mutex_enter(pMtx);
         ASMAtomicWriteBool(&pWait->fTimedOut, true);
+        mutex_exit(pMtx);
         setrun(pThread);
     }
 }
@@ -229,6 +242,8 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
     bool const fHasTimeout = !pWait->fIndefinite;
     if (fHasTimeout)
     {
+        ASMAtomicWritePtr(&pWait->pvMtx, pMtx); /* atomic is paranoia */
+
         if (pWait->fHighRes)
         {
             if (g_pfnrtR0Sol_timeout_generic != NULL)
@@ -293,11 +308,12 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
 
     /*
      * Remove the timeout callback.  Drop the lock while we're doing that
-     * to reduce lock contention - we don't need it yet anyway.  (Too bad we
-     * are stuck with the cv_* API here, it's doing a little bit too much.)
+     * to reduce lock contention / deadlocks.  (Too bad we are stuck with the
+     * cv_* API here, it's doing a little bit too much.)
      */
     if (fHasTimeout)
     {
+        ASMAtomicWritePtr(&pWait->pvMtx, NULL);
         mutex_exit(pMtx);
 
         if (pWait->fHighRes)
