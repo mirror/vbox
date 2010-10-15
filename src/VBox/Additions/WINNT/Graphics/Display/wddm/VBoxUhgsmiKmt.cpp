@@ -102,7 +102,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
 
     cbBuf = VBOXWDDM_ROUNDBOUND(cbBuf, 0x1000);
     Assert(cbBuf);
-    uint32_t cPages = cbBuf >> 0x1000;
+    uint32_t cPages = cbBuf >> 12;
     Assert(cPages);
 
     PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pHgsmi);

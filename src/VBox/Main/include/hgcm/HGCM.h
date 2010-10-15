@@ -48,6 +48,12 @@ int HGCMGuestCall (PPDMIHGCMPORT pHGCMPort, PVBOXHGCMCMD pCmdPtr, uint32_t clien
 
 int HGCMHostCall (const char *pszServiceName, uint32_t function, uint32_t cParms, VBOXHGCMSVCPARM aParms[]);
 
+#ifdef VBOX_WITH_CRHGSMI
+int HGCMHostSvcHandleCreate (const char *pszServiceName, HGCMCVSHANDLE * phSvc);
+int HGCMHostSvcHandleDestroy (HGCMCVSHANDLE hSvc);
+int HGCMHostFastCallAsync (HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion);
+#endif
+
 int HGCMHostSaveState (PSSMHANDLE pSSM);
 int HGCMHostLoadState (PSSMHANDLE pSSM);
 

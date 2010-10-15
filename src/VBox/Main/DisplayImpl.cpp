@@ -2894,6 +2894,39 @@ void Display::updateDisplayData(void)
     LogFlowFunc (("leave\n"));
 }
 
+#ifdef VBOX_WITH_CRHGSMI
+void Display::setupCrHgsmiData(void)
+{
+    VMMDev *pVMMDev = mParent->getVMMDev();
+    Assert(pVMMDev);
+    int rc = VERR_GENERAL_FAILURE;
+    if (pVMMDev)
+    {
+        rc = pVMMDev->hgcmHostSvcHandleCreate("VBoxSharedCrOpenGL", &mhCrOglSvc);
+        AssertRC(rc);
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        mhCrOglSvc = NULL;
+    }
+}
+
+void Display::destructCrHgsmiData(void)
+{
+    if (mhCrOglSvc)
+    {
+        VMMDev *pVMMDev = mParent->getVMMDev();
+        Assert(pVMMDev);
+        if (pVMMDev)
+        {
+            int rc = pVMMDev->hgcmHostSvcHandleDestroy(mhCrOglSvc);
+            AssertRC(rc);
+        }
+    }
+}
+#endif
+
 /**
  *  Changes the current frame buffer. Called on EMT to avoid both
  *  race conditions and excessive locking.
@@ -3476,6 +3509,97 @@ DECLCALLBACK(void) Display::displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInt
 }
 #endif
 
+#ifdef VBOX_WITH_CRHGSMI
+void Display::handleCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam)
+{
+    mpDrv->pVBVACallbacks->pfnCrHgsmiCommandCompleteAsync(mpDrv->pVBVACallbacks, (PVBOXVDMACMD_CHROMIUM_CMD)pParam->u.pointer.addr, result);
+}
+
+void Display::handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam)
+{
+    mpDrv->pVBVACallbacks->pfnCrHgsmiControlCompleteAsync(mpDrv->pVBVACallbacks, (PVBOXVDMACMD_CHROMIUM_CTL)pParam->u.pointer.addr, result);
+}
+
+void Display::handleCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd)
+{
+    int rc = VERR_INVALID_FUNCTION;
+    VBOXHGCMSVCPARM parm;
+    parm.type = VBOX_HGCM_SVC_PARM_PTR;
+    parm.u.pointer.addr = pCmd;
+    parm.u.pointer.size = 0;
+
+    if (mhCrOglSvc)
+    {
+        VMMDev *pVMMDev = mParent->getVMMDev();
+        if (pVMMDev)
+        {
+            rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_CRHGSMI_CMD, &parm, Display::displayCrHgsmiCommandCompletion, this);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+                return;
+        }
+        else
+            rc = VERR_INVALID_STATE;
+    }
+
+    /* we are here because something went wrong with command prosessing, complete it */
+    handleCrHgsmiCommandCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CMD, &parm);
+}
+
+void Display::handleCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCtl)
+{
+    int rc = VERR_INVALID_FUNCTION;
+    VBOXHGCMSVCPARM parm;
+    parm.type = VBOX_HGCM_SVC_PARM_PTR;
+    parm.u.pointer.addr = pCtl;
+    parm.u.pointer.size = 0;
+
+    if (mhCrOglSvc)
+    {
+        VMMDev *pVMMDev = mParent->getVMMDev();
+        if (pVMMDev)
+        {
+            rc = pVMMDev->hgcmHostFastCallAsync(mhCrOglSvc, SHCRGL_HOST_FN_CRHGSMI_CTL, &parm, Display::displayCrHgsmiControlCompletion, this);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+                return;
+        }
+        else
+            rc = VERR_INVALID_STATE;
+    }
+
+    /* we are here because something went wrong with command prosessing, complete it */
+    handleCrHgsmiControlCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CTL, &parm);
+}
+
+DECLCALLBACK(void) Display::displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd)
+{
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+
+    pDrv->pDisplay->handleCrHgsmiCommandProcess(pInterface, pCmd);
+}
+
+DECLCALLBACK(void) Display::displayCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd)
+{
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+
+    pDrv->pDisplay->handleCrHgsmiControlProcess(pInterface, pCmd);
+}
+
+DECLCALLBACK(void) Display::displayCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
+{
+    Display *pDisplay = (Display *)pvContext;
+    pDisplay->handleCrHgsmiCommandCompletion(result, u32Function, pParam);
+}
+
+DECLCALLBACK(void) Display::displayCrHgsmiControlCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)
+{
+    Display *pDisplay = (Display *)pvContext;
+    pDisplay->handleCrHgsmiControlCompletion(result, u32Function, pParam);
+}
+#endif
+
+
 #ifdef VBOX_WITH_HGSMI
 DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags)
 {
@@ -3816,6 +3940,9 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
     if (pData->pDisplay)
     {
         AutoWriteLock displayLock(pData->pDisplay COMMA_LOCKVAL_SRC_POS);
+#ifdef VBOX_WITH_CRHGSMI
+        pData->pDisplay->destructCrHgsmiData();
+#endif
         pData->pDisplay->mpDrv = NULL;
         pData->pDisplay->mpVMMDev = NULL;
         pData->pDisplay->mLastAddress = NULL;
@@ -3862,6 +3989,10 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
 #ifdef VBOX_WITH_VIDEOHWACCEL
     pData->IConnector.pfnVHWACommandProcess = Display::displayVHWACommandProcess;
 #endif
+#ifdef VBOX_WITH_CRHGSMI
+    pData->IConnector.pfnCrHgsmiCommandProcess = Display::displayCrHgsmiCommandProcess;
+    pData->IConnector.pfnCrHgsmiControlProcess = Display::displayCrHgsmiControlProcess;
+#endif
 #ifdef VBOX_WITH_HGSMI
     pData->IConnector.pfnVBVAEnable         = Display::displayVBVAEnable;
     pData->IConnector.pfnVBVADisable        = Display::displayVBVADisable;
@@ -3882,7 +4013,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         AssertMsgFailed(("Configuration error: No display port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
-#if defined(VBOX_WITH_VIDEOHWACCEL)
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI)
     pData->pVBVACallbacks = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIDISPLAYVBVACALLBACKS);
     if (!pData->pVBVACallbacks)
     {
@@ -3912,6 +4043,10 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
      * Start periodic screen refreshes
      */
     pData->pUpPort->pfnSetRefreshRate(pData->pUpPort, 20);
+
+#ifdef VBOX_WITH_CRHGSMI
+    pData->pDisplay->setupCrHgsmiData();
+#endif
 
     return VINF_SUCCESS;
 }

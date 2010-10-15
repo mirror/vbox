@@ -37,6 +37,10 @@
 #define SHCRGL_HOST_FN_SET_VISIBLE_REGION (5)
 #define SHCRGL_HOST_FN_SET_VM (7)
 #define SHCRGL_HOST_FN_SCREEN_CHANGED (8)
+#ifdef VBOX_WITH_CRHGSMI
+#define SHCRGL_HOST_FN_CRHGSMI_CMD (10)
+#define SHCRGL_HOST_FN_CRHGSMI_CTL (11)
+#endif
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)

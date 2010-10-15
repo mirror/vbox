@@ -766,6 +766,29 @@ void VMMDev::hgcmShutdown(void)
     HGCMHostShutdown();
 }
 
+# ifdef VBOX_WITH_CRHGSMI
+int VMMDev::hgcmHostSvcHandleCreate (const char *pszServiceName, HGCMCVSHANDLE * phSvc)
+{
+    if (!hgcmIsActive())
+        return VERR_INVALID_STATE;
+    return HGCMHostSvcHandleCreate(pszServiceName, phSvc);
+}
+
+int VMMDev::hgcmHostSvcHandleDestroy (HGCMCVSHANDLE hSvc)
+{
+    if (!hgcmIsActive())
+        return VERR_INVALID_STATE;
+    return HGCMHostSvcHandleDestroy(hSvc);
+}
+
+int VMMDev::hgcmHostFastCallAsync (HGCMCVSHANDLE hSvc, uint32_t function, PVBOXHGCMSVCPARM pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion)
+{
+    if (!hgcmIsActive())
+        return VERR_INVALID_STATE;
+    return HGCMHostFastCallAsync(hSvc, function, pParm, pfnCompletion, pvCompletion);
+}
+# endif
+
 #endif /* HGCM */
 
 

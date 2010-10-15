@@ -126,6 +126,13 @@ public:
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand);
 #endif
+#ifdef VBOX_WITH_CRHGSMI
+    void handleCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd);
+    void handleCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCtl);
+
+    void handleCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
+    void handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam);
+#endif
     IFramebuffer *getFramebuffer()
     {
         return maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer;
@@ -168,6 +175,11 @@ private:
 
     void updateDisplayData(void);
 
+#ifdef VBOX_WITH_CRHGSMI
+    void setupCrHgsmiData(void);
+    void destructCrHgsmiData(void);
+#endif
+
     static DECLCALLBACK(int)   changeFramebuffer(Display *that, IFramebuffer *aFB, unsigned uScreenId);
 
     static DECLCALLBACK(void*) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
@@ -184,6 +196,14 @@ private:
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     static DECLCALLBACK(void)  displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand);
+#endif
+
+#ifdef VBOX_WITH_CRHGSMI
+    static DECLCALLBACK(void)  displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd);
+    static DECLCALLBACK(void)  displayCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCtl);
+
+    static DECLCALLBACK(void) displayCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
+    static DECLCALLBACK(void) displayCrHgsmiControlCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext);
 #endif
 
 #ifdef VBOX_WITH_HGSMI
@@ -235,6 +255,11 @@ private:
 
     uint8_t    *mpu8VbvaPartial;
     uint32_t   mcbVbvaPartial;
+
+#ifdef VBOX_WITH_CRHGSMI
+    /* for fast host hgcm calls */
+    HGCMCVSHANDLE mhCrOglSvc;
+#endif
 
     bool vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd);
     void vbvaReleaseCmd (VBVACMDHDR *pHdr, int32_t cbCmd);

@@ -25,7 +25,7 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
     g_VBoxCrHgsmiCallbacks = *pCallbacks;
     if (!g_hVBoxCrHgsmiProvider)
     {
-        BOOL bRc = GetModuleHandleEx(0, "VBoxDispD3D", &g_hVBoxCrHgsmiProvider);
+        BOOL bRc = GetModuleHandleEx(0, L"VBoxDispD3D", &g_hVBoxCrHgsmiProvider);
 //        g_hVBoxCrHgsmiProvider = GetModuleHandle(L"VBoxDispD3D");
         if (bRc)
         {
