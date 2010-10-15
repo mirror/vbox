@@ -3651,12 +3651,10 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
         if (fbo_blit_supported(&myDevice->adapter->gl_info, BLIT_OP_BLIT,
                                &src_rect, Src->resource.usage, Src->resource.pool, Src->resource.format_desc,
                                &dst_rect, This->resource.usage, This->resource.pool, This->resource.format_desc)
-            && ((!stretchx) || dst_rect.right - dst_rect.left > Src->currentDesc.Width
-                || dst_rect.bottom - dst_rect.top > Src->currentDesc.Height)
-            && (dst_rect.right==This->currentDesc.Width)
-            && (dst_rect.bottom==This->currentDesc.Height)
-            && (dst_rect.left==0)
-            && (dst_rect.top==0)
+            && (myDevice->adapter->driver_info.vendor==HW_VENDOR_NVIDIA
+                || (dst_rect.right==This->currentDesc.Width && dst_rect.bottom==This->currentDesc.Height
+                    && dst_rect.left==0 && dst_rect.top==0)
+               )
            )
         {
             stretch_rect_fbo((IWineD3DDevice *)myDevice, SrcSurface, &src_rect,
