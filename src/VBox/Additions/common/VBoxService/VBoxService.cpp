@@ -524,6 +524,16 @@ int main(int argc, char **argv)
         return VBoxServicePageSharingInitFork();
 #endif
 
+#ifdef VBOXSERVICE_TOOLBOX
+    /*
+     * Run toolbox code before all other stuff, especially before checking the global
+     * mutex because VBoxService might spawn itself to execute some commands.
+     */
+    rc = VBoxServiceToolboxMain(argc, argv);
+    if (rc != VERR_NOT_FOUND) /* Internal tool found? Then bail out. */
+        return rc;
+#endif
+
     /*
      * Do pre-init of services.
      */
@@ -534,7 +544,6 @@ int main(int argc, char **argv)
         if (RT_FAILURE(rc))
             return VBoxServiceError("Service '%s' failed pre-init: %Rrc\n", g_aServices[j].pDesc->pszName, rc);
     }
-
 #ifdef RT_OS_WINDOWS
     /*
      * Make sure only one instance of VBoxService runs at a time.  Create a
@@ -557,12 +566,6 @@ int main(int argc, char **argv)
          *        and 'VBoxService --version' won't work now when the service
          *        is running... */
     }
-#endif
-
-#ifdef VBOXSERVICE_TOOLBOX
-    rc = VBoxServiceToolboxMain(argc, argv);
-    if (rc != VERR_NOT_FOUND) /* Internal tool found? Then bail out. */
-        return rc;
 #endif
 
     /*
