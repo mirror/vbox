@@ -1731,6 +1731,99 @@
 /** @} */
 
 
+/** @defgroup grp_rt_cdefs_time     Time Constants
+ * @{
+ */
+/** 1 hour expressed in nanoseconds (64-bit). */
+#define RT_NS_1HOUR             UINT64_C(3600000000000)
+/** 1 minute expressed in nanoseconds (64-bit). */
+#define RT_NS_1MIN              UINT64_C(60000000000)
+/** 1 second expressed in nanoseconds. */
+#define RT_NS_1SEC              UINT32_C(1000000000)
+/** 100 millsecond expressed in nanoseconds. */
+#define RT_NS_100MS             UINT32_C(100000000)
+/** 10 millsecond expressed in nanoseconds. */
+#define RT_NS_10MS              UINT32_C(10000000)
+/** 1 millsecond expressed in nanoseconds. */
+#define RT_NS_1MS               UINT32_C(1000000)
+/** 100 microseconds expressed in nanoseconds. */
+#define RT_NS_100US             UINT32_C(100000)
+/** 10 microseconds expressed in nanoseconds. */
+#define RT_NS_10US              UINT32_C(10000)
+/** 1 microsecond expressed in nanoseconds. */
+#define RT_NS_1US               UINT32_C(1000)
+
+/** 1 second expressed in nanoseconds - 64-bit type. */
+#define RT_NS_1SEC_64           UINT64_C(1000000000)
+/** 100 millsecond expressed in nanoseconds - 64-bit type. */
+#define RT_NS_100MS_64          UINT64_C(100000000)
+/** 10 millsecond expressed in nanoseconds - 64-bit type. */
+#define RT_NS_10MS_64           UINT64_C(10000000)
+/** 1 millsecond expressed in nanoseconds - 64-bit type. */
+#define RT_NS_1MS_64            UINT64_C(1000000)
+/** 100 microseconds expressed in nanoseconds - 64-bit type. */
+#define RT_NS_100US_64          UINT64_C(100000)
+/** 10 microseconds expressed in nanoseconds - 64-bit type. */
+#define RT_NS_10US_64           UINT64_C(10000)
+/** 1 microsecond expressed in nanoseconds - 64-bit type. */
+#define RT_NS_1US_64            UINT64_C(1000)
+
+/** 1 hour expressed in microseconds. */
+#define RT_US_1HOUR             UINT32_C(3600000000)
+/** 1 minute expressed in microseconds. */
+#define RT_US_1MIN              UINT32_C(60000000)
+/** 1 second expressed in microseconds. */
+#define RT_US_1SEC              UINT32_C(1000000)
+/** 100 millsecond expressed in microseconds. */
+#define RT_US_100MS             UINT32_C(100000)
+/** 10 millsecond expressed in microseconds. */
+#define RT_US_10MS              UINT32_C(10000)
+/** 1 millsecond expressed in microseconds. */
+#define RT_US_1MS               UINT32_C(1000)
+
+/** 1 hour expressed in microseconds - 64-bit type. */
+#define RT_US_1HOUR_64          UINT64_C(3600000000)
+/** 1 minute expressed in microseconds - 64-bit type. */
+#define RT_US_1MIN_64           UINT64_C(60000000)
+/** 1 second expressed in microseconds - 64-bit type. */
+#define RT_US_1SEC_64           UINT64_C(1000000)
+/** 100 millsecond expressed in microseconds - 64-bit type. */
+#define RT_US_100MS_64          UINT64_C(100000)
+/** 10 millsecond expressed in microseconds - 64-bit type. */
+#define RT_US_10MS_64           UINT64_C(10000)
+/** 1 millsecond expressed in microseconds - 64-bit type. */
+#define RT_US_1MS_64            UINT64_C(1000)
+
+/** 1 hour expressed in milliseconds. */
+#define RT_MS_1HOUR             UINT32_C(3600000)
+/** 1 minute expressed in milliseconds. */
+#define RT_MS_1MIN              UINT32_C(60000)
+/** 1 second expressed in milliseconds. */
+#define RT_MS_1SEC              UINT32_C(1000)
+
+/** 1 hour expressed in milliseconds - 64-bit type. */
+#define RT_MS_1HOUR_64          UINT64_C(3600000)
+/** 1 minute expressed in milliseconds - 64-bit type. */
+#define RT_MS_1MIN_64           UINT64_C(60000)
+/** 1 second expressed in milliseconds - 64-bit type. */
+#define RT_MS_1SEC_64           UINT64_C(1000)
+
+/** The number of seconds per week. */
+#define RT_SEC_1WEEK            UINT32_C(604800)
+/** The number of seconds per day. */
+#define RT_SEC_1DAY             UINT32_C(86400)
+/** The number of seconds per hour. */
+#define RT_SEC_1HOUR            UINT32_C(3600)
+
+/** The number of seconds per week - 64-bit type. */
+#define RT_SEC_1WEEK_64         UINT64_C(604800)
+/** The number of seconds per day - 64-bit type. */
+#define RT_SEC_1DAY_64          UINT64_C(86400)
+/** The number of seconds per hour - 64-bit type. */
+#define RT_SEC_1HOUR_64         UINT64_C(3600)
+/** @}  */
+
+
 /** @defgroup grp_rt_cdefs_dbgtype  Debug Info Types
  * @{ */
 /** Other format. */
