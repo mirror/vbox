@@ -1406,6 +1406,10 @@ RuntimeR0Drv_SOURCES    = \
 	generic/RTLogWriteUser-generic.cpp \
 	generic/RTMpGetArraySize-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
+ 	generic/RTSemEventWait-2-ex-generic.cpp \
+ 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
+ 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
+ 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/uuid-generic.cpp \
 	r0drv/alloc-r0drv.cpp \
 	r0drv/initterm-r0drv.cpp \
@@ -1429,10 +1433,6 @@ RuntimeR0Drv_SOURCES.linux = \
 	common/err/RTErrConvertFromErrno.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
- 	generic/RTSemEventWait-2-ex-generic.cpp \
- 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/assert-r0drv-linux.c \
@@ -1468,10 +1468,6 @@ RuntimeR0Drv_SOURCES.win = \
 	common/string/strpbrk.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
- 	generic/RTSemEventWait-2-ex-generic.cpp \
- 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
@@ -1509,10 +1505,6 @@ RuntimeR0Drv_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwinIO.cpp \
 	darwin/RTErrConvertFromDarwinKern.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
- 	generic/RTSemEventWait-2-ex-generic.cpp \
- 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
@@ -1639,10 +1631,6 @@ RuntimeR0Drv_SOURCES.solaris = \
 	common/string/memchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
- 	generic/RTSemEventWait-2-ex-generic.cpp \
- 	generic/RTSemEventWaitNoResume-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
- 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
