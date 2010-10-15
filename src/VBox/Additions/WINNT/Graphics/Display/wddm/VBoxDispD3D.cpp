@@ -731,17 +731,32 @@ static VBOXUHGSMI_PRIVATE_KMT g_VBoxUhgsmiKmt;
 static uint32_t g_cVBoxUhgsmiKmtRefs = 0;
 #endif
 
-VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
-{
-#ifdef VBOX_WITH_CRHGSMI
-    g_VBoxCrHgsmiCallbacks = *pCallbacks;
-#endif
-    return VINF_SUCCESS;
-}
-
 #ifdef VBOX_WITH_CRHGSMI
 static __declspec(thread) PVBOXUHGSMI_PRIVATE_BASE gt_pHgsmi = NULL;
 #endif
+
+VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
+{
+#ifdef VBOX_WITH_CRHGSMI
+    vboxDispLock(); /* the lock is needed here only to ensure callbacks are not initialized & used concurrently
+                     * @todo: make a separate call used to init the per-thread info and make the VBoxDispCrHgsmiInit be called only once */
+    g_VBoxCrHgsmiCallbacks = *pCallbacks;
+    PVBOXUHGSMI_PRIVATE_BASE pHgsmi = gt_pHgsmi;
+#ifdef DEBUG_misha
+    Assert(pHgsmi);
+#endif
+    if (pHgsmi)
+    {
+        if (!pHgsmi->hClient)
+        {
+            pHgsmi->hClient = g_VBoxCrHgsmiCallbacks.pfnClientCreate(&pHgsmi->Base);
+            Assert(pHgsmi->hClient);
+        }
+    }
+    vboxDispUnlock();
+#endif
+    return VINF_SUCCESS;
+}
 
 VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiTerm()
 {
@@ -752,44 +767,60 @@ VBOXWDDMDISP_DECL(HVBOXCRHGSMI_CLIENT) VBoxDispCrHgsmiQueryClient()
 {
 #ifdef VBOX_WITH_CRHGSMI
     PVBOXUHGSMI_PRIVATE_BASE pHgsmi = gt_pHgsmi;
+#ifdef DEBUG_misha
+    Assert(pHgsmi);
+#endif
     if (pHgsmi)
+    {
+        Assert(pHgsmi->hClient);
         return pHgsmi->hClient;
+    }
 #endif
     return NULL;
 }
 
 #ifdef VBOX_WITH_CRHGSMI
-static int vboxUhgsmiGlobalRetain()
+static HRESULT vboxUhgsmiGlobalRetain()
 {
-    int rc = VINF_SUCCESS;
+    HRESULT hr = S_OK;
     vboxDispLock();
     if (!g_cVBoxUhgsmiKmtRefs)
     {
-        rc = vboxUhgsmiKmtCreate(&g_VBoxUhgsmiKmt, TRUE);
-        AssertRC(rc);
+        hr = vboxUhgsmiKmtCreate(&g_VBoxUhgsmiKmt, TRUE);
+        Assert(hr == S_OK);
+        /* can not do it here because callbacks may not be set yet
+         * @todo: need to call the cr lib from here to get the callbacks
+         * rather than making the cr lib call us */
+//        if (hr == S_OK)
+//        {
+//            g_VBoxUhgsmiKmt.BasePrivate.hClient = g_VBoxCrHgsmiCallbacks.pfnClientCreate(&g_VBoxUhgsmiKmt.BasePrivate.Base);
+//            Assert(g_VBoxUhgsmiKmt.BasePrivate.hClient);
+//        }
     }
 
-    if (RT_SUCCESS(rc))
+    if (hr == S_OK)
     {
         ++g_cVBoxUhgsmiKmtRefs;
     }
     vboxDispUnlock();
 
-    return rc;
+    return hr;
 }
 
-static int vboxUhgsmiGlobalRelease()
+static HRESULT vboxUhgsmiGlobalRelease()
 {
-    int rc = VINF_SUCCESS;
+    HRESULT hr = S_OK;
     vboxDispLock();
     --g_cVBoxUhgsmiKmtRefs;
     if (!g_cVBoxUhgsmiKmtRefs)
     {
-        rc = vboxUhgsmiKmtDestroy(&g_VBoxUhgsmiKmt);
-        AssertRC(rc);
+        if (g_VBoxUhgsmiKmt.BasePrivate.hClient)
+            g_VBoxCrHgsmiCallbacks.pfnClientDestroy(g_VBoxUhgsmiKmt.BasePrivate.hClient);
+        hr = vboxUhgsmiKmtDestroy(&g_VBoxUhgsmiKmt);
+        Assert(hr == S_OK);
     }
     vboxDispUnlock();
-    return rc;
+    return hr;
 }
 
 DECLINLINE(void) vboxDispCrHgsmiClientSet(PVBOXUHGSMI_PRIVATE_BASE pHgsmi)
@@ -802,20 +833,20 @@ DECLINLINE(void) vboxDispCrHgsmiClientClear()
     gt_pHgsmi = NULL;
 }
 
-int vboxUhgsmiGlobalSetCurrent()
+HRESULT vboxUhgsmiGlobalSetCurrent()
 {
-    int rc = vboxUhgsmiGlobalRetain();
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
+    HRESULT hr = vboxUhgsmiGlobalRetain();
+    Assert(hr == S_OK);
+    if (hr == S_OK)
         vboxDispCrHgsmiClientSet(&g_VBoxUhgsmiKmt.BasePrivate);
-    return rc;
+    return hr;
 }
 
-int vboxUhgsmiGlobalClearCurrent()
+HRESULT vboxUhgsmiGlobalClearCurrent()
 {
     vboxUhgsmiGlobalRelease();
     vboxDispCrHgsmiClientClear();
-    return VINF_SUCCESS;
+    return S_OK;
 }
 
 class VBoxDispCrHgsmiScope
@@ -6967,6 +6998,13 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
         pDevice->pDevice9If->Release();
     }
 
+#ifdef VBOX_WITH_CRHGSMI
+    vboxDispLock();
+    if (pDevice->Uhgsmi.BasePrivate.hClient)
+        g_VBoxCrHgsmiCallbacks.pfnClientDestroy(pDevice->Uhgsmi.BasePrivate.hClient);
+    vboxDispUnlock();
+#endif
+
     HRESULT hr = vboxDispCmCtxDestroy(pDevice, &pDevice->DefaultContext);
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -7726,9 +7764,9 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
             do
             {
 #ifdef VBOX_WITH_CRHGSMI
-                int rc = vboxUhgsmiGlobalRetain();
-                AssertRC(rc);
-                if (RT_SUCCESS(rc))
+                hr = vboxUhgsmiGlobalRetain();
+                Assert(hr == S_OK);
+                if (hr == S_OK)
 #endif
                 {
                     VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL();
@@ -7771,12 +7809,6 @@ HRESULT APIENTRY OpenAdapter (__inout D3DDDIARG_OPENADAPTER*  pOpenData)
                     vboxUhgsmiGlobalRelease();
 #endif
                 }
-#ifdef VBOX_WITH_CRHGSMI
-                else
-                {
-                    hr = E_FAIL;
-                }
-#endif
             } while (0);
         }
 #ifdef VBOX_WITH_VIDEOHWACCEL

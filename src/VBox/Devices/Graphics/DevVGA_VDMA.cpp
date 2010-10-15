@@ -246,6 +246,7 @@ static bool vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR p
                 PVGASTATE pVGAState = pVdma->pVGAState;
                 if (pVGAState->pDrv->pfnCrHgsmiCommandProcess)
                 {
+                    VBoxSHGSMICommandMarkAsynchCompletion(pCmd);
                     pVGAState->pDrv->pfnCrHgsmiCommandProcess(pVGAState->pDrv, pCrCmd);
                     return true;
                 }
@@ -275,10 +276,11 @@ int vboxVDMACrHgsmiCommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PV
     PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
     VBOXVDMACMD *pDmaHdr = VBOXVDMACMD_FROM_BODY(pCmd);
     VBOXVDMACBUF_DR *pDr = VBOXVDMACBUF_DR_FROM_TAIL(pDmaHdr);
+    AssertRC(rc);
     pDr->rc = rc;
 
     Assert(pVGAState->fGuestCaps & VBVACAPS_COMPLETEGCMD_BY_IOREAD);
-    rc = HGSMICompleteGuestCommand(pIns, pDr, true /* do Irq */);
+    rc = VBoxSHGSMICommandComplete(pIns, pDr);
     AssertRC(rc);
     return rc;
 }
@@ -288,6 +290,7 @@ int vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PV
     PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
     PVBOXVDMACMD_CHROMIUM_CTL_PRIVATE pCmdPrivate = VBOXVDMACMD_CHROMIUM_CTL_PRIVATE_FROM_CTL(pCmd);
     pCmdPrivate->rc = rc;
+    AssertRC(rc);
     if (pCmdPrivate->pfnCompletion)
     {
         pCmdPrivate->pfnCompletion(pVGAState, pCmd, pCmdPrivate->pvCompletion);
@@ -1073,6 +1076,10 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
 #ifdef VBOX_WITH_CRHGSMI
     if (vboxVDMACmdCheckCrCmd(pVdma, pCmd))
         return;
+#endif
+
+#ifdef DEBUG_misha
+    Assert(0);
 #endif
 
     VBOXVDMACMD_SUBMIT_CONTEXT Context;

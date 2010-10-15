@@ -66,6 +66,19 @@ static void vboxWddmPopulateDmaAllocInfo(PVBOXWDDM_DMA_ALLOCINFO pInfo, PVBOXWDD
     pInfo->srcId = pAlloc->SurfDesc.VidPnSourceId;
 }
 
+static void vboxWddmPopulateDmaAllocInfoWithOffset(PVBOXWDDM_DMA_ALLOCINFO pInfo, PVBOXWDDM_ALLOCATION pAlloc, DXGK_ALLOCATIONLIST *pDmaAlloc, uint32_t offStart)
+{
+    pInfo->pAlloc = pAlloc;
+    if (pDmaAlloc->SegmentId)
+    {
+        pInfo->offAlloc = (VBOXVIDEOOFFSET)pDmaAlloc->PhysicalAddress.QuadPart + offStart;
+        pInfo->segmentIdAlloc = pDmaAlloc->SegmentId;
+    }
+    else
+        pInfo->segmentIdAlloc = 0;
+    pInfo->srcId = pAlloc->SurfDesc.VidPnSourceId;
+}
+
 //VBOXVIDEOOFFSET vboxWddmVRAMAddressToOffset(PDEVICE_EXTENSION pDevExt, PHYSICAL_ADDRESS phAddress)
 //{
 //    Assert(phAddress.QuadPart >= VBE_DISPI_LFB_PHYSICAL_ADDRESS);
@@ -1436,7 +1449,10 @@ NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATI
 //#endif
         case VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER:
         {
-            ObDereferenceObject(pAllocation->pSynchEvent);
+            if (pAllocation->pSynchEvent)
+            {
+                ObDereferenceObject(pAllocation->pSynchEvent);
+            }
             break;
         }
         default:
@@ -1576,7 +1592,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                     pAllocation->enmSynchType = pAllocInfo->enmSynchType;
                     pAllocation->SurfDesc.cbSize = pAllocInfo->cbBuffer;
                     pAllocationInfo->Flags.CpuVisible = 1;
-                    pAllocationInfo->Flags.SynchronousPaging = 1;
+//                    pAllocationInfo->Flags.SynchronousPaging = 1;
                     pAllocationInfo->AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_MAXIMUM;
                     switch (pAllocInfo->enmSynchType)
                     {
@@ -1594,7 +1610,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_RESOURCE 
                             break;
                         case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
                             pAllocation->pSynchEvent = NULL;
-                            Status == STATUS_SUCCESS;
+                            Status = STATUS_SUCCESS;
                             break;
                         default:
                             drprintf((__FUNCTION__ ": ERROR: invalid synch info type(%d)\n", pAllocInfo->enmSynchType));
@@ -2032,7 +2048,8 @@ DxgkDdiPatch(
                     {
                         DXGK_ALLOCATIONLIST *pAllocation2Patch = (DXGK_ALLOCATIONLIST*)(pPrivateBuf + pPatchList->PatchOffset);
                         pAllocation2Patch->SegmentId = pAllocationList->SegmentId;
-                        pAllocation2Patch->PhysicalAddress = pAllocationList->PhysicalAddress;
+                        pAllocation2Patch->PhysicalAddress.QuadPart = pAllocationList->PhysicalAddress.QuadPart + pPatchList->AllocationOffset;
+                        Assert(!(pAllocationList->PhysicalAddress.QuadPart & 0xfffUL)); /* <- just a check to ensure allocation offset does not go here */
                     }
                 }
                 break;
@@ -2542,6 +2559,7 @@ DxgkDdiBuildPagingBuffer(
     vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
@@ -2550,6 +2568,39 @@ DxgkDdiBuildPagingBuffer(
     {
         case DXGK_OPERATION_TRANSFER:
         {
+            PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pBuildPagingBuffer->Transfer.hAllocation;
+            uint8_t* pvVramBase = pDevExt->pvVisibleVram;
+            SIZE_T cbSize = pBuildPagingBuffer->Transfer.TransferSize;
+            uint8_t *pvSrc, *pvDst;
+            if (pBuildPagingBuffer->Transfer.Source.SegmentId)
+            {
+#ifdef DEBUG_misha
+                Assert(pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart);
+#endif
+                pvSrc  = pvVramBase + pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart;
+                pvSrc += pBuildPagingBuffer->Transfer.TransferOffset;
+            }
+            else
+            {
+                pvSrc  = (uint8_t*)MmGetMdlVirtualAddress(pBuildPagingBuffer->Transfer.Source.pMdl);
+                pvSrc += pBuildPagingBuffer->Transfer.MdlOffset * 0x1000 /* page size */;
+            }
+
+            if (pBuildPagingBuffer->Transfer.Destination.SegmentId)
+            {
+#ifdef DEBUG_misha
+                Assert(pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart);
+#endif
+                pvDst  = pvVramBase + pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart;
+                pvDst += pBuildPagingBuffer->Transfer.TransferOffset;
+            }
+            else
+            {
+                pvDst  = (uint8_t*)MmGetMdlVirtualAddress(pBuildPagingBuffer->Transfer.Destination.pMdl);
+                pvDst += pBuildPagingBuffer->Transfer.MdlOffset * 0x1000 /* page size */;
+            }
+
+            memcpy(pvDst, pvSrc, cbSize);
 //            pBuildPagingBuffer->pDmaBuffer = (uint8_t*)pBuildPagingBuffer->pDmaBuffer + VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
             break;
         }
@@ -4066,7 +4117,7 @@ DxgkDdiRender(
             for (UINT i = 0; i < pChromiumCmd->Base.u32CmdReserved; ++i)
             {
                 PVBOXWDDM_ALLOCATION pAlloc = vboxWddmGetAllocationFromAllocList(pDevExt, pAllocationList);
-                vboxWddmPopulateDmaAllocInfo(&pSubmInfo->Alloc, pAlloc, pAllocationList);
+                vboxWddmPopulateDmaAllocInfoWithOffset(&pSubmInfo->Alloc, pAlloc, pAllocationList, pSubmUmInfo->offData);
 
                 pSubmInfo->cbData = pSubmUmInfo->cbData;
                 pSubmInfo->bDoNotSignalCompletion = pSubmUmInfo->fSubFlags.bDoNotSignalCompletion;

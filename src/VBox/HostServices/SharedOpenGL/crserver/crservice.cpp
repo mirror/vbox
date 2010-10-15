@@ -460,6 +460,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 static int vboxCrHgsmiCtl(PVBOXVDMACMD_CHROMIUM_CTL pCtl)
 {
     int rc;
+
     switch (pCtl->enmType)
     {
         case VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP:

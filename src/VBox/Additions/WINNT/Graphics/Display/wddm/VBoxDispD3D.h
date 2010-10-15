@@ -266,8 +266,8 @@ typedef struct VBOXWDDMDISP_OVERLAY
 } VBOXWDDMDISP_OVERLAY, *PVBOXWDDMDISP_OVERLAY;
 
 #ifdef VBOX_WITH_CRHGSMI
-int vboxUhgsmiGlobalSetCurrent();
-int vboxUhgsmiGlobalClearCurrent();
+HRESULT vboxUhgsmiGlobalSetCurrent();
+HRESULT vboxUhgsmiGlobalClearCurrent();
 #endif
 
 #define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
