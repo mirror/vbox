@@ -37,6 +37,7 @@
 #include <iprt/lockvalidator.h>
 #include <iprt/mem.h>
 #include <iprt/time.h>
+#include <iprt/timer.h>
 
 #include "internal/magics.h"
 
