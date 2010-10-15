@@ -22,6 +22,8 @@
 #include <stdio.h>
 
 #include <iprt/assert.h>
+#include <iprt/file.h>
+#include <iprt/getopt.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -42,6 +44,7 @@ void VBoxServiceToolboxShowUsage(void)
              "\n");
 }
 
+
 /**
  *
  *
@@ -61,6 +64,15 @@ int VBoxServiceToolboxErrorSyntax(const char *pszFormat, ...)
     return VERR_INVALID_PARAMETER;
 }
 
+
+/**
+ *
+ *
+ * @return  int
+ *
+ * @param   argc
+ * @param   argv
+ */
 int VBoxServiceToolboxCatMain(int argc, char **argv)
 {
     int rc = VINF_SUCCESS;
@@ -69,9 +81,141 @@ int VBoxServiceToolboxCatMain(int argc, char **argv)
     {
     }
     if (!usageOK)
-        rc = VBoxServiceToolboxErrorSyntax(0 /* TODO */, "Incorrect parameters");
+        rc = VBoxServiceToolboxErrorSyntax("Incorrect parameters!");
     return rc;
 }
+
+
+/**
+ *
+ *
+ * @return  int
+ *
+ * @param   hInput
+ * @param   hOutput
+ */
+int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
+{
+    int rc = VINF_SUCCESS;
+    if (hInput == NIL_RTFILE)
+    {
+#ifdef RT_OS_WINDOWS
+        rc = RTFileFromNative(&hInput, STD_INPUT_HANDLE);
+#else
+        rc = RTFileFromNative(&hInput, 0 /*stdin*/);
+#endif
+        if (RT_FAILURE(rc))
+            VBoxServiceError("Cat: Could not translate input file to native handle, rc=%Rrc\n", rc);
+    }
+
+    if (hOutput == NIL_RTFILE)
+    {
+#ifdef RT_OS_WINDOWS
+        rc = RTFileFromNative(&hOutput, STD_OUTPUT_HANDLE);
+#else
+        rc = RTFileFromNative(&hOutput, 1 /*stdout*/);
+#endif
+        if (RT_FAILURE(rc))
+            VBoxServiceError("Cat: Could not translate output file to native handle, rc=%Rrc\n", rc);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t abBuf[_64K];
+        size_t cbRead;
+        for (;;)
+        {
+            rc = RTFileRead(hInput, abBuf, sizeof(abBuf), &cbRead);
+            if (RT_SUCCESS(rc) && cbRead)
+            {
+                rc = RTFileWrite(hOutput, abBuf, cbRead, NULL /* Try to write all at once! */);
+                cbRead = 0;
+            }
+            else
+            {
+                if (   cbRead == 0
+                    && rc     == VERR_BROKEN_PIPE)
+                {
+                    rc = VINF_SUCCESS;
+                }
+                break;
+            }
+        }
+    }
+    return rc;
+}
+
+
+/**
+ *
+ *
+ * @return  int
+ *
+ * @param   argc
+ * @param   argv
+ */
+int VBoxServiceToolboxCat(int argc, char **argv)
+{
+     static const RTGETOPTDEF s_aOptions[] =
+     {
+         { "--input",     'i', RTGETOPT_REQ_STRING },
+         { "--output",    'o', RTGETOPT_REQ_STRING }
+     };
+
+     int ch;
+     RTGETOPTUNION ValueUnion;
+     RTGETOPTSTATE GetState;
+     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+
+     int rc = VINF_SUCCESS;
+     //bool fSeenInput = false;
+     RTFILE hInput = NIL_RTFILE;
+     RTFILE hOutput = NIL_RTFILE;
+
+     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+            && RT_SUCCESS(rc))
+     {
+         /* For options that require an argument, ValueUnion has received the value. */
+         switch (ch)
+         {
+             case 'o':
+                 rc = RTFileOpen(&hOutput, ValueUnion.psz,
+                                 RTFILE_O_CREATE_REPLACE | RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE);
+                 if (RT_FAILURE(rc))
+                     VBoxServiceError("Cat: Could not create output file \"%s\"! rc=%Rrc\n",
+                                      ValueUnion.psz, rc);
+                 break;
+
+             case 'i':
+             case VINF_GETOPT_NOT_OPTION:
+             {
+                 /*rc = VBoxServiceToolboxCatInput(ValueUnion.psz, hOutput);
+                 if (RT_SUCCESS(rc))
+                     fSeenInput = true;*/
+
+                 rc = RTFileOpen(&hInput, ValueUnion.psz,
+                                 RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+                 if (RT_FAILURE(rc))
+                     VBoxServiceError("Cat: Could not open input file \"%s\"! rc=%Rrc\n",
+                                      ValueUnion.psz, rc);
+                 break;
+             }
+
+             default:
+                 return RTGetOptPrintError(ch, &ValueUnion);
+         }
+     }
+
+     if (RT_SUCCESS(rc) /*&& !fSeenInput*/)
+         rc  = VBoxServiceToolboxCatOutput(hInput, hOutput);
+
+     if (hInput != NIL_RTFILE)
+         RTFileClose(hInput);
+     if (hOutput != NIL_RTFILE)
+         RTFileClose(hOutput);
+     return rc;
+}
+
 
 /**
  * Main routine for toolbox command line handling.
@@ -84,57 +228,11 @@ int VBoxServiceToolboxCatMain(int argc, char **argv)
 int VBoxServiceToolboxMain(int argc, char **argv)
 {
     int rc = VERR_NOT_FOUND;
-
-    bool fUsageOK = true;
     if (argc >= 1) /* Do we have at least a main command? */
     {
         if (!strcmp(argv[1], "cat"))
-        {
-            /** @todo Move this block into an own "cat main" routine! */
-            PRTSTREAM pStream;
-            bool fHaveFile = false;
-
-            /* Do we have a file as second argument? */
-            if (argc == 2)
-            {
-                /* Use stdin as standard input stream. */
-                pStream = g_pStdIn;
-                rc = VINF_SUCCESS;
-            }
-            else if (argc == 3)
-            {
-                rc = RTStrmOpen(argv[2], /* Filename */
-                                "rb",    /* Read binary */
-                                &pStream);
-                if (RT_SUCCESS(rc))
-                    fHaveFile = true;
-            }
-            else
-                fUsageOK = false;
-
-
-            if (RT_SUCCESS(rc))
-            {
-                uint8_t cBuf[_64K];
-                size_t cbRead;
-                do
-                {
-                    rc = RTStrmReadEx(pStream, cBuf, sizeof(cBuf), &cbRead);
-                    if (RT_SUCCESS(rc))
-                        rc = RTStrmWrite(g_pStdOut, cBuf, cbRead);
-                } while (RT_SUCCESS(rc) && cbRead);
-                RTStrmFlush(g_pStdOut);
-
-                /* Close opened file handle. */
-                if (fHaveFile)
-                    rc = RTStrmClose(pStream);
-            }
-        }
+            rc = VBoxServiceToolboxCat(argc - 1, &argv[1]);
     }
-    /* Ignore usage errors when using an unknown command - this might
-     * be a regular VBoxService startup command (--whatever)! */
-    if (!fUsageOK)
-        rc = VBoxServiceToolboxErrorSyntax(0 /* TODO */, "Incorrect parameters");
 
     if (rc != VERR_NOT_FOUND)
         rc = RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
