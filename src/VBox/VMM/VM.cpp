@@ -830,11 +830,17 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
 
         for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltYield,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state yielding.", "/PROF/VM/CPU%d/Halt/Yield", idCpu);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltYield,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state yielding.",  "/PROF/VM/CPU%d/Halt/Yield", idCpu);
             AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlock,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state blocking.", "/PROF/VM/CPU%d/Halt/Block", idCpu);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlock,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state blocking.",  "/PROF/VM/CPU%d/Halt/Block", idCpu);
             AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltTimers, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state timer tasks.", "/PROF/VM/CPU%d/Halt/Timers", idCpu);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockOverslept,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time wasted by blocking too long.", "/PROF/VM/CPU%d/Halt/BlockOverslept", idCpu);
+            AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockInsomnia,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time slept when returning to early.","/PROF/VM/CPU%d/Halt/BlockInsomnia", idCpu);
+            AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlockOnTime,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Time slept on time.",                "/PROF/VM/CPU%d/Halt/BlockOnTime", idCpu);
+            AssertRC(rc);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltTimers,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL, "Profiling halted state timer tasks.", "/PROF/VM/CPU%d/Halt/Timers", idCpu);
             AssertRC(rc);
         }
 
