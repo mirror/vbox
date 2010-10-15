@@ -219,6 +219,9 @@ typedef struct VBOXVIDEO_COMMON
                                          * This is mapped by miniport separately.
                                          */
 
+    /** Host HGSMI capabilities the guest can handle */
+    uint32_t fCaps;
+
     BOOLEAN bHGSMI;                     /* Whether HGSMI is enabled. */
 
     HGSMIAREA areaHostHeap;             /* Host heap VRAM area. */
@@ -231,7 +234,7 @@ typedef struct VBOXVIDEO_COMMON
     RTIOPORT IOPortHost;
 
     /* The IO Port Number for guest commands. */
-    RTIOPORT IOPortGuest;
+    RTIOPORT IOPortGuest;    
 } VBOXVIDEO_COMMON, *PVBOXVIDEO_COMMON;
 
 typedef struct _DEVICE_EXTENSION
@@ -885,7 +888,7 @@ VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
 #ifndef VBOX_WITH_WDDM
                              PVIDEO_PORT_CONFIG_INFO pConfigInfo,
 #endif
-                             ULONG AdapterMemorySize);
+                             ULONG AdapterMemorySize, uint32_t fCaps);
 BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);

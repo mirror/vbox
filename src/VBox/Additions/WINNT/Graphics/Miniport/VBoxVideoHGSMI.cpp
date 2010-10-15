@@ -315,7 +315,7 @@ static int vbvaFinalizeQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvDa
     return VINF_SUCCESS;
 }
 
-static int vboxQueryConfHGSMI (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32Index, ULONG *pulValue)
+static int vboxQueryConfHGSMI (PVBOXVIDEO_COMMON pCommon, uint32_t u32Index, ULONG *pulValue)
 {
     dprintf(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
 
@@ -324,7 +324,7 @@ static int vboxQueryConfHGSMI (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32I
     context.u32Index = u32Index;
     context.pulValue = pulValue;
 
-    int rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
+    int rc = vboxCallVBVA (pCommon,
                            VBVA_QUERY_CONF32,
                            sizeof (VBVACONF32),
                            vbvaInitQueryConf,
@@ -388,12 +388,12 @@ static int vbvaInitInfoDisplay (void *pvData, VBVAINFOVIEW *p)
     AssertFailed ();
     return VERR_INTERNAL_ERROR;
 }
-#else
-int vbvaInitInfoCaps (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
+#endif
+int vbvaInitInfoCaps (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
 {
     VBVACAPS *pCaps = (VBVACAPS*)pvData;
     pCaps->rc = VERR_NOT_IMPLEMENTED;
-    pCaps->fCaps = VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ;
+    pCaps->fCaps = pCommon->fCaps;
     return VINF_SUCCESS;
 }
 
@@ -404,7 +404,6 @@ int vbvaFinalizeInfoCaps (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
     AssertRC(pCaps->rc);
     return pCaps->rc;
 }
-#endif
 
 static int vbvaInitInfoHeap (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
 {
@@ -444,20 +443,22 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
                        NULL,
                        NULL);
     AssertRC(rc);
-    if(RT_SUCCESS (rc))
-    {
 #ifndef VBOX_WITH_WDDM
+    if (RT_SUCCESS(rc))
+    {
         rc = VBoxHGSMISendViewInfo (commonFromDeviceExt(PrimaryExtension),
                                PrimaryExtension->u.primary.cDisplays,
                                vbvaInitInfoDisplay,
                                (void *) PrimaryExtension);
         AssertRC(rc);
-        if (RT_SUCCESS (rc))
-#else
-        /* in case of WDDM we do not control the framebuffer location,
-         * i.e. it is assigned by Video Memory Manager,
-         * The FB information should be passed to guest from our DxgkDdiSetVidPnSourceAddress callback */
-
+    }
+    /* in case of WDDM we do not control the framebuffer location,
+     * i.e. it is assigned by Video Memory Manager,
+     * The FB information should be passed to guest from our
+     * DxgkDdiSetVidPnSourceAddress callback */
+#endif
+    if (RT_SUCCESS(rc) && commonFromDeviceExt(PrimaryExtension)->fCaps)
+    {
         /* Inform about caps */
         rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
                                VBVA_INFO_CAPS,
@@ -466,18 +467,17 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
                                vbvaFinalizeInfoCaps,
                                NULL);
         AssertRC(rc);
-        if (RT_SUCCESS (rc))
-#endif
-        {
-            /* Report the host heap location. */
-            rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
-                               VBVA_INFO_HEAP,
-                               sizeof (VBVAINFOHEAP),
-                               vbvaInitInfoHeap,
-                               NULL,
-                               NULL);
-            AssertRC(rc);
-        }
+    }
+    if (RT_SUCCESS (rc))
+    {
+        /* Report the host heap location. */
+        rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
+                           VBVA_INFO_HEAP,
+                           sizeof (VBVAINFOHEAP),
+                           vbvaInitInfoHeap,
+                           NULL,
+                           NULL);
+        AssertRC(rc);
     }
 
 
@@ -720,7 +720,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 #ifndef VBOX_WITH_WDDM
         PVIDEO_PORT_CONFIG_INFO pConfigInfo,
 #endif
-        ULONG AdapterMemorySize)
+        ULONG AdapterMemorySize, uint32_t fCaps)
 {
     VP_STATUS rc = NO_ERROR;
 
@@ -749,7 +749,8 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation     = NULL;
     commonFromDeviceExt(PrimaryExtension)->pHostFlags               = NULL;
     PrimaryExtension->u.primary.ulMaxFrameBufferSize     = 0;
-    commonFromDeviceExt(PrimaryExtension)->bHGSMI         = VBoxHGSMIIsSupported ();
+    commonFromDeviceExt(PrimaryExtension)->fCaps         = fCaps;
+    commonFromDeviceExt(PrimaryExtension)->bHGSMI        = VBoxHGSMIIsSupported ();
     VBoxVideoCmnMemZero(&commonFromDeviceExt(PrimaryExtension)->areaHostHeap, sizeof(HGSMIAREA));
     VBoxVideoCmnMemZero(&PrimaryExtension->areaDisplay, sizeof(HGSMIAREA));
 
@@ -802,7 +803,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     {
         /* The miniport heap is used for the host buffers. */
         ULONG cbMiniportHeap = 0;
-        vboxQueryConfHGSMI (PrimaryExtension, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbMiniportHeap);
+        vboxQueryConfHGSMI (commonFromDeviceExt(PrimaryExtension), VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbMiniportHeap);
 
         if (cbMiniportHeap != 0)
         {
@@ -886,7 +887,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         {
             /* Query the configured number of displays. */
             ULONG cDisplays = 0;
-            vboxQueryConfHGSMI (PrimaryExtension, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
+            vboxQueryConfHGSMI (commonFromDeviceExt(PrimaryExtension), VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
 
             dprintf(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
                      cDisplays));
@@ -1246,6 +1247,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
     return RT_SUCCESS(rc) && RT_SUCCESS(ctx.i32Result);
 }
 
+#ifndef VBOX_WITH_WDDM
 typedef struct _VBVAMINIPORT_CHANNELCONTEXT
 {
     PFNHGSMICHANNELHANDLER pfnChannelHandler;
@@ -1351,7 +1353,6 @@ static VBVADISP_CHANNELCONTEXT* vboxVBVAFindHandlerInfo(VBVA_CHANNELCONTEXTS *pC
     return NULL;
 }
 
-#ifndef VBOX_WITH_WDDM
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd)
 {
     PDEVICE_EXTENSION PrimaryExtension = ((PDEVICE_EXTENSION)hHGSMI)->pPrimary;
@@ -1400,7 +1401,6 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
 
     return VERR_INVALID_PARAMETER;
 }
-#endif
 
 static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
 {
@@ -1609,6 +1609,7 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
 
     return VERR_GENERAL_FAILURE;
 }
+#endif /* !VBOX_WITH_WDDM */
 
 /** @todo Mouse pointer position to be read from VMMDev memory, address of the memory region
  * can be queried from VMMDev via an IOCTL. This VMMDev memory region will contain
