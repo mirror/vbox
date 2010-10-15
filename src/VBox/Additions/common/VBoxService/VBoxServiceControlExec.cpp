@@ -361,7 +361,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
                 case VBOXSERVICECTRLPIPEID_STDIN_WRITABLE:
                 {
-                    uint32_t cbWritten;
+                    size_t cbWritten;
                     rc = VBoxServiceControlExecProcHandleStdInWritableEvent(hPollSet, fPollEvt, &hStdInW,
                                                                             &pData->stdIn, &cbWritten);
                     if (RT_SUCCESS(rc))
