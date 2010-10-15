@@ -410,7 +410,7 @@
       VM core file contain the memory and CPU dumps of the VM and can be
       useful for debugging your guest OS. The 64-bit ELF object format
       specficiation can be obtained here: <literal><ulink
-      url="http://www.tkk.fi/Misc/Electronics/faq/vga2rgb/calc.html">http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf</ulink></literal>.</para>
+      url="http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf">http://downloads.openwatcom.org/ftp/devel/docs/elf-64-gen.pdf</ulink></literal>.</para>
 
       <para>The overall layout of the VM core format is as follows:</para>
 
