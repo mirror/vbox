@@ -578,7 +578,8 @@ NTSTATUS DxgkDdiStartDevice(
                  * The host will however support both old and new interface to keep compatibility
                  * with old guest additions.
                  */
-                VBoxSetupDisplaysHGSMI(pContext, AdapterMemorySize);
+                VBoxSetupDisplaysHGSMI(pContext, AdapterMemorySize,
+                                       VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ);
                 if (commonFromDeviceExt(pContext)->bHGSMI)
                 {
                     drprintf(("VBoxVideoWddm: using HGSMI\n"));
