@@ -52,6 +52,8 @@
 #include <sys/sunddi.h>
 #include <sys/spl.h>
 #include <sys/archsystm.h>
+#include <sys/callo.h>
+#include <sys/kobj.h>
 #include "vbi.h"
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
@@ -60,10 +62,30 @@
 #include <iprt/types.h>
 
 RT_C_DECLS_BEGIN
-extern bool g_frtSolarisSplSetsEIF;
-extern struct ddi_dma_attr g_SolarisX86PhysMemLimits;
-extern uintptr_t kernelbase;
-extern RTCPUSET g_rtMpSolarisCpuSet;
+
+typedef callout_id_t (*PFNSOL_timeout_generic)(int type, void (*func)(void *),
+                                               void *arg, hrtime_t expiration,
+                                               hrtime_t resultion, int flags);
+typedef hrtime_t    (*PFNSOL_untimeout_generic)(callout_id_t id, int nowait);
+typedef int         (*PFNSOL_cyclic_reprogram)(cyclic_id_t id, hrtime_t expiration);
+
+
+/* IPRT globals. */
+extern bool                     g_frtSolarisSplSetsEIF;
+extern struct ddi_dma_attr      g_SolarisX86PhysMemLimits;
+extern RTCPUSET                 g_rtMpSolarisCpuSet;
+extern PFNSOL_timeout_generic   g_pfnrtR0Sol_timeout_generic;
+extern PFNSOL_untimeout_generic g_pfnrtR0Sol_untimeout_generic;
+extern PFNSOL_cyclic_reprogram  g_pfnrtR0Sol_cyclic_reprogram;
+
+/* Solaris globals. */
+extern uintptr_t                kernelbase;
+
+/* Misc stuff from newer kernels. */
+#ifndef CALLOUT_FLAG_ABSOLUTE
+# define CALLOUT_FLAG_ABSOLUTE 2
+#endif
+
 RT_C_DECLS_END
 
 #endif

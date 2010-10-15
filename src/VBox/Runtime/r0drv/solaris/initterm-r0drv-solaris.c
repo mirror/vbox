@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,6 +45,13 @@
  * will set EFLAGS::IF and break code that disables interrupts.  */
 bool g_frtSolarisSplSetsEIF = false;
 
+/** timeout_generic address. */
+PFNSOL_timeout_generic      g_pfnrtR0Sol_timeout_generic   = NULL;
+/** untimeout_generic address. */
+PFNSOL_untimeout_generic    g_pfnrtR0Sol_untimeout_generic = NULL;
+/** cyclic_reprogram address. */
+PFNSOL_cyclic_reprogram     g_pfnrtR0Sol_cyclic_reprogram  = NULL;
+
 
 int rtR0InitNative(void)
 {
@@ -70,6 +77,23 @@ int rtR0InitNative(void)
 #else
         /* PORTME: See if the amd64/x86 problem applies to this architecture. */
 #endif
+
+        /*
+         * Dynamically resolve new symbols we want to use.
+         */
+        g_pfnrtR0Sol_timeout_generic    = (PFNSOL_timeout_generic  )kobj_getsymvalue("timeout_generic",   1);
+        g_pfnrtR0Sol_untimeout_generic  = (PFNSOL_untimeout_generic)kobj_getsymvalue("untimeout_generic", 1);
+        if ((g_pfnrtR0Sol_timeout_generic == NULL) != (g_pfnrtR0Sol_untimeout_generic == NULL))
+        {
+            static const char *s_apszFn[2] = { "timeout_generic", "untimeout_generic" };
+            bool iMissingFn = g_pfnrtR0Sol_timeout_generic == NULL;
+            cmn_err(CE_NOTE, "rtR0InitNative: Weird! Found %s but not %s!\n", s_apszFn[!iMissingFn], s_apszFn[iMissingFn]);
+            g_pfnrtR0Sol_timeout_generic   = NULL;
+            g_pfnrtR0Sol_untimeout_generic = NULL;
+        }
+
+        g_pfnrtR0Sol_cyclic_reprogram   = (PFNSOL_cyclic_reprogram )kobj_getsymvalue("cyclic_reprogram",  1);
+
 
         return VINF_SUCCESS;
     }
