@@ -4850,6 +4850,27 @@ static DECLCALLBACK(void) vgaInfoCR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 }
 
 /**
+ * Info handler, device version. Dumps VGA Graphics Controller registers.
+ *
+ * @param   pDevIns     Device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+static DECLCALLBACK(void) vgaInfoGR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    unsigned    i;
+
+    pHlp->pfnPrintf(pHlp, "VGA Graphics Controller (3CF): GR index 3CE:%02X\n", s->gr_index);
+    Assert(sizeof(s->gr) >= 9);
+    for (i = 0; i < 9; ++i)
+    {
+        pHlp->pfnPrintf(pHlp, " GR%02X:%02X", i, s->gr[i]);
+    }
+    pHlp->pfnPrintf(pHlp, "\n");
+}
+
+/**
  * Info handler, device version. Dumps VGA Sequencer registers.
  *
  * @param   pDevIns     Device instance which registered the info.
@@ -6190,6 +6211,17 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
         pThis->pu8VBEExtraData = NULL;
     }
 #endif
+    if (pThis->pu8VgaBios)
+    {
+        MMR3HeapFree(pThis->pu8VgaBios);
+        pThis->pu8VgaBios = NULL;
+    }
+
+    if (pThis->pszVgaBiosFile)
+    {
+        MMR3HeapFree(pThis->pszVgaBiosFile);
+        pThis->pszVgaBiosFile = NULL;
+    }
 
     if (pThis->pszLogoFile)
     {
@@ -6272,6 +6304,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "LogoTime\0"
                                           "LogoFile\0"
                                           "ShowBootMenu\0"
+                                          "BiosRom\0"
                                           "CustomVideoModes\0"
                                           "HeightReduction\0"
                                           "CustomVideoMode1\0"
@@ -6549,10 +6582,107 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             return rc;
     }
 
+    /*
+     * Get the VGA BIOS ROM file name.
+     */
+    rc = CFGMR3QueryStringAlloc(pCfg, "BiosRom", &pThis->pszVgaBiosFile);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        pThis->pszVgaBiosFile = NULL;
+        rc = VINF_SUCCESS;
+    }
+    else if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"BiosRom\" as a string failed"));
+    else if (!*pThis->pszVgaBiosFile)
+    {
+        MMR3HeapFree(pThis->pszVgaBiosFile);
+        pThis->pszVgaBiosFile = NULL;
+    }
+
+    const uint8_t *pu8VgaBiosBinary = NULL;
+    uint64_t cbVgaBiosBinary;
+    /*
+     * Determine the VGA BIOS ROM size, open specified ROM file in the process.
+     */
+    RTFILE FileVgaBios = NIL_RTFILE;
+    if (pThis->pszVgaBiosFile)
+    {
+        rc = RTFileOpen(&FileVgaBios, pThis->pszVgaBiosFile,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileGetSize(FileVgaBios, &pThis->cbVgaBios);
+            if (RT_SUCCESS(rc))
+            {
+                if (    RT_ALIGN(pThis->cbVgaBios, _4K) != pThis->cbVgaBios
+                    ||  pThis->cbVgaBios > _64K
+                    ||  pThis->cbVgaBios < 16 * _1K)
+                    rc = VERR_TOO_MUCH_DATA;
+            }
+        }
+        if (RT_FAILURE(rc))
+        {
+            /*
+             * In case of failure simply fall back to the built-in VGA BIOS ROM.
+             */
+            Log(("vgaConstruct: Failed to open VGA BIOS ROM file '%s', rc=%Rrc!\n", pThis->pszVgaBiosFile, rc));
+            RTFileClose(FileVgaBios);
+            FileVgaBios = NIL_RTFILE;
+            MMR3HeapFree(pThis->pszVgaBiosFile);
+            pThis->pszVgaBiosFile = NULL;
+        }
+    }
+
+    /*
+     * Attempt to get the VGA BIOS ROM data from file.
+     */
+    if (pThis->pszVgaBiosFile)
+    {
+        /*
+         * Allocate buffer for the VGA BIOS ROM data.
+         */
+        pThis->pu8VgaBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbVgaBios);
+        if (pThis->pu8VgaBios)
+        {
+            rc = RTFileRead(FileVgaBios, pThis->pu8VgaBios, pThis->cbVgaBios, NULL);
+            if (RT_FAILURE(rc))
+            {
+                AssertMsgFailed(("RTFileRead(,,%d,NULL) -> %Rrc\n", pThis->cbVgaBios, rc));
+                MMR3HeapFree(pThis->pu8VgaBios);
+                pThis->pu8VgaBios = NULL;
+            }
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        pThis->pu8VgaBios = NULL;
+
+    /* cleanup */
+    if (FileVgaBios != NIL_RTFILE)
+        RTFileClose(FileVgaBios);
+
+    /* If we were unable to get the data from file for whatever reason, fall
+       back to the built-in ROM image. */
+    uint32_t fFlags = 0;
+    if (pThis->pu8VgaBios == NULL)
+    {
+        pu8VgaBiosBinary = g_abVgaBiosBinary;
+        cbVgaBiosBinary  = g_cbVgaBiosBinary;
+        fFlags           = PGMPHYS_ROM_FLAGS_PERMANENT_BINARY;
+    }
+    else
+    {
+        pu8VgaBiosBinary = pThis->pu8VgaBios;
+        cbVgaBiosBinary  = pThis->cbVgaBios;
+    }
+
     AssertReleaseMsg(g_cbVgaBiosBinary <= _64K && g_cbVgaBiosBinary >= 32*_1K, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
     AssertReleaseMsg(RT_ALIGN_Z(g_cbVgaBiosBinary, PAGE_SIZE) == g_cbVgaBiosBinary, ("g_cbVgaBiosBinary=%#x\n", g_cbVgaBiosBinary));
-    rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, g_cbVgaBiosBinary, &g_abVgaBiosBinary[0],
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "VGA BIOS");
+    rc = PDMDevHlpROMRegister(pDevIns, 0x000c0000, cbVgaBiosBinary, pu8VgaBiosBinary,
+                              fFlags, "VGA BIOS");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -6799,6 +6929,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDMDevHlpDBGFInfoRegister(pDevIns, "vga", "Display basic VGA state.", vgaInfoState);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgatext", "Display VGA memory formatted as text.", vgaInfoText);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgacr", "Dump VGA CRTC registers.", vgaInfoCR);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "vgagr", "Dump VGA Graphics Controller registers.", vgaInfoGR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgasr", "Dump VGA Sequencer registers.", vgaInfoSR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgaar", "Dump VGA Attribute Controller registers.", vgaInfoAR);
     PDMDevHlpDBGFInfoRegister(pDevIns, "vgadac", "Dump VGA DAC registers.", vgaInfoDAC);
