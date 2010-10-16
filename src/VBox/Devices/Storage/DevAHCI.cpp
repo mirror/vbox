@@ -5583,129 +5583,6 @@ static int ahciScatterGatherListCopyFromBuffer(PAHCIPORTTASKSTATE pAhciPortTaskS
 /** Makes a PAHCIPort out of a PPDMIBLOCKASYNCPORT. */
 #define PDMIBLOCKASYNCPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)pInterface - RT_OFFSETOF(AHCIPort, IPortAsync)) )
 
-/**
- * Complete a data transfer task by freeing all occupied ressources
- * and notifying the guest.
- *
- * @returns VBox status code
- *
- * @param pAhciPort             Pointer to the port where to request completed.
- * @param pAhciPortTaskState    Pointer to the task which finished.
- * @param rcReq                 IPRT status code of the completed request.
- */
-static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState, int rcReq)
-{
-    /* Free system resources occupied by the scatter gather list. */
-    if (pAhciPortTaskState->enmTxDir != AHCITXDIR_FLUSH)
-        ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
-
-    if (RT_FAILURE(rcReq))
-    {
-        pAhciPortTaskState->cmdHdr.u32PRDBC = 0;
-        pAhciPortTaskState->uATARegError = ID_ERR;
-        pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
-
-        /* Log the error. */
-        if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
-        {
-            if (pAhciPortTaskState->enmTxDir == AHCITXDIR_FLUSH)
-                LogRel(("AHCI#%u: Flush returned rc=%Rrc\n",
-                        pAhciPort->iLUN, rcReq));
-            else
-                LogRel(("AHCI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
-                        pAhciPort->iLUN,
-                        pAhciPortTaskState->enmTxDir == AHCITXDIR_READ
-                        ? "Read"
-                        : "Write",
-                        pAhciPortTaskState->uOffset,
-                        pAhciPortTaskState->cbTransfer, rcReq));
-        }
-        ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciPortTaskState, NULL);
-    }
-    else
-    {
-        pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer;
-
-        pAhciPortTaskState->uATARegError = 0;
-        pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
-
-        /* Write updated command header into memory of the guest. */
-        PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
-                           &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
-    }
-
-    if (pAhciPortTaskState->enmTxDir == AHCITXDIR_READ)
-    {
-        STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, pAhciPortTaskState->cbTransfer);
-        pAhciPort->Led.Actual.s.fReading = 0;
-    }
-    else if (pAhciPortTaskState->enmTxDir == AHCITXDIR_WRITE)
-    {
-        STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, pAhciPortTaskState->cbTransfer);
-        pAhciPort->Led.Actual.s.fWriting = 0;
-    }
-
-    if (pAhciPortTaskState->fQueued)
-    {
-        uint32_t cOutstandingTasks;
-
-        ahciLog(("%s: Before decrement uActTasksActive=%u\n", __FUNCTION__, pAhciPort->uActTasksActive));
-        cOutstandingTasks = ASMAtomicDecU32(&pAhciPort->uActTasksActive);
-        ahciLog(("%s: After decrement uActTasksActive=%u\n", __FUNCTION__, cOutstandingTasks));
-        if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIPORTTASKSTATE))
-            ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
-
-#ifdef RT_STRICT
-        bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
-        AssertMsg(fXchg, ("Task is not active\n"));
-#endif
-
-        /* Always raise an interrupt after task completion; delaying
-         * this (interrupt coalescing) increases latency and has a significant
-         * impact on performance (see #5071)
-         */
-        ahciSendSDBFis(pAhciPort, 0, true);
-    }
-    else
-    {
-#ifdef RT_STRICT
-        bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
-        AssertMsg(fXchg, ("Task is not active\n"));
-#endif
-
-        ASMAtomicDecU32(&pAhciPort->uActTasksActive);
-        ahciSendD2HFis(pAhciPort, pAhciPortTaskState, pAhciPortTaskState->cmdFis, true);
-    }
-
-    /* Add the task to the cache. */
-    pAhciPort->aCachedTasks[pAhciPortTaskState->uTag] = pAhciPortTaskState;
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Notification callback for a completed transfer.
- *
- * @returns VBox status code.
- * @param   pInterface   Pointer to the interface.
- * @param   pvUser       User data.
- * @param   rcReq        IPRT Status code of the completed request.
- */
-static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rcReq)
-{
-    PAHCIPort pAhciPort = PDMIBLOCKASYNCPORT_2_PAHCIPORT(pInterface);
-    PAHCIPORTTASKSTATE pAhciPortTaskState = (PAHCIPORTTASKSTATE)pvUser;
-
-    ahciLog(("%s: pInterface=%p pvUser=%p uTag=%u\n",
-             __FUNCTION__, pInterface, pvUser, pAhciPortTaskState->uTag));
-
-    int rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rcReq);
-
-    if (pAhciPort->uActTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
-        PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
-    return rc;
-}
-
 static void ahciWarningDiskFull(PPDMDEVINS pDevIns)
 {
     int rc;
@@ -5737,22 +5614,146 @@ bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
 {
     if (rc == VERR_DISK_FULL)
     {
-        ahciWarningDiskFull(pAhciPort->CTX_SUFF(pDevIns));
+        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
+            ahciWarningDiskFull(pAhciPort->CTX_SUFF(pDevIns));
         return true;
     }
     if (rc == VERR_FILE_TOO_BIG)
     {
-        ahciWarningFileTooBig(pAhciPort->CTX_SUFF(pDevIns));
+        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
+            ahciWarningFileTooBig(pAhciPort->CTX_SUFF(pDevIns));
         return true;
     }
     if (rc == VERR_BROKEN_PIPE || rc == VERR_NET_CONNECTION_REFUSED)
     {
         /* iSCSI connection abort (first error) or failure to reestablish
          * connection (second error). Pause VM. On resume we'll retry. */
-        ahciWarningISCSI(pAhciPort->CTX_SUFF(pDevIns));
+        if (ASMAtomicCmpXchgBool(&pAhciPort->fRedo, true, false))
+            ahciWarningISCSI(pAhciPort->CTX_SUFF(pDevIns));
         return true;
     }
     return false;
+}
+
+/**
+ * Complete a data transfer task by freeing all occupied ressources
+ * and notifying the guest.
+ *
+ * @returns VBox status code
+ *
+ * @param pAhciPort             Pointer to the port where to request completed.
+ * @param pAhciPortTaskState    Pointer to the task which finished.
+ * @param rcReq                 IPRT status code of the completed request.
+ */
+static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState, int rcReq)
+{
+    bool fRedo = false;
+
+    /* Free system resources occupied by the scatter gather list. */
+    if (pAhciPortTaskState->enmTxDir != AHCITXDIR_FLUSH)
+        ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
+
+    if (pAhciPortTaskState->enmTxDir == AHCITXDIR_READ)
+    {
+        STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, pAhciPortTaskState->cbTransfer);
+        pAhciPort->Led.Actual.s.fReading = 0;
+    }
+    else if (pAhciPortTaskState->enmTxDir == AHCITXDIR_WRITE)
+    {
+        STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, pAhciPortTaskState->cbTransfer);
+        pAhciPort->Led.Actual.s.fWriting = 0;
+    }
+
+    if (RT_FAILURE(rcReq))
+    {
+        /* Log the error. */
+        if (pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
+        {
+            if (pAhciPortTaskState->enmTxDir == AHCITXDIR_FLUSH)
+                LogRel(("AHCI#%u: Flush returned rc=%Rrc\n",
+                        pAhciPort->iLUN, rcReq));
+            else
+                LogRel(("AHCI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                        pAhciPort->iLUN,
+                        pAhciPortTaskState->enmTxDir == AHCITXDIR_READ
+                        ? "Read"
+                        : "Write",
+                        pAhciPortTaskState->uOffset,
+                        pAhciPortTaskState->cbTransfer, rcReq));
+        }
+
+        fRedo = ahciIsRedoSetWarning(pAhciPort, rcReq);
+        if (!fRedo)
+        {
+            pAhciPortTaskState->cmdHdr.u32PRDBC = 0;
+            pAhciPortTaskState->uATARegError = ID_ERR;
+            pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+            ASMAtomicCmpXchgPtr(&pAhciPort->pTaskErr, pAhciPortTaskState, NULL);
+        }
+    }
+    else
+    {
+        pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer;
+
+        pAhciPortTaskState->uATARegError = 0;
+        pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+
+        /* Write updated command header into memory of the guest. */
+        PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
+                           &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
+    }
+
+#ifdef RT_STRICT
+    bool fXchg = ASMAtomicCmpXchgBool(&pAhciPortTaskState->fActive, false, true);
+    AssertMsg(fXchg, ("Task is not active\n"));
+#endif
+
+    /* Add the task to the cache. */
+    ASMAtomicWritePtr(&pAhciPort->aCachedTasks[pAhciPortTaskState->uTag], pAhciPortTaskState);
+    ASMAtomicDecU32(&pAhciPort->uActTasksActive);
+
+    if (!fRedo)
+    {
+        if (pAhciPortTaskState->fQueued)
+        {
+            if (RT_SUCCESS(rcReq) && !ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIPORTTASKSTATE))
+                ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
+
+            /*
+             * Always raise an interrupt after task completion; delaying
+             * this (interrupt coalescing) increases latency and has a significant
+             * impact on performance (see #5071)
+             */
+            ahciSendSDBFis(pAhciPort, 0, true);
+        }
+        else
+            ahciSendD2HFis(pAhciPort, pAhciPortTaskState, pAhciPortTaskState->cmdFis, true);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Notification callback for a completed transfer.
+ *
+ * @returns VBox status code.
+ * @param   pInterface   Pointer to the interface.
+ * @param   pvUser       User data.
+ * @param   rcReq        IPRT Status code of the completed request.
+ */
+static DECLCALLBACK(int) ahciTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *pvUser, int rcReq)
+{
+    PAHCIPort pAhciPort = PDMIBLOCKASYNCPORT_2_PAHCIPORT(pInterface);
+    PAHCIPORTTASKSTATE pAhciPortTaskState = (PAHCIPORTTASKSTATE)pvUser;
+
+    ahciLog(("%s: pInterface=%p pvUser=%p uTag=%u\n",
+             __FUNCTION__, pInterface, pvUser, pAhciPortTaskState->uTag));
+
+    int rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rcReq);
+
+    if (pAhciPort->uActTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
+        PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
+    return rc;
 }
 
 /**
@@ -6507,10 +6508,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                             pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
                         }
                         else
-                        {
-                            pAhciPort->fRedo = true;
                             pAhciPort->cTasksToProcess = cTasksToProcess;
-                        }
                     }
                     else
                     {
@@ -7093,6 +7091,8 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         /* Now every port. */
         for (uint32_t i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
         {
+            PAHCIPort pAhciPort = &pThis->ahciPort[i];
+
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLB);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLBU);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regFB);
@@ -7137,8 +7137,11 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             else if (pThis->ahciPort[i].fATAPI)
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: atapi - saved=%false config=true"));
 
-            if (   pThis->ahciPort[i].uActWritePos != pThis->ahciPort[i].uActReadPos
-                && !pThis->ahciPort[i].fAsyncInterface)
+            /* Check if we have tasks pending. */
+            uint32_t fTasksOutstanding = pAhciPort->regCI & ~pAhciPort->u32TasksFinished;
+            uint32_t fQueuedTasksOutstanding = pAhciPort->regSACT & ~pAhciPort->u32QueuedTasksFinished;
+
+            if (fTasksOutstanding || fQueuedTasksOutstanding)
             {
                 /*
                  * There are tasks pending. The VM was saved after a task failed
@@ -7146,29 +7149,47 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                  * and the correct cTasksToProcess number based on the difference
                  * of the FIFO counters.
                  */
-                PAHCIPort pAhciPort = &pThis->ahciPort[i];
 
-                pAhciPort->fRedo = true;
-                /*
-                 * Because we don't save the task FIFO we have to reconstruct it by using the
-                 * SACT and CI registers along with the shadowed variables containing the
-                 * completed tasks and placing them in the FIFO again.
-                 */
-                uint32_t fTasksOutstanding = pAhciPort->regCI & ~pAhciPort->u32TasksFinished;
-                uint32_t fQueuedTasksOutstanding = pAhciPort->regSACT & ~pAhciPort->u32QueuedTasksFinished;
-
-                pAhciPort->uActWritePos = 0;
-                pAhciPort->uActReadPos  = 0;
-
-                for (unsigned uTag = 0; uTag < AHCI_NR_COMMAND_SLOTS; uTag++)
+                if (!pAhciPort->fAsyncInterface)
                 {
-                    if (   fTasksOutstanding & (1 << uTag)
-                        || fQueuedTasksOutstanding & (1 << uTag))
+                    /*
+                     * Because we don't save the task FIFO we have to reconstruct it by using the
+                     * SACT and CI registers along with the shadowed variables containing the
+                     * completed tasks and placing them in the FIFO again.
+                     */
+                    pAhciPort->fRedo = true;
+
+                    pAhciPort->uActWritePos = 0;
+                    pAhciPort->uActReadPos  = 0;
+
+                    for (unsigned uTag = 0; uTag < AHCI_NR_COMMAND_SLOTS; uTag++)
                     {
-                        pAhciPort->ahciIOTasks[pAhciPort->uActWritePos] = AHCI_TASK_SET(uTag, (fQueuedTasksOutstanding & (1 << uTag)) ? 1 : 0);
-                        pAhciPort->uActWritePos++;
-                        pAhciPort->uActWritePos %= RT_ELEMENTS(pAhciPort->ahciIOTasks);
-                        pAhciPort->cTasksToProcess++;
+                        if (   fTasksOutstanding & (1 << uTag)
+                            || fQueuedTasksOutstanding & (1 << uTag))
+                        {
+                            pAhciPort->ahciIOTasks[pAhciPort->uActWritePos] = AHCI_TASK_SET(uTag, (fQueuedTasksOutstanding & (1 << uTag)) ? 1 : 0);
+                            pAhciPort->uActWritePos++;
+                            pAhciPort->uActWritePos %= RT_ELEMENTS(pAhciPort->ahciIOTasks);
+                            pAhciPort->cTasksToProcess++;
+                        }
+                    }
+                }
+                else
+                {
+                    /* Use the PDM queue. */
+                    for (unsigned uTag = 0; uTag < AHCI_NR_COMMAND_SLOTS; uTag++)
+                    {
+                        if (   fTasksOutstanding & (1 << uTag)
+                            || fQueuedTasksOutstanding & (1 << uTag))
+                        {
+                            PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(pThis->CTX_SUFF(pNotifierQueue));
+                            AssertMsg(pItem, ("Allocating item for queue failed\n"));
+
+                            pItem->iPort = pThis->ahciPort[i].iLUN;
+                            pItem->iTask = uTag;
+                            pItem->fQueued = !!(fQueuedTasksOutstanding & (1 << uTag)); /* Mark if the task is queued. */
+                            PDMQueueInsert(pThis->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+                        }
                     }
                 }
             }
@@ -7545,6 +7566,40 @@ static DECLCALLBACK(void) ahciR3Suspend(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
 {
     PAHCI    pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+
+    /*
+     * Check if one of the ports has the redo flag set
+     * and queue all pending tasks again.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
+    {
+        PAHCIPort pAhciPort = &pAhci->ahciPort[i];
+
+        if (   pAhciPort->fRedo
+            && pAhciPort->fAsyncInterface)
+        {
+            uint32_t fTasksOutstanding = pAhciPort->regCI & ~pAhciPort->u32TasksFinished;
+            uint32_t fQueuedTasksOutstanding = pAhciPort->regSACT & ~pAhciPort->u32QueuedTasksFinished;
+
+            pAhciPort->fRedo = false;
+
+            /* Use the PDM queue. */
+            for (unsigned uTag = 0; uTag < AHCI_NR_COMMAND_SLOTS; uTag++)
+            {
+                if (   fTasksOutstanding & (1 << uTag)
+                    || fQueuedTasksOutstanding & (1 << uTag))
+                {
+                    PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(pAhci->CTX_SUFF(pNotifierQueue));
+                    AssertMsg(pItem, ("Allocating item for queue failed\n"));
+
+                    pItem->iPort = pAhci->ahciPort[i].iLUN;
+                    pItem->iTask = uTag;
+                    pItem->fQueued = !!(fQueuedTasksOutstanding & (1 << uTag)); /* Mark if the task is queued. */
+                    PDMQueueInsert(pAhci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+                }
+            }
+        }
+    }
 
     Log(("%s:\n", __FUNCTION__));
     for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
