@@ -1138,9 +1138,9 @@ Bit16u *AX;Bit16u CX; Bit16u ES;Bit16u DI;
 {
         Bit16u            result=0x0100;
         Bit16u            ss=get_SS();
-        ModeInfoBlock     info;
         ModeInfoListItem  *cur_info;
         Boolean           using_lfb;
+        Bit8u             win_attr;
 
 #ifdef DEBUG
         printf("VBE vbe_biosfn_return_mode_information ES%x DI%x CX%x\n",ES,DI,CX);
@@ -1160,23 +1160,25 @@ Bit16u *AX;Bit16u CX; Bit16u ES;Bit16u DI;
 #ifdef DEBUG
                 printf("VBE found mode %x\n",CX);
 #endif
-                memsetb(ss, &info, 0, sizeof(ModeInfoBlock));
+                memsetb(ES, DI, 0, 256);    // The mode info size is fixed
 #ifdef VBE_NEW_DYN_LIST
                 for (i = 0; i < sizeof(ModeInfoBlockCompact); i++)
                 {
                     Bit8u b;
 
                     b = in_byte(VBE_EXTRA_PORT, (char *)(&(cur_info->info)) + i);
-                    write_byte(ss, (char *)(&info) + i, b);
+                    write_byte(ES, (char *)DI + i, b);
                 }
 #else
-                memcpyb(ss, &info, 0xc000, &(cur_info->info), sizeof(ModeInfoBlockCompact));
+                memcpyb(ES, DI, 0xc000, &(cur_info->info), sizeof(ModeInfoBlockCompact));
 #endif
-                if (info.WinAAttributes & VBE_WINDOW_ATTRIBUTE_RELOCATABLE) {
-                  info.WinFuncPtr = 0xC0000000UL;
-                  *(Bit16u *)&(info.WinFuncPtr) = (Bit16u)(dispi_set_bank_farcall);
+                win_attr = read_byte(ES, DI + RT_OFFSETOF(ModeInfoBlock, WinAAttributes));
+                if (win_attr & VBE_WINDOW_ATTRIBUTE_RELOCATABLE) {
+                    write_word(ES, DI + RT_OFFSETOF(ModeInfoBlock, WinFuncPtr),
+                               (Bit16u)(dispi_set_bank_farcall));
+                    // If BIOS not at 0xC000 -> boom
+                    write_word(ES, DI + RT_OFFSETOF(ModeInfoBlock, WinFuncPtr) + 2, 0xC000);
                 }
-
                 result = 0x4f;
         }
         else
@@ -1185,12 +1187,6 @@ Bit16u *AX;Bit16u CX; Bit16u ES;Bit16u DI;
                 printf("VBE *NOT* found mode %x\n",CX);
 #endif
                 result = 0x100;
-        }
-
-        if (result == 0x4f)
-        {
-                // copy updates in mode_info_block back
-                memcpyb(ES, DI, ss, &info, sizeof(info));
         }
 
         write_word(ss, AX, result);
