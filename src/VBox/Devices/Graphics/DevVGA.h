@@ -411,6 +411,9 @@ typedef struct VGAState {
     uint64_t                    cbVgaBios;
     /** The name of the VGA BIOS ROM file. */
     char                        *pszVgaBiosFile;
+# if HC_ARCH_BITS == 32
+    uint32_t                    Padding6a;
+# endif
 #endif /* VBOX */
 #ifdef VBOX_WITH_HGSMI
     /** Base port in the assigned PCI I/O space. */
