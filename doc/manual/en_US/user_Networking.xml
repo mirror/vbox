@@ -504,6 +504,11 @@
           more efficient than bridged networking, as VirtualBox can directly
           transmit the data without having to send it through the host
           operating system's networking stack.</para>
+          <!-- @todo r=bird: This is not true at all any longer. The only
+          difference between bridged and internal networking is that the
+          internal network has a trunk connection to the host+world when in
+          bridged mode, so there is practically no speed up in pure intnet
+          mode. -->
         </listitem>
       </orderedlist></para>
 
