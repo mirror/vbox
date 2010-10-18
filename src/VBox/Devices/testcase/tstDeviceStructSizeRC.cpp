@@ -1164,19 +1164,26 @@ int main()
     GEN_CHECK_OFF(AHCIPort, regCI);
     GEN_CHECK_OFF(AHCIPort, GCPhysAddrClb);
     GEN_CHECK_OFF(AHCIPort, GCPhysAddrFb);
-    GEN_CHECK_OFF(AHCIPort, fAsyncInterface);
-    GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
-    GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
-    GEN_CHECK_OFF(AHCIPort, ahciIOTasks);
-    GEN_CHECK_OFF(AHCIPort, ahciIOTasks[2*AHCI_NR_COMMAND_SLOTS-1]);
-    GEN_CHECK_OFF(AHCIPort, uActWritePos);
-    GEN_CHECK_OFF(AHCIPort, uActReadPos);
-    GEN_CHECK_OFF(AHCIPort, uActTasksActive);
+    GEN_CHECK_OFF(AHCIPort, cTasksActive);
     GEN_CHECK_OFF(AHCIPort, fPoweredOn);
     GEN_CHECK_OFF(AHCIPort, fSpunUp);
     GEN_CHECK_OFF(AHCIPort, fFirstD2HFisSend);
     GEN_CHECK_OFF(AHCIPort, fATAPI);
     GEN_CHECK_OFF(AHCIPort, fATAPIPassthrough);
+    GEN_CHECK_OFF(AHCIPort, fPortReset);
+    GEN_CHECK_OFF(AHCIPort, fAsyncInterface);
+    GEN_CHECK_OFF(AHCIPort, fResetDevice);
+    GEN_CHECK_OFF(AHCIPort, cTotalSectors);
+    GEN_CHECK_OFF(AHCIPort, cMultSectors);
+    GEN_CHECK_OFF(AHCIPort, uATATransferMode);
+    GEN_CHECK_OFF(AHCIPort, abATAPISense);
+    GEN_CHECK_OFF(AHCIPort, cNotifiedMediaChange);
+    GEN_CHECK_OFF(AHCIPort, MediaEventStatus);
+    GEN_CHECK_OFF(AHCIPort, MediaTrackType);
+    GEN_CHECK_OFF(AHCIPort, iLUN);
+    GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
+    GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
+    GEN_CHECK_OFF(AHCIPort, u32TasksNew);
     GEN_CHECK_OFF(AHCIPort, pDrvBase);
     GEN_CHECK_OFF(AHCIPort, pDrvBlock);
     GEN_CHECK_OFF(AHCIPort, pDrvBlockAsync);
@@ -1188,17 +1195,9 @@ int main()
     GEN_CHECK_OFF(AHCIPort, IMountNotify);
     GEN_CHECK_OFF(AHCIPort, PCHSGeometry);
     GEN_CHECK_OFF(AHCIPort, Led);
-    GEN_CHECK_OFF(AHCIPort, cTotalSectors);
-    GEN_CHECK_OFF(AHCIPort, cMultSectors);
-    GEN_CHECK_OFF(AHCIPort, uATATransferMode);
-    GEN_CHECK_OFF(AHCIPort, abATAPISense);
-    GEN_CHECK_OFF(AHCIPort, cNotifiedMediaChange);
-    GEN_CHECK_OFF(AHCIPort, MediaEventStatus);
-    GEN_CHECK_OFF(AHCIPort, MediaTrackType);
-    GEN_CHECK_OFF(AHCIPort, iLUN);
-    GEN_CHECK_OFF(AHCIPort, fResetDevice);
-    GEN_CHECK_OFF(AHCIPort, u32TasksFinished);
-    GEN_CHECK_OFF(AHCIPort, u32QueuedTasksFinished);
+    GEN_CHECK_OFF(AHCIPort, pAsyncIOThread);
+    GEN_CHECK_OFF(AHCIPort, AsyncIORequestSem);
+
     GEN_CHECK_OFF(AHCIPort, aCachedTasks);
     GEN_CHECK_OFF(AHCIPort, pTaskErr);
     GEN_CHECK_OFF(AHCIPort, StatDMA);
@@ -1211,8 +1210,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, StatProfileReadWrite);
     GEN_CHECK_OFF(AHCIPort, StatProfileDestroyScatterGatherList);
 #endif
-    GEN_CHECK_OFF(AHCIPort, fNotificationSend);
-    GEN_CHECK_OFF(AHCIPort, fPortReset);
     GEN_CHECK_OFF(AHCIPort, fAsyncIOThreadIdle);
     GEN_CHECK_OFF(AHCIPort, szSerialNumber);
     GEN_CHECK_OFF(AHCIPort, szSerialNumber[AHCI_SERIAL_NUMBER_LENGTH]); /* One additional byte for the termination.*/
@@ -1227,7 +1224,6 @@ int main()
     GEN_CHECK_OFF(AHCIPort, szInquiryRevision[AHCI_ATAPI_INQUIRY_REVISION_LENGTH]);
     GEN_CHECK_OFF(AHCIPort, cErrors);
     GEN_CHECK_OFF(AHCIPort, fRedo);
-    GEN_CHECK_OFF(AHCIPort, cTasksToProcess);
 
     GEN_CHECK_SIZE(AHCI);
     GEN_CHECK_OFF(AHCI, dev);
@@ -1268,8 +1264,6 @@ int main()
     GEN_CHECK_OFF(AHCI, fSignalIdle);
     GEN_CHECK_OFF(AHCI, cPortsImpl);
     GEN_CHECK_OFF(AHCI, f8ByteMMIO4BytesWrittenSuccessfully);
-    GEN_CHECK_OFF(AHCI, cHighIOThreshold);
-    GEN_CHECK_OFF(AHCI, cMillisToSleep);
 #endif /* VBOX_WITH_AHCI */
 
 #ifdef VBOX_WITH_E1000
