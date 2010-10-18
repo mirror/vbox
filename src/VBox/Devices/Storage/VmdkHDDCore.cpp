@@ -5610,11 +5610,22 @@ static int vmdkStreamReadSequential(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                       + RT_OFFSETOF(VMDKMARKER, uType),
                                       &Marker.uType, sizeof(Marker.uType),
                                       NULL);
+                if (RT_FAILURE(rc))
+                    return rc;
                 Marker.uType = RT_LE2H_U32(Marker.uType);
                 switch (Marker.uType)
                 {
                     case VMDK_MARKER_EOS:
                         uGrainSectorAbs++;
+                        /* Read (or mostly skip) to the end of file. Uses the
+                         * Marker (LBA sector) as it is unused anyway. This
+                         * makes sure that really everything is read in the
+                         * success case. If this read fails it means the image
+                         * is truncated, but this is harmless so ignore. */
+                        vmdkFileReadSync(pImage, pExtent->pFile,
+                                           VMDK_SECTOR2BYTE(uGrainSectorAbs)
+                                         + 511,
+                                         &Marker.uSector, 1, NULL);
                         break;
                     case VMDK_MARKER_GT:
                         uGrainSectorAbs += 1 + VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
