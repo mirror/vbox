@@ -46,6 +46,18 @@ all:
 	        cp vboxsf/vboxsf.o .; \
 	    fi; \
 	fi
+	@if [ -d vboxvideo ]; then \
+	    if [ -f vboxguest/Module.symvers ]; then \
+	        cp vboxguest/Module.symvers vboxvideo; \
+	    fi; \
+	    echo "*** Building 'vboxvideo' module ***"; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo; \
+	    if [ -f vboxvideo/vboxvideo.ko ]; then \
+	        cp vboxvideo/vboxvideo.ko .; \
+	    else \
+	        cp vboxvideo/vboxvideo.o .; \
+	    fi; \
+	fi
 
 
 install:
@@ -53,19 +65,27 @@ install:
 	@if [ -d vboxsf ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxsf install; \
 	fi
+	@if [ -d vboxvideo ]; then \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvideo install; \
+	fi
 
 clean:
 	@$(MAKE) -C vboxguest clean
 	@if [ -d vboxsf ]; then \
 	    $(MAKE) -C vboxsf clean; \
 	fi
-	rm -f vboxguest.*o vboxsf.*o
+	@if [ -d vboxvideo ]; then \
+	    $(MAKE) -C vboxvideo clean; \
+	fi
+	rm -f vboxguest.*o vboxsf.*o vboxvideo.*o
 
 load:
+	@/sbin/rmmod vboxvideo || true
 	@/sbin/rmmod vboxvfs || true
 	@/sbin/rmmod vboxsf || true
 	@/sbin/rmmod vboxguest || true
 	@/sbin/insmod vboxguest.ko
 	@if [ -f vboxsf.ko ]; then /sbin/insmod vboxsf.ko; fi
+	@if [ -f vboxvideo.ko ]; then /sbin/insmod vboxvideo.ko; fi
 
 endif # ! KBUILD_EXTMOD
