@@ -806,7 +806,7 @@ int errorArgument(const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
-    RTMsgError(pszFormat, args);
+    RTMsgErrorV(pszFormat, args);
     va_end(args);
     return 1;
 }
