@@ -289,6 +289,7 @@ install: $(MODULE)
 endif # eq($(MAKECMDGOALS),clean)
 
 clean:
-	for f in . linux r0drv r0drv/linux r0drv/generic VBox common/err common/string common/log generic common/math/gcc; \
+	for f in . linux r0drv generic r0drv/linux r0drv/generic VBox \
+	    common/alloc common/err common/log common/math/gcc common/misc common/string common/time; \
             do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .vboxguest* .tmp_ver* vboxguest.* Module.symvers Modules.symvers modules.order
