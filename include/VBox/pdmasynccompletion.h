@@ -327,6 +327,17 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpSetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoi
                                              uint64_t cbSize);
 
 /**
+ * Assigns or removes a bandwidth control manager to/from the endpoint.
+ *
+ * @returns VBox status code.
+ * @param   pEndpoint       The endpoint.
+ * @param   pcszBwMgr       The identifer of the new bandwidth manager to assign
+ *                          or NULL to remove the current one.
+ */
+VMMR3DECL(int) PDMR3AsyncCompletionEpSetBwMgr(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
+                                              const char *pcszBwMgr);
+
+/**
  * Cancels a async completion task.
  *
  * If you want to use this method, you have to take great create to make sure

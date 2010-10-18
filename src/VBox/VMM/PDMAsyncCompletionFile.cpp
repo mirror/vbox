@@ -466,100 +466,6 @@ static void pdmacFileAioMgrDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile, 
     MMR3HeapFree(pAioMgr);
 }
 
-static int pdmacFileBwMgrInitialize(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile,
-                                    PCFGMNODE pCfgNode, PPPDMACFILEBWMGR ppBwMgr)
-{
-    int rc = VINF_SUCCESS;
-    PPDMACFILEBWMGR pBwMgr = NULL;
-
-    rc = MMR3HeapAllocZEx(pEpClassFile->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION,
-                          sizeof(PDMACFILEBWMGR),
-                          (void **)&pBwMgr);
-    if (RT_SUCCESS(rc))
-    {
-        /* Init I/O flow control. */
-        rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecMax", &pBwMgr->cbVMTransferPerSecMax, UINT32_MAX);
-        AssertLogRelRCReturn(rc, rc);
-        rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStart", &pBwMgr->cbVMTransferPerSecStart, UINT32_MAX /*5 * _1M*/);
-        AssertLogRelRCReturn(rc, rc);
-        rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStep", &pBwMgr->cbVMTransferPerSecStep, _1M);
-        AssertLogRelRCReturn(rc, rc);
-
-        pBwMgr->cbVMTransferAllowed = pBwMgr->cbVMTransferPerSecStart;
-        pBwMgr->tsUpdatedLast       = RTTimeSystemNanoTS();
-
-        if (pBwMgr->cbVMTransferPerSecMax != UINT32_MAX)
-            LogRel(("AIOMgr: I/O bandwidth limited to %u bytes/sec\n", pBwMgr->cbVMTransferPerSecMax));
-        else
-            LogRel(("AIOMgr: I/O bandwidth not limited\n"));
-
-        *ppBwMgr = pBwMgr;
-    }
-
-    return rc;
-}
-
-static void pdmacFileBwMgrDestroy(PPDMACFILEBWMGR pBwMgr)
-{
-    MMR3HeapFree(pBwMgr);
-}
-
-static void pdmacFileBwRef(PPDMACFILEBWMGR pBwMgr)
-{
-    pBwMgr->cRefs++;
-}
-
-static void pdmacFileBwUnref(PPDMACFILEBWMGR pBwMgr)
-{
-    Assert(pBwMgr->cRefs > 0);
-    pBwMgr->cRefs--;
-}
-
-bool pdmacFileBwMgrIsTransferAllowed(PPDMACFILEBWMGR pBwMgr, uint32_t cbTransfer)
-{
-    bool fAllowed = true;
-
-    LogFlowFunc(("pBwMgr=%p cbTransfer=%u\n", pBwMgr, cbTransfer));
-
-    if (pBwMgr->cbVMTransferPerSecMax != UINT32_MAX) /* No need to check if bandwidth is unlimited. */
-    {
-        uint32_t cbOld = ASMAtomicSubU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
-        if (RT_LIKELY(cbOld >= cbTransfer))
-            fAllowed = true;
-        else
-        {
-            fAllowed = false;
-
-            /* We are out of ressources  Check if we can update again. */
-            uint64_t tsNow          = RTTimeSystemNanoTS();
-            uint64_t tsUpdatedLast  = ASMAtomicUoReadU64(&pBwMgr->tsUpdatedLast);
-
-            if (tsNow - tsUpdatedLast >= (1000*1000*1000))
-            {
-                if (ASMAtomicCmpXchgU64(&pBwMgr->tsUpdatedLast, tsNow, tsUpdatedLast))
-                {
-                    if (pBwMgr->cbVMTransferPerSecStart < pBwMgr->cbVMTransferPerSecMax)
-                    {
-                       pBwMgr->cbVMTransferPerSecStart = RT_MIN(pBwMgr->cbVMTransferPerSecMax, pBwMgr->cbVMTransferPerSecStart + pBwMgr->cbVMTransferPerSecStep);
-                       LogFlow(("AIOMgr: Increasing maximum bandwidth to %u bytes/sec\n", pBwMgr->cbVMTransferPerSecStart));
-                    }
-
-                    /* Update */
-                    ASMAtomicWriteU32(&pBwMgr->cbVMTransferAllowed, pBwMgr->cbVMTransferPerSecStart - cbTransfer);
-                    fAllowed = true;
-                    LogFlow(("AIOMgr: Refreshed bandwidth\n"));
-                }
-            }
-            else
-                ASMAtomicAddU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
-        }
-    }
-
-    LogFlowFunc(("fAllowed=%RTbool\n", fAllowed));
-
-    return fAllowed;
-}
-
 static int pdmacFileMgrTypeFromName(const char *pszVal, PPDMACEPFILEMGRTYPE penmMgrType)
 {
     int rc = VINF_SUCCESS;
@@ -762,10 +668,6 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
         }
         else
             LogRel(("AIOMgr: Cache was globally disabled\n"));
-
-        rc = pdmacFileBwMgrInitialize(pEpClassFile, pCfgNode, &pEpClassFile->pBwMgr);
-        if (RT_FAILURE(rc))
-            RTCritSectDelete(&pEpClassFile->CritSect);
     }
 
     return rc;
@@ -787,7 +689,6 @@ static void pdmacFileTerminate(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals)
         pdmacFileCacheDestroy(pEpClassFile);
 
     RTCritSectDelete(&pEpClassFile->CritSect);
-    pdmacFileBwMgrDestroy(pEpClassFile->pBwMgr);
 }
 
 static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
@@ -920,7 +821,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 pEpFile->cbEndpoint     = pEpFile->cbFile;
                 pEpFile->pTasksFreeTail = pEpFile->pTasksFreeHead;
                 pEpFile->cTasksCached   = 0;
-                pEpFile->pBwMgr         = pEpClassFile->pBwMgr;
                 pEpFile->enmBackendType = enmEpBackend;
                 /*
                  * Disable async flushes on Solaris for now.
@@ -931,7 +831,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 #else
                 pEpFile->fAsyncFlushSupported = false;
 #endif
-                pdmacFileBwRef(pEpFile->pBwMgr);
 
                 if (enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE)
                 {
@@ -983,7 +882,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                     {
                         RTMemFree(pEpFile->AioMgr.pTreeRangesLocked);
                         MMR3HeapFree(pEpFile->pTasksFreeHead);
-                        pdmacFileBwUnref(pEpFile->pBwMgr);
                     }
                 }
             }
@@ -1061,9 +959,6 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
         pTask = pTask->pNext;
         MMR3HeapFree(pTaskFree);
     }
-
-    /* Remove from the bandwidth manager */
-    pdmacFileBwUnref(pEpFile->pBwMgr);
 
     /* Destroy the locked ranges tree now. */
     RTAvlrFileOffsetDestroy(pEpFile->AioMgr.pTreeRangesLocked, pdmacFileEpRangesLockedDestroy, NULL);

@@ -973,9 +973,10 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
            && (pAioMgr->cRequestsActive + cRequests < pAioMgr->cRequestsActiveMax)
            && RT_SUCCESS(rc))
     {
+        RTMSINTERVAL msWhenNext;
         PPDMACTASKFILE pCurr = pTaskHead;
 
-        if (!pdmacFileBwMgrIsTransferAllowed(pEndpoint->pBwMgr, (uint32_t)pCurr->DataSeg.cbSeg))
+        if (!pdmacEpIsTransferAllowed(&pEndpoint->Core, (uint32_t)pCurr->DataSeg.cbSeg, &msWhenNext))
         {
             pAioMgr->fBwLimitReached = true;
             break;
