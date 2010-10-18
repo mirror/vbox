@@ -56,8 +56,11 @@ DECLINLINE(uint32_t) mmR3ComputeHyperHeapSize(PVM pVM, bool fCanUseLargerHeap)
     else
     if (fHwVirtExtForced)
     {
+        uint64_t cbRam = 0;
+        CFGMR3QueryU64(CFGMR3GetRoot(pVM), "RamSize", &cbRam);
+
         /* Need a bit more space for large memory guests. */
-        if (pVM->mm.s.cbRamBase >= _4G)
+        if (cbRam >= _4G)
             return _1M;
         else
             return 640 * _1K;
