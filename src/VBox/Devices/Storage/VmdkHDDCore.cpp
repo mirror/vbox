@@ -4117,10 +4117,11 @@ static int vmdkCreateStreamImage(PVMDKIMAGE pImage, uint64_t cbSize,
         return rc;
     pExtent->pszFullname = pszFullname;
 
-    /* Create file for extent. */
+    /* Create file for extent. Make it write only, no reading allowed. */
     rc = vmdkFileOpen(pImage, &pExtent->pFile, pExtent->pszFullname,
-                      VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
-                                                 true /* fCreate */),
+                        VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
+                                                   true /* fCreate */)
+                      & ~RTFILE_O_READ,
                       false /* fAsyncIO */);
     if (RT_FAILURE(rc))
         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: could not create new file '%s'"), pExtent->pszFullname);
