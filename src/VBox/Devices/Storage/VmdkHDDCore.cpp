@@ -305,13 +305,14 @@ typedef struct VMDKEXTENT
     uint16_t    uCompression;
     /** Append position for writing new grain. Only for sparse extents. */
     uint64_t    uAppendPosition;
-    /** Last grain which has been written to. Only for streamOptimized extents. */
-    uint32_t    uLastGrainWritten;
-    /** Sector number of last grain which has been written to. Only for
-     * streamOptimized extents. */
-    uint32_t    uLastGrainSector;
-    /** Starting sector of the decompressed grain buffer. */
-    uint32_t    uGrainSector;
+    /** Last grain which was accessed. Only for streamOptimized extents. */
+    uint32_t    uLastGrainAccess;
+    /** Starting sector corresponding to the grain buffer. */
+    uint32_t    uGrainSectorAbs;
+    /** Grain number corresponding to the grain buffer. */
+    uint32_t    uGrain;
+    /** Actual size of the compressed data, only valid for reading. */
+    uint32_t    cbGrainStreamRead;
     /** Size of compressed grain buffer for streamOptimized extents. */
     size_t      cbCompGrain;
     /** Compressed grain buffer for streamOptimized extents, with marker. */
@@ -522,6 +523,7 @@ static const char *const s_apszVmdkFileExtensions[] =
 *   Internal Functions                                                         *
 *******************************************************************************/
 
+static void vmdkFreeStreamBuffers(PVMDKEXTENT pExtent);
 static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                bool fDelete);
 
@@ -868,8 +870,8 @@ static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t
  */
 DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                     uint64_t uOffset, void *pvBuf,
-                                    size_t cbToRead, uint64_t *puLBA,
-                                    uint32_t *pcbMarkerData)
+                                    size_t cbToRead, const void *pcvMarker,
+                                    uint64_t *puLBA, uint32_t *pcbMarkerData)
 {
     if (pExtent->pFile->fAsyncIO)
     {
@@ -883,10 +885,16 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         VMDKMARKER *pMarker = (VMDKMARKER *)pExtent->pvCompGrain;
         size_t cbCompSize, cbActuallyRead;
 
-        rc = vmdkFileReadSync(pImage, pExtent->pFile, uOffset, pMarker,
-                              RT_OFFSETOF(VMDKMARKER, uType), NULL);
-        if (RT_FAILURE(rc))
-            return rc;
+        if (!pcvMarker)
+        {
+            rc = vmdkFileReadSync(pImage, pExtent->pFile, uOffset, pMarker,
+                                  RT_OFFSETOF(VMDKMARKER, uType), NULL);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        else
+            memcpy(pMarker, pcvMarker, RT_OFFSETOF(VMDKMARKER, uType));
+
         cbCompSize = RT_LE2H_U32(pMarker->cbSize);
         if (cbCompSize == 0)
         {
@@ -1156,33 +1164,12 @@ static void vmdkFreeGrainDirectory(PVMDKEXTENT pExtent)
 }
 
 /**
- * Internal: allocate all buffers associated with grain directories. This
- * includes the compressed/uncompressed buffers for streamOptimized images.
+ * Internal: allocate the compressed/uncompressed buffers for streamOptimized
+ * images.
  */
-static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+static int vmdkAllocStreamBuffers(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 {
     int rc = VINF_SUCCESS;
-    size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
-    uint32_t *pGD = NULL, *pRGD = NULL;
-
-    pGD = (uint32_t *)RTMemAllocZ(cbGD);
-    if (!pGD)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-    pExtent->pGD = pGD;
-
-    if (pExtent->uSectorRGD)
-    {
-        pRGD = (uint32_t *)RTMemAllocZ(cbGD);
-        if (!pRGD)
-        {
-            rc = VERR_NO_MEMORY;
-            goto out;
-        }
-        pExtent->pRGD = pRGD;
-    }
 
     if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
     {
@@ -1209,6 +1196,40 @@ static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 
 out:
     if (RT_FAILURE(rc))
+        vmdkFreeStreamBuffers(pExtent);
+    return rc;
+}
+
+/**
+ * Internal: allocate all buffers associated with grain directories.
+ */
+static int vmdkAllocGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+{
+    int rc = VINF_SUCCESS;
+    size_t cbGD = pExtent->cGDEntries * sizeof(uint32_t);
+    uint32_t *pGD = NULL, *pRGD = NULL;
+
+    pGD = (uint32_t *)RTMemAllocZ(cbGD);
+    if (!pGD)
+    {
+        rc = VERR_NO_MEMORY;
+        goto out;
+    }
+    pExtent->pGD = pGD;
+
+    if (pExtent->uSectorRGD)
+    {
+        pRGD = (uint32_t *)RTMemAllocZ(cbGD);
+        if (!pRGD)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+        pExtent->pRGD = pRGD;
+    }
+
+out:
+    if (RT_FAILURE(rc))
         vmdkFreeGrainDirectory(pExtent);
     return rc;
 }
@@ -1222,6 +1243,13 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 
     if (pExtent->enmType != VMDKETYPE_HOSTED_SPARSE)
         goto out;
+
+    if (   pExtent->uSectorGD == VMDK_GD_AT_END
+        || pExtent->uSectorRGD == VMDK_GD_AT_END)
+    {
+        rc = VERR_INTERNAL_ERROR;
+        goto out;
+    }
 
     rc = vmdkAllocGrainDirectory(pImage, pExtent);
     if (RT_FAILURE(rc))
@@ -1389,6 +1417,10 @@ static int vmdkCreateGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         pExtent->uSectorRGD = uStartSector;
         pExtent->uSectorGD = uStartSector + VMDK_BYTE2SECTOR(cbGDRounded + cbGTRounded);
     }
+
+    rc = vmdkAllocStreamBuffers(pImage, pExtent);
+    if (RT_FAILURE(rc))
+        goto out;
 
     rc = vmdkAllocGrainDirectory(pImage, pExtent);
     if (RT_FAILURE(rc))
@@ -2675,12 +2707,27 @@ static int vmdkValidateHeader(PVMDKIMAGE pImage, PVMDKEXTENT pExtent, const Spar
  * Internal: read metadata belonging to an extent with binary header, i.e.
  * as found in monolithic files.
  */
-static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
+static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                                    bool fMagicAlreadyRead)
 {
     SparseExtentHeader Header;
     uint64_t cSectorsPerGDE;
+    uint64_t cbFile = 0;
+    int rc;
 
-    int rc = vmdkFileReadSync(pImage, pExtent->pFile, 0, &Header, sizeof(Header), NULL);
+    if (fMagicAlreadyRead)
+        rc = vmdkFileReadSync(pImage, pExtent->pFile, 0, &Header,
+                              sizeof(Header), NULL);
+    else
+    {
+        Header.magicNumber = RT_H2LE_U32(VMDK_SPARSE_MAGICNUMBER);
+        rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                              RT_OFFSETOF(SparseExtentHeader, version),
+                              &Header.version,
+                                sizeof(Header)
+                              - RT_OFFSETOF(SparseExtentHeader, version),
+                              NULL);
+    }
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
@@ -2691,21 +2738,33 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
     if (RT_FAILURE(rc))
         goto out;
 
-    rc = vmdkFileGetSize(pImage, pExtent->pFile, &pExtent->uAppendPosition);
-    AssertRC(rc);
-    if (RT_FAILURE(rc))
-    {
-        rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot get size of '%s'"), pExtent->pszFullname);
-        goto out;
-    }
-    pExtent->uAppendPosition = RT_ALIGN_64(pExtent->uAppendPosition, 512);
-
     if (    RT_LE2H_U32(Header.flags & RT_BIT(17))
         &&  RT_LE2H_U64(Header.gdOffset) == VMDK_GD_AT_END)
+        pExtent->fFooter = true;
+
+    if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        || (   pExtent->fFooter
+            && !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL)))
+    {
+        rc = vmdkFileGetSize(pImage, pExtent->pFile, &cbFile);
+        AssertRC(rc);
+        if (RT_FAILURE(rc))
+        {
+            rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot get size of '%s'"), pExtent->pszFullname);
+            goto out;
+        }
+    }
+
+    if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
+        pExtent->uAppendPosition = RT_ALIGN_64(cbFile, 512);
+
+    if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        || (   pExtent->fFooter
+            && !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL)))
     {
         /* Read the footer, which comes before the end-of-stream marker. */
         rc = vmdkFileReadSync(pImage, pExtent->pFile,
-                              pExtent->uAppendPosition - 2*512, &Header,
+                              cbFile - 2*512, &Header,
                               sizeof(Header), NULL);
         AssertRC(rc);
         if (RT_FAILURE(rc))
@@ -2716,10 +2775,10 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         rc = vmdkValidateHeader(pImage, pExtent, &Header);
         if (RT_FAILURE(rc))
             goto out;
-        pExtent->fFooter = true;
         /* Prohibit any writes to this extent. */
         pExtent->uAppendPosition = 0;
     }
+
     pExtent->uVersion = RT_LE2H_U32(Header.version);
     pExtent->enmType = VMDKETYPE_HOSTED_SPARSE; /* Just dummy value, changed later. */
     pExtent->cSectors = RT_LE2H_U64(Header.capacity);
@@ -2742,7 +2801,10 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         pExtent->uSectorGD = RT_LE2H_U64(Header.gdOffset);
         pExtent->uSectorRGD = 0;
     }
-    if (pExtent->uSectorGD == VMDK_GD_AT_END || pExtent->uSectorRGD == VMDK_GD_AT_END)
+    if (   (   pExtent->uSectorGD == VMDK_GD_AT_END
+            || pExtent->uSectorRGD == VMDK_GD_AT_END)
+        && (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            || !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL)))
     {
         rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: cannot resolve grain directory offset in '%s'"), pExtent->pszFullname);
         goto out;
@@ -2785,8 +2847,10 @@ out:
 static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
 {
     int rc = VINF_SUCCESS;
-    uint64_t cbExtentSize;
 
+/* disabled the check as there are too many truncated vmdk images out there */
+#ifdef VBOX_WITH_VMDK_STRICT_SIZE_CHECK
+    uint64_t cbExtentSize;
     /* The image must be a multiple of a sector in size and contain the data
      * area (flat images only). If not, it means the image is at least
      * truncated, or even seriously garbled. */
@@ -2796,8 +2860,6 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error getting size in '%s'"), pExtent->pszFullname);
         goto out;
     }
-/* disabled the check as there are too many truncated vmdk images out there */
-#ifdef VBOX_WITH_VMDK_STRICT_SIZE_CHECK
     if (    cbExtentSize != RT_ALIGN_64(cbExtentSize, 512)
         &&  (pExtent->enmType != VMDKETYPE_FLAT || pExtent->cNominalSectors + pExtent->uSectorOffset > VMDK_BYTE2SECTOR(cbExtentSize)))
     {
@@ -2826,11 +2888,23 @@ static int vmdkReadMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         goto out;
     }
 
+    rc = vmdkAllocStreamBuffers(pImage, pExtent);
+    if (RT_FAILURE(rc))
+        goto out;
+
     /* Prohibit any writes to this streamOptimized extent. */
     if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
         pExtent->uAppendPosition = 0;
 
-    rc = vmdkReadGrainDirectory(pImage, pExtent);
+    if (   !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        || !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        || !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL))
+        rc = vmdkReadGrainDirectory(pImage, pExtent);
+    else
+    {
+        pExtent->uGrainSectorAbs = pExtent->cOverheadSectors;
+        pExtent->cbGrainStreamRead = 0;
+    }
 
 out:
     if (RT_FAILURE(rc))
@@ -3033,6 +3107,23 @@ out:
 #endif /* VBOX_WITH_VMDK_ESX */
 
 /**
+ * Internal: free the buffers used for streamOptimized images.
+ */
+static void vmdkFreeStreamBuffers(PVMDKEXTENT pExtent)
+{
+    if (pExtent->pvCompGrain)
+    {
+        RTMemFree(pExtent->pvCompGrain);
+        pExtent->pvCompGrain = NULL;
+    }
+    if (pExtent->pvGrain)
+    {
+        RTMemFree(pExtent->pvGrain);
+        pExtent->pvGrain = NULL;
+    }
+}
+
+/**
  * Internal: free the memory used by the extent data structure, optionally
  * deleting the referenced files.
  */
@@ -3063,16 +3154,7 @@ static void vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         RTStrFree((char *)(void *)pExtent->pszFullname);
         pExtent->pszFullname = NULL;
     }
-    if (pExtent->pvCompGrain)
-    {
-        RTMemFree(pExtent->pvCompGrain);
-        pExtent->pvCompGrain = NULL;
-    }
-    if (pExtent->pvGrain)
-    {
-        RTMemFree(pExtent->pvGrain);
-        pExtent->pvGrain = NULL;
-    }
+    vmdkFreeStreamBuffers(pExtent);
 }
 
 /**
@@ -3207,7 +3289,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             rc = VERR_NO_MEMORY;
             goto out;
         }
-        rc = vmdkReadBinaryMetaExtent(pImage, pExtent);
+        rc = vmdkReadBinaryMetaExtent(pImage, pExtent, false /* fMagicAlreadyRead */);
         if (RT_FAILURE(rc))
             goto out;
 
@@ -3398,7 +3480,8 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                          * failed. */
                         goto out;
                     }
-                    rc = vmdkReadBinaryMetaExtent(pImage, pExtent);
+                    rc = vmdkReadBinaryMetaExtent(pImage, pExtent,
+                                                  true /* fMagicAlreadyRead */);
                     if (RT_FAILURE(rc))
                         goto out;
                     rc = vmdkReadMetaExtent(pImage, pExtent);
@@ -3488,9 +3571,10 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         }
     }
 
-    rc = vmdkAllocateGrainTableCache(pImage);
-    if (RT_FAILURE(rc))
-        goto out;
+    if (   !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        || !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        || !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL))
+        rc = vmdkAllocateGrainTableCache(pImage);
 
 out:
     if (RT_FAILURE(rc))
@@ -4431,10 +4515,12 @@ static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
         {
             /* No need to write any pending data if the file will be deleted
              * or if the new file wasn't successfully created. */
-            if (!fDelete && pImage->pExtents && pImage->pExtents[0].cGTEntries)
+            if (   !fDelete && pImage->pExtents
+                && pImage->pExtents[0].cGTEntries
+                && pImage->pExtents[0].uAppendPosition)
             {
                 PVMDKEXTENT pExtent = &pImage->pExtents[0];
-                uint32_t uLastGDEntry = pExtent->uLastGrainWritten / pExtent->cGTEntries;
+                uint32_t uLastGDEntry = pExtent->uLastGrainAccess / pExtent->cGTEntries;
                 if (uLastGDEntry != pExtent->cGDEntries - 1)
                 {
                     rc = vmdkStreamFlushGT(pImage, pExtent, uLastGDEntry);
@@ -4744,9 +4830,13 @@ static int vmdkGetSector(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     uint32_t aGTDataTmp[VMDK_GT_CACHELINE_SIZE];
     int rc;
 
-    /* For newly created streamOptimized images this must be a no-op. */
-    if (   pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
-        && pExtent->uAppendPosition)
+    /* For newly created and readonly/sequentially opened streamOptimized
+     * images this must be a no-op, as the grain directory is not there. */
+    if (   (   pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
+            && pExtent->uAppendPosition)
+        || (   pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
+            && pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY
+            && pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL))
     {
         *puExtentSector = 0;
         return VINF_SUCCESS;
@@ -4986,8 +5076,7 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
 
         /* Invalidate cache, just in case some code incorrectly allows mixing
          * of reads and writes. Normally shouldn't be needed. */
-        pExtent->uGrainSector = 0;
-        pExtent->uLastGrainSector = 0;
+        pExtent->uGrainSectorAbs = 0;
 
         /* Write compressed data block and the markers. */
         uint32_t cbGrain = 0;
@@ -4998,7 +5087,7 @@ static int vmdkAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
             AssertRC(rc);
             return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write allocated compressed data block in '%s'"), pExtent->pszFullname);
         }
-        pExtent->uLastGrainWritten = uSector / pExtent->cSectorsPerGrain;
+        pExtent->uLastGrainAccess = uSector / pExtent->cSectorsPerGrain;
         pExtent->uAppendPosition += cbGrain;
     }
     else
@@ -5099,8 +5188,8 @@ static int vmdkStreamAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     uCacheLine = uGrain % pExtent->cGTEntries / VMDK_GT_CACHELINE_SIZE;
     uCacheEntry = uGrain % VMDK_GT_CACHELINE_SIZE;
     uGDEntry = uGrain / pExtent->cGTEntries;
-    uLastGDEntry = pExtent->uLastGrainWritten / pExtent->cGTEntries;
-    if (uGrain < pExtent->uLastGrainWritten)
+    uLastGDEntry = pExtent->uLastGrainAccess / pExtent->cGTEntries;
+    if (uGrain < pExtent->uLastGrainAccess)
         return VERR_VD_VMDK_INVALID_WRITE;
 
     /* Zero byte write optimization. Since we don't tell VBoxHDD that we need
@@ -5153,13 +5242,11 @@ static int vmdkStreamAllocGrain(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                              uSector, &cbGrain);
     if (RT_FAILURE(rc))
     {
-        pExtent->uGrainSector = 0;
-        pExtent->uLastGrainSector = 0;
+        pExtent->uGrainSectorAbs = 0;
         AssertRC(rc);
         return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: cannot write compressed data block in '%s'"), pExtent->pszFullname);
     }
-    pExtent->uLastGrainSector = VMDK_BYTE2SECTOR(uFileOffset);
-    pExtent->uLastGrainWritten = uGrain;
+    pExtent->uLastGrainAccess = uGrain;
     pExtent->uAppendPosition += cbGrain;
 
     return rc;
@@ -5469,6 +5556,138 @@ static int vmdkAllocGrainAsync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     LogFlowFunc(("leaving rc=%Rrc\n", rc));
 
     return rc;
+}
+
+/**
+ * Internal. Reads the contents by sequentially going over the compressed
+ * grains (hoping that they are in sequence).
+ */
+static int vmdkStreamReadSequential(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
+                                    uint64_t uSector, void *pvBuf,
+                                    uint64_t cbRead)
+{
+    int rc;
+
+    /* Do not allow to go back. */
+    uint32_t uGrain = uSector / pExtent->cSectorsPerGrain;
+    if (uGrain < pExtent->uLastGrainAccess)
+        return VERR_VD_VMDK_INVALID_STATE;
+    pExtent->uLastGrainAccess = uGrain;
+
+    /* After a previous error do not attempt to recover, as it would need
+     * seeking (in the general case backwards which is forbidden). */
+    if (!pExtent->uGrainSectorAbs)
+        return VERR_VD_VMDK_INVALID_STATE;
+
+    /* Check if we need to read something from the image or if what we have
+     * in the buffer is good to fulfill the request. */
+    if (!pExtent->cbGrainStreamRead || uGrain > pExtent->uGrain)
+    {
+        uint32_t uGrainSectorAbs =   pExtent->uGrainSectorAbs
+                                   + VMDK_BYTE2SECTOR(pExtent->cbGrainStreamRead);
+
+        /* Get the marker from the next data block - and skip everything which
+         * is not a compressed grain. If it's a compressed grain which is for
+         * the requested sector (or after), read it. */
+        VMDKMARKER Marker;
+        do
+        {
+            RT_ZERO(Marker);
+            rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                                  VMDK_SECTOR2BYTE(uGrainSectorAbs),
+                                  &Marker, RT_OFFSETOF(VMDKMARKER, uType),
+                                  NULL);
+            if (RT_FAILURE(rc))
+                return rc;
+            Marker.uSector = RT_LE2H_U64(Marker.uSector);
+            Marker.cbSize = RT_LE2H_U32(Marker.cbSize);
+
+            if (Marker.cbSize == 0)
+            {
+                /* A marker for something else than a compressed grain. */
+                rc = vmdkFileReadSync(pImage, pExtent->pFile,
+                                        VMDK_SECTOR2BYTE(uGrainSectorAbs)
+                                      + RT_OFFSETOF(VMDKMARKER, uType),
+                                      &Marker.uType, sizeof(Marker.uType),
+                                      NULL);
+                Marker.uType = RT_LE2H_U32(Marker.uType);
+                switch (Marker.uType)
+                {
+                    case VMDK_MARKER_EOS:
+                        uGrainSectorAbs++;
+                        break;
+                    case VMDK_MARKER_GT:
+                        uGrainSectorAbs += 1 + VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t));
+                        break;
+                    case VMDK_MARKER_GD:
+                        uGrainSectorAbs += 1 + VMDK_BYTE2SECTOR(RT_ALIGN(pExtent->cGDEntries * sizeof(uint32_t), 512));
+                        break;
+                    case VMDK_MARKER_FOOTER:
+                        uGrainSectorAbs += 2;
+                        break;
+                    default:
+                        AssertMsgFailed(("VMDK: corrupted marker, type=%#x\n", Marker.uType));
+                        pExtent->uGrainSectorAbs = 0;
+                        return VERR_VD_VMDK_INVALID_STATE;
+                }
+                pExtent->cbGrainStreamRead = 0;
+            }
+            else
+            {
+                /* A compressed grain marker. If it is at/after what we're
+                 * interested in read and decompress data. */
+                if (uSector > Marker.uSector + pExtent->cSectorsPerGrain)
+                {
+                    uGrainSectorAbs += VMDK_BYTE2SECTOR(RT_ALIGN(Marker.cbSize + RT_OFFSETOF(VMDKMARKER, uType), 512));
+                    continue;
+                }
+                uint64_t uLBA;
+                uint32_t cbGrainStreamRead = 0;
+                rc = vmdkFileInflateSync(pImage, pExtent,
+                                         VMDK_SECTOR2BYTE(uGrainSectorAbs),
+                                         pExtent->pvGrain,
+                                         VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
+                                         &Marker, &uLBA, &cbGrainStreamRead);
+                if (RT_FAILURE(rc))
+                {
+                    pExtent->uGrainSectorAbs = 0;
+                    return rc;
+                }
+                if (   pExtent->uGrain
+                    && uLBA / pExtent->cSectorsPerGrain <= pExtent->uGrain)
+                {
+                    pExtent->uGrainSectorAbs = 0;
+                    return VERR_VD_VMDK_INVALID_STATE;
+                }
+                pExtent->uGrain = uLBA / pExtent->cSectorsPerGrain;
+                pExtent->cbGrainStreamRead = cbGrainStreamRead;
+                break;
+            }
+        } while (Marker.uType != VMDK_MARKER_EOS);
+
+        pExtent->uGrainSectorAbs = uGrainSectorAbs;
+
+        if (!pExtent->cbGrainStreamRead && Marker.uType == VMDK_MARKER_EOS)
+        {
+            pExtent->uGrain = UINT32_MAX;
+            /* Must set a non-zero value for pExtent->cbGrainStreamRead or
+             * the next read would try to get more data, and we're at EOF. */
+            pExtent->cbGrainStreamRead = 1;
+        }
+    }
+
+    if (pExtent->uGrain > uSector / pExtent->cSectorsPerGrain)
+    {
+        /* The next data block we have is not for this area, so just return
+         * that there is no data. */
+        return VERR_VD_BLOCK_FREE;
+    }
+
+    uint32_t uSectorInGrain = uSector % pExtent->cSectorsPerGrain;
+    memcpy(pvBuf,
+           (uint8_t *)pExtent->pvGrain + VMDK_SECTOR2BYTE(uSectorInGrain),
+           cbRead);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -6020,7 +6239,16 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
             cbToRead = RT_MIN(cbToRead, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - uSectorExtentRel % pExtent->cSectorsPerGrain));
             Assert(!(cbToRead % 512));
             if (uSectorExtentAbs == 0)
-                rc = VERR_VD_BLOCK_FREE;
+            {
+                if (   !(pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+                    || !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                    || !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL))
+                    rc = VERR_VD_BLOCK_FREE;
+                else
+                    rc = vmdkStreamReadSequential(pImage, pExtent,
+                                                  uSectorExtentRel,
+                                                  pvBuf, cbToRead);
+            }
             else
             {
                 if (pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
@@ -6028,20 +6256,21 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                     uint32_t uSectorInGrain = uSectorExtentRel % pExtent->cSectorsPerGrain;
                     uSectorExtentAbs -= uSectorInGrain;
                     uint64_t uLBA;
-                    if (pExtent->uGrainSector != uSectorExtentAbs)
+                    if (pExtent->uGrainSectorAbs != uSectorExtentAbs)
                     {
                         rc = vmdkFileInflateSync(pImage, pExtent,
                                                  VMDK_SECTOR2BYTE(uSectorExtentAbs),
                                                  pExtent->pvGrain,
                                                  VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain),
-                                                 &uLBA, NULL);
+                                                 NULL, &uLBA, NULL);
                         if (RT_FAILURE(rc))
                         {
-                            pExtent->uGrainSector = 0;
+                            pExtent->uGrainSectorAbs = 0;
                             AssertRC(rc);
                             goto out;
                         }
-                        pExtent->uGrainSector = uSectorExtentAbs;
+                        pExtent->uGrainSectorAbs = uSectorExtentAbs;
+                        pExtent->uGrain = uSectorExtentRel / pExtent->cSectorsPerGrain;
                         Assert(uLBA == uSectorExtentRel);
                     }
                     memcpy(pvBuf, (uint8_t *)pExtent->pvGrain + VMDK_SECTOR2BYTE(uSectorInGrain), cbToRead);
@@ -6136,7 +6365,7 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
             /* Clip write range to at most the rest of the grain. */
             cbToWrite = RT_MIN(cbToWrite, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - uSectorExtentRel % pExtent->cSectorsPerGrain));
             if (    pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
-                &&  uSectorExtentRel < (uint64_t)pExtent->uLastGrainWritten * pExtent->cSectorsPerGrain)
+                &&  uSectorExtentRel < (uint64_t)pExtent->uLastGrainAccess * pExtent->cSectorsPerGrain)
             {
                 rc = VERR_VD_VMDK_INVALID_WRITE;
                 goto out;
@@ -6185,8 +6414,7 @@ static int vmdkWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                      * invalid. It requires rewriting already compressed data
                      * which is somewhere between expensive and impossible. */
                     rc = VERR_VD_VMDK_INVALID_STATE;
-                    pExtent->uGrainSector = 0;
-                    pExtent->uLastGrainSector = 0;
+                    pExtent->uGrainSectorAbs = 0;
                     AssertRC(rc);
                 }
                 else
@@ -6463,9 +6691,8 @@ static int vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
     int rc;
 
-    /* Image must be opened and the new flags must be valid. Just readonly and
-     * info flags are supported. */
-    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE)))
+    /* Image must be opened and the new flags must be valid. */
+    if (!pImage || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -6964,7 +7191,7 @@ static int vmdkAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
             /* Clip write range to at most the rest of the grain. */
             cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->cSectorsPerGrain - uSectorExtentRel % pExtent->cSectorsPerGrain));
             if (    pImage->uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED
-                &&  uSectorExtentRel < (uint64_t)pExtent->uLastGrainWritten * pExtent->cSectorsPerGrain)
+                &&  uSectorExtentRel < (uint64_t)pExtent->uLastGrainAccess * pExtent->cSectorsPerGrain)
             {
                 rc = VERR_VD_VMDK_INVALID_WRITE;
                 goto out;

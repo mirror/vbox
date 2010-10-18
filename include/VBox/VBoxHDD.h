@@ -172,8 +172,11 @@ typedef struct VBOXHDDRAW
 /** Allow sharing of the image for writable images. May be ignored if the
  * format backend doesn't support this type of concurrent access. */
 #define VD_OPEN_FLAGS_SHAREABLE     RT_BIT(5)
+/** Ask the backend to switch to sequential accesses if possible. Opening
+ * will not fail if it cannot do this, the flag will be simply ignored. */
+#define VD_OPEN_FLAGS_SEQUENTIAL    RT_BIT(6)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL)
 /** @}*/
 
 /**
