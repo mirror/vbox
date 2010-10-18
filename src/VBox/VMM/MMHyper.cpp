@@ -44,16 +44,27 @@ static int mmR3HyperHeapMap(PVM pVM, PMMHYPERHEAP pHeap, PRTGCPTR ppHeapGC);
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 
-DECLINLINE(uint32_t) computeHyperHeapSize(bool fCanUseLargerHeap, uint32_t cCpus, bool fHwVirtExtForced)
+DECLINLINE(uint32_t) mmR3ComputeHyperHeapSize(PVM pVM, bool fCanUseLargerHeap)
 {
-    if (cCpus > 1)
-        return _2M + cCpus * _64K;
+    bool fHwVirtExtForced = VMMIsHwVirtExtForced(pVM);
+
+    if (pVM->cCpus > 1)
+        return _1M + pVM->cCpus * 2 * _64K;
 
     if (fCanUseLargerHeap)
         return 1280*_1K;
     else
-        /* Size must be kept like this for saved state compatibility */
-        return fHwVirtExtForced ? 640*_1K : 1280*_1K;
+    if (fHwVirtExtForced)
+    {
+        /* Need a bit more space for large memory guests. */
+        if (pVM->mm.s.cbRamBase >= _4G)
+            return _1M;
+        else
+            return 640 * _1K;
+    }
+    else
+        /* Size must be kept like this for saved state compatibility (only for raw mode though). */
+        return 1280*_1K;
 }
 
 
@@ -86,7 +97,7 @@ int mmR3HyperInit(PVM pVM)
     PCFGMNODE pMM = CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM");
     bool fCanUseLargerHeap = false;
     int rc = CFGMR3QueryBoolDef(pMM, "CanUseLargerHeap", &fCanUseLargerHeap, false);
-    uint32_t cbHyperHeap = computeHyperHeapSize(fCanUseLargerHeap, pVM->cCpus, VMMIsHwVirtExtForced(pVM));
+    uint32_t cbHyperHeap = mmR3ComputeHyperHeapSize(pVM, fCanUseLargerHeap);
     rc = CFGMR3QueryU32Def(pMM, "cbHyperHeap", &cbHyperHeap, cbHyperHeap);
     AssertLogRelRCReturn(rc, rc);
 
