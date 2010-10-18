@@ -221,7 +221,7 @@ def removeVm(ctx,mach):
     id = mach.id
     print "removing machine ",mach.name,"with UUID",id
     cmdClosedVm(ctx, mach, detachVmDevice, ["ALL"])
-    mach = vb.unregisterMachine(id)
+    mach = mach.unregister(ctx['global'].constants.CleanupMode_Full)
     if mach:
          mach.deleteSettings()
     # update cache
@@ -612,9 +612,9 @@ def cmdAnyVm(ctx,mach,cmd, args=[],save=False):
 
 def machById(ctx,id):
     try:
-        mach = ctx['vb'].findMachine(id)
-    except:
         mach = ctx['vb'].getMachine(id)
+    except:
+        mach = ctx['vb'].findMachine(id)
     return mach
 
 class XPathNode:
