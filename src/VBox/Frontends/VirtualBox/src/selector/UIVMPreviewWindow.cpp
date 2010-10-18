@@ -147,7 +147,8 @@ void UIVMPreviewWindow::paintEvent(QPaintEvent *pEvent)
     /* Where should the content go */
     QRect cr = contentsRect();
     /* Draw the background with the monitor and the shadow */
-    painter.drawImage(cr.x(), cr.y(), *m_pbgImage);
+    if (m_pbgImage)
+        painter.drawImage(cr.x(), cr.y(), *m_pbgImage);
 //    painter.setPen(Qt::red);
 //    painter.drawRect(cr.adjusted(0, 0, -1, -1));
 //    return;
@@ -184,7 +185,8 @@ void UIVMPreviewWindow::paintEvent(QPaintEvent *pEvent)
         painter.drawText(m_vRect, fFlags, strName);
     }
     /* Draw the glossy overlay last */
-    painter.drawImage(m_vRect.x(), m_vRect.y(), *m_pGlossyImg);
+    if (m_pGlossyImg)
+        painter.drawImage(m_vRect.x(), m_vRect.y(), *m_pGlossyImg);
 }
 
 void UIVMPreviewWindow::contextMenuEvent(QContextMenuEvent *pEvent)
@@ -387,8 +389,20 @@ void UIVMPreviewWindow::restart()
 
 void UIVMPreviewWindow::repaintBGImages()
 {
-    QPalette pal = palette();
+    /* Delete the old images */
+    if (m_pbgImage)
+        delete m_pbgImage;
+    if (m_pGlossyImg)
+        delete m_pGlossyImg;
+
+    /* Check that there is enough room for our fancy stuff. If not we just
+     * draw nothing. */
     QRect cr = contentsRect();
+    if (   cr.width()  < 30
+        || cr.height() < 30)
+        return;
+
+    QPalette pal = palette();
     m_wRect = cr.adjusted(10, 10, -10, -10);
     m_vRect = m_wRect.adjusted(m_vMargin, m_vMargin, -m_vMargin, -m_vMargin).adjusted(-3, -3, 3, 3);
 
@@ -424,8 +438,6 @@ void UIVMPreviewWindow::repaintBGImages()
     pO.end();
 #endif
     /* Make a copy of the new bg image */
-    if (m_pbgImage)
-        delete m_pbgImage;
     m_pbgImage = new QImage(imageO);
 
     /* Now the glossy overlay has to be created. Start with defining a nice
@@ -440,8 +452,6 @@ void UIVMPreviewWindow::repaintBGImages()
     glossyPath.closeSubpath();
 
     /* Paint the glossy path on a QImage */
-    if (m_pGlossyImg)
-        delete m_pGlossyImg;
     QImage image(m_vRect.size(), QImage::Format_ARGB32);
     QColor bg1(Qt::white); /* We want blur to transparent _and_ white. */
     bg1.setAlpha(0);
