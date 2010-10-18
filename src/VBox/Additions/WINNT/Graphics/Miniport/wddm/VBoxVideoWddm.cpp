@@ -2544,6 +2544,97 @@ DxgkDdiPreemptCommand(
     return STATUS_SUCCESS;
 }
 
+#if 0
+static uint32_t vboxWddmSysMemElBuild(PVBOXVDMACMD_SYSMEMEL pEl, PMDL pMdl, uint32_t iPfn, uint32_t cPages, uint32_t cbBuffer, uint32_t *pcPagesRemaining)
+{
+    uint32_t cbInitialBuffer = cbBuffer;
+    if (cbBuf >= sizeof (*pEl))
+    {
+        PFN_NUMBER cur = MmGetMdlPfnArray(pMdl)[iPfn];
+        uint32_t cbEl = sizeof (*pEl);
+        uint32_t cBufs = 1;
+        pEl->phBuf[0] = (cur << 12);
+        --cPages;
+        cbBuffer -= sizeof (*pEl);
+        bool bArrayMode = false;
+        while (cPages)
+        {
+            PFN_NUMBER next = MmGetMdlPfnArray(pMdl)[iPfn+cBufs];
+            if (!bArrayMode)
+            {
+                if (next == cur+1)
+                {
+                    cur = next;
+                    ++cBufs;
+                    --cPages;
+                }
+                else if (cBufs > 1)
+                {
+                    break;
+                }
+                else
+                {
+                    bArrayMode = true;
+                }
+            }
+
+            /* array mode */
+            if (cbBuffer < sizeof (pEl->phBuf[0]))
+            {
+                break;
+            }
+
+            pEl->phBuf[cBufs] = (next << 12);
+            cbBuffer -= sizeof (pEl->phBuf[0]);
+            ++cBufs;
+            --cPages;
+        }
+
+        pEl->cPages = cPages;
+        if (bArrayMode)
+            pEl->fFlags = VBOXVDMACMD_SYSMEMEL_F_PAGELIST;
+        else
+            pEl->fFlags = 0;
+    }
+    else
+    {
+        Assert(0);
+    }
+
+    *pcPagesRemaining = cPages;
+    return cbInitialBuffer - cbBuffer;
+}
+
+static uint32_t vboxWddmBpbTransferVRamSysBuildEls(PVBOXVDMACMD_DMA_BPB_TRANSFER_VRAMSYS pCmd, PMDL pMdl, uint32_t iPfn, uint32_t cPages, uint32_t cbBuffer, uint32_t *pcPagesRemaining)
+{
+    uint32_t cInitPages = cPages;
+    uint32_t cbBufferUsed = vboxWddmSysMemElBuild(&pCmd->FirstEl, pMdl, iPfn, cPages, cbBuffer, &cPages);
+    if (cbBufferUsed)
+    {
+        uint32_t cEls = 1;
+        PVBOXVDMACMD_SYSMEMEL pEl = &pCmd->FirstEl;
+        while (cPages)
+        {
+            PVBOXVDMACMD_SYSMEMEL pEl = VBOXVDMACMD_SYSMEMEL_NEXT(pEl);
+            cbBufferUsed = vboxWddmSysMemElBuild(pEl, pMdl, iPfn + cInitPages - cPages, cPages, cbBuffer - cbBufferUsed, &cPages);
+            if (cbBufferUsed)
+            {
+                ++cEls;
+            }
+            else
+                break;
+        }
+    }
+    else
+    {
+        Assert(0);
+    }
+
+    pCmd->cTransferPages = (cInitPages - cPages);
+    *pcPagesRemaining = cPages;
+    return cbBufferUsed;
+}
+#endif
 /*
  * DxgkDdiBuildPagingBuffer
  */
@@ -2569,80 +2660,135 @@ DxgkDdiBuildPagingBuffer(
         case DXGK_OPERATION_TRANSFER:
         {
 #ifdef VBOX_WITH_VDMA
+#if 0
+            if ((!pBuildPagingBuffer->Transfer.Source.SegmentId) != (!pBuildPagingBuffer->Transfer.Destination.SegmentId))
+            {
+                PVBOXVDMACMD pCmd = (PVBOXVDMACMD)pBuildPagingBuffer->pDmaBuffer;
+                pCmd->enmType = VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER_VRAMSYS;
+                pCmd->u32CmdSpecific = 0;
+                PVBOXVDMACMD_DMA_BPB_TRANSFER_VRAMSYS pBody = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_BPB_TRANSFER_VRAMSYS);
+                PMDL pMdl;
+                uint32_t cPages = (pBuildPagingBuffer->Transfer.TransferSize + 0xfff) >> 12;
+                cPages -= pBuildPagingBuffer->MultipassOffset;
+                uint32_t iFirstPage = pBuildPagingBuffer->Transfer.MdlOffset + pBuildPagingBuffer->MultipassOffset;
+                uint32_t cPagesRemaining;
+                if (pBuildPagingBuffer->Transfer.Source.SegmentId)
+                {
+                    uint64_t off = pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart;
+                    off += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << 12);
+                    pBody->offVramBuf = off;
+                    pMdl = pBuildPagingBuffer->Transfer.Source.pMdl;
+                    pBody->fFlags = 0;//VBOXVDMACMD_DMA_BPB_TRANSFER_VRAMSYS_SYS2VRAM
+                }
+                else
+                {
+                    uint64_t off = pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart;
+                    off += pBuildPagingBuffer->Transfer.TransferOffset + (pBuildPagingBuffer->MultipassOffset << 12);
+                    pBody->offVramBuf = off;
+                    pMdl = pBuildPagingBuffer->Transfer.Destination.pMdl;
+                    pBody->fFlags = VBOXVDMACMD_DMA_BPB_TRANSFER_VRAMSYS_SYS2VRAM;
+                }
+
+                uint32_t sbBufferUsed = vboxWddmBpbTransferVRamSysBuildEls(pBody, pMdl, iFirstPage, cPages, pBuildPagingBuffer->DmaSize, &cPagesRemaining);
+                Assert(sbBufferUsed);
+            }
+
+#else
             UINT cbCmd = VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
             PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, cbCmd);
             Assert(pDr);
             if (pDr)
             {
-                // vboxVdmaCBufDrCreate zero initializes the pDr
-                pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR;
-                pDr->cbBuf = cbCmd;
-                pDr->rc = VERR_NOT_IMPLEMENTED;
-
+                SIZE_T cbTransfered = 0;
+                SIZE_T cbTransferSize = pBuildPagingBuffer->Transfer.TransferSize;
                 PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
-                pHdr->enmType = VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER;
-                pHdr->u32CmdSpecific = 0;
-                VBOXVDMACMD_DMA_BPB_TRANSFER *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_DMA_BPB_TRANSFER);
-                pBody->cbTransferSize = (uint32_t)pBuildPagingBuffer->Transfer.TransferSize;
-                pBody->fFlags = 0;
+                do
+                {
+                    // vboxVdmaCBufDrCreate zero initializes the pDr
+                    pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR;
+                    pDr->cbBuf = cbCmd;
+                    pDr->rc = VERR_NOT_IMPLEMENTED;
 
-                if (pBuildPagingBuffer->Transfer.Source.SegmentId)
-                {
-#ifdef DEBUG_misha
-                    Assert(pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart);
-#endif
-                    uint64_t off = pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart;
-                    off += pBuildPagingBuffer->Transfer.TransferOffset;
-                    pBody->Src.offVramBuf = off;
-                    pBody->fFlags |= VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET;
-                }
-                else
-                {
-                    pBody->Src.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[pBuildPagingBuffer->Transfer.MdlOffset] << 12;
-#ifdef DEBUG
+                    pHdr->enmType = VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER;
+                    pHdr->u32CmdSpecific = 0;
+                    VBOXVDMACMD_DMA_BPB_TRANSFER *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_DMA_BPB_TRANSFER);
+//                    pBody->cbTransferSize = (uint32_t)pBuildPagingBuffer->Transfer.TransferSize;
+                    pBody->fFlags = 0;
+                    SIZE_T cSrcPages = cbTransferSize;
+                    SIZE_T cDstPages = cbTransferSize;
+
+                    if (pBuildPagingBuffer->Transfer.Source.SegmentId)
                     {
-                        PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[pBuildPagingBuffer->Transfer.MdlOffset];
-                        for (UINT i = 1; i < ((pBuildPagingBuffer->Transfer.TransferSize + 0xfff) >> 12); ++i)
+#ifdef DEBUG_misha
+                        Assert(pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart);
+#endif
+                        uint64_t off = pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart;
+                        off += pBuildPagingBuffer->Transfer.TransferOffset + cbTransfered;
+                        pBody->Src.offVramBuf = off;
+                        pBody->fFlags |= VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET;
+                    }
+                    else
+                    {
+                        UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (cbTransfered>>12);
+                        pBody->Src.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index] << 12;
+                        PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index];
+                        cSrcPages = 1;
+                        for (UINT i = 1; i < ((cbTransferSize - cbTransfered + 0xfff) >> 12); ++i)
                         {
-                            PFN_NUMBER cur = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[pBuildPagingBuffer->Transfer.MdlOffset+1];
-                            Assert(cur == ++num);
+                            PFN_NUMBER cur = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Source.pMdl)[index+i];
+                            if(cur != ++num)
+                            {
+                                cSrcPages+= i-1;
+                                break;
+                            }
                         }
                     }
-#endif
-                }
 
-                if (pBuildPagingBuffer->Transfer.Destination.SegmentId)
-                {
-#ifdef DEBUG_misha
-                    Assert(pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart);
-#endif
-                    uint64_t off = pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart;
-                    off += pBuildPagingBuffer->Transfer.TransferOffset;
-                    pBody->Dst.offVramBuf = off;
-                    pBody->fFlags |= VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET;
-                }
-                else
-                {
-                    pBody->Dst.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[pBuildPagingBuffer->Transfer.MdlOffset] << 12;
-#ifdef DEBUG
+                    if (pBuildPagingBuffer->Transfer.Destination.SegmentId)
                     {
-                        PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[pBuildPagingBuffer->Transfer.MdlOffset];
-                        for (UINT i = 1; i < ((pBuildPagingBuffer->Transfer.TransferSize + 0xfff) >> 12); ++i)
+#ifdef DEBUG_misha
+                        Assert(pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart);
+#endif
+                        uint64_t off = pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart;
+                        off += pBuildPagingBuffer->Transfer.TransferOffset;
+                        pBody->Dst.offVramBuf = off + cbTransfered;
+                        pBody->fFlags |= VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET;
+                    }
+                    else
+                    {
+                        UINT index = pBuildPagingBuffer->Transfer.MdlOffset + (cbTransfered>>12);
+                        pBody->Dst.phBuf = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index] << 12;
+                        PFN_NUMBER num = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index];
+                        cDstPages = 1;
+                        for (UINT i = 1; i < ((cbTransferSize - cbTransfered + 0xfff) >> 12); ++i)
                         {
-                            PFN_NUMBER cur = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[pBuildPagingBuffer->Transfer.MdlOffset+1];
-                            Assert(cur == ++num);
+                            PFN_NUMBER cur = MmGetMdlPfnArray(pBuildPagingBuffer->Transfer.Destination.pMdl)[index+i];
+                            if(cur != ++num)
+                            {
+                                cDstPages+= i-1;
+                                break;
+                            }
                         }
                     }
-#endif
-                }
 
-                int rc = vboxVdmaCBufDrSubmitSynch(pDevExt, &pDevExt->u.primary.Vdma, pDr);
-                AssertRC(rc);
-                if (RT_SUCCESS(rc))
-                    Status = STATUS_SUCCESS;
-                else
-                    Status = STATUS_UNSUCCESSFUL;
+                    SIZE_T cbCurTransfer;
+                    cbCurTransfer = RT_MIN(cbTransferSize - cbTransfered, cSrcPages << 12);
+                    cbCurTransfer = RT_MIN(cbCurTransfer, cDstPages << 12);
 
+                    pBody->cbTransferSize = cbCurTransfer;
+                    Assert(!(cbCurTransfer & 0xfff));
+
+                    int rc = vboxVdmaCBufDrSubmitSynch(pDevExt, &pDevExt->u.primary.Vdma, pDr);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        Status = STATUS_SUCCESS;
+                        cbTransfered += cbCurTransfer;
+                    }
+                    else
+                        Status = STATUS_UNSUCCESSFUL;
+                } while (cbTransfered < cbTransferSize);
+                Assert(cbTransfered == cbTransferSize);
                 vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
             }
             else
@@ -2651,6 +2797,7 @@ DxgkDdiBuildPagingBuffer(
                 drprintf((__FUNCTION__": vboxVdmaCBufDrCreate returned NULL\n"));
                 Status = STATUS_INSUFFICIENT_RESOURCES;
             }
+#endif
 #endif /* #ifdef VBOX_WITH_VDMA */
             break;
         }
