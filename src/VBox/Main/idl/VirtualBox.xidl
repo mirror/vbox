@@ -11231,7 +11231,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAdapterType"
-    uuid="bea69445-df7d-449f-b224-3b6526d8ac81"
+    uuid="3c2281e4-d952-4e87-8c7d-24379cb6a81c"
   >
     <desc>
       Network adapter type.
@@ -11257,9 +11257,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="Virtio"                value="6">
         <desc>Virtio network device.</desc>
-    </const>
-    <const name="I82566MC"              value="7">
-        <desc>Intel 82566MC Gigabit Ethernet Controller (82566MC).</desc>
     </const>
   </enum>
 
