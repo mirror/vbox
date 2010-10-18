@@ -1879,7 +1879,8 @@ static const struct {
     {
         "piix3ide", 31, 1 /* IDE controller */
     },
-#if 0
+    /* Disable, if we may wish to have multiple AHCI controllers */
+#if 1
     {
         "ahci",     31, 2 /* SATA controller */
     },
@@ -1888,11 +1889,17 @@ static const struct {
         "smbus",    31, 3 /* System Management Bus */
     },
     {
+        "usb-ohci", 31, 4 /* OHCI USB controller */
+    },
+    {
+        "usb-ehci", 31, 5 /* EHCI USB controller */
+    },
+    {
         "thermal",  31, 6 /* Thermal controller */
     },
 };
 
-static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName)
+static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName, int iDevFn)
 {
     /* Hardcoded slots/functions, per chipset spec */
     for (size_t i = 0; i < RT_ELEMENTS(PciSlotAssignments); i++)
@@ -1903,6 +1910,9 @@ static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName)
             return (PciSlotAssignments[i].iSlot << 3) + PciSlotAssignments[i].iFunction;
         }
     }
+
+    if (iDevFn >=0 && iDevFn < (int)RT_ELEMENTS(pBus->apDevices))
+        return iDevFn;
 
     /* Otherwise when assigning a slot, we need to make sure all its functions are available */
     for (int iPos = 0; iPos < (int)RT_ELEMENTS(pBus->apDevices); iPos += 8)
@@ -1944,14 +1954,11 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
     /*
      * Find device position
      */
-    if (iDev < 0 || !strcmp(pszName, "piix3ide"))
+    iDev = assignPosition(pBus, pPciDev, pszName, iDev);
+    if (iDev < 0)
     {
-        iDev = assignPosition(pBus, pPciDev, pszName);
-        if (iDev < 0)
-        {
-             AssertMsgFailed(("Couldn't find free spot!\n"));
-             return VERR_PDM_TOO_PCI_MANY_DEVICES;
-        }
+        AssertMsgFailed(("Couldn't find free spot!\n"));
+        return VERR_PDM_TOO_PCI_MANY_DEVICES;
     }
 
     /*
@@ -1970,7 +1977,7 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
     if (pBus->apDevices[iDev])
     {
         /* if we got here, we shall (and usually can) relocate the device */
-        int iRelDev = assignPosition(pBus, pBus->apDevices[iDev], pBus->apDevices[iDev]->name);
+        int iRelDev = assignPosition(pBus, pBus->apDevices[iDev], pBus->apDevices[iDev]->name, -1);
         if (iRelDev < 0 || iRelDev == iDev)
         {
             AssertMsgFailed(("Couldn't find free spot!\n"));
