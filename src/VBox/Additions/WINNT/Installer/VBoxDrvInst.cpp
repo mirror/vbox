@@ -360,6 +360,8 @@ int CreateDevice (_TCHAR* a_pszHwID, GUID a_devClass)
 
 int InstallDriver (_TCHAR* a_pszInfFile, _TCHAR* a_pszHwID, _TCHAR* a_pszDevClass)
 {
+    int rc = EXIT_OK; /** @todo Use IPRT values! */
+
     DWORD dwErr = 0;
     BOOL bReboot = FALSE;
 
@@ -377,7 +379,7 @@ int InstallDriver (_TCHAR* a_pszInfFile, _TCHAR* a_pszHwID, _TCHAR* a_pszDevClas
     if (FALSE == g_pfnSetupDiClassGuidsFromNameEx(a_pszDevClass, devClassArr, 32, &dwReqSize, NULL, NULL))
     {
         _tprintf(_T("Could not retrieve device class GUID! Error: %ld\n"), GetLastError());
-        return EXIT_FAIL;
+        rc = EXIT_FAIL;
     }
     else
     {
@@ -397,94 +399,99 @@ int InstallDriver (_TCHAR* a_pszInfFile, _TCHAR* a_pszHwID, _TCHAR* a_pszDevClas
             return EXIT_FAIL;*/
     }
 
-    _TCHAR* pcFile = NULL;
-    if (0 == GetFullPathName(a_pszInfFile, _MAX_PATH, szInf, &pcFile))
+    if (rc == EXIT_OK)
     {
-        dwErr = GetLastError();
-
-        _tprintf(_T("ERROR: INF-Path too long / could not be retrieved!\n"));
-        return EXIT_FAIL;
-    }
-
-    /* Extract path from path+INF */
-    if (pcFile != NULL)
-        _tcsnccpy(szInfPath, szInf, pcFile - szInf);
-
-    _tprintf(_T("INF-File: %ws\n"), szInf);
-    _tprintf(_T("INF-Path: %ws\n"), szInfPath);
-
-    _tprintf(_T("Updating driver for plug'n play devices ...\n"));
-    if (!g_pfnUpdateDriverForPlugAndPlayDevices(NULL, a_pszHwID, szInf, INSTALLFLAG_FORCE, &bReboot))
-    {
-        DWORD dwErr = GetLastError();
-        _TCHAR szErrMsg[_MAX_PATH + 1] = { 0 };
-
-        if (dwErr == ERROR_NO_SUCH_DEVINST)
+        _TCHAR* pcFile = NULL;
+        if (0 == GetFullPathName(a_pszInfFile, _MAX_PATH, szInf, &pcFile))
         {
-            _TCHAR szDestInf[_MAX_PATH] = { 0 };
-            _tprintf(_T("The device is not plugged in (yet), pre-installing drivers ...\n"));
+            dwErr = GetLastError();
 
-            if (FALSE == g_pfnSetupCopyOEMInf(szInf, szInfPath, SPOST_PATH, 0, szDestInf, sizeof(szDestInf), NULL, NULL))
+            _tprintf(_T("ERROR: INF-Path too long / could not be retrieved!\n"));
+            rc = EXIT_FAIL;
+        }
+
+        /* Extract path from path+INF */
+        if (pcFile != NULL)
+            _tcsnccpy(szInfPath, szInf, pcFile - szInf);
+
+        _tprintf(_T("INF-File: %ws\n"), szInf);
+        _tprintf(_T("INF-Path: %ws\n"), szInfPath);
+
+        _tprintf(_T("Updating driver for plug'n play devices ...\n"));
+        if (!g_pfnUpdateDriverForPlugAndPlayDevices(NULL, a_pszHwID, szInf, INSTALLFLAG_FORCE, &bReboot))
+        {
+            DWORD dwErr = GetLastError();
+            _TCHAR szErrMsg[_MAX_PATH + 1] = { 0 };
+
+            if (dwErr == ERROR_NO_SUCH_DEVINST)
             {
-                dwErr = GetLastError();
-                GetErrorMsg(dwErr, szErrMsg, sizeof(szErrMsg));
-                _tprintf(_T("ERROR (%08x): %ws\n"), dwErr, szErrMsg);
-                return EXIT_FAIL;
+                _TCHAR szDestInf[_MAX_PATH] = { 0 };
+                _tprintf(_T("The device is not plugged in (yet), pre-installing drivers ...\n"));
+
+                if (FALSE == g_pfnSetupCopyOEMInf(szInf, szInfPath, SPOST_PATH, 0, szDestInf, sizeof(szDestInf), NULL, NULL))
+                {
+                    dwErr = GetLastError();
+                    GetErrorMsg(dwErr, szErrMsg, sizeof(szErrMsg));
+                    _tprintf(_T("ERROR (%08x): %ws\n"), dwErr, szErrMsg);
+
+                    rc = EXIT_FAIL;
+                }
+                else
+                    _tprintf(_T("OK. Installed to: %ws\n"), szDestInf);
             }
+            else
+            {
+                switch (dwErr)
+                {
 
-            _tprintf(_T("OK. Installed to: %ws\n"), szDestInf);
-            return EXIT_OK;
+                case ERROR_INVALID_FLAGS:
+
+                    _tprintf(_T("ERROR: The value specified for InstallFlags is invalid!\n"));
+                    break;
+
+                case ERROR_NO_MORE_ITEMS:
+
+                    _tprintf(
+                             _T(
+                                "ERROR: The function found a match for the HardwareId value, but the specified driver was not a better match than the current driver and the caller did not specify the INSTALLFLAG_FORCE flag!\n"));
+                    break;
+
+                case ERROR_FILE_NOT_FOUND:
+
+                    _tprintf(_T("ERROR: File not found! File = %ws\n", szInf));
+                    break;
+
+                case ERROR_IN_WOW64:
+
+                    _tprintf(_T("ERROR: The calling application is a 32-bit application attempting to execute in a 64-bit environment, which is not allowed!"));
+                    break;
+
+                case ERROR_NO_DRIVER_SELECTED:
+
+                    _tprintf(_T("ERROR: No driver in .INF-file selected!\n"));
+                    break;
+
+                case ERROR_SECTION_NOT_FOUND:
+
+                    _tprintf(_T("ERROR: Section in .INF-file was not found!\n"));
+                    break;
+
+                default:
+
+                    /* Try error lookup with GetErrorMsg() */
+                    GetErrorMsg(dwErr, szErrMsg, sizeof(szErrMsg));
+                    _tprintf(_T("ERROR (%08x): %ws\n"), dwErr, szErrMsg);
+                    break;
+                }
+
+                rc = EXIT_FAIL;
+            }
         }
-
-        switch (dwErr)
-        {
-
-        case ERROR_INVALID_FLAGS:
-
-            _tprintf(_T("ERROR: The value specified for InstallFlags is invalid!\n"));
-            break;
-
-        case ERROR_NO_MORE_ITEMS:
-
-            _tprintf(
-                     _T(
-                        "ERROR: The function found a match for the HardwareId value, but the specified driver was not a better match than the current driver and the caller did not specify the INSTALLFLAG_FORCE flag!\n"));
-            break;
-
-        case ERROR_FILE_NOT_FOUND:
-
-            _tprintf(_T("ERROR: File not found!\n"));
-            break;
-
-        case ERROR_IN_WOW64:
-
-            _tprintf(_T("ERROR: The calling application is a 32-bit application attempting to execute in a 64-bit environment, which is not allowed!"));
-            break;
-
-        case ERROR_NO_DRIVER_SELECTED:
-
-            _tprintf(_T("ERROR: No driver in .INF-file selected!\n"));
-            break;
-
-        case ERROR_SECTION_NOT_FOUND:
-
-            _tprintf(_T("ERROR: Section in .INF-file was not found!\n"));
-            break;
-
-        default:
-
-            /* Try error lookup with GetErrorMsg() */
-            GetErrorMsg(dwErr, szErrMsg, sizeof(szErrMsg));
-            _tprintf(_T("ERROR (%08x): %ws\n"), dwErr, szErrMsg);
-            break;
-        }
-
-        return EXIT_FAIL;
     }
 
-    _tprintf(_T("Installation successful.\n"));
-
-    return EXIT_OK;
+    if (rc == EXIT_OK)
+        _tprintf(_T("Installation successful.\n"));
+    return rc;
 }
 
 /*++
