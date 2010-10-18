@@ -482,35 +482,17 @@
 
     <para>Internal Networking is similar to bridged networking in that the VM
     can directly communicate with the outside world. However, the "outside
-    world" is limited to other VMs which connect to the same internal
+    world" is limited to other VMs on the same host which connect to the same internal
     network.</para>
 
     <para>Even though technically, everything that can be done using internal
-    networking can also be done using bridged networking, there are two good
-    reasons why this additional mode was implemented:<orderedlist>
-        <listitem>
-          <para><emphasis role="bold">Security.</emphasis> In bridged
-          networking mode, all traffic goes through a physical interface of
-          the host system. It is therefore possible to attach a packet sniffer
-          (such as Wireshark) to the host interface and log all traffic that
-          goes over it. If, for any reason, you prefer two or more VMs on the
-          same machine to communicate privately, hiding their data from both
-          the host system and the user, bridged networking therefore is not an
-          option.</para>
-        </listitem>
-
-        <listitem>
-          <para><emphasis role="bold">Speed.</emphasis> Internal networking is
-          more efficient than bridged networking, as VirtualBox can directly
-          transmit the data without having to send it through the host
-          operating system's networking stack.</para>
-          <!-- @todo r=bird: This is not true at all any longer. The only
-          difference between bridged and internal networking is that the
-          internal network has a trunk connection to the host+world when in
-          bridged mode, so there is practically no speed up in pure intnet
-          mode. -->
-        </listitem>
-      </orderedlist></para>
+    networking can also be done using bridged networking, there are security
+    advantages with internal networking. In bridged networking mode, all traffic
+    goes through a physical interface of the host system. It is therefore possible
+    to attach a packet sniffer (such as Wireshark) to the host interface and log
+    all traffic that goes over it. If, for any reason, you prefer two or more VMs
+    on the same machine to communicate privately, hiding their data from both
+    the host system and the user, bridged networking therefore is not an option.</para>
 
     <para>Internal networks are created automatically as needed, i.e. there is
     no central configuration. Every internal network is identified simply by
