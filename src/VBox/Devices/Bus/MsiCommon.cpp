@@ -90,6 +90,13 @@ DECLINLINE(bool) msiBitJustCleared(uint32_t u32OldValue,
     return (!!(u32OldValue & u32Mask) && !(u32NewValue & u32Mask));
 }
 
+DECLINLINE(bool) msiBitJustSet(uint32_t u64OldValue,
+                               uint32_t u64NewValue,
+                               uint32_t u64Mask)
+{
+    return (!(u64OldValue & u64Mask) && !!(u64NewValue & u64Mask));
+}
+
 
 void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
 {
@@ -141,14 +148,27 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
 
                     if (maskUpdated != -1 && msiIsEnabled(pDev))
                     {
-                        for (int iBitNum = 0; i<8; i++)
+                        uint32_t*  puPending = msiGetPendingBits(pDev);
+                        for (int iBitNum = 0; iBitNum < 8; iBitNum++)
                         {
                             int32_t iBit = 1 << iBitNum;
+                            uint32_t uVector = maskUpdated*8 + iBitNum;
+
                             if (msiBitJustCleared(pDev->config[uAddr], val, iBit))
                             {
+                                Log(("msi: mask updated bit %d@%x (%d)\n", iBitNum, uAddr, maskUpdated));
+
                                 /* To ensure that we're no longer masked */
                                 pDev->config[uAddr] &= ~iBit;
-                                MsiNotify(pDevIns, pPciHlp, pDev, maskUpdated*8 + iBitNum);
+                                if ((*puPending & (1 << uVector)) != 0)
+                                {
+                                    Log(("msi: notify earlier masked pending vector: %d\n", uVector));
+                                    MsiNotify(pDevIns, pPciHlp, pDev, uVector, PDM_IRQ_LEVEL_HIGH);
+                                }
+                            }
+                            if (msiBitJustSet(pDev->config[uAddr], val, iBit))
+                            {
+                                Log(("msi: mask vector: %d\n", uVector));
                             }
                         }
                     }
@@ -218,6 +238,9 @@ int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
     PCIDevSetByte(pDev,  iCapOffset + 1, iNextOffset); /* next */
     PCIDevSetWord(pDev,  iCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL, iMsiFlags);
 
+    *msiGetMaskBits(pDev)    = 0;
+    *msiGetPendingBits(pDev) = 0;
+
     PCISetMsiCapable(pDev);
 
     return VINF_SUCCESS;
@@ -229,25 +252,37 @@ bool     MsiIsEnabled(PPCIDEVICE pDev)
     return PCIIsMsiCapable(pDev) && msiIsEnabled(pDev);
 }
 
-void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector)
+void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel)
 {
-    Log2(("MSINotify: %d\n", iVector));
-
     AssertMsg(msiIsEnabled(pDev), ("Must be enabled to use that"));
 
     uint32_t   uMask = *msiGetMaskBits(pDev);
-    uint32_t*  upPending = msiGetPendingBits(pDev);
+    uint32_t*  puPending = msiGetPendingBits(pDev);
+
+    LogFlow(("MSINotify: %d pending=%x mask=%x\n", iVector, *puPending, uMask));
+
+    /* We only trigger MSI on level up */
+    if ((iLevel & PDM_IRQ_LEVEL_HIGH) == 0)
+    {
+        /* @todo: maybe clear pending interrupts on level down? */
+#if 0
+        *puPending &= ~(1<<iVector);
+        LogFlow(("msi: clear pending %d, now %x\n", iVector, *puPending));
+#endif
+        return;
+    }
 
     if ((uMask & (1<<iVector)) != 0)
     {
-        *upPending |= (1<<iVector);
+        *puPending |= (1<<iVector);
+        LogFlow(("msi: %d is masked, mark pending, now %x\n", iVector, *puPending));
         return;
     }
 
     RTGCPHYS   GCAddr = msiGetMsiAddress(pDev);
     uint32_t   u32Value = msiGetMsiData(pDev, iVector);
 
-    *upPending &= ~(1<<iVector);
+    *puPending &= ~(1<<iVector);
 
     Assert(pPciHlp->pfnIoApicSendMsi != NULL);
     pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value);
