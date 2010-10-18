@@ -2498,8 +2498,9 @@ DECLINLINE(uint64_t) ASMAtomicAddU64(uint64_t volatile *pu64, uint64_t u64)
     uint64_t u64Old;
     for (;;)
     {
+        uint64_t u64New;
         u64Old = ASMAtomicUoReadU64(pu64);
-        uint64_t u64New = u64Old + u64;
+        u64New = u64Old + u64;
         if (ASMAtomicCmpXchgU64(pu64, u64New, u64Old))
             break;
         ASMNopPause();
