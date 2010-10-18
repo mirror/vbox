@@ -42,7 +42,6 @@
 //#define E1K_INT_STATS
 //#define E1K_REL_STATS
 //#define E1K_USE_SUPLIB_SEMEVENT
-//#define E1K_WITH_MSI
 
 #include <iprt/crc.h>
 #include <iprt/ctype.h>
@@ -134,6 +133,11 @@ typedef uint32_t E1KCHIP;
 #define E1K_CHIP_82540EM 0
 #define E1K_CHIP_82543GC 1
 #define E1K_CHIP_82545EM 2
+#define E1K_CHIP_82566MC 3
+#define E1K_CHIP_LAST    E1K_CHIP_82566MC
+
+/* Flags for chip descripton */
+#define E1K_MSI_CHIP (1 << 0)
 
 struct E1kChips
 {
@@ -142,19 +146,14 @@ struct E1kChips
     uint16_t uPCISubsystemVendorId;
     uint16_t uPCISubsystemId;
     const char *pcszName;
+    uint32_t uFlags;
 } g_Chips[] =
 {
     /* Vendor Device SSVendor SubSys  Name */
-    { 0x8086,
-      /* Temporary code, as MSI-aware driver dislike 0x100E. How to do that right? */
-#ifdef E1K_WITH_MSI
-      0x105E,
-#else
-      0x100E,
-#endif
-                      0x8086, 0x001E, "82540EM" }, /* Intel 82540EM-A in Intel PRO/1000 MT Desktop */
-    { 0x8086, 0x1004, 0x8086, 0x1004, "82543GC" }, /* Intel 82543GC   in Intel PRO/1000 T  Server */
-    { 0x8086, 0x100F, 0x15AD, 0x0750, "82545EM" }  /* Intel 82545EM-A in VMWare Network Adapter */
+    { 0x8086, 0x100E, 0x8086, 0x001E, "82540EM", 0 }, /* Intel 82540EM-A in Intel PRO/1000 MT Desktop */
+    { 0x8086, 0x1004, 0x8086, 0x1004, "82543GC", 0 }, /* Intel 82543GC   in Intel PRO/1000 T  Server */
+    { 0x8086, 0x100F, 0x15AD, 0x0750, "82545EM", 0 }, /* Intel 82545EM-A in VMWare Network Adapter */
+    { 0x8086, 0x104D, 0x8086, 0x001E, "82566MC", E1K_MSI_CHIP } /* Intel 82566MC Gigabit Ethernet Controller */
 };
 
 
@@ -5596,12 +5595,14 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
     /* PCI-X Configuration Registers *****************************************/
     /* Capability ID: PCI-X Configuration Registers */
     e1kPCICfgSetU8( pci, 0xE4,                           VBOX_PCI_CAP_ID_PCIX);
-#ifdef E1K_WITH_MSI
-    e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x80);
-#else
-    /* Next Item Pointer: None (Message Signalled Interrupts are disabled) */
-    e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x00);
+    /* Next Item Pointer: Message Signalled Interrupts */
+#ifdef  VBOX_WITH_MSI_DEVICES
+    if (g_Chips[eChip].uFlags & E1K_MSI_CHIP)
+        e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x80);
+    else
 #endif
+        /* Next Item Pointer: None (Message Signalled Interrupts are disabled) */
+        e1kPCICfgSetU8( pci, 0xE4 + 1,                      0x00);
     /* PCI-X Command: Enable Relaxed Ordering */
     e1kPCICfgSetU16(pci, 0xE4 + 2,                    VBOX_PCI_X_CMD_ERO);
     /* PCI-X Status: 32-bit, 66MHz*/
@@ -5646,7 +5647,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));
-    Assert(pState->eChip <= E1K_CHIP_82545EM);
+    Assert(pState->eChip <= E1K_CHIP_LAST);
 
     E1kLog(("%s Chip=%s\n", INSTANCE(pState), g_Chips[pState->eChip].pcszName));
 
@@ -5742,18 +5743,23 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return rc;
 
-#ifdef E1K_WITH_MSI
-    PDMMSIREG aMsiReg;
-    aMsiReg.cVectors = 1;
-    aMsiReg.iCapOffset = 0x80;
-    aMsiReg.iNextOffset = 0x0;
-    aMsiReg.iMsiFlags = 0;
-    rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
-    AssertRC(rc);
-    if (RT_FAILURE (rc))
-        return rc;
+#ifdef VBOX_WITH_MSI_DEVICES
+    if (g_Chips[pState->eChip].uFlags & E1K_MSI_CHIP)
+    {
+        PDMMSIREG aMsiReg;
+        aMsiReg.cVectors = 1;
+        aMsiReg.iCapOffset = 0x80;
+        aMsiReg.iNextOffset = 0x0;
+        aMsiReg.iMsiFlags = 0;
+        rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
+        AssertRC(rc);
+        if (RT_FAILURE (rc))
+        {
+            PCIDevSetByte( &pState->pciDevice, 0xE4 + 1, 0x0);
+            // continue
+        }
+    }
 #endif
-
 
     /* Map our registers to memory space (region 0, see e1kConfigurePCI)*/
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, E1K_MM_SIZE,

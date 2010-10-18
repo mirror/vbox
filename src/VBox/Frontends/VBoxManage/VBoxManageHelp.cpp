@@ -212,7 +212,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "]\n"
                      "                            [--nictype<1-N> Am79C970A|Am79C973"
 #ifdef VBOX_WITH_E1000
-                  "|\n                                            82540EM|82543GC|82545EM"
+                  "|\n                                            82540EM|82543GC|82545EM|82566MC"
 #endif
 #ifdef VBOX_WITH_VIRTIO
                   "|\n                                            virtio"
@@ -806,7 +806,7 @@ int errorArgument(const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
-    RTMsgError(pszFormat, args);
+    RTMsgErrorV(pszFormat, args);
     va_end(args);
     return 1;
 }

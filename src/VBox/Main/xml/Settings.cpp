@@ -1879,6 +1879,8 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
                 nic.type = NetworkAdapterType_I82543GC;
             else if (strTemp == "82545EM")
                 nic.type = NetworkAdapterType_I82545EM;
+            else if (strTemp == "82566MC")
+                nic.type = NetworkAdapterType_I82566MC;
             else if (strTemp == "virtio")
                 nic.type = NetworkAdapterType_Virtio;
             else
@@ -3501,6 +3503,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             case NetworkAdapterType_I82540EM:   pcszType = "82540EM"; break;
             case NetworkAdapterType_I82543GC:   pcszType = "82543GC"; break;
             case NetworkAdapterType_I82545EM:   pcszType = "82545EM"; break;
+            case NetworkAdapterType_I82566MC:   pcszType = "82566MC"; break;
             case NetworkAdapterType_Virtio:     pcszType = "virtio"; break;
             default: /*case NetworkAdapterType_Am79C970A:*/  pcszType = "Am79C970A"; break;
         }
