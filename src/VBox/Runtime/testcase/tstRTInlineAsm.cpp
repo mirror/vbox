@@ -879,9 +879,9 @@ DECLINLINE(void) tstASMAtomicAddS64Worker(int64_t volatile *pi64)
     do { \
         i64Rc = op; \
         if (i64Rc != (rc)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %lld expected %lld\n", __FUNCTION__, __LINE__, #op, i64Rc, (int64_t)rc); \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s -> %llx expected %llx\n", __FUNCTION__, __LINE__, #op, i64Rc, (int64_t)rc); \
         if (*pi64 != (val)) \
-            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi64=%lld expected %lld\n", __FUNCTION__, __LINE__, #op, *pi64, (int64_t)(val)); \
+            RTTestFailed(g_hTest, "%s, %d: FAILURE: %s => *pi64=%llx expected %llx\n", __FUNCTION__, __LINE__, #op, *pi64, (int64_t)(val)); \
     } while (0)
     MYCHECK(ASMAtomicAddS64(pi64, 1),               10,             11);
     MYCHECK(ASMAtomicAddS64(pi64, -2),              11,             9);
