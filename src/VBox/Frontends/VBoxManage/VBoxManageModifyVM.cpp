@@ -1059,10 +1059,6 @@ int handleModifyVM(HandlerArg *a)
                 {
                     CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82545EM));
                 }
-                 else if (!strcmp(ValueUnion.psz, "82566MC"))
-                {
-                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82566MC));
-                }
 #endif
 #ifdef VBOX_WITH_VIRTIO
                 else if (!strcmp(ValueUnion.psz, "virtio"))
