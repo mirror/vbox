@@ -375,7 +375,7 @@
               on Windows and PAM on Linux for RDP authentication. In addition,
               it includes an easy-to-use SDK which allows you to create
               arbitrary interfaces for other methods of authentication; see
-              <xref linkend="vrdp-authenticate-sdk" /> for details.</para>
+              <xref linkend="vbox-authenticate-sdk" /> for details.</para>
             </listitem>
 
             <listitem>

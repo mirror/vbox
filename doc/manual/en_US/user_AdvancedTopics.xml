@@ -616,12 +616,12 @@ vga = 864</screen>
       globally to all guest systems, not just to a single machine.</para>
     </sect2>
 
-    <sect2 id="vrdp-authenticate-sdk">
-      <title>Custom external VRDP authentication</title>
+    <sect2 id="vbox-authenticate-sdk">
+      <title>Custom external authentication modules</title>
 
-      <para>As described in <xref linkend="vrdp-auth" />, VirtualBox supports
-      arbitrary external modules to perform authentication with its VRDP
-      servers. When the authentication method is set to "external" for a
+      <para>As described in <xref linkend="vbox-auth" />, VirtualBox supports
+      arbitrary external modules to perform authentication. When the
+      authentication method is set to "external" for a
       particular VM, VirtualBox calls the library that was specified with
       <computeroutput>VBoxManage setproperty vrdpauthlibrary</computeroutput>.
       This library will be loaded by the VM process on demand, i.e. when the
@@ -634,7 +634,7 @@ vga = 864</screen>
       component, it will still be called afterwards with the option to
       override the result.</para>
 
-      <para>A VRDP authentication library is required to implement exactly one
+      <para>An authentication library is required to implement exactly one
       entry point:</para>
 
       <screen>#include "VRDPAuth.h"

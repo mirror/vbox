@@ -49,8 +49,8 @@ DEFAULT_FILE_NAMES=" \
     VBoxSharedClipboard.so \
     VBoxGuestPropSvc.so \
     VBoxGuestControlSvc.so \
-    VRDPAuth.so \
-    VRDPAuthSimple.so \
+    VBoxAuth.so \
+    VBoxAuthSimple.so \
     VBoxDbg.so \
     VBoxDbg3.so \
     VBoxVRDP.so \
