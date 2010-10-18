@@ -2715,7 +2715,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     uint64_t cbFile = 0;
     int rc;
 
-    if (fMagicAlreadyRead)
+    if (!fMagicAlreadyRead)
         rc = vmdkFileReadSync(pImage, pExtent->pFile, 0, &Header,
                               sizeof(Header), NULL);
     else
@@ -2758,9 +2758,9 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
         pExtent->uAppendPosition = RT_ALIGN_64(cbFile, 512);
 
-    if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-        || (   pExtent->fFooter
-            && !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL)))
+    if (   pExtent->fFooter
+        && (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            || !(pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL)))
     {
         /* Read the footer, which comes before the end-of-stream marker. */
         rc = vmdkFileReadSync(pImage, pExtent->pFile,
@@ -3289,7 +3289,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             rc = VERR_NO_MEMORY;
             goto out;
         }
-        rc = vmdkReadBinaryMetaExtent(pImage, pExtent, false /* fMagicAlreadyRead */);
+        rc = vmdkReadBinaryMetaExtent(pImage, pExtent, true /* fMagicAlreadyRead */);
         if (RT_FAILURE(rc))
             goto out;
 
@@ -3481,7 +3481,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                         goto out;
                     }
                     rc = vmdkReadBinaryMetaExtent(pImage, pExtent,
-                                                  true /* fMagicAlreadyRead */);
+                                                  false /* fMagicAlreadyRead */);
                     if (RT_FAILURE(rc))
                         goto out;
                     rc = vmdkReadMetaExtent(pImage, pExtent);
