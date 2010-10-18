@@ -935,7 +935,7 @@ Statistics update:  disabled
             <para><computeroutput>--vrdpauthtype
             null|external|guest</computeroutput>: This allows you to choose
             whether and how authorization will be performed; see <xref
-            linkend="vrdp-auth" /> for details.</para>
+            linkend="vbox-auth" /> for details.</para>
           </listitem>
 
           <listitem>
@@ -2006,7 +2006,7 @@ Value: 2006.01.01</screen>
           <glossdef>
             <para>This specifies which library to use when "external" VRDP
             authentication has been selected for a particular virtual machine;
-            see <xref linkend="vrdp-auth" /> for details.</para>
+            see <xref linkend="vbox-auth" /> for details.</para>
           </glossdef>
         </glossentry>
 

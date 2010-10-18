@@ -324,7 +324,7 @@
       plug/unplug events are visible on the VBox.log file of the VM.</para>
     </sect2>
 
-    <sect2 id="vrdp-auth">
+    <sect2 id="vbox-auth">
       <title>RDP authentication</title>
 
       <para>For each virtual machine that is remotely accessible via RDP, you
@@ -350,19 +350,19 @@
             authentication:<itemizedlist>
                 <listitem>
                   <para>On Linux hosts,
-                  <computeroutput>VRDPAuth.so</computeroutput> authenticates
+                  <computeroutput>VBoxAuth.so</computeroutput> authenticates
                   users against the host's PAM system.</para>
                 </listitem>
 
                 <listitem>
                   <para>On Windows hosts,
-                  <computeroutput>VRDPAuth.dll</computeroutput> authenticates
+                  <computeroutput>VBoxAuth.dll</computeroutput> authenticates
                   users against the host's WinLogon system.</para>
                 </listitem>
 
                 <listitem>
                   <para>On Mac OS X hosts,
-                  <computeroutput>VRDPAuth.dylib</computeroutput>
+                  <computeroutput>VBoxAuth.dylib</computeroutput>
                   authenticates users against the host's directory
                   service.<footnote>
                       <para>Support for Mac OS X was added in version
@@ -380,17 +380,17 @@
           
           <listitem>
             <para>An additional library called
-            <computeroutput>VRDPAuthSimple</computeroutput> performs authentication
+            <computeroutput>VBoxAuthSimple</computeroutput> performs authentication
             against credentials configured in the VM's extra data section. This is
             probably the simplest way to get authentication that does not depend
             on a running and supported guest (see below). In order to enable
-            VRDPAuthSimple, issue
-            <computeroutput>VBoxManage setproperty vrdpauthlibrary "VRDPAuthSimple"</computeroutput>.
+            VBoxAuthSimple, issue
+            <computeroutput>VBoxManage setproperty vrdpauthlibrary "VBoxAuthSimple"</computeroutput>.
             To enable the library for a VM, switch authentication to external using
             <computeroutput>VBoxManage modifyvm "VM name" --vrdpauthtype external</computeroutput>.
             Last but not least, you have to configure users and passwords. Here is an example
             for the user "john" with the password "secret":
-            <computeroutput>VBoxManage setextradata "VM name" "VRDPAuthSimple/users/john" "secret"</computeroutput>
+            <computeroutput>VBoxManage setextradata "VM name" "VBoxAuthSimple/users/john" "secret"</computeroutput>
             To specify an empty password, use the special reserved value
             <computeroutput>[NULL]</computeroutput>.
             </para>
@@ -409,7 +409,7 @@
         default "external authentication module with any other module. For this,
         VirtualBox provides a well-defined interface that allows you to write your
         own authentication module; see <xref
-        linkend="vrdp-authenticate-sdk" /> for details.</para>
+        linkend="vbox-authenticate-sdk" /> for details.</para>
     </sect2>
 
     <sect2 id="vrdp-crypt">
