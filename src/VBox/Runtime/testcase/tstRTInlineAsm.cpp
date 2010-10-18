@@ -205,11 +205,13 @@ void tstASMCpuId(void)
                   "Function  eax      ebx      ecx      edx\n");
     for (unsigned iStd = 0; iStd <= cFunctions + 3; iStd++)
     {
-        if (iStd == 4)
-            continue; /* Leaf 04 output depends on the initial value of ECX */
-        ASMCpuId(iStd, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
+        ASMCpuId_Idx_ECX(iStd, 0, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%08x  %08x %08x %08x %08x%s\n",
                       iStd, s.uEAX, s.uEBX, s.uECX, s.uEDX, iStd <= cFunctions ? "" : "*");
+
+        if (iStd == 0x04 || iStd == 0x0d || iStd > cFunctions)
+            continue; /* Leaf 04 and leaf 0d output depend on the initial value of ECX
+                       * The same seems to apply to invalid standard functions */
 
         u32 = ASMCpuId_EAX(iStd);
         CHECKVAL(u32, s.uEAX, "%x");
@@ -333,6 +335,9 @@ void tstASMCpuId(void)
         ASMCpuId(iExt, &s.uEAX, &s.uEBX, &s.uECX, &s.uEDX);
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%08x  %08x %08x %08x %08x%s\n",
                       iExt, s.uEAX, s.uEBX, s.uECX, s.uEDX, iExt <= cExtFunctions ? "" : "*");
+
+        if (iExt > cExtFunctions)
+            continue;   /* Invalid extended functions seems change the value if ECX changes */
 
         u32 = ASMCpuId_EAX(iExt);
         CHECKVAL(u32, s.uEAX, "%x");
