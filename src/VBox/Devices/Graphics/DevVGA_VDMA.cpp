@@ -222,11 +222,14 @@ static int vboxVDMACrCtlHgsmiSetupAsync(struct VBOXVDMAHOST *pVdma)
     return VERR_NO_MEMORY;
 }
 
+static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_BPB_TRANSFER pTransfer, uint32_t cbBuffer);
+
 /* check if this is external cmd to be passed to chromium backend */
 static bool vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
 {
     PVBOXVDMACMD pDmaCmd;
     uint8_t * pvRam = pVdma->pVGAState->vram_ptrR3;
+    bool bCompleted = false;
 
     if (pCmd->fFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
         pDmaCmd = VBOXVDMACBUF_DR_TAIL(pCmd, VBOXVDMACMD);
@@ -240,23 +243,26 @@ static bool vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR p
 
         if (cbCmd >= VBOXVDMACMD_HEADER_SIZE())
         {
-            if (pDmaCmd->enmType == VBOXVDMACMD_TYPE_CHROMIUM_CMD)
+            switch (pDmaCmd->enmType)
             {
-                PVBOXVDMACMD_CHROMIUM_CMD pCrCmd = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_CHROMIUM_CMD);
-                PVGASTATE pVGAState = pVdma->pVGAState;
-                if (pVGAState->pDrv->pfnCrHgsmiCommandProcess)
+                case VBOXVDMACMD_TYPE_CHROMIUM_CMD:
                 {
-                    VBoxSHGSMICommandMarkAsynchCompletion(pCmd);
-                    pVGAState->pDrv->pfnCrHgsmiCommandProcess(pVGAState->pDrv, pCrCmd);
-                    return true;
-                }
-                else
-                {
-                    Assert(0);
-                }
+                    PVBOXVDMACMD_CHROMIUM_CMD pCrCmd = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_CHROMIUM_CMD);
+                    PVGASTATE pVGAState = pVdma->pVGAState;
+                    bCompleted = true;
+                    if (pVGAState->pDrv->pfnCrHgsmiCommandProcess)
+                    {
+                        VBoxSHGSMICommandMarkAsynchCompletion(pCmd);
+                        pVGAState->pDrv->pfnCrHgsmiCommandProcess(pVGAState->pDrv, pCrCmd);
+                        break;
+                    }
+                    else
+                    {
+                        Assert(0);
+                    }
 
-                int tmpRc = VBoxSHGSMICommandComplete (pVdma->pHgsmi, pCmd);
-                AssertRC(tmpRc);
+                    int tmpRc = VBoxSHGSMICommandComplete (pVdma->pHgsmi, pCmd);
+                    AssertRC(tmpRc);
 //                uint32_t cBufs = pCrCmd->cBuffers;
 //                for (uint32_t i = 0; i < cBufs; ++i)
 //                {
@@ -264,10 +270,26 @@ static bool vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR p
 //                    void *pvBuffer = pvRam + pBuf->offBuffer;
 //                    uint32_t cbBuffer = pBuf->cbBuffer;
 //                }
+                    break;
+                }
+                case VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER:
+                {
+                    PVBOXVDMACMD_DMA_BPB_TRANSFER pTransfer = VBOXVDMACMD_BODY(pDmaCmd, VBOXVDMACMD_DMA_BPB_TRANSFER);
+                    int rc = vboxVDMACmdExecBpbTransfer(pVdma, pTransfer, sizeof (*pTransfer));
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pCmd->rc = VINF_SUCCESS;
+                        rc = VBoxSHGSMICommandComplete (pVdma->pHgsmi, pCmd);
+                        AssertRC(rc);
+                        bCompleted = true;
+                    }
+                    break;
+                }
             }
         }
     }
-    return false;
+    return bCompleted;
 }
 
 int vboxVDMACrHgsmiCommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc)
@@ -488,6 +510,66 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
     return cbBlt;
 }
 
+static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_BPB_TRANSFER pTransfer, uint32_t cbBuffer)
+{
+    if (cbBuffer < sizeof (*pTransfer))
+        return VERR_INVALID_PARAMETER;
+
+    PVGASTATE pVGAState = pVdma->pVGAState;
+    uint8_t * pvRam = pVGAState->vram_ptrR3;
+    PGMPAGEMAPLOCK SrcLock;
+    PGMPAGEMAPLOCK DstLock;
+    PPDMDEVINS pDevIns = pVdma->pVGAState->pDevInsR3;
+    const void * pvSrc;
+    void * pvDst;
+    int rc = VINF_SUCCESS;
+    bool bSrcLocked = false;
+    bool bDstLocked = false;
+    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET)
+    {
+        pvSrc = pvRam + pTransfer->Src.offVramBuf;
+    }
+    else
+    {
+        RTGCPHYS phPage = pTransfer->Src.phBuf;
+        rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phPage, 0, &pvSrc, &SrcLock);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            bSrcLocked = true;
+        }
+    }
+
+    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET)
+    {
+        pvDst = pvRam + pTransfer->Dst.offVramBuf;
+    }
+    else
+    {
+        RTGCPHYS phPage = pTransfer->Dst.phBuf;
+        rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, phPage, 0, &pvDst, &DstLock);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            bDstLocked = true;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        memcpy(pvDst, pvSrc, pTransfer->cbTransferSize);
+    }
+
+    if (bSrcLocked)
+        PDMDevHlpPhysReleasePageMappingLock(pDevIns, &SrcLock);
+    if (bDstLocked)
+        PDMDevHlpPhysReleasePageMappingLock(pDevIns, &DstLock);
+
+    if (RT_SUCCESS(rc))
+        return sizeof (*pTransfer);
+    return rc;
+}
+
 static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_t cbBuffer)
 {
     do
@@ -542,6 +624,26 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
                 }
                 else
                     return cbBlt; /* error */
+                break;
+            }
+            case VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER:
+            {
+                const PVBOXVDMACMD_DMA_BPB_TRANSFER pTransfer = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_BPB_TRANSFER);
+                int cbTransfer = vboxVDMACmdExecBpbTransfer(pVdma, pTransfer, cbBuffer);
+                Assert(cbTransfer >= 0);
+                Assert((uint32_t)cbTransfer <= cbBuffer);
+                if (cbTransfer >= 0)
+                {
+                    if (cbTransfer == cbBuffer)
+                        return VINF_SUCCESS;
+                    else
+                    {
+                        cbBuffer -= (uint32_t)cbTransfer;
+                        pvBuffer -= cbTransfer;
+                    }
+                }
+                else
+                    return cbTransfer; /* error */
                 break;
             }
             default:

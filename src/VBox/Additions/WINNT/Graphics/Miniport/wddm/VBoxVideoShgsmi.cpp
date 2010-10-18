@@ -64,7 +64,8 @@ DECLINLINE(void) vboxSHGSMICommandDoneAsynch (struct _HGSMIHEAP * pHeap, const V
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pHeader->fFlags) & VBOXSHGSMI_FLAG_HG_ASYNCH))
     {
         PFNVBOXSHGSMICMDCOMPLETION pfnCompletion = (PFNVBOXSHGSMICMDCOMPLETION)pHeader->u64Info1;
-        pfnCompletion(pHeap, VBoxSHGSMIBufferData (pHeader), (PVOID)pHeader->u64Info2);
+        if (pfnCompletion)
+            pfnCompletion(pHeap, VBoxSHGSMIBufferData (pHeader), (PVOID)pHeader->u64Info2);
     }
 
     vboxSHGSMICommandRelease(pHeap, (PVBOXSHGSMIHEADER)pHeader);

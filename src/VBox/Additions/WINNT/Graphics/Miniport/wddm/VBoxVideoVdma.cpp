@@ -1288,6 +1288,39 @@ int vboxVdmaCBufDrSubmit(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVD
         rc = VERR_INVALID_PARAMETER;
     return rc;
 }
+
+int vboxVdmaCBufDrSubmitSynch(PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
+{
+    const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepAsynch (&pInfo->CmdHeap, pDr, NULL, NULL, VBOXSHGSMI_FLAG_GH_SYNCH);
+    Assert(pHdr);
+    int rc = VERR_GENERAL_FAILURE;
+    if (pHdr)
+    {
+        do
+        {
+            HGSMIOFFSET offCmd = VBoxSHGSMICommandOffset(&pInfo->CmdHeap, pHdr);
+            Assert(offCmd != HGSMIOFFSET_VOID);
+            if (offCmd != HGSMIOFFSET_VOID)
+            {
+                rc = vboxWddmVdmaSubmit(pDevExt, pInfo, offCmd);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    VBoxSHGSMICommandDoneAsynch(&pInfo->CmdHeap, pHdr);
+                    AssertRC(rc);
+                    break;
+                }
+            }
+            else
+                rc = VERR_INVALID_PARAMETER;
+            /* fail to submit, cancel it */
+            VBoxSHGSMICommandCancelAsynch(&pInfo->CmdHeap, pHdr);
+        } while (0);
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+    return rc;
+}
 #endif
 
 

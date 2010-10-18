@@ -21,6 +21,7 @@ typedef struct VBOXUHGSMI_BUFFER_PRIVATE_KMT
 {
     VBOXUHGSMI_BUFFER_PRIVATE_BASE BasePrivate;
     PVBOXUHGSMI_PRIVATE_KMT pHgsmi;
+    CRITICAL_SECTION CritSect;
     UINT aLockPageIndices[1];
 } VBOXUHGSMI_BUFFER_PRIVATE_KMT, *PVBOXUHGSMI_BUFFER_PRIVATE_KMT;
 
@@ -54,8 +55,10 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offL
     DdiLock.hAllocation = pBuffer->BasePrivate.hAllocation;
     DdiLock.PrivateDriverData = NULL;
 
+    EnterCriticalSection(&pBuffer->CritSect);
+
     int rc = vboxUhgsmiBaseLockData(pBuf, offLock, cbLock, fFlags,
-                                         &DdiLock.Flags, pBuffer->aLockPageIndices, &DdiLock.NumPages);
+                                         &DdiLock.Flags, &DdiLock.NumPages, pBuffer->aLockPageIndices);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         return rc;
@@ -64,6 +67,7 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offL
 
     NTSTATUS Status = pBuffer->pHgsmi->Callbacks.pfnD3DKMTLock(&DdiLock);
     Assert(!Status);
+    LeaveCriticalSection(&pBuffer->CritSect);
     if (!Status)
     {
         *pvLock = (void*)(((uint8_t*)DdiLock.pData) + (offLock & 0xfff));
@@ -131,6 +135,8 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
         Assert(hr == S_OK);
         if (hr == S_OK)
         {
+            InitializeCriticalSection(&pBuf->CritSect);
+
             Assert(Buf.DdiAllocInfo.hAllocation);
             pBuf->BasePrivate.Base.pfnLock = vboxUhgsmiKmtBufferLock;
             pBuf->BasePrivate.Base.pfnUnlock = vboxUhgsmiKmtBufferUnlock;

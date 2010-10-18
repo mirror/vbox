@@ -727,8 +727,14 @@ void vboxDispLockInit()
 #ifdef VBOX_WITH_CRHGSMI
 /* cr hgsmi */
 static VBOXCRHGSMI_CALLBACKS g_VBoxCrHgsmiCallbacks = {0};
-static VBOXUHGSMI_PRIVATE_KMT g_VBoxUhgsmiKmt;
-static uint32_t g_cVBoxUhgsmiKmtRefs = 0;
+#define VBOXUHGSMIKMT_PERTHREAD
+#ifdef VBOXUHGSMIKMT_PERTHREAD
+#define VBOXUHGSMIKMT_VAR(_type) __declspec(thread) _type
+#else
+#define VBOXUHGSMIKMT_VAR(_type) _type
+#endif
+static VBOXUHGSMIKMT_VAR(VBOXUHGSMI_PRIVATE_KMT) g_VBoxUhgsmiKmt;
+static VBOXUHGSMIKMT_VAR(uint32_t) g_cVBoxUhgsmiKmtRefs = 0;
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -5012,6 +5018,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
     HRESULT hr = S_OK;
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     Assert(pDevice);
+    VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     Assert(pResource);
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
 

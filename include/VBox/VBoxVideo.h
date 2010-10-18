@@ -1269,12 +1269,14 @@ typedef struct VBOXVDMACMD_DMA_PRESENT_SHADOW2PRIMARY
     VBOXVDMA_RECTL Rect;
 } VBOXVDMACMD_DMA_PRESENT_SHADOW2PRIMARY, *PVBOXVDMACMD_DMA_PRESENT_SHADOW2PRIMARY;
 
+
+#define VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET 0x00000001
+#define VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET 0x00000002
+
 typedef struct VBOXVDMACMD_DMA_BPB_TRANSFER
 {
     uint32_t cbTransferSize;
-    uint32_t offTransfer; /* <- applicable for offVramBuf, which always points to the surface start*/
     uint32_t fFlags;
-    uint32_t u32Reserved;
     union
     {
         uint64_t phBuf;
