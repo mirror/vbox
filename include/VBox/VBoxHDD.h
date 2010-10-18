@@ -626,7 +626,7 @@ typedef struct VDINTERFACEIO
      * @param   uOffset         The offset to start from.
      * @param   pvBuffer        Pointer to the bits need to be written.
      * @param   cbBuffer        How many bytes to write.
-     * @param   pcbWritten      Where to store how many bytes where actually written.
+     * @param   pcbWritten      Where to store how many bytes were actually written.
      */
     DECLR3CALLBACKMEMBER(int, pfnWriteSync, (void *pvUser, void *pStorage, uint64_t uOffset,
                                              const void *pvBuffer, size_t cbBuffer, size_t *pcbWritten));
@@ -640,7 +640,7 @@ typedef struct VDINTERFACEIO
      * @param   uOffset         The offset to start from.
      * @param   pvBuffer        Where to store the read bits.
      * @param   cbBuffer        How many bytes to read.
-     * @param   pcbRead         Where to store how many bytes where actually read.
+     * @param   pcbRead         Where to store how many bytes were actually read.
      */
     DECLR3CALLBACKMEMBER(int, pfnReadSync, (void *pvUser, void *pStorage, uint64_t uOffset,
                                             void *pvBuffer, size_t cbBuffer, size_t *pcbRead));
@@ -1701,7 +1701,7 @@ typedef struct VDINTERFACEIOINT
      * @param   uOffset         The offset to start from.
      * @param   pvBuffer        Pointer to the bits need to be written.
      * @param   cbBuffer        How many bytes to write.
-     * @param   pcbWritten      Where to store how many bytes where actually written.
+     * @param   pcbWritten      Where to store how many bytes were actually written.
      *
      * @notes Do not use in code called from the async read/write entry points in the backends.
      *        This should be only used during open/close of images and for the support functions
@@ -1719,7 +1719,7 @@ typedef struct VDINTERFACEIOINT
      * @param   uOffset         The offset to start from.
      * @param   pvBuffer        Where to store the read bits.
      * @param   cbBuffer        How many bytes to read.
-     * @param   pcbRead         Where to store how many bytes where actually read.
+     * @param   pcbRead         Where to store how many bytes were actually read.
      *
      * @notes See pfnWriteSync()
      */
