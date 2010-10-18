@@ -101,6 +101,10 @@
       </listitem>
 
       <listitem>
+        <para>EFI: support for SATA disks and CDROMs</para>
+      </listitem>
+
+      <listitem>
         <para>OVF: creation of the manifest file on export is optional now</para>
       </listitem>
 
