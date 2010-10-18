@@ -185,6 +185,8 @@ typedef struct VBOXDISK
     size_t              cbDataValid;
     /** The disk buffer. */
     uint8_t            *pbData;
+    /** Bandwidth group the disk is assigned to. */
+    char               *pszBwGroup;
 } VBOXDISK, *PVBOXDISK;
 
 
@@ -363,10 +365,19 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                 rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint,
                                                          pszLocation, fFlags,
                                                          pStorageBackend->pTemplate);
+
                 if (RT_SUCCESS(rc))
                 {
-                    *ppStorage = pStorageBackend;
-                    return VINF_SUCCESS;
+                    if (pThis->pszBwGroup)
+                        rc = PDMR3AsyncCompletionEpSetBwMgr(pStorageBackend->pEndpoint, pThis->pszBwGroup);
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        *ppStorage = pStorageBackend;
+                        return VINF_SUCCESS;
+                    }
+
+                    PDMR3AsyncCompletionEpClose(pStorageBackend->pEndpoint);
                 }
 
                 PDMR3AsyncCompletionTemplateDestroy(pStorageBackend->pTemplate);
@@ -1900,6 +1911,11 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     }
     if (pThis->pbData)
         RTMemFree(pThis->pbData);
+    if (pThis->pszBwGroup)
+    {
+        MMR3HeapFree(pThis->pszBwGroup);
+        pThis->pszBwGroup = NULL;
+    }
 }
 
 /**
@@ -2000,7 +2016,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "Format\0Path\0"
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
-                                          "SetupMerge\0MergeSource\0MergeTarget\0");
+                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0");
         }
         else
         {
@@ -2106,6 +2122,15 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                       N_("DrvVD: Configuration error: Querying \"BootAccelerationBuffer\" as integer failed"));
                 break;
             }
+            rc = CFGMR3QueryStringAlloc(pCurNode, "BwGroup", &pThis->pszBwGroup);
+            if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"BwGroup\" as string failed"));
+                break;
+            }
+            else
+                rc = VINF_SUCCESS;
         }
 
         PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");

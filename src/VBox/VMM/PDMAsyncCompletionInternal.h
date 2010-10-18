@@ -160,6 +160,9 @@ typedef const PDMASYNCCOMPLETIONEPCLASSOPS *PCPDMASYNCCOMPLETIONEPCLASSOPS;
 /** Version for the endpoint class operations structure. */
 #define PDMAC_EPCLASS_OPS_VERSION 0x00000001
 
+/** Pointer to a bandwidth control manager. */
+typedef struct PDMACBWMGR *PPDMACBWMGR;
+
 /**
  * PDM Async completion endpoint class.
  * Common data.
@@ -168,12 +171,14 @@ typedef struct PDMASYNCCOMPLETIONEPCLASS
 {
     /** Pointer to the shared VM structure. */
     PVM                                         pVM;
-    /** Critical section protecting the endpoint list. */
+    /** Critical section protecting the lists below. */
     RTCRITSECT                                  CritSect;
     /** Number of endpoints in the list. */
     volatile unsigned                           cEndpoints;
     /** Head of endpoints with this class. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINT)      pEndpointsHead;
+    /** Head of the bandwidth managers for this class. */
+    R3PTRTYPE(PPDMACBWMGR)                      pBwMgrsHead;
     /** Pointer to the callback table. */
     R3PTRTYPE(PCPDMASYNCCOMPLETIONEPCLASSOPS)   pEndpointOps;
     /** Task cache. */
@@ -204,6 +209,8 @@ typedef struct PDMASYNCCOMPLETIONENDPOINT
     unsigned                                    cUsers;
     /** URI describing the endpoint */
     char                                       *pszUri;
+    /** Pointer to the assigned bandwidth manager. */
+    volatile PPDMACBWMGR                        pBwMgr;
 #ifdef VBOX_WITH_STATISTICS
     STAMCOUNTER                                 StatTaskRunTimesNs[10];
     STAMCOUNTER                                 StatTaskRunTimesMicroSec[10];
@@ -250,6 +257,19 @@ typedef struct PDMASYNCCOMPLETIONTASK
  *                                    inform the owner of the task that it has completed.
  */
 void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, bool fCallCompletionHandler);
+
+/**
+ * Checks if the endpoint is allowed to transfer the given amount of bytes.
+ *
+ * @returns true if the endpoint is allowed to transfer the data.
+ *          false otherwise
+ * @param   pEndpoint                 The endpoint.
+ * @param   cbTransfer                The number of bytes to transfer.
+ * @param   pmsWhenNext               Where to store the number of milliseconds
+ *                                    until the bandwidth is refreshed.
+ *                                    Only set if false is returned.
+ */
+bool pdmacEpIsTransferAllowed(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint32_t cbTransfer, RTMSINTERVAL *pmsWhenNext);
 
 RT_C_DECLS_END
 

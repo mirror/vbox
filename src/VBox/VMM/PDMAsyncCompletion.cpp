@@ -36,6 +36,7 @@
 #include <iprt/critsect.h>
 #include <iprt/tcp.h>
 #include <iprt/path.h>
+#include <iprt/string.h>
 
 #include <VBox/pdmasynccompletion.h>
 #include "PDMAsyncCompletionInternal.h"
@@ -111,6 +112,34 @@ typedef struct PDMASYNCCOMPLETIONTEMPLATE
     /** Use count of the template. */
     volatile uint32_t                       cUsed;
 } PDMASYNCCOMPLETIONTEMPLATE;
+
+/**
+ * Bandwidth control manager instance data
+ */
+typedef struct PDMACBWMGR
+{
+    /** Pointer to the next manager in the list. */
+    struct PDMACBWMGR                          *pNext;
+    /** Pointer to the shared UVM structure. */
+    PPDMASYNCCOMPLETIONEPCLASS                  pEpClass;
+    /** Identifer of the manager. */
+    char                                       *pszId;
+    /** Maximum number of bytes the endpoints are allowed to transfer (Max is 4GB/s currently) */
+    volatile uint32_t                           cbTransferPerSecMax;
+    /** Number of bytes we start with */
+    volatile uint32_t                           cbTransferPerSecStart;
+    /** Step after each update */
+    volatile uint32_t                           cbTransferPerSecStep;
+    /** Number of bytes we are allowed to transfer till the next update.
+     * Reset by the refresh timer. */
+    volatile uint32_t                           cbTransferAllowed;
+    /** Timestamp of the last update */
+    volatile uint64_t                           tsUpdatedLast;
+    /** Reference counter - How many endpoints are associated with this manager. */
+    volatile uint32_t                           cRefs;
+} PDMACBWMGR;
+/** Pointer to a bandwidth control manager pointer. */
+typedef PPDMACBWMGR *PPPDMACBWMGR;
 
 static void pdmR3AsyncCompletionPutTask(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, PPDMASYNCCOMPLETIONTASK pTask);
 
@@ -564,6 +593,181 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIn
     return VINF_SUCCESS;
 }
 
+
+static PPDMACBWMGR pdmacBwMgrFindById(PPDMASYNCCOMPLETIONEPCLASS pEpClass, const char *pcszId)
+{
+    PPDMACBWMGR pBwMgr = NULL;
+
+    if (VALID_PTR(pcszId))
+    {
+        int rc;
+        rc = RTCritSectEnter(&pEpClass->CritSect);
+        AssertRC(rc);
+
+        pBwMgr = pEpClass->pBwMgrsHead;
+        while (   pBwMgr
+               && RTStrCmp(pBwMgr->pszId, pcszId))
+            pBwMgr = pBwMgr->pNext;
+
+        rc = RTCritSectLeave(&pEpClass->CritSect);
+        AssertRC(rc);
+    }
+
+    return pBwMgr;
+}
+
+static void pdmacBwMgrLink(PPDMACBWMGR pBwMgr)
+{
+    PPDMASYNCCOMPLETIONEPCLASS pEpClass = pBwMgr->pEpClass;
+    int rc;
+
+    rc = RTCritSectEnter(&pEpClass->CritSect);
+    AssertRC(rc);
+
+    pBwMgr->pNext = pEpClass->pBwMgrsHead;
+    pEpClass->pBwMgrsHead = pBwMgr;
+
+    rc = RTCritSectLeave(&pEpClass->CritSect);
+    AssertRC(rc);
+}
+
+static void pdmacBwMgrUnlink(PPDMACBWMGR pBwMgr)
+{
+    int rc;
+    PPDMASYNCCOMPLETIONEPCLASS pEpClass = pBwMgr->pEpClass;
+
+    rc = RTCritSectEnter(&pEpClass->CritSect);
+    AssertRC(rc);
+
+    if (pBwMgr == pEpClass->pBwMgrsHead)
+        pEpClass->pBwMgrsHead = pBwMgr->pNext;
+    else
+    {
+        PPDMACBWMGR pPrev = pEpClass->pBwMgrsHead;
+        while (   pPrev
+               && pPrev->pNext != pBwMgr)
+            pPrev = pPrev->pNext;
+
+        AssertPtr(pPrev);
+        pPrev->pNext = pBwMgr->pNext;
+    }
+
+    rc = RTCritSectLeave(&pEpClass->CritSect);
+    AssertRC(rc);
+}
+
+static int pdmacAsyncCompletionBwMgrCreate(PPDMASYNCCOMPLETIONEPCLASS pEpClass, const char *pcszBwMgr, uint32_t cbTransferPerSecMax,
+                                           uint32_t cbTransferPerSecStart, uint32_t cbTransferPerSecStep)
+{
+    int rc = VINF_SUCCESS;
+    PPDMACBWMGR pBwMgr;
+
+    LogFlowFunc(("pEpClass=%#p pcszBwMgr=%#p{%s} cbTransferPerSecMax=%u cbTransferPerSecStart=%u cbTransferPerSecStep=%u\n",
+                 pEpClass, pcszBwMgr, cbTransferPerSecMax, cbTransferPerSecStart, cbTransferPerSecStep));
+
+    AssertPtrReturn(pEpClass, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszBwMgr, VERR_INVALID_POINTER);
+    AssertReturn(*pcszBwMgr != '\0', VERR_INVALID_PARAMETER);
+
+    pBwMgr = pdmacBwMgrFindById(pEpClass, pcszBwMgr);
+    if (!pBwMgr)
+    {
+        rc = MMR3HeapAllocZEx(pEpClass->pVM, MM_TAG_PDM_ASYNC_COMPLETION,
+                              sizeof(PDMACBWMGR),
+                              (void **)&pBwMgr);
+        if (RT_SUCCESS(rc))
+        {
+            pBwMgr->pszId = RTStrDup(pcszBwMgr);
+            if (pBwMgr->pszId)
+            {
+                pBwMgr->pEpClass              = pEpClass;
+                pBwMgr->cRefs                 = 0;
+
+                /* Init I/O flow control. */
+                pBwMgr->cbTransferPerSecMax   = cbTransferPerSecMax;
+                pBwMgr->cbTransferPerSecStart = cbTransferPerSecStart;
+                pBwMgr->cbTransferPerSecStep  = cbTransferPerSecStep;
+
+                pBwMgr->cbTransferAllowed     = pBwMgr->cbTransferPerSecStart;
+                pBwMgr->tsUpdatedLast         = RTTimeSystemNanoTS();
+
+                pdmacBwMgrLink(pBwMgr);
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                rc = VERR_NO_MEMORY;
+                MMR3HeapFree(pBwMgr);
+            }
+        }
+    }
+    else
+        rc = VERR_ALREADY_EXISTS;
+
+    LogFlowFunc(("returns rc=%Rc\n", rc));
+    return rc;
+}
+
+DECLINLINE(void) pdmacBwMgrRef(PPDMACBWMGR pBwMgr)
+{
+    ASMAtomicIncU32(&pBwMgr->cRefs);
+}
+
+DECLINLINE(void) pdmacBwMgrUnref(PPDMACBWMGR pBwMgr)
+{
+    Assert(pBwMgr->cRefs > 0);
+    ASMAtomicDecU32(&pBwMgr->cRefs);
+}
+
+bool pdmacEpIsTransferAllowed(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint32_t cbTransfer, RTMSINTERVAL *pmsWhenNext)
+{
+    bool fAllowed = true;
+    PPDMACBWMGR pBwMgr = ASMAtomicReadPtrT(&pEndpoint->pBwMgr, PPDMACBWMGR);
+
+    LogFlowFunc(("pEndpoint=%p pBwMgr=%p cbTransfer=%u\n", pEndpoint, pBwMgr, cbTransfer));
+
+    if (pBwMgr)
+    {
+        uint32_t cbOld = ASMAtomicSubU32(&pBwMgr->cbTransferAllowed, cbTransfer);
+        if (RT_LIKELY(cbOld >= cbTransfer))
+            fAllowed = true;
+        else
+        {
+            fAllowed = false;
+
+            /* We are out of ressources  Check if we can update again. */
+            uint64_t tsNow          = RTTimeSystemNanoTS();
+            uint64_t tsUpdatedLast  = ASMAtomicUoReadU64(&pBwMgr->tsUpdatedLast);
+
+            if (tsNow - tsUpdatedLast >= (1000*1000*1000))
+            {
+                if (ASMAtomicCmpXchgU64(&pBwMgr->tsUpdatedLast, tsNow, tsUpdatedLast))
+                {
+                    if (pBwMgr->cbTransferPerSecStart < pBwMgr->cbTransferPerSecMax)
+                    {
+                       pBwMgr->cbTransferPerSecStart = RT_MIN(pBwMgr->cbTransferPerSecMax, pBwMgr->cbTransferPerSecStart + pBwMgr->cbTransferPerSecStep);
+                       LogFlow(("AIOMgr: Increasing maximum bandwidth to %u bytes/sec\n", pBwMgr->cbTransferPerSecStart));
+                    }
+
+                    /* Update */
+                    ASMAtomicWriteU32(&pBwMgr->cbTransferAllowed, pBwMgr->cbTransferPerSecStart - cbTransfer);
+                    fAllowed = true;
+                    LogFlow(("AIOMgr: Refreshed bandwidth\n"));
+                }
+            }
+            else
+            {
+                ASMAtomicAddU32(&pBwMgr->cbTransferAllowed, cbTransfer);
+                *pmsWhenNext = ((1000*1000*1000) - (tsNow - tsUpdatedLast)) / (1000*1000);
+            }
+        }
+    }
+
+    LogFlowFunc(("fAllowed=%RTbool\n", fAllowed));
+
+    return fAllowed;
+}
+
 void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, bool fCallCompletionHandler)
 {
     LogFlow(("%s: pTask=%#p fCallCompletionHandler=%RTbool\n", __FUNCTION__, pTask, fCallCompletionHandler));
@@ -648,13 +852,52 @@ int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpC
                 rc = pEpClassOps->pfnInitialize(pEndpointClass, pCfgNodeClass);
                 if (RT_SUCCESS(rc))
                 {
-                    PUVM pUVM = pVM->pUVM;
-                    AssertMsg(!pUVM->pdm.s.apAsyncCompletionEndpointClass[pEpClassOps->enmClassType],
-                              ("Endpoint class was already initialized\n"));
+                    /* Create all bandwidth groups for resource control. */
+                    PCFGMNODE pCfgBwGrp = CFGMR3GetChild(pCfgNodeClass, "BwGroups");
 
-                    pUVM->pdm.s.apAsyncCompletionEndpointClass[pEpClassOps->enmClassType] = pEndpointClass;
-                    LogFlowFunc((": Initialized endpoint class \"%s\" rc=%Rrc\n", pEpClassOps->pcszName, rc));
-                    return VINF_SUCCESS;
+                    if (pCfgBwGrp)
+                    {
+                        for (PCFGMNODE pCur = CFGMR3GetFirstChild(pCfgBwGrp); pCur; pCur = CFGMR3GetNextChild(pCur))
+                        {
+                            uint32_t cbMax, cbStart, cbStep;
+                            size_t cchName = CFGMR3GetNameLen(pCur) + 1;
+                            char *pszBwGrpId = (char *)RTMemAllocZ(cchName);
+
+                            if (!pszBwGrpId)
+                            {
+                                rc = VERR_NO_MEMORY;
+                                break;
+                            }
+
+                            rc = CFGMR3GetName(pCur, pszBwGrpId, cchName);
+                            AssertRC(rc);
+
+                            if (RT_SUCCESS(rc))
+                                rc = CFGMR3QueryU32(pCur, "Start", &cbStart);
+                            if (RT_SUCCESS(rc))
+                                rc = CFGMR3QueryU32(pCur, "Max", &cbMax);
+                            if (RT_SUCCESS(rc))
+                                rc = CFGMR3QueryU32(pCur, "Step", &cbStep);
+                            if (RT_SUCCESS(rc))
+                                rc = pdmacAsyncCompletionBwMgrCreate(pEndpointClass, pszBwGrpId, cbMax, cbStart, cbStep);
+
+                            RTMemFree(pszBwGrpId);
+
+                            if (RT_FAILURE(rc))
+                                break;
+                        }
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        PUVM pUVM = pVM->pUVM;
+                        AssertMsg(!pUVM->pdm.s.apAsyncCompletionEndpointClass[pEpClassOps->enmClassType],
+                                  ("Endpoint class was already initialized\n"));
+
+                        pUVM->pdm.s.apAsyncCompletionEndpointClass[pEpClassOps->enmClassType] = pEndpointClass;
+                        LogFlowFunc((": Initialized endpoint class \"%s\" rc=%Rrc\n", pEpClassOps->pcszName, rc));
+                        return VINF_SUCCESS;
+                    }
                 }
                 RTMemCacheDestroy(pEndpointClass->hMemCacheTasks);
             }
@@ -684,6 +927,15 @@ static void pdmR3AsyncCompletionEpClassTerminate(PPDMASYNCCOMPLETIONEPCLASS pEnd
     /* Close all still open endpoints. */
     while (pEndpointClass->pEndpointsHead)
         PDMR3AsyncCompletionEpClose(pEndpointClass->pEndpointsHead);
+
+    /* Destroy the bandwidth managers. */
+    PPDMACBWMGR pBwMgr = pEndpointClass->pBwMgrsHead;
+    while (pBwMgr)
+    {
+        PPDMACBWMGR pFree = pBwMgr;
+        pBwMgr = pBwMgr->pNext;
+        MMR3HeapFree(pFree);
+    }
 
     /* Call the termination callback of the class. */
     pEndpointClass->pEndpointOps->pfnTerminate(pEndpointClass);
@@ -737,6 +989,64 @@ int pdmR3AsyncCompletionTerm(PVM pVM)
             pdmR3AsyncCompletionEpClassTerminate(pUVM->pdm.s.apAsyncCompletionEndpointClass[i]);
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Resume worker for the async completion manager.
+ *
+ * @returns nothing.
+ * @param   pVM Pointer to the shared VM structure.
+ */
+void pdmR3AsyncCompletionResume(PVM pVM)
+{
+    LogFlowFunc((": pVM=%p\n", pVM));
+    PUVM pUVM = pVM->pUVM;
+
+    /* Log the bandwidth groups and all assigned endpoints. */
+    for (size_t i = 0; i < RT_ELEMENTS(pUVM->pdm.s.apAsyncCompletionEndpointClass); i++)
+        if (pUVM->pdm.s.apAsyncCompletionEndpointClass[i])
+        {
+            PPDMASYNCCOMPLETIONEPCLASS pEpClass = pUVM->pdm.s.apAsyncCompletionEndpointClass[i];
+            PPDMASYNCCOMPLETIONENDPOINT pEp;
+            PPDMACBWMGR pBwMgr = pEpClass->pBwMgrsHead;
+
+            if (pBwMgr)
+                LogRel(("AIOMgr: Bandwidth groups for class '%s'\n", i == PDMASYNCCOMPLETIONEPCLASSTYPE_FILE
+                                                                     ? "File" : "<Unknown>"));
+
+            while (pBwMgr)
+            {
+                LogRel(("AIOMgr:     Id:    %s\n", pBwMgr->pszId));
+                LogRel(("AIOMgr:     Max:   %u B/s\n", pBwMgr->cbTransferPerSecMax));
+                LogRel(("AIOMgr:     Start: %u B/s\n", pBwMgr->cbTransferPerSecStart));
+                LogRel(("AIOMgr:     Step:  %u B/s\n", pBwMgr->cbTransferPerSecStep));
+                LogRel(("AIOMgr:     Endpoints:\n"));
+
+                pEp = pEpClass->pEndpointsHead;
+                while (pEp)
+                {
+                    if (pEp->pBwMgr == pBwMgr)
+                        LogRel(("AIOMgr:         %s\n", pEp->pszUri));
+
+                    pEp = pEp->pNext;
+                }
+
+                pBwMgr = pBwMgr->pNext;
+            }
+
+            /* Print all endpoints without assigned bandwidth groups. */
+            pEp = pEpClass->pEndpointsHead;
+            if (pEp)
+                LogRel(("AIOMgr: Endpoints without assigned bandwidth groups:\n"));
+
+            while (pEp)
+            {
+                if (!pEp->pBwMgr)
+                    LogRel(("AIOMgr:     %s\n", pEp->pszUri));
+
+                pEp = pEp->pNext;
+            }
+        }
 }
 
 /**
@@ -913,6 +1223,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
             pEndpoint->pTemplate         = pTemplate;
             pEndpoint->pszUri            = RTStrDup(pszFilename);
             pEndpoint->cUsers            = 1;
+            pEndpoint->pBwMgr            = NULL;
 
 #ifdef VBOX_WITH_STATISTICS
             /* Init the statistics part */
@@ -1240,6 +1551,35 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpSetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoi
         return pEndpoint->pEpClass->pEndpointOps->pfnEpSetSize(pEndpoint, cbSize);
     else
         return VERR_NOT_SUPPORTED;
+}
+
+VMMR3DECL(int) PDMR3AsyncCompletionEpSetBwMgr(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
+                                              const char *pcszBwMgr)
+{
+    int rc = VINF_SUCCESS;
+    AssertReturn(VALID_PTR(pEndpoint), VERR_INVALID_POINTER);
+    PPDMACBWMGR pBwMgrOld = NULL;
+    PPDMACBWMGR pBwMgrNew = NULL;
+
+    if (pcszBwMgr)
+    {
+        pBwMgrNew = pdmacBwMgrFindById(pEndpoint->pEpClass, pcszBwMgr);
+
+        if (pBwMgrNew)
+            pdmacBwMgrRef(pBwMgrNew);
+        else
+            rc = VERR_NOT_FOUND;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pBwMgrOld = ASMAtomicXchgPtrT(&pEndpoint->pBwMgr, pBwMgrNew, PPDMACBWMGR);
+
+        if (pBwMgrOld)
+            pdmacBwMgrUnref(pBwMgrOld);
+    }
+
+    return rc;
 }
 
 VMMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask)
