@@ -2568,6 +2568,7 @@ DxgkDdiBuildPagingBuffer(
     {
         case DXGK_OPERATION_TRANSFER:
         {
+#ifdef VBOX_WITH_VDMA
             UINT cbCmd = VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
             PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, cbCmd);
             Assert(pDr);
@@ -2650,6 +2651,7 @@ DxgkDdiBuildPagingBuffer(
                 drprintf((__FUNCTION__": vboxVdmaCBufDrCreate returned NULL\n"));
                 Status = STATUS_INSUFFICIENT_RESOURCES;
             }
+#endif /* #ifdef VBOX_WITH_VDMA */
             break;
         }
         case DXGK_OPERATION_FILL:
