@@ -526,13 +526,9 @@ static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVI
     {
         if (MsiIsEnabled(pPciDev))
         {
-            Log2(("Raise a MSI interrupt: %d\n", iIrq));
-            /* We only trigger MSI on level up, as technically it's matching flip-flop best (maybe even assert that level == PDM_IRQ_LEVEL_FLIP_FLOP) */
-            if ((iLevel & PDM_IRQ_LEVEL_HIGH) != 0)
-            {
-                PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
-                MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq);
-            }
+            Log2(("MSI interrupt: %d level=%d\n", iIrq, iLevel));
+            PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
+            MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel);
         }
         return;
     }

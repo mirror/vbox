@@ -34,7 +34,7 @@ int      MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
 bool     MsiIsEnabled(PPCIDEVICE pDev);
 
 /* Device notification (aka interrupt). */
-void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector);
+void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel);
 
 /* PCI config space accessors for MSI registers */
 void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
