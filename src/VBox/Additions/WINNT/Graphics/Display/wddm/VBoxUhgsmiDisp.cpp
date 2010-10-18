@@ -57,7 +57,7 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offL
     DdiLock.PrivateDriverData = 0;
 
     int rc = vboxUhgsmiBaseLockData(pBuf, offLock, cbLock, fFlags,
-                                         &DdiLock.Flags, pBuffer->aLockPageIndices, &DdiLock.NumPages);
+                                         &DdiLock.Flags, &DdiLock.NumPages, pBuffer->aLockPageIndices);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         return rc;
