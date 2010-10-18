@@ -1048,6 +1048,10 @@ VMMR3DECL(void) PDMR3PowerOn(PVM pVM)
     }
 #endif
 
+#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+    pdmR3AsyncCompletionResume(pVM);
+#endif
+
     /*
      * Resume all threads.
      */
