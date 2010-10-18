@@ -428,7 +428,7 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
     /** Bitmask for checking the alignment of a buffer. */
     RTR3UINTPTR                         uBitmaskAlignment;
 #ifdef VBOX_WITH_STATISTICS
-    uint32_t                            u32Alignment;
+    uint32_t                            u32Alignment[2];
 #endif
     /** Global cache data. */
     PDMACFILECACHEGLOBAL                Cache;
