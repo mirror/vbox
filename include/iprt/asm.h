@@ -1612,7 +1612,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
 #    else
                            "=m" (*pu64)
 #    endif
-                         : "0" (0),
+                         : "0" (0ULL),
                            "m" (u32EBX),
                            "c" (0),
                            "S" (pu64));
@@ -1620,7 +1620,7 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
     __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
                          : "=A" (u64),
                            "+m" (*pu64)
-                         : "0" (0),
+                         : "0" (0ULL),
                            "b" (0),
                            "c" (0));
 #   endif
@@ -1700,7 +1700,7 @@ DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
     __asm__ __volatile__("lock; cmpxchg8b %1\n\t"
                          : "=A" (u64),
                            "+m" (*pu64)
-                         : "0" (0),
+                         : "0" (0ULL),
                            "b" (0),
                            "c" (0));
 #   endif
