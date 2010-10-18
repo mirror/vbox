@@ -3529,6 +3529,7 @@ ASM_END
 // Start of ATA/ATAPI generic functions
 // ---------------------------------------------------------------------------
 
+#if 0   // currently unused
   Bit16u
 atapi_get_sense(device)
   Bit16u device;
@@ -3576,6 +3577,7 @@ atapi_is_ready(device)
     }
   return 0;
 }
+#endif
 
   Bit16u
 atapi_is_cdrom(device)
@@ -8977,6 +8979,7 @@ carry_set:
 ;   - make all called C function get the same parameters list
 ;
 int13_relocated:
+  cld   ;; we will be doing some string I/O
 
 #if BX_ELTORITO_BOOT
   ;; check for an eltorito function
