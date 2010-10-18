@@ -7426,7 +7426,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
                              targetId.raw(),
                              VD_OPEN_FLAGS_NORMAL,
                              NULL /* pVDIfsOperation */,
-                             task.mVDImageIfaces,
+                             m->vdImageIfaces,
                              task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
