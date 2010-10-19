@@ -867,8 +867,6 @@ static void crVBoxHGSMIFree(CRConnection *conn, void *buf)
 {
     CRVBOXHGSMIBUFFER *hgsmi_buffer = (CRVBOXHGSMIBUFFER *) buf - 1;
 
-    Assert(0);
-
     CRASSERT(hgsmi_buffer->magic == CR_VBOXHGSMI_BUFFER_MAGIC);
 
     if (hgsmi_buffer->bIsBuf)

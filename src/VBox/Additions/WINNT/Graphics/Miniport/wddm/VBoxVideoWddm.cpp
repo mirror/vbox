@@ -2714,8 +2714,8 @@ DxgkDdiBuildPagingBuffer(
                     VBOXVDMACMD_DMA_BPB_TRANSFER *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_DMA_BPB_TRANSFER);
 //                    pBody->cbTransferSize = (uint32_t)pBuildPagingBuffer->Transfer.TransferSize;
                     pBody->fFlags = 0;
-                    SIZE_T cSrcPages = cbTransferSize;
-                    SIZE_T cDstPages = cbTransferSize;
+                    SIZE_T cSrcPages = (cbTransferSize + 0xfff ) >> 12;
+                    SIZE_T cDstPages = cSrcPages;
 
                     if (pBuildPagingBuffer->Transfer.Source.SegmentId)
                     {
