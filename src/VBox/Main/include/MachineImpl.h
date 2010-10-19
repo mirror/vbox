@@ -1003,8 +1003,6 @@ private:
 
     HRESULT endSavingState(BOOL aSuccess);
 
-    typedef std::map<ComObjPtr<Machine>, MachineState_T> AffectedMachines;
-
     void deleteSnapshotHandler(DeleteSnapshotTask &aTask);
     void restoreSnapshotHandler(RestoreSnapshotTask &aTask);
 
