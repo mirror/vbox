@@ -59,7 +59,6 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
                                      const VBoxGlobalSettings &aGs)
 {
-    mPsHardDisk->setPath (aProps.GetDefaultHardDiskFolder());
     mPsMach->setPath (aProps.GetDefaultMachineFolder());
     mPsVRDP->setPath (aProps.GetRemoteDisplayAuthLibrary());
     mCbCheckTrayIcon->setChecked (aGs.trayIconEnabled());
@@ -72,8 +71,6 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
 void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
                                        VBoxGlobalSettings &aGs)
 {
-    if (mPsHardDisk->isModified())
-        aProps.SetDefaultHardDiskFolder (mPsHardDisk->path());
     if (aProps.isOk() && mPsMach->isModified())
         aProps.SetDefaultMachineFolder (mPsMach->path());
     if (aProps.isOk() && mPsVRDP->isModified())

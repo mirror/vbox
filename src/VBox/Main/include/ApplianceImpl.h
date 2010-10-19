@@ -120,7 +120,6 @@ private:
 
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
-    HRESULT getDefaultHardDiskFolder(Utf8Str &str) const;
     void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
     void addWarning(const char* aWarning, ...);
 

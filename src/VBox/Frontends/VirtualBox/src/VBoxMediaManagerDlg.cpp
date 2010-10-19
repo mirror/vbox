@@ -977,10 +977,6 @@ void VBoxMediaManagerDlg::doAddMedium()
              && item->state() != KMediumState_NotCreated)
         dir = QFileInfo (item->location().trimmed()).absolutePath();
 
-    if (dir.isEmpty())
-        if (type == VBoxDefs::MediumType_HardDisk)
-            dir = mVBox.GetSystemProperties().GetDefaultHardDiskFolder();
-
     if (dir.isEmpty() || !QFileInfo (dir).exists())
         dir = mVBox.GetHomeFolder();
 

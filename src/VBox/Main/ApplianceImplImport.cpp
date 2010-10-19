@@ -126,10 +126,6 @@ STDMETHODIMP Appliance::Interpret()
     /* Clear any previous virtual system descriptions */
     m->virtualSystemDescriptions.clear();
 
-    Utf8Str strDefaultHardDiskFolder;
-    rc = getDefaultHardDiskFolder(strDefaultHardDiskFolder);
-    if (FAILED(rc)) return rc;
-
     if (!m->pReader)
         return setError(E_FAIL,
                         tr("Cannot interpret appliance without reading it first (call read() before interpret())"));
@@ -255,7 +251,7 @@ STDMETHODIMP Appliance::Interpret()
 
             /* RAM */
             uint64_t ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
-            /* Check for the constrains */
+            /* Check for the constraints */
             if (    ullMemSizeVBox != 0
                  && (    ullMemSizeVBox < MM_RAM_MIN_IN_MB
                       || ullMemSizeVBox > MM_RAM_MAX_IN_MB
@@ -498,12 +494,6 @@ STDMETHODIMP Appliance::Interpret()
                         Utf8Str strFilename = di.strHref;
                         if (!strFilename.length())
                             strFilename = Utf8StrFmt("%s.vmdk", nameVBox.c_str());
-                        /* Construct a unique target path */
-                        Utf8StrFmt strPath("%s%c%s",
-                                           strDefaultHardDiskFolder.c_str(),
-                                           RTPATH_DELIMITER,
-                                           strFilename.c_str());
-                        searchUniqueDiskImageFilePath(strPath);
 
                         /* find the description for the hard disk controller
                          * that has the same ID as hd.idController */
@@ -521,7 +511,7 @@ STDMETHODIMP Appliance::Interpret()
                         pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
                                            hd.strDiskId,
                                            di.strHref,
-                                           strPath,
+                                           strFilename,
                                            di.ulSuggestedSizeMB,
                                            strExtraConfig);
                     }
@@ -1262,6 +1252,17 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Missing VM name"));
             stack.strNameVBox = vsdeName.front()->strVboxCurrent;
+
+            // have VirtualBox suggest where the filename would be placed so we can
+            // put the disk images in the same directory
+            Bstr bstrMachineFilename;
+            rc = mVirtualBox->ComposeMachineFilename(Bstr(stack.strNameVBox).raw(),
+                                                     NULL,
+                                                     bstrMachineFilename.asOutParam());
+            if (FAILED(rc)) throw rc;
+            // and determine the machine folder from that
+            stack.strMachineFolder = bstrMachineFilename;
+            stack.strMachineFolder.stripFilename();
 
             // guest OS type
             std::list<VirtualSystemDescriptionEntry*> vsdeOS;
@@ -2199,11 +2200,9 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 {
     Assert(vsdescThis->m->pConfig);
 
-    settings::MachineConfigFile &config = *vsdescThis->m->pConfig;
+    HRESULT rc = S_OK;
 
-    Utf8Str strDefaultHardDiskFolder;
-    HRESULT rc = getDefaultHardDiskFolder(strDefaultHardDiskFolder);
-    if (FAILED(rc)) throw rc;
+    settings::MachineConfigFile &config = *vsdescThis->m->pConfig;
 
     /*
      *
@@ -2294,7 +2293,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
                 if (di.uuidVbox == strUuid)
                 {
-                    Utf8Str strTargetPath(strDefaultHardDiskFolder);
+                    Utf8Str strTargetPath(stack.strMachineFolder);
                     strTargetPath.append(RTPATH_DELIMITER);
                     strTargetPath.append(di.strHref);
                     searchUniqueDiskImageFilePath(strTargetPath);
