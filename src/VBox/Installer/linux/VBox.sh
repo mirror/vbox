@@ -81,19 +81,16 @@ APP=`which $0`
 APP=`basename $APP`
 APP=${APP##/*/}
 case "$APP" in
-  VirtualBox)
+  VirtualBox|virtualbox)
     exec "$INSTALL_DIR/VirtualBox" "$@"
     ;;
-  VBoxManage)
+  VBoxManage|vboxmanage)
     exec "$INSTALL_DIR/VBoxManage" "$@"
     ;;
-  VBoxSDL)
+  VBoxSDL|vboxsdl)
     exec "$INSTALL_DIR/VBoxSDL" "$@"
     ;;
-  VBoxVRDP)
-    exec "$INSTALL_DIR/VBoxHeadless" "$@"
-    ;;
-  VBoxHeadless)
+  VBoxVRDP|VBoxHeadless|vboxheadless)
     exec "$INSTALL_DIR/VBoxHeadless" "$@"
     ;;
   vboxwebsrv)

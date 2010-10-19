@@ -134,6 +134,10 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxSDL
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxVRDP
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxHeadless
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxwebsrv
+ln -s VirtualBox $RPM_BUILD_ROOT/usr/bin/virtualbox
+ln -s VBoxManage $RPM_BUILD_ROOT/usr/bin/vboxmanage
+ln -s VBoxSDL $RPM_BUILD_ROOT/usr/bin/vboxsdl
+ln -s VBoxHeadless $RPM_BUILD_ROOT/usr/bin/vboxheadless
 ln -s /usr/share/virtualbox/src/vboxhost $RPM_BUILD_ROOT/usr/src/vboxhost-%VER%
 mv virtualbox.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualbox.desktop
 mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png
