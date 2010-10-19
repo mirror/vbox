@@ -245,17 +245,23 @@ STDMETHODIMP SystemProperties::COMGETTER(InfoVDSize)(LONG64 *infoVDSize)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /** The BIOS supports currently 32 bit LBA numbers (implementing the full
+    /*
+     * The BIOS supports currently 32 bit LBA numbers (implementing the full
      * 48 bit range is in theory trivial, but the crappy compiler makes things
-     * more difficult). This translates to almost 2 TBytes (to be on the safe
+     * more difficult). This translates to almost 2 TiBytes (to be on the safe
      * side, the reported limit is 1 MiByte less than that, as the total number
      * of sectors should fit in 32 bits, too), which should be enough for the
-     * moment. The virtual ATA/SATA disks support complete LBA48, and SCSI
-     * supports LBA64 (almost, more like LBA55 in practice), so the theoretical
-     * maximum disk size is 128 PiByte/16 EiByte. The GUI works nicely with 6
-     * orders of magnitude, but not with 11/13 orders of magnitude. */
+     * moment. Since the MBR partition tables support only 32bit sector numbers
+     * and thus the BIOS can only boot from disks smaller than 2T this is a
+     * rather hard limit.
+     *
+     * The virtual ATA/SATA disks support complete LBA48, and SCSI supports
+     * LBA64 (almost, more like LBA55 in practice), so the theoretical maximum
+     * disk size is 128 PiByte/16 EiByte. The GUI works nicely with 6 orders
+     * of magnitude, but not with 11..13 orders of magnitude.
+    */
     /* no need to lock, this is const */
-    *infoVDSize = (2048LL * 1024 - 1) * _1M;
+    *infoVDSize = 2 * _1T - _1M;
 
     return S_OK;
 }
