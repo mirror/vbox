@@ -1373,7 +1373,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="ec6cc7e7-06a2-4c5d-8993-1e3619c53817"
+    uuid="1489e5b2-40ed-4037-b8c9-d316bbf5e07c"
     wsmap="managed"
   >
     <desc>
@@ -1513,6 +1513,49 @@
       </desc>
     </attribute>
 
+    <method name="composeMachineFilename">
+      <desc>
+        Returns the full path of the settings file name that <link to="#createMachine" />
+        would use. This method gets called by createMachine(), but calling this method
+        independently might be helpful if one needs to create the machine directory
+        to place files (such as disk images) there before actually creating the machine.
+
+        See the <link to="IMachine::name"/> attribute description for more details about
+        the machine name.
+
+        Every machine has a <i>settings file</i> that is used to store
+        the machine configuration. This file is stored in a directory called the
+        <i>machine settings subfolder</i>. Both the settings subfolder and file
+        will have a name that corresponds to the name of the virtual machine.
+        You can specify where to create the machine setting subfolder using the
+        @a baseFolder argument. The base folder can be absolute (full path) or
+        relative to the <link to="IVirtualBox::homeFolder">VirtualBox home
+        directory</link>.
+
+        If @a baseFolder is a @c null or empty string (which is recommended), the
+        <link to="ISystemProperties::defaultMachineFolder">default machine
+        settings folder</link> will be used as a base folder for the created
+        machine. Otherwise the given base folder will be used. In either case,
+        the full path to the resulting settings file has the following
+        structure:
+        <pre>
+          &lt;base_folder&gt;/&lt;machine_name&gt;/&lt;machine_name&gt;.xml
+        </pre>
+
+
+        This method does not access the host disks. In particular, it does not check for
+        whether a machine of this name already exists.
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Suggested machine name.</desc>
+      </param>
+      <param name="baseFolder" type="wstring" dir="in">
+        <desc>Base machine folder (optional).</desc>
+      </param>
+      <param name="file" type="wstring" dir="return">
+        <desc>Fully qualified path where the machine would be created.</desc>
+      </param>
+    </method>
 
     <method name="createMachine">
       <desc>
@@ -1545,35 +1588,16 @@
           </li>
         </ol>
 
-        You should specify valid name for the newly created machine when calling
-        this method. See the <link to="IMachine::name"/> attribute description
-        for more details about the machine name.
-
         The specified guest OS type identifier must match an ID of one of known
         guest OS types listed in the <link to="IVirtualBox::guestOSTypes"/>
         array.
 
-        Every machine has a <i>settings file</i> that is used to store
-        the machine configuration. This file is stored in a directory called the
-        <i>machine settings subfolder</i>. Both the settings subfolder and file
-        will have a name that corresponds to the name of the virtual machine.
-        You can specify where to create the machine setting subfolder using the
-        @a baseFolder argument. The base folder can be absolute (full path) or
-        relative to the <link to="IVirtualBox::homeFolder">VirtualBox home
-        directory</link>.
+        This method uses the <link to="#composeMachineFilename" /> method to determine
+        where to create the machine's directory and settings file. Please refer
+        to the additional remarks and restrictions there.
 
-        If @a baseFolder is a @c null or empty string (which is recommended), the
-        <link to="ISystemProperties::defaultMachineFolder">default machine
-        settings folder</link> will be used as a base folder for the created
-        machine. Otherwise the given base folder will be used. In either case,
-        the full path to the resulting settings file has the following
-        structure:
-        <pre>
-          &lt;base_folder&gt;/&lt;machine_name&gt;/&lt;machine_name&gt;.xml
-        </pre>
-
-        Note that if the resulting settings file already exists, this method
-        will fail with <link to="VBOX_E_FILE_ERROR"/>.
+        If the resulting settings file already exists, this method will fail
+        with <link to="VBOX_E_FILE_ERROR"/>.
 
         Optionally, you may specify an UUID of to assign to the created machine.
         However, this is not recommended and you should normally pass an empty
@@ -1745,8 +1769,7 @@
         be used for creating a storage unit of the medium.
 
         Note that the format of the location string is storage format specific.
-        See <link to="IMedium::location"/>, IMedium and
-        <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
+        See <link to="IMedium::location"/> and IMedium for more details.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           @a format identifier is invalid. See
@@ -1824,8 +1847,7 @@
         again soon.
 
         The format of the location string is storage format specific. See
-        <link to="IMedium::location"/>, IMedium and
-        <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
+        <link to="IMedium::location"/> and IMedium for more details.
 
         Prior to VirtualBox 3.3, opening a medium added it to a global media
         registry in the VirtualBox.xml file, which was shared between
@@ -1875,8 +1897,8 @@
 
     <method name="findMedium">
       <desc>
-        Returns a medium of the given type that uses the given location or
-        UUID to store medium data.
+        Returns a medium of the given type that uses the given fully qualified
+        location or UUID to store medium data.
 
         The given medium must be known to this VirtualBox installation, i.e.
         it must be previously created by <link to="#createHardDisk"/> or opened
@@ -1886,14 +1908,8 @@
         the <link to="IMedium::location"/> and <link to="IMedium::id" />
         attributes of each known medium.
 
-        For locations represented by file names in the host's file system, the
-        requested location can be a path relative to the
-        <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
-        only a file name without any path is given, the
-        <link to="ISystemProperties::defaultHardDiskFolder"> default medium
-        folder</link> will be prepended to the file name before searching. Note
-        that on case sensitive file systems, a case sensitive comparison is
-        performed, otherwise the case of symbols in the file path is ignored.
+        On case sensitive file systems, a case sensitive comparison is performed,
+        otherwise the case of symbols in the file path is ignored.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           No medium object matching @a location found.
@@ -7202,7 +7218,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="5e54e767-293c-441b-a5e4-03a1fdbc0dcb"
+     uuid="f8fff1f1-eeb4-4483-a2a4-b4186fab5a1e"
      wsmap="managed"
      >
     <desc>
@@ -7307,45 +7323,6 @@
         <see>
           <link to="IVirtualBox::createMachine"/>,
           <link to="IVirtualBox::openMachine"/>
-        </see>
-      </desc>
-    </attribute>
-
-    <attribute name="defaultHardDiskFolder" type="wstring">
-      <desc>
-        Full path to the default directory used to create new or open existing
-        virtual disks.
-
-        This path is used when the storage unit of a hard disk is a regular file
-        in the host's file system and only a file name that contains no path is
-        given.
-
-        The initial value of this property is
-        <tt>&lt;</tt>
-        <link to="IVirtualBox::homeFolder">VirtualBox_home</link>
-        <tt>&gt;/HardDisks</tt>.
-
-        <note>
-          Setting this property to @c null or empty string will restore the
-          initial value.
-        </note>
-        <note>
-          When settings this property, the specified path can be relative
-          to the
-          <link to="IVirtualBox::homeFolder">VirtualBox home directory</link> or
-          absolute. When reading this property, a full path is
-          always returned.
-        </note>
-        <note>
-          The specified path may not exist, it will be created
-          when necessary.
-        </note>
-
-        <see>
-          IMedium,
-          <link to="IVirtualBox::createHardDisk"/>,
-          <link to="IVirtualBox::openMedium"/>,
-          <link to="IMedium::location"/>
         </see>
       </desc>
     </attribute>
@@ -8816,10 +8793,7 @@
 
       If the storage unit of the hard disk is a regular file in the host's
       file system then the rules stated in the description of the
-      <link to="IMedium::location"/> attribute apply when setting its value. In
-      addition, a plain file name without any path may be given, in which case
-      the <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
-      folder</link> will be prepended to it.
+      <link to="IMedium::location"/> attribute apply when setting its value.
 
       <h4>Automatic composition of the file name part</h4>
 

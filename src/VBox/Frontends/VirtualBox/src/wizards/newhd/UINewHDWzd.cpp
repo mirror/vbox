@@ -77,7 +77,7 @@ QString UINewHDWzd::composeFullFileName(const QString &strFileName)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QString strHomeFolder = vbox.GetHomeFolder();
-    QString strDefaultFolder = vbox.GetSystemProperties().GetDefaultHardDiskFolder();
+    QString strDefaultFolder = vbox.GetHomeFolder();
 
     QFileInfo fi(strFileName);
     if (fi.fileName() == strFileName)
@@ -320,7 +320,7 @@ void UINewHDWzdPage3::onSelectLocationButtonClicked()
     if (!folder.exists() || folder.isRoot())
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        folder = vbox.GetSystemProperties().GetDefaultHardDiskFolder();
+        folder = vbox.GetHomeFolder();          // @todo machine folder?
         if (!folder.exists())
             folder = vbox.GetHomeFolder();
     }

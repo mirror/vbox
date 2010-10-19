@@ -880,8 +880,6 @@ int handleList(HandlerArg *a)
             RTPrintf("Maximum Devices per Floppy Port: %u\n", ulValue);
             systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
             RTPrintf("Default machine folder:          %lS\n", str.raw());
-            systemProperties->COMGETTER(DefaultHardDiskFolder)(str.asOutParam());
-            RTPrintf("Default hard disk folder:        %lS\n", str.raw());
             systemProperties->COMGETTER(RemoteDisplayAuthLibrary)(str.asOutParam());
             RTPrintf("VRDP authentication library:     %lS\n", str.raw());
             systemProperties->COMGETTER(WebServiceAuthLibrary)(str.asOutParam());

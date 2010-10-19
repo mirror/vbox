@@ -84,7 +84,6 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     unconst(mParent) = aParent;
 
     setDefaultMachineFolder(Utf8Str::Empty);
-    setDefaultHardDiskFolder(Utf8Str::Empty);
     setDefaultHardDiskFormat(Utf8Str::Empty);
 
     setRemoteDisplayAuthLibrary(Utf8Str::Empty);
@@ -564,39 +563,6 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder)(IN_BSTR aDefaultM
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder)(BSTR *aDefaultHardDiskFolder)
-{
-    CheckComArgOutPointerValid(aDefaultHardDiskFolder);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    m_strDefaultHardDiskFolderFull.cloneTo(aDefaultHardDiskFolder);
-
-    return S_OK;
-}
-
-STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder)(IN_BSTR aDefaultHardDiskFolder)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = setDefaultHardDiskFolder(aDefaultHardDiskFolder);
-    alock.release();
-
-    if (SUCCEEDED(rc))
-    {
-        // VirtualBox::saveSettings() needs vbox write lock
-        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
-    }
-
-    return rc;
-}
-
 STDMETHODIMP SystemProperties::COMGETTER(MediumFormats)(ComSafeArrayOut(IMediumFormat *, aMediumFormats))
 {
     CheckComArgOutSafeArrayPointerValid(aMediumFormats);
@@ -818,9 +784,6 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
     rc = setDefaultMachineFolder(data.strDefaultMachineFolder);
     if (FAILED(rc)) return rc;
 
-    rc = setDefaultHardDiskFolder(data.strDefaultHardDiskFolder);
-    if (FAILED(rc)) return rc;
-
     rc = setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
     if (FAILED(rc)) return rc;
 
@@ -900,27 +863,6 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &aPath)
 
     m->strDefaultMachineFolder = path;
     m_strDefaultMachineFolderFull = folder;
-
-    return S_OK;
-}
-
-HRESULT SystemProperties::setDefaultHardDiskFolder(const Utf8Str &aPath)
-{
-    Utf8Str path(aPath);
-    if (path.isEmpty())
-        path = "HardDisks";
-
-    /* get the full file name */
-    Utf8Str folder;
-    int vrc = mParent->calculateFullPath(path, folder);
-    if (RT_FAILURE(vrc))
-        return setError(E_FAIL,
-                        tr("Invalid default hard disk folder '%s' (%Rrc)"),
-                        path.c_str(),
-                        vrc);
-
-    m->strDefaultHardDiskFolder = path;
-    m_strDefaultHardDiskFolderFull = folder;
 
     return S_OK;
 }

@@ -1148,6 +1148,43 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
 // IVirtualBox methods
 /////////////////////////////////////////////////////////////////////////////
 
+STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
+                                                IN_BSTR aBaseFolder,
+                                                BSTR *aFilename)
+{
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("aName=\"%ls\",aBaseFolder=\"%ls\"\n", aName, aBaseFolder));
+
+    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgOutPointerValid(aFilename);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Compose the settings file name using the following scheme:
+     *
+     *     <base_folder>/<machine_name>/<machine_name>.xml
+     *
+     * If a non-null and non-empty base folder is specified, the default
+     * machine folder will be used as a base folder.
+     */
+    Utf8Str strBase = aBaseFolder;
+    if (strBase.isEmpty())
+        /* we use the non-full folder value below to keep the path relative */
+        getDefaultMachineFolder(strBase);
+
+    Bstr bstrSettingsFile = BstrFmt("%s%c%ls%c%ls.vbox",
+                                    strBase.c_str(),
+                                    RTPATH_DELIMITER,
+                                    aName,
+                                    RTPATH_DELIMITER,
+                                    aName);
+
+    bstrSettingsFile.detachTo(aFilename);
+
+    return S_OK;
+}
+
 /** @note Locks mSystemProperties object for reading. */
 STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
                                        IN_BSTR aOsTypeId,
@@ -1166,26 +1203,9 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* Compose the settings file name using the following scheme:
-     *
-     *     <base_folder>/<machine_name>/<machine_name>.xml
-     *
-     * If a non-null and non-empty base folder is specified, the default
-     * machine folder will be used as a base folder.
-     */
-    Utf8Str strSettingsFile = aBaseFolder;
-    if (strSettingsFile.isEmpty())
-        /* we use the non-full folder value below to keep the path relative */
-        getDefaultMachineFolder(strSettingsFile);
-
-    strSettingsFile = Utf8StrFmt("%s%c%ls%c%ls.vbox",
-                                 strSettingsFile.c_str(),
-                                 RTPATH_DELIMITER,
-                                 aName,
-                                 RTPATH_DELIMITER,
-                                 aName);
-
-    HRESULT rc = E_FAIL;
+    Bstr bstrSettingsFilename;
+    HRESULT rc = ComposeMachineFilename(aName, aBaseFolder, bstrSettingsFilename.asOutParam());
+    if (FAILED(rc)) return rc;
 
     /* create a new object */
     ComObjPtr<Machine> machine;
@@ -1203,7 +1223,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
 
     /* initialize the machine object */
     rc = machine->init(this,
-                       strSettingsFile,
+                       Utf8Str(bstrSettingsFilename),
                        Utf8Str(aName),
                        id,
                        osType,
@@ -2845,17 +2865,6 @@ void VirtualBox::getDefaultMachineFolder(Utf8Str &str) const
 {
     AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
     str = m->pSystemProperties->m->strDefaultMachineFolder;
-}
-
-/**
- * Returns the default hard disk folder from the system properties
- * with proper locking.
- * @return
- */
-void VirtualBox::getDefaultHardDiskFolder(Utf8Str &str) const
-{
-    AutoReadLock propsLock(m->pSystemProperties COMMA_LOCKVAL_SRC_POS);
-    str = m->pSystemProperties->m->strDefaultHardDiskFolder;
 }
 
 /**

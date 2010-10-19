@@ -3500,6 +3500,11 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
+          <para>ISystemProperties::get/setDefaultHardDiskFolder() have been
+          removed.</para>
+        </listitem>
+
+        <listitem>
           <para>ISystemProperties::getMaxVDISize() is now <xref
           linkend="ISystemProperties__getMaxVDSize"
           xreflabel="ISystemProperties::getMaxVDSize()" /> and the returned

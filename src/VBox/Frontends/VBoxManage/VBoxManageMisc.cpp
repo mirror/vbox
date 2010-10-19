@@ -619,15 +619,7 @@ int handleSetProperty(HandlerArg *a)
     ComPtr<ISystemProperties> systemProperties;
     a->virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
 
-    if (!strcmp(a->argv[0], "hdfolder"))
-    {
-        /* reset to default? */
-        if (!strcmp(a->argv[1], "default"))
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(NULL));
-        else
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultHardDiskFolder)(Bstr(a->argv[1]).raw()));
-    }
-    else if (!strcmp(a->argv[0], "machinefolder"))
+    if (!strcmp(a->argv[0], "machinefolder"))
     {
         /* reset to default? */
         if (!strcmp(a->argv[1], "default"))

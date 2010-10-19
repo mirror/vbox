@@ -74,8 +74,6 @@ public:
     STDMETHOD(COMGETTER(MaxBootPosition))(ULONG *aMaxBootPosition);
     STDMETHOD(COMGETTER(DefaultMachineFolder))(BSTR *aDefaultMachineFolder);
     STDMETHOD(COMSETTER(DefaultMachineFolder))(IN_BSTR aDefaultMachineFolder);
-    STDMETHOD(COMGETTER(DefaultHardDiskFolder))(BSTR *aDefaultHardDiskFolder);
-    STDMETHOD(COMSETTER(DefaultHardDiskFolder))(IN_BSTR aDefaultHardDiskFolder);
     STDMETHOD(COMGETTER(MediumFormats))(ComSafeArrayOut(IMediumFormat *, aMediumFormats));
     STDMETHOD(COMGETTER(DefaultHardDiskFormat))(BSTR *aDefaultHardDiskFormat);
     STDMETHOD(COMSETTER(DefaultHardDiskFormat))(IN_BSTR aDefaultHardDiskFormat);
@@ -117,7 +115,6 @@ private:
     typedef std::list<ComObjPtr<MediumFormat> > MediumFormatList;
 
     HRESULT setDefaultMachineFolder(const Utf8Str &aPath);
-    HRESULT setDefaultHardDiskFolder(const Utf8Str &aPath);
     HRESULT setDefaultHardDiskFormat(const Utf8Str &aFormat);
 
     HRESULT setRemoteDisplayAuthLibrary(const Utf8Str &aPath);
@@ -128,7 +125,6 @@ private:
     settings::SystemProperties *m;
 
     Utf8Str             m_strDefaultMachineFolderFull;
-    Utf8Str             m_strDefaultHardDiskFolderFull;
 
     MediumFormatList    m_llMediumFormats;
 
