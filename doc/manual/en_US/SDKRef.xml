@@ -1992,10 +1992,11 @@ String name = machine.getName();</screen>Boolean attribute getters can
       it.</para>
 
       <para>When done making the changes to the machine, you must call <xref
-      linkend="IMachine__saveSettings" xreflabel="IMachine::saveSettings()" />,
-      which will copy the changes you have made from your "mutable" machine
-      back to the real machine and write them out to the machine settings XML
-      file. This will make your changes permanent.</para>
+      linkend="IMachine__saveSettings"
+      xreflabel="IMachine::saveSettings()" />, which will copy the changes you
+      have made from your "mutable" machine back to the real machine and write
+      them out to the machine settings XML file. This will make your changes
+      permanent.</para>
 
       <para>Finally, it is important to always unlock the machine again, by
       calling <xref linkend="ISession__unlockMachine"
@@ -3024,31 +3025,31 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </listitem>
 
               <listitem>
-                 RDPWebClient.isRDPWebControlById(ElementId)
+                 RDPWebClient.isRDPWebControlById(ElementId) 
 
                 <para>Returns true if the given id refers to a RDPWeb Flash
                 element.</para>
 
-
+                 
               </listitem>
 
               <listitem>
-                 RDPWebClient.isRDPWebControlByElement(Element)
+                 RDPWebClient.isRDPWebControlByElement(Element) 
 
                 <para>Returns true if the given element is a RDPWeb Flash
                 element.</para>
 
-
+                 
               </listitem>
 
               <listitem>
-                 RDPWebClient.getFlashById(ElementId)
+                 RDPWebClient.getFlashById(ElementId) 
 
                 <para>Returns an element, which is referenced by the given id.
                 This function will try to resolve any element, event if it is
                 not a Flash movie.</para>
 
-
+                 
               </listitem>
             </itemizedlist></para>
         </sect3>
@@ -3110,12 +3111,10 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <title>Version 1.2.28</title>
 
         <itemizedlist>
-
           <listitem>
             <para><computeroutput>keyboardLayout</computeroutput>,
             <computeroutput>keyboardLayouts</computeroutput>,
-            <computeroutput>UUID</computeroutput>
-            properties.</para>
+            <computeroutput>UUID</computeroutput> properties.</para>
           </listitem>
 
           <listitem>
@@ -3125,19 +3124,16 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <listitem>
             <para>Rebranding to Oracle.</para>
           </listitem>
-
         </itemizedlist>
-
       </sect2>
 
       <sect2>
         <title>Version 1.1.26</title>
 
         <itemizedlist>
-
           <listitem>
-            <para><computeroutput>webclient.js</computeroutput> is a part of the
-            distribution package.</para>
+            <para><computeroutput>webclient.js</computeroutput> is a part of
+            the distribution package.</para>
           </listitem>
 
           <listitem>
@@ -3148,22 +3144,17 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
             <para><computeroutput>keyboardSendScancodes</computeroutput> and
             <computeroutput>keyboardSendCAD</computeroutput> methods.</para>
           </listitem>
-
         </itemizedlist>
-
       </sect2>
 
       <sect2>
         <title>Version 1.0.24</title>
 
         <itemizedlist>
-
           <listitem>
             <para>Initial release.</para>
           </listitem>
-
         </itemizedlist>
-
       </sect2>
     </sect1>
   </chapter>
@@ -3337,11 +3328,11 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           changed. In existing client code, the following changes need to be
           made:<itemizedlist>
               <listitem>
-                <para>Replace
+                <para>Replace any
                 <computeroutput>IVirtualBox::openSession(uuidMachine,
-                ...)</computeroutput> with <xref
+                ...)</computeroutput> API call with the machine's <xref
                 linkend="IMachine__lockMachine"
-                xreflabel="IMachine::lockMachine()" /> and a
+                xreflabel="IMachine::lockMachine()" /> call and a
                 <computeroutput>LockType.Write</computeroutput> argument. The
                 functionality is unchanged, but instead of "opening a direct
                 session on a machine" all documentation now refers to
@@ -3350,11 +3341,11 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </listitem>
 
               <listitem>
-                <para>Replace
+                <para>Similarly, replace any
                 <computeroutput>IVirtualBox::openExistingSession(uuidMachine,
-                ...)</computeroutput> with <xref
+                ...)</computeroutput> call with the machine's <xref
                 linkend="IMachine__lockMachine"
-                xreflabel="IMachine::lockMachine()" /> and a
+                xreflabel="IMachine::lockMachine()" /> call and a
                 <computeroutput>LockType.Shared</computeroutput> argument.
                 Whereas it was previously impossible to connect a client
                 session to a running VM process in a race-free manner, the new
@@ -3367,26 +3358,30 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </listitem>
 
               <listitem>
-                <para>Replace
+                <para>Third, replace any
                 <computeroutput>IVirtualBox::openRemoteSession(uuidMachine,
-                ...)</computeroutput> with <xref
+                ...)</computeroutput> call with the machine's <xref
                 linkend="IMachine__launchVMProcess"
-                xreflabel="IMachine::launchVMProcess()" />. The functionality
-                is unchanged.</para>
+                xreflabel="IMachine::launchVMProcess()" /> call. The
+                functionality is unchanged.</para>
               </listitem>
 
               <listitem>
-                <para>The <xref linkend="SessionState" /> enum was adjusted
-                accordingly: "Open" is now "Locked", "Closed" is now
-                "Unlocked", "Closing" is now "Unlocking".</para>
+                <para>The <xref linkend="SessionState"
+                xreflabel="SessionState" /> enum was adjusted accordingly:
+                "Open" is now "Locked", "Closed" is now "Unlocked", "Closing"
+                is now "Unlocking".</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
 
         <listitem>
-          <para>Since the global media registry is no longer required, a
-          number of media-related APIs had to be modified again.
-            <itemizedlist>
+          <para>Virtual machines created with VirtualBox 4.0 or later no
+          longer register their media in the global media registry in the
+          <computeroutput>VirtualBox.xml</computeroutput> file. Instead, such
+          machines list all their media in their own machine XML files. As a
+          result, a number of media-related APIs had to be modified again.
+          <itemizedlist>
               <listitem>
                 <para>Neither <xref linkend="IVirtualBox__createHardDisk"
                 xreflabel="IVirtualBox::createHardDisk()" /> nor <xref
@@ -3397,23 +3392,27 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
               <listitem>
                 <para><xref linkend="IMachine__attachDevice"
-                xreflabel="IMachine::attachDevice()" /> now takes an IMedium
-                object instead of a UUID as an argument and adds the medium to
-                a registry (either a machine registry for machines created
-                with VirtualBox 3.3 or later or the global registry
-                otherwise).</para>
+                xreflabel="IMachine::attachDevice()" /> and <xref
+                linkend="IMachine__mountMedium"
+                xreflabel="IMachine::mountMedium()" /> now take an IMedium
+                object instead of a UUID as an argument. It is these two calls
+                which add media to a registry now (either a machine registry
+                for machines created with VirtualBox 4.0 or later or the
+                global registry otherwise). As a consequence, if a medium is
+                opened but never attached to a machine, it is no longer added
+                to any registry any more.</para>
               </listitem>
 
               <listitem>
-                <para>To reduce code duplication, IVirtualBox::findHardDisk(),
-                getHardDisk(), findDVDImage(), getDVDImage(),
-                findFloppyImage() and getFloppyImage() have all been merged
-                into <xref linkend="IVirtualBox__findMedium"
+                <para>To reduce code duplication, the APIs
+                IVirtualBox::findHardDisk(), getHardDisk(), findDVDImage(),
+                getDVDImage(), findFloppyImage() and getFloppyImage() have all
+                been merged into <xref linkend="IVirtualBox__findMedium"
                 xreflabel="IVirtualBox::findMedium()" />, and
                 IVirtualBox::openHardDisk(), openDVDImage() and
                 openFloppyImage() have all been merged into <xref
                 linkend="IVirtualBox__openMedium"
-                xreflabel="IVirtualBox::openMedium()" />. </para>
+                xreflabel="IVirtualBox::openMedium()" />.</para>
               </listitem>
 
               <listitem>
@@ -3455,11 +3454,13 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
-          <para>additionsActive() was replaced by
-          <xref linkend="IGuest__additionsRunLevel" xreflabel="additionsRunLevel()" />
-          and <xref linkend="IGuest__getAdditionsStatus" xreflabel="getAdditionsStatus()" />
-          in order to support a more detailed status of the current Guest
-          Additions loading/readiness state.</para>
+          <para>additionsActive() was replaced by <xref
+          linkend="IGuest__additionsRunLevel"
+          xreflabel="additionsRunLevel()" /> and <xref
+          linkend="IGuest__getAdditionsStatus"
+          xreflabel="getAdditionsStatus()" /> in order to support a more
+          detailed status of the current Guest Additions loading/readiness
+          state.</para>
         </listitem>
 
         <listitem>
@@ -3490,8 +3491,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <para><xref linkend="IAppliance__write"
           xreflabel="IAppliance::write()" /> got an extra parameter
           <computeroutput>manifest</computeroutput>. This allows to
-          enable/disable the manifest file creation on export.
-          </para>
+          enable/disable the manifest file creation on export.</para>
         </listitem>
 
         <listitem>
@@ -3627,9 +3627,9 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
         <listitem>
           <para>The <computeroutput>shape</computeroutput> parameter of
-          IConsoleCallback::onMousePointerShapeChange was
-          changed from a implementation-specific pointer to a safearray,
-          enabling scripting languages to process pointer shapes.</para>
+          IConsoleCallback::onMousePointerShapeChange was changed from a
+          implementation-specific pointer to a safearray, enabling scripting
+          languages to process pointer shapes.</para>
         </listitem>
       </itemizedlist>
     </sect1>
@@ -3717,9 +3717,9 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <listitem>
           <para>The <xref linkend="IVRDPServer" xreflabel="IVRDPServer" />,
           <xref linkend="IRemoteDisplayInfo" xreflabel="IRemoteDisplayInfo" />
-          and IConsoleCallback
-          interfaces were changed to reflect VRDP server ability to bind to
-          one of available ports from a list of ports.</para>
+          and IConsoleCallback interfaces were changed to reflect VRDP server
+          ability to bind to one of available ports from a list of
+          ports.</para>
 
           <para>The <computeroutput>IVRDPServer::port</computeroutput>
           attribute has been replaced with <xref linkend="IVRDPServer__ports"
@@ -3730,8 +3730,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           xreflabel="IRemoteDisplayInfo::port" /> attribute has been added for
           querying the actual port VRDP server listens on.</para>
 
-          <para>An IConsoleCallback::onRemoteDisplayInfoChange()
-          notification callback has been added.</para>
+          <para>An IConsoleCallback::onRemoteDisplayInfoChange() notification
+          callback has been added.</para>
         </listitem>
 
         <listitem>
@@ -3767,9 +3767,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <para>In the object-oriented web service bindings for JAX-WS, proper
           inheritance has been introduced for some classes, so explicit
           casting is no longer needed to call methods from a parent class. In
-          particular, IHardDisk and
-          other classes now properly derive from <xref linkend="IMedium"
-          xreflabel="IMedium" />.</para>
+          particular, IHardDisk and other classes now properly derive from
+          <xref linkend="IMedium" xreflabel="IMedium" />.</para>
         </listitem>
 
         <listitem>
@@ -3806,13 +3805,13 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
-          <para>The parameter list of IVirtualBox::openHardDisk was changed.</para>
+          <para>The parameter list of IVirtualBox::openHardDisk was
+          changed.</para>
         </listitem>
 
         <listitem>
           <para>The method IConsole::discardSavedState was renamed to
-          IConsole::forgetSavedState, and a parameter was
-          added.</para>
+          IConsole::forgetSavedState, and a parameter was added.</para>
         </listitem>
 
         <listitem>
@@ -3902,8 +3901,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
-          <para>IVirtualBox::openHardDisk has an extra parameter
-          for opening a disk read/write or read-only.</para>
+          <para>IVirtualBox::openHardDisk has an extra parameter for opening a
+          disk read/write or read-only.</para>
         </listitem>
 
         <listitem>
@@ -4024,12 +4023,12 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
             </listitem>
 
             <listitem>
-              <para>IHardDiskFormat is a new interface to describe
-              the available back-ends for hard disk images (e.g. VDI, VMDK,
-              VHD or iSCSI). The IHardDisk2::format attribute can be used to
-              find out the back-end that is in use for a particular hard disk
-              image. ISystemProperties::hardDiskFormats[] contains a
-              list of all back-ends supported by the system. <xref
+              <para>IHardDiskFormat is a new interface to describe the
+              available back-ends for hard disk images (e.g. VDI, VMDK, VHD or
+              iSCSI). The IHardDisk2::format attribute can be used to find out
+              the back-end that is in use for a particular hard disk image.
+              ISystemProperties::hardDiskFormats[] contains a list of all
+              back-ends supported by the system. <xref
               linkend="ISystemProperties__defaultHardDiskFormat"
               xreflabel="ISystemProperties::defaultHardDiskFormat" /> contains
               the default system format.</para>
@@ -4102,8 +4101,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         <listitem>
           <para>New attributes in IMachine: <xref
           linkend="IMachine__accelerate3DEnabled"
-          xreflabel="accelerate3DEnabled" />,
-          HWVirtExVPIDEnabled, <xref
+          xreflabel="accelerate3DEnabled" />, HWVirtExVPIDEnabled, <xref
           linkend="IMachine__guestPropertyNotificationPatterns"
           xreflabel="guestPropertyNotificationPatterns" />, <xref
           linkend="IMachine__CPUCount" xreflabel="CPUCount" />.</para>
