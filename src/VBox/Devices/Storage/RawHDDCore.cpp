@@ -37,36 +37,44 @@
 typedef struct RAWIMAGE
 {
     /** Image name. */
-    const char       *pszFilename;
+    const char          *pszFilename;
     /** Storage handle. */
-    PVDIOSTORAGE      pStorage;
+    PVDIOSTORAGE        pStorage;
     /** I/O interface. */
-    PVDINTERFACE      pInterfaceIO;
+    PVDINTERFACE        pInterfaceIO;
     /** Async I/O interface callbacks. */
-    PVDINTERFACEIOINT pInterfaceIOCallbacks;
+    PVDINTERFACEIOINT   pInterfaceIOCallbacks;
 
     /** Pointer to the per-disk VD interface list. */
-    PVDINTERFACE      pVDIfsDisk;
+    PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
-    PVDINTERFACE      pVDIfsImage;
+    PVDINTERFACE        pVDIfsImage;
 
     /** Error callback. */
-    PVDINTERFACE      pInterfaceError;
+    PVDINTERFACE        pInterfaceError;
     /** Opaque data for error callback. */
-    PVDINTERFACEERROR pInterfaceErrorCallbacks;
+    PVDINTERFACEERROR   pInterfaceErrorCallbacks;
 
     /** Open flags passed by VBoxHD layer. */
-    unsigned          uOpenFlags;
+    unsigned            uOpenFlags;
     /** Image flags defined during creation or determined during open. */
-    unsigned          uImageFlags;
+    unsigned            uImageFlags;
     /** Total size of the image. */
-    uint64_t          cbSize;
+    uint64_t            cbSize;
+    /** Position in the image (only truly used for sequential access). */
+    uint64_t            offAccess;
+    /** Flag if this is a newly created image. */
+    bool                fCreate;
     /** Physical geometry of this image. */
-    VDGEOMETRY        PCHSGeometry;
+    VDGEOMETRY          PCHSGeometry;
     /** Logical geometry of this image. */
-    VDGEOMETRY        LCHSGeometry;
+    VDGEOMETRY          LCHSGeometry;
 
 } RAWIMAGE, *PRAWIMAGE;
+
+
+/** Size of write operations when filling an image with zeroes. */
+#define RAW_FILL_SIZE (128 * _1K)
 
 /*******************************************************************************
 *   Static Variables                                                           *
@@ -248,7 +256,40 @@ static int rawFreeImage(PRAWIMAGE pImage, bool fDelete)
         {
             /* No point updating the file that is deleted anyway. */
             if (!fDelete)
+            {
+                /* For newly created images in sequential mode fill it to
+                 * the nominal size. */
+                if (   pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL
+                    && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+                    && pImage->fCreate)
+                {
+                    /* Fill rest of image with zeroes, a must for sequential
+                     * images to reach the nominal size. */
+                    uint64_t uOff;
+                    void *pvBuf = RTMemTmpAllocZ(RAW_FILL_SIZE);
+                    if (!pvBuf)
+                        goto out;
+
+                    uOff = pImage->offAccess;
+                    /* Write data to all image blocks. */
+                    while (uOff < pImage->cbSize)
+                    {
+                        unsigned cbChunk = (unsigned)RT_MIN(pImage->cbSize,
+                                                            RAW_FILL_SIZE);
+
+                        rc = rawFileWriteSync(pImage, uOff, pvBuf, cbChunk,
+                                              NULL);
+                        if (RT_FAILURE(rc))
+                            goto out;
+
+                        uOff += cbChunk;
+                    }
+out:
+                    if (pvBuf)
+                        RTMemTmpFree(pvBuf);
+                }
                 rawFlushImage(pImage);
+            }
 
             rawFileClose(pImage);
             pImage->pStorage = NULL;
@@ -270,6 +311,7 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
     int rc;
 
     pImage->uOpenFlags = uOpenFlags;
+    pImage->fCreate = false;
 
     pImage->pInterfaceError = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ERROR);
     if (pImage->pInterfaceError)
@@ -323,8 +365,8 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     int rc;
     RTFOFF cbFree = 0;
     uint64_t uOff;
-    size_t cbBuf = 128 * _1K;
     void *pvBuf = NULL;
+    int32_t fOpen;
 
     if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
     {
@@ -338,6 +380,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     pImage->uOpenFlags = uOpenFlags & ~VD_OPEN_FLAGS_READONLY;
 
     pImage->uImageFlags = uImageFlags;
+    pImage->fCreate = true;
     pImage->PCHSGeometry = *pPCHSGeometry;
     pImage->LCHSGeometry = *pLCHSGeometry;
 
@@ -352,68 +395,71 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     /* Create image file. */
-    rc = rawFileOpen(pImage, pImage->pszFilename,
-                     VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags,
-                                                true /* fCreate */));
+    fOpen = VDOpenFlagsToFileOpenFlags(pImage->uOpenFlags, true /* fCreate */);
+    if (uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL)
+        fOpen &= ~RTFILE_O_READ;
+    rc = rawFileOpen(pImage, pImage->pszFilename, fOpen);
     if (RT_FAILURE(rc))
     {
         rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: cannot create image '%s'"), pImage->pszFilename);
         goto out;
     }
 
-    /* Check the free space on the disk and leave early if there is not
-     * sufficient space available. */
-    rc = rawFileGetFreeSpace(pImage, pImage->pszFilename, &cbFree);
-    if (RT_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbSize))
+    if (!(uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL))
     {
-        rc = rawError(pImage, VERR_DISK_FULL, RT_SRC_POS, N_("Raw: disk would overflow creating image '%s'"), pImage->pszFilename);
-        goto out;
-    }
-
-    /* Allocate & commit whole file if fixed image, it must be more
-     * effective than expanding file by write operations. */
-    rc = rawFileSetSize(pImage, cbSize);
-    if (RT_FAILURE(rc))
-    {
-        rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
-        goto out;
-    }
-
-    /* Fill image with zeroes. We do this for every fixed-size image since on
-     * some systems (for example Windows Vista), it takes ages to write a block
-     * near the end of a sparse file and the guest could complain about an ATA
-     * timeout. */
-    pvBuf = RTMemTmpAllocZ(cbBuf);
-    if (!pvBuf)
-    {
-        rc = VERR_NO_MEMORY;
-        goto out;
-    }
-
-    uOff = 0;
-    /* Write data to all image blocks. */
-    while (uOff < cbSize)
-    {
-        unsigned cbChunk = (unsigned)RT_MIN(cbSize, cbBuf);
-
-        rc = rawFileWriteSync(pImage, uOff, pvBuf, cbChunk, NULL);
-        if (RT_FAILURE(rc))
+        /* Check the free space on the disk and leave early if there is not
+         * sufficient space available. */
+        rc = rawFileGetFreeSpace(pImage, pImage->pszFilename, &cbFree);
+        if (RT_SUCCESS(rc) /* ignore errors */ && ((uint64_t)cbFree < cbSize))
         {
-            rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
+            rc = rawError(pImage, VERR_DISK_FULL, RT_SRC_POS, N_("Raw: disk would overflow creating image '%s'"), pImage->pszFilename);
             goto out;
         }
 
-        uOff += cbChunk;
-
-        if (pfnProgress)
+        /* Allocate & commit whole file if fixed image, it must be more
+         * effective than expanding file by write operations. */
+        rc = rawFileSetSize(pImage, cbSize);
+        if (RT_FAILURE(rc))
         {
-            rc = pfnProgress(pvUser,
-                             uPercentStart + uOff * uPercentSpan * 98 / (cbSize * 100));
+            rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
+            goto out;
+        }
+
+        /* Fill image with zeroes. We do this for every fixed-size image since
+         * on some systems (for example Windows Vista), it takes ages to write
+         * a block near the end of a sparse file and the guest could complain
+         * about an ATA timeout. */
+        pvBuf = RTMemTmpAllocZ(RAW_FILL_SIZE);
+        if (!pvBuf)
+        {
+            rc = VERR_NO_MEMORY;
+            goto out;
+        }
+
+        uOff = 0;
+        /* Write data to all image blocks. */
+        while (uOff < cbSize)
+        {
+            unsigned cbChunk = (unsigned)RT_MIN(cbSize, RAW_FILL_SIZE);
+
+            rc = rawFileWriteSync(pImage, uOff, pvBuf, cbChunk, NULL);
             if (RT_FAILURE(rc))
+            {
+                rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
                 goto out;
+            }
+
+            uOff += cbChunk;
+
+            if (pfnProgress)
+            {
+                rc = pfnProgress(pvUser,
+                                 uPercentStart + uOff * uPercentSpan * 98 / (cbSize * 100));
+                if (RT_FAILURE(rc))
+                    goto out;
+            }
         }
     }
-    RTMemTmpFree(pvBuf);
 
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan * 98 / 100);
@@ -423,6 +469,9 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     rc = rawFlushImage(pImage);
 
 out:
+    if (pvBuf)
+        RTMemTmpFree(pvBuf);
+
     if (RT_SUCCESS(rc) && pfnProgress)
         pfnProgress(pvUser, uPercentStart + uPercentSpan);
 
@@ -661,8 +710,18 @@ static int rawRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         goto out;
     }
 
+    /* For sequential access do not allow to go back. */
+    if (   pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL
+        && uOffset < pImage->offAccess)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
     rc = rawFileReadSync(pImage, uOffset, pvBuf, cbToRead, NULL);
-    *pcbActuallyRead = cbToRead;
+    pImage->offAccess = uOffset + cbToRead;
+    if (pcbActuallyRead)
+        *pcbActuallyRead = cbToRead;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -695,7 +754,16 @@ static int rawWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         goto out;
     }
 
+    /* For sequential access do not allow to go back. */
+    if (   pImage->uOpenFlags & VD_OPEN_FLAGS_SEQUENTIAL
+        && uOffset < pImage->offAccess)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
     rc = rawFileWriteSync(pImage, uOffset, pvBuf, cbToWrite, NULL);
+    pImage->offAccess = uOffset + cbToWrite;
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
 
