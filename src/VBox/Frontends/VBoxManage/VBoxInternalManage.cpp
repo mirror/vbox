@@ -42,7 +42,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
-
+#include <iprt/sha.h>
 
 #include "VBoxManage.h"
 
@@ -136,7 +136,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         "\n"
         "Commands:\n"
         "\n"
-        "%s%s%s%s%s%s%s%s%s%s%s%s"
+        "%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
         "WARNING: This is a development tool and shall only be used to analyse\n"
         "         problems. It is completely unsupported and will change in\n"
         "         incompatible ways without warning.\n",
@@ -237,7 +237,13 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
           "           [--groups todo] [--destinations todo]\n"
           "       Controls debug logging.\n"
           "\n"
-        : ""
+        : "",
+        (u64Cmd & USAGE_PASSWORDHASH)
+        ? "  passwordhash <passsword>\n"
+          "       Generates a password hash.\n"
+          "\n"
+        :
+          ""
         );
 }
 
@@ -2006,6 +2012,24 @@ int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<I
 }
 
 /**
+ * Generate a SHA-256 password hash
+ */
+int CmdGeneratePasswordHash(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    /* one parameter, the password to hash */
+    if (argc != 1)
+        return errorSyntax(USAGE_PASSWORDHASH, "password to hash required");
+
+    uint8_t abDigest[RTSHA256_HASH_SIZE];
+    RTSha256(argv[0], strlen(argv[0]), abDigest);
+    char pszDigest[RTSHA256_STRING_LEN + 1];
+    RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
+    RTPrintf("Password hash: %s\n", pszDigest);
+    
+    return 0;
+}
+
+/**
  * Wrapper for handling internal commands
  */
 int handleInternalCommands(HandlerArg *a)
@@ -2044,6 +2068,8 @@ int handleInternalCommands(HandlerArg *a)
         return CmdModUninstall();
     if (!strcmp(pszCmd, "debuglog"))
         return CmdDebugLog(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
+    if (!strcmp(pszCmd, "passwordhash"))
+        return CmdGeneratePasswordHash(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", a->argv[0]);

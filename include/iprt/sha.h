@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
 /** The size of a SHA-1 hash. */
 #define RTSHA1_HASH_SIZE    20
 /** The length of a SHA-1 digest string. The terminator is not included. */
-#define RTSHA1_DIGEST_LEN  (40)
+#define RTSHA1_STRING_LEN  (40)
 
 /**
  * SHA-1 context.
@@ -141,7 +141,7 @@ RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRT
 /** The size of a SHA-256 hash. */
 #define RTSHA256_HASH_SIZE      32
 /** The length of a SHA-256 digest string. The terminator is not included. */
-#define RTSHA256_DIGEST_LEN     64
+#define RTSHA256_STRING_LEN     64
 
 /**
  * SHA-256 context.
