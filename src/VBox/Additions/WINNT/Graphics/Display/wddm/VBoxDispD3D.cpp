@@ -2902,7 +2902,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
             vboxDispLockInit();
 
             vboxVDbgPrint(("VBoxDispD3D: DLL loaded.\n"));
-#ifdef VBOXWDDMDISP_DEBUG
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
             vboxVDbgVEHandlerRegister();
 #endif
             RTR3Init();
@@ -2938,7 +2938,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
         case DLL_PROCESS_DETACH:
         {
-#ifdef VBOXWDDMDISP_DEBUG
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
             vboxVDbgVEHandlerUnregister();
 #endif
             HRESULT hr = S_OK;
@@ -8010,6 +8010,9 @@ void vboxVDbgDoMpPrintRect(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPre
 {
     vboxVDbgDoMpPrintF(pDevice, "%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix);
 }
+#endif
+
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
 
 static PVOID g_VBoxWDbgVEHandler = NULL;
 LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
@@ -8022,7 +8025,7 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
         case 0xe06d7363: /* <- ms compiler - generated exception related to C++ exception */
             break;
         default:
-            Assert(0);
+            AssertRelease(0);
             break;
     }
     return EXCEPTION_CONTINUE_SEARCH;

@@ -15,7 +15,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-///#define IN_GUEST
+//#define IN_GUEST
 #ifdef IN_GUEST
 #ifdef RT_OS_WINDOWS
     #include <windows.h>
@@ -248,9 +248,11 @@ static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLock(PCRVBOXHGSMI_CLIENT pClient, ui
     fFlags.bDiscard = 1;
     rc = pClient->pCmdBuffer->pfnLock(pClient->pCmdBuffer, 0, cbBuffer, fFlags, (void**)&pHdr);
     AssertRC(rc);
-    if (RT_FAILURE(rc))
-        crWarning("Failed to Lock the command buffer of size(%d), rc(%d)\n", cbBuffer, rc);
-    return pHdr;
+    if (RT_SUCCESS(rc))
+        return pHdr;
+
+    crWarning("Failed to Lock the command buffer of size(%d), rc(%d)\n", cbBuffer, rc);
+    return NULL;
 }
 
 static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLockRo(PCRVBOXHGSMI_CLIENT pClient, uint32_t cbBuffer)
@@ -364,8 +366,6 @@ static PVBOXUHGSMI_BUFFER _crVBoxHGSMIBufAlloc(PCRVBOXHGSMI_CLIENT pClient, uint
 
     if (!buf)
     {
-        Assert(0);
-
         crDebug("Buffer pool %p was empty; allocating new %d byte buffer.",
                         (void *) pClient->bufpool,
                         cbSize);
@@ -393,8 +393,6 @@ static CRVBOXHGSMIBUFFER* _crVBoxHGSMISysMemAlloc(uint32_t cbSize)
     pBuf = crBufferPoolPop(g_crvboxhgsmi.mempool, cbSize);
     if (!pBuf)
     {
-        Assert(0);
-
         pBuf = (CRVBOXHGSMIBUFFER*)crAlloc(CRVBOXHGSMI_BUF_HDR_SIZE() + cbSize);
         Assert(pBuf);
         if (pBuf)
@@ -694,7 +692,7 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
             memcpy(pvBuf, buf, len);
             rc = pBuf->pfnUnlock(pBuf);
             AssertRC(rc);
-            CRASSERT(rc);
+            CRASSERT(RT_SUCCESS(rc));
         }
         else
         {
