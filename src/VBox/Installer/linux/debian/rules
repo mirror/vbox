@@ -272,10 +272,14 @@ endif
 	rmdir $(prefix)/opt
 	dh_link \
 	    $(if $(NOQT),,usr/bin/VBox          usr/bin/VirtualBox) \
+	    $(if $(NOQT),,VirtualBox            usr/bin/virtualbox) \
 	    usr/bin/VBox                        usr/bin/VBoxManage \
+	    VBoxManage                          usr/bin/vboxmanage \
 	    $(if $(HEADLESS),,usr/bin/VBox      usr/bin/VBoxSDL) \
+	    $(if $(HEADLESS),,VBoxSDL           usr/bin/vboxsdl) \
 	    $(if $(ose),,usr/bin/VBox           usr/bin/VBoxVRDP) \
 	    usr/bin/VBox                        usr/bin/VBoxHeadless \
+	    VBoxHeadless                        usr/bin/vboxheadless \
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop

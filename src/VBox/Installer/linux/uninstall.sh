@@ -81,24 +81,31 @@ if [ -z "$VBOX_DONT_REMOVE_OLD_MODULES" ]; then
 fi
 
 # Remove symlinks
-rm -f /usr/bin/VirtualBox 2> /dev/null
-rm -f /usr/bin/VBoxManage 2> /dev/null
-rm -f /usr/bin/VBoxSDL 2> /dev/null
-rm -f /usr/bin/VBoxVRDP 2> /dev/null
-rm -f /usr/bin/VBoxHeadless 2> /dev/null
-rm -f /usr/bin/VBoxNetDHCP 2> /dev/null
-rm -f /usr/bin/vboxwebsrv 2> /dev/null
-rm -f /usr/bin/VBoxAddIF 2> /dev/null
-rm -f /usr/bin/VBoxDeleteIf 2> /dev/null
-rm -f /usr/bin/VBoxTunctl 2> /dev/null
-rm -f /usr/share/pixmaps/VBox.png 2> /dev/null
-rm -f /usr/share/applications/virtualbox.desktop 2> /dev/null
-rm -f /usr/bin/rdesktop-vrdp 2> /dev/null
-rm -f $PREV_INSTALLATION/components/VBoxVMM.so
-rm -f $PREV_INSTALLATION/components/VBoxREM.so
-rm -f $PREV_INSTALLATION/components/VBoxRT.so
-rm -f $PREV_INSTALLATION/components/VBoxDDU.so
-rm -f $PREV_INSTALLATION/components/VBoxXPCOM.so
+rm -f \
+  /usr/bin/VirtualBox \
+  /usr/bin/VBoxManage \
+  /usr/bin/VBoxSDL \
+  /usr/bin/VBoxVRDP \
+  /usr/bin/VBoxHeadless \
+  /usr/bin/VBoxNetDHCP \
+  /usr/bin/vboxwebsrv \
+  /usr/bin/VBoxAddIF \
+  /usr/bin/VBoxDeleteIf \
+  /usr/bin/VBoxTunctl \
+  /usr/bin/virtualbox \
+  /usr/share/pixmaps/VBox.png \
+  /usr/share/applications/virtualbox.desktop \
+  /usr/bin/rdesktop-vrdp \
+  /usr/bin/virtualbox \
+  /usr/bin/vboxmanage \
+  /usr/bin/vboxsdl \
+  /usr/bin/vboxheadless \
+  $PREV_INSTALLATION/components/VBoxVMM.so \
+  $PREV_INSTALLATION/components/VBoxREM.so \
+  $PREV_INSTALLATION/components/VBoxRT.so \
+  $PREV_INSTALLATION/components/VBoxDDU.so \
+  $PREV_INSTALLATION/components/VBoxXPCOM.so \
+  2> /dev/null
 
 # Remove udev description file
 if [ -f /etc/udev/rules.d/60-vboxdrv.rules ]; then

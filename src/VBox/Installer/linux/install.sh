@@ -392,6 +392,12 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/rdesktop-vrdp /usr/bin/rdesktop-vrdp
     ln -sf $INSTALLATION_DIR/src/vboxhost /usr/src/vboxhost-_VERSION_
 
+    # Convenience symlinks. The creation fails if the FS is not case sensitive
+    ln -sf VirtualBox /usr/bin/virtualbox > /dev/null 2>&1
+    ln -sf VBoxManage /usr/bin/vboxmanage > /dev/null 2>&1
+    ln -sf VBoxSDL /usr/bin/vboxsdl > /dev/null 2>&1
+    ln -sf VBoxHeadless /usr/bin/vboxheadless > /dev/null 2>&1
+
     # If Python is available, install Python bindings
     if [ -n "$PYTHON" ]; then
       maybe_run_python_bindings_installer $INSTALLATION_DIR
