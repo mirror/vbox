@@ -28,6 +28,9 @@
 #ifndef RT_OS_WINDOWS
 # include <signal.h>
 #endif
+#ifdef RT_OS_FREEBSD
+# include <pthread.h>
+#endif
 
 #include "product-generated.h"
 #include <iprt/asm.h>
