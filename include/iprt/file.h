@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -46,6 +46,27 @@ RT_C_DECLS_BEGIN
 # define RTFILE_LINEFEED    "\r\n"
 #else
 # define RTFILE_LINEFEED    "\n"
+#endif
+
+/** Platform specific native standard input "handle". */
+#ifdef RT_OS_WINDOWS
+# define RTFILE_NATIVE_STDIN ((uint32_t)-10)
+#else
+# define RTFILE_NATIVE_STDIN 0
+#endif
+
+/** Platform specific native standard outt "handle". */
+#ifdef RT_OS_WINDOWS
+# define RTFILE_NATIVE_STDOUT ((uint32_t)-11)
+#else
+# define RTFILE_NATIVE_STDOUT 1
+#endif
+
+/** Platform specific native standard error "handle". */
+#ifdef RT_OS_WINDOWS
+# define RTFILE_NATIVE_STDERR ((uint32_t)-12)
+#else
+# define RTFILE_NATIVE_STDERR 2
 #endif
 
 
