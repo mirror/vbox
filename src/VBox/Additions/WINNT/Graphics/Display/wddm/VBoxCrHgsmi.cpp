@@ -108,6 +108,8 @@ VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient()
 
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()
 {
+    Assert(0);
+#if 0
     PVBOXUHGSMI_PRIVATE_KMT pHgsmiGL = gt_pHgsmiGL;
     if (pHgsmiGL)
     {
@@ -118,6 +120,7 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()
 
     if (g_pfnVBoxDispCrHgsmiTerm)
         g_pfnVBoxDispCrHgsmiTerm();
+#endif
     return VINF_SUCCESS;
 }
 

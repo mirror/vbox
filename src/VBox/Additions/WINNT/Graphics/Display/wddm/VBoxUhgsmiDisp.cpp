@@ -52,7 +52,7 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
 DECLCALLBACK(int) vboxUhgsmiD3DBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, void**pvLock)
 {
     PVBOXUHGSMI_BUFFER_PRIVATE_D3D pBuffer = VBOXUHGSMID3D_GET_BUFFER(pBuf);
-    D3DDDICB_LOCK DdiLock;
+    D3DDDICB_LOCK DdiLock = {0};
     DdiLock.hAllocation = pBuffer->BasePrivate.hAllocation;
     DdiLock.PrivateDriverData = 0;
 
@@ -62,7 +62,10 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offL
     if (RT_FAILURE(rc))
         return rc;
 
-    DdiLock.pPages = pBuffer->aLockPageIndices;
+    if (DdiLock.NumPages)
+        DdiLock.pPages = pBuffer->aLockPageIndices;
+    else
+        DdiLock.pPages = NULL;
 
     HRESULT hr = pBuffer->pDevice->RtCallbacks.pfnLockCb(pBuffer->pDevice->hDevice, &DdiLock);
     Assert(hr == S_OK);
@@ -106,7 +109,7 @@ DECLCALLBACK(int) vboxUhgsmiD3DBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
     Assert(cPages);
 
     PVBOXUHGSMI_PRIVATE_D3D pPrivate = VBOXUHGSMID3D_GET(pHgsmi);
-    PVBOXUHGSMI_BUFFER_PRIVATE_D3D pBuf = (PVBOXUHGSMI_BUFFER_PRIVATE_D3D)RTMemAllocZ(RT_OFFSETOF(VBOXUHGSMI_BUFFER_PRIVATE_D3D, aLockPageIndices));
+    PVBOXUHGSMI_BUFFER_PRIVATE_D3D pBuf = (PVBOXUHGSMI_BUFFER_PRIVATE_D3D)RTMemAllocZ(RT_OFFSETOF(VBOXUHGSMI_BUFFER_PRIVATE_D3D, aLockPageIndices[cPages]));
     Assert(pBuf);
     if (pBuf)
     {

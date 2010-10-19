@@ -85,20 +85,21 @@ endif
 ifdef VBOXWDDM_TEST_UHGSMI
  VBoxDispD3D_DEFS   += VBOXWDDM_TEST_UHGSMI
 endif
-ifdef VBOX_WITH_CRHGSMI
- VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
-endif
 VBoxDispD3D_SOURCES  = \
 	wddm/VBoxDispD3D.cpp \
     wddm/VBoxDispD3DIf.cpp \
     wddm/VBoxDispCm.cpp \
     wddm/VBoxDispMp.cpp \
     wddm/VBoxScreen.cpp \
-    $(if $(VBOX_WITH_CRHGSMI),wddm/VBoxUhgsmiDisp.cpp,) \
-    $(if $(VBOX_WITH_CRHGSMI),wddm/VBoxUhgsmiKmt.cpp,) \
     wddm/VBoxDispMpTst.cpp \
 	wddm/VBoxDispD3D.def \
 	wddm/VBoxDispD3D.rc
+#ifdef VBOX_WITH_CRHGSMI
+#VBoxDispD3D_SOURCES += \
+#    wddm/VBoxUhgsmiDisp.cpp \
+#    wddm/VBoxUhgsmiKmt.cpp
+#VBoxDispD3D_DEFS   += VBOX_WITH_CRHGSMI
+#endif
 VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)

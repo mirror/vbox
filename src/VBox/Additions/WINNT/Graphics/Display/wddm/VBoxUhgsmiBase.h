@@ -76,6 +76,7 @@ DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock
 
         if (cPages == cBufPages)
         {
+            *pNumPages = 0;
             fLockFlags.LockEntire = 1;
         }
         else
