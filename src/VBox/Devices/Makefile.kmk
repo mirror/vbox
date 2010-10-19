@@ -283,6 +283,7 @@ DevicesR3_SOURCES       = \
 	Bus/DevPCI.cpp \
 	Bus/DevPciIch9.cpp \
 	Bus/MsiCommon.cpp \
+	Bus/MsixCommon.cpp \
 	Graphics/DevVGA.cpp \
 	Storage/DevATA.cpp \
 	PC/DevPit-i8254.cpp \
@@ -530,6 +531,7 @@ PC/ACPI/VBoxAcpi.cpp_INCS = $(PATH_DevicesR3)
 Bus/DevPCI.cpp_INCS      = Bus
 Bus/DevPciIch9.cpp_INCS  = Bus
 Bus/MsiCommon.cpp_INCS  = Bus
+Bus/MsixCommon.cpp_INCS  = Bus
 
 # For finding and generating vbetables.h (see Graphics/BIOS/Makefile.kmk).
 Graphics/DevVGA.cpp_INCS = $(PATH_VgaBiosBin)
@@ -551,6 +553,7 @@ ifdef VBOX_WITH_RAW_MODE
  	Bus/DevPCI.cpp \
 	Bus/DevPciIch9.cpp \
 	Bus/MsiCommon.cpp \
+	Bus/MsixCommon.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	PC/DevACPI.cpp \
@@ -674,6 +677,7 @@ VBoxDDR0_SOURCES        = \
 	Bus/DevPCI.cpp \
 	Bus/DevPciIch9.cpp \
 	Bus/MsiCommon.cpp \
+	Bus/MsixCommon.cpp \
 	Graphics/DevVGA.cpp \
 	Input/DevPS2.cpp \
 	PC/DevACPI.cpp \
