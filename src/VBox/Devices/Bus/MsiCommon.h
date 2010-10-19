@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Header for MSI support routines.
+ * Header for MSI/MSI-X support routines.
  */
 /*
  * Copyright (C) 2010 Oracle Corporation
@@ -39,3 +39,17 @@ void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int
 /* PCI config space accessors for MSI registers */
 void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
 uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);
+
+
+/* Init MSI-X support in the device. */
+int      MsixInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
+
+/* If MSI-X is enabled, so that MSIXNotify() shall be used for notifications.  */
+bool     MsixIsEnabled(PPCIDEVICE pDev);
+
+/* Device notification (aka interrupt). */
+void     MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel);
+
+/* PCI config space accessors for MSI-X */
+void     MsixPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len);
+uint32_t MsixPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Address, unsigned len);

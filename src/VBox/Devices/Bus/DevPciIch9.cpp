@@ -530,6 +530,13 @@ static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVI
             PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
             MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel);
         }
+
+        if (MsixIsEnabled(pPciDev))
+        {
+            Log2(("MSI-X interrupt: %d level=%d\n", iIrq, iLevel));
+            PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
+            MsixNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel);
+        }
         return;
     }
 
@@ -773,7 +780,17 @@ static DECLCALLBACK(int) ich9pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev,
 
 static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PPDMMSIREG pMsiReg)
 {
-    return MsiInit(pPciDev, pMsiReg);
+    int rc;
+
+    rc = MsiInit(pPciDev, pMsiReg);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
+    rc = MsixInit(pPciDev, pMsiReg);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
+    return rc;
 }
 
 
@@ -1674,6 +1691,14 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
         return MsiPciConfigRead(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, len);
     }
 
+    if (   PCIIsMsixCapable(aDev)
+        && (u32Address >= aDev->Int.s.u8MsixCapOffset)
+        && (u32Address <  aDev->Int.s.u8MsixCapOffset + aDev->Int.s.u8MsixCapSize)
+       )
+    {
+        return MsixPciConfigRead(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, len);
+    }
+
     AssertMsgReturn(u32Address + len <= 256, ("Read after end of PCI config space\n"),
                     0);
     switch (len)
@@ -1715,6 +1740,17 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
         MsiPciConfigWrite(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
                           aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
                           aDev, u32Address, val, len);
+        return;
+    }
+
+    if (   PCIIsMsixCapable(aDev)
+        && (u32Address >= aDev->Int.s.u8MsixCapOffset)
+        && (u32Address <  aDev->Int.s.u8MsixCapOffset + aDev->Int.s.u8MsixCapSize)
+       )
+    {
+        MsixPciConfigWrite(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
+                           aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp),
+                           aDev, u32Address, val, len);
         return;
     }
 
@@ -1895,20 +1931,27 @@ static const struct {
     },
 };
 
-static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName, int iDevFn)
+static bool assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName, int iDevFn, PciAddress* aPosition)
 {
+    aPosition->iBus = 0;
+    aPosition->iDeviceFunc = iDevFn;
+    aPosition->iRegister = 0; /* N/A */
+
     /* Hardcoded slots/functions, per chipset spec */
     for (size_t i = 0; i < RT_ELEMENTS(PciSlotAssignments); i++)
     {
         if (!strcmp(pszName, PciSlotAssignments[i].pszName))
         {
             PCISetRequestedDevfunc(pPciDev);
-            return (PciSlotAssignments[i].iSlot << 3) + PciSlotAssignments[i].iFunction;
+            aPosition->iDeviceFunc =
+                    (PciSlotAssignments[i].iSlot << 3) + PciSlotAssignments[i].iFunction;
+            return true;
         }
     }
 
+    /* Explicit slot request */
     if (iDevFn >=0 && iDevFn < (int)RT_ELEMENTS(pBus->apDevices))
-        return iDevFn;
+        return true;
 
     /* Otherwise when assigning a slot, we need to make sure all its functions are available */
     for (int iPos = 0; iPos < (int)RT_ELEMENTS(pBus->apDevices); iPos += 8)
@@ -1923,11 +1966,12 @@ static int assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName,
                 &&  !pBus->apDevices[iPos + 7])
         {
             PCIClearRequestedDevfunc(pPciDev);
-            return iPos;
+            aPosition->iDeviceFunc = iPos;
+            return true;
         }
     }
 
-    return -1;
+    return false;
 }
 
 static bool hasHardAssignedDevsInSlot(PPCIBUS pBus, int iSlot)
@@ -1947,16 +1991,23 @@ static bool hasHardAssignedDevsInSlot(PPCIBUS pBus, int iSlot)
 
 static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const char *pszName)
 {
+    PciAddress aPosition = {0, 0, 0};
+
     /*
      * Find device position
      */
-    iDev = assignPosition(pBus, pPciDev, pszName, iDev);
-    if (iDev < 0)
+    if (!assignPosition(pBus, pPciDev, pszName, iDev, &aPosition))
     {
-        AssertMsgFailed(("Couldn't find free spot!\n"));
+        AssertMsgFailed(("Couldn't asssign position!\n"));
         return VERR_PDM_TOO_PCI_MANY_DEVICES;
     }
 
+    AssertMsgReturn(aPosition.iBus == 0,
+                    ("Assigning behind the bridge not implemented yet\n"),
+                    VERR_PDM_TOO_PCI_MANY_DEVICES);
+
+
+    iDev = aPosition.iDeviceFunc;
     /*
      * Check if we can really take this slot, possibly by relocating
      * its current habitant, if it wasn't hard assigned too.
@@ -1973,8 +2024,12 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
     if (pBus->apDevices[iDev])
     {
         /* if we got here, we shall (and usually can) relocate the device */
-        int iRelDev = assignPosition(pBus, pBus->apDevices[iDev], pBus->apDevices[iDev]->name, -1);
-        if (iRelDev < 0 || iRelDev == iDev)
+        bool assigned = assignPosition(pBus, pBus->apDevices[iDev], pBus->apDevices[iDev]->name, -1, &aPosition);
+        AssertMsgReturn(aPosition.iBus == 0,
+                        ("Assigning behind the bridge not implemented yet\n"),
+                        VERR_PDM_TOO_PCI_MANY_DEVICES);
+        int iRelDev = aPosition.iDeviceFunc;
+        if (!assigned || iRelDev == iDev)
         {
             AssertMsgFailed(("Couldn't find free spot!\n"));
             return VERR_PDM_TOO_PCI_MANY_DEVICES;

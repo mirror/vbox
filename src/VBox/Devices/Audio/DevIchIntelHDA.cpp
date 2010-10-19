@@ -1662,18 +1662,12 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     s->IBase.pfnQueryInterface  = hdaQueryInterface;
 
     /* PCI Device (the assertions will be removed later) */
-#if 0
-    /* Linux kernel has whitelist for MSI-enabled HDA, this card seems to be there. */
-    PCIDevSetVendorId           (&pThis->dev, 0x103c); /* HP. */
-    PCIDevSetDeviceId           (&pThis->dev, 0x30f7); /* HP Pavilion dv4t-1300 */
-#else
 #if 1
     PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */
     PCIDevSetDeviceId           (&pThis->dev, 0x2668); /* 02 ro - 82801 / 82801aa(?). */
 #else
     PCIDevSetVendorId           (&pThis->dev, 0x10de); /* nVidia */
     PCIDevSetDeviceId           (&pThis->dev, 0x0028); /* HDA */
-#endif
 #endif
     PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */
     PCIDevSetStatus             (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
@@ -1767,9 +1761,11 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 
 #ifdef VBOX_WITH_MSI_DEVICES
     PDMMSIREG aMsiReg;
-    aMsiReg.cVectors = 1;
-    aMsiReg.iCapOffset = 0x60;
-    aMsiReg.iNextOffset = 0x50;
+
+    RT_ZERO(aMsiReg);
+    aMsiReg.cMsiVectors = 1;
+    aMsiReg.iMsiCapOffset = 0x60;
+    aMsiReg.iMsiNextOffset = 0x50;
     aMsiReg.iMsiFlags = 0;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
     if (RT_FAILURE (rc))

@@ -83,18 +83,18 @@ DECLINLINE(uint32_t) msiGetMsiData(PPCIDEVICE pDev, int32_t iVector)
     return RT_MAKE_U32(lo, 0);
 }
 
-DECLINLINE(bool) msiBitJustCleared(uint32_t u32OldValue,
-                                   uint32_t u32NewValue,
-                                   uint32_t u32Mask)
+DECLINLINE(bool) msiBitJustCleared(uint32_t uOldValue,
+                                   uint32_t uNewValue,
+                                   uint32_t uMask)
 {
-    return (!!(u32OldValue & u32Mask) && !(u32NewValue & u32Mask));
+    return (!!(uOldValue & uMask) && !(uNewValue & uMask));
 }
 
-DECLINLINE(bool) msiBitJustSet(uint32_t u64OldValue,
-                               uint32_t u64NewValue,
-                               uint32_t u64Mask)
+DECLINLINE(bool) msiBitJustSet(uint32_t uOldValue,
+                               uint32_t uNewValue,
+                               uint32_t uMask)
 {
-    return (!(u64OldValue & u64Mask) && !!(u64NewValue & u64Mask));
+    return (!(uOldValue & uMask) && !!(uNewValue & uMask));
 }
 
 
@@ -103,7 +103,7 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
     Assert(iOff >= 0 && (PCIIsMsiCapable(pDev) && iOff < pDev->Int.s.u8MsiCapSize));
 
-    Log2(("MSIPciConfigWrite: %d <- %x (%d)\n", iOff, val, len));
+    Log2(("MsiPciConfigWrite: %d <- %x (%d)\n", iOff, val, len));
 
     uint32_t uAddr = u32Address;
     bool f64Bit = msiIs64Bit(pDev);
@@ -111,6 +111,7 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
     for (uint32_t i = 0; i < len; i++)
     {
         uint32_t reg = i + iOff;
+        uint8_t u8Val = (uint8_t)val;
         switch (reg)
         {
             case 0: /* Capability ID, ro */
@@ -118,14 +119,14 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
                 break;
             case VBOX_MSI_CAP_MESSAGE_CONTROL:
                 /* don't change read-only bits: 1-3,7 */
-                val &= UINT32_C(~0x8e);
-                pDev->config[uAddr] = val;
+                u8Val &= UINT8_C(~0x8e);
+                pDev->config[uAddr] = u8Val | (pDev->config[uAddr] & UINT8_C(0x8e));
                 break;
             case VBOX_MSI_CAP_MESSAGE_CONTROL + 1:
                 /* don't change read-only bit 8, and reserved 9-15 */
                 break;
             default:
-                if (pDev->config[uAddr] != val)
+                if (pDev->config[uAddr] != u8Val)
                 {
                     int32_t maskUpdated = -1;
 
@@ -154,7 +155,7 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
                             int32_t iBit = 1 << iBitNum;
                             uint32_t uVector = maskUpdated*8 + iBitNum;
 
-                            if (msiBitJustCleared(pDev->config[uAddr], val, iBit))
+                            if (msiBitJustCleared(pDev->config[uAddr], u8Val, iBit))
                             {
                                 Log(("msi: mask updated bit %d@%x (%d)\n", iBitNum, uAddr, maskUpdated));
 
@@ -166,14 +167,14 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
                                     MsiNotify(pDevIns, pPciHlp, pDev, uVector, PDM_IRQ_LEVEL_HIGH);
                                 }
                             }
-                            if (msiBitJustSet(pDev->config[uAddr], val, iBit))
+                            if (msiBitJustSet(pDev->config[uAddr], u8Val, iBit))
                             {
                                 Log(("msi: mask vector: %d\n", uVector));
                             }
                         }
                     }
 
-                    pDev->config[uAddr] = val;
+                    pDev->config[uAddr] = u8Val;
                 }
         }
         uAddr++;
@@ -203,7 +204,7 @@ uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
             Assert(false);
     }
 
-    Log2(("MSIPciConfigRead: %d (%d) -> %x\n", iOff, len, rv));
+    Log2(("MsiPciConfigRead: %d (%d) -> %x\n", iOff, len, rv));
 
     return rv;
 }
@@ -211,12 +212,13 @@ uint32_t MsiPciConfigRead (PPDMDEVINS pDevIns, PPCIDEVICE pDev, uint32_t u32Addr
 
 int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 {
-    uint16_t   cVectors    = pMsiReg->cVectors;
-    uint8_t    iCapOffset  = pMsiReg->iCapOffset;
-    uint8_t    iNextOffset = pMsiReg->iNextOffset;
-    uint16_t   iMsiFlags   = pMsiReg->iMsiFlags;
+    if (pMsiReg->cMsiVectors == 0)
+         return VINF_SUCCESS;
 
-    Assert(cVectors > 0);
+    uint16_t   cVectors    = pMsiReg->cMsiVectors;
+    uint8_t    iCapOffset  = pMsiReg->iMsiCapOffset;
+    uint8_t    iNextOffset = pMsiReg->iMsiNextOffset;
+    uint16_t   iFlags   = pMsiReg->iMsiFlags;
 
     if (cVectors != 1)
         /* We cannot handle multiple vectors yet */
@@ -227,16 +229,16 @@ int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
 
     Assert(iCapOffset != 0 && iCapOffset < 0xff && iNextOffset < 0xff);
 
-    bool f64bit = (iMsiFlags & VBOX_PCI_MSI_FLAGS_64BIT) != 0;
+    bool f64bit = (iFlags & VBOX_PCI_MSI_FLAGS_64BIT) != 0;
     /* We always support per-vector masking */
-    iMsiFlags |= VBOX_PCI_MSI_FLAGS_MASKBIT;
+    iFlags |= VBOX_PCI_MSI_FLAGS_MASKBIT;
 
     pDev->Int.s.u8MsiCapOffset = iCapOffset;
     pDev->Int.s.u8MsiCapSize   = f64bit ? VBOX_MSI_CAP_SIZE_64 : VBOX_MSI_CAP_SIZE_32;
 
     PCIDevSetByte(pDev,  iCapOffset + 0, VBOX_PCI_CAP_ID_MSI);
     PCIDevSetByte(pDev,  iCapOffset + 1, iNextOffset); /* next */
-    PCIDevSetWord(pDev,  iCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL, iMsiFlags);
+    PCIDevSetWord(pDev,  iCapOffset + VBOX_MSI_CAP_MESSAGE_CONTROL, iFlags);
 
     *msiGetMaskBits(pDev)    = 0;
     *msiGetPendingBits(pDev) = 0;

@@ -269,7 +269,8 @@ typedef FNPCIIOREGIONMAP *PFNPCIIOREGIONMAP;
 #define  VBOX_PCI_MSI_FLAGS_QMASK    0x000e  /* Maximum queue size available (i.e. vectors per device possible) */
 
 /* MSI-X flags (2 bytes, capability offset 2) */
-#define  VBOX_PCI_MSIX_FLAGS_ENABLE  0x8000
+#define  VBOX_PCI_MSIX_FLAGS_ENABLE   0x8000  /* MSI-X enable */
+#define  VBOX_PCI_MSIX_FLAGS_FUNCMASK 0x4000  /* Function mask */
 
 /* Power management flags (2 bytes, capability offset 2) */
 #define  VBOX_PCI_PM_CAP_VER_MASK    0x0007  /* Version mask */

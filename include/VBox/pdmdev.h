@@ -421,14 +421,23 @@ typedef PDMDEVREG const *PCPDMDEVREG;
  */
 typedef struct PDMMSIREG
 {
-    /** Number of interrupt vectors */
-    uint16_t   cVectors;
+    /** Number of MSI interrupt vectors, 0 if MSI not supported */
+    uint16_t   cMsiVectors;
     /** Offset of MSI capability */
-    uint8_t    iCapOffset;
-    /** Offset of next capability */
-    uint8_t    iNextOffset;
-    /** Value to initialize message control register */
+    uint8_t    iMsiCapOffset;
+    /** Offset of next capability to MSI */
+    uint8_t    iMsiNextOffset;
+    /** Value to initialize MSI message control register */
     uint16_t   iMsiFlags;
+
+    /** Number of MSI-X interrupt vectors, 0 if MSI-X not supported */
+    uint16_t   cMsixVectors;
+    /** Offset of MSI-X capability */
+    uint8_t    iMsixCapOffset;
+    /** Offset of next capability to MSI-X */
+    uint8_t    iMsixNextOffset;
+    /** Value to initialize MSI-X message control register */
+    uint16_t   iMsixFlags;
 } PDMMSIREG;
 typedef PDMMSIREG *PPDMMSIREG;
 
