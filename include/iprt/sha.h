@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
 /** The size of a SHA-1 hash. */
 #define RTSHA1_HASH_SIZE    20
 /** The length of a SHA-1 digest string. The terminator is not included. */
-#define RTSHA1_STRING_LEN  (40)
+#define RTSHA1_DIGEST_LEN  (40)
 
 /**
  * SHA-1 context.
@@ -96,7 +96,7 @@ RTDECL(void) RTSha1Final(PRTSHA1CONTEXT pCtx, uint8_t pabDigest[RTSHA1_HASH_SIZE
  * @param   pabDigest   The binary digest returned by RTSha1Final or RTSha1.
  * @param   pszDigest   Where to return the stringified digest.
  * @param   cchDigest   The size of the output buffer. Should be at least
- *                      RTSHA1_STRING_LEN + 1 bytes.
+ *                      RTSHA1_DIGEST_LEN + 1 bytes.
  */
 RTDECL(int) RTSha1ToString(uint8_t const pabDigest[RTSHA1_HASH_SIZE], char *pszDigest, size_t cchDigest);
 
@@ -141,7 +141,7 @@ RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRT
 /** The size of a SHA-256 hash. */
 #define RTSHA256_HASH_SIZE      32
 /** The length of a SHA-256 digest string. The terminator is not included. */
-#define RTSHA256_STRING_LEN     64
+#define RTSHA256_DIGEST_LEN     64
 
 /**
  * SHA-256 context.
@@ -199,7 +199,7 @@ RTDECL(void) RTSha256Final(PRTSHA256CONTEXT pCtx, uint8_t pabDigest[RTSHA256_HAS
  * @param   pabDigest   The binary digest returned by RTSha256Final or RTSha256.
  * @param   pszDigest   Where to return the stringified digest.
  * @param   cchDigest   The size of the output buffer. Should be at least
- *                      RTSHA256_STRING_LEN + 1 bytes.
+ *                      RTSHA256_DIGEST_LEN + 1 bytes.
  */
 RTDECL(int) RTSha256ToString(uint8_t const pabDigest[RTSHA256_HASH_SIZE], char *pszDigest, size_t cchDigest);
 
@@ -220,7 +220,7 @@ RTDECL(int) RTSha256FromString(char const *pszDigest, uint8_t pabDigest[RTSHA256
 /** The size of a SHA-512 hash. */
 #define RTSHA512_HASH_SIZE      64
 /** The length of a SHA-512 digest string. The terminator is not included. */
-#define RTSHA512_STRING_LEN     128
+#define RTSHA512_DIGEST_LEN     128
 
 /**
  * SHA-512 context.
@@ -278,7 +278,7 @@ RTDECL(void) RTSha512Final(PRTSHA512CONTEXT pCtx, uint8_t pabDigest[RTSHA512_HAS
  * @param   pabDigest   The binary digest returned by RTSha512Final or RTSha512.
  * @param   pszDigest   Where to return the stringified digest.
  * @param   cchDigest   The size of the output buffer. Should be at least
- *                      RTSHA512_STRING_LEN + 1 bytes.
+ *                      RTSHA512_DIGEST_LEN + 1 bytes.
  */
 RTDECL(int) RTSha512ToString(uint8_t const pabDigest[RTSHA512_HASH_SIZE], char *pszDigest, size_t cchDigest);
 

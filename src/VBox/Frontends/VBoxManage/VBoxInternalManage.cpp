@@ -2022,7 +2022,7 @@ int CmdGeneratePasswordHash(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 
     uint8_t abDigest[RTSHA256_HASH_SIZE];
     RTSha256(argv[0], strlen(argv[0]), abDigest);
-    char pszDigest[RTSHA256_STRING_LEN + 1];
+    char pszDigest[RTSHA256_DIGEST_LEN + 1];
     RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
     RTPrintf("Password hash: %s\n", pszDigest);
     
