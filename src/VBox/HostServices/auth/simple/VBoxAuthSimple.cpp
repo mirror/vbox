@@ -112,7 +112,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
             /* calculate hash */
             uint8_t abDigest[RTSHA256_HASH_SIZE];
             RTSha256(szPassword, strlen(szPassword), abDigest);
-            char pszDigest[RTSHA256_STRING_LEN + 1];
+            char pszDigest[RTSHA256_DIGEST_LEN + 1];
             RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
                         
             if (password == pszDigest)
