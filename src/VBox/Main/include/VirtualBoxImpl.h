@@ -97,7 +97,8 @@ public:
     HRESULT init();
     HRESULT initMachines();
     HRESULT initMedia(const Guid &uuidMachineRegistry,
-                      const settings::MediaRegistry mediaRegistry);
+                      const settings::MediaRegistry mediaRegistry,
+                      const Utf8Str &strMachineFolder);
     void uninit();
 
     /* IVirtualBox properties */
@@ -211,10 +212,12 @@ public:
                         bool aSetError,
                         ComObjPtr<Machine> *machine = NULL);
 
-    HRESULT findHardDisk(const Guid *aId,
-                         const Utf8Str &strLocation,
-                         bool aSetError,
-                         ComObjPtr<Medium> *aHardDisk = NULL);
+    HRESULT findHardDiskById(const Guid &id,
+                             bool aSetError,
+                             ComObjPtr<Medium> *aHardDisk = NULL);
+    HRESULT findHardDiskByLocation(const Utf8Str &strLocation,
+                                   bool aSetError,
+                                   ComObjPtr<Medium> *aHardDisk = NULL);
     HRESULT findDVDOrFloppyImage(DeviceType_T mediumType,
                                  const Guid *aId,
                                  const Utf8Str &aLocation,
@@ -261,7 +264,8 @@ public:
                                            const Utf8Str &strNewConfigDir);
 
     void saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
-                           const Guid &uuidRegistry);
+                           const Guid &uuidRegistry,
+                           const Utf8Str &strMachineFolder);
     HRESULT saveSettings();
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName);

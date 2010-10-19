@@ -1775,7 +1775,6 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
 
             // source path: where the VBox image is
             const Utf8Str &strSrcFilePath = pDiskEntry->strVboxCurrent;
-            Bstr bstrSrcFilePath(strSrcFilePath);
 
             // Do NOT check here whether the file exists. findHardDisk will
             // figure that out, and filesystem-based tests are simply wrong
@@ -1784,8 +1783,8 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             // clone the disk:
             ComObjPtr<Medium> pSourceDisk;
 
-            Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
-            rc = mVirtualBox->findHardDisk(NULL, bstrSrcFilePath.raw(), true, &pSourceDisk);
+            Log(("Finding source disk \"%s\"\n", strSrcFilePath.c_str()));
+            rc = mVirtualBox->findHardDiskByLocation(strSrcFilePath, true, &pSourceDisk);
             if (FAILED(rc)) throw rc;
 
             Bstr uuidSource;

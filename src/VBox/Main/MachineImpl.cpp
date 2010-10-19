@@ -6927,8 +6927,12 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     // machine registry, if present (must be loaded before snapshots)
     if (config.canHaveOwnMediaRegistry())
     {
+        // determine machine folder
+        Utf8Str strMachineFolder = getSettingsFileFull();
+        strMachineFolder.stripFilename();
         rc = mParent->initMedia(getId(),         // media registry ID == machine UUID
-                                config.mediaRegistry);
+                                config.mediaRegistry,
+                                strMachineFolder);
         if (FAILED(rc)) return rc;
     }
 
@@ -7407,7 +7411,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             case DeviceType_HardDisk:
             {
                 /* find a hard disk by UUID */
-                rc = mParent->findHardDisk(&dev.uuid, Utf8Str::Empty, true /* aDoSetError */, &medium);
+                rc = mParent->findHardDiskById(dev.uuid, true /* aDoSetError */, &medium);
                 if (FAILED(rc))
                 {
                     if (isSnapshotMachine())
@@ -8052,9 +8056,15 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
 
     // save machine's media registry if this is VirtualBox 4.0 or later
     if (config.canHaveOwnMediaRegistry())
+    {
+        // determine machine folder
+        Utf8Str strMachineFolder = getSettingsFileFull();
+        strMachineFolder.stripFilename();
         mParent->saveMediaRegistry(config.mediaRegistry,
-                                   getId());            // only media with registry ID == machine UUID
+                                   getId(),             // only media with registry ID == machine UUID
+                                   strMachineFolder);
             // this throws HRESULT
+    }
 
     // save snapshots
     rc = saveAllSnapshots(config);
@@ -8409,7 +8419,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         if (pMedium)
         {
             if (pMedium->isHostDrive())
-                dev.strHostDriveSrc = pMedium->getLocation();
+                dev.strHostDriveSrc = pMedium->getLocationFull();
             else
                 dev.uuid = pMedium->getId();
             dev.fPassThrough = pAttach->getPassthrough();

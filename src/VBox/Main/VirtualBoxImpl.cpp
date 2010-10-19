@@ -456,7 +456,8 @@ HRESULT VirtualBox::init()
 
         /* all registered media, needed by machines */
         if (FAILED(rc = initMedia(m->uuidMediaRegistry,
-                                  m->pMainConfigFile->mediaRegistry)))
+                                  m->pMainConfigFile->mediaRegistry,
+                                  Utf8Str::Empty)))     // const Utf8Str &machineFolder
             throw rc;
 
         /* machines */
@@ -607,7 +608,8 @@ HRESULT VirtualBox::initMachines()
  * @return
  */
 HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
-                              const settings::MediaRegistry mediaRegistry)
+                              const settings::MediaRegistry mediaRegistry,
+                              const Utf8Str &strMachineFolder)
 {
     LogFlow(("VirtualBox::initMedia ENTERING, uuidRegistry=%s\n", uuidRegistry.toString().c_str()));
 
@@ -627,7 +629,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                                  NULL,          // parent
                                  DeviceType_HardDisk,
                                  uuidRegistry,
-                                 xmlHD);        // XML data; this recurses to processes the children
+                                 xmlHD,         // XML data; this recurses to processes the children
+                                 strMachineFolder);
         if (FAILED(rc)) return rc;
 
         rc = registerHardDisk(pHardDisk,
@@ -647,7 +650,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               NULL,
                               DeviceType_DVD,
                               uuidRegistry,
-                              xmlDvd);
+                              xmlDvd,
+                              strMachineFolder);
         if (FAILED(rc)) return rc;
 
         rc = registerImage(pImage,
@@ -668,7 +672,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               NULL,
                               DeviceType_Floppy,
                               uuidRegistry,
-                              xmlFloppy);
+                              xmlFloppy,
+                              strMachineFolder);
         if (FAILED(rc)) return rc;
 
         rc = registerImage(pImage,
@@ -1478,9 +1483,9 @@ STDMETHODIMP VirtualBox::FindMedium(IN_BSTR   aLocation,
     {
         case DeviceType_HardDisk:
             if (!id.isEmpty())
-                rc = findHardDisk(&id, Utf8Str::Empty, true /* setError */, &pMedium);
+                rc = findHardDiskById(id, true /* setError */, &pMedium);
             else
-                rc = findHardDisk(NULL, strLocation, true /* setError */, &pMedium);
+                rc = findHardDiskByLocation(strLocation, true /* setError */, &pMedium);
         break;
 
         case DeviceType_Floppy:
@@ -2524,82 +2529,94 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
 }
 
 /**
- * Searches for a Medium object with the given ID or location in the list of
- * registered hard disks. If both ID and location are specified, the first
- * object that matches either of them (not necessarily both) is returned.
+ * Searches for a Medium object with the given ID in the list of registered
+ * hard disks.
  *
- * @param aId           ID of the hard disk (unused when NULL).
- * @param aLocation     Full location specification (unused NULL).
+ * @param aId           ID of the hard disk. Must not be empty.
  * @param aSetError     If @c true , the appropriate error info is set in case
  *                      when the hard disk is not found.
  * @param aHardDisk     Where to store the found hard disk object (can be NULL).
  *
- * @return S_OK when found or E_INVALIDARG when not found.
+ * @return S_OK, E_INVALIDARG or VBOX_E_OBJECT_NOT_FOUND when not found.
  *
  * @note Locks the media tree for reading.
  */
-HRESULT VirtualBox::findHardDisk(const Guid *aId,
-                                 const Utf8Str &strLocation,
-                                 bool aSetError,
-                                 ComObjPtr<Medium> *aHardDisk /*= NULL*/)
+HRESULT VirtualBox::findHardDiskById(const Guid &id,
+                                     bool aSetError,
+                                     ComObjPtr<Medium> *aHardDisk /*= NULL*/)
 {
-    AssertReturn(aId || !strLocation.isEmpty(), E_INVALIDARG);
+    AssertReturn(!id.isEmpty(), E_INVALIDARG);
 
     // we use the hard disks map, but it is protected by the
     // hard disk _list_ lock handle
     AutoReadLock alock(m->allHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    /* first, look up by UUID in the map if UUID is provided */
-    if (aId)
+    HardDiskMap::const_iterator it = m->mapHardDisks.find(id);
+    if (it != m->mapHardDisks.end())
     {
-        HardDiskMap::const_iterator it = m->mapHardDisks.find(*aId);
-        if (it != m->mapHardDisks.end())
+        if (aHardDisk)
+            *aHardDisk = (*it).second;
+        return S_OK;
+    }
+
+    if (aSetError)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("Could not find an open hard disk with UUID {%RTuuid}"),
+                        id.raw());
+
+    return VBOX_E_OBJECT_NOT_FOUND;
+}
+
+/**
+ * Searches for a Medium object with the given ID or location in the list of
+ * registered hard disks. If both ID and location are specified, the first
+ * object that matches either of them (not necessarily both) is returned.
+ *
+ * @param aLocation     Full location specification. Must not be empty.
+ * @param aSetError     If @c true , the appropriate error info is set in case
+ *                      when the hard disk is not found.
+ * @param aHardDisk     Where to store the found hard disk object (can be NULL).
+ *
+ * @return S_OK, E_INVALIDARG or VBOX_E_OBJECT_NOT_FOUND when not found.
+ *
+ * @note Locks the media tree for reading.
+ */
+HRESULT VirtualBox::findHardDiskByLocation(const Utf8Str &strLocation,
+                                           bool aSetError,
+                                           ComObjPtr<Medium> *aHardDisk /*= NULL*/)
+{
+    AssertReturn(!strLocation.isEmpty(), E_INVALIDARG);
+
+    // we use the hard disks map, but it is protected by the
+    // hard disk _list_ lock handle
+    AutoReadLock alock(m->allHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    for (HardDiskMap::const_iterator it = m->mapHardDisks.begin();
+         it != m->mapHardDisks.end();
+         ++it)
+    {
+        const ComObjPtr<Medium> &pHD = (*it).second;
+
+        AutoCaller autoCaller(pHD);
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+        AutoWriteLock mlock(pHD COMMA_LOCKVAL_SRC_POS);
+
+        Utf8Str strLocationFull = pHD->getLocationFull();
+
+        if (0 == RTPathCompare(strLocationFull.c_str(), strLocation.c_str()))
         {
             if (aHardDisk)
-                *aHardDisk = (*it).second;
+                *aHardDisk = pHD;
             return S_OK;
         }
     }
 
-    /* then iterate and search by location */
-    int result = -1;
-    if (!strLocation.isEmpty())
-    {
-        for (HardDiskMap::const_iterator it = m->mapHardDisks.begin();
-             it != m->mapHardDisks.end();
-             ++ it)
-        {
-            const ComObjPtr<Medium> &hd = (*it).second;
+    if (aSetError)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("Could not find an open hard disk with location '%s'"),
+                        strLocation.c_str());
 
-            HRESULT rc = hd->compareLocationTo(strLocation, result);
-            if (FAILED(rc)) return rc;
-
-            if (result == 0)
-            {
-                if (aHardDisk)
-                    *aHardDisk = hd;
-                break;
-            }
-        }
-    }
-
-    HRESULT rc = result == 0 ? S_OK : VBOX_E_OBJECT_NOT_FOUND;
-
-    if (aSetError && result != 0)
-    {
-        if (aId)
-            setError(rc,
-                     tr("Could not find a hard disk with UUID {%RTuuid} in the media registry ('%s')"),
-                     aId->raw(),
-                     m->strSettingsFilePath.c_str());
-        else
-            setError(rc,
-                     tr("Could not find a hard disk with location '%s' in the media registry ('%s')"),
-                     strLocation.c_str(),
-                     m->strSettingsFilePath.c_str());
-    }
-
-    return rc;
+    return VBOX_E_OBJECT_NOT_FOUND;
 }
 
 /**
@@ -2876,7 +2893,10 @@ int VirtualBox::calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult)
     /* no need to lock since mHomeDir is const */
 
     char folder[RTPATH_MAX];
-    int vrc = RTPathAbsEx(m->strHomeDir.c_str(), strPath.c_str(), folder, sizeof(folder));
+    int vrc = RTPathAbsEx(m->strHomeDir.c_str(),
+                          strPath.c_str(),
+                          folder,
+                          sizeof(folder));
     if (RT_SUCCESS(vrc))
         aResult = folder;
 
@@ -2938,29 +2958,29 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
 
     HRESULT rc = S_OK;
 
-    Bstr bstrLocation(aLocation);
     aConflict.setNull();
     fIdentical = false;
 
     ComObjPtr<Medium> pMediumFound;
     const char *pcszType = NULL;
 
-    {
-        rc = findHardDisk(&aId, bstrLocation, false /* aSetError */, &pMediumFound);
-        if (SUCCEEDED(rc))
-            pcszType = tr("hard disk");
-    }
+    if (!aId.isEmpty())
+        rc = findHardDiskById(aId, false /* aSetError */, &pMediumFound);
+    if (FAILED(rc) && !aLocation.isEmpty())
+        rc = findHardDiskByLocation(aLocation, false /* aSetError */, &pMediumFound);
+    if (SUCCEEDED(rc))
+        pcszType = tr("hard disk");
 
     if (!pcszType)
     {
-        rc = findDVDOrFloppyImage(DeviceType_DVD, &aId, bstrLocation, false /* aSetError */, &pMediumFound);
+        rc = findDVDOrFloppyImage(DeviceType_DVD, &aId, aLocation, false /* aSetError */, &pMediumFound);
         if (SUCCEEDED(rc))
             pcszType = tr("CD/DVD image");
     }
 
     if (!pcszType)
     {
-        rc = findDVDOrFloppyImage(DeviceType_Floppy, &aId, bstrLocation, false /* aSetError */, &pMediumFound);
+        rc = findDVDOrFloppyImage(DeviceType_Floppy, &aId, aLocation, false /* aSetError */, &pMediumFound);
         if (SUCCEEDED(rc))
             pcszType = tr("floppy image");
     }
@@ -3033,12 +3053,13 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
  *
  * This throws HRESULT on errors!
  *
- * @param mediaRegistry
- * @param uuidRegistry
- * @return
+ * @param mediaRegistry Settings structure to fill.
+ * @param uuidRegistry The UUID of the media registry; either a machine UUID (if machine registry) or the UUID of the global registry.
+ * @param hardDiskFolder The machine folder for relative paths, if machine registry, or an empty string otherwise.
  */
 void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
-                                   const Guid &uuidRegistry)
+                                   const Guid &uuidRegistry,
+                                   const Utf8Str &strMachineFolder)
 {
     HRESULT rc;
     // hard disks
@@ -3051,7 +3072,7 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
         if (pMedium->isInRegistry(uuidRegistry))
         {
             settings::Medium med;
-            rc = pMedium->saveSettings(med);     // this recurses into its children
+            rc = pMedium->saveSettings(med, strMachineFolder);     // this recurses into its children
             if (FAILED(rc)) throw rc;
             mediaRegistry.llHardDisks.push_back(med);
         }
@@ -3067,7 +3088,7 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
         if (pMedium->isInRegistry(uuidRegistry))
         {
             settings::Medium med;
-            rc = pMedium->saveSettings(med);
+            rc = pMedium->saveSettings(med, strMachineFolder);
             if (FAILED(rc)) throw rc;
             mediaRegistry.llDvdImages.push_back(med);
         }
@@ -3083,7 +3104,7 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
         if (pMedium->isInRegistry(uuidRegistry))
         {
             settings::Medium med;
-            rc = pMedium->saveSettings(med);
+            rc = pMedium->saveSettings(med, strMachineFolder);
             if (FAILED(rc)) throw rc;
             mediaRegistry.llFloppyImages.push_back(med);
         }
@@ -3167,7 +3188,8 @@ HRESULT VirtualBox::saveSettings()
         }
 
         saveMediaRegistry(m->pMainConfigFile->mediaRegistry,
-                          m->uuidMediaRegistry);
+                          m->uuidMediaRegistry,         // global media registry ID
+                          Utf8Str::Empty);              // strMachineFolder
 
         mediaLock.release();
 

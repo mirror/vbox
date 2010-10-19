@@ -116,7 +116,6 @@ struct Medium::Data
     Utf8Str strDescription;
     MediumState_T state;
     MediumVariant_T variant;
-    Utf8Str strLocation;
     Utf8Str strLocationFull;
     uint64_t size;
     Utf8Str strLastAccessError;
@@ -947,16 +946,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     rc = setFormat(aFormat);
     if (FAILED(rc)) return rc;
 
-    if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
-    {
-        rc = setLocation(aLocation);
-        if (FAILED(rc)) return rc;
-    }
-    else
-    {
-        rc = setLocation(aLocation);
-        if (FAILED(rc)) return rc;
-    }
+    rc = setLocation(aLocation);
+    if (FAILED(rc)) return rc;
 
     if (!(m->formatObj->getCapabilities() & (   MediumFormatCapabilities_CreateFixed
                                               | MediumFormatCapabilities_CreateDynamic))
@@ -1084,14 +1075,16 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * @param aDeviceType   Device type of the medium.
  * @param uuidMachineRegistry The registry to which this medium should be added (global registry UUI or medium UUID).
  * @param aNode         Configuration settings.
+ * @param strMachineFolder The machine folder with which to resolve relative paths; if empty, then we use the VirtualBox home directory
  *
- * @note Locks VirtualBox for writing, the medium tree for writing.
+ * @note Locks the medium tree for writing.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      Medium *aParent,
                      DeviceType_T aDeviceType,
                      const Guid &uuidMachineRegistry,
-                     const settings::Medium &data)
+                     const settings::Medium &data,
+                     const Utf8Str &strMachineFolder)
 {
     using namespace settings;
 
@@ -1170,8 +1163,25 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         m->mapProperties[name] = value;
     }
 
-    /* required */
-    rc = setLocation(data.strLocation);
+    // compose full path of the medium, if it's not fully qualified...
+    // slightly convoluted logic here. If the caller has given us a
+    // machine folder, then a relative path will be relative to that:
+    Utf8Str strFull;
+    if (    !strMachineFolder.isEmpty()
+         && !RTPathHavePath(data.strLocation.c_str()))
+    {
+        strFull = strMachineFolder;
+        strFull += RTPATH_DELIMITER;
+        strFull += data.strLocation;
+    }
+    else
+    {
+        // Otherwise use the old VirtualBox "make absolute path" logic:
+        rc = m->pVirtualBox->calculateFullPath(data.strLocation, strFull);
+        if (FAILED(rc)) return rc;
+    }
+
+    rc = setLocation(strFull);
     if (FAILED(rc)) return rc;
 
     if (aDeviceType == DeviceType_HardDisk)
@@ -1211,7 +1221,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                        this,            // parent
                        aDeviceType,
                        uuidMachineRegistry,
-                       med);              // child data
+                       med,               // child data
+                       strMachineFolder);
         if (FAILED(rc)) break;
 
         rc = m->pVirtualBox->registerHardDisk(pHD, NULL /*pfNeedsGlobalSaveSettings*/);
@@ -2887,15 +2898,6 @@ bool Medium::isHostDrive() const
 }
 
 /**
- * Internal method to return the medium's location. Must have caller + locking!
- * @return
- */
-const Utf8Str& Medium::getLocation() const
-{
-    return m->strLocation;
-}
-
-/**
  * Internal method to return the medium's full location. Must have caller + locking!
  * @return
  */
@@ -3152,10 +3154,6 @@ HRESULT Medium::updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath)
         newPath.append(pcszMediumPath + strOldPath.length());
         unconst(m->strLocationFull) = newPath;
 
-        Utf8Str path;
-        m->pVirtualBox->copyPathRelativeToConfig(newPath, path);
-        unconst(m->strLocation) = path;
-
         LogFlowThisFunc(("locationFull.after='%s'\n", m->strLocationFull.c_str()));
     }
 
@@ -3257,10 +3255,12 @@ bool Medium::isReadOnly()
  * parent XML settings node.
  *
  * @param data      Settings struct to be updated.
+ * @param strHardDiskFolder Folder for which paths should be relative.
  *
  * @note Locks this object, medium tree and children for reading.
  */
-HRESULT Medium::saveSettings(settings::Medium &data)
+HRESULT Medium::saveSettings(settings::Medium &data,
+                             const Utf8Str &strHardDiskFolder)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3271,7 +3271,14 @@ HRESULT Medium::saveSettings(settings::Medium &data)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.uuid = m->id;
-    data.strLocation = m->strLocation;
+
+    // make path relative if needed
+    if (    !strHardDiskFolder.isEmpty()
+         && RTPathStartsWith(m->strLocationFull.c_str(), strHardDiskFolder.c_str())
+       )
+        data.strLocation = m->strLocationFull.substr(strHardDiskFolder.length() + 1);
+    else
+        data.strLocation = m->strLocationFull;
     data.strFormat = m->strFormat;
 
     /* optional, only for diffs, default is false */
@@ -3308,63 +3315,10 @@ HRESULT Medium::saveSettings(settings::Medium &data)
          ++it)
     {
         settings::Medium med;
-        HRESULT rc = (*it)->saveSettings(med);
+        HRESULT rc = (*it)->saveSettings(med, strHardDiskFolder);
         AssertComRCReturnRC(rc);
         data.llChildren.push_back(med);
     }
-
-    return S_OK;
-}
-
-/**
- * Compares the location of this medium to the given location.
- *
- * The comparison takes the location details into account. For example, if the
- * location is a file in the host's filesystem, a case insensitive comparison
- * will be performed for case insensitive filesystems.
- *
- * @param aLocation     Location to compare to (as is).
- * @param aResult       Where to store the result of comparison: 0 if locations
- *                      are equal, 1 if this object's location is greater than
- *                      the specified location, and -1 otherwise.
- */
-HRESULT Medium::compareLocationTo(const Utf8Str &strLocation, int &aResult)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    Utf8Str locationFull(m->strLocationFull);
-
-    /// @todo NEWMEDIA delegate the comparison to the backend?
-
-    if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
-    {
-        Utf8Str location;
-
-        /* For locations represented by files, append the default path if
-         * only the name is given, and then get the full path. */
-        if (!RTPathHavePath(strLocation.c_str()))
-        {
-            m->pVirtualBox->getDefaultHardDiskFolder(location);
-            location.append(RTPATH_DELIMITER);
-            location.append(strLocation);
-        }
-        else
-            location = strLocation;
-
-        int vrc = m->pVirtualBox->calculateFullPath(location, location);
-        if (RT_FAILURE(vrc))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid medium storage file location '%s' (%Rrc)"),
-                            location.c_str(),
-                            vrc);
-
-        aResult = RTPathCompare(locationFull.c_str(), location.c_str());
-    }
-    else
-        aResult = locationFull.compare(strLocation);
 
     return S_OK;
 }
@@ -3603,14 +3557,11 @@ const Guid& Medium::getFirstRegistryMachineId() const
 }
 
 /**
- * Sets the value of m->strLocation and calculates the value of m->strLocationFull.
+ * Sets the value of m->strLocationFull. The given location must be a fully
+ * qualified path; relative paths are not supported here.
  *
- * Treats non-FS-path locations specially, and prepends the default medium
- * folder if the given location string does not contain any path information
- * at all.
- *
- * Also, if the specified location is a file path that ends with '/' then the
- * file name part will be generated by this method automatically in the format
+ * As a special exception, if the specified location is a file path that ends with '/'
+ * then the file name part will be generated by this method automatically in the format
  * '{<uuid>}.<ext>' where <uuid> is a fresh UUID that this method will generate
  * and assign to this medium, and <ext> is the default extension for this
  * medium's storage format. Note that this procedure requires the media state to
@@ -3651,14 +3602,14 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
     {
         Guid id;
 
-        Utf8Str location(aLocation);
+        Utf8Str locationFull(aLocation);
 
         if (m->state == MediumState_NotCreated)
         {
             /* must be a file (formatObj must be already known) */
             Assert(m->formatObj->getCapabilities() & MediumFormatCapabilities_File);
 
-            if (RTPathFilename(location.c_str()) == NULL)
+            if (RTPathFilename(aLocation.c_str()) == NULL)
             {
                 /* no file name is given (either an empty string or ends with a
                  * slash), generate a new UUID + file name if the state allows
@@ -3675,33 +3626,20 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
 
                 id.create();
 
-                location = Utf8StrFmt("%s{%RTuuid}.%s",
-                                      location.c_str(), id.raw(), strExt.c_str());
+                locationFull = Utf8StrFmt("%s{%RTuuid}.%s",
+                                          aLocation.c_str(), id.raw(), strExt.c_str());
             }
         }
 
-        /* append the default folder if no path is given */
-        if (!RTPathHavePath(location.c_str()))
-        {
-            Utf8Str tmp;
-            m->pVirtualBox->getDefaultHardDiskFolder(tmp);
-            tmp.append(RTPATH_DELIMITER);
-            tmp.append(location);
-            location = tmp;
-        }
-
-        /* get the full file name */
-        Utf8Str locationFull;
-        int vrc = m->pVirtualBox->calculateFullPath(location, locationFull);
-        if (RT_FAILURE(vrc))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid medium storage file location '%s' (%Rrc)"),
-                            location.c_str(), vrc);
+        // we must always have full paths now
+        Assert(RTPathHavePath(locationFull.c_str()));
 
         /* detect the backend from the storage unit if importing */
         if (isImport)
         {
             char *backendName = NULL;
+
+            int vrc = VINF_SUCCESS;
 
             /* is it a file? */
             {
@@ -3718,7 +3656,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
             else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
             {
                 /* assume it's not a file, restore the original location */
-                location = locationFull = aLocation;
+                locationFull = aLocation;
                 vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
                                   locationFull.c_str(), &backendName);
             }
@@ -3754,32 +3692,20 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
             }
         }
 
-        /* is it still a file? */
-        if (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
-        {
-            m->strLocation = location;
-            m->strLocationFull = locationFull;
+        m->strLocationFull = locationFull;
 
-            if (m->state == MediumState_NotCreated)
-            {
-                /* assign a new UUID (this UUID will be used when calling
-                 * VDCreateBase/VDCreateDiff as a wanted UUID). Note that we
-                 * also do that if we didn't generate it to make sure it is
-                 * either generated by us or reset to null */
-                unconst(m->id) = id;
-            }
-        }
-        else
-        {
-            m->strLocation = locationFull;
-            m->strLocationFull = locationFull;
-        }
+        /* is it still a file? */
+        if (    (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
+             && (m->state == MediumState_NotCreated)
+           )
+            /* assign a new UUID (this UUID will be used when calling
+             * VDCreateBase/VDCreateDiff as a wanted UUID). Note that we
+             * also do that if we didn't generate it to make sure it is
+             * either generated by us or reset to null */
+            unconst(m->id) = id;
     }
     else
-    {
-        m->strLocation = aLocation;
         m->strLocationFull = aLocation;
-    }
 
     return S_OK;
 }
@@ -4005,7 +3931,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 
                     Guid id = parentId;
                     ComObjPtr<Medium> pParent;
-                    rc = m->pVirtualBox->findHardDisk(&id, Utf8Str::Empty, false /* aSetError */, &pParent);
+                    rc = m->pVirtualBox->findHardDiskById(id, false /* aSetError */, &pParent);
                     if (FAILED(rc))
                     {
                         lastAccessError = Utf8StrFmt(
