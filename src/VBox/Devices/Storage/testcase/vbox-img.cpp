@@ -253,6 +253,7 @@ int handleSetUUID(HandlerArg *a)
 
 typedef struct FILEIOSTATE
 {
+    RTFILE file;
     /** Offset in the file. */
     uint64_t off;
     /** Offset where the buffer contents start. UINT64_MAX=buffer invalid. */
@@ -272,11 +273,17 @@ static int convInOpen(void *pvUser, const char *pszLocation,
     AssertPtrReturn(ppStorage, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
     AssertReturn((fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ, VERR_INVALID_PARAMETER);
+    RTFILE file;
+    int rc = RTFileFromNative(&file, RTFILE_NATIVE_STDIN);
+    if (RT_FAILURE(rc))
+        return rc;
 
+    /* No need to clear the buffer, the data will be read from disk. */
     PFILEIOSTATE pFS = (PFILEIOSTATE)RTMemAlloc(sizeof(FILEIOSTATE));
     if (!pFS)
         return VERR_NO_MEMORY;
 
+    pFS->file = file;
     pFS->off = 0;
     pFS->offBuffer = UINT64_MAX;
     pFS->cbBuffer = 0;
@@ -289,7 +296,6 @@ static int convInClose(void *pvUser, void *pStorage)
 {
     NOREF(pvUser);
     AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
-
     PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
 
     RTMemFree(pFS);
@@ -368,7 +374,7 @@ static int convInRead(void *pvUser, void *pStorage, uint64_t uOffset,
         size_t cbTmp = sizeof(pFS->abBuffer);
         do
         {
-            rc = RTFileRead(0, pTmp, cbTmp, &cbRead);
+            rc = RTFileRead(pFS->file, pTmp, cbTmp, &cbRead);
             if (RT_FAILURE(rc))
                 return rc;
             pTmp += cbRead;
@@ -400,7 +406,7 @@ static int convInRead(void *pvUser, void *pStorage, uint64_t uOffset,
             size_t cbTmp = sizeof(pFS->abBuffer);
             do
             {
-                rc = RTFileRead(0, pTmp, cbTmp, &cbRead);
+                rc = RTFileRead(pFS->file, pTmp, cbTmp, &cbRead);
                 if (RT_FAILURE(rc))
                     return rc;
                 pTmp += cbRead;
@@ -459,14 +465,20 @@ static int convOutOpen(void *pvUser, const char *pszLocation,
     AssertPtrReturn(ppStorage, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
     AssertReturn((fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_WRITE, VERR_INVALID_PARAMETER);
+    RTFILE file;
+    int rc = RTFileFromNative(&file, RTFILE_NATIVE_STDOUT);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    PFILEIOSTATE pFS = (PFILEIOSTATE)RTMemAlloc(sizeof(FILEIOSTATE));
+    /* Must clear buffer, so that skipped over data is initialized properly. */
+    PFILEIOSTATE pFS = (PFILEIOSTATE)RTMemAllocZ(sizeof(FILEIOSTATE));
     if (!pFS)
         return VERR_NO_MEMORY;
 
+    pFS->file = file;
     pFS->off = 0;
-    pFS->offBuffer = UINT64_MAX;
-    pFS->cbBuffer = 0;
+    pFS->offBuffer = 0;
+    pFS->cbBuffer = sizeof(FILEIOSTATE);
 
     *ppStorage = pFS;
     return VINF_SUCCESS;
@@ -476,12 +488,16 @@ static int convOutClose(void *pvUser, void *pStorage)
 {
     NOREF(pvUser);
     AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
-
     PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
+    int rc = VINF_SUCCESS;
+
+    /* Flush any remaining buffer contents. */
+    if (pFS->cbBuffer)
+        rc = RTFileWrite(pFS->file, &pFS->abBuffer[0], pFS->cbBuffer, NULL);
 
     RTMemFree(pFS);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static int convOutDelete(void *pvUser, const char *pcszFilename)
@@ -553,12 +569,45 @@ static int convOutWrite(void *pvUser, void *pStorage, uint64_t uOffset,
                         size_t *pcbWritten)
 {
     NOREF(pvUser);
-    NOREF(pStorage);
-    NOREF(uOffset);
-    NOREF(cbBuffer);
-    NOREF(pcbWritten);
+    AssertPtrReturn(pStorage, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuffer, VERR_INVALID_POINTER);
-    AssertFailedReturn(VERR_NOT_SUPPORTED);
+    PFILEIOSTATE pFS = (PFILEIOSTATE)pStorage;
+    AssertReturn(uOffset >= pFS->off, VERR_INVALID_PARAMETER);
+    int rc;
+
+    /* Write the data to the buffer, flushing as required. */
+    size_t cbTotalWritten = 0;
+    do
+    {
+        /* Flush the buffer if we need a new one. */
+        while (uOffset > pFS->offBuffer + sizeof(pFS->abBuffer) - 1)
+        {
+            rc = RTFileWrite(pFS->file, &pFS->abBuffer[0],
+                             sizeof(pFS->abBuffer), NULL);
+            RT_ZERO(pFS->abBuffer);
+            pFS->offBuffer += sizeof(pFS->abBuffer);
+            pFS->cbBuffer = 0;
+        }
+
+        uint32_t cbThisWrite = RT_MIN(cbBuffer,
+                                      sizeof(pFS->abBuffer) - uOffset % sizeof(pFS->abBuffer));
+        memcpy(&pFS->abBuffer[uOffset % sizeof(pFS->abBuffer)], pvBuffer,
+               cbThisWrite);
+        uOffset += cbThisWrite;
+        pvBuffer = (uint8_t *)pvBuffer + cbThisWrite;
+        cbBuffer -= cbThisWrite;
+        cbTotalWritten += cbThisWrite;
+    } while (cbBuffer > 0);
+
+    if (pcbWritten)
+        *pcbWritten = cbTotalWritten;
+
+    pFS->cbBuffer = uOffset % sizeof(pFS->abBuffer);
+    if (!pFS->cbBuffer)
+        pFS->cbBuffer = sizeof(pFS->abBuffer);
+    pFS->off = uOffset;
+
+    return VINF_SUCCESS;
 }
 
 static int convOutFlush(void *pvUser, void *pStorage)
