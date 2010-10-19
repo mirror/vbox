@@ -23,6 +23,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/uuid.h>
+#include <iprt/sha.h>
 
 #include <VBox/VRDPAuth.h>
 
@@ -84,20 +85,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
     else
         user = (char*)szUser;
 
-    dprintf("VRDPAuth: uuid: %s, user: %s, szPassword: %s\n", uuid, user, szPassword);
-
-#if 0
-    /* this is crude stuff, but let's keep it there as a sample */
-    if (getenv("VBOX_VRDP_AUTH_USER") && getenv("VBOX_VRDP_AUTH_PASSWORD"))
-    {
-
-        if (   !strcmp(getenv("VBOX_VRDP_AUTH_USER"), user)
-            && !strcmp(getenv("VBOX_VRDP_AUTH_PASSWORD"), szPassword))
-        {
-            result = VRDPAuthAccessGranted;
-        }
-    }
-#endif
+    dprintf("VBoxAuth: uuid: %s, user: %s, szPassword: %s\n", uuid, user, szPassword);
 
     ComPtr<IVirtualBox> virtualBox;
     HRESULT rc;
@@ -105,7 +93,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
     rc = virtualBox.createLocalObject(CLSID_VirtualBox);
     if (SUCCEEDED(rc))
     {
-        Bstr key = BstrFmt("VRDPAuthSimple/users/%s", user);
+        Bstr key = BstrFmt("VBoxAuthSimple/users/%s", user);
         Bstr password;
 
         /* lookup in VM's extra data? */
@@ -119,11 +107,16 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
             /* lookup global extra data */
             virtualBox->GetExtraData(key.raw(), password.asOutParam());
 
-        /* we compare the password or check for special NULL marker */
-        if (   (!password.isEmpty() && (password == szPassword))
-            || ((password == "[NULL]") && (!szPassword || (*szPassword == '\0'))))
+        if (!password.isEmpty())
         {
-            result = VRDPAuthAccessGranted;
+            /* calculate hash */
+            uint8_t abDigest[RTSHA256_HASH_SIZE];
+            RTSha256(szPassword, strlen(szPassword), abDigest);
+            char pszDigest[RTSHA256_STRING_LEN + 1];
+            RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
+                        
+            if (password == pszDigest)
+                result = VRDPAuthAccessGranted;
         }
     }
 

@@ -96,6 +96,7 @@
 #endif  /* VBOX_WITH_GUEST_CONTROL defined */
 #define USAGE_DEBUGLOG              RT_BIT_64(52)
 #define USAGE_SETHDPARENTUUID       RT_BIT_64(53)
+#define USAGE_PASSWORDHASH          RT_BIT_64(54)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 

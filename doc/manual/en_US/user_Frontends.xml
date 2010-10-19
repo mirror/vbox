@@ -390,9 +390,11 @@
             <computeroutput>VBoxManage modifyvm "VM name" --vrdpauthtype external</computeroutput>.
             Last but not least, you have to configure users and passwords. Here is an example
             for the user "john" with the password "secret":
-            <computeroutput>VBoxManage setextradata "VM name" "VBoxAuthSimple/users/john" "secret"</computeroutput>
-            To specify an empty password, use the special reserved value
-            <computeroutput>[NULL]</computeroutput>.
+            <computeroutput>VBoxManage internalcommands passwordhash "secret"</computeroutput>
+            This will give you the hash value "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"
+            which you set using
+            <computeroutput>VBoxManage setextradata "VM name" "VBoxAuthSimple/users/john"
+            "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b"</computeroutput>.
             </para>
           </listitem>
 
@@ -408,8 +410,8 @@
         <para>In addition to the methods described above, you can replace the
         default "external authentication module with any other module. For this,
         VirtualBox provides a well-defined interface that allows you to write your
-        own authentication module; see <xref
-        linkend="vbox-authenticate-sdk" /> for details.</para>
+        own authentication module; see <xref linkend="vbox-authenticate-sdk" />
+        for details.</para>
     </sect2>
 
     <sect2 id="vrdp-crypt">
