@@ -1740,14 +1740,6 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
     return S_OK;
 }
 
-STDMETHODIMP VirtualBox::WaitForPropertyChange(IN_BSTR /* aWhat */,
-                                               ULONG /* aTimeout */,
-                                               BSTR * /* aChanged */,
-                                               BSTR * /* aValues */)
-{
-    ReturnComNotImplemented();
-}
-
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 

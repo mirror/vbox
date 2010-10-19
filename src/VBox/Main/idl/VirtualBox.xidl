@@ -1373,7 +1373,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="1489e5b2-40ed-4037-b8c9-d316bbf5e07c"
+    uuid="a35a051c-0966-4582-8e9c-7c1b973f6bd2"
     wsmap="managed"
   >
     <desc>
@@ -2065,99 +2065,6 @@
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>Value to assign to the key.</desc>
-      </param>
-    </method>
-
-    <method name="waitForPropertyChange">
-      <desc>
-        Blocks the caller until any of the properties represented by the
-        @a what argument changes the value or until the given timeout interval
-        expires.
-
-        The @a what argument is a comma separated list of property masks that
-        describe properties the caller is interested in. The property mask is
-        a string in the following format:
-
-        <pre>
-        [[group.]subgroup.]name
-        </pre>
-
-        where @c name is the property name and @c group, @c subgroup are zero
-        or more property group specifiers. Each element (group or name) in
-        the property mask may be either a Latin string or an asterisk symbol
-        (@c "*") which is used to match any string for the given element. A
-        property mask that doesn't contain asterisk symbols represents a
-        single fully qualified property name.
-
-        Groups in the fully qualified property name go from more generic (the
-        left-most part) to more specific (the right-most part). The first
-        element is usually a name of the object the property belongs to.  The
-        second element may be either a property name, or a child object name,
-        or an index if the preceding element names an object which is one of
-        many objects of the same type. This way, property names form a
-        hierarchy of properties.  Here are some examples of property names:
-
-        <table>
-          <tr>
-            <td><tt>VirtualBox.version</tt></td>
-            <td><link to="IVirtualBox::version"/> property</td>
-          </tr>
-          <tr>
-            <td><tt>Machine.&lt;UUID&gt;.name</tt></td>
-            <td><link to="IMachine::name"/> property of the machine with the
-            given UUID</td>
-            </tr>
-        </table>
-
-        Most property names directly correspond to the properties of objects
-        (components) provided by the VirtualBox library and may be used to
-        track changes to these properties. However, there may be
-        pseudo-property names that don't correspond to any existing object's
-        property directly, as well as there may be object properties that
-        don't have a corresponding property name that is understood by this
-        method, and therefore changes to such properties cannot be
-        tracked. See individual object's property descriptions to get a
-        fully qualified property name that can be used with this method (if
-        any).
-
-        There is a special property mask @c "*" (i.e. a string consisting of a
-        single asterisk symbol) that can be used to match all properties.
-        Below are more examples of property masks:
-
-        <table>
-          <tr>
-            <td><tt>VirtualBox.*</tt></td>
-            <td>Track all properties of the VirtualBox object</td>
-          </tr>
-          <tr>
-            <td><tt>Machine.*.name</tt></td>
-            <td>Track changes to the <link to="IMachine::name"/> property of
-            all registered virtual machines</td>
-          </tr>
-        </table>
-
-        <note>
-          This function is not implemented in the current version of the
-          product.
-        </note>
-      </desc>
-      <param name="what" type="wstring" dir="in">
-        <desc>Comma separated list of property masks.</desc>
-      </param>
-      <param name="timeout" type="unsigned long" dir="in">
-        <desc>
-          Wait timeout in milliseconds.
-          Specify -1 for an indefinite wait.
-        </desc>
-      </param>
-      <param name="changed" type="wstring" dir="out">
-        <desc>
-          Comma separated list of properties that have been changed and caused
-          this method to return to the caller.
-        </desc>
-      </param>
-      <param name="values" type="wstring" dir="out">
-        <desc>Reserved, not currently used.</desc>
       </param>
     </method>
 
