@@ -727,44 +727,25 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     dprintf(("VBoxVideo::VBoxSetupDisplays: PrimaryExtension = %p\n",
              PrimaryExtension));
 
-    /* Preinitialize the primary extension.
-     * Note: bVBoxVideoSupported is set to FALSE, because HGSMI is active instead.
-     * Note 2: shouldn't be needed for WDDM.
-     */
-    PrimaryExtension->pNext                              = NULL;
-#ifndef VBOX_WITH_WDDM
-    PrimaryExtension->pPrimary                           = PrimaryExtension;
-    PrimaryExtension->iDevice                            = 0;
-    PrimaryExtension->ulFrameBufferOffset                = 0;
-    PrimaryExtension->ulFrameBufferSize                  = 0;
-#endif
-    PrimaryExtension->u.primary.ulVbvaEnabled            = 0;
-    PrimaryExtension->u.primary.bVBoxVideoSupported      = FALSE;
-#ifndef VBOX_WITH_WDDM
-    PrimaryExtension->u.primary.cDisplays                = 1;
-#endif
-    commonFromDeviceExt(PrimaryExtension)->cbVRAM                   = AdapterMemorySize;
-    commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap           = 0;
-    commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap           = NULL;
-    commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation     = NULL;
-    commonFromDeviceExt(PrimaryExtension)->pHostFlags               = NULL;
-    PrimaryExtension->u.primary.ulMaxFrameBufferSize     = 0;
-    commonFromDeviceExt(PrimaryExtension)->fCaps         = fCaps;
-    commonFromDeviceExt(PrimaryExtension)->bHGSMI        = VBoxHGSMIIsSupported ();
-    VBoxVideoCmnMemZero(&commonFromDeviceExt(PrimaryExtension)->areaHostHeap, sizeof(HGSMIAREA));
-    VBoxVideoCmnMemZero(&PrimaryExtension->areaDisplay, sizeof(HGSMIAREA));
-
-    if (commonFromDeviceExt(PrimaryExtension)->IOPortGuest == 0)
-    {
-        commonFromDeviceExt(PrimaryExtension)->bHGSMI = false;
-    }
-
+    memset(commonFromDeviceExt(PrimaryExtension), 0,
+           sizeof(*commonFromDeviceExt(PrimaryExtension)));
+    commonFromDeviceExt(PrimaryExtension)->cbVRAM = AdapterMemorySize;
+    commonFromDeviceExt(PrimaryExtension)->fCaps  = fCaps;
+    commonFromDeviceExt(PrimaryExtension)->bHGSMI = VBoxHGSMIIsSupported ();
+    /* Why does this use VBoxVideoCmnMemZero?  The MSDN docs say that it should
+     * only be used on mapped display adapter memory.  Done with memset above. */
+    // VBoxVideoCmnMemZero(&commonFromDeviceExt(PrimaryExtension)->areaHostHeap, sizeof(HGSMIAREA));
     if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
+        /** @note (michael) moved this here as it is done unconditionally in both
+         * driver branches.  Feel free to fix if that is ever changed. */
+        commonFromDeviceExt(PrimaryExtension)->IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+        commonFromDeviceExt(PrimaryExtension)->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+
         /* Map the adapter information. It will be needed for HGSMI IO. */
-        rc = VBoxMapAdapterMemory (PrimaryExtension,
+        rc = VBoxMapAdapterMemory (commonFromDeviceExt(PrimaryExtension),
                                    &commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation,
-                                   commonFromDeviceExt(PrimaryExtension)->cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
+                                   AdapterMemorySize - VBVA_ADAPTER_INFORMATION_SIZE,
                                    VBVA_ADAPTER_INFORMATION_SIZE
                                   );
         if (rc != NO_ERROR)
@@ -832,7 +813,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
              *       The miniport driver is responsible for reading FIFO and notifying
              *       display drivers.
              */
-            rc = VBoxMapAdapterMemory (PrimaryExtension,
+            rc = VBoxMapAdapterMemory (commonFromDeviceExt(PrimaryExtension),
                                        &commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap,
                                        commonFromDeviceExt(PrimaryExtension)->cbVRAM
                                        - VBVA_ADAPTER_INFORMATION_SIZE
@@ -1039,7 +1020,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         }
 #endif
 
-        rc = VBoxMapAdapterMemory(PrimaryExtension, (void**)&PrimaryExtension->pvVisibleVram,
+        rc = VBoxMapAdapterMemory(commonFromDeviceExt(PrimaryExtension), (void**)&PrimaryExtension->pvVisibleVram,
                                        0,
                                        vboxWddmVramCpuVisibleSize(PrimaryExtension));
         Assert(rc == VINF_SUCCESS);

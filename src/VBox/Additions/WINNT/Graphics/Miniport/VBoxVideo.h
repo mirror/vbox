@@ -267,8 +267,6 @@ typedef struct _DEVICE_EXTENSION
 
            ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
 
-           BOOLEAN bVBoxVideoSupported;        /* TRUE if VBoxVideo extensions, including DualView, are supported by the host. */
-
            int cDisplays;                      /* Number of displays. */
 
 #ifdef VBOX_WITH_WDDM
@@ -341,6 +339,11 @@ static inline PVBOXVIDEO_COMMON commonFromDeviceExt(PDEVICE_EXTENSION pExt)
 #else
     return &pExt->u.primary.commonInfo;
 #endif
+}
+
+static inline PDEVICE_EXTENSION commonToPrimaryExt(PVBOXVIDEO_COMMON pCommon)
+{
+    return RT_FROM_MEMBER(pCommon, DEVICE_EXTENSION, u.primary.commonInfo);
 }
 
 #ifndef VBOX_WITH_WDDM
@@ -842,7 +845,7 @@ BOOLEAN FASTCALL VBoxVideoSetColorRegisters(
    PVIDEO_CLUT ColorLookUpTable,
    PSTATUS_BLOCK StatusBlock);
 
-int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
+int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon,
                           void **ppv,
                           ULONG ulOffset,
                           ULONG ulSize);

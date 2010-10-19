@@ -1380,8 +1380,9 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 
 #endif
 
-int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG ulOffset, ULONG ulSize)
+int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv, ULONG ulOffset, ULONG ulSize)
 {
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
     dprintf(("VBoxVideo::VBoxMapAdapterMemory 0x%08X[0x%X]\n", ulOffset, ulSize));
 
     if (!ulSize)
@@ -1650,10 +1651,6 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
 
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: calling VideoPortGetAccessRanges\n"));
 
-      /* pPrimary is not yet set */
-      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.commonInfo.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.commonInfo.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
-
       VIDEO_ACCESS_RANGE tmpRanges[4];
       ULONG slot = 0;
 
@@ -1694,6 +1691,16 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       rc = VbglInit ();
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: VbglInit returned 0x%x\n", rc));
 
+      /* Preinitialize the primary extension.
+       */
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->pNext                   = NULL;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary                = (PDEVICE_EXTENSION)HwDeviceExtension;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->iDevice                 = 0;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->ulFrameBufferOffset     = 0;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->ulFrameBufferSize       = 0;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.ulVbvaEnabled = 0;
+      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.cDisplays     = 1;
+      VBoxVideoCmnMemZero(&((PDEVICE_EXTENSION)HwDeviceExtension)->areaDisplay, sizeof(HGSMIAREA));
       /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old
        * code will be ifdef'ed and later removed.
        * The host will however support both old and new interface to keep compatibility
@@ -2201,18 +2208,9 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
         case IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY:
         {
             dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_INTERPRET_DISPLAY_MEMORY\n"));
-
-            if (pDevExt->pPrimary->u.primary.bVBoxVideoSupported)
-            {
-                /* The display driver must have prepared the monitor information. */
-                VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
-                VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
-            }
-            else
-            {
-                RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
-            }
-            Result = pDevExt->pPrimary->u.primary.bVBoxVideoSupported;
+            /* Pre-HGSMI IOCTL */
+            RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+            Result = false;
             break;
         }
 

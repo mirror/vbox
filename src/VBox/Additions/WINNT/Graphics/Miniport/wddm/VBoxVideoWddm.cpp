@@ -433,9 +433,6 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
        *pAdapterMemorySize = VBoxVideoCmnPortReadUlong((PULONG)VBE_DISPI_IOPORT_DATA);
        if (VBoxHGSMIIsSupported ())
        {
-           commonFromDeviceExt(pContext)->IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-           commonFromDeviceExt(pContext)->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
-
            PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;
            /* @todo: verify resources */
            for (ULONG i = 0; i < pRcList->Count; ++i)

@@ -1087,7 +1087,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo
     }
     PVOID pvBuffer;
 
-    rc = VBoxMapAdapterMemory (pDevExt,
+    rc = VBoxMapAdapterMemory (commonFromDeviceExt(pDevExt),
                                    &pvBuffer,
                                    offBuffer,
                                    cbBuffer);

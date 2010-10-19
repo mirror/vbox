@@ -105,7 +105,7 @@ int vboxVbvaCreate(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuff
 
     KeInitializeSpinLock(&pVbva->Lock);
 
-    int rc = VBoxMapAdapterMemory (pDevExt,
+    int rc = VBoxMapAdapterMemory (commonFromDeviceExt(pDevExt),
                                        (void**)&pVbva->pVBVA,
                                        offBuffer,
                                        cbBuffer);
