@@ -759,7 +759,8 @@ int handleConvert(HandlerArg *a)
         /* Create the output image */
         rc = VDCopy(pSrcDisk, VD_LAST_IMAGE, pDstDisk, pszDstFormat,
                     pszDstFilename, false, 0, uImageFlags, NULL,
-                    VD_OPEN_FLAGS_NORMAL, NULL, pIfsImageOutput, NULL);
+                    VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL, NULL,
+                    pIfsImageOutput, NULL);
         if (RT_FAILURE(rc))
         {
             errorRuntime("Error while copying the image: %Rrc\n", rc);
@@ -898,6 +899,7 @@ int main(int argc, char *argv[])
 {
     RTR3Init();
     int rc;
+    int exitcode = 0;
 
     g_pszProgName = RTPathFilename(argv[0]);
 
@@ -962,7 +964,10 @@ int main(int argc, char *argv[])
 
     rc = VDInit();
     if (RT_FAILURE(rc))
-        return errorSyntax("Initalizing backends failed! rc=%Rrc\n");
+    {
+        errorSyntax("Initalizing backends failed! rc=%Rrc\n", rc);
+        return 1;
+    }
 
     /*
      * All registered command handlers
@@ -989,18 +994,24 @@ int main(int argc, char *argv[])
             handlerArg.argc = argc - iCmdArg;
             handlerArg.argv = &argv[iCmdArg];
 
-            rc = s_commandHandlers[commandIndex].handler(&handlerArg);
+            exitcode = s_commandHandlers[commandIndex].handler(&handlerArg);
             break;
         }
     }
     if (!s_commandHandlers[commandIndex].command)
-        return errorSyntax("Invalid command '%s'", argv[iCmd]);
+    {
+        errorSyntax("Invalid command '%s'", argv[iCmd]);
+        return 1;
+    }
 
     rc = VDShutdown();
     if (RT_FAILURE(rc))
-        return errorSyntax("Unloading backends failed! rc=%Rrc\n", rc);
+    {
+        errorSyntax("Unloading backends failed! rc=%Rrc\n", rc);
+        return 1;
+    }
 
-    return rc;
+    return exitcode;
 }
 
 /* dummy stub for RuntimeR3 */
