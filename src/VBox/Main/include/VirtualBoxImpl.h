@@ -148,9 +148,6 @@ public:
     STDMETHOD(GetExtraData) (IN_BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData) (IN_BSTR aKey, IN_BSTR aValue);
 
-    STDMETHOD(WaitForPropertyChange) (IN_BSTR aWhat, ULONG aTimeout,
-                                      BSTR *aChanged, BSTR *aValues);
-
     STDMETHOD(CreateDHCPServer) (IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(FindDHCPServerByNetworkName) (IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(RemoveDHCPServer) (IDHCPServer * aServer);
