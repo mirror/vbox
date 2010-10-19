@@ -86,7 +86,8 @@ public:
                  Medium *aParent,
                  DeviceType_T aDeviceType,
                  const Guid &uuidMachineRegistry,
-                 const settings::Medium &data);
+                 const settings::Medium &data,
+                 const Utf8Str &strMachineFolder);
 
     // initializer for host floppy/DVD
     HRESULT init(VirtualBox *aVirtualBox,
@@ -166,7 +167,6 @@ public:
     MediumState_T getState() const;
     MediumVariant_T getVariant() const;
     bool isHostDrive() const;
-    const Utf8Str& getLocation() const;
     const Utf8Str& getLocationFull() const;
     const Utf8Str& getFormat() const;
     const ComObjPtr<MediumFormat> & getMediumFormat() const;
@@ -198,9 +198,8 @@ public:
 
     bool isReadOnly();
 
-    HRESULT saveSettings(settings::Medium &data);
-
-    HRESULT compareLocationTo(const Utf8Str &strLocation, int &aResult);
+    HRESULT saveSettings(settings::Medium &data,
+                         const Utf8Str &strHardDiskFolder);
 
     HRESULT createMediumLockList(bool fFailIfInaccessible,
                                  bool fMediumLockWrite,
