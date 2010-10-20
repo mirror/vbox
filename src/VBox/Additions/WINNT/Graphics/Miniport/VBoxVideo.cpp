@@ -763,8 +763,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 && (bpp != 32)))
             break;
 
-        /* round down width to be a multiple of 8 */
-        xres &= 0xFFF8;
+        /* round down width to be a multiple of 8 if necessary */
+        if (!DeviceExtension->fAnyX)
+            xres &= 0xFFF8;
 
         /* second test: does it fit within our VRAM? */
         if (xres * yres * (bpp / 8) > vramSize)
@@ -975,10 +976,12 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             dprintf(("VBoxVideo: using stored custom resolution %dx%dx%d for %d\n", xres, yres, bpp, DeviceExtension->iDevice));
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
         }
-        /* round down to multiple of 8 */
-        if ((xres & 0xfff8) != xres)
-            dprintf(("VBoxVideo: rounding down xres from %d to %d\n", xres, xres & 0xfff8));
-        xres &= 0xfff8;
+        /* round down to multiple of 8 if necessary */
+        if (!DeviceExtension->fAnyX) {
+            if ((xres & 0xfff8) != xres)
+                dprintf(("VBoxVideo: rounding down xres from %d to %d\n", xres, xres & 0xfff8));
+            xres &= 0xfff8;
+        }
         /* take the current values for the fields that are not set */
 #ifndef VBOX_WITH_WDDM
         if (DeviceExtension->CurrentMode != 0)
@@ -1734,10 +1737,20 @@ BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
     dprintf(("VBoxVideo::VBoxVideoInitialize\n"));
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)HwDeviceExtension;
+    USHORT DispiId;
 
     /* Initialize the request pointer. */
     pDevExt->u.primary.pvReqFlush = NULL;
 
+    /* Check if the chip restricts horizontal resolution or not. */
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_ANYX);
+    DispiId = VideoPortReadPortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
+    if (DispiId == VBE_DISPI_ID_ANYX)
+        pDevExt->fAnyX = TRUE;
+    else
+        pDevExt->fAnyX = FALSE;
+    
     vboxVideoInitCustomVideoModes(pDevExt);
 
    return TRUE;

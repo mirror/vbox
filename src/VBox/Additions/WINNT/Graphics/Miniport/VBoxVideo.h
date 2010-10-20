@@ -94,6 +94,7 @@ RT_C_DECLS_END
 /* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_VBOX_VIDEO. */
 #define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
 #define VBE_DISPI_ID_HGSMI              0xBE01
+#define VBE_DISPI_ID_ANYX               0xBE02
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
 #define VBE_DISPI_LFB_ENABLED           0x40
@@ -331,6 +332,7 @@ typedef struct _DEVICE_EXTENSION
    VBOXWDDM_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];
    VBOXWDDM_TARGET aTargets[VBOX_VIDEO_MAX_SCREENS];
 #endif
+   BOOLEAN fAnyX;   /* Unrestricted horizontal resolution flag. */
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 static inline PVBOXVIDEO_COMMON commonFromDeviceExt(PDEVICE_EXTENSION pExt)
