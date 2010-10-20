@@ -529,9 +529,6 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                     {
                         Log(("VBoxTray: VBoxDisplayThread: VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
-                        /* Horizontal resolution must be a multiple of 8, round down. */
-                        displayChangeRequest.xres &= 0xfff8;
-
                         /*
                          * Only try to change video mode if the active display driver is VBox additions.
                          */
