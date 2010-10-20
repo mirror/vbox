@@ -3488,8 +3488,8 @@ int Console::configNetwork(const char *pszDevice,
                     * hrc = aNetworkAdapter->Detach();                        H();
                     */
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                    N_("Malformed host interface networking name '%ls'"),
-                                    HifName.raw());
+                                      N_("Malformed host interface networking name '%ls'"),
+                                      HifName.raw());
                 }
                 *pszColon = '\0';
                 const char *pszTrunk = szTrunk;
@@ -3523,8 +3523,8 @@ int Console::configNetwork(const char *pszDevice,
                 {
                     AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)", hrc, hrc));
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                    N_("Inexistent host networking interface, name '%ls'"),
-                                    HifName.raw());
+                                      N_("Inexistent host networking interface, name '%ls'"),
+                                      HifName.raw());
                 }
 
                 HostNetworkInterfaceType_T eIfType;
@@ -3538,8 +3538,8 @@ int Console::configNetwork(const char *pszDevice,
                 if (eIfType != HostNetworkInterfaceType_Bridged)
                 {
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                                        N_("Interface ('%ls') is not a Bridged Adapter interface"),
-                                                        HifName.raw());
+                                      N_("Interface ('%ls') is not a Bridged Adapter interface"),
+                                      HifName.raw());
                 }
 
                 hrc = hostInterface->COMGETTER(Id)(bstr.asOutParam());
@@ -3891,8 +3891,8 @@ int Console::configNetwork(const char *pszDevice,
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)\n", rc));
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                    N_("Inexistent host networking interface, name '%ls'"),
-                                    HifName.raw());
+                                      N_("Inexistent host networking interface, name '%ls'"),
+                                      HifName.raw());
                 }
 
                 char szNetwork[INTNET_MAX_NETWORK_NAME];
@@ -3916,8 +3916,8 @@ int Console::configNetwork(const char *pszDevice,
 
                 if (eIfType != HostNetworkInterfaceType_HostOnly)
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                    N_("Interface ('%ls') is not a Host-Only Adapter interface"),
-                                    HifName.raw());
+                                      N_("Interface ('%ls') is not a Host-Only Adapter interface"),
+                                      HifName.raw());
 
                 hrc = hostInterface->COMGETTER(Id)(bstr.asOutParam());
                 if (FAILED(hrc))
