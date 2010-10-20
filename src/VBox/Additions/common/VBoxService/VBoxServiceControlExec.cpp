@@ -1078,7 +1078,7 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
      * Use the built-in toolbox of VBoxService?
      */
     if (   (g_pszProgName && stricmp(pszExec, g_pszProgName) == 0)
-        || stricmp(pszExec, "VBoxService"))
+        || stricmp(pszExec, VBOXSERVICE_NAME))
     {
         /* Search the path of our executable. */
         char szVBoxService[RTPATH_MAX];
