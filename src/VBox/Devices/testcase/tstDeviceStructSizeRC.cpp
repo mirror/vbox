@@ -1553,6 +1553,8 @@ int main()
     GEN_CHECK_OFF(BUSLOGIC, ILeds);
     GEN_CHECK_OFF(BUSLOGIC, pLedsConnector);
     GEN_CHECK_OFF(BUSLOGIC, fSignalIdle);
+    GEN_CHECK_OFF(BUSLOGIC, fRedo);
+    GEN_CHECK_OFF(BUSLOGIC, pTasksRedoHead);
 #endif /* VBOX_WITH_BUSLOGIC */
 
 #ifdef VBOX_WITH_LSILOGIC
