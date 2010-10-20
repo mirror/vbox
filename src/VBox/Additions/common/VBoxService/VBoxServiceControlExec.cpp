@@ -1072,15 +1072,35 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
                             NULL /* pszPassword */, phProcess);
     }
     else
+#endif /* RT_OS_WINDOWS */
+#ifdef VBOXSERVICE_TOOLBOX
+    /*
+     * Use the built-in toolbox of VBoxService?
+     */
+    if (   (g_pszProgName && stricmp(pszExec, g_pszProgName) == 0)
+        || stricmp(pszExec, "VBoxService"))
+    {
+        /* Search the path of our executable. */
+        char szVBoxService[RTPATH_MAX];
+        if (RTProcGetExecutableName(szVBoxService, sizeof(szVBoxService)))
+        {
+            rc = RTProcCreateEx(szVBoxService, papszArgs, hEnv, fFlags,
+                                phStdIn, phStdOut, phStdErr, pszAsUser,
+                                pszPassword, phProcess);
+        }
+        else
+            rc = VERR_NOT_FOUND;
+    }
+    else
     {
 #endif
         /* Do normal execution. */
         rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
                             phStdIn, phStdOut, phStdErr, pszAsUser,
                             pszPassword, phProcess);
-#ifdef RT_OS_WINDOWS
+#ifdef VBOXSERVICE_TOOLBOX
     }
-#endif
+#endif /* VBOXSERVICE_TOOLBOX */
     return rc;
 }
 
