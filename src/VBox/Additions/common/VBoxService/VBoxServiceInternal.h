@@ -22,6 +22,8 @@
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
 # include <process.h> /* Needed for file version information. */
+#else /* !RT_OS_WINDOWS */
+# include <string.h>
 #endif
 
 #include <iprt/list.h>
@@ -91,20 +93,19 @@ typedef VBOXSERVICE *PVBOXSERVICE;
 /** Pointer to a const VBOXSERVICE. */
 typedef VBOXSERVICE const *PCVBOXSERVICE;
 
-#ifdef RT_OS_WINDOWS
-
 /** The service name (needed for mutex creation on Windows). */
-# define VBOXSERVICE_NAME           "VBoxService"
+#define VBOXSERVICE_NAME           "VBoxService"
+
+#ifdef RT_OS_WINDOWS
 /** The friendly service name. */
 # define VBOXSERVICE_FRIENDLY_NAME  "VirtualBox Guest Additions Service"
 /** The service description (only W2K+ atm) */
 # define VBOXSERVICE_DESCRIPTION    "Manages VM runtime information, time synchronization, remote sysprep execution and miscellaneous utilities for guest operating systems."
 /** The following constant may be defined by including NtStatus.h. */
 # define STATUS_SUCCESS             ((NTSTATUS)0x00000000L)
-
 #endif /* RT_OS_WINDOWS */
-#ifdef VBOX_WITH_GUEST_CONTROL
 
+#ifdef VBOX_WITH_GUEST_CONTROL
 typedef enum VBOXSERVICECTRLTHREADDATATYPE
 {
     kVBoxServiceCtrlThreadDataUnknown = 0,
