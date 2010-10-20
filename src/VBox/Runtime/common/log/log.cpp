@@ -429,7 +429,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
 #if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
             RTMemFree(*(void **)&pLogger->pfnLogger);
 #else
-            RTMemExecFree(*(void **)&pLogger->pfnLogger);
+            RTMemExecFree(*(void **)&pLogger->pfnLogger, 64);
 #endif
         }
         RTMemFree(pLogger);
@@ -578,7 +578,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 #if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
         RTMemFree(*(void **)&pLogger->pfnLogger);
 #else
-        RTMemExecFree(*(void **)&pLogger->pfnLogger);
+        RTMemExecFree(*(void **)&pLogger->pfnLogger, 64);
 #endif
         pLogger->pfnLogger = NULL;
     }

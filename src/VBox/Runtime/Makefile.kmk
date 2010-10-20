@@ -351,6 +351,7 @@ RuntimeR3_SOURCES       = \
 	common/table/avlrogcptr.cpp \
 	common/table/avlroioport.cpp \
 	common/table/avlroogcptr.cpp \
+	common/table/avlrpv.cpp \
 	common/table/avlruintptr.cpp \
 	common/table/avlrfoff.cpp \
 	common/table/avlu32.cpp \
@@ -522,8 +523,11 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/RTProcIsRunningByName-linux.cpp \
 	r3/linux/RTSystemQueryDmiString-linux.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-	r3/posix/alloc-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -536,8 +540,6 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
-	r3/posix/RTTimeNow-posix.cpp \
-	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/semrw-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
@@ -602,8 +604,11 @@ RuntimeR3_SOURCES.os2   = \
 	r3/os2/thread-os2.cpp \
 	r3/os2/time-os2.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-	r3/posix/alloc-posix.cpp \
+	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -612,8 +617,6 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/path-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/process-posix.cpp \
-	r3/posix/RTTimeNow-posix.cpp \
-	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
@@ -828,7 +831,8 @@ RuntimeR3L4_SOURCES = \
 	l4/timer-l4env.cpp \
 	l4/utf8-l4env.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
-	r3/posix/alloc-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -948,6 +952,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/string/utf-8-case.cpp \
 	common/string/utf-16.cpp \
 	common/table/avlpv.cpp \
+	generic/critsect-generic.cpp \
 	generic/pathhost-generic.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	r3/alloc.cpp \
@@ -955,19 +960,22 @@ RuntimeGuestR3Mini_SOURCES = \
 	r3/fileio.cpp \
 	r3/fs.cpp
 RuntimeGuestR3Mini_SOURCES.freebsd = \
-	r3/posix/alloc-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/utf8-posix.cpp
 RuntimeGuestR3Mini_SOURCES.linux = \
-	r3/posix/alloc-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/utf8-posix.cpp
 RuntimeGuestR3Mini_SOURCES.solaris = \
-	r3/posix/alloc-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \

@@ -302,7 +302,7 @@ RTDECL(void *)    RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 RT_EXPORT_SYMBOL(RTMemExecAllocTag);
 
 
-RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
+RTDECL(void)      RTMemExecFree(void *pv, size_t cb) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
     RT_ASSERT_INTS_ON();

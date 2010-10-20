@@ -51,7 +51,8 @@ RT_EXPORT_SYMBOL(RTCritSectInit);
 RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCLASS hClass, uint32_t uSubClass,
                              const char *pszNameFmt, ...)
 {
-    AssertReturn(fFlags <= (RTCRITSECT_FLAGS_NO_NESTING | RTCRITSECT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTCRITSECT_FLAGS_NO_NESTING | RTCRITSECT_FLAGS_NO_LOCK_VAL | RTCRITSECT_FLAGS_BOOTSTRAP_HACK)),
+                 VERR_INVALID_PARAMETER);
 
     /*
      * Initialize the structure and
@@ -64,25 +65,33 @@ RTDECL(int) RTCritSectInitEx(PRTCRITSECT pCritSect, uint32_t fFlags, RTLOCKVALCL
     pCritSect->pValidatorRec        = NULL;
     int rc = VINF_SUCCESS;
 #ifdef RTCRITSECT_STRICT
-    if (!pszNameFmt)
+    if (!(fFlags & RTCRITSECT_FLAGS_BOOTSTRAP_HACK))
     {
-        static uint32_t volatile s_iCritSectAnon = 0;
-        rc = RTLockValidatorRecExclCreate(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
-                                          !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL),
-                                          "RTCritSect-%u", ASMAtomicIncU32(&s_iCritSectAnon) - 1);
-    }
-    else
-    {
-        va_list va;
-        va_start(va, pszNameFmt);
-        rc = RTLockValidatorRecExclCreateV(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
-                                           !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
-        va_end(va);
+        if (!pszNameFmt)
+        {
+            static uint32_t volatile s_iCritSectAnon = 0;
+            rc = RTLockValidatorRecExclCreate(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
+                                              !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL),
+                                              "RTCritSect-%u", ASMAtomicIncU32(&s_iCritSectAnon) - 1);
+        }
+        else
+        {
+            va_list va;
+            va_start(va, pszNameFmt);
+            rc = RTLockValidatorRecExclCreateV(&pCritSect->pValidatorRec, hClass, uSubClass, pCritSect,
+                                               !(fFlags & RTCRITSECT_FLAGS_NO_LOCK_VAL), pszNameFmt, va);
+            va_end(va);
+        }
     }
 #endif
     if (RT_SUCCESS(rc))
     {
-        rc = RTSemEventCreate(&pCritSect->EventSem);
+        rc = RTSemEventCreateEx(&pCritSect->EventSem,
+                                fFlags & RTCRITSECT_FLAGS_BOOTSTRAP_HACK
+                                ? RTSEMEVENT_FLAGS_NO_LOCK_VAL | RTSEMEVENT_FLAGS_BOOTSTRAP_HACK
+                                : RTSEMEVENT_FLAGS_NO_LOCK_VAL,
+                                NIL_RTLOCKVALCLASS,
+                                NULL);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
         RTLockValidatorRecExclDestroy(&pCritSect->pValidatorRec);
@@ -186,10 +195,16 @@ DECL_FORCE_INLINE(int) rtCritSectEnter(PRTCRITSECT pCritSect, PCRTLOCKVALSRCPOS 
         return VERR_SEM_DESTROYED;
 
 #ifdef RTCRITSECT_STRICT
-    RTTHREAD        hThreadSelf = RTThreadSelfAutoAdopt();
-    int rc9 = RTLockValidatorRecExclCheckOrder(pCritSect->pValidatorRec, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
-    if (RT_FAILURE(rc9))
-        return rc9;
+    RTTHREAD hThreadSelf = pCritSect->pValidatorRec
+                         ? RTThreadSelfAutoAdopt()
+                         : RTThreadSelf();
+    int      rc9;
+    if (pCritSect->pValidatorRec) /* (bootstap) */
+    {
+         rc9 = RTLockValidatorRecExclCheckOrder(pCritSect->pValidatorRec, hThreadSelf, pSrcPos, RT_INDEFINITE_WAIT);
+         if (RT_FAILURE(rc9))
+             return rc9;
+    }
 #endif
 
     /*

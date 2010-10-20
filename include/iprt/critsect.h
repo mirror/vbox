@@ -99,6 +99,8 @@ AssertCompileSize(RTCRITSECT, HC_ARCH_BITS == 32 ? 32 : 48);
 #define RTCRITSECT_FLAGS_NO_NESTING     UINT32_C(0x00000001)
 /** Disables lock validation. */
 #define RTCRITSECT_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000002)
+/** Bootstrap hack for use with certain memory allocator locks only! */
+#define RTCRITSECT_FLAGS_BOOTSTRAP_HACK UINT32_C(0x00000004)
 /** @} */
 
 #ifdef IN_RING3

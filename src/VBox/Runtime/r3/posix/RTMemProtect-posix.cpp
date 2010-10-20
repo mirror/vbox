@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Memory Allocation, Solaris.
+ * IPRT - Memory Allocation, POSIX.
  */
 
 /*
@@ -34,105 +34,8 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 
-#include <stdlib.h>
 #include <errno.h>
 #include <sys/mman.h>
-#include <strings.h>
-
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-#if 0
-# define RT_USE_MMAP_PAGE
-#endif
-
-
-RTDECL(void *) RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
-{
-    /*
-     * Allocate first.
-     */
-    AssertMsg(cb, ("Allocating ZERO bytes is really not a good idea! Good luck with the next assertion!\n"));
-    cb = RT_ALIGN_Z(cb, PAGE_SIZE);
-    void *pv = valloc(cb);
-    AssertMsg(pv, ("posix_memalign(%d) failed!!! errno=%d\n", cb, errno));
-    if (RT_UNLIKELY((uintptr_t)pv + cb > _2G))
-    {
-        AssertMsgFailed(("%p %#zx\n", pv, cb));
-        free(pv);
-        return NULL;
-    }
-    if (pv)
-    {
-        /*
-         * Add PROT_EXEC flag to the page(s).
-         */
-        memset(pv, 0xcc, cb);
-        int rc = mprotect(pv, cb, PROT_READ | PROT_WRITE | PROT_EXEC);
-        if (rc)
-        {
-            AssertMsgFailed(("mprotect(%p, %#x,,) -> rc=%d, errno=%d\n", pv, cb, rc, errno));
-            free(pv);
-            pv = NULL;
-        }
-    }
-    return pv;
-}
-
-
-RTDECL(void)    RTMemExecFree(void *pv, size_t cb) RT_NO_THROW
-{
-    if (pv)
-        free(pv);
-}
-
-
-RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
-{
-#ifdef RT_USE_MMAP_PAGE
-    size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
-    void   *pv = mmap(NULL, cbAligned, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
-    return pv;
-
-#else
-    return valloc(RT_ALIGN_Z(cb, PAGE_SIZE));
-#endif
-}
-
-
-RTDECL(void *) RTMemPageAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
-{
-#ifdef RT_USE_MMAP_PAGE
-    size_t  cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
-    void   *pv = mmap(NULL, cbAligned, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    AssertMsgReturn(pv != MAP_FAILED, ("errno=%d cb=%#zx\n", errno, cb), NULL);
-    return pv;
-
-#else
-    cb = RT_ALIGN_Z(cb, PAGE_SIZE);
-    void *pv = valloc(cb);
-    if (pv)
-        bzero(pv, RT_ALIGN_Z(cb, PAGE_SIZE));
-    return pv;
-#endif
-}
-
-
-RTDECL(void) RTMemPageFree(void *pv, size_t cb) RT_NO_THROW
-{
-    if (pv)
-    {
-#ifdef RT_USE_MMAP_PAGE
-        size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
-        int rc = munmap(pv, cbAligned);
-        AssertMsg(!rc, ("munmap(%p, %#zx) -> %d errno=%d\n", pv, cbAligned, rc, errno)); NOREF(rc);
-#else
-        free(pv);
-#endif
-    }
-}
 
 
 RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW

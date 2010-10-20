@@ -3058,6 +3058,8 @@ RTDECL(void) RTLockValidatorRecExclSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hTh
                                             PCRTLOCKVALSRCPOS pSrcPos, bool fFirstRecursion)
 {
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
+    if (!pRecU)
+        return;
     AssertReturnVoid(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC);
     if (!pRecU->Excl.fEnabled)
         return;
@@ -3118,6 +3120,8 @@ static void  rtLockValidatorRecExclReleaseOwnerUnchecked(PRTLOCKVALRECUNION pRec
 RTDECL(int)  RTLockValidatorRecExclReleaseOwner(PRTLOCKVALRECEXCL pRec, bool fFinalRecursion)
 {
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
+    if (!pRecU)
+        return VINF_SUCCESS;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRecU->Excl.fEnabled)
         return VINF_SUCCESS;
@@ -3155,6 +3159,8 @@ RTDECL(void) RTLockValidatorRecExclReleaseOwnerUnchecked(PRTLOCKVALRECEXCL pRec)
 RTDECL(int) RTLockValidatorRecExclRecursion(PRTLOCKVALRECEXCL pRec, PCRTLOCKVALSRCPOS pSrcPos)
 {
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
+    if (!pRecU)
+        return VINF_SUCCESS;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRecU->Excl.fEnabled)
         return VINF_SUCCESS;
@@ -3283,6 +3289,8 @@ RTDECL(int) RTLockValidatorRecExclCheckOrder(PRTLOCKVALRECEXCL pRec, RTTHREAD hT
      * Validate and adjust input.  Quit early if order validation is disabled.
      */
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
+    if (!pRecU)
+        return VINF_SUCCESS;
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (   !pRecU->Excl.fEnabled
         || pRecU->Excl.hClass == NIL_RTLOCKVALCLASS
@@ -3316,6 +3324,8 @@ RTDECL(int) RTLockValidatorRecExclCheckBlocking(PRTLOCKVALRECEXCL pRec, RTTHREAD
      * Fend off wild life.
      */
     PRTLOCKVALRECUNION pRecU = (PRTLOCKVALRECUNION)pRec;
+    if (!pRecU)
+        return VINF_SUCCESS;
     AssertPtrReturn(pRecU, VERR_SEM_LV_INVALID_PARAMETER);
     AssertReturn(pRecU->Core.u32Magic == RTLOCKVALRECEXCL_MAGIC, VERR_SEM_LV_INVALID_PARAMETER);
     if (!pRec->fEnabled)

@@ -41,6 +41,7 @@
 #include <iprt/mem.h>
 #include <iprt/thread.h>
 #include "internal/magics.h"
+#include "internal/mem.h"
 #include "internal/strict.h"
 
 
@@ -59,6 +60,8 @@ struct RTSEMEVENTINTERNAL
     /** Indicates that lock validation should be performed. */
     bool volatile       fEverHadSignallers;
 #endif
+    /** The creation flags. */
+    uint32_t            fFlags;
 };
 
 
@@ -71,9 +74,14 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 
 RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
 {
-    AssertReturn(!(fFlags & ~RTSEMEVENT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTSEMEVENT_FLAGS_NO_LOCK_VAL | RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)), VERR_INVALID_PARAMETER);
+    Assert(!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) || (fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL));
 
-    struct RTSEMEVENTINTERNAL *pThis = (struct RTSEMEVENTINTERNAL *)RTMemAlloc(sizeof(*pThis));
+    struct RTSEMEVENTINTERNAL *pThis;
+    if (!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK))
+        pThis = (struct RTSEMEVENTINTERNAL *)RTMemAlloc(sizeof(*pThis));
+    else
+        pThis = (struct RTSEMEVENTINTERNAL *)rtMemBaseAlloc(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
 
@@ -85,6 +93,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
     if (pThis->hev != NULL) /* not INVALID_HANDLE_VALUE */
     {
         pThis->u32Magic = RTSEMEVENT_MAGIC;
+        pThis->fFlags   = fFlags;
 #ifdef RTSEMEVENT_STRICT
         if (!pszNameFmt)
         {
@@ -110,7 +119,10 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
     }
 
     DWORD dwErr = GetLastError();
-    RTMemFree(pThis);
+    if (!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK))
+        RTMemFree(pThis);
+    else
+        rtMemBaseFree(pThis);
     return RTErrConvertFromWin32(dwErr);
 }
 
@@ -133,7 +145,10 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 #ifdef RTSEMEVENT_STRICT
         RTLockValidatorRecSharedDelete(&pThis->Signallers);
 #endif
-        RTMemFree(pThis);
+        if (!(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK))
+            RTMemFree(pThis);
+        else
+            rtMemBaseFree(pThis);
     }
     else
     {
@@ -217,7 +232,9 @@ RTDECL(int)   RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies
      * Wait for condition.
      */
 #ifdef RTSEMEVENT_STRICT
-    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    RTTHREAD hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)
+                         ? RTThreadSelfAutoAdopt()
+                         : RTThreadSelf();
     if (pThis->fEverHadSignallers)
     {
         DWORD rc = WaitForSingleObjectEx(pThis->hev,
