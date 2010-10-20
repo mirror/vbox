@@ -7612,7 +7612,7 @@
     <const name="None"                    value="0">
       <desc>No flag set.</desc>
     </const>
-    <const name="EOF"                     value="1">
+    <const name="EndOfFile"               value="1">
       <desc>End of file (input) reached.</desc>
     </const>
   </enum>
