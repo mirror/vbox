@@ -526,6 +526,8 @@ int main(int argc, char **argv)
         return VBoxServicePageSharingInitFork();
 #endif
 
+    g_pszProgName = RTPathFilename(argv[0]);
+
 #ifdef VBOXSERVICE_TOOLBOX
     /*
      * Run toolbox code before all other stuff, especially before checking the global
@@ -539,7 +541,6 @@ int main(int argc, char **argv)
     /*
      * Do pre-init of services.
      */
-    g_pszProgName = RTPathFilename(argv[0]);
     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
     {
         rc = g_aServices[j].pDesc->pfnPreInit();
