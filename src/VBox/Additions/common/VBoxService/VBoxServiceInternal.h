@@ -22,8 +22,6 @@
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
 # include <process.h> /* Needed for file version information. */
-#else /* !RT_OS_WINDOWS */
-# include <string.h>
 #endif
 
 #include <iprt/list.h>
