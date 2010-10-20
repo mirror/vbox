@@ -37,6 +37,11 @@
       </listitem>
 
       <listitem>
+        <para>Snapshots: Implement deleting the last remaining snapshot while
+          the VM is running.</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: Shared Folders now can be marked as being auto-mounted
           on Windows, Linux and Solaris guests</para>
       </listitem>
