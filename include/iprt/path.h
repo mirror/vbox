@@ -339,6 +339,15 @@ RTDECL(bool) RTPathHaveExt(const char *pszPath);
 RTDECL(bool) RTPathHavePath(const char *pszPath);
 
 /**
+ * Checks if the path starts with a root specifier or not.
+ *
+ * @returns @c true if it starts with root, @c false if not.
+ *
+ * @param   pszPath     Path to check.
+ */
+RTDECL(bool) RTPathStartsWithRoot(const char *pszPath);
+
+/**
  * Counts the components in the specified path.
  *
  * An empty string has zero components.  A lone root slash is considered have
