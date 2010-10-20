@@ -1667,7 +1667,14 @@ static int vdiGetComment(void *pBackendData, char *pszComment,
     if (pImage)
     {
         char *pszTmp = getImageComment(&pImage->Header);
-        size_t cb = strlen(pszTmp);
+        /* Make this foolproof even if the image doesn't have the zero
+         * termination. With some luck the repaired header will be saved. */
+        size_t cb = RTStrNLen(pszTmp, VDI_IMAGE_COMMENT_SIZE);
+        if (cb == VDI_IMAGE_COMMENT_SIZE)
+        {
+            pszTmp[VDI_IMAGE_COMMENT_SIZE-1] = '\0';
+            cb--;
+        }
         if (cb < cbComment)
         {
             /* memcpy is much better than strncpy. */
