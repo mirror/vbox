@@ -249,9 +249,9 @@
 #define SSMRECTERM_FLAGS_CRC32                  UINT16_C(0x0001)
 /** @} */
 
-/** Start structure magic. (Isacc Asimov) */
+/** Start structure magic. (Isaac Asimov) */
 #define SSMR3STRUCT_BEGIN                       UINT32_C(0x19200102)
-/** End structure magic. (Isacc Asimov) */
+/** End structure magic. (Isaac Asimov) */
 #define SSMR3STRUCT_END                         UINT32_C(0x19920406)
 
 
