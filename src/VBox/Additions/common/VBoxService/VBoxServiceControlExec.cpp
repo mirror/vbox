@@ -1026,6 +1026,48 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
 }
 
 
+#ifdef VBOXSERVICE_TOOLBOX
+/**
+ * TODO
+ *
+ * @return IPRT status code.
+ * @param  pszFileName
+ * @param  pszTool
+ * @param  papszArgs
+ * @param  ppapszArgv
+ */
+int VBoxServiceControlExecPrepareToolboxArgv(const char *pszFileName, const char *pszTool,
+                                             const char * const *papszArgs, char ***ppapszArgv)
+{
+    AssertPtrReturn(pszFileName, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszTool, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppapszArgv, VERR_INVALID_PARAMETER);
+
+    char *pszArgs;
+    int rc = RTGetOptArgvToString(&pszArgs, papszArgs,
+                                  RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
+    if (RT_SUCCESS(rc))
+    {
+        char *pszNewArgs;
+        /*
+         * Construct the new command line by appending the actual
+         * tool name to new process' command line.
+         */
+        if (RTStrAPrintf(&pszNewArgs, "%s %s %s", pszFileName, pszTool, pszArgs))
+        {
+            int iNumArgsIgnored;
+            rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
+                                        pszNewArgs, NULL /* Use standard separators. */);
+            RTStrFree(pszNewArgs);
+        }
+        RTStrFree(pszArgs);
+    }
+    return rc;
+}
+#endif
+
+
 /**
  * TODO
  *
@@ -1070,37 +1112,48 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
         rc = RTProcCreateEx(szSysprepCmd, papszArgs, hEnv, 0 /* fFlags */,
                             phStdIn, phStdOut, phStdErr, NULL /* pszAsUser */,
                             NULL /* pszPassword */, phProcess);
+        return rc;
     }
-    else
 #endif /* RT_OS_WINDOWS */
 #ifdef VBOXSERVICE_TOOLBOX
-    /*
-     * Use the built-in toolbox of VBoxService?
-     */
-    if (   (g_pszProgName && RTStrICmp(pszExec, g_pszProgName) == 0)
-        || RTStrICmp(pszExec, VBOXSERVICE_NAME))
+    /* Search the path of our executable. */
+    char szVBoxService[RTPATH_MAX];
+    if (RTProcGetExecutableName(szVBoxService, sizeof(szVBoxService)))
     {
-        /* Search the path of our executable. */
-        char szVBoxService[RTPATH_MAX];
-        if (RTProcGetExecutableName(szVBoxService, sizeof(szVBoxService)))
+        char *pszCmdTool = NULL;
+        char **papszArgsTool = NULL;
+        if (   (g_pszProgName && RTStrICmp(pszExec, g_pszProgName) == 0)
+            || !RTStrICmp(pszExec, VBOXSERVICE_NAME))
         {
-            rc = RTProcCreateEx(szVBoxService, papszArgs, hEnv, fFlags,
+            /* We just want to execute VBoxService (no toolbox). */
+            pszCmdTool = RTStrDup(szVBoxService);
+        }
+        else if (RTStrStr(pszExec, "vbox_") == pszExec)
+        {
+            /* We want to use the internal toolbox. */
+            pszCmdTool = RTStrDup(szVBoxService);
+            rc = VBoxServiceControlExecPrepareToolboxArgv(pszCmdTool, pszExec,
+                                                          papszArgs, &papszArgsTool);
+        }
+
+        if (RT_SUCCESS(rc) && pszCmdTool)
+        {
+            rc = RTProcCreateEx(pszCmdTool, papszArgsTool ? papszArgsTool : papszArgs,
+                                hEnv, fFlags,
                                 phStdIn, phStdOut, phStdErr, pszAsUser,
                                 pszPassword, phProcess);
+            if (papszArgsTool)
+                RTGetOptArgvFree(papszArgsTool);
+            RTStrFree(pszCmdTool);
+            return rc;
         }
-        else
-            rc = VERR_NOT_FOUND;
     }
-    else
-    {
 #endif
-        /* Do normal execution. */
-        rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
-                            phStdIn, phStdOut, phStdErr, pszAsUser,
-                            pszPassword, phProcess);
-#ifdef VBOXSERVICE_TOOLBOX
-    }
-#endif /* VBOXSERVICE_TOOLBOX */
+
+    /* Do normal execution. */
+    rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
+                        phStdIn, phStdOut, phStdErr, pszAsUser,
+                        pszPassword, phProcess);
     return rc;
 }
 
