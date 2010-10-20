@@ -2000,7 +2000,7 @@ static int remLoadLinuxObj(void)
     if (RT_SUCCESS(rc))
     {
         g_cbREM2 = RTLdrSize(g_ModREM2);
-        g_pvREM2 = RTMemExecAlloc(g_cbREM);
+        g_pvREM2 = RTMemExecAlloc(g_cbREM2);
         if (g_pvREM2)
         {
 #  ifdef DEBUG /* How to load the VBoxREM2.rel symbols into the GNU debugger. */
