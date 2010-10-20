@@ -166,6 +166,10 @@ struct VBOXHDD
      * The same as pBase if only one image is used. */
     PVDIMAGE            pLast;
 
+    /** If a merge to one of the parents is running this may be non-NULL
+     * to indicate to what image the writes should be additionally relayed. */
+    PVDIMAGE            pImageRelay;
+
     /** Flags representing the modification state. */
     unsigned            uModified;
 
@@ -1564,8 +1568,9 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
  * internal: write buffer to the image, taking care of block boundaries and
  * write optimizations.
  */
-static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
-                         uint64_t uOffset, const void *pvBuf, size_t cbWrite,
+static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage,
+                         PVDIMAGE pImageParentOverride, uint64_t uOffset,
+                         const void *pvBuf, size_t cbWrite,
                          bool fUpdateCache)
 {
     int rc;
@@ -5289,11 +5294,11 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         else
         {
             /*
-             * We may need to update the parent uuid of the child coming after the
-             * last image to be merged. We have to reopen it read/write.
+             * We may need to update the parent uuid of the child coming after
+             * the last image to be merged. We have to reopen it read/write.
              *
-             * This is done before we do the actual merge to prevent an incosistent
-             * chain if the mode change fails for some reason.
+             * This is done before we do the actual merge to prevent an
+             * inconsistent chain if the mode change fails for some reason.
              */
             if (pImageFrom->pNext)
             {
@@ -5315,6 +5320,23 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                     if (RT_FAILURE(rc))
                         break;
                 }
+
+                rc2 = vdThreadFinishWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = false;
+            }
+
+            /* If the merge is from the last image we have to relay all writes
+             * to the merge destination as well, so that concurrent writes
+             * (in case of a live merge) are handled correctly. */
+            if (!pImageFrom->pNext)
+            {
+                /* Take the write lock. */
+                rc2 = vdThreadStartWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = true;
+
+                pDisk->pImageRelay = pImageTo;
 
                 rc2 = vdThreadFinishWrite(pDisk);
                 AssertRC(rc2);
@@ -5379,6 +5401,22 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                         break;
                 }
             } while (uOffset < cbSize);
+
+            /* In case we set up a "write proxy" image above we must clear
+             * this again now to prevent stray writes. Failure or not. */
+            if (!pImageFrom->pNext)
+            {
+                /* Take the write lock. */
+                rc2 = vdThreadStartWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = true;
+
+                pDisk->pImageRelay = NULL;
+
+                rc2 = vdThreadFinishWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = false;
+            }
         }
 
         /*
@@ -6474,6 +6512,20 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         vdSetModifiedFlag(pDisk);
         rc = vdWriteHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite,
                            true /* fUpdateCache */);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* If there is a merge (in the direction towards a parent) running
+         * concurrently then we have to also "relay" the write to this parent,
+         * as the merge position might be already past the position where
+         * this write is going. The "context" of the write can come from the
+         * natural chain, since merging either already did or will take care
+         * of the "other" content which is might be needed to fill the block
+         * to a full allocation size. The cache doesn't need to be touched
+         * as this write is covered by the previous one. */
+        if (RT_UNLIKELY(pDisk->pImageRelay))
+            rc = vdWriteHelper(pDisk, pDisk->pImageRelay, NULL, uOffset,
+                               pvBuf, cbWrite, false /* fUpdateCache */);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
