@@ -7644,7 +7644,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="5d38c1dd-2604-4ddf-92e5-0c0cdd3bdbd5"
+     uuid="9a2d971f-62cb-4e84-b91a-c5adc2b7c6b8"
      wsmap="managed"
      >
     <desc>
