@@ -98,6 +98,8 @@
 /* The VBOX interface id. Indicates support for VBVA shared memory interface. */
 #define VBE_DISPI_ID_HGSMI              0xBE01
 #endif /* VBOX_WITH_HGSMI */
+/* Indicates support for unrestricted horizontal resolutions (not multiple of 8). */
+#define VBE_DISPI_ID_ANYX               0xBE02
 #endif /* VBOX */
 
 #define VBE_DISPI_DISABLED              0x00
