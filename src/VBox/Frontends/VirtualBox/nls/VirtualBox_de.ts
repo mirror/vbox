@@ -6636,7 +6636,7 @@
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation>Aktiviert das Extended Firmware Interface (EFI), das zum Booten von manchen speziellen Gästen benötigt wird. Nicht-EFI-fährige Gäste können nicht booten, wenn diese Option aktiviert ist.</translation>
+        <translation>Aktiviert das Extended Firmware Interface (EFI), das zum Booten von manchen speziellen Gästen benötigt wird. Nicht-EFI-fähige Gäste können nicht booten, wenn diese Option aktiviert ist.</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
@@ -6652,7 +6652,7 @@
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation>Legt die Anzahld der virtuellen CPUs dieser VM fest. Der Host muss Hardware-Virtualisierung unterstützen, falls mehr als eine virtuelle CPU emuliert werden soll.</translation>
+        <translation>Legt die Anzahl der virtuellen CPUs dieser VM fest. Der Host muss Hardware-Virtualisierung unterstützen, falls mehr als eine virtuelle CPU emuliert werden soll.</translation>
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
