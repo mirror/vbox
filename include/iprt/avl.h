@@ -123,6 +123,54 @@ RTDECL(int)             RTAvlULDestroy(PPAVLULNODECORE pTree, PAVLULCALLBACK pfn
 
 
 
+/** AVL tree of void pointer ranges.
+ * @{
+ */
+
+/**
+ * AVL key type
+ */
+typedef void *AVLRPVKEY;
+
+/**
+ * AVL Core node.
+ */
+typedef struct AVLRPVNodeCore
+{
+    AVLRPVKEY               Key;        /**< First key value in the range (inclusive). */
+    AVLRPVKEY               KeyLast;    /**< Last key value in the range (inclusive). */
+    struct AVLRPVNodeCore  *pLeft;      /**< Pointer to left leaf node. */
+    struct AVLRPVNodeCore  *pRight;     /**< Pointer to right leaf node. */
+    unsigned char           uchHeight;  /**< Height of this tree: max(height(left), height(right)) + 1 */
+} AVLRPVNODECORE, *PAVLRPVNODECORE, **PPAVLRPVNODECORE;
+
+/** A tree with void pointer keys. */
+typedef PAVLRPVNODECORE    AVLRPVTREE;
+/** Pointer to a tree with void pointer keys. */
+typedef PPAVLRPVNODECORE   PAVLRPVTREE;
+
+/** Callback function for AVLPVDoWithAll(). */
+typedef DECLCALLBACK(int) AVLRPVCALLBACK(PAVLRPVNODECORE, void *);
+/** Pointer to callback function for AVLPVDoWithAll(). */
+typedef AVLRPVCALLBACK *PAVLRPVCALLBACK;
+
+/*
+ * Functions.
+ */
+RTDECL(bool)            RTAvlrPVInsert(PAVLRPVTREE ppTree, PAVLRPVNODECORE pNode);
+RTDECL(PAVLRPVNODECORE) RTAvlrPVRemove(PAVLRPVTREE ppTree, AVLRPVKEY Key);
+RTDECL(PAVLRPVNODECORE) RTAvlrPVGet(PAVLRPVTREE ppTree, AVLRPVKEY Key);
+RTDECL(PAVLRPVNODECORE) RTAvlrPVRangeGet(PAVLRPVTREE ppTree, AVLRPVKEY Key);
+RTDECL(PAVLRPVNODECORE) RTAvlrPVRangeRemove(PAVLRPVTREE ppTree, AVLRPVKEY Key);
+RTDECL(PAVLRPVNODECORE) RTAvlrPVGetBestFit(PAVLRPVTREE ppTree, AVLRPVKEY Key, bool fAbove);
+RTDECL(PAVLRPVNODECORE) RTAvlrPVRemoveBestFit(PAVLRPVTREE ppTree, AVLRPVKEY Key, bool fAbove);
+RTDECL(int)             RTAvlrPVDoWithAll(PAVLRPVTREE ppTree, int fFromLeft, PAVLRPVCALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)             RTAvlrPVDestroy(PAVLRPVTREE ppTree, PAVLRPVCALLBACK pfnCallBack, void *pvParam);
+
+/** @} */
+
+
+
 /** AVL tree of uint32_t
  * @{
  */
