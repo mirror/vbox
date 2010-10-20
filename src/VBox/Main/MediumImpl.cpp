@@ -1168,7 +1168,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     // machine folder, then a relative path will be relative to that:
     Utf8Str strFull;
     if (    !strMachineFolder.isEmpty()
-         && !RTPathHavePath(data.strLocation.c_str()))
+         && !RTPathStartsWithRoot(data.strLocation.c_str())
+       )
     {
         strFull = strMachineFolder;
         strFull += RTPATH_DELIMITER;

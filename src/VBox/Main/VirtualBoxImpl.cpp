@@ -611,7 +611,9 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               const settings::MediaRegistry mediaRegistry,
                               const Utf8Str &strMachineFolder)
 {
-    LogFlow(("VirtualBox::initMedia ENTERING, uuidRegistry=%s\n", uuidRegistry.toString().c_str()));
+    LogFlow(("VirtualBox::initMedia ENTERING, uuidRegistry=%s, strMachineFolder=%s\n",
+             uuidRegistry.toString().c_str(),
+             strMachineFolder.c_str()));
 
     AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
