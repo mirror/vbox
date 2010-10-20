@@ -5177,7 +5177,6 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
             {
                 if (!((pCur->fFlags ^ fFlags) & INTNET_OPEN_FLAGS_COMPATIBILITY_XOR_MASK))
                 {
-
                     /*
                      * Increment the reference and check that the session
                      * can access this network.

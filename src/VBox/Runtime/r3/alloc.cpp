@@ -38,7 +38,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "alloc-ef.h"
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #ifdef RTMEMALLOC_USE_TRACKER
@@ -46,6 +47,7 @@
 #endif
 #include <iprt/param.h>
 #include <iprt/string.h>
+#include "internal/mem.h"
 
 #include <stdlib.h>
 
@@ -215,5 +217,19 @@ RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 # endif
         free(pv);
 #endif
+}
+
+
+
+DECLHIDDEN(void *)  rtMemBaseAlloc(size_t cb)
+{
+    Assert(cb > 0 && cb < _1M);
+    return malloc(cb);
+}
+
+
+DECLHIDDEN(void)    rtMemBaseFree(void *pv)
+{
+    free(pv);
 }
 

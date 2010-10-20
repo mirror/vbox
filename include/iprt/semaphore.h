@@ -136,6 +136,8 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
  * @{ */
 /** Disables lock validation. */
 #define RTSEMEVENT_FLAGS_NO_LOCK_VAL    UINT32_C(0x00000001)
+/** Bootstrap hack for use with certain memory allocator locks only! */
+#define RTSEMEVENT_FLAGS_BOOTSTRAP_HACK UINT32_C(0x00000004)
 /** @} */
 
 /**

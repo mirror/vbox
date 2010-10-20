@@ -98,15 +98,16 @@ static int testLdrOne(const char *pszFilename)
     {
         RTLDRMOD    hLdrMod;
         void       *pvBits;
+        size_t      cbBits;
         const char *pszName;
     }   aLoads[6] =
     {
-        { NULL, NULL, "foo" },
-        { NULL, NULL, "bar" },
-        { NULL, NULL, "foobar" },
-        { NULL, NULL, "kLdr-foo" },
-        { NULL, NULL, "kLdr-bar" },
-        { NULL, NULL, "kLdr-foobar" }
+        { NULL, NULL, 0, "foo" },
+        { NULL, NULL, 0, "bar" },
+        { NULL, NULL, 0, "foobar" },
+        { NULL, NULL, 0, "kLdr-foo" },
+        { NULL, NULL, 0, "kLdr-bar" },
+        { NULL, NULL, 0, "kLdr-foobar" }
     };
     unsigned i;
     int rc;
@@ -136,7 +137,7 @@ static int testLdrOne(const char *pszFilename)
             cErrors++;
             break;
         }
-        cbImage = cb;
+        aLoads[i].cbBits = cbImage = cb;
 
         /* Allocate bits. */
         aLoads[i].pvBits = RTMemExecAlloc(cb);
@@ -195,7 +196,7 @@ static int testLdrOne(const char *pszFilename)
     for (i = 0; i < RT_ELEMENTS(aLoads); i++)
     {
         if (aLoads[i].pvBits)
-            RTMemExecFree(aLoads[i].pvBits);
+            RTMemExecFree(aLoads[i].pvBits, aLoads[i].cbBits);
         if (aLoads[i].hLdrMod)
         {
             rc = RTLdrClose(aLoads[i].hLdrMod);

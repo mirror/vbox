@@ -379,8 +379,9 @@ RTDECL(void *)  RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
  * Free executable/read/write memory allocated by RTMemExecAlloc().
  *
  * @param   pv      Pointer to memory block.
+ * @param   cb      The allocation size.
  */
-RTDECL(void)    RTMemExecFree(void *pv) RT_NO_THROW;
+RTDECL(void)    RTMemExecFree(void *pv, size_t cb) RT_NO_THROW;
 
 #if defined(IN_RING0) && defined(RT_ARCH_AMD64) && defined(RT_OS_LINUX)
 /**

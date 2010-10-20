@@ -4541,7 +4541,7 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     pImage->cUsage = 0;
     pImage->pNext  = 0;
     pImage->uState = SUP_IOCTL_LDR_FREE;
-    RTMemExecFree(pImage->pvImageAlloc);
+    RTMemExecFree(pImage->pvImageAlloc, pImage->cbImageBits + 31);
     pImage->pvImageAlloc = NULL;
     RTMemFree(pImage->pachStrTab);
     pImage->pachStrTab = NULL;

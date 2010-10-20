@@ -338,6 +338,8 @@ typedef struct REMEXECMEM
 static RTLDRMOD g_ModREM2 = NIL_RTLDRMOD;
 /** Pointer to the memory containing the loaded REM2 object/DLL. */
 static void    *g_pvREM2 = NULL;
+/** The size of the memory g_pvREM2 is pointing to. */
+static size_t   g_cbREM2 = 0;
 # ifdef VBOX_WITHOUT_REM_LDR_CYCLE
 /** Loader handle of the VBoxVMM DLL. */
 static RTLDRMOD g_ModVMM = NIL_RTLDRMOD;
@@ -400,6 +402,11 @@ static const REMPARMDESC g_aArgsPTRTag[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
+};
+static const REMPARMDESC g_aArgsPTR_SIZE_T[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsVM[] =
 {
@@ -1085,11 +1092,6 @@ static const REMPARMDESC g_aArgsRTMemProtect[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL }
 };
-static const REMPARMDESC g_aArgsRTMemPageFree[] =
-{
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
-};
 static const REMPARMDESC g_aArgsRTStrPrintf[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL },
@@ -1319,10 +1321,10 @@ static REMFNDESC g_aRTImports[] =
     { "RTMemAllocZTag",                         (void *)(uintptr_t)&RTMemAllocZTag,                 &g_aArgsSIZE_TTag[0],                       RT_ELEMENTS(g_aArgsSIZE_TTag),                         REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "RTMemReallocTag",                        (void *)(uintptr_t)&RTMemReallocTag,                &g_aArgsRTMemReallocTag[0],                 RT_ELEMENTS(g_aArgsRTMemReallocTag),                   REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "RTMemExecAllocTag",                      (void *)(uintptr_t)&RTMemExecAllocTag,              &g_aArgsSIZE_TTag[0],                       RT_ELEMENTS(g_aArgsSIZE_TTag),                         REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
-    { "RTMemExecFree",                          (void *)(uintptr_t)&RTMemExecFree,                  &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
+    { "RTMemExecFree",                          (void *)(uintptr_t)&RTMemExecFree,                  &g_aArgsPTR_SIZE_T[0],                      RT_ELEMENTS(g_aArgsPTR_SIZE_T),                        REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemFree",                              (void *)(uintptr_t)&RTMemFree,                      &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemPageAllocTag",                      (void *)(uintptr_t)&RTMemPageAllocTag,              &g_aArgsSIZE_TTag[0],                       RT_ELEMENTS(g_aArgsSIZE_TTag),                         REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
-    { "RTMemPageFree",                          (void *)(uintptr_t)&RTMemPageFree,                  &g_aArgsRTMemPageFree[0],                   RT_ELEMENTS(g_aArgsRTMemPageFree),                     REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
+    { "RTMemPageFree",                          (void *)(uintptr_t)&RTMemPageFree,                  &g_aArgsPTR_SIZE_T[0],                      RT_ELEMENTS(g_aArgsPTR_SIZE_T),                        REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemProtect",                           (void *)(uintptr_t)&RTMemProtect,                   &g_aArgsRTMemProtect[0],                    RT_ELEMENTS(g_aArgsRTMemProtect),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "RTStrPrintf",                            (void *)(uintptr_t)&RTStrPrintf,                    &g_aArgsRTStrPrintf[0],                     RT_ELEMENTS(g_aArgsRTStrPrintf),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(size_t), NULL },
     { "RTStrPrintfV",                           (void *)(uintptr_t)&RTStrPrintfV,                   &g_aArgsRTStrPrintfV[0],                    RT_ELEMENTS(g_aArgsRTStrPrintfV),                      REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_VALIST, sizeof(size_t), NULL },
@@ -1997,7 +1999,8 @@ static int remLoadLinuxObj(void)
     rc = RTLdrOpen(szPath, 0, RTLDRARCH_HOST, &g_ModREM2);
     if (RT_SUCCESS(rc))
     {
-        g_pvREM2 = RTMemExecAlloc(RTLdrSize(g_ModREM2));
+        g_cbREM2 = RTLdrSize(g_ModREM2);
+        g_pvREM2 = RTMemExecAlloc(g_cbREM);
         if (g_pvREM2)
         {
 #  ifdef DEBUG /* How to load the VBoxREM2.rel symbols into the GNU debugger. */
@@ -2027,8 +2030,11 @@ static int remLoadLinuxObj(void)
                 }
                 return rc;
             }
-            RTMemExecFree(g_pvREM2);
+
+            RTMemExecFree(g_pvREM2, g_cbREM2);
+            g_pvREM2 = NULL;
         }
+        g_cbREM2 = 0;
         RTLdrClose(g_ModREM2);
         g_ModREM2 = NIL_RTLDRMOD;
     }
@@ -2048,8 +2054,9 @@ static void remUnloadLinuxObj(void)
     /* close modules. */
     RTLdrClose(g_ModREM2);
     g_ModREM2 = NIL_RTLDRMOD;
-    RTMemExecFree(g_pvREM2);
+    RTMemExecFree(g_pvREM2, g_cbREM2);
     g_pvREM2 = NULL;
+    g_cbREM2 = 0;
 
     /* clear the pointers. */
     for (i = 0; i < RT_ELEMENTS(g_aExports); i++)
@@ -2068,7 +2075,7 @@ static void remUnloadLinuxObj(void)
         PREMEXECMEM pCur = g_pExecMemHead;
         g_pExecMemHead = pCur->pNext;
         memset(pCur, 0xcc, pCur->cb);
-        RTMemExecFree(pCur);
+        RTMemExecFree(pCur, pCur->cb);
     }
 #  endif
 }

@@ -54,6 +54,7 @@ asm volatile (".global epoll_pwait");
 #include <iprt/mem.h>
 #include <iprt/time.h>
 #include "internal/magics.h"
+#include "internal/mem.h"
 #include "internal/strict.h"
 
 #include <errno.h>
@@ -92,6 +93,8 @@ struct RTSEMEVENTINTERNAL
     /** Indicates that lock validation should be performed. */
     bool volatile       fEverHadSignallers;
 #endif
+    /** The creation flags. */
+    uint32_t            fFlags;
 };
 
 
@@ -120,17 +123,23 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT phEventSem)
 
 RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKVALCLASS hClass, const char *pszNameFmt, ...)
 {
-    AssertReturn(!(fFlags & ~RTSEMEVENT_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTSEMEVENT_FLAGS_NO_LOCK_VAL | RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)), VERR_INVALID_PARAMETER);
+    Assert(!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK) || (fFlags & RTSEMEVENT_FLAGS_NO_LOCK_VAL));
 
     /*
      * Allocate semaphore handle.
      */
-    struct RTSEMEVENTINTERNAL *pThis = (struct RTSEMEVENTINTERNAL *)RTMemAlloc(sizeof(struct RTSEMEVENTINTERNAL));
+    struct RTSEMEVENTINTERNAL *pThis;
+    if (!(fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK))
+        pThis = (struct RTSEMEVENTINTERNAL *)RTMemAlloc(sizeof(struct RTSEMEVENTINTERNAL));
+    else
+        pThis = (struct RTSEMEVENTINTERNAL *)rtMemBaseAlloc(sizeof(struct RTSEMEVENTINTERNAL));
     if (pThis)
     {
         pThis->iMagic = RTSEMEVENT_MAGIC;
         pThis->cWaiters = 0;
         pThis->fSignalled = 0;
+        pThis->fFlags = fFlags;
 #ifdef RTSEMEVENT_STRICT
         if (!pszNameFmt)
         {
@@ -185,7 +194,10 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 #ifdef RTSEMEVENT_STRICT
     RTLockValidatorRecSharedDelete(&pThis->Signallers);
 #endif
-    RTMemFree(pThis);
+    if (!(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK))
+        RTMemFree(pThis);
+    else
+        rtMemBaseFree(pThis);
     return VINF_SUCCESS;
 }
 
@@ -266,7 +278,9 @@ static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAut
      * The wait loop.
      */
 #ifdef RTSEMEVENT_STRICT
-    RTTHREAD hThreadSelf = RTThreadSelfAutoAdopt();
+    RTTHREAD hThreadSelf = !(pThis->fFlags & RTSEMEVENT_FLAGS_BOOTSTRAP_HACK)
+                         ? RTThreadSelfAutoAdopt()
+                         : RTThreadSelf();
 #else
     RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
