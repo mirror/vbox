@@ -425,7 +425,7 @@ HRESULT Mouse::reportAbsEvent(uint32_t mouseXAbs, uint32_t mouseYAbs,
         if (mouseXAbs != mLastAbsX || mouseYAbs != mLastAbsY)
         {
             rc = reportAbsEventToVMMDev(mouseXAbs, mouseYAbs);
-            cJiggle = 1;
+            cJiggle = !fUsesVMMDevEvent;
         }
         rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
     }
