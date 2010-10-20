@@ -40,6 +40,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/mman.h>
+#if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
+# define MAP_ANONYMOUS MAP_ANON
+#endif
 
 
 /**

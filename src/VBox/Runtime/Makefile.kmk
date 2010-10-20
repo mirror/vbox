@@ -642,7 +642,6 @@ RuntimeR3_SOURCES.darwin = \
 	generic/uuid-generic.cpp\
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
-	r3/darwin/alloc-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
 	r3/darwin/mp-darwin.cpp \
 	r3/darwin/pathhost-darwin.cpp \
@@ -651,6 +650,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/sched-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
@@ -658,6 +658,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
@@ -699,9 +700,9 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/freebsd/mp-freebsd.cpp \
-	r3/freebsd/alloc-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -709,6 +710,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
@@ -746,6 +748,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/uuid-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
+	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -753,6 +756,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
@@ -771,7 +775,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
 	r3/posix/utf8-posix.cpp \
-	r3/solaris/alloc-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp
 RuntimeR3_SOURCES.solaris.amd64 = \
