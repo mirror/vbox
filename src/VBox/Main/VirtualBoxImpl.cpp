@@ -1175,6 +1175,8 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
         /* we use the non-full folder value below to keep the path relative */
         getDefaultMachineFolder(strBase);
 
+    calculateFullPath(strBase, strBase);
+
     Bstr bstrSettingsFile = BstrFmt("%s%c%ls%c%ls.vbox",
                                     strBase.c_str(),
                                     RTPATH_DELIMITER,
