@@ -484,7 +484,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                                         if (cbLength < _64K)
                                         {
                                             RTPrintf("Last!\n");
-                                            uFlags |= ProcessInputFlag_EOF;
+                                            uFlags |= ProcessInputFlag_EndOfFile;
                                         }
 
                                         ULONG uBytesWritten;

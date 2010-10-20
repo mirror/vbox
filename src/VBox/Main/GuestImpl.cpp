@@ -1398,7 +1398,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ComSafeArrayIn(BYT
     /* Validate flags. */
     if (aFlags)
     {
-        if (!(aFlags & ProcessInputFlag_EOF))
+        if (!(aFlags & ProcessInputFlag_EndOfFile))
             return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
     }
 
