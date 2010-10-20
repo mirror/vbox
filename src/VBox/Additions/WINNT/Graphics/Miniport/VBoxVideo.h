@@ -202,6 +202,8 @@ typedef struct VBOXWDDM_TARGET
 
 typedef struct VBOXVIDEO_COMMON
 {
+    int cDisplays;                      /* Number of displays. */
+
     ULONG cbVRAM;                       /* The VRAM size. */
 
     ULONG cbMiniportHeap;               /* The size of reserved VRAM for miniport driver heap.
@@ -213,7 +215,6 @@ typedef struct VBOXVIDEO_COMMON
                                          */
     volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
     volatile bool bHostCmdProcessing;
-    VBOXVCMNSPIN_LOCK pSynchLock;
 
     PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM.
                                          * This is mapped by miniport separately.
@@ -267,14 +268,14 @@ typedef struct _DEVICE_EXTENSION
 
            ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
 
-           int cDisplays;                      /* Number of displays. */
-
 #ifdef VBOX_WITH_WDDM
            VBOXVDMAINFO Vdma;
 # ifdef VBOXVDMA_WITH_VBVA
            VBOXVBVAINFO Vbva;
 # endif
 #endif
+
+           VBOXVCMNSPIN_LOCK pSynchLock;
 
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
 

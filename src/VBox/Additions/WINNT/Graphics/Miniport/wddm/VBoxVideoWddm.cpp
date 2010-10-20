@@ -173,7 +173,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoView(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLO
 
         pView->u32ViewIndex     = pAllocation->SurfDesc.VidPnSourceId;
         pView->u32ViewOffset    = (uint32_t)offVram; /* we pretend the view is located at the start of each framebuffer */
-        pView->u32ViewSize      = vboxWddmVramCpuVisibleSegmentSize(pDevExt)/pDevExt->u.primary.cDisplays;
+        pView->u32ViewSize      = vboxWddmVramCpuVisibleSegmentSize(pDevExt)/commonFromDeviceExt(pDevExt)->cDisplays;
 
         pView->u32MaxScreenSize = pView->u32ViewSize;
 
@@ -593,8 +593,8 @@ NTSTATUS DxgkDdiStartDevice(
                 if (commonFromDeviceExt(pContext)->bHGSMI)
                 {
                     drprintf(("VBoxVideoWddm: using HGSMI\n"));
-                    *NumberOfVideoPresentSources = pContext->u.primary.cDisplays;
-                    *NumberOfChildren = pContext->u.primary.cDisplays;
+                    *NumberOfVideoPresentSources = commonFromDeviceExt(pContext)->cDisplays;
+                    *NumberOfChildren = commonFromDeviceExt(pContext)->cDisplays;
                     dprintf(("VBoxVideoWddm: sources(%d), children(%d)\n", *NumberOfVideoPresentSources, *NumberOfChildren));
 
                     vboxVdmaDdiQueueInit(pContext, &pContext->DdiCmdQueue);
@@ -1023,8 +1023,8 @@ NTSTATUS DxgkDdiQueryChildRelations(
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
-    Assert(ChildRelationsSize == (pDevExt->u.primary.cDisplays + 1)*sizeof(DXGK_CHILD_DESCRIPTOR));
-    for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+    Assert(ChildRelationsSize == (commonFromDeviceExt(pDevExt)->cDisplays + 1)*sizeof(DXGK_CHILD_DESCRIPTOR));
+    for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
         ChildRelations[i].ChildDeviceType = TypeVideoOutput;
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_HD15; /* VGA */
@@ -1216,7 +1216,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             pCaps->NumberOfSwizzlingRanges = 0;
             pCaps->MaxOverlays = 0;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-            for (int i = 0; i < pContext->u.primary.cDisplays; ++i)
+            for (int i = 0; i < commonFromDeviceExt(pContext)->cDisplays; ++i)
             {
                 if ( pContext->aSources[i].Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
                     pCaps->MaxOverlays += pContext->aSources[i].Vhwa.Settings.cOverlaysSupported;
@@ -1305,9 +1305,9 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
                 memset (pQi, 0, sizeof (VBOXWDDM_QI));
                 pQi->u32Version = VBOXVIDEOIF_VERSION;
-                pQi->cInfos = pContext->u.primary.cDisplays;
+                pQi->cInfos = commonFromDeviceExt(pContext)->cDisplays;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                for (int i = 0; i < pContext->u.primary.cDisplays; ++i)
+                for (int i = 0; i < commonFromDeviceExt(pContext)->cDisplays; ++i)
                 {
                     pQi->aInfos[i] = pContext->aSources[i].Vhwa.Settings;
                 }
@@ -1667,7 +1667,7 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
         if (pCreateAllocation->PrivateDriverDataSize >= sizeof (VBOXWDDM_RCINFO))
         {
             PVBOXWDDM_RCINFO pRcInfo = (PVBOXWDDM_RCINFO)pCreateAllocation->pPrivateDriverData;
-//            Assert(pRcInfo->RcDesc.VidPnSourceId < pDevExt->u.primary.cDisplays);
+//            Assert(pRcInfo->RcDesc.VidPnSourceId < commonFromDeviceExt(pDevExt)->cDisplays);
             Assert(pRcInfo->cAllocInfos == pCreateAllocation->NumAllocations);
             pResource = (PVBOXWDDM_RESOURCE)vboxWddmMemAllocZero(RT_OFFSETOF(VBOXWDDM_RESOURCE, aAllocations[pRcInfo->cAllocInfos]));
             Assert(pResource);
@@ -3293,12 +3293,12 @@ DxgkDdiEscape(
                 if (pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT))
                 {
                     PVBOXDISPIFESCAPE_SCREENLAYOUT pLo = (PVBOXDISPIFESCAPE_SCREENLAYOUT)pEscapeHdr;
-                    Assert(pLo->ScreenLayout.cScreens <= (UINT)pDevExt->u.primary.cDisplays);
+                    Assert(pLo->ScreenLayout.cScreens <= (UINT)commonFromDeviceExt(pDevExt)->cDisplays);
                     for (UINT i = 0; i < pLo->ScreenLayout.cScreens; ++i)
                     {
                         PVBOXSCREENLAYOUT_ELEMENT pEl = &pLo->ScreenLayout.aScreens[i];
-                        Assert(pEl->VidPnSourceId < (UINT)pDevExt->u.primary.cDisplays);
-                        if (pEl->VidPnSourceId < (UINT)pDevExt->u.primary.cDisplays)
+                        Assert(pEl->VidPnSourceId < (UINT)commonFromDeviceExt(pDevExt)->cDisplays);
+                        if (pEl->VidPnSourceId < (UINT)commonFromDeviceExt(pDevExt)->cDisplays)
                         {
                             PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pEl->VidPnSourceId];
                             NTSTATUS tmpStatus = vboxWddmGhDisplayUpdateScreenPos(pDevExt, pSource, &pEl->pos);
@@ -3423,7 +3423,7 @@ DxgkDdiIsSupportedVidPn(
             Status = vboxVidPnCheckTopology(pIsSupportedVidPnArg->hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
             if (Status == STATUS_SUCCESS && bSupported)
             {
-                for (int id = 0; id < pContext->u.primary.cDisplays; ++id)
+                for (int id = 0; id < commonFromDeviceExt(pContext)->cDisplays; ++id)
                 {
                     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
                     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface;
@@ -3454,7 +3454,7 @@ DxgkDdiIsSupportedVidPn(
 
                 if (Status == STATUS_SUCCESS && bSupported)
                 {
-                    for (int id = 0; id < pContext->u.primary.cDisplays; ++id)
+                    for (int id = 0; id < commonFromDeviceExt(pContext)->cDisplays; ++id)
                     {
                         D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet;
                         CONST DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface;
@@ -3564,7 +3564,7 @@ DxgkDdiRecommendFunctionalVidPn(
 
     if (Status == STATUS_SUCCESS)
     {
-        for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+        for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
         {
             Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, &Resolution, 1, 0);
             Assert(Status == STATUS_SUCCESS);
@@ -3681,14 +3681,14 @@ DxgkDdiSetVidPnSourceAddress(
 
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
-    Assert((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceAddress->VidPnSourceId);
+    Assert((UINT)commonFromDeviceExt(pDevExt)->cDisplays > pSetVidPnSourceAddress->VidPnSourceId);
 
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
     Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId, &pSource->VScreenPos);
     Assert(Status == STATUS_SUCCESS);
     Status = STATUS_SUCCESS;
 
-    if ((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceAddress->VidPnSourceId)
+    if ((UINT)commonFromDeviceExt(pDevExt)->cDisplays > pSetVidPnSourceAddress->VidPnSourceId)
     {
         PVBOXWDDM_ALLOCATION pAllocation;
         Assert(pSetVidPnSourceAddress->hAllocation);
@@ -3740,7 +3740,7 @@ DxgkDdiSetVidPnSourceAddress(
     }
     else
     {
-        drprintf((__FUNCTION__": invalid VidPnSourceId (%d), should be smaller than (%d)\n", pSetVidPnSourceAddress->VidPnSourceId, pDevExt->u.primary.cDisplays));
+        drprintf((__FUNCTION__": invalid VidPnSourceId (%d), should be smaller than (%d)\n", pSetVidPnSourceAddress->VidPnSourceId, commonFromDeviceExt(pDevExt)->cDisplays));
         Status = STATUS_INVALID_PARAMETER;
     }
 
@@ -3765,14 +3765,14 @@ DxgkDdiSetVidPnSourceVisibility(
 
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
-    Assert((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceVisibility->VidPnSourceId);
+    Assert((UINT)commonFromDeviceExt(pDevExt)->cDisplays > pSetVidPnSourceVisibility->VidPnSourceId);
 
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
     Status= vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId, &pSource->VScreenPos);
     Assert(Status == STATUS_SUCCESS);
     Status = STATUS_SUCCESS;
 
-    if ((UINT)pDevExt->u.primary.cDisplays > pSetVidPnSourceVisibility->VidPnSourceId)
+    if ((UINT)commonFromDeviceExt(pDevExt)->cDisplays > pSetVidPnSourceVisibility->VidPnSourceId)
     {
         PVBOXWDDM_ALLOCATION pAllocation = pSource->pPrimaryAllocation;
         if (pAllocation)
@@ -3818,7 +3818,7 @@ DxgkDdiSetVidPnSourceVisibility(
     }
     else
     {
-        drprintf((__FUNCTION__": invalid VidPnSourceId (%d), should be smaller than (%d)\n", pSetVidPnSourceVisibility->VidPnSourceId, pDevExt->u.primary.cDisplays));
+        drprintf((__FUNCTION__": invalid VidPnSourceId (%d), should be smaller than (%d)\n", pSetVidPnSourceVisibility->VidPnSourceId, commonFromDeviceExt(pDevExt)->cDisplays));
         Status = STATUS_INVALID_PARAMETER;
     }
 
@@ -3857,7 +3857,7 @@ DxgkDdiCommitVidPn(
         else
         {
             /* clear all current primaries */
-            for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+            for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
                 vboxWddmAssignPrimary(pDevExt, &pDevExt->aSources[i], NULL, i);
             }
@@ -4004,7 +4004,7 @@ DxgkDdiGetScanLine(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
 
-    Assert((UINT)pDevExt->u.primary.cDisplays > pGetScanLine->VidPnTargetId);
+    Assert((UINT)commonFromDeviceExt(pDevExt)->cDisplays > pGetScanLine->VidPnTargetId);
     VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[pGetScanLine->VidPnTargetId];
     Assert(pTarget->HeightTotal);
     Assert(pTarget->HeightVisible);
@@ -4398,7 +4398,7 @@ DECLINLINE(bool) vboxWddmCheckForVisiblePrimary(PDEVICE_EXTENSION pDevExt, PVBOX
         return false;
 
     D3DDDI_VIDEO_PRESENT_SOURCE_ID id = pAllocation->SurfDesc.VidPnSourceId;
-    if (id >= (D3DDDI_VIDEO_PRESENT_SOURCE_ID)pDevExt->u.primary.cDisplays)
+    if (id >= (D3DDDI_VIDEO_PRESENT_SOURCE_ID)commonFromDeviceExt(pDevExt)->cDisplays)
         return false;
 
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[id];
@@ -4967,7 +4967,7 @@ DxgkDdiCreateContext(
             Assert(!pCreateContext->pPrivateDriverData);
             Assert(pCreateContext->Flags.Value <= 2); /* 2 is a GDI context in Win7 */
             pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
-            for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+            for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
                 pDevExt->aSources[i].offVram = VBOXVIDEOOFFSET_VOID;
                 NTSTATUS tmpStatus= vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pDevExt->aSources[i].VScreenPos);

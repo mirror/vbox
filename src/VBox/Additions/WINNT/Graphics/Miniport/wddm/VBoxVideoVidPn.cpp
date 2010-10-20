@@ -1557,14 +1557,14 @@ NTSTATUS vboxVidPnSetupSourceInfo(struct _DEVICE_EXTENSION* pDevExt, D3DDDI_VIDE
 
 NTSTATUS vboxVidPnCommitSourceMode(struct _DEVICE_EXTENSION* pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
 {
-    Assert(srcId < (UINT)pDevExt->u.primary.cDisplays);
-    if (srcId < (UINT)pDevExt->u.primary.cDisplays)
+    Assert(srcId < (UINT)commonFromDeviceExt(pDevExt)->cDisplays);
+    if (srcId < (UINT)commonFromDeviceExt(pDevExt)->cDisplays)
     {
         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[srcId];
         return vboxVidPnSetupSourceInfo(pDevExt, srcId, pSource, pVidPnSourceModeInfo, pAllocation);
     }
 
-    drprintf((__FUNCTION__": invalid srcId (%d), cSources(%d)\n", srcId, pDevExt->u.primary.cDisplays));
+    drprintf((__FUNCTION__": invalid srcId (%d), cSources(%d)\n", srcId, commonFromDeviceExt(pDevExt)->cDisplays));
     return STATUS_INVALID_PARAMETER;
 }
 
@@ -1579,7 +1579,7 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCommitTargetModeEnum(PDEVICE_EXTENSION pDevExt, D
         CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId, SIZE_T cTgtPaths, PVOID pContext)
 {
     VBOXVIDPNCOMMITTARGETMODE *pInfo = (VBOXVIDPNCOMMITTARGETMODE*)pContext;
-    Assert(cTgtPaths <= (SIZE_T)pDevExt->u.primary.cDisplays);
+    Assert(cTgtPaths <= (SIZE_T)commonFromDeviceExt(pDevExt)->cDisplays);
     D3DKMDT_HVIDPNTARGETMODESET hVidPnTargetModeSet;
     CONST DXGK_VIDPNTARGETMODESET_INTERFACE* pVidPnTargetModeSetInterface;
     NTSTATUS Status = pInfo->pVidPnInterface->pfnAcquireTargetModeSet(pInfo->hVidPn, VidPnTargetId, &hVidPnTargetModeSet, &pVidPnTargetModeSetInterface);

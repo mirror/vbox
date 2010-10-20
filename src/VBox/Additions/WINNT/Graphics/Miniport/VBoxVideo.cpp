@@ -894,7 +894,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      * Reinsert custom video modes for all displays.
      */
     int iCustomMode;
-    for (iCustomMode = 0; iCustomMode < DeviceExtension->pPrimary->u.primary.cDisplays; iCustomMode++)
+    for (iCustomMode = 0; iCustomMode < commonFromDeviceExt(DeviceExtension)->cDisplays; iCustomMode++)
     {
         if (fDisplayChangeRequest && iCustomMode == display)
         {
@@ -951,7 +951,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* handle the startup case */
         if (DeviceExtension->CurrentMode == 0)
 #else
-        if (!DeviceExtension->u.primary.cDisplays || !DeviceExtension->aSources[0].pPrimaryAllocation)
+        if (!commonFromDeviceExt(DeviceExtension)->cDisplays || !DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
         {
             /* Use the stored custom resolution values only if nothing was read from host.
@@ -991,7 +991,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 bpp  = DeviceExtension->CurrentModeBPP;
         }
 #else
-        if (DeviceExtension->u.primary.cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
+        if (commonFromDeviceExt(DeviceExtension)->cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
         {
             if (!xres)
                 xres = DeviceExtension->aSources[0].pPrimaryAllocation->SurfDesc.width;
@@ -1050,7 +1050,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOX_WITH_WDDM
                 if (DeviceExtension->CurrentMode != 0)
 #else
-                if (DeviceExtension->u.primary.cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
+                if (commonFromDeviceExt(DeviceExtension)->cDisplays && DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
 #ifndef VBOX_WITH_MULTIMONITOR_FIX
                 {
@@ -1156,7 +1156,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOX_WITH_WDDM
                 if (DeviceExtension->CurrentMode == 0)
 #else
-                if (!DeviceExtension->u.primary.cDisplays || !DeviceExtension->aSources[0].pPrimaryAllocation)
+                if (!commonFromDeviceExt(DeviceExtension)->cDisplays || !DeviceExtension->aSources[0].pPrimaryAllocation)
 #endif
                 {
                     dprintf(("VBoxVideo: making a copy of the custom mode as #%d\n", gNumVideoModes + 1));
@@ -1346,15 +1346,15 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 
     /* Size of a framebuffer. */
 
-    ULONG ulSize = ulAvailable / PrimaryExtension->u.primary.cDisplays;
+    ULONG ulSize = ulAvailable / commonFromDeviceExt(PrimaryExtension)->cDisplays;
 
     /* Align down to 4096 bytes. */
     ulSize &= ~0xFFF;
 
     dprintf(("VBoxVideo::VBoxComputeFrameBufferSizes: cbVRAM = 0x%08X, cDisplays = %d, ulSize = 0x%08X, ulSize * cDisplays = 0x%08X, slack = 0x%08X\n",
-             commonFromDeviceExt(PrimaryExtension)->cbVRAM, PrimaryExtension->u.primary.cDisplays,
-             ulSize, ulSize * PrimaryExtension->u.primary.cDisplays,
-             ulAvailable - ulSize * PrimaryExtension->u.primary.cDisplays));
+             commonFromDeviceExt(PrimaryExtension)->cbVRAM, commonFromDeviceExt(PrimaryExtension)->cDisplays,
+             ulSize, ulSize * commonFromDeviceExt(PrimaryExtension)->cDisplays,
+             ulAvailable - ulSize * commonFromDeviceExt(PrimaryExtension)->cDisplays));
 
 
     /* Update the primary info. */
@@ -1522,9 +1522,9 @@ void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt)
     /* Load stored custom resolution from the registry. */
     for (iCustomMode = 0;
 #ifdef VBOX_WITH_WDDM
-            iCustomMode < pDevExt->u.primary.cDisplays;
+            iCustomMode < commonFromDeviceExt(pDevExt)->cDisplays;
 #else
-            iCustomMode < pDevExt->pPrimary->u.primary.cDisplays;
+            iCustomMode < commonFromDeviceExt(pDevExt)->cDisplays;
 #endif
             iCustomMode++)
     {
@@ -1699,7 +1699,6 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       ((PDEVICE_EXTENSION)HwDeviceExtension)->ulFrameBufferOffset     = 0;
       ((PDEVICE_EXTENSION)HwDeviceExtension)->ulFrameBufferSize       = 0;
       ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.ulVbvaEnabled = 0;
-      ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.cDisplays     = 1;
       VBoxVideoCmnMemZero(&((PDEVICE_EXTENSION)HwDeviceExtension)->areaDisplay, sizeof(HGSMIAREA));
       /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old
        * code will be ifdef'ed and later removed.
@@ -2856,7 +2855,7 @@ VP_STATUS VBoxVideoGetChildDescriptor(
 
     if (ChildEnumInfo->ChildIndex > 0)
     {
-        if ((int)ChildEnumInfo->ChildIndex <= pDevExt->pPrimary->u.primary.cDisplays)
+        if ((int)ChildEnumInfo->ChildIndex <= commonFromDeviceExt(pDevExt)->cDisplays)
         {
             *VideoChildType = Monitor;
             *pUId = ChildEnumInfo->ChildIndex;
