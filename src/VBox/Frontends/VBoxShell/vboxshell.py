@@ -372,6 +372,118 @@ def monitorSource(ctx, es, active, dur):
         es.unregisterListener(listener)
 
 
+tsLast = 0
+def recordDemo(ctx, console, file, dur):
+    demo = open(file, 'w')
+    header="VM="+console.machine.name+"\n"
+    demo.write(header)
+
+    global tsLast
+    tsLast = time.time()
+
+    def stamp():
+        global tsLast
+        tsCur = time.time()
+        rv = int((tsCur-tsLast)*1000)
+        tsLast = tsCur
+        return rv
+
+    def handleEventImpl(ev):
+         type = ev.type
+         #print "got event: %s %s" %(str(type), asEnumElem(ctx, 'VBoxEventType', type))
+         if type == ctx['global'].constants.VBoxEventType_OnGuestMouseEvent:
+             mev = ctx['global'].queryInterface(ev, 'IGuestMouseEvent')
+             if mev:
+                 l = "%d: m %d %d %d %d %d %d\n" %(stamp(), mev.absolute, mev.x, mev.y, mev.z, mev.w, mev.buttons)
+                 demo.write(l)
+         elif type == ctx['global'].constants.VBoxEventType_OnGuestKeyboardEvent:
+             kev = ctx['global'].queryInterface(ev, 'IGuestKeyboardEvent')
+             if kev:
+                 l = "%d: k %s\n" %(stamp(), str(ctx['global'].getArray(kev, 'scancodes')))
+                 demo.write(l)
+
+    listener = console.eventSource.createListener()
+    registered = False
+    sources = [console.keyboard.eventSource, console.mouse.eventSource]
+    demo = open(file, 'w')
+    header="VM="+console.machine.name+"\n"
+    demo.write(header)
+    if dur == -1:
+        # not infinity, but close enough
+        dur = 100000
+    try:
+        for es in sources:
+            es.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
+        registered = True
+        end = time.time() + dur
+        while  time.time() < end:
+            for es in sources:
+                ev = es.getEvent(listener, 0)
+                if ev:
+                    handleEventImpl(ev)
+                    # keyboard/mouse events aren't waitable, so no need for eventProcessed
+    # We need to catch all exceptions here, otherwise listener will never be unregistered
+    except:
+        traceback.print_exc()
+        pass
+    demo.close()
+    if listener and registered:
+        for es in sources:
+            es.unregisterListener(listener)
+
+
+def playbackDemo(ctx, console, file, dur):
+    demo = open(file, 'r')
+
+    if dur == -1:
+        # not infinity, but close enough
+        dur = 100000
+
+    header = demo.readline()
+    print "Header is", header
+    basere = re.compile(r'(?P<s>\d+): (?P<t>[km]) (?P<p>.*)')
+    mre = re.compile(r'(?P<a>\d+) (?P<x>\d+) (?P<y>\d+) (?P<z>\d+) (?P<w>\d+) (?P<b>\d+)')
+    kre = re.compile(r'\d+')
+
+    kbd = console.keyboard
+    mouse = console.mouse
+
+    try:
+        end = time.time() + dur
+        while  time.time() < end:
+            for line in demo:
+                m = basere.search(line)
+                if m is not None:
+                    dict = m.groupdict()
+                    stamp = dict['s']
+                    params = dict['p']
+                    type = dict['t']
+
+                    time.sleep(float(stamp)/1000)
+
+                    if type == 'k':
+                        codes=kre.findall(params)
+                        #print "KBD:",codes
+                        kbd.putScancodes(codes)
+                    elif type == 'm':
+                        mm = mre.search(params)
+                        if mm is not None:
+                            mdict = mm.groupdict()
+                            if mdict['a'] == '1':
+                                # absolute
+                                #print "MA: ",mdict['x'],mdict['y'],mdict['b']
+                                mouse.putMouseEventAbsolute(mdict['x'], mdict['y'], mdict['z'], mdict['w'], mdict['b'])
+                            else:
+                                #print "MR: ",mdict['x'],mdict['y'],mdict['b']
+                                mouse.putMouseEvent(mdict['x'], mdict['y'], mdict['z'], mdict['w'], mdict['b'])
+
+    # We need to catch all exceptions here, to close file
+    except:
+        traceback.print_exc()
+        pass
+    demo.close()
+
+
 def takeScreenshotOld(ctx,console,args):
     from PIL import Image
     display = console.display
@@ -1770,6 +1882,7 @@ def typeInGuest(console, text, delay):
     group = False
     modGroupEnd = True
     i = 0
+    kbd = console.keyboard
     while i < len(text):
         ch = text[i]
         i = i+1
@@ -1780,7 +1893,7 @@ def typeInGuest(console, text, delay):
         if ch == '}':
             # end group, release all keys
             for c in pressed:
-                 console.keyboard.putScancodes(keyUp(c))
+                 kbd.putScancodes(keyUp(c))
             pressed = []
             group = False
             continue
@@ -1816,11 +1929,11 @@ def typeInGuest(console, text, delay):
                     combo += ch
                 ch = combo
             modGroupEnd = True
-        console.keyboard.putScancodes(keyDown(ch))
+        kbd.putScancodes(keyDown(ch))
         pressed.insert(0, ch)
         if not group and modGroupEnd:
             for c in pressed:
-                console.keyboard.putScancodes(keyUp(c))
+                kbd.putScancodes(keyUp(c))
             pressed = []
             modGroupEnd = True
         time.sleep(delay)
@@ -2834,6 +2947,34 @@ def foreachvmCmd(ctx, args):
         runCommandArgs(ctx, cmdargs)
     return 0
 
+def recordDemoCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: recordDemo vm filename (duration)"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    filename = args[2]
+    dur = 10000
+    if len(args) > 3:
+        dur = float(args[3])
+    cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  recordDemo(ctx, console, filename, dur)])
+    return 0
+
+def playbackDemoCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: playbackDemo vm filename (duration)"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    filename = args[2]
+    dur = 10000
+    if len(args) > 3:
+        dur = float(args[3])
+    cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx,mach,console,args:  playbackDemo(ctx, console, filename, dur)])
+    return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -2915,6 +3056,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'prompt' : ['Control prompt', promptCmd, 0],
             'foreachvm' : ['Perform command for each VM', foreachvmCmd, 0],
             'foreach' : ['Generic "for each" construction, using XPath-like notation: foreach //vms/vm[@OSTypeId=\'MacOS\'] "print obj.name"', foreachCmd, 0],
+            'recordDemo':['Record demo: recordDemo Win32 file.dmo 10', recordDemoCmd, 0],
+            'playbackDemo':['Playback demo: playbackDemo Win32 file.dmo 10', playbackDemoCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
