@@ -38,6 +38,123 @@
 #include <iprt/asm.h>
 
 
+/**
+ * The state loop of the other threads.
+ *
+ * @returns VINF_SUCCESS when everything went smoothly. IPRT status code if we
+ *          encountered trouble.
+ * @param   pOnce           The execute once structure.
+ * @param   phEvtM          Where to store the semaphore handle so the caller
+ *                          can do the cleaning up for us.
+ */
+static int rtOnceOtherThread(PRTONCE pOnce, PRTSEMEVENTMULTI phEvtM)
+{
+    uint32_t cYields = 0;
+    for (;;)
+    {
+        int32_t iState = ASMAtomicReadS32(&pOnce->iState);
+        switch (iState)
+        {
+            /*
+             * No semaphore, try create one.
+             */
+            case RTONCESTATE_BUSY_NO_SEM:
+                if (ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_BUSY_CREATING_SEM, RTONCESTATE_BUSY_NO_SEM))
+                {
+                    int rc = RTSemEventMultiCreate(phEvtM);
+                    if (RT_SUCCESS(rc))
+                    {
+                        ASMAtomicWriteHandle(&pOnce->hEventMulti, *phEvtM);
+                        int32_t cRefs = ASMAtomicIncS32(&pOnce->cEventRefs); Assert(cRefs == 1); NOREF(cRefs);
+
+                        if (!ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_BUSY_HAVE_SEM, RTONCESTATE_BUSY_CREATING_SEM))
+                        {
+                            /* Too slow. */
+                            AssertReturn(ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_DONE, RTONCESTATE_DONE_CREATING_SEM)
+                                         , VERR_INTERNAL_ERROR_5);
+
+                            ASMAtomicWriteHandle(&pOnce->hEventMulti, NIL_RTSEMEVENTMULTI);
+                            cRefs = ASMAtomicDecS32(&pOnce->cEventRefs); Assert(cRefs == 0);
+
+                            RTSemEventMultiDestroy(*phEvtM);
+                            *phEvtM = NIL_RTSEMEVENTMULTI;
+                        }
+                    }
+                    else
+                    {
+                        AssertReturn(   ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_BUSY_SPIN, RTONCESTATE_BUSY_CREATING_SEM)
+                                     || ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_DONE,      RTONCESTATE_DONE_CREATING_SEM)
+                                     , VERR_INTERNAL_ERROR_4);
+                        *phEvtM = NIL_RTSEMEVENTMULTI;
+                    }
+                }
+                break;
+
+            /*
+             * This isn't nice, but it's the easy way out.
+             */
+            case RTONCESTATE_BUSY_CREATING_SEM:
+            case RTONCESTATE_BUSY_SPIN:
+                cYields++;
+                if (!(++cYields % 8))
+                    RTThreadSleep(1);
+                else
+                    RTThreadYield();
+                break;
+
+            /*
+             * There is a semaphore, try wait on it.
+             *
+             * We continue waiting after reaching DONE_HAVE_SEM if we
+             * already got the semaphore to avoid racing the first thread.
+             */
+            case RTONCESTATE_DONE_HAVE_SEM:
+                if (*phEvtM == NIL_RTSEMEVENTMULTI)
+                    return VINF_SUCCESS;
+                /* fall thru */
+            case RTONCESTATE_BUSY_HAVE_SEM:
+            {
+                /*
+                 * Grab the semaphore if we haven't got it yet.
+                 * We must take care not to increment the counter if it
+                 * is 0.  This may happen if we're racing a state change.
+                 */
+                if (*phEvtM == NIL_RTSEMEVENTMULTI)
+                {
+                    int32_t cEventRefs = ASMAtomicUoReadS32(&pOnce->cEventRefs);
+                    while (   cEventRefs > 0
+                           && ASMAtomicUoReadS32(&pOnce->iState) == RTONCESTATE_BUSY_HAVE_SEM)
+                    {
+                        if (ASMAtomicCmpXchgExS32(&pOnce->cEventRefs, cEventRefs + 1, cEventRefs, &cEventRefs))
+                            break;
+                        ASMNopPause();
+                    }
+                    if (cEventRefs <= 0)
+                        break;
+
+                    ASMAtomicReadHandle(&pOnce->hEventMulti, phEvtM);
+                    AssertReturn(*phEvtM != NIL_RTSEMEVENTMULTI, VERR_INTERNAL_ERROR_2);
+                }
+
+                /*
+                 * We've got a sempahore, do the actual waiting.
+                 */
+                do
+                    RTSemEventMultiWaitNoResume(*phEvtM, RT_INDEFINITE_WAIT);
+                while (ASMAtomicReadS32(&pOnce->iState) == RTONCESTATE_BUSY_HAVE_SEM);
+                break;
+            }
+
+            case RTONCESTATE_DONE_CREATING_SEM:
+            case RTONCESTATE_DONE:
+                return VINF_SUCCESS;
+
+            default:
+                AssertMsgFailedReturn(("%d\n", iState), VERR_INTERNAL_ERROR_3);
+        }
+    }
+}
+
 
 RTDECL(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser2)
 {
@@ -51,111 +168,80 @@ RTDECL(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser
      * Deal with the 'initialized' case first
      */
     int32_t iState = ASMAtomicUoReadS32(&pOnce->iState);
-    if (RT_LIKELY(iState == 2))
+    if (RT_LIKELY(   iState == RTONCESTATE_DONE
+                  || iState == RTONCESTATE_DONE_CREATING_SEM
+                  || iState == RTONCESTATE_DONE_HAVE_SEM
+                 ))
         return ASMAtomicUoReadS32(&pOnce->rc);
-    AssertReturn(iState == -1 || iState == 1, VERR_INTERNAL_ERROR);
+
+    AssertReturn(   iState == RTONCESTATE_UNINITIALIZED
+                 || iState == RTONCESTATE_BUSY_NO_SEM
+                 || iState == RTONCESTATE_BUSY_SPIN
+                 || iState == RTONCESTATE_BUSY_CREATING_SEM
+                 || iState == RTONCESTATE_BUSY_HAVE_SEM
+                 , VERR_INTERNAL_ERROR);
 
     /*
      * Do we initialize it?
      */
-    if (iState == -1)
+    int32_t rcOnce;
+    if (   iState == RTONCESTATE_UNINITIALIZED
+        && ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_BUSY_NO_SEM, RTONCESTATE_UNINITIALIZED))
     {
-        RTSEMEVENTMULTI hEventMulti;
-        int rc = RTSemEventMultiCreate(&hEventMulti);
-        if (RT_FAILURE(rc))
-            hEventMulti = NIL_RTSEMEVENTMULTI;
+        /*
+         * Yes, so do the execute once stuff.
+         */
+        rcOnce = pfnOnce(pvUser1, pvUser2);
+        ASMAtomicWriteS32(&pOnce->rc, rcOnce);
 
-        if (ASMAtomicCmpXchgS32(&pOnce->iState, 1, -1))
+        /*
+         * If there is a sempahore to signal, we're in for some extra work here.
+         */
+        if (   !ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_DONE,              RTONCESTATE_BUSY_NO_SEM)
+            && !ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_DONE,              RTONCESTATE_BUSY_SPIN)
+            && !ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_DONE_CREATING_SEM, RTONCESTATE_BUSY_CREATING_SEM)
+           )
         {
-            ASMAtomicWriteHandle(&pOnce->hEventMulti, hEventMulti);
-            ASMAtomicIncS32(&pOnce->cEventRefs);
+            /* Grab the sempahore by switching to 'DONE_HAVE_SEM' before reaching 'DONE'. */
+            AssertReturn(ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_DONE_HAVE_SEM, RTONCESTATE_BUSY_HAVE_SEM),
+                         VERR_INTERNAL_ERROR_2);
 
-            /* do the execute once stuff. */
-            int32_t rcOnce = pfnOnce(pvUser1, pvUser2);
+            int32_t cRefs = ASMAtomicIncS32(&pOnce->cEventRefs);
+            Assert(cRefs > 1);
 
-            /* set the return code, change the state and signal any waiters. */
-            ASMAtomicWriteS32(&pOnce->rc, rcOnce);
-            ASMAtomicWriteS32(&pOnce->iState, 2);
-            if (hEventMulti != NIL_RTSEMEVENTMULTI)
-                RTSemEventMultiSignal(hEventMulti);
+            RTSEMEVENTMULTI hEvtM;
+            ASMAtomicReadHandle(&pOnce->hEventMulti, &hEvtM);
+            Assert(hEvtM != NIL_RTSEMEVENTMULTI);
 
-            /* last guy destroys the semaphore. */
+            ASMAtomicWriteS32(&pOnce->iState, RTONCESTATE_DONE);
+
+            /* Signal it and return. */
+            RTSemEventMultiSignal(hEvtM);
+        }
+    }
+    else
+    {
+        /*
+         * Wait for the first thread to complete.  Delegate this to a helper
+         * function to simplify cleanup and keep things a bit shorter.
+         */
+        RTSEMEVENTMULTI hEvtM = NIL_RTSEMEVENTMULTI;
+        rcOnce = rtOnceOtherThread(pOnce, &hEvtM);
+        if (hEvtM != NIL_RTSEMEVENTMULTI)
+        {
             if (ASMAtomicDecS32(&pOnce->cEventRefs) == 0)
-                ASMAtomicWriteSize(&pOnce->hEventMulti, NIL_RTSEMEVENTMULTI);
-            else
-                hEventMulti = NIL_RTSEMEVENTMULTI;
-        }
-        if (hEventMulti != NIL_RTSEMEVENTMULTI)
-            RTSemEventMultiDestroy(hEventMulti);
-    }
-
-    /*
-     * Wait for it to finish initializing.
-     */
-    if (ASMAtomicReadS32(&pOnce->iState) == 1)
-    {
-        int i = 0;
-        while (ASMAtomicReadS32(&pOnce->iState) == 1)
-        {
-            bool fYieldSleep = true;
-
-            /*
-             * Take care not to increment the counter if it's 0, that indicates
-             * that RTONCE::hEventMulti isn't valid either because it's not set
-             * yet, or because it's being destroyed.
-             */
-            int32_t cEventRefs = ASMAtomicUoReadS32(&pOnce->cEventRefs);
-            while (   cEventRefs > 0
-                   && !ASMAtomicCmpXchgS32(&pOnce->cEventRefs, cEventRefs + 1, cEventRefs))
-                cEventRefs = ASMAtomicUoReadS32(&pOnce->cEventRefs);
-            if (cEventRefs > 1)
             {
-                /*
-                 * The hEventMulti might be NIL for two reasons, see above in
-                 * the init code, if it isn't valid just do the yield/sleep thing.
-                 */
-                RTSEMEVENTMULTI hEventMulti;
-                ASMAtomicUoReadHandle(&pOnce->hEventMulti, &hEventMulti);
-                if (hEventMulti != NIL_RTSEMEVENTMULTI)
-                {
-                    fYieldSleep = false;
-                    RTSemEventMultiWait(hEventMulti, RT_INDEFINITE_WAIT);
-                }
-
-                /*
-                 * Last thread cleans up.
-                 */
-                if (ASMAtomicDecS32(&pOnce->cEventRefs) == 0)
-                {
-                    ASMAtomicXchgHandle(&pOnce->hEventMulti, NIL_RTSEMEVENTMULTI, &hEventMulti);
-                    if (hEventMulti != NIL_RTSEMEVENTMULTI)
-                        RTSemEventMultiDestroy(hEventMulti);
-                }
-            }
-
-            /*
-             * If we didn't block, yield or sleep for a bit.
-             *
-             * The sleep is essential to prevent higher priority threads from spinning wildly
-             * and preventing a lower priority thread from completing the pfnOnce operation
-             * in a timely manner.
-             */
-            if (fYieldSleep)
-            {
-                if (ASMAtomicReadS32(&pOnce->iState) != 1)
-                    break;
-                if (!(++i % 8) )
-                    RTThreadSleep(1);
-                else
-                    RTThreadYield();
+                bool fRc;
+                ASMAtomicCmpXchgHandle(&pOnce->hEventMulti, NIL_RTSEMEVENTMULTI, hEvtM, fRc);           Assert(fRc);
+                fRc = ASMAtomicCmpXchgS32(&pOnce->iState, RTONCESTATE_DONE, RTONCESTATE_DONE_HAVE_SEM); Assert(fRc);
+                RTSemEventMultiDestroy(hEvtM);
             }
         }
+        if (RT_SUCCESS(rcOnce))
+            rcOnce = ASMAtomicUoReadS32(&pOnce->rc);
     }
 
-    /*
-     * Finally, return the status code from the execute once function.
-     */
-    return ASMAtomicUoReadS32(&pOnce->rc);
+    return rcOnce;
 }
 RT_EXPORT_SYMBOL(RTOnce);
 
@@ -165,11 +251,14 @@ RTDECL(void) RTOnceReset(PRTONCE pOnce)
     /* Cannot be done while busy! */
     AssertPtr(pOnce);
     Assert(pOnce->hEventMulti == NIL_RTSEMEVENTMULTI);
-    Assert(pOnce->iState != 1);
+    int32_t iState = ASMAtomicUoReadS32(&pOnce->iState);
+    AssertMsg(   iState == RTONCESTATE_DONE
+              && iState == RTONCESTATE_UNINITIALIZED,
+              ("%d\n", iState));
 
     /* Do the same as RTONCE_INITIALIZER does. */
     ASMAtomicWriteS32(&pOnce->rc, VERR_INTERNAL_ERROR);
-    ASMAtomicWriteS32(&pOnce->iState, -1);
+    ASMAtomicWriteS32(&pOnce->iState, RTONCESTATE_UNINITIALIZED);
 }
 RT_EXPORT_SYMBOL(RTOnceReset);
 

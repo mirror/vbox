@@ -57,8 +57,42 @@ typedef struct RTONCE
 /** Pointer to a execute once struct. */
 typedef RTONCE *PRTONCE;
 
+/**
+ * The execute once statemachine.
+ */
+typedef enum RTONCESTATE
+{
+    /** RTOnce() has not been called.
+     *  Next: NO_SEM */
+    RTONCESTATE_UNINITIALIZED = 1,
+    /** RTOnce() is busy, no race.
+     *  Next: CREATING_SEM, DONE */
+    RTONCESTATE_BUSY_NO_SEM,
+    /** More than one RTOnce() caller is busy.
+     *  Next: BUSY_HAVE_SEM, BUSY_SPIN, DONE_CREATING_SEM, DONE */
+    RTONCESTATE_BUSY_CREATING_SEM,
+    /** More than one RTOnce() caller, the first is busy, the others are
+     *  waiting.
+     *  Next: DONE */
+    RTONCESTATE_BUSY_HAVE_SEM,
+    /** More than one RTOnce() caller, the first is busy, the others failed to
+     *  create a semaphore and are spinning.
+     *  Next: DONE */
+    RTONCESTATE_BUSY_SPIN,
+    /** More than one RTOnce() caller, the first has completed, the others
+     *  are busy creating the semaphore.
+     *  Next: DONE_HAVE_SEM */
+    RTONCESTATE_DONE_CREATING_SEM,
+    /** More than one RTOnce() caller, the first is busy grabbing the
+     *  semaphore, while the others are waiting.
+     *  Next: DONE */
+    RTONCESTATE_DONE_HAVE_SEM,
+    /** The execute once stuff has completed. */
+    RTONCESTATE_DONE = 16
+} RTONCESTATE;
+
 /** Static initializer for RTONCE variables. */
-#define RTONCE_INITIALIZER      { NIL_RTSEMEVENTMULTI, 0, -1, VERR_INTERNAL_ERROR }
+#define RTONCE_INITIALIZER      { NIL_RTSEMEVENTMULTI, 0, RTONCESTATE_UNINITIALIZED, VERR_INTERNAL_ERROR }
 
 
 /**
