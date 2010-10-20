@@ -422,6 +422,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecSendOut(uint32_t     u32ClientId,
 VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
                                                   uint32_t     u32Context,
                                                   uint32_t     u32PID,
+                                                  uint32_t     u32Status,
                                                   uint32_t     u32Flags,
                                                   uint32_t     cbWritten)
 {
@@ -430,10 +431,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
     Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_EXEC_SEND_INPUT_STATUS;
-    Msg.hdr.cParms = 4;
+    Msg.hdr.cParms = 5;
 
     VbglHGCMParmUInt32Set(&Msg.context, u32Context);
     VbglHGCMParmUInt32Set(&Msg.pid, u32PID);
+    VbglHGCMParmUInt32Set(&Msg.status, u32Status);
     VbglHGCMParmUInt32Set(&Msg.flags, u32Flags);
     VbglHGCMParmUInt32Set(&Msg.written, cbWritten);
 

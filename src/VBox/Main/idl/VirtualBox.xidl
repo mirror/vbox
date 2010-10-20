@@ -7602,6 +7602,22 @@
   </enum>
 
   <enum
+    name="ProcessInputFlag"
+    uuid="5d38c1dd-2604-4ddf-92e5-0c0cdd3bdbd5"
+  >
+    <desc>
+      Guest process input flags.
+    </desc>
+
+    <const name="None"     value="0">
+      <desc>No flag set.</desc>
+    </const>
+    <const name="EOF"   value="1">
+        <desc>End of file (input) reached.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="CopyFileFlag"
     uuid="23f79fdf-738a-493d-b80b-42d607c9b916"
   >
@@ -7613,22 +7629,22 @@
       <desc>No flag set.</desc>
     </const>
 
-    <const name="Recursive"   value="2">
+    <const name="Recursive"   value="1">
       <desc>Copy directories recursively.</desc>
     </const>
 
-    <const name="Update"      value="4">
+    <const name="Update"      value="2">
       <desc>Copy only when the source file is newer than the destination file or when the destination file is missing.</desc>
     </const>
 
-    <const name="FollowLinks" value="8">
+    <const name="FollowLinks" value="4">
       <desc>Follow symbolic links.</desc>
     </const>
   </enum>
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="c165a809-0882-4c76-9220-746da84b5ecf"
+     uuid="5d38c1dd-2604-4ddf-92e5-0c0cdd3bdbd5"
      wsmap="managed"
      >
     <desc>
@@ -7963,12 +7979,6 @@
       <param name="flags" type="unsigned long" dir="in">
         <desc>
           Not used, must be set to zero.
-        </desc>
-      </param>
-      <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>
-          The maximum timeout value (in msec) to wait for handling
-          the input data. Pass 0 for an infinite timeout.
         </desc>
       </param>
       <param name="data" type="octet" dir="in" safearray="yes">
