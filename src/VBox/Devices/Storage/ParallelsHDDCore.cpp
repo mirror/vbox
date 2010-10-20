@@ -656,7 +656,6 @@ static int parallelsRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
                 uOffset, pvBuf, cbBuf, cbBuf, pvBuf));
     }
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
