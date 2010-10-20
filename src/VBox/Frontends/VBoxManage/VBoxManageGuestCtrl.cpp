@@ -403,7 +403,6 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     if (   fWaitForStdOut
                         || fWaitForStdErr)
                     {
-
                         rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
                                                      u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
                         if (FAILED(rc))
@@ -452,27 +451,70 @@ static int handleCtrlExecProgram(HandlerArg *a)
                     static int sent = 0;
                     if (sent < 1)
                     {
-                        ULONG cbWritten;
-                        SafeArray<BYTE> aInputData(_64K);
-                        RTStrPrintf((char*)aInputData.raw(), _64K, "dir c:\\windows\n");
-                        rc = guest->SetProcessInput(uPID, 0 /* aFlags */,
-                                                    u32TimeoutMS, ComSafeArrayAsInParam(aInputData), &cbWritten);
-                        if (FAILED(rc))
+                        RTISOFSFILE file;
+                        int vrc = RTIsoFsOpen(&file, "c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso");
+                        if (RT_SUCCESS(vrc))
                         {
-                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                             * because it contains more accurate info about what went wrong. */
-                            ErrorInfo info(guest, COM_IIDOF(IGuest));
-                            if (info.isFullAvailable())
+                            uint32_t cbOffset;
+                            size_t cbLength;
+                            vrc = RTIsoFsGetFileInfo(&file, "VBOXWINDOWSADDITIONS_X86.EXE", &cbOffset, &cbLength);
+                            //vrc = RTIsoFsGetFileInfo(&file, "32BIT/README.TXT", &cbOffset, &cbLength);
+                            if (   RT_SUCCESS(vrc)
+                                && cbOffset
+                                && cbLength)
                             {
-                                if (rc == VBOX_E_IPRT_ERROR)
-                                    RTMsgError("%ls.", info.getText().raw());
-                                else
-                                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+                                vrc = RTFileSeek(file.file, cbOffset, RTFILE_SEEK_BEGIN, NULL);
+
+                                size_t cbRead;
+                                size_t cbToRead;
+                                SafeArray<BYTE> aInputData(_64K);
+                                while (   cbLength
+                                       && RT_SUCCESS(vrc))
+                                {
+                                    cbToRead = RT_MIN(cbLength, _64K);
+                                    vrc = RTFileRead(file.file, (uint8_t*)aInputData.raw(), cbToRead, &cbRead);
+                                    if (   cbRead
+                                        && RT_SUCCESS(vrc))
+                                    {
+                                        aInputData.resize(cbRead);
+
+                                        /* Did we reach the end of the content
+                                         * we want to transfer (last chunk)? */
+                                        ULONG uFlags = ProcessInputFlag_None;
+                                        if (cbLength < _64K)
+                                        {
+                                            RTPrintf("Last!\n");
+                                            uFlags |= ProcessInputFlag_EOF;
+                                        }
+
+                                        ULONG uBytesWritten;
+                                        rc = guest->SetProcessInput(uPID, uFlags,
+                                                                    ComSafeArrayAsInParam(aInputData), &uBytesWritten);
+                                        if (FAILED(rc))
+                                        {
+                                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                                             * because it contains more accurate info about what went wrong. */
+                                            ErrorInfo info(guest, COM_IIDOF(IGuest));
+                                            if (info.isFullAvailable())
+                                            {
+                                                if (rc == VBOX_E_IPRT_ERROR)
+                                                    RTMsgError("%ls.", info.getText().raw());
+                                                else
+                                                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+                                            }
+                                            break;
+                                        }
+                                        else
+                                        {
+                                            //Assert(uTransfered == cbRead);
+                                            cbLength -= uBytesWritten;
+                                            RTPrintf("Left: %u\n", cbLength);
+                                        }
+                                    }
+                                }
+                                RTPrintf("Finished\n");
                             }
-                        }
-                        else
-                        {
-                            RTPrintf("sent\n");
+                            RTIsoFsClose(&file);
                         }
                     }
                     sent++;
@@ -582,19 +624,6 @@ static void ctrlCopySignalHandler(int iSignal)
 
 static int handleCtrlCopyTo(HandlerArg *a)
 {
-#if 0
-    RTISOFSFILE file;
-    int vrc = RTIsoFsOpen(&file, "c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso");
-    if (RT_SUCCESS(vrc))
-    {
-        vrc = RTIsoFsExtractFile(&file, "VBOXWINDOWSADDITIONS_X86.EXE", "C:\\VBOXWINDOWSADDITIONS_X86.EXE");
-        vrc = RTIsoFsExtractFile(&file, "FOO.EXE", "C:\\FOO.EXE");
-        vrc = RTIsoFsExtractFile(&file, "32BIT/OS2/README.TXT", "C:\\OS2-Readme.txt");
-        RTIsoFsClose(&file);
-    }
-    return vrc;
-#endif
-
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.

@@ -217,7 +217,6 @@ void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...)
         va_start(va, pszFormat);
         RTStrmPrintfV(g_pStdOut, pszFormat, va);
         va_end(va);
-
         va_start(va, pszFormat);
         LogRel(("%s: %N", g_pszProgName, pszFormat, &va));
         va_end(va);

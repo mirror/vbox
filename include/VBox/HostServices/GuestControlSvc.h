@@ -67,6 +67,30 @@ enum eProcessStatus
     PROC_STS_ERROR = 8
 };
 
+/**
+ * Input flags, set by the host.
+ * Note: Has to match Main's ProcessInputFlag_* flags!
+ */
+#define INPUT_FLAG_NONE             0
+#define INPUT_FLAG_EOF              RT_BIT(0)
+
+/**
+ * Input status, reported by the client.
+ */
+enum eInputStatus
+{
+    /** Input is in an undefined state. */
+    INPUT_STS_UNDEFINED = 0,
+    /** Input was written (partially, see cbProcessed). */
+    INPUT_STS_WRITTEN = 1,
+    /** Input failed with an error (see flags for rc). */
+    INPUT_STS_ERROR = 20,
+    /** Process has abandoned / terminated input handling. */
+    INPUT_STS_TERMINATED = 21,
+    /** Too much input data. */
+    INPUT_STS_OVERFLOW = 30
+};
+
 typedef struct _VBoxGuestCtrlCallbackHeader
 {
     /** Magic number to identify the structure. */
@@ -117,7 +141,9 @@ typedef struct _VBoxGuestCtrlCallbackDataExecInStatus
     CALLBACKHEADER hdr;
     /** The process ID (PID). */
     uint32_t u32PID;
-    /** Optional flags (not used atm). */
+    /** Current input status. */
+    uint32_t u32Status;
+    /** Optional flags. */
     uint32_t u32Flags;
     /** Size (in bytes) of processed input data. */
     uint32_t cbProcessed;
@@ -268,7 +294,7 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecIn
     HGCMFunctionParameter context;
     /** The process ID (PID). */
     HGCMFunctionParameter pid;
-    /** Optional flags. */
+    /** Flags (see IGuest::ProcessInputFlag_*). */
     HGCMFunctionParameter flags;
     /** Data buffer. */
     HGCMFunctionParameter data;
@@ -316,6 +342,8 @@ typedef struct _VBoxGuestCtrlHGCMMsgExecStatusIn
     HGCMFunctionParameter context;
     /** The process ID (PID). */
     HGCMFunctionParameter pid;
+    /** Status of the operation. */
+    HGCMFunctionParameter status;
     /** Optional flags. */
     HGCMFunctionParameter flags;
     /** Data written. */

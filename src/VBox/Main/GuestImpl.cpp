@@ -682,10 +682,14 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
 
                 case PROC_STS_TEN: /* Terminated normally. */
                     LogRel(("Guest process (PID %u) exited normally\n", pCBData->u32PID)); /** @todo Add process name */
-                    hr = it->second.pProgress->notifyComplete(S_OK);
-                    AssertComRC(hr);
-                    LogFlowFunc(("Proccess (context ID=%u, status=%u) terminated successfully\n",
-                                 pData->hdr.u32ContextID, pData->u32Status));
+                    if (!it->second.pProgress->getCompleted())
+                    {
+                        hr = it->second.pProgress->notifyComplete(S_OK);
+                        AssertComRC(hr);
+
+                        LogFlowFunc(("Proccess (CID=%u, status=%u) terminated successfully\n",
+                                     pData->hdr.u32ContextID, pData->u32Status));
+                    }
                     break;
 
                 case PROC_STS_TEA: /* Terminated abnormally. */
@@ -723,8 +727,11 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                      */
                     if (pData->u32Flags & ExecuteProcessFlag_IgnoreOrphanedProcesses)
                     {
-                        hr = it->second.pProgress->notifyComplete(S_OK);
-                        AssertComRC(hr);
+                        if (!it->second.pProgress->getCompleted())
+                        {
+                            hr = it->second.pProgress->notifyComplete(S_OK);
+                            AssertComRC(hr);
+                        }
                     }
                     else
                     {
@@ -808,13 +815,13 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                                                                    Guest::getStaticComponentName(),
                                                                    "%s", errMsg.c_str());
                 AssertComRC(hr2);
-                LogFlowFunc(("Process (context ID=%u, status=%u) reported error: %s\n",
+                LogFlowFunc(("Process (CID=%u, status=%u) reported error: %s\n",
                              pData->hdr.u32ContextID, pData->u32Status, errMsg.c_str()));
             }
         }
     }
     else
-        LogFlowFunc(("Unexpected callback (magic=%u, context ID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
+        LogFlowFunc(("Unexpected callback (magic=%u, CID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
     LogFlowFunc(("Returned with rc=%Rrc\n", vrc));
     return vrc;
 }
@@ -866,10 +873,18 @@ int Guest::notifyCtrlExecOut(uint32_t             u32Function,
                                                  Guest::tr("The output operation was canceled"));
         }
         else
-            it->second.pProgress->notifyComplete(S_OK);
+        {
+            BOOL fCompleted;
+            if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
+                && !fCompleted)
+            {
+                    /* If we previously got completed notification, don't trigger again. */
+                it->second.pProgress->notifyComplete(S_OK);
+            }
+        }
     }
     else
-        LogFlowFunc(("Unexpected callback (magic=%u, context ID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
+        LogFlowFunc(("Unexpected callback (magic=%u, CID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
     return rc;
 }
 
@@ -888,7 +903,8 @@ int Guest::notifyCtrlExecInStatus(uint32_t                  u32Function,
         PCALLBACKDATAEXECINSTATUS pCBData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
         AssertPtr(pCBData);
 
-        /* Nothing to do here yet. */
+        /* Save bytes processed. */
+        pCBData->cbProcessed = pData->cbProcessed;
 
         /* Was progress canceled before? */
         BOOL fCanceled;
@@ -901,10 +917,18 @@ int Guest::notifyCtrlExecInStatus(uint32_t                  u32Function,
                                                  Guest::tr("The input operation was canceled"));
         }
         else
-            it->second.pProgress->notifyComplete(S_OK);
+        {
+            BOOL fCompleted;
+            if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
+                && !fCompleted)
+            {
+                    /* If we previously got completed notification, don't trigger again. */
+                it->second.pProgress->notifyComplete(S_OK);
+            }
+        }
     }
     else
-        LogFlowFunc(("Unexpected callback (magic=%u, context ID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
+        LogFlowFunc(("Unexpected callback (magic=%u, CID=%u) arrived\n", pData->hdr.u32Magic, pData->hdr.u32ContextID));
     return rc;
 }
 
@@ -917,7 +941,7 @@ int Guest::notifyCtrlClientDisconnected(uint32_t                        u32Funct
     CallbackMapIter it = getCtrlCallbackContextByID(pData->hdr.u32ContextID);
     if (it != mCallbackMap.end())
     {
-        LogFlowFunc(("Client with context ID=%u disconnected\n", it->first));
+        LogFlowFunc(("Client with CID=%u disconnected\n", it->first));
         destroyCtrlCallbackContext(it);
     }
     return rc;
@@ -1361,7 +1385,7 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten)
+STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -1369,8 +1393,14 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
     using namespace guestControl;
 
     CheckComArgExpr(aPID, aPID > 0);
-    if (aFlags != 0) /* Flags are not supported at the moment. */
-        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+    CheckComArgOutPointerValid(aBytesWritten);
+
+    /* Validate flags. */
+    if (aFlags)
+    {
+        if (!(aFlags & ProcessInputFlag_EOF))
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+    }
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1379,6 +1409,9 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
 
     try
     {
+        /* Init. */
+        *aBytesWritten = 0;
+
         /* Search for existing PID. */
         GuestProcessMapIterConst itProc = getProcessByPID(aPID);
         if (itProc != mGuestProcessMap.end())
@@ -1408,14 +1441,10 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
             if (SUCCEEDED(rc))
             {
                 rc = progress->init(static_cast<IGuest*>(this),
-                                    Bstr(tr("Getting output of process")).raw(),
-                                    TRUE);
+                                    Bstr(tr("Setting input for process")).raw(),
+                                    TRUE /* Cancelable */);
             }
             if (FAILED(rc)) return rc;
-
-            /* Adjust timeout */
-            if (aTimeoutMS == 0)
-                aTimeoutMS = UINT32_MAX;
 
             PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
             AssertReturn(pData, VBOX_E_IPRT_ERROR);
@@ -1429,14 +1458,15 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
             Assert(uContextID > 0);
 
             com::SafeArray<BYTE> sfaData(ComSafeArrayInArg(aData));
+            uint32_t cbSize = sfaData.size();
 
             VBOXHGCMSVCPARM paParms[6];
             int i = 0;
             paParms[i++].setUInt32(uContextID);
             paParms[i++].setUInt32(aPID);
             paParms[i++].setUInt32(aFlags);
-            paParms[i++].setPointer(sfaData.raw(), sfaData.size());
-            paParms[i++].setUInt32(sfaData.size());
+            paParms[i++].setPointer(sfaData.raw(), cbSize);
+            paParms[i++].setUInt32(cbSize);
 
             int vrc = VINF_SUCCESS;
 
@@ -1463,7 +1493,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
 
             if (RT_SUCCESS(vrc))
             {
-                LogFlowFunc(("Waiting for HGCM callback (timeout=%ldms) ...\n", aTimeoutMS));
+                LogFlowFunc(("Waiting for HGCM callback ...\n"));
 
                 /*
                  * Wait for the HGCM low level callback until the process
@@ -1477,7 +1507,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                     ComAssert(!it->second.pProgress.isNull());
 
                     /* Wait until operation completed. */
-                    rc = it->second.pProgress->WaitForCompletion(aTimeoutMS);
+                    rc = it->second.pProgress->WaitForCompletion(UINT32_MAX /* Wait forever */);
                     if (FAILED(rc)) throw rc;
 
                     /* Was the operation canceled by one of the parties? */
@@ -1490,24 +1520,19 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                         if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
                             && fCompleted)
                         {
-                            /* Nothing to do here yet. */
+                            PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
+                            Assert(it->second.cbData == sizeof(CALLBACKDATAEXECINSTATUS));
+                            AssertPtr(pData);
+
+                            *aBytesWritten = pData->cbProcessed;
                         }
-                        else /* If callback not called within time ... well, that's a timeout! */
-                            vrc = VERR_TIMEOUT;
                     }
                     else /* Operation was canceled. */
-                    {
                         vrc = VERR_CANCELLED;
-                    }
 
                     if (RT_FAILURE(vrc))
                     {
-                        if (vrc == VERR_TIMEOUT)
-                        {
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The guest did not process input within time (%ums)"), aTimeoutMS);
-                        }
-                        else if (vrc == VERR_CANCELLED)
+                        if (vrc == VERR_CANCELLED)
                         {
                             rc = setError(VBOX_E_IPRT_ERROR,
                                           tr("The input operation was canceled"));
@@ -1928,7 +1953,9 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
         if (   !(aFlags & CopyFileFlag_Recursive)
             && !(aFlags & CopyFileFlag_Update)
             && !(aFlags & CopyFileFlag_FollowLinks))
-            return E_INVALIDARG;
+        {
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+        }
     }
 
     HRESULT rc = S_OK;

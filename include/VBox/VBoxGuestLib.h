@@ -580,6 +580,7 @@ VBGLR3DECL(int)     VbglR3GuestCtrlExecSendOut(uint32_t     u32ClientId,
 VBGLR3DECL(int)     VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
                                                       uint32_t     u32Context,
                                                       uint32_t     u32PID,
+                                                      uint32_t     u32Status,
                                                       uint32_t     u32Flags,
                                                       uint32_t     cbWritten);
 /** @}  */

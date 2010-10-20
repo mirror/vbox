@@ -27,7 +27,7 @@
  * - Client: A client (e.g. VBoxService) running inside the guest OS waiting for
  *           new host commands to perform. There can be multiple clients connected
  *           to a service. A client is represented by its HGCM client ID.
- * - Context ID: A (almost) unique ID automatically generated on the host (Main API)
+ * - Context ID: An (almost) unique ID automatically generated on the host (Main API)
  *               to not only distinguish clients but individual requests. Because
  *               the host does not know anything about connected clients it needs
  *               an indicator which it can refer to later. This context ID gets
@@ -635,15 +635,16 @@ int Service::notifyHost(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paP
                                   (void *)(&data), sizeof(data));
     }
     else if (   eFunction == GUEST_EXEC_SEND_INPUT_STATUS
-             && cParms    == 4)
+             && cParms    == 5)
     {
         CALLBACKDATAEXECINSTATUS data;
         data.hdr.u32Magic = CALLBACKDATAMAGICEXECINSTATUS;
         paParms[0].getUInt32(&data.hdr.u32ContextID);
 
         paParms[1].getUInt32(&data.u32PID);
-        paParms[2].getUInt32(&data.u32Flags);
-        paParms[3].getUInt32(&data.cbProcessed);
+        paParms[2].getUInt32(&data.u32Status);
+        paParms[3].getUInt32(&data.u32Flags);
+        paParms[4].getUInt32(&data.cbProcessed);
 
         if (mpfnHostCallback)
             rc = mpfnHostCallback(mpvHostData, eFunction,
