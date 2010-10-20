@@ -297,6 +297,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathJoin.cpp \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathRealDup.cpp \
+	common/path/RTPathStartsWithRoot.cpp \
 	common/path/RTPathStripExt.cpp \
 	common/path/RTPathStripFilename.cpp \
 	common/path/RTPathStripTrailingSlash.cpp \
