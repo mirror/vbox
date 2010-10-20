@@ -894,6 +894,8 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 #ifdef VBOX
             if (val == VBE_DISPI_ID_VBOX_VIDEO) {
                 s->vbe_regs[s->vbe_index] = val;
+            } else if (val == VBE_DISPI_ID_ANYX) {
+                s->vbe_regs[s->vbe_index] = val;
             }
 #ifdef VBOX_WITH_HGSMI
             else if (val == VBE_DISPI_ID_HGSMI) {
