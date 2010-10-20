@@ -125,30 +125,30 @@ VOID VBoxVideoHGSMIDpc(
             {
                 break;
             }
-            VBOX_HGSMI_LOCK(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pSynchLock, flags, &OldIrql);
+            VBOX_HGSMI_LOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, &OldIrql);
             if(!(commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING))
             {
                 Assert(commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing);
                 commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing = false;
-                VBOX_HGSMI_UNLOCK(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pSynchLock, flags, OldIrql);
+                VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
                 break;
             }
-            VBOX_HGSMI_UNLOCK(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pSynchLock, flags, OldIrql);
+            VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
         }
         else
         {
             if(!bProcessing)
             {
-                VBOX_HGSMI_LOCK(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pSynchLock, flags, &OldIrql);
+                VBOX_HGSMI_LOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, &OldIrql);
                 if(!(commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
                         || commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing)
                 {
-                    VBOX_HGSMI_UNLOCK(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pSynchLock, flags, OldIrql);
+                    VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
                     break;
                 }
                 Assert(!commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing);
                 commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing = true;
-                VBOX_HGSMI_UNLOCK(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pSynchLock, flags, OldIrql);
+                VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
                 bProcessing = true;
             }
         }
@@ -365,7 +365,7 @@ static int vbvaInitInfoDisplay (void *pvData, VBVAINFOVIEW *p)
     PDEVICE_EXTENSION Extension;
 
     for (i = 0, Extension = PrimaryExtension;
-         i < PrimaryExtension->u.primary.cDisplays && Extension;
+         i < commonFromDeviceExt(PrimaryExtension)->cDisplays && Extension;
          i++, Extension = Extension->pNext)
     {
         p[i].u32ViewIndex     = Extension->iDevice;
@@ -380,7 +380,7 @@ static int vbvaInitInfoDisplay (void *pvData, VBVAINFOVIEW *p)
                                     0;
     }
 
-    if (i == PrimaryExtension->u.primary.cDisplays && Extension == NULL)
+    if (i == commonFromDeviceExt(PrimaryExtension)->cDisplays && Extension == NULL)
     {
         return VINF_SUCCESS;
     }
@@ -430,12 +430,12 @@ static int hgsmiInitFlagsLocation (PVBOXVIDEO_COMMON pCommon, void *pvContext, v
 }
 
 
-static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
+static int vboxSetupAdapterInfoHGSMI (PVBOXVIDEO_COMMON pCommon)
 {
     dprintf(("VBoxVideo::vboxSetupAdapterInfo\n"));
 
     /* setup the flags first to ensure they are initialized by the time the host heap is ready */
-    int rc = vboxCallChannel(commonFromDeviceExt(PrimaryExtension),
+    int rc = vboxCallChannel(pCommon,
             HGSMI_CH_HGSMI,
             HGSMI_CC_HOST_FLAGS_LOCATION,
                        sizeof (HGSMIBUFFERLOCATION),
@@ -443,24 +443,10 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
                        NULL,
                        NULL);
     AssertRC(rc);
-#ifndef VBOX_WITH_WDDM
-    if (RT_SUCCESS(rc))
-    {
-        rc = VBoxHGSMISendViewInfo (commonFromDeviceExt(PrimaryExtension),
-                               PrimaryExtension->u.primary.cDisplays,
-                               vbvaInitInfoDisplay,
-                               (void *) PrimaryExtension);
-        AssertRC(rc);
-    }
-    /* in case of WDDM we do not control the framebuffer location,
-     * i.e. it is assigned by Video Memory Manager,
-     * The FB information should be passed to guest from our
-     * DxgkDdiSetVidPnSourceAddress callback */
-#endif
-    if (RT_SUCCESS(rc) && commonFromDeviceExt(PrimaryExtension)->fCaps)
+    if (RT_SUCCESS(rc) && pCommon->fCaps)
     {
         /* Inform about caps */
-        rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
+        rc = vboxCallVBVA (pCommon,
                                VBVA_INFO_CAPS,
                                sizeof (VBVACAPS),
                                vbvaInitInfoCaps,
@@ -471,7 +457,7 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
     if (RT_SUCCESS (rc))
     {
         /* Report the host heap location. */
-        rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
+        rc = vboxCallVBVA (pCommon,
                            VBVA_INFO_HEAP,
                            sizeof (VBVAINFOHEAP),
                            vbvaInitInfoHeap,
@@ -729,9 +715,10 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 
     memset(commonFromDeviceExt(PrimaryExtension), 0,
            sizeof(*commonFromDeviceExt(PrimaryExtension)));
-    commonFromDeviceExt(PrimaryExtension)->cbVRAM = AdapterMemorySize;
-    commonFromDeviceExt(PrimaryExtension)->fCaps  = fCaps;
-    commonFromDeviceExt(PrimaryExtension)->bHGSMI = VBoxHGSMIIsSupported ();
+    commonFromDeviceExt(PrimaryExtension)->cbVRAM    = AdapterMemorySize;
+    commonFromDeviceExt(PrimaryExtension)->fCaps     = fCaps;
+    commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
+    commonFromDeviceExt(PrimaryExtension)->bHGSMI    = VBoxHGSMIIsSupported ();
     /* Why does this use VBoxVideoCmnMemZero?  The MSDN docs say that it should
      * only be used on mapped display adapter memory.  Done with memset above. */
     // VBoxVideoCmnMemZero(&commonFromDeviceExt(PrimaryExtension)->areaHostHeap, sizeof(HGSMIAREA));
@@ -850,7 +837,37 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
     /* Check whether the guest supports multimonitors. */
     if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
+        /* Query the configured number of displays. */
+        ULONG cDisplays = 0;
+        vboxQueryConfHGSMI (commonFromDeviceExt(PrimaryExtension), VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
+
+        dprintf(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
+                 cDisplays));
+
+        if (cDisplays == 0 || cDisplays > VBOX_VIDEO_MAX_SCREENS)
+        {
+            /* Host reported some bad value. Continue in the 1 screen mode. */
+            cDisplays = 1;
+        }
+        commonFromDeviceExt(PrimaryExtension)->cDisplays = cDisplays;
+    }
+
+    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    {
+        /* Setup the information for the host. */
+        rc = vboxSetupAdapterInfoHGSMI (commonFromDeviceExt(PrimaryExtension));
+
+        if (RT_FAILURE (rc))
+        {
+            commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
+        }
+    }
+
 #ifndef VBOX_WITH_WDDM
+    /* For WDDM, we simply store the number of monitors as we will deal with
+     * VidPN stuff later */
+    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    {
         typedef VP_STATUS (*PFNCREATESECONDARYDISPLAY)(PVOID, PVOID *, ULONG);
         PFNCREATESECONDARYDISPLAY pfnCreateSecondaryDisplay = NULL;
 
@@ -863,26 +880,15 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
                                                                         (PUCHAR)"VideoPortCreateSecondaryDisplay");
         }
 
-        if (pfnCreateSecondaryDisplay != NULL)
-#endif
+        if (!pfnCreateSecondaryDisplay)
+            commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
+        else
         {
-            /* Query the configured number of displays. */
-            ULONG cDisplays = 0;
-            vboxQueryConfHGSMI (commonFromDeviceExt(PrimaryExtension), VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
-
-            dprintf(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
-                     cDisplays));
-
-            if (cDisplays == 0 || cDisplays > VBOX_VIDEO_MAX_SCREENS)
-            {
-                /* Host reported some bad value. Continue in the 1 screen mode. */
-                cDisplays = 1;
-            }
-
-#ifndef VBOX_WITH_WDDM
             PDEVICE_EXTENSION pPrev = PrimaryExtension;
 
             ULONG iDisplay;
+            ULONG cDisplays = commonFromDeviceExt(PrimaryExtension)->cDisplays;
+            commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
             for (iDisplay = 1; iDisplay < cDisplays; iDisplay++)
             {
                PDEVICE_EXTENSION SecondaryExtension = NULL;
@@ -908,35 +914,40 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
                pPrev = SecondaryExtension;
 
                /* Take the successfully created display into account. */
-               PrimaryExtension->u.primary.cDisplays++;
+               commonFromDeviceExt(PrimaryExtension)->cDisplays++;
             }
-#else
-            /* simply store the number of monitors, we will deal with VidPN stuff later */
-            PrimaryExtension->u.primary.cDisplays = cDisplays;
-#endif
         }
 
         /* Failure to create secondary displays is not fatal */
         rc = NO_ERROR;
     }
 
-#ifndef VBOX_WITH_WDDM
     /* Now when the number of monitors is known and extensions are created,
      * calculate the layout of framebuffers.
      */
     VBoxComputeFrameBufferSizes (PrimaryExtension);
-#endif
+    /* in case of WDDM we do not control the framebuffer location,
+     * i.e. it is assigned by Video Memory Manager,
+     * The FB information should be passed to guest from our
+     * DxgkDdiSetVidPnSourceAddress callback */
 
     if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
-        /* Setup the information for the host. */
-        rc = vboxSetupAdapterInfoHGSMI (PrimaryExtension);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VBoxHGSMISendViewInfo (commonFromDeviceExt(PrimaryExtension),
+                                   commonFromDeviceExt(PrimaryExtension)->cDisplays,
+                                   vbvaInitInfoDisplay,
+                                   (void *) PrimaryExtension);
+            AssertRC(rc);
+        }
 
         if (RT_FAILURE (rc))
         {
             commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
         }
     }
+#endif
 
 #ifdef VBOX_WITH_WDDM
     if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
@@ -981,7 +992,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         {
             ulAvailable = offset;
             ulSize = ulAvailable / 2;
-            ulSize /= PrimaryExtension->u.primary.cDisplays;
+            ulSize /= commonFromDeviceExt(PrimaryExtension)->cDisplays;
             Assert(ulSize > VBVA_MIN_BUFFER_SIZE);
             if (ulSize > VBVA_MIN_BUFFER_SIZE)
             {
@@ -1000,9 +1011,9 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             ulSize &= ~0xFFF;
             Assert(ulSize);
 
-            Assert(ulSize * PrimaryExtension->u.primary.cDisplays < ulAvailable);
+            Assert(ulSize * commonFromDeviceExt(PrimaryExtension)->cDisplays < ulAvailable);
 
-            for (int i = PrimaryExtension->u.primary.cDisplays-1; i >= 0; --i)
+            for (int i = commonFromDeviceExt(PrimaryExtension)->cDisplays-1; i >= 0; --i)
             {
                 offset -= ulSize;
                 rc = vboxVbvaCreate(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva, offset, ulSize, i);
@@ -1043,7 +1054,7 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 
     if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
-        VBoxVideoCmnSpinLockCreate(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pSynchLock);
+        VBoxVideoCmnSpinLockCreate(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock);
     }
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
@@ -1058,7 +1069,7 @@ int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
     if (PrimaryExtension->pvVisibleVram)
         VBoxUnmapAdapterMemory(PrimaryExtension, (void**)&PrimaryExtension->pvVisibleVram, vboxWddmVramCpuVisibleSize(PrimaryExtension));
 
-    for (int i = PrimaryExtension->u.primary.cDisplays-1; i >= 0; --i)
+    for (int i = commonFromDeviceExt(PrimaryExtension)->cDisplays-1; i >= 0; --i)
     {
         rc = vboxVbvaDisable(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);
         AssertRC(rc);
@@ -1303,11 +1314,7 @@ static int vboxVBVADeleteChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBV
 
 static int vboxVBVACreateChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBVA_CHANNELCONTEXTS ** ppContext)
 {
-#ifndef VBOX_WITH_WDDM
-    uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
-#else
-    uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
-#endif
+    uint32_t cDisplays = (uint32_t)commonFromDeviceExt(PrimaryExtension)->cDisplays;
     const size_t size = RT_OFFSETOF(VBVA_CHANNELCONTEXTS, aContexts[cDisplays]);
     VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)VBoxVideoCmnMemAllocNonPaged(PrimaryExtension, size, MEM_TAG);
     if(pContext)

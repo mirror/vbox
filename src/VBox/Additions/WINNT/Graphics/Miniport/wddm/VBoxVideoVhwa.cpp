@@ -352,7 +352,7 @@ DECLINLINE(VOID) vboxVhwaHlpOverlayListInit(PDEVICE_EXTENSION pDevExt, D3DDDI_VI
 
 static void vboxVhwaInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
-    Assert(srcId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)pDevExt->u.primary.cDisplays);
+    Assert(srcId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)commonFromDeviceExt(pDevExt)->cDisplays);
     VBOXVHWA_INFO *pSettings = &pDevExt->aSources[srcId].Vhwa.Settings;
     memset (pSettings, 0, sizeof (VBOXVHWA_INFO));
 
@@ -417,7 +417,7 @@ static void vboxVhwaInitSrc(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOUR
 
 void vboxVhwaInit(PDEVICE_EXTENSION pDevExt)
 {
-    for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+    for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
         vboxVhwaInitSrc(pDevExt, (D3DDDI_VIDEO_PRESENT_SOURCE_ID)i);
     }
@@ -427,7 +427,7 @@ void vboxVhwaFree(PDEVICE_EXTENSION pDevExt)
 {
     /* we do not allocate/map anything, just issue a Disable command
      * to ensure all pending commands are flushed */
-    for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+    for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
         vboxVhwaDisable(pDevExt, i);
     }
@@ -679,7 +679,7 @@ int vboxVhwaHlpGetSurfInfoForSource(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCAT
 
 int vboxVhwaHlpGetSurfInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf)
 {
-    for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+    for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
     {
         PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[i];
         if (pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
@@ -719,8 +719,8 @@ int vboxVhwaHlpCreatePrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource
 
 int vboxVhwaHlpCheckInit(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
-    Assert(VidPnSourceId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)pDevExt->u.primary.cDisplays);
-    if (VidPnSourceId >= (D3DDDI_VIDEO_PRESENT_SOURCE_ID)pDevExt->u.primary.cDisplays)
+    Assert(VidPnSourceId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)commonFromDeviceExt(pDevExt)->cDisplays);
+    if (VidPnSourceId >= (D3DDDI_VIDEO_PRESENT_SOURCE_ID)commonFromDeviceExt(pDevExt)->cDisplays)
         return VERR_INVALID_PARAMETER;
 
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[VidPnSourceId];
@@ -765,8 +765,8 @@ int vboxVhwaHlpCheckInit(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_
 
 int vboxVhwaHlpCheckTerm(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
-    Assert(VidPnSourceId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)pDevExt->u.primary.cDisplays);
-    if (VidPnSourceId >= (D3DDDI_VIDEO_PRESENT_SOURCE_ID)pDevExt->u.primary.cDisplays)
+    Assert(VidPnSourceId < (D3DDDI_VIDEO_PRESENT_SOURCE_ID)commonFromDeviceExt(pDevExt)->cDisplays);
+    if (VidPnSourceId >= (D3DDDI_VIDEO_PRESENT_SOURCE_ID)commonFromDeviceExt(pDevExt)->cDisplays)
         return VERR_INVALID_PARAMETER;
 
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[VidPnSourceId];
