@@ -180,25 +180,27 @@ void vringWriteUsedElem(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex, uint3
                        &elem, sizeof(elem));
 }
 
-void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, uint32_t uLen)
+void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, uint32_t uLen, uint32_t uReserved)
 {
-    unsigned int i, uOffset;
+    unsigned int i, uOffset, cbReserved = uReserved;
 
     Log2(("%s vqueuePut: %s desc_idx=%u acb=%u\n", INSTANCE(pState),
           QUEUENAME(pState, pQueue), pElem->uIndex, uLen));
-    for (i = uOffset = 0; i < pElem->nIn && uOffset < uLen; i++)
+    for (i = uOffset = 0; i < pElem->nIn && uOffset < uLen - uReserved; i++)
     {
-        uint32_t cbSegLen = RT_MIN(uLen - uOffset, pElem->aSegsIn[i].cb);
+        uint32_t cbSegLen = RT_MIN(uLen - cbReserved - uOffset, pElem->aSegsIn[i].cb - cbReserved);
         if (pElem->aSegsIn[i].pv)
         {
             Log2(("%s vqueuePut: %s used_idx=%u seg=%u addr=%p pv=%p cb=%u acb=%u\n", INSTANCE(pState),
                   QUEUENAME(pState, pQueue), pQueue->uNextUsedIndex, i, pElem->aSegsIn[i].addr, pElem->aSegsIn[i].pv, pElem->aSegsIn[i].cb, cbSegLen));
-            PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns), pElem->aSegsIn[i].addr,
+            PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns), pElem->aSegsIn[i].addr + cbReserved,
                                pElem->aSegsIn[i].pv, cbSegLen);
+            cbReserved = 0;
         }
         uOffset += cbSegLen;
     }
 
+    Assert((uReserved + uOffset) == uLen || pElem->nIn == 0);
     Log2(("%s vqueuePut: %s used_idx=%u guest_used_idx=%u id=%u len=%u\n", INSTANCE(pState),
           QUEUENAME(pState, pQueue), pQueue->uNextUsedIndex, vringReadUsedIndex(pState, &pQueue->VRing), pElem->uIndex, uLen));
     vringWriteUsedElem(pState, &pQueue->VRing, pQueue->uNextUsedIndex++, pElem->uIndex, uLen);

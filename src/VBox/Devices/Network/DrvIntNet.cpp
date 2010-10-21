@@ -725,44 +725,53 @@ static int drvR3IntNetRecvRun(PDRVINTNET pThis)
                     {
                         /*
                          * Generic segment offload frame (INTNETHDR_TYPE_GSO).
-                         *
-                         * This is where we do the offloading since we don't
-                         * emulate any NICs with large receive offload (LRO).
                          */
                         STAM_COUNTER_INC(&pThis->StatReceivedGso);
                         PCPDMNETWORKGSO pGso = IntNetHdrGetGsoContext(pHdr, pBuf);
                         if (PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(PDMNETWORKGSO)))
                         {
-                            cbFrame -= sizeof(PDMNETWORKGSO);
+                            if (!pThis->pIAboveNet->pfnReceiveGso ||
+                                RT_FAILURE(pThis->pIAboveNet->pfnReceiveGso(pThis->pIAboveNet,
+                                                                            (uint8_t *)(pGso + 1),
+                                                                            pHdr->cbFrame - sizeof(PDMNETWORKGSO),
+                                                                            pGso)))
+                            {
+                                /*
+                                 *
+                                 * This is where we do the offloading since this NIC
+                                 * does not support large receive offload (LRO).
+                                 */
+                                cbFrame -= sizeof(PDMNETWORKGSO);
 
-                            uint8_t         abHdrScratch[256];
-                            uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
+                                uint8_t         abHdrScratch[256];
+                                uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
 #ifdef LOG_ENABLED
-                            if (LogIsEnabled())
-                            {
-                                uint64_t u64Now = RTTimeProgramNanoTS();
-                                LogFlow(("drvR3IntNetRecvRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu; GSO - %u segs\n",
-                                         cbFrame, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS, cSegs));
-                                pThis->u64LastReceiveTS = u64Now;
-                                Log2(("drvR3IntNetRecvRun: cbFrame=%#x type=%d cbHdrs=%#x Hdr1=%#x Hdr2=%#x MMS=%#x\n"
-                                      "%.*Rhxd\n",
-                                      cbFrame, pGso->u8Type, pGso->cbHdrs, pGso->offHdr1, pGso->offHdr2, pGso->cbMaxSeg,
-                                      cbFrame - sizeof(*pGso), pGso + 1));
-                            }
-#endif
-                            for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
-                            {
-                                uint32_t cbSegFrame;
-                                void    *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame, abHdrScratch,
-                                                                              iSeg, cSegs, &cbSegFrame);
-                                rc = drvR3IntNetRecvWaitForSpace(pThis);
-                                if (RT_FAILURE(rc))
+                                if (LogIsEnabled())
                                 {
-                                    Log(("drvR3IntNetRecvRun: drvR3IntNetRecvWaitForSpace -> %Rrc; iSeg=%u cSegs=%u\n", iSeg, cSegs));
-                                    break; /* we drop the rest. */
+                                    uint64_t u64Now = RTTimeProgramNanoTS();
+                                    LogFlow(("drvR3IntNetRecvRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu; GSO - %u segs\n",
+                                             cbFrame, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS, cSegs));
+                                    pThis->u64LastReceiveTS = u64Now;
+                                    Log2(("drvR3IntNetRecvRun: cbFrame=%#x type=%d cbHdrs=%#x Hdr1=%#x Hdr2=%#x MMS=%#x\n"
+                                          "%.*Rhxd\n",
+                                          cbFrame, pGso->u8Type, pGso->cbHdrs, pGso->offHdr1, pGso->offHdr2, pGso->cbMaxSeg,
+                                          cbFrame - sizeof(*pGso), pGso + 1));
                                 }
-                                rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pvSegFrame, cbSegFrame);
-                                AssertRC(rc);
+#endif
+                                for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
+                                {
+                                    uint32_t cbSegFrame;
+                                    void    *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame, abHdrScratch,
+                                                                                  iSeg, cSegs, &cbSegFrame);
+                                    rc = drvR3IntNetRecvWaitForSpace(pThis);
+                                    if (RT_FAILURE(rc))
+                                    {
+                                        Log(("drvR3IntNetRecvRun: drvR3IntNetRecvWaitForSpace -> %Rrc; iSeg=%u cSegs=%u\n", iSeg, cSegs));
+                                        break; /* we drop the rest. */
+                                    }
+                                    rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pvSegFrame, cbSegFrame);
+                                    AssertRC(rc);
+                                }
                             }
                         }
                         else

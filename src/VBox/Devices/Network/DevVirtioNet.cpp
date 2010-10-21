@@ -18,7 +18,8 @@
 
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO_NET
 #define VNET_GC_SUPPORT
-//#define VNET_WITH_GSO
+#define VNET_WITH_GSO
+#define VNET_WITH_MERGEABLE_RX_BUFS
 
 #include <VBox/pdmdev.h>
 #include <VBox/pdmnetifs.h>
@@ -227,6 +228,15 @@ typedef struct VNetHdr VNETHDR;
 typedef VNETHDR *PVNETHDR;
 AssertCompileSize(VNETHDR, 10);
 
+struct VNetHdrMrx
+{
+    VNETHDR  Hdr;
+    uint16_t u16NumBufs;
+};
+typedef struct VNetHdrMrx VNETHDRMRX;
+typedef VNETHDRMRX *PVNETHDRMRX;
+AssertCompileSize(VNETHDRMRX, 12);
+
 AssertCompileMemberOffset(VNETSTATE, VPCI, 0);
 
 #define VNET_OK                    0
@@ -253,6 +263,12 @@ struct VNetCtlHdr
 typedef struct VNetCtlHdr VNETCTLHDR;
 typedef VNETCTLHDR *PVNETCTLHDR;
 AssertCompileSize(VNETCTLHDR, 2);
+
+/* Returns true if large packets are written into several RX buffers. */
+DECLINLINE(bool) vnetMergeableRxBuffers(PVNETSTATE pState)
+{
+    return !!(pState->VPCI.uGuestFeatures & VNET_F_MRG_RXBUF);
+}
 
 DECLINLINE(int) vnetCsEnter(PVNETSTATE pState, int rcBusy)
 {
@@ -291,7 +307,7 @@ DECLINLINE(void) vnetPacketDump(PVNETSTATE pState, const uint8_t *cpPacket, size
 #ifdef DEBUG
     Log(("%s %s packet #%d (%d bytes):\n",
          INSTANCE(pState), cszText, ++pState->u32PktNo, cb));
-    //Log3(("%.*Rhxd\n", cb, cpPacket));
+    Log3(("%.*Rhxd\n", cb, cpPacket));
 #endif
 }
 
@@ -317,6 +333,9 @@ PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
         | VNET_F_HOST_TSO4
         | VNET_F_HOST_TSO6
         | VNET_F_HOST_UFO
+#endif
+#ifdef VNET_WITH_MERGEABLE_RX_BUFS
+        | VNET_F_MRG_RXBUF
 #endif
         ;
 }
@@ -384,6 +403,7 @@ PDMBOTHCBDECL(int) vnetReset(void *pvState)
         STATUS = VNET_S_LINK_UP;
     else
         STATUS = 0;
+
     /*
      * By default we pass all packets up since the older guests cannot control
      * virtio mode.
@@ -654,7 +674,10 @@ static bool vnetAddressFilter(PVNETSTATE pState, const void *pvBuf, size_t cb)
     /* Compare TPID with VLAN Ether Type */
     if (   u16Ptr[6] == RT_H2BE_U16(0x8100)
         && !ASMBitTest(pState->aVlanFilter, RT_BE2H_U16(u16Ptr[7]) & 0xFFF))
+    {
+        Log4(("%s vnetAddressFilter: not our VLAN, returning false\n", INSTANCE(pState)));
         return false;
+    }
 
     if (vnetIsBroadcast(pvBuf))
         return true;
@@ -664,10 +687,15 @@ static bool vnetAddressFilter(PVNETSTATE pState, const void *pvBuf, size_t cb)
 
     if (!memcmp(pState->config.mac.au8, pvBuf, sizeof(RTMAC)))
         return true;
+    Log4(("%s vnetAddressFilter: %RTmac (conf) != %RTmac (dest)\n",
+          INSTANCE(pState), pState->config.mac.au8, pvBuf));
 
     for (unsigned i = 0; i < pState->nMacFilterEntries; i++)
         if (!memcmp(&pState->aMacFilter[i], pvBuf, sizeof(RTMAC)))
             return true;
+
+    Log2(("%s vnetAddressFilter: failed all tests, returning false, packet dump follows:\n", INSTANCE(pState)));
+    vnetPacketDump(pState, (const uint8_t*)pvBuf, cb, "<-- Incoming");
 
     return false;
 }
@@ -684,23 +712,68 @@ static bool vnetAddressFilter(PVNETSTATE pState, const void *pvBuf, size_t cb)
  * @param   cb              Number of bytes available in the buffer.
  * @thread  RX
  */
-static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
+static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb,
+                              PCPDMNETWORKGSO pGso)
 {
-    VNETHDR hdr;
+    VNETHDRMRX   Hdr;
+    PVNETHDRMRX pHdr;
+    unsigned    uHdrLen;
+    RTGCPHYS     addrHdrMrx = 0;
 
-    hdr.u8Flags   = 0;
-    hdr.u8GSOType = VNETHDR_GSO_NONE;
+    if (pGso)
+    {
+        Log2(("%s vnetHandleRxPacket: gso type=%x cbHdr=%u mss=%u"
+              " off1=0x%x off2=0x%x\n", INSTANCE(pState), pGso->u8Type,
+              pGso->cbHdrs, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
+        Hdr.Hdr.u8Flags = VNETHDR_F_NEEDS_CSUM;
+        switch (pGso->u8Type)
+        {
+            case PDMNETWORKGSOTYPE_IPV4_TCP:
+                Hdr.Hdr.u8GSOType = VNETHDR_GSO_TCPV4;
+                Hdr.Hdr.u16CSumOffset = RT_OFFSETOF(RTNETTCP, th_sum);
+                break;
+            case PDMNETWORKGSOTYPE_IPV6_TCP:
+                Hdr.Hdr.u8GSOType = VNETHDR_GSO_TCPV6;
+                Hdr.Hdr.u16CSumOffset = RT_OFFSETOF(RTNETTCP, th_sum);
+                break;
+            case PDMNETWORKGSOTYPE_IPV4_UDP:
+                Hdr.Hdr.u8GSOType = VNETHDR_GSO_UDP;
+                Hdr.Hdr.u16CSumOffset = RT_OFFSETOF(RTNETUDP, uh_sum);
+                break;
+            default:
+                return VERR_INVALID_PARAMETER;
+        }
+        Hdr.Hdr.u16HdrLen = pGso->cbHdrs;
+        Hdr.Hdr.u16GSOSize = pGso->cbMaxSeg;
+        Hdr.Hdr.u16CSumStart = pGso->offHdr2;
+        STAM_REL_COUNTER_INC(&pState->StatReceiveGSO);
+    }
+    else
+    {
+        Hdr.Hdr.u8Flags   = 0;
+        Hdr.Hdr.u8GSOType = VNETHDR_GSO_NONE;
+    }
 
-    vnetPacketDump(pState, (const uint8_t*)pvBuf, cb, "<-- Incoming");
+    if (vnetMergeableRxBuffers(pState))
+        uHdrLen = sizeof(VNETHDRMRX);
+    else
+        uHdrLen = sizeof(VNETHDR);
+
+    //vnetPacketDump(pState, (const uint8_t*)pvBuf, cb, "<-- Incoming");
 
     unsigned int uOffset = 0;
-    for (unsigned int nElem = 0; uOffset < cb; nElem++)
+    unsigned int nElem;
+    for (nElem = 0; uOffset < cb; nElem++)
     {
         VQUEUEELEM elem;
-        unsigned int nSeg = 0, uElemSize = 0;
+        unsigned int nSeg = 0, uElemSize = 0, cbReserved = 0;
 
         if (!vqueueGet(&pState->VPCI, pState->pRxQueue, &elem))
         {
+            /*
+             * @todo: It is possible to run out of RX buffers if only a few
+             * were added and we received a big packet.
+             */
             Log(("%s vnetHandleRxPacket: Suddenly there is no space in receive queue!\n", INSTANCE(pState)));
             return VERR_INTERNAL_ERROR;
         }
@@ -713,41 +786,72 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
 
         if (nElem == 0)
         {
-            /* The very first segment of the very first element gets the header. */
-            if (elem.aSegsIn[nSeg].cb != sizeof(VNETHDR))
+            if (vnetMergeableRxBuffers(pState))
             {
-                Log(("%s vnetHandleRxPacket: The first descriptor does match the header size!\n", INSTANCE(pState)));
-                return VERR_INTERNAL_ERROR;
+                addrHdrMrx = elem.aSegsIn[nSeg].addr;
+                cbReserved = uHdrLen;
             }
-
-            elem.aSegsIn[nSeg++].pv = &hdr;
-            uElemSize += sizeof(VNETHDR);
+            else
+            {
+                /* The very first segment of the very first element gets the header. */
+                if (elem.aSegsIn[nSeg].cb != sizeof(VNETHDR))
+                {
+                    Log(("%s vnetHandleRxPacket: The first descriptor does match the header size!\n", INSTANCE(pState)));
+                    return VERR_INTERNAL_ERROR;
+                }
+                elem.aSegsIn[nSeg++].pv = &Hdr;
+            }
+            uElemSize += uHdrLen;
         }
-
         while (nSeg < elem.nIn && uOffset < cb)
         {
-            unsigned int uSize = (unsigned int)RT_MIN(elem.aSegsIn[nSeg].cb, cb - uOffset);
+            unsigned int uSize = (unsigned int)RT_MIN(elem.aSegsIn[nSeg].cb - (nSeg?0:cbReserved),
+                                                      cb - uOffset);
             elem.aSegsIn[nSeg++].pv = (uint8_t*)pvBuf + uOffset;
             uOffset += uSize;
             uElemSize += uSize;
         }
         STAM_PROFILE_START(&pState->StatReceiveStore, a);
-        vqueuePut(&pState->VPCI, pState->pRxQueue, &elem, uElemSize);
+        vqueuePut(&pState->VPCI, pState->pRxQueue, &elem, uElemSize, cbReserved);
         STAM_PROFILE_STOP(&pState->StatReceiveStore, a);
+        if (!vnetMergeableRxBuffers(pState))
+            break;
+        cbReserved = 0;
+    }
+    if (vnetMergeableRxBuffers(pState))
+    {
+        Hdr.u16NumBufs = nElem;
+        int rc = PDMDevHlpPhysWrite(pState->VPCI.CTX_SUFF(pDevIns), addrHdrMrx,
+                                    &Hdr, sizeof(Hdr));
+        if (RT_FAILURE(rc))
+        {
+            Log(("%s vnetHandleRxPacket: Failed to write merged RX buf header: %Rrc\n",
+                 INSTANCE(pState), rc));
+            return rc;
+        }
     }
     vqueueSync(&pState->VPCI, pState->pRxQueue);
+    if (uOffset < cb)
+    {
+        Log(("%s vnetHandleRxPacket: Packet did not fit into RX queue (packet size=%u)!\n",
+             INSTANCE(pState), cb));
+        return VERR_TOO_MUCH_DATA;
+    }
 
     return VINF_SUCCESS;
 }
 
 /**
- * @interface_method_impl{PDMINETWORKDOWN,pfnReceive}
+ * @interface_method_impl{PDMINETWORKDOWN,pfnReceiveGso}
  */
-static DECLCALLBACK(int) vnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) vnetNetworkDown_ReceiveGso(PPDMINETWORKDOWN pInterface,
+                                                    const void *pvBuf, size_t cb,
+                                                    PCPDMNETWORKGSO pGso)
 {
     VNETSTATE *pState = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
 
-    Log2(("%s vnetNetworkDown_Receive: pvBuf=%p cb=%u\n", INSTANCE(pState), pvBuf, cb));
+    Log2(("%s vnetNetworkDown_ReceiveGso: pvBuf=%p cb=%u pGso=%p\n",
+          INSTANCE(pState), pvBuf, cb, pGso));
     int rc = vnetCanReceive(pState);
     if (RT_FAILURE(rc))
         return rc;
@@ -766,7 +870,7 @@ static DECLCALLBACK(int) vnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, co
         rc = vnetCsRxEnter(pState, VERR_SEM_BUSY);
         if (RT_SUCCESS(rc))
         {
-            rc = vnetHandleRxPacket(pState, pvBuf, cb);
+            rc = vnetHandleRxPacket(pState, pvBuf, cb, pGso);
             STAM_REL_COUNTER_ADD(&pState->StatReceiveBytes, cb);
             vnetCsRxLeave(pState);
         }
@@ -774,6 +878,14 @@ static DECLCALLBACK(int) vnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, co
     vpciSetReadLed(&pState->VPCI, false);
     STAM_PROFILE_STOP(&pState->StatReceive, a);
     return rc;
+}
+
+/**
+ * @interface_method_impl{PDMINETWORKDOWN,pfnReceive}
+ */
+static DECLCALLBACK(int) vnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
+{
+    return vnetNetworkDown_ReceiveGso(pInterface, pvBuf, cb, NULL);
 }
 
 /**
@@ -940,6 +1052,12 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
         }
     }
 
+    unsigned int uHdrLen;
+    if (vnetMergeableRxBuffers(pState))
+        uHdrLen = sizeof(VNETHDRMRX);
+    else
+        uHdrLen = sizeof(VNETHDR);
+
     Log3(("%s vnetTransmitPendingPackets: About to trasmit %d pending packets\n", INSTANCE(pState),
           vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
 
@@ -949,10 +1067,10 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
     while (vqueueGet(&pState->VPCI, pQueue, &elem))
     {
         unsigned int uOffset = 0;
-        if (elem.nOut < 2 || elem.aSegsOut[0].cb != sizeof(VNETHDR))
+        if (elem.nOut < 2 || elem.aSegsOut[0].cb != uHdrLen)
         {
             Log(("%s vnetQueueTransmit: The first segment is not the header! (%u < 2 || %u != %u).\n",
-                 INSTANCE(pState), elem.nOut, elem.aSegsOut[0].cb, sizeof(VNETHDR)));
+                 INSTANCE(pState), elem.nOut, elem.aSegsOut[0].cb, uHdrLen));
             break; /* For now we simply ignore the header, but it must be there anyway! */
         }
         else
@@ -991,7 +1109,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
                         uOffset += elem.aSegsOut[i].cb;
                     }
                     pSgBuf->cbUsed = uSize;
-                    vnetPacketDump(pState, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
+                    //vnetPacketDump(pState, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
                     if (pGso)
                         STAM_REL_COUNTER_INC(&pState->StatTransmitGSO);
                     else if (Hdr.u8Flags & VNETHDR_F_NEEDS_CSUM)
@@ -1474,6 +1592,7 @@ static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
         rc = SSMR3GetMem( pSSM, pState->config.mac.au8,
                           sizeof(pState->config.mac));
         AssertRCReturn(rc, rc);
+
         if (uVersion > VIRTIO_SAVEDSTATE_VERSION_3_1_BETA1)
         {
             rc = SSMR3GetBool(pSSM, &pState->fPromiscuous);
@@ -1809,6 +1928,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Interfaces */
     pState->INetworkDown.pfnWaitReceiveAvail = vnetNetworkDown_WaitReceiveAvail;
     pState->INetworkDown.pfnReceive          = vnetNetworkDown_Receive;
+    pState->INetworkDown.pfnReceiveGso       = vnetNetworkDown_ReceiveGso;
     pState->INetworkDown.pfnXmitPending      = vnetNetworkDown_XmitPending;
 
     pState->INetworkConfig.pfnGetMac         = vnetGetMac;

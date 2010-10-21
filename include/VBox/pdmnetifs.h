@@ -137,6 +137,19 @@ typedef struct PDMINETWORKDOWN
     DECLR3CALLBACKMEMBER(int, pfnReceive,(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb));
 
     /**
+     * Receive data with segmentation context from the network.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           The available data.
+     * @param   cb              Number of bytes available in the buffer.
+     * @param   pGso            Segmentation context.
+     *
+     * @thread  Non-EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnReceiveGso,(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb, PCPDMNETWORKGSO pGso));
+
+    /**
      * Do pending transmit work on the leaf driver's XMIT thread.
      *
      * When a PDMINETWORKUP::pfnBeginTransmit or PDMINETWORKUP::pfnAllocBuf call
