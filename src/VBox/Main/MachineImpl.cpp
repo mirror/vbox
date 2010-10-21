@@ -3683,14 +3683,15 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     mMediaData.backup();
     mMediaData->mAttachments.push_back(attachment);
 
+    mediumLock.release();
+    treeLock.leave();
+
     if (fNeedsMachineSaveSettings)
         saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force);
 
     if (fNeedsGlobalSaveSettings)
     {
         // save the global settings; for that we should hold only the VirtualBox lock
-        mediumLock.release();
-        treeLock.leave();
         alock.release();
 
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
