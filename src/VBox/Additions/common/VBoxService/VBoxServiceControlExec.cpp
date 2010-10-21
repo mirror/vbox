@@ -62,13 +62,8 @@ static int VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, u
     int rc = RTCritSectEnter(&pStdInBuf->CritSect);
     if (RT_SUCCESS(rc))
     {
-        int rc2;
-        /* If there still was buffered data to write, remove the writable pipe as well. */
-        if (pStdInBuf->cbOffset < pStdInBuf->cbSize)
-        {
-            rc2 = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
-            AssertRC(rc2);
-        }
+        int rc2 = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
+        AssertRC(rc2);
 
         rc2 = RTPipeClose(*phStdInW);
         AssertRC(rc2);
@@ -1028,13 +1023,16 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
 
 #ifdef VBOXSERVICE_TOOLBOX
 /**
- * TODO
+ * Constructs the argv command line of a VBoxService toolbox program
+ * by first appending the full path of VBoxService along  with the given
+ * tool name (e.g. "vbox_cat") + the tool's actual command line parameters.
  *
  * @return IPRT status code.
- * @param  pszFileName
- * @param  pszTool
- * @param  papszArgs
- * @param  ppapszArgv
+ * @param  pszFileName      File name (full path) of this process.
+ * @param  pszTool          Tool name (e.g. "vbox_cat") to use.
+ * @param  papszArgs        Original argv command line from the host.
+ * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
+ *                          Needs to be freed with RTGetOptArgvFree.
  */
 int VBoxServiceControlExecPrepareToolboxArgv(const char *pszFileName, const char *pszTool,
                                              const char * const *papszArgs, char ***ppapszArgv)
