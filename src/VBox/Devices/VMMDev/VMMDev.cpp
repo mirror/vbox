@@ -2219,12 +2219,12 @@ static DECLCALLBACK(int) vmmdevSetAbsoluteMouse(PPDMIVMMDEVPORT pInterface, uint
  * @returns VBox status code
  * @param   pCapabilities  Pointer of result value
  */
-static DECLCALLBACK(int) vmmdevQueryMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t *pCapabilities)
+static DECLCALLBACK(int) vmmdevQueryMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t *pfCaps)
 {
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
-    if (!pCapabilities)
+    if (!pfCaps)
         return VERR_INVALID_PARAMETER;
-    *pCapabilities = pThis->mouseCapabilities;
+    *pfCaps = pThis->mouseCapabilities;
     return VINF_SUCCESS;
 }
 
@@ -2234,20 +2234,21 @@ static DECLCALLBACK(int) vmmdevQueryMouseCapabilities(PPDMIVMMDEVPORT pInterface
  * @returns VBox status code
  * @param   capabilities  Capability mask
  */
-static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t capabilities)
+static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCaps)
 {
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
-    bool bNotify = (   (capabilities & VMMDEV_MOUSE_NOTIFY_GUEST_MASK)
+    bool fNotify = (   (fCaps & VMMDEV_MOUSE_NOTIFY_GUEST_MASK)
                     != (pThis->mouseCapabilities & VMMDEV_MOUSE_NOTIFY_GUEST_MASK));
 
-    Log(("vmmdevSetMouseCapabilities: bNotify %d\n", bNotify));
+    LogRelFlowFunc(("fCaps=0x%x, fNotify %s\n", fCaps,
+                    fNotify ? "TRUE" : "FALSE"));
 
     pThis->mouseCapabilities &=   ~VMMDEV_MOUSE_HOST_MASK
                                 | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
-    pThis->mouseCapabilities |= (capabilities & VMMDEV_MOUSE_HOST_MASK);
-    if (bNotify)
+    pThis->mouseCapabilities |= (fCaps & VMMDEV_MOUSE_HOST_MASK);
+    if (fNotify)
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
 
     PDMCritSectLeave(&pThis->CritSect);
