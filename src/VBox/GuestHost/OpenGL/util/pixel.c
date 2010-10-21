@@ -1801,12 +1801,18 @@ typedef struct tgaheader_tag
 void crDumpTGA(GLint w, GLint h, GLvoid *data)
 {
     char fname[200];
-    tgaheader_t header;
-    FILE *out;
 
     if (!w || !h) return;
 
     sprintf(fname, "tex%i.tga", _tnum++);
+    crDumpNamedTGA(fname, w, h, data);
+}
+
+void crDumpNamedTGA(const char* fname, GLint w, GLint h, GLvoid *data)
+{
+    tgaheader_t header;
+    FILE *out;
+
     out = fopen(fname, "w");
     if (!out) crError("can't create %s!", fname);
 
