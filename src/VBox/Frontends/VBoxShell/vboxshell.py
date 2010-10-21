@@ -404,7 +404,7 @@ def recordDemo(ctx, console, file, dur):
 
     listener = console.eventSource.createListener()
     registered = False
-    # we create an aggregated event source to listen for multiple event types
+    # we create an aggregated event source to listen for multiple event sources (keyboard and mouse in our case)
     agg = console.eventSource.createAggregator([console.keyboard.eventSource, console.mouse.eventSource])
     demo = open(file, 'w')
     header="VM="+console.machine.name+"\n"
