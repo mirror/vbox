@@ -623,7 +623,7 @@ int handleConvert(HandlerArg *a)
     const char *pszDstFilename = NULL;
     bool fStdIn = false;
     bool fStdOut = false;
-    char *pszSrcFormat = NULL;
+    const char *pszSrcFormat = NULL;
     const char *pszDstFormat = NULL;
     const char *pszVariant = NULL;
     PVBOXHDD pSrcDisk = NULL;
@@ -669,10 +669,10 @@ int handleConvert(HandlerArg *a)
                 fStdOut = true;
                 break;
             case 's':   // --srcformat
-                pszSrcFormat = RTStrDup(ValueUnion.psz);
+                pszSrcFormat = ValueUnion.psz;
                 break;
             case 'd':   // --dstformat
-                pszDstFormat = RTStrDup(ValueUnion.psz);
+                pszDstFormat = ValueUnion.psz;
                 break;
             case 'v':   // --variant
                 pszVariant = ValueUnion.psz;
@@ -685,7 +685,27 @@ int handleConvert(HandlerArg *a)
         }
     }
 
-    /* Check for mandatory parameters. */
+    /* Check for mandatory parameters and handle dummies/defaults. */
+    if (fStdIn && !pszSrcFormat)
+        return errorSyntax("Mandatory --srcformat option missing\n");
+    if (!pszDstFormat)
+        pszDstFormat = "VDI";
+    if (fStdIn && !pszSrcFilename)
+    {
+        /* Complete dummy, will be just passed to various calls to fulfill
+         * the "must be non-NULL" requirement, and is completely ignored
+         * otherwise. It shown in the stderr message below. */
+        pszSrcFilename = "stdin";
+    }
+    if (fStdOut && !pszDstFilename)
+    {
+        /* Will be stored in the destination image if it is a streamOptimized
+         * VMDK, but it isn't really relevant - use it for "branding". */
+        if (!RTStrICmp(pszDstFormat, "VMDK"))
+            pszDstFilename = "VirtualBoxStream.vmdk";
+        else
+            pszDstFilename = "stdout";
+    }
     if (!pszSrcFilename)
         return errorSyntax("Mandatory --srcfilename option missing\n");
     if (!pszDstFilename)
@@ -767,12 +787,14 @@ int handleConvert(HandlerArg *a)
         /* try to determine input format if not specified */
         if (!pszSrcFormat)
         {
-            rc = VDGetFormat(NULL, NULL, pszSrcFilename, &pszSrcFormat);
+            char *pszFormat;
+            rc = VDGetFormat(NULL, NULL, pszSrcFilename, &pszFormat);
             if (RT_FAILURE(rc))
             {
                 errorSyntax("No file format specified, please specify format: %Rrc\n", rc);
                 break;
             }
+            pszSrcFormat = pszFormat;
         }
 
         rc = VDCreate(pVDIfs, &pSrcDisk);
@@ -790,10 +812,6 @@ int handleConvert(HandlerArg *a)
             errorRuntime("Error while opening source image: %Rrc\n", rc);
             break;
         }
-
-        /* output format defaults to VDI */
-        if (!pszDstFormat)
-            pszDstFormat = "VDI";
 
         rc = VDCreate(pVDIfs, &pDstDisk);
         if (RT_FAILURE(rc))
