@@ -56,7 +56,7 @@ VBOXUSB_GRP=$GROUPNAME
 
 usage() {
     info ""
-    info "Usage: install [<installation directory>] | uninstall"
+    info "Usage: install | uninstall"
     info ""
     info "Example:"
     info "$SELF install"
@@ -192,13 +192,10 @@ do
         *)
             if [ "$ACTION" = "" ]; then
                 info "Unknown command '$1'."
-                usage
+            else
+                info "Specifying an installation path is not allowed!"
             fi
-            if [ "`echo $1|cut -c1`" != "/" ]; then
-                info "Please specify an absolute path"
-                usage
-            fi
-            INSTALLATION_DIR="$1"
+            usage
             ;;
     esac
 done
