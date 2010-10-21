@@ -565,7 +565,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     {
         AutoWriteLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
-        if (mfVMMDevCanAbs && !(mfHostCaps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
+        if (!(mfHostCaps & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
         {
             mfHostCaps |= VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE;
             fUpdateCaps = TRUE;
