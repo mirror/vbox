@@ -71,7 +71,6 @@ static uint8_t* g_pvVRamBase;
 #endif
 
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
-#define SHCROGL_SSM_VERSION 21
 
 static DECLCALLBACK(int) svcUnload (void *)
 {
@@ -157,19 +156,38 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     /* Version */
     rc = SSMR3GetU32(pSSM, &ui32);
     AssertRCReturn(rc, rc);
-    if ((SHCROGL_SSM_VERSION != ui32)
-        && ((SHCROGL_SSM_VERSION!=4) || (3!=ui32)))
-    {
-        /*@todo: add some warning here*/
-        /*@todo: in many cases saved states would be made without any opengl guest app running.
-         *       that means we could safely restore the default context.
-         */
-        rc = SSMR3SkipToEndOfUnit(pSSM);
-        return rc;
-    }
 
     /* The state itself */
     rc = crVBoxServerLoadState(pSSM, ui32);
+
+    if (rc==VERR_SSM_DATA_UNIT_FORMAT_CHANGED && ui32!=SHCROGL_SSM_VERSION)
+    {
+        LogRel(("SHARED_CROPENGL svcLoadState: unsupported save state version %d\n", ui32));
+
+        /*@todo ugly hack, as we don't know size of stored opengl data try to read untill end of opengl data marker*/
+        /*VboxSharedCrOpenGL isn't last hgcm service now, so can't use SSMR3SkipToEndOfUnit*/
+        {
+            const char *pMatch = &gszVBoxOGLSSMMagic[0];
+            char current;
+
+            while (*pMatch)
+            {
+                rc = SSMR3GetS8(pSSM, (int8_t*)&current);
+                AssertRCReturn(rc, rc);
+
+                if (current==*pMatch)
+                {
+                    pMatch++;
+                }
+                else
+                {
+                    pMatch = &gszVBoxOGLSSMMagic[0];
+                }
+            }
+        }
+
+        return VINF_SUCCESS;
+    }
     AssertRCReturn(rc, rc);
 
     /* End of data */
