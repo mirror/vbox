@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - String allocation APIs and related manimuplators.
+ * IPRT Testcase - String allocation APIs and related manipulators.
  */
 
 /*
