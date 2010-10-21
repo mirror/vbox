@@ -1080,7 +1080,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                                     case '>':   cchOutput += pfnOutput(pvArgOutput, "&gt;", 4); break;
                                     case '&':   cchOutput += pfnOutput(pvArgOutput, "&amp;", 5); break;
                                     case '\'':  cchOutput += pfnOutput(pvArgOutput, "&apos;", 6); break;
-                                    case '"':   cchOutput += pfnOutput(pvArgOutput, "&qout;", 6); break;
+                                    case '"':   cchOutput += pfnOutput(pvArgOutput, "&quot;", 6); break;
                                     case '\n':  cchOutput += pfnOutput(pvArgOutput, "&#xA;", 5); break;
                                     case '\r':  cchOutput += pfnOutput(pvArgOutput, "&#xD;", 5); break;
                                     default:
