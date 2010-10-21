@@ -1735,23 +1735,25 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             xml::Document doc;
             // Now fully build a valid ovf document in memory
             buildXML(writeLock, doc, stack, pTask->locInfo.strPath, pTask->enFormat);
+            /* Extract the path */
+            Utf8Str strOvfFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".ovf");
             // Create a memory buffer containing the XML. */
-            void *pvBuf;
+            void *pvBuf = 0;
             size_t cbSize;
             xml::XmlMemWriter writer;
             writer.write(doc, &pvBuf, &cbSize);
-            /* Extract the path */
-            Utf8Str tmpPath = pTask->locInfo.strPath;
-            /* Remove the extension and add ovf. */
-            tmpPath.stripExt()
-                .append(".ovf");
+            if (RT_UNLIKELY(!pvBuf))
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not create OVF file '%s'"),
+                               strOvfFile.c_str());
             /* Write the ovf file to disk. */
-            vrc = Sha1WriteBuf(tmpPath.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            vrc = Sha1WriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            RTMemFree(pvBuf);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create OVF file '%s' (%Rrc)"),
-                               tmpPath.c_str(), vrc);
-            fileList.push_back(STRPAIR(tmpPath, pStorage->strDigest));
+                               strOvfFile.c_str(), vrc);
+            fileList.push_back(STRPAIR(strOvfFile, pStorage->strDigest));
         }
 
         // We need a proper format description
@@ -1839,8 +1841,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
         {
             // Create & write the manifest file
             Utf8Str strMfFilePath = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
-            Utf8Str strMfFileName = Utf8Str(strMfFilePath)
-                .stripPath();
+            Utf8Str strMfFileName = Utf8Str(strMfFilePath).stripPath();
             pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), strMfFileName.c_str()).raw(),
                                                m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
             PRTMANIFESTTEST paManifestFiles = (PRTMANIFESTTEST)RTMemAlloc(sizeof(RTMANIFESTTEST) * fileList.size());
