@@ -867,6 +867,19 @@ static void quirk_fbo_tex_update(struct wined3d_gl_info *gl_info)
     gl_info->quirks |= WINED3D_QUIRK_FBO_TEX_UPDATE;
 }
 
+static BOOL match_ati_hd4800(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
+        enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
+{
+    if (card_vendor != HW_VENDOR_ATI) return FALSE;
+    if (device == CARD_ATI_RADEON_HD4800) return TRUE;
+    return FALSE;
+}
+
+static void quirk_fullsize_blit(struct wined3d_gl_info *gl_info)
+{
+    gl_info->quirks |= WINED3D_QUIRK_FULLSIZE_BLIT;
+}
+
 struct driver_quirk
 {
     BOOL (*match)(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
@@ -950,6 +963,11 @@ static const struct driver_quirk quirk_table[] =
         match_fbo_tex_update,
         quirk_fbo_tex_update,
         "FBO rebind for attachment updates"
+    },
+    {
+        match_ati_hd4800,
+        quirk_fullsize_blit,
+        "Fullsize blit"
     },
 };
 
@@ -1260,7 +1278,9 @@ static enum wined3d_pci_vendor wined3d_guess_card_vendor(const char *gl_vendor_s
 static enum wined3d_pci_device select_card_nvidia_binary(const struct wined3d_gl_info *gl_info,
         const char *gl_renderer, unsigned int *vidmem)
 {
+#ifndef VBOX_WITH_WDDM
     if (WINE_D3D10_CAPABLE(gl_info))
+#endif
     {
         /* Geforce 200 - highend */
         if (strstr(gl_renderer, "GTX 280")
@@ -1515,7 +1535,9 @@ static enum wined3d_pci_device select_card_ati_binary(const struct wined3d_gl_in
      *
      * Beware: renderer string do not match exact card model,
      * eg HD 4800 is returned for multiple cards, even for RV790 based ones. */
+#ifndef VBOX_WITH_WDDM
     if (WINE_D3D10_CAPABLE(gl_info))
+#endif
     {
         /* Radeon EG CYPRESS XT / PRO HD5800 - highend */
         if (strstr(gl_renderer, "HD 5800")          /* Radeon EG CYPRESS HD58xx generic renderer string */

@@ -3651,7 +3651,7 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
         if (fbo_blit_supported(&myDevice->adapter->gl_info, BLIT_OP_BLIT,
                                &src_rect, Src->resource.usage, Src->resource.pool, Src->resource.format_desc,
                                &dst_rect, This->resource.usage, This->resource.pool, This->resource.format_desc)
-            && (myDevice->adapter->driver_info.vendor==HW_VENDOR_NVIDIA
+            && (!(myDevice->adapter->gl_info.quirks & WINED3D_QUIRK_FULLSIZE_BLIT)
                 || (dst_rect.right==This->currentDesc.Width && dst_rect.bottom==This->currentDesc.Height
                     && dst_rect.left==0 && dst_rect.top==0)
                )
