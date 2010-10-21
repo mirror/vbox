@@ -14100,7 +14100,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IEventSource" extends="$unknown"
-     uuid="3c670618-f727-4fe9-94d2-8243f489a033"
+     uuid="9b6e1aee-35f3-4f4d-b5bb-ed0ecefd8538"
      wsmap="managed"
      >
     <desc>
@@ -14120,6 +14120,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="listener" type="IEventListener" dir="return"/>
     </method>
 
+    <method name="createAggregator">
+      <desc>
+        Creates a aggregator event source, collecting events from multiple source.
+        This way single listener can collect events from multiple sources, using
+        getEvent() of this aggregator.
+      </desc>
+      <param name="subordinates" type="IEventSource" dir="in" safearray="yes">
+        <desc>
+          Subordinate event source this one aggregatres.
+        </desc>
+      </param>
+      <param name="result" type="IEventSource" dir="return"/>
+    </method>
+
     <method name="registerListener">
       <desc>
         Register an event listener.
@@ -14127,7 +14141,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <note>
           To avoid system overload, the VirtualBox server process checks if passive event
           listeners call <link to="IEventSource::getEvent"/> frequently enough. In the
-          current implementation, if more than 100 pending events are detected for a passive
+          current implementation, if more than 500 pending events are detected for a passive
           event listener, it is forcefully unregistered by the system, and further
           <link to="#getEvent" /> calls will return @c VBOX_E_OBJECT_NOT_FOUND.
         </note>

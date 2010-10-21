@@ -832,7 +832,7 @@ HRESULT ListenerRecord::enqueue (IEvent* aEvent)
 
 
     if (queueSize != 0 && mQueue.back() == aEvent)
-        /* if same event is being pushed multiple times - it's reusable event and 
+        /* if same event is being pushed multiple times - it's reusable event and
            we don't really need multiple instances of it in the queue */
         (void)aEvent;
     else
@@ -850,7 +850,8 @@ HRESULT ListenerRecord::dequeue (IEvent*       *aEvent,
                                  LONG          aTimeout,
                                  AutoLockBase& aAlock)
 {
-    AssertMsg(!mActive, ("must be passive\n"));
+    if (mActive)
+        return VBOX_E_INVALID_OBJECT_STATE;
 
     // retain listener record
     RecordHolder<ListenerRecord> holder(this);
@@ -1100,6 +1101,9 @@ STDMETHODIMP EventSource::GetEvent(IEventListener * aListener,
         rc = setError(VBOX_E_OBJECT_NOT_FOUND,
                       tr("Listener was never registered"));
 
+    if (rc == VBOX_E_INVALID_OBJECT_STATE)
+        return setError(rc, tr("Listener must be passive"));
+
     return rc;
 }
 
@@ -1200,7 +1204,128 @@ public:
     }
 };
 
+/* Proxy listener class, used to aggregate multiple event sources into one */
+class ATL_NO_VTABLE ProxyEventListener :
+    public VirtualBoxBase,
+    VBOX_SCRIPTABLE_IMPL(IEventListener)
+{
+    ComPtr<IEventSource> mSource;
+public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ProxyEventListener, IEventListener)
+
+    DECLARE_NOT_AGGREGATABLE(ProxyEventListener)
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(ProxyEventListener)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IEventListener)
+        COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
+
+    ProxyEventListener()
+    {}
+    ~ProxyEventListener()
+    {}
+
+    HRESULT FinalConstruct()
+    {
+        return S_OK;
+    }
+    void FinalRelease()
+    {}
+
+    HRESULT init(IEventSource* aSource)
+    {
+        mSource = aSource;
+        return S_OK;
+    }
+
+    // IEventListener methods
+    STDMETHOD(HandleEvent)(IEvent * aEvent)
+    {
+        BOOL fProcessed = FALSE;
+        if (mSource)
+            return mSource->FireEvent(aEvent, 0, &fProcessed);
+        else
+            return S_OK;
+    }
+};
+
+class ATL_NO_VTABLE EventSourceAggregator :
+    public VirtualBoxBase,
+    VBOX_SCRIPTABLE_IMPL(IEventSource)
+{
+    typedef std::list <ComPtr<IEventSource> > EventSourceList;
+    /* key is weak reference */
+    typedef std::map<IEventListener*, ComPtr<IEventListener> > ProxyListenerMap;
+
+    EventSourceList           mEventSources;
+    ProxyListenerMap          mListenerProxies;
+    ComObjPtr<EventSource>    mSource;
+
+public:
+
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(EventSourceAggregator, IEventSource)
+
+    DECLARE_NOT_AGGREGATABLE(EventSourceAggregator)
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(EventSourceAggregator)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IEventSource)
+        COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
+
+    EventSourceAggregator()
+    {}
+    ~EventSourceAggregator()
+    {}
+
+    HRESULT FinalConstruct()
+    {
+        return S_OK;
+    }
+    void FinalRelease()
+    {
+        mEventSources.clear();
+        mListenerProxies.clear();
+        mSource->uninit();
+    }
+
+    // internal public
+    HRESULT init(ComSafeArrayIn(IEventSource *, aSources));
+
+    // IEventSource methods
+    STDMETHOD(CreateListener)(IEventListener ** aListener);
+    STDMETHOD(CreateAggregator)(ComSafeArrayIn(IEventSource*, aSubordinates),
+                                IEventSource **               aAggregator);
+    STDMETHOD(RegisterListener)(IEventListener * aListener,
+                                ComSafeArrayIn(VBoxEventType_T, aInterested),
+                                BOOL             aActive);
+    STDMETHOD(UnregisterListener)(IEventListener * aListener);
+    STDMETHOD(FireEvent)(IEvent * aEvent,
+                         LONG     aTimeout,
+                         BOOL     *aProcessed);
+    STDMETHOD(GetEvent)(IEventListener * aListener,
+                        LONG      aTimeout,
+                        IEvent  * *aEvent);
+    STDMETHOD(EventProcessed)(IEventListener * aListener,
+                              IEvent *         aEvent);
+
+  protected:
+    HRESULT createProxyListener(IEventListener * aListener,
+                                IEventListener * *aProxy);
+    HRESULT getProxyListener   (IEventListener * aListener,
+                                IEventListener * *aProxy);
+    HRESULT removeProxyListener(IEventListener * aListener);
+};
+
 #ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO(ProxyEventListener)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ProxyEventListener, IEventListener)
 NS_DECL_CLASSINFO(PassiveEventListener)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PassiveEventListener, IEventListener)
 NS_DECL_CLASSINFO(VBoxEvent)
@@ -1209,7 +1334,10 @@ NS_DECL_CLASSINFO(VBoxVetoEvent)
 NS_IMPL_ISUPPORTS_INHERITED1(VBoxVetoEvent, VBoxEvent, IVetoEvent)
 NS_DECL_CLASSINFO(EventSource)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(EventSource, IEventSource)
+NS_DECL_CLASSINFO(EventSourceAggregator)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(EventSourceAggregator, IEventSource)
 #endif
+
 
 STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)
 {
@@ -1224,5 +1352,215 @@ STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)
     ComAssertMsgRet(SUCCEEDED(rc), ("Could not create wrapper object (%Rrc)", rc),
                     E_FAIL);
     listener.queryInterfaceTo(aListener);
+    return S_OK;
+}
+
+
+STDMETHODIMP EventSource::CreateAggregator(ComSafeArrayIn(IEventSource*, aSubordinates),
+                                           IEventSource **               aResult)
+{
+    CheckComArgOutPointerValid(aResult);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    ComObjPtr<EventSourceAggregator> agg;
+
+    HRESULT rc = agg.createObject();
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create aggregator (%Rrc)", rc),
+                    E_FAIL);
+
+    rc = agg->init(ComSafeArrayInArg(aSubordinates));
+    if (FAILED(rc))
+        return rc;
+
+
+    agg.queryInterfaceTo(aResult);
+    return S_OK;
+}
+
+HRESULT  EventSourceAggregator::init(ComSafeArrayIn(IEventSource*, aSourcesIn))
+{
+    HRESULT rc;
+
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    rc = mSource.createObject();
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create source (%Rrc)", rc),
+                    E_FAIL);
+    rc = mSource->init((IEventSource*)this);
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not init source (%Rrc)", rc),
+                    E_FAIL);
+
+    com::SafeIfaceArray<IEventSource> aSources(ComSafeArrayInArg (aSourcesIn));
+
+    uint32_t cSize = aSources.size();
+
+    for (uint32_t i=0; i<cSize; i++)
+    {
+        if (aSources[i] != NULL)
+            mEventSources.push_back(aSources[i]);
+    }
+
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
+    return rc;
+}
+
+STDMETHODIMP EventSourceAggregator::CreateListener(IEventListener ** aListener)
+{
+    return mSource->CreateListener(aListener);
+}
+
+STDMETHODIMP EventSourceAggregator::CreateAggregator(ComSafeArrayIn(IEventSource*, aSubordinates),
+                                                     IEventSource **               aResult)
+{
+    return mSource->CreateAggregator(ComSafeArrayInArg(aSubordinates), aResult);
+}
+
+STDMETHODIMP EventSourceAggregator::RegisterListener(IEventListener * aListener,
+                                                     ComSafeArrayIn(VBoxEventType_T, aInterested),
+                                                     BOOL             aActive)
+{
+    CheckComArgNotNull(aListener);
+    CheckComArgSafeArrayNotNull(aInterested);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc;
+
+    ComPtr<IEventListener> proxy;
+    rc = createProxyListener(aListener, proxy.asOutParam());
+    if (FAILED(rc))
+        return rc;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    for (EventSourceList::const_iterator it = mEventSources.begin(); it != mEventSources.end();
+         ++it)
+    {
+        ComPtr<IEventSource> es = *it;
+        /* Register active proxy listener on real event source */
+        rc = es->RegisterListener(proxy, ComSafeArrayInArg(aInterested), TRUE);
+    }
+    /* And add real listener on our event source */
+    rc = mSource->RegisterListener(aListener, ComSafeArrayInArg(aInterested), aActive);
+
+    rc = S_OK;
+
+    return rc;
+}
+
+STDMETHODIMP EventSourceAggregator::UnregisterListener(IEventListener * aListener)
+{
+    CheckComArgNotNull(aListener);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc = S_OK;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ComPtr<IEventListener> proxy;
+    rc = getProxyListener(aListener, proxy.asOutParam());
+    if (FAILED(rc))
+        return rc;
+
+    for (EventSourceList::const_iterator it = mEventSources.begin(); it != mEventSources.end();
+         ++it)
+    {
+        ComPtr<IEventSource> es = *it;
+        rc = es->UnregisterListener(proxy);
+    }
+    rc = mSource->UnregisterListener(aListener);
+
+    return removeProxyListener(aListener);
+
+}
+
+STDMETHODIMP EventSourceAggregator::FireEvent(IEvent * aEvent,
+                                              LONG     aTimeout,
+                                              BOOL     *aProcessed)
+{
+    CheckComArgNotNull(aEvent);
+    CheckComArgOutPointerValid(aProcessed);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc = S_OK;
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    /* Aggresgator event source shalln't have direct event firing, but we may
+       wish to support aggregation chains */
+    for (EventSourceList::const_iterator it = mEventSources.begin(); it != mEventSources.end();
+         ++it)
+    {
+        ComPtr<IEventSource> es = *it;
+        rc = es->FireEvent(aEvent, aTimeout, aProcessed);
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP EventSourceAggregator::GetEvent(IEventListener * aListener,
+                                             LONG             aTimeout,
+                                             IEvent  **       aEvent)
+{
+    return mSource->GetEvent(aListener, aTimeout, aEvent);
+}
+
+STDMETHODIMP EventSourceAggregator::EventProcessed(IEventListener * aListener,
+                                                   IEvent *         aEvent)
+{
+    return mSource->EventProcessed(aListener, aEvent);
+}
+
+HRESULT EventSourceAggregator::createProxyListener(IEventListener * aListener,
+                                                   IEventListener * *aProxy)
+{
+    ComObjPtr<ProxyEventListener> proxy;
+
+    HRESULT rc = proxy.createObject();
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create proxy (%Rrc)", rc),
+                    E_FAIL);
+
+    rc = proxy->init(mSource);
+    if (FAILED(rc))
+        return rc;
+
+    ProxyListenerMap::const_iterator it = mListenerProxies.find(aListener);
+    if (it != mListenerProxies.end())
+        return setError(E_INVALIDARG,
+                        tr("This listener already registered"));
+
+    mListenerProxies.insert(ProxyListenerMap::value_type(aListener, proxy));
+
+    proxy.queryInterfaceTo(aProxy);
+    return S_OK;
+}
+
+HRESULT EventSourceAggregator::getProxyListener(IEventListener * aListener,
+                                                IEventListener * *aProxy)
+{
+    ProxyListenerMap::const_iterator it = mListenerProxies.find(aListener);
+    if (it == mListenerProxies.end())
+        return setError(E_INVALIDARG,
+                        tr("This listener never registered"));
+
+    (*it).second.queryInterfaceTo(aProxy);
+    return S_OK;
+}
+
+HRESULT EventSourceAggregator::removeProxyListener(IEventListener * aListener)
+{
+    ProxyListenerMap::iterator it = mListenerProxies.find(aListener);
+    if (it == mListenerProxies.end())
+        return setError(E_INVALIDARG,
+                        tr("This listener never registered"));
+
+    mListenerProxies.erase(it);
     return S_OK;
 }
