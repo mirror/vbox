@@ -59,6 +59,104 @@
 # define CRASSERT Assert
 #endif
 
+#define VBOX_WITH_CRHGSMIPROFILE
+#ifdef VBOX_WITH_CRHGSMIPROFILE
+#include <iprt/time.h>
+#include <stdio.h>
+
+typedef struct VBOXCRHGSMIPROFILE
+{
+    uint64_t cStartTime;
+    uint64_t cStepsTime;
+    uint64_t cSteps;
+} VBOXCRHGSMIPROFILE, *PVBOXCRHGSMIPROFILE;
+
+#define VBOXCRHGSMIPROFILE_GET_TIME_NANO() RTTimeNanoTS()
+#define VBOXCRHGSMIPROFILE_GET_TIME_MILLI() RTTimeMilliTS()
+
+/* 10 sec */
+#define VBOXCRHGSMIPROFILE_LOG_STEP_TIME (10000000000.)
+
+DECLINLINE(void) vboxCrHgsmiProfileStart(PVBOXCRHGSMIPROFILE pProfile)
+{
+    pProfile->cStepsTime = 0;
+    pProfile->cSteps = 0;
+    pProfile->cStartTime = VBOXCRHGSMIPROFILE_GET_TIME_NANO();
+}
+
+DECLINLINE(void) vboxCrHgsmiProfileStep(PVBOXCRHGSMIPROFILE pProfile, uint64_t cStepTime)
+{
+    pProfile->cStepsTime += cStepTime;
+    ++pProfile->cSteps;
+}
+
+typedef struct VBOXCRHGSMIPROFILE_SCOPE
+{
+    uint64_t cStartTime;
+//    bool bDisable;
+} VBOXCRHGSMIPROFILE_SCOPE, *PVBOXCRHGSMIPROFILE_SCOPE;
+
+static VBOXCRHGSMIPROFILE g_VBoxProfile;
+
+static void vboxCrHgsmiLog(char * szString, ...)
+{
+    char szBuffer[4096] = {0};
+     va_list pArgList;
+     va_start(pArgList, szString);
+     _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
+     va_end(pArgList);
+
+     VBoxCrHgsmiLog(szBuffer);
+}
+
+DECLINLINE(void) vboxCrHgsmiProfileLog(PVBOXCRHGSMIPROFILE pProfile, uint64_t cTime)
+{
+    uint64_t profileTime = cTime - pProfile->cStartTime;
+    double percent = ((double)100.0) * pProfile->cStepsTime / profileTime;
+    double cps = ((double)1000000000.) * pProfile->cSteps / profileTime;
+    vboxCrHgsmiLog("hgsmi: cps: %.1f, host %.1f%%\n", cps, percent);
+}
+
+DECLINLINE(void) vboxCrHgsmiProfileScopeEnter(PVBOXCRHGSMIPROFILE_SCOPE pScope)
+{
+//    pScope->bDisable = false;
+    pScope->cStartTime = VBOXCRHGSMIPROFILE_GET_TIME_NANO();
+}
+
+DECLINLINE(void) vboxCrHgsmiProfileScopeExit(PVBOXCRHGSMIPROFILE_SCOPE pScope)
+{
+//    if (!pScope->bDisable)
+    {
+        uint64_t cTime = VBOXCRHGSMIPROFILE_GET_TIME_NANO();
+        vboxCrHgsmiProfileStep(&g_VBoxProfile, cTime - pScope->cStartTime);
+        if (VBOXCRHGSMIPROFILE_LOG_STEP_TIME < cTime - g_VBoxProfile.cStartTime)
+        {
+            vboxCrHgsmiProfileLog(&g_VBoxProfile, cTime);
+            vboxCrHgsmiProfileStart(&g_VBoxProfile);
+        }
+    }
+}
+
+
+#define VBOXCRHGSMIPROFILE_INIT() vboxCrHgsmiProfileStart(&g_VBoxProfile)
+#define VBOXCRHGSMIPROFILE_TERM() do {} while (0)
+
+#define VBOXCRHGSMIPROFILE_FUNC_PROLOGUE() \
+        VBOXCRHGSMIPROFILE_SCOPE __vboxCrHgsmiProfileScope; \
+        vboxCrHgsmiProfileScopeEnter(&__vboxCrHgsmiProfileScope);
+
+#define VBOXCRHGSMIPROFILE_FUNC_EPILOGUE() \
+        vboxCrHgsmiProfileScopeExit(&__vboxCrHgsmiProfileScope); \
+
+
+#else
+#define VBOXCRHGSMIPROFILE_INIT() do {} while (0)
+#define VBOXCRHGSMIPROFILE_TERM() do {} while (0)
+#define VBOXCRHGSMIPROFILE_FUNC_PROLOGUE() do {} while (0)
+#define VBOXCRHGSMIPROFILE_FUNC_EPILOGUE() do {} while (0)
+#endif
+
+
 typedef struct {
     int                  initialized;
     int                  num_conns;
@@ -442,9 +540,17 @@ static void *_crVBoxHGSMIDoAlloc(PCRVBOXHGSMI_CLIENT pClient, uint32_t cbSize)
 }
 static void *crVBoxHGSMIAlloc(CRConnection *conn)
 {
-    PCRVBOXHGSMI_CLIENT pClient = _crVBoxHGSMIClientGet();
-    void *pvBuf = _crVBoxHGSMIDoAlloc(pClient, conn->buffer_size);
+    PCRVBOXHGSMI_CLIENT pClient;
+    void *pvBuf;
+
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+
+    pClient = _crVBoxHGSMIClientGet();
+    pvBuf = _crVBoxHGSMIDoAlloc(pClient, conn->buffer_size);
     Assert(pvBuf);
+
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
+
     return pvBuf;
 }
 
@@ -455,10 +561,10 @@ DECLINLINE(void) _crVBoxHGSMIFillCmd(VBOXUHGSMI_BUFFER_SUBMIT *pSubm, PCRVBOXHGS
     pSubm->cbData = cbData;
     pSubm->fFlags.Value = 0;
     pSubm->fFlags.bDoNotRetire = 1;
-    pSubm->fFlags.bDoNotSignalCompletion = 1; /* <- we do not need that actually since
-                                                       * in case we want completion,
-                                                       * we will block in _crVBoxHGSMICmdBufferGetRc (when locking the buffer)
-                                                       * which is needed for getting the result */
+//    pSubm->fFlags.bDoNotSignalCompletion = 1; /* <- we do not need that actually since
+//                                                       * in case we want completion,
+//                                                       * we will block in _crVBoxHGSMICmdBufferGetRc (when locking the buffer)
+//                                                       * which is needed for getting the result */
 }
 
 #ifdef RT_OS_WINDOWS
@@ -466,6 +572,12 @@ DECLINLINE(void) _crVBoxHGSMIFillCmd(VBOXUHGSMI_BUFFER_SUBMIT *pSubm, PCRVBOXHGS
 #else
 # error "Port Me!!"
 #endif
+
+DECLINLINE(void) _crVBoxHGSMIWaitCmd(PCRVBOXHGSMI_CLIENT pClient)
+{
+    int rc = CRVBOXHGSMI_BUF_WAIT(pClient->pCmdBuffer);
+    Assert(rc == 0);
+}
 
 static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, PVBOXUHGSMI_BUFFER pBuf, uint32_t offStart, unsigned int len)
 {
@@ -505,6 +617,7 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
+            _crVBoxHGSMIWaitCmd(pClient);
                 /* @todo: do we need to wait for completion actually?
                  * NOTE: in case we do not need completion,
                  * we MUST specify bDoNotSignalCompletion flag for the command buffer */
@@ -538,6 +651,7 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
+            _crVBoxHGSMIWaitCmd(pClient);
                 /* @todo: do we need to wait for completion actually?
                  * NOTE: in case we do not need completion,
                  * we MUST specify bDoNotSignalCompletion flag for the command buffer */
@@ -555,6 +669,7 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
 
 static void crVBoxHGSMIWriteExact(CRConnection *conn, const void *buf, unsigned int len)
 {
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     Assert(0);
 
     CRASSERT(0);
@@ -565,6 +680,7 @@ static void crVBoxHGSMIWriteExact(CRConnection *conn, const void *buf, unsigned 
 //    pClient = (PCRVBOXHGSMI_CLIENT)pBuf->pvUserData;
 //    _crVBoxHGSMIWriteExact(conn, pClient, pBuf, 0, len);
 //    _crVBoxHGSMIBufFree(pClient, pBuf);
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
 static void _crVBoxHGSMIPollHost(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient)
@@ -608,6 +724,8 @@ static void _crVBoxHGSMIPollHost(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
         crWarning("pfnBufferSubmitAsynch failed with %d \n", rc);
         return;
     }
+
+    _crVBoxHGSMIWaitCmd(pClient);
 
     parms = (CRVBOXHGSMIREAD *)_crVBoxHGSMICmdBufferLockRo(pClient, sizeof (*parms));
     Assert(parms);
@@ -733,6 +851,8 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
             break;
         }
 
+        _crVBoxHGSMIWaitCmd(pClient);
+
         parms = (CRVBOXHGSMIWRITEREAD *)_crVBoxHGSMICmdBufferLockRo(pClient, sizeof (*parms));
         Assert(parms);
         if (parms)
@@ -798,6 +918,8 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
     PCRVBOXHGSMI_CLIENT pClient;
     PVBOXUHGSMI_BUFFER pBuf;
 
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+
     if (!bufp) /* We're sending a user-allocated buffer. */
     {
         pClient = _crVBoxHGSMIClientGet();
@@ -810,6 +932,7 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
         crDebug("SHCRGL: sending userbuf with %d bytes\n", len);
         _crVBoxHGSMIWriteReadExact(conn, pClient, (void*)start, 0, len, false);
 #endif
+        VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return;
     }
 
@@ -821,7 +944,10 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
     pBuf = _crVBoxHGSMIBufFromMemPtr(*bufp);
     Assert(pBuf);
     if (!pBuf)
+    {
+        VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return;
+    }
 
     pClient = (PCRVBOXHGSMI_CLIENT)pBuf->pvUserData;
 
@@ -846,22 +972,30 @@ static void crVBoxHGSMISend(CRConnection *conn, void **bufp,
      * doesn't try to re-use the buffer.
      */
     *bufp = NULL;
+
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
 static void crVBoxHGSMISingleRecv(CRConnection *conn, void *buf, unsigned int len)
 {
     PCRVBOXHGSMI_CLIENT pClient;
-    PVBOXUHGSMI_BUFFER pBuf = _crVBoxHGSMIBufFromMemPtr(buf);
+    PVBOXUHGSMI_BUFFER pBuf;
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+    pBuf = _crVBoxHGSMIBufFromMemPtr(buf);
     Assert(pBuf);
     Assert(0);
     CRASSERT(0);
     if (!pBuf)
+    {
+        VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
         return;
+    }
     pClient = (PCRVBOXHGSMI_CLIENT)pBuf->pvUserData;
     _crVBoxHGSMIReadExact(conn, pClient);
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
-static void crVBoxHGSMIFree(CRConnection *conn, void *buf)
+static void _crVBoxHGSMIFree(CRConnection *conn, void *buf)
 {
     CRVBOXHGSMIBUFFER *hgsmi_buffer = (CRVBOXHGSMIBUFFER *) buf - 1;
 
@@ -887,6 +1021,12 @@ static void crVBoxHGSMIFree(CRConnection *conn, void *buf)
             crUnlockMutex(&g_crvboxhgsmi.mutex);
 #endif
     }
+}
+static void crVBoxHGSMIFree(CRConnection *conn, void *buf)
+{
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+    _crVBoxHGSMIFree(conn, buf);
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
 static void _crVBoxHGSMIReceiveMessage(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient)
@@ -966,30 +1106,36 @@ static void _crVBoxHGSMIReceiveMessage(CRConnection *conn, PCRVBOXHGSMI_CLIENT p
         && cached_type != CR_MESSAGE_OOB
         && cached_type != CR_MESSAGE_GATHER)
     {
-        crVBoxHGSMIFree(conn, msg);
+        _crVBoxHGSMIFree(conn, msg);
     }
 }
 
 static void crVBoxHGSMIReceiveMessage(CRConnection *conn)
 {
-    PCRVBOXHGSMI_CLIENT pClient = _crVBoxHGSMIClientGet();
+    PCRVBOXHGSMI_CLIENT pClient;
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+
+    pClient = _crVBoxHGSMIClientGet();
 
     Assert(pClient);
     Assert(0);
 
     _crVBoxHGSMIReceiveMessage(conn, pClient);
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 /*
  * Called on host side only, to "accept" client connection
  */
 static void crVBoxHGSMIAccept( CRConnection *conn, const char *hostname, unsigned short port )
 {
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     Assert(0);
 
     CRASSERT(conn && conn->pHostBuffer);
 #ifdef IN_GUEST
     CRASSERT(FALSE);
 #endif
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
 static int crVBoxHGSMISetVersion(CRConnection *conn, unsigned int vMajor, unsigned int vMinor)
@@ -1037,6 +1183,7 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
 
 #ifdef RT_OS_WINDOWS
     DWORD cbReturned;
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
     if (g_crvboxhgsmi.hGuestDrv == INVALID_HANDLE_VALUE)
     {
@@ -1054,16 +1201,20 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
         {
             Assert(0);
             crDebug("could not open VBox Guest Additions driver! rc = %d\n", GetLastError());
+            VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return FALSE;
         }
     }
 #else
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
+
     if (g_crvboxhgsmi.iGuestDrv == INVALID_HANDLE_VALUE)
     {
         g_crvboxhgsmi.iGuestDrv = open(VBOXGUEST_USER_DEVICE_NAME, O_RDWR, 0);
         if (g_crvboxhgsmi.iGuestDrv == INVALID_HANDLE_VALUE)
         {
             crDebug("could not open Guest Additions kernel module! rc = %d\n", errno);
+            VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return FALSE;
         }
     }
@@ -1096,10 +1247,13 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
     {
         if (info.result == VINF_SUCCESS)
         {
+            int rc;
             conn->u32ClientID = info.u32ClientID;
             crDebug("HGCM connect was successful: client id =0x%x\n", conn->u32ClientID);
 
-            return crVBoxHGSMISetVersion(conn, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
+            rc = crVBoxHGSMISetVersion(conn, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
+            VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
+            return rc;
         }
         else
         {
@@ -1115,6 +1269,8 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
         crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", errno);
 #endif
     }
+
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 
     return FALSE;
 #else /*#ifdef IN_GUEST*/
@@ -1134,6 +1290,7 @@ static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
 # endif
     int i;
 #endif
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
     if (conn->pHostBuffer)
     {
@@ -1213,22 +1370,28 @@ static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
         g_crvboxhgsmi.iGuestDrv = INVALID_HANDLE_VALUE;
 # endif
     }
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 #endif /* IN_GUEST */
 }
 
 static void crVBoxHGSMIInstantReclaim(CRConnection *conn, CRMessage *mess)
 {
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     Assert(0);
 
-    crVBoxHGSMIFree(conn, mess);
+    _crVBoxHGSMIFree(conn, mess);
     CRASSERT(FALSE);
+
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
 static void crVBoxHGSMIHandleNewMessage( CRConnection *conn, CRMessage *msg, unsigned int len )
 {
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     Assert(0);
 
     CRASSERT(FALSE);
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 }
 
 DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
@@ -1240,13 +1403,15 @@ DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
         int rc;
         pClient->pHgsmi = pHgsmi;
         rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1),
-                                VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE, NULL,
+                                VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
+                                NULL,
                                 &pClient->pCmdBuffer);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
             rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(0x800000),
-                                            VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE, NULL,
+                                            VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
+                                            NULL,
                                             &pClient->pHGBuffer);
             AssertRC(rc);
             if (RT_SUCCESS(rc))

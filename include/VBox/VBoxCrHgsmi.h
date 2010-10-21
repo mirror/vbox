@@ -47,6 +47,8 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks);
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm();
 VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient();
 
+VBOXCRHGSMI_DECL(void) VBoxCrHgsmiLog(char * szString);
+
 RT_C_DECLS_END
 
 #endif /* #ifndef ___VBoxCrHgsmi_h__ */

@@ -523,47 +523,71 @@ static int vboxVDMACmdExecBpbTransfer(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DM
     const void * pvSrc;
     void * pvDst;
     int rc = VINF_SUCCESS;
+    uint32_t cbTransfer = pTransfer->cbTransferSize;
+    uint32_t cbTransfered = 0;
     bool bSrcLocked = false;
     bool bDstLocked = false;
-    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET)
+    do
     {
-        pvSrc = pvRam + pTransfer->Src.offVramBuf;
-    }
-    else
-    {
-        RTGCPHYS phPage = pTransfer->Src.phBuf;
-        rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phPage, 0, &pvSrc, &SrcLock);
-        AssertRC(rc);
+        uint32_t cbSubTransfer = cbTransfer;
+        if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_SRC_VRAMOFFSET)
+        {
+            pvSrc  = pvRam + pTransfer->Src.offVramBuf + cbTransfered;
+        }
+        else
+        {
+            RTGCPHYS phPage = pTransfer->Src.phBuf;
+            phPage += cbTransfered;
+            rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phPage, 0, &pvSrc, &SrcLock);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                bSrcLocked = true;
+                cbSubTransfer = RT_MIN(cbSubTransfer, 0x1000);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET)
+        {
+            pvDst  = pvRam + pTransfer->Dst.offVramBuf + cbTransfered;
+        }
+        else
+        {
+            RTGCPHYS phPage = pTransfer->Dst.phBuf;
+            phPage += cbTransfered;
+            rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, phPage, 0, &pvDst, &DstLock);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                bDstLocked = true;
+                cbSubTransfer = RT_MIN(cbSubTransfer, 0x1000);
+            }
+            else
+            {
+                break;
+            }
+        }
+
         if (RT_SUCCESS(rc))
         {
-            bSrcLocked = true;
+            memcpy(pvDst, pvSrc, cbSubTransfer);
+            cbTransfer -= cbSubTransfer;
+            cbTransfered += cbSubTransfer;
         }
-    }
-
-    if (pTransfer->fFlags & VBOXVDMACMD_DMA_BPB_TRANSFER_F_DST_VRAMOFFSET)
-    {
-        pvDst = pvRam + pTransfer->Dst.offVramBuf;
-    }
-    else
-    {
-        RTGCPHYS phPage = pTransfer->Dst.phBuf;
-        rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, phPage, 0, &pvDst, &DstLock);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
+        else
         {
-            bDstLocked = true;
+            cbTransfer = 0; /* to break */
         }
-    }
 
-    if (RT_SUCCESS(rc))
-    {
-        memcpy(pvDst, pvSrc, pTransfer->cbTransferSize);
-    }
-
-    if (bSrcLocked)
-        PDMDevHlpPhysReleasePageMappingLock(pDevIns, &SrcLock);
-    if (bDstLocked)
-        PDMDevHlpPhysReleasePageMappingLock(pDevIns, &DstLock);
+        if (bSrcLocked)
+            PDMDevHlpPhysReleasePageMappingLock(pDevIns, &SrcLock);
+        if (bDstLocked)
+            PDMDevHlpPhysReleasePageMappingLock(pDevIns, &DstLock);
+    } while (cbTransfer);
 
     if (RT_SUCCESS(rc))
         return sizeof (*pTransfer);

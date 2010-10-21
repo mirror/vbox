@@ -138,6 +138,7 @@ typedef struct VBOXWDDMDISP_SWAPCHAIN
     VBOXWDDMDISP_SWAPCHAIN_FLAGS fFlags;
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
     IDirect3DSurface9 *pRenderTargetFbCopy;
+    BOOL bRTFbCopyUpToDate;
 #endif
     IDirect3DSwapChain9 *pSwapChainIf;
     HWND hWnd;

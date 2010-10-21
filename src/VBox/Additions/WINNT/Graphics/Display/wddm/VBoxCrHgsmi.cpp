@@ -7,6 +7,8 @@ static VBOXCRHGSMI_CALLBACKS g_VBoxCrHgsmiCallbacks;
 static HMODULE g_hVBoxCrHgsmiProvider = NULL;
 static uint32_t g_cVBoxCrHgsmiProvider = 0;
 
+static VBOXDISPKMT_CALLBACKS g_VBoxCrHgsmiKmtCallbacks;
+
 typedef VBOXWDDMDISP_DECL(int) FNVBOXDISPCRHGSMI_INIT(PVBOXCRHGSMI_CALLBACKS pCallbacks);
 typedef FNVBOXDISPCRHGSMI_INIT *PFNVBOXDISPCRHGSMI_INIT;
 
@@ -22,6 +24,24 @@ static PFNVBOXDISPCRHGSMI_QUERY_CLIENT g_pfnVBoxDispCrHgsmiQueryClient = NULL;
 
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
 {
+    static int bKmtCallbacksInited = 0;
+    if (!bKmtCallbacksInited)
+    {
+        HRESULT hr = vboxDispKmtCallbacksInit(&g_VBoxCrHgsmiKmtCallbacks);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+            bKmtCallbacksInited = 1;
+        else
+            bKmtCallbacksInited = -1;
+    }
+
+    Assert(bKmtCallbacksInited);
+    if (bKmtCallbacksInited < 0)
+    {
+        Assert(0);
+        return VERR_NOT_SUPPORTED;
+    }
+
     g_VBoxCrHgsmiCallbacks = *pCallbacks;
     if (!g_hVBoxCrHgsmiProvider)
     {
@@ -76,9 +96,9 @@ VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient()
     if (g_pfnVBoxDispCrHgsmiQueryClient)
     {
         hClient = g_pfnVBoxDispCrHgsmiQueryClient();
-#ifdef DEBUG_misha
-        Assert(hClient);
-#endif
+//#ifdef DEBUG_misha
+//        Assert(hClient);
+//#endif
         if (hClient)
             return hClient;
     }
@@ -124,6 +144,40 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()
     return VINF_SUCCESS;
 }
 
+VBOXCRHGSMI_DECL(void) VBoxCrHgsmiLog(char * szString)
+{
+    VBOXDISPKMT_ADAPTER Adapter;
+    HRESULT hr = vboxDispKmtOpenAdapter(&g_VBoxCrHgsmiKmtCallbacks, &Adapter);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        uint32_t cbString = (uint32_t)strlen(szString) + 1;
+        uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
+        PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)RTMemAllocZ(cbCmd);
+        Assert(pCmd);
+        if (pCmd)
+        {
+            pCmd->EscapeHdr.escapeCode = VBOXESC_DBGPRINT;
+            memcpy(pCmd->aStringBuf, szString, cbString);
+
+            D3DKMT_ESCAPE EscapeData = {0};
+            EscapeData.hAdapter = Adapter.hAdapter;
+            //EscapeData.hDevice = NULL;
+            EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    //        EscapeData.Flags.HardwareAccess = 1;
+            EscapeData.pPrivateDriverData = pCmd;
+            EscapeData.PrivateDriverDataSize = cbCmd;
+            //EscapeData.hContext = NULL;
+
+            int Status = g_VBoxCrHgsmiKmtCallbacks.pfnD3DKMTEscape(&EscapeData);
+            Assert(!Status);
+
+            RTMemFree(pCmd);
+        }
+        hr = vboxDispKmtCloseAdapter(&Adapter);
+        Assert(hr == S_OK);
+    }
+}
 
 ///* to be used by injection thread and by ogl ICD driver for hgsmi initialization*/
 //VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCustomCreate(PVBOXUHGSMI *ppHgsmi)
