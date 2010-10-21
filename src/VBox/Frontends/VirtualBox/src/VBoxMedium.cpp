@@ -190,7 +190,7 @@ void VBoxMedium::refresh()
 
             for (QVector <QString>::ConstIterator it = machineIds.begin(); it != machineIds.end(); ++ it)
             {
-                CMachine machine = vbox.GetMachine (*it);
+                CMachine machine = vbox.FindMachine(*it);
 
                 QString sName = machine.GetName();
                 QString sSnapshots;

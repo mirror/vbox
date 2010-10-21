@@ -440,14 +440,8 @@ static int CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, C
      * Get the VM
      */
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = aVirtualBox->GetMachine(Bstr(argv[0]).raw(), machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
-                                                 machine.asOutParam()), 1);
-    }
+    CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
+                                             machine.asOutParam()), 1);
 
     /*
      * Parse the command.
@@ -1905,11 +1899,9 @@ int CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<I
         return errorSyntax(USAGE_DEBUGLOG, "Missing VM name/UUID");
 
     ComPtr<IMachine> ptrMachine;
-    HRESULT rc = aVirtualBox->GetMachine(Bstr(argv[0]).raw(),
-                                         ptrMachine.asOutParam());
-    if (FAILED(rc) || ptrMachine.isNull())
-        CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
-                                                 ptrMachine.asOutParam()), 1);
+    HRESULT rc;
+    CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
+                                             ptrMachine.asOutParam()), 1);
 
     CHECK_ERROR_RET(ptrMachine, LockMachine(aSession, LockType_Shared), 1);
 
@@ -2025,7 +2017,7 @@ int CmdGeneratePasswordHash(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     char pszDigest[RTSHA256_DIGEST_LEN + 1];
     RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
     RTPrintf("Password hash: %s\n", pszDigest);
-    
+
     return 0;
 }
 

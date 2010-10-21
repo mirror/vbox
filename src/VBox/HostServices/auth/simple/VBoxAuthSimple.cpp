@@ -100,7 +100,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
         if (pUuid)
         {
             ComPtr<IMachine> machine;
-            virtualBox->GetMachine(Bstr(uuid).raw(), machine.asOutParam());
+            virtualBox->FindMachine(Bstr(uuid).raw(), machine.asOutParam());
             if (machine)
                 machine->GetExtraData(key.raw(), password.asOutParam());
         } else
@@ -114,7 +114,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
             RTSha256(szPassword, strlen(szPassword), abDigest);
             char pszDigest[RTSHA256_DIGEST_LEN + 1];
             RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
-                        
+
             if (password == pszDigest)
                 result = VRDPAuthAccessGranted;
         }

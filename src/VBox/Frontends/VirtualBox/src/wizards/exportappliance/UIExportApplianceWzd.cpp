@@ -253,7 +253,7 @@ bool UIExportApplianceWzdPage2::prepareSettingsWidget()
         foreach (const QString &uuid, uuids)
         {
             /* Get the machine with the uuid */
-            CMachine m = vbox.GetMachine(uuid);
+            CMachine m = vbox.FindMachine(uuid);
             fResult = m.isOk();
             if (fResult)
             {

@@ -1305,70 +1305,59 @@ STDMETHODIMP VirtualBox::RegisterMachine(IMachine *aMachine)
     return rc;
 }
 
-/** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetMachine(IN_BSTR aId, IMachine **aMachine)
-{
-    CheckComArgOutSafeArrayPointerValid(aMachine);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ComObjPtr<Machine> machine;
-    HRESULT rc = findMachine(Guid(aId),
-                             true /* fPermitInaccessible */,
-                             true /* setError */,
-                             &machine);
-
-    /* the below will set *aMachine to NULL if machine is null */
-    machine.queryInterfaceTo(aMachine);
-
-    return rc;
-}
-
 /** @note Locks this object for reading, then some machine objects for reading. */
-STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
+STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aNameOrId, IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aName=\"%ls\", aMachine={%p}\n", aName, aMachine));
+    LogFlowThisFunc(("aName=\"%ls\", aMachine={%p}\n", aNameOrId, aMachine));
 
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgStrNotEmptyOrNull(aNameOrId);
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* start with not found */
+    HRESULT rc = S_OK;
     ComObjPtr<Machine> pMachineFound;
-    Utf8Str strName(aName);
 
-    AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-    for (MachinesOList::iterator it = m->allMachines.begin();
-         it != m->allMachines.end();
-         ++it)
+    Guid id(aNameOrId);
+    if (!id.isEmpty())
+        rc = findMachine(id,
+                         true /* fPermitInaccessible */,
+                         true /* setError */,
+                         &pMachineFound);
+                // returns VBOX_E_OBJECT_NOT_FOUND if not found and sets error
+    else
     {
-        ComObjPtr<Machine> &pMachine2 = *it;
-        AutoCaller machCaller(pMachine2);
-        /* skip inaccessible machines */
-        if (FAILED(machCaller.rc()))
-            continue;
-
-        AutoReadLock machLock(pMachine2 COMMA_LOCKVAL_SRC_POS);
-        if (pMachine2->getName() == strName)
+        Utf8Str strName(aNameOrId);
+        AutoReadLock al(m->allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+        for (MachinesOList::iterator it = m->allMachines.begin();
+             it != m->allMachines.end();
+             ++it)
         {
-            pMachineFound = pMachine2;
-            break;
+            ComObjPtr<Machine> &pMachine2 = *it;
+            AutoCaller machCaller(pMachine2);
+            if (machCaller.rc())
+                continue;       // we can't ask inaccessible machines for their names
+
+            AutoReadLock machLock(pMachine2 COMMA_LOCKVAL_SRC_POS);
+            if (pMachine2->getName() == strName)
+            {
+                pMachineFound = pMachine2;
+                break;
+            }
         }
+
+        if (!pMachineFound)
+            rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                          tr("Could not find a registered machine named '%ls'"), aNameOrId);
     }
 
     /* this will set (*machine) to NULL if machineObj is null */
     pMachineFound.queryInterfaceTo(aMachine);
 
-    HRESULT rc = pMachineFound
-        ? S_OK
-        : setError(VBOX_E_OBJECT_NOT_FOUND,
-                   tr("Could not find a registered machine named '%ls'"), aName);
-
-    LogFlowThisFunc(("aName=\"%ls\", aMachine=%p, rc=%08X\n", aName, *aMachine, rc));
+    LogFlowThisFunc(("aName=\"%ls\", aMachine=%p, rc=%08X\n", aNameOrId, *aMachine, rc));
     LogFlowThisFuncLeave();
 
     return rc;

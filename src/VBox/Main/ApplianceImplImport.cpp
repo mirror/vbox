@@ -1084,7 +1084,7 @@ HRESULT Appliance::importFS(TaskOVF *pTask)
             Guid guid = *itID;
             Bstr bstrGuid = guid.toUtf16();
             ComPtr<IMachine> failedMachine;
-            HRESULT rc2 = mVirtualBox->GetMachine(bstrGuid.raw(), failedMachine.asOutParam());
+            HRESULT rc2 = mVirtualBox->FindMachine(bstrGuid.raw(), failedMachine.asOutParam());
             if (SUCCEEDED(rc2))
             {
                 SafeIfaceArray<IMedium> aMedia;

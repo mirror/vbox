@@ -226,14 +226,8 @@ int handleSnapshot(HandlerArg *a)
     /* the first argument must be the VM */
     Bstr bstrMachine(a->argv[0]);
     ComPtr<IMachine> pMachine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(bstrMachine.raw(), pMachine.asOutParam());
-    if (FAILED(rc) || !pMachine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(bstrMachine.raw(),
-                                               pMachine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(bstrMachine.raw(),
+                                           pMachine.asOutParam()));
     if (!pMachine)
         return 1;
 

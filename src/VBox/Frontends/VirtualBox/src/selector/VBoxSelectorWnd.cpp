@@ -778,7 +778,7 @@ void VBoxSelectorWnd::vmDiscard(const QString &aUuid /* = QString::null */)
         return;
     }
 
-    CMachine foundMachine = vbox.GetMachine(id);
+    CMachine foundMachine = vbox.FindMachine(id);
     if (!foundMachine.isNull())
         foundMachine.LockMachine(session, KLockType_Write);
     if (!vbox.isOk())
@@ -1406,7 +1406,7 @@ void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
     if (fRegistered)
     {
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine m = vbox.GetMachine(strId);
+        CMachine m = vbox.FindMachine(strId);
         if (!m.isNull())
         {
             mVMModel->addItem(new UIVMItem(m));

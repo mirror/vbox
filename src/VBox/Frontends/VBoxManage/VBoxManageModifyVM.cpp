@@ -283,7 +283,6 @@ int handleModifyVM(HandlerArg *a)
     int c;
     HRESULT rc;
     Bstr name;
-    Bstr machineuuid(a->argv[0]);
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetOptState;
     ComPtr <IMachine> machine;
@@ -309,17 +308,8 @@ int handleModifyVM(HandlerArg *a)
     }
 
     /* try to find the given machine */
-    if (!Guid(machineuuid).isEmpty())
-    {
-        CHECK_ERROR_RET(a->virtualBox, GetMachine(machineuuid.raw(),
-                                                  machine.asOutParam()), 1);
-    }
-    else
-    {
-        CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                                   machine.asOutParam()), 1);
-        machine->COMGETTER(Id)(machineuuid.asOutParam());
-    }
+    CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()), 1);
 
     /* open a session for the VM */
     CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
