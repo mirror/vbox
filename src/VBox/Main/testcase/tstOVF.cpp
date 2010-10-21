@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
             const Guid &uuid = *it;
             Bstr bstrUUID(uuid.toUtf16());
             ComPtr<IMachine> pMachine;
-            rc = pVirtualBox->GetMachine(bstrUUID.raw(), pMachine.asOutParam());
+            rc = pVirtualBox->FindMachine(bstrUUID.raw(), pMachine.asOutParam());
             if (FAILED(rc)) throw MyError(rc, "VirtualBox::FindMachine() failed\n");
 
             RTPrintf("  Deleting machine %ls...\n", bstrUUID.raw());

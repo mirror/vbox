@@ -287,16 +287,9 @@ static int handleCtrlExecProgram(HandlerArg *a)
 
     /* lookup VM. */
     ComPtr<IMachine> machine;
-    /* assume it's an UUID */
-    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
-
+    HRESULT rc;
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         do
@@ -688,15 +681,9 @@ static int handleCtrlCopyTo(HandlerArg *a)
     /* lookup VM. */
     ComPtr<IMachine> machine;
     /* assume it's an UUID */
-    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
-
+    HRESULT rc;
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         do

@@ -136,7 +136,7 @@ static void listMedia(const ComPtr<IVirtualBox> aVirtualBox,
         for (size_t j = 0; j < machineIds.size(); ++j)
         {
             ComPtr<IMachine> machine;
-            CHECK_ERROR(aVirtualBox, GetMachine(machineIds[j], machine.asOutParam()));
+            CHECK_ERROR(aVirtualBox, FindMachine(machineIds[j], machine.asOutParam()));
             ASSERT(machine);
             Bstr name;
             machine->COMGETTER(Name)(name.asOutParam());

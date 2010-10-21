@@ -149,14 +149,8 @@ int handleUnregisterVM(HandlerArg *a)
         return errorSyntax(USAGE_UNREGISTERVM, "VM name required");
 
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(VMName).raw(), machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
-                                               machine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         SafeIfaceArray<IMedium> aMedia;
@@ -349,14 +343,8 @@ int handleStartVM(HandlerArg *a)
         return errorSyntax(USAGE_STARTVM, "VM name required");
 
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(VMName).raw(), machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
-                                               machine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMName).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         Bstr env;
@@ -410,15 +398,8 @@ int handleDiscardState(HandlerArg *a)
         return errorSyntax(USAGE_DISCARDSTATE, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                   machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         do
@@ -446,15 +427,8 @@ int handleAdoptState(HandlerArg *a)
         return errorSyntax(USAGE_ADOPTSTATE, "Incorrect number of parameters");
 
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                   machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         do
@@ -516,15 +490,8 @@ int handleGetExtraData(HandlerArg *a)
     else
     {
         ComPtr<IMachine> machine;
-        /* assume it's a UUID */
-        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                       machine.asOutParam());
-        if (FAILED(rc) || !machine)
-        {
-            /* must be a name */
-            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                                   machine.asOutParam()));
-        }
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
         if (machine)
         {
             /* enumeration? */
@@ -583,15 +550,8 @@ int handleSetExtraData(HandlerArg *a)
     else
     {
         ComPtr<IMachine> machine;
-        /* assume it's a UUID */
-        rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                       machine.asOutParam());
-        if (FAILED(rc) || !machine)
-        {
-            /* must be a name */
-            CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                       machine.asOutParam()));
-        }
+        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                               machine.asOutParam()));
         if (machine)
         {
             /** @todo passing NULL is deprecated */
@@ -667,15 +627,8 @@ int handleSharedFolder(HandlerArg *a)
         return errorSyntax(USAGE_SHAREDFOLDER, "Not enough parameters");
 
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[1]).raw(),
-                                   machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[1]).raw(),
-                                               machine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[1]).raw(),
+                                           machine.asOutParam()));
     if (!machine)
         return 1;
 
@@ -851,17 +804,8 @@ int handleVMStatistics(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr<IMachine> machine;
-    Bstr uuid(a->argv[0]);
-    if (!Guid(a->argv[0]).isEmpty())
-        CHECK_ERROR(a->virtualBox, GetMachine(uuid.raw(),
-                                              machine.asOutParam()));
-    else
-    {
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-        if (SUCCEEDED(rc))
-            machine->COMGETTER(Id)(uuid.asOutParam());
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (FAILED(rc))
         return 1;
 

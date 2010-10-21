@@ -87,15 +87,8 @@ static int handleGetGuestProperty(HandlerArg *a)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                   machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         /* open a session for the VM - new or existing */
@@ -155,15 +148,8 @@ static int handleSetGuestProperty(HandlerArg *a)
     pszName = a->argv[1];
 
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                   machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         /* open a session for the VM - new or existing */
@@ -221,15 +207,9 @@ static int handleEnumGuestProperty(HandlerArg *a)
      * Make the actual call to Main.
      */
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
+    HRESULT rc;
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (machine)
     {
         /* open a session for the VM - new or existing */
@@ -279,15 +259,9 @@ static int handleWaitGuestProperty(HandlerArg *a)
     else
         pszPatterns = a->argv[1];
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
-    HRESULT rc = a->virtualBox->GetMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam());
-    if (FAILED(rc) || !machine)
-    {
-        /* must be a name */
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()));
-    }
+    HRESULT rc;
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
     if (!machine)
         usageOK = false;
     for (int i = 2; usageOK && i < a->argc; ++i)

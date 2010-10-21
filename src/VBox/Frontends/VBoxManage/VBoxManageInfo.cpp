@@ -2122,19 +2122,8 @@ int handleShowVMInfo(HandlerArg *a)
 
     /* try to find the given machine */
     ComPtr <IMachine> machine;
-    Bstr uuid(VMNameOrUuid);
-    if (!Guid(VMNameOrUuid).isEmpty())
-    {
-        CHECK_ERROR(a->virtualBox, GetMachine(uuid.raw(),
-                                              machine.asOutParam()));
-    }
-    else
-    {
-        CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMNameOrUuid).raw(),
-                                               machine.asOutParam()));
-        if (SUCCEEDED(rc))
-            machine->COMGETTER(Id)(uuid.asOutParam());
-    }
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMNameOrUuid).raw(),
+                                           machine.asOutParam()));
     if (FAILED(rc))
         return 1;
 

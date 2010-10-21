@@ -830,16 +830,8 @@ int handleExportAppliance(HandlerArg *a)
                     Utf8Str strMachine(ValueUnion.psz);
                     // must be machine: try UUID or name
                     ComPtr<IMachine> machine;
-                    /* assume it's a UUID */
-                    rc = a->virtualBox->GetMachine(Bstr(strMachine).raw(),
-                                                   machine.asOutParam());
-                    if (FAILED(rc) || !machine)
-                    {
-                        /* must be a name */
-                        CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(strMachine).raw(),
-                                                                     machine.asOutParam()));
-                    }
-
+                    CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(strMachine).raw(),
+                                                                 machine.asOutParam()));
                     if (machine)
                         llMachines.push_back(machine);
                 }

@@ -3425,7 +3425,14 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
-          <para>IVirtualBox::unregisterMachine was replaced with <xref
+          <para>To reduce code duplication and for consistency with the
+          aforementioned changes, IVirtualBox::getMachine() has been merged
+          with <xref linkend="IVirtualBox__findMachine"
+          xreflabel="IVirtualBox::findMachine()" />.</para>
+        </listitem>
+
+        <listitem>
+          <para>IVirtualBox::unregisterMachine() was replaced with <xref
           linkend="IMachine__unregister" xreflabel="IMachine::unregister()" />
           with additional functionality.</para>
         </listitem>
@@ -3449,12 +3456,12 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <para><xref linkend="IGuest__additionsVersion"
           xreflabel="IGuest::additionsVersion()" /> no longer returns the
           Guest Additions interface version but the installed Guest Additions
-          version + revision in form of
+          version and revision in form of
           <computeroutput>3.3.0r12345</computeroutput>.</para>
         </listitem>
 
         <listitem>
-          <para>additionsActive() was replaced by <xref
+          <para>additionsActive() was replaced with <xref
           linkend="IGuest__additionsRunLevel"
           xreflabel="additionsRunLevel()" /> and <xref
           linkend="IGuest__getAdditionsStatus"
@@ -3489,9 +3496,9 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
         <listitem>
           <para><xref linkend="IAppliance__write"
-          xreflabel="IAppliance::write()" /> got an extra parameter
-          <computeroutput>manifest</computeroutput>. This allows to
-          enable/disable the manifest file creation on export.</para>
+          xreflabel="IAppliance::write()" /> received an extra parameter
+          <computeroutput>manifest</computeroutput>, which can suppress
+          creating the manifest file on export.</para>
         </listitem>
 
         <listitem>

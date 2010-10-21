@@ -1373,7 +1373,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="a35a051c-0966-4582-8e9c-7c1b973f6bd2"
+    uuid="5e887b09-e3f3-4787-b9f3-8ade5d04d675"
     wsmap="managed"
   >
     <desc>
@@ -1698,34 +1698,24 @@
       <param name="machine" type="IMachine" dir="in"/>
     </method>
 
-    <method name="getMachine">
-      <desc>
-        Attempts to find a virtual machine given its UUID.
-        To look up a machine by name, use <link to="IVirtualBox::findMachine" />
-        instead.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Could not find registered machine matching @a id.
-        </result>
-
-      </desc>
-      <param name="id" type="uuid" mod="string" dir="in"/>
-      <param name="machine" type="IMachine" dir="return"/>
-    </method>
-
     <method name="findMachine">
       <desc>
-        Attempts to find a virtual machine given its name.
-        To look up a machine by UUID, use <link to="IVirtualBox::getMachine" />
-        instead.
+        Attempts to find a virtual machine given its name or UUID.
+
+        <note>Inaccessible machines cannot be found by name, only by UUID, because their name
+          cannot safely be determined.</note>
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Could not find registered machine matching @a name.
+          Could not find registered machine matching @a nameOrId.
         </result>
 
       </desc>
-      <param name="name" type="wstring" dir="in"/>
-      <param name="machine" type="IMachine" dir="return"/>
+      <param name="nameOrId" type="wstring" dir="in">
+        <desc>What to search for. This can either be the UUID or the name of a virtual machine.</desc>
+      </param>
+      <param name="machine" type="IMachine" dir="return">
+        <desc>Machine object, if found.</desc>
+      </param>
     </method>
 
     <method name="createAppliance">

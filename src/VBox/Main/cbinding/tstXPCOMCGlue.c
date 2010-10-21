@@ -205,7 +205,7 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id)
     PRUnichar *env        = NULL;
     PRUnichar *sessionType;
 
-    rc = virtualBox->vtbl->GetMachine(virtualBox, id, &machine);
+    rc = virtualBox->vtbl->FindMachine(virtualBox, id, &machine);
 
     if (NS_FAILED(rc) || !machine)
     {
