@@ -298,6 +298,7 @@ extern int  VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd,
                                           const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                           const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
 extern void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pThread);
+extern void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
 extern int  VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
                                                         uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
 extern int  VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,

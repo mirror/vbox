@@ -46,8 +46,6 @@ using namespace guestControl;
 
 extern RTLISTNODE g_GuestControlExecThreads;
 
-void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
-
 
 /**
  * Handle an error event on standard input.
