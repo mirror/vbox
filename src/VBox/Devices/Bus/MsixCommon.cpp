@@ -35,7 +35,7 @@ typedef struct {
     uint32_t  u32VectorControl;
 } MsixTableRecord;
 AssertCompileSize(MsixTableRecord, VBOX_MSIX_ENTRY_SIZE);
-#pragma pack(0)
+#pragma pack()
 
 DECLINLINE(uint16_t)  msixGetMessageControl(PPCIDEVICE pDev)
 {
