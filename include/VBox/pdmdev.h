@@ -436,8 +436,8 @@ typedef struct PDMMSIREG
     uint8_t    iMsixCapOffset;
     /** Offset of next capability to MSI-X */
     uint8_t    iMsixNextOffset;
-    /** Value to initialize MSI-X message control register */
-    uint16_t   iMsixFlags;
+    /** Value of PCI BAR (base addresss register) assigned by device for MSI-X page access */
+    uint8_t    iMsixBar;
 } PDMMSIREG;
 typedef PDMMSIREG *PPDMMSIREG;
 

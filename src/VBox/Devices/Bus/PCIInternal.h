@@ -106,6 +106,17 @@ typedef struct PCIDEVICEINT
     RTRCPTR                         Alignment0;
 #endif
 
+    /* Page used for MSI-X state.             - R3 ptr */
+    R3PTRTYPE(void*)                pMsixPageR3;
+    /* Page used for MSI-X state.             - R0 ptr */
+    R0PTRTYPE(void*)                pMsixPageR0;
+    /* Page used for MSI-X state.             - RC ptr */
+    RCPTRTYPE(void*)                pMsixPageRC;
+#if HC_ARCH_BITS == 64
+    RTRCPTR                         Alignment1;
+#endif
+
+
     /** Read config callback. */
     R3PTRTYPE(PFNPCICONFIGREAD)     pfnConfigRead;
     /** Write config callback. */
@@ -125,7 +136,10 @@ typedef struct PCIDEVICEINT
     /* Size of MSI-X PCI capability in config space, or 0 */
     uint8_t                         u8MsixCapSize;
 
-    uint32_t                        Alignment1;
+    uint32_t                        Alignment2;
+
+    /* Pointer to bus specific data.                 - R3 ptr */
+    R3PTRTYPE(const void*)          pPciBusPtrR3;
 
     /** Read config callback for PCI bridges to pass requests
      *  to devices on another bus.
