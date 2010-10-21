@@ -46,6 +46,8 @@ using namespace guestControl;
 
 extern RTLISTNODE g_GuestControlExecThreads;
 
+void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
+
 
 /**
  * Handle an error event on standard input.
@@ -543,14 +545,10 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
      */
     if (RT_SUCCESS(rc))
     {
-        /** WRONG CONTEXT ID!!!! */
-#if 0
-        rc = VbglR3GuestCtrlExecReportStatusIn(pThread->uClientID, pThread->uContextID, pData->uPID,
-                                               INPUT_STS_TERMINATED, 0 /* Flags */, 0);
-
-        rc = VbglR3GuestCtrlExecSendOut(pThread->uClientID, pThread->uContextID, pData->uPID,
-                                        0 /* Handle ID */, 0 /* Flags */, NULL, 0);
-#endif
+        /* Since the process is not alive anymore, destroy its local
+         * stdin pipe buffer - it's not used anymore and can eat up quite
+         * a bit of memory. */
+        VBoxServiceControlExecDeletePipeBuffer(&pData->stdIn);
 
         uint32_t uStatus = PROC_STS_UNDEFINED;
         uint32_t uFlags = 0;
@@ -711,12 +709,15 @@ static int VBoxServiceControlExecInitPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf
 static void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
     AssertPtr(pBuf);
-    RTMemFree(pBuf->pbData);
-    pBuf->pbData = NULL;
-    pBuf->cbAllocated = 0;
-    pBuf->cbSize = 0;
-    pBuf->cbOffset = 0;
-    pBuf->fAlive = false;
+    if (pBuf->pbData)
+    {
+        RTMemFree(pBuf->pbData);
+        pBuf->pbData = NULL;
+        pBuf->cbAllocated = 0;
+        pBuf->cbSize = 0;
+        pBuf->cbOffset = 0;
+        pBuf->fAlive = false;
+    }
 
     RTPipeClose(pBuf->hNotificationPipeR);
     pBuf->hNotificationPipeR = NIL_RTPIPE;
