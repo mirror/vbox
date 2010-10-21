@@ -7002,7 +7002,10 @@ static HRESULT APIENTRY vboxWddmDDevDestroyDevice(IN HANDLE hDevice)
     {
 //    Assert(!pDevice->cScreens);
         vboxWddmSwapchainDestroyAll(pDevice);
-        pDevice->pDevice9If->Release();
+        if (pDevice->pDevice9If)
+        {
+            pDevice->pDevice9If->Release();
+        }
     }
 
 #ifdef VBOX_WITH_CRHGSMI
