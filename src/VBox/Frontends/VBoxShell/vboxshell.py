@@ -440,7 +440,7 @@ def playbackDemo(ctx, console, file, dur):
     header = demo.readline()
     print "Header is", header
     basere = re.compile(r'(?P<s>\d+): (?P<t>[km]) (?P<p>.*)')
-    mre = re.compile(r'(?P<a>\d+) (?P<x>\d+) (?P<y>\d+) (?P<z>\d+) (?P<w>\d+) (?P<b>\d+)')
+    mre = re.compile(r'(?P<a>\d+) (?P<x>-*\d+) (?P<y>-*\d+) (?P<z>-*\d+) (?P<w>-*\d+) (?P<b>-*\d+)')
     kre = re.compile(r'\d+')
 
     kbd = console.keyboard
@@ -448,32 +448,35 @@ def playbackDemo(ctx, console, file, dur):
 
     try:
         end = time.time() + dur
-        while  time.time() < end:
-            for line in demo:
-                m = basere.search(line)
-                if m is not None:
-                    dict = m.groupdict()
-                    stamp = dict['s']
-                    params = dict['p']
-                    type = dict['t']
+        for line in demo:
+            if time.time() > end:
+                break
+            m = basere.search(line)
+            if m is None:
+                continue
 
-                    time.sleep(float(stamp)/1000)
+            dict = m.groupdict()
+            stamp = dict['s']
+            params = dict['p']
+            type = dict['t']
 
-                    if type == 'k':
-                        codes=kre.findall(params)
-                        #print "KBD:",codes
-                        kbd.putScancodes(codes)
-                    elif type == 'm':
-                        mm = mre.search(params)
-                        if mm is not None:
-                            mdict = mm.groupdict()
-                            if mdict['a'] == '1':
-                                # absolute
-                                #print "MA: ",mdict['x'],mdict['y'],mdict['b']
-                                mouse.putMouseEventAbsolute(mdict['x'], mdict['y'], mdict['z'], mdict['w'], mdict['b'])
-                            else:
-                                #print "MR: ",mdict['x'],mdict['y'],mdict['b']
-                                mouse.putMouseEvent(mdict['x'], mdict['y'], mdict['z'], mdict['w'], mdict['b'])
+            time.sleep(float(stamp)/1000)
+
+            if type == 'k':
+                codes=kre.findall(params)
+                #print "KBD:",codes
+                kbd.putScancodes(codes)
+            elif type == 'm':
+                mm = mre.search(params)
+                if mm is not None:
+                    mdict = mm.groupdict()
+                    if mdict['a'] == '1':
+                        # absolute
+                        #print "MA: ",mdict['x'],mdict['y'],mdict['z'],mdict['b']
+                        mouse.putMouseEventAbsolute(int(mdict['x']), int(mdict['y']), int(mdict['z']), int(mdict['w']), int(mdict['b']))
+                    else:
+                        #print "MR: ",mdict['x'],mdict['y'],mdict['b']
+                        mouse.putMouseEvent(int(mdict['x']), int(mdict['y']), int(mdict['z']), int(mdict['w']), int(mdict['b']))
 
     # We need to catch all exceptions here, to close file
     except:
