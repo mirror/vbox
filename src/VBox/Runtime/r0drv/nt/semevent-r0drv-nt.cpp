@@ -76,7 +76,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
     {
         pThis->u32Magic = RTSEMEVENT_MAGIC;
         pThis->cRefs    = 1;
-        KeInitializeEvent(&pThis->Event, SynchronizationEvent, FALSE);
+        KeInitializeEvent(&pThis->Event, SynchronizationEvent, FALSE /* not signalled */);
 
         *phEventSem = pThis;
         return VINF_SUCCESS;
