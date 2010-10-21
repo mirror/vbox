@@ -23,6 +23,7 @@
 #include <math.h>
 #endif
 #include <iprt/assert.h>
+#include <VBox/err.h>
 
 #ifdef VBOXCR_LOGFPS
 #include <iprt/timer.h>
@@ -797,6 +798,11 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     if (g_hackVBoxServerSaveLoadCallsLeft>0)
     {
         return VINF_SUCCESS;
+    }
+
+    if (version!=SHCROGL_SSM_VERSION)
+    {
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 
     /* Load and recreate rendering contexts */
