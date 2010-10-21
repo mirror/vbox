@@ -1191,6 +1191,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         if (m->pParent.isNull())
             m->type = data.hdType;
     }
+    else if (aDeviceType == DeviceType_DVD)
+        m->type = MediumType_Readonly;
     else
         m->type = MediumType_Writethrough;
 
@@ -1279,7 +1281,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         memcpy(&uuid.au8[4 + 12 - lenLocation], aLocation.c_str(), lenLocation);
     unconst(m->id) = uuid;
 
-    m->type = MediumType_Writethrough;
+    if (aDeviceType == DeviceType_DVD)
+        m->type = MediumType_Readonly;
+    else
+        m->type = MediumType_Writethrough;
     m->devType = aDeviceType;
     m->state = MediumState_Created;
     m->hostDrive = true;
@@ -1645,8 +1650,10 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
         }
         case MediumType_Writethrough:
         case MediumType_Shareable:
+        case MediumType_Readonly:
         {
-            /* cannot change to writethrough or shareable if there are children */
+            /* cannot change to writethrough, shareable or readonly
+             * if there are children */
             if (getChildren().size() != 0)
                 return setError(VBOX_E_OBJECT_IN_USE,
                                 tr("Cannot change type for medium '%s' since it has %d child media"),
@@ -2425,6 +2432,10 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     else if (m->type == MediumType_Shareable)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Medium type of '%s' is Shareable"),
+                        m->strLocationFull.c_str());
+    else if (m->type == MediumType_Readonly)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Medium type of '%s' is Readonly"),
                         m->strLocationFull.c_str());
 
     /* Apply the normal locking logic to the entire chain. */
@@ -3243,6 +3254,7 @@ bool Medium::isReadOnly()
             return true;
         case MediumType_Writethrough:
         case MediumType_Shareable:
+        case MediumType_Readonly: /* explicit readonly media has no diffs */
             return false;
         default:
             break;
@@ -3771,6 +3783,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
      * time in VirtualBox (such as VMDK for which VDOpen() needs to
      * generate an UUID if it is missing) */
     if (    (m->hddOpenMode == OpenReadOnly)
+         || m->type == MediumType_Readonly
          || !isImport
        )
         uOpenFlags |= VD_OPEN_FLAGS_READONLY;
@@ -4581,7 +4594,8 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
         AutoMultiWriteLock2 alock(this, aTarget COMMA_LOCKVAL_SRC_POS);
 
         ComAssertThrow(   m->type != MediumType_Writethrough
-                       && m->type != MediumType_Shareable, E_FAIL);
+                       && m->type != MediumType_Shareable
+                       && m->type != MediumType_Readonly, E_FAIL);
         ComAssertThrow(m->state == MediumState_LockedRead, E_FAIL);
 
         if (aTarget->m->state != MediumState_NotCreated)

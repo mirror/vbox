@@ -8392,7 +8392,7 @@
 
   <enum
     name="MediumType"
-    uuid="46bf1fd4-ad86-4ded-8c49-28bd2d148e5a"
+    uuid="19388a99-8e70-4bd4-9a95-90cbc513ef6d"
    >
     <desc>
       Virtual medium type.
@@ -8421,6 +8421,12 @@
       <desc>
         Allow using this medium concurrently by several machines.
         <note>Present since VirtualBox 3.2.0, and accepted since 3.2.8.</note>
+      </desc>
+    </const>
+    <const name="Readonly"          value="4">
+      <desc>
+        A readonly medium, which can of course be used by several machines.
+        <note>Present and accepted since VirtualBox 4.0.</note>
       </desc>
     </const>
   </enum>
