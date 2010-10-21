@@ -2489,11 +2489,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                            config);                 // the whole machine config
     if (FAILED(rc)) throw rc;
 
-    // return the new machine as an IMachine
-    IMachine *p;
-    rc = pNewMachine.queryInterfaceTo(&p);
-    if (FAILED(rc)) throw rc;
-    pReturnNewMachine = p;
+    pReturnNewMachine = ComPtr<IMachine>(pNewMachine);
 
     // and register it
     rc = mVirtualBox->RegisterMachine(pNewMachine);
