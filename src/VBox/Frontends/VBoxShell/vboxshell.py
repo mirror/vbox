@@ -417,7 +417,7 @@ def recordDemo(ctx, console, file, dur):
         registered = True
         end = time.time() + dur
         while  time.time() < end:
-            ev = agg.getEvent(listener, 0)
+            ev = agg.getEvent(listener, 1000)
             if ev:
                 handleEventImpl(ev)
                 # keyboard/mouse events aren't waitable, so no need for eventProcessed
