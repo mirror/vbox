@@ -548,10 +548,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
               "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
               "All rights reserved.\n\n");
 
-    Bstr id;
-    /* the below cannot be Bstr because on Linux Bstr doesn't work until XPCOM (nsMemory) is initialized */
-    const char *name = NULL;
-
 #ifdef VBOX_FFMPEG
     /* Parse the environment */
     parse_environ(&ulFrameWidth, &ulFrameHeight, &ulBitRate, &pszFileNameParam);
@@ -615,6 +611,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--comment", OPT_COMMENT, RTGETOPT_REQ_STRING }
     };
 
+    const char *pcszNameOrUUID = NULL;
+
     // parse the command line
     int ch;
     RTGETOPTUNION ValueUnion;
@@ -625,10 +623,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         switch(ch)
         {
             case 's':
-                id = asGuidStr(ValueUnion.psz);
-                /* If the argument was not a UUID, then it must be a name. */
-                if (id.isEmpty())
-                    name = ValueUnion.psz;
+                pcszNameOrUUID = ValueUnion.psz;
                 break;
 #ifdef VBOX_WITH_VRDP
             case 'p':
@@ -745,7 +740,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     RTStrPrintf(&pszMPEGFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
 #endif /* defined VBOX_FFMPEG */
 
-    if (id.isEmpty() && !name)
+    if (!pcszNameOrUUID)
     {
         show_usage();
         return 1;
@@ -792,12 +787,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         ComPtr<IMachine> m;
 
-        rc = virtualBox->FindMachine(Bstr(name).raw(), m.asOutParam());
+        rc = virtualBox->FindMachine(Bstr(pcszNameOrUUID).raw(), m.asOutParam());
         if (FAILED(rc))
         {
             LogError("Invalid machine name or UUID!\n", rc);
             break;
         }
+        Bstr id;
         m->COMGETTER(Id)(id.asOutParam());
         AssertComRC(rc);
         if (FAILED(rc))
