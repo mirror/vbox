@@ -441,7 +441,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                         }
                     }
 
-#if 1
+#if 0
                     static int sent = 0;
                     if (sent < 1)
                     {
