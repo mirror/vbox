@@ -2029,7 +2029,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
      * snapshots
      */
     ComPtr<ISnapshot> snapshot;
-    rc = machine->GetSnapshot(Bstr().raw(), snapshot.asOutParam());
+    rc = machine->FindSnapshot(Bstr().raw(), snapshot.asOutParam());
     if (SUCCEEDED(rc) && snapshot)
     {
         ComPtr<ISnapshot> currentSnapshot;

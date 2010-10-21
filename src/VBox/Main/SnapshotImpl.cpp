@@ -2087,7 +2087,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
                         Global::stringifyMachineState(mData->mMachineState));
 
     ComObjPtr<Snapshot> pSnapshot;
-    HRESULT rc = findSnapshot(id, pSnapshot, true /* aSetError */);
+    HRESULT rc = findSnapshotById(id, pSnapshot, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
     AutoWriteLock snapshotLock(pSnapshot COMMA_LOCKVAL_SRC_POS);

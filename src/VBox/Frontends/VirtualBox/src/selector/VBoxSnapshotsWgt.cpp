@@ -506,7 +506,7 @@ void VBoxSnapshotsWgt::onItemChanged (QTreeWidgetItem *aItem)
 
     if (item)
     {
-        CSnapshot snap = item->snapshotId().isNull() ? CSnapshot() : mMachine.GetSnapshot (item->snapshotId());
+        CSnapshot snap = item->snapshotId().isNull()    ? CSnapshot() : mMachine.FindSnapshot(item->snapshotId());
         if (!snap.isNull() && snap.isOk() && snap.GetName() != item->text (0))
             snap.SetName (item->text (0));
     }
@@ -520,7 +520,7 @@ void VBoxSnapshotsWgt::restoreSnapshot()
 
     QString snapId = item->snapshotId();
     AssertReturn (!snapId.isNull(), (void) 0);
-    CSnapshot snapshot = mMachine.GetSnapshot (snapId);
+    CSnapshot snapshot = mMachine.FindSnapshot(snapId);
 
     if (!vboxProblem().askAboutSnapshotRestoring (snapshot.GetName()))
         return;
@@ -555,7 +555,7 @@ void VBoxSnapshotsWgt::deleteSnapshot()
 
     QString snapId = item->snapshotId();
     AssertReturn (!snapId.isNull(), (void) 0);
-    CSnapshot snapshot = mMachine.GetSnapshot (snapId);
+    CSnapshot snapshot = mMachine.FindSnapshot(snapId);
 
     if (!vboxProblem().askAboutSnapshotDeleting (snapshot.GetName()))
         return;
@@ -778,7 +778,7 @@ void VBoxSnapshotsWgt::refreshAll()
     /* Get the first snapshot */
     if (mMachine.GetSnapshotCount() > 0)
     {
-        CSnapshot snapshot = mMachine.GetSnapshot (QString::null);
+        CSnapshot snapshot = mMachine.FindSnapshot(QString::null);
 
         populateSnapshots (snapshot, 0);
         Assert (mCurSnapshotItem);
