@@ -114,7 +114,8 @@ PROGRAMS += \
 	tstRTTimeSpec \
 	tstUtf8 \
 	tstRTUuid \
-	tstRTCircBuf
+	tstRTCircBuf \
+	tstRTManifest
 
 PROGRAMS.win += \
 	tstRTProcWait \
@@ -471,6 +472,9 @@ tstUtf8_SOURCES = tstUtf8.cpp
 
 tstRTCircBuf_TEMPLATE = VBOXR3TSTEXE
 tstRTCircBuf_SOURCES = tstRTCircBuf.cpp
+
+tstRTManifest_TEMPLATE = VBOXR3TSTEXE
+tstRTManifest_SOURCES = tstRTManifest.cpp
 
 tstRTCoreDump_TEMPLACE = VBOXR3TSTEXE
 tstRTCoreDump_SOURCES = tstRTCoreDump.cpp
