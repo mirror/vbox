@@ -949,6 +949,9 @@ struct E1kState_st
     RCPTRTYPE(PPDMSCATTERGATHER) pTxSgRC;
     RTRCPTR                 RCPtrAlignment;
 
+#if HC_ARCH_BITS == 32
+    uint32_t                Alignment1;
+#endif
     PDMCRITSECT cs;                  /**< Critical section - what is it protecting? */
 #ifndef E1K_GLOBAL_MUTEX
     PDMCRITSECT csRx;                                     /**< RX Critical section. */

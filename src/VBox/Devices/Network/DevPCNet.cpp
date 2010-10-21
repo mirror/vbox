@@ -178,9 +178,9 @@ struct PCNetState_st
     PTMTIMERRC                          pTimerPollRC;
 #endif
 
-#if HC_ARCH_BITS == 64
+//#if HC_ARCH_BITS == 64
     uint32_t                            Alignment1;
-#endif
+//#endif
 
     /** Register Address Pointer */
     uint32_t                            u32RAP;

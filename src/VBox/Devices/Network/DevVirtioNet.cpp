@@ -125,7 +125,9 @@ struct VNetState_st
     R3PTRTYPE(PPDMQUEUE)    pCanRxQueueR3;           /**< Rx wakeup signaller - R3. */
     R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
     RCPTRTYPE(PPDMQUEUE)    pCanRxQueueRC;           /**< Rx wakeup signaller - RC. */
+# if HC_ARCH_BITS == 64
     uint32_t                padding;
+# endif
 
     /**< Link Up(/Restore) Timer. */
     PTMTIMERR3              pLinkUpTimer;
