@@ -43,9 +43,9 @@ RT_C_DECLS_BEGIN
 typedef struct RTMANIFESTTEST
 {
     /** The filename. */
-    char *pszTestFile;
+    const char *pszTestFile;
     /** The SHA1 digest of the file. */
-    char *pszTestDigest;
+    const char *pszTestDigest;
 } RTMANIFESTTEST;
 /** Pointer to the input structure. */
 typedef RTMANIFESTTEST* PRTMANIFESTTEST;
@@ -105,6 +105,22 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * con
                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 /**
+ * Verify the given SHA1 digests against the entries in the manifest file in
+ * memory.
+ *
+ * @returns iprt status code.
+ *
+ * @param   pvBuf                Pointer to memory buffer of the manifest file.
+ * @param   cbSize               Size of the memory buffer.
+ * @param   paTests              Array of file names and digests.
+ * @param   cTest                Number of entries in paTests.
+ * @param   piFailed             A index to paTests in the
+ *                               VERR_MANIFEST_DIGEST_MISMATCH error case
+ *                               (optional).
+ */
+RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed);
+
+/**
  * Creates a manifest file in memory for a set of files. The manifest file
  * contains SHA1 sums of every provided file and could be used to verify the
  * data integrity of them.
@@ -113,11 +129,10 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * con
  *
  * @param   ppvBuf               Pointer to resulting memory buffer.
  * @param   pcbSize              Pointer for the size of the memory buffer.
- * @param   papszFileNames       Array of file names.
- * @param   papszFileDigests     Array of file digests.
- * @param   cFiles               Number of entries in papszFileNames and papszFileDigests.
+ * @param   paFiles              Array of file names and digests.
+ * @param   cFiles               Number of entries in paFiles.
  */
-RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, const char * const *papszFileNames, const char * const *papszFileDigests, size_t cFiles);
+RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, PRTMANIFESTTEST paFiles, size_t cFiles);
 
 /** @} */
 

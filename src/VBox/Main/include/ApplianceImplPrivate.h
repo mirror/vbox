@@ -28,6 +28,8 @@ class VirtualSystemDescription;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef std::pair<Utf8Str, Utf8Str> STRPAIR;
+
 /* Describe a location for the import/export. The location could be a file on a
  * local hard disk or a remote target based on the supported inet protocols. */
 struct Appliance::LocationInfo
@@ -152,7 +154,7 @@ struct Appliance::ImportStack
     uint32_t                        cCPUs;              // CPU count
     bool                            fForceHWVirt;       // if true, we force enabling hardware virtualization
     bool                            fForceIOAPIC;       // if true, we force enabling the IOAPIC
-    uint32_t                        ulMemorySizeMB;     // virtual machien RAM in megabytes
+    uint32_t                        ulMemorySizeMB;     // virtual machine RAM in megabytes
 #ifdef VBOX_WITH_USB
     bool                            fUSBEnabled;
 #endif
@@ -166,7 +168,7 @@ struct Appliance::ImportStack
     // a list of images that we created/imported; this is initially empty
     // and will be cleaned up on errors
     std::list<MyHardDiskAttachment> llHardDiskAttachments;      // disks that were attached
-    std::list< ComPtr<IMedium> >    llHardDisksCreated;         // media that were created
+    std::list<STRPAIR>              llSrcDisksDigest;           // Digests of the source disks
 
     ImportStack(const LocationInfo &aLocInfo,
                 const ovf::DiskImagesMap &aMapDisks,
@@ -224,6 +226,7 @@ typedef struct SHA1STORAGE
 PVDINTERFACEIO Sha1CreateInterface();
 PVDINTERFACEIO RTFileCreateInterface();
 PVDINTERFACEIO RTTarCreateInterface();
+int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
 int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
 
 #endif // ____H_APPLIANCEIMPLPRIVATE

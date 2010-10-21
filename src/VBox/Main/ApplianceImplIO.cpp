@@ -30,6 +30,7 @@
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
 #include <iprt/stream.h>
+#include <iprt/circbuf.h>
 #include <VBox/VBoxHDD.h>
 
 /******************************************************************************
@@ -56,6 +57,8 @@ typedef struct SHA1STORAGEINTERNAL
 {
     /** Completion callback. */
     PFNVDCOMPLETED pfnCompleted;
+    /** Our own storage handle. */
+    PSHA1STORAGE pSha1Storage;
     /** Storage handle for the next callback in chain. */
     void *pvStorage;
     /** Memory buffer used for caching and SHA1 calculation. */
@@ -82,6 +85,12 @@ typedef struct SHA1STORAGEINTERNAL
     RTSEMEVENT calcFinishedEvent;
     /** SHA1 calculation context. */
     RTSHA1CONTEXT ctx;
+    /* Circular buffer in read mode. */
+    PRTCIRCBUF pCircBuf;
+    /* Are we reached end of file. */
+    volatile bool fEOF;
+//    uint64_t calls;
+//    uint64_t waits;
 } SHA1STORAGEINTERNAL, *PSHA1STORAGEINTERNAL;
 
 /******************************************************************************
@@ -91,6 +100,7 @@ typedef struct SHA1STORAGEINTERNAL
 #define STATUS_WAIT UINT32_C(0)
 #define STATUS_CALC UINT32_C(1)
 #define STATUS_END  UINT32_C(3)
+#define STATUS_READ UINT32_C(4)
 
 /* Enable for getting some flow history. */
 #if 0
@@ -226,7 +236,7 @@ static int rtFileReadSyncCallback(void * /* pvUser */, void *pvStorage, uint64_t
     /* Validate input. */
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
-    DEBUG_PRINT_FLOW();
+//    DEBUG_PRINT_FLOW();
 
     PRTFILESTORAGEINTERNAL pInt = (PRTFILESTORAGEINTERNAL)pvStorage;
 
@@ -256,6 +266,7 @@ static int rtTarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOp
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(ppInt, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
+//    AssertReturn(!(fOpen & RTFILE_O_READWRITE), VERR_INVALID_PARAMETER);
 
     RTTAR tar = (RTTAR)pvUser;
 
@@ -267,7 +278,48 @@ static int rtTarOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOp
 
     pInt->pfnCompleted = pfnCompleted;
 
-    int rc = RTTarFileOpen(tar, &pInt->file, RTPathFilename(pszLocation), fOpen);
+    int rc = VINF_SUCCESS;
+
+    if (   fOpen & RTFILE_O_READ
+        && !(fOpen & RTFILE_O_WRITE))
+    {
+        /* Read only is a little bit more complicated than writing, cause we
+         * need streaming functionality. First try to open the file on the
+         * current file position. If this is the file the caller requested, we
+         * are fine. If not seek to the next file in the stream and check
+         * again. This is repeated until EOF of the OVA. */
+        /*
+         *
+         *
+         *  TODO: recheck this with more VDMKs (or what else) in an test OVA.
+         *
+         *
+         */
+        bool fFound = false;
+        for(;;)
+        {
+            char *pszFilename = 0;
+            rc = RTTarCurrentFile(tar, &pszFilename);
+            if (RT_SUCCESS(rc))
+            {
+                fFound = !strcmp(pszFilename, RTPathFilename(pszLocation));
+                RTStrFree(pszFilename);
+                if (fFound)
+                    break;
+                else
+                {
+                    rc = RTTarSeekNextFile(tar);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+            }else
+                break;
+        }
+        if (fFound)
+            rc = RTTarFileOpenCurrentFile(tar, &pInt->file, 0, fOpen);
+    }
+    else
+        rc = RTTarFileOpen(tar, &pInt->file, RTPathFilename(pszLocation), fOpen);
 
     if (RT_FAILURE(rc))
         RTMemFree(pInt);
@@ -424,6 +476,7 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
     {
         /* What should we do next? */
         uint32_t u32Status = ASMAtomicReadU32(&pInt->u32Status);
+//        RTPrintf("status: %d\n", u32Status);
         switch (u32Status)
         {
             case STATUS_WAIT:
@@ -441,7 +494,7 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                 RTSha1Update(&pInt->ctx, pInt->pcBuf, pInt->cbCurBuf);
                 /* Reset the thread status and signal the main thread that we
                    are finished. */
-                ASMAtomicWriteU32(&pInt->u32Status, STATUS_WAIT);
+                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_CALC);
                 rc = RTSemEventSignal(pInt->calcFinishedEvent);
                 break;
             }
@@ -449,6 +502,75 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
             {
                 /* End signaled */
                 fLoop = false;
+                break;
+            }
+            case STATUS_READ:
+            {
+                PVDINTERFACE pIO = VDInterfaceGet(pInt->pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
+                AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
+                PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
+                AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+
+                size_t cbAvail = RTCircBufFree(pInt->pCircBuf);
+//                RTPrintf("############################################################################### th: avail %ld\n", cbAvail);
+
+                /* ************ CHECK for 0 */
+                /* First loop over all the available memory in the circular
+                 * memory buffer (could be turn around at the end). */
+                size_t cbMemAllWrite = 0;
+                bool fStop = false;
+                bool fEOF = false;
+                for(;;)
+                {
+                    if (   cbMemAllWrite == cbAvail
+                        || fStop == true)
+                        break;
+                    char *pcBuf;
+                    size_t cbMemToWrite = cbAvail - cbMemAllWrite;
+                    size_t cbMemWrite = 0;
+                    /* Try to acquire all the free space of the circular buffer. */
+                    RTCircBufAcquireWriteBlock(pInt->pCircBuf, cbMemToWrite, (void**)&pcBuf, &cbMemWrite);
+                    /* Second, read as long as we filled all the memory. The
+                     * read method could also split the reads up into to
+                     * smaller parts. */
+                    size_t cbAllRead = 0;
+                    for(;;)
+                    {
+                        if (cbAllRead == cbMemWrite)
+                            break;
+                        size_t cbToRead = cbMemWrite - cbAllRead;
+                        size_t cbRead = 0;
+                        rc = pCallbacks->pfnReadSync(pIO->pvUser, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllRead], cbToRead, &cbRead);
+//                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
+                        if (RT_FAILURE(rc))
+                        {
+                            fLoop = false;
+                            fStop = true;
+                            break;
+                        }
+                        if (cbRead == 0)
+                        {
+                            fStop = true;
+                            fLoop = false;
+                            fEOF = true;
+//                            RTPrintf("EOF\n");
+                            break;
+                        }
+                        cbAllRead += cbRead;
+                        pInt->cbCurFile += cbRead;
+                    }
+                    /* Update the SHA1 context with the next data block. */
+                    RTSha1Update(&pInt->ctx, pcBuf, cbAllRead);
+                    /* Mark the block as full. */
+                    RTCircBufReleaseWriteBlock(pInt->pCircBuf, cbAllRead);
+                    cbMemAllWrite += cbAllRead;
+                }
+                if (fEOF)
+                    ASMAtomicWriteBool(&pInt->fEOF, true);
+                /* Reset the thread status and signal the main thread that we
+                   are finished. */
+                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_READ);
+                rc = RTSemEventSignal(pInt->calcFinishedEvent);
                 break;
             }
         }
@@ -469,7 +591,8 @@ DECLINLINE(int) sha1WaitForManifestThreadFinished(PSHA1STORAGEINTERNAL pInt)
     for(;;)
     {
 //        RTPrintf(" wait\n");
-        if (ASMAtomicReadU32(&pInt->u32Status) != STATUS_CALC)
+        if (!(   ASMAtomicReadU32(&pInt->u32Status) == STATUS_CALC
+              || ASMAtomicReadU32(&pInt->u32Status) == STATUS_READ))
             break;
         rc = RTSemEventWait(pInt->calcFinishedEvent, 100);
     }
@@ -522,6 +645,7 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
     AssertPtrReturn(pszLocation, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppInt, VERR_INVALID_POINTER);
+    AssertReturn((fOpen & RTFILE_O_READWRITE) != RTFILE_O_READWRITE, VERR_INVALID_PARAMETER); /* No read/write allowed */
 
     PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
     PVDINTERFACE pIO = VDInterfaceGet(pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
@@ -539,30 +663,43 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
     do
     {
         pInt->pfnCompleted = pfnCompleted;
-        /* For caching reasons and to be able to calculate the sha1 sum of the
-           data we need a memory buffer. */
-        pInt->cbBuf = _1M;
-        pInt->pcBuf = (char*)RTMemAlloc(pInt->cbBuf);
-        if (!pInt->pcBuf)
+        pInt->pSha1Storage = pSha1Storage;
+        pInt->fEOF         = false;
+
+
+        if (fOpen & RTFILE_O_READ)
         {
-            rc = VERR_NO_MEMORY;
-            break;
+            /* Circular buffer in the read case. */
+            rc = RTCircBufCreate(&pInt->pCircBuf, _1M * 2);
+            if (RT_FAILURE(rc))
+                break;
         }
-        /* The zero buffer is used for appending empty parts at the end of the
-         * file (or our buffer) in setSize or when uOffset in writeSync is
-         * increased in steps bigger than a byte. */
-        pInt->cbZeroBuf = _1K;
-        pInt->pvZeroBuf = RTMemAllocZ(pInt->cbZeroBuf);
-        if (!pInt->pvZeroBuf)
+        else if (fOpen & RTFILE_O_WRITE)
         {
-            rc = VERR_NO_MEMORY;
-            break;
+            /* For caching reasons and to be able to calculate the sha1 sum of the
+               data we need a memory buffer. */
+            pInt->cbBuf = _1M;
+            pInt->pcBuf = (char*)RTMemAlloc(pInt->cbBuf);
+            if (!pInt->pcBuf)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+            /* The zero buffer is used for appending empty parts at the end of the
+             * file (or our buffer) in setSize or when uOffset in writeSync is
+             * increased in steps bigger than a byte. */
+            pInt->cbZeroBuf = _1K;
+            pInt->pvZeroBuf = RTMemAllocZ(pInt->cbZeroBuf);
+            if (!pInt->pvZeroBuf)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
         }
 
-        if (pSha1Storage->fCreateDigest)
+        if (   fOpen & RTFILE_O_READ
+            || pSha1Storage->fCreateDigest)
         {
-            /* Create a sha1 context the sha1 worker thread will work with. */
-            RTSha1Init(&pInt->ctx);
             /* Create an event semaphore to indicate a state change for the sha1
                worker thread. */
             rc = RTSemEventCreate(&pInt->newStatusEvent);
@@ -578,6 +715,11 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
             if (RT_FAILURE(rc))
                 break;
         }
+
+        if (pSha1Storage->fCreateDigest)
+            /* Create a sha1 context the sha1 worker thread will work with. */
+            RTSha1Init(&pInt->ctx);
+
         /* Open the file. */
         rc = pCallbacks->pfnOpen(pIO->pvUser, pszLocation,
                                  fOpen, pInt->pfnCompleted,
@@ -587,18 +729,17 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
 
     if (RT_FAILURE(rc))
     {
-        if (pSha1Storage->fCreateDigest)
+        if (pInt->pMfThread)
         {
-            if (pInt->pMfThread)
-            {
-                sha1SignalManifestThread(pInt, STATUS_END);
-                RTThreadWait(pInt->pMfThread, RT_INDEFINITE_WAIT, 0);
-            }
-            if (pInt->calcFinishedEvent)
-                RTSemEventDestroy(pInt->calcFinishedEvent);
-            if (pInt->newStatusEvent)
-                RTSemEventDestroy(pInt->newStatusEvent);
+            sha1SignalManifestThread(pInt, STATUS_END);
+            RTThreadWait(pInt->pMfThread, RT_INDEFINITE_WAIT, 0);
         }
+        if (pInt->calcFinishedEvent)
+            RTSemEventDestroy(pInt->calcFinishedEvent);
+        if (pInt->newStatusEvent)
+            RTSemEventDestroy(pInt->newStatusEvent);
+        if (pInt->pCircBuf)
+            RTCircBufDestroy(pInt->pCircBuf);
         if (pInt->pvZeroBuf)
             RTMemFree(pInt->pvZeroBuf);
         if (pInt->pcBuf)
@@ -633,10 +774,12 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
     if (pInt->cbCurBuf > 0)
         rc = sha1FlushCurBuf(pIO, pCallbacks, pInt, pSha1Storage->fCreateDigest);
 
-    if (pSha1Storage->fCreateDigest)
-    {
+    if (pInt->pMfThread)
         /* Signal the worker thread to end himself */
         rc = sha1SignalManifestThread(pInt, STATUS_END);
+
+    if (pSha1Storage->fCreateDigest)
+    {
         /* Finally calculate & format the SHA1 sum */
         unsigned char auchDig[RTSHA1_HASH_SIZE];
         char *pszDigest;
@@ -649,20 +792,24 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
                 pSha1Storage->strDigest = pszDigest;
             RTStrFree(pszDigest);
         }
+    }
+
+    if (pInt->pMfThread)
         /* Worker thread stopped? */
         rc = RTThreadWait(pInt->pMfThread, RT_INDEFINITE_WAIT, 0);
-    }
+
     /* Close the file */
     rc = pCallbacks->pfnClose(pIO->pvUser, pInt->pvStorage);
 
+//    RTPrintf("%lu %lu\n", pInt->calls, pInt->waits);
+
     /* Cleanup */
-    if (pSha1Storage->fCreateDigest)
-    {
-        if (pInt->calcFinishedEvent)
-            RTSemEventDestroy(pInt->calcFinishedEvent);
-        if (pInt->newStatusEvent)
-            RTSemEventDestroy(pInt->newStatusEvent);
-    }
+    if (pInt->calcFinishedEvent)
+        RTSemEventDestroy(pInt->calcFinishedEvent);
+    if (pInt->newStatusEvent)
+        RTSemEventDestroy(pInt->newStatusEvent);
+    if (pInt->pCircBuf)
+        RTCircBufDestroy(pInt->pCircBuf);
     if (pInt->pvZeroBuf)
         RTMemFree(pInt->pvZeroBuf);
     if (pInt->pcBuf)
@@ -759,6 +906,7 @@ static int sha1GetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
         return rc;
 
     *pcbSize = RT_MAX(pInt->cbCurAll, cbSize);
+
     return VINF_SUCCESS;
 }
 
@@ -869,7 +1017,73 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
-    return pCallbacks->pfnReadSync(pIO->pvUser, pInt->pvStorage, uOffset, pvBuf, cbRead, pcbRead);
+    int rc = VINF_SUCCESS;
+
+//    pInt->calls++;
+//    RTPrintf("Read uOffset: %7lu cbRead: %7lu = %7lu\n", uOffset, cbRead, uOffset + cbRead);
+
+    /* Check if we jump forward in the file. If so we have to read the
+     * remaining stuff in the gap anyway (SHA1; streaming). */
+    if (pInt->cbCurAll < uOffset)
+    {
+        rc = sha1ReadSyncCallback(pvUser, pvStorage, pInt->cbCurAll, 0, uOffset - pInt->cbCurAll, 0);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    size_t cbAllRead = 0;
+    for(;;)
+    {
+        /* Finished? */
+        if (cbAllRead == cbRead)
+            break;
+        size_t cbAvail = RTCircBufUsed(pInt->pCircBuf);
+        if (   cbAvail == 0
+            && pInt->fEOF)
+            return VERR_EOF;
+        /* If there isn't enough data make sure the worker thread is fetching
+         * more. */
+        if ((cbRead - cbAllRead) > cbAvail)
+        {
+            rc = sha1SignalManifestThread(pInt, STATUS_READ);
+            if(RT_FAILURE(rc))
+                break;
+            /* If there is _no_ data available, we have to wait until it is. */
+            if (cbAvail == 0)
+            {
+                rc = sha1WaitForManifestThreadFinished(pInt);
+                if (RT_FAILURE(rc))
+                    break;
+                cbAvail = RTCircBufUsed(pInt->pCircBuf);
+//                RTPrintf("############## wait %lu %lu %lu \n", cbRead, cbAllRead, cbAvail);
+//                pInt->waits++;
+            }
+        }
+        size_t cbToRead = RT_MIN(cbRead - cbAllRead, cbAvail);
+        char *pcBuf;
+        size_t cbMemRead = 0;
+        /* Acquire a block for reading from our circular buffer. */
+        RTCircBufAcquireReadBlock(pInt->pCircBuf, cbToRead, (void**)&pcBuf, &cbMemRead);
+        if (pvBuf) /* Make it possible to blind read data (for skipping) */
+            memcpy(&((char*)pvBuf)[cbAllRead], pcBuf, cbMemRead);
+        /* Mark the block as empty again. */
+        RTCircBufReleaseReadBlock(pInt->pCircBuf, cbMemRead);
+        cbAllRead += cbMemRead;
+        pInt->cbCurAll += cbMemRead;
+    }
+
+    if (pcbRead)
+        *pcbRead = cbAllRead;
+
+    if (rc == VERR_EOF)
+        rc = VINF_SUCCESS;
+
+    /* Signal the thread to read more data in the mean time. */
+    if (   RT_SUCCESS(rc)
+        && RTCircBufFree(pInt->pCircBuf) >= (RTCircBufSize(pInt->pCircBuf) / 2))
+        rc = sha1SignalManifestThread(pInt, STATUS_READ);
+
+    return rc;
 }
 
 static int sha1FlushSyncCallback(void *pvUser, void *pvStorage)
@@ -974,10 +1188,70 @@ PVDINTERFACEIO RTTarCreateInterface()
     return pCallbacks;
 }
 
+int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, void *pvUser)
+{
+    /* Validate input. */
+    AssertPtrReturn(ppvBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCallbacks, VERR_INVALID_POINTER);
+
+    void *pvStorage;
+    int rc = pCallbacks->pfnOpen(pvUser, pcszFilename,
+                                 RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, 0,
+                                 &pvStorage);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    void *pvBuf = 0;
+    uint64_t cbSize = 0;
+    do
+    {
+        rc = pCallbacks->pfnGetSize(pvUser, pvStorage, &cbSize);
+        if (RT_FAILURE(rc))
+            break;
+
+        pvBuf = RTMemAlloc(cbSize);
+        if (!pvBuf)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        size_t cbAllRead = 0;
+        for(;;)
+        {
+            if (cbAllRead == cbSize)
+                break;
+            size_t cbToRead = cbSize - cbAllRead;
+            size_t cbRead = 0;
+            rc = pCallbacks->pfnReadSync(pvUser, pvStorage, cbAllRead, &((char*)pvBuf)[cbAllRead], cbToRead, &cbRead);
+            if (RT_FAILURE(rc))
+                break;
+            cbAllRead += cbRead;
+        }
+    }while(0);
+
+    pCallbacks->pfnClose(pvUser, pvStorage);
+
+    if (RT_SUCCESS(rc))
+    {
+        *ppvBuf = pvBuf;
+        *pcbSize = cbSize;
+    }else
+    {
+        if (pvBuf)
+            RTMemFree(pvBuf);
+    }
+
+    return rc;
+}
+
 int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pCallbacks, void *pvUser)
 {
     /* Validate input. */
-    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbSize, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCallbacks, VERR_INVALID_POINTER);
 
     void *pvStorage;
     int rc = pCallbacks->pfnOpen(pvUser, pcszFilename,

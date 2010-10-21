@@ -63,8 +63,14 @@ typedef RTTARFILE                               *PRTTARFILE;
  * @param   pszTarname     The file name of the tar archive to open.
  * @param   fMode          Open flags, i.e a combination of the RTFILE_O_* defines.
  *                         The ACCESS, ACTION and DENY flags are mandatory!
+ * @param   fStream        Open the file in stream mode. Within this mode no
+ *                         seeking is allowed. Use this together with
+ *                         RTTarFileCurrent, RTTarFileOpenCurrent,
+ *                         RTTarFileSeekNextFile and the read method to
+ *                         sequential read a tar file. Currently ignored with
+ *                         RTFILE_O_WRITE.
  */
-RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode);
+RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode, bool fStream);
 
 /**
  * Close the Tar archive.
@@ -378,6 +384,44 @@ RTR3DECL(int) RTTarExtractAll(const char *pszTarFile, const char *pszOutputDir, 
  *                               callback. Optional.
  */
 RTR3DECL(int) RTTarCreate(const char *pszTarFile, const char * const *papszFiles, size_t cFiles, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+
+/******************************************************************************
+ *   Streaming Functions                                                      *
+ ******************************************************************************/
+
+/**
+ * Return the filename where RTTar currently stays at.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTar           Handle to the RTTAR interface.
+ * @param   ppszFilename   On success the filename.
+ */
+RTR3DECL(int) RTTarCurrentFile(RTTAR hTar, char **ppszFilename);
+
+/**
+ * Jumps to the next file from the current RTTar position.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTar           Handle to the RTTAR interface.
+ */
+RTR3DECL(int) RTTarSeekNextFile(RTTAR hTar);
+
+/**
+ * Opens the file where RTTar currently stays at.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTar           Handle to the RTTAR interface.
+ * @param   phFile         Where to store the handle to the opened file.
+ * @param   ppszFilename   On success the filename.
+ * @param   fOpen          Open flags, i.e a combination of the RTFILE_O_* defines.
+ *                         The ACCESS, ACTION flags are mandatory! Currently
+ *                         only RTFILE_O_OPEN | RTFILE_O_READ is supported.
+ */
+RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **ppszFilename, uint32_t fOpen);
+
 
 /** @} */
 

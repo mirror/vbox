@@ -91,12 +91,15 @@ typedef struct RTTARFILELIST
 typedef RTTARFILELIST *PRTTARFILELIST;
 #endif
 
+typedef struct RTTARFILEINTERNAL* PRTTARFILEINTERNAL;
 typedef struct RTTARINTERNAL
 {
     uint32_t        u32Magic;
     RTFILE          hTarFile;
     bool            fFileOpenForWrite;
     uint32_t        fOpenMode;
+    bool            fStreamMode;
+    PRTTARFILEINTERNAL pFileCache;
 } RTTARINTERNAL;
 typedef RTTARINTERNAL* PRTTARINTERNAL;
 
@@ -274,6 +277,43 @@ DECLINLINE(int) rtTarAppendZeros(RTTARFILE hFile, uint64_t cbSize)
     RTMemTmpFree(pvTmp);
 
     return rc;
+}
+
+DECLINLINE(PRTTARFILEINTERNAL) rtCreateTarFileInternal(PRTTARINTERNAL pInt, const char *pszFilename, uint32_t fOpen)
+{
+    PRTTARFILEINTERNAL pFileInt = (PRTTARFILEINTERNAL)RTMemAllocZ(sizeof(RTTARFILEINTERNAL));
+    if (!pFileInt)
+        return NULL;
+
+    pFileInt->u32Magic = RTTARFILE_MAGIC;
+    pFileInt->pTar = pInt;
+    pFileInt->pszFilename = RTStrDup(pszFilename);
+    pFileInt->fOpenMode = fOpen;
+
+    return pFileInt;
+}
+
+DECLINLINE(PRTTARFILEINTERNAL) rtCopyTarFileInternal(PRTTARFILEINTERNAL pInt)
+{
+    PRTTARFILEINTERNAL pNewInt = (PRTTARFILEINTERNAL)RTMemAllocZ(sizeof(RTTARFILEINTERNAL));
+    if (!pNewInt)
+        return NULL;
+
+    memcpy(pNewInt, pInt, sizeof(RTTARFILEINTERNAL));
+    pNewInt->pszFilename = RTStrDup(pInt->pszFilename);
+
+    return pNewInt;
+}
+
+DECLINLINE(void) rtDeleteTarFileInternal(PRTTARFILEINTERNAL pInt)
+{
+    if (pInt)
+    {
+        if (pInt->pszFilename)
+            RTStrFree(pInt->pszFilename);
+        pInt->u32Magic = RTTARFILE_MAGIC_DEAD;
+        RTMemFree(pInt);
+    }
 }
 
 static int rtTarExtractFileToFile(RTTARFILE hFile, const char *pszTargetName, const uint64_t cbOverallSize, uint64_t &cbOverallWritten, PFNRTPROGRESS pfnProgressCallback, void *pvUser)
@@ -562,7 +602,7 @@ static int rtTarGetFilesOverallSize(RTFILE hFile, const char * const *papszFiles
  *   Public Functions                                                         *
  ******************************************************************************/
 
-RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode)
+RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode, bool fStream)
 {
     PRTTARINTERNAL pInt = (PRTTARINTERNAL)RTMemAllocZ(sizeof(RTTARINTERNAL));
     if (!pInt)
@@ -570,6 +610,7 @@ RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode)
 
     pInt->u32Magic = RTTAR_MAGIC;
     pInt->fOpenMode = fMode;
+    pInt->fStreamMode = fStream && (fMode & RTFILE_O_READ);
 
     int rc = VINF_SUCCESS;
     do
@@ -617,6 +658,13 @@ RTR3DECL(int) RTTarClose(RTTAR hTar)
     if (pInt->hTarFile)
         rc = RTFileClose(pInt->hTarFile);
 
+    /* Delete any remaining cached file headers. */
+    if (pInt->pFileCache)
+    {
+        rtDeleteTarFileInternal(pInt->pFileCache);
+        pInt->pFileCache = 0;
+    }
+
     pInt->u32Magic = RTTAR_MAGIC_DEAD;
 
     RTMemFree(pInt);
@@ -634,6 +682,9 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
     if (!pInt->hTarFile)
         return VERR_INVALID_HANDLE;
 
+    if (pInt->fStreamMode)
+        return VERR_INVALID_STATE;
+
     if (fOpen & RTFILE_O_WRITE)
     {
         if (!(pInt->fOpenMode & RTFILE_O_WRITE))
@@ -642,23 +693,13 @@ RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilena
             return VERR_TOO_MANY_OPEN_FILES;
     }
 
-    PRTTARFILEINTERNAL pFileInt = (PRTTARFILEINTERNAL)RTMemAllocZ(sizeof(RTTARFILEINTERNAL));
+    PRTTARFILEINTERNAL pFileInt = rtCreateTarFileInternal(pInt, pszFilename, fOpen);
     if (!pFileInt)
         return VERR_NO_MEMORY;
-
-    pFileInt->u32Magic = RTTARFILE_MAGIC;
 
     int rc = VINF_SUCCESS;
     do
     {
-        pFileInt->pTar = pInt;
-        pFileInt->pszFilename = RTStrDup(pszFilename);
-        pFileInt->uStart = 0;
-        pFileInt->cbSize = 0;
-        pFileInt->cbSetSize = 0;
-        pFileInt->fOpenMode = fOpen;
-        pFileInt->uCurrentPos = 0;
-
         if (pFileInt->fOpenMode & RTFILE_O_WRITE)
         {
             pInt->fFileOpenForWrite = true;
@@ -717,7 +758,23 @@ RTR3DECL(int) RTTarFileClose(RTTARFILE hFile)
     int rc = VINF_SUCCESS;
 
     /* In write mode: */
-    if (pFileInt->fOpenMode & RTFILE_O_WRITE)
+    if (pFileInt->fOpenMode & RTFILE_O_READ)
+    {
+        /* In read mode, we want to make sure to stay at the aligned end of this
+         * file, so the next file could be read immediately. */
+        uint64_t uCurPos = RTFileTell(pFileInt->pTar->hTarFile);
+        /* Check that the file pointer is somewhere within the last open file.
+         * If we are at the beginning (nothing read yet) nothing will be done.
+         * A user could open/close a file more than once, without reading
+         * something. */
+        if (pFileInt->uStart + sizeof(RTTARRECORD) < uCurPos && uCurPos < RT_ALIGN(pFileInt->uStart + sizeof(RTTARRECORD) + pFileInt->cbSize, sizeof(RTTARRECORD)))
+        {
+            /* Seek to the next file header. */
+            uint64_t uNextPos = RT_ALIGN(pFileInt->uStart + sizeof(RTTARRECORD) + pFileInt->cbSize, sizeof(RTTARRECORD));
+            rc = RTFileSeek(pFileInt->pTar->hTarFile, uNextPos - uCurPos, RTFILE_SEEK_CURRENT, NULL);
+        }
+    }
+    else if (pFileInt->fOpenMode & RTFILE_O_WRITE)
     {
         pFileInt->pTar->fFileOpenForWrite = false;
         do
@@ -755,12 +812,9 @@ RTR3DECL(int) RTTarFileClose(RTTARFILE hFile)
         }
         while(0);
     }
-    /* Nothing special in readmode. */
 
     /* Now cleanup and delete the handle */
-    RTStrFree(pFileInt->pszFilename);
-    pFileInt->u32Magic = RTTARFILE_MAGIC_DEAD;
-    RTMemFree(pFileInt);
+    rtDeleteTarFileInternal(pFileInt);
 
     return rc;
 }
@@ -769,6 +823,9 @@ RTR3DECL(int) RTTarFileSeek(RTTARFILE hFile, uint64_t uOffset,  unsigned uMethod
 {
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
+
+    if (pFileInt->pTar->fStreamMode)
+        return VERR_INVALID_STATE;
 
     switch (uMethod)
     {
@@ -821,8 +878,17 @@ RTR3DECL(int) RTTarFileReadAt(RTTARFILE hFile, uint64_t uOffset, void *pvBuf, si
     PRTTARFILEINTERNAL pFileInt = hFile;
     RTTARFILE_VALID_RETURN(pFileInt);
 
+    /* Check that we not read behind the end of file. If so return immediately. */
+    if (uOffset > pFileInt->cbSize)
+    {
+        if (pcbRead)
+            *pcbRead = 0;
+        return VINF_SUCCESS; /* ??? VERR_EOF */
+    }
+
+    size_t cbToCopy = RT_MIN(pFileInt->cbSize - uOffset, cbToRead);
     size_t cbTmpRead = 0;
-    int rc = RTFileReadAt(pFileInt->pTar->hTarFile, pFileInt->uStart + 512 + uOffset, pvBuf, cbToRead, &cbTmpRead);
+    int rc = RTFileReadAt(pFileInt->pTar->hTarFile, pFileInt->uStart + 512 + uOffset, pvBuf, cbToCopy, &cbTmpRead);
     pFileInt->uCurrentPos = uOffset + cbTmpRead;
     if (pcbRead)
         *pcbRead = cbTmpRead;
@@ -1020,7 +1086,7 @@ RTR3DECL(int) RTTarFileExists(const char *pszTarFile, const char *pszFile)
 
     /* Open the tar file */
     RTTAR hTar;
-    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, false);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1044,7 +1110,7 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
 
     /* Open the tar file */
     RTTAR hTar;
-    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, false);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1151,7 +1217,7 @@ RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, size_
     uint64_t cbToCopy = 0;
     do
     {
-        rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+        rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, false);
         if (RT_FAILURE(rc))
             break;
         rc = RTTarFileOpen(hTar, &hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_READ);
@@ -1214,7 +1280,7 @@ RTR3DECL(int) RTTarExtractFiles(const char *pszTarFile, const char *pszOutputDir
 
     /* Open the tar file */
     RTTAR hTar;
-    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, false);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1285,7 +1351,7 @@ RTR3DECL(int) RTTarCreate(const char *pszTarFile, const char * const *papszFiles
     AssertPtrNullReturn(pvUser, VERR_INVALID_POINTER);
 
     RTTAR hTar;
-    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_CREATE | RTFILE_O_READWRITE | RTFILE_O_DENY_NONE);
+    int rc = RTTarOpen(&hTar, pszTarFile, RTFILE_O_CREATE | RTFILE_O_READWRITE | RTFILE_O_DENY_NONE, false);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1311,6 +1377,145 @@ RTR3DECL(int) RTTarCreate(const char *pszTarFile, const char * const *papszFiles
 
     /* Cleanup */
     RTTarClose(hTar);
+
+    return rc;
+}
+
+/******************************************************************************
+ *   Streaming Functions                                                      *
+ ******************************************************************************/
+
+RTR3DECL(int) RTTarCurrentFile(RTTAR hTar, char **ppszFilename)
+{
+    /* Validate input. */
+    AssertPtrNullReturn(ppszFilename, VERR_INVALID_POINTER);
+
+    PRTTARINTERNAL pInt = hTar;
+    RTTAR_VALID_RETURN(pInt);
+
+    /* Open and close the file on the current position. This makes sure the
+     * cache is filled in case we never read something before. On success it
+     * will return the current filename. */
+    RTTARFILE hFile;
+    int rc = RTTarFileOpenCurrentFile(hTar, &hFile, ppszFilename, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+        RTTarFileClose(hFile);
+
+    return rc;
+}
+
+RTR3DECL(int) RTTarSeekNextFile(RTTAR hTar)
+{
+    PRTTARINTERNAL pInt = hTar;
+    RTTAR_VALID_RETURN(pInt);
+
+    int rc = VINF_SUCCESS;
+
+    if (!pInt->fStreamMode)
+        return VERR_INVALID_STATE;
+
+    /* If there is nothing in the cache, it means we never read something. Just
+     * ask for the current filename to fill the cache. */
+    if (!pInt->pFileCache)
+    {
+        rc = RTTarCurrentFile(hTar, 0);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /* Check that the file pointer is somewhere within the last open file.
+     * If not we are somehow busted. */
+    uint64_t uCurPos = RTFileTell(pInt->hTarFile);
+    if (!(pInt->pFileCache->uStart <= uCurPos && uCurPos < pInt->pFileCache->uStart + sizeof(RTTARRECORD) + pInt->pFileCache->cbSize))
+        return VERR_INVALID_STATE;
+
+    /* Seek to the next file header. */
+    uint64_t uNextPos = RT_ALIGN(pInt->pFileCache->uStart + sizeof(RTTARRECORD) + pInt->pFileCache->cbSize, sizeof(RTTARRECORD));
+    rc = RTFileSeek(pInt->hTarFile, uNextPos - uCurPos, RTFILE_SEEK_CURRENT, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Again check the current filename to fill the cache with the new value. */
+    return RTTarCurrentFile(hTar, 0);
+}
+
+RTR3DECL(int) RTTarFileOpenCurrentFile(RTTAR hTar, PRTTARFILE phFile, char **ppszFilename, uint32_t fOpen)
+{
+    /* Validate input. */
+    AssertPtrReturn(phFile, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(ppszFilename, VERR_INVALID_POINTER);
+    AssertReturn((fOpen & RTFILE_O_READ), VERR_INVALID_PARAMETER); /* Only valid in read mode. */
+
+    PRTTARINTERNAL pInt = hTar;
+    RTTAR_VALID_RETURN(pInt);
+
+    if (!pInt->fStreamMode)
+        return VERR_INVALID_STATE;
+
+    int rc = VINF_SUCCESS;
+
+    /* Is there some cached entry? */
+    if (pInt->pFileCache)
+    {
+        /* Are we still direct behind that header? */
+        if (pInt->pFileCache->uStart + sizeof(RTTARRECORD) == RTFileTell(pInt->hTarFile))
+        {
+            /* Yes, so the streaming can start. Just return the cached file
+             * structure to the caller. */
+            *phFile = rtCopyTarFileInternal(pInt->pFileCache);
+            if (ppszFilename)
+                *ppszFilename = RTStrDup(pInt->pFileCache->pszFilename);
+            return VINF_SUCCESS;
+        }else
+        {
+            /* Else delete the last open file cache. Might be recreated below. */
+            rtDeleteTarFileInternal(pInt->pFileCache);
+            pInt->pFileCache = 0;
+        }
+    }
+
+    PRTTARFILEINTERNAL pFileInt = 0;
+    do
+    {
+        /* Try to read a header entry from the current position. If we aren't
+         * on a header record, the header checksum will show and an error will
+         * be returned. */
+        RTTARRECORD record;
+        /* Read & verify a header record */
+        rc = rtTarReadHeaderRecord(pInt->hTarFile, &record);
+        /* Check for error or EOF. */
+        if (RT_FAILURE(rc))
+            break;
+        /* We support normal files only */
+        if (   record.h.linkflag == LF_OLDNORMAL
+            || record.h.linkflag == LF_NORMAL)
+        {
+            pFileInt = rtCreateTarFileInternal(pInt, record.h.name, fOpen);
+            if (!pFileInt)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+            /* Get the file size */
+            rc = RTStrToUInt64Full(record.h.size, 8, &pFileInt->cbSize);
+            if (RT_FAILURE(rc))
+                break;
+            /* The start is -512 from here. */
+            pFileInt->uStart = RTFileTell(pInt->hTarFile) - sizeof(RTTARRECORD);
+            /* Copy the new file structure to our cache. */
+            pInt->pFileCache = rtCopyTarFileInternal(pFileInt);
+            if (ppszFilename)
+                *ppszFilename = RTStrDup(pFileInt->pszFilename);
+        }
+    }while (0);
+
+    if (RT_FAILURE(rc))
+    {
+        if (pFileInt)
+            rtDeleteTarFileInternal(pFileInt);
+    }
+    else
+        *phFile = pFileInt;
 
     return rc;
 }

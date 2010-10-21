@@ -23,6 +23,10 @@
 /* VBox includes */
 #include "VirtualBoxBase.h"
 
+/* Todo: This file needs massive cleanup. Split IAppliance in a public and
+ * private classes. */
+#include <iprt/tar.h>
+
 /* VBox forward declarations */
 class Progress;
 class VirtualSystemDescription;
@@ -113,38 +117,58 @@ private:
     /** weak VirtualBox parent */
     VirtualBox* const   mVirtualBox;
 
+    struct ImportStack;
+    struct TaskOVF;
+    struct LocationInfo;
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
-    bool isApplianceIdle();
+    enum SetUpProgressMode { ImportFile, ImportS3, WriteFile, WriteS3 };
 
+    /*******************************************************************************
+     * General stuff
+     ******************************************************************************/
+
+    bool isApplianceIdle();
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
-    void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
-    void addWarning(const char* aWarning, ...);
-
-    void disksWeight();
-    struct LocationInfo;
-    enum SetUpProgressMode { ImportFileWithManifest, ImportFileNoManifest, ImportS3, WriteFile, WriteS3 };
-    HRESULT setUpProgress(const LocationInfo &locInfo,
-                          ComObjPtr<Progress> &pProgress,
+    HRESULT setUpProgress(ComObjPtr<Progress> &pProgress,
                           const Bstr &bstrDescription,
                           SetUpProgressMode mode);
-
+    void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
+    void addWarning(const char* aWarning, ...);
+    void disksWeight();
     void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
     void parseBucket(Utf8Str &aPath, Utf8Str &aBucket);
-    Utf8Str manifestFileName(const Utf8Str& aPath) const;
-    Utf8Str queryManifestFileName(const Utf8Str& aPath) const;
+
+    static DECLCALLBACK(int) taskThreadImportOrExport(RTTHREAD aThread, void *pvUser);
+
+    /*******************************************************************************
+     * Read stuff
+     ******************************************************************************/
 
     HRESULT readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
-    struct TaskOVF;
-    static DECLCALLBACK(int) taskThreadImportOrExport(RTTHREAD aThread, void *pvUser);
-
-    HRESULT readFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress);
-    HRESULT readFSOVF(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress);
-    HRESULT readFSOVA(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress);
+    HRESULT readFS(TaskOVF *pTask);
+    HRESULT readFSOVF(TaskOVF *pTask);
+    HRESULT readFSOVA(TaskOVF *pTask);
+    HRESULT readFSImpl(TaskOVF *pTask, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage);
     HRESULT readS3(TaskOVF *pTask);
+
+    /*******************************************************************************
+     * Import stuff
+     ******************************************************************************/
+
+    HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+
+    HRESULT importFS(TaskOVF *pTask);
+    HRESULT importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
+    HRESULT importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
+    HRESULT importS3(TaskOVF *pTask);
+
+    HRESULT readManifestFile(const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage);
+    HRESULT readTarManifestFile(RTTAR tar, const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage);
+    HRESULT verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize);
 
     void convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                      uint32_t ulAddressOnParent,
@@ -152,29 +176,38 @@ private:
                                      int32_t &lControllerPort,
                                      int32_t &lDevice);
 
-    HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
-    HRESULT manifestVerify(const LocationInfo &locInfo, const ovf::OVFReader &reader, ComObjPtr<Progress> &pProgress);
-
-    HRESULT importFS(TaskOVF *pTask);
-    HRESULT importFSOVF(TaskOVF *pTask);
-    HRESULT importFSOVA(TaskOVF *pTask);
-
-    struct ImportStack;
     void importOneDiskImage(const ovf::DiskImage &di,
                             const Utf8Str &strTargetPath,
-                            ComPtr<IMedium> &pTargetHD,
-                            ImportStack &stack);
+                            ComObjPtr<Medium> &pTargetHD,
+                            ImportStack &stack,
+                            PVDINTERFACEIO pCallbacks,
+                            PSHA1STORAGE pStorage);
     void importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                               ComObjPtr<VirtualSystemDescription> &vsdescThis,
                               ComPtr<IMachine> &pNewMachine,
-                              ImportStack &stack);
+                              ImportStack &stack,
+                              PVDINTERFACEIO pCallbacks,
+                              PSHA1STORAGE pStorage);
     void importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThis,
                            ComPtr<IMachine> &pNewMachine,
-                           ImportStack &stack);
+                           ImportStack &stack,
+                           PVDINTERFACEIO pCallbacks,
+                           PSHA1STORAGE pStorage);
+    void importMachines(ImportStack &stack,
+                        PVDINTERFACEIO pCallbacks,
+                        PSHA1STORAGE pStorage);
 
-    HRESULT importS3(TaskOVF *pTask);
+    /*******************************************************************************
+     * Write stuff
+     ******************************************************************************/
 
     HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+
+    HRESULT writeFS(TaskOVF *pTask);
+    HRESULT writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
+    HRESULT writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
+    HRESULT writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage);
+    HRESULT writeS3(TaskOVF *pTask);
 
     struct XMLStack;
     void buildXML(AutoWriteLockBase& writeLock, xml::Document &doc, XMLStack &stack, const Utf8Str &strPath, OVFFormat enFormat);
@@ -185,11 +218,6 @@ private:
                                      OVFFormat enFormat,
                                      XMLStack &stack);
 
-    HRESULT writeFS(TaskOVF *pTask);
-    HRESULT writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock);
-    HRESULT writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
-    HRESULT writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage);
-    HRESULT writeS3(TaskOVF *pTask);
 
     friend class Machine;
 };

@@ -66,6 +66,27 @@ typedef struct RTMANIFESTCALLBACKDATA
 } RTMANIFESTCALLBACKDATA;
 typedef RTMANIFESTCALLBACKDATA* PRTMANIFESTCALLBACKDATA;
 
+/*******************************************************************************
+*   Private functions
+*******************************************************************************/
+
+DECLINLINE(char *) rtManifestPosOfCharInBuf(char const *pv, size_t cb, char c)
+{
+    char *pb = (char *)pv;
+    for (; cb; --cb, ++pb)
+        if (RT_UNLIKELY(*pb == c))
+            return pb;
+    return NULL;
+}
+
+DECLINLINE(size_t) rtManifestIndexOfCharInBuf(char const *pv, size_t cb, char c)
+{
+    char const *pb = (char const *)pv;
+    for (size_t i=0; i < cb; ++i, ++pb)
+        if (RT_UNLIKELY(*pb == c))
+            return i;
+    return cb;
+}
 
 int rtSHAProgressCallback(unsigned uPercent, void *pvUser)
 {
@@ -75,44 +96,216 @@ int rtSHAProgressCallback(unsigned uPercent, void *pvUser)
                                       pData->pvUser);
 }
 
+/*******************************************************************************
+*   Public functions
+*******************************************************************************/
+
 RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)
 {
     /* Validate input */
     AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
-    AssertPtrReturn(paTests, VERR_INVALID_POINTER);
-    AssertReturn(cTests > 0, VERR_INVALID_PARAMETER);
 
     /* Open the manifest file */
-    PRTSTREAM pStream;
-    int rc = RTStrmOpen(pszManifestFile, "r", &pStream);
+    RTFILE file;
+    int rc = RTFileOpen(&file, pszManifestFile, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
         return rc;
 
+    void *pvBuf = 0;
+    do
+    {
+        uint64_t cbSize;
+        rc = RTFileGetSize(file, &cbSize);
+        if (RT_FAILURE(rc))
+            break;
+
+        /* Cast down for the case size_t < uint64_t. This isn't really correct,
+           but we consider manifest files bigger than size_t as not supported
+           by now. */
+        size_t cbToRead = (size_t)cbSize;
+        pvBuf = RTMemAlloc(cbToRead);
+        if (!pvBuf)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        size_t cbRead = 0;
+        rc = RTFileRead(file, pvBuf, cbToRead, &cbRead);
+        if (RT_FAILURE(rc))
+            break;
+
+        rc = RTManifestVerifyFilesBuf(pvBuf, cbRead, paTests, cTests, piFailed);
+    }while (0);
+
+    /* Cleanup */
+    if (pvBuf)
+        RTMemFree(pvBuf);
+
+    RTFileClose(file);
+
+    return rc;
+}
+
+RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed,
+                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+{
+    /* Validate input */
+    AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
+    AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    /* Create our compare list */
+    PRTMANIFESTTEST paFiles = (PRTMANIFESTTEST)RTMemTmpAllocZ(sizeof(RTMANIFESTTEST) * cFiles);
+    if (!paFiles)
+        return VERR_NO_MEMORY;
+
+    RTMANIFESTCALLBACKDATA callback = { pfnProgressCallback, pvUser, cFiles, 0 };
+    /* Fill our compare list */
+    for (size_t i = 0; i < cFiles; ++i)
+    {
+        char *pszDigest;
+        if (pfnProgressCallback)
+        {
+            callback.cCurrentFile = i;
+            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
+        }
+        else
+            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, NULL, NULL);
+        if (RT_FAILURE(rc))
+            break;
+        paFiles[i].pszTestFile = (char*)papszFiles[i];
+        paFiles[i].pszTestDigest = pszDigest;
+    }
+
+    /* Do the verification */
+    if (RT_SUCCESS(rc))
+        rc = RTManifestVerify(pszManifestFile, paFiles, cFiles, piFailed);
+
+    /* Cleanup */
+    for (size_t i = 0; i < cFiles; ++i)
+    {
+        if (paFiles[i].pszTestDigest)
+            RTStrFree((char*)paFiles[i].pszTestDigest);
+    }
+    RTMemTmpFree(paFiles);
+
+    return rc;
+}
+
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles,
+                                   PFNRTPROGRESS pfnProgressCallback, void *pvUser)
+{
+    /* Validate input */
+    AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
+    AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_POINTER);
+
+    RTFILE file;
+    int rc = RTFileOpen(&file, pszManifestFile, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    PRTMANIFESTTEST paFiles = 0;
+    void *pvBuf = 0;
+    do
+    {
+        paFiles = (PRTMANIFESTTEST)RTMemAllocZ(sizeof(RTMANIFESTTEST) * cFiles);
+        if (!paFiles)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        RTMANIFESTCALLBACKDATA callback = { pfnProgressCallback, pvUser, cFiles, 0 };
+        for (size_t i = 0; i < cFiles; ++i)
+        {
+            paFiles[i].pszTestFile = papszFiles[i];
+            /* Calculate the SHA1 digest of every file */
+            if (pfnProgressCallback)
+            {
+                callback.cCurrentFile = i;
+                rc = RTSha1DigestFromFile(paFiles[i].pszTestFile, (char**)&paFiles[i].pszTestDigest, rtSHAProgressCallback, &callback);
+            }
+            else
+                rc = RTSha1DigestFromFile(paFiles[i].pszTestFile, (char**)&paFiles[i].pszTestDigest, NULL, NULL);
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            size_t cbSize = 0;
+            rc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, paFiles, cFiles);
+            if (RT_FAILURE(rc))
+                break;
+
+            rc = RTFileWrite(file, pvBuf, cbSize, 0);
+        }
+    }while (0);
+
+    RTFileClose(file);
+
+    /* Cleanup */
+    if (pvBuf)
+        RTMemFree(pvBuf);
+    for (size_t i = 0; i < cFiles; ++i)
+        if (paFiles[i].pszTestDigest)
+            RTStrFree((char*)paFiles[i].pszTestDigest);
+    RTMemFree(paFiles);
+
+    /* Delete the manifest file on failure */
+    if (RT_FAILURE(rc))
+        RTFileDelete(pszManifestFile);
+
+    return rc;
+}
+
+RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)
+{
+    /* Validate input */
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbSize > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(paTests, VERR_INVALID_POINTER);
+    AssertReturn(cTests > 0, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(piFailed, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
     PRTMANIFESTFILEENTRY paFiles = (PRTMANIFESTFILEENTRY)RTMemTmpAllocZ(sizeof(RTMANIFESTFILEENTRY) * cTests);
     if (!paFiles)
-    {
-        RTStrmClose(pStream);
         return VERR_NO_MEMORY;
-    }
 
     /* Fill our compare list */
     for (size_t i = 0; i < cTests; ++i)
         paFiles[i].pTestPattern = &paTests[i];
 
+    char *pcBuf = (char*)pvBuf;
+    size_t cbRead = 0;
     /* Parse the manifest file line by line */
-    char szLine[1024];
     for (;;)
     {
-        rc = RTStrmGetLine(pStream, szLine, sizeof(szLine));
-        if (RT_FAILURE(rc))
+        if (cbRead >= cbSize)
             break;
-        size_t cch = strlen(szLine);
 
-        /* Skip empty lines */
-        if (cch == 0)
+        size_t cch = rtManifestIndexOfCharInBuf(pcBuf, cbSize - cbRead, '\n') + 1;
+
+        /* Skip empty lines (UNIX/DOS format) */
+        if (   (   cch == 1
+                && pcBuf[0] == '\n')
+            || (   cch == 2
+                && pcBuf[0] == '\r'
+                && pcBuf[1] == '\n'))
+        {
+            pcBuf += cch;
+            cbRead += cch;
             continue;
+        }
 
         /** @todo r=bird:
+         *  -# Better deal with this EOF line platform dependency
          *  -# The SHA1 test should probably include a blank space check.
          *  -# If there is a specific order to the elements in the string, it would be
          *     good if the delimiter searching checked for it.
@@ -121,10 +314,10 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
 
         /* Check for the digest algorithm */
         if (   cch < 4
-            || !(  szLine[0] == 'S'
-                && szLine[1] == 'H'
-                && szLine[2] == 'A'
-                && szLine[3] == '1'))
+            || !(   pcBuf[0] == 'S'
+                 && pcBuf[1] == 'H'
+                 && pcBuf[2] == 'A'
+                 && pcBuf[3] == '1'))
         {
             /* Digest unsupported */
             rc = VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE;
@@ -132,13 +325,13 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
         }
 
         /* Try to find the filename */
-        char *pszNameStart = strchr(szLine, '(');
+        char *pszNameStart = rtManifestPosOfCharInBuf(pcBuf, cch, '(');
         if (!pszNameStart)
         {
             rc = VERR_MANIFEST_WRONG_FILE_FORMAT;
             break;
         }
-        char *pszNameEnd = strchr(szLine, ')');
+        char *pszNameEnd = rtManifestPosOfCharInBuf(pcBuf, cch, ')');
         if (!pszNameEnd)
         {
             rc = VERR_MANIFEST_WRONG_FILE_FORMAT;
@@ -157,14 +350,31 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
         pszName[cchName] = '\0';
 
         /* Try to find the digest sum */
-        char *pszDigestStart = strchr(szLine, '=');
+        char *pszDigestStart = rtManifestPosOfCharInBuf(pcBuf, cch, '=') + 1;
         if (!pszDigestStart)
         {
             RTMemTmpFree(pszName);
             rc = VERR_MANIFEST_WRONG_FILE_FORMAT;
             break;
         }
-        char *pszDigest = ++pszDigestStart;
+        char *pszDigestEnd = rtManifestPosOfCharInBuf(pcBuf, cch, '\r');
+        if (!pszDigestEnd)
+            pszDigestEnd = rtManifestPosOfCharInBuf(pcBuf, cch, '\n');
+        if (!pszDigestEnd)
+        {
+            rc = VERR_MANIFEST_WRONG_FILE_FORMAT;
+            break;
+        }
+        /* Copy the digest part */
+        size_t cchDigest = pszDigestEnd - pszDigestStart - 1;
+        char *pszDigest = (char *)RTMemTmpAlloc(cchDigest + 1);
+        if (!pszDigest)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        memcpy(pszDigest, pszDigestStart + 1, cchDigest);
+        pszDigest[cchDigest] = '\0';
 
         /* Check our file list against the extracted data */
         bool fFound = false;
@@ -180,14 +390,17 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
             }
         }
         RTMemTmpFree(pszName);
+        RTMemTmpFree(pszDigest);
         if (!fFound)
         {
             /* There have to be an entry in the file list */
             rc = VERR_MANIFEST_FILE_MISMATCH;
             break;
         }
+
+        pcBuf += cch;
+        cbRead += cch;
     }
-    RTStrmClose(pStream);
 
     if (   rc == VINF_SUCCESS
         || rc == VERR_EOF)
@@ -228,112 +441,12 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
     return rc;
 }
 
-
-RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed,
-                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser)
-{
-    /* Validate input */
-    AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
-    AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_PARAMETER);
-
-    int rc = VINF_SUCCESS;
-
-    /* Create our compare list */
-    PRTMANIFESTTEST paFiles = (PRTMANIFESTTEST)RTMemTmpAllocZ(sizeof(RTMANIFESTTEST) * cFiles);
-    if (!paFiles)
-        return VERR_NO_MEMORY;
-
-    RTMANIFESTCALLBACKDATA callback = { pfnProgressCallback, pvUser, cFiles, 0 };
-    /* Fill our compare list */
-    for (size_t i = 0; i < cFiles; ++i)
-    {
-        char *pszDigest;
-        if (pfnProgressCallback)
-        {
-            callback.cCurrentFile = i;
-            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
-        }
-        else
-            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, NULL, NULL);
-        if (RT_FAILURE(rc))
-            break;
-        paFiles[i].pszTestFile = (char*)papszFiles[i];
-        paFiles[i].pszTestDigest = pszDigest;
-    }
-
-    /* Do the verification */
-    if (RT_SUCCESS(rc))
-        rc = RTManifestVerify(pszManifestFile, paFiles, cFiles, piFailed);
-
-    /* Cleanup */
-    for (size_t i = 0; i < cFiles; ++i)
-    {
-        if (paFiles[i].pszTestDigest)
-            RTStrFree(paFiles[i].pszTestDigest);
-    }
-    RTMemTmpFree(paFiles);
-
-    return rc;
-}
-
-
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles,
-                                   PFNRTPROGRESS pfnProgressCallback, void *pvUser)
-{
-    /* Validate input */
-    AssertPtrReturn(pszManifestFile, VERR_INVALID_POINTER);
-    AssertPtrReturn(papszFiles, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pfnProgressCallback, VERR_INVALID_PARAMETER);
-
-    /* Open a file to stream in */
-    PRTSTREAM pStream;
-    int rc = RTStrmOpen(pszManifestFile, "w", &pStream);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    RTMANIFESTCALLBACKDATA callback = { pfnProgressCallback, pvUser, cFiles, 0 };
-    for (size_t i = 0; i < cFiles; ++i)
-    {
-        /* Calculate the SHA1 digest of every file */
-        char *pszDigest;
-        if (pfnProgressCallback)
-        {
-            callback.cCurrentFile = i;
-            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, rtSHAProgressCallback, &callback);
-        }
-        else
-            rc = RTSha1DigestFromFile(papszFiles[i], &pszDigest, NULL, NULL);
-        if (RT_FAILURE(rc))
-            break;
-
-        /* Add the entry to the manifest file */
-        int cch = RTStrmPrintf(pStream, "SHA1 (%s)= %s\n", RTPathFilename(papszFiles[i]), pszDigest);
-        RTStrFree(pszDigest);
-        if (RT_UNLIKELY(cch < 0))
-        {
-            rc = VERR_INTERNAL_ERROR;
-            break;
-        }
-    }
-    int rc2 = RTStrmClose(pStream);
-    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-        rc2 = rc;
-
-    /* Delete the manifest file on failure */
-    if (RT_FAILURE(rc))
-        RTFileDelete(pszManifestFile);
-
-    return rc;
-}
-
-RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, const char * const *papszFileNames, const char * const *papszFileDigests, size_t cFiles)
+RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, PRTMANIFESTTEST paFiles, size_t cFiles)
 {
     /* Validate input */
     AssertPtrReturn(ppvBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbSize, VERR_INVALID_POINTER);
-    AssertPtrReturn(papszFileNames, VERR_INVALID_POINTER);
-    AssertPtrReturn(papszFileDigests, VERR_INVALID_POINTER);
+    AssertPtrReturn(paFiles, VERR_INVALID_POINTER);
     AssertReturn(cFiles > 0, VERR_INVALID_PARAMETER);
 
     /* Calculate the size necessary for the memory buffer. */
@@ -341,7 +454,7 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, const char
     size_t cbMaxSize = 0;
     for (size_t i = 0; i < cFiles; ++i)
     {
-        size_t cbTmp = strlen(RTPathFilename(papszFileNames[i])) + strlen(papszFileDigests[i]) + 10;
+        size_t cbTmp = strlen(RTPathFilename(paFiles[i].pszTestFile)) + strlen(paFiles[i].pszTestDigest) + 10;
         cbMaxSize = RT_MAX(cbMaxSize, cbTmp);
         cbSize += cbTmp;
     }
@@ -356,7 +469,7 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, const char
     size_t cbPos = 0;
     for (size_t i = 0; i < cFiles; ++i)
     {
-        size_t cch = RTStrPrintf(pszTmp, cbMaxSize + 1, "SHA1 (%s)= %s\n", RTPathFilename(papszFileNames[i]), papszFileDigests[i]);
+        size_t cch = RTStrPrintf(pszTmp, cbMaxSize + 1, "SHA1 (%s)= %s\n", RTPathFilename(paFiles[i].pszTestFile), paFiles[i].pszTestDigest);
         memcpy(&((char*)pvBuf)[cbPos], pszTmp, cch);
         cbPos += cch;
     }
