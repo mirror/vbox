@@ -704,7 +704,7 @@ static int VBoxServiceControlExecInitPipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf
  *
  * @param   pBuf            The pipe buffer.
  */
-static void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
+void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf)
 {
     AssertPtr(pBuf);
     if (pBuf->pbData)
