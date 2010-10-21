@@ -79,6 +79,7 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "\n"
                  "                            copyto <vmname>|<uuid>\n"
                  "                            <source on host> <destination on guest>\n"
+                 "                            --username <name> --password <password>\n"
                  "                            [--recursive] [--verbose] [--flags <flags>]\n"
 #endif
                  "\n");
@@ -367,7 +368,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                 else if (fVerbose)
                     RTPrintf("Waiting for process to exit ...\n");
 
-                /* setup signal handling if cancelable */
+                /* Setup signal handling if cancelable. */
                 ASSERT(progress);
                 bool fCanceledAlready = false;
                 BOOL fCancelable;
@@ -440,7 +441,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                         }
                     }
 
-#if 0
+#if 1
                     static int sent = 0;
                     if (sent < 1)
                     {
@@ -626,7 +627,9 @@ static int handleCtrlCopyTo(HandlerArg *a)
 
     Utf8Str Utf8Source(a->argv[1]);
     Utf8Str Utf8Dest(a->argv[2]);
-    uint32_t uFlags = 0;
+    Utf8Str Utf8UserName;
+    Utf8Str Utf8Password;
+    uint32_t uFlags = CopyFileFlag_None;
     bool fVerbose = false;
     bool fCopyRecursive = false;
 
@@ -634,7 +637,29 @@ static int handleCtrlCopyTo(HandlerArg *a)
     bool usageOK = true;
     for (int i = 3; usageOK && i < a->argc; i++)
     {
-        if (!strcmp(a->argv[i], "--flags"))
+        if (   !strcmp(a->argv[i], "--username")
+            || !strcmp(a->argv[i], "--user"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8UserName = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (   !strcmp(a->argv[i], "--password")
+                 || !strcmp(a->argv[i], "--pwd"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8Password = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (!strcmp(a->argv[i], "--flags"))
         {
             if (i + 1 >= a->argc)
                 usageOK = false;
@@ -678,6 +703,10 @@ static int handleCtrlCopyTo(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No destination specified!");
 
+    if (Utf8UserName.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL,
+                           "No user name specified!");
+
     /* lookup VM. */
     ComPtr<IMachine> machine;
     /* assume it's an UUID */
@@ -715,6 +744,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
 
             /* Do the copy. */
             rc = guest->CopyToGuest(Bstr(Utf8Source).raw(), Bstr(Utf8Dest).raw(),
+                                    Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
                                     uFlags, progress.asOutParam());
             if (FAILED(rc))
             {
@@ -732,7 +762,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
             }
             else
             {
-                /* setup signal handling if cancelable */
+                /* Setup signal handling if cancelable. */
                 ASSERT(progress);
                 bool fCanceledAlready = false;
                 BOOL fCancelable;
@@ -750,7 +780,8 @@ static int handleCtrlCopyTo(HandlerArg *a)
                 /* Wait for process to exit ... */
                 BOOL fCompleted = FALSE;
                 BOOL fCanceled = FALSE;
-                while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+                while (   SUCCEEDED(progress->COMGETTER(Completed(&fCompleted)))
+                       && !fCompleted)
                 {
                     /* Process async cancelation */
                     if (g_fCopyCanceled && !fCanceledAlready)

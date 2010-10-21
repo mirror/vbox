@@ -33,6 +33,7 @@
 #endif
 #include <iprt/cpp/utils.h>
 #include <iprt/dir.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
@@ -1520,11 +1521,11 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ComSafeArrayIn(BYT
                         if (   SUCCEEDED(it->second.pProgress->COMGETTER(Completed)(&fCompleted))
                             && fCompleted)
                         {
-                            PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
+                            PCALLBACKDATAEXECINSTATUS pStatusData = (PCALLBACKDATAEXECINSTATUS)it->second.pvData;
                             Assert(it->second.cbData == sizeof(CALLBACKDATAEXECINSTATUS));
-                            AssertPtr(pData);
+                            AssertPtr(pStatusData);
 
-                            *aBytesWritten = pData->cbProcessed;
+                            *aBytesWritten = pStatusData->cbProcessed;
                         }
                     }
                     else /* Operation was canceled. */
@@ -1929,8 +1930,13 @@ int Guest::directoryRead(const char *pszDirectory, const char *pszFilter,
 }
 #endif
 
-STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
-                                IProgress **aProgress)
+/** @todo For having a progress object which actually reports something,
+  *       the actual copy loop (see below) needs to go to some worker thread
+  *       so that this routine can return to the caller (and the caller then
+  *       can do display a progress). */
+STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
+                                IN_BSTR aUserName, IN_BSTR aPassword,
+                                ULONG aFlags, IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -1948,7 +1954,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Validate flags. */
-    if (aFlags)
+    if (aFlags != CopyFileFlag_None)
     {
         if (   !(aFlags & CopyFileFlag_Recursive)
             && !(aFlags & CopyFileFlag_Update)
@@ -1962,22 +1968,120 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
 
     try
     {
-        ULONG cObjectsToCopy = 0;
-        RTLISTNODE listEntries;
+        /*ULONG cObjectsToCopy = 0;
+        RTLISTNODE listEntries;*/
 
         Utf8Str Utf8Source(aSource);
         Utf8Str Utf8Dest(aDest);
+        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8Password(aPassword);
 
-        char *pszSourceAbs = RTPathAbsDup(Utf8Source.c_str());
-        if (!pszSourceAbs)
+        /* Does our source file exist? */
+        if (!RTFileExists(Utf8Source.c_str()))
         {
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          tr("Could not determine absolute path of \"%s\""), Utf8Source.c_str());
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Source file \"%s\" does not exist"), Utf8Source.c_str());
         }
         else
         {
+            RTFILE fileSource;
+            int vrc = RTFileOpen(&fileSource, Utf8Source.c_str(),
+                                 RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+            if (RT_FAILURE(vrc))
+            {
+                rc = setError(VBOX_E_IPRT_ERROR,
+                              tr("Could not open source file \"%s\" for reading, rc=%Rrc"),
+                              Utf8Source.c_str(),  vrc);
+            }
+            else
+            {
+                uint64_t cbSize;
+                vrc = RTFileGetSize(fileSource, &cbSize);
+                if (RT_FAILURE(vrc))
+                {
+                    rc = setError(VBOX_E_IPRT_ERROR,
+                                  tr("Could not query file size of \"%s\", rc=%Rrc"),
+                                  Utf8Source.c_str(),  vrc);
+                }
+                else
+                {
+                    com::SafeArray<IN_BSTR> args;
+                    com::SafeArray<IN_BSTR> env;
+
+                    /*
+                     * Prepare tool command line.
+                     */
+                    args.push_back(Bstr("vbox_cat").raw()); /* The actual (internal) tool to use (as argv[0]). */
+                    args.push_back(Bstr("--output").raw()); /* We want to write a file ... */
+                    args.push_back(Bstr(Utf8Dest).raw());   /* ... which is specified here. */
+
+                    /*
+                     * Okay, since we gathered all stuff we need until now to start the
+                     * actual copying, start the guest part now.
+                     */
+                    ULONG uPID;
+                    ComPtr<IProgress> execProgress;
+                    rc = ExecuteProcess(Bstr("vbox_cat").raw(), 0 /* Flags */,
+                                        ComSafeArrayAsInParam(args),
+                                        ComSafeArrayAsInParam(env),
+                                        Bstr(Utf8UserName).raw(),
+                                        Bstr(Utf8Password).raw(), 0 /* Timeout */,
+                                        &uPID, execProgress.asOutParam());
+                    if (SUCCEEDED(rc))
+                    {
+                        /* Wait for process to exit ... */
+                        BOOL fCompleted = FALSE;
+                        BOOL fCanceled = FALSE;
+
+                        size_t cbRead;
+                        SafeArray<BYTE> aInputData(_64K);
+                        while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
+                               && !fCompleted)
+                        {
+                            vrc = RTFileRead(fileSource, (uint8_t*)aInputData.raw(), _64K, &cbRead);
+                            if (   cbRead == 0
+                                || vrc == VERR_EOF)
+                                break;
+
+                            aInputData.resize(cbRead);
+
+                            /* Did we reach the end of the content
+                             * we want to transfer (last chunk)? */
+                            ULONG uFlags = ProcessInputFlag_None;
+                            if (cbRead < _64K)
+                                uFlags |= ProcessInputFlag_EndOfFile;
+
+                            /* Transfer the current chunk ... */
+                            ULONG uBytesWritten;
+                            rc = SetProcessInput(uPID, uFlags,
+                                                 ComSafeArrayAsInParam(aInputData), &uBytesWritten);
+                            if (FAILED(rc))
+                                break;
+
+                            /* Progress canceled by Main API? */
+                            if (   SUCCEEDED(execProgress->COMGETTER(Canceled(&fCanceled)))
+                                && fCanceled)
+                            {
+                                break;
+                            }
+                        }
+
+                        if (SUCCEEDED(rc))
+                        {
+                            /* Return the progress to the caller. */
+                            execProgress.queryInterfaceTo(aProgress);
+                        }
+                    }
+                }
+                RTFileClose(fileSource);
+            }
+#if 0
+            /*
+             * Does the source directory exist?
+             */
             if (RTDirExists(pszSourceAbs))
             {
+                /* If no trailing slash is present, append. */
                 size_t cch = strlen(pszSourceAbs);
                 if (    cch > 1
                     &&  !RTPATH_IS_SLASH(pszSourceAbs[cch - 1])
@@ -1988,6 +2092,46 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
                         rc = setError(VBOX_E_IPRT_ERROR,
                                       tr("Failed to extend source path, rc=%Rrc\n"), vrc);
                 }
+            }
+
+            if (SUCCEEDED(rc))
+            {
+#endif
+#if 0
+                /*
+                 * Create progress object.  Note that this is a multi operation
+                 * object to perform an operation per file object we just gathered
+                 * in our list above.
+                 *
+                 * Stages:
+                 * - 0: Starting copy process
+                 * - 1: Copying file
+                 * - 2: Finished
+                 */
+                ComObjPtr <Progress> progress;
+                rc = progress.createObject();
+                if (SUCCEEDED(rc))
+                {
+                    rc = progress->init(static_cast<IGuest*>(this),
+                                        Bstr(tr("Copying to guest")).raw(),
+                                        TRUE,
+                                        3,                                  /* Number of stages. */
+                                        Bstr(tr("Starting ...")).raw());    /* Description of first stage. */
+                }
+                if (FAILED(rc)) return rc;
+
+                rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(), uFlags,
+                                           ComSafeArrayAsInParam(args),
+                                           ComSafeArrayAsInParam(env),
+                                           Bstr(Utf8UserName).raw(),
+                                           Bstr(Utf8Password).raw(), u32TimeoutMS,
+                                           &uPID, progress.asOutParam());
+                if (SUCCEEDED(rc))
+                {
+
+                }
+#endif
+#if 0
             }
 
             if (SUCCEEDED(rc))
@@ -2032,6 +2176,21 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
                                         Bstr(tr("Copying ...")).raw());      /* Description of first stage. */
                 }
                 if (FAILED(rc)) return rc;
+#endif
+#if 0
+                /*
+                 * Now copy all files in the list ...
+                 */
+                for (ULONG l=0; l < cObjectsToCopy; l++)
+                {
+                    rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(), uFlags,
+                                       ComSafeArrayAsInParam(args),
+                                       ComSafeArrayAsInParam(env),
+                                       Bstr(Utf8UserName).raw(),
+                                       Bstr(Utf8Password).raw(), u32TimeoutMS,
+                                       &uPID, progress.asOutParam());
+                }
+#endif
 #if 0
                 if (SUCCEEDED(rc))
                 {
@@ -2078,7 +2237,8 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
                         vrc = VERR_INVALID_VM_HANDLE;
                 }
 #endif
-                /* Destroy list. */
+#if 0
+                /* Destroy file list. */
                 VBoxGuestDirEntry *pNode = RTListNodeGetFirst(&listEntries, VBoxGuestDirEntry, Node);
                 while (pNode)
                 {
@@ -2096,6 +2256,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest, ULONG aFlags,
                     pNode = pNext;
                 }
             }
+#endif
         }
     }
     catch (std::bad_alloc &)

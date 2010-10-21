@@ -7604,7 +7604,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="9a2d971f-62cb-4e84-b91a-c5adc2b7c6b8"
+     uuid="ed69cdce-2905-4275-872b-3c743a85c584"
      wsmap="managed"
      >
     <desc>
@@ -7910,6 +7910,18 @@
       <param name="dest" type="wstring" dir="in">
         <desc>
           Bar.
+        </desc>
+      </param>
+      <param name="userName" type="wstring" dir="in">
+        <desc>
+          User name under which the copy command will be executed; the
+          user has to exist and have the appropriate rights to write to
+          the destination path.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          Password of the user account specified.
         </desc>
       </param>
       <param name="flags" type="unsigned long" dir="in">
