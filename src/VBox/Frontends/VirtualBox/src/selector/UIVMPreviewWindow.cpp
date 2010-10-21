@@ -90,6 +90,10 @@ UIVMPreviewWindow::~UIVMPreviewWindow()
     /* Close any open session */
     if (m_session.GetState() == KSessionState_Locked)
         m_session.UnlockMachine();
+    if (m_pbgImage)
+        delete m_pbgImage;
+    if (m_pGlossyImg)
+        delete m_pGlossyImg;
 }
 
 void UIVMPreviewWindow::setMachine(const CMachine& machine)
