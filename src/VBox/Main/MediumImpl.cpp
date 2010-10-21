@@ -1026,7 +1026,13 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     if (aDeviceType == DeviceType_HardDisk)
         rc = setLocation(aLocation);
     else
+    {
+        if (aDeviceType == DeviceType_DVD)
+            m->type = MediumType_Readonly;
+        else
+            m->type = MediumType_Writethrough;
         rc = setLocation(aLocation, "RAW");
+    }
     if (FAILED(rc)) return rc;
 
     if (    aDeviceType == DeviceType_DVD
