@@ -154,6 +154,8 @@ public:
 
     // IEventSource methods
     STDMETHOD(CreateListener)(IEventListener ** aListener);
+    STDMETHOD(CreateAggregator)(ComSafeArrayIn(IEventSource*, aSubordinates),
+                                IEventSource **               aAggregator);
     STDMETHOD(RegisterListener)(IEventListener * aListener,
                                 ComSafeArrayIn(VBoxEventType_T, aInterested),
                                 BOOL             aActive);
