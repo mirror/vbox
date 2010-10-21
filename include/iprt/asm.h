@@ -2525,6 +2525,24 @@ DECLINLINE(int64_t) ASMAtomicAddS64(int64_t volatile *pi64, int64_t i64)
 
 
 /**
+ * Atomically exchanges and adds a value which size might differ between
+ * platforms or compilers, ordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   uNew    The value to add to *pu.
+ * @param   puOld   Where to store the old value.
+ */
+#define ASMAtomicAddSize(pu, uNew, puOld) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 4: *(uint32_t  *)(puOld) = ASMAtomicAddU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew)); break; \
+            case 8: *(uint64_t  *)(puOld) = ASMAtomicAddU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew)); break; \
+            default: AssertMsgFailed(("ASMAtomicAddSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
+
+
+/**
  * Atomically exchanges and subtracts to an unsigned 32-bit value, ordered.
  *
  * @returns The old value.
@@ -2574,6 +2592,23 @@ DECLINLINE(int64_t) ASMAtomicSubS64(int64_t volatile *pi64, int64_t i64)
 {
     return (int64_t)ASMAtomicAddU64((uint64_t volatile *)pi64, (uint64_t)-i64);
 }
+
+/**
+ * Atomically exchanges and subtracts a value which size might differ between
+ * platforms or compilers, ordered.
+ *
+ * @param   pu      Pointer to the variable to update.
+ * @param   uNew    The value to subtract to *pu.
+ * @param   puOld   Where to store the old value.
+ */
+#define ASMAtomicSubSize(pu, uNew, puOld) \
+    do { \
+        switch (sizeof(*(pu))) { \
+            case 4: *(uint32_t  *)(puOld) = ASMAtomicSubU32((volatile uint32_t *)(void *)(pu), (uint32_t)(uNew)); break; \
+            case 8: *(uint64_t  *)(puOld) = ASMAtomicSubU64((volatile uint64_t *)(void *)(pu), (uint64_t)(uNew)); break; \
+            default: AssertMsgFailed(("ASMAtomicSubSize: size %d is not supported\n", sizeof(*(pu)))); \
+        } \
+    } while (0)
 
 
 /**
