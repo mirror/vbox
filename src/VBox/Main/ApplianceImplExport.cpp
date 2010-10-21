@@ -612,6 +612,10 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IPro
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*******************************************************************************
+ * Export stuff
+ ******************************************************************************/
+
 /**
  * Implementation for writing out the OVF to disk. This starts a new thread which will call
  * Appliance::taskThreadWriteOVF().
@@ -635,8 +639,7 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
     HRESULT rc = S_OK;
     try
     {
-        rc = setUpProgress(aLocInfo,
-                           aProgress,
+        rc = setUpProgress(aProgress,
                            BstrFmt(tr("Export appliance '%s'"), aLocInfo.strPath.c_str()),
                            (aLocInfo.storageType == VFSType_File) ? WriteFile : WriteS3);
 
@@ -1657,7 +1660,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     LogFlowFuncEnter();
 
     RTTAR tar;
-    int vrc = RTTarOpen(&tar, pTask->locInfo.strPath.c_str(), RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL);
+    int vrc = RTTarOpen(&tar, pTask->locInfo.strPath.c_str(), RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL, false);
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Could not create OVA file '%s' (%Rrc)"),
@@ -1718,7 +1721,6 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
 
     HRESULT rc = S_OK;
 
-    typedef pair<Utf8Str, Utf8Str> STRPAIR;
     list<STRPAIR> fileList;
     try
     {
@@ -1836,27 +1838,25 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
         if (m->fManifest)
         {
             // Create & write the manifest file
-            Utf8Str strMfFilePath = manifestFileName(pTask->locInfo.strPath.c_str());
+            Utf8Str strMfFilePath = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
             Utf8Str strMfFileName = Utf8Str(strMfFilePath)
                 .stripPath();
             pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), strMfFileName.c_str()).raw(),
                                                m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
-            const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*) * fileList.size());
-            const char** ppManifestDigests = (const char**)RTMemAlloc(sizeof(char*) * fileList.size());
+            PRTMANIFESTTEST paManifestFiles = (PRTMANIFESTTEST)RTMemAlloc(sizeof(RTMANIFESTTEST) * fileList.size());
             size_t i = 0;
             list<STRPAIR>::const_iterator it1;
             for (it1 = fileList.begin();
                  it1 != fileList.end();
                  ++it1, ++i)
             {
-                ppManifestFiles[i] = (*it1).first.c_str();
-                ppManifestDigests[i] = (*it1).second.c_str();
+                paManifestFiles[i].pszTestFile   = (*it1).first.c_str();
+                paManifestFiles[i].pszTestDigest = (*it1).second.c_str();
             }
             void *pvBuf;
             size_t cbSize;
-            vrc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, ppManifestFiles, ppManifestDigests, fileList.size());
-            RTMemFree(ppManifestFiles);
-            RTMemFree(ppManifestDigests);
+            vrc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, paManifestFiles, fileList.size());
+            RTMemFree(paManifestFiles);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create manifest file '%s' (%Rrc)"),
@@ -1974,7 +1974,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         /* Add the manifest file */
         if (m->fManifest)
         {
-            Utf8Str strMfFile = manifestFileName(strTmpOvf);
+            Utf8Str strMfFile = Utf8Str(strTmpOvf).stripExt().append(".mf");
             filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total for the manifest file upload */
         }
 

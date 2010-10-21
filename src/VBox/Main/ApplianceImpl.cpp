@@ -18,7 +18,6 @@
 
 #include <iprt/path.h>
 #include <iprt/cpp/utils.h>
-#include <iprt/tar.h>
 
 #include <VBox/com/array.h>
 
@@ -632,6 +631,115 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 }
 
 /**
+ * Called from Appliance::importImpl() and Appliance::writeImpl() to set up a
+ * progress object with the proper weights and maximum progress values.
+ *
+ * @param pProgress
+ * @param bstrDescription
+ * @param mode
+ * @return
+ */
+HRESULT Appliance::setUpProgress(ComObjPtr<Progress> &pProgress,
+                                 const Bstr &bstrDescription,
+                                 SetUpProgressMode mode)
+{
+    HRESULT rc;
+
+    /* Create the progress object */
+    pProgress.createObject();
+
+    // compute the disks weight (this sets ulTotalDisksMB and cDisks in the instance data)
+    disksWeight();
+
+    m->ulWeightForManifestOperation = 0;
+
+    ULONG cOperations;
+    ULONG ulTotalOperationsWeight;
+
+    cOperations =   1               // one for XML setup
+                  + m->cDisks;      // plus one per disk
+    if (m->ulTotalDisksMB)
+    {
+        m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1 / 100);    // use 1% of the progress for the XML
+        ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightForXmlOperation;
+    }
+    else
+    {
+        // no disks to export:
+        m->ulWeightForXmlOperation = 1;
+        ulTotalOperationsWeight = 1;
+    }
+
+    switch (mode)
+    {
+        case ImportFile:
+        {
+            break;
+        }
+        case WriteFile:
+        {
+            // assume that creating the manifest will take .1% of the time it takes to export the disks
+            if (m->fManifest)
+            {
+                ++cOperations;          // another one for creating the manifest
+
+                m->ulWeightForManifestOperation = (ULONG)((double)m->ulTotalDisksMB * .1 / 100);    // use .5% of the progress for the manifest
+                ulTotalOperationsWeight += m->ulWeightForManifestOperation;
+            }
+            break;
+        }
+        case ImportS3:
+        {
+            cOperations += 1 + 1;     // another one for the manifest file & another one for the import
+            ulTotalOperationsWeight = m->ulTotalDisksMB;
+            if (!m->ulTotalDisksMB)
+                // no disks to export:
+                ulTotalOperationsWeight = 1;
+
+            ULONG ulImportWeight = (ULONG)((double)ulTotalOperationsWeight * 50  / 100);  // use 50% for import
+            ulTotalOperationsWeight += ulImportWeight;
+
+            m->ulWeightForXmlOperation = ulImportWeight; /* save for using later */
+
+            ULONG ulInitWeight = (ULONG)((double)ulTotalOperationsWeight * 0.1  / 100);  // use 0.1% for init
+            ulTotalOperationsWeight += ulInitWeight;
+            break;
+        }
+        case WriteS3:
+        {
+            cOperations += 1 + 1;     // another one for the mf & another one for temporary creation
+
+            if (m->ulTotalDisksMB)
+            {
+                m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1  / 100);    // use 1% of the progress for OVF file upload (we didn't know the size at this point)
+                ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightForXmlOperation;
+            }
+            else
+            {
+                // no disks to export:
+                ulTotalOperationsWeight = 1;
+                m->ulWeightForXmlOperation = 1;
+            }
+            ULONG ulOVFCreationWeight = (ULONG)((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
+            ulTotalOperationsWeight += ulOVFCreationWeight;
+            break;
+        }
+    }
+
+    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
+         m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
+
+    rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                         bstrDescription.raw(),
+                         TRUE /* aCancelable */,
+                         cOperations, // ULONG cOperations,
+                         ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
+                         bstrDescription.raw(), // CBSTR bstrFirstOperationDescription,
+                         m->ulWeightForXmlOperation); // ULONG ulFirstOperationWeight,
+    return rc;
+}
+
+/**
  * Called from the import and export background threads to synchronize the second
  * background disk thread's progress object with the current progress object so
  * that the user interface sees progress correctly and that cancel signals are
@@ -745,142 +853,6 @@ void Appliance::disksWeight()
 
 }
 
-/**
- * Called from Appliance::importImpl() and Appliance::writeImpl() to set up a
- * progress object with the proper weights and maximum progress values.
- *
- * @param pProgress
- * @param bstrDescription
- * @param mode
- * @return
- */
-HRESULT Appliance::setUpProgress(const LocationInfo &locInfo,
-                                 ComObjPtr<Progress> &pProgress,
-                                 const Bstr &bstrDescription,
-                                 SetUpProgressMode mode)
-{
-    HRESULT rc;
-
-    /* Create the progress object */
-    pProgress.createObject();
-
-    // compute the disks weight (this sets ulTotalDisksMB and cDisks in the instance data)
-    disksWeight();
-
-    m->ulWeightForManifestOperation = 0;
-
-    ULONG cOperations;
-    ULONG ulTotalOperationsWeight;
-
-    cOperations =   1               // one for XML setup
-                  + m->cDisks;      // plus one per disk
-    if (m->ulTotalDisksMB)
-    {
-        m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1 / 100);    // use 1% of the progress for the XML
-        ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightForXmlOperation;
-    }
-    else
-    {
-        // no disks to export:
-        m->ulWeightForXmlOperation = 1;
-        ulTotalOperationsWeight = 1;
-    }
-
-    bool fOVA = locInfo.strPath.endsWith(".ova", Utf8Str::CaseInsensitive);
-    switch (mode)
-    {
-        case ImportFileNoManifest:
-        {
-            if (fOVA)
-            {
-                // Another operation for packing
-                ++cOperations;
-
-                // assume that packing the files into the archive has the same weight than creating all files in the ovf exporting step
-                ulTotalOperationsWeight += m->ulTotalDisksMB;
-            }
-            break;
-        }
-        case ImportFileWithManifest:
-        {
-            ++cOperations;          // another one for creating the manifest
-
-            // assume that creating the manifest will take 10% of the time it takes to export the disks
-            m->ulWeightForManifestOperation = m->ulTotalDisksMB / 10;
-            ulTotalOperationsWeight += m->ulWeightForManifestOperation;
-            if (fOVA)
-            {
-                // Another operation for packing
-                ++cOperations;
-
-                // assume that packing the files into the archive has the same weight than creating all files in the ovf exporting step
-                ulTotalOperationsWeight += m->ulTotalDisksMB;
-            }
-            break;
-        }
-        case WriteFile:
-        {
-            // assume that creating the manifest will take .1% of the time it takes to export the disks
-            if (m->fManifest)
-            {
-                ++cOperations;          // another one for creating the manifest
-
-                m->ulWeightForManifestOperation = (ULONG)((double)m->ulTotalDisksMB * .1 / 100);    // use .5% of the progress for the manifest
-                ulTotalOperationsWeight += m->ulWeightForManifestOperation;
-            }
-            break;
-        }
-        case ImportS3:
-        {
-            cOperations += 1 + 1;     // another one for the manifest file & another one for the import
-            ulTotalOperationsWeight = m->ulTotalDisksMB;
-            if (!m->ulTotalDisksMB)
-                // no disks to export:
-                ulTotalOperationsWeight = 1;
-
-            ULONG ulImportWeight = (ULONG)((double)ulTotalOperationsWeight * 50  / 100);  // use 50% for import
-            ulTotalOperationsWeight += ulImportWeight;
-
-            m->ulWeightForXmlOperation = ulImportWeight; /* save for using later */
-
-            ULONG ulInitWeight = (ULONG)((double)ulTotalOperationsWeight * 0.1  / 100);  // use 0.1% for init
-            ulTotalOperationsWeight += ulInitWeight;
-            break;
-        }
-        case WriteS3:
-        {
-            cOperations += 1 + 1;     // another one for the mf & another one for temporary creation
-
-            if (m->ulTotalDisksMB)
-            {
-                m->ulWeightForXmlOperation = (ULONG)((double)m->ulTotalDisksMB * 1  / 100);    // use 1% of the progress for OVF file upload (we didn't know the size at this point)
-                ulTotalOperationsWeight = m->ulTotalDisksMB + m->ulWeightForXmlOperation;
-            }
-            else
-            {
-                // no disks to export:
-                ulTotalOperationsWeight = 1;
-                m->ulWeightForXmlOperation = 1;
-            }
-            ULONG ulOVFCreationWeight = (ULONG)((double)ulTotalOperationsWeight * 50.0 / 100.0); /* Use 50% for the creation of the OVF & the disks */
-            ulTotalOperationsWeight += ulOVFCreationWeight;
-            break;
-        }
-    }
-
-    Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
-         m->ulTotalDisksMB, m->cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightForXmlOperation));
-
-    rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         bstrDescription.raw(),
-                         TRUE /* aCancelable */,
-                         cOperations, // ULONG cOperations,
-                         ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
-                         bstrDescription.raw(), // CBSTR bstrFirstOperationDescription,
-                         m->ulWeightForXmlOperation); // ULONG ulFirstOperationWeight,
-    return rc;
-}
-
 void Appliance::parseURI(Utf8Str strUri, LocationInfo &locInfo) const
 {
     /* Check the URI for the protocol */
@@ -946,21 +918,6 @@ void Appliance::parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
                        tr("You doesn't provide a bucket name in the URI '%s'"), aPath.c_str());
 }
 
-Utf8Str Appliance::manifestFileName(const Utf8Str& aPath) const
-{
-    Utf8Str strTmpPath = aPath;
-    /* Get the name part */
-    char *pszMfName = RTStrDup(RTPathFilename(strTmpPath.c_str()));
-    /* Strip any extensions */
-    RTPathStripExt(pszMfName);
-    /* Path without the filename */
-    strTmpPath.stripFilename();
-    /* Format the manifest path */
-    Utf8StrFmt strMfFile("%s/%s.mf", strTmpPath.c_str(), pszMfName);
-    RTStrFree(pszMfName);
-    return strMfFile;
-}
-
 /**
  *
  * @return
@@ -1004,7 +961,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportOrExport(RTTHREAD /* aThread */, vo
     {
         case TaskOVF::Read:
             if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->readFS(task->locInfo, task->pProgress);
+                taskrc = pAppliance->readFS(task.get());
             else if (task->locInfo.storageType == VFSType_S3)
                 taskrc = pAppliance->readS3(task.get());
         break;
