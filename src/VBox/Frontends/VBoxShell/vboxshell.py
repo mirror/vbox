@@ -404,7 +404,8 @@ def recordDemo(ctx, console, file, dur):
 
     listener = console.eventSource.createListener()
     registered = False
-    sources = [console.keyboard.eventSource, console.mouse.eventSource]
+    # we create an aggregated event source to listen for multiple event types
+    agg = console.eventSource.createAggregator([console.keyboard.eventSource, console.mouse.eventSource])
     demo = open(file, 'w')
     header="VM="+console.machine.name+"\n"
     demo.write(header)
@@ -412,24 +413,21 @@ def recordDemo(ctx, console, file, dur):
         # not infinity, but close enough
         dur = 100000
     try:
-        for es in sources:
-            es.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
+        agg.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
         registered = True
         end = time.time() + dur
         while  time.time() < end:
-            for es in sources:
-                ev = es.getEvent(listener, 0)
-                if ev:
-                    handleEventImpl(ev)
-                    # keyboard/mouse events aren't waitable, so no need for eventProcessed
+            ev = agg.getEvent(listener, 0)
+            if ev:
+                handleEventImpl(ev)
+                # keyboard/mouse events aren't waitable, so no need for eventProcessed
     # We need to catch all exceptions here, otherwise listener will never be unregistered
     except:
         traceback.print_exc()
         pass
     demo.close()
     if listener and registered:
-        for es in sources:
-            es.unregisterListener(listener)
+        agg.unregisterListener(listener)
 
 
 def playbackDemo(ctx, console, file, dur):
