@@ -171,7 +171,7 @@ void DumpSnapshot(ComPtr<IMachine> &pMachine)
     {
         // get root snapshot
         ComPtr<ISnapshot> pSnapshot;
-        CHECK_ERROR_BREAK(pMachine, GetSnapshot(Bstr("").raw(), pSnapshot.asOutParam()));
+        CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr("").raw(), pSnapshot.asOutParam()));
 
         // get current snapshot
         ComPtr<ISnapshot> pCurrentSnapshot;
@@ -362,16 +362,10 @@ int handleSnapshot(HandlerArg *a)
             else
             {
                 // restore or delete snapshot: then resolve cmd line argument to snapshot instance
-                // assume it's a UUID
-                bstrSnapGuid = a->argv[2];
-                if (FAILED(pMachine->GetSnapshot(bstrSnapGuid.raw(),
-                                                 pSnapshot.asOutParam())))
-                {
-                    // then it must be a name
-                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                             pSnapshot.asOutParam()));
-                    CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
-                }
+                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                         pSnapshot.asOutParam()));
+                Bstr bstrSnapGuid;
+                CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
             }
 
             if (fDelete)
@@ -414,15 +408,8 @@ int handleSnapshot(HandlerArg *a)
             }
             else
             {
-                /* assume it's a UUID */
-                rc = pMachine->GetSnapshot(Bstr(a->argv[2]).raw(),
-                                           snapshot.asOutParam());
-                if (FAILED(rc) || !snapshot)
-                {
-                    /* then it must be a name */
-                    CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                             snapshot.asOutParam()));
-                }
+                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                         snapshot.asOutParam()));
             }
 
             /* parse options */
@@ -475,15 +462,8 @@ int handleSnapshot(HandlerArg *a)
 
             ComPtr<ISnapshot> snapshot;
 
-            /* assume it's a UUID */
-            rc = pMachine->GetSnapshot(Bstr(a->argv[2]).raw(),
-                                       snapshot.asOutParam());
-            if (FAILED(rc) || !snapshot)
-            {
-                /* then it must be a name */
-                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                         snapshot.asOutParam()));
-            }
+            CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                     snapshot.asOutParam()));
 
             /* get the machine of the given snapshot */
             ComPtr<IMachine> pMachine2;

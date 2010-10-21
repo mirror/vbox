@@ -4556,7 +4556,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetSnapshot(IN_BSTR aId, ISnapshot **aSnapshot)
+STDMETHODIMP Machine::FindSnapshot(IN_BSTR aNameOrId, ISnapshot **aSnapshot)
 {
     CheckComArgOutPointerValid(aSnapshot);
 
@@ -4565,52 +4565,23 @@ STDMETHODIMP Machine::GetSnapshot(IN_BSTR aId, ISnapshot **aSnapshot)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Guid uuid(aId);
-    /* Todo: fix this properly by perhaps introducing an isValid method for the Guid class */
-    if (    (aId)
-        &&  (*aId != '\0')      // an empty Bstr means "get root snapshot", so don't fail on that
-        &&  (uuid.isEmpty()))
+    ComObjPtr<Snapshot> pSnapshot;
+    HRESULT rc;
+
+    if (!aNameOrId || !*aNameOrId)
+        // null case (caller wants root snapshot): findSnapshotById() handles this
+        rc = findSnapshotById(Guid(), pSnapshot, true /* aSetError */);
+    else
     {
-        RTUUID uuidTemp;
-        /* Either it's a null UUID or the conversion failed. (null uuid has a special meaning in findSnapshot) */
-        if (RT_FAILURE(RTUuidFromUtf16(&uuidTemp, aId)))
-            return setError(E_FAIL,
-                            tr("Could not find a snapshot with UUID {%ls}"),
-                            aId);
+        Guid uuid(aNameOrId);
+        if (!uuid.isEmpty())
+            rc = findSnapshotById(uuid, pSnapshot, true /* aSetError */);
+        else
+            rc = findSnapshotByName(Utf8Str(aNameOrId), pSnapshot, true /* aSetError */);
     }
-
-    ComObjPtr<Snapshot> snapshot;
-
-    HRESULT rc = findSnapshot(uuid, snapshot, true /* aSetError */);
-    snapshot.queryInterfaceTo(aSnapshot);
+    pSnapshot.queryInterfaceTo(aSnapshot);
 
     return rc;
-}
-
-STDMETHODIMP Machine::FindSnapshot(IN_BSTR aName, ISnapshot **aSnapshot)
-{
-    CheckComArgStrNotEmptyOrNull(aName);
-    CheckComArgOutPointerValid(aSnapshot);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    ComObjPtr<Snapshot> snapshot;
-
-    HRESULT rc = findSnapshot(aName, snapshot, true /* aSetError */);
-    snapshot.queryInterfaceTo(aSnapshot);
-
-    return rc;
-}
-
-STDMETHODIMP Machine::SetCurrentSnapshot(IN_BSTR /* aId */)
-{
-    /// @todo (dmik) don't forget to set
-    //  mData->mCurrentStateModified to FALSE
-
-    return setError(E_NOTIMPL, "Not implemented");
 }
 
 STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount)
@@ -7532,17 +7503,16 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
  *  @param aSnapshot    where to return the found snapshot
  *  @param aSetError    true to set extended error info on failure
  */
-HRESULT Machine::findSnapshot(const Guid &aId,
-                              ComObjPtr<Snapshot> &aSnapshot,
-                              bool aSetError /* = false */)
+HRESULT Machine::findSnapshotById(const Guid &aId,
+                                  ComObjPtr<Snapshot> &aSnapshot,
+                                  bool aSetError /* = false */)
 {
     AutoReadLock chlock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mData->mFirstSnapshot)
     {
         if (aSetError)
-            return setError(E_FAIL,
-                            tr("This machine does not have any snapshots"));
+            return setError(E_FAIL, tr("This machine does not have any snapshots"));
         return E_FAIL;
     }
 
@@ -7570,11 +7540,11 @@ HRESULT Machine::findSnapshot(const Guid &aId,
  *  @param aSnapshot    where to return the found snapshot
  *  @param aSetError    true to set extended error info on failure
  */
-HRESULT Machine::findSnapshot(IN_BSTR aName,
-                              ComObjPtr<Snapshot> &aSnapshot,
-                              bool aSetError /* = false */)
+HRESULT Machine::findSnapshotByName(const Utf8Str &strName,
+                                    ComObjPtr<Snapshot> &aSnapshot,
+                                    bool aSetError /* = false */)
 {
-    AssertReturn(aName, E_INVALIDARG);
+    AssertReturn(!strName.isEmpty(), E_INVALIDARG);
 
     AutoReadLock chlock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -7586,13 +7556,13 @@ HRESULT Machine::findSnapshot(IN_BSTR aName,
         return VBOX_E_OBJECT_NOT_FOUND;
     }
 
-    aSnapshot = mData->mFirstSnapshot->findChildOrSelf(aName);
+    aSnapshot = mData->mFirstSnapshot->findChildOrSelf(strName);
 
     if (!aSnapshot)
     {
         if (aSetError)
             return setError(VBOX_E_OBJECT_NOT_FOUND,
-                            tr("Could not find a snapshot named '%ls'"), aName);
+                            tr("Could not find a snapshot named '%s'"), strName.c_str());
         return VBOX_E_OBJECT_NOT_FOUND;
     }
 

@@ -3345,7 +3345,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="5c91359b-5bdb-4518-9bd1-5f2c50a3c129"
+     uuid="14136b33-438a-45de-884c-550e9eb34f23"
      wsmap="managed"
      >
     <desc>
@@ -3795,8 +3795,6 @@
           <li><link to="IConsole::takeSnapshot"/> (issued on a
             "powered off" or "saved" machine, for which
             <link to="#settingsModified"/> returns @c false)
-          </li>
-          <li><link to="IMachine::setCurrentSnapshot"/>
           </li>
         </ul>
 
@@ -5067,10 +5065,12 @@
       </param>
     </method >
 
-    <method name="getSnapshot">
+    <method name="findSnapshot">
       <desc>
+        Returns a snapshot of this machine with the given name or UUID.
+
         Returns a snapshot of this machine with the given UUID.
-        A @c null UUID can be used to obtain the first snapshot
+        A @c null argument can be used to obtain the first snapshot
         taken on this machine. This is useful if you want to traverse
         the whole tree of snapshots starting from the root.
 
@@ -5079,41 +5079,11 @@
         </result>
 
       </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the snapshot to get</desc>
-      </param>
-      <param name="snapshot" type="ISnapshot" dir="return">
-        <desc>Snapshot object with the given UUID.</desc>
-      </param>
-    </method>
-
-    <method name="findSnapshot">
-      <desc>
-        Returns a snapshot of this machine with the given name.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Virtual machine has no snapshots or snapshot not found.
-        </result>
-
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Name of the snapshot to find</desc>
+      <param name="nameOrId" type="wstring" dir="in">
+        <desc>What to search for. Name or UUID of the snapshot to find</desc>
       </param>
       <param name="snapshot" type="ISnapshot" dir="return">
         <desc>Snapshot object with the given name.</desc>
-      </param>
-    </method>
-
-    <method name="setCurrentSnapshot">
-      <desc>
-        Sets the current snapshot of this machine.
-        <note>
-          In the current implementation, this operation is not
-          implemented.
-        </note>
-      </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the snapshot to set as the current snapshot.</desc>
       </param>
     </method>
 

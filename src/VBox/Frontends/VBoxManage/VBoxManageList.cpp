@@ -149,7 +149,7 @@ static void listMedia(const ComPtr<IVirtualBox> aVirtualBox,
             for (size_t k = 0; k < snapshotIds.size(); ++k)
             {
                 ComPtr<ISnapshot> snapshot;
-                machine->GetSnapshot(snapshotIds[k], snapshot.asOutParam());
+                machine->FindSnapshot(snapshotIds[k], snapshot.asOutParam());
                 if (snapshot)
                 {
                     Bstr snapshotName;

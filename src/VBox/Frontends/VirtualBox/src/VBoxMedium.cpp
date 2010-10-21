@@ -207,7 +207,7 @@ void VBoxMedium::refresh()
                         continue;
                     }
 
-                    CSnapshot snapshot = machine.GetSnapshot (*jt);
+                    CSnapshot snapshot = machine.FindSnapshot(*jt);
                     if (!snapshot.isNull())           // can be NULL while takeSnaphot is in progress
                     {
                         if (!sSnapshots.isNull())

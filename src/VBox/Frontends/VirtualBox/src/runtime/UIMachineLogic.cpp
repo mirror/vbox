@@ -993,7 +993,7 @@ void UIMachineLogic::sltTakeSnapshot()
 
     /* Search for the max available filter index. */
     QString strNameTemplate = QApplication::translate("UIMachineLogic", "Snapshot %1");
-    int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine, machine.GetSnapshot(QString()), strNameTemplate);
+    int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine, machine.FindSnapshot(QString()), strNameTemplate);
     dlg.mLeName->setText(strNameTemplate.arg(++ iMaxSnapshotIndex));
 
     if (dlg.exec() == QDialog::Accepted)

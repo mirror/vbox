@@ -3428,7 +3428,10 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <para>To reduce code duplication and for consistency with the
           aforementioned changes, IVirtualBox::getMachine() has been merged
           with <xref linkend="IVirtualBox__findMachine"
-          xreflabel="IVirtualBox::findMachine()" />.</para>
+          xreflabel="IVirtualBox::findMachine()" />, and
+          IMachine::getSnapshot() has been merged with <xref
+          linkend="IMachine__findSnapshot"
+          xreflabel="IMachine::findSnapshot()" />.</para>
         </listitem>
 
         <listitem>
