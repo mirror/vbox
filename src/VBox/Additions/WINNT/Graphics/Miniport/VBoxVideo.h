@@ -275,9 +275,6 @@ typedef struct _DEVICE_EXTENSION
            VBOXVBVAINFO Vbva;
 # endif
 #endif
-
-           VBOXVCMNSPIN_LOCK pSynchLock;
-
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
 
            BOOLEAN fMouseHidden;               /* Has the mouse cursor been hidden by the guest? */
