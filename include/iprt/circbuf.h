@@ -78,7 +78,7 @@ RTDECL(void) RTCircBufDestroy(PRTCIRCBUF pBuf);
 /**
  * Reset all position information in the circular buffer.
  *
- * @note: This function is not multi threading aware.
+ * @note This function is not multi threading aware.
  *
  * @param   pBuf           The buffer to reset.
  */
