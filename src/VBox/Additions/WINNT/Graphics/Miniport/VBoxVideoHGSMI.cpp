@@ -82,84 +82,23 @@ static void hgsmiHostCommandQueryProcess (PVBOXVIDEO_COMMON pCommon)
     }
 }
 
-#define VBOX_HGSMI_LOCK(_pe, _plock, _dpc, _pold) \
-    do { \
-        if(_dpc) \
-        { \
-            VBoxVideoCmnSpinLockAcquireAtDpcLevel(_pe, _plock); \
-        } \
-        else \
-        {\
-            VBoxVideoCmnSpinLockAcquire(_pe, _plock, _pold); \
-        }\
-    } while(0)
-
-#define VBOX_HGSMI_UNLOCK(_pe, _plock, _dpc, _pold) \
-    do { \
-        if(_dpc) \
-        { \
-            VBoxVideoCmnSpinLockReleaseFromDpcLevel(_pe, _plock); \
-        } \
-        else \
-        {\
-            VBoxVideoCmnSpinLockRelease(_pe, _plock, _pold); \
-        }\
-    } while(0)
-
 VOID VBoxVideoHGSMIDpc(
     IN PVOID  HwDeviceExtension,
     IN PVOID  Context
     )
 {
     PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION)HwDeviceExtension;
-    uint32_t flags = (uint32_t)Context;
-    bool bProcessing = false;
-    VBOXVCMNIRQL OldIrql;
-    /* we check if another thread is processing the queue and exit if so */
-    do
+
+    while (  commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags
+           & HGSMIHOSTFLAGS_COMMANDS_PENDING)
     {
-        bool bLock = false;
-        if(!(commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING))
-        {
-            if(!bProcessing)
-            {
-                break;
-            }
-            VBOX_HGSMI_LOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, &OldIrql);
-            if(!(commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING))
-            {
-                Assert(commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing);
-                commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing = false;
-                VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
-                break;
-            }
-            VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
-        }
-        else
-        {
-            if(!bProcessing)
-            {
-                VBOX_HGSMI_LOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, &OldIrql);
-                if(!(commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
-                        || commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing)
-                {
-                    VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
-                    break;
-                }
-                Assert(!commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing);
-                commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing = true;
-                VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
-                bProcessing = true;
-            }
-        }
-
-        Assert(bProcessing);
-        Assert(commonFromDeviceExt(PrimaryExtension)->bHostCmdProcessing);
-        Assert((commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0);
-        bProcessing = true;
-
-        hgsmiHostCommandQueryProcess (commonFromDeviceExt(PrimaryExtension));
-    } while(true/*!PrimaryExtension->u.primary.bPollingStop*/);
+        if (!ASMAtomicCmpXchgBool(&commonFromDeviceExt(PrimaryExtension)
+                                   ->bHostCmdProcessing, true, false))
+            return;
+        hgsmiHostCommandQueryProcess(commonFromDeviceExt(PrimaryExtension));
+        ASMAtomicWriteBool(&commonFromDeviceExt(PrimaryExtension)
+                            ->bHostCmdProcessing, false);
+    }
 }
 
 /* Detect whether HGSMI is supported by the host. */
@@ -1050,11 +989,6 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         VBoxUnmapAdapterInformation (PrimaryExtension);
 
         HGSMIHeapDestroy (&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap);
-    }
-
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
-    {
-        VBoxVideoCmnSpinLockCreate(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock);
     }
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
