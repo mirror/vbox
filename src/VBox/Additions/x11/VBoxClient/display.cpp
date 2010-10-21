@@ -56,17 +56,12 @@ static int initDisplay(Display *pDisplay)
     rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
     if (RT_SUCCESS(rc))
     {
-        if (fMouseFeatures & VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR)
-        {
-            rc = VbglR3CtlFilterMask(VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
-                                     0);
-            if (RT_SUCCESS(rc))
-                rc = VbglR3SetMouseStatus
-                                   (  fMouseFeatures
-                                    & ~VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-        }
-        else
-            rc = VERR_NOT_SUPPORTED;
+        rc = VbglR3CtlFilterMask(VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
+                                 0);
+        if (RT_SUCCESS(rc))
+            rc = VbglR3SetMouseStatus
+                               (  fMouseFeatures
+                                & ~VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     }
     if (RT_FAILURE(rc))
     {
