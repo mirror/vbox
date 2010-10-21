@@ -3781,6 +3781,7 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
         AssertPtrBreak(pDisk);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
         VDCloseAll(pDisk);
+        RTCritSectDelete(&pDisk->CritSect);
         RTMemCacheDestroy(pDisk->hMemCacheIoCtx);
         RTMemCacheDestroy(pDisk->hMemCacheIoTask);
         RTMemFree(pDisk);
