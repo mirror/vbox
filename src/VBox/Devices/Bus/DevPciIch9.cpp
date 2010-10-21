@@ -786,7 +786,7 @@ static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPCIDEVICE pPciD
     if (rc != VINF_SUCCESS)
         return rc;
 
-    rc = MsixInit(pPciDev, pMsiReg);
+    rc = MsixInit(pPciDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pPciHlp), pPciDev, pMsiReg);
     if (rc != VINF_SUCCESS)
         return rc;
 

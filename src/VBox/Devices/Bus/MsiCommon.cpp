@@ -261,7 +261,7 @@ void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVe
     uint32_t   uMask = *msiGetMaskBits(pDev);
     uint32_t*  puPending = msiGetPendingBits(pDev);
 
-    LogFlow(("MSINotify: %d pending=%x mask=%x\n", iVector, *puPending, uMask));
+    LogFlow(("MsiNotify: %d pending=%x mask=%x\n", iVector, *puPending, uMask));
 
     /* We only trigger MSI on level up */
     if ((iLevel & PDM_IRQ_LEVEL_HIGH) == 0)

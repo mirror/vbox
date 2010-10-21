@@ -114,5 +114,8 @@
 #define VBOX_MSIX_CAP_MESSAGE_CONTROL         0x02
 #define VBOX_MSIX_TABLE_BIROFFSET             0x04
 #define VBOX_MSIX_PBA_BIROFFSET               0x08
+/* Size of single MSI-X table entry */
+#define VBOX_MSIX_ENTRY_SIZE                  16
+
 
 #endif
