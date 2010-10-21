@@ -982,6 +982,9 @@ VOID DxgkDdiDpcRoutine(
             &bRet);
     Assert(Status == STATUS_SUCCESS);
 
+    if (context.data.bNotifyDpc)
+        pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+
     if (!vboxSHGSMIListIsEmpty(&context.data.CtlList))
     {
         int rc = VBoxSHGSMICommandPostprocessCompletion (&commonFromDeviceExt(pDevExt)->hgsmiAdapterHeap, &context.data.CtlList);
@@ -1002,9 +1005,6 @@ VOID DxgkDdiDpcRoutine(
 #endif
 
     vboxVdmaDdiCmdHandleCompletedList(pDevExt, &pDevExt->DdiCmdQueue, &context.data.CompletedDdiCmdQueue);
-
-    if (context.data.bNotifyDpc)
-        pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
 //    dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
 }
@@ -4244,7 +4244,7 @@ DxgkDdiRender(
     CONST HANDLE  hContext,
     DXGKARG_RENDER  *pRender)
 {
-    drprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
+//    drprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
 
     Assert(pRender->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR));
     if (pRender->DmaBufferPrivateDataSize < sizeof (VBOXWDDM_DMA_PRIVATEDATA_BASEHDR))
@@ -4346,7 +4346,7 @@ DxgkDdiRender(
             return STATUS_INVALID_PARAMETER;
     }
 
-    drprintf(("<== "__FUNCTION__ ", hContext(0x%x)\n", hContext));
+//    drprintf(("<== "__FUNCTION__ ", hContext(0x%x)\n", hContext));
 
     return Status;
 }

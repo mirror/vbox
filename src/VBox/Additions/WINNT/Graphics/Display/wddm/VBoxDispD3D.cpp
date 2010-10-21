@@ -1698,6 +1698,7 @@ static HRESULT vboxWddmSwapchainDestroyIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
         pSwapchain->pRenderTargetFbCopy->Release();
         pSwapchain->pRenderTargetFbCopy = NULL;
+        pSwapchain->bRTFbCopyUpToDate = FALSE;
 #endif
         pSwapchain->pSwapChainIf->Release();
         Assert(pSwapchain->hWnd);
@@ -2357,6 +2358,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         Assert(pNewIf);
         pSwapchain->pSwapChainIf = pNewIf;
 #ifndef VBOXWDDM_WITH_VISIBLE_FB
+        pSwapchain->bRTFbCopyUpToDate = FALSE;
         if (!pSwapchain->pRenderTargetFbCopy)
         {
             IDirect3DSurface9* pD3D9Surf;
@@ -2461,6 +2463,7 @@ static HRESULT vboxWddmSwapchainPresentPerform(PVBOXWDDMDISP_DEVICE pDevice, PVB
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
+        pSwapchain->bRTFbCopyUpToDate = FALSE;
         vboxWddmSwapchainFlip(pSwapchain);
         Assert(pSwapchain->fFlags.Value == 0);
         hr = vboxWddmSwapchainSynch(pDevice, pSwapchain);
@@ -6354,11 +6357,19 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
                 {
                     pSrcSurfIf = pSrcSwapchain->pRenderTargetFbCopy;
                     Assert(pSrcSurfIf);
-                    hr = pSrcSwapchain->pSwapChainIf->GetFrontBufferData(pSrcSurfIf);
-                    Assert(hr == S_OK);
-                    if (hr == S_OK)
+                    if (!pSrcSwapchain->bRTFbCopyUpToDate)
                     {
-                        /* do pSrcSurfIf->AddRef since we do a Release in the following if (hr == S_OK) branch */
+                        hr = pSrcSwapchain->pSwapChainIf->GetFrontBufferData(pSrcSurfIf);
+                        Assert(hr == S_OK);
+                        if (hr == S_OK)
+                        {
+                            /* do pSrcSurfIf->AddRef since we do a Release in the following if (hr == S_OK) branch */
+                            pSrcSwapchain->bRTFbCopyUpToDate = TRUE;
+                            pSrcSurfIf->AddRef();
+                        }
+                    }
+                    else
+                    {
                         pSrcSurfIf->AddRef();
                     }
                 }
