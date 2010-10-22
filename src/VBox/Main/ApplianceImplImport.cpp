@@ -1660,7 +1660,7 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
  * @param stack
  */
 void Appliance::importOneDiskImage(const ovf::DiskImage &di,
-                                   const Utf8Str &strTargetPath,
+                                   Utf8Str strTargetPath,
                                    ComObjPtr<Medium> &pTargetHD,
                                    ImportStack &stack,
                                    PVDINTERFACEIO pCallbacks,
@@ -1671,47 +1671,63 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     HRESULT rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetPath.c_str()).raw(), TRUE);
     if (FAILED(rc)) throw rc;
 
-    Utf8Str strTrgFormat = "VMDK";
+    /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
-    if (RTPathHaveExt(strTargetPath.c_str()))
+
+//    strTargetPath = "8d5193b2-82a0-4d53-be95-b7557238b000";
+    /* First of all check if the path is an UUID. If so, the user like to
+     * import the disk into an existing path. This is useful for iSCSI for
+     * example. */
+    RTUUID uuid;
+    int vrc = RTUuidFromStr(&uuid, strTargetPath.c_str());
+    if (vrc == VINF_SUCCESS)
     {
-        char *pszExt = RTPathExt(strTargetPath.c_str());
-        /* Figure out which format the user like to have. Default is VMDK. */
-        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
-        if (trgFormat.isNull())
-            throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Could not find a valid medium format for the target disk '%s'"),
-                           strTargetPath.c_str());
-        /* Check the capabilities. We need create capabilities. */
-        ULONG lCabs = 0;
-        rc = trgFormat->COMGETTER(Capabilities)(&lCabs);
+        rc = mVirtualBox->findHardDiskById(Guid(uuid), true, &pTargetHD);
         if (FAILED(rc)) throw rc;
-        if (!(   ((lCabs & MediumFormatCapabilities_CreateFixed) == MediumFormatCapabilities_CreateFixed)
-              || ((lCabs & MediumFormatCapabilities_CreateDynamic) == MediumFormatCapabilities_CreateDynamic)))
-            throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Could not find a valid medium format for the target disk '%s'"),
-                           strTargetPath.c_str());
-        Bstr bstrFormatName;
-        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-        if (FAILED(rc)) throw rc;
-        strTrgFormat = Utf8Str(bstrFormatName);
     }
+    else
+    {
+        Utf8Str strTrgFormat = "VMDK";
+        if (RTPathHaveExt(strTargetPath.c_str()))
+        {
+            char *pszExt = RTPathExt(strTargetPath.c_str());
+            /* Figure out which format the user like to have. Default is VMDK. */
+            ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
+            if (trgFormat.isNull())
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Could not find a valid medium format for the target disk '%s'"),
+                               strTargetPath.c_str());
+            /* Check the capabilities. We need create capabilities. */
+            ULONG lCabs = 0;
+            rc = trgFormat->COMGETTER(Capabilities)(&lCabs);
+            if (FAILED(rc)) throw rc;
+            if (!(   ((lCabs & MediumFormatCapabilities_CreateFixed) == MediumFormatCapabilities_CreateFixed)
+                     || ((lCabs & MediumFormatCapabilities_CreateDynamic) == MediumFormatCapabilities_CreateDynamic)))
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Could not find a valid medium format for the target disk '%s'"),
+                               strTargetPath.c_str());
+            Bstr bstrFormatName;
+            rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+            if (FAILED(rc)) throw rc;
+            strTrgFormat = Utf8Str(bstrFormatName);
+        }
 
-    bool fNeedsGlobalSaveSettings;
-    /* Create an IMedium object. */
-    pTargetHD.createObject();
-    rc = pTargetHD->init(mVirtualBox,
-                         strTrgFormat,
-                         strTargetPath,
-                         Guid::Empty,        // media registry
-                         &fNeedsGlobalSaveSettings);
-    if (FAILED(rc)) throw rc;
+        bool fNeedsGlobalSaveSettings;
+        /* Create an IMedium object. */
+        pTargetHD.createObject();
+        rc = pTargetHD->init(mVirtualBox,
+                             strTrgFormat,
+                             strTargetPath,
+                             Guid::Empty,        // media registry
+                             &fNeedsGlobalSaveSettings);
+        if (FAILED(rc)) throw rc;
 
-    /* Now create an empty hard disk. */
-    rc = mVirtualBox->CreateHardDisk(NULL,
-                                     Bstr(strTargetPath).raw(),
-                                     ComPtr<IMedium>(pTargetHD).asOutParam());
-    if (FAILED(rc)) throw rc;
+        /* Now create an empty hard disk. */
+        rc = mVirtualBox->CreateHardDisk(NULL,
+                                         Bstr(strTargetPath).raw(),
+                                         ComPtr<IMedium>(pTargetHD).asOutParam());
+        if (FAILED(rc)) throw rc;
+    }
 
     const Utf8Str &strSourceOVF = di.strHref;
     /* Construct source file path */
