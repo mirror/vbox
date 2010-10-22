@@ -177,7 +177,7 @@ private:
                                      int32_t &lDevice);
 
     void importOneDiskImage(const ovf::DiskImage &di,
-                            const Utf8Str &strTargetPath,
+                            Utf8Str strTargetPath,
                             ComObjPtr<Medium> &pTargetHD,
                             ImportStack &stack,
                             PVDINTERFACEIO pCallbacks,
