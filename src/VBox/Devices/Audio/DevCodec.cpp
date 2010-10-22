@@ -492,7 +492,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.name = "VENDEF-0";
             goto vendor_define_init;
         case 0x11:
-            pNode->node.name = "VENDEF-0";
+            pNode->node.name = "VENDEF-1";
             goto vendor_define_init;
         case 0x12:
             pNode->node.name = "VENDEF-2";
