@@ -651,8 +651,52 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
             switch (pPage->enmKind)
             {
                 /*
-                 * We only care about shadow page tables.
+                 * We only care about shadow page tables that reference physical memory
                  */
+#ifdef PGM_WITH_LARGE_PAGES
+                case PGMPOOLKIND_EPT_PD_FOR_PHYS: /* Large pages reference 2 MB of physical memory, so we must clear them. */
+                    if (pPage->cPresent)
+                    {
+                        PX86PDPAE pShwPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pPool->CTX_SUFF(pVM), pVCpu, pPage);
+                        for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
+                        {
+                            Assert((pShwPD->a[i].u & (X86_PDE_PAE_MBZ_MASK_NX | UINT64_C(0x7ff0000000000200))) == 0);
+                            if (    pShwPD->a[i].n.u1Present
+                                &&  pShwPD->a[i].b.u1Size)
+                            {
+                                Assert(!(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING));
+                                pShwPD->a[i].u = 0;
+                                Assert(pPage->cPresent);
+                                pPage->cPresent--;
+                            }
+                        }
+                        if (pPage->cPresent == 0)
+                            pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
+                    }
+                    goto default_case;
+
+                case PGMPOOLKIND_PAE_PD_PHYS:   /* Large pages reference 2 MB of physical memory, so we must clear them. */
+                    if (pPage->cPresent)
+                    {
+                        PEPTPD pShwPD = (PEPTPD)PGMPOOL_PAGE_2_PTR_V2(pPool->CTX_SUFF(pVM), pVCpu, pPage);
+                        for (unsigned i = 0; i < RT_ELEMENTS(pShwPD->a); i++)
+                        {
+                            Assert((pShwPD->a[i].u & UINT64_C(0xfff0000000000f80)) == 0);
+                            if (    pShwPD->a[i].n.u1Present
+                                &&  pShwPD->a[i].b.u1Size)
+                            {
+                                Assert(!(pShwPD->a[i].u & PGM_PDFLAGS_MAPPING));
+                                pShwPD->a[i].u = 0;
+                                Assert(pPage->cPresent);
+                                pPage->cPresent--;
+                            }
+                        }
+                        if (pPage->cPresent == 0)
+                            pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
+                    }
+                    goto default_case;
+#endif /* PGM_WITH_LARGE_PAGES */
+
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
                 case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
@@ -713,6 +757,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                 }
                 /* fall thru */
 
+#ifdef PGM_WITH_LARGE_PAGES
+                default_case:
+#endif
                 default:
                     Assert(!pPage->cModifications || ++cModifiedPages);
                     Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX || pPage->cModifications);
