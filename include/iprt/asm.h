@@ -1321,12 +1321,12 @@ DECLINLINE(bool) ASMAtomicCmpXchgExPtrVoid(void * volatile *ppv, const void *pvN
         __typeof__(*(ppv)) *          const ppvOldTypeChecked = (ppvOld); \
         bool fMacroRet = ASMAtomicCmpXchgExPtrVoid((void * volatile *)ppvTypeChecked, \
                                                    (void *)pvNewTypeChecked, (void *)pvOldTypeChecked, \
-                                                   (void **)ppvOld); \
+                                                   (void **)ppvOldTypeChecked); \
         fMacroRet; \
      })
 #else
 # define ASMAtomicCmpXchgExPtr(ppv, pvNew, pvOld, ppvOld) \
-    ASMAtomicCmpXchgExPtrVoid((void * volatile *)(ppv), (void *)(pvNew), (void *)pvOld, (void **)ppvOld)
+    ASMAtomicCmpXchgExPtrVoid((void * volatile *)(ppv), (void *)(pvNew), (void *)(pvOld), (void **)(ppvOld))
 #endif
 
 
