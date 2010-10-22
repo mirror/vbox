@@ -1666,14 +1666,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                    PVDINTERFACEIO pCallbacks,
                                    PSHA1STORAGE pStorage)
 {
-    // destination file must not exist
-    if (    strTargetPath.isEmpty()
-        || RTPathExists(strTargetPath.c_str())
-       )
-        throw setError(VBOX_E_FILE_ERROR,
-                       tr("Destination file '%s' exists"),
-                       strTargetPath.c_str());
-
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
     HRESULT rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetPath.c_str()).raw(), TRUE);
@@ -1685,13 +1677,13 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     {
         char *pszExt = RTPathExt(strTargetPath.c_str());
         /* Figure out which format the user like to have. Default is VMDK. */
-        ComObjPtr<MediumFormat> targetFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
-        if (targetFormat.isNull())
+        ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
+        if (trgFormat.isNull())
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Could not find a valid medium format for the target disk '%s'"),
                            strTargetPath.c_str());
         Bstr bstrFormatName;
-        rc = targetFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+        rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
         if (FAILED(rc)) throw rc;
         strTrgFormat = Utf8Str(bstrFormatName);
     }
@@ -1713,59 +1705,59 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     if (FAILED(rc)) throw rc;
 
     const Utf8Str &strSourceOVF = di.strHref;
-    // construct source file path
+    /* Construct source file path */
     Utf8StrFmt strSrcFilePath("%s%c%s", stack.strSourceDir.c_str(), RTPATH_DELIMITER, strSourceOVF.c_str());
 
-    /* If strHref is empty we have to create a new file */
+    /* If strHref is empty we have to create a new file. */
     if (strSourceOVF.isEmpty())
     {
-        // create a dynamic growing disk image with the given capacity
+        /* Create a dynamic growing disk image with the given capacity. */
         rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, ComPtr<IProgress>(pProgress).asOutParam());
         if (FAILED(rc)) throw rc;
 
-        // advance to the next operation
+        /* Advance to the next operation. */
         stack.pProgress->SetNextOperation(BstrFmt(tr("Creating disk image '%s'"), strTargetPath.c_str()).raw(),
                                           di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally
     }
     else
     {
-        // We need a proper format description
-        ComObjPtr<MediumFormat> format;
-        // Scope for the AutoReadLock
-        {
-            /* Which format to use? */
-            Utf8Str strSrcFormat = "VDI";
-            if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-                || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
-                || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-                || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-               )
-                strSrcFormat = "VMDK";
-            format = pSysProps->mediumFormat(strSrcFormat);
-            if (format.isNull())
-                throw setError(VBOX_E_NOT_SUPPORTED,
-                               tr("Could not find a valid medium format for the source disk '%s'"),
-                               RTPathFilename(strSrcFilePath.c_str()));
-        }
+        /* We need a proper source format description */
+        ComObjPtr<MediumFormat> srcFormat;
+        /* Which format to use? */
+        Utf8Str strSrcFormat = "VDI";
+        if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
+               || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
+               || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+               || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+           )
+            strSrcFormat = "VMDK";
+        srcFormat = pSysProps->mediumFormat(strSrcFormat);
+        if (srcFormat.isNull())
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Could not find a valid medium format for the source disk '%s'"),
+                           RTPathFilename(strSrcFilePath.c_str()));
 
         /* Clone the source disk image */
         ComObjPtr<Medium> nullParent;
         rc = pTargetHD->importFile(strSrcFilePath.c_str(),
-                                   format,
+                                   srcFormat,
                                    MediumVariant_Standard,
                                    pCallbacks, pStorage,
                                    nullParent,
                                    pProgress);
 
-        /* Advance to the next operation */
+        /* Advance to the next operation. */
         stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())).raw(),
                                           di.ulSuggestedSizeMB);     // operation's weight, as set up with the IProgress originally);
     }
 
-    // now wait for the background disk operation to complete; this throws HRESULTs on error
+    /* Now wait for the background disk operation to complete; this throws
+     * HRESULTs on error. */
     ComPtr<IProgress> pp(pProgress);
     waitForAsyncProgress(stack.pProgress, pp);
 
+    /* Add the newly create disk path + a corresponding digest the our list for
+     * later manifest verification. */
     stack.llSrcDisksDigest.push_back(STRPAIR(strSrcFilePath, pStorage->strDigest));
 }
 
