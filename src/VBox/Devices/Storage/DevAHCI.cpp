@@ -513,9 +513,7 @@ typedef struct AHCIPort
     /** Error counter */
     uint32_t                        cErrors;
 
-#if HC_ARCH_BITS == 64
     uint32_t                        u32Alignment4;
-#endif
 } AHCIPort;
 /** Pointer to the state of an AHCI port. */
 typedef AHCIPort *PAHCIPort;
