@@ -1701,7 +1701,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             rc = trgFormat->COMGETTER(Capabilities)(&lCabs);
             if (FAILED(rc)) throw rc;
             if (!(   ((lCabs & MediumFormatCapabilities_CreateFixed) == MediumFormatCapabilities_CreateFixed)
-                     || ((lCabs & MediumFormatCapabilities_CreateDynamic) == MediumFormatCapabilities_CreateDynamic)))
+                  || ((lCabs & MediumFormatCapabilities_CreateDynamic) == MediumFormatCapabilities_CreateDynamic)))
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Could not find a valid medium format for the target disk '%s'"),
                                strTargetPath.c_str());
@@ -1750,9 +1750,9 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
         /* Which format to use? */
         Utf8Str strSrcFormat = "VDI";
         if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-               || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
-               || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-               || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+            || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
+            || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+            || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
            )
             strSrcFormat = "VMDK";
         srcFormat = pSysProps->mediumFormat(strSrcFormat);
