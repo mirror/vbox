@@ -46,7 +46,7 @@ static const char  *g_apszExclude[] =
 {
 #if 1 // slow stuff
     "testcase/tstFile",
-    "testcase/tstAvl",
+    "testcase/tstRTAvl",
     "testcase/tstSemMutex",
     "testcase/tstVD",
 #endif
@@ -67,8 +67,9 @@ static const char  *g_apszExclude[] =
     "testcase/tstLdrObj",
     "testcase/tstLdrObjR0",
     "testcase/tstMove",
-    "testcase/tstR0ThreadPreemption", /* r0 driver, not directly executable */
-    "testcase/tstRTR0MemUserKernel", /* r0 driver, not directly executable */
+#if !defined(RT_OS_LINUX)
+    "testcase/tstRTR0Timer",
+#endif
     "testcase/tstRunTestcases",
     "testcase/tstRTS3",             /* requires parameters <access key>, <secret key> */
     "testcase/tstSDL",
@@ -79,6 +80,7 @@ static const char  *g_apszExclude[] =
     "./tstRunTestcases",
     "./tstAnimate",
     "./tstAPI",
+    "./tstCollector",               /* takes forever */
     "./tstHeadless",
     "./tstHeadless2",
     "./tstMicro",
@@ -115,6 +117,25 @@ static const char  *g_apszExclude[] =
  */
 static bool IsTestcaseIncluded(const char *pszTestcase)
 {
+    /* exclude special modules based on extension. */
+    const char *pszExt = RTPathExt(pszTestcase);
+    if (   !RTStrICmp(pszExt, ".r0")
+        || !RTStrICmp(pszExt, ".gc")
+        || !RTStrICmp(pszExt, ".sys")
+        || !RTStrICmp(pszExt, ".ko")
+        || !RTStrICmp(pszExt, ".o")
+        || !RTStrICmp(pszExt, ".obj")
+        || !RTStrICmp(pszExt, ".lib")
+        || !RTStrICmp(pszExt, ".a")
+        || !RTStrICmp(pszExt, ".so")
+        || !RTStrICmp(pszExt, ".dll")
+        || !RTStrICmp(pszExt, ".dylib")
+        || !RTStrICmp(pszExt, ".tmp")
+        || !RTStrICmp(pszExt, ".log")
+       )
+        return false;
+
+    /* check by name */
     char *pszDup = RTStrDup(pszTestcase);
     if (pszDup)
     {
