@@ -33,6 +33,9 @@
 #include <iprt/thread.h>
 
 #include <iprt/asm.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 28)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mp.h>
