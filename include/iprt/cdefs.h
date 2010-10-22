@@ -1192,6 +1192,13 @@
  */
 #define RT_ABS(Value)                           ( (Value) >= 0 ? (Value) : -(Value) )
 
+/** @def RT_BOOL
+ * Turn non-zero/zero into true/false
+ * @returns The resulting boolean value.
+ * @param   Value       The value.
+ */
+#define RT_BOOL(Value)                          ( !!(Value) )
+
 /** @def RT_LODWORD
  * Gets the low dword (=uint32_t) of something. */
 #define RT_LODWORD(a)                           ( (uint32_t)(a) )
