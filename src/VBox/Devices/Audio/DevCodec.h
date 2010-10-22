@@ -87,6 +87,7 @@ typedef struct ADCNODE
 typedef struct SPDIFOUTNODE
 {
     CODECCOMMONNODE node;
+    uint32_t    u32F05_param;
     uint32_t    u32F06_param;
     uint32_t    u32F09_param;
     uint32_t    u32F0d_param;
@@ -98,6 +99,7 @@ typedef struct SPDIFOUTNODE
 typedef struct SPDIFINNODE
 {
     CODECCOMMONNODE node;
+    uint32_t    u32F05_param;
     uint32_t    u32F06_param;
     uint32_t    u32F09_param;
     uint32_t    u32F0d_param;
@@ -112,6 +114,7 @@ typedef struct AFGCODECNODE
     uint32_t  u32F05_param;
     uint32_t  u32F08_param;
     uint32_t  u32F20_param;
+    uint32_t  u32F17_param;
 } AFGCODECNODE, *PAFGCODECNODE;
 
 typedef struct PORTNODE
@@ -129,6 +132,7 @@ typedef struct DIGOUTNODE
 {
     CODECCOMMONNODE node;
     uint32_t u32F01_param;
+    uint32_t u32F08_param;
     uint32_t u32F07_param;
     uint32_t u32F09_param;
     uint32_t u32F1c_param;
@@ -158,10 +162,12 @@ typedef struct ADCMUXNODE
 typedef struct PCBEEPNODE
 {
     CODECCOMMONNODE node;
+    uint32_t    u32F07_param;
     uint32_t    u32F0a_param;
 
     uint32_t    u32A_param;
     AMPLIFIER   B_params;
+    uint32_t u32F1c_param;
 } PCBEEPNODE, *PPCBEEPNODE;
 
 typedef struct CDNODE
@@ -182,6 +188,7 @@ typedef struct ADCVOLNODE
 {
     CODECCOMMONNODE node;
     uint32_t    u32F0c_param;
+    uint32_t    u32F01_param;
     uint32_t    u32A_params;
     AMPLIFIER   B_params;
 } ADCVOLNODE, *PADCVOLNODE;
@@ -189,8 +196,9 @@ typedef struct ADCVOLNODE
 typedef struct RESNODE
 {
     CODECCOMMONNODE node;
-    uint32_t    u32F07_param;
+    uint32_t    u32F05_param;
     uint32_t    u32F06_param;
+    uint32_t    u32F07_param;
     uint32_t    u32F1c_param;
 } RESNODE, *PRESNODE;
 
@@ -230,6 +238,8 @@ typedef enum
 typedef struct CODECState
 {
     uint16_t                id;
+    uint16_t                u16VendorId;
+    uint16_t                u16DeviceId;
     CODECVERB               *pVerbs;
     int                     cVerbs;
     PCODECNODE               pNodes;

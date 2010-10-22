@@ -39,6 +39,7 @@ extern "C" {
 #else
 #define USE_MIXER
 #endif
+#define VBOX_WITH_INTEL_HDA
 
 #define HDA_SSM_VERSION 1
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb);
@@ -652,6 +653,7 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
         rc = PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pState->u64CORBBase, pState->pu32CorbBuf, pState->cbCorbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
+#ifdef DEBUG_CMD_BUFFER
         uint8_t i = 0;
         do
         {
@@ -672,6 +674,7 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
             Log(("\n"));
             i += 8;
         } while(i != 0);
+#endif
     }
     else
     {
@@ -679,6 +682,7 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
         rc = PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), pState->u64RIRBBase, pState->pu64RirbBuf, pState->cbRirbBuf);
         if (RT_FAILURE(rc))
             AssertRCReturn(rc, rc);
+#ifdef DEBUG_CMD_BUFFER
         uint8_t i = 0;
         do {
             Log(("hda: rirb%02x: ", i));
@@ -694,21 +698,10 @@ static int hdaCmdSync(INTELHDLinkState *pState, bool fLocal)
             Log(("\n"));
             i += 8;
         } while (i != 0);
+#endif
     }
     return rc;
 }
-
-#if 0
-static int hdaUnsolictedResponse(INTELHDLinkState *pState, uint64_t pu64UnsolictedResponse)
-{
-    uint8_t rirbWp;
-    if (!HDA_REG_FLAG_VALUE(pState, GCTL, UR))
-    {
-        Log(("hda: unsolicited response %016lx is ignored\n"));
-        return VINF_SUCCESS;
-    }
-}
-#endif
 
 static int hdaCORBCmdProcess(INTELHDLinkState *pState)
 {
@@ -1345,12 +1338,10 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             pBdle->u32BdleCviPos = 0;
             pBdle->u32BdleCvi++;
             if (pBdle->u32BdleCvi == pBdle->u32BdleMaxCvi + 1)
+            {
                 pBdle->u32BdleCvi = 0;
+            }
             fStop = true;   /* Give the guest a chance to refill (or empty) buffers. */
-
-            /* Read the next BDE unless we're exiting. */
-            if (!fStop)
-                fetch_bd(pState, pBdle, u64BaseDMA);
         }
     }
 }
@@ -1662,12 +1653,18 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     s->IBase.pfnQueryInterface  = hdaQueryInterface;
 
     /* PCI Device (the assertions will be removed later) */
-#if 1
+#if defined(VBOX_WITH_HP_HDA)
+    /* Linux kernel has whitelist for MSI-enabled HDA, this card seems to be there. */
+    PCIDevSetVendorId           (&pThis->dev, 0x103c); /* HP. */
+    PCIDevSetDeviceId           (&pThis->dev, 0x30f7); /* HP Pavilion dv4t-1300 */
+#elif defined(VBOX_WITH_INTEL_HDA)
     PCIDevSetVendorId           (&pThis->dev, 0x8086); /* 00 ro - intel. */
     PCIDevSetDeviceId           (&pThis->dev, 0x2668); /* 02 ro - 82801 / 82801aa(?). */
-#else
+#elif defined(VBOX_WITH_NVIDIA_HDA)
     PCIDevSetVendorId           (&pThis->dev, 0x10de); /* nVidia */
-    PCIDevSetDeviceId           (&pThis->dev, 0x0028); /* HDA */
+    PCIDevSetDeviceId           (&pThis->dev, 0x0ac0); /* HDA */
+#else
+# error "Please specify your HDA device vendor/device IDs"
 #endif
     PCIDevSetCommand            (&pThis->dev, 0x0000); /* 04 rw,ro - pcicmd. */
     PCIDevSetStatus             (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
@@ -1678,10 +1675,6 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     PCIDevSetHeaderType         (&pThis->dev, 0x00);   /* 0e ro - headtyp. */
     PCIDevSetBaseAddress        (&pThis->dev, 0,       /* 10 rw - MMIO */
                                  false /* fIoSpace */, false /* fPrefetchable */, true /* f64Bit */, 0x00000000);
-    /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
-       verb F20 should provide device/codec recognition. */
-    PCIDevSetSubSystemVendorId  (&pThis->dev, 0x0000); /* 2c ro - intel.) */
-    PCIDevSetSubSystemId        (&pThis->dev, 0x0000); /* 2e ro. */
     PCIDevSetInterruptLine      (&pThis->dev, 0x00);   /* 3c rw. */
     PCIDevSetInterruptPin       (&pThis->dev, 0x01);   /* 3d ro - INTA#. */
 
@@ -1795,9 +1788,17 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
 
 
     pThis->hda.Codec.pHDAState = (void *)&pThis->hda;
-    rc = codecConstruct(&pThis->hda.Codec, STAC9220_CODEC);
+    rc = codecConstruct(&pThis->hda.Codec, /* ALC885_CODEC */ STAC9220_CODEC);
     if (RT_FAILURE(rc))
         AssertRCReturn(rc, rc);
+
+    /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
+       verb F20 should provide device/codec recognition. */
+    Assert(pThis->hda.Codec.u16VendorId);
+    Assert(pThis->hda.Codec.u16DeviceId);
+    PCIDevSetSubSystemVendorId  (&pThis->dev, pThis->hda.Codec.u16VendorId); /* 2c ro - intel.) */
+    PCIDevSetSubSystemId        (&pThis->dev, pThis->hda.Codec.u16DeviceId); /* 2e ro. */
+
     hdaReset (pDevIns);
     pThis->hda.Codec.id = 0;
     pThis->hda.Codec.pfnTransfer = hdaTransfer;
