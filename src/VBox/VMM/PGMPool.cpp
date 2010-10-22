@@ -178,6 +178,9 @@ int pgmR3PoolInit(PVM pVM)
      * We need to be much more careful with our allocation strategy here.
      * For nested paging we don't need pool user info nor extents at all, but we can't check for nested paging here (too early during init to get a confirmation it can be used)
      * The default for large memory configs is a bit large for shadow paging, so I've restricted the extent maximum to 2k (2k * 16 = 32k of hyper heap)
+     *
+     * Also when large page support is enabled, we typically don't need so much,
+     * although that depends on the availability of 2 MB chunks on the host.
      */
 
     /** @cfgm{/PGM/Pool/MaxUsers, uint16_t, #users, MaxUsers, 32K, MaxPages*2}
