@@ -51,6 +51,9 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_USB
   tstDeviceStructSizeRC_DEFS    += VBOX_WITH_USB
  endif
+ ifdef VBOX_WITH_EHCI
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_EHCI
+ endif
  ifdef VBOX_WITH_AHCI
   tstDeviceStructSizeRC_DEFS    += VBOX_WITH_AHCI
  endif
@@ -90,6 +93,9 @@ tstDeviceStructSize_TEMPLATE = VBOXR3AUTOTST
 tstDeviceStructSize_DEFS     =
 ifdef VBOX_WITH_USB
  tstDeviceStructSize_DEFS   += VBOX_WITH_USB
+endif
+ifdef VBOX_WITH_EHCI
+ tstDeviceStructSize_DEFS   += VBOX_WITH_EHCI
 endif
 ifdef VBOX_WITH_AHCI
  tstDeviceStructSize_DEFS   += VBOX_WITH_AHCI
