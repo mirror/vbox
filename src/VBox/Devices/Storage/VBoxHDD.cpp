@@ -4532,6 +4532,13 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                          N_("VD: unknown backend name '%s'"), pszBackend);
             break;
         }
+        if (!(pImage->Backend->uBackendCaps & (  VD_CAP_CREATE_FIXED
+                                               | VD_CAP_CREATE_DYNAMIC)))
+        {
+            rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VD: backend '%s' cannot create base images"), pszBackend);
+            break;
+        }
 
         /* Create UUID if the caller didn't specify one. */
         if (!pUuid)
@@ -4765,6 +4772,14 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         {
             rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
                          N_("VD: unknown backend name '%s'"), pszBackend);
+            break;
+        }
+        if (   !(pImage->Backend->uBackendCaps & VD_CAP_DIFF)
+            || !(pImage->Backend->uBackendCaps & (  VD_CAP_CREATE_FIXED
+                                                  | VD_CAP_CREATE_DYNAMIC)))
+        {
+            rc = vdError(pDisk, VERR_INVALID_PARAMETER, RT_SRC_POS,
+                         N_("VD: backend '%s' cannot create diff images"), pszBackend);
             break;
         }
 
