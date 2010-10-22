@@ -107,6 +107,10 @@ class HGCMService
 
         uint32_t *m_paClientIds;
 
+#ifdef VBOX_WITH_CRHGSMI
+        uint32_t m_cHandleAcquires;
+#endif
+
         HGCMSVCEXTHANDLE m_hExtension;
 
         int loadServiceDLL (void);
@@ -152,6 +156,8 @@ class HGCMService
         int HostCall (uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM *paParms);
 
 #ifdef VBOX_WITH_CRHGSMI
+        int HandleAcquired();
+        int HandleReleased();
         int HostFastCallAsync (uint32_t u32Function, VBOXHGCMSVCPARM *pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion);
 #endif
 
@@ -229,6 +235,9 @@ HGCMService::HGCMService ()
     m_cClients   (0),
     m_cClientsAllocated (0),
     m_paClientIds (NULL),
+#ifdef VBOX_WITH_CRHGSMI
+    m_cHandleAcquires (0),
+#endif
     m_hExtension (NULL)
 {
     memset (&m_fntable, 0, sizeof (m_fntable));
@@ -1108,7 +1117,18 @@ void HGCMService::ReleaseService (void)
             pSvc->DisconnectClient (pSvc->m_paClientIds[0], false);
         }
 
+#ifdef VBOX_WITH_CRHGSMI
+        /* @todo: could this actually happen that the service is destroyed on ReleaseService? */
+        HGCMService *pNextSvc = pSvc->m_pSvcNext;
+        while (pSvc->m_cHandleAcquires)
+        {
+            pSvc->HandleReleased ();
+            pSvc->ReleaseService ();
+        }
+        pSvc = pNextSvc;
+#else
         pSvc = pSvc->m_pSvcNext;
+#endif
     }
 
     g_fResetting = false;
@@ -1563,6 +1583,23 @@ static DECLCALLBACK(void) hgcmMsgFastCallCompletionCallback (int32_t result, HGC
     }
 }
 
+int HGCMService::HandleAcquired()
+{
+    ++m_cHandleAcquires;
+    return VINF_SUCCESS;
+}
+
+int HGCMService::HandleReleased()
+{
+    Assert(m_cHandleAcquires);
+    if (m_cHandleAcquires)
+    {
+        --m_cHandleAcquires;
+        return VINF_SUCCESS;
+    }
+    return VERR_INVALID_STATE;
+}
+
 int HGCMService::HostFastCallAsync (uint32_t u32Function, VBOXHGCMSVCPARM *pParm, PHGCMHOSTFASTCALLCB pfnCompletion, void *pvCompletion)
 {
     LogFlowFunc(("%s u32Function = %d, pParm = %p\n",
@@ -1843,7 +1880,15 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 rc = HGCMService::ResolveService (&pService, pMsg->pszServiceName);
                 if (RT_SUCCESS(rc))
                 {
-                    pMsg->pService = pService;
+                    rc = pService->HandleAcquired ();
+                    if (RT_SUCCESS(rc))
+                    {
+                        pMsg->pService = pService;
+                    }
+                    else
+                    {
+                        pService->ReleaseService ();
+                    }
                 }
             } break;
 
@@ -1855,9 +1900,11 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
 
                 /* Resolve the service name to the pointer to service instance. */
 
-                pMsg->pService->ReleaseService ();
-
-                rc = VINF_SUCCESS;
+                rc = pMsg->pService->HandleReleased ();
+                if (RT_SUCCESS(rc))
+                {
+                    pMsg->pService->ReleaseService ();
+                }
             } break;
 #endif
 

@@ -5664,6 +5664,39 @@ static HRESULT APIENTRY vboxWddmDDevSetDisplayMode(HANDLE hDevice, CONST D3DDDIA
     {
         hr = pDevice->RtCallbacks.pfnSetDisplayModeCb(pDevice->hDevice, &DdiDm);
         Assert(hr == S_OK);
+#if 0
+        if (hr == S_OK)
+        {
+            D3DDDICB_LOCK DdiLock = {0};
+            DdiLock.hAllocation = pAlloc->hAllocation;
+            DdiLock.Flags.LockEntire = 1;
+            DdiLock.Flags.ReadOnly = 1;
+            hr = pDevice->RtCallbacks.pfnLockCb(pDevice->hDevice, &DdiLock);
+            Assert(hr == S_OK);
+            if (hr == S_OK)
+            {
+                D3DLOCKED_RECT LockRect;
+                IDirect3DSurface9 *pD3DIfSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
+                hr = pD3DIfSurf->LockRect(&LockRect, NULL /* RECT*/, D3DLOCK_DISCARD);
+                Assert(hr == S_OK);
+                if (hr == S_OK)
+                {
+                    /** @todo: take pitch into account */
+                    Assert(pAlloc->SurfDesc.pitch == LockRect.Pitch);
+                    memcpy(LockRect.pBits, DdiLock.pData, LockRect.Pitch * pAlloc->SurfDesc.height);
+                    hr = pD3DIfSurf->UnlockRect();
+                    Assert(hr == S_OK);
+                }
+
+                D3DDDICB_UNLOCK DdiUnlock = {0};
+                DdiUnlock.NumAllocations = 1;
+                DdiUnlock.phAllocations = &pAlloc->hAllocation;
+                hr = pDevice->RtCallbacks.pfnUnlockCb(pDevice->hDevice, &DdiUnlock);
+                Assert(hr == S_OK);
+            }
+            hr = S_OK;
+#endif
+        }
     }
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
@@ -7651,7 +7684,7 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
                             hr = E_OUTOFMEMORY;
                         }
     #else
-    //# define VBOXDISP_TEST_SWAPCHAIN
+    # define VBOXDISP_TEST_SWAPCHAIN
     # ifdef VBOXDISP_TEST_SWAPCHAIN
                         VBOXDISP_D3DEV(pDevice);
     # endif
