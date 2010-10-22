@@ -41,7 +41,7 @@ else # !VBOX_ONLY_DOCS
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxManageGuestCtrl.cpp) \
  	VBoxManageHelp.cpp \
  	VBoxManageHostonly.cpp \
- 	VBoxManageImport.cpp \
+ 	VBoxManageAppliance.cpp \
  	VBoxManageInfo.cpp \
  	VBoxManageList.cpp \
  	VBoxManageMetrics.cpp \
