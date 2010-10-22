@@ -1690,32 +1690,32 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     if (FAILED(rc)) throw rc;
     /**************** Check */
 
-    pTargetHD.createObject();
+    /* Figure out which format the user like to have. Default is VMDK. */
+    Utf8Str strFormat = "VMDK";
+    if (strTargetPath.endsWith("vdi", Utf8Str::CaseInsensitive))
+        strFormat = "VDI";
+    else if (strTargetPath.endsWith("vhd", Utf8Str::CaseInsensitive))
+        strFormat = "VHD";
+
     bool fNeedsGlobalSaveSettings;
-    // create an empty hard disk
+    /* Create an IMedium object. */
+    pTargetHD.createObject();
     rc = pTargetHD->init(mVirtualBox,
-                         Utf8Str("VMDK"),
+                         strFormat,
                          strTargetPath,
                          Guid::Empty,        // media registry
                          &fNeedsGlobalSaveSettings);
     if (FAILED(rc)) throw rc;
 
+    /* Now create an empty hard disk. */
+    rc = mVirtualBox->CreateHardDisk(NULL,
+                                     Bstr(strTargetPath).raw(),
+                                     ComPtr<IMedium>(pTargetHD).asOutParam());
+    if (FAILED(rc)) throw rc;
+
     /* If strHref is empty we have to create a new file */
     if (strSourceOVF.isEmpty())
     {
-        // which format to use?
-        Bstr srcFormat = L"VDI";
-        if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-               || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
-               || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-               || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-           )
-            srcFormat = L"VMDK";
-        rc = mVirtualBox->CreateHardDisk(srcFormat.raw(),
-                                         Bstr(strTargetPath).raw(),
-                                         ComPtr<IMedium>(pTargetHD).asOutParam());
-        if (FAILED(rc)) throw rc;
-
         // create a dynamic growing disk image with the given capacity
         rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, pProgress2.asOutParam());
         if (FAILED(rc)) throw rc;
@@ -1726,24 +1726,21 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     }
     else
     {
-        /* Create a new hard disk interface for the destination disk image */
-        rc = mVirtualBox->CreateHardDisk(NULL,
-                                         Bstr(strTargetPath).raw(),
-                                         ComPtr<IMedium>(pTargetHD).asOutParam());
-        if (FAILED(rc)) throw rc;
-
         // We need a proper format description
         ComObjPtr<MediumFormat> format;
         // Scope for the AutoReadLock
         {
+            /* Which format to use? */
+            Utf8Str strSrcFormat = "VDI";
+            if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
+                   || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
+                   || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+                   || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+               )
+                strSrcFormat = "VMDK";
             SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
             AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
-            Utf8Str strFormat = "VMDK";
-            if (strTargetPath.endsWith("vdi", Utf8Str::CaseInsensitive))
-                strFormat = "VDI";
-            else if (strTargetPath.endsWith("vhd", Utf8Str::CaseInsensitive))
-                strFormat = "VHD";
-            format = pSysProps->mediumFormat(strFormat);
+            format = pSysProps->mediumFormat(strSrcFormat);
             if (format.isNull())
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Invalid medium storage format"));
