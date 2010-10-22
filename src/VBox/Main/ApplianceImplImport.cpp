@@ -1660,7 +1660,7 @@ void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
  * @param stack
  */
 void Appliance::importOneDiskImage(const ovf::DiskImage &di,
-                                   Utf8Str strTargetPath,
+                                   const Utf8Str &strTargetPath,
                                    ComObjPtr<Medium> &pTargetHD,
                                    ImportStack &stack,
                                    PVDINTERFACEIO pCallbacks,
@@ -1674,7 +1674,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
 
-//    strTargetPath = "8d5193b2-82a0-4d53-be95-b7557238b000";
     /* First of all check if the path is an UUID. If so, the user like to
      * import the disk into an existing path. This is useful for iSCSI for
      * example. */
