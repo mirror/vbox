@@ -245,13 +245,14 @@ public:
      * Used by IAppliance to export disk images.
      *
      * @param aFilename             Filename to create (UTF8).
-     * @param aFormat               Which medium format to use for export.
+     * @param aFormat               Medium format for creating @a aFilename.
      * @param aVariant              Which exact image format variant to use.
      * @param aVDImageIOCallbacks   Pointer to the callback table for a
      *                              VDINTERFACEIO interface. May be NULL.
      * @param aVDImageIOUser        Opaque data for the callbacks.
      * @param aProgress             Progress object to use.
      * @return
+     * @note The source format is defined by the Medium instance.
      */
     HRESULT exportFile(const char *aFilename,
                        const ComObjPtr<MediumFormat> &aFormat,
@@ -262,7 +263,7 @@ public:
      * Used by IAppliance to import disk images.
      *
      * @param aFilename             Filename to read (UTF8).
-     * @param aFormat               Which medium format to use for import.
+     * @param aFormat               Medium format for reading @a aFilename.
      * @param aVariant              Which exact image format variant to use.
      * @param aVDImageIOCallbacks   Pointer to the callback table for a
      *                              VDINTERFACEIO interface. May be NULL.
@@ -270,6 +271,7 @@ public:
      * @param aParent               Parent medium. May be NULL.
      * @param aProgress             Progress object to use.
      * @return
+     * @note The destination format is defined by the Medium instance.
      */
     HRESULT importFile(const char *aFilename,
                        const ComObjPtr<MediumFormat> &aFormat,
