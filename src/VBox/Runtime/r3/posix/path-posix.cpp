@@ -478,6 +478,40 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
     return rc;
 }
 
+RTR3DECL(int) RTReadLink(const char *pszPath, char *pszDestLink, size_t cchDestLink)
+{
+    char szNativeDest[RTPATH_MAX];
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDestLink, VERR_INVALID_POINTER);
+
+    /*
+     * Convert the filename.
+     */
+    char const *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        ssize_t cchLink = readlink(pszNativePath, szNativeDest, RTPATH_MAX-1);
+        if (RT_LIKELY(cchLink != -1))
+        {
+            szNativeDest[RT_MIN(cchLink, (ssize_t)sizeof(RTPATH_MAX-1))] = '\0';
+            rc = rtPathFromNativeCopy(pszDestLink, cchDestLink, szNativeDest, NULL);
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+
+        rtPathFreeNative(pszNativePath, pszPath);
+    }
+
+    LogFlow(("RTReadlink(%p:{%s}, pObjInfo=%p): returns %Rrc\n",
+             pszPath, pszPath, pObjInfo, rc));
+    return rc;
+}
 
 RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
@@ -863,6 +897,39 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
     int rc = rtPathPosixRename(pszSrc, pszDst, fRename, 0);
 
     Log(("RTPathRename(%p:{%s}, %p:{%s}, %#x): returns %Rrc\n", pszSrc, pszSrc, pszDst, pszDst, fRename, rc));
+    return rc;
+}
+
+
+RTR3DECL(int) RTSymlink(const char *pszNewPath, const char *pszOldPath)
+{
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(VALID_PTR(pszNewPath), ("%p\n", pszNewPath), VERR_INVALID_POINTER);
+    AssertMsgReturn(VALID_PTR(pszOldPath), ("%p\n", pszOldPath), VERR_INVALID_POINTER);
+    AssertMsgReturn(*pszNewPath, ("%p\n", pszNewPath), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(*pszOldPath, ("%p\n", pszOldPath), VERR_INVALID_PARAMETER);
+
+    /*
+     * Convert the filenames.
+     */
+    char const *pszNativeNewPath;
+    char const *pszNativeOldPath;
+    int rc = rtPathToNative(&pszNativeNewPath, pszNewPath, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        rc = rtPathToNative(&pszNativeOldPath, pszOldPath, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (symlink(pszOldPath, pszNewPath) == -1)
+                rc = RTErrConvertFromErrno(errno);
+
+            rtPathFreeNative(pszNativeOldPath, pszOldPath);
+        }
+        rtPathFreeNative(pszNativeNewPath, pszNewPath);
+    }
+
     return rc;
 }
 
