@@ -146,9 +146,6 @@ DECLINLINE(void) vboxCrHgsmiProfileScopeExit(PVBOXCRHGSMIPROFILE_SCOPE pScope)
 
 
 #else
-#ifdef IN_GUEST
-#error "should not happen!"
-#endif
 #define VBOXCRHGSMIPROFILE_INIT() do {} while (0)
 #define VBOXCRHGSMIPROFILE_TERM() do {} while (0)
 #define VBOXCRHGSMIPROFILE_FUNC_PROLOGUE() do {} while (0)
