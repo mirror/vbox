@@ -79,6 +79,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_BIN             = $(INST_VIRTUALBOX)Contents/MacOS/
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
+ INST_EXTPACK         = $(INST_BIN)ExtensionPacks/
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_BIN)
@@ -96,6 +97,7 @@ else
  INST_SDK             = $(INST_BIN)sdk/
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
+ INST_EXTPACK         = $(INST_BIN)ExtensionPacks/
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
@@ -104,6 +106,7 @@ else
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
 endif
+INST_EXTPACK_PUEL     = $(INST_EXTPACK)Puel/
 
 PATH_BIN              = $(patsubst %/,%,$(PATH_INS)/$(INST_BIN))
 PATH_DLL              = $(patsubst %/,%,$(PATH_INS)/$(INST_DLL))
@@ -522,6 +525,14 @@ if1of ($(KBUILD_TARGET), freebsd linux)
 endif
 ## @}
 
+
+## @name Extension pack
+## @{
+# Enables the extension pack feature.
+VBOX_WITH_EXTPACK = 1
+# Enables building of the "PUEL" (final name TBD) extension pack.
+#VBOX_WITH_EXTPACK_PUEL = 1
+## @}
 
 ## @name Misc
 ## @{
@@ -3432,26 +3443,50 @@ TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLAT
 
 
 #
-# Templates used for building the add-ons.
+# Templates used for building the extension packs.
 #
-TEMPLATE_VBoxR3AddOn = For the ring-3 context addons.
-TEMPLATE_VBoxR3AddOn_EXTENDS = VBOXR3
-ifeq ($(KBUILD_TARGET),win)
-else
- TEMPLATE_VBoxR3AddOn_CXXFLAGS = $(filter-out $(TEMPLATE_VBOX_CXXFLAGS), -fexceptions) -fno-exceptions
- TEMPLATE_VBoxR3AddOn_CFLAGS   = $(filter-out $(TEMPLATE_VBOX_CFLAGS), -fexceptions -frtti) -fno-exceptions -fno-rtti
-endif
-TEMPLATE_VBoxR3AddOn_LIBS = \
-	$(TEMPLATE_LIBS_VBOXR3) \
-	$(LIB_RUNTIME) \
-	$(LIB_VMM)
+ifdef VBOX_WITH_EXTPACK
+ # Base templates (native or portable).
+ TEMPLATE_VBoxR3ExtPack = For the ring-3 context extension pack modules.
+ if 1 # Native for now.
+  TEMPLATE_VBoxR3ExtPack_EXTENDS = VBOXR3DLLNOXCPT
+ else
+  TEMPLATE_VBoxR3ExtPack_EXTENDS = VBOXNOCRTGCC
+  TEMPLATE_VBoxR3ExtPack_DEFS = $(TEMPLATE_VBOXR3DLLNOXCPT_DEFS) IPRT_NO_CRT IN_RING3
+  TEMPLATE_VBoxR3ExtPack_INCS = $(PATH_ROOT)/include/iprt/nocrt $(TEMPLATE_VBOXR3DLLNOXCPT_INCS)
+ endif
+ ifneq ($(KBUILD_TARGET),win)
+  TEMPLATE_VBoxR3ExtPack_CXXFLAGS = $(TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS) -fno-rtti
+ endif
+ TEMPLATE_VBoxR3ExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
+ TEMPLATE_VBoxR3ExtPack_LIBS = \
+ 	$(TEMPLATE_LIBS_VBOXR3) \
+ 	$(LIB_RUNTIME) \
+ 	$(LIB_VMM)
 
-TEMPLATE_VBoxR0AddOn = For the ring-0 context addons.
-TEMPLATE_VBoxR0AddOn_EXTENDS = VBoxR0
+ TEMPLATE_VBoxR0ExtPack = For the ring-0 context extension pack modules.
+ TEMPLATE_VBoxR0ExtPack_EXTENDS = VBoxR0
+ TEMPLATE_VBoxR0ExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
 
-TEMPLATE_VBoxRcAddOn = For the raw-mode context addons.
-TEMPLATE_VBoxRcAddOn_EXTENDS = VBoxRc
+ TEMPLATE_VBoxRcExtPack = For the raw-mode context extension pack modules.
+ TEMPLATE_VBoxRcExtPack_EXTENDS = VBoxRc
+ TEMPLATE_VBoxRcExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
 
+ # For each individual extension pack
+ ifdef VBOX_WITH_EXTPACK_PUEL
+  TEMPLATE_VBoxR3ExtPackPuel = For the ring-3 context modules in the PUEL extension pack.
+  TEMPLATE_VBoxR3ExtPackPuel_EXTENDS = VBoxR3ExtPack
+  TEMPLATE_VBoxR3ExtPackPuel_INST = $(INST_EXTPACK_PUEL)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
+
+  TEMPLATE_VBoxR0ExtPackPuel = For the ring-0 context modules in the PUEL extension pack.
+  TEMPLATE_VBoxR0ExtPackPuel_EXTENDS = VBoxR0ExtPack
+  TEMPLATE_VBoxR0ExtPackPuel_INST = $(INST_EXTPACK_PUEL)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
+
+  TEMPLATE_VBoxRcExtPackPuel = For the raw-mode context modules in the PUEL extension pack.
+  TEMPLATE_VBoxRcExtPackPuel_EXTENDS = VBoxRcExtPack
+  TEMPLATE_VBoxRcExtPackPuel_INST = $(INST_EXTPACK_PUEL)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
+ endif
+endif # VBOX_WITH_EXTPACK
 
 
 #

@@ -66,7 +66,7 @@ endif
 ifdef VBOX_WITH_USB
  VBoxDDU_DEFS           += VBOX_WITH_USB IN_USBLIB
  VBoxDDU_SDKS.win        = WINPSDK W2K3DDK
- if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_ADDONS)
+ if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_EXTPACK_PUEL)
   VBoxDDU_DEFS          += VBOX_WITH_EHCI
  endif
  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
@@ -135,7 +135,7 @@ VBoxDD_SOURCES          = \
 VBoxDD_DEFS             = VBOX_ACPI
 ifdef VBOX_WITH_USB
  VBoxDD_DEFS           += VBOX_WITH_USB
- if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_ADDONS)
+ if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_EXTPACK_PUEL)
   VBoxDD_DEFS          += VBOX_WITH_EHCI
  endif
 endif
@@ -451,7 +451,7 @@ ifdef VBOX_WITH_VUSB
 endif
 ifdef VBOX_WITH_USB
  DevicesR3_DEFS        += VBOX_WITH_USB
- if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_ADDONS)
+ if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_EXTPACK_PUEL)
   DevicesR3_DEFS       += VBOX_WITH_EHCI
   DevicesR3_SOURCES    += \
 	USB/DevEHCI.cpp
@@ -610,7 +610,7 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifdef VBOX_WITH_USB
   VBoxDDGC_DEFS        += VBOX_WITH_USB
-  if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_ADDONS)
+  if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_EXTPACK_PUEL)
    VBoxDDGC_DEFS       += VBOX_WITH_EHCI
    VBoxDDGC_SOURCES    += \
  	USB/DevEHCI.cpp
@@ -736,7 +736,7 @@ ifdef VBOX_WITH_VUSB
 endif
 ifdef VBOX_WITH_USB
 VBoxDDR0_DEFS          += VBOX_WITH_USB
- if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_ADDONS)
+ if defined(VBOX_WITH_EHCI) && !defined(VBOX_WITH_EXTPACK_PUEL)
   VBoxDDR0_DEFS        += VBOX_WITH_EHCI
   VBoxDDR0_SOURCES     += \
 	USB/DevEHCI.cpp
@@ -1189,23 +1189,23 @@ ServicesR0_SOURCES   = \
 
 
 #
-# The EHCI (USB 2.0) Add-On Modules.
+# The EHCI (USB 2.0) Extension Pack Modules.
 #
-if defined(VBOX_WITH_USB) && defined(VBOX_WITH_ADDONS)
+if defined(VBOX_WITH_USB) && defined(VBOX_WITH_EXTPACK_PUEL)
  DLLS += VBoxEhciR3
- VBoxEhciR3_TEMPLATE = VBoxR3AddOn
+ VBoxEhciR3_TEMPLATE = VBoxR3ExtPackPuel
  VBoxEhciR3_SOURCES  = USB/DevEHCI.cpp
 
  SYSMODS += VBoxEhciR0
- VBoxEhciR0_TEMPLATE = VBoxR0AddOn
+ VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
  VBoxEhciR0_SOURCES  = USB/DevEHCI.cpp
 
  ifdef VBOX_WITH_RAW_MODE
   SYSMODS += VBoxEhciRC
-  VBoxEhciRC_TEMPLATE = VBoxRcAddOn
+  VBoxEhciRC_TEMPLATE = VBoxRcExtPackPuel
   VBoxEhciRC_SOURCES  = USB/DevEHCI.cpp
  endif
-endif # VBOX_WITH_USB && VBOX_WITH_ADDONS
+endif # VBOX_WITH_USB && VBOX_WITH_EXTPACK_PUEL
 
 
 #
