@@ -192,10 +192,9 @@ do
         *)
             if [ "$ACTION" = "" ]; then
                 info "Unknown command '$1'."
-            else
-                info "Specifying an installation path is not allowed!"
+                usage
             fi
-            usage
+            info "Specifying an installation path is not allowed -- using /opt/VirtualBox!"
             ;;
     esac
 done
