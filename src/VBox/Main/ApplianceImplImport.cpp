@@ -1682,6 +1682,15 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Could not find a valid medium format for the target disk '%s'"),
                            strTargetPath.c_str());
+        /* Check the capabilities. We need create capabilities. */
+        ULONG lCabs = 0;
+        rc = trgFormat->COMGETTER(Capabilities)(&lCabs);
+        if (FAILED(rc)) throw rc;
+        if (!(   ((lCabs & MediumFormatCapabilities_CreateFixed) == MediumFormatCapabilities_CreateFixed)
+              || ((lCabs & MediumFormatCapabilities_CreateFixed) == MediumFormatCapabilities_CreateDynamic)))
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Could not find a valid medium format for the target disk '%s'"),
+                           strTargetPath.c_str());
         Bstr bstrFormatName;
         rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
         if (FAILED(rc)) throw rc;
