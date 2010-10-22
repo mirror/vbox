@@ -4369,15 +4369,14 @@ VBOX_XIDL_FILE         = $(PATH_OUT)/obj/VirtualBox_stripped.xidl
 
 # Java stuff.
 ifeq ($(KBUILD_TARGET), darwin)
- VBOX_JAVA_HOME = $(firstword $(wildcard \
-	/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0 \
-	/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0 \
-        ) /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0)
- VBOX_JAVAC     = $(VBOX_JAVA_HOME)/Commands/javac
- VBOX_JAVAH     = $(VBOX_JAVA_HOME)/Commands/javah
- VBOX_JAR       = $(VBOX_JAVA_HOME)/Commands/jar
- VBOX_WSIMPORT  = $(VBOX_JAVA_HOME)/Commands/wsimport
- VBOX_JAVA_INC  = $(VBOX_JAVA_HOME)/Headers
+ VBOX_JAVA_COMMANDS = $(firstword $(wildcard \
+        /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Commands \
+        ) /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Commands)
+ VBOX_JAVAC     = $(VBOX_JAVA_COMMANDS)/javac
+ VBOX_JAVAH     = $(VBOX_JAVA_COMMANDS)/javah
+ VBOX_JAR       = $(VBOX_JAVA_COMMANDS)/jar
+ VBOX_WSIMPORT  = $(VBOX_JAVA_COMMANDS)/wsimport
+ VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/1.6.0/Headers
 
 else
 
