@@ -1674,34 +1674,33 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                        tr("Destination file '%s' exists"),
                        strTargetPath.c_str());
 
-    const Utf8Str &strSourceOVF = di.strHref;
-
-    // construct source file path
-    Utf8StrFmt strSrcFilePath("%s%c%s", stack.strSourceDir.c_str(), RTPATH_DELIMITER, strSourceOVF.c_str());
-
-    // subprogress object for hard disk
-    ComPtr<IProgress> pProgress2;
-
-    /**************** Check */
-    ComObjPtr<Progress> pProgress3;
-    pProgress3.createObject();
-    HRESULT rc = pProgress3->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium")).raw(), TRUE);
-    //        rc = pProgress3->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetFilePath.c_str()).raw(), TRUE);
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    HRESULT rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetPath.c_str()).raw(), TRUE);
     if (FAILED(rc)) throw rc;
-    /**************** Check */
 
-    /* Figure out which format the user like to have. Default is VMDK. */
-    Utf8Str strFormat = "VMDK";
-    if (strTargetPath.endsWith("vdi", Utf8Str::CaseInsensitive))
-        strFormat = "VDI";
-    else if (strTargetPath.endsWith("vhd", Utf8Str::CaseInsensitive))
-        strFormat = "VHD";
+    Utf8Str strTrgFormat = "VMDK";
+    SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
+    if (RTPathHaveExt(strTargetPath.c_str()))
+    {
+        char *pszExt = RTPathExt(strTargetPath.c_str());
+        /* Figure out which format the user like to have. Default is VMDK. */
+        ComObjPtr<MediumFormat> targetFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
+        if (targetFormat.isNull())
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Could not find a valid medium format for the target disk '%s'"),
+                           strTargetPath.c_str());
+        Bstr bstrFormatName;
+        rc = targetFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+        if (FAILED(rc)) throw rc;
+        strTrgFormat = Utf8Str(bstrFormatName);
+    }
 
     bool fNeedsGlobalSaveSettings;
     /* Create an IMedium object. */
     pTargetHD.createObject();
     rc = pTargetHD->init(mVirtualBox,
-                         strFormat,
+                         strTrgFormat,
                          strTargetPath,
                          Guid::Empty,        // media registry
                          &fNeedsGlobalSaveSettings);
@@ -1713,11 +1712,15 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                      ComPtr<IMedium>(pTargetHD).asOutParam());
     if (FAILED(rc)) throw rc;
 
+    const Utf8Str &strSourceOVF = di.strHref;
+    // construct source file path
+    Utf8StrFmt strSrcFilePath("%s%c%s", stack.strSourceDir.c_str(), RTPATH_DELIMITER, strSourceOVF.c_str());
+
     /* If strHref is empty we have to create a new file */
     if (strSourceOVF.isEmpty())
     {
         // create a dynamic growing disk image with the given capacity
-        rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, pProgress2.asOutParam());
+        rc = pTargetHD->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, ComPtr<IProgress>(pProgress).asOutParam());
         if (FAILED(rc)) throw rc;
 
         // advance to the next operation
@@ -1733,17 +1736,16 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             /* Which format to use? */
             Utf8Str strSrcFormat = "VDI";
             if (   di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#sparse", Utf8Str::CaseInsensitive)
-                   || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
-                   || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
-                   || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+                || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#streamOptimized", Utf8Str::CaseInsensitive)
+                || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
+                || di.strFormat.compare("http://www.vmware.com/interfaces/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive)
                )
-                strSrcFormat = "VMDK";
-            SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
-            AutoReadLock propsLock(pSysProps COMMA_LOCKVAL_SRC_POS);
+                strSrcFormat = "VMDK1";
             format = pSysProps->mediumFormat(strSrcFormat);
             if (format.isNull())
                 throw setError(VBOX_E_NOT_SUPPORTED,
-                               tr("Invalid medium storage format"));
+                               tr("Could not find a valid medium format for the source disk '%s'"),
+                               RTPathFilename(strSrcFilePath.c_str()));
         }
 
         /* Clone the source disk image */
@@ -1753,7 +1755,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                    MediumVariant_Standard,
                                    pCallbacks, pStorage,
                                    nullParent,
-                                   pProgress3);
+                                   pProgress);
 
         /* Advance to the next operation */
         stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())).raw(),
@@ -1761,7 +1763,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     }
 
     // now wait for the background disk operation to complete; this throws HRESULTs on error
-    ComPtr<IProgress> pp(pProgress3);
+    ComPtr<IProgress> pp(pProgress);
     waitForAsyncProgress(stack.pProgress, pp);
 
     stack.llSrcDisksDigest.push_back(STRPAIR(strSrcFilePath, pStorage->strDigest));
