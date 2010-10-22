@@ -104,7 +104,8 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-scsitype",              'T', RTGETOPT_REQ_UINT32 },     // deprecated
     { "--type",                 'T', RTGETOPT_REQ_UINT32 },     // deprecated
     { "-type",                  'T', RTGETOPT_REQ_UINT32 },     // deprecated
-    { "--controller",           'C', RTGETOPT_REQ_STRING },
+//    { "--controller",           'C', RTGETOPT_REQ_STRING },
+    { "--disk",                 'D', RTGETOPT_REQ_STRING },
 };
 
 int handleImportAppliance(HandlerArg *arg)
@@ -206,6 +207,14 @@ int handleImportAppliance(HandlerArg *arg)
                 if (ulCurUnit == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys][Utf8StrFmt("controller%u", ulCurUnit)] = ValueUnion.psz;
+                break;
+
+            case 'D':   // --disk
+                if (ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                if (ulCurUnit == (uint32_t)-1)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys][Utf8StrFmt("disk%u", ulCurUnit)] = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -591,20 +600,44 @@ int handleImportAppliance(HandlerArg *arg)
                             }
                             else
                             {
-                                Utf8StrFmt strTypeArg("controller%u", a);
+                                Utf8StrFmt strTypeArg("disk%u", a);
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
                                 {
-                                    // strOverride now has the controller index as a number, but we
-                                    // need a "controller=X" format string
-                                    strOverride = Utf8StrFmt("controller=%s", strOverride.c_str());
-                                    Bstr bstrExtraConfigValue = strOverride;
-                                    bstrExtraConfigValue.detachTo(&aExtraConfigValues[a]);
+                                    RTUUID uuid;
+                                    /* Check if this is a uuid. If so, don't touch. */
+                                    int vrc = RTUuidFromStr(&uuid, strOverride.c_str());
+                                    if (vrc != VINF_SUCCESS)
+                                    {
+                                        /* Make the path absolute. */
+                                        if (!RTPathStartsWithRoot(strOverride.c_str()))
+                                        {
+                                            char pszPwd[RTPATH_MAX];
+                                            vrc = RTPathGetCurrent(pszPwd, RTPATH_MAX);
+                                            if (RT_SUCCESS(vrc))
+                                                strOverride = Utf8Str(pszPwd).append(RTPATH_SLASH).append(strOverride);
+                                        }
+                                    }
+                                    bstrFinalValue = strOverride;
                                     RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls\n",
                                             a,
                                             aOvfValues[a],
-                                            aVboxValues[a],
+                                            bstrFinalValue.raw(),
                                             aExtraConfigValues[a]);
                                 }
+//                                Utf8StrFmt strTypeArg("controller%u", a);
+//                                if (findArgValue(strOverride, pmapArgs, strTypeArg))
+//                                {
+                                    // strOverride now has the controller index as a number, but we
+                                    // need a "controller=X" format string
+//                                    strOverride = Utf8StrFmt("controller=%s", strOverride.c_str());
+//                                    Bstr bstrExtraConfigValue = strOverride;
+//                                    bstrExtraConfigValue.detachTo(&aExtraConfigValues[a]);
+//                                    RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls\n",
+//                                            a,
+//                                            aOvfValues[a],
+//                                            aVboxValues[a],
+//                                            aExtraConfigValues[a]);
+//                                }
                                 else
                                     RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls"
                                             "\n    (change controller with \"--vsys %u --unit %u --controller <id>\";"
