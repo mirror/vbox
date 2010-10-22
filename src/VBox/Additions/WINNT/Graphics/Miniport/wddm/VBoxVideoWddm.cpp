@@ -1760,7 +1760,7 @@ DxgkDdiDescribeAllocation(
     CONST HANDLE  hAdapter,
     DXGKARG_DESCRIBEALLOCATION*  pDescribeAllocation)
 {
-    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -1773,7 +1773,7 @@ DxgkDdiDescribeAllocation(
     pDescribeAllocation->RefreshRate.Denominator = 1000;
     pDescribeAllocation->PrivateDriverFormatAttribute = 0;
 
-    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_SUCCESS;
 }

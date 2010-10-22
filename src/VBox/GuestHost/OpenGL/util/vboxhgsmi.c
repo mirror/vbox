@@ -1456,7 +1456,14 @@ bool crVBoxHGSMIInit(CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl, unsigne
     Assert(bHasHGSMI);
 
     if (!bHasHGSMI)
+    {
+#ifdef DEBUG_misha
+        AssertRelease(0);
+#endif
         return false;
+    }
+
+    return false;
 
     g_crvboxhgsmi.recv_list = rfl;
     g_crvboxhgsmi.close_list = cfl;
@@ -1587,6 +1594,7 @@ void crVBoxHGSMIConnection(CRConnection *conn)
 int crVBoxHGSMIRecv(void)
 {
     int32_t i;
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
 #ifdef IN_GUEST
     /* we're on guest side, poll host if it got something for us */
@@ -1619,14 +1627,17 @@ int crVBoxHGSMIRecv(void)
         }
     }
 
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
     return 0;
 }
 
 CRConnection** crVBoxHGSMIDump( int *num )
 {
+    VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     Assert(0);
     *num = g_crvboxhgsmi.num_conns;
 
+    VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
     return g_crvboxhgsmi.conns;
 }
 #endif /* #ifdef IN_GUEST */

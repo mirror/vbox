@@ -2914,16 +2914,7 @@ void Display::setupCrHgsmiData(void)
 
 void Display::destructCrHgsmiData(void)
 {
-    if (mhCrOglSvc)
-    {
-        VMMDev *pVMMDev = mParent->getVMMDev();
-        Assert(pVMMDev);
-        if (pVMMDev)
-        {
-            int rc = pVMMDev->hgcmHostSvcHandleDestroy(mhCrOglSvc);
-            AssertRC(rc);
-        }
-    }
+    mhCrOglSvc = NULL;
 }
 #endif
 
