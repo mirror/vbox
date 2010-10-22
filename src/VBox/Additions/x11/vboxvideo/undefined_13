@@ -122,6 +122,7 @@ strlen
 strncmp
 strpbrk
 strstr
+symlink
 tolower
 unlink
 unsetenv
