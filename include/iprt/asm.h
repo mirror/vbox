@@ -4546,13 +4546,5 @@ DECLINLINE(uint64_t) ASMByteSwapU64(uint64_t u64)
 
 /** @} */
 
-/* KLUDGE: Play safe for now as I cannot test all solaris and linux usages. */
-#if !defined(__cplusplus) && !defined(DEBUG)
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  include <iprt/asm-amd64-x86.h>
-# endif
-# include <iprt/asm-math.h>
-#endif
-
 #endif
 
