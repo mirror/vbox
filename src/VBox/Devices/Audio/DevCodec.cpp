@@ -94,6 +94,8 @@ static int stac9220Construct(CODECState *pState)
 {
     unconst(pState->cTotalNodes) = 0x1C;
     pState->pfnCodecNodeReset = stac9220ResetNode;
+    pState->u16VendorId = 0x8384;
+    pState->u16DeviceId = 0x7680;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pState->cTotalNodes);
     pState->fInReset = false;
 #define STAC9220WIDGET(type) pState->au8##type##s = au8Stac9220##type##s
@@ -143,11 +145,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xB] = RT_BIT(0);
             pNode->node.au32F00_param[0xD] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
-            pNode->node.au32F00_param[0x11] = 0;
+            pNode->node.au32F00_param[0x11] = 0xc0000004;
             pNode->node.au32F00_param[0xF] = 0xF;
             pNode->afg.u32F05_param = 0x2 << 4| 0x2; /* PS-Act: D3, PS->Set D3  */
-            pNode->afg.u32F20_param = 0x83847882;
+            pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->afg.u32F08_param = 0;
+            pNode->afg.u32F17_param = 0;
             break;
         case 2:
             pNode->dac.node.name = "DAC0";
@@ -211,7 +214,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "PortA";
             pNode->node.au32F00_param[0xC] = 0x173f;
             pNode->node.au32F02_param[0] = 0x2;
-            pNode->port.u32F07_param = RT_BIT(6);
+            pNode->port.u32F07_param = 0xc0;//RT_BIT(6);
             pNode->port.u32F08_param = 0;
             pNode->port.u32F09_param = RT_BIT(31)|0x9920; /* 39.2 kOm */
             if (!pState->fInReset)
@@ -230,20 +233,20 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "PortC";
             pNode->node.au32F02_param[0] = 0x3;
             pNode->node.au32F00_param[0xC] = 0x1737;
-            pNode->port.u32F09_param = 0;
             pNode->port.u32F07_param = RT_BIT(5);
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
             goto port_init;
         case 0xD:
             pNode->node.name = "PortD";
-            pNode->node.au32F00_param[0xC] = 0x173f;
-            pNode->port.u32F09_param = 0;
+            pNode->node.au32F00_param[0xC] = 0x173c;
+            pNode->port.u32F09_param = 0x173f;
             pNode->port.u32F07_param = RT_BIT(6);
             pNode->node.au32F02_param[0] = 0x2;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = 0x01013040;  /* Line Out */
         port_init:
+            pNode->port.u32F09_param = RT_BIT(31)|0x7fffffff;
             pNode->port.u32F08_param = 0;
             pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(0);
             pNode->node.au32F00_param[0xE] = 0x1;
@@ -252,23 +255,25 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "PortE";
             pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(7)|RT_BIT(0);
             pNode->port.u32F08_param = 0;
-            pNode->node.au32F00_param[0xC] = RT_BIT(5)|RT_BIT(2);
+            pNode->node.au32F00_param[0xC] = 0x34;
+            pNode->port.u32F09_param = 0;
+            //pNode->node.au32F00_param[0xC] = RT_BIT(5)|RT_BIT(2);
             pNode->port.u32F07_param = RT_BIT(5);
-            pNode->port.u32F09_param = RT_BIT(31);
+            //pNode->port.u32F09_param = RT_BIT(31);
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
             break;
         case 0xF:
             pNode->node.name = "PortF";
-            pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(0);
+            pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(2)|RT_BIT(0);
             pNode->node.au32F00_param[0xC] = 0x37;
             pNode->node.au32F00_param[0xE] = 0x1;
             pNode->port.u32F08_param = 0;
-            pNode->port.u32F07_param = 0;
+            pNode->port.u32F07_param = 0x40;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
             pNode->node.au32F02_param[0] = 0x5;
-            pNode->port.u32F09_param = 0;
+            pNode->port.u32F09_param = 0x7fffffff;
         break;
         case 0x10:
             pNode->node.name = "DigOut_0";
@@ -285,7 +290,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0x11:
             pNode->node.name = "DigIn_0";
             pNode->node.au32F00_param[9] = (4 << 20)|(3<<16)|RT_BIT(10)|RT_BIT(9)|RT_BIT(7)|RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = /* RT_BIT(16)|*/ RT_BIT(5)|RT_BIT(2);
+            pNode->node.au32F00_param[0xC] = RT_BIT(16)| RT_BIT(5)|RT_BIT(2);
             pNode->digin.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3 -> D3 */
             pNode->digin.u32F07_param = 0;
             pNode->digin.u32F08_param = 0;
@@ -362,9 +367,10 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "Reserved_3";
             pNode->node.au32F00_param[0x9] = (0x4 << 20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[0xE] = 0x1;
+            pNode->node.au32F00_param[0xC] = 0x10;
             pNode->node.au32F02_param[0] = 0x1a;
             pNode->reserved.u32F07_param = 0;
-            pNode->reserved.u32F1c_param = 0x400000fb; /* dumped from real stac9220 chip */
+            pNode->reserved.u32F1c_param = 0x4000000f;
             break;
         default:
         break;
@@ -373,19 +379,19 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
 }
 
 /* ALC885 */
-const static uint8_t au8Alc889aPorts[] = { 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0};
-const static uint8_t au8Alc889aDacs[] = { 0x2, 0x3, 0x4, 0x5, 0x25, 0};
-const static uint8_t au8Alc889aAdcs[] = { 0x7, 0x8, 0x9, 0};
-const static uint8_t au8Alc889aSpdifOuts[] = { 0x6, 0 };
-const static uint8_t au8Alc889aSpdifIns[] = { 0xA, 0 };
-const static uint8_t au8Alc889aDigOutPins[] = { 0x1E, 0 };
-const static uint8_t au8Alc889aDigInPins[] = { 0x1F, 0 };
-const static uint8_t au8Alc889aAdcVols[] = { 0xE, 0xF, 0xD, 0xC, 0x26, 0xB, 0};
-const static uint8_t au8Alc889aAdcMuxs[] = { 0x22, 0x23, 0x24, 0};
-const static uint8_t au8Alc889aPcbeeps[] = { 0x1D, 0 };
-const static uint8_t au8Alc889aCds[] = { 0x1C, 0 };
-const static uint8_t au8Alc889aVolKnobs[] = { 0x21, 0 };
-const static uint8_t au8Alc889aReserveds[] = { 0x10, 0x11, 0x12, 0x13, 0 };
+const static uint8_t au8Alc885Ports[] = { 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0};
+const static uint8_t au8Alc885Dacs[] = { 0x2, 0x3, 0x4, 0x5, 0x25, 0};
+const static uint8_t au8Alc885Adcs[] = { 0x7, 0x8, 0x9, 0};
+const static uint8_t au8Alc885SpdifOuts[] = { 0x6, 0 };
+const static uint8_t au8Alc885SpdifIns[] = { 0xA, 0 };
+const static uint8_t au8Alc885DigOutPins[] = { 0x1E, 0 };
+const static uint8_t au8Alc885DigInPins[] = { 0x1F, 0 };
+const static uint8_t au8Alc885AdcVols[] = { 0xE, 0xF, 0xD, 0xC, 0x26, 0xB, 0};
+const static uint8_t au8Alc885AdcMuxs[] = { 0x22, 0x23, 0x24, 0};
+const static uint8_t au8Alc885Pcbeeps[] = { 0x1D, 0 };
+const static uint8_t au8Alc885Cds[] = { 0x1C, 0 };
+const static uint8_t au8Alc885VolKnobs[] = { 0x21, 0 };
+const static uint8_t au8Alc885Reserveds[] = { 0x10, 0x11, 0x12, 0x13, 0 };
 
 
 static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
@@ -393,10 +399,12 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
 static int alc885Construct(CODECState *pState)
 {
     unconst(pState->cTotalNodes) = 0x27;
+    pState->u16VendorId = 0x10ec;
+    pState->u16DeviceId =  0x0885;
     pState->pfnCodecNodeReset = alc885ResetNode;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pState->cTotalNodes);
     pState->fInReset = false;
-#define ALC885WIDGET(type) pState->au8##type##s = au8Alc889a##type##s
+#define ALC885WIDGET(type) pState->au8##type##s = au8Alc885##type##s
     ALC885WIDGET(Port);
     ALC885WIDGET(Dac);
     ALC885WIDGET(Adc);
@@ -434,8 +442,9 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.au32F00_param[4] = (2 << 16)|0x25; /* start node 1, total 1*/
             pNode->node.au32F00_param[5] = RT_BIT(8) | 0x1; /* UnSol: enabled, function group type: AFG */ 
             pNode->node.au32F00_param[0xa] = 0xe0560;
-            pNode->afg.u32F20_param = 0x10ec0889;
+            pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->node.au32F00_param[0xB] = 0x1;
+            pNode->node.au32F00_param[0x11] = RT_BIT(30)|0x2;
             break;
         /* DACs */
         case 0x2:
@@ -483,7 +492,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.name = "VENDEF-0";
             goto vendor_define_init;
         case 0x11:
-            pNode->node.name = "VENDEF-1";
+            pNode->node.name = "VENDEF-0";
             goto vendor_define_init;
         case 0x12:
             pNode->node.name = "VENDEF-2";
@@ -511,7 +520,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.au32F02_param[3] = RT_MAKE_U32_FROM_U8(0x6, 0x0, 0x0, 0x0);
             break;
         case 0x1F:
-            pNode->node.name = "DIGOUT-0";
+            pNode->node.name = "DIGIN-0";
             pNode->node.au32F00_param[9] = 0x400200;
             /* N = 0~3 */
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0xA, 0x0, 0x0, 0x0);
@@ -700,12 +709,6 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.au32F00_param[0x9] = 0x20010b;
             pNode->node.au32F00_param[0xD] = 0x80000000;
             pNode->node.au32F00_param[0xE] = 0xb;
-            goto adc_mux_init;
-        case 0x24:
-            pNode->node.name = "AdcMux-2";
-            pNode->node.au32F00_param[0x9] = 0x20010b;
-            pNode->node.au32F00_param[0xD] = 0x80000000;
-            pNode->node.au32F00_param[0xE] = 0xb;
         adc_mux_init:
             /* N = 0~3 */
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x18, 0x19, 0x1A, 0x1B);
@@ -722,6 +725,27 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.au32F02_param[9] = RT_MAKE_U32_FROM_U8(0x16, 0x17, 0xB, 0);
             pNode->node.au32F02_param[10] = RT_MAKE_U32_FROM_U8(0x16, 0x17, 0xB, 0);
             pNode->node.au32F02_param[11] = RT_MAKE_U32_FROM_U8(0x16, 0x17, 0xB, 0);
+            break;
+        case 0x24:
+            pNode->node.name = "AdcMux-2";
+            pNode->node.au32F00_param[0x9] = 0x20010b;
+            pNode->node.au32F00_param[0xD] = 0x80000000;
+            pNode->node.au32F00_param[0xE] = 0xb;
+            /* N = 0~3 */
+            pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x18, 0x19, 0x1A, 0x1B);
+            pNode->node.au32F02_param[1] = RT_MAKE_U32_FROM_U8(0x18, 0x19, 0x1A, 0x1B);
+            pNode->node.au32F02_param[2] = RT_MAKE_U32_FROM_U8(0x18, 0x19, 0x1A, 0x1B);
+            pNode->node.au32F02_param[3] = RT_MAKE_U32_FROM_U8(0x18, 0x19, 0x1A, 0x1B);
+            /* N = 4~7 */
+            pNode->node.au32F02_param[4] = RT_MAKE_U32_FROM_U8(0x1C, 0x1D, 0x14, 0x15);
+            pNode->node.au32F02_param[5] = RT_MAKE_U32_FROM_U8(0x1C, 0x1D, 0x14, 0x15);
+            pNode->node.au32F02_param[6] = RT_MAKE_U32_FROM_U8(0x1C, 0x1D, 0x14, 0x15);
+            pNode->node.au32F02_param[7] = RT_MAKE_U32_FROM_U8(0x1C, 0x1D, 0x14, 0x15);
+            /* N = 8~11 */
+            pNode->node.au32F02_param[8] = RT_MAKE_U32_FROM_U8(0x16, 0x17, 0xB, 0x12);
+            pNode->node.au32F02_param[9] = RT_MAKE_U32_FROM_U8(0x16, 0x17, 0xB, 0x12);
+            pNode->node.au32F02_param[10] = RT_MAKE_U32_FROM_U8(0x16, 0x17, 0xB, 0x12);
+            pNode->node.au32F02_param[11] = RT_MAKE_U32_FROM_U8(0x16, 0x17, 0xB, 0x12);
             break;
         /* PCBEEP */
         case 0x1D:
@@ -984,6 +1008,8 @@ static int codecGetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64
         *pResp = pState->pNodes[CODEC_NID(cmd)].port.u32F01_param;
     else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F01_param;
+    else if (codecIsAdcVolNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
     return VINF_SUCCESS;
 }
 
@@ -1006,6 +1032,8 @@ static int codecSetConSelectCtrl(struct CODECState *pState, uint32_t cmd, uint64
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].port.u32F01_param;
     else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adc.u32F01_param;
+    else if (codecIsAdcVolNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adcvol.u32F01_param;
     Assert((pu32Reg));
     if (pu32Reg)
         codecSetRegisterU8(pu32Reg, cmd, 0);
@@ -1031,8 +1059,9 @@ static int codecGetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F07_param;
     else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
-    else if (   codecIsReservedNode(pState, CODEC_NID(cmd))
-             && CODEC_NID(cmd) == 0x1b)
+    else if (codecIsPcbeepNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].pcbeep.u32F07_param;
+    else if (codecIsReservedNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     else
         AssertMsgFailed(("Unsupported"));
@@ -1059,8 +1088,11 @@ static int codecSetPinCtrl(struct CODECState *pState, uint32_t cmd, uint64_t *pR
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F07_param;
     else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F07_param;
+    else if (codecIsPcbeepNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].pcbeep.u32F07_param;
     else if (   codecIsReservedNode(pState, CODEC_NID(cmd))
-             && CODEC_NID(cmd) == 0x1b)
+             && CODEC_NID(cmd) == 0x1b
+             && pState->enmCodec == STAC9220_CODEC)
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F07_param;
     Assert((pu32Reg));
     if (pu32Reg)
@@ -1087,6 +1119,10 @@ static int codecGetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
     else if (codecIsVolKnobNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F08_param;
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
     else
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     return VINF_SUCCESS;
@@ -1112,6 +1148,10 @@ static int codecSetUnsolicitedEnabled(struct CODECState *pState, uint32_t cmd, u
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F08_param;
     else if (codecIsVolKnobNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].volumeKnob.u32F08_param;
+    else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F08_param;
+    else if (codecIsDigOutPinNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F08_param;
     else
         AssertMsgFailed(("unsupported operation %x on node: %x\n", CODEC_VERB_CMD8(cmd), CODEC_NID(cmd)));
     Assert(pu32Reg);
@@ -1262,6 +1302,7 @@ static int codecSetDigitalConverter2(struct CODECState *pState, uint32_t cmd, ui
     return codecSetDigitalConverter(pState, cmd, 8, pResp);
 }
 
+/* F20 */
 static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -1277,6 +1318,49 @@ static int codecGetSubId(struct CODECState *pState, uint32_t cmd, uint64_t *pRes
         *pResp = pState->pNodes[CODEC_NID(cmd)].afg.u32F20_param;
     }
     return VINF_SUCCESS;
+}
+
+static int codecSetSubIdX(struct CODECState *pState, uint32_t cmd, uint8_t u8Offset)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
+    {
+        Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
+        return VINF_SUCCESS;
+    }
+    uint32_t *pu32Reg = NULL;
+    if (CODEC_NID(cmd) == 0x1 /* AFG */)
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].afg.u32F20_param;
+    Assert((pu32Reg));
+    if (pu32Reg)
+        codecSetRegisterU8(pu32Reg, cmd, u8Offset);
+    return VINF_SUCCESS;
+}
+/* 720 */
+static int codecSetSubId0 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    return codecSetSubIdX(pState, cmd, 0);
+}
+
+/* 721 */
+static int codecSetSubId1 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    return codecSetSubIdX(pState, cmd, 8);
+}
+/* 722 */
+static int codecSetSubId2 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    return codecSetSubIdX(pState, cmd, 16);
+}
+/* 723 */
+static int codecSetSubId3 (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    *pResp = 0;
+    return codecSetSubIdX(pState, cmd, 24);
 }
 
 static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
@@ -1318,6 +1402,12 @@ static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
     else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
+    else if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].spdifout.u32F05_param;
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].spdifin.u32F05_param;
+    else if (codecIsReservedNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].reserved.u32F05_param;
     return VINF_SUCCESS;
 }
 
@@ -1341,6 +1431,12 @@ static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digin.u32F05_param;
     else if (codecIsAdcNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].adc.u32F05_param;
+    else if (codecIsSpdifOutNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].spdifout.u32F05_param;
+    else if (codecIsSpdifInNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].spdifin.u32F05_param;
+    else if (codecIsReservedNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F05_param;
     Assert((pu32Reg));
     if (!pu32Reg)
         return VINF_SUCCESS;
@@ -1547,6 +1643,43 @@ static int codecSetVolumeKnobCtrl(struct CODECState *pState, uint32_t cmd, uint6
     return VINF_SUCCESS;
 }
 
+/* F17 */
+static int codecGetGPIOUnsolisted (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
+    {
+        Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
+        return VINF_SUCCESS;
+    }
+    *pResp = 0;
+    /* note: this is true for ALC885 */
+    if (CODEC_NID(cmd) == 0x1 /* AFG */)
+        *pResp = pState->pNodes[1].afg.u32F17_param;
+    return VINF_SUCCESS;
+}
+
+/* 717 */
+static int codecSetGPIOUnsolisted (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
+{
+    Assert((CODEC_CAD(cmd) == pState->id));
+    Assert((CODEC_NID(cmd) < pState->cTotalNodes));
+    if (CODEC_NID(cmd) >= pState->cTotalNodes)
+    {
+        Log(("HDAcodec: invalid node address %d\n", CODEC_NID(cmd)));
+        return VINF_SUCCESS;
+    }
+    uint32_t *pu32Reg = NULL;
+    *pResp = 0;
+    if (CODEC_NID(cmd) == 1 /* AFG */)
+        pu32Reg = &pState->pNodes[1].afg.u32F17_param;
+    Assert((pu32Reg));
+    if (pu32Reg)
+        codecSetRegisterU8(pu32Reg, cmd, 0);
+    return VINF_SUCCESS;
+}
+
 /* F1C */
 static int codecGetConfig (struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
@@ -1564,8 +1697,12 @@ static int codecGetConfig (struct CODECState *pState, uint32_t cmd, uint64_t *pR
         *pResp = pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
     else if (codecIsDigInPinNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].digin.u32F1c_param;
+    else if (codecIsPcbeepNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].pcbeep.u32F1c_param;
     else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         *pResp = pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
+    else if (codecIsReservedNode(pState, CODEC_NID(cmd)))
+        *pResp = pState->pNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
     return VINF_SUCCESS;
 }
 static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint8_t u8Offset)
@@ -1586,8 +1723,9 @@ static int codecSetConfigX(struct CODECState *pState, uint32_t cmd, uint8_t u8Of
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].digout.u32F1c_param;
     else if (codecIsCdNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].cdnode.u32F1c_param;
-    else if (   CODEC_NID(cmd) == 0x1B
-             && pState->enmCodec == STAC9220_CODEC)
+    else if (codecIsPcbeepNode(pState, CODEC_NID(cmd)))
+        pu32Reg = &pState->pNodes[CODEC_NID(cmd)].pcbeep.u32F1c_param;
+    else if (codecIsReservedNode(pState, CODEC_NID(cmd)))
         pu32Reg = &pState->pNodes[CODEC_NID(cmd)].reserved.u32F1c_param;
     Assert((pu32Reg));
     if (pu32Reg)
@@ -1665,6 +1803,10 @@ static CODECVERB CODECVERBS[] =
     {0x00070D00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter1   },
     {0x00070E00, CODEC_VERB_8BIT_CMD , codecSetDigitalConverter2   },
     {0x000F2000, CODEC_VERB_8BIT_CMD , codecGetSubId               },
+    {0x00072000, CODEC_VERB_8BIT_CMD , codecSetSubId0              },
+    {0x00072100, CODEC_VERB_8BIT_CMD , codecSetSubId1              },
+    {0x00072200, CODEC_VERB_8BIT_CMD , codecSetSubId2              },
+    {0x00072300, CODEC_VERB_8BIT_CMD , codecSetSubId3              },
     {0x0007FF00, CODEC_VERB_8BIT_CMD , codecReset                  },
     {0x000F0500, CODEC_VERB_8BIT_CMD , codecGetPowerState          },
     {0x00070500, CODEC_VERB_8BIT_CMD , codecSetPowerState          },
@@ -1672,6 +1814,8 @@ static CODECVERB CODECVERBS[] =
     {0x00070C00, CODEC_VERB_8BIT_CMD , codecSetEAPD_BTLEnabled     },
     {0x000F0F00, CODEC_VERB_8BIT_CMD , codecGetVolumeKnobCtrl      },
     {0x00070F00, CODEC_VERB_8BIT_CMD , codecSetVolumeKnobCtrl      },
+    {0x000F1700, CODEC_VERB_8BIT_CMD , codecGetGPIOUnsolisted      },
+    {0x00071700, CODEC_VERB_8BIT_CMD , codecSetGPIOUnsolisted      },
     {0x000F1C00, CODEC_VERB_8BIT_CMD , codecGetConfig              },
     {0x00071C00, CODEC_VERB_8BIT_CMD , codecSetConfig0             },
     {0x00071D00, CODEC_VERB_8BIT_CMD , codecSetConfig1             },
@@ -1799,7 +1943,10 @@ int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
 int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
 {
     SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * pCodecState->cTotalNodes);
-    codecToAudVolume(&pCodecState->pNodes[pCodecState->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
+    if (codecIsDacNode(pCodecState, pCodecState->u8DacLineOut))
+        codecToAudVolume(&pCodecState->pNodes[pCodecState->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
+    else if (codecIsSpdifOutNode(pCodecState, pCodecState->u8DacLineOut))
+        codecToAudVolume(&pCodecState->pNodes[pCodecState->u8DacLineOut].spdifout.B_params, AUD_MIXER_VOLUME);
     codecToAudVolume(&pCodecState->pNodes[pCodecState->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
     return VINF_SUCCESS;
 }
