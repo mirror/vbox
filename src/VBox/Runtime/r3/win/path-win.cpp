@@ -300,6 +300,12 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
 }
 
 
+RTR3DECL(int) RTReadLink(const char *pszPath, char *pszDestLink, size_t cchDestLink)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
@@ -495,6 +501,12 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
 
     LogFlow(("RTPathRename(%p:{%s}, %p:{%s}, %#x): returns %Rrc\n", pszSrc, pszSrc, pszDst, pszDst, fRename, rc));
     return rc;
+}
+
+
+RTR3DECL(int) RTSymlink(const char *pszNewPath, const char *pszOldPath)
+{
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
