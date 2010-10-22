@@ -1770,6 +1770,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                    pCallbacks, pStorage,
                                    nullParent,
                                    pProgress);
+        if (FAILED(rc)) throw rc;
 
         /* Advance to the next operation. */
         stack.pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), RTPathFilename(strSrcFilePath.c_str())).raw(),
