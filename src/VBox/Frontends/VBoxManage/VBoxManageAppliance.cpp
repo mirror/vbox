@@ -104,6 +104,7 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-scsitype",              'T', RTGETOPT_REQ_UINT32 },     // deprecated
     { "--type",                 'T', RTGETOPT_REQ_UINT32 },     // deprecated
     { "-type",                  'T', RTGETOPT_REQ_UINT32 },     // deprecated
+    { "--controller",           'C', RTGETOPT_REQ_STRING },
 };
 
 int handleImportAppliance(HandlerArg *arg)
