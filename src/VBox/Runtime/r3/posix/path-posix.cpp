@@ -508,8 +508,8 @@ RTR3DECL(int) RTReadLink(const char *pszPath, char *pszDestLink, size_t cchDestL
         rtPathFreeNative(pszNativePath, pszPath);
     }
 
-    LogFlow(("RTReadlink(%p:{%s}, pObjInfo=%p): returns %Rrc\n",
-             pszPath, pszPath, pObjInfo, rc));
+    LogFlow(("RTReadlink(%p:{%s}): returns %Rrc\n",
+             pszPath, pszPath, rc));
     return rc;
 }
 
