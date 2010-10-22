@@ -5695,8 +5695,8 @@ static HRESULT APIENTRY vboxWddmDDevSetDisplayMode(HANDLE hDevice, CONST D3DDDIA
                 Assert(hr == S_OK);
             }
             hr = S_OK;
-#endif
         }
+#endif
     }
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
