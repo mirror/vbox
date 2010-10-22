@@ -1891,12 +1891,15 @@ static const struct {
     int32_t     iSlot;
     int32_t     iFunction;
 } PciSlotAssignments[] = {
+    /* Due to somewhat inflexible PCI bus configuration, ConsoleImpl hardcodes 0:5:0 as HDA address, so we shalln't put elsewhere */ 
+#if 0
     {
         "lan",      25, 0 /* LAN controller */
     },
     {
         "hda",      27, 0 /* High Definition Audio */
     },
+#endif
     {
         "i82801",   30, 0 /* Host Controller */
     },
