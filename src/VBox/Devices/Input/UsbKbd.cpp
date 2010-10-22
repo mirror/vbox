@@ -881,7 +881,6 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     uint8_t     u8HidCode;
     int         fKeyDown;
     bool        fHaveEvent = true;
-    unsigned    i;
 
     RTCritSectEnter(&pThis->CritSect);
 
