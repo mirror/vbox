@@ -36,6 +36,9 @@
 #include <iprt/string.h>
 #include "vector.h"
 
+#ifdef VBOX_WITH_LINUX_COMPILER_H
+# include <linux/compiler.h>
+#endif
 #include <linux/usbdevice_fs.h>
 
 #include <sys/types.h>
