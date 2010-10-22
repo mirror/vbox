@@ -3430,6 +3430,30 @@ endif
 TEMPLATE_VBOXMAINCLIENTDLL_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBOXMAINCLIENTEXE_LDFLAGS.darwin))
 
 
+
+#
+# Templates used for building the add-ons.
+#
+TEMPLATE_VBoxR3AddOn = For the ring-3 context addons.
+TEMPLATE_VBoxR3AddOn_EXTENDS = VBOXR3
+ifeq ($(KBUILD_TARGET),win)
+else
+ TEMPLATE_VBoxR3AddOn_CXXFLAGS = $(filter-out $(TEMPLATE_VBOX_CXXFLAGS), -fexceptions) -fno-exceptions
+ TEMPLATE_VBoxR3AddOn_CFLAGS   = $(filter-out $(TEMPLATE_VBOX_CFLAGS), -fexceptions -frtti) -fno-exceptions -fno-rtti
+endif
+TEMPLATE_VBoxR3AddOn_LIBS = \
+	$(TEMPLATE_LIBS_VBOXR3) \
+	$(LIB_RUNTIME) \
+	$(LIB_VMM)
+
+TEMPLATE_VBoxR0AddOn = For the ring-0 context addons.
+TEMPLATE_VBoxR0AddOn_EXTENDS = VBoxR0
+
+TEMPLATE_VBoxRcAddOn = For the raw-mode context addons.
+TEMPLATE_VBoxRcAddOn_EXTENDS = VBoxRc
+
+
+
 #
 # Qt 4
 # Qt 4
