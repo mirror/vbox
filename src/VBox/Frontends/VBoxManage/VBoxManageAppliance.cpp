@@ -106,7 +106,7 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "-type",                  'T', RTGETOPT_REQ_UINT32 },     // deprecated
 #if 0 /* Changing the controller is fully valid, but the current design on how
          the params are evaluated here doesn't allow two parameter for one
-         unit. The target disk path is more importend. I leave it for future
+         unit. The target disk path is more important. I leave it for future
          improvments. */
     { "--controller",           'C', RTGETOPT_REQ_STRING },
 #endif
@@ -631,7 +631,7 @@ int handleImportAppliance(HandlerArg *arg)
                                 }
 #if 0 /* Changing the controller is fully valid, but the current design on how
          the params are evaluated here doesn't allow two parameter for one
-         unit. The target disk path is more importend. I leave it for future
+         unit. The target disk path is more important I leave it for future
          improvments. */
                                 Utf8StrFmt strTypeArg("controller%u", a);
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
