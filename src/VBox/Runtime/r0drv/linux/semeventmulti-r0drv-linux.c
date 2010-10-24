@@ -158,6 +158,7 @@ RTDECL(int) RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
     ASMAtomicAndU32(&pThis->fStateAndGen, RTSEMEVENTMULTILNX_GEN_MASK);
     Assert(!waitqueue_active(&pThis->Head));
     wake_up_all(&pThis->Head);
+    rtR0SemEventMultiLnxRelease(pThis);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSemEventMultiDestroy);
