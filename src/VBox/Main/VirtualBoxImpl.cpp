@@ -1138,7 +1138,10 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
         url = firmwareDesc[i].url;
         /** @todo: account for version in the URL */
         if (aUrl != NULL)
-            Utf8Str(firmwareDesc[i].url).cloneTo(aUrl);
+        {
+            Utf8Str strUrl(firmwareDesc[i].url);
+            strUrl.cloneTo(aUrl);
+        }
         *aResult = FALSE;
 
         /* Assume single record per firmware type */
@@ -3957,7 +3960,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                         Assert(semId >= 0 && semId < cnt);
                         if (semId >= 0 && semId < cnt)
                         {
-#ifdef DEBUG
+#if 0//def DEBUG
                             {
                                 AutoReadLock machineLock(machines[semId] COMMA_LOCKVAL_SRC_POS);
                                 LogFlowFunc(("released mutex: machine='%ls'\n",
@@ -3986,7 +3989,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                                 Assert(i >= 0 && i < cnt);
                                 if (i >= 0 && i < cnt)
                                 {
-#ifdef DEBUG
+#if 0//def DEBUG
                                     {
                                         AutoReadLock machineLock(machines[semId] COMMA_LOCKVAL_SRC_POS);
                                         LogFlowFunc(("mutex owner dead: machine='%ls'\n",
@@ -4027,8 +4030,8 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                     cnt = 0;
                     machines.clear();
 
-                    for (MachinesOList::iterator it = that->m->llMachines.begin();
-                         it != that->m->llMachines.end(); ++ it)
+                    for (MachinesOList::iterator it = that->m->allMachines.begin();
+                         it != that->m->allMachines.end(); ++ it)
                     {
                         /// @todo handle situations with more than 64 objects
                         AssertMsg(cnt <= 64 /* according to PMREF */,
@@ -4065,8 +4068,8 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                     /* obtain a new set of spawned machines */
                     spawnedMachines.clear();
 
-                    for (MachinesOList::iterator it = that->m->llMachines.begin();
-                         it != that->m->llMachines.end(); ++ it)
+                    for (MachinesOList::iterator it = that->m->allMachines.begin();
+                         it != that->m->allMachines.end(); ++ it)
                     {
                         if ((*it)->isSessionSpawning())
                             spawnedMachines.push_back(*it);
