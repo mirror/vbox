@@ -976,7 +976,7 @@ testsuite-packing:
 		VBOX_WITH_TESTSUITE_PACKING.solaris.x86=1 \
 		VBOX_WITH_TESTSUITE_PACKING.win.amd64=1 \
 		VBOX_WITH_TESTSUITE_PACKING.win.x86=1 \
-		-C src/tests/testsuite \
+		-C src/VBox/Testsuite \
 		$(PATH_OUT)/VBoxTestSuite.zip
 
 .PHONY: \
