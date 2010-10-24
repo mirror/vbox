@@ -344,6 +344,14 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMilli
     }
 }
 
+RTDECL(int) RTSemMutexRequestNoResumeDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+//    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+//    return rtSemMutexRequestNoResume(hMutexSem, cMillies, &SrcPos);
+    return RTSemMutexRequestNoResume(hMutexSem, cMillies);
+}
+
+
 RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem)
 {
     /*
@@ -357,7 +365,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX hMutexSem)
 }
 
 
-RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
+RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem)
 {
     /*
      * Unlock mutex semaphore.

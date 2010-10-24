@@ -88,7 +88,7 @@ typedef struct RTSEMSPINMUTEXINTERNAL
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-//#define RTSEMSPINMUTEX_INT_FLAGS_MUST
+/*#define RTSEMSPINMUTEX_INT_FLAGS_MUST*/
 
 /** Validates the handle, returning if invalid. */
 #define RTSEMSPINMUTEX_VALIDATE_RETURN(pThis) \
