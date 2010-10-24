@@ -9787,10 +9787,10 @@ HRESULT SessionMachine::init(Machine *aMachine)
     Utf8Str ipcSem = Utf8StrFmt("\\SEM32\\VBOX\\VM\\{%RTuuid}",
                                 aMachine->mData->mUuid.raw());
     mIPCSemName = ipcSem;
-    APIRET arc = ::DosCreateMutexSem((PSZ)ipcSem.raw(), &mIPCSem, 0, FALSE);
+    APIRET arc = ::DosCreateMutexSem((PSZ)ipcSem.c_str(), &mIPCSem, 0, FALSE);
     ComAssertMsgRet(arc == NO_ERROR,
                     ("Cannot create IPC mutex '%s', arc=%ld",
-                     ipcSem.raw(), arc),
+                     ipcSem.c_str(), arc),
                     E_FAIL);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 # ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
