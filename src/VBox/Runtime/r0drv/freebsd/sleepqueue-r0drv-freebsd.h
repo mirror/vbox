@@ -109,6 +109,8 @@ DECLINLINE(int) rtR0SemBsdWaitInit(PRTR0SEMBSDSLEEP pWait, uint32_t fFlags, uint
                 u64Now = RTTimeSystemNanoTS();
                 if (u64Now >= uTimeout)
                     return VERR_TIMEOUT;
+
+                uTimeout -= u64Now; /* Get a relative value. */
             }
         }
     }
@@ -116,11 +118,21 @@ DECLINLINE(int) rtR0SemBsdWaitInit(PRTR0SEMBSDSLEEP pWait, uint32_t fFlags, uint
     if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
     {
         pWait->fIndefinite      = false;
+
+#if 0
+        struct timeval tv;
+
+        tv.tv_sec = uTimeout / UINT64_C(1000000000);
+        tv.tv_usec = (uTimeout % UINT64_C(1000000000)) / UINT64_C(1000);
+
+        pWait->iTimeout = tvtohz(&tv);
+#else
         uint64_t cTicks = ASMMultU64ByU32DivByU32(uTimeout, hz, UINT32_C(1000000000));
         if (cTicks >= INT_MAX)
             fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
         else
             pWait->iTimeout     = (int)cTicks;
+#endif
     }
 
     if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
