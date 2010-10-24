@@ -2162,7 +2162,7 @@ STDMETHODIMP Machine::COMGETTER(VRDEServer)(IVRDEServer **vrdeServer)
 
     return S_OK;
 #else
-    NOREF(vrde);
+    NOREF(vrdeServer);
     ReturnComNotImplemented();
 #endif
 }
