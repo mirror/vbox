@@ -32,14 +32,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-freebsd-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/semaphore.h>
-#include <iprt/alloc.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include <iprt/spinlock.h>
+#include <iprt/lockvalidator.h>
+#include <iprt/mem.h>
 
+#include "sleepqueue-r0drv-freebsd.h"
 #include "internal/magics.h"
 
 
@@ -53,14 +55,10 @@ typedef struct RTSEMEVENTINTERNAL
 {
     /** Magic value (RTSEMEVENT_MAGIC). */
     uint32_t volatile   u32Magic;
-    /** The number of waiting threads. */
-    uint32_t volatile   cWaiters;
-    /** Set if the event object is signaled. */
-    uint8_t volatile    fSignaled;
-    /** The number of threads in the process of waking up. */
-    uint32_t volatile   cWaking;
-    /** Spinlock protecting this structure. */
-    RTSPINLOCK          hSpinLock;
+    /** The object status - !0 when signaled and 0 when reset. */
+    uint32_t volatile   fState;
+    /** Reference counter. */
+    uint32_t volatile   cRefs;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
 
@@ -82,217 +80,172 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
         return VERR_NO_MEMORY;
 
     pThis->u32Magic  = RTSEMEVENT_MAGIC;
-    pThis->cWaiters  = 0;
-    pThis->cWaking   = 0;
-    pThis->fSignaled = 0;
-    int rc = RTSpinlockCreate(&pThis->hSpinLock);
-    if (RT_SUCCESS(rc))
-    {
-        *phEventSem = pThis;
-        return VINF_SUCCESS;
-    }
+    pThis->cRefs     = 1;
+    pThis->fState    = 0;
 
-    RTMemFree(pThis);
-    return rc;
+    *phEventSem = pThis;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Retains a reference to the event semaphore.
+ *
+ * @param   pThis       The event semaphore.
+ */
+DECLINLINE(void) rtR0SemEventBsdRetain(PRTSEMEVENTINTERNAL pThis)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs < 100000); NOREF(cRefs);
+}
+
+
+/**
+ * Releases a reference to the event semaphore.
+ *
+ * @param   pThis       The event semaphore.
+ */
+DECLINLINE(void) rtR0SemEventBsdRelease(PRTSEMEVENTINTERNAL pThis)
+{
+    if (RT_UNLIKELY(ASMAtomicDecU32(&pThis->cRefs) == 0))
+        RTMemFree(pThis);
 }
 
 
 RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem)
 {
+    /*
+     * Validate input.
+     */
     PRTSEMEVENTINTERNAL pThis = hEventSem;
-    RTSPINLOCKTMP       Tmp   = RTSPINLOCKTMP_INITIALIZER;
-
     if (pThis == NIL_RTSEMEVENT)
         return VINF_SUCCESS;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    Assert(pThis->cRefs > 0);
 
-    RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
-
-    ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
-    if (pThis->cWaiters > 0)
-    {
-        /* abort waiting thread, last man cleans up. */
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
-        sleepq_lock(pThis);
-        sleepq_broadcast(pThis, SLEEPQ_CONDVAR, 0, 0);
-        sleepq_release(pThis);
-        RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-    }
-    else if (pThis->cWaking)
-        /* the last waking thread is gonna do the cleanup */
-        RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-    else
-    {
-        RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-        RTSpinlockDestroy(pThis->hSpinLock);
-        RTMemFree(pThis);
-    }
-
+    /*
+     * Invalidate it and signal the object just in case.
+     */
+    ASMAtomicWriteU32(&pThis->u32Magic, ~RTSEMEVENT_MAGIC);
+    ASMAtomicWriteU32(&pThis->fState, 0);
+    rtR0SemBsdBroadcast(pThis);
+    rtR0SemEventBsdRelease(pThis);
     return VINF_SUCCESS;
 }
 
 
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 {
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
+    /*
+     * Validate input.
+     */
     PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC,
-                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
-                    VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
+    rtR0SemEventBsdRetain(pThis);
 
-    RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
-
-    if (pThis->cWaiters > 0)
-    {
-        ASMAtomicDecU32(&pThis->cWaiters);
-        ASMAtomicIncU32(&pThis->cWaking);
-        sleepq_lock(pThis);
-        int fWakeupSwapProc = sleepq_signal(pThis, SLEEPQ_CONDVAR, 0, 0);
-        sleepq_release(pThis);
-        if (fWakeupSwapProc)
-            kick_proc0();
-    }
-    else
-        ASMAtomicXchgU8(&pThis->fSignaled, true);
-
-    RTSpinlockRelease(pThis->hSpinLock, &Tmp);
+    /*
+     * Signal the event object.
+     */
+    ASMAtomicWriteU32(&pThis->fState, 1);
+    rtR0SemBsdSignal(pThis);
+    rtR0SemEventBsdRelease(pThis);
     return VINF_SUCCESS;
 }
 
-
-static int rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fInterruptible)
+/**
+ * Worker for RTSemEventWaitEx and RTSemEventWaitExDebug.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The event semaphore.
+ * @param   fFlags          See RTSemEventWaitEx.
+ * @param   uTimeout        See RTSemEventWaitEx.
+ * @param   pSrcPos         The source code position of the wait.
+ */
+static int rtR0SemEventWait(PRTSEMEVENTINTERNAL pThis, uint32_t fFlags, uint64_t uTimeout,
+                            PCRTLOCKVALSRCPOS pSrcPos)
 {
     int rc;
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PRTSEMEVENTINTERNAL pThis = (PRTSEMEVENTINTERNAL)hEventSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC,
-                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
-                    VERR_INVALID_HANDLE);
 
-    RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
+    /*
+     * Validate the input.
+     */
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENT_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+    rtR0SemEventBsdRetain(pThis);
 
-    if (pThis->fSignaled)
-    {
-        Assert(!pThis->cWaiters);
-        ASMAtomicXchgU8(&pThis->fSignaled, false);
+    /*
+     * Try grab the event without setting up the wait.
+     */
+    if (ASMAtomicCmpXchgU32(&pThis->fState, 0, 1))
         rc = VINF_SUCCESS;
-    }
     else
     {
-        if (cMillies == 0)
-            rc = VERR_TIMEOUT;
-        else
+        /*
+         * We have to wait.
+         */
+        RTR0SEMBSDSLEEP Wait;
+        rc = rtR0SemBsdWaitInit(&Wait, fFlags, uTimeout, pThis);
+        if (RT_SUCCESS(rc))
         {
-            ASMAtomicIncU32(&pThis->cWaiters);
-
-            int fFlags = SLEEPQ_CONDVAR;
-
-            if (fInterruptible)
-                fFlags |= SLEEPQ_INTERRUPTIBLE;
-
-            sleepq_lock(pThis);
-            sleepq_add(pThis, NULL, "IPRT Event Semaphore", fFlags, 0);
-
-            if (cMillies != RT_INDEFINITE_WAIT)
+            for (;;)
             {
-                /*
-                 * Translate milliseconds into ticks and go to sleep.
-                 */
-                struct timeval tv;
-
-                tv.tv_sec = cMillies / 1000;
-                tv.tv_usec = (cMillies % 1000) * 1000;
-
-                sleepq_set_timeout(pThis, tvtohz(&tv));
-
-                RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-
-                if (fInterruptible)
-                    rc = SLEEPQ_TIMEDWAIT_SIG(pThis);
-                else
-                    rc = SLEEPQ_TIMEDWAIT(pThis);
-            }
-            else
-            {
-                RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-
-                if (fInterruptible)
-                    rc = SLEEPQ_WAIT_SIG(pThis);
+                /* The destruction test. */
+                if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENT_MAGIC))
+                    rc = VERR_SEM_DESTROYED;
                 else
                 {
-                    rc = 0;
-                    SLEEPQ_WAIT(pThis);
-                }
-            }
+                    rtR0SemBsdWaitPrepare(&Wait);
 
-            RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
-
-            switch (rc)
-            {
-                case 0:
-                    if (pThis->u32Magic == RTSEMEVENT_MAGIC)
-                    {
-                        ASMAtomicDecU32(&pThis->cWaking);
+                    /* Check the exit conditions. */
+                    if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENT_MAGIC))
+                        rc = VERR_SEM_DESTROYED;
+                    else if (ASMAtomicCmpXchgU32(&pThis->fState, 0, 1))
                         rc = VINF_SUCCESS;
-                    }
+                    else if (rtR0SemBsdWaitHasTimedOut(&Wait))
+                        rc = VERR_TIMEOUT;
+                    else if (rtR0SemBsdWaitWasInterrupted(&Wait))
+                        rc = VERR_INTERRUPTED;
                     else
                     {
-                        rc = VERR_SEM_DESTROYED; /** @todo this isn't necessarily correct, we've
-                                                  * could've woken up just before destruction... */
-                        if (!ASMAtomicDecU32(&pThis->cWaking))
-                        {
-                            /* The event was destroyed, as the last thread do the cleanup.
-                               we don't actually know whether */
-                            RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-                            RTSpinlockDestroy(pThis->hSpinLock);
-                            RTMemFree(pThis);
-                            return rc;
-                        }
+                        /* Do the wait and then recheck the conditions. */
+                        rtR0SemBsdWaitDoIt(&Wait);
+                        continue;
                     }
-                    break;
-
-                case EWOULDBLOCK:
-                    Assert(cMillies != RT_INDEFINITE_WAIT);
-                    if (pThis->cWaiters > 0)
-                        ASMAtomicDecU32(&pThis->cWaiters);
-                    rc = VERR_TIMEOUT;
-                    break;
-
-                case EINTR:
-                case ERESTART:
-                    Assert(fInterruptible);
-                    if (pThis->cWaiters > 0)
-                        ASMAtomicDecU32(&pThis->cWaiters);
-                    rc = VERR_INTERRUPTED;
-                    break;
-
-                default:
-                    AssertMsgFailed(("sleepq_* -> %d\n", rc));
-                    rc = VERR_GENERAL_FAILURE;
-                    break;
+                }
+                break;
             }
+
+            rtR0SemBsdWaitDelete(&Wait);
         }
     }
 
-    RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-
+    rtR0SemEventBsdRelease(pThis);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
+#undef RTSemEventWaitEx
+RTDECL(int)  RTSemEventWaitEx(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout)
 {
-    return rtSemEventWait(hEventSem, cMillies, false /* not interruptible */);
+#ifndef RTSEMEVENT_STRICT
+    return rtR0SemEventWait(hEventSem, fFlags, uTimeout, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtR0SemEventWait(hEventSem, fFlags, uTimeout, &SrcPos);
+#endif
 }
+RT_EXPORT_SYMBOL(RTSemEventWaitEx);
 
 
-RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
+RTDECL(int)  RTSemEventWaitExDebug(RTSEMEVENT hEventSem, uint32_t fFlags, uint64_t uTimeout,
+                                   RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return rtSemEventWait(hEventSem, cMillies, true /* interruptible */);
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtR0SemEventWait(hEventSem, fFlags, uTimeout, &SrcPos);
 }
+RT_EXPORT_SYMBOL(RTSemEventWaitExDebug);
 
 
 RTDECL(uint32_t) RTSemEventGetResolution(void)

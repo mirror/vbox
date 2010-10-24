@@ -127,6 +127,10 @@ SRCS += \
 	RTMpGetArraySize-generic.c \
 	RTRandAdvCreateSystemFaster-generic.c \
 	RTRandAdvCreateSystemTruer-generic.c \
+    RTSemEventWait-2-ex-generic.c \
+    RTSemEventWaitNoResume-2-ex-generic.c \
+    RTSemEventMultiWait-2-ex-generic.c \
+    RTSemEventMultiWaitNoResume-2-ex-generic.c \
 	RTTimerCreate-generic.c \
 	timer-generic.c \
 	mppresent-generic.c
