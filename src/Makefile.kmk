@@ -25,7 +25,6 @@ if defined(VBOX_ONLY_ADDITIONS)
 
 else if defined(VBOX_ONLY_TESTSUITE)
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
- include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
 
 else if defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk

@@ -33,6 +33,7 @@ else ifdef VBOX_ONLY_TESTSUITE
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/HostDrivers/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Testsuite/Makefile.kmk
 
 else ifdef VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
@@ -71,6 +72,9 @@ else
  endif
  ifdef VBOX_WITH_ADDITIONS
   include $(PATH_SUB_CURRENT)/Additions/Makefile.kmk
+ endif
+ ifdef VBOX_WITH_TESTSUITE
+  include $(PATH_SUB_CURRENT)/TestSuite/Makefile.kmk
  endif
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
@@ -133,9 +137,14 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
   SUBDIRS += Additions
  endif
 
+ ifdef VBOX_WITH_TESTSUITE
+  SUBDIRS += Testsuite
+ endif
+
  SUBDIRS += \
 	Frontends \
 	NetworkServices
+
 
  # This must be the last one.
  ifdef VBOX_WITH_INSTALLER
