@@ -366,12 +366,12 @@ static void *VBoxServiceClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, 
             if (RT_SUCCESS(rc))
             {
                 size_t cbPM = strlen(pszLocale) + 1;
-                APIRET rc = DosAllocSharedMem(&pvPM, NULL, cbPM, OBJ_GIVEABLE | OBJ_GETTABLE | OBJ_TILE | PAG_READ | PAG_WRITE | PAG_COMMIT);
-                if (rc == NO_ERROR)
+                APIRET orc = DosAllocSharedMem(&pvPM, NULL, cbPM, OBJ_GIVEABLE | OBJ_GETTABLE | OBJ_TILE | PAG_READ | PAG_WRITE | PAG_COMMIT);
+                if (orc == NO_ERROR)
                     memcpy(pvPM, pszLocale, cbPM);
                 else
                 {
-                    VBoxServiceError("DosAllocSharedMem(,,%#x,,) -> %ld\n", cb + sizeof(CLIPHEADER), rc);
+                    VBoxServiceError("DosAllocSharedMem(,,%#x,,) -> %ld\n", cb + sizeof(CLIPHEADER), orc);
                     pvPM = NULL;
                 }
                 RTStrFree(pszLocale);
