@@ -307,7 +307,7 @@ int main(int argc, char **argv)
                     uint64_t u64StartSys = RTTimeSystemNanoTS();
                     uint64_t u64Start    = RTTimeNanoTS();
                     int rcX = SUPSemEventWaitNoResume(pSession, hEvent, cMs);
-                    if (rc == VERR_TIMEOUT)
+                    if (rcX != VERR_TIMEOUT)
                         RTTestFailed(hTest, "%Rrc j=%u cMs=%u", rcX, j, cMs);
                     uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
                     uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
@@ -350,7 +350,7 @@ int main(int argc, char **argv)
                     uint64_t u64StartSys = RTTimeSystemNanoTS();
                     uint64_t u64Start    = RTTimeNanoTS();
                     int rcX = SUPSemEventMultiWaitNoResume(pSession, hEvent, cMs);
-                    if (rc == VERR_TIMEOUT)
+                    if (rcX != VERR_TIMEOUT)
                         RTTestFailed(hTest, "%Rrc j=%u cMs=%u", rcX, j, cMs);
                     uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
                     uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
@@ -401,7 +401,7 @@ int main(int argc, char **argv)
                     uint64_t u64StartSys = RTTimeSystemNanoTS();
                     uint64_t u64Start    = RTTimeNanoTS();
                     int rcX = SUPSemEventWaitNsRelIntr(pSession, hEvent, cNs);
-                    if (rc == VERR_TIMEOUT)
+                    if (rcX != VERR_TIMEOUT)
                         RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
                     uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
                     uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
@@ -445,7 +445,7 @@ int main(int argc, char **argv)
                     uint64_t u64StartSys = RTTimeSystemNanoTS();
                     uint64_t u64Start    = RTTimeNanoTS();
                     int rcX = SUPSemEventMultiWaitNsRelIntr(pSession, hEvent, cNs);
-                    if (rc == VERR_TIMEOUT)
+                    if (rcX != VERR_TIMEOUT)
                         RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
                     uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
                     uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
@@ -490,7 +490,7 @@ int main(int argc, char **argv)
                     uint64_t u64Start      = RTTimeNanoTS();
                     uint64_t uAbsDeadline  = (fGip ? u64Start : u64StartSys) + cNs;
                     int rcX = SUPSemEventWaitNsAbsIntr(pSession, hEvent, uAbsDeadline);
-                    if (rc == VERR_TIMEOUT)
+                    if (rcX != VERR_TIMEOUT)
                         RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
                     uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
                     uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
@@ -536,7 +536,7 @@ int main(int argc, char **argv)
                     uint64_t u64Start      = RTTimeNanoTS();
                     uint64_t uAbsDeadline  = (fGip ? u64Start : u64StartSys) + cNs;
                     int rcX = SUPSemEventMultiWaitNsAbsIntr(pSession, hEvent, uAbsDeadline);
-                    if (rc == VERR_TIMEOUT)
+                    if (rcX != VERR_TIMEOUT)
                         RTTestFailed(hTest, "%Rrc j=%u cNs=%u", rcX, j, cNs);
                     uint64_t cNsElapsedSys = RTTimeSystemNanoTS() - u64StartSys;
                     uint64_t cNsElapsed    = RTTimeNanoTS()       - u64Start;
