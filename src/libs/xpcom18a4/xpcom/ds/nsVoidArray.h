@@ -375,7 +375,11 @@ public:
   PRBool EnumerateBackwards(nsVoidArrayEnumFunc aFunc, void* aData);
 
 private:
+#ifdef RT_OS_OS2 /* shut up a million warnings */
+  typedef PRUint32 PtrBits;
+#else
   typedef PRUint64 PtrBits;
+#endif
 
   PRBool HasSingleChild() const
   {
