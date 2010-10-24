@@ -39,6 +39,9 @@
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/un.h>
+# ifndef SHUT_RDWR /* OS/2 */
+#  define SHUT_RDWR 3
+# endif
 #endif /* !RT_OS_WINDOWS */
 
 
