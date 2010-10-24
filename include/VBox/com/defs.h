@@ -37,22 +37,27 @@
 
 #if defined (RT_OS_OS2)
 
-#if defined(RT_MAX) && RT_MAX != 22
-# error RT_MAX already defined by <iprt/cdefs.h>! Make sure <VBox/com/defs.h> \
-        is included before it.
-#endif
+# if defined(RT_MAX) && RT_MAX != 22
+#  undef RT_MAX
+#  define REDEFINE_RT_MAX
+# endif   
+# undef RT_MAX
 
 /* Make sure OS/2 Toolkit headers are pulled in to have BOOL/ULONG/etc. typedefs
- * already defined in order to be able to redefine them using #define. It's
- * also important to do it before iprt/cdefs.h, otherwise we'll lose RT_MAX in
- * all code that uses COM Glue. */
-#define INCL_BASE
-#define INCL_PM
-#include <os2.h>
+ * already defined in order to be able to redefine them using #define. */
+# define INCL_BASE
+# define INCL_PM
+# include <os2.h>
 
 /* OS/2 Toolkit defines TRUE and FALSE */
-#undef FALSE
-#undef TRUE
+# undef FALSE
+# undef TRUE
+
+/* */
+# undef RT_MAX 
+# ifdef REDEFINE_RT_MAX
+#  define RT_MAX(Value1, Value2)                  ( (Value1) >= (Value2) ? (Value1) : (Value2) )
+# endif
 
 #endif /* defined (RT_OS_OS2) */
 
