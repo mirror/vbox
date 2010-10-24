@@ -32,15 +32,35 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-freebsd-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/semaphore.h>
-#include <iprt/alloc.h>
-#include <iprt/asm.h>
-#include <iprt/assert.h>
-#include <iprt/err.h>
-#include <iprt/spinlock.h>
 
+#include <iprt/assert.h>
+#include <iprt/asm.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/lockvalidator.h>
+
+#include "sleepqueue-r0drv-freebsd.h"
 #include "internal/magics.h"
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @name fStateAndGen values
+ * @{ */
+/** The state bit number. */
+#define RTSEMEVENTMULTIBSD_STATE_BIT        0
+/** The state mask. */
+#define RTSEMEVENTMULTIBSD_STATE_MASK       RT_BIT_32(RTSEMEVENTMULTIBSD_STATE_BIT)
+/** The generation mask. */
+#define RTSEMEVENTMULTIBSD_GEN_MASK         ~RTSEMEVENTMULTIBSD_STATE_MASK
+/** The generation shift. */
+#define RTSEMEVENTMULTIBSD_GEN_SHIFT        1
+/** The initial variable value. */
+#define RTSEMEVENTMULTIBSD_STATE_GEN_INIT   UINT32_C(0xfffffffc)
+/** @}  */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -52,14 +72,12 @@ typedef struct RTSEMEVENTMULTIINTERNAL
 {
     /** Magic value (RTSEMEVENTMULTI_MAGIC). */
     uint32_t volatile   u32Magic;
-    /** The number of waiting threads. */
-    uint32_t volatile   cWaiters;
-    /** Set if the event object is signaled. */
-    uint8_t volatile    fSignaled;
-    /** The number of threads in the process of waking up. */
-    uint32_t volatile   cWaking;
-    /** Spinlock protecting this structure. */
-    RTSPINLOCK          hSpinLock;
+    /** The object state bit and generation counter.
+     * The generation counter is incremented every time the object is
+     * signalled. */
+    uint32_t volatile   fStateAndGen;
+    /** Reference counter. */
+    uint32_t volatile   cRefs;
 } RTSEMEVENTMULTIINTERNAL, *PRTSEMEVENTMULTIINTERNAL;
 
 
@@ -72,240 +90,229 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI phEventMultiSem)
 RTDECL(int)  RTSemEventMultiCreateEx(PRTSEMEVENTMULTI phEventMultiSem, uint32_t fFlags, RTLOCKVALCLASS hClass,
                                      const char *pszNameFmt, ...)
 {
-    AssertCompile(sizeof(RTSEMEVENTMULTIINTERNAL) > sizeof(void *));
-    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
-    AssertPtrReturn(phEventMultiSem, VERR_INVALID_POINTER);
+    PRTSEMEVENTMULTIINTERNAL pThis;
 
-    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAllocZ(sizeof(*pThis));
+    AssertReturn(!(fFlags & ~RTSEMEVENTMULTI_FLAGS_NO_LOCK_VAL), VERR_INVALID_PARAMETER);
+    pThis = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (pThis)
     {
-        pThis->u32Magic = RTSEMEVENTMULTI_MAGIC;
-        pThis->cWaiters = 0;
-        pThis->cWaking = 0;
-        pThis->fSignaled = 0;
-        int rc = RTSpinlockCreate(&pThis->hSpinLock);
-        if (RT_SUCCESS(rc))
-        {
-            *phEventMultiSem = pThis;
-            return VINF_SUCCESS;
-        }
+        pThis->u32Magic     = RTSEMEVENTMULTI_MAGIC;
+        pThis->fStateAndGen = RTSEMEVENTMULTIBSD_STATE_GEN_INIT;
+        pThis->cRefs        = 1;
 
-        RTMemFree(pThis);
-        return rc;
+        *phEventMultiSem = pThis;
+        return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
 }
 
 
-RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
+/**
+ * Retain a reference to the semaphore.
+ *
+ * @param   pThis       The semaphore.
+ */
+DECLINLINE(void) rtR0SemEventMultiBsdRetain(PRTSEMEVENTMULTIINTERNAL pThis)
 {
-    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
-    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs && cRefs < 100000);
+}
 
-    if (pThis == NIL_RTSEMEVENTMULTI)
-        return VINF_SUCCESS;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
 
-    RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
-    ASMAtomicIncU32(&pThis->u32Magic); /* make the handle invalid */
-    if (pThis->cWaiters > 0)
+/**
+ * Release a reference, destroy the thing if necessary.
+ *
+ * @param   pThis       The semaphore.
+ */
+DECLINLINE(void) rtR0SemEventMultiBsdRelease(PRTSEMEVENTMULTIINTERNAL pThis)
+{
+    if (RT_UNLIKELY(ASMAtomicDecU32(&pThis->cRefs) == 0))
     {
-        /* abort waiting thread, last man cleans up. */
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
-        sleepq_lock(pThis);
-        sleepq_broadcast(pThis, SLEEPQ_CONDVAR, 0, 0);
-        sleepq_release(pThis);
-        RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-    }
-    else if (pThis->cWaking)
-        /* the last waking thread is gonna do the cleanup */
-        RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-    else
-    {
-        RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-        RTSpinlockDestroy(pThis->hSpinLock);
+        Assert(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC);
         RTMemFree(pThis);
     }
+}
 
+
+RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI hEventMultiSem)
+{
+    /*
+     * Validate input.
+     */
+    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
+    if (pThis == NIL_RTSEMEVENTMULTI)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    Assert(pThis->cRefs > 0);
+
+    /*
+     * Invalidate it and signal the object just in case.
+     */
+    ASMAtomicWriteU32(&pThis->u32Magic, ~RTSEMEVENTMULTI_MAGIC);
+    ASMAtomicAndU32(&pThis->fStateAndGen, RTSEMEVENTMULTIBSD_GEN_MASK);
+    rtR0SemBsdBroadcast(pThis);
+    rtR0SemEventMultiBsdRelease(pThis);
     return VINF_SUCCESS;
 }
 
 
 RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
 {
-    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
+    uint32_t fNew;
+    uint32_t fOld;
+
+    /*
+     * Validate input.
+     */
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
-                    VERR_INVALID_HANDLE);
+    if (!pThis)
+        return VERR_INVALID_PARAMETER;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    rtR0SemEventMultiBsdRetain(pThis);
 
-    RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
-
-    ASMAtomicXchgU8(&pThis->fSignaled, true);
-    if (pThis->cWaiters > 0)
+    /*
+     * Signal the event object.  The cause of the parnoia here is racing to try
+     * deal with racing RTSemEventMultiSignal calls (should probably be
+     * forbidden, but it's relatively easy to handle).
+     */
+    do
     {
-        ASMAtomicXchgU32(&pThis->cWaking, pThis->cWaking + pThis->cWaiters);
-        ASMAtomicXchgU32(&pThis->cWaiters, 0);
-        sleepq_lock(pThis);
-        int fWakeupSwapProc = sleepq_signal(pThis, SLEEPQ_CONDVAR, 0, 0);
-        sleepq_release(pThis);
-        if (fWakeupSwapProc)
-            kick_proc0();
+        fNew = fOld = ASMAtomicUoReadU32(&pThis->fStateAndGen);
+        fNew += 1 << RTSEMEVENTMULTIBSD_GEN_SHIFT;
+        fNew |= RTSEMEVENTMULTIBSD_STATE_MASK;
     }
+    while (!ASMAtomicCmpXchgU32(&pThis->fStateAndGen, fNew, fOld));
 
-    RTSpinlockRelease(pThis->hSpinLock, &Tmp);
+    rtR0SemBsdBroadcast(pThis);
+    rtR0SemEventMultiBsdRelease(pThis);
     return VINF_SUCCESS;
 }
 
 
 RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 {
-    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
+    /*
+     * Validate input.
+     */
     PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
-                    VERR_INVALID_HANDLE);
+    if (!pThis)
+        return VERR_INVALID_PARAMETER;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    rtR0SemEventMultiBsdRetain(pThis);
 
-    RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
-    ASMAtomicXchgU8(&pThis->fSignaled, false);
-    RTSpinlockRelease(pThis->hSpinLock, &Tmp);
+    /*
+     * Reset it.
+     */
+    ASMAtomicAndU32(&pThis->fStateAndGen, ~RTSEMEVENTMULTIBSD_STATE_MASK);
+
+    rtR0SemEventMultiBsdRelease(pThis);
     return VINF_SUCCESS;
 }
 
 
-static int rtSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies, bool fInterruptible)
+/**
+ * Worker for RTSemEventMultiWaitEx and RTSemEventMultiWaitExDebug.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The event semaphore.
+ * @param   fFlags          See RTSemEventMultiWaitEx.
+ * @param   uTimeout        See RTSemEventMultiWaitEx.
+ * @param   pSrcPos         The source code position of the wait.
+ */
+static int rtR0SemEventMultiBsdWait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFlags, uint64_t uTimeout,
+                                    PCRTLOCKVALSRCPOS pSrcPos)
 {
-    int rc;
-    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PRTSEMEVENTMULTIINTERNAL pThis = (PRTSEMEVENTMULTIINTERNAL)hEventMultiSem;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC,
-                    ("pThis=%p u32Magic=%#x\n", pThis, pThis->u32Magic),
-                    VERR_INVALID_HANDLE);
+    uint32_t    fOrgStateAndGen;
+    int         rc;
 
-    RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
+    /*
+     * Validate the input.
+     */
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pThis->u32Magic == RTSEMEVENTMULTI_MAGIC, ("%p u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_PARAMETER);
+    AssertReturn(RTSEMWAIT_FLAGS_ARE_VALID(fFlags), VERR_INVALID_PARAMETER);
+    rtR0SemEventMultiBsdRetain(pThis);
 
-    if (pThis->fSignaled)
+    /*
+     * Is the event already signalled or do we have to wait?
+     */
+    fOrgStateAndGen = ASMAtomicUoReadU32(&pThis->fStateAndGen);
+    if (fOrgStateAndGen & RTSEMEVENTMULTIBSD_STATE_MASK)
         rc = VINF_SUCCESS;
     else
     {
-        if (cMillies == 0)
-            rc = VERR_TIMEOUT;
-        else
+        /*
+         * We have to wait.
+         */
+        RTR0SEMBSDSLEEP Wait;
+        rc = rtR0SemBsdWaitInit(&Wait, fFlags, uTimeout, pThis);
+        if (RT_SUCCESS(rc))
         {
-            ASMAtomicIncU32(&pThis->cWaiters);
-
-            int fFlags = SLEEPQ_CONDVAR;
-
-            if (fInterruptible)
-                fFlags |= SLEEPQ_INTERRUPTIBLE;
-
-            sleepq_lock(pThis);
-            sleepq_add(pThis, NULL, "IPRT Event Semaphore", fFlags, 0);
-
-            if (cMillies != RT_INDEFINITE_WAIT)
+            for (;;)
             {
-                /*
-                 * Translate milliseconds into ticks and go to sleep.
-                 */
-                struct timeval tv;
-
-                tv.tv_sec = cMillies / 1000;
-                tv.tv_usec = (cMillies % 1000) * 1000;
-
-                sleepq_set_timeout(pThis, tvtohz(&tv));
-
-                RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-
-                if (fInterruptible)
-                    rc = SLEEPQ_TIMEDWAIT_SIG(pThis);
-                else
-                    rc = SLEEPQ_TIMEDWAIT(pThis);
-            }
-            else
-            {
-                RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-
-                if (fInterruptible)
-                    rc = SLEEPQ_WAIT_SIG(pThis);
+                /* The destruction test. */
+                if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC))
+                    rc = VERR_SEM_DESTROYED;
                 else
                 {
-                    rc = 0;
-                    SLEEPQ_WAIT(pThis);
-                }
-            }
+                    rtR0SemBsdWaitPrepare(&Wait);
 
-            RTSpinlockAcquire(pThis->hSpinLock, &Tmp);
-
-            switch (rc)
-            {
-                case 0:
-                    if (pThis->u32Magic == RTSEMEVENTMULTI_MAGIC)
-                    {
-                        ASMAtomicDecU32(&pThis->cWaking);
+                    /* Check the exit conditions. */
+                    if (RT_UNLIKELY(pThis->u32Magic != RTSEMEVENTMULTI_MAGIC))
+                        rc = VERR_SEM_DESTROYED;
+                    else if (ASMAtomicUoReadU32(&pThis->fStateAndGen) != fOrgStateAndGen)
                         rc = VINF_SUCCESS;
-                    }
+                    else if (rtR0SemBsdWaitHasTimedOut(&Wait))
+                        rc = VERR_TIMEOUT;
+                    else if (rtR0SemBsdWaitWasInterrupted(&Wait))
+                        rc = VERR_INTERRUPTED;
                     else
                     {
-                        rc = VERR_SEM_DESTROYED; /** @todo this isn't necessarily correct, we've
-                                                  * could've woken up just before destruction... */
-                        if (!ASMAtomicDecU32(&pThis->cWaking))
-                        {
-                            /* The event was destroyed, as the last thread do the cleanup.
-                               we don't actually know whether */
-                            RTSpinlockRelease(pThis->hSpinLock, &Tmp);
-                            RTSpinlockDestroy(pThis->hSpinLock);
-                            RTMemFree(pThis);
-                            return rc;
-                        }
+                        /* Do the wait and then recheck the conditions. */
+                        rtR0SemBsdWaitDoIt(&Wait);
+                        continue;
                     }
-                    break;
-
-                case EWOULDBLOCK:
-                    Assert(cMillies != RT_INDEFINITE_WAIT);
-                    if (pThis->cWaiters > 0)
-                        ASMAtomicDecU32(&pThis->cWaiters);
-                    rc = VERR_TIMEOUT;
-                    break;
-
-                case EINTR:
-                case ERESTART:
-                    Assert(fInterruptible);
-                    if (pThis->cWaiters > 0)
-                        ASMAtomicDecU32(&pThis->cWaiters);
-                    rc = VERR_INTERRUPTED;
-                    break;
-
-                default:
-                    AssertMsgFailed(("sleepq_* -> %d\n", rc));
-                    rc = VERR_GENERAL_FAILURE;
-                    break;
+                }
+                break;
             }
+
+            rtR0SemBsdWaitDelete(&Wait);
         }
     }
 
-    RTSpinlockRelease(pThis->hSpinLock, &Tmp);
+    rtR0SemEventMultiBsdRelease(pThis);
     return rc;
 }
 
 
-RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
+#undef RTSemEventMultiWaitEx
+RTDECL(int)  RTSemEventMultiWaitEx(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout)
 {
-    return rtSemEventMultiWait(hEventMultiSem, cMillies, false /* not interruptible */);
+#ifndef RTSEMEVENT_STRICT
+    return rtR0SemEventMultiBsdWait(hEventMultiSem, fFlags, uTimeout, NULL);
+#else
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_NORMAL_API();
+    return rtR0SemEventMultiBsdWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
+#endif
 }
+RT_EXPORT_SYMBOL(RTSemEventMultiWaitEx);
 
 
-RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI hEventMultiSem, RTMSINTERVAL cMillies)
+RTDECL(int)  RTSemEventMultiWaitExDebug(RTSEMEVENTMULTI hEventMultiSem, uint32_t fFlags, uint64_t uTimeout,
+                                        RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return rtSemEventMultiWait(hEventMultiSem, cMillies, true /* interruptible */);
+    RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
+    return rtR0SemEventMultiBsdWait(hEventMultiSem, fFlags, uTimeout, &SrcPos);
 }
+RT_EXPORT_SYMBOL(RTSemEventMultiWaitExDebug);
 
 
 RTDECL(uint32_t) RTSemEventMultiGetResolution(void)
 {
-    return 1000000000 / hz;
+    return rtR0SemBsdWaitGetResolution();
 }
+RT_EXPORT_SYMBOL(RTSemEventMultiGetResolution);
 
