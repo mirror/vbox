@@ -27,6 +27,9 @@
 #include <errno.h>
 #ifndef RT_OS_WINDOWS
 # include <signal.h>
+# ifdef RT_OS_OS2
+#  define pthread_sigmask sigprocmask
+# endif
 #endif
 #ifdef RT_OS_FREEBSD
 # include <pthread.h>

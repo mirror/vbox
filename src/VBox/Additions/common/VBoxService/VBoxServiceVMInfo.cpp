@@ -35,8 +35,10 @@
 # include <sys/socket.h>
 # include <net/if.h>
 # include <unistd.h>
-# ifndef RT_OS_FREEBSD
-#  include <utmpx.h> /* @todo FreeBSD 9 should have this. */
+# ifndef RT_OS_OS2
+#  ifndef RT_OS_FREEBSD
+#   include <utmpx.h> /* @todo FreeBSD 9 should have this. */
+#  endif
 # endif
 # ifdef RT_OS_SOLARIS
 #  include <sys/sockio.h>
@@ -636,24 +638,28 @@ static int vboxserviceVMInfoWriteNetwork(void)
             continue;
         }
 # else
+#  ifndef RT_OS_OS2 /** @todo port this to OS/2 */
         if (ioctl(sd, SIOCGIFHWADDR, &ifrequest[i]) < 0)
         {
             rc = RTErrConvertFromErrno(errno);
             VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFHWADDR) on socket: Error %Rrc\n", rc);
             break;
         }
+#  endif
 # endif
 
+# ifndef RT_OS_OS2 /** @todo port this to OS/2 */
         char szMac[32];
-# if defined(RT_OS_SOLARIS)
+#  if defined(RT_OS_SOLARIS)
         uint8_t *pu8Mac = IfMac.au8;
-# else
+#  else
         uint8_t *pu8Mac = (uint8_t*)&ifrequest[i].ifr_hwaddr.sa_data[0];        /* @todo see above */
-# endif
+#  endif
         RTStrPrintf(szMac, sizeof(szMac), "%02X%02X%02X%02X%02X%02X",
                     pu8Mac[0], pu8Mac[1], pu8Mac[2], pu8Mac[3],  pu8Mac[4], pu8Mac[5]);
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/MAC", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, "%s", szMac);
+# endif /* !OS/2*/
 
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%u/Status", cIfacesReport);
         VBoxServicePropCacheUpdate(&g_VMInfoPropCache, szPropPath, fIfUp ? "Up" : "Down");
