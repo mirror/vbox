@@ -35,16 +35,14 @@
 #include <iprt/string.h>
 #include <iprt/time.h>
 
-/** The resolution (nanoseconds) specified when using
- *  schedule_hrtimeout_range. */
-#define RTR0SEMLNXWAIT_RESOLUTION   50000
-
-
 /**
  * Kernel mode Linux wait state structure.
  */
 typedef struct RTR0SEMBSDSLEEP
 {
+    /** The absolute timeout given as nano seconds since the start of the
+     *  monotonic clock. */
+    uint64_t        uNsAbsTimeout;
     /** The timeout in ticks. Updated after waiting. */
     int             iTimeout;
     /** Set if it's an indefinite wait. */
@@ -64,6 +62,34 @@ typedef RTR0SEMBSDSLEEP *PRTR0SEMBSDSLEEP;
 
 
 /**
+ * Updates the timeout of the FreeBSD wait.
+ *
+ * @returns RTSEMWAIT_FLAGS_INDEFINITE if the timeout value is too big.
+ *          0 otherwise
+ * @param   pWait               The wait structure.
+ * @param   uTimeout            The relative timeout in nanoseconds.
+ */
+DECLINLINE(uint32_t) rtR0SemBsdWaitUpdateTimeout(PRTR0SEMBSDSLEEP pWait, uint64_t uTimeout)
+{
+#if 0
+    struct timeval tv;
+
+    tv.tv_sec = uTimeout / UINT64_C(1000000000);
+    tv.tv_usec = (uTimeout % UINT64_C(1000000000)) / UINT64_C(1000);
+
+    pWait->iTimeout = tvtohz(&tv);
+#else
+    uint64_t cTicks = ASMMultU64ByU32DivByU32(uTimeout, hz, UINT32_C(1000000000));
+    if (cTicks >= INT_MAX)
+        return RTSEMWAIT_FLAGS_INDEFINITE;
+    else
+        pWait->iTimeout     = (int)cTicks;
+#endif
+
+    return 0;
+}
+
+/**
  * Initializes a wait.
  *
  * The caller MUST check the wait condition BEFORE calling this function or the
@@ -79,6 +105,7 @@ DECLINLINE(int) rtR0SemBsdWaitInit(PRTR0SEMBSDSLEEP pWait, uint32_t fFlags, uint
                                    void *pvWaitChan)
 {
     pWait->iTimeout = 0;
+    pWait->uNsAbsTimeout = 0; /* shut up gcc */
 
     /*
      * Process the flags and timeout.
@@ -103,6 +130,8 @@ DECLINLINE(int) rtR0SemBsdWaitInit(PRTR0SEMBSDSLEEP pWait, uint32_t fFlags, uint
                 u64Now = RTTimeSystemNanoTS();
                 if (u64Now + uTimeout < u64Now) /* overflow */
                     fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
+                else
+                    pWait->uNsAbsTimeout = u64Now + uTimeout;
             }
             else
             {
@@ -110,6 +139,7 @@ DECLINLINE(int) rtR0SemBsdWaitInit(PRTR0SEMBSDSLEEP pWait, uint32_t fFlags, uint
                 if (u64Now >= uTimeout)
                     return VERR_TIMEOUT;
 
+                pWait->uNsAbsTimeout = uTimeout;
                 uTimeout -= u64Now; /* Get a relative value. */
             }
         }
@@ -118,27 +148,14 @@ DECLINLINE(int) rtR0SemBsdWaitInit(PRTR0SEMBSDSLEEP pWait, uint32_t fFlags, uint
     if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
     {
         pWait->fIndefinite      = false;
-
-#if 0
-        struct timeval tv;
-
-        tv.tv_sec = uTimeout / UINT64_C(1000000000);
-        tv.tv_usec = (uTimeout % UINT64_C(1000000000)) / UINT64_C(1000);
-
-        pWait->iTimeout = tvtohz(&tv);
-#else
-        uint64_t cTicks = ASMMultU64ByU32DivByU32(uTimeout, hz, UINT32_C(1000000000));
-        if (cTicks >= INT_MAX)
-            fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
-        else
-            pWait->iTimeout     = (int)cTicks;
-#endif
+        fFlags |= rtR0SemBsdWaitUpdateTimeout(pWait, uTimeout);
     }
 
     if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
     {
         pWait->fIndefinite      = true;
         pWait->iTimeout         = INT_MAX;
+        pWait->uNsAbsTimeout    = UINT64_MAX;
     }
 
     pWait->fTimedOut   = false;
@@ -207,11 +224,27 @@ DECLINLINE(void) rtR0SemBsdWaitDoIt(PRTR0SEMBSDSLEEP pWait)
     {
         case 0:
             break;
+        case ERESTART:
+        {
+            if (!pWait->fIndefinite)
+            {
+                /* Recalc timeout. */
+                uint64_t u64Now = RTTimeSystemNanoTS();
+                if (u64Now >= pWait->uNsAbsTimeout)
+                    pWait->fTimedOut = true;
+                else
+                {
+                    u64Now = pWait->uNsAbsTimeout - u64Now;
+                    rtR0SemBsdWaitUpdateTimeout(pWait, u64Now);
+                }
+            }
+            break;
+        }
         case EWOULDBLOCK:
             pWait->fTimedOut = true;
             break;
         case EINTR:
-        case ERESTART:
+            Assert(pWait->fInterruptible);
             pWait->fInterrupted = true;
             break;
         default:
