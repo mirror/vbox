@@ -62,6 +62,16 @@
 #include <VBox/hwacc_vmx.h>
 #include <VBox/x86.h>
 
+#ifdef VBOX_WITH_DTRACE
+# include "SUPDrv-dtrace.h"
+#else
+# define VBOXDRV_SUPDRV_SESSION_CREATE(pvSession, fUser) do { } while (0)
+# define VBOXDRV_SUPDRV_SESSION_CLOSE(pvSession) do { } while (0)
+# define VBOXDRV_SUPDRV_IOCCLOSE(pvSession) do { } while (0)
+# define VBOXDRV_SUPDRV_IOCTL_ENTRY(pvSession, uIOCtl, pvReqHdr) do { } while (0)
+# define VBOXDRV_SUPDRV_IOCTL_RETURN(pvSession, uIOCtl, pvReqHdr, rcRet, rcReq) do { } while (0)
+#endif
+
 /*
  * Logging assignments:
  *      Log     - useful stuff, like failures.
@@ -652,6 +662,7 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
                     pSession->R0Process     = NIL_RTR0PROCESS;
                 }
 
+                VBOXDRV_SUPDRV_SESSION_CREATE(pSession, fUser);
                 LogFlow(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
                 return VINF_SUCCESS;
             }
@@ -678,6 +689,8 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
  */
 void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
+    VBOXDRV_SUPDRV_SESSION_CLOSE(pSession);
+
     /*
      * Cleanup the session first.
      */
@@ -1015,6 +1028,8 @@ static int supdrvCheckInvalidChar(const char *pszStr, const char *pszChars)
  */
 int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr)
 {
+    VBOXDRV_SUPDRV_IOCTL_ENTRY(pSession, uIOCtl, pReqHdr);
+
     /*
      * Validate the request.
      */
@@ -1025,6 +1040,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
     {
         OSDBGPRINT(("vboxdrv: Bad ioctl request header; cbIn=%#lx cbOut=%#lx fFlags=%#lx\n",
                     (long)pReqHdr->cbIn, (long)pReqHdr->cbOut, (long)pReqHdr->fFlags));
+        VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VINF_SUCCESS);
         return VERR_INVALID_PARAMETER;
     }
     if (RT_UNLIKELY(uIOCtl == SUP_IOCTL_COOKIE))
@@ -1032,6 +1048,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         if (pReqHdr->u32Cookie != SUPCOOKIE_INITIAL_COOKIE)
         {
             OSDBGPRINT(("SUP_IOCTL_COOKIE: bad cookie %#lx\n", (long)pReqHdr->u32Cookie));
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VINF_SUCCESS);
             return VERR_INVALID_PARAMETER;
         }
     }
@@ -1039,6 +1056,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                          ||  pReqHdr->u32SessionCookie != pSession->u32Cookie))
     {
         OSDBGPRINT(("vboxdrv: bad cookie %#lx / %#lx.\n", (long)pReqHdr->u32Cookie, (long)pReqHdr->u32SessionCookie));
+        VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VINF_SUCCESS);
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1051,6 +1069,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         { \
             OSDBGPRINT(( #Name ": Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n", \
                         (long)pReq->Hdr.cbIn, (long)(cbInExpect), (long)pReq->Hdr.cbOut, (long)(cbOutExpect))); \
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
             return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
@@ -1063,6 +1082,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         { \
             OSDBGPRINT(( #Name ": Invalid input/output sizes. cbIn=%ld expected %ld.\n", \
                         (long)pReq->Hdr.cbIn, (long)(cbInExpect))); \
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
             return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
@@ -1073,6 +1093,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         { \
             OSDBGPRINT(( #Name ": Invalid input/output sizes. cbOut=%ld expected %ld.\n", \
                         (long)pReq->Hdr.cbOut, (long)(cbOutExpect))); \
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
             return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
@@ -1082,6 +1103,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         if (RT_UNLIKELY(!(expr))) \
         { \
             OSDBGPRINT(( #Name ": %s\n", #expr)); \
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
             return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
@@ -1091,6 +1113,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         if (RT_UNLIKELY(!(expr))) \
         { \
             OSDBGPRINT( fmt ); \
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
             return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
@@ -1109,6 +1132,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             {
                 OSDBGPRINT(("SUP_IOCTL_COOKIE: invalid magic %.16s\n", pReq->u.In.szMagic));
                 pReq->Hdr.rc = VERR_INVALID_MAGIC;
+                VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, VERR_INVALID_MAGIC);
                 return 0;
             }
 
@@ -1126,6 +1150,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 pReq->u.Out.pSession          = NULL;
                 pReq->u.Out.cFunctions        = 0;
                 pReq->Hdr.rc = VERR_PERMISSION_DENIED;
+                VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, VERR_PERMISSION_DENIED);
                 return 0;
             }
 #endif
@@ -1146,6 +1171,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                 pReq->u.Out.pSession          = NULL;
                 pReq->u.Out.cFunctions        = 0;
                 pReq->Hdr.rc = VERR_VERSION_MISMATCH;
+                VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
                 return 0;
             }
 
@@ -1162,6 +1188,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->u.Out.pSession          = pSession;
             pReq->u.Out.cFunctions        = sizeof(g_aFunctions) / sizeof(g_aFunctions[0]);
             pReq->Hdr.rc = VINF_SUCCESS;
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1175,6 +1202,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->u.Out.cFunctions = RT_ELEMENTS(g_aFunctions);
             memcpy(&pReq->u.Out.aFunctions[0], g_aFunctions, sizeof(g_aFunctions));
             pReq->Hdr.rc = VINF_SUCCESS;
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1191,6 +1219,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->Hdr.rc = SUPR0LockMem(pSession, pReq->u.In.pvR3, pReq->u.In.cPages, &pReq->u.Out.aPages[0]);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1202,6 +1231,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = SUPR0UnlockMem(pSession, pReq->u.In.pvR3);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1215,6 +1245,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->Hdr.rc = SUPR0ContAlloc(pSession, pReq->u.In.cPages, &pReq->u.Out.pvR0, &pReq->u.Out.pvR3, &pReq->u.Out.HCPhys);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1226,6 +1257,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = SUPR0ContFree(pSession, (RTHCUINTPTR)pReq->u.In.pvR3);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1246,6 +1278,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrOpen(pDevExt, pSession, pReq);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1286,6 +1319,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrLoad(pDevExt, pSession, pReq);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1297,6 +1331,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrFree(pDevExt, pSession, pReq);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1309,6 +1344,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LdrGetSymbol(pDevExt, pSession, pReq);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1352,6 +1388,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             else
                 Log4(("SUP_IOCTL_CALL_VMMR0: rc=%Rrc op=%u out=%u arg=%RX64 p/t=%RTproc/%RTthrd\n",
                       pReq->Hdr.rc, pReq->u.In.uOperation, pReq->Hdr.cbOut, pReq->u.In.u64Arg, RTProcSelf(), RTThreadNativeSelf()));
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1364,6 +1401,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             /* execute */
             pReq->Hdr.rc = VINF_SUCCESS;
             pReq->u.Out.enmMode = SUPR0GetPagingMode();
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1378,6 +1416,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->Hdr.rc = SUPR0LowAlloc(pSession, pReq->u.In.cPages, &pReq->u.Out.pvR0, &pReq->u.Out.pvR3, &pReq->u.Out.aPages[0]);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1389,6 +1428,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = SUPR0LowFree(pSession, (RTHCUINTPTR)pReq->u.In.pvR3);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1402,6 +1442,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->Hdr.rc = SUPR0GipMap(pSession, &pReq->u.Out.pGipR3, &pReq->u.Out.HCPhysGip);
             if (RT_SUCCESS(pReq->Hdr.rc))
                 pReq->u.Out.pGipR0 = pDevExt->pGip;
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1413,6 +1454,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = SUPR0GipUnmap(pSession);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1428,6 +1470,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             /* execute */
             pSession->pVM = pReq->u.In.pVMR0;
             pReq->Hdr.rc = VINF_SUCCESS;
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1451,6 +1494,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                                             &pReq->u.Out.aPages[0]);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1469,6 +1513,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                                               pReq->u.In.fFlags, &pReq->u.Out.pvR0);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1485,6 +1530,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = SUPR0PageProtect(pSession, pReq->u.In.pvR3, pReq->u.In.pvR0, pReq->u.In.offSub, pReq->u.In.cbSub, pReq->u.In.fProt);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1496,6 +1542,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = SUPR0PageFree(pSession, pReq->u.In.pvR3);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1520,6 +1567,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_CallServiceModule(pDevExt, pSession, pReq);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1542,6 +1590,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
             /* execute */
             pReq->Hdr.rc = supdrvIOCtl_LoggerSettings(pDevExt, pSession, pReq);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1574,6 +1623,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                     pReq->Hdr.rc = VERR_INVALID_PARAMETER;
                     break;
             }
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1636,6 +1686,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                     pReq->Hdr.rc = VERR_INVALID_PARAMETER;
                     break;
             }
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1787,6 +1838,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             pReq->Hdr.rc = SUPR0QueryVTCaps(pSession, &pReq->u.Out.Caps);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
             return 0;
         }
 
@@ -1794,6 +1846,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;
     }
+    VBOXDRV_SUPDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_GENERAL_FAILURE, VERR_GENERAL_FAILURE);
     return VERR_GENERAL_FAILURE;
 }
 
