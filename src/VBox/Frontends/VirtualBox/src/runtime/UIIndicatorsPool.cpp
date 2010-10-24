@@ -501,7 +501,7 @@ public:
 
     void updateAppearance()
     {
-        CVRDEServer &srv = m_session.GetMachine().GetVRDEServer();
+        CVRDEServer srv = m_session.GetMachine().GetVRDEServer();
         if (!srv.isNull())
         {
             /* update menu&status icon state */
