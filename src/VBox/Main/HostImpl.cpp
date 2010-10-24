@@ -1055,6 +1055,7 @@ STDMETHODIMP Host::CreateHostOnlyNetworkInterface(IHostNetworkInterface **aHostN
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+#ifdef VBOX_WITH_HOSTNETIF_API
     /* No need to lock anything. If there ever will - watch out, the function
      * called below grabs the VirtualBox lock. */
 
@@ -1063,6 +1064,9 @@ STDMETHODIMP Host::CreateHostOnlyNetworkInterface(IHostNetworkInterface **aHostN
         return S_OK;
 
     return r == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Host::RemoveHostOnlyNetworkInterface(IN_BSTR aId,
@@ -1073,6 +1077,7 @@ STDMETHODIMP Host::RemoveHostOnlyNetworkInterface(IN_BSTR aId,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+#ifdef VBOX_WITH_HOSTNETIF_API
     /* No need to lock anything, the code below does not touch the state
      * of the host object. If that ever changes then check for lock order
      * violations with the called functions. */
@@ -1092,6 +1097,9 @@ STDMETHODIMP Host::RemoveHostOnlyNetworkInterface(IN_BSTR aId,
         return S_OK;
 
     return r == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Host::CreateUSBDeviceFilter(IN_BSTR aName,
@@ -1372,6 +1380,7 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_BSTR id, IHostNetworkInterfac
 STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T type,
                                                    ComSafeArrayOut(IHostNetworkInterface *, aNetworkInterfaces))
 {
+#ifdef VBOX_WITH_HOSTNETIF_API
     std::list <ComObjPtr<HostNetworkInterface> > allList;
     int rc = NetIfList(allList);
     if (RT_FAILURE(rc))
@@ -1398,6 +1407,9 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T ty
     filteredNetworkInterfaces.detachTo(ComSafeArrayOutArg(aNetworkInterfaces));
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Host::FindUSBDeviceByAddress(IN_BSTR aAddress,
