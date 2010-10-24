@@ -171,8 +171,8 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
         }
         /* Not used *
         case KVBoxEventType_OnCPUChange:
-        case KVBoxEventType_OnVRDPServerChange:
-        case KVBoxEventType_OnRemoteDisplayInfoChange:
+        case KVBoxEventType_OnVRDEServerChange:
+        case KVBoxEventType_OnVRDEServerInfoChange:
          */
         case KVBoxEventType_OnUSBControllerChanged:
         {

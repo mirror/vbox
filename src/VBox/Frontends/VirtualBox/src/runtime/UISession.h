@@ -52,8 +52,8 @@ enum UIConsoleEventType
     /* Not used: UIConsoleEventType_StorageControllerChange, */
     UIConsoleEventType_MediumChange,
     /* Not used: UIConsoleEventType_CPUChange, */
-    UIConsoleEventType_VRDPServerChange,
-    UIConsoleEventType_RemoteDisplayInfoChange,
+    UIConsoleEventType_VRDEServerChange,
+    UIConsoleEventType_VRDEServerInfoChange,
     UIConsoleEventType_USBControllerChange,
     UIConsoleEventType_USBDeviceStateChange,
     UIConsoleEventType_SharedFolderChange,

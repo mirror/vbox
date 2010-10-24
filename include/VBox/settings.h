@@ -221,8 +221,9 @@ struct SystemProperties
     com::Utf8Str            strDefaultMachineFolder;
     com::Utf8Str            strDefaultHardDiskFolder;
     com::Utf8Str            strDefaultHardDiskFormat;
-    com::Utf8Str            strRemoteDisplayAuthLibrary;
+    com::Utf8Str            strVRDEAuthLibrary;
     com::Utf8Str            strWebServiceAuthLibrary;
+    com::Utf8Str            strDefaultVRDELibrary;
     uint32_t                ulLogHistoryCount;
 };
 
@@ -273,11 +274,11 @@ public:
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
-struct VRDPSettings
+struct VRDESettings
 {
-    VRDPSettings()
+    VRDESettings()
         : fEnabled(true),
-          authType(VRDPAuthType_Null),
+          authType(AuthType_Null),
           ulAuthTimeout(5000),
           fAllowMultiConnection(false),
           fReuseSingleConnection(false),
@@ -285,12 +286,12 @@ struct VRDPSettings
           ulVideoChannelQuality(75)
     {}
 
-    bool operator==(const VRDPSettings& v) const;
+    bool operator==(const VRDESettings& v) const;
 
     bool            fEnabled;
     com::Utf8Str    strPort;
     com::Utf8Str    strNetAddress;
-    VRDPAuthType_T  authType;
+    AuthType_T      authType;
     uint32_t        ulAuthTimeout;
     bool            fAllowMultiConnection,
                     fReuseSingleConnection,
@@ -711,7 +712,7 @@ struct Hardware
 
     ChipsetType_T       chipsetType;            // requires settings version 1.11 (VirtualBox 4.0)
 
-    VRDPSettings        vrdpSettings;
+    VRDESettings        vrdeSettings;
 
     BIOSSettings        biosSettings;
     USBController       usbController;

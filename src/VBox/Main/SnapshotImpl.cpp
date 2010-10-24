@@ -1006,8 +1006,8 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     mBIOSSettings->initCopy(this, mPeer->mBIOSSettings);
 
 #ifdef VBOX_WITH_VRDP
-    unconst(mVRDPServer).createObject();
-    mVRDPServer->initCopy(this, mPeer->mVRDPServer);
+    unconst(mVRDEServer).createObject();
+    mVRDEServer->initCopy(this, mPeer->mVRDEServer);
 #endif
 
     unconst(mAudioAdapter).createObject();
@@ -1099,8 +1099,8 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
     mBIOSSettings->init(this);
 
 #ifdef VBOX_WITH_VRDP
-    unconst(mVRDPServer).createObject();
-    mVRDPServer->init(this);
+    unconst(mVRDEServer).createObject();
+    mVRDEServer->init(this);
 #endif
 
     unconst(mAudioAdapter).createObject();

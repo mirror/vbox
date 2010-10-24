@@ -332,7 +332,7 @@
       authenticated.</para>
 
       <para>For this, use <computeroutput>VBoxManage modifyvm</computeroutput>
-      command with the <computeroutput>--vrdpauthtype</computeroutput> option;
+      command with the <computeroutput>--vrdeauthtype</computeroutput> option;
       see <xref linkend="vboxmanage-modifyvm" /> for a general introduction.
       Three methods of authentication are available:<itemizedlist>
           <listitem>
@@ -385,7 +385,7 @@
             probably the simplest way to get authentication that does not depend
             on a running and supported guest (see below). In order to enable
             VBoxAuthSimple, issue
-            <computeroutput>VBoxManage setproperty vrdpauthlibrary "VBoxAuthSimple"</computeroutput>.
+            <computeroutput>VBoxManage setproperty vrdeauthlibrary "VBoxAuthSimple"</computeroutput>.
             To enable the library for a VM, switch authentication to external using
             <computeroutput>VBoxManage modifyvm "VM name" --vrdpauthtype external</computeroutput>.
             Last but not least, you have to configure users and passwords. Here is an example

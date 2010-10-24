@@ -196,7 +196,7 @@ static ComPtr<IMachineDebugger> gMachineDebugger;
 static ComPtr<IKeyboard> gKeyboard;
 static ComPtr<IMouse> gMouse;
 static ComPtr<IDisplay> gDisplay;
-static ComPtr<IVRDPServer> gVrdpServer;
+static ComPtr<IVRDEServer> gVRDEServer;
 static ComPtr<IProgress> gProgress;
 
 static ULONG       gcMonitors = 1;
@@ -1877,15 +1877,15 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_VRDP
     if (portVRDP)
     {
-        rc = gMachine->COMGETTER(VRDPServer)(gVrdpServer.asOutParam());
-        AssertMsg((rc == S_OK) && gVrdpServer, ("Could not get VRDP Server! rc = 0x%x\n", rc));
-        if (gVrdpServer)
+        rc = gMachine->COMGETTER(VRDEServer)(gVRDEServer.asOutParam());
+        AssertMsg((rc == S_OK) && gVRDEServer, ("Could not get VRDP Server! rc = 0x%x\n", rc));
+        if (gVRDEServer)
         {
             // has a non standard VRDP port been requested?
             if (portVRDP > 0)
             {
                 Bstr bstr = portVRDP;
-                rc = gVrdpServer->COMSETTER(Ports)(bstr.raw());
+                rc = gVRDEServer->SetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.raw());
                 if (rc != S_OK)
                 {
                     RTPrintf("Error: could not set VRDP port! rc = 0x%x\n", rc);
@@ -1893,7 +1893,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
             // now enable VRDP
-            rc = gVrdpServer->COMSETTER(Enabled)(TRUE);
+            rc = gVRDEServer->COMSETTER(Enabled)(TRUE);
             if (rc != S_OK)
             {
                 RTPrintf("Error: could not enable VRDP server! rc = 0x%x\n", rc);
@@ -2686,8 +2686,8 @@ leave:
 #endif /* VBOX_WITH_XPCOM */
 
 #ifdef VBOX_WITH_VRDP
-    if (gVrdpServer)
-        rc = gVrdpServer->COMSETTER(Enabled)(FALSE);
+    if (gVRDEServer)
+        rc = gVRDEServer->COMSETTER(Enabled)(FALSE);
 #endif
 
     /*
@@ -2796,7 +2796,7 @@ leave:
     }
 #endif
 
-    LogFlow(("Releasing mouse, keyboard, vrdpserver, display, console...\n"));
+    LogFlow(("Releasing mouse, keyboard, remote desktop server, display, console...\n"));
     if (gDisplay)
     {
         for (unsigned i = 0; i < gcMonitors; i++)
@@ -2805,7 +2805,7 @@ leave:
 
     gMouse = NULL;
     gKeyboard = NULL;
-    gVrdpServer = NULL;
+    gVRDEServer = NULL;
     gDisplay = NULL;
     gConsole = NULL;
     gMachineDebugger = NULL;

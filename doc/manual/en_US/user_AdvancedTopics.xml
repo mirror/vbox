@@ -623,7 +623,7 @@ vga = 864</screen>
       arbitrary external modules to perform authentication. When the
       authentication method is set to "external" for a
       particular VM, VirtualBox calls the library that was specified with
-      <computeroutput>VBoxManage setproperty vrdpauthlibrary</computeroutput>.
+      <computeroutput>VBoxManage setproperty vrdeauthlibrary</computeroutput>.
       This library will be loaded by the VM process on demand, i.e. when the
       first RDP connection is made by an external client.</para>
 

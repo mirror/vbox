@@ -185,7 +185,7 @@ void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsP
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_NetworkAdaptersDialog));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_SharedFoldersDialog));
     pMenu->addSeparator();
-    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_VRDP));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_VRDEServer));
     pMenu->addSeparator();
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_InstallGuestTools));
 }

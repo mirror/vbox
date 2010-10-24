@@ -496,8 +496,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltOpenNetworkAdaptersDialog()));
     connect(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog), SIGNAL(triggered()),
             this, SLOT(sltOpenSharedFoldersDialog()));
-    connect(actionsPool()->action(UIActionIndex_Toggle_VRDP), SIGNAL(toggled(bool)),
-            this, SLOT(sltSwitchVrdp(bool)));
+    connect(actionsPool()->action(UIActionIndex_Toggle_VRDEServer), SIGNAL(toggled(bool)),
+            this, SLOT(sltSwitchVrde(bool)));
     connect(actionsPool()->action(UIActionIndex_Simple_InstallGuestTools), SIGNAL(triggered()),
             this, SLOT(sltInstallGuestAdditions()));
 
@@ -561,7 +561,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_SharedFolders));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_VRDP));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_VRDEServer));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_InstallGuestTools));
 }
 
@@ -1441,11 +1441,11 @@ void UIMachineLogic::sltOpenSharedFoldersDialog()
     dlg.exec();
 }
 
-void UIMachineLogic::sltSwitchVrdp(bool fOn)
+void UIMachineLogic::sltSwitchVrde(bool fOn)
 {
-    /* Enable VRDP server if possible: */
-    CVRDPServer server = session().GetMachine().GetVRDPServer();
-    AssertMsg(!server.isNull(), ("VRDP server should not be null!\n"));
+    /* Enable VRDE server if possible: */
+    CVRDEServer server = session().GetMachine().GetVRDEServer();
+    AssertMsg(!server.isNull(), ("VRDE server should not be null!\n"));
     server.SetEnabled(fOn);
 }
 

@@ -2146,10 +2146,10 @@ STDMETHODIMP Machine::COMGETTER(MediumAttachments)(ComSafeArrayOut(IMediumAttach
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
+STDMETHODIMP Machine::COMGETTER(VRDEServer)(IVRDEServer **vrdeServer)
 {
 #ifdef VBOX_WITH_VRDP
-    if (!vrdpServer)
+    if (!vrdeServer)
         return E_POINTER;
 
     AutoCaller autoCaller(this);
@@ -2157,12 +2157,12 @@ STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert(!!mVRDPServer);
-    mVRDPServer.queryInterfaceTo(vrdpServer);
+    Assert(!!mVRDEServer);
+    mVRDEServer.queryInterfaceTo(vrdeServer);
 
     return S_OK;
 #else
-    NOREF(vrdpServer);
+    NOREF(vrde);
     ReturnComNotImplemented();
 #endif
 }
@@ -5987,28 +5987,27 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
     if (   strType == "headless"
         || strType == "capture"
 #ifdef VBOX_WITH_VRDP
-        || strType == "vrdp"
+        || strType == "vrdp" /* Deprecated. Same as headless. */
 #endif
        )
     {
+        /* On pre-4.0 the "headless" type was used for passing "--vrdp off" to VBoxHeadless to let it work in OSE,
+         * which did not contain VRDP server. In VBox 4.0 the remote desktop server (VRDE) is optional,
+         * and a VM works even if the server has not been installed.
+         * So in 4.0 the "headless" behavior remains the same for default VBox installations.
+         * Only if a VRDE has been installed and the VM enables it, the "headless" will work
+         * differently in 4.0 and 3.x.
+         */
         const char VBoxHeadless_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
         Assert(sz >= sizeof(VBoxHeadless_exe));
         strcpy(cmd, VBoxHeadless_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
-        /* Leave space for 2 args, as "headless" needs --vrdp off on non-OSE. */
-        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), 0, 0, 0 };
-#ifdef VBOX_WITH_VRDP
-        if (strType == "headless")
-        {
-            unsigned pos = RT_ELEMENTS(args) - 3;
-            args[pos++] = "--vrdp";
-            args[pos] = "off";
-        }
-#endif
+        /* Leave space for "--capture" arg. */
+        const char * args[] = {szPath, "--comment", mUserData->s.strName.c_str(), "--startvm", idStr.c_str(), 0, 0 };
         if (strType == "capture")
         {
-            unsigned pos = RT_ELEMENTS(args) - 3;
+            unsigned pos = RT_ELEMENTS(args) - 2;
             args[pos] = "--capture";
         }
         vrc = RTProcCreate(szPath, args, env, 0, &pid);
@@ -6540,9 +6539,9 @@ HRESULT Machine::initDataAndChildObjects()
     mBIOSSettings->init(this);
 
 #ifdef VBOX_WITH_VRDP
-    /* create an associated VRDPServer object (default is disabled) */
-    unconst(mVRDPServer).createObject();
-    mVRDPServer->init(this);
+    /* create an associated VRDE object (default is disabled) */
+    unconst(mVRDEServer).createObject();
+    mVRDEServer->init(this);
 #endif
 
     /* create associated serial port objects */
@@ -6639,10 +6638,10 @@ void Machine::uninitDataAndChildObjects()
     }
 
 #ifdef VBOX_WITH_VRDP
-    if (mVRDPServer)
+    if (mVRDEServer)
     {
-        mVRDPServer->uninit();
-        unconst(mVRDPServer).setNull();
+        mVRDEServer->uninit();
+        unconst(mVRDEServer).setNull();
     }
 #endif
 
@@ -7149,8 +7148,8 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mHpetEnabled = data.fHpetEnabled;
 
 #ifdef VBOX_WITH_VRDP
-        /* RemoteDisplay */
-        rc = mVRDPServer->loadSettings(data.vrdpSettings);
+        /* VRDEServer */
+        rc = mVRDEServer->loadSettings(data.vrdeSettings);
         if (FAILED(rc)) return rc;
 #endif
 
@@ -8182,8 +8181,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.fAccelerate2DVideo = !!mHWData->mAccelerate2DVideoEnabled;
 
 #ifdef VBOX_WITH_VRDP
-        /* VRDP settings (optional) */
-        rc = mVRDPServer->saveSettings(data.vrdpSettings);
+        /* VRDEServer settings (optional) */
+        rc = mVRDEServer->saveSettings(data.vrdeSettings);
         if (FAILED(rc)) throw rc;
 #endif
 
@@ -9328,8 +9327,8 @@ void Machine::rollback(bool aNotify)
         mBIOSSettings->rollback();
 
 #ifdef VBOX_WITH_VRDP
-    if (mVRDPServer && (mData->flModifications & IsModified_VRDPServer))
-        mVRDPServer->rollback();
+    if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
+        mVRDEServer->rollback();
 #endif
 
     if (mAudioAdapter)
@@ -9380,8 +9379,8 @@ void Machine::rollback(bool aNotify)
         if (flModifications & IsModified_SharedFolders)
             that->onSharedFolderChange();
 
-        if (flModifications & IsModified_VRDPServer)
-            that->onVRDPServerChange(/* aRestart */ TRUE);
+        if (flModifications & IsModified_VRDEServer)
+            that->onVRDEServerChange(/* aRestart */ TRUE);
         if (flModifications & IsModified_USB)
             that->onUSBControllerChange();
 
@@ -9430,7 +9429,7 @@ void Machine::commit()
 
     mBIOSSettings->commit();
 #ifdef VBOX_WITH_VRDP
-    mVRDPServer->commit();
+    mVRDEServer->commit();
 #endif
     mAudioAdapter->commit();
     mUSBController->commit();
@@ -9562,7 +9561,7 @@ void Machine::copyFrom(Machine *aThat)
 
     mBIOSSettings->copyFrom(aThat->mBIOSSettings);
 #ifdef VBOX_WITH_VRDP
-    mVRDPServer->copyFrom(aThat->mVRDPServer);
+    mVRDEServer->copyFrom(aThat->mVRDEServer);
 #endif
     mAudioAdapter->copyFrom(aThat->mAudioAdapter);
     mUSBController->copyFrom(aThat->mUSBController);
@@ -9891,9 +9890,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
 #ifdef VBOX_WITH_VRDP
-    /* create another VRDPServer object that will be mutable */
-    unconst(mVRDPServer).createObject();
-    mVRDPServer->init(this, aMachine->mVRDPServer);
+    /* create another VRDEServer object that will be mutable */
+    unconst(mVRDEServer).createObject();
+    mVRDEServer->init(this, aMachine->mVRDEServer);
 #endif
     /* create another audio adapter object that will be mutable */
     unconst(mAudioAdapter).createObject();
@@ -11081,7 +11080,7 @@ HRESULT SessionMachine::onCPUExecutionCapChange(ULONG aExecutionCap)
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onVRDPServerChange(BOOL aRestart)
+HRESULT SessionMachine::onVRDEServerChange(BOOL aRestart)
 {
     LogFlowThisFunc(("\n"));
 
@@ -11098,7 +11097,7 @@ HRESULT SessionMachine::onVRDPServerChange(BOOL aRestart)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnVRDPServerChange(aRestart);
+    return directControl->OnVRDEServerChange(aRestart);
 }
 
 /**

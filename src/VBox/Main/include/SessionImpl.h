@@ -90,7 +90,7 @@ public:
     STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment, BOOL aForce);
     STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove);
     STDMETHOD(OnCPUExecutionCapChange)(ULONG aExecutionCap);
-    STDMETHOD(OnVRDPServerChange)(BOOL aRestart);
+    STDMETHOD(OnVRDEServerChange)(BOOL aRestart);
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange)(BOOL aGlobal);
     STDMETHOD(OnUSBDeviceAttach)(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);

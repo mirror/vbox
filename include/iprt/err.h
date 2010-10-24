@@ -464,6 +464,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_INVALID_FUNCTION               (-36)
 /** Not supported. */
 #define VERR_NOT_SUPPORTED                  (-37)
+/** Not supported. */
+#define VINF_NOT_SUPPORTED                  37
 /** Access denied. */
 #define VERR_ACCESS_DENIED                  (-38)
 /** Call interrupted. */

@@ -488,31 +488,34 @@ int handleControlVM(HandlerArg *a)
         }
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
 #ifdef VBOX_WITH_VRDP
-        else if (!strcmp(a->argv[1], "vrdp"))
+        else if (   !strcmp(a->argv[1], "vrde")
+                 || !strcmp(a->argv[1], "vrdp"))
         {
+            if (!strcmp(a->argv[1], "vrdp"))
+                RTStrmPrintf(g_pStdErr, "Warning: 'vrdp' is deprecated. Use 'vrde'.\n");
+
             if (a->argc <= 1 + 1)
             {
                 errorArgument("Missing argument to '%s'", a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
-            /* get the corresponding VRDP server */
-            ComPtr<IVRDPServer> vrdpServer;
-            sessionMachine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-            ASSERT(vrdpServer);
-            if (vrdpServer)
+            ComPtr<IVRDEServer> vrdeServer;
+            sessionMachine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+            ASSERT(vrdeServer);
+            if (vrdeServer)
             {
                 if (!strcmp(a->argv[2], "on"))
                 {
-                    CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(TRUE));
+                    CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(TRUE));
                 }
                 else if (!strcmp(a->argv[2], "off"))
                 {
-                    CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(FALSE));
+                    CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(FALSE));
                 }
                 else
                 {
-                    errorArgument("Invalid vrdp server state '%s'", Utf8Str(a->argv[2]).c_str());
+                    errorArgument("Invalid remote desktop server state '%s'", Utf8Str(a->argv[2]).c_str());
                     rc = E_FAIL;
                     break;
                 }
@@ -520,29 +523,52 @@ int handleControlVM(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "vrdpport"))
         {
+            RTStrmPrintf(g_pStdErr, "Warning: 'vrdpport' is deprecated. Use 'setvrdeproperty'.\n");
+
             if (a->argc <= 1 + 1)
             {
                 errorArgument("Missing argument to '%s'", a->argv[1]);
                 rc = E_FAIL;
                 break;
             }
-            /* get the corresponding VRDP server */
-            ComPtr<IVRDPServer> vrdpServer;
-            sessionMachine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-            ASSERT(vrdpServer);
-            if (vrdpServer)
+            ComPtr<IVRDEServer> vrdeServer;
+            sessionMachine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+            ASSERT(vrdeServer);
+            if (vrdeServer)
             {
-                Bstr vrdpports;
+                Bstr ports;
 
                 if (!strcmp(a->argv[2], "default"))
-                    vrdpports = "0";
+                    ports = "0";
                 else
-                    vrdpports = a->argv[2];
+                    ports = a->argv[2];
 
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(vrdpports.raw()));
+                CHECK_ERROR_BREAK(vrdeServer, SetVRDEProperty(Bstr("TCP/Ports").raw(), ports.raw()));
             }
         }
-        else if (!strcmp(a->argv[1], "vrdpvideochannelquality"))
+        else if (   !strcmp(a->argv[1], "vrdevideochannelquality")
+                 || !strcmp(a->argv[1], "vrdpvideochannelquality"))
+        {
+            if (!strcmp(a->argv[1], "vrdpvideochannelquality"))
+                RTStrmPrintf(g_pStdErr, "Warning: 'vrdpvideochannelquality' is deprecated. Use 'vrdevideochannelquality'.\n");
+
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+            ComPtr<IVRDEServer> vrdeServer;
+            sessionMachine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+            ASSERT(vrdeServer);
+            if (vrdeServer)
+            {
+                unsigned n = parseNum(a->argv[2], 100, "VRDE video redirection quality in percent");
+
+                CHECK_ERROR(vrdeServer, COMSETTER(VideoChannelQuality)(n));
+            }
+        }
+        else if (!strcmp(a->argv[1], "vrdesetproperty"))
         {
             if (a->argc <= 1 + 1)
             {
@@ -550,15 +576,41 @@ int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
-            /* get the corresponding VRDP server */
-            ComPtr<IVRDPServer> vrdpServer;
-            sessionMachine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-            ASSERT(vrdpServer);
-            if (vrdpServer)
+            ComPtr<IVRDEServer> vrdeServer;
+            sessionMachine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+            ASSERT(vrdeServer);
+            if (vrdeServer)
             {
-                unsigned n = parseNum(a->argv[2], 100, "VRDP video channel quality in percent");
+                /* Parse 'name=value' */
+                char *pszProperty = RTStrDup(a->argv[2]);
+                if (pszProperty)
+                {
+                    char *pDelimiter = strchr(pszProperty, '=');
+                    if (pDelimiter)
+                    {
+                        *pDelimiter = '\0';
 
-                CHECK_ERROR(vrdpServer, COMSETTER(VideoChannelQuality)(n));
+                        Bstr bstrName = pszProperty;
+                        Bstr bstrValue = &pDelimiter[1];
+                        CHECK_ERROR(vrdeServer, SetVRDEProperty(bstrName.raw(), bstrValue.raw()));
+                    }
+                    else
+                    {
+                        errorArgument("Invalid --vrdesetproperty argument '%s'", a->argv[2]);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    RTStrFree(pszProperty);
+                }
+                else
+                {
+                    RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for VRDE property '%s'\n", a->argv[2]);
+                    rc = E_FAIL;
+                }
+            }
+            if (FAILED(rc))
+            {
+                break;
             }
         }
 #endif /* VBOX_WITH_VRDP */

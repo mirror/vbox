@@ -585,18 +585,18 @@ void UIDetailsPagePrivate::sltUpdateDisplay()
             if (!accel.isEmpty())
                 item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
 
-            /* VRDP tab */
-            const CVRDPServer &srv = m_machine.GetVRDPServer();
+            /* VRDE tab */
+            CVRDEServer &srv = m_machine.GetVRDEServer();
             if (!srv.isNull())
             {
                 if (srv.GetEnabled())
                     item += QString(sSectionItemTpl2)
-                        .arg(tr("Remote Display Server Port", "details report (VRDP Server)"))
-                        .arg(srv.GetPorts());
+                        .arg(tr("Remote Desktop Server Port", "details report (VRDE Server)"))
+                        .arg(srv.GetVRDEProperty("TCP/Ports"));
                 else
                     item += QString(sSectionItemTpl2)
-                        .arg(tr("Remote Display Server", "details report (VRDP Server)"))
-                        .arg(tr("Disabled", "details report (VRDP Server)"));
+                        .arg(tr("Remote Desktop Server", "details report (VRDE Server)"))
+                        .arg(tr("Disabled", "details report (VRDE Server)"));
             }
 
             QString table = sTableTpl.arg(item);

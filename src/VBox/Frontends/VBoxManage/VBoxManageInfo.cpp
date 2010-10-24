@@ -1365,41 +1365,41 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     }
 
     /*
-     * VRDP
+     * Remote Desktop
      */
-    ComPtr<IVRDPServer> vrdpServer;
-    rc = machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-    if (SUCCEEDED(rc) && vrdpServer)
+    ComPtr<IVRDEServer> vrdeServer;
+    rc = machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+    if (SUCCEEDED(rc) && vrdeServer)
     {
         BOOL fEnabled = false;
-        vrdpServer->COMGETTER(Enabled)(&fEnabled);
+        vrdeServer->COMGETTER(Enabled)(&fEnabled);
         if (fEnabled)
         {
-            LONG vrdpPort = -1;
+            LONG currentPort = -1;
             Bstr ports;
-            vrdpServer->COMGETTER(Ports)(ports.asOutParam());
+            vrdeServer->GetVRDEProperty(Bstr("TCP/Ports").raw(), ports.asOutParam());
             Bstr address;
-            vrdpServer->COMGETTER(NetAddress)(address.asOutParam());
+            vrdeServer->GetVRDEProperty(Bstr("TCP/Address").raw(), address.asOutParam());
             BOOL fMultiCon;
-            vrdpServer->COMGETTER(AllowMultiConnection)(&fMultiCon);
+            vrdeServer->COMGETTER(AllowMultiConnection)(&fMultiCon);
             BOOL fReuseCon;
-            vrdpServer->COMGETTER(ReuseSingleConnection)(&fReuseCon);
+            vrdeServer->COMGETTER(ReuseSingleConnection)(&fReuseCon);
             BOOL fVideoChannel;
-            vrdpServer->COMGETTER(VideoChannel)(&fVideoChannel);
+            vrdeServer->COMGETTER(VideoChannel)(&fVideoChannel);
             ULONG ulVideoChannelQuality;
-            vrdpServer->COMGETTER(VideoChannelQuality)(&ulVideoChannelQuality);
-            VRDPAuthType_T vrdpAuthType;
+            vrdeServer->COMGETTER(VideoChannelQuality)(&ulVideoChannelQuality);
+            AuthType_T authType;
             const char *strAuthType;
-            vrdpServer->COMGETTER(AuthType)(&vrdpAuthType);
-            switch (vrdpAuthType)
+            vrdeServer->COMGETTER(AuthType)(&authType);
+            switch (authType)
             {
-                case VRDPAuthType_Null:
+                case AuthType_Null:
                     strAuthType = "null";
                     break;
-                case VRDPAuthType_External:
+                case AuthType_External:
                     strAuthType = "external";
                     break;
-                case VRDPAuthType_Guest:
+                case AuthType_Guest:
                     strAuthType = "guest";
                     break;
                 default:
@@ -1408,40 +1408,40 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             }
             if (console)
             {
-                ComPtr<IRemoteDisplayInfo> remoteDisplayInfo;
-                CHECK_ERROR_RET(console, COMGETTER(RemoteDisplayInfo)(remoteDisplayInfo.asOutParam()), rc);
-                rc = remoteDisplayInfo->COMGETTER(Port)(&vrdpPort);
+                ComPtr<IVRDEServerInfo> vrdeServerInfo;
+                CHECK_ERROR_RET(console, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
+                rc = vrdeServerInfo->COMGETTER(Port)(&currentPort);
                 if (rc == E_ACCESSDENIED)
                 {
-                    vrdpPort = -1; /* VM not powered up */
+                    currentPort = -1; /* VM not powered up */
                 }
                 if (FAILED(rc))
                 {
-                    com::ErrorInfo info(remoteDisplayInfo, COM_IIDOF(IRemoteDisplayInfo));
+                    com::ErrorInfo info(vrdeServerInfo, COM_IIDOF(IVRDEServerInfo));
                     GluePrintErrorInfo(info);
                     return rc;
                 }
             }
             if (details == VMINFO_MACHINEREADABLE)
             {
-                RTPrintf("vrdp=\"on\"\n");
-                RTPrintf("vrdpport=%d\n", vrdpPort);
-                RTPrintf("vrdpports=\"%lS\"\n", ports.raw());
-                RTPrintf("vrdpaddress=\"%lS\"\n", address.raw());
-                RTPrintf("vrdpauthtype=\"%s\"\n", strAuthType);
-                RTPrintf("vrdpmulticon=\"%s\"\n", fMultiCon ? "on" : "off");
-                RTPrintf("vrdpreusecon=\"%s\"\n", fReuseCon ? "on" : "off");
-                RTPrintf("vrdpvideochannel=\"%s\"\n", fVideoChannel ? "on" : "off");
+                RTPrintf("vrde=\"on\"\n");
+                RTPrintf("vrdeport=%d\n", currentPort);
+                RTPrintf("vrdeproperty[TCP/Ports]=\"%lS\"\n", ports.raw());
+                RTPrintf("vrdeproperty[TCP/Address]=\"%lS\"\n", address.raw());
+                RTPrintf("vrdeauthtype=\"%s\"\n", strAuthType);
+                RTPrintf("vrdemulticon=\"%s\"\n", fMultiCon ? "on" : "off");
+                RTPrintf("vrdereusecon=\"%s\"\n", fReuseCon ? "on" : "off");
+                RTPrintf("vrdevideochannel=\"%s\"\n", fVideoChannel ? "on" : "off");
                 if (fVideoChannel)
-                    RTPrintf("vrdpvideochannelquality=\"%d\"\n", ulVideoChannelQuality);
+                    RTPrintf("vrdevideochannelquality=\"%d\"\n", ulVideoChannelQuality);
             }
             else
             {
                 if (address.isEmpty())
                     address = "0.0.0.0";
-                RTPrintf("VRDP:            enabled (Address %lS, Ports %lS, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), ports.raw(), fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
-                if (console && vrdpPort != -1 && vrdpPort != 0)
-                   RTPrintf("VRDP port:       %d\n", vrdpPort);
+                RTPrintf("VRDE:            enabled (Address %lS, Ports %lS, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), ports.raw(), fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
+                if (console && currentPort != -1 && currentPort != 0)
+                   RTPrintf("VRDE port:       %d\n", currentPort);
                 if (fVideoChannel)
                     RTPrintf("Video redirection: enabled (Quality %d)\n", ulVideoChannelQuality);
                 else
@@ -1451,9 +1451,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         else
         {
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("vrdp=\"off\"\n");
+                RTPrintf("vrde=\"off\"\n");
             else
-                RTPrintf("VRDP:            disabled\n");
+                RTPrintf("VRDE:            disabled\n");
         }
     }
 
@@ -1826,10 +1826,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     if (console)
     {
         /*
-         * Live VRDP info.
+         * Live VRDE info.
          */
-        ComPtr<IRemoteDisplayInfo> remoteDisplayInfo;
-        CHECK_ERROR_RET(console, COMGETTER(RemoteDisplayInfo)(remoteDisplayInfo.asOutParam()), rc);
+        ComPtr<IVRDEServerInfo> vrdeServerInfo;
+        CHECK_ERROR_RET(console, COMGETTER(VRDEServerInfo)(vrdeServerInfo.asOutParam()), rc);
         BOOL    Active;
         ULONG   NumberOfClients;
         LONG64  BeginTime;
@@ -1845,28 +1845,28 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         ULONG   ClientVersion;
         ULONG   EncryptionStyle;
 
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(Active)(&Active), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(NumberOfClients)(&NumberOfClients), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BeginTime)(&BeginTime), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(EndTime)(&EndTime), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesSent)(&BytesSent), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesSentTotal)(&BytesSentTotal), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesReceived)(&BytesReceived), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(BytesReceivedTotal)(&BytesReceivedTotal), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(User)(User.asOutParam()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(Domain)(Domain.asOutParam()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientName)(ClientName.asOutParam()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientIP)(ClientIP.asOutParam()), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(ClientVersion)(&ClientVersion), rc);
-        CHECK_ERROR_RET(remoteDisplayInfo, COMGETTER(EncryptionStyle)(&EncryptionStyle), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Active)(&Active), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(NumberOfClients)(&NumberOfClients), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BeginTime)(&BeginTime), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EndTime)(&EndTime), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesSent)(&BytesSent), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesSentTotal)(&BytesSentTotal), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesReceived)(&BytesReceived), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(BytesReceivedTotal)(&BytesReceivedTotal), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(User)(User.asOutParam()), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(Domain)(Domain.asOutParam()), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientName)(ClientName.asOutParam()), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientIP)(ClientIP.asOutParam()), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(ClientVersion)(&ClientVersion), rc);
+        CHECK_ERROR_RET(vrdeServerInfo, COMGETTER(EncryptionStyle)(&EncryptionStyle), rc);
 
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("VRDPActiveConnection=\"%s\"\n", Active ? "on": "off");
+            RTPrintf("VRDEActiveConnection=\"%s\"\n", Active ? "on": "off");
         else
-            RTPrintf("VRDP Connection:    %s\n", Active? "active": "not active");
+            RTPrintf("VRDE Connection:    %s\n", Active? "active": "not active");
 
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("VRDPClients=%d\n", NumberOfClients);
+            RTPrintf("VRDEClients=%d\n", NumberOfClients);
         else
             RTPrintf("Clients so far:     %d\n", NumberOfClients);
 
@@ -1878,7 +1878,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             {
                 makeTimeStr(timestr, sizeof(timestr), BeginTime);
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("VRDPStartTime=\"%s\"\n", timestr);
+                    RTPrintf("VRDEStartTime=\"%s\"\n", timestr);
                 else
                     RTPrintf("Start time:         %s\n", timestr);
             }
@@ -1886,12 +1886,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             {
                 makeTimeStr(timestr, sizeof(timestr), BeginTime);
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("VRDPLastStartTime=\"%s\"\n", timestr);
+                    RTPrintf("VRDELastStartTime=\"%s\"\n", timestr);
                 else
                     RTPrintf("Last started:       %s\n", timestr);
                 makeTimeStr(timestr, sizeof(timestr), EndTime);
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("VRDPLastEndTime=\"%s\"\n", timestr);
+                    RTPrintf("VRDELastEndTime=\"%s\"\n", timestr);
                 else
                     RTPrintf("Last ended:         %s\n", timestr);
             }
@@ -1906,13 +1906,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 
             if (details == VMINFO_MACHINEREADABLE)
             {
-                RTPrintf("VRDPBytesSent=%lld\n", BytesSent);
-                RTPrintf("VRDPThroughputSend=%lld\n", ThroughputSend);
-                RTPrintf("VRDPBytesSentTotal=%lld\n", BytesSentTotal);
+                RTPrintf("VRDEBytesSent=%lld\n", BytesSent);
+                RTPrintf("VRDEThroughputSend=%lld\n", ThroughputSend);
+                RTPrintf("VRDEBytesSentTotal=%lld\n", BytesSentTotal);
 
-                RTPrintf("VRDPBytesReceived=%lld\n", BytesReceived);
-                RTPrintf("VRDPThroughputReceive=%lld\n", ThroughputReceive);
-                RTPrintf("VRDPBytesReceivedTotal=%lld\n", BytesReceivedTotal);
+                RTPrintf("VRDEBytesReceived=%lld\n", BytesReceived);
+                RTPrintf("VRDEThroughputReceive=%lld\n", ThroughputReceive);
+                RTPrintf("VRDEBytesReceivedTotal=%lld\n", BytesReceivedTotal);
             }
             else
             {
@@ -1929,12 +1929,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             {
                 if (details == VMINFO_MACHINEREADABLE)
                 {
-                    RTPrintf("VRDPUserName=\"%lS\"\n", User.raw());
-                    RTPrintf("VRDPDomain=\"%lS\"\n", Domain.raw());
-                    RTPrintf("VRDPClientName=\"%lS\"\n", ClientName.raw());
-                    RTPrintf("VRDPClientIP=\"%lS\"\n", ClientIP.raw());
-                    RTPrintf("VRDPClientVersion=%d\n",  ClientVersion);
-                    RTPrintf("VRDPEncryption=\"%s\"\n", EncryptionStyle == 0? "RDP4": "RDP5 (X.509)");
+                    RTPrintf("VRDEUserName=\"%lS\"\n", User.raw());
+                    RTPrintf("VRDEDomain=\"%lS\"\n", Domain.raw());
+                    RTPrintf("VRDEClientName=\"%lS\"\n", ClientName.raw());
+                    RTPrintf("VRDEClientIP=\"%lS\"\n", ClientIP.raw());
+                    RTPrintf("VRDEClientVersion=%d\n",  ClientVersion);
+                    RTPrintf("VRDEEncryption=\"%s\"\n", EncryptionStyle == 0? "RDP4": "RDP5 (X.509)");
                 }
                 else
                 {

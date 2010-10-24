@@ -2,11 +2,11 @@
 
 /** @file
  *
- * VBox Console VRDP Helper class and implementation of IRemoteDisplayInfo
+ * VBox Console VRDE Server Helper class and implementation of IVRDEServerInfo
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -148,7 +148,7 @@ private:
 #ifdef VBOX_WITH_VRDP
     HVRDESERVER mhServer;
 
-    static bool loadVRDPLibrary (void);
+    static int loadVRDPLibrary (const char *pszLibraryName);
 
     /** Static because will never load this more than once! */
     static RTLDRMOD mVRDPLibrary;
@@ -229,25 +229,25 @@ private:
 
 class Console;
 
-class ATL_NO_VTABLE RemoteDisplayInfo :
+class ATL_NO_VTABLE VRDEServerInfo :
     public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IRemoteDisplayInfo)
+    VBOX_SCRIPTABLE_IMPL(IVRDEServerInfo)
 {
 public:
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(RemoteDisplayInfo, IRemoteDisplayInfo)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VRDEServerInfo, IVRDEServerInfo)
 
-    DECLARE_NOT_AGGREGATABLE(RemoteDisplayInfo)
+    DECLARE_NOT_AGGREGATABLE(VRDEServerInfo)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(RemoteDisplayInfo)
+    BEGIN_COM_MAP(VRDEServerInfo)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
-        COM_INTERFACE_ENTRY(IRemoteDisplayInfo)
+        COM_INTERFACE_ENTRY(IVRDEServerInfo)
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (RemoteDisplayInfo)
+    DECLARE_EMPTY_CTOR_DTOR (VRDEServerInfo)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -256,7 +256,7 @@ public:
     HRESULT init (Console *aParent);
     void uninit();
 
-    /* IRemoteDisplayInfo properties */
+    /* IVRDEServerInfo properties */
     #define DECL_GETTER(_aType, _aName) STDMETHOD(COMGETTER(_aName)) (_aType *a##_aName)
         DECL_GETTER (BOOL,    Active);
         DECL_GETTER (LONG,    Port);

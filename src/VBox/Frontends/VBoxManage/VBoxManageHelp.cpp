@@ -74,9 +74,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     bool fDarwin = false;
 #endif
 #ifdef VBOX_WITH_VRDP
-    bool fVRDP = true;
+    bool fVRDE = true;
 #else
-    bool fVRDP = false;
+    bool fVRDE = false;
 #endif
 #ifdef VBOX_WITH_VBOXSDL
     bool fVBoxSDL = true;
@@ -92,7 +92,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         fSolaris = true;
         fFreeBSD = true;
         fDarwin = true;
-        fVRDP = true;
+        fVRDE = true;
         fVBoxSDL = true;
         u64Cmd = USAGE_ALL;
     }
@@ -308,17 +308,16 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--audiocontroller ac97|hda|sb16]\n"
                      "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
                      "                                         bidirectional]\n");
-        if (fVRDP)
+        if (fVRDE)
         {
             RTStrmPrintf(pStrm,
-                     "                            [--vrdp on|off]\n"
-                     "                            [--vrdpport default|<ports>]\n"
-                     "                            [--vrdpaddress <host>]\n"
-                     "                            [--vrdpauthtype null|external|guest]\n"
-                     "                            [--vrdpmulticon on|off]\n"
-                     "                            [--vrdpreusecon on|off]\n"
-                     "                            [--vrdpvideochannel on|off]\n"
-                     "                            [--vrdpvideochannelquality <percent>]\n");
+                     "                            [--vrde on|off]\n"
+                     "                            [--vrdesetproperty <name=[value]>]\n"
+                     "                            [--vrdeauthtype null|external|guest]\n"
+                     "                            [--vrdemulticon on|off]\n"
+                     "                            [--vrdereusecon on|off]\n"
+                     "                            [--vrdevideochannel on|off]\n"
+                     "                            [--vrdevideochannelquality <percent>]\n");
         }
         RTStrmPrintf(pStrm,
                      "                            [--usb on|off]\n"
@@ -375,8 +374,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--type gui");
         if (fVBoxSDL)
             RTStrmPrintf(pStrm, "|sdl");
-        if (fVRDP)
-            RTStrmPrintf(pStrm, "|vrdp");
         RTStrmPrintf(pStrm, "|headless]\n");
         RTStrmPrintf(pStrm,
                      "\n");
@@ -406,13 +403,13 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            gueststatisticsinterval <seconds>]\n"
                      "                            usbattach <uuid>|<address> |\n"
                      "                            usbdetach <uuid>|<address> |\n");
-        if (fVRDP)
+        if (fVRDE)
         {
             RTStrmPrintf(pStrm,
-                     "                            vrdp on|off |\n");
+                     "                            vrde on|off |\n");
             RTStrmPrintf(pStrm,
-                     "                            vrdpport default|<ports> |\n"
-                     "                            vrdpvideochannelquality <percent>\n");
+                     "                            vrdesetproperty <name=[value]> |\n"
+                     "                            vrdevideochannelquality <percent>\n");
         }
         RTStrmPrintf(pStrm,
                      "                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
@@ -598,8 +595,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                      "VBoxManage setproperty      hdfolder default|<folder> |\n"
                      "                            machinefolder default|<folder> |\n"
-                     "                            vrdpauthlibrary default|<library> |\n"
+                     "                            vrdeauthlibrary default|<library> |\n"
                      "                            websrvauthlibrary default|null|<library> |\n"
+                     "                            vrdelibrary null|<library> |\n"
                      "                            loghistorycount <value>\n"
                      "\n");
     }

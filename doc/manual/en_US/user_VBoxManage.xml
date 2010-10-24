@@ -2001,10 +2001,10 @@ Value: 2006.01.01</screen>
         </glossentry>
 
         <glossentry>
-          <glossterm>vrdpauthlibrary</glossterm>
+          <glossterm>vrdeauthlibrary</glossterm>
 
           <glossdef>
-            <para>This specifies which library to use when "external" VRDP
+            <para>This specifies which library to use when "external"
             authentication has been selected for a particular virtual machine;
             see <xref linkend="vbox-auth" /> for details.</para>
           </glossdef>
@@ -2018,6 +2018,15 @@ Value: 2006.01.01</screen>
             authenticate users. For details about the VirtualBox web service,
             please refer to the separate VirtualBox SDK reference (see <xref
             linkend="VirtualBoxAPI" />).</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>vrdelibrary</glossterm>
+
+          <glossdef>
+            <para>This specifies which library implements the VirtualBox Remote Desktop
+            Extension.</para>
           </glossdef>
         </glossentry>
 

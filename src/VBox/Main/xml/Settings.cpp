@@ -1228,8 +1228,11 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                     {
                         pelmGlobalChild->getAttributeValue("defaultMachineFolder", systemProperties.strDefaultMachineFolder);
                         pelmGlobalChild->getAttributeValue("defaultHardDiskFormat", systemProperties.strDefaultHardDiskFormat);
-                        pelmGlobalChild->getAttributeValue("remoteDisplayAuthLibrary", systemProperties.strRemoteDisplayAuthLibrary);
+                        if (!pelmGlobalChild->getAttributeValue("VRDEAuthLibrary", systemProperties.strVRDEAuthLibrary))
+                            // pre-1.11 used @remoteDisplayAuthLibrary instead
+                            pelmGlobalChild->getAttributeValue("remoteDisplayAuthLibrary", systemProperties.strVRDEAuthLibrary);
                         pelmGlobalChild->getAttributeValue("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
+                        pelmGlobalChild->getAttributeValue("defaultVRDELibrary", systemProperties.strDefaultVRDELibrary);
                         pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.ulLogHistoryCount);
                     }
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
@@ -1334,10 +1337,12 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("defaultMachineFolder", systemProperties.strDefaultMachineFolder);
     if (systemProperties.strDefaultHardDiskFormat.length())
         pelmSysProps->setAttribute("defaultHardDiskFormat", systemProperties.strDefaultHardDiskFormat);
-    if (systemProperties.strRemoteDisplayAuthLibrary.length())
-        pelmSysProps->setAttribute("remoteDisplayAuthLibrary", systemProperties.strRemoteDisplayAuthLibrary);
+    if (systemProperties.strVRDEAuthLibrary.length())
+        pelmSysProps->setAttribute("VRDEAuthLibrary", systemProperties.strVRDEAuthLibrary);
     if (systemProperties.strWebServiceAuthLibrary.length())
         pelmSysProps->setAttribute("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
+    if (systemProperties.strDefaultVRDELibrary.length())
+        pelmSysProps->setAttribute("defaultVRDELibrary", systemProperties.strDefaultVRDELibrary);
     pelmSysProps->setAttribute("LogHistoryCount", systemProperties.ulLogHistoryCount);
 
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
@@ -1364,7 +1369,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
  * which in turn gets called from Machine::saveSettings to figure out whether
  * machine settings have really changed and thus need to be written out to disk.
  */
-bool VRDPSettings::operator==(const VRDPSettings& v) const
+bool VRDESettings::operator==(const VRDESettings& v) const
 {
     return (    (this == &v)
              || (    (fEnabled                  == v.fEnabled)
@@ -1594,7 +1599,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (pointingHidType           == h.pointingHidType)
                   && (keyboardHidType           == h.keyboardHidType)
                   && (chipsetType               == h.chipsetType)
-                  && (vrdpSettings              == h.vrdpSettings)
+                  && (vrdeSettings              == h.vrdeSettings)
                   && (biosSettings              == h.biosSettings)
                   && (usbController             == h.usbController)
                   && (llNetworkAdapters         == h.llNetworkAdapters)
@@ -2425,9 +2430,9 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
-            pelmHwChild->getAttributeValue("enabled", hw.vrdpSettings.fEnabled);
-            pelmHwChild->getAttributeValue("port", hw.vrdpSettings.strPort);
-            pelmHwChild->getAttributeValue("netAddress", hw.vrdpSettings.strNetAddress);
+            pelmHwChild->getAttributeValue("enabled", hw.vrdeSettings.fEnabled);
+            pelmHwChild->getAttributeValue("port", hw.vrdeSettings.strPort);
+            pelmHwChild->getAttributeValue("netAddress", hw.vrdeSettings.strNetAddress);
 
             Utf8Str strAuthType;
             if (pelmHwChild->getAttributeValue("authType", strAuthType))
@@ -2435,25 +2440,25 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 // settings before 1.3 used lower case so make sure this is case-insensitive
                 strAuthType.toUpper();
                 if (strAuthType == "NULL")
-                    hw.vrdpSettings.authType = VRDPAuthType_Null;
+                    hw.vrdeSettings.authType = AuthType_Null;
                 else if (strAuthType == "GUEST")
-                    hw.vrdpSettings.authType = VRDPAuthType_Guest;
+                    hw.vrdeSettings.authType = AuthType_Guest;
                 else if (strAuthType == "EXTERNAL")
-                    hw.vrdpSettings.authType = VRDPAuthType_External;
+                    hw.vrdeSettings.authType = AuthType_External;
                 else
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in RemoteDisplay/@authType attribute"), strAuthType.c_str());
             }
 
-            pelmHwChild->getAttributeValue("authTimeout", hw.vrdpSettings.ulAuthTimeout);
-            pelmHwChild->getAttributeValue("allowMultiConnection", hw.vrdpSettings.fAllowMultiConnection);
-            pelmHwChild->getAttributeValue("reuseSingleConnection", hw.vrdpSettings.fReuseSingleConnection);
+            pelmHwChild->getAttributeValue("authTimeout", hw.vrdeSettings.ulAuthTimeout);
+            pelmHwChild->getAttributeValue("allowMultiConnection", hw.vrdeSettings.fAllowMultiConnection);
+            pelmHwChild->getAttributeValue("reuseSingleConnection", hw.vrdeSettings.fReuseSingleConnection);
 
             const xml::ElementNode *pelmVideoChannel;
             if ((pelmVideoChannel = pelmHwChild->findChildElement("VideoChannel")))
             {
-                pelmVideoChannel->getAttributeValue("enabled", hw.vrdpSettings.fVideoChannel);
-                pelmVideoChannel->getAttributeValue("quality", hw.vrdpSettings.ulVideoChannelQuality);
-                hw.vrdpSettings.ulVideoChannelQuality = RT_CLAMP(hw.vrdpSettings.ulVideoChannelQuality, 10, 100);
+                pelmVideoChannel->getAttributeValue("enabled", hw.vrdeSettings.fVideoChannel);
+                pelmVideoChannel->getAttributeValue("quality", hw.vrdeSettings.ulVideoChannelQuality);
+                hw.vrdeSettings.ulVideoChannelQuality = RT_CLAMP(hw.vrdeSettings.ulVideoChannelQuality, 10, 100);
             }
         }
         else if (pelmHwChild->nameEquals("BIOS"))
@@ -3340,35 +3345,35 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (m->sv >= SettingsVersion_v1_8)
         pelmDisplay->setAttribute("accelerate2DVideo", hw.fAccelerate2DVideo);
 
-    xml::ElementNode *pelmVRDP = pelmHardware->createChild("RemoteDisplay");
-    pelmVRDP->setAttribute("enabled", hw.vrdpSettings.fEnabled);
-    Utf8Str strPort = hw.vrdpSettings.strPort;
+    xml::ElementNode *pelmVRDE = pelmHardware->createChild("RemoteDisplay");
+    pelmVRDE->setAttribute("enabled", hw.vrdeSettings.fEnabled);
+    Utf8Str strPort = hw.vrdeSettings.strPort;
     if (!strPort.length())
         strPort = "3389";
-    pelmVRDP->setAttribute("port", strPort);
-    if (hw.vrdpSettings.strNetAddress.length())
-        pelmVRDP->setAttribute("netAddress", hw.vrdpSettings.strNetAddress);
+    pelmVRDE->setAttribute("port", strPort);
+    if (hw.vrdeSettings.strNetAddress.length())
+        pelmVRDE->setAttribute("netAddress", hw.vrdeSettings.strNetAddress);
     const char *pcszAuthType;
-    switch (hw.vrdpSettings.authType)
+    switch (hw.vrdeSettings.authType)
     {
-        case VRDPAuthType_Guest:    pcszAuthType = "Guest";    break;
-        case VRDPAuthType_External: pcszAuthType = "External"; break;
-        default: /*case VRDPAuthType_Null:*/ pcszAuthType = "Null"; break;
+        case AuthType_Guest:    pcszAuthType = "Guest";    break;
+        case AuthType_External: pcszAuthType = "External"; break;
+        default: /*case AuthType_Null:*/ pcszAuthType = "Null"; break;
     }
-    pelmVRDP->setAttribute("authType", pcszAuthType);
+    pelmVRDE->setAttribute("authType", pcszAuthType);
 
-    if (hw.vrdpSettings.ulAuthTimeout != 0)
-        pelmVRDP->setAttribute("authTimeout", hw.vrdpSettings.ulAuthTimeout);
-    if (hw.vrdpSettings.fAllowMultiConnection)
-        pelmVRDP->setAttribute("allowMultiConnection", hw.vrdpSettings.fAllowMultiConnection);
-    if (hw.vrdpSettings.fReuseSingleConnection)
-        pelmVRDP->setAttribute("reuseSingleConnection", hw.vrdpSettings.fReuseSingleConnection);
+    if (hw.vrdeSettings.ulAuthTimeout != 0)
+        pelmVRDE->setAttribute("authTimeout", hw.vrdeSettings.ulAuthTimeout);
+    if (hw.vrdeSettings.fAllowMultiConnection)
+        pelmVRDE->setAttribute("allowMultiConnection", hw.vrdeSettings.fAllowMultiConnection);
+    if (hw.vrdeSettings.fReuseSingleConnection)
+        pelmVRDE->setAttribute("reuseSingleConnection", hw.vrdeSettings.fReuseSingleConnection);
 
     if (m->sv >= SettingsVersion_v1_10)
     {
-        xml::ElementNode *pelmVideoChannel = pelmVRDP->createChild("VideoChannel");
-        pelmVideoChannel->setAttribute("enabled", hw.vrdpSettings.fVideoChannel);
-        pelmVideoChannel->setAttribute("quality", hw.vrdpSettings.ulVideoChannelQuality);
+        xml::ElementNode *pelmVideoChannel = pelmVRDE->createChild("VideoChannel");
+        pelmVideoChannel->setAttribute("enabled", hw.vrdeSettings.fVideoChannel);
+        pelmVideoChannel->setAttribute("quality", hw.vrdeSettings.ulVideoChannelQuality);
     }
 
     xml::ElementNode *pelmBIOS = pelmHardware->createChild("BIOS");
@@ -4316,8 +4321,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     {
         if (   (hardwareMachine.ioSettings.fIoCacheEnabled != true)
             || (hardwareMachine.ioSettings.ulIoCacheSize != 5)
-                // and VRDP video channel
-            || (hardwareMachine.vrdpSettings.fVideoChannel)
+                // and remote desktop video redirection channel
+            || (hardwareMachine.vrdeSettings.fVideoChannel)
                 // and page fusion
             || (hardwareMachine.fPageFusionEnabled)
                 // and CPU hotplug, RTC timezone control, HID type and HPET

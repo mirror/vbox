@@ -60,7 +60,7 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
                                      const VBoxGlobalSettings &aGs)
 {
     mPsMach->setPath (aProps.GetDefaultMachineFolder());
-    mPsVRDP->setPath (aProps.GetRemoteDisplayAuthLibrary());
+    mPsVRDP->setPath (aProps.GetVRDEAuthLibrary());
     mCbCheckTrayIcon->setChecked (aGs.trayIconEnabled());
 #ifdef Q_WS_MAC
     mCbCheckPresentationMode->setChecked (aGs.presentationModeEnabled());
@@ -74,7 +74,7 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
     if (aProps.isOk() && mPsMach->isModified())
         aProps.SetDefaultMachineFolder (mPsMach->path());
     if (aProps.isOk() && mPsVRDP->isModified())
-        aProps.SetRemoteDisplayAuthLibrary (mPsVRDP->path());
+        aProps.SetVRDEAuthLibrary (mPsVRDP->path());
     aGs.setTrayIconEnabled (mCbCheckTrayIcon->isChecked());
 #ifdef Q_WS_MAC
     aGs.setPresentationModeEnabled (mCbCheckPresentationMode->isChecked());
