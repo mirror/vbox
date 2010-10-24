@@ -586,7 +586,7 @@ void UIDetailsPagePrivate::sltUpdateDisplay()
                 item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
 
             /* VRDE tab */
-            CVRDEServer &srv = m_machine.GetVRDEServer();
+            CVRDEServer srv = m_machine.GetVRDEServer();
             if (!srv.isNull())
             {
                 if (srv.GetEnabled())
