@@ -954,9 +954,9 @@ def infoCmd(ctx,args):
     print "  Keyboard [keyboardHidType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHidType", mach.keyboardHidType), mach.keyboardHidType)
     print "  Pointing device [pointingHidType]: %s (%s)" %(asEnumElem(ctx,"PointingHidType", mach.pointingHidType), mach.pointingHidType)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
-    # OSE has no VRDP
+    # OSE has no VRDE
     try:
-        print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
+        print "  VRDE server [VRDEServer.enabled]: %s" %(asState(mach.VRDEServer.enabled))
     except:
         pass
     print
@@ -2986,7 +2986,7 @@ aliases = {'s':'start',
            'v':'verbose'}
 
 commands = {'help':['Prints help information', helpCmd, 0],
-            'start':['Start virtual machine by name or uuid: start Linux vrdp', startCmd, 0],
+            'start':['Start virtual machine by name or uuid: start Linux headless', startCmd, 0],
             'createVm':['Create virtual machine: createVm macvm MacOS', createVmCmd, 0],
             'removeVm':['Remove virtual machine', removeVmCmd, 0],
             'pause':['Pause virtual machine', pauseCmd, 0],

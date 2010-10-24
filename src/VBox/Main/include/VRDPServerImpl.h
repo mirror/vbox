@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,21 +26,21 @@
 
 namespace settings
 {
-    struct VRDPSettings;
+    struct VRDESettings;
 }
 
-class ATL_NO_VTABLE VRDPServer :
+class ATL_NO_VTABLE VRDEServer :
     public VirtualBoxBase,
-    VBOX_SCRIPTABLE_IMPL(IVRDPServer)
+    VBOX_SCRIPTABLE_IMPL(IVRDEServer)
 {
 public:
 
     struct Data
     {
         BOOL mEnabled;
-        Bstr mVRDPPorts;
-        Bstr mVRDPAddress;
-        VRDPAuthType_T mAuthType;
+        Bstr mPorts;
+        Bstr mAddress;
+        AuthType_T mAuthType;
         ULONG mAuthTimeout;
         BOOL mAllowMultiConnection;
         BOOL mReuseSingleConnection;
@@ -48,38 +48,34 @@ public:
         ULONG mVideoChannelQuality;
     };
 
-    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VRDPServer, IVRDPServer)
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VRDEServer, IVRDEServer)
 
-    DECLARE_NOT_AGGREGATABLE(VRDPServer)
+    DECLARE_NOT_AGGREGATABLE(VRDEServer)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(VRDPServer)
+    BEGIN_COM_MAP(VRDEServer)
         COM_INTERFACE_ENTRY  (ISupportErrorInfo)
-        COM_INTERFACE_ENTRY  (IVRDPServer)
-        COM_INTERFACE_ENTRY2 (IDispatch, IVRDPServer)
+        COM_INTERFACE_ENTRY  (IVRDEServer)
+        COM_INTERFACE_ENTRY2 (IDispatch, IVRDEServer)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (VRDPServer)
+    DECLARE_EMPTY_CTOR_DTOR (VRDEServer)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *aParent);
-    HRESULT init(Machine *aParent, VRDPServer *aThat);
-    HRESULT initCopy (Machine *aParent, VRDPServer *aThat);
+    HRESULT init(Machine *aParent, VRDEServer *aThat);
+    HRESULT initCopy (Machine *aParent, VRDEServer *aThat);
     void uninit();
 
-    // IVRDPServer properties
+    // IVRDEServer properties
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnable);
-    STDMETHOD(COMGETTER(Ports)) (BSTR *aPorts);
-    STDMETHOD(COMSETTER(Ports)) (IN_BSTR aPorts);
-    STDMETHOD(COMGETTER(NetAddress)) (BSTR *aAddress);
-    STDMETHOD(COMSETTER(NetAddress)) (IN_BSTR aAddress);
-    STDMETHOD(COMGETTER(AuthType)) (VRDPAuthType_T *aType);
-    STDMETHOD(COMSETTER(AuthType)) (VRDPAuthType_T aType);
+    STDMETHOD(COMGETTER(AuthType)) (AuthType_T *aType);
+    STDMETHOD(COMSETTER(AuthType)) (AuthType_T aType);
     STDMETHOD(COMGETTER(AuthTimeout)) (ULONG *aTimeout);
     STDMETHOD(COMSETTER(AuthTimeout)) (ULONG aTimeout);
     STDMETHOD(COMGETTER(AllowMultiConnection)) (BOOL *aAllowMultiConnection);
@@ -91,21 +87,23 @@ public:
     STDMETHOD(COMGETTER(VideoChannelQuality)) (ULONG *aVideoChannelQuality);
     STDMETHOD(COMSETTER(VideoChannelQuality)) (ULONG aVideoChannelQuality);
 
-    // IVRDPServer methods
+    // IVRDEServer methods
+    STDMETHOD(SetVRDEProperty) (IN_BSTR aKey, IN_BSTR aValue);
+    STDMETHOD(GetVRDEProperty) (IN_BSTR aKey, BSTR *aValue);
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings(const settings::VRDPSettings &data);
-    HRESULT saveSettings(settings::VRDPSettings &data);
+    HRESULT loadSettings(const settings::VRDESettings &data);
+    HRESULT saveSettings(settings::VRDESettings &data);
 
     void rollback();
     void commit();
-    void copyFrom (VRDPServer *aThat);
+    void copyFrom (VRDEServer *aThat);
 
 private:
 
     Machine * const     mParent;
-    const ComObjPtr<VRDPServer> mPeer;
+    const ComObjPtr<VRDEServer> mPeer;
 
     Backupable<Data>    mData;
 };

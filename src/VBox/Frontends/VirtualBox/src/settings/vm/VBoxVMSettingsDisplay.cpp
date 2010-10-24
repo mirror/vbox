@@ -65,8 +65,8 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     /* Setup validators */
     mLeMemory->setValidator (new QIntValidator (m_minVRAM, m_maxVRAMVisible, this));
     mLeMonitors->setValidator (new QIntValidator (MinMonitors, MaxMonitors, this));
-    mLeVRDPPort->setValidator (new QRegExpValidator (QRegExp ("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
-    mLeVRDPTimeout->setValidator (new QIntValidator (this));
+    mLeVRDEPort->setValidator (new QRegExpValidator (QRegExp ("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
+    mLeVRDETimeout->setValidator (new QIntValidator (this));
 
     /* Setup connections */
     connect (mSlMemory, SIGNAL (valueChanged (int)), this, SLOT (valueChangedVRAM (int)));
@@ -100,12 +100,12 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     /* Ensure value and validation is updated */
     valueChangedVRAM (mSlMemory->value());
     valueChangedMonitors (mSlMonitors->value());
-    /* Setup VRDP widget */
-    mCbVRDPMethod->insertItem (0, ""); /* KVRDPAuthType_Null */
-    mCbVRDPMethod->insertItem (1, ""); /* KVRDPAuthType_External */
-    mCbVRDPMethod->insertItem (2, ""); /* KVRDPAuthType_Guest */
+    /* Setup VRDE widget */
+    mCbVRDEMethod->insertItem (0, ""); /* KAuthType_Null */
+    mCbVRDEMethod->insertItem (1, ""); /* KAuthType_External */
+    mCbVRDEMethod->insertItem (2, ""); /* KAuthType_Guest */
     /* Initially disabled */
-    mCbVRDP->setChecked (false);
+    mCbVRDE->setChecked (false);
 
     mCb3D->setEnabled (false);
 
@@ -152,16 +152,16 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
                             && VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif
 
-    /* VRDP Settings */
-    CVRDPServer vrdp = mMachine.GetVRDPServer();
-    if (!vrdp.isNull())
+    /* Remote Desktop Settings */
+    CVRDEServer vrdeServer = mMachine.GetVRDEServer();
+    if (!vrdeServer.isNull())
     {
-        mCbVRDP->setChecked (vrdp.GetEnabled());
-        mLeVRDPPort->setText (vrdp.GetPorts());
-        mCbVRDPMethod->setCurrentIndex (mCbVRDPMethod->
-                                        findText (vboxGlobal().toString (vrdp.GetAuthType())));
-        mLeVRDPTimeout->setText (QString::number (vrdp.GetAuthTimeout()));
-        mCbMultipleConn->setChecked(vrdp.GetAllowMultiConnection());
+        mCbVRDE->setChecked (vrdeServer.GetEnabled());
+        mLeVRDEPort->setText (vrdeServer.GetVRDEProperty("TCP/Ports"));
+        mCbVRDEMethod->setCurrentIndex (mCbVRDEMethod->
+                                        findText (vboxGlobal().toString (vrdeServer.GetAuthType())));
+        mLeVRDETimeout->setText (QString::number (vrdeServer.GetAuthTimeout()));
+        mCbMultipleConn->setChecked(vrdeServer.GetAllowMultiConnection());
     }
     else
     {
@@ -186,15 +186,15 @@ void VBoxVMSettingsDisplay::putBackTo()
     mMachine.SetAccelerate2DVideoEnabled (mCb2DVideo->isChecked());
 #endif
 
-    /* VRDP Settings */
-    CVRDPServer vrdp = mMachine.GetVRDPServer();
-    if (!vrdp.isNull())
+    /* VRDE Settings */
+    CVRDEServer vrdeServer = mMachine.GetVRDEServer();
+    if (!vrdeServer.isNull())
     {
-        vrdp.SetEnabled (mCbVRDP->isChecked());
-        vrdp.SetPorts (mLeVRDPPort->text());
-        vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (mCbVRDPMethod->currentText()));
-        vrdp.SetAuthTimeout (mLeVRDPTimeout->text().toULong());
-        vrdp.SetAllowMultiConnection(mCbMultipleConn->isChecked());
+        vrdeServer.SetEnabled (mCbVRDE->isChecked());
+        vrdeServer.SetVRDEProperty("TCP/Ports", mLeVRDEPort->text());
+        vrdeServer.SetAuthType (vboxGlobal().toAuthType (mCbVRDEMethod->currentText()));
+        vrdeServer.SetAuthTimeout (mLeVRDETimeout->text().toULong());
+        vrdeServer.SetAllowMultiConnection(mCbMultipleConn->isChecked());
     }
 }
 
@@ -207,11 +207,11 @@ void VBoxVMSettingsDisplay::setValidator (QIWidgetValidator *aVal)
     connect (mCb2DVideo, SIGNAL (stateChanged (int)),
              mValidator, SLOT (revalidate()));
 #endif
-    connect (mCbVRDP, SIGNAL (toggled (bool)),
+    connect (mCbVRDE, SIGNAL (toggled (bool)),
              mValidator, SLOT (revalidate()));
-    connect (mLeVRDPPort, SIGNAL (textChanged (const QString&)),
+    connect (mLeVRDEPort, SIGNAL (textChanged (const QString&)),
              mValidator, SLOT (revalidate()));
-    connect (mLeVRDPTimeout, SIGNAL (textChanged (const QString&)),
+    connect (mLeVRDETimeout, SIGNAL (textChanged (const QString&)),
              mValidator, SLOT (revalidate()));
 }
 
@@ -260,16 +260,16 @@ void VBoxVMSettingsDisplay::setOrderAfter (QWidget *aWidget)
     setTabOrder (mLeMonitors, mCb3D);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     setTabOrder (mCb3D, mCb2DVideo);
-    setTabOrder (mCb2DVideo, mCbVRDP);
+    setTabOrder (mCb2DVideo, mCbVRDE);
 #else
-    setTabOrder (mCb3D, mCbVRDP);
+    setTabOrder (mCb3D, mCbVRDE);
 #endif
 
     /* Remote display tab-order */
-    setTabOrder (mCbVRDP, mLeVRDPPort);
-    setTabOrder (mLeVRDPPort, mCbVRDPMethod);
-    setTabOrder (mCbVRDPMethod, mLeVRDPTimeout);
-    setTabOrder (mLeVRDPTimeout, mCbMultipleConn);
+    setTabOrder (mCbVRDE, mLeVRDEPort);
+    setTabOrder (mLeVRDEPort, mCbVRDEMethod);
+    setTabOrder (mCbVRDEMethod, mLeVRDETimeout);
+    setTabOrder (mLeVRDETimeout, mCbMultipleConn);
 }
 
 void VBoxVMSettingsDisplay::retranslateUi()
@@ -283,12 +283,12 @@ void VBoxVMSettingsDisplay::retranslateUi()
     mLbMonitorsMin->setText (tr ("<qt>%1</qt>").arg (1));
     mLbMonitorsMax->setText (tr ("<qt>%1</qt>").arg (sys.GetMaxGuestMonitors()));
 
-    mCbVRDPMethod->setItemText (0,
-        vboxGlobal().toString (KVRDPAuthType_Null));
-    mCbVRDPMethod->setItemText (1,
-        vboxGlobal().toString (KVRDPAuthType_External));
-    mCbVRDPMethod->setItemText (2,
-        vboxGlobal().toString (KVRDPAuthType_Guest));
+    mCbVRDEMethod->setItemText (0,
+        vboxGlobal().toString (KAuthType_Null));
+    mCbVRDEMethod->setItemText (1,
+        vboxGlobal().toString (KAuthType_External));
+    mCbVRDEMethod->setItemText (2,
+        vboxGlobal().toString (KAuthType_Guest));
 }
 
 void VBoxVMSettingsDisplay::valueChangedVRAM (int aVal)

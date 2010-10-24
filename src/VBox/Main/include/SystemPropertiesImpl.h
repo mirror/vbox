@@ -85,10 +85,12 @@ public:
     STDMETHOD(COMSETTER(FreeDiskSpaceError))(LONG64 aFreeDiskSpace);
     STDMETHOD(COMGETTER(FreeDiskSpacePercentError))(ULONG *aFreeDiskSpacePercent);
     STDMETHOD(COMSETTER(FreeDiskSpacePercentError))(ULONG aFreeDiskSpacePercent);
-    STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary))(BSTR *aRemoteDisplayAuthLibrary);
-    STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary))(IN_BSTR aRemoteDisplayAuthLibrary);
+    STDMETHOD(COMGETTER(VRDEAuthLibrary))(BSTR *aVRDEAuthLibrary);
+    STDMETHOD(COMSETTER(VRDEAuthLibrary))(IN_BSTR aVRDEAuthLibrary);
     STDMETHOD(COMGETTER(WebServiceAuthLibrary))(BSTR *aWebServiceAuthLibrary);
     STDMETHOD(COMSETTER(WebServiceAuthLibrary))(IN_BSTR aWebServiceAuthLibrary);
+    STDMETHOD(COMGETTER(DefaultVRDELibrary))(BSTR *aVRDELibrary);
+    STDMETHOD(COMSETTER(DefaultVRDELibrary))(IN_BSTR aVRDELibrary);
     STDMETHOD(COMGETTER(LogHistoryCount))(ULONG *count);
     STDMETHOD(COMSETTER(LogHistoryCount))(ULONG count);
     STDMETHOD(COMGETTER(DefaultAudioDriver))(AudioDriverType_T *aAudioDriver);
@@ -118,8 +120,9 @@ private:
     HRESULT setDefaultMachineFolder(const Utf8Str &aPath);
     HRESULT setDefaultHardDiskFormat(const Utf8Str &aFormat);
 
-    HRESULT setRemoteDisplayAuthLibrary(const Utf8Str &aPath);
+    HRESULT setVRDEAuthLibrary(const Utf8Str &aPath);
     HRESULT setWebServiceAuthLibrary(const Utf8Str &aPath);
+    HRESULT setDefaultVRDELibrary(const Utf8Str &aPath);
 
     VirtualBox * const  mParent;
 

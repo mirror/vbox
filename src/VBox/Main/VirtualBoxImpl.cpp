@@ -4455,4 +4455,19 @@ HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
     return rc;
 }
 
+STDMETHODIMP VirtualBox::VRDERegisterLibrary(IN_BSTR aName)
+{
+    return E_FAIL; /* @todo VRDE */
+}
+
+STDMETHODIMP VirtualBox::VRDEUnregisterLibrary(IN_BSTR aName)
+{
+    return E_FAIL; /* @todo VRDE */
+}
+
+STDMETHODIMP VirtualBox::VRDEListLibraries(ComSafeArrayOut(BSTR, aNames))
+{
+    return E_FAIL; /* @todo VRDE */
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

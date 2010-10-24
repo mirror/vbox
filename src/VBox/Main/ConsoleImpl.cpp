@@ -275,8 +275,8 @@ public:
         kOnMediumChanged,
         kOnCPUChanged,
         kOnCPUExecutionCapChanged,
-        kOnVRDPServerChanged,
-        kOnRemoteDisplayInfoChanged,
+        kOnVRDEServerChanged,
+        kOnVRDEServerInfoChanged,
         kOnUSBControllerChanged,
         kOnUSBDeviceStateChanged,
         kOnSharedFolderChanged,
@@ -425,7 +425,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     AssertComRCReturnRC(rc);
 
 #ifdef VBOX_WITH_VRDP
-    rc = mMachine->COMGETTER(VRDPServer)(unconst(mVRDPServer).asOutParam());
+    rc = mMachine->COMGETTER(VRDEServer)(unconst(mVRDEServer).asOutParam());
     AssertComRCReturnRC(rc);
 #endif
 
@@ -452,8 +452,8 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     rc = mDisplay->init(this);
     AssertComRCReturnRC(rc);
 
-    unconst(mRemoteDisplayInfo).createObject();
-    rc = mRemoteDisplayInfo->init(this);
+    unconst(mVRDEServerInfo).createObject();
+    rc = mVRDEServerInfo->init(this);
     AssertComRCReturnRC(rc);
 
     /* Grab global and machine shared folder lists */
@@ -554,10 +554,10 @@ void Console::uninit()
     mRemoteUSBDevices.clear();
     mUSBDevices.clear();
 
-    if (mRemoteDisplayInfo)
+    if (mVRDEServerInfo)
     {
-        mRemoteDisplayInfo->uninit();
-        unconst(mRemoteDisplayInfo).setNull();;
+        mVRDEServerInfo->uninit();
+        unconst(mVRDEServerInfo).setNull();;
     }
 
     if (mDebugger)
@@ -597,7 +597,7 @@ void Console::uninit()
     }
 
 #ifdef VBOX_WITH_VRDP
-    unconst(mVRDPServer).setNull();
+    unconst(mVRDEServer).setNull();
 #endif
 
     unconst(mControl).setNull();
@@ -643,7 +643,7 @@ void Console::updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *p
     if (RT_SUCCESS(rc))
     {
         Bstr clientName;
-        mRemoteDisplayInfo->COMGETTER(ClientName)(clientName.asOutParam());
+        mVRDEServerInfo->COMGETTER(ClientName)(clientName.asOutParam());
 
         mMachine->SetGuestProperty(Bstr(pszPropertyName).raw(),
                                    clientName.raw(),
@@ -752,12 +752,12 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
 
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
-    VRDPAuthType_T authType = VRDPAuthType_Null;
-    hrc = mVRDPServer->COMGETTER(AuthType)(&authType);
+    AuthType_T authType = AuthType_Null;
+    hrc = mVRDEServer->COMGETTER(AuthType)(&authType);
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
     ULONG authTimeout = 0;
-    hrc = mVRDPServer->COMGETTER(AuthTimeout)(&authTimeout);
+    hrc = mVRDEServer->COMGETTER(AuthTimeout)(&authTimeout);
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
     VRDPAuthResult result = VRDPAuthAccessDenied;
@@ -767,11 +767,11 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
 
     LogRel(("VRDPAUTH: User: [%s]. Domain: [%s]. Authentication type: [%s]\n",
                 pszUser, pszDomain,
-                authType == VRDPAuthType_Null?
+                authType == AuthType_Null?
                     "Null":
-                    (authType == VRDPAuthType_External?
+                    (authType == AuthType_External?
                         "External":
-                        (authType == VRDPAuthType_Guest?
+                        (authType == AuthType_Guest?
                             "Guest":
                             "INVALID"
                         )
@@ -780,13 +780,13 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
 
     switch (authType)
     {
-        case VRDPAuthType_Null:
+        case AuthType_Null:
         {
             result = VRDPAuthAccessGranted;
             break;
         }
 
-        case VRDPAuthType_External:
+        case AuthType_External:
         {
             /* Call the external library. */
             result = mConsoleVRDPServer->Authenticate(uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
@@ -801,7 +801,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
             LogFlowFunc(("External auth asked for guest judgement\n"));
         } /* pass through */
 
-        case VRDPAuthType_Guest:
+        case AuthType_Guest:
         {
             guestJudgement = VRDPAuthGuestNotReacted;
 
@@ -847,7 +847,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
                 }
             }
 
-            if (authType == VRDPAuthType_External)
+            if (authType == AuthType_External)
             {
                 LogRel(("VRDPAUTH: Guest judgement %d.\n", guestJudgement));
                 LogFlowFunc(("External auth called again with guest judgement = %d\n", guestJudgement));
@@ -885,11 +885,11 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
 
     /* Multiconnection check must be made after authentication, so bad clients would not interfere with a good one. */
     BOOL allowMultiConnection = FALSE;
-    hrc = mVRDPServer->COMGETTER(AllowMultiConnection)(&allowMultiConnection);
+    hrc = mVRDEServer->COMGETTER(AllowMultiConnection)(&allowMultiConnection);
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
     BOOL reuseSingleConnection = FALSE;
-    hrc = mVRDPServer->COMGETTER(ReuseSingleConnection)(&reuseSingleConnection);
+    hrc = mVRDEServer->COMGETTER(ReuseSingleConnection)(&reuseSingleConnection);
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
     LogFlowFunc(("allowMultiConnection %d, reuseSingleConnection = %d, mcVRDPClients = %d, mu32SingleRDPClientId = %d\n", allowMultiConnection, reuseSingleConnection, mcVRDPClients, mu32SingleRDPClientId));
@@ -1053,11 +1053,11 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
     HRESULT hrc = mMachine->COMGETTER(Id)(uuid.asOutParam());
     AssertComRC(hrc);
 
-    VRDPAuthType_T authType = VRDPAuthType_Null;
-    hrc = mVRDPServer->COMGETTER(AuthType)(&authType);
+    AuthType_T authType = AuthType_Null;
+    hrc = mVRDEServer->COMGETTER(AuthType)(&authType);
     AssertComRC(hrc);
 
-    if (authType == VRDPAuthType_External)
+    if (authType == AuthType_External)
         mConsoleVRDPServer->AuthDisconnect(uuid, u32ClientId);
 
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -1623,15 +1623,15 @@ STDMETHODIMP Console::COMGETTER(RemoteUSBDevices)(ComSafeArrayOut(IHostUSBDevice
     return S_OK;
 }
 
-STDMETHODIMP Console::COMGETTER(RemoteDisplayInfo)(IRemoteDisplayInfo **aRemoteDisplayInfo)
+STDMETHODIMP Console::COMGETTER(VRDEServerInfo)(IVRDEServerInfo **aVRDEServerInfo)
 {
-    CheckComArgOutPointerValid(aRemoteDisplayInfo);
+    CheckComArgOutPointerValid(aVRDEServerInfo);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mDisplay is constant during life time, no need to lock */
-    mRemoteDisplayInfo.queryInterfaceTo(aRemoteDisplayInfo);
+    mVRDEServerInfo.queryInterfaceTo(aVRDEServerInfo);
 
     return S_OK;
 }
@@ -3937,11 +3937,11 @@ HRESULT Console::onCPUExecutionCapChange(ULONG aExecutionCap)
 }
 
 /**
- * Called by IInternalSessionControl::OnVRDPServerChange().
+ * Called by IInternalSessionControl::OnVRDEServerChange().
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onVRDPServerChange(BOOL aRestart)
+HRESULT Console::onVRDEServerChange(BOOL aRestart)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -3950,7 +3950,7 @@ HRESULT Console::onVRDPServerChange(BOOL aRestart)
 
     HRESULT rc = S_OK;
 
-    if (    mVRDPServer
+    if (    mVRDEServer
         &&  (   mMachineState == MachineState_Running
              || mMachineState == MachineState_Teleporting
              || mMachineState == MachineState_LiveSnapshotting
@@ -3959,7 +3959,7 @@ HRESULT Console::onVRDPServerChange(BOOL aRestart)
     {
         BOOL vrdpEnabled = FALSE;
 
-        rc = mVRDPServer->COMGETTER(Enabled)(&vrdpEnabled);
+        rc = mVRDEServer->COMGETTER(Enabled)(&vrdpEnabled);
         ComAssertComRCRetRC(rc);
 
         if (aRestart)
@@ -3990,7 +3990,7 @@ HRESULT Console::onVRDPServerChange(BOOL aRestart)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS0(OnVRDPServerChanged);
+        CONSOLE_DO_CALLBACKS0(OnVRDEServerChanged);
 
     return rc;
 }
@@ -3998,14 +3998,14 @@ HRESULT Console::onVRDPServerChange(BOOL aRestart)
 /**
  * @note Locks this object for reading.
  */
-void Console::onRemoteDisplayInfoChange()
+void Console::onVRDEServerInfoChange()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CONSOLE_DO_CALLBACKS0(OnRemoteDisplayInfoChanged);
+    CONSOLE_DO_CALLBACKS0(OnVRDEServerInfoChanged);
 }
 
 
@@ -7430,7 +7430,6 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         }
 
 #ifdef VBOX_WITH_VRDP
-
         /* Create the VRDP server. In case of headless operation, this will
          * also create the framebuffer, required at VM creation.
          */
@@ -7448,28 +7447,35 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         {
             Utf8Str errMsg;
             Bstr bstr;
-            console->mVRDPServer->COMGETTER(Ports)(bstr.asOutParam());
+            console->mVRDEServer->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
             Utf8Str ports = bstr;
-            errMsg = Utf8StrFmt(tr("VRDP server can't bind to a port: %s"),
+            errMsg = Utf8StrFmt(tr("VirtualBox Remote Desktop Extension server can't bind to the port: %s"),
                                 ports.c_str());
-            LogRel(("Warning: failed to launch VRDP server (%Rrc): '%s'\n",
+            LogRel(("VRDE: Warning: failed to launch VRDE server (%Rrc): '%s'\n",
                     vrc, errMsg.c_str()));
+        }
+        else if (vrc == VINF_NOT_SUPPORTED)
+        {
+            /* This means that the VRDE is not installed. */
+            LogRel(("VRDE: VirtualBox Remote Desktop Extension is not available.\n"));
         }
         else if (RT_FAILURE(vrc))
         {
+            /* Fail, if the server is installed but can't start. */
             Utf8Str errMsg;
             switch (vrc)
             {
                 case VERR_FILE_NOT_FOUND:
                 {
-                    errMsg = Utf8StrFmt(tr("Could not load the VRDP library"));
+                    /* VRDE library file is missing. */
+                    errMsg = Utf8StrFmt(tr("Could not find the VirtualBox Remote Desktop Extension library."));
                     break;
                 }
                 default:
-                    errMsg = Utf8StrFmt(tr("Failed to launch VRDP server (%Rrc)"),
+                    errMsg = Utf8StrFmt(tr("Failed to launch Remote Desktop Extension server (%Rrc)"),
                                         vrc);
             }
-            LogRel(("Failed to launch VRDP server (%Rrc), error message: '%s'\n",
+            LogRel(("VRDE: Failed: (%Rrc), error message: '%s'\n",
                      vrc, errMsg.c_str()));
             throw setErrorStatic(E_FAIL, errMsg.c_str());
         }

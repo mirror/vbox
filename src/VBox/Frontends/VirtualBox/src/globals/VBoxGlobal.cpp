@@ -1656,17 +1656,17 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 #endif
 
         /* VRDP tab */
-        CVRDPServer srv = aMachine.GetVRDPServer();
+        CVRDEServer srv = aMachine.GetVRDEServer();
         if (!srv.isNull())
         {
             if (srv.GetEnabled())
                 item += QString (sSectionItemTpl2)
-                        .arg (tr ("Remote Display Server Port", "details report (VRDP Server)"))
-                        .arg (srv.GetPorts());
+                        .arg (tr ("Remote Desktop Server Port", "details report (VRDE Server)"))
+                        .arg (srv.GetVRDEProperty("TCP/Ports"));
             else
                 item += QString (sSectionItemTpl2)
-                        .arg (tr ("Remote Display Server", "details report (VRDP Server)"))
-                        .arg (tr ("Disabled", "details report (VRDP Server)"));
+                        .arg (tr ("Remote Desktop Server", "details report (VRDE Server)"))
+                        .arg (tr ("Disabled", "details report (VRDE Server)"));
             ++ rows;
         }
 
@@ -2701,9 +2701,9 @@ void VBoxGlobal::retranslateUi()
     mDiskTypes [KMediumType_Shareable] =        tr ("Shareable", "DiskType");
     mDiskTypes_Differencing =                   tr ("Differencing", "DiskType");
 
-    mVRDPAuthTypes [KVRDPAuthType_Null] =       tr ("Null", "VRDPAuthType");
-    mVRDPAuthTypes [KVRDPAuthType_External] =   tr ("External", "VRDPAuthType");
-    mVRDPAuthTypes [KVRDPAuthType_Guest] =      tr ("Guest", "VRDPAuthType");
+    mAuthTypes [KAuthType_Null] =       tr ("Null", "AuthType");
+    mAuthTypes [KAuthType_External] =   tr ("External", "AuthType");
+    mAuthTypes [KAuthType_Guest] =      tr ("Guest", "AuthType");
 
     mPortModeTypes [KPortMode_Disconnected] =   tr ("Disconnected", "PortMode");
     mPortModeTypes [KPortMode_HostPipe] =       tr ("Host Pipe", "PortMode");

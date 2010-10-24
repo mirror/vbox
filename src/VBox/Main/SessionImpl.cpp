@@ -609,7 +609,7 @@ STDMETHODIMP Session::OnCPUExecutionCapChange(ULONG aExecutionCap)
     return mConsole->onCPUExecutionCapChange(aExecutionCap);
 }
 
-STDMETHODIMP Session::OnVRDPServerChange(BOOL aRestart)
+STDMETHODIMP Session::OnVRDEServerChange(BOOL aRestart)
 {
     LogFlowThisFunc(("\n"));
 
@@ -620,7 +620,7 @@ STDMETHODIMP Session::OnVRDPServerChange(BOOL aRestart)
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onVRDPServerChange(aRestart);
+    return mConsole->onVRDEServerChange(aRestart);
 }
 
 STDMETHODIMP Session::OnUSBControllerChange()

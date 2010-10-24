@@ -581,7 +581,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
     {
         case VRDE_QP_NETWORK_PORT:
         {
-            /* This is obsolete, the VRDP server uses VRDE_QP_NETWORK_PORT_RANGE instead. */
+            /* This is obsolete, the VRDE server uses VRDE_QP_NETWORK_PORT_RANGE instead. */
             ULONG port = 0;
 
             if (cbBuffer >= sizeof(uint32_t))
@@ -600,7 +600,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
         case VRDE_QP_NETWORK_ADDRESS:
         {
             com::Bstr bstr;
-            server->mConsole->getVRDPServer()->COMGETTER(NetAddress)(bstr.asOutParam());
+            server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("TCP/Address").raw(), bstr.asOutParam());
 
             /* The server expects UTF8. */
             com::Utf8Str address = bstr;
@@ -649,7 +649,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
         case VRDE_QP_NETWORK_PORT_RANGE:
         {
             com::Bstr bstr;
-            HRESULT hrc = server->mConsole->getVRDPServer()->COMGETTER(Ports)(bstr.asOutParam());
+            HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
 
             if (hrc != S_OK)
             {
@@ -691,7 +691,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
         {
             BOOL fVideoEnabled = FALSE;
 
-            server->mConsole->getVRDPServer()->COMGETTER(VideoChannel)(&fVideoEnabled);
+            server->mConsole->getVRDEServer()->COMGETTER(VideoChannel)(&fVideoEnabled);
 
             if (cbBuffer >= sizeof(uint32_t))
             {
@@ -710,7 +710,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
         {
             ULONG ulQuality = 0;
 
-            server->mConsole->getVRDPServer()->COMGETTER(VideoChannelQuality)(&ulQuality);
+            server->mConsole->getVRDEServer()->COMGETTER(VideoChannelQuality)(&ulQuality);
 
             if (cbBuffer >= sizeof(uint32_t))
             {
@@ -843,7 +843,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
                 *pcbOut = sizeof(uint32_t);
             }
 
-            server->mConsole->onRemoteDisplayInfoChange();
+            server->mConsole->onVRDEServerInfoChange();
         } break;
 
         default:
@@ -1255,16 +1255,58 @@ int ConsoleVRDPServer::Launch(void)
     LogFlowThisFunc(("\n"));
 #ifdef VBOX_WITH_VRDP
     int rc = VINF_SUCCESS;
-    IVRDPServer *vrdpserver = mConsole->getVRDPServer();
-    Assert(vrdpserver);
-    BOOL vrdpEnabled = FALSE;
 
-    HRESULT rc2 = vrdpserver->COMGETTER(Enabled)(&vrdpEnabled);
-    AssertComRC(rc2);
+    /* 
+     * Check that a VRDE library name is set.
+     */
+    Utf8Str filename;
 
-    if (SUCCEEDED(rc2) && vrdpEnabled)
+    ComPtr<IMachine> machine;
+    HRESULT hrc = mConsole->COMGETTER(Machine)(machine.asOutParam());
+
+    if (SUCCEEDED(hrc))
     {
-        if (loadVRDPLibrary())
+        ComPtr<IVirtualBox> virtualBox;
+        hrc = machine->COMGETTER(Parent)(virtualBox.asOutParam());
+
+        if (SUCCEEDED(hrc))
+        {
+            ComPtr<ISystemProperties> systemProperties;
+            hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+
+            if (SUCCEEDED(hrc))
+            {
+                Bstr library;
+                hrc = systemProperties->COMGETTER(DefaultVRDELibrary)(library.asOutParam());
+
+                if (SUCCEEDED(hrc))
+                {
+                    filename = library;
+                }
+            }
+        }
+    }
+
+    if (FAILED(hrc) || filename.isEmpty())
+    {
+        return VINF_NOT_SUPPORTED;
+    }
+
+    /*
+     * Load the VRDE library and start the server, if it is enabled.
+     */
+    IVRDEServer *server = mConsole->getVRDEServer();
+    Assert(server);
+    BOOL fEnabled = FALSE;
+
+    hrc = server->COMGETTER(Enabled)(&fEnabled);
+    AssertComRC(hrc);
+
+    if (SUCCEEDED(hrc) && fEnabled)
+    {
+        rc = loadVRDPLibrary(filename.c_str());
+
+        if (RT_SUCCESS(rc))
         {
             rc = mpfnVRDECreateServer(&mCallbacks.header, this, (VRDEINTERFACEHDR **)&mpEntryPoints, &mhServer);
 
@@ -1275,12 +1317,9 @@ int ConsoleVRDPServer::Launch(void)
 #endif /* VBOX_WITH_USB */
             }
             else if (rc != VERR_NET_ADDRESS_IN_USE)
-                AssertMsgFailed(("Could not start VRDP server: rc = %Rrc\n", rc));
-        }
-        else
-        {
-            AssertMsgFailed(("Could not load the VRDP library\n"));
-            rc = VERR_FILE_NOT_FOUND;
+            {
+                LogRel(("VRDE: Could not start VRDP server rc = %Rrc\n", rc));
+            }
         }
     }
 #else
@@ -1508,7 +1547,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJu
         virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
 
         Bstr authLibrary;
-        systemProperties->COMGETTER(RemoteDisplayAuthLibrary)(authLibrary.asOutParam());
+        systemProperties->COMGETTER(VRDEAuthLibrary)(authLibrary.asOutParam());
 
         Utf8Str filename = authLibrary;
 
@@ -2130,19 +2169,16 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
 }
 
 #ifdef VBOX_WITH_VRDP
-/* note: static function now! */
-bool ConsoleVRDPServer::loadVRDPLibrary(void)
+/* static */ int ConsoleVRDPServer::loadVRDPLibrary(const char *pszLibraryName)
 {
     int rc = VINF_SUCCESS;
 
     if (!mVRDPLibrary)
     {
-        rc = SUPR3HardenedLdrLoadAppPriv("VBoxVRDP", &mVRDPLibrary);
+        rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &mVRDPLibrary);
 
         if (RT_SUCCESS(rc))
         {
-            LogFlow(("VRDPServer::loadLibrary(): successfully loaded VRDP library.\n"));
-
             struct SymbolEntry
             {
                 const char *name;
@@ -2162,22 +2198,24 @@ bool ConsoleVRDPServer::loadVRDPLibrary(void)
             {
                 rc = RTLdrGetSymbol(mVRDPLibrary, symbols[i].name, symbols[i].ppfn);
 
-                AssertMsgRC(rc, ("Error resolving VRDP symbol %s\n", symbols[i].name));
-
                 if (RT_FAILURE(rc))
                 {
+                    LogRel(("VRDE: Error resolving symbol '%s', rc %Rrc.\n", symbols[i].name, rc));
                     break;
                 }
             }
         }
         else
         {
-            LogRel(("VRDPServer::loadLibrary(): failed to load VRDP library! VRDP not available: rc = %Rrc\n", rc));
+            if (rc != VERR_FILE_NOT_FOUND)
+            {
+                LogRel(("VRDE: Error loading the library '%s' rc = %Rrc.\n", pszLibraryName, rc));
+            }
+
             mVRDPLibrary = NULL;
         }
     }
 
-    // just to be safe
     if (RT_FAILURE(rc))
     {
         if (mVRDPLibrary)
@@ -2187,32 +2225,32 @@ bool ConsoleVRDPServer::loadVRDPLibrary(void)
         }
     }
 
-    return (mVRDPLibrary != NULL);
+    return rc;
 }
 #endif /* VBOX_WITH_VRDP */
 
 /*
- * IRemoteDisplayInfo implementation.
+ * IVRDEServerInfo implementation.
  */
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-RemoteDisplayInfo::RemoteDisplayInfo()
+VRDEServerInfo::VRDEServerInfo()
     : mParent(NULL)
 {
 }
 
-RemoteDisplayInfo::~RemoteDisplayInfo()
+VRDEServerInfo::~VRDEServerInfo()
 {
 }
 
 
-HRESULT RemoteDisplayInfo::FinalConstruct()
+HRESULT VRDEServerInfo::FinalConstruct()
 {
     return S_OK;
 }
 
-void RemoteDisplayInfo::FinalRelease()
+void VRDEServerInfo::FinalRelease()
 {
     uninit();
 }
@@ -2223,7 +2261,7 @@ void RemoteDisplayInfo::FinalRelease()
 /**
  * Initializes the guest object.
  */
-HRESULT RemoteDisplayInfo::init(Console *aParent)
+HRESULT VRDEServerInfo::init(Console *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
@@ -2245,7 +2283,7 @@ HRESULT RemoteDisplayInfo::init(Console *aParent)
  *  Uninitializes the instance and sets the ready flag to FALSE.
  *  Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-void RemoteDisplayInfo::uninit()
+void VRDEServerInfo::uninit()
 {
     LogFlowThisFunc(("\n"));
 
@@ -2257,11 +2295,11 @@ void RemoteDisplayInfo::uninit()
     unconst(mParent) = NULL;
 }
 
-// IRemoteDisplayInfo properties
+// IVRDEServerInfo properties
 /////////////////////////////////////////////////////////////////////////////
 
 #define IMPL_GETTER_BOOL(_aType, _aName, _aIndex)                         \
-    STDMETHODIMP RemoteDisplayInfo::COMGETTER(_aName)(_aType *a##_aName)  \
+    STDMETHODIMP VRDEServerInfo::COMGETTER(_aName)(_aType *a##_aName)  \
     {                                                                     \
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
@@ -2285,7 +2323,7 @@ void RemoteDisplayInfo::uninit()
     extern void IMPL_GETTER_BOOL_DUMMY(void)
 
 #define IMPL_GETTER_SCALAR(_aType, _aName, _aIndex, _aValueMask)          \
-    STDMETHODIMP RemoteDisplayInfo::COMGETTER(_aName)(_aType *a##_aName)  \
+    STDMETHODIMP VRDEServerInfo::COMGETTER(_aName)(_aType *a##_aName)  \
     {                                                                     \
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
@@ -2310,7 +2348,7 @@ void RemoteDisplayInfo::uninit()
     extern void IMPL_GETTER_SCALAR_DUMMY(void)
 
 #define IMPL_GETTER_BSTR(_aType, _aName, _aIndex)                         \
-    STDMETHODIMP RemoteDisplayInfo::COMGETTER(_aName)(_aType *a##_aName)  \
+    STDMETHODIMP VRDEServerInfo::COMGETTER(_aName)(_aType *a##_aName)  \
     {                                                                     \
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
@@ -2337,7 +2375,7 @@ void RemoteDisplayInfo::uninit()
                                                                           \
         if (!pchBuffer)                                                   \
         {                                                                 \
-            Log(("RemoteDisplayInfo::"                                    \
+            Log(("VRDEServerInfo::"                                       \
                  #_aName                                                  \
                  ": Failed to allocate memory %d bytes\n", cbOut));       \
             return E_OUTOFMEMORY;                                         \

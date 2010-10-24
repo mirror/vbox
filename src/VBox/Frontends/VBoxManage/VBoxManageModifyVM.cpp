@@ -132,14 +132,21 @@ enum
     MODIFYVM_AUDIO,
     MODIFYVM_CLIPBOARD,
 #ifdef VBOX_WITH_VRDP
-    MODIFYVM_VRDPPORT,
-    MODIFYVM_VRDPADDRESS,
-    MODIFYVM_VRDPAUTHTYPE,
-    MODIFYVM_VRDPMULTICON,
-    MODIFYVM_VRDPREUSECON,
-    MODIFYVM_VRDPVIDEOCHANNEL,
-    MODIFYVM_VRDPVIDEOCHANNELQUALITY,
-    MODIFYVM_VRDP,
+    MODIFYVM_VRDPPORT,                /* VRDE: deprecated */
+    MODIFYVM_VRDPADDRESS,             /* VRDE: deprecated */
+    MODIFYVM_VRDPAUTHTYPE,            /* VRDE: deprecated */
+    MODIFYVM_VRDPMULTICON,            /* VRDE: deprecated */
+    MODIFYVM_VRDPREUSECON,            /* VRDE: deprecated */
+    MODIFYVM_VRDPVIDEOCHANNEL,        /* VRDE: deprecated */
+    MODIFYVM_VRDPVIDEOCHANNELQUALITY, /* VRDE: deprecated */
+    MODIFYVM_VRDP,                    /* VRDE: deprecated */
+    MODIFYVM_VRDESETPROPERTY,
+    MODIFYVM_VRDEAUTHTYPE,
+    MODIFYVM_VRDEMULTICON,
+    MODIFYVM_VRDEREUSECON,
+    MODIFYVM_VRDEVIDEOCHANNEL,
+    MODIFYVM_VRDEVIDEOCHANNELQUALITY,
+    MODIFYVM_VRDE,
 #endif
     MODIFYVM_RTCUSEUTC,
     MODIFYVM_USBEHCI,
@@ -249,14 +256,21 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
     { "--clipboard",                MODIFYVM_CLIPBOARD,                 RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VRDP
-    { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },
-    { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },
-    { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },
-    { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vrdpvideochannel",         MODIFYVM_VRDPVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
-    { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },
-    { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },     /* deprecated */
+    { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },     /* deprecated */
+    { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },     /* deprecated */
+    { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
+    { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
+    { "--vrdpvideochannel",         MODIFYVM_VRDPVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
+    { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },     /* deprecated */
+    { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
+    { "--vrdesetproperty",          MODIFYVM_VRDESETPROPERTY,           RTGETOPT_REQ_STRING },
+    { "--vrdeauthtype",             MODIFYVM_VRDEAUTHTYPE,              RTGETOPT_REQ_STRING },
+    { "--vrdemulticon",             MODIFYVM_VRDEMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdereusecon",             MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdevideochannel",         MODIFYVM_VRDEVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
+    { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },
+    { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
 #endif
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
@@ -277,6 +291,18 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--faulttolerancesyncinterval", MODIFYVM_FAULT_TOLERANCE_SYNC_INTERVAL, RTGETOPT_REQ_UINT32 },
     { "--chipset",                  MODIFYVM_CHIPSET,                   RTGETOPT_REQ_STRING },
 };
+
+static void vrdeWarningDeprecatedOption(const char *pszOption)
+{
+    RTStrmPrintf(g_pStdErr, "Warning: '--vrdp%s' is deprecated. Use '--vrde%s'.\n", pszOption, pszOption);
+}
+
+static void vrdeWarningDeprecatedProperty(const char *pszOption, const char *pszProperty, const char *pszArg)
+{
+    RTStrmPrintf(g_pStdErr, "Warning: '--%s' is deprecated. Use '--vrdesetproperty \"%s=%s\"'.\n",
+                 pszOption, pszProperty, pszArg);
+}
+
 
 int handleModifyVM(HandlerArg *a)
 {
@@ -1797,46 +1823,92 @@ int handleModifyVM(HandlerArg *a)
             }
 
 #ifdef VBOX_WITH_VRDP
+            case MODIFYVM_VRDESETPROPERTY:
+            {
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
+
+                if (vrdeServer)
+                {
+                    /* Parse 'name=value' */
+                    char *pszProperty = RTStrDup(ValueUnion.psz);
+                    if (pszProperty)
+                    {
+                        char *pDelimiter = strchr(pszProperty, '=');
+                        if (pDelimiter)
+                        {
+                            *pDelimiter = '\0';
+
+                            Bstr bstrName = pszProperty;
+                            Bstr bstrValue = &pDelimiter[1];
+                            CHECK_ERROR(vrdeServer, SetVRDEProperty(bstrName.raw(), bstrValue.raw()));
+                        }
+                        else
+                        {
+                            RTStrFree(pszProperty);
+
+                            errorArgument("Invalid --vrdesetproperty argument '%s'", ValueUnion.psz);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        RTStrFree(pszProperty);
+                    }
+                    else
+                    {
+                        RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for VRDE property '%s'\n", ValueUnion.psz);
+                        rc = E_FAIL;
+                    }
+                }
+                break;
+            }
+
             case MODIFYVM_VRDPPORT:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                vrdeWarningDeprecatedProperty("vrdpport", "TCP/Ports", ValueUnion.psz);
+
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
 
                 if (!strcmp(ValueUnion.psz, "default"))
-                    CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr("0").raw()));
+                    CHECK_ERROR(vrdeServer, SetVRDEProperty(Bstr("TCP/Ports").raw(), Bstr("0").raw()));
                 else
-                    CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr(ValueUnion.psz).raw()));
+                    CHECK_ERROR(vrdeServer, SetVRDEProperty(Bstr("TCP/Ports").raw(), Bstr(ValueUnion.psz).raw()));
                 break;
             }
 
             case MODIFYVM_VRDPADDRESS:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                vrdeWarningDeprecatedProperty("vrdpaddress", "TCP/Address", ValueUnion.psz);
 
-                CHECK_ERROR(vrdpServer, COMSETTER(NetAddress)(Bstr(ValueUnion.psz).raw()));
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
+
+                CHECK_ERROR(vrdeServer, SetVRDEProperty(Bstr("TCP/Address").raw(), Bstr(ValueUnion.psz).raw()));
                 break;
             }
 
             case MODIFYVM_VRDPAUTHTYPE:
+                vrdeWarningDeprecatedOption("authtype");
+            case MODIFYVM_VRDEAUTHTYPE:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
 
                 if (!strcmp(ValueUnion.psz, "null"))
                 {
-                    CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Null));
+                    CHECK_ERROR(vrdeServer, COMSETTER(AuthType)(AuthType_Null));
                 }
                 else if (!strcmp(ValueUnion.psz, "external"))
                 {
-                    CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_External));
+                    CHECK_ERROR(vrdeServer, COMSETTER(AuthType)(AuthType_External));
                 }
                 else if (!strcmp(ValueUnion.psz, "guest"))
                 {
-                    CHECK_ERROR(vrdpServer, COMSETTER(AuthType)(VRDPAuthType_Guest));
+                    CHECK_ERROR(vrdeServer, COMSETTER(AuthType)(AuthType_Guest));
                 }
                 else
                 {
@@ -1847,52 +1919,62 @@ int handleModifyVM(HandlerArg *a)
             }
 
             case MODIFYVM_VRDPMULTICON:
+                vrdeWarningDeprecatedOption("multicon");
+            case MODIFYVM_VRDEMULTICON:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
 
-                CHECK_ERROR(vrdpServer, COMSETTER(AllowMultiConnection)(ValueUnion.f));
+                CHECK_ERROR(vrdeServer, COMSETTER(AllowMultiConnection)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_VRDPREUSECON:
+                vrdeWarningDeprecatedOption("reusecon");
+            case MODIFYVM_VRDEREUSECON:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
 
-                CHECK_ERROR(vrdpServer, COMSETTER(ReuseSingleConnection)(ValueUnion.f));
+                CHECK_ERROR(vrdeServer, COMSETTER(ReuseSingleConnection)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_VRDPVIDEOCHANNEL:
+                vrdeWarningDeprecatedOption("videochannel");
+            case MODIFYVM_VRDEVIDEOCHANNEL:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
 
-                CHECK_ERROR(vrdpServer, COMSETTER(VideoChannel)(ValueUnion.f));
+                CHECK_ERROR(vrdeServer, COMSETTER(VideoChannel)(ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_VRDPVIDEOCHANNELQUALITY:
+                vrdeWarningDeprecatedOption("videochannelquality");
+            case MODIFYVM_VRDEVIDEOCHANNELQUALITY:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
 
-                CHECK_ERROR(vrdpServer, COMSETTER(VideoChannelQuality)(ValueUnion.u32));
+                CHECK_ERROR(vrdeServer, COMSETTER(VideoChannelQuality)(ValueUnion.u32));
                 break;
             }
 
             case MODIFYVM_VRDP:
+                vrdeWarningDeprecatedOption("");
+            case MODIFYVM_VRDE:
             {
-                ComPtr<IVRDPServer> vrdpServer;
-                machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                ASSERT(vrdpServer);
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
 
-                CHECK_ERROR(vrdpServer, COMSETTER(Enabled)(ValueUnion.f));
+                CHECK_ERROR(vrdeServer, COMSETTER(Enabled)(ValueUnion.f));
                 break;
             }
 #endif /* VBOX_WITH_VRDP */

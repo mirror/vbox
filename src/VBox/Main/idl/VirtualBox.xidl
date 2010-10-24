@@ -76,8 +76,8 @@
   implementation. On all other platforms, Mozilla XPCOM, an open-source COM
   implementation, is used.
 
-  All the parts that a typical VirtualBox user interacts with (the Qt GUI,
-  the VBoxManage command-line interface and the VBoxVRDP server) are technically
+  All the parts that a typical VirtualBox user interacts with (the Qt GUI
+  and the VBoxManage command-line interface) are technically
   front-ends to the Main API and only use the interfaces that are documented
   in this Main API documentation. This ensures that, with any given release
   version of VirtualBox, all capabilities of the product that could be useful
@@ -1373,7 +1373,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="5e887b09-e3f3-4787-b9f3-8ade5d04d675"
+    uuid="2ecb8c49-ce8a-41fc-96da-9a438b44e4b1"
     wsmap="managed"
   >
     <desc>
@@ -2162,6 +2162,39 @@
 
       <param name="result" type="boolean" dir="return">
         <desc>If firmware of this type and version is available.</desc>
+      </param>
+    </method>
+
+    <method name="VRDERegisterLibrary">
+      <desc>
+        Appends a VRDE library to this VirtualBox installation.
+
+        The library implements a VirtualBox Remote Desktop Extension (VRDE),
+        which is used to remotely connect to the virtual machines.
+
+        The system library extension (".DLL" or ".so") must be omitted.
+        The library must reside in the VirtualBox installation directory.
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>The library name.</desc>
+      </param>
+    </method>
+
+    <method name="VRDEUnregisterLibrary">
+      <desc>
+        Removes a VRDE library from this VirtualBox installation.
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>The library name.</desc>
+      </param>
+    </method>
+
+    <method name="VRDEListLibraries">
+      <desc>
+        List registered libraries.
+      </desc>
+      <param name="names" type="wstring" dir="return" safearray="yes">
+        <desc>Array of names of the libraries.</desc>
       </param>
     </method>
 
@@ -3345,7 +3378,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="14136b33-438a-45de-884c-550e9eb34f23"
+     uuid="8934e426-1c09-459f-bbc4-58dba016fbbe"
      wsmap="managed"
      >
     <desc>
@@ -3648,8 +3681,8 @@
       </desc>
     </attribute>
 
-    <attribute name="VRDPServer" type="IVRDPServer" readonly="yes">
-      <desc>VRDP server object.</desc>
+    <attribute name="VRDEServer" type="IVRDEServer" readonly="yes">
+      <desc>VirtualBox Remote Desktop Extension (VRDE) server object.</desc>
     </attribute>
 
     <attribute name="mediumAttachments" type="IMediumAttachment" readonly="yes" safearray="yes">
@@ -4123,7 +4156,7 @@
           Front-end to use for the new VM process. The following are currently supported:
           <ul>
             <li><tt>"gui"</tt>: VirtualBox Qt GUI front-end</li>
-            <li><tt>"vrdp"</tt>: VBoxHeadless (VRDP Server) front-end</li>
+            <li><tt>"headless"</tt>: VBoxHeadless (VRDE Server) front-end</li>
             <li><tt>"sdl"</tt>: VirtualBox SDL front-end</li>
           </ul>
         </desc>
@@ -5626,26 +5659,26 @@
   -->
 
   <interface
-     name="IRemoteDisplayInfo" extends="$unknown"
-     uuid="b3741084-806f-4c3b-8c42-ebad1a81e45a"
+     name="IVRDEServerInfo" extends="$unknown"
+     uuid="6890123c-5218-42ba-9afd-c71699475115"
      wsmap="struct"
      >
      <desc>
-        Contains information about the remote display (VRDP) capabilities and status.
-        This is used in the <link to="IConsole::remoteDisplayInfo" /> attribute.
+        Contains information about the remote desktop (VRDE) server capabilities and status.
+        This is used in the <link to="IConsole::VRDEServerInfo" /> attribute.
      </desc>
 
     <attribute name="active" type="boolean" readonly="yes">
       <desc>
-        Whether the remote display connection is active.
+        Whether the remote desktop connection is active.
       </desc>
     </attribute>
 
     <attribute name="port" type="long" readonly="yes">
       <desc>
-        VRDP server port number. If this property is equal to <tt>0</tt>, then
-        the VRDP server failed to start, usually because there are no free TCP
-        ports to bind to. If this property is equal to <tt>-1</tt>, then the VRDP
+        VRDE server port number. If this property is equal to <tt>0</tt>, then
+        the VRDE server failed to start, usually because there are no free IP
+        ports to bind to. If this property is equal to <tt>-1</tt>, then the VRDE
         server has not yet been started.
       </desc>
     </attribute>
@@ -5735,7 +5768,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="03cb7897-ea17-4e6c-81ae-4bd90be2fde2"
+     uuid="3c4a453e-d27b-44a2-b59d-dda6e1835e57"
      wsmap="managed"
      >
     <desc>
@@ -5828,7 +5861,7 @@
 
     <attribute name="remoteUSBDevices" type="IHostUSBDevice" readonly="yes" safearray="yes">
       <desc>
-        List of USB devices currently attached to the remote VRDP client.
+        List of USB devices currently attached to the remote VRDE client.
         Once a new device is physically attached to the remote host computer,
         it appears in this list and remains there until detached.
       </desc>
@@ -5850,9 +5883,9 @@
       </desc>
     </attribute>
 
-    <attribute name="remoteDisplayInfo" type="IRemoteDisplayInfo" readonly="yes">
+    <attribute name="VRDEServerInfo" type="IVRDEServerInfo" readonly="yes">
       <desc>
-        Interface that provides information on Remote Display (VRDP) connection.
+        Interface that provides information on Remote Desktop Extension (VRDE) connection.
       </desc>
     </attribute>
 
@@ -7085,7 +7118,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="f8fff1f1-eeb4-4483-a2a4-b4186fab5a1e"
+     uuid="2af0100b-fda2-4c6a-8e8f-31e4ba871886"
      wsmap="managed"
      >
     <desc>
@@ -7277,9 +7310,9 @@
       intensive operation is expected to go below) the given percentage.</desc>
     </attribute>
 
-    <attribute name="remoteDisplayAuthLibrary" type="wstring">
+    <attribute name="VRDEAuthLibrary" type="wstring">
       <desc>
-        Library that provides authentication for VRDP clients. The library
+        Library that provides authentication for Remote Desktop clients. The library
         is used if a virtual machine's authentication type is set to "external"
         in the VM RemoteDisplay configuration.
 
@@ -7307,7 +7340,7 @@
         in the VM RemoteDisplay configuration and will be called from
         within the <link to="IWebsessionManager::logon" /> implementation.
 
-        As opposed to <link to="ISystemProperties::remoteDisplayAuthLibrary" />,
+        As opposed to <link to="ISystemProperties::VRDEAuthLibrary" />,
         there is no per-VM setting for this, as the webservice is a global
         resource (if it is running). Only for this setting (for the webservice),
         setting this value to a literal <tt>"null"</tt> string disables authentication,
@@ -7316,15 +7349,27 @@
 
         The initial value of this property is <tt>"VRDPAuth"</tt>,
         meaning that the webservice will use the same authentication
-        library that is used by default for VBoxVRDP (again, see
-        <link to="ISystemProperties::remoteDisplayAuthLibrary" />).
+        library that is used by default for VRDE (again, see
+        <link to="ISystemProperties::VRDEAuthLibrary" />).
         The format and calling convention of authentication libraries
-        is the same for the webservice as it is for VBoxVRDP.
+        is the same for the webservice as it is for VRDE.
 
         <note>
           Setting this property to @c null or empty string will restore the
           initial value.
         </note>
+      </desc>
+    </attribute>
+
+    <attribute name="defaultVRDELibrary" type="wstring">
+      <desc>
+        Default VRDE library.
+
+        The default value of this property is an empty string, which means that the
+        VRDE is not available.
+
+        For details about VirtualBox Remote Desktop Extension and how to implement
+        it, please refer to the VirtualBox SDK.
       </desc>
     </attribute>
 
@@ -11820,7 +11865,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="remote" type="boolean" readonly="yes">
       <desc>
-        Whether the device is physically connected to a remote VRDP
+        Whether the device is physically connected to a remote VRDE
         client or to a local host machine.
       </desc>
     </attribute>
@@ -12247,17 +12292,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
   </interface>
 
-  <!--
-  // IVRDPServer
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
   <enum
-    name="VRDPAuthType"
-    uuid="3d91887a-b67f-4b33-85bf-2da7ab1ea83a"
+    name="AuthType"
+    uuid="7eef6ef6-98c2-4dc2-ab35-10d2b292028d"
   >
     <desc>
-      VRDP authentication type.
+      VirtualBox authentication type.
     </desc>
 
     <const name="Null"            value="0">
@@ -12267,31 +12307,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Guest"           value="2"/>
   </enum>
 
+  <!--
+  // IVRDEServer
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
   <interface
-     name="IVRDPServer" extends="$unknown"
-     uuid="7aeeb530-0b08-41fe-835d-9be9ec1dbe5c"
+     name="IVRDEServer" extends="$unknown"
+     uuid="f68a6b34-6f09-4040-8de1-e8d746c4a9ea"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
-      <desc>VRDP server status.</desc>
+      <desc>VRDE server status.</desc>
     </attribute>
 
-    <attribute name="ports" type="wstring">
-      <desc>
-        VRDP server port numbers. The server will try to bind to one of free ports from the list.
-        <note>
-          This is a string of comma separated TCP port numbers or port number ranges.
-          Example <tt>5000,5010-5012,5015</tt>
-        </note>
-      </desc>
-    </attribute>
-
-    <attribute name="netAddress" type="wstring">
-      <desc>VRDP server address.</desc>
-    </attribute>
-
-    <attribute name="authType" type="VRDPAuthType">
-      <desc>VRDP authentication method.</desc>
+    <attribute name="authType" type="AuthType">
+      <desc>VRDE authentication method.</desc>
     </attribute>
 
     <attribute name="authTimeout" type="unsigned long">
@@ -12308,14 +12339,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="reuseSingleConnection" type="boolean">
       <desc>
         Flag whether the existing connection must be dropped and a new connection
-        must be established by the VRDP server, when a new client connects in single
+        must be established by the VRDE server, when a new client connects in single
         connection mode.
       </desc>
     </attribute>
 
     <attribute name="videoChannel" type="boolean">
       <desc>
-        Flag whether RDP video channel is supported.
+        Flag whether video redirectiron channel is enabled.
       </desc>
     </attribute>
 
@@ -12324,6 +12355,38 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Image quality in percents.
       </desc>
     </attribute>
+
+    <method name="setVRDEProperty">
+      <desc>
+        Sets a VRDE specific property string.
+
+        If you pass @c null or empty string as a key @a value, the given @a key
+        will be deleted.
+
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the key to set.</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>Value to assign to the key.</desc>
+      </param>
+    </method>
+
+    <method name="getVRDEProperty">
+      <desc>
+        Returns a VRDE specific property string.
+
+        If the requested data @a key does not exist, this function will
+        succeed and return an empty string in the @a value argument.
+
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the key to get.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>Value of the requested key.</desc>
+      </param>
+    </method>
 
   </interface>
 
@@ -12441,7 +12504,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="0431ef9e-2c2e-42af-87d7-c8f52455f28a"
+     uuid="06ef98a7-f7c0-45ba-bf99-9aca7a4d5530"
      internal="yes"
      wsmap="suppress"
      >
@@ -12630,9 +12693,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="onVRDPServerChange">
+    <method name="onVRDEServerChange">
       <desc>
-        Triggered when settings of the VRDP server object of the
+        Triggered when settings of the VRDE server object of the
         associated virtual machine have changed.
 
         <result name="VBOX_E_INVALID_VM_STATE">
@@ -13850,7 +13913,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
      name="VBoxEventType"
-     uuid="1728bb3b-4843-4f12-af67-f7a1f69f3a52">
+     uuid="e085d0b1-05e6-4f40-a709-b7266fbdb236">
 
     <desc>
       Type of an event.
@@ -14012,9 +14075,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IMediumChangedEvent">IMediumChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnVRDPServerChanged" value="53">
+    <const name="OnVRDEServerChanged" value="53">
       <desc>
-        See <link to="IVRDPServerChangedEvent">IVRDPServerChangedEvent</link>.
+        See <link to="IVRDEServerChangedEvent">IVRDEServerChangedEvent</link>.
       </desc>
     </const>
     <const name="OnUSBControllerChanged" value="54">
@@ -14052,9 +14115,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ICPUChangedEvent">ICPUChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnRemoteDisplayInfoChanged" value="61">
+    <const name="OnVRDEServerInfoChanged" value="61">
       <desc>
-        See <link to="IRemoteDisplayInfoChangedEvent">IRemoteDisplayInfoChangedEvent</link>.
+        See <link to="IVRDEServerInfoChangedEvent">IVRDEServerInfoChangedEvent</link>.
       </desc>
     </const>
     <const name="OnEventSourceChanged" value="62">
@@ -14907,26 +14970,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
    <interface
-     name="IVRDPServerChangedEvent" extends="IEvent"
-     uuid="726038B6-6279-4A7A-8037-D041693D1915"
-     wsmap="managed" autogen="VBoxEvent" id="OnVRDPServerChanged"
+     name="IVRDEServerChangedEvent" extends="IEvent"
+     uuid="a06fd66a-3188-4c8c-8756-1395e8cb691c"
+     wsmap="managed" autogen="VBoxEvent" id="OnVRDEServerChanged"
      >
     <desc>
       Notification when a property of the
-      <link to="IMachine::VRDPServer">VRDP server</link> changes.
-      Interested callees should use IVRDPServer methods and attributes to
+      <link to="IMachine::VRDEServer">VRDE server</link> changes.
+      Interested callees should use IVRDEServer methods and attributes to
       find out what has changed.
     </desc>
   </interface>
 
    <interface
-     name="IRemoteDisplayInfoChangedEvent" extends="IEvent"
-     uuid="65B556C5-2A99-47D8-B311-FC177F0914CD"
-     wsmap="managed" autogen="VBoxEvent" id="OnRemoteDisplayInfoChanged"
+     name="IVRDEServerInfoChangedEvent" extends="IEvent"
+     uuid="dd6a1080-e1b7-4339-a549-f0878115596e"
+     wsmap="managed" autogen="VBoxEvent" id="OnVRDEServerInfoChanged"
      >
     <desc>
-      Notification when the status of the VRDP server changes. Interested callees
-      should use <link to="IConsole::remoteDisplayInfo">IRemoteDisplayInfo</link>
+      Notification when the status of the VRDE server changes. Interested callees
+      should use <link to="IConsole::VRDEServerInfo">IVRDEServerInfo</link>
       attributes to find out what is the current status.
     </desc>
   </interface>

@@ -174,7 +174,7 @@ private slots:
     void sltAttachUSBDevice();
     void sltOpenNetworkAdaptersDialog();
     void sltOpenSharedFoldersDialog();
-    void sltSwitchVrdp(bool fOn);
+    void sltSwitchVrde(bool fOn);
     void sltInstallGuestAdditions();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

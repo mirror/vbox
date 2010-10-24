@@ -32,7 +32,7 @@ class TeleporterStateSrc;
 class OUSBDevice;
 class RemoteUSBDevice;
 class SharedFolder;
-class RemoteDisplayInfo;
+class VRDEServerInfo;
 class AudioSniffer;
 class ConsoleVRDPServer;
 class VMMDev;
@@ -120,7 +120,7 @@ public:
     STDMETHOD(COMGETTER(Debugger))(IMachineDebugger **aDebugger);
     STDMETHOD(COMGETTER(USBDevices))(ComSafeArrayOut(IUSBDevice *, aUSBDevices));
     STDMETHOD(COMGETTER(RemoteUSBDevices))(ComSafeArrayOut(IHostUSBDevice *, aRemoteUSBDevices));
-    STDMETHOD(COMGETTER(RemoteDisplayInfo))(IRemoteDisplayInfo **aRemoteDisplayInfo);
+    STDMETHOD(COMGETTER(VRDEServerInfo))(IVRDEServerInfo **aVRDEServerInfo);
     STDMETHOD(COMGETTER(SharedFolders))(ComSafeArrayOut(ISharedFolder *, aSharedFolders));
     STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
 
@@ -168,7 +168,7 @@ public:
     const ComPtr<IMachine> &machine() const { return mMachine; }
 
     /** Method is called only from ConsoleVRDPServer */
-    IVRDPServer *getVRDPServer() const { return mVRDPServer; }
+    IVRDEServer *getVRDEServer() const { return mVRDEServer; }
 
     ConsoleVRDPServer *consoleVRDPServer() const { return mConsoleVRDPServer; }
 
@@ -182,7 +182,7 @@ public:
     HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
     HRESULT onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT onCPUExecutionCapChange(ULONG aExecutionCap);
-    HRESULT onVRDPServerChange(BOOL aRestart);
+    HRESULT onVRDEServerChange(BOOL aRestart);
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange(BOOL aGlobal);
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
@@ -227,7 +227,7 @@ public:
                                 IVirtualBoxErrorInfo *aError);
     void onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage);
     HRESULT onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId);
-    void onRemoteDisplayInfoChange();
+    void onVRDEServerInfoChange();
 
     static const PDMDRVREG DrvStatusReg;
 
@@ -593,7 +593,7 @@ private:
     const ComPtr<IMachine> mMachine;
     const ComPtr<IInternalMachineControl> mControl;
 
-    const ComPtr <IVRDPServer> mVRDPServer;
+    const ComPtr <IVRDEServer> mVRDEServer;
 
     ConsoleVRDPServer * const mConsoleVRDPServer;
 
@@ -602,7 +602,7 @@ private:
     const ComObjPtr<Mouse> mMouse;
     const ComObjPtr<Display> mDisplay;
     const ComObjPtr<MachineDebugger> mDebugger;
-    const ComObjPtr<RemoteDisplayInfo> mRemoteDisplayInfo;
+    const ComObjPtr<VRDEServerInfo> mVRDEServerInfo;
     const ComObjPtr<EventSource> mEventSource;
 
     USBDeviceList mUSBDevices;

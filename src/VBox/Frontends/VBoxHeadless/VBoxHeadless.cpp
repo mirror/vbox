@@ -179,21 +179,21 @@ public:
                             {
                                 mfNoLoggedInUsers = true;
 
-                                /* If there is a VRDP connection, drop it. */
-                                ComPtr<IRemoteDisplayInfo> info;
-                                hrc = gConsole->COMGETTER(RemoteDisplayInfo)(info.asOutParam());
+                                /* If there is a connection, drop it. */
+                                ComPtr<IVRDEServerInfo> info;
+                                hrc = gConsole->COMGETTER(VRDEServerInfo)(info.asOutParam());
                                 if (SUCCEEDED(hrc) && info)
                                 {
                                     ULONG cClients = 0;
                                     hrc = info->COMGETTER(NumberOfClients)(&cClients);
                                     if (SUCCEEDED(hrc) && cClients > 0)
                                     {
-                                        ComPtr <IVRDPServer> vrdpServer;
-                                        hrc = machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
-                                        if (SUCCEEDED(hrc) && vrdpServer)
+                                        ComPtr <IVRDEServer> vrdeServer;
+                                        hrc = machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                                        if (SUCCEEDED(hrc) && vrdeServer)
                                         {
-                                            vrdpServer->COMSETTER(Enabled)(FALSE);
-                                            vrdpServer->COMSETTER(Enabled)(TRUE);
+                                            vrdeServer->COMSETTER(Enabled)(FALSE);
+                                            vrdeServer->COMSETTER(Enabled)(TRUE);
                                         }
                                     }
                                 }
@@ -235,7 +235,7 @@ public:
 #ifndef VBOX_WITH_XPCOM
         refcnt = 0;
 #endif
-        mLastVRDPPort = -1;
+        mLastVRDEPort = -1;
     }
 
     virtual ~ConsoleEventListener()
@@ -309,30 +309,30 @@ public:
 
                 break;
             }
-            case VBoxEventType_OnRemoteDisplayInfoChanged:
+            case VBoxEventType_OnVRDEServerInfoChanged:
             {
-                ComPtr<IRemoteDisplayInfoChangedEvent> rdicev = aEvent;
+                ComPtr<IVRDEServerInfoChangedEvent> rdicev = aEvent;
                 Assert(rdicev);
 
 #ifdef VBOX_WITH_VRDP
                 if (gConsole)
                 {
-                    ComPtr<IRemoteDisplayInfo> info;
-                    gConsole->COMGETTER(RemoteDisplayInfo)(info.asOutParam());
+                    ComPtr<IVRDEServerInfo> info;
+                    gConsole->COMGETTER(VRDEServerInfo)(info.asOutParam());
                     if (info)
                     {
                         LONG port;
                         info->COMGETTER(Port)(&port);
-                        if (port != mLastVRDPPort)
+                        if (port != mLastVRDEPort)
                         {
                             if (port == -1)
-                                RTPrintf("VRDP server is inactive.\n");
+                                RTPrintf("VRDE server is inactive.\n");
                             else if (port == 0)
-                                RTPrintf("VRDP server failed to start.\n");
+                                RTPrintf("VRDE server failed to start.\n");
                             else
-                                RTPrintf("Listening on port %d.\n", port);
+                                RTPrintf("VRDE server is listening on port %d.\n", port);
 
-                            mLastVRDPPort = port;
+                            mLastVRDEPort = port;
                         }
                     }
                 }
@@ -364,7 +364,7 @@ private:
 #ifndef VBOX_WITH_XPCOM
     long refcnt;
 #endif
-    long mLastVRDPPort;
+    long mLastVRDEPort;
 };
 
 #ifdef VBOX_WITH_XPCOM
@@ -445,12 +445,14 @@ static void show_usage()
              "   -o, --vncpass <pw>                    Set the VNC server password\n"
 #endif
 #ifdef VBOX_WITH_VRDP
-             "   -v, -vrdp, --vrdp on|off|config       Enable (default) or disable the VRDP\n"
+             "   -v, -vrde, --vrde on|off|config       Enable (default) or disable the VRDE\n"
              "                                         server or don't change the setting\n"
-             "   -p, -vrdpport, --vrdpport <ports>     Comma-separated list of ports the VRDP\n"
-             "                                         server can bind to. Use a dash between\n"
+             "   -e, -vrdeproperty, --vrdeproperty <name=[value]> Set a VRDE property:\n"
+             "                                         \"TCP/Ports\" - comma-separated list of ports\n"
+             "                                         the VRDE server can bind to. Use a dash between\n"
              "                                         two port numbers to specify a range\n"
-             "   -a, -vrdpaddress, --vrdpaddress <ip>  Interface IP the VRDP will bind to \n"
+             "                                         \"TCP/Address\" - interface IP the VRDE server\n"
+             "                                         will bind to\n"
 #endif
 #ifdef VBOX_FFMPEG
              "   -c, -capture, --capture               Record the VM screen output to a file\n"
@@ -516,9 +518,11 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
 #ifdef VBOX_WITH_VRDP
-    const char *vrdpPort = NULL;
-    const char *vrdpAddress = NULL;
-    const char *vrdpEnabled = NULL;
+    const char *vrdePort = NULL;
+    const char *vrdeAddress = NULL;
+    const char *vrdeEnabled = NULL;
+    int cVRDEProperties = 0;
+    const char *aVRDEProperties[16];
 #endif
 #ifdef VBOX_WITH_VNC
     bool        fVNCEnable      = false;
@@ -571,12 +575,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "-startvm", 's', RTGETOPT_REQ_STRING },
         { "--startvm", 's', RTGETOPT_REQ_STRING },
 #ifdef VBOX_WITH_VRDP
-        { "-vrdpport", 'p', RTGETOPT_REQ_STRING },
-        { "--vrdpport", 'p', RTGETOPT_REQ_STRING },
-        { "-vrdpaddress", 'a', RTGETOPT_REQ_STRING },
-        { "--vrdpaddress", 'a', RTGETOPT_REQ_STRING },
-        { "-vrdp", 'v', RTGETOPT_REQ_STRING },
-        { "--vrdp", 'v', RTGETOPT_REQ_STRING },
+        { "-vrdpport", 'p', RTGETOPT_REQ_STRING },     /* VRDE: deprecated. */
+        { "--vrdpport", 'p', RTGETOPT_REQ_STRING },    /* VRDE: deprecated. */
+        { "-vrdpaddress", 'a', RTGETOPT_REQ_STRING },  /* VRDE: deprecated. */
+        { "--vrdpaddress", 'a', RTGETOPT_REQ_STRING }, /* VRDE: deprecated. */
+        { "-vrdp", 'v', RTGETOPT_REQ_STRING },         /* VRDE: deprecated. */
+        { "--vrdp", 'v', RTGETOPT_REQ_STRING },        /* VRDE: deprecated. */
+        { "-vrde", 'v', RTGETOPT_REQ_STRING },
+        { "--vrde", 'v', RTGETOPT_REQ_STRING },
+        { "-vrdesetproperty", 'e', RTGETOPT_REQ_STRING },
+        { "--vrdesetproperty", 'e', RTGETOPT_REQ_STRING },
 #endif /* VBOX_WITH_VRDP defined */
 #ifdef VBOX_WITH_VNC
         { "--vncport", 'm', RTGETOPT_REQ_INT32 },
@@ -627,13 +635,21 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
 #ifdef VBOX_WITH_VRDP
             case 'p':
-                vrdpPort = ValueUnion.psz;
+                RTPrintf("Warning: '-p' or '-vrdpport' are deprecated. Use '-e \"TCP/Ports=%s\"'\n", ValueUnion.psz);
+                vrdePort = ValueUnion.psz;
                 break;
             case 'a':
-                vrdpAddress = ValueUnion.psz;
+                RTPrintf("Warning: '-a' or '-vrdpaddress' are deprecated. Use '-e \"TCP/Address=%s\"'\n", ValueUnion.psz);
+                vrdeAddress = ValueUnion.psz;
                 break;
             case 'v':
-                vrdpEnabled = ValueUnion.psz;
+                vrdeEnabled = ValueUnion.psz;
+                break;
+            case 'e':
+                if (cVRDEProperties < RT_ELEMENTS(aVRDEProperties))
+                    aVRDEProperties[cVRDEProperties++] = ValueUnion.psz;
+                else
+                     RTPrintf("Warning: too many VRDE properties. Ignored: '%s'\n", ValueUnion.psz);
                 break;
 #endif /* VBOX_WITH_VRDP defined */
 #ifdef VBOX_WITH_VNC
@@ -994,64 +1010,104 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             com::SafeArray <VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
             eventTypes.push_back(VBoxEventType_OnStateChanged);
-            eventTypes.push_back(VBoxEventType_OnRemoteDisplayInfoChanged);
+            eventTypes.push_back(VBoxEventType_OnVRDEServerInfoChanged);
             eventTypes.push_back(VBoxEventType_OnCanShowWindow);
             eventTypes.push_back(VBoxEventType_OnShowWindow);
             CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 
 #ifdef VBOX_WITH_VRDP
-        /* default is to enable the RDP server (backward compatibility) */
-        BOOL fVRDPEnable = true;
-        BOOL fVRDPEnabled;
-        ComPtr <IVRDPServer> vrdpServer;
-        CHECK_ERROR_BREAK(machine, COMGETTER(VRDPServer)(vrdpServer.asOutParam()));
-        CHECK_ERROR_BREAK(vrdpServer, COMGETTER(Enabled)(&fVRDPEnabled));
+        /* default is to enable the remote desktop server (backward compatibility) */
+        BOOL fVRDEEnable = true;
+        BOOL fVRDEEnabled;
+        ComPtr <IVRDEServer> vrdeServer;
+        CHECK_ERROR_BREAK(machine, COMGETTER(VRDEServer)(vrdeServer.asOutParam()));
+        CHECK_ERROR_BREAK(vrdeServer, COMGETTER(Enabled)(&fVRDEEnabled));
 
-        if (vrdpEnabled != NULL)
+        if (vrdeEnabled != NULL)
         {
-            /* -vrdp on|off|config */
-            if (!strcmp(vrdpEnabled, "off") || !strcmp(vrdpEnabled, "disable"))
-                fVRDPEnable = false;
-            else if (!strcmp(vrdpEnabled, "config"))
+            /* -vrdeServer on|off|config */
+            if (!strcmp(vrdeEnabled, "off") || !strcmp(vrdeEnabled, "disable"))
+                fVRDEEnable = false;
+            else if (!strcmp(vrdeEnabled, "config"))
             {
-                if (!fVRDPEnabled)
-                    fVRDPEnable = false;
+                if (!fVRDEEnabled)
+                    fVRDEEnable = false;
             }
-            else if (strcmp(vrdpEnabled, "on") && strcmp(vrdpEnabled, "enable"))
+            else if (strcmp(vrdeEnabled, "on") && strcmp(vrdeEnabled, "enable"))
             {
-                RTPrintf("-vrdp requires an argument (on|off|config)\n");
+                RTPrintf("-vrdeServer requires an argument (on|off|config)\n");
                 break;
             }
         }
 
-        if (fVRDPEnable)
+        if (fVRDEEnable)
         {
-            Log(("VBoxHeadless: Enabling VRDP server...\n"));
+            Log(("VBoxHeadless: Enabling VRDE server...\n"));
 
-            /* set VRDP port if requested by the user */
-            if (vrdpPort != NULL)
+            /* set VRDE port if requested by the user */
+            if (vrdePort != NULL)
             {
-                Bstr bstr = vrdpPort;
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(bstr.raw()));
+                Bstr bstr = vrdePort;
+                CHECK_ERROR_BREAK(vrdeServer, SetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.raw()));
             }
-            /* set VRDP address if requested by the user */
-            if (vrdpAddress != NULL)
+            /* set VRDE address if requested by the user */
+            if (vrdeAddress != NULL)
             {
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(NetAddress)(Bstr(vrdpAddress).raw()));
+                CHECK_ERROR_BREAK(vrdeServer, SetVRDEProperty(Bstr("TCP/Address").raw(), Bstr(vrdeAddress).raw()));
             }
-            /* enable VRDP server (only if currently disabled) */
-            if (!fVRDPEnabled)
+
+            /* Set VRDE properties. */
+            if (cVRDEProperties > 0)
             {
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(TRUE));
+                int i;
+                for (i = 0; i < cVRDEProperties; i++)
+                {
+                    /* Parse 'name=value' */
+                    char *pszProperty = RTStrDup(aVRDEProperties[i]);
+                    if (pszProperty)
+                    {
+                        char *pDelimiter = strchr(pszProperty, '=');
+                        if (pDelimiter)
+                        {
+                            *pDelimiter = '\0';
+
+                            Bstr bstrName = pszProperty;
+                            Bstr bstrValue = &pDelimiter[1];
+                            CHECK_ERROR_BREAK(vrdeServer, SetVRDEProperty(bstrName.raw(), bstrValue.raw()));
+                        }
+                        else
+                        {
+                            RTPrintf("Error: Invalid VRDE property '%s'\n", aVRDEProperties[i]);
+                            RTStrFree(pszProperty);
+                            rc = E_INVALIDARG;
+                            break;
+                        }
+                        RTStrFree(pszProperty);
+                    }
+                    else
+                    {
+                        RTPrintf("Error: Failed to allocate memory for VRDE property '%s'\n", aVRDEProperties[i]);
+                        rc = E_OUTOFMEMORY;
+                        break;
+                    }
+                }
+                if (FAILED(rc))
+                    break;
+            }
+
+            /* enable VRDE server (only if currently disabled) */
+            if (!fVRDEEnabled)
+            {
+                CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(TRUE));
             }
         }
         else
         {
-            /* disable VRDP server (only if currently enabled */
-            if (fVRDPEnabled)
+            /* disable VRDE server (only if currently enabled */
+            if (fVRDEEnabled)
             {
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(FALSE));
+                CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(FALSE));
             }
         }
 #endif
@@ -1136,7 +1192,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
 #endif /* defined(VBOX_FFMPEG) */
 
-        /* we don't have to disable VRDP here because we don't save the settings of the VM */
+        /* we don't have to disable VRDE here because we don't save the settings of the VM */
     }
     while (0);
 

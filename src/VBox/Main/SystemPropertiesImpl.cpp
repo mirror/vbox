@@ -86,7 +86,8 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     setDefaultMachineFolder(Utf8Str::Empty);
     setDefaultHardDiskFormat(Utf8Str::Empty);
 
-    setRemoteDisplayAuthLibrary(Utf8Str::Empty);
+    setVRDEAuthLibrary(Utf8Str::Empty);
+    setDefaultVRDELibrary(Utf8Str::Empty);
 
     m->ulLogHistoryCount = 3;
 
@@ -665,27 +666,27 @@ STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentError)(ULONG /* aFr
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary)(BSTR *aRemoteDisplayAuthLibrary)
+STDMETHODIMP SystemProperties::COMGETTER(VRDEAuthLibrary)(BSTR *aVRDEAuthLibrary)
 {
-    CheckComArgOutPointerValid(aRemoteDisplayAuthLibrary);
+    CheckComArgOutPointerValid(aVRDEAuthLibrary);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->strRemoteDisplayAuthLibrary.cloneTo(aRemoteDisplayAuthLibrary);
+    m->strVRDEAuthLibrary.cloneTo(aVRDEAuthLibrary);
 
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary)(IN_BSTR aRemoteDisplayAuthLibrary)
+STDMETHODIMP SystemProperties::COMSETTER(VRDEAuthLibrary)(IN_BSTR aVRDEAuthLibrary)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = setRemoteDisplayAuthLibrary(aRemoteDisplayAuthLibrary);
+    HRESULT rc = setVRDEAuthLibrary(aVRDEAuthLibrary);
     alock.release();
 
     if (SUCCEEDED(rc))
@@ -719,6 +720,39 @@ STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary)(IN_BSTR aWebServ
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = setWebServiceAuthLibrary(aWebServiceAuthLibrary);
+    alock.release();
+
+    if (SUCCEEDED(rc))
+    {
+        // VirtualBox::saveSettings() needs vbox write lock
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->saveSettings();
+    }
+
+    return rc;
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(DefaultVRDELibrary)(BSTR *aVRDELibrary)
+{
+    CheckComArgOutPointerValid(aVRDELibrary);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->strDefaultVRDELibrary.cloneTo(aVRDELibrary);
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(DefaultVRDELibrary)(IN_BSTR aVRDELibrary)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = setDefaultVRDELibrary(aVRDELibrary);
     alock.release();
 
     if (SUCCEEDED(rc))
@@ -793,10 +827,13 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
     rc = setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
     if (FAILED(rc)) return rc;
 
-    rc = setRemoteDisplayAuthLibrary(data.strRemoteDisplayAuthLibrary);
+    rc = setVRDEAuthLibrary(data.strVRDEAuthLibrary);
     if (FAILED(rc)) return rc;
 
     rc = setWebServiceAuthLibrary(data.strWebServiceAuthLibrary);
+    if (FAILED(rc)) return rc;
+
+    rc = setDefaultVRDELibrary(data.strDefaultVRDELibrary);
     if (FAILED(rc)) return rc;
 
     m->ulLogHistoryCount = data.ulLogHistoryCount;
@@ -923,12 +960,19 @@ HRESULT SystemProperties::setDefaultHardDiskFormat(const Utf8Str &aFormat)
     return S_OK;
 }
 
-HRESULT SystemProperties::setRemoteDisplayAuthLibrary(const Utf8Str &aPath)
+HRESULT SystemProperties::setVRDEAuthLibrary(const Utf8Str &aPath)
 {
     if (!aPath.isEmpty())
-        m->strRemoteDisplayAuthLibrary = aPath;
+        m->strVRDEAuthLibrary = aPath;
     else
-        m->strRemoteDisplayAuthLibrary = "VRDPAuth";
+        m->strVRDEAuthLibrary = "VRDPAuth";
+
+    return S_OK;
+}
+
+HRESULT SystemProperties::setDefaultVRDELibrary(const Utf8Str &aPath)
+{
+    m->strDefaultVRDELibrary = aPath;
 
     return S_OK;
 }

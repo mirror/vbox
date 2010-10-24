@@ -795,13 +795,13 @@ protected:
     }
 };
 
-class ToggleVRDPAction : public UIToggleAction
+class ToggleVRDEServerAction : public UIToggleAction
 {
     Q_OBJECT;
 
 public:
 
-    ToggleVRDPAction(QObject *pParent)
+    ToggleVRDEServerAction(QObject *pParent)
         : UIToggleAction(pParent,
                          ":/vrdp_on_16px.png", ":/vrdp_16px.png",
                          ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png")
@@ -1196,7 +1196,7 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     /* "Devices" menu actions: */
     m_actionsPool[UIActionIndex_Simple_NetworkAdaptersDialog] = new ShowNetworkAdaptersDialogAction(this);
     m_actionsPool[UIActionIndex_Simple_SharedFoldersDialog] = new ShowSharedFoldersDialogAction(this);
-    m_actionsPool[UIActionIndex_Toggle_VRDP] = new ToggleVRDPAction(this);
+    m_actionsPool[UIActionIndex_Toggle_VRDEServer] = new ToggleVRDEServerAction(this);
     m_actionsPool[UIActionIndex_Simple_InstallGuestTools] = new PerformInstallGuestToolsAction(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

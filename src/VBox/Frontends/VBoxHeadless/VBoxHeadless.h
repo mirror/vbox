@@ -1,11 +1,11 @@
 /** @file
  *
- * VBox frontends: VRDP (headless RDP server):
+ * VBox frontends: VRDE (headless Remote Desktop server):
  * Header file with registration call for ffmpeg framebuffer
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __H_VBOXVRDP
-#define __H_VBOXVRDP
+#ifndef __H_VBOXHEADLESS
+#define __H_VBOXHEADLESS
 
 #include <VBox/com/VirtualBox.h>
 
@@ -46,4 +46,4 @@ typedef DECLCALLBACK(HRESULT) FNREGISTERFFMPEGFB(ULONG width,
                                      IFramebuffer **retVal);
 typedef FNREGISTERFFMPEGFB *PFNREGISTERFFMPEGFB;
 
-#endif // __H_VBOXVRDP
+#endif // __H_VBOXHEADLESS

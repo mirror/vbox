@@ -403,7 +403,7 @@ public:
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
     STDMETHOD(COMSETTER(SnapshotFolder))(IN_BSTR aSavedStateFolder);
     STDMETHOD(COMGETTER(MediumAttachments))(ComSafeArrayOut(IMediumAttachment *, aAttachments));
-    STDMETHOD(COMGETTER(VRDPServer))(IVRDPServer **vrdpServer);
+    STDMETHOD(COMGETTER(VRDEServer))(IVRDEServer **vrdeServer);
     STDMETHOD(COMGETTER(AudioAdapter))(IAudioAdapter **audioAdapter);
     STDMETHOD(COMGETTER(USBController))(IUSBController * *aUSBController);
     STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *aFilePath);
@@ -601,7 +601,7 @@ public:
         IsModified_NetworkAdapters      = 0x0008,
         IsModified_SerialPorts          = 0x0010,
         IsModified_ParallelPorts        = 0x0020,
-        IsModified_VRDPServer           = 0x0040,
+        IsModified_VRDEServer           = 0x0040,
         IsModified_AudioAdapter         = 0x0080,
         IsModified_USB                  = 0x0100,
         IsModified_BIOS                 = 0x0200,
@@ -615,7 +615,7 @@ public:
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }
     virtual HRESULT onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
     virtual HRESULT onParallelPortChange(IParallelPort * /* parallelPort */) { return S_OK; }
-    virtual HRESULT onVRDPServerChange(BOOL /* aRestart */) { return S_OK; }
+    virtual HRESULT onVRDEServerChange(BOOL /* aRestart */) { return S_OK; }
     virtual HRESULT onUSBControllerChange() { return S_OK; }
     virtual HRESULT onStorageControllerChange() { return S_OK; }
     virtual HRESULT onCPUChange(ULONG /* aCPU */, BOOL /* aRemove */) { return S_OK; }
@@ -847,7 +847,7 @@ protected:
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of HWData
 
-    const ComObjPtr<VRDPServer>     mVRDPServer;
+    const ComObjPtr<VRDEServer>     mVRDEServer;
     const ComObjPtr<SerialPort>     mSerialPorts[SchemaDefs::SerialPortCount];
     const ComObjPtr<ParallelPort>   mParallelPorts[SchemaDefs::ParallelPortCount];
     const ComObjPtr<AudioAdapter>   mAudioAdapter;
@@ -960,7 +960,7 @@ public:
     HRESULT onParallelPortChange(IParallelPort *parallelPort);
     HRESULT onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT onCPUExecutionCapChange(ULONG aCpuExecutionCap);
-    HRESULT onVRDPServerChange(BOOL aRestart);
+    HRESULT onVRDEServerChange(BOOL aRestart);
     HRESULT onUSBControllerChange();
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice,
                               IVirtualBoxErrorInfo *aError,

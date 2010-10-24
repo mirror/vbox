@@ -153,6 +153,9 @@ public:
     STDMETHOD(CheckFirmwarePresent)(FirmwareType_T aFirmwareType, IN_BSTR aVersion,
                                     BSTR * aUrl, BSTR * aFile, BOOL * aResult);
 
+    STDMETHOD(VRDERegisterLibrary)(IN_BSTR aName);
+    STDMETHOD(VRDEUnregisterLibrary)(IN_BSTR aName);
+    STDMETHOD(VRDEListLibraries)(ComSafeArrayOut(BSTR, aNames));
     /* public methods only for internal purposes */
 
     /**

@@ -323,7 +323,7 @@
            <number>0</number>
           </property>
           <item>
-           <widget class="QCheckBox" name="mCbVRDP">
+           <widget class="QCheckBox" name="mCbVRDE">
             <property name="whatsThis">
              <string>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</string>
             </property>
@@ -372,12 +372,12 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
                <property name="buddy">
-                <cstring>mLeVRDPPort</cstring>
+                <cstring>mLeVRDEPort</cstring>
                </property>
               </widget>
              </item>
              <item row="1" column="2">
-              <widget class="QLineEdit" name="mLeVRDPPort">
+              <widget class="QLineEdit" name="mLeVRDEPort">
                <property name="whatsThis">
                 <string>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</string>
                </property>
@@ -392,12 +392,12 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
                <property name="buddy">
-                <cstring>mCbVRDPMethod</cstring>
+                <cstring>mCbVRDEMethod</cstring>
                </property>
               </widget>
              </item>
              <item row="2" column="2">
-              <widget class="QComboBox" name="mCbVRDPMethod">
+              <widget class="QComboBox" name="mCbVRDEMethod">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                  <horstretch>0</horstretch>
@@ -418,12 +418,12 @@
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                </property>
                <property name="buddy">
-                <cstring>mLeVRDPTimeout</cstring>
+                <cstring>mLeVRDETimeout</cstring>
                </property>
               </widget>
              </item>
              <item row="3" column="2">
-              <widget class="QLineEdit" name="mLeVRDPTimeout">
+              <widget class="QLineEdit" name="mLeVRDETimeout">
                <property name="whatsThis">
                 <string>Specifies the timeout for guest authentication, in milliseconds.</string>
                </property>
@@ -500,7 +500,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>mCbVRDP</sender>
+   <sender>mCbVRDE</sender>
    <signal>toggled(bool)</signal>
    <receiver>mWtVRDPServer</receiver>
    <slot>setEnabled(bool)</slot>

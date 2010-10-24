@@ -1040,18 +1040,18 @@ int main(int argc, char *argv[])
         readAndChangeMachineSettings(sessionMachine, machine);
 #if 0
         RTPrintf("\n");
-        RTPrintf("Enabling the VRDP server (must succeed even if the VM is saved):\n");
-        ComPtr<IVRDPServer> vrdp;
-        CHECK_ERROR_BREAK(sessionMachine, COMGETTER(VRDPServer)(vrdp.asOutParam()));
-        if (FAILED(vrdp->COMSETTER(Enabled)(TRUE)))
+        RTPrintf("Enabling the VRDE server (must succeed even if the VM is saved):\n");
+        ComPtr<IVRDEServer> vrdeServer;
+        CHECK_ERROR_BREAK(sessionMachine, COMGETTER(VRDEServer)(vrdeServer.asOutParam()));
+        if (FAILED(vrdeServer->COMSETTER(Enabled)(TRUE)))
         {
-            PRINT_ERROR_INFO(com::ErrorInfo(vrdp));
+            PRINT_ERROR_INFO(com::ErrorInfo(vrdeServer));
         }
         else
         {
             BOOL enabled = FALSE;
-            CHECK_ERROR_BREAK(vrdp, COMGETTER(Enabled)(&enabled));
-            RTPrintf("VRDP server is %s\n", enabled ? "enabled" : "disabled");
+            CHECK_ERROR_BREAK(vrdeServer, COMGETTER(Enabled)(&enabled));
+            RTPrintf("VRDE server is %s\n", enabled ? "enabled" : "disabled");
         }
 #endif
 #endif
@@ -1232,7 +1232,7 @@ int main(int argc, char *argv[])
         // Get machine
         ComPtr<IMachine> machine;
         Bstr name = argc > 1 ? argv[1] : "dsl";
-        Bstr sessionType = argc > 2 ? argv[2] : "vrdp";
+        Bstr sessionType = argc > 2 ? argv[2] : "headless";
         RTPrintf("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_RC_BREAK(virtualBox->FindMachine(name, machine.asOutParam()));
 

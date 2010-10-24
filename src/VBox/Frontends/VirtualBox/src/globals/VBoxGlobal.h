@@ -316,10 +316,10 @@ public:
         return toString (aHD.GetType());
     }
 
-    QString toString (KVRDPAuthType t) const
+    QString toString (KAuthType t) const
     {
-        AssertMsg (!mVRDPAuthTypes.value (t).isNull(), ("No text for %d", t));
-        return mVRDPAuthTypes.value (t);
+        AssertMsg (!mAuthTypes.value (t).isNull(), ("No text for %d", t));
+        return mAuthTypes.value (t);
     }
 
     QString toString (KPortMode t) const
@@ -364,13 +364,13 @@ public:
         return KStorageControllerType (it.key());
     }
 
-    KVRDPAuthType toVRDPAuthType (const QString &s) const
+    KAuthType toAuthType (const QString &s) const
     {
         QULongStringHash::const_iterator it =
-            qFind (mVRDPAuthTypes.begin(), mVRDPAuthTypes.end(), s);
-        AssertMsg (it != mVRDPAuthTypes.end(), ("No value for {%s}",
+            qFind (mAuthTypes.begin(), mAuthTypes.end(), s);
+        AssertMsg (it != mAuthTypes.end(), ("No value for {%s}",
                                                 s.toLatin1().constData()));
-        return KVRDPAuthType (it.key());
+        return KAuthType (it.key());
     }
 
     KPortMode toPortMode (const QString &s) const
@@ -796,7 +796,7 @@ private:
     QULongStringHash mDiskTypes;
     QString mDiskTypes_Differencing;
 
-    QULongStringHash mVRDPAuthTypes;
+    QULongStringHash mAuthTypes;
     QULongStringHash mPortModeTypes;
     QULongStringHash mUSBFilterActionTypes;
     QULongStringHash mAudioDriverTypes;

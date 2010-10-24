@@ -294,12 +294,6 @@ int handleStartVM(HandlerArg *a)
                     sessionType = "sdl";
                 }
 #endif
-#ifdef VBOX_WITH_VRDP
-                else if (!RTStrICmp(ValueUnion.psz, "vrdp"))
-                {
-                    sessionType = "vrdp";
-                }
-#endif
 #ifdef VBOX_WITH_HEADLESS
                 else if (!RTStrICmp(ValueUnion.psz, "capture"))
                 {
@@ -587,13 +581,17 @@ int handleSetProperty(HandlerArg *a)
         else
             CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(Bstr(a->argv[1]).raw()));
     }
-    else if (!strcmp(a->argv[0], "vrdpauthlibrary"))
+    else if (   !strcmp(a->argv[0], "vrdeauthlibrary")
+             || !strcmp(a->argv[0], "vrdpauthlibrary"))
     {
+        if (!strcmp(a->argv[0], "vrdpauthlibrary"))
+            RTStrmPrintf(g_pStdErr, "Warning: 'vrdpauthlibrary' is deprecated. Use 'vrdeauthlibrary'.\n");
+
         /* reset to default? */
         if (!strcmp(a->argv[1], "default"))
-            CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(NULL));
+            CHECK_ERROR(systemProperties, COMSETTER(VRDEAuthLibrary)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(RemoteDisplayAuthLibrary)(Bstr(a->argv[1]).raw()));
+            CHECK_ERROR(systemProperties, COMSETTER(VRDEAuthLibrary)(Bstr(a->argv[1]).raw()));
     }
     else if (!strcmp(a->argv[0], "websrvauthlibrary"))
     {
@@ -602,6 +600,14 @@ int handleSetProperty(HandlerArg *a)
             CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(NULL));
         else
             CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(a->argv[1]).raw()));
+    }
+    else if (!strcmp(a->argv[0], "vrdelibrary"))
+    {
+        /* disable? */
+        if (!strcmp(a->argv[1], "null"))
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultVRDELibrary)(NULL));
+        else
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultVRDELibrary)(Bstr(a->argv[1]).raw()));
     }
     else if (!strcmp(a->argv[0], "loghistorycount"))
     {
