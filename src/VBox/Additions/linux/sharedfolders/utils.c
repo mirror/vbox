@@ -111,6 +111,7 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
            in the directory plus two (. ..) */
         inode->i_nlink = 1;
     }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     else if (RTFS_IS_SYMLINK(attr->fMode))
     {
         inode->i_mode  = sf_g->fmode != ~0 ? (sf_g->fmode & 0777): mode;
@@ -119,6 +120,7 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
         inode->i_op    = &sf_lnk_iops;
         inode->i_nlink = 1;
     }
+#endif
     else
     {
         inode->i_mode  = sf_g->fmode != ~0 ? (sf_g->fmode & 0777): mode;
