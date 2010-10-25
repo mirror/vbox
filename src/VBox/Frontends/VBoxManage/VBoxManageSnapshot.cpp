@@ -357,16 +357,15 @@ int handleSnapshot(HandlerArg *a)
             if (fRestoreCurrent)
             {
                 CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
-                CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
             }
             else
             {
                 // restore or delete snapshot: then resolve cmd line argument to snapshot instance
                 CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
                                                          pSnapshot.asOutParam()));
-                Bstr bstrSnapGuid;
-                CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
             }
+
+            CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
 
             if (fDelete)
             {
