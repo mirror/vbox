@@ -292,9 +292,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
     PRTDIR pDir = NULL;
     try
     {
-        pszPath = RTStrDup(m->strPath.c_str());
-        RTPathStripFilename(pszPath);
-        int vrc = RTDirOpen(&pDir, pszPath);
+        int vrc = RTDirOpen(&pDir, m->strPath.c_str());
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR, tr ("Can't open directory '%s' (%Rrc)"), pszPath, vrc);
 
@@ -569,16 +567,35 @@ STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
 STDMETHODIMP VFSExplorer::Cd(IN_BSTR aDir, IProgress **aProgress)
 {
     CheckComArgStrNotEmptyOrNull(aDir);
-    CheckComArgOutPointerValid(aProgress);
 
-    return E_NOTIMPL;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        m->strPath = aDir;
+    }
+
+    return Update(aProgress);
 }
 
 STDMETHODIMP VFSExplorer::CdUp(IProgress **aProgress)
 {
-    CheckComArgOutPointerValid(aProgress);
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return E_NOTIMPL;
+    Utf8Str strUpPath;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        /* Remove lowest dir entry in a platform neutral way. */
+        char *pszNewPath = RTStrDup(m->strPath.c_str());
+        RTPathStripTrailingSlash(pszNewPath);
+        RTPathStripFilename(pszNewPath);
+        strUpPath = pszNewPath;
+        RTStrFree(pszNewPath);
+    }
+
+    return Cd(Bstr(strUpPath).raw(), aProgress);
 }
 
 STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes))
@@ -625,14 +642,14 @@ STDMETHODIMP VFSExplorer::Exists(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOu
     com::SafeArray<IN_BSTR> sfaNames(ComSafeArrayInArg(aNames));
     std::list<BSTR> listExists;
 
-    std::list<VFSExplorer::Data::DirEntry>::const_iterator it;
-    for (it = m->entryList.begin();
-         it != m->entryList.end();
-         ++it)
+    for (size_t a=0; a < sfaNames.size(); ++a)
     {
-        const VFSExplorer::Data::DirEntry &entry = (*it);
-        for (size_t a=0; a < sfaNames.size(); ++a)
+        std::list<VFSExplorer::Data::DirEntry>::const_iterator it;
+        for (it = m->entryList.begin();
+             it != m->entryList.end();
+             ++it)
         {
+            const VFSExplorer::Data::DirEntry &entry = (*it);
             if (entry.name == RTPathFilename(Utf8Str(sfaNames[a]).c_str()))
             {
                 BSTR name;

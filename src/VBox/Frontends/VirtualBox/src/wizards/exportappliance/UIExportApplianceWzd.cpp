@@ -551,7 +551,7 @@ bool UIExportApplianceWzdPage4::exportAppliance()
                 files << QString("%2").arg(s);
         }
     }
-    CVFSExplorer explorer = appliance->CreateVFSExplorer(uri());
+    CVFSExplorer explorer = appliance->CreateVFSExplorer(uri(false /* fWithFile */));
     CProgress progress = explorer.Update();
     bool fResult = explorer.isOk();
     if (fResult)
@@ -630,14 +630,21 @@ bool UIExportApplianceWzdPage4::exportVMs(CAppliance &appliance)
     return false;
 }
 
-QString UIExportApplianceWzdPage4::uri() const
+QString UIExportApplianceWzdPage4::uri(bool fWithFile) const
 {
     StorageType type = field("storageType").value<StorageType>();
+
+    QString path = field("path").toString();
+    if (!fWithFile)
+    {
+        QFileInfo fi(path);
+        path = fi.path();
+    }
     switch (type)
     {
         case Filesystem:
         {
-            return field("path").toString();
+            return path;
         }
         case SunCloud:
         {
@@ -648,7 +655,7 @@ QString UIExportApplianceWzdPage4::uri() const
                 uri = QString("%1:%2").arg(uri).arg(field("password").toString());
             if (!field("username").toString().isEmpty() || !field("username").toString().isEmpty())
                 uri = QString("%1@").arg(uri);
-            uri = QString("%1%2/%3/%4").arg(uri).arg("object.storage.network.com").arg(field("bucket").toString()).arg(field("path").toString());
+            uri = QString("%1%2/%3/%4").arg(uri).arg("object.storage.network.com").arg(field("bucket").toString()).arg(path);
             return uri;
         }
         case S3:
@@ -660,7 +667,7 @@ QString UIExportApplianceWzdPage4::uri() const
                 uri = QString("%1:%2").arg(uri).arg(field("password").toString());
             if (!field("username").toString().isEmpty() || !field("password").toString().isEmpty())
                 uri = QString("%1@").arg(uri);
-            uri = QString("%1%2/%3/%4").arg(uri).arg(field("hostname").toString()).arg(field("bucket").toString()).arg(field("path").toString());
+            uri = QString("%1%2/%3/%4").arg(uri).arg(field("hostname").toString()).arg(field("bucket").toString()).arg(path);
             return uri;
         }
     }

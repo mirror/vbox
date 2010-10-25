@@ -187,7 +187,7 @@ private:
 
     bool exportAppliance();
     bool exportVMs(CAppliance &appliance);
-    QString uri() const;
+    QString uri(bool fWithFile = true) const;
 
     ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
     void setApplianceWidget(const ExportAppliancePointer &pApplianceWidget) { m_pApplianceWidget = pApplianceWidget; }
