@@ -53,9 +53,9 @@ DECLINLINE(bool) msiIsEnabled(PPCIDEVICE pDev)
     return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_ENABLE) != 0;
 }
 
-DECLINLINE(bool) msiIsMME(PPCIDEVICE pDev)
+DECLINLINE(uint8_t) msiGetMme(PPCIDEVICE pDev)
 {
-    return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_QSIZE) != 0;
+    return (msiGetMessageControl(pDev) & VBOX_PCI_MSI_FLAGS_QSIZE) >> 4;
 }
 
 DECLINLINE(RTGCPHYS) msiGetMsiAddress(PPCIDEVICE pDev)
@@ -77,8 +77,11 @@ DECLINLINE(uint32_t) msiGetMsiData(PPCIDEVICE pDev, int32_t iVector)
     int16_t  iOff = msiIs64Bit(pDev) ? VBOX_MSI_CAP_MESSAGE_DATA_64 : VBOX_MSI_CAP_MESSAGE_DATA_32;
     uint16_t lo = PCIDevGetWord(pDev, pDev->Int.s.u8MsiCapOffset + iOff);
 
-    /// @todo: vector encoding into lower bits of message data, for Multiple Message Enable
-    Assert(!msiIsMME(pDev));
+    // vector encoding into lower bits of message data
+    uint8_t bits = msiGetMme(pDev);
+    uint16_t uMask = ((1 << bits) - 1);
+    lo &= ~uMask;
+    lo |= iVector & uMask;
 
     return RT_MAKE_U32(lo, 0);
 }
@@ -218,20 +221,28 @@ int MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg)
     uint16_t   cVectors    = pMsiReg->cMsiVectors;
     uint8_t    iCapOffset  = pMsiReg->iMsiCapOffset;
     uint8_t    iNextOffset = pMsiReg->iMsiNextOffset;
-    uint16_t   iFlags   = pMsiReg->iMsiFlags;
+    bool       f64bit      = pMsiReg->fMsi64bit;
+    uint16_t   iFlags      = 0;
+    int        iMmc;
 
-    if (cVectors != 1)
-        /* We cannot handle multiple vectors yet */
-        return VERR_TOO_MUCH_DATA;
+    /* Compute multiple-message capable bitfield */
+    for (iMmc = 0; iMmc < 6; iMmc++)
+    {
+        if ((1 << iMmc) >= cVectors)
+            break;
+    }
 
-    if (cVectors > VBOX_MSI_MAX_ENTRIES)
+    if ((cVectors > VBOX_MSI_MAX_ENTRIES) || (1 << iMmc) < cVectors)
         return VERR_TOO_MUCH_DATA;
 
     Assert(iCapOffset != 0 && iCapOffset < 0xff && iNextOffset < 0xff);
 
-    bool f64bit = (iFlags & VBOX_PCI_MSI_FLAGS_64BIT) != 0;
     /* We always support per-vector masking */
-    iFlags |= VBOX_PCI_MSI_FLAGS_MASKBIT;
+    iFlags |= VBOX_PCI_MSI_FLAGS_MASKBIT | iMmc;
+    if (f64bit)
+        iFlags |= VBOX_PCI_MSI_FLAGS_64BIT;
+    /* How many vectors we're capable of */
+    iFlags |= iMmc;
 
     pDev->Int.s.u8MsiCapOffset = iCapOffset;
     pDev->Int.s.u8MsiCapSize   = f64bit ? VBOX_MSI_CAP_SIZE_64 : VBOX_MSI_CAP_SIZE_32;

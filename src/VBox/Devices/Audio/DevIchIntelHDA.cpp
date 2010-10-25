@@ -1529,7 +1529,7 @@ static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
     SSMR3GetMem (pSSMHandle, &pThis->hda.stOutBdle, sizeof (HDABDLEDESC));
     SSMR3GetMem (pSSMHandle, &pThis->hda.stMicBdle, sizeof (HDABDLEDESC));
     SSMR3GetMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
-    
+
     AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), SDCTL(&pThis->hda, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
     AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), SDCTL(&pThis->hda, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 
@@ -1760,7 +1760,6 @@ static DECLCALLBACK(int) hdaConstruct (PPDMDEVINS pDevIns, int iInstance,
     aMsiReg.cMsiVectors = 1;
     aMsiReg.iMsiCapOffset = 0x60;
     aMsiReg.iMsiNextOffset = 0x50;
-    aMsiReg.iMsiFlags = 0;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
     if (RT_FAILURE (rc))
     {
