@@ -32,7 +32,6 @@
 # include <VBox/com/array.h>
 #endif
 #include <iprt/cpp/utils.h>
-#include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/list.h>
@@ -1816,120 +1815,6 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 #endif
 }
 
-#ifdef VBOX_WITH_COPYTOGUEST
-int Guest::directoryEntryAppend(const char *pszPath, PRTLISTNODE pList)
-{
-    using namespace guestControl;
-
-    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("Appending to pList=%p: %s\n", pList, pszPath));
-
-    VBoxGuestDirEntry *pNode = (VBoxGuestDirEntry*)RTMemAlloc(sizeof(VBoxGuestDirEntry));
-    if (pNode == NULL)
-        return VERR_NO_MEMORY;
-
-    pNode->pszPath = NULL;
-    if (RT_SUCCESS(RTStrAAppend(&pNode->pszPath, pszPath)))
-    {
-        pNode->Node.pPrev = NULL;
-        pNode->Node.pNext = NULL;
-        RTListAppend(pList, &pNode->Node);
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
-}
-
-int Guest::directoryRead(const char *pszDirectory, const char *pszFilter,
-                         ULONG uFlags, ULONG *pcObjects, PRTLISTNODE pList)
-{
-    using namespace guestControl;
-
-    AssertPtrReturn(pszDirectory, VERR_INVALID_POINTER);
-    /* Filter is optional. */
-    AssertPtrReturn(pcObjects, VERR_INVALID_POINTER);
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-
-    LogFlowFunc(("Reading directory: %s, filter: %s\n",
-                 pszDirectory, pszFilter ? pszFilter : "<None>"));
-
-    PRTDIR pDir = NULL;
-    int rc = RTDirOpenFiltered(&pDir, pszDirectory,
-#ifdef RT_OS_WINDOWS
-                               RTDIRFILTER_WINNT);
-#else
-                               RTDIRFILTER_UNIX);
-#endif
-    char *pszDirectoryStrip = RTStrDup(pszDirectory);
-    if (!pszDirectoryStrip)
-        rc = VERR_NO_MEMORY;
-
-    if (RT_SUCCESS(rc))
-    {
-        RTPathStripFilename(pszDirectoryStrip);
-        for (;;)
-        {
-            RTDIRENTRY DirEntry;
-            rc = RTDirRead(pDir, &DirEntry, NULL);
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_NO_MORE_FILES)
-                    rc = VINF_SUCCESS;
-                break;
-            }
-            switch (DirEntry.enmType)
-            {
-                case RTDIRENTRYTYPE_DIRECTORY:
-                    /* Skip "." and ".." entrires. */
-                    if (   !strcmp(DirEntry.szName, ".")
-                        || !strcmp(DirEntry.szName, ".."))
-                    {
-                        break;
-                    }
-                    if (uFlags & CopyFileFlag_Recursive)
-                        rc = directoryRead(DirEntry.szName, pszFilter,
-                                           uFlags, pcObjects, pList);
-                    break;
-
-                case RTDIRENTRYTYPE_FILE:
-                {
-                    char *pszFile;
-                    if (RTStrAPrintf(&pszFile, "%s%c%s",
-                                     pszDirectoryStrip, RTPATH_SLASH, DirEntry.szName))
-                    {
-                        rc = directoryEntryAppend(pszFile, pList);
-                        if (RT_SUCCESS(rc))
-                            *pcObjects = *pcObjects + 1;
-                        RTStrFree(pszFile);
-                    }
-                    break;
-                }
-
-                case RTDIRENTRYTYPE_SYMLINK:
-                    if (   (uFlags & CopyFileFlag_Recursive)
-                        && (uFlags & CopyFileFlag_FollowLinks))
-                    {
-                        rc = directoryRead(DirEntry.szName, pszFilter,
-                                           uFlags, pcObjects, pList);
-                    }
-                    break;
-
-                default:
-                    break;
-            }
-            if (RT_FAILURE(rc))
-                break;
-        }
-        RTStrFree(pszDirectoryStrip);
-    }
-
-    if (pDir)
-        RTDirClose(pDir);
-    return rc;
-}
-#endif
-
 /** @todo For having a progress object which actually reports something,
   *       the actual copy loop (see below) needs to go to some worker thread
   *       so that this routine can return to the caller (and the caller then
@@ -1941,9 +1826,6 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else  /* VBOX_WITH_GUEST_CONTROL */
-#ifndef VBOX_WITH_COPYTOGUEST
-    ReturnComNotImplemented();
-#else
     using namespace guestControl;
 
     CheckComArgStrNotEmptyOrNull(aSource);
@@ -2264,7 +2146,6 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
         rc = E_OUTOFMEMORY;
     }
     return rc;
-#endif /* VBOX_WITH_COPYTOGUEST */
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

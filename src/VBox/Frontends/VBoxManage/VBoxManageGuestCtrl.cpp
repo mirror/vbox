@@ -35,8 +35,11 @@
 #include <VBox/HostServices/GuestControlSvc.h> /* for PROC_STS_XXX */
 
 #include <iprt/asm.h>
+#include <iprt/dir.h>
 #include <iprt/isofs.h>
 #include <iprt/getopt.h>
+#include <iprt/list.h>
+#include <iprt/path.h>
 
 #ifdef USE_XPCOM_QUEUE
 # include <sys/select.h>
@@ -61,6 +64,15 @@ using namespace com;
 static volatile bool    g_fExecCanceled = false;
 static volatile bool    g_fCopyCanceled = false;
 
+/*
+ * Structure holding a directory entry.
+ */
+typedef struct DIRECTORYENTRY
+{
+    char       *pszPath;
+    RTLISTNODE  Node;
+} DIRECTORYENTRY, *PDIRECTORYENTRY;
+
 #endif /* VBOX_ONLY_DOCS */
 
 void usageGuestControl(PRTSTREAM pStrm)
@@ -75,13 +87,11 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            [--verbose] [--wait-for exit,stdout,stderr||]\n"
                  /** @todo Add a "--" parameter (has to be last parameter) to directly execute
                   *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
-#ifdef VBOX_WITH_COPYTOGUEST
                  "\n"
                  "                            copyto <vmname>|<uuid>\n"
                  "                            <source on host> <destination on guest>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--recursive] [--verbose] [--flags <flags>]\n"
-#endif
                  "\n");
 }
 
@@ -602,7 +612,6 @@ static int handleCtrlExecProgram(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-#ifdef VBOX_WITH_COPYTOGUEST
 /**
  * Signal handler that sets g_fCopyCanceled.
  *
@@ -614,6 +623,332 @@ static void ctrlCopySignalHandler(int iSignal)
 {
     NOREF(iSignal);
     ASMAtomicWriteBool(&g_fCopyCanceled, true);
+}
+
+/**
+ * TODO
+ *
+ * @return  IPRT status code.
+ * @return  int
+ * @param   pszPath
+ * @param   pList
+ */
+int ctrlCopyDirectoryEntryAppend(const char *pszPath, PRTLISTNODE pList)
+{
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("Appending to pList=%p: %s\n", pList, pszPath));
+
+    PDIRECTORYENTRY pNode = (PDIRECTORYENTRY)RTMemAlloc(sizeof(DIRECTORYENTRY));
+    if (pNode == NULL)
+        return VERR_NO_MEMORY;
+
+    pNode->pszPath = NULL;
+    if (RT_SUCCESS(RTStrAAppend(&pNode->pszPath, pszPath)))
+    {
+        pNode->Node.pPrev = NULL;
+        pNode->Node.pNext = NULL;
+        RTListAppend(pList, &pNode->Node);
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_MEMORY;
+}
+
+/**
+ * TODO
+ *
+ * @return  IPRT status code.
+ * @return  int
+ * @param   pszDirectory
+ * @param   pszFilter
+ * @param   uFlags
+ * @param   pcObjects
+ * @param   pList
+ */
+int ctrlCopyDirectoryRead(const char *pszDirectory, const char *pszFilter,
+                          uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
+{
+    AssertPtrReturn(pszDirectory, VERR_INVALID_POINTER);
+    /* Filter is optional. */
+    AssertPtrReturn(pcObjects, VERR_INVALID_POINTER);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("Reading directory: %s, filter: %s\n",
+                 pszDirectory, pszFilter ? pszFilter : "<None>"));
+
+    PRTDIR pDir = NULL;
+    int rc = RTDirOpenFiltered(&pDir, pszDirectory,
+#ifdef RT_OS_WINDOWS
+                               RTDIRFILTER_WINNT);
+#else
+                               RTDIRFILTER_UNIX);
+#endif
+    char *pszDirectoryStrip = RTStrDup(pszDirectory);
+    if (!pszDirectoryStrip)
+        rc = VERR_NO_MEMORY;
+
+    if (RT_SUCCESS(rc))
+    {
+        RTPathStripFilename(pszDirectoryStrip);
+        for (;;)
+        {
+            RTDIRENTRY DirEntry;
+            rc = RTDirRead(pDir, &DirEntry, NULL);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_NO_MORE_FILES)
+                    rc = VINF_SUCCESS;
+                break;
+            }
+            switch (DirEntry.enmType)
+            {
+                case RTDIRENTRYTYPE_DIRECTORY:
+                    /* Skip "." and ".." entrires. */
+                    if (   !strcmp(DirEntry.szName, ".")
+                        || !strcmp(DirEntry.szName, ".."))
+                    {
+                        break;
+                    }
+                    if (uFlags & CopyFileFlag_Recursive)
+                        rc = ctrlCopyDirectoryRead(DirEntry.szName, pszFilter,
+                                                   uFlags, pcObjects, pList);
+                    break;
+
+                case RTDIRENTRYTYPE_FILE:
+                {
+                    char *pszFile;
+                    if (RTStrAPrintf(&pszFile, "%s%c%s",
+                                     pszDirectoryStrip, RTPATH_SLASH, DirEntry.szName))
+                    {
+                        rc = ctrlCopyDirectoryEntryAppend(pszFile, pList);
+                        if (RT_SUCCESS(rc))
+                            *pcObjects = *pcObjects + 1;
+                        RTStrFree(pszFile);
+                    }
+                    break;
+                }
+
+                case RTDIRENTRYTYPE_SYMLINK:
+                    if (   (uFlags & CopyFileFlag_Recursive)
+                        && (uFlags & CopyFileFlag_FollowLinks))
+                    {
+                        rc = ctrlCopyDirectoryRead(DirEntry.szName, pszFilter,
+                                                   uFlags, pcObjects, pList);
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+            if (RT_FAILURE(rc))
+                break;
+        }
+        RTStrFree(pszDirectoryStrip);
+    }
+
+    if (pDir)
+        RTDirClose(pDir);
+    return rc;
+}
+
+/**
+ * TODO
+ *
+ * @return  IPRT status code.
+ * @param   pszSource
+ * @param   pszDest
+ * @param   uFlags
+ */
+int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
+                 uint32_t *pcObjects, PRTLISTNODE pList)
+{
+    AssertPtrReturn(pszSource, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDest, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcObjects, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pList, VERR_INVALID_PARAMETER);
+
+    int rc;
+    char *pszSourceAbs = RTPathAbsDup(pszSource);
+    if (pszSourceAbs)
+    {
+        if (   RTPathFilename(pszSourceAbs)
+            && RTFileExists(pszSourceAbs)) /* We have a single file ... */
+        {
+            RTListInit(pList);
+            rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pList);
+            *pcObjects = 1;
+        }
+        else /* ... or a directory. */
+        {
+            RTListInit(pList);
+            rc = ctrlCopyDirectoryRead(pszSourceAbs, NULL /* Filter */,
+                                       uFlags, pcObjects, pList);
+            if (*pcObjects == 0)
+                rc = VERR_NOT_FOUND;
+        }
+        RTStrFree(pszSourceAbs);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+/**
+ * TODO
+ *
+ * @return  IPRT status code.
+ */
+void ctrlCopyDestroy(PRTLISTNODE pList)
+{
+    AssertPtr(pList);
+
+    /* Destroy file list. */
+    PDIRECTORYENTRY pNode = RTListNodeGetFirst(pList, DIRECTORYENTRY, Node);
+    while (pNode)
+    {
+        PDIRECTORYENTRY pNext = RTListNodeGetNext(&pNode->Node, DIRECTORYENTRY, Node);
+        bool fLast = RTListNodeIsLast(pList, &pNode->Node);
+
+        if (pNode->pszPath)
+            RTStrFree(pNode->pszPath);
+        RTListNodeRemove(&pNode->Node);
+        RTMemFree(pNode);
+
+        if (fLast)
+            break;
+
+        pNode = pNext;
+    }
+}
+
+/**
+ * TODO
+ *
+ * @return  IPRT status code.
+ * @return  int
+ * @param   pGuest
+ * @param   pszSource
+ * @param   pszDest
+ * @param   pszUserName
+ * @param   pszPassword
+ * @param   uFlags
+ */
+int ctrlCopyFile(IGuest *pGuest, const char *pszSource, const char *pszDest,
+                 const char *pszUserName, const char *pszPassword,
+                 uint32_t uFlags)
+{
+    AssertPtrReturn(pszSource, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDest, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszUserName, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszPassword, VERR_INVALID_PARAMETER);
+
+    int vrc = VINF_SUCCESS;
+    ComPtr<IProgress> progress;
+    HRESULT rc = pGuest->CopyToGuest(Bstr(pszSource).raw(), Bstr(pszDest).raw(),
+                                     Bstr(pszUserName).raw(), Bstr(pszPassword).raw(),
+                                     uFlags, progress.asOutParam());
+    if (FAILED(rc))
+    {
+        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+         * because it contains more accurate info about what went wrong. */
+        ErrorInfo info(pGuest, COM_IIDOF(IGuest));
+        if (info.isFullAvailable())
+        {
+            if (rc == VBOX_E_IPRT_ERROR)
+                RTMsgError("%ls.", info.getText().raw());
+            else
+                RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+        }
+        vrc = VERR_GENERAL_FAILURE;
+    }
+    else
+    {
+        /* Setup signal handling if cancelable. */
+        ASSERT(progress);
+        bool fCanceledAlready = false;
+        BOOL fCancelable;
+        HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+        if (FAILED(hrc))
+            fCancelable = FALSE;
+        if (fCancelable)
+        {
+            signal(SIGINT,   ctrlCopySignalHandler);
+    #ifdef SIGBREAK
+            signal(SIGBREAK, ctrlCopySignalHandler);
+    #endif
+        }
+
+        /* Wait for process to exit ... */
+        BOOL fCompleted = FALSE;
+        BOOL fCanceled = FALSE;
+        while (   SUCCEEDED(progress->COMGETTER(Completed(&fCompleted)))
+               && !fCompleted)
+        {
+            /* Process async cancelation */
+            if (g_fCopyCanceled && !fCanceledAlready)
+            {
+                hrc = progress->Cancel();
+                if (SUCCEEDED(hrc))
+                    fCanceledAlready = TRUE;
+                else
+                    g_fCopyCanceled = false;
+            }
+
+            /* Progress canceled by Main API? */
+            if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
+                && fCanceled)
+            {
+                break;
+            }
+        }
+
+        /* Undo signal handling */
+        if (fCancelable)
+        {
+            signal(SIGINT,   SIG_DFL);
+    #ifdef SIGBREAK
+            signal(SIGBREAK, SIG_DFL);
+    #endif
+        }
+
+        if (fCanceled)
+        {
+            //RTPrintf("Copy operation canceled!\n");
+        }
+        else if (   fCompleted
+                 && SUCCEEDED(rc))
+        {
+            LONG iRc = false;
+            CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+            if (FAILED(iRc))
+            {
+                com::ProgressErrorInfo info(progress);
+                if (   info.isFullAvailable()
+                    || info.isBasicAvailable())
+                {
+                    /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                     * because it contains more accurate info about what went wrong. */
+                    if (info.getResultCode() == VBOX_E_IPRT_ERROR)
+                        RTMsgError("%ls.", info.getText().raw());
+                    else
+                    {
+                        RTMsgError("Copy operation error details:");
+                        GluePrintErrorInfo(info);
+                    }
+                }
+                else
+                {
+                    if (RT_FAILURE(rc))
+                        RTMsgError("Error while looking up error code, rc=%Rrc", rc);
+                    else
+                        com::GluePrintRCMessage(iRc);
+                }
+                vrc = VERR_GENERAL_FAILURE;
+            }
+        }
+    }
+    return vrc;
 }
 
 static int handleCtrlCopyTo(HandlerArg *a)
@@ -734,133 +1069,63 @@ static int handleCtrlCopyTo(HandlerArg *a)
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
 
-            if (fVerbose)
+            RTLISTNODE listToCopy;
+            uint32_t cObjects = 0;
+            int vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), uFlags,
+                                   &cObjects, &listToCopy);
+            if (RT_FAILURE(vrc))
             {
-                if (fCopyRecursive)
-                    RTPrintf("Recursively copying \"%s\" to \"%s\" ...\n", Utf8Source, Utf8Dest);
-                else
-                    RTPrintf("Copying \"%s\" to \"%s\" ...\n", Utf8Source, Utf8Dest);
-            }
-
-            /* Do the copy. */
-            rc = guest->CopyToGuest(Bstr(Utf8Source).raw(), Bstr(Utf8Dest).raw(),
-                                    Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
-                                    uFlags, progress.asOutParam());
-            if (FAILED(rc))
-            {
-                /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                 * because it contains more accurate info about what went wrong. */
-                ErrorInfo info(guest, COM_IIDOF(IGuest));
-                if (info.isFullAvailable())
+                switch (vrc)
                 {
-                    if (rc == VBOX_E_IPRT_ERROR)
-                        RTMsgError("%ls.", info.getText().raw());
-                    else
-                        RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+                    case VERR_NOT_FOUND:
+                        RTMsgError("No files to copy found!\n");
+                        break;
+
+                    case VERR_PATH_NOT_FOUND:
+                        RTMsgError("Source path \"%s\" not found!\n", Utf8Source.c_str());
+                        break;
+
+                    default:
+                        RTMsgError("Failed to initialize, rc=%Rrc\n", vrc);
+                        break;
                 }
-                break;
             }
             else
             {
-                /* Setup signal handling if cancelable. */
-                ASSERT(progress);
-                bool fCanceledAlready = false;
-                BOOL fCancelable;
-                HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
-                if (FAILED(hrc))
-                    fCancelable = FALSE;
-                if (fCancelable)
+                if (fVerbose)
                 {
-                    signal(SIGINT,   ctrlCopySignalHandler);
-            #ifdef SIGBREAK
-                    signal(SIGBREAK, ctrlCopySignalHandler);
-            #endif
+                    if (fCopyRecursive)
+                        RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
+                                 Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
+                    else
+                        RTPrintf("Copying \"%s\" to \"%s\" (%u file(s)) ...\n",
+                                 Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
                 }
 
-                /* Wait for process to exit ... */
-                BOOL fCompleted = FALSE;
-                BOOL fCanceled = FALSE;
-                while (   SUCCEEDED(progress->COMGETTER(Completed(&fCompleted)))
-                       && !fCompleted)
+                if (RT_SUCCESS(vrc))
                 {
-                    /* Process async cancelation */
-                    if (g_fCopyCanceled && !fCanceledAlready)
+                    PDIRECTORYENTRY pNode;
+                    uint32_t uCurObject = 0;
+                    RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
                     {
-                        hrc = progress->Cancel();
-                        if (SUCCEEDED(hrc))
-                            fCanceledAlready = TRUE;
-                        else
-                            g_fCopyCanceled = false;
+                        if (fVerbose)
+                            RTPrintf("Copying \"%s\" (%u/%u) ...\n",
+                                     pNode->pszPath, uCurObject + 1, cObjects + 1);
+                        vrc = ctrlCopyFile(guest, pNode->pszPath, Utf8Dest.c_str(),
+                                           Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
+                        if (RT_FAILURE(vrc))
+                            break;
                     }
-
-                    /* Progress canceled by Main API? */
-                    if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
-                        && fCanceled)
-                    {
-                        break;
-                    }
-                }
-
-                /* Undo signal handling */
-                if (fCancelable)
-                {
-                    signal(SIGINT,   SIG_DFL);
-            #ifdef SIGBREAK
-                    signal(SIGBREAK, SIG_DFL);
-            #endif
-                }
-
-                if (fCanceled)
-                {
-                    if (fVerbose)
-                        RTPrintf("Copy operation canceled!\n");
-                }
-                else if (   fCompleted
-                         && SUCCEEDED(rc))
-                {
-                    LONG iRc = false;
-                    CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-                    if (FAILED(iRc))
-                    {
-                        com::ProgressErrorInfo info(progress);
-                        if (   info.isFullAvailable()
-                            || info.isBasicAvailable())
-                        {
-                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                             * because it contains more accurate info about what went wrong. */
-                            if (info.getResultCode() == VBOX_E_IPRT_ERROR)
-                                RTMsgError("%ls.", info.getText().raw());
-                            else
-                            {
-                                RTMsgError("Copy operation error details:");
-                                GluePrintErrorInfo(info);
-                            }
-                        }
-                        else
-                        {
-                            if (RT_FAILURE(rc))
-                                RTMsgError("Error while looking up error code, rc=%Rrc", rc);
-                            else
-                                com::GluePrintRCMessage(iRc);
-                        }
-                    }
-                    else if (fVerbose)
-                    {
+                    if (RT_SUCCESS(vrc) && fVerbose)
                         RTPrintf("Copy operation successful!\n");
-                    }
                 }
-                else
-                {
-                    if (fVerbose)
-                        RTPrintf("Copy operation aborted!\n");
-                }
+                ctrlCopyDestroy(&listToCopy);
             }
             a->session->UnlockMachine();
         } while (0);
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
-#endif
 
 /**
  * Access the guest control store.
@@ -883,13 +1148,11 @@ int handleGuestControl(HandlerArg *a)
     {
         return handleCtrlExecProgram(&arg);
     }
-#ifdef VBOX_WITH_COPYTOGUEST
     else if (   strcmp(a->argv[0], "copyto")  == 0
              || strcmp(a->argv[0], "copy_to") == 0)
     {
         return handleCtrlCopyTo(&arg);
     }
-#endif
 
     /* default: */
     return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");

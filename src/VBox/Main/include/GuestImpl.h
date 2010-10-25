@@ -151,19 +151,8 @@ private:
     typedef std::map< uint32_t, GuestProcess >::iterator GuestProcessMapIter;
     typedef std::map< uint32_t, GuestProcess >::const_iterator GuestProcessMapIterConst;
 
-#ifdef VBOX_WITH_COPYTOGUEST
-    /*
-     * Structure holding a directory entry.
-     */
-    struct VBoxGuestDirEntry
-    {
-        char       *pszPath;
-        RTLISTNODE  Node;
-    };
-
     int directoryEntryAppend(const char *pszPath, PRTLISTNODE pList);
     int directoryRead(const char *pszDirectory, const char *pszFilter, ULONG uFlags, ULONG *pcObjects, PRTLISTNODE pList);
-#endif
 
     int prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
     /** Handler for guest execution control notifications. */
