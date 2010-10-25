@@ -783,91 +783,97 @@ int VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
     AssertPtrReturn(pBuf, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbWritten, VERR_INVALID_PARAMETER);
 
-    int rc = RTCritSectEnter(&pBuf->CritSect);
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (pBuf->fAlive)
     {
-        /* Rewind the buffer if it's empty. */
-        size_t     cbInBuf   = pBuf->cbSize - pBuf->cbOffset;
-        bool const fAddToSet = cbInBuf == 0;
-        if (fAddToSet)
-            pBuf->cbSize = pBuf->cbOffset = 0;
-
-        /* Try and see if we can simply append the data. */
-        if (cbData + pBuf->cbSize <= pBuf->cbAllocated)
+        rc = RTCritSectEnter(&pBuf->CritSect);
+        if (RT_SUCCESS(rc))
         {
-            memcpy(&pBuf->pbData[pBuf->cbSize], pbData, cbData);
-            pBuf->cbSize += cbData;
-        }
-        else
-        {
-            /* Move any buffered data to the front. */
-            cbInBuf = pBuf->cbSize - pBuf->cbOffset;
-            if (cbInBuf == 0)
+            /* Rewind the buffer if it's empty. */
+            size_t     cbInBuf   = pBuf->cbSize - pBuf->cbOffset;
+            bool const fAddToSet = cbInBuf == 0;
+            if (fAddToSet)
                 pBuf->cbSize = pBuf->cbOffset = 0;
-            else if (pBuf->cbOffset) /* Do we have something to move? */
-            {
-                memmove(pBuf->pbData, &pBuf->pbData[pBuf->cbOffset], cbInBuf);
-                pBuf->cbSize = cbInBuf;
-                pBuf->cbOffset = 0;
-            }
 
-            /* Do we need to grow the buffer? */
-            if (cbData + pBuf->cbSize > pBuf->cbAllocated)
+            /* Try and see if we can simply append the data. */
+            if (cbData + pBuf->cbSize <= pBuf->cbAllocated)
             {
-                size_t cbAlloc = pBuf->cbSize + cbData;
-                cbAlloc = RT_ALIGN_Z(cbAlloc, _64K);
-                void *pvNew = RTMemRealloc(pBuf->pbData, cbAlloc);
-                if (pvNew)
+                memcpy(&pBuf->pbData[pBuf->cbSize], pbData, cbData);
+                pBuf->cbSize += cbData;
+            }
+            else
+            {
+                /* Move any buffered data to the front. */
+                cbInBuf = pBuf->cbSize - pBuf->cbOffset;
+                if (cbInBuf == 0)
+                    pBuf->cbSize = pBuf->cbOffset = 0;
+                else if (pBuf->cbOffset) /* Do we have something to move? */
                 {
-                    pBuf->pbData = (uint8_t *)pvNew;
-                    pBuf->cbAllocated = cbAlloc;
+                    memmove(pBuf->pbData, &pBuf->pbData[pBuf->cbOffset], cbInBuf);
+                    pBuf->cbSize = cbInBuf;
+                    pBuf->cbOffset = 0;
                 }
-                else
-                    rc = VERR_NO_MEMORY;
+
+                /* Do we need to grow the buffer? */
+                if (cbData + pBuf->cbSize > pBuf->cbAllocated)
+                {
+                    size_t cbAlloc = pBuf->cbSize + cbData;
+                    cbAlloc = RT_ALIGN_Z(cbAlloc, _64K);
+                    void *pvNew = RTMemRealloc(pBuf->pbData, cbAlloc);
+                    if (pvNew)
+                    {
+                        pBuf->pbData = (uint8_t *)pvNew;
+                        pBuf->cbAllocated = cbAlloc;
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+
+                /* Finally, copy the data. */
+                if (RT_SUCCESS(rc))
+                {
+                    if (cbData + pBuf->cbSize <= pBuf->cbAllocated)
+                    {
+                        memcpy(&pBuf->pbData[pBuf->cbSize], pbData, cbData);
+                        pBuf->cbSize += cbData;
+                    }
+                    else
+                        rc = VERR_BUFFER_OVERFLOW;
+                }
             }
 
-            /* Finally, copy the data. */
             if (RT_SUCCESS(rc))
             {
-                if (cbData + pBuf->cbSize <= pBuf->cbAllocated)
+                /* Report back written bytes. */
+                *pcbWritten = cbData;
+
+                /*
+                 * Was this the final read/write to do on this buffer? The close it
+                 * next time we have the chance to.
+                 */
+                if (fPendingClose)
+                    pBuf->fPendingClose = fPendingClose;
+
+                /*
+                 * Wake up the thread servicing the process so it can feed it
+                 * (if we have a notification helper pipe).
+                 */
+                if (pBuf->fNeedNotification)
                 {
-                    memcpy(&pBuf->pbData[pBuf->cbSize], pbData, cbData);
-                    pBuf->cbSize += cbData;
+                    size_t cbWritten;
+                    int rc2 = RTPipeWrite(pBuf->hNotificationPipeW, "i", 1, &cbWritten);
+
+                    /* Disable notification until it is set again on successful write. */
+                    pBuf->fNeedNotification = !RT_SUCCESS(rc2);
                 }
-                else
-                    rc = VERR_BUFFER_OVERFLOW;
             }
+            int rc2 = RTCritSectLeave(&pBuf->CritSect);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
         }
-
-        if (RT_SUCCESS(rc))
-        {
-            /* Report back written bytes. */
-            *pcbWritten = cbData;
-
-            /*
-             * Was this the final read/write to do on this buffer? The close it
-             * next time we have the chance to.
-             */
-            if (fPendingClose)
-                pBuf->fPendingClose = fPendingClose;
-
-            /*
-             * Wake up the thread servicing the process so it can feed it
-             * (if we have a notification helper pipe).
-             */
-            if (pBuf->fNeedNotification)
-            {
-                size_t cbWritten;
-                int rc2 = RTPipeWrite(pBuf->hNotificationPipeW, "i", 1, &cbWritten);
-
-                /* Disable notification until it is set again on successful write. */
-                pBuf->fNeedNotification = !RT_SUCCESS(rc2);
-            }
-        }
-        int rc2 = RTCritSectLeave(&pBuf->CritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
     }
+    else
+        rc = VERR_BAD_PIPE;
     return rc;
 }
 
@@ -1569,8 +1575,8 @@ int VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumP
             rc = VBoxServiceControlExecWritePipeBuffer(&pData->stdIn, abBuffer, cbSize, fPendingClose, &cbWritten);
 #ifdef DEBUG
             VBoxServiceVerbose(4, "ControlExec: Written to StdIn buffer (PID %u): rc=%Rrc, uFlags=0x%x, cbAlloc=%u, cbSize=%u, cbOffset=%u\n",
-                               uPID, rc, pData->stdIn.cbAllocated, pData->stdIn.cbSize,
-                               pData->stdIn.cbOffset);
+                               uPID, rc, uFlags,
+                               pData->stdIn.cbAllocated, pData->stdIn.cbSize, pData->stdIn.cbOffset);
 #endif
             uint32_t uStatus = INPUT_STS_UNDEFINED;
             if (RT_SUCCESS(rc))
