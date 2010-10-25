@@ -43,6 +43,46 @@
 #include <Windows.h>
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef struct MY_REPARSE_DATA_BUFFER
+{
+    ULONG           ReparseTag;
+#define MY_IO_REPARSE_TAG_SYMLINK       0xa000000c
+#define MY_IO_REPARSE_TAG_MOUNT_POINT   0xa0000003
+
+    USHORT          ReparseDataLength;
+    USHORT          Reserved;
+    union
+    {
+        struct
+        {
+            USHORT  SubstituteNameOffset;
+            USHORT  SubstituteNameLength;
+            USHORT  PrintNameOffset;
+            USHORT  PrintNameLength;
+            ULONG   Flags;
+#define MY_SYMLINK_FLAG_RELATIVE 1
+            WCHAR   PathBuffer[1];
+        } SymbolicLinkReparseBuffer;
+        struct
+        {
+            USHORT  SubstituteNameOffset;
+            USHORT  SubstituteNameLength;
+            USHORT  PrintNameOffset;
+            USHORT  PrintNameLength;
+            WCHAR   PathBuffer[1];
+        } MountPointReparseBuffer;
+        struct
+        {
+            UCHAR   DataBuffer[1];
+        } GenericReparseBuffer;
+    };
+} MY_REPARSE_DATA_BUFFER;
+#define MY_FSCTL_GET_REPARSE_POINT CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 42, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+
 RTDECL(bool) RTSymlinkExists(const char *pszSymlink)
 {
     bool        fRc = false;
@@ -67,7 +107,7 @@ RTDECL(bool) RTSymlinkIsDangling(const char *pszSymlink)
         if (fRc)
         {
             rc = RTPathQueryInfoEx(pszSymlink, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
-            fRc = RT_SUCCESS(rc);
+            fRc = !RT_SUCCESS_NP(rc);
         }
     }
 
@@ -125,6 +165,7 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
              */
             size_t cchTarget        = strlen(pszTarget);
             size_t cchVolSpecTarget = rtPathVolumeSpecLen(pszTarget);
+#if 0 /* looks like this isn't needed after all. That makes everything much simper :-) */
             if (   cchTarget > RT_MIN(cchVolSpecTarget, 1)
                 && RTPATH_IS_SLASH(pszTarget[cchTarget - 1]))
             {
@@ -139,6 +180,7 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
                     offFromEnd++;
                 }
             }
+#endif
 
             if (enmType == RTSYMLINKTYPE_UNKNOWN)
             {
@@ -147,6 +189,7 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
                     enmType = RTSYMLINKTYPE_DIR;
                 else if (cchVolSpecTarget)
                 {
+                    /** @todo this is subject to sharing violations. */
                     DWORD dwAttr = GetFileAttributesW(pwszNativeTarget);
                     if (   dwAttr != INVALID_FILE_ATTRIBUTES
                         && (dwAttr & FILE_ATTRIBUTE_DIRECTORY))
@@ -246,13 +289,45 @@ RTDECL(int) RTSymlinkReadA(const char *pszSymlink, char **ppszTarget)
                                       FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                       NULL,
                                       OPEN_EXISTING,
-                                      FILE_FLAG_OPEN_REPARSE_POINT,
+                                      FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
                                       NULL);
         if (hSymlink != INVALID_HANDLE_VALUE)
         {
-            /** @todo what do we do next? FSCTL_GET_REPARSE_POINT? */
-            rc = VERR_NOT_IMPLEMENTED;
-
+            DWORD cbReturned = 0;
+            union
+            {
+                MY_REPARSE_DATA_BUFFER  Buf;
+                uint8_t                 abBuf[16*_1K + sizeof(WCHAR)];
+            } u;
+            if (DeviceIoControl(hSymlink,
+                                MY_FSCTL_GET_REPARSE_POINT,
+                                NULL /*pInBuffer */,
+                                0 /*cbInBuffer */,
+                                &u.Buf,
+                                sizeof(u) - sizeof(WCHAR),
+                                &cbReturned,
+                                NULL /*pOverlapped*/))
+            {
+                if (u.Buf.ReparseTag == MY_IO_REPARSE_TAG_SYMLINK)
+                {
+                    PWCHAR pwszTarget = &u.Buf.SymbolicLinkReparseBuffer.PathBuffer[0];
+                    pwszTarget += u.Buf.SymbolicLinkReparseBuffer.SubstituteNameOffset / 2;
+                    pwszTarget[u.Buf.SymbolicLinkReparseBuffer.SubstituteNameLength / 2] = 0;
+                    if (   !(u.Buf.SymbolicLinkReparseBuffer.Flags & MY_SYMLINK_FLAG_RELATIVE)
+                        && pwszTarget[0] == '\\'
+                        && pwszTarget[1] == '?'
+                        && pwszTarget[2] == '?'
+                        && pwszTarget[3] == '\\'
+                        && pwszTarget[4] != 0
+                       )
+                        pwszTarget += 4;
+                    rc = RTUtf16ToUtf8(pwszTarget, ppszTarget);
+                }
+                else
+                    rc = VERR_NOT_SYMLINK;
+            }
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
             CloseHandle(hSymlink);
         }
         else
