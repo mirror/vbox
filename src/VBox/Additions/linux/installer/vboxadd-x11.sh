@@ -440,7 +440,7 @@ setup()
                     if grep -q "VirtualBox generated" "$i"; then
                         generated="$generated  `printf "$i\n"`"
                     else
-                        "$lib_dir/x11config-new.pl" $newmouse $automouse $nopsaux "$i"
+                        "$lib_dir/x11config.sh" $newmouse $automouse $nopsaux "$i"
                     fi
                     configured="true"
                 fi
@@ -454,7 +454,7 @@ setup()
             nobak="/etc/X11/xorg.vbox.nobak"
             if test -z "$configured"; then
                 touch "$main_cfg"
-                "$lib_dir/x11config-new.pl" $newmouse $automouse $nopsaux --noBak "$main_cfg"
+                "$lib_dir/x11config.sh" $newmouse $automouse $nopsaux --noBak "$main_cfg"
                 touch "$nobak"
             fi
         fi
