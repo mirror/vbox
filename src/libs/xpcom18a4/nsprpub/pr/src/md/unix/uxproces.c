@@ -66,6 +66,7 @@ static PRLock *_pr_vms_fork_lock = NULL;
 #ifdef VBOX
 #include <iprt/err.h>
 #include <iprt/env.h>
+#include <iprt/file.h>
 #include <iprt/process.h>
 #endif
 
