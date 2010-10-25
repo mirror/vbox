@@ -427,8 +427,8 @@ typedef struct PDMMSIREG
     uint8_t    iMsiCapOffset;
     /** Offset of next capability to MSI */
     uint8_t    iMsiNextOffset;
-    /** Value to initialize MSI message control register */
-    uint16_t   iMsiFlags;
+    /** If we support 64-bit MSI addressing */
+    bool       fMsi64bit;
 
     /** Number of MSI-X interrupt vectors, 0 if MSI-X not supported */
     uint16_t   cMsixVectors;

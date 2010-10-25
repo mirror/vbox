@@ -5416,7 +5416,6 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     aMsiReg.cMsiVectors = 1;
     aMsiReg.iMsiCapOffset = 0x80;
     aMsiReg.iMsiNextOffset = 0x0;
-    aMsiReg.iMsiFlags = 0;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
     if (RT_FAILURE (rc))
     {
@@ -5574,4 +5573,3 @@ const PDMDEVREG g_DeviceOHCI =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-

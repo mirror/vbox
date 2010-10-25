@@ -27,6 +27,9 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#ifdef IN_RING3
+#include <iprt/alloc.h>
+#endif
 
 #include "../Builtins.h"
 
@@ -526,14 +529,12 @@ static void ich9pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVI
     {
         if (MsiIsEnabled(pPciDev))
         {
-            Log2(("MSI interrupt: %d level=%d\n", iIrq, iLevel));
             PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
             MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel);
         }
 
         if (MsixIsEnabled(pPciDev))
         {
-            Log2(("MSI-X interrupt: %d level=%d\n", iIrq, iLevel));
             PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
             MsixNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel);
         }
@@ -918,6 +919,14 @@ static int ich9pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
             rc = SSMR3PutU8(pSSM, pDev->Int.s.u8MsixCapSize);
             if (RT_FAILURE(rc))
                 return rc;
+            /* Save MSI-X page state */
+            if (pDev->Int.s.u8MsixCapOffset != 0)
+            {
+                Assert(pDev->Int.s.pMsixPageR3 != NULL);
+                SSMR3PutMem(pSSM, pDev->Int.s.pMsixPageR3, 0x1000);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
         }
     }
     return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
@@ -1213,13 +1222,14 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
         }
     }
 
+    void* pvMsixPage = RTMemTmpAllocZ(0x1000);
     /*
      * Iterate all the devices.
      */
     for (i = 0;; i++)
     {
-        PCIDEVICE   DevTmp;
         PPCIDEVICE  pDev;
+        PCIDEVICE   DevTmp;
 
         /* index / terminator */
         rc = SSMR3GetU32(pSSM, &u32);
@@ -1231,7 +1241,7 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
             ||  u32 < i)
         {
             AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
-            return rc;
+            goto out;
         }
 
         /* skip forward to the device checking that no new devices are present. */
@@ -1259,27 +1269,36 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
 
         rc = SSMR3GetU32(pSSM, &DevTmp.Int.s.uFlags);
         if (RT_FAILURE(rc))
-            return rc;
+            goto out;
 
         rc = SSMR3GetS32(pSSM, &DevTmp.Int.s.uIrqPinState);
         if (RT_FAILURE(rc))
-            return rc;
+            goto out;
 
         rc = SSMR3GetU8(pSSM, &DevTmp.Int.s.u8MsiCapOffset);
         if (RT_FAILURE(rc))
-            return rc;
+            goto out;
 
         rc = SSMR3GetU8(pSSM, &DevTmp.Int.s.u8MsiCapSize);
         if (RT_FAILURE(rc))
-            return rc;
+            goto out;
 
         rc = SSMR3GetU8(pSSM, &DevTmp.Int.s.u8MsixCapOffset);
         if (RT_FAILURE(rc))
-            return rc;
+            goto out;
 
         rc = SSMR3GetU8(pSSM, &DevTmp.Int.s.u8MsixCapSize);
         if (RT_FAILURE(rc))
-            return rc;
+            goto out;
+
+        /* Load MSI-X page state */
+        if (DevTmp.Int.s.u8MsixCapOffset != 0)
+        {
+            Assert(pvMsixPage != NULL);
+            SSMR3GetMem(pSSM, pvMsixPage, 0x1000);
+            if (RT_FAILURE(rc))
+                goto out;
+        }
 
         /* check that it's still around. */
         pDev = pBus->apDevices[i];
@@ -1302,9 +1321,22 @@ static DECLCALLBACK(int) ich9pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSM, 
         pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
 
         pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
+        pDev->Int.s.u8MsiCapOffset  = DevTmp.Int.s.u8MsiCapOffset;
+        pDev->Int.s.u8MsiCapSize    = DevTmp.Int.s.u8MsiCapSize;
+        pDev->Int.s.u8MsixCapOffset = DevTmp.Int.s.u8MsixCapOffset;
+        pDev->Int.s.u8MsixCapSize   = DevTmp.Int.s.u8MsixCapSize;
+        if (DevTmp.Int.s.u8MsixCapSize != 0)
+        {
+            Assert(pDev->Int.s.pMsixPageR3 != NULL);
+            memcpy(pDev->Int.s.pMsixPageR3, pvMsixPage, 0x1000);
+        }
     }
 
-    return VINF_SUCCESS;
+  out:
+    if (pvMsixPage)
+        RTMemTmpFree(pvMsixPage);
+
+    return rc;
 }
 
 /**
@@ -1891,7 +1923,7 @@ static const struct {
     int32_t     iSlot;
     int32_t     iFunction;
 } PciSlotAssignments[] = {
-    /* Due to somewhat inflexible PCI bus configuration, ConsoleImpl hardcodes 0:5:0 as HDA address, so we shalln't put elsewhere */ 
+    /* Due to somewhat inflexible PCI bus configuration, ConsoleImpl hardcodes 0:5:0 as HDA address, so we shalln't put elsewhere */
 #if 0
     {
         "lan",      25, 0 /* LAN controller */
