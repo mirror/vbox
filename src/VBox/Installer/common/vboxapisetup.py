@@ -12,6 +12,13 @@
 import os,sys
 from distutils.core import setup
 
+def cleanupComCache():
+    import shutil
+    from distutils.sysconfig import get_python_lib
+    comCache = os.path.join(get_python_lib(),'win32com', 'gen_py')
+    print "Cleaning COM cache at",comCache
+    shutil.rmtree(comCache, True)
+
 def patchWith(file,install,sdk):
     newFile=file+".new"
     install=install.replace("\\", "\\\\")
@@ -49,6 +56,8 @@ def main(argv):
             vboxSdkDest = os.path.join(vboxDest, "sdk")
     else:
         vboxSdkDest = os.path.join(vboxDest, "sdk")
+    if platform.system() == 'Windows':
+        cleanupComCache()
     patchWith(os.path.join(os.path.dirname(sys.argv[0]), 'vboxapi', '__init__.py'), vboxDest, vboxSdkDest)
     setup(name='vboxapi',
       version=vboxVersion,
