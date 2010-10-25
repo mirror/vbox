@@ -81,6 +81,8 @@ void vboxVDbgVEHandlerUnregister();
 extern bool g_VDbgTstDumpEnable;
 extern bool g_VDbgTstDumpOnSys2VidSameSizeEnable;
 
+VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, const RECT *pRect, const char* pSuffix);
+VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, IDirect3DSurface9 *pSurf, const RECT *pRect, const char* pSuffix);
 VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const RECT *pRect, IDirect3DSurface9 *pSurf, const char* pSuffix);
 void vboxVDbgDoMpPrintRect(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const RECT *pRect, const char * pSuffix);
 void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix);
@@ -108,6 +110,14 @@ void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
     do { \
         vboxVDbgDoDumpSurfData _m ; \
     } while (0)
+#define vboxVDbgDumpAllocSurfData(_m) \
+    do { \
+        vboxVDbgDoDumpAllocSurfData _m ; \
+    } while (0)
+#define vboxVDbgDumpAllocData(_m) \
+    do { \
+        vboxVDbgDoDumpAllocData _m ; \
+    } while (0)
 #else
 #define vboxVDbgDumpSurfData(_m) do {} while (0)
 #endif
@@ -121,6 +131,8 @@ void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
 #define vboxVDbgMpPrintRect(_m) do {} while (0)
 #define vboxVDbgMpPrintAlloc(_m) do {} while (0)
 #define vboxVDbgDumpSurfData(_m) do {} while (0)
+#define vboxVDbgDumpAllocSurfData(_m) do {} while (0)
+#define vboxVDbgDumpAllocData(_m) do {} while (0)
 #define vboxVDbgBreak() do {} while (0)
 #define vboxVDbgPrint(_m)  do {} while (0)
 #define vboxVDbgPrintR vboxVDbgPrint
