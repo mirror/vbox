@@ -3498,6 +3498,12 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
+          <para><xref linkend="IMachine__export"
+          xreflabel="IMachine::export()" /> received an extra parameter
+          <computeroutput>location</computeroutput>, which is used to decide
+          for the disk nameing.</para>
+        </listitem>
+        <listitem>
           <para><xref linkend="IAppliance__write"
           xreflabel="IAppliance::write()" /> received an extra parameter
           <computeroutput>manifest</computeroutput>, which can suppress

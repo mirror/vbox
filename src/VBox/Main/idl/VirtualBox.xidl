@@ -3378,7 +3378,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="8934e426-1c09-459f-bbc4-58dba016fbbe"
+     uuid="cc4fec9a-3150-45df-9ee9-f00ba54d6ac3"
      wsmap="managed"
      >
     <desc>
@@ -5092,6 +5092,9 @@
 
       <param name="aAppliance" type="IAppliance" dir="in">
         <desc>Appliance to export this machine to.</desc>
+      </param>
+      <param name="location" type="wstring" dir="in">
+        <desc>The target location.</desc>
       </param>
       <param name="aDescription" type="IVirtualSystemDescription" dir="return">
         <desc>VirtualSystemDescription object which is created for this machine.</desc>

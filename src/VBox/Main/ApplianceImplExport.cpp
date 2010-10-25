@@ -56,8 +56,7 @@ using namespace std;
 * @param appliance
 * @return
 */
-
-STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription **aDescription)
+STDMETHODIMP Machine::Export(IAppliance *aAppliance, IN_BSTR location, IVirtualSystemDescription **aDescription)
 {
     HRESULT rc = S_OK;
 
@@ -71,6 +70,12 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
     try
     {
+        Appliance *pAppliance = static_cast<Appliance*>(aAppliance);
+        AutoCaller autoCaller1(pAppliance);
+        if (FAILED(autoCaller1.rc())) return autoCaller1.rc();
+
+        LocationInfo locInfo;
+        parseURI(location, locInfo);
         // create a new virtual system to store in the appliance
         rc = pNewDesc.createObject();
         if (FAILED(rc)) throw rc;
@@ -341,9 +346,8 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                 rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                strTargetVmdkName = bstrBaseName;
-                strTargetVmdkName.stripExt();
-                strTargetVmdkName.append(".vmdk");
+                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripExt();
+                strTargetVmdkName = Utf8StrFmt("%s-disk%d.vmdk", strTargetName.c_str(), ++pAppliance->m->cDisks);
 
                 // force reading state, or else size will be returned as 0
                 MediumState_T ms;
@@ -520,17 +524,12 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
                                "ensoniq1371",       // this is what OVFTool writes and VMware supports
                                Utf8StrFmt("%RI32", audioController));
 
-        // finally, add the virtual system to the appliance
-        Appliance *pAppliance = static_cast<Appliance*>(aAppliance);
-        AutoCaller autoCaller1(pAppliance);
-        if (FAILED(autoCaller1.rc())) return autoCaller1.rc();
-
         /* We return the new description to the caller */
         ComPtr<IVirtualSystemDescription> copy(pNewDesc);
         copy.queryInterfaceTo(aDescription);
 
         AutoWriteLock alock(pAppliance COMMA_LOCKVAL_SRC_POS);
-
+        // finally, add the virtual system to the appliance
         pAppliance->m->virtualSystemDescriptions.push_back(pNewDesc);
     }
     catch(HRESULT arc)
