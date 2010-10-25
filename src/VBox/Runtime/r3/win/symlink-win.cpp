@@ -40,6 +40,7 @@
 #include <iprt/string.h>
 #include "internal/path.h"
 
+#include <Windows.h>
 
 
 RTDECL(bool) RTSymlinkExists(const char *pszSymlink)
