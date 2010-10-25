@@ -926,6 +926,14 @@ int handleExportAppliance(HandlerArg *a)
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
+        char *pszAbsFilePath = 0;
+        if (strOutputFile.startsWith("S3://", iprt::MiniString::CaseInsensitive) ||
+            strOutputFile.startsWith("SunCloud://", iprt::MiniString::CaseInsensitive) ||
+            strOutputFile.startsWith("webdav://", iprt::MiniString::CaseInsensitive))
+            pszAbsFilePath = RTStrDup(strOutputFile.c_str());
+        else
+            pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
+
         std::list< ComPtr<IMachine> >::iterator itM;
         uint32_t i=0;
         for (itM = llMachines.begin();
@@ -934,7 +942,7 @@ int handleExportAppliance(HandlerArg *a)
         {
             ComPtr<IMachine> pMachine = *itM;
             ComPtr<IVirtualSystemDescription> pVSD;
-            CHECK_ERROR_BREAK(pMachine, Export(pAppliance, pVSD.asOutParam()));
+            CHECK_ERROR_BREAK(pMachine, Export(pAppliance, Bstr(pszAbsFilePath).raw(), pVSD.asOutParam()));
             // Add additional info to the virtal system description if the user wants so
             ArgsMap *pmapArgs = NULL;
             ArgsMapsMap::iterator itm = mapArgsMapsPerVsys.find(i);
@@ -1000,13 +1008,6 @@ int handleExportAppliance(HandlerArg *a)
             break;
 
         ComPtr<IProgress> progress;
-        char *pszAbsFilePath;
-        if (strOutputFile.startsWith("S3://", iprt::MiniString::CaseInsensitive) ||
-            strOutputFile.startsWith("SunCloud://", iprt::MiniString::CaseInsensitive) ||
-            strOutputFile.startsWith("webdav://", iprt::MiniString::CaseInsensitive))
-            pszAbsFilePath = RTStrDup(strOutputFile.c_str());
-        else
-            pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
         CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat).raw(),
                                             fManifest,
                                             Bstr(pszAbsFilePath).raw(),

@@ -853,53 +853,6 @@ void Appliance::disksWeight()
 
 }
 
-void Appliance::parseURI(Utf8Str strUri, LocationInfo &locInfo) const
-{
-    /* Check the URI for the protocol */
-    if (strUri.startsWith("file://", Utf8Str::CaseInsensitive)) /* File based */
-    {
-        locInfo.storageType = VFSType_File;
-        strUri = strUri.substr(sizeof("file://") - 1);
-    }
-    else if (strUri.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
-    {
-        locInfo.storageType = VFSType_S3;
-        strUri = strUri.substr(sizeof("SunCloud://") - 1);
-    }
-    else if (strUri.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
-    {
-        locInfo.storageType = VFSType_S3;
-        strUri = strUri.substr(sizeof("S3://") - 1);
-    }
-    else if (strUri.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
-        throw E_NOTIMPL;
-
-    /* Not necessary on a file based URI */
-    if (locInfo.storageType != VFSType_File)
-    {
-        size_t uppos = strUri.find("@"); /* username:password combo */
-        if (uppos != Utf8Str::npos)
-        {
-            locInfo.strUsername = strUri.substr(0, uppos);
-            strUri = strUri.substr(uppos + 1);
-            size_t upos = locInfo.strUsername.find(":");
-            if (upos != Utf8Str::npos)
-            {
-                locInfo.strPassword = locInfo.strUsername.substr(upos + 1);
-                locInfo.strUsername = locInfo.strUsername.substr(0, upos);
-            }
-        }
-        size_t hpos = strUri.find("/"); /* hostname part */
-        if (hpos != Utf8Str::npos)
-        {
-            locInfo.strHostname = strUri.substr(0, hpos);
-            strUri = strUri.substr(hpos);
-        }
-    }
-
-    locInfo.strPath = strUri;
-}
-
 void Appliance::parseBucket(Utf8Str &aPath, Utf8Str &aBucket)
 {
     /* Buckets are S3 specific. So parse the bucket out of the file path */
@@ -1006,6 +959,53 @@ int Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
         pTask->pProgress->SetCurrentOperationProgress(uPercent);
     }
     return VINF_SUCCESS;
+}
+
+void parseURI(Utf8Str strUri, LocationInfo &locInfo)
+{
+    /* Check the URI for the protocol */
+    if (strUri.startsWith("file://", Utf8Str::CaseInsensitive)) /* File based */
+    {
+        locInfo.storageType = VFSType_File;
+        strUri = strUri.substr(sizeof("file://") - 1);
+    }
+    else if (strUri.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
+    {
+        locInfo.storageType = VFSType_S3;
+        strUri = strUri.substr(sizeof("SunCloud://") - 1);
+    }
+    else if (strUri.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
+    {
+        locInfo.storageType = VFSType_S3;
+        strUri = strUri.substr(sizeof("S3://") - 1);
+    }
+    else if (strUri.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
+        throw E_NOTIMPL;
+
+    /* Not necessary on a file based URI */
+    if (locInfo.storageType != VFSType_File)
+    {
+        size_t uppos = strUri.find("@"); /* username:password combo */
+        if (uppos != Utf8Str::npos)
+        {
+            locInfo.strUsername = strUri.substr(0, uppos);
+            strUri = strUri.substr(uppos + 1);
+            size_t upos = locInfo.strUsername.find(":");
+            if (upos != Utf8Str::npos)
+            {
+                locInfo.strPassword = locInfo.strUsername.substr(upos + 1);
+                locInfo.strUsername = locInfo.strUsername.substr(0, upos);
+            }
+        }
+        size_t hpos = strUri.find("/"); /* hostname part */
+        if (hpos != Utf8Str::npos)
+        {
+            locInfo.strHostname = strUri.substr(0, hpos);
+            strUri = strUri.substr(hpos);
+        }
+    }
+
+    locInfo.strPath = strUri;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

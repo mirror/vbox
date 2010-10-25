@@ -32,7 +32,7 @@ typedef std::pair<Utf8Str, Utf8Str> STRPAIR;
 
 /* Describe a location for the import/export. The location could be a file on a
  * local hard disk or a remote target based on the supported inet protocols. */
-struct Appliance::LocationInfo
+struct LocationInfo
 {
     LocationInfo()
       : storageType(VFSType_File) {}
@@ -52,6 +52,10 @@ struct Appliance::Data
       : state(ApplianceIdle)
       , fManifest(true)
       , pReader(NULL)
+      , ulWeightForXmlOperation(0)
+      , ulWeightForManifestOperation(0)
+      , ulTotalDisksMB(0)
+      , cDisks(0)
     {
     }
 

@@ -31,6 +31,7 @@
 class Progress;
 class VirtualSystemDescription;
 struct VirtualSystemDescriptionEntry;
+struct LocationInfo;
 typedef struct VDINTERFACE   *PVDINTERFACE;
 typedef struct VDINTERFACEIO *PVDINTERFACEIO;
 typedef struct SHA1STORAGE   *PSHA1STORAGE;
@@ -119,7 +120,6 @@ private:
 
     struct ImportStack;
     struct TaskOVF;
-    struct LocationInfo;
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
@@ -138,7 +138,6 @@ private:
     void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
     void addWarning(const char* aWarning, ...);
     void disksWeight();
-    void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
     void parseBucket(Utf8Str &aPath, Utf8Str &aBucket);
 
     static DECLCALLBACK(int) taskThreadImportOrExport(RTTHREAD aThread, void *pvUser);
@@ -221,6 +220,8 @@ private:
 
     friend class Machine;
 };
+
+void parseURI(Utf8Str strUri, LocationInfo &locInfo);
 
 struct VirtualSystemDescriptionEntry
 {
