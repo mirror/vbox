@@ -75,7 +75,9 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
-#include <linux/namei.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# include <linux/namei.h>
+#endif
 #include <linux/mm.h>
 #include <linux/pagemap.h>
 #include <linux/slab.h>
