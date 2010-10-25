@@ -823,7 +823,7 @@ HRESULT ListenerRecord::enqueue (IEvent* aEvent)
     // If there was no events reading from the listener for the long time,
     // and events keep coming, or queue is oversized we shall unregister this listener.
     uint64_t sinceRead = RTTimeMilliTS() - mLastRead;
-    uint32_t queueSize = mQueue.size();
+    size_t queueSize = mQueue.size();
     if ( (queueSize > 1000) || ((queueSize > 500) && (sinceRead > 60 * 1000)))
     {
         ::RTCritSectLeave(&mcsQLock);
@@ -1395,9 +1395,9 @@ HRESULT  EventSourceAggregator::init(ComSafeArrayIn(IEventSource*, aSourcesIn))
 
     com::SafeIfaceArray<IEventSource> aSources(ComSafeArrayInArg (aSourcesIn));
 
-    uint32_t cSize = aSources.size();
+    size_t cSize = aSources.size();
 
-    for (uint32_t i=0; i<cSize; i++)
+    for (size_t i = 0; i < cSize; i++)
     {
         if (aSources[i] != NULL)
             mEventSources.push_back(aSources[i]);
