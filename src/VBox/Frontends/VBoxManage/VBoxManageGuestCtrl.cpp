@@ -939,8 +939,8 @@ int ctrlCopyFile(IGuest *pGuest, const char *pszSource, const char *pszDest,
                 }
                 else
                 {
-                    if (RT_FAILURE(rc))
-                        RTMsgError("Error while looking up error code, rc=%Rrc", rc);
+                    if (RT_FAILURE(vrc))
+                        RTMsgError("Error while looking up error code, rc=%Rrc", vrc);
                     else
                         com::GluePrintRCMessage(iRc);
                 }
