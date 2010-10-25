@@ -79,3 +79,13 @@ int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath
     return rc;
 }
 
+
+int rtPathFromNativeDup(char **ppszPath, const char *pszNativePath, const char *pszBasePath)
+{
+    int rc = RTStrValidateEncodingEx(pszNativePath, RTSTR_MAX, 0 /*fFlags*/);
+    if (RT_SUCCESS(rc))
+        rc = RTStrDupEx(ppszPath, pszNativePath);
+    NOREF(pszBasePath); /* We don't query the FS for codeset preferences. */
+    return rc;
+}
+

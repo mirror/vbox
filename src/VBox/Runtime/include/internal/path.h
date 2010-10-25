@@ -84,7 +84,7 @@ void rtPathFreeNative(char const *pszNativePath, const char *pszPath);
  *
  * @returns IPRT status code.
  * @param   ppszPath        Where to store the pointer to the IPRT path.
- *                          Free by calling RTStrFree(). NULL on failure.
+ *                          Free by calling rtPathFreeIprt(). NULL on failure.
  * @param   pszNativePath   The native path to convert.
  * @param   pszBasePath     What pszNativePath is relative to - in IPRT
  *                          representation.  NULL if current directory.
@@ -115,6 +115,20 @@ void rtPathFreeIprt(const char *pszPath, const char *pszNativePath);
  *                          representation.  NULL if current directory.
  */
 int rtPathFromNativeCopy(char *pszPath, size_t cbPath, const char *pszNativePath, const char *pszBasePath);
+
+/**
+ * Convert a path from the native representation to the IPRT one, allocating a
+ * string buffer for the result.
+ *
+ * @returns VINF_SUCCESS, VERR_NO_STR_MEMORY, and recoding errors.
+ *
+ * @param   ppszPath        Where to return the pointer to the IPRT path.  Must
+ *                          be freed by calling RTStrFree.
+ * @param   pszNativePath   The path to convert.
+ * @param   pszBasePath     What pszNativePath is relative to - in IPRT
+ *                          representation.  NULL if current directory.
+ */
+int rtPathFromNativeDup(char **ppszPath, const char *pszNativePath, const char *pszBasePath);
 
 
 RT_C_DECLS_END

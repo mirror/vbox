@@ -99,6 +99,7 @@ PROGRAMS += \
 	tstStrSimplePattern \
 	tstStrToNum \
 	tstRTStrVersion \
+	tstRTSymlink \
 	tstRTSystemQueryDmi \
 	tstRTSystemQueryOsInfo \
 	tstRTTcp-1 \
@@ -430,6 +431,9 @@ tstStrToNum_SOURCES = tstStrToNum.cpp
 
 tstRTStrVersion_TEMPLATE = VBOXR3TSTEXE
 tstRTStrVersion_SOURCES = tstRTStrVersion.cpp
+
+tstRTSymlink_TEMPLATE = VBOXR3TSTEXE
+tstRTSymlink_SOURCES = tstRTSymlink.cpp
 
 tstRTSystemQueryDmi_TEMPLATE = VBOXR3TSTEXE
 tstRTSystemQueryDmi_SOURCES = tstRTSystemQueryDmi.cpp
