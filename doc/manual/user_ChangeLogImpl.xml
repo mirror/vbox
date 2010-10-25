@@ -15,6 +15,10 @@
           (COM/XPCOM) and remote (SOAP) invocation APIs</para>
       </listitem>
 
+      <listitem>
+        <para>Open Virtualization Format Archive (OVA) support</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
@@ -111,6 +115,10 @@
 
       <listitem>
         <para>OVF: creation of the manifest file on export is optional now</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF: allow overwriting the target disk format on import</para>
       </listitem>
 
     </itemizedlist>
