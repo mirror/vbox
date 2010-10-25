@@ -388,7 +388,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            keyboardputscancode <hex> [<hex> ...]|\n"
                      "                            injectnmi|\n"
                      "                            setlinkstate<1-N> on|off |\n"
-#ifdef VBOX_DYNAMIC_NET_ATTACH
 #if defined(VBOX_WITH_NETFLT)
                      "                            nic<1-N> null|nat|bridged|intnet|hostonly\n"
                      "                                     [<devicename>] |\n"
@@ -398,7 +397,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif /* !RT_OS_LINUX && !RT_OS_DARWIN  */
                      "                            nictrace<1-N> on|off\n"
                      "                            nictracefile<1-N> <filename>\n"
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
                      "                            guestmemoryballoon <balloonsize in MB>]\n"
                      "                            gueststatisticsinterval <seconds>]\n"
                      "                            usbattach <uuid>|<address> |\n"

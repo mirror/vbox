@@ -1699,9 +1699,8 @@ static DECLCALLBACK(int) vnetMap(PPCIDEVICE pPciDev, int iRegion,
     return rc;
 }
 
-/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
 
-#ifdef VBOX_DYNAMIC_NET_ATTACH
+/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
 
 /**
  * Detach notification.
@@ -1734,7 +1733,6 @@ static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
     vnetCsLeave(pState);
 }
-
 
 /**
  * Attach the Network attachment.
@@ -1802,8 +1800,6 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     return rc;
 
 }
-
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
 
 /**
  * @copydoc FNPDMDEVSUSPEND
@@ -2083,17 +2079,10 @@ const PDMDEVREG g_DeviceVirtioNet =
     vnetSuspend,
     /* Resume notification - optional. */
     NULL,
-#ifdef VBOX_DYNAMIC_NET_ATTACH
     /* Attach command - optional. */
     vnetAttach,
     /* Detach notification - optional. */
     vnetDetach,
-#else /* !VBOX_DYNAMIC_NET_ATTACH */
-    /* Attach command - optional. */
-    NULL,
-    /* Detach notification - optional. */
-    NULL,
-#endif /* !VBOX_DYNAMIC_NET_ATTACH */
     /* Query a LUN base interface - optional. */
     NULL,
     /* Init complete notification - optional. */
