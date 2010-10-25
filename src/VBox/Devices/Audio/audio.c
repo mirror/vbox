@@ -121,7 +121,11 @@ static struct {
     int plive;
 } conf = {
     {                           /* DAC fixed settings */
+#ifndef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
         1,                      /* enabled */
+#else
+        0,
+#endif
         1,                      /* nb_voices */
         1,                      /* greedy */
         {
@@ -132,7 +136,11 @@ static struct {
     },
 
     {                           /* ADC fixed settings */
+#ifndef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
         1,                      /* enabled */
+#else
+        0,
+#endif
         1,                      /* nb_voices */
         1,                      /* greedy */
         {

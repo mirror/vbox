@@ -300,8 +300,6 @@ DevicesR3_SOURCES       = \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
-	Audio/DevIchIntelHDA.cpp \
-	Audio/DevCodec.cpp \
 	PC/DevDMA.cpp \
 	PC/DevHPET.cpp \
 	PC/DevSMC.cpp \
@@ -309,6 +307,20 @@ DevicesR3_SOURCES       = \
 	Storage/fdc.c \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
+
+VBOX_DEV_HDA_SOURCES= \
+	Audio/DevIchIntelHDA.cpp \
+	Audio/DevCodec.cpp
+
+define def_vbox_audio_flags
+$(1)_DEFS += \
+      $(if $(VBOX_WITH_AUDIO_FLEXIBLE_FORMAT),VBOX_WITH_AUDIO_FLEXIBLE_FORMAT,)
+endef
+
+DevicesR3_SOURCES += $(VBOX_DEV_HDA_SOURCES)
+
+$(foreach file,$(VBOX_DEV_HDA_SOURCES),$(eval $(call def_vbox_audio_flags, $(file))))
+
 
 ifdef VBOX_DYNAMIC_NET_ATTACH
  DevicesR3_DEFS        += VBOX_DYNAMIC_NET_ATTACH
@@ -851,10 +863,6 @@ Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	Network/slirp
 Drivers_SOURCES    = \
-	Audio/audio.c \
-	Audio/audiosniffer.c \
-	Audio/mixeng.c \
-	Audio/noaudio.c \
 	Input/DrvKeyboardQueue.cpp \
 	Input/DrvMouseQueue.cpp \
 	Network/DrvIntNet.cpp \
@@ -874,6 +882,15 @@ Drivers_SOURCES    = \
 	Storage/DrvVD.cpp \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
+
+VBOX_AUDIO_SOURCES = \
+	Audio/audio.c \
+	Audio/audiosniffer.c \
+	Audio/mixeng.c \
+	Audio/noaudio.c
+
+Drivers_SOURCES += $(VBOX_AUDIO_SOURCES)
+$(foreach file,$(VBOX_AUDIO_SOURCES),$(eval $(call def_vbox_audio_flags, $(file))))
 
 VBOX_SLIRP_SOURCES = \
 	Network/DrvNAT.cpp \

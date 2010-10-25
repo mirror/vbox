@@ -139,8 +139,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[4] = 2 << 16 | 0x1A; /* starting node - 2; total numbers of nodes  0x1A */
             pNode->node.au32F00_param[5] = RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
-            //pNode->node.au32F00_param[0xa] = RT_BIT(19)|RT_BIT(18)|RT_BIT(17)|RT_BIT(10)|RT_BIT(9)|RT_BIT(8)|RT_BIT(7)|RT_BIT(6)|RT_BIT(5);
-            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
             pNode->node.au32F00_param[0xC] = (17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
             pNode->node.au32F00_param[0xB] = RT_BIT(0);
             pNode->node.au32F00_param[0xD] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
@@ -193,17 +191,16 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->spdifout.node.name = "SPDIFOut";
             pNode->spdifout.u32A_param = (1<<14)|(0x1<<4) | 0x1;
             pNode->spdifout.node.au32F00_param[9] = (4 << 16) | RT_BIT(9)|RT_BIT(4)|0x1;
-            pNode->node.au32F00_param[0xa] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xa] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->spdifout.node.au32F00_param[0xB] = RT_BIT(2)|RT_BIT(0);
             pNode->spdifout.u32F06_param = 0;
             pNode->spdifout.u32F0d_param = 0;
-            //pNode->spdifout.node.au32F00_param[0xA] = RT_BIT(19)|RT_BIT(18)|RT_BIT(17)|RT_BIT(10)|RT_BIT(9)|RT_BIT(8)|RT_BIT(7)|RT_BIT(6);
         break;
         case 9:
             pNode->node.name = "Reserved_0";
             pNode->spdifin.u32A_param = (0x1<<4) | 0x1;
             pNode->spdifin.node.au32F00_param[9] = (0x1 << 20)|(4 << 16) | RT_BIT(9)| RT_BIT(8)|RT_BIT(4)|0x1;
-            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->node.au32F00_param[0xE] = RT_BIT(0);
             pNode->node.au32F02_param[0] = 0x11;
             pNode->spdifin.node.au32F00_param[0xB] = RT_BIT(2)|RT_BIT(0);
@@ -257,9 +254,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F08_param = 0;
             pNode->node.au32F00_param[0xC] = 0x34;
             pNode->port.u32F09_param = 0;
-            //pNode->node.au32F00_param[0xC] = RT_BIT(5)|RT_BIT(2);
             pNode->port.u32F07_param = RT_BIT(5);
-            //pNode->port.u32F09_param = RT_BIT(31);
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
             break;
@@ -435,13 +430,12 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.au32F00_param[0] = (0x10EC /* Realtek */ << 16) | 0x885 /* device */;
             pNode->node.au32F00_param[2] = RT_BIT(20); /* Realtek 889 (8.1.9)*/
             pNode->node.au32F00_param[4] = (1 << 16)|0x1; /* start node 1, total 1*/
-            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             
             break;
         case 0x1: /* AFG */
             pNode->node.au32F00_param[4] = (2 << 16)|0x25; /* start node 1, total 1*/
             pNode->node.au32F00_param[5] = RT_BIT(8) | 0x1; /* UnSol: enabled, function group type: AFG */ 
-            pNode->node.au32F00_param[0xa] = 0xe0560;
             pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->node.au32F00_param[0xB] = 0x1;
             pNode->node.au32F00_param[0x11] = RT_BIT(30)|0x2;
@@ -462,7 +456,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
         case 0x25:
             pNode->node.name = "DAC-4";
         dac_init:
-            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->node.au32F00_param[0x9] = 0x11;
             pNode->node.au32F00_param[0xB] = 0x1;
             pNode->dac.u32A_param = (1<<14)|(0x1<<4) | 0x1;
@@ -472,19 +466,19 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.name = "SPDIFOUT-0";
             pNode->node.au32F00_param[0x9] = 0x211;
             pNode->node.au32F00_param[0xB] = 0x1;
-            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->spdifout.u32A_param = (1<<14)|(0x1<<4) | 0x1;
             break;
         case 0xA:
             pNode->node.name = "SPDIFIN-0";
             pNode->node.au32F00_param[0x9] = 0x100391;
-            pNode->node.au32F00_param[0xA] = 0x1e0560;
+            pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->node.au32F00_param[0xB] = 0x1;
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x1F, 0, 0, 0);
             pNode->node.au32F02_param[1] = RT_MAKE_U32_FROM_U8(0x1F, 0, 0, 0);
             pNode->node.au32F02_param[2] = RT_MAKE_U32_FROM_U8(0x1F, 0, 0, 0);
             pNode->node.au32F02_param[3] = RT_MAKE_U32_FROM_U8(0x1F, 0, 0, 0);
-            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->spdifin.u32A_param = (1<<14)|(0x1<<4) | 0x1;
             break;
         /* VENDOR DEFINE */
@@ -556,7 +550,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.au32F00_param[0x9] = 0x10011b;
             pNode->node.au32F00_param[0xD] = 0x80032e10;
             pNode->node.au32F00_param[0xE] = 0x1;
-            pNode->node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+            pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->adc.u32A_param = (1<<14)|(0x1<<4) | 0x1;
             break;
         /* Ports */
@@ -679,7 +673,6 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
         case 0xB:
             pNode->node.name = "AdcVol-5";
             pNode->node.au32F00_param[0x9] = 0x20010b;
-            //pNode->node.au32F00_param[0xA] = 0x80051f17;
             pNode->node.au32F00_param[0xD] = 0x80051f17;
             /* N = 0~3 */
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x18, 0x19, 0x1A, 0x1B);
@@ -1915,14 +1908,54 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     //** @todo r=michaln: Was this meant to be 'HDA' or something like that? (AC'97 was on ICH0)
     AUD_register_card ("ICH0", &pState->card);
 
-    codec_dac_to_aud(pState, &as);
-    pState->voice_pi = AUD_open_in(&pState->card, pState->voice_pi, "hda.in", pState, pi_callback, &as);
-    codec_dac_to_aud(pState, &as);
-    pState->voice_po = AUD_open_out(&pState->card, pState->voice_po, "hda.out", pState, po_callback, &as);
-    if (!pState->voice_pi)
-        LogRel (("HDAcodec: WARNING: Unable to open PCM IN!\n"));
-    if (!pState->voice_po)
-        LogRel (("HDAcodec: WARNING: Unable to open PCM OUT!\n"));
+    /* @todo: AFG:f00[0xA] -> quemu's voices */
+
+    as.freq = 44100; 
+    as.nchannels = 2;
+    as.fmt = AUD_FMT_S16;
+    as.endianness = 0;
+    #define SETUP_AUDIO_FORMAT(pState, base, mult, div, name, as, in_callback, out_callback)                                \
+    do{                                                                                                                     \
+        AUDIO_FORMAT_SELECTOR((pState), Out, (base), (mult), div) = AUD_open_out(&(pState)->card,                           \
+            AUDIO_FORMAT_SELECTOR(pState, Out, (base), (mult), (div)), name ".out", (pState), (out_callback), &(as));       \
+        Assert(AUDIO_FORMAT_SELECTOR(pState, Out, (base), (mult), (div)));                                                  \
+        if (!AUDIO_FORMAT_SELECTOR(pState, Out, (base), (mult), (div)))                                                     \
+            LogRel (("HDAcodec: WARNING: Unable to open PCM OUT(%s)!\n", name ".out"));                                     \
+        AUDIO_FORMAT_SELECTOR(pState, In, (base), (mult), (div)) = AUD_open_in(&(pState)->card,                             \
+            AUDIO_FORMAT_SELECTOR(pState, In, (base), (mult), (div)), name ".in", (pState), (in_callback), &(as));          \
+        Assert(AUDIO_FORMAT_SELECTOR((pState), In, (base), (mult), (div)));                                                 \
+        if (!AUDIO_FORMAT_SELECTOR(pState, In, (base), (mult), (div)))                                                      \
+            LogRel (("HDAcodec: WARNING: Unable to open PCM IN(%s)!\n", name ".in"));                                       \
+    } while(0)
+    
+    SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_DIV_X1, "hda44_1", as, pi_callback, po_callback);
+    pState->pNodes[1].node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+
+#ifdef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
+    as.freq *= 2; /* 2 * 44.1kHz */
+    SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X2, AFMT_DIV_X1, "hda44_1_2x", as, pi_callback, po_callback);
+    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(7);
+
+    as.freq *= 2; /* 4 * 44.1kHz */
+    SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_DIV_X1, "hda44_1_4x", as, pi_callback, po_callback);
+    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(9);
+
+    as.freq = 48000; 
+    SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_DIV_X1, "hda48", as, pi_callback, po_callback);
+    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(6);
+
+# if 0
+    as.freq *= 2; /* 2 * 48kHz */
+    SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X2, AFMT_DIV_X1, "hda48_2x", as, pi_callback, po_callback);
+    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(8);
+
+    as.freq *= 2; /* 4 * 48kHz */
+    SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X4, AFMT_DIV_X1, "hda48_4x", as, pi_callback, po_callback);
+    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(10);
+# endif
+#endif
+    #undef SETUP_AUDIO_FORMAT
+
     codecToAudVolume(&pState->pNodes[pState->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
     codecToAudVolume(&pState->pNodes[pState->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
 
