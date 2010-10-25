@@ -458,7 +458,7 @@ int InstallDriver (_TCHAR* a_pszInfFile, _TCHAR* a_pszHwID, _TCHAR* a_pszDevClas
 
                 case ERROR_FILE_NOT_FOUND:
 
-                    _tprintf(_T("ERROR: File not found! File = %ws\n", szInf));
+                    _tprintf(_T("ERROR: File not found! File = %ws\n"), szInf);
                     break;
 
                 case ERROR_IN_WOW64:
