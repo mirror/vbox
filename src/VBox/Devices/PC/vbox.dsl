@@ -842,6 +842,46 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             // HDA Audio card
             Device (HDEF)
             {
+                Method(_DSM, 4, NotSerialized)
+                {
+                    Store (Package (0x04)                                                                                                                              
+                    {                                                                                                                                              
+                        "layout-id",                                                                                                                               
+                        Buffer (0x04)                                                                                                                              
+                        {                                                                                                                                          
+                            /* 0000 */    0x07, 0x00, 0x00, 0x00                                                                                                   
+                        },                                                                                                                                         
+                                                                                                                                                                   
+                        "PinConfigurations",                                                                                                                       
+                        Buffer (Zero) {}                                                                                                                           
+                    }, Local0)                                                                                                                                     
+                    if (LEqual (Arg0, ToUUID("a0b5b7c6-1318-441c-b0c9-fe695eaf949b")))
+                    {
+                        If (LEqual (Arg1, One))
+                        {
+                            if (LEqual(Arg2, Zero))
+                            {
+                                    Store (Buffer (0x01)                                                                                                                              
+                                        {                                                                                                                                          
+                                            0x03
+                                        }
+                                    , Local0)                                                                                                                                     
+                                    Return (Local0)   
+                            }
+                            if (LEqual(Arg2, One))
+                            {
+                                    Return (Local0)   
+                            }
+                        }
+                    }
+                    Store (Buffer (0x01)                                                                                                                              
+                        {                                                                                                                                          
+                            0x0
+                        }
+                    , Local0)                                                                                                                                     
+                    Return (Local0)   
+                }
+
                 Method(_ADR, 0, NotSerialized)
                 {
                      Return (HDAA)
