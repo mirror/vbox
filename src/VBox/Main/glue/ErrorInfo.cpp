@@ -313,7 +313,7 @@ HRESULT ErrorInfoKeeper::restore()
     }
     rc = ::SetErrorInfo(0, err);
 
-#else // !defined(VBOX_WITH_XPCOM)
+#else // defined(VBOX_WITH_XPCOM)
 
     nsCOMPtr <nsIExceptionService> es;
     es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
@@ -333,7 +333,7 @@ HRESULT ErrorInfoKeeper::restore()
         }
     }
 
-#endif // !defined(VBOX_WITH_XPCOM)
+#endif // defined(VBOX_WITH_XPCOM)
 
     if (SUCCEEDED(rc))
     {
