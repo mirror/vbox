@@ -149,7 +149,6 @@ protected:
     void initializePage();
 
     bool isComplete() const;
-    bool validatePage();
 
 private:
 

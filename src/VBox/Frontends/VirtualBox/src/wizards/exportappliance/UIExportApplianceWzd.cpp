@@ -439,12 +439,6 @@ bool UIExportApplianceWzdPage3::isComplete() const
     return bComplete;
 }
 
-bool UIExportApplianceWzdPage3::validatePage()
-{
-    return true;
-//    return exportAppliance();
-}
-
 UIExportApplianceWzdPage4::UIExportApplianceWzdPage4()
 {
     /* Decorate page */
