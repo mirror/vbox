@@ -36,6 +36,8 @@
 #undef LogFlow
 #define LogFlow Log
 
+#define SHFL_RT_LINK(pClient) ((pClient)->fu32Flags & SHFL_CF_SYMLINKS ? RTPATH_F_ON_LINK : RTPATH_F_FOLLOW_LINK)
+
 /**
  * @todo find a better solution for supporting the execute bit for non-windows
  * guests on windows host. Search for "0111" to find all the relevant places.
@@ -99,7 +101,7 @@ void vbsfStripLastComponent (char *pszFullPath, uint32_t cbFullPathRoot)
     LogFlowFunc(("%s, %s, %s\n", pszFullPath, delimLast, delimSecondLast));
 }
 
-static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
+static int vbsfCorrectCasing(SHFLCLIENTDATA *pClient, char *pszFullPath, char *pszStartComponent)
 {
     PRTDIRENTRYEX  pDirEntry = NULL;
     uint32_t       cbDirEntry, cbComponent;
@@ -138,7 +140,7 @@ static int vbsfCorrectCasing(char *pszFullPath, char *pszStartComponent)
     {
         size_t cbDirEntrySize = cbDirEntry;
 
-        rc = RTDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+        rc = RTDirReadEx(hSearch, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
         if (rc == VERR_NO_MORE_FILES)
             break;
 
@@ -493,7 +495,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
             }
 
             /** @todo don't check when creating files or directories; waste of time */
-            rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+            rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
             {
                 uint32_t len = (uint32_t)strlen(pszFullPath);
@@ -507,7 +509,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                     if (*src == RTPATH_DELIMITER)
                     {
                         *src = 0;
-                        rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+                        rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
                         *src = RTPATH_DELIMITER;
                         if (rc == VINF_SUCCESS)
                         {
@@ -543,7 +545,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                         {
                             fEndOfString = false;
                             *end = 0;
-                            rc = RTPathQueryInfoEx(src, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+                            rc = RTPathQueryInfoEx(src, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
                             Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
                         }
                         else
@@ -555,7 +557,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                         if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
                         {
                             /* path component is invalid; try to correct the casing */
-                            rc = vbsfCorrectCasing(pszFullPath, src);
+                            rc = vbsfCorrectCasing(pClient, pszFullPath, src);
                             if (RT_FAILURE(rc))
                             {
                                 if (!fEndOfString)
@@ -825,6 +827,7 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
  * Open a file or create and open a new one.
  *
  * @returns IPRT status code
+ * @param  pClient               Data structure describing the client accessing the shared folder
  * @param  pszPath               Path to the file or folder on the host.
  * @param  pParms->CreateFlags   Creation or open parameters, see include/VBox/shflsvc.h
  * @param  pParms->Info          When a new file is created this specifies the initial parameters.
@@ -835,7 +838,7 @@ static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHAND
  *                               created
  * @retval pParms->Info          On success the parameters of the file opened or created
  */
-static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
+static int vbsfOpenFile (SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATEPARMS *pParms)
 {
     LogFlow(("vbsfOpenFile: pszPath = %s, pParms = %p\n", pszPath, pParms));
     Log(("SHFL create flags %08x\n", pParms->CreateFlags));
@@ -883,7 +886,7 @@ static int vbsfOpenFile (const char *pszPath, SHFLCREATEPARMS *pParms)
             RTFSOBJINFO info;
 
             /** @todo Possible race left here. */
-            if (RT_SUCCESS(RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK)))
+            if (RT_SUCCESS(RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient))))
             {
 #ifdef RT_OS_WINDOWS
                 info.Attr.fMode |= 0111;
@@ -1151,12 +1154,12 @@ static int vbsfCloseFile (SHFLFILEHANDLE *pHandle)
  * @retval  pParms->Result Status of the operation (success or error)
  * @retval  pParms->Info   On success, information returned about the file
  */
-static int vbsfLookupFile(char *pszPath, SHFLCREATEPARMS *pParms)
+static int vbsfLookupFile(SHFLCLIENTDATA *pClient, char *pszPath, SHFLCREATEPARMS *pParms)
 {
     RTFSOBJINFO info;
     int rc;
 
-    rc = RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    rc = RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
     LogFlow(("SHFL_CF_LOOKUP\n"));
     /* Client just wants to know if the object exists. */
     switch (rc)
@@ -1241,14 +1244,14 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
 
         if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_LOOKUP))
         {
-            rc = vbsfLookupFile(pszFullPath, pParms);
+            rc = vbsfLookupFile(pClient, pszFullPath, pParms);
         }
         else
         {
             /* Query path information. */
             RTFSOBJINFO info;
 
-            rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+            rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
             LogFlow(("RTPathQueryInfoEx returned %Rrc\n", rc));
 
             if (RT_SUCCESS(rc))
@@ -1307,7 +1310,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
                 }
                 else
                 {
-                    rc = vbsfOpenFile (pszFullPath, pParms);
+                    rc = vbsfOpenFile (pClient, pszFullPath, pParms);
                 }
             }
             else
@@ -1527,7 +1530,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         {
             pDirEntry = pDirEntryOrg;
 
-            rc = RTDirReadEx(DirHandle, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+            rc = RTDirReadEx(DirHandle, pDirEntry, &cbDirEntrySize, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
             if (rc == VERR_NO_MORE_FILES)
             {
                 *pIndex = 0; /* listing completed */
@@ -1646,6 +1649,36 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 end:
     if (pDirEntry)
         RTMemFree(pDirEntry);
+
+    return rc;
+}
+
+int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32_t cbPath, uint8_t *pBuffer, uint32_t cbBuffer)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pPath == 0 || pBuffer == 0)
+    {
+        AssertFailed();
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Build a host full path for the given path, handle file name case issues
+     * (if the guest expects case-insensitive paths but the host is
+     * case-sensitive) and convert ucs2 to utf8 if necessary.
+     */
+    char *pszFullPath = NULL;
+    uint32_t cbFullPathRoot = 0;
+
+    rc = vbsfBuildFullPath (pClient, root, pPath, cbPath, &pszFullPath, &cbFullPathRoot);
+
+    if (RT_SUCCESS (rc))
+    {
+        rc = RTReadLink(pszFullPath, (char *) pBuffer, cbBuffer);
+
+        /* free the path string */
+        vbsfFreeFullPath(pszFullPath);
+    }
 
     return rc;
 }
@@ -2103,6 +2136,30 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     }
     /* free the path string */
     vbsfFreeFullPath(pszFullPathSrc);
+    return rc;
+}
+
+int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SHFLSTRING *pOldPath, RTFSOBJINFO *pInfo)
+{
+    int rc = VINF_SUCCESS;
+
+    char *pszFullNewPath = NULL;
+    char *pszOldPath = NULL;
+
+    /* XXX: no support for UCS2 at the moment. */
+    if (!BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
+        return VERR_NOT_IMPLEMENTED;
+
+    rc = vbsfBuildFullPath (pClient, root, pNewPath, pNewPath->u16Size, &pszFullNewPath, NULL);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
+    rc = RTSymlink(pszFullNewPath, (const char *)pOldPath->String.utf8);
+    if (RT_SUCCESS (rc))
+        rc = RTPathQueryInfoEx(pszFullNewPath, pInfo, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
+
+    vbsfFreeFullPath(pszFullNewPath);
+
     return rc;
 }
 

@@ -779,6 +779,54 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             break;
         }
 
+        /* Read symlink destination */
+        case SHFL_FN_READLINK:
+        {
+            Log(("svcCall: SHFL_FN_READLINK\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHFL_CPARMS_READLINK)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT   /* root */
+                || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* path */
+                || paParms[2].type != VBOX_HGCM_SVC_PARM_PTR     /* buffer */
+                    )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                SHFLROOT  root     = (SHFLROOT)paParms[0].u.uint32;
+                SHFLSTRING *pPath  = (SHFLSTRING *)paParms[1].u.pointer.addr;
+                uint32_t cbPath    = paParms[1].u.pointer.size;
+                uint8_t   *pBuffer = (uint8_t *)paParms[2].u.pointer.addr;
+                uint32_t  cbBuffer = paParms[2].u.pointer.size;
+
+                /* Verify parameters values. */
+                if (!ShflStringIsValidOrNull(pPath, paParms[1].u.pointer.size))
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {
+                    /* Execute the function. */
+                    rc = vbsfReadLink (pClient, root, pPath, cbPath, pBuffer, cbBuffer);
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Update parameters.*/
+                        ; /* none */
+                    }
+                }
+            }
+
+            break;
+        }
+
         /* Legacy interface */
         case SHFL_FN_MAP_FOLDER_OLD:
         {
@@ -1112,6 +1160,63 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             rc = VINF_SUCCESS;
             break;
         }
+
+        case SHFL_FN_SYMLINK:
+        {
+            Log(("svnCall: SHFL_FN_SYMLINK\n"));
+            /* Verify parameter count and types. */
+            if (cParms != SHFL_CPARMS_SYMLINK)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT   /* root */
+                || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* newPath */
+                || paParms[2].type != VBOX_HGCM_SVC_PARM_PTR     /* oldPath */
+                || paParms[3].type != VBOX_HGCM_SVC_PARM_PTR     /* info */
+                    )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                SHFLROOT     root     = (SHFLROOT)paParms[0].u.uint32;
+                SHFLSTRING  *pNewPath = (SHFLSTRING *)paParms[1].u.pointer.addr;
+                SHFLSTRING  *pOldPath = (SHFLSTRING *)paParms[2].u.pointer.addr;
+                RTFSOBJINFO *pInfo    = (RTFSOBJINFO *)paParms[3].u.pointer.addr;
+                uint32_t     cbInfo   = paParms[3].u.pointer.size;
+
+                /* Verify parameters values. */
+                if (    !ShflStringIsValid(pNewPath, paParms[1].u.pointer.size)
+                    ||  !ShflStringIsValid(pOldPath, paParms[2].u.pointer.size)
+                    ||  (cbInfo != sizeof(RTFSOBJINFO))
+                   )
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {
+                    /* Execute the function. */
+                    rc = vbsfSymlink (pClient, root, pNewPath, pOldPath, pInfo);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Update parameters.*/
+                        ; /* none */
+                    }
+                }
+            }
+        }
+        break;
+
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+        case SHFL_FN_SET_SYMLINKS:
+        {
+            pClient->fu32Flags |= SHFL_CF_SYMLINKS;
+            rc = VINF_SUCCESS;
+            break;
+        }
+#endif
 
         default:
         {
