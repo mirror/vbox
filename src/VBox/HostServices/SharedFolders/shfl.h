@@ -39,6 +39,9 @@
 /** Client uses UTF8 encoding, if not set then unicode 16 bit (UCS2) is used. */
 #define SHFL_CF_UTF8             (0x00000004)
 
+/** Client both supports and wants to use symlinks. */
+#define SHFL_CF_SYMLINKS         (0x00000008)
+
 /** @} */
 
 typedef struct _SHFLCLIENTDATA

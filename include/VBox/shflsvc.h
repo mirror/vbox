@@ -98,6 +98,12 @@
 #define SHFL_FN_SET_UTF8            (16)
 /** Map folder */
 #define SHFL_FN_MAP_FOLDER          (17)
+/** Read symlink destination (as of VBox 4.0) */
+#define SHFL_FN_READLINK            (18)
+/** Create symlink (as of VBox 4.0) */
+#define SHFL_FN_SYMLINK             (19)
+/** Ask host to show symlinks (as of VBox 4.0) */
+#define SHFL_FN_SET_SYMLINKS        (20)
 
 /** @} */
 
@@ -862,6 +868,37 @@ typedef struct _VBoxSFList
 
 
 /**
+ * SHFL_FN_READLINK
+ */
+
+/** Parameters structure. */
+typedef struct _VBoxSFReadLink
+{
+    VBoxGuestHGCMCallInfo callInfo;
+
+    /** pointer, in: SHFLROOT
+     * Root handle of the mapping which name is queried.
+     */
+    HGCMFunctionParameter root;
+
+    /** pointer, in:
+     * Points to SHFLSTRING buffer.
+     */
+    HGCMFunctionParameter path;
+
+    /** pointer, out:
+     * Buffer to place data to.
+     */
+    HGCMFunctionParameter buffer;
+
+} VBoxSFReadLink;
+
+/** Number of parameters */
+#define SHFL_CPARMS_READLINK (3)
+
+
+
+/**
  * SHFL_FN_INFORMATION
  */
 
@@ -989,6 +1026,42 @@ typedef struct _VBoxSFRename
 } VBoxSFRename;
 
 #define SHFL_CPARMS_RENAME  (4)
+
+
+/**
+ * SHFL_FN_SYMLINK
+ */
+
+/** Parameters structure. */
+typedef struct _VBoxSFSymlink
+{
+    VBoxGuestHGCMCallInfo callInfo;
+
+    /** pointer, in: SHFLROOT
+     * Root handle of the mapping which name is queried.
+     */
+    HGCMFunctionParameter root;
+
+    /** pointer, in:
+     * Points to SHFLSTRING of path for the new symlink.
+     */
+    HGCMFunctionParameter newPath;
+
+    /** pointer, in:
+     * Points to SHFLSTRING of destination for symlink.
+     */
+    HGCMFunctionParameter oldPath;
+
+    /** pointer, out:
+     * Information about created symlink.
+     */
+    HGCMFunctionParameter info;
+
+} VBoxSFSymlink;
+
+#define SHFL_CPARMS_SYMLINK  (4)
+
+
 
 /**
  * SHFL_FN_ADD_MAPPING
