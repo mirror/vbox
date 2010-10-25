@@ -90,6 +90,11 @@ RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName)
                 fMode |= RTFS_UNIX_IXUSR | RTFS_UNIX_IXGRP | RTFS_UNIX_IXOTH;
         }
     }
+
+    /* Is it really a symbolic link? */
+    if (fMode & RTFS_DOS_NT_REPARSE_POINT)
+        fMode = (fMode & ~RTFS_TYPE_MASK) | RTFS_TYPE_SYMLINK;
+
     /* writable? */
     if (!(fMode & RTFS_DOS_READONLY))
         fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;

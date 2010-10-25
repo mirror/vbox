@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -223,12 +223,13 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
                 return rc;
             }
             FindClose(hDir);
-            Data.dwFileAttributes = FindData.dwFileAttributes;
-            Data.ftCreationTime = FindData.ftCreationTime;
-            Data.ftLastAccessTime = FindData.ftLastAccessTime;
-            Data.ftLastWriteTime = FindData.ftLastWriteTime;
-            Data.nFileSizeHigh = FindData.nFileSizeHigh;
-            Data.nFileSizeLow = FindData.nFileSizeLow;
+
+            Data.dwFileAttributes   = FindData.dwFileAttributes;
+            Data.ftCreationTime     = FindData.ftCreationTime;
+            Data.ftLastAccessTime   = FindData.ftLastAccessTime;
+            Data.ftLastWriteTime    = FindData.ftLastWriteTime;
+            Data.nFileSizeHigh      = FindData.nFileSizeHigh;
+            Data.nFileSizeLow       = FindData.nFileSizeLow;
         }
         else
         {
@@ -237,17 +238,45 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
             return rc;
         }
     }
-    RTUtf16Free(pwszPath);
+
+    /*
+     * Getting the information for the link target is a bit annoying and
+     * subject to the same access violation mess as above.. :/
+     */
+    /** @todo we're too lazy wrt to error paths here... */
     if (   (fFlags & RTPATH_F_FOLLOW_LINK)
         && (Data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
     {
-#ifndef DEBUG_sandervl
-        AssertFailed();
-#endif
-        /** @todo Symlinks: RTPathQueryInfoEx is not handling symbolic links
-         *        correctly on Windows.  (Both GetFileAttributesEx and FileFindFirst
-         *        will return info about the symlink.) */
+        HANDLE hFinal = CreateFileW(pwszPath,
+                                    GENERIC_READ,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                    NULL,
+                                    OPEN_EXISTING,
+                                    FILE_FLAG_BACKUP_SEMANTICS,
+                                    NULL);
+        if (hFinal != INVALID_HANDLE_VALUE)
+        {
+            BY_HANDLE_FILE_INFORMATION FileData;
+            if (GetFileInformationByHandle(hFinal, &FileData))
+            {
+                Data.dwFileAttributes   = FileData.dwFileAttributes;
+                Data.ftCreationTime     = FileData.ftCreationTime;
+                Data.ftLastAccessTime   = FileData.ftLastAccessTime;
+                Data.ftLastWriteTime    = FileData.ftLastWriteTime;
+                Data.nFileSizeHigh      = FileData.nFileSizeHigh;
+                Data.nFileSizeLow       = FileData.nFileSizeLow;
+            }
+            CloseHandle(hFinal);
+        }
+        else if (GetLastError() != ERROR_SHARING_VIOLATION)
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            RTUtf16Free(pwszPath);
+            return rc;
+        }
     }
+
+    RTUtf16Free(pwszPath);
 
     /*
      * Setup the returned data.

@@ -395,6 +395,13 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         //case WSATRY_AGAIN            (WSABASEERR+1002)
         //case WSANO_RECOVERY          (WSABASEERR+1003)
         //case WSANO_DATA              (WSABASEERR+1004)
+
+
+#ifndef ERROR_NOT_A_REPARSE_POINT
+# define ERROR_NOT_A_REPARSE_POINT 0x1126
+#endif
+        case ERROR_NOT_A_REPARSE_POINT: return VERR_NOT_SYMLINK;
+
     }
 
     /* unknown error. */
