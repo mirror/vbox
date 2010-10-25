@@ -235,6 +235,34 @@ typedef enum
     STAC9220_CODEC,
     ALC885_CODEC
 } ENMCODEC;
+
+#define AFMT_IN In
+#define AFMT_OUT Out
+
+#ifdef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
+# define MAX_AUDIO_FORMAT 64 
+typedef SWVoiceIn *CODECAUDIOINFORMAT[MAX_AUDIO_FORMAT];
+typedef SWVoiceOut *CODECAUDIOOUTFORMAT[MAX_AUDIO_FORMAT];
+# define AUDIO_FORMAT_SELECTOR(pState, dir, hz, mult, divizor) ((pState)->aSwVoice##dir[(hz)*24 + (mult)*8 + (divizor)])
+# define AFMT_HZ_48K    0
+# define AFMT_HZ_44_1K  1
+# define AFMT_MULT_X1   0
+# define AFMT_MULT_X2   1
+# define AFMT_MULT_X3   2 /* reserved for stac9220 */
+# define AFMT_MULT_X4   3
+# define AFMT_DIV_X1    0
+# define AFMT_DIV_X2    1
+# define AFMT_DIV_X3    2
+# define AFMT_DIV_X4    3
+# define AFMT_DIV_X5    4
+# define AFMT_DIV_X6    5
+# define AFMT_DIV_X7    6
+# define AFMT_DIV_X8    7
+#else
+# define AUDIO_FORMAT_SELECTOR(pState, dir, hz, mult, divizor) ((pState)->SwVoice##dir)
+#endif
+
+
 typedef struct CODECState
 {
     uint16_t                id;
@@ -244,12 +272,17 @@ typedef struct CODECState
     int                     cVerbs;
     PCODECNODE               pNodes;
     QEMUSoundCard           card;
+#ifndef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
     /** PCM in */
-    SWVoiceIn               *voice_pi;
+    SWVoiceIn               *SwVoiceIn;
     /** PCM out */
-    SWVoiceOut              *voice_po;
+    SWVoiceOut              *SwVoiceOut;
     /** Mic in */
     SWVoiceIn               *voice_mc;
+#else
+    CODECAUDIOOUTFORMAT        aSwVoiceOut;
+    CODECAUDIOINFORMAT        aSwVoiceIn;
+#endif
     ENMCODEC                enmCodec;
     void                    *pHDAState;
     bool                    fInReset;

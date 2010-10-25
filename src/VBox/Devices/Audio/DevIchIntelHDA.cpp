@@ -320,6 +320,16 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define ICH6_HDA_REG_SD6FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 60) /* 0x152 */
 #define ICH6_HDA_REG_SD7FMT     (HDA_STREAM_REG_DEF(FMT, 0) + 70) /* 0x172 */
 
+#define SDFMT(pState, num)      (HDA_REG((pState), SD(FMT, num)))
+#define ICH6_HDA_SDFMT_BASE_RATE_SHIFT (14)
+#define ICH6_HDA_SDFMT_MULT_SHIFT (11)
+#define ICH6_HDA_SDFMT_MULT_MASK (0x7)
+#define ICH6_HDA_SDFMT_DIV_SHIFT (8)
+#define ICH6_HDA_SDFMT_DIV_MASK (0x7)
+#define SDFMT_BASE_RATE(pState, num) ((SDFMT(pState, num) & HDA_REG_FIELD_FLAG_MASK(SDFMT, BASE_RATE)) >> HDA_REG_FIELD_SHIFT(SDFMT, BASE_RATE))
+#define SDFMT_MULT(pState, num) ((SDFMT((pState), num) & HDA_REG_FIELD_MASK(SDFMT,MULT)) >> HDA_REG_FIELD_SHIFT(SDFMT, MULT))
+#define SDFMT_DIV(pState, num) ((SDFMT((pState), num) & HDA_REG_FIELD_MASK(SDFMT,DIV)) >> HDA_REG_FIELD_SHIFT(SDFMT, DIV))
+
 #define ICH6_HDA_REG_SD0BDPL     40 /* 0x98 */
 #define ICH6_HDA_REG_SD1BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 10) /* 0xB8 */
 #define ICH6_HDA_REG_SD2BDPL     (HDA_STREAM_REG_DEF(BDPL, 0) + 20) /* 0xD8 */
@@ -391,6 +401,11 @@ typedef struct INTELHDLinkState
 
 #define ICH6_HDASTATE_2_DEVINS(pINTELHD)   ((pINTELHD)->pDevIns)
 #define PCIDEV_2_ICH6_HDASTATE(pPciDev) ((PCIINTELHDLinkState *)(pPciDev))
+
+#define ISD0FMT_TO_AUDIO_SELECTOR(pState) (AUDIO_FORMAT_SELECTOR(&(pState)->Codec, In,     \
+                SDFMT_BASE_RATE(pState, 0), SDFMT_MULT(pState, 0), SDFMT_DIV(pState, 0)))
+#define OSD0FMT_TO_AUDIO_SELECTOR(pState) (AUDIO_FORMAT_SELECTOR(&(pState)->Codec, Out,     \
+                SDFMT_BASE_RATE(pState, 4), SDFMT_MULT(pState, 4), SDFMT_DIV(pState, 4)))
 
 
 
@@ -971,20 +986,13 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     {
         Log(("hda: DMA(%x) switched on\n", offset));
         if (offset == 0x80)
-        {
-            AUD_set_active_in(pState->Codec.voice_pi, 1);
-            //AUD_set_active_in(pState->Codec.voice_mc, 1);
-        }
+            AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 1);
         if (offset == 0x100)
         {
             uint64_t u64BaseDMA = SDBDPL(pState, 4);
             u64BaseDMA |= (((uint64_t)SDBDPU(pState, 4)) << 32);
             if (u64BaseDMA)
-            {
-                //fetch_bd(pState, u64BaseDMA);
-                AUD_set_active_out(pState->Codec.voice_po, 1);
-            }
-            //SDSTS(pState, 4) |= (1<<5);
+                AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 1);
         }
     }
     else
@@ -992,15 +1000,13 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
         Log(("hda: DMA(%x) switched off\n", offset));
         if (offset == 0x80)
         {
-            AUD_set_active_in(pState->Codec.voice_pi, 0);
-            //AUD_set_active_in(pState->Codec.voice_mc, 0);
+            AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 0);
         }
         if (offset == 0x100)
         {
             SDSTS(pState, 4) &= ~(1<<5);
-            AUD_set_active_out(pState->Codec.voice_po, 0);
+            AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 0);
         }
-        //SSYNC(pState) &= ~(1<< (offset - 0x80));
     }
     int rc = hdaRegWriteU24(pState, offset, index, u32Value);
     if (RT_FAILURE(rc))
@@ -1183,7 +1189,7 @@ static uint32_t read_audio(INTELHDLinkState *pState, int avail, bool *fStop)
     uint32_t to_copy = 0;
     /* todo: add input line detection */
     PHDABDLEDESC pBdle = &pState->stInBdle;
-    SWVoiceIn *voice = pState->Codec.voice_pi;
+    SWVoiceIn *voice = ISD0FMT_TO_AUDIO_SELECTOR(pState);
     u32Rest = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
     temp = audio_MIN(u32Rest, (uint32_t)avail);
     if (!temp)
@@ -1230,7 +1236,7 @@ static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
         int copied;
         to_copy = audio_MIN(temp, 4096U);
         PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, tmpbuf, to_copy);
-        copied = AUD_write (pState->Codec.voice_po, tmpbuf, to_copy);
+        copied = AUD_write (OSD0FMT_TO_AUDIO_SELECTOR(pState), tmpbuf, to_copy);
         Log (("hda: write_audio max=%x to_copy=%x copied=%x\n",
               avail, to_copy, copied));
         Assert((copied));
@@ -1496,9 +1502,9 @@ static DECLCALLBACK(int) hdaSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     SSMR3PutMem (pSSMHandle, &pThis->hda.stOutBdle, sizeof (HDABDLEDESC));
     SSMR3PutMem (pSSMHandle, &pThis->hda.stMicBdle, sizeof (HDABDLEDESC));
     SSMR3PutMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
-    uint8_t voices = AUD_is_active_in(pThis->hda.Codec.voice_pi)? RT_BIT(0):0;
-    voices |= AUD_is_active_in(pThis->hda.Codec.voice_mc)? RT_BIT(1):0;
-    voices |= AUD_is_active_out(pThis->hda.Codec.voice_po)? RT_BIT(2):0;
+    uint8_t voices = AUD_is_active_in(ISD0FMT_TO_AUDIO_SELECTOR(&pThis->hda))? RT_BIT(0):0;
+    //voices |= AUD_is_active_in(pThis->hda.Codec.voice_mc)? RT_BIT(1):0;
+    voices |= AUD_is_active_out(OSD0FMT_TO_AUDIO_SELECTOR(&pThis->hda))? RT_BIT(2):0;
     SSMR3PutU8(pSSMHandle, voices);
     return VINF_SUCCESS;
 }
@@ -1529,9 +1535,9 @@ static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
     SSMR3GetMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
     uint8_t voices;
     SSMR3GetU8(pSSMHandle, &voices);
-    AUD_set_active_in(pThis->hda.Codec.voice_pi, voices & RT_BIT(0));
-    AUD_set_active_in(pThis->hda.Codec.voice_mc, voices & RT_BIT(1));
-    AUD_set_active_out(pThis->hda.Codec.voice_po, voices & RT_BIT(2));
+    AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), voices & RT_BIT(0));
+    //AUD_set_active_in(pThis->hda.Codec.voice_mc, voices & RT_BIT(1));
+    AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), voices & RT_BIT(2));
     pThis->hda.u64CORBBase = CORBLBASE(&pThis->hda);
     pThis->hda.u64CORBBase |= ((uint64_t)CORBUBASE(&pThis->hda)) << 32;
     pThis->hda.u64RIRBBase = RIRLBASE(&pThis->hda);
