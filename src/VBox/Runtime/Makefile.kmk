@@ -487,6 +487,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/semevent-win.cpp \
 	r3/win/semeventmulti-win.cpp \
 	r3/win/semmutex-win.cpp \
+	r3/win/symlink-win.cpp \
 	r3/win/rtFileNativeSetAttributes-win.cpp \
 	r3/win/thread-win.cpp \
 	r3/win/time-win.cpp \
@@ -542,6 +543,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/semrw-posix.cpp \
+	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
@@ -618,6 +620,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/path-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/process-posix.cpp \
+	r3/posix/symlink-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
@@ -668,6 +671,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
+	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/tls-posix.cpp \
@@ -725,6 +729,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
 	r3/posix/semrw-posix.cpp \
+	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
@@ -770,6 +775,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
 	r3/posix/semrw-posix.cpp \
+	r3/posix/symlink-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp \

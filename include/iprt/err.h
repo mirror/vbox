@@ -429,6 +429,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 /** The request function is not implemented. */
 #define VERR_NOT_IMPLEMENTED                (-12)
 
+/** The specified path does not point at a symbolic link. */
+#define VERR_NOT_SYMLINK                    (-19)
 /** Failed to allocate temporary memory. */
 #define VERR_NO_TMP_MEMORY                  (-20)
 /** Invalid file mode mask (RTFMODE). */
