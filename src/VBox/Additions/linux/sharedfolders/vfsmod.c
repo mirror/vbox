@@ -471,9 +471,11 @@ static struct file_system_type vboxsf_fs_type =
 };
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int follow_symlinks = 0;
 module_param(follow_symlinks, bool, 0);
 MODULE_PARM_DESC(follow_symlinks, "Let host resolve symlinks rather than showing them");
+#endif
 
 /* Module initialization/finalization handlers */
 static int __init init(void)
@@ -525,6 +527,7 @@ static int __init init(void)
         goto fail2;
     }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!follow_symlinks)
     {
         rcVBox = vboxCallSetSymlinks(&client_handle);
@@ -535,7 +538,7 @@ static int __init init(void)
                      rcVBox);
         }
     }
-
+#endif
 
     printk(KERN_DEBUG
             "vboxsf: Successfully loaded version " VBOX_VERSION_STRING

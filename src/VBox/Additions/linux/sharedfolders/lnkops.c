@@ -1,5 +1,7 @@
 #include "vfsmod.h"
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+
 static void *sf_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
         struct inode *inode = dentry->d_inode;
@@ -37,3 +39,5 @@ struct inode_operations sf_lnk_iops =
         .follow_link    = sf_follow_link,
         .put_link       = sf_put_link
 };
+
+#endif

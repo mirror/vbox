@@ -738,6 +738,7 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
     return err;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *symname)
 {
     int err;
@@ -798,6 +799,7 @@ fail1:
 fail0:
     return err;
 }
+#endif
 
 struct inode_operations sf_dir_iops =
 {
