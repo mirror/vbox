@@ -1034,16 +1034,14 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
  *
  * @return IPRT status code.
  * @param  pszFileName      File name (full path) of this process.
- * @param  pszTool          Tool name (e.g. "vbox_cat") to use.
  * @param  papszArgs        Original argv command line from the host.
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
-int VBoxServiceControlExecPrepareToolboxArgv(const char *pszFileName, const char *pszTool,
+int VBoxServiceControlExecPrepareToolboxArgv(const char *pszFileName,
                                              const char * const *papszArgs, char ***ppapszArgv)
 {
     AssertPtrReturn(pszFileName, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszTool, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_PARAMETER);
 
@@ -1057,7 +1055,7 @@ int VBoxServiceControlExecPrepareToolboxArgv(const char *pszFileName, const char
          * Construct the new command line by appending the actual
          * tool name to new process' command line.
          */
-        if (RTStrAPrintf(&pszNewArgs, "%s %s %s", pszFileName, pszTool, pszArgs))
+        if (RTStrAPrintf(&pszNewArgs, "%s %s", pszFileName, pszArgs))
         {
             int iNumArgsIgnored;
             rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
@@ -1135,8 +1133,7 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
         {
             /* We want to use the internal toolbox. */
             pszCmdTool = RTStrDup(szVBoxService);
-            rc = VBoxServiceControlExecPrepareToolboxArgv(pszCmdTool, pszExec,
-                                                          papszArgs, &papszArgsTool);
+            rc = VBoxServiceControlExecPrepareToolboxArgv(pszCmdTool, papszArgs, &papszArgsTool);
         }
 
         if (RT_SUCCESS(rc) && pszCmdTool)
