@@ -1378,8 +1378,8 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     {
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
     }
-    if (   index != -1
-           && cb <= 4)
+    if (   index == -1
+           || cb > 4)
     {
         LogRel(("hda: Invalid read access @0x%x(of bytes:%d)\n", u32Offset, cb));
     }
@@ -1429,8 +1429,8 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     {
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
     }
-    if (   index != -1
-           && cb <= 4)
+    if (   index == -1
+           || cb > 4)
     {
         LogRel(("hda: Invalid write access @0x%x(of bytes:%d)\n", u32Offset, cb));
     }
