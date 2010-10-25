@@ -2429,6 +2429,9 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
             break;
         }
 
+        /* Get all hard disk descriptions. */
+        std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+
         // for each medium attachment to this controller...
         for (settings::AttachedDevicesList::iterator dit = sc.llAttachedDevices.begin();
              dit != sc.llAttachedDevices.end();
@@ -2443,6 +2446,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
             // convert the Guid to string
             Utf8Str strUuid = d.uuid.toString();
 
+
             // there must be an image in the OVF disk structs with the same UUID
             bool fFound = false;
             for (ovf::DiskImagesMap::const_iterator oit = stack.mapDisks.begin();
@@ -2453,10 +2457,27 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
                 if (di.uuidVbox == strUuid)
                 {
-                    Utf8Str strTargetPath(stack.strMachineFolder);
-                    strTargetPath.append(RTPATH_DELIMITER);
-                    strTargetPath.append(di.strHref);
-                    searchUniqueDiskImageFilePath(strTargetPath);
+                    VirtualSystemDescriptionEntry *vsdeTargetHD = 0;
+
+                    /* Iterate over all given disk images of the virtual system
+                     * disks description. We need to find the target disk path,
+                     * which could be changed by the user. */
+                    list<VirtualSystemDescriptionEntry*>::const_iterator itHD;
+                    for (itHD = avsdeHDs.begin();
+                         itHD != avsdeHDs.end();
+                         ++itHD)
+                    {
+                        VirtualSystemDescriptionEntry *vsdeHD = *itHD;
+                        if (vsdeHD->strRef == oit->first)
+                        {
+                            vsdeTargetHD = vsdeHD;
+                            break;
+                        }
+                    }
+                    if (!vsdeTargetHD)
+                        throw setError(E_FAIL,
+                                       tr("Internal inconsistency looking up disk image '%s'"),
+                                       oit->first.c_str());
 
                     /*
                      *
@@ -2465,7 +2486,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                      */
                     ComObjPtr<Medium> pTargetHD;
                     importOneDiskImage(di,
-                                       strTargetPath,
+                                       vsdeTargetHD->strVboxCurrent,
                                        pTargetHD,
                                        stack,
                                        pCallbacks,
