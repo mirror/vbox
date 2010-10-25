@@ -75,6 +75,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/fs.h>
+#include <linux/namei.h>
 #include <linux/mm.h>
 #include <linux/pagemap.h>
 #include <linux/slab.h>

@@ -39,6 +39,7 @@
 #include <iprt/string.h>
 
 #define SHFL_CPARMS_SET_UTF8 0
+#define SHFL_CPARMS_SET_SYMLINKS 0
 
 #define VBOX_INIT_CALL(a, b, c)          \
     (a)->result      = VINF_SUCCESS;     \
@@ -679,5 +680,88 @@ DECLVBGL(int) vboxCallSetUtf8 (PVBSFCLIENT pClient)
     }
     return rc;
 }
+
+DECLVBGL(int) vboxReadLink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pParsedPath,
+                            uint32_t cbBuffer, uint8_t *pBuffer)
+{
+    int rc = VINF_SUCCESS;
+
+    VBoxSFReadLink data;
+
+    VBOX_INIT_CALL(&data.callInfo, READLINK, pClient);
+
+    data.root.type                      = VMMDevHGCMParmType_32bit;
+    data.root.u.value32                 = pMap->root;
+
+    data.path.type                      = VMMDevHGCMParmType_LinAddr_In;
+    data.path.u.Pointer.size            = ShflStringSizeOfBuffer (pParsedPath);
+    data.path.u.Pointer.u.linearAddr    = (uintptr_t)pParsedPath;
+
+    data.buffer.type                    = VMMDevHGCMParmType_LinAddr_Out;
+    data.buffer.u.Pointer.size          = cbBuffer;
+    data.buffer.u.Pointer.u.linearAddr  = (uintptr_t)pBuffer;
+
+    rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
+
+/*    Log(("VBOXSF: VBoxSF::vboxCallReadline: "
+         "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
+*/
+    if (RT_SUCCESS (rc))
+    {
+        rc = data.callInfo.result;
+    }
+    return rc;
+}
+
+DECLVBGL(int) vboxCallSymlink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath, PRTFSOBJINFO pBuffer)
+{
+    int rc = VINF_SUCCESS;
+
+    VBoxSFSymlink data;
+
+    VBOX_INIT_CALL(&data.callInfo, SYMLINK, pClient);
+
+    data.root.type                      = VMMDevHGCMParmType_32bit;
+    data.root.u.value32                 = pMap->root;
+
+    data.newPath.type                   = VMMDevHGCMParmType_LinAddr_In;
+    data.newPath.u.Pointer.size         = ShflStringSizeOfBuffer (pNewPath);
+    data.newPath.u.Pointer.u.linearAddr = (uintptr_t)pNewPath;
+
+    data.oldPath.type                   = VMMDevHGCMParmType_LinAddr_In;
+    data.oldPath.u.Pointer.size         = ShflStringSizeOfBuffer (pOldPath);
+    data.oldPath.u.Pointer.u.linearAddr = (uintptr_t)pOldPath;
+
+    data.info.type                      = VMMDevHGCMParmType_LinAddr_Out;
+    data.info.u.Pointer.size            = sizeof(RTFSOBJINFO);
+    data.info.u.Pointer.u.linearAddr    = (uintptr_t)pBuffer;
+
+    rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));
+
+/*    Log(("VBOXSF: VBoxSF::vboxCallSymlink: "
+         "VbglHGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.result));
+*/
+    if (RT_SUCCESS (rc))
+    {
+        rc = data.callInfo.result;
+    }
+    return rc;
+}
+
+DECLVBGL(int) vboxCallSetSymlinks (PVBSFCLIENT pClient)
+{
+    int rc = VINF_SUCCESS;
+
+    VBoxGuestHGCMCallInfo callInfo;
+
+    VBOX_INIT_CALL (&callInfo, SET_SYMLINKS, pClient);
+    rc = VbglHGCMCall (pClient->handle, &callInfo, sizeof (callInfo));
+    if (RT_SUCCESS (rc))
+    {
+        rc = callInfo.result;
+    }
+    return rc;
+}
+
 
 #endif /* !VBGL_VBOXGUEST */

@@ -471,6 +471,10 @@ static struct file_system_type vboxsf_fs_type =
 };
 #endif
 
+static int follow_symlinks = 0;
+module_param(follow_symlinks, bool, 0);
+MODULE_PARM_DESC(follow_symlinks, "Let host resolve symlinks rather than showing them");
+
 /* Module initialization/finalization handlers */
 static int __init init(void)
 {
@@ -514,11 +518,24 @@ static int __init init(void)
     }
 
     rcVBox = vboxCallSetUtf8(&client_handle);
-    if (RT_FAILURE(rcVBox)) {
+    if (RT_FAILURE(rcVBox))
+    {
         LogRelFunc(("vboxCallSetUtf8 failed, rc=%d\n", rcVBox));
         rcRet = -EPROTO;
         goto fail2;
     }
+
+    if (!follow_symlinks)
+    {
+        rcVBox = vboxCallSetSymlinks(&client_handle);
+        if (RT_FAILURE(rcVBox))
+        {
+            printk(KERN_WARNING
+                     "vboxsf: Host unable to show symlinks, rc=%d\n",
+                     rcVBox);
+        }
+    }
+
 
     printk(KERN_DEBUG
             "vboxsf: Successfully loaded version " VBOX_VERSION_STRING

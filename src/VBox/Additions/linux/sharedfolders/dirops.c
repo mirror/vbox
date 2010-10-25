@@ -609,6 +609,7 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry, int fDirec
     struct sf_glob_info *sf_g = GET_GLOB_INFO(parent->i_sb);
     struct sf_inode_info *sf_i = GET_INODE_INFO(parent);
     SHFLSTRING *path;
+    uint32_t fFlags;
 
     TRACE();
     BUG_ON(!sf_g);
@@ -617,8 +618,12 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry, int fDirec
     if (err)
         goto fail0;
 
-    rc = vboxCallRemove(&client_handle, &sf_g->map, path,
-            fDirectory ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
+    fFlags = fDirectory ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE;
+    if (   dentry
+        && dentry->d_inode
+        && ((dentry->d_inode->i_mode & S_IFLNK) == S_IFLNK))
+        fFlags |= SHFL_REMOVE_SYMLINK;
+    rc = vboxCallRemove(&client_handle, &sf_g->map, path, fFlags);
     if (RT_FAILURE(rc))
     {
         LogFunc(("(%d): vboxCallRemove(%s) failed rc=%Rrc\n", fDirectory,
@@ -733,6 +738,67 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
     return err;
 }
 
+static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *symname)
+{
+    int err;
+    int rc;
+    struct sf_inode_info *sf_i;
+    struct sf_glob_info *sf_g;
+    SHFLSTRING *path, *ssymname;
+    RTFSOBJINFO info;
+    int symname_len = strlen(symname) + 1;
+
+    TRACE();
+    sf_g = GET_GLOB_INFO(parent->i_sb);
+    sf_i = GET_INODE_INFO(parent);
+
+    BUG_ON(!sf_g);
+    BUG_ON(!sf_i);
+
+    err = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
+    if (err)
+        goto fail0;
+
+    ssymname = kmalloc(offsetof(SHFLSTRING, String.utf8) + symname_len, GFP_KERNEL);
+    if (!ssymname)
+    {
+        LogRelFunc(("kmalloc failed, caller=sf_symlink\n"));
+        err = -ENOMEM;
+        goto fail1;
+    }
+
+    ssymname->u16Length = symname_len - 1;
+    ssymname->u16Size = symname_len;
+    memcpy(ssymname->String.utf8, symname, symname_len);
+
+    rc = vboxCallSymlink(&client_handle, &sf_g->map, path, ssymname, &info);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_WRITE_PROTECT)
+        {
+            err = -EROFS;
+            goto fail2;
+        }
+        err = -EPROTO;
+        goto fail2;
+    }
+
+    err = sf_instantiate(parent, dentry, path, &info, SHFL_HANDLE_NIL);
+    if (err)
+    {
+        LogFunc(("could not instantiate dentry for %s err=%d\n",
+                 sf_i->path->String.utf8, err));
+        goto fail2;
+    }
+
+fail2:
+    kfree(ssymname);
+fail1:
+    kfree(path);
+fail0:
+    return err;
+}
+
 struct inode_operations sf_dir_iops =
 {
     .lookup     = sf_lookup,
@@ -745,6 +811,7 @@ struct inode_operations sf_dir_iops =
     .revalidate = sf_inode_revalidate
 #else
     .getattr    = sf_getattr,
-    .setattr    = sf_setattr
+    .setattr    = sf_setattr,
+    .symlink    = sf_symlink
 #endif
 };

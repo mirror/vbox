@@ -111,15 +111,19 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
            in the directory plus two (. ..) */
         inode->i_nlink = 1;
     }
+    else if (RTFS_IS_SYMLINK(attr->fMode))
+    {
+        inode->i_mode  = sf_g->fmode != ~0 ? (sf_g->fmode & 0777): mode;
+        inode->i_mode &= ~sf_g->fmask;
+        inode->i_mode |= S_IFLNK;
+        inode->i_op    = &sf_lnk_iops;
+        inode->i_nlink = 1;
+    }
     else
     {
         inode->i_mode  = sf_g->fmode != ~0 ? (sf_g->fmode & 0777): mode;
         inode->i_mode &= ~sf_g->fmask;
         inode->i_mode |= S_IFREG;
-#if 0
-        if (RTFS_IS_SYMLINK(attr->fMode))
-            inode->i_mode |= S_IFLNK;
-#endif
         inode->i_op    = &sf_reg_iops;
         inode->i_fop   = &sf_reg_fops;
         inode->i_nlink = 1;
@@ -341,7 +345,8 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
         rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,
                 SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer,
                 (PSHFLDIRINFO)&info);
-        if (RT_FAILURE(rc)) {
+        if (RT_FAILURE(rc))
+        {
             LogFunc(("vboxCallFSInfo(%s, FILE) failed rc=%Rrc\n",
                         sf_i->path->String.utf8, rc));
             err = -RTErrConvertToErrno(rc);

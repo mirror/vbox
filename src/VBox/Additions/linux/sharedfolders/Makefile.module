@@ -62,6 +62,7 @@ override MODULE = vboxsf
 OBJS   = \
 	vfsmod.o \
 	dirops.o \
+	lnkops.o \
 	regops.o \
 	utils.o \
 	GenericRequest.o \

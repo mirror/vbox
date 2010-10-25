@@ -641,16 +641,6 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
 RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 
 /**
- * Returns the destination of a symbolic link.
- *
- * @returns IPRT status code.
- * @param   pszPath     Path to the file system object.
- * @param   pszDestLink Where to store the destination path.
- * @param   cchDestLink Size of the buffer.
- */
-RTR3DECL(int) RTReadLink(const char *pszPath, char *pszDestLink, size_t cchDestLink);
-
-/**
  * Changes the mode flags of a file system object.
  *
  * The API requires at least one of the mode flag sets (Unix/Dos) to
@@ -803,16 +793,6 @@ RTR3DECL(int) RTPathGetOwner(const char *pszPath, uint32_t *pUid, uint32_t *pGid
  * @param   fRename     Rename flags, RTPATHRENAME_FLAGS_*.
  */
 RTR3DECL(int) RTPathRename(const char *pszSrc,  const char *pszDst, unsigned fRename);
-
-/**
- * Creates a symlink from new path to old path.
- *
- * @returns IPRT status code.
- * @param   pszNewPath  The path for the new symlink.
- * @param   pszOldPath  The destination path for the symlink (i.e. the content of
- *                      pszNewPath).
- */
-RTR3DECL(int) RTSymlink(const char *pszNewPath, const char *pszOldPath);
 
 #endif /* IN_RING3 */
 
