@@ -344,7 +344,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
     {
         RTStrmPrintf(pStrm,
-                     "VBoxManage import           <ovf> [--dry-run|-n] [more options]\n"
+                     "VBoxManage import           <ovf/ova> [--dry-run|-n] [more options]\n"
                      "                            (run with -n to have options displayed\n"
                      "                             for a particular OVF)\n\n");
     }
@@ -352,7 +352,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_EXPORTAPPLIANCE)
     {
         RTStrmPrintf(pStrm,
-                     "VBoxManage export           <machines> --output|-o <ovf>\n"
+                     "VBoxManage export           <machines> --output|-o <ovf/ova>\n"
                      "                            [--legacy09]\n"
                      "                            [--manifest]\n"
                      "                            [--vsys <number of virtual system>]\n"

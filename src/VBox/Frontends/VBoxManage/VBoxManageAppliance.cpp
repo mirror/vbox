@@ -650,7 +650,7 @@ int handleImportAppliance(HandlerArg *arg)
 #endif
                                 else
                                     RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls"
-                                            "\n    (change controller with \"--vsys %u --unit %u --controller <id>\";"
+                                            "\n    (change target path with \"--vsys %u --unit %u --disk path\";"
                                             "\n    disable with \"--vsys %u --unit %u --ignore\")\n",
                                             a,
                                             aOvfValues[a],
