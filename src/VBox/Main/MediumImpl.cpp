@@ -3651,7 +3651,10 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
         }
 
         // we must always have full paths now
-        Assert(RTPathHavePath(locationFull.c_str()));
+        if (!RTPathStartsWithRoot(locationFull.c_str()))
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("The given path '%s' is not fully qualified"),
+                            locationFull.c_str());
 
         /* detect the backend from the storage unit if importing */
         if (isImport)
