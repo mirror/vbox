@@ -7752,7 +7752,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     aMsiReg.cMsiVectors = 1;
     aMsiReg.iMsiCapOffset = 0xa0;
     aMsiReg.iMsiNextOffset = 0x70;
-    aMsiReg.iMsiFlags = 0;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
     if (RT_FAILURE (rc))
     {
