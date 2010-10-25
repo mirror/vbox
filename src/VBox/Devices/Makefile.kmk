@@ -268,8 +268,11 @@ VBoxDD2_LDFLAGS.l4      = -Wl,--no-undefined
 DevicesR3_TEMPLATE      = VBOXR3
 DevicesR3_SDKS.win      = WINPSDK W2K3DDK
 DevicesR3_DEFS.darwin.x86 = VBOX_WITH_2X_4GB_ADDR_SPACE
-DevicesR3_DEFS         += VBOX_HGCM_HOST_CODE \
-			  VBOX_WITH_HGCM
+DevicesR3_DEFS         += \
+	VBOX_HGCM_HOST_CODE \
+	VBOX_WITH_HGCM \
+	$(if $(VBOX_WITH_AUDIO_FLEXIBLE_FORMAT),VBOX_WITH_AUDIO_FLEXIBLE_FORMAT,) \
+	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,)
 DevicesR3_DEFS.linux   += _GNU_SOURCE
 DevicesR3_DEFS.l4      += _GNU_SOURCE
 
@@ -300,6 +303,8 @@ DevicesR3_SOURCES       = \
 	Network/DevPCNet.cpp \
 	Audio/DevIchAc97.cpp \
 	Audio/DevSB16.cpp \
+	Audio/DevIchIntelHDA.cpp \
+	Audio/DevCodec.cpp \
 	PC/DevDMA.cpp \
 	PC/DevHPET.cpp \
 	PC/DevSMC.cpp \
@@ -307,24 +312,6 @@ DevicesR3_SOURCES       = \
 	Storage/fdc.c \
 	Serial/DevSerial.cpp \
 	Parallel/DevParallel.cpp
-
-VBOX_DEV_HDA_SOURCES= \
-	Audio/DevIchIntelHDA.cpp \
-	Audio/DevCodec.cpp
-
-define def_vbox_audio_flags
-$(1)_DEFS += \
-      $(if $(VBOX_WITH_AUDIO_FLEXIBLE_FORMAT),VBOX_WITH_AUDIO_FLEXIBLE_FORMAT,)
-endef
-
-DevicesR3_SOURCES += $(VBOX_DEV_HDA_SOURCES)
-
-$(foreach file,$(VBOX_DEV_HDA_SOURCES),$(eval $(call def_vbox_audio_flags, $(file))))
-
-
-ifdef VBOX_BIOS_DMI_FALLBACK
- DevicesR3_DEFS        += VBOX_BIOS_DMI_FALLBACK
-endif
 
 ifdef VBOX_WITH_E1000
  DevicesR3_DEFS        += VBOX_WITH_E1000
@@ -837,21 +824,21 @@ endif
 Drivers_SDKS.win   = WINPSDK W2K3DDK
 Storage/DrvHostDVD.cpp_SDKS.win = W2K3DDK
 Drivers_DEFS.win       += _WIN32_WINNT=0x0510
-Drivers_DEFS            = IN_IDE_R3
-ifdef VBOX_WITH_NETFLT
-Drivers_DEFS           += VBOX_WITH_NETFLT
-endif
-ifdef VBOX_WITH_INIP
-Drivers_DEFS           += VBOX_WITH_INIP
-endif
-ifdef VBOX_WITH_DRV_DISK_INTEGRITY
-Drivers_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
-endif
+Drivers_DEFS            = \
+	IN_IDE_R3 \
+	$(if $(VBOX_WITH_NETFLT),VBOX_WITH_NETFLT,) \
+	$(if $(VBOX_WITH_INIP),VBOX_WITH_INIP,) \
+	$(if $(VBOX_WITH_DRV_DISK_INTEGRITY),VBOX_WITH_DRV_DISK_INTEGRITY,) \
+	$(if $(VBOX_WITH_AUDIO_FLEXIBLE_FORMAT),VBOX_WITH_AUDIO_FLEXIBLE_FORMAT,) \
 
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	Network/slirp
 Drivers_SOURCES    = \
+	Audio/audio.c \
+	Audio/audiosniffer.c \
+	Audio/mixeng.c \
+	Audio/noaudio.c \
 	Input/DrvKeyboardQueue.cpp \
 	Input/DrvMouseQueue.cpp \
 	Network/DrvIntNet.cpp \
@@ -872,15 +859,6 @@ Drivers_SOURCES    = \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
 
-VBOX_AUDIO_SOURCES = \
-	Audio/audio.c \
-	Audio/audiosniffer.c \
-	Audio/mixeng.c \
-	Audio/noaudio.c
-
-Drivers_SOURCES += $(VBOX_AUDIO_SOURCES)
-$(foreach file,$(VBOX_AUDIO_SOURCES),$(eval $(call def_vbox_audio_flags, $(file))))
-
 VBOX_SLIRP_SOURCES = \
 	Network/DrvNAT.cpp \
 	Network/slirp/bootp.c \
@@ -889,7 +867,7 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/ip_input.c \
 	Network/slirp/ip_output.c \
 	Network/slirp/misc.c \
-    Network/slirp/sbuf.c \
+	Network/slirp/sbuf.c \
 	Network/slirp/slirp.c \
 	Network/slirp/socket.c \
 	Network/slirp/tcp_input.c \
