@@ -5202,7 +5202,11 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
                     rc = VERR_INTNET_INCOMPATIBLE_FLAGS;
             }
             else
+            {
                 rc = VERR_INTNET_INCOMPATIBLE_TRUNK;
+                LogRel(("intnetR0OpenNetwork failed. rc=%d pCur->szTrunk=%s pszTrunk=%s pCur->enmTrunkType=%d enmTrunkType=%d\n",
+                        rc, pCur->szTrunk, pszTrunk, pCur->enmTrunkType, enmTrunkType));
+            }
 
             LogFlow(("intnetR0OpenNetwork: returns %Rrc *ppNetwork=%p\n", rc, *ppNetwork));
             return rc;
