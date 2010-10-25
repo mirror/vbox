@@ -294,7 +294,6 @@ int handleControlVM(HandlerArg *a)
                 }
             }
         }
-#ifdef VBOX_DYNAMIC_NET_ATTACH
         /* here the order in which strncmp is called is important
          * cause nictracefile can be very well compared with
          * nictrace and nic and thus everything will always fail
@@ -486,7 +485,6 @@ int handleControlVM(HandlerArg *a)
                     RTMsgError("The NIC %d is currently disabled and thus can't change its attachment type", n);
             }
         }
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
 #ifdef VBOX_WITH_VRDP
         else if (   !strcmp(a->argv[1], "vrde")
                  || !strcmp(a->argv[1], "vrdp"))

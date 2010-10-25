@@ -322,9 +322,6 @@ DevicesR3_SOURCES += $(VBOX_DEV_HDA_SOURCES)
 $(foreach file,$(VBOX_DEV_HDA_SOURCES),$(eval $(call def_vbox_audio_flags, $(file))))
 
 
-ifdef VBOX_DYNAMIC_NET_ATTACH
- DevicesR3_DEFS        += VBOX_DYNAMIC_NET_ATTACH
-endif
 ifdef VBOX_BIOS_DMI_FALLBACK
  DevicesR3_DEFS        += VBOX_BIOS_DMI_FALLBACK
 endif
@@ -579,10 +576,6 @@ ifdef VBOX_WITH_RAW_MODE
  	Parallel/DevParallel.cpp \
 	VMMDev/VMMDevTesting.cpp
 
- ifdef VBOX_DYNAMIC_NET_ATTACH
-  VBoxDDGC_DEFS        += VBOX_DYNAMIC_NET_ATTACH
- endif
-
  ifdef VBOX_WITH_E1000
   VBoxDDGC_DEFS        += VBOX_WITH_E1000
   VBoxDDGC_SOURCES     += \
@@ -705,10 +698,6 @@ VBoxDDR0_SOURCES        = \
 	\
 	Network/DrvIntNet.cpp \
 	Network/DrvDedicatedNic.cpp
-
-ifdef VBOX_DYNAMIC_NET_ATTACH
- VBoxDDR0_DEFS += VBOX_DYNAMIC_NET_ATTACH
-endif
 
 ifdef VBOX_WITH_E1000
  VBoxDDR0_DEFS         += VBOX_WITH_E1000

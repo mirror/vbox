@@ -506,13 +506,11 @@ private:
     HRESULT doCPURemove(ULONG aCpu);
     HRESULT doCPUAdd(ULONG aCpu);
 
-#ifdef VBOX_DYNAMIC_NET_ATTACH
     HRESULT doNetworkAdapterChange(const char *pszDevice, unsigned uInstance,
                                    unsigned uLun, INetworkAdapter *aNetworkAdapter);
     static DECLCALLBACK(int) changeNetworkAttachment(Console *pThis, const char *pszDevice,
                                                      unsigned uInstance, unsigned uLun,
                                                      INetworkAdapter *aNetworkAdapter);
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
 
 #ifdef VBOX_WITH_USB
     HRESULT attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs);

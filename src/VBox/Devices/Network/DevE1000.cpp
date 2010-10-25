@@ -5297,9 +5297,8 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
 
-#ifdef VBOX_DYNAMIC_NET_ATTACH
+/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
 
 /**
  * Detach notification.
@@ -5333,7 +5332,6 @@ static DECLCALLBACK(void) e1kDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 
     PDMCritSectLeave(&pState->cs);
 }
-
 
 /**
  * Attach the Network attachment.
@@ -5410,8 +5408,6 @@ static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
     return rc;
 
 }
-
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
 
 /**
  * @copydoc FNPDMDEVPOWEROFF
@@ -5971,17 +5967,10 @@ const PDMDEVREG g_DeviceE1000 =
     e1kSuspend,
     /* Resume notification - optional. */
     NULL,
-#ifdef VBOX_DYNAMIC_NET_ATTACH
     /* Attach command - optional. */
     e1kAttach,
     /* Detach notification - optional. */
     e1kDetach,
-#else /* !VBOX_DYNAMIC_NET_ATTACH */
-    /* Attach command - optional. */
-    NULL,
-    /* Detach notification - optional. */
-    NULL,
-#endif /* !VBOX_DYNAMIC_NET_ATTACH */
     /* Query a LUN base interface - optional. */
     NULL,
     /* Init complete notification - optional. */

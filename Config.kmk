@@ -395,8 +395,6 @@ VBOX_WITH_BUSLOGIC = 1
 VBOX_WITH_LSILOGIC = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
-# Enable changing network attachments dynamically.
-VBOX_DYNAMIC_NET_ATTACH = 1
 # Enable this setting to force a fallback to default DMI data on configuration errors
 VBOX_BIOS_DMI_FALLBACK =
 # Enable MSI support in devices
