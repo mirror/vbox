@@ -1502,10 +1502,6 @@ static DECLCALLBACK(int) hdaSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     SSMR3PutMem (pSSMHandle, &pThis->hda.stOutBdle, sizeof (HDABDLEDESC));
     SSMR3PutMem (pSSMHandle, &pThis->hda.stMicBdle, sizeof (HDABDLEDESC));
     SSMR3PutMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
-    uint8_t voices = AUD_is_active_in(ISD0FMT_TO_AUDIO_SELECTOR(&pThis->hda))? RT_BIT(0):0;
-    //voices |= AUD_is_active_in(pThis->hda.Codec.voice_mc)? RT_BIT(1):0;
-    voices |= AUD_is_active_out(OSD0FMT_TO_AUDIO_SELECTOR(&pThis->hda))? RT_BIT(2):0;
-    SSMR3PutU8(pSSMHandle, voices);
     return VINF_SUCCESS;
 }
 
@@ -1533,11 +1529,10 @@ static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
     SSMR3GetMem (pSSMHandle, &pThis->hda.stOutBdle, sizeof (HDABDLEDESC));
     SSMR3GetMem (pSSMHandle, &pThis->hda.stMicBdle, sizeof (HDABDLEDESC));
     SSMR3GetMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
-    uint8_t voices;
-    SSMR3GetU8(pSSMHandle, &voices);
-    AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), voices & RT_BIT(0));
-    //AUD_set_active_in(pThis->hda.Codec.voice_mc, voices & RT_BIT(1));
-    AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), voices & RT_BIT(2));
+    
+    AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), SDCTL(&pThis->hda, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+    AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(&pThis->hda), SDCTL(&pThis->hda, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+
     pThis->hda.u64CORBBase = CORBLBASE(&pThis->hda);
     pThis->hda.u64CORBBase |= ((uint64_t)CORBUBASE(&pThis->hda)) << 32;
     pThis->hda.u64RIRBBase = RIRLBASE(&pThis->hda);
