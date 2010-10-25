@@ -61,6 +61,7 @@ vboxsf_SOURCES         = \
 	vfsmod.c \
 	utils.c \
 	dirops.c \
+	lnkops.c \
 	regops.c
 vboxsf_LIBS            = \
 	$(VBOX_LIB_VBGL_R0)

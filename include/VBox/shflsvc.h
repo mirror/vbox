@@ -964,6 +964,7 @@ typedef struct _VBoxSFInformation
 
 #define SHFL_REMOVE_FILE        (0x1)
 #define SHFL_REMOVE_DIR         (0x2)
+#define SHFL_REMOVE_SYMLINK     (0x4)
 
 /** Parameters structure. */
 typedef struct _VBoxSFRemove

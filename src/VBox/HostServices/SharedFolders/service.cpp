@@ -1049,7 +1049,6 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 else
                 {
                     /* Execute the function. */
-
                     rc = vbsfRemove (pClient, root, pPath, cbPath, flags);
                     if (RT_SUCCESS(rc))
                     {

@@ -27,6 +27,7 @@
 #include <iprt/file.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/symlink.h>
 #include <iprt/uni.h>
 #include <iprt/stream.h>
 #ifdef RT_OS_DARWIN
@@ -1674,7 +1675,7 @@ int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint
 
     if (RT_SUCCESS (rc))
     {
-        rc = RTReadLink(pszFullPath, (char *) pBuffer, cbBuffer);
+        rc = RTSymlinkRead(pszFullPath, (char *) pBuffer, cbBuffer);
 
         /* free the path string */
         vbsfFreeFullPath(pszFullPath);
@@ -2040,7 +2041,7 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
     int rc = VINF_SUCCESS;
 
     /* Validate input */
-    if (   flags & ~(SHFL_REMOVE_FILE|SHFL_REMOVE_DIR)
+    if (   flags & ~(SHFL_REMOVE_FILE|SHFL_REMOVE_DIR|SHFL_REMOVE_SYMLINK)
         || cbPath == 0
         || pPath == 0)
     {
@@ -2064,7 +2065,9 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
 
         if (RT_SUCCESS (rc))
         {
-            if (flags & SHFL_REMOVE_FILE)
+            if (flags & SHFL_REMOVE_SYMLINK)
+                rc = RTSymlinkDelete(pszFullPath);
+            else if (flags & SHFL_REMOVE_FILE)
                 rc = RTFileDelete(pszFullPath);
             else
                 rc = RTDirRemove(pszFullPath);
@@ -2154,7 +2157,7 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
     if (rc != VINF_SUCCESS)
         return rc;
 
-    rc = RTSymlink(pszFullNewPath, (const char *)pOldPath->String.utf8);
+    rc = RTSymlinkCreate(pszFullNewPath, (const char *)pOldPath->String.utf8, RTSYMLINKTYPE_UNKNOWN);
     if (RT_SUCCESS (rc))
         rc = RTPathQueryInfoEx(pszFullNewPath, pInfo, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
 

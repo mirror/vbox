@@ -64,8 +64,9 @@ struct sf_inode_info
     SHFLHANDLE handle;
 };
 
-struct sf_dir_info {
-        struct list_head info_list;
+struct sf_dir_info
+{
+    struct list_head info_list;
 };
 
 struct sf_dir_buf
@@ -87,6 +88,7 @@ extern VBSFCLIENT client_handle;
 
 /* forward declarations */
 extern struct inode_operations         sf_dir_iops;
+extern struct inode_operations         sf_lnk_iops;
 extern struct inode_operations         sf_reg_iops;
 extern struct file_operations          sf_dir_fops;
 extern struct file_operations          sf_reg_fops;
