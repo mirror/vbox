@@ -204,7 +204,7 @@ int VBoxServiceToolboxMain(int argc, char **argv)
         if (   !strcmp(argv[0], "cat")
             || !strcmp(argv[0], "vbox_cat"))
         {
-            rc = VBoxServiceToolboxCat(argc - 1, &argv[1]);
+            rc = VBoxServiceToolboxCat(argc, argv);
         }
     }
 
