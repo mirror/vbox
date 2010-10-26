@@ -239,16 +239,8 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Enter &Fullscreen Mode"), "F"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Switch to fullscreen mode"));
-        }
-        else
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Exit &Fullscreen Mode"), "F"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Switch to normal mode"));
-        }
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Switch to &Fullscreen"), "F"));
+        setStatusTip(QApplication::translate("UIActionsPool", "Switch between normal and fullscreen mode"));
     }
 };
 
@@ -270,16 +262,8 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Enter Seam&less Mode"), "L"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Switch to seamless desktop integration mode"));
-        }
-        else
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Exit Seam&less Mode"), "L"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Switch to normal mode"));
-        }
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Switch to Seam&less Mode"), "L"));
+        setStatusTip(QApplication::translate("UIActionsPool", "Switch between normal and seamless desktop integration mode"));
     }
 };
 
@@ -301,16 +285,8 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Enter &Scale Mode"), "C"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Switch to scale mode"));
-        }
-        else
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Exit &Scale Mode"), "C"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Switch to normal mode"));
-        }
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Switch to &Scale Mode"), "C"));
+        setStatusTip(QApplication::translate("UIActionsPool", "Switch between normal and scale mode"));
     }
 };
 
@@ -332,16 +308,8 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Enable &Guest Display Auto-resize"), "G"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Automatically resize the guest display when the window is resized (requires Guest Additions)"));
-        }
-        else
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Disable &Guest Display Auto-resize"), "G"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Disable automatic resize of the guest display when the window is resized"));
-        }
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Auto-resize &Guest Display"), "G"));
+        setStatusTip(QApplication::translate("UIActionsPool", "Automatically resize the guest display when the window is resized (requires Guest Additions)"));
     }
 };
 
@@ -404,16 +372,8 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Disable &Mouse Integration"), "I"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Temporarily disable host mouse pointer integration"));
-        }
-        else
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Enable &Mouse Integration"), "I"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Enable temporarily disabled host mouse pointer integration"));
-        }
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Disable &Mouse Integration"), "I"));
+        setStatusTip(QApplication::translate("UIActionsPool", "Temporarily disable host mouse pointer integration"));
     }
 };
 
@@ -502,7 +462,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Session I&nformation Dialog"), "N"));
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "Session I&nformation"), "N"));
         setStatusTip(QApplication::translate("UIActionsPool", "Show Session Information Dialog"));
     }
 };
@@ -524,16 +484,8 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "&Pause"), "P"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Suspend the execution of the virtual machine"));
-        }
-        else
-        {
-            setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "R&esume"), "P"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Resume the execution of the virtual machine"));
-        }
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "&Pause"), "P"));
+        setStatusTip(QApplication::translate("UIActionsPool", "Suspend the execution of the virtual machine"));
     }
 };
 
@@ -582,6 +534,7 @@ protected:
 #else /* Q_WS_MAC */
         setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "ACPI S&hutdown"), "H"));
 #endif /* !Q_WS_MAC */
+
         setStatusTip(QApplication::translate("UIActionsPool", "Send the ACPI Power Button press event to the virtual machine"));
     }
 };
@@ -604,7 +557,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "&Close..." ), "Q"));
+        setText(VBoxGlobal::insertKeyToActionText(QApplication::translate("UIActionsPool", "&Close..."), "Q"));
         setStatusTip(QApplication::translate("UIActionsPool", "Close the virtual machine"));
     }
 };
@@ -813,16 +766,8 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-        {
-            setText(QApplication::translate("UIActionsPool", "&Enable Remote Display"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Enable remote desktop (RDP) connections to this machine"));
-        }
-        else
-        {
-            setText(QApplication::translate("UIActionsPool", "&Disable Remote Display"));
-            setStatusTip(QApplication::translate("UIActionsPool", "Disable remote desktop (RDP) connections to this machine"));
-        }
+        setText(QApplication::translate("UIActionsPool", "Enable R&emote Display"));
+        setStatusTip(QApplication::translate("UIActionsPool", "Enable remote desktop (RDP) connections to this machine"));
     }
 };
 
@@ -925,10 +870,7 @@ protected:
 
     void retranslateUi()
     {
-        if (!isChecked())
-            setText(QApplication::translate("UIActionsPool", "Enable &Logging...", "debug action"));
-        else
-            setText(QApplication::translate("UIActionsPool", "Disable &Logging...", "debug action"));
+        setText(QApplication::translate("UIActionsPool", "Enable &Logging...", "debug action"));
     }
 };
 #endif
