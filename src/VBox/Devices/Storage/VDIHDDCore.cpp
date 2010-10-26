@@ -710,6 +710,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
             if (RT_FAILURE(rc))
             {
                 rc = vdiError(pImage, rc, RT_SRC_POS, N_("VDI: writing block failed for '%s'"), pImage->pszFilename);
+                RTMemTmpFree(pvBuf);
                 goto out;
             }
 
