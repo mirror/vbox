@@ -450,17 +450,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "\n");
     }
 
-    if (u64Cmd & USAGE_OPENMEDIUM)
-    {
-        RTStrmPrintf(pStrm,
-                     "VBoxManage openmedium       disk|dvd|floppy <filename>\n"
-                     "                            [--type normal|immutable|writethrough|\n"
-                     "                                    shareable] (disk only)\n"
-                     "                            [--uuid <uuid>]\n"
-                     "                            [--parentuuid <uuid>] (disk only)\n"
-                     "\n");
-    }
-
     if (u64Cmd & USAGE_CLOSEMEDIUM)
     {
         RTStrmPrintf(pStrm,

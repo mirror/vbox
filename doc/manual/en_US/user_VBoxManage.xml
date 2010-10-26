@@ -105,6 +105,14 @@ Settings file: '/home/username/.VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
       </listitem>
 
       <listitem>
+        <para>To change the storage configuration (e.g. to add a storage
+        controller and then a virtual disk), use <computeroutput>VBoxManage
+        storagectl</computeroutput> and <computeroutput>VBoxManage
+        storageattach</computeroutput>; see <xref
+        linkend="vboxmanage-storage" /> for details.</para>
+      </listitem>
+
+      <listitem>
         <para>To control VM operation, use one of the following:<itemizedlist>
             <listitem>
               <para>To start a VM that is currently powered off, use
@@ -492,10 +500,10 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--hwvirtex on|off</computeroutput>:
-            This enables or disables the use of hardware virtualization
-            extensions (Intel VT-x or AMD-V) in the processor of your host
-            system; see <xref linkend="hwvirt" />.</para>
+            <para><computeroutput>--hwvirtex on|off</computeroutput>: This
+            enables or disables the use of hardware virtualization extensions
+            (Intel VT-x or AMD-V) in the processor of your host system; see
+            <xref linkend="hwvirt" />.</para>
           </listitem>
 
           <listitem>
@@ -1393,29 +1401,6 @@ Virtual system 0:
     snapshot.</para>
   </sect1>
 
-  <sect1 id="vboxmanage-registerimage">
-    <title>VBoxManage openmedium / closemedium</title>
-
-    <para>These commands register or unregister hard disk, DVD or floppy
-    images in VirtualBox. This is the command-line equivalent of the Virtual
-    Media Manager; see <xref linkend="vdis" /> for more information.<note>
-        <para>For compatibility with earlier versions of VirtualBox, the
-        "registerimage" and "unregisterimage" commands are also supported and
-        mapped internally to the "openmedium" and "closemedium" commands,
-        respectively.</para>
-      </note></para>
-
-    <para>When you register an images you can optionally specify a new UUID
-    for the image. For hard disk images the parent UUID can be changed as
-    well. You can also specify the type of the medium, see <xref
-    linkend="hdimagewrites" /> for details.</para>
-
-    <para>When you unregister an image, you can optionally specify that the
-    image should be deleted. You will get appropriate diagnostics that the
-    deletion failed, however the image will become unregistered in any
-    case.</para>
-  </sect1>
-
   <sect1 id="vboxmanage-storage">
     <title>VBoxManage storagectl / storageattach</title>
 
@@ -1584,12 +1569,46 @@ Virtual system 0:
             <glossterm>medium</glossterm>
 
             <glossdef>
-              <para>Allows to specify if the DVD/Floppy drive or Harddisk is
-              to be completely detached (none) or just an empty DVD/Floppy
-              drive needs to be attached (emptydrive). If uuid, filename or
-              host:&lt;drive&gt; is specified then it is attached to the
-              storage controller at the specified port and device
-              number.</para>
+              <para>Specifies what is to be attached. The following values are
+              supported:<itemizedlist>
+                  <listitem>
+                    <para>"none": Any existing device should be removed from
+                    the given slot.</para>
+
+                    <note>
+                      <para>DVD/floppy drives or harddisks cannot be removed
+                      while the VM is running.</para>
+                    </note>
+                  </listitem>
+
+                  <listitem>
+                    <para>"emptydrive": This is only allowed if the given slot
+                    is a DVD or floppy drive. In this case, the slot behaves
+                    like a removeable drive into which no media has been
+                    inserted.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>If a UUID is specified, it must be the UUID of a
+                    storage medium that is already known to VirtualBox (e.g.
+                    because it has been attached to another virtual machine).
+                    This medium is then attached to the given device
+                    slot.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>If a filename is specified, it must be the full path
+                    of an existing disk image (ISO, RAW, VDI, VMDK or other),
+                    which is then attached to the given device slot.</para>
+                  </listitem>
+
+                  <listitem>
+                    <para>"host:&lt;drive&gt;: This is only allowed if the
+                    given slot is a DVD or floppy drive, in which case the
+                    device slot is attached to the specified DVD or floppy
+                    drive on the host computer.</para>
+                  </listitem>
+                </itemizedlist></para>
             </glossdef>
           </glossentry>
 
@@ -1612,12 +1631,6 @@ Virtual system 0:
             </glossdef>
           </glossentry>
         </glosslist></para>
-
-      <note>
-        <para>The option "--medium none" doesn't work when the VM is running
-        because you can't remove DVD/Floppy Drives or Harddisks when the VM is
-        running.</para>
-      </note>
     </sect2>
   </sect1>
 
@@ -1947,6 +1960,25 @@ VBoxManage convertfromraw   stdin &lt;outputfile&gt; &lt;bytes&gt;
       </glosslist></para>
   </sect1>
 
+  <sect1 id="vboxmanage-closemedium">
+    <title>VBoxManage closemedium</title>
+
+    <para>This commands removes a hard disk, DVD or floppy image from a
+    VirtualBox media registry.<footnote>
+        <para>Before VirtualBox 4.0, it was necessary to call VBoxManage
+        openmedium before a medium could be attached to a virtual machine;
+        that call "registered" the medium with the global VirtualBox media
+        registry. With VirtualBox 4.0 this is no longer necessary; media are
+        added to media registries automatically. The "closemedium" call has
+        been retained, however, to allow for explicitly removing a medium from
+        a registry.</para>
+      </footnote></para>
+
+    <para>Optionally, you can request that the image be deleted. You will get
+    appropriate diagnostics that the deletion failed, however the image will
+    become unregistered in any case.</para>
+  </sect1>
+
   <sect1>
     <title>VBoxManage getextradata/setextradata</title>
 
@@ -2025,8 +2057,8 @@ Value: 2006.01.01</screen>
           <glossterm>vrdelibrary</glossterm>
 
           <glossdef>
-            <para>This specifies which library implements the VirtualBox Remote Desktop
-            Extension.</para>
+            <para>This specifies which library implements the VirtualBox
+            Remote Desktop Extension.</para>
           </glossdef>
         </glossentry>
 
