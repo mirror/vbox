@@ -191,7 +191,8 @@ static int  VBoxServiceControlExecProcHandleStdInWritableEvent(RTPOLLSET hPollSe
             rc = VINF_SUCCESS;
         if (RT_FAILURE(rc))
         {
-            if (rc == VERR_BAD_PIPE)
+            if (   rc == VERR_BAD_PIPE
+                || rc == VERR_BROKEN_PIPE)
             {
                 rc = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN_WRITABLE);
                 AssertRC(rc);

@@ -1202,14 +1202,32 @@ static int handleCtrlCopyTo(HandlerArg *a)
                 {
                     PDIRECTORYENTRY pNode;
                     uint32_t uCurObject = 1;
+                    char szDest[RTPATH_MAX];
                     RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
                     {
-                        if (fVerbose)
-                            RTPrintf("Copying \"%s\" (%u/%u) ...\n",
-                                     pNode->pszSourcePath, uCurObject, cObjects);
-                        if (!fDryRun)
-                            vrc = ctrlCopyFile(guest, pNode->pszSourcePath, pNode->pszDestPath,
-                                               Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
+                        /*
+                         * Build final destination path: Append the relative path
+                         * stored in the directory node to the destination directory
+                         * specified on the command line.
+                         */
+                        szDest[0] = '\0'; /* Terminate string, needed for RTPathAppend(). */
+                        vrc = RTPathAppend(szDest, sizeof(szDest), Utf8Dest.c_str());
+                        if (RT_SUCCESS(vrc))
+                            vrc = RTPathAppend(szDest, sizeof(szDest), pNode->pszDestPath);
+
+                        if (RT_SUCCESS(vrc))
+                        {
+                            if (fVerbose)
+                                RTPrintf("Copying \"%s\" (%u/%u) ...\n",
+                                         pNode->pszSourcePath, uCurObject, cObjects);
+
+                            /* Finally copy the desired file (if no dry run selected). */
+                            if (!fDryRun)
+                                vrc = ctrlCopyFile(guest, pNode->pszSourcePath, szDest,
+                                                   Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
+                        }
+                        else
+                            RTMsgError("Error building destination file name, rc=%Rrc", vrc);
                         if (RT_FAILURE(vrc))
                             break;
                         uCurObject++;
