@@ -1890,22 +1890,34 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                     /*
                      * Prepare tool command line.
                      */
-                    args.push_back(Bstr("vbox_cat").raw()); /* The actual (internal) tool to use (as argv[0]). */
-                    args.push_back(Bstr("--output").raw()); /* We want to write a file ... */
-                    args.push_back(Bstr(Utf8Dest).raw());   /* ... which is specified here. */
+                    char szOutput[RTPATH_MAX];
+                    if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", Utf8Dest.c_str()))
+                    {
+                        args.push_back(Bstr("vbox_cat").raw()); /* The actual (internal) tool to use (as argv[0]). */
+                        args.push_back(Bstr(szOutput).raw());   /* We want to write a file ... */
+                    }
+                    else
+                        rc = setError(VBOX_E_IPRT_ERROR, tr("Error preparing command line"));
 
-                    /*
-                     * Okay, since we gathered all stuff we need until now to start the
-                     * actual copying, start the guest part now.
-                     */
-                    ULONG uPID;
                     ComPtr<IProgress> execProgress;
-                    rc = ExecuteProcess(Bstr("vbox_cat").raw(), 0 /* Flags */,
-                                        ComSafeArrayAsInParam(args),
-                                        ComSafeArrayAsInParam(env),
-                                        Bstr(Utf8UserName).raw(),
-                                        Bstr(Utf8Password).raw(), 0 /* Timeout */,
-                                        &uPID, execProgress.asOutParam());
+                    ULONG uPID;
+                    if (SUCCEEDED(rc))
+                    {
+                        LogRel(("Copying file \"%s\" to guest \"%s\" ...\n",
+                                Utf8Source.c_str(), Utf8Dest.c_str()));
+
+                        /*
+                         * Okay, since we gathered all stuff we need until now to start the
+                         * actual copying, start the guest part now.
+                         */
+                        rc = ExecuteProcess(Bstr("vbox_cat").raw(), 0 /* Flags */,
+                                            ComSafeArrayAsInParam(args),
+                                            ComSafeArrayAsInParam(env),
+                                            Bstr(Utf8UserName).raw(),
+                                            Bstr(Utf8Password).raw(), 0 /* Timeout */,
+                                            &uPID, execProgress.asOutParam());
+                    }
+
                     if (SUCCEEDED(rc))
                     {
                         /* Wait for process to exit ... */
