@@ -467,6 +467,10 @@ Node::~Node()
     delete m;
 }
 
+/**
+ * Private implementation.
+ * @param elmRoot
+ */
 void Node::buildChildren(const ElementNode &elmRoot)       // private
 {
     // go thru this element's attributes
@@ -645,6 +649,12 @@ int Node::getLineNumber() const
     return m_plibNode->line;
 }
 
+/**
+ * Private element constructor.
+ * @param pelmRoot
+ * @param pParent
+ * @param plibNode
+ */
 ElementNode::ElementNode(const ElementNode *pelmRoot,
                          Node *pParent,
                          xmlNode *plibNode)
@@ -998,7 +1008,7 @@ ContentNode* ElementNode::addContent(const char *pcszContent)
 }
 
 /**
- * Sets the given attribute.
+ * Sets the given attribute; overloaded version for const char *.
  *
  * If an attribute with the given name exists, it is overwritten,
  * otherwise a new attribute is created. Returns the attribute node
@@ -1042,53 +1052,119 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, const char *pcszV
 
 }
 
+/**
+ * Sets the given attribute; overloaded version for int32_t.
+ *
+ * If an attribute with the given name exists, it is overwritten,
+ * otherwise a new attribute is created. Returns the attribute node
+ * that was either created or changed.
+ *
+ * @param pcszName
+ * @param i
+ * @return
+ */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, int32_t i)
 {
-    char szValue[64];
+    char szValue[10];
     RTStrPrintf(szValue, sizeof(szValue), "%RI32", i);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
+/**
+ * Sets the given attribute; overloaded version for uint32_t.
+ *
+ * If an attribute with the given name exists, it is overwritten,
+ * otherwise a new attribute is created. Returns the attribute node
+ * that was either created or changed.
+ *
+ * @param pcszName
+ * @param u
+ * @return
+ */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, uint32_t u)
 {
-    char szValue[64];
+    char szValue[10];
     RTStrPrintf(szValue, sizeof(szValue), "%RU32", u);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
+/**
+ * Sets the given attribute; overloaded version for int64_t.
+ *
+ * If an attribute with the given name exists, it is overwritten,
+ * otherwise a new attribute is created. Returns the attribute node
+ * that was either created or changed.
+ *
+ * @param pcszName
+ * @param i
+ * @return
+ */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, int64_t i)
 {
-    char szValue[64];
+    char szValue[20];
     RTStrPrintf(szValue, sizeof(szValue), "%RI64", i);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
+/**
+ * Sets the given attribute; overloaded version for uint64_t.
+ *
+ * If an attribute with the given name exists, it is overwritten,
+ * otherwise a new attribute is created. Returns the attribute node
+ * that was either created or changed.
+ *
+ * @param pcszName
+ * @param u
+ * @return
+ */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, uint64_t u)
 {
-    char szValue[64];
+    char szValue[20];
     RTStrPrintf(szValue, sizeof(szValue), "%RU64", u);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
+/**
+ * Sets the given attribute to the given uint32_t, outputs a hexadecimal string.
+ *
+ * If an attribute with the given name exists, it is overwritten,
+ * otherwise a new attribute is created. Returns the attribute node
+ * that was either created or changed.
+ *
+ * @param pcszName
+ * @param u
+ * @return
+ */
 AttributeNode* ElementNode::setAttributeHex(const char *pcszName, uint32_t u)
 {
-    char szValue[64];
+    char szValue[10];
     RTStrPrintf(szValue, sizeof(szValue), "0x%RX32", u);
     AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
+/**
+ * Sets the given attribute; overloaded version for bool.
+ *
+ * If an attribute with the given name exists, it is overwritten,
+ * otherwise a new attribute is created. Returns the attribute node
+ * that was either created or changed.
+ *
+ * @param pcszName
+ * @param i
+ * @return
+ */
 AttributeNode* ElementNode::setAttribute(const char *pcszName, bool f)
 {
     return setAttribute(pcszName, (f) ? "true" : "false");
 }
 
 /**
- * Private constructur for a new attribute node. This one is special:
+ * Private constructor for a new attribute node. This one is special:
  * in ppcszKey, it returns a pointer to a string buffer that should be
  * used to index the attribute correctly with namespaces.
  *
