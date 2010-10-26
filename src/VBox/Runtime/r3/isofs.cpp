@@ -375,10 +375,10 @@ static int rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
                                 memcpy(pRec, pCurRecord, sizeof(RTISOFSDIRRECORD));
                                 *ppRec = pRec;
                                 rc = VINF_SUCCESS;
-                                break;
                             }
                             else
                                 rc = VERR_NO_MEMORY;
+                            break;
                         }
                     }
                 }
@@ -525,12 +525,12 @@ RTR3DECL(int) RTIsoFsGetFileInfo(PRTISOFSFILE pFile, const char *pszPath,
     if (RT_SUCCESS(rc))
     {
         /* Get actual file record. */
-        PRTISOFSDIRRECORD pFileRecord;
+        PRTISOFSDIRRECORD pFileRecord = NULL; /* shut up gcc*/
         rc = rtIsoFsFindEntry(pFile,
-                                RTPathFilename(pszPath),
-                                pDirRecord->extent_location,
-                                pDirRecord->extent_data_length,
-                                &pFileRecord);
+                              RTPathFilename(pszPath),
+                              pDirRecord->extent_location,
+                              pDirRecord->extent_data_length,
+                              &pFileRecord);
         if (RT_SUCCESS(rc))
         {
             *pcbOffset = pFileRecord->extent_location * RTISOFS_SECTOR_SIZE;
