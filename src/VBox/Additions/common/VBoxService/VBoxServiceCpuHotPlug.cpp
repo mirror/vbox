@@ -22,6 +22,7 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <VBox/VBoxGuestLib.h>
