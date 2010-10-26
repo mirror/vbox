@@ -1180,7 +1180,7 @@ static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64B
     dump_bd(pState, pBdle, u64BaseDMA);
 }
 
-static uint32_t read_audio(INTELHDLinkState *pState, int avail, bool *fStop)
+static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 {
     uint8_t tmpbuf[4096];
     uint32_t temp;
@@ -1216,7 +1216,7 @@ static uint32_t read_audio(INTELHDLinkState *pState, int avail, bool *fStop)
     }
     return cbRead;
 }
-static uint32_t write_audio(INTELHDLinkState *pState, int avail, bool *fStop)
+static uint32_t hdaWriteAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 {
     uint8_t tmpbuf[4096];
     uint32_t temp;
@@ -1312,10 +1312,10 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         switch (src)
         {
             case PO_INDEX:
-                nBytes = write_audio(pState, avail, &fStop);
+                nBytes = hdaWriteAudio(pState, avail, &fStop);
                 break;
             case PI_INDEX:
-                nBytes = read_audio(pState, avail, &fStop);
+                nBytes = hdaReadAudio(pState, avail, &fStop);
                 break;
             default:
                 nBytes = 0;
