@@ -374,10 +374,7 @@ int main(int argc, char *argv[])
         { "discardstate",     USAGE_DISCARDSTATE,      handleDiscardState },
         { "adoptstate",       USAGE_ADOPTSTATE,        handleAdoptState },
         { "snapshot",         USAGE_SNAPSHOT,          handleSnapshot },
-        { "openmedium",       USAGE_OPENMEDIUM,        handleOpenMedium },
-        { "registerimage",    USAGE_OPENMEDIUM,        handleOpenMedium }, /* backward compatiblity */
         { "closemedium",      USAGE_CLOSEMEDIUM,       handleCloseMedium },
-        { "unregisterimage",  USAGE_CLOSEMEDIUM,       handleCloseMedium }, /* backward compatiblity */
         { "storageattach",    USAGE_STORAGEATTACH,     handleStorageAttach },
         { "storagectl",       USAGE_STORAGECONTROLLER, handleStorageController },
         { "showhdinfo",       USAGE_SHOWHDINFO,        handleShowHardDiskInfo },

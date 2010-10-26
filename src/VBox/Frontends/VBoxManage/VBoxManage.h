@@ -48,7 +48,6 @@
 #define USAGE_CONTROLVM             RT_BIT_64(7)
 #define USAGE_DISCARDSTATE          RT_BIT_64(8)
 #define USAGE_SNAPSHOT              RT_BIT_64(9)
-#define USAGE_OPENMEDIUM            RT_BIT_64(10)
 #define USAGE_CLOSEMEDIUM           RT_BIT_64(11)
 #define USAGE_SHOWHDINFO            RT_BIT_64(12)
 #define USAGE_CREATEHD              RT_BIT_64(13)
@@ -217,7 +216,6 @@ int handleCloneHardDisk(HandlerArg *a);
 int handleConvertFromRaw(int argc, char *argv[]);
 int handleAddiSCSIDisk(HandlerArg *a);
 int handleShowHardDiskInfo(HandlerArg *a);
-int handleOpenMedium(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);
 
 /* VBoxManageStorageController.cpp */
