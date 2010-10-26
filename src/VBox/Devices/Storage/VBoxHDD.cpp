@@ -2074,13 +2074,9 @@ static int vdLoadDynamicBackends()
         return rc;
 
     /* To get all entries with VBoxHDD as prefix. */
-    char *pszPluginFilter;
-    rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath, VBOX_HDDFORMAT_PLUGIN_PREFIX);
-    if (RT_FAILURE(rc))
-    {
-        rc = VERR_NO_MEMORY;
-        return rc;
-    }
+    char *pszPluginFilter = RTPathJoinA(szPath, VBOX_HDDFORMAT_PLUGIN_PREFIX "*");
+    if (!pszPluginFilter)
+        return VERR_NO_STR_MEMORY;
 
     PRTDIRENTRYEX pPluginDirEntry = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
@@ -2126,10 +2122,10 @@ static int vdLoadDynamicBackends()
             continue;
 
         /* Prepend the path to the libraries. */
-        rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
-        if (RT_FAILURE(rc))
+        pszPluginPath = RTPathJoinA(szPath, pPluginDirEntry->szName);
+        if (!pszPluginPath)
         {
-            rc = VERR_NO_MEMORY;
+            rc = VERR_NO_STR_MEMORY;
             break;
         }
 
@@ -2194,11 +2190,10 @@ static int vdLoadDynamicCacheBackends()
         return rc;
 
     /* To get all entries with VBoxHDD as prefix. */
-    char *pszPluginFilter;
-    rc = RTStrAPrintf(&pszPluginFilter, "%s/%s*", szPath, VD_CACHEFORMAT_PLUGIN_PREFIX);
-    if (RT_FAILURE(rc))
+    char *pszPluginFilter = RTPathJoinA(szPath, VD_CACHEFORMAT_PLUGIN_PREFIX "*");
+    if (!pszPluginFilter)
     {
-        rc = VERR_NO_MEMORY;
+        rc = VERR_NO_STR_MEMORY;
         return rc;
     }
 
@@ -2246,10 +2241,10 @@ static int vdLoadDynamicCacheBackends()
             continue;
 
         /* Prepend the path to the libraries. */
-        rc = RTStrAPrintf(&pszPluginPath, "%s/%s", szPath, pPluginDirEntry->szName);
-        if (RT_FAILURE(rc))
+        pszPluginPath = RTPathJoinA(szPath, pPluginDirEntry->szName);
+        if (!pszPluginPath)
         {
-            rc = VERR_NO_MEMORY;
+            rc = VERR_NO_STR_MEMORY;
             break;
         }
 

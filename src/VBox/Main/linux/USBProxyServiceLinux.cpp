@@ -168,8 +168,7 @@ int USBProxyServiceLinux::initUsbfs(void)
      * Open the devices file.
      */
     int rc;
-    char *pszDevices;
-    RTStrAPrintf(&pszDevices, "%s/devices", mUsbfsRoot.c_str());
+    char *pszDevices = RTPathJoinA(mUsbfsRoot.c_str(), "devices");
     if (pszDevices)
     {
         rc = USBProxyLinuxCheckForUsbfs(pszDevices);

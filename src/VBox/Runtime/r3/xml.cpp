@@ -1044,46 +1044,41 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, const char *pcszV
 
 AttributeNode* ElementNode::setAttribute(const char *pcszName, int32_t i)
 {
-    char *psz = NULL;
-    RTStrAPrintf(&psz, "%RI32", i);
-    AttributeNode *p = setAttribute(pcszName, psz);
-    RTStrFree(psz);
+    char szValue[64];
+    RTStrPrintf(szValue, sizeof(szValue), "%RI32", i);
+    AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
-AttributeNode* ElementNode::setAttribute(const char *pcszName, uint32_t i)
+AttributeNode* ElementNode::setAttribute(const char *pcszName, uint32_t u)
 {
-    char *psz = NULL;
-    RTStrAPrintf(&psz, "%RU32", i);
-    AttributeNode *p = setAttribute(pcszName, psz);
-    RTStrFree(psz);
+    char szValue[64];
+    RTStrPrintf(szValue, sizeof(szValue), "%RU32", u);
+    AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
 AttributeNode* ElementNode::setAttribute(const char *pcszName, int64_t i)
 {
-    char *psz = NULL;
-    RTStrAPrintf(&psz, "%RI64", i);
-    AttributeNode *p = setAttribute(pcszName, psz);
-    RTStrFree(psz);
+    char szValue[64];
+    RTStrPrintf(szValue, sizeof(szValue), "%RI64", i);
+    AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
-AttributeNode* ElementNode::setAttribute(const char *pcszName, uint64_t i)
+AttributeNode* ElementNode::setAttribute(const char *pcszName, uint64_t u)
 {
-    char *psz = NULL;
-    RTStrAPrintf(&psz, "%RU64", i);
-    AttributeNode *p = setAttribute(pcszName, psz);
-    RTStrFree(psz);
+    char szValue[64];
+    RTStrPrintf(szValue, sizeof(szValue), "%RU64", u);
+    AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 
-AttributeNode* ElementNode::setAttributeHex(const char *pcszName, uint32_t i)
+AttributeNode* ElementNode::setAttributeHex(const char *pcszName, uint32_t u)
 {
-    char *psz = NULL;
-    RTStrAPrintf(&psz, "0x%RX32", i);
-    AttributeNode *p = setAttribute(pcszName, psz);
-    RTStrFree(psz);
+    char szValue[64];
+    RTStrPrintf(szValue, sizeof(szValue), "0x%RX32", u);
+    AttributeNode *p = setAttribute(pcszName, szValue);
     return p;
 }
 

@@ -562,5 +562,5 @@ RTR3DECL(int) RTFsMountpointsEnum(PFNRTFSMOUNTPOINTENUM pfnCallback, void *pvUse
 
 RT_C_DECLS_END
 
-#endif /* ___iprt_fs_h */
+#endif /* !___iprt_fs_h */
 

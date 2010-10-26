@@ -26,10 +26,8 @@
 #ifndef ___iprt_isofs_h
 #define ___iprt_isofs_h
 
-#include <iprt/file.h>
-#include <iprt/mem.h>
+#include <iprt/types.h>
 #include <iprt/list.h>
-#include <iprt/string.h>
 
 RT_C_DECLS_BEGIN
 
@@ -220,5 +218,5 @@ RTR3DECL(int) RTIsoFsExtractFile(PRTISOFSFILE pFile, const char *pszSource,
 
 RT_C_DECLS_END
 
-#endif /* ___iprt_isofs_h */
+#endif
 

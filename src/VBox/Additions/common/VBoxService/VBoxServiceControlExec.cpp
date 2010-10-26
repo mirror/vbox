@@ -939,11 +939,11 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
         /* Prepare environment list. */
         if (uNumEnvVars)
         {
-            pData->papszEnv = (char**)RTMemAlloc(uNumEnvVars * sizeof(char*));
+            pData->papszEnv = (char **)RTMemAlloc(uNumEnvVars * sizeof(char*));
             AssertPtr(pData->papszEnv);
             pData->uNumEnvVars = uNumEnvVars;
 
-            const char *pcCur = pszEnv;
+            const char *pszCur = pszEnv;
             uint32_t i = 0;
             uint32_t cbLen = 0;
             while (cbLen < cbEnv)
@@ -954,14 +954,14 @@ int VBoxServiceControlExecAllocateThreadData(PVBOXSERVICECTRLTHREAD pThread,
                     rc = VERR_INVALID_PARAMETER;
                     break;
                 }
-                int cbStr = RTStrAPrintf(&pData->papszEnv[i++], "%s", pcCur);
+                int cbStr = RTStrAPrintf(&pData->papszEnv[i++], "%s", pszCur);
                 if (cbStr < 0)
                 {
-                    rc = VERR_NO_MEMORY;
+                    rc = VERR_NO_STR_MEMORY;
                     break;
                 }
-                cbLen += cbStr + 1; /* Skip terminating '\0' */
-                pcCur += cbStr + 1; /* Skip terminating '\0' */
+                pszCur += cbStr + 1; /* Skip terminating '\0' */
+                cbLen  += cbStr + 1; /* Skip terminating '\0' */
             }
         }
 

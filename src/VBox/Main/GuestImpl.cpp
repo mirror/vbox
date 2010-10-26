@@ -504,49 +504,57 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
 
 #ifdef VBOX_WITH_GUEST_CONTROL
 /**
- * Appends environment variables to the environment block. Each var=value pair is separated
- * by NULL (\0) sequence. The whole block will be stored in one blob and disassembled on the
- * guest side later to fit into the HGCM param structure.
+ * Appends environment variables to the environment block.
+ *
+ * Each var=value pair is separated by the null character ('\\0').  The whole
+ * block will be stored in one blob and disassembled on the guest side later to
+ * fit into the HGCM param structure.
  *
  * @returns VBox status code.
  *
- * @todo
- *
+ * @param   pszEnvVar       The environment variable=value to append to the
+ *                          environment block.
+ * @param   ppvList         This is actually a pointer to a char pointer
+ *                          variable which keeps track of the environment block
+ *                          that we're constructing.
+ * @param   pcbList         Pointer to the variable holding the current size of
+ *                          the environment block.  (List is a misnomer, go
+ *                          ahead a be confused.)
+ * @param   pcEnvVars       Pointer to the variable holding count of variables
+ *                          stored in the environment block.
  */
-int Guest::prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv)
+int Guest::prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnvVars)
 {
     int rc = VINF_SUCCESS;
-    uint32_t cbLen = strlen(pszEnv);
+    uint32_t cchEnv = strlen(pszEnv); Assert(cchEnv >= 2);
     if (*ppvList)
     {
-        uint32_t cbNewLen = *pcbList + cbLen + 1; /* Include zero termination. */
-        char *pvTmp = (char*)RTMemRealloc(*ppvList, cbNewLen);
-        if (NULL == pvTmp)
-        {
+        uint32_t cbNewLen = *pcbList + cchEnv + 1; /* Include zero termination. */
+        char *pvTmp = (char *)RTMemRealloc(*ppvList, cbNewLen);
+        if (pvTmp == NULL)
             rc = VERR_NO_MEMORY;
-        }
         else
         {
-            memcpy(pvTmp + *pcbList, pszEnv, cbLen);
+            memcpy(pvTmp + *pcbList, pszEnv, cchEnv);
             pvTmp[cbNewLen - 1] = '\0'; /* Add zero termination. */
-            *ppvList = (void**)pvTmp;
+            *ppvList = (void **)pvTmp;
         }
     }
     else
     {
-        char *pcTmp;
-        if (RTStrAPrintf(&pcTmp, "%s", pszEnv) > 0)
+        char *pszTmp;
+        if (RTStrAPrintf(&pszTmp, "%s", pszEnv) >= 0)
         {
-            *ppvList = (void**)pcTmp;
+            *ppvList = (void **)pszTmp;
             /* Reset counters. */
-            *pcEnv = 0;
+            *pcEnvVars = 0;
             *pcbList = 0;
         }
     }
     if (RT_SUCCESS(rc))
     {
-        *pcbList += cbLen + 1; /* Include zero termination. */
-        *pcEnv += 1;           /* Increase env pairs count. */
+        *pcbList += cchEnv + 1; /* Include zero termination. */
+        *pcEnvVars += 1;        /* Increase env variable count. */
     }
     return rc;
 }

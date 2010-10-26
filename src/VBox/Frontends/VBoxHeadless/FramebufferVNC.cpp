@@ -92,8 +92,8 @@ HRESULT VNCFB::init(const char *pszName)
         vncServer->port = mVncPort;
     char *pszDesktopName;
     rc = RTStrAPrintf(&pszDesktopName, "%s - VirtualBox", pszName);
-    if (RT_SUCCESS(rc))
-        vncServer->desktopName = (const char*)pszDesktopName;
+    if (rc >= 0)
+        vncServer->desktopName = pszDesktopName;
     else
         vncServer->desktopName = "VirtualBox";
     if (mVncPassword)
