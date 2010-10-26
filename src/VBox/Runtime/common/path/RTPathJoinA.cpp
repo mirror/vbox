@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathJoin.
+ * IPRT - RTPathJoinA.
  */
 
 /*
@@ -37,21 +37,37 @@
 
 
 
-RTDECL(int) RTPathJoin(char *pszPathDst, size_t cbPathDst, const char *pszPathSrc,
-                       const char *pszAppend)
+RTDECL(char *) RTPathJoinA(const char *pszPathSrc, const char *pszAppend)
 {
-    AssertPtr(pszPathDst);
-    AssertPtr(pszPathSrc);
     AssertPtr(pszAppend);
+    AssertPtr(pszPathSrc);
 
     /*
-     * The easy way: Copy the path into the buffer and call RTPathAppend.
+     * The easy way: Allocate a buffer and call RTPathAppend till it succeeds.
      */
     size_t cchPathSrc = strlen(pszPathSrc);
-    if (cchPathSrc >= cbPathDst)
-        return VERR_BUFFER_OVERFLOW;
-    memcpy(pszPathDst, pszPathSrc, cchPathSrc + 1);
+    size_t cchAppend  = strlen(pszAppend);
+    size_t cbPathDst  = cchPathSrc + cchAppend + 4;
+    char *pszPathDst  = RTStrAlloc(cbPathDst);
+    if (pszPathDst)
+    {
+        memcpy(pszPathDst, pszPathSrc, cchPathSrc + 1);
+        int rc = RTPathAppend(pszPathDst, cbPathDst, pszAppend);
+        if (RT_FAILURE(rc))
+        {
+            /* This shouldn't happen, but if it does try again with a larger buffer... */
+            AssertRC(rc);
 
-    return RTPathAppend(pszPathDst, cbPathDst, pszAppend);
+            rc = RTStrRealloc(&pszPathDst, cbPathDst * 2);
+            if (RT_SUCCESS(rc))
+                rc = RTPathAppend(pszPathDst, cbPathDst, pszAppend);
+            if (RT_FAILURE(rc))
+            {
+                RTStrFree(pszPathDst);
+                pszPathDst = NULL;
+            }
+        }
+    }
+    return pszPathDst;
 }
 
