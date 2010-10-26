@@ -1611,6 +1611,46 @@ def findLogCmd(ctx, args):
 
     return 0
 
+
+def findAssertCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: findAssert vm <num>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+
+    log = 0
+    if (len(args) > 2):
+       log  = args[2]
+
+    uOffset = 0
+    ere = re.compile(r'Expression: ')
+    active = False
+    context = 0
+    while True:
+        # to reduce line splits on buffer boundary
+        data = mach.readLog(log, uOffset, 512*1024)
+        if (len(data) == 0):
+            break
+        d = str(data).split("\n")
+        for s in d:
+            if active:
+                print s
+                if context == 0:
+                    active = False
+                else:
+                    context = context - 1
+                continue
+            m = ere.findall(s)
+            if len(m) > 0:
+                active = True
+                context = 50
+                print s
+        uOffset += len(data)
+
+    return 0
+
 def evalCmd(ctx, args):
    expr = ' '.join(args[1:])
    try:
@@ -3013,6 +3053,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'findLog':['Show entries matching pattern in log file of the VM, : findLog Win32 PDM|CPUM', findLogCmd, 0],
+            'findAssert':['Find assert in log file of the VM, : findAssert Win32', findAssertCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
             'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
             'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
