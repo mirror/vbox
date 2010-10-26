@@ -46,7 +46,7 @@ RTDECL(int) RTPathExecDir(char *pszPath, size_t cchPath)
      * Calc the length and check if there is space before copying.
      */
     size_t cch = g_cchrtProcDir;
-    if (cch <= cchPath)
+    if (cch < cchPath)
     {
         memcpy(pszPath, g_szrtProcExePath, cch);
         pszPath[cch] = '\0';
