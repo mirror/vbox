@@ -244,6 +244,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* General */
     {
         QILabel *pLabel= new QILabel(m_secBoxes.value(GeneralSec));
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateGeneral()));
         m_secBoxes.value(GeneralSec)->setTitleIcon(UIIconPool::iconSet(":/machine_16px.png"));
@@ -255,6 +256,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* System */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateSystem()));
         m_secBoxes.value(SystemSec)->setTitleIcon(UIIconPool::iconSet(":/chipset_16px.png"));
@@ -290,6 +292,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Display */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateDisplay()));
         m_secBoxes.value(DisplaySec)->setTitleIcon(UIIconPool::iconSet(":/vrdp_16px.png"));
@@ -302,6 +305,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Storage */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateStorage()));
         m_secBoxes.value(StorageSec)->setTitleIcon(UIIconPool::iconSet(":/attachment_16px.png"));
@@ -314,6 +318,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Audio */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateAudio()));
         m_secBoxes.value(AudioSec)->setTitleIcon(UIIconPool::iconSet(":/sound_16px.png"));
@@ -326,6 +331,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Network */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateNetwork()));
         m_secBoxes.value(NetworkSec)->setTitleIcon(UIIconPool::iconSet(":/nw_16px.png"));
@@ -338,6 +344,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Serial Ports */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateSerialPorts()));
         m_secBoxes.value(SerialPortsSec)->setTitleIcon(UIIconPool::iconSet(":/serial_port_16px.png"));
@@ -351,6 +358,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Parallel Ports */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateParallelPorts()));
         m_secBoxes.value(ParallelPortsSec)->setTitleIcon(UIIconPool::iconSet(":/parallel_port_16px.png"));
@@ -364,6 +372,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* USB */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateUSB()));
         m_secBoxes.value(USBSec)->setTitleIcon(UIIconPool::iconSet(":/usb_16px.png"));
@@ -376,6 +385,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Shared Folders */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateSharedFolders()));
         m_secBoxes.value(SharedFoldersSec)->setTitleIcon(UIIconPool::iconSet(":/shared_folder_16px.png"));
@@ -388,6 +398,7 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *aParent,
     /* Description */
     {
         QILabel *pLabel= new QILabel(this);
+        pLabel->setWordWrap(true);
         connect(pLabel, SIGNAL(shown()),
                 this, SLOT(sltUpdateDescription()));
         m_secBoxes.value(DescriptionSec)->setTitleIcon(UIIconPool::iconSet(":/description_16px.png"));
