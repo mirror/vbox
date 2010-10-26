@@ -1862,13 +1862,13 @@
         The format of the location string is storage format specific. See
         <link to="IMedium::location"/> and IMedium for more details.
 
-        Prior to VirtualBox 3.3, opening a medium added it to a global media
-        registry in the VirtualBox.xml file, which was shared between
-        all machines and made transporting machines and their media from one
-        host to another difficult.
+        Prior to VirtualBox 4.0, opening a medium added it to a global media
+        registry in the VirtualBox.xml file, which was shared between all machines
+        and made transporting machines and their media from one host to another
+        difficult.
 
-        Starting with VirtualBox 3.3, media are only added to a registry when
-        they are attached to a machine. Machines created with VirtualBox 3.3
+        Starting with VirtualBox 4.0, media are only added to a registry when
+        they are attached to a machine. Machines created with VirtualBox 4.0
         or later can have their own media registry. As a result, a medium attached
         to such a machine will be remembered in that machine's XML settings file.
         Media attached to older machines will continue to be added to the global
@@ -8666,14 +8666,17 @@
 
       <h3>Known media</h3>
 
-      When an existing medium is opened for the first time, it is automatically
-      remembered by the given VirtualBox installation or, in other words, becomes
-      a <i>known medium</i>. Known media are stored in the media
-      registry transparently maintained by VirtualBox and stored in settings
-      files so that this registry is preserved when VirtualBox is not running.
+      When an existing medium is opened and attached to a virtual machine, it
+      is automatically added to a media registry. If the medium has first
+      been attached to a machine which was created by VirtualBox 4.0 or later,
+      it is added to that machine's media registry (in the machine XML settings
+      file; this way all information about a machine's media attachments is
+      contained in a single file). For older media attachments (i.e. if the
+      medium was first attached to a machine which was created with a VirtualBox
+      version before 4.0), media continue to be registered in the global
+      VirtualBox settings file, for backwards compatibility.
 
-      Newly created virtual media are remembered only when the associated
-      storage unit is actually created.
+      See <link to="IVirtualBox::openMedium" /> for more information.
 
       All known media can be enumerated using
       <link to="IVirtualBox::hardDisks"/>,
@@ -14367,7 +14370,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <ul>
         <li>An active listener is very similar to a callback: it is a function invoked
           by the API. As opposed to the callbacks that were used in the API before
-          VirtualBox 3.3 however, events are now objects with an interface hierarchy.
+          VirtualBox 4.0 however, events are now objects with an interface hierarchy.
         </li>
 
         <li>Passive listeners are somewhat tricker to implement, but do not require
