@@ -29,15 +29,20 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/isofs.h>
+
+#include <iprt/file.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
+#include <iprt/string.h>
 
 
 /**
- * Destroys the patch cache.
+ * Destroys the path cache.
  *
  * @param   pFile           ISO handle.
  */
-RTR3DECL(void) rtIsoFsDestroyPathCache(PRTISOFSFILE pFile)
+static void rtIsoFsDestroyPathCache(PRTISOFSFILE pFile)
 {
     PRTISOFSPATHTABLEENTRY pNode = RTListNodeGetFirst(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
     while (pNode)
@@ -68,8 +73,8 @@ RTR3DECL(void) rtIsoFsDestroyPathCache(PRTISOFSFILE pFile)
  * @param   pszPath     Path to add.
  * @param   pHeader     Path header information to add.
  */
-RTR3DECL(int) rtIsoFsAddToPathCache(PRTLISTNODE pList, const char *pszPath,
-                                    RTISOFSPATHTABLEHEADER *pHeader)
+static int rtIsoFsAddToPathCache(PRTLISTNODE pList, const char *pszPath,
+                                 RTISOFSPATHTABLEHEADER *pHeader)
 {
     AssertPtrReturn(pList, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
@@ -105,8 +110,8 @@ RTR3DECL(int) rtIsoFsAddToPathCache(PRTLISTNODE pList, const char *pszPath,
  * @param   pszPathNode     Current (partial) parent path; needed for recursion.
  * @param   ppszPath        Pointer to a pointer to store the retrieved full path to.
  */
-RTR3DECL(int) rtIsoFsGetParentPathSub(PRTLISTNODE pList, PRTISOFSPATHTABLEENTRY pNode,
-                                      char *pszPathNode, char **ppszPath)
+static int rtIsoFsGetParentPathSub(PRTLISTNODE pList, PRTISOFSPATHTABLEENTRY pNode,
+                                   char *pszPathNode, char **ppszPath)
 {
     int rc = VINF_SUCCESS;
     /* Do we have a parent? */
@@ -118,21 +123,18 @@ RTR3DECL(int) rtIsoFsGetParentPathSub(PRTLISTNODE pList, PRTISOFSPATHTABLEENTRY 
         while (idx++ < pNode->header.parent_index)
             pNodeParent =  RTListNodeGetNext(&pNodeParent->Node, RTISOFSPATHTABLEENTRY, Node);
         /* Construct intermediate path (parent + current path). */
-        char *pszPath;
-        if (RTStrAPrintf(&pszPath, "%s/%s", pNodeParent->path, pszPathNode))
+        char *pszPath = RTPathJoinA(pNodeParent->path, pszPathNode);
+        if (pszPath)
         {
             /* ... and do the same with the parent's parent until we reached the root. */
             rc = rtIsoFsGetParentPathSub(pList, pNodeParent, pszPath, ppszPath);
             RTStrFree(pszPath);
         }
         else
-            rc = VERR_NO_MEMORY;
+            rc = VERR_NO_STR_MEMORY;
     }
     else /* No parent (left), this must be the root path then. */
-    {
-        char *pszPath = RTStrDup(pszPathNode);
-        *ppszPath = pszPath;
-    }
+        *ppszPath = RTStrDup(pszPathNode);
     return rc;
 }
 
@@ -143,7 +145,7 @@ RTR3DECL(int) rtIsoFsGetParentPathSub(PRTLISTNODE pList, PRTISOFSPATHTABLEENTRY 
  * @return  IPRT status code.
  * @param   pFile                   ISO handle.
  */
-RTR3DECL(int) rtIsoFsUpdatePathCache(PRTISOFSFILE pFile)
+static int rtIsoFsUpdatePathCache(PRTISOFSFILE pFile)
 {
     AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
     rtIsoFsDestroyPathCache(pFile);
@@ -301,9 +303,9 @@ RTR3DECL(void) RTIsoFsClose(PRTISOFSFILE pFile)
  *                                  directory record. Must be free'd with
  *                                  rtIsoFsFreeDirectoryRecord().
  */
-RTR3DECL(int) rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
-                               uint32_t uExtentSector, uint32_t cbExtent /* Bytes */,
-                               PRTISOFSDIRRECORD *ppRec)
+static int rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
+                            uint32_t uExtentSector, uint32_t cbExtent /* Bytes */,
+                            PRTISOFSDIRRECORD *ppRec)
 {
     AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
     Assert(uExtentSector > 16);
@@ -397,7 +399,7 @@ RTR3DECL(int) rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
  * @param   pszPath             File path to resolve.
  * @param   puSector            Pointer where to store the found sector to.
  */
-RTR3DECL(int) rtIsoFsResolvePath(PRTISOFSFILE pFile, const char *pszPath, uint32_t *puSector)
+static int rtIsoFsResolvePath(PRTISOFSFILE pFile, const char *pszPath, uint32_t *puSector)
 {
     AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
@@ -446,7 +448,7 @@ RTR3DECL(int) rtIsoFsResolvePath(PRTISOFSFILE pFile, const char *pszPath, uint32
  *
  * @return  Pointer to the newly allocated directory record.
  */
-RTR3DECL(PRTISOFSDIRRECORD) rtIsoFsCreateDirectoryRecord(void)
+static PRTISOFSDIRRECORD rtIsoFsCreateDirectoryRecord(void)
 {
     PRTISOFSDIRRECORD pRecord = (PRTISOFSDIRRECORD)RTMemAlloc(sizeof(RTISOFSDIRRECORD));
     return pRecord;
@@ -458,7 +460,7 @@ RTR3DECL(PRTISOFSDIRRECORD) rtIsoFsCreateDirectoryRecord(void)
  *
  * @return  IPRT status code.
  */
-RTR3DECL(void) rtIsoFsFreeDirectoryRecord(PRTISOFSDIRRECORD pRecord)
+static void rtIsoFsFreeDirectoryRecord(PRTISOFSDIRRECORD pRecord)
 {
     RTMemFree(pRecord);
 }
@@ -474,8 +476,8 @@ RTR3DECL(void) rtIsoFsFreeDirectoryRecord(PRTISOFSDIRRECORD pRecord)
  *                                  directory record. Must be free'd with
  *                                  rtIsoFsFreeDirectoryRecord().
  */
-RTR3DECL(int) rtIsoFsGetDirectoryRecord(PRTISOFSFILE pFile, const char *pszPath,
-                                        PRTISOFSDIRRECORD *ppRecord)
+static int rtIsoFsGetDirectoryRecord(PRTISOFSFILE pFile, const char *pszPath,
+                                     PRTISOFSDIRRECORD *ppRecord)
 {
     AssertPtrReturn(pFile, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszPath, VERR_INVALID_PARAMETER);
