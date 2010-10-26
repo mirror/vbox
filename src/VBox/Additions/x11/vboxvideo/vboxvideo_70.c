@@ -483,6 +483,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     Gamma gzeros = {0.0, 0.0, 0.0};
     rgb rzeros = {0, 0, 0};
     int i;
+    unsigned DispiId;
     DisplayModePtr pMode;
     enum { MODE_MIN_SIZE = 64 };
 
@@ -564,6 +565,15 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Using the PCI information caused problems with non-powers-of-two
        sized video RAM configurations */
     pScrn->videoRam = inl(VBE_DISPI_IOPORT_DATA) / 1024;
+
+    /* Check if the chip restricts horizontal resolution or not. */
+    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    outw(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_ANYX);
+    DispiId = inw(VBE_DISPI_IOPORT_DATA);
+    if (DispiId == VBE_DISPI_ID_ANYX)
+        pVBox->fAnyX = TRUE;
+    else
+        pVBox->fAnyX = FALSE;
 
     /* Set up clock information that will support all modes we need. */
     pScrn->clockRanges = xnfcalloc(sizeof(ClockRange), 1);

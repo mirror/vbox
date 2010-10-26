@@ -1033,14 +1033,19 @@ vboxRetrieveVideoMode(ScrnInfoPtr pScrn, uint32_t *pcx, uint32_t *pcy, uint32_t 
  * Fills a display mode M with a built-in mode of name pszName and dimensions
  * cx and cy.
  */
-static void vboxFillDisplayMode(DisplayModePtr m, const char *pszName,
-                                unsigned cx, unsigned cy)
+static void vboxFillDisplayMode(ScrnInfoPtr pScrn, DisplayModePtr m,
+                                const char *pszName, unsigned cx, unsigned cy)
 {
+    VBOXPtr pVBox = pScrn->driverPrivate;
     TRACE_LOG("pszName=%s, cx=%u, cy=%u\n", pszName, cx, cy);
     m->status        = MODE_OK;
     m->type          = M_T_BUILTIN;
-    /* VBox only supports screen widths which are a multiple of 8 */
-    m->HDisplay      = cx & ~7;
+    /* Older versions of VBox only support screen widths which are a multiple
+     * of 8 */
+    if (pVBox->fAnyX)
+        m->HDisplay  = cx;
+    else
+        m->HDisplay  = cx & ~7;
     m->HSyncStart    = m->HDisplay + 2;
     m->HSyncEnd      = m->HDisplay + 4;
     m->HTotal        = m->HDisplay + 6;
@@ -1154,9 +1159,6 @@ void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t *pcx,
             found = vboxRetrieveVideoMode(pScrn, &cx, &cy, &cBits);
         if ((cx == 0) || (cy == 0))
             found = false;
-        if (found)
-            /* Adjust to a multiple of eight */
-            cx &= ~7;
         if (!found)
             found = (vboxNextStandardMode(pScrn, 0, &cx, &cy, &cBits) != 0);
         if (!found)
@@ -1235,9 +1237,9 @@ void vboxWriteHostModes(ScrnInfoPtr pScrn, DisplayModePtr pCurrent)
             && !strcmp(pMode->name, "VBoxDynamicMode"))
         {
             if (!found)
-                vboxFillDisplayMode(pMode, NULL, cx, cy);
+                vboxFillDisplayMode(pScrn, pMode, NULL, cx, cy);
             else if (pCurrent)
-                vboxFillDisplayMode(pMode, NULL, pCurrent->HDisplay,
+                vboxFillDisplayMode(pScrn, pMode, NULL, pCurrent->HDisplay,
                                     pCurrent->VDisplay);
             found = true;
             pMode = vboxMoveModeToFront(pScrn, pMode);
@@ -1307,12 +1309,12 @@ void vboxAddModes(ScrnInfoPtr pScrn, uint32_t cxInit, uint32_t cyInit)
      * approach to dynamic resizing isn't quite the way RandR was intended to
      * be, and breaks the second assumption, we guarantee the first. */
     DisplayModePtr pMode = vboxAddEmptyScreenMode(pScrn);
-    vboxFillDisplayMode(pMode, "VBoxInitialMode", cxInit, cyInit);
+    vboxFillDisplayMode(pScrn, pMode, "VBoxInitialMode", cxInit, cyInit);
     /* Create our two dynamic modes. */
     pMode = vboxAddEmptyScreenMode(pScrn);
-    vboxFillDisplayMode(pMode, "VBoxDynamicMode", cxInit, cyInit);
+    vboxFillDisplayMode(pScrn, pMode, "VBoxDynamicMode", cxInit, cyInit);
     pMode = vboxAddEmptyScreenMode(pScrn);
-    vboxFillDisplayMode(pMode, "VBoxDynamicMode", cxInit, cyInit);
+    vboxFillDisplayMode(pScrn, pMode, "VBoxDynamicMode", cxInit, cyInit);
     /* Add standard modes supported by the host */
     for ( ; ; )
     {
@@ -1322,7 +1324,7 @@ void vboxAddModes(ScrnInfoPtr pScrn, uint32_t cxInit, uint32_t cyInit)
             break;
         sprintf(szName, "VBox-%ux%u", cx, cy);
         pMode = vboxAddEmptyScreenMode(pScrn);
-        vboxFillDisplayMode(pMode, szName, cx, cy);
+        vboxFillDisplayMode(pScrn, pMode, szName, cx, cy);
     }
     /* And finally any modes specified by the user.  We assume here that
      * the mode names reflect the mode sizes. */
@@ -1332,7 +1334,7 @@ void vboxAddModes(ScrnInfoPtr pScrn, uint32_t cxInit, uint32_t cyInit)
         if (sscanf(pScrn->display->modes[i], "%ux%u", &cx, &cy) == 2)
         {
             pMode = vboxAddEmptyScreenMode(pScrn);
-            vboxFillDisplayMode(pMode, pScrn->display->modes[i], cx, cy);
+            vboxFillDisplayMode(pScrn, pMode, pScrn->display->modes[i], cx, cy);
         }
     }
 }

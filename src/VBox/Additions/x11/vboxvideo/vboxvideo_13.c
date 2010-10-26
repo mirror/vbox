@@ -201,9 +201,6 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
     Bool rc = TRUE;
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
-    /* We only support horizontal resolutions which are a multiple of 8.
-     * Round up if necessary. */
-    width = (width + 7) & ~7;
     if (width * height * bpp / 8 >= scrn->videoRam * 1024)
     {
         xf86DrvMsg(scrn->scrnIndex, X_ERROR,
@@ -260,24 +257,7 @@ vbox_crtc_lock (xf86CrtcPtr crtc)
 static Bool
 vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
                       DisplayModePtr adjusted_mode)
-{
-    ScrnInfoPtr pScrn = crtc->scrn;
-    int xRes = adjusted_mode->HDisplay;
-
-    (void) mode;
-    TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d\n", adjusted_mode->name,
-           adjusted_mode->HDisplay, adjusted_mode->VDisplay);
-    /* We only support horizontal resolutions which are a multiple of 8.  Round down if
-       necessary. */
-    if (xRes % 8 != 0)
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-                   "VirtualBox only supports screen widths which are a multiple of 8.  Rounding down from %d to %d\n",
-                   xRes, xRes - (xRes % 8));
-        adjusted_mode->HDisplay = xRes - (xRes % 8);
-    }
-    return TRUE;
-}
+{ (void) crtc; (void) mode; (void) adjusted_mode; return TRUE; }
 
 static void
 vbox_crtc_stub (xf86CrtcPtr crtc)
@@ -378,7 +358,8 @@ vbox_output_detect (xf86OutputPtr output)
 }
 
 static void
-vbox_output_add_mode (DisplayModePtr *pModes, const char *pszName, int x, int y,
+vbox_output_add_mode (VBOXPtr pVBox, DisplayModePtr *pModes,
+                      const char *pszName, int x, int y,
                       Bool isPreferred, Bool isUserDef)
 {
     TRACE_LOG("pszName=%s, x=%d, y=%d\n", pszName, x, y);
@@ -390,8 +371,12 @@ vbox_output_add_mode (DisplayModePtr *pModes, const char *pszName, int x, int y,
     pMode->type          = isUserDef ? M_T_USERDEF : M_T_BUILTIN;
     if (isPreferred)
         pMode->type     |= M_T_PREFERRED;
-    /* VBox only supports screen widths which are a multiple of 8 */
-    pMode->HDisplay      = (x + 7) & ~7;
+    /* Older versions of VBox only support screen widths which are a multiple
+     * of 8 */
+    if (pVBox->fAnyX)
+        pMode->HDisplay  = x;
+    else
+        pMode->HDisplay  = x & ~7;
     pMode->HSyncStart    = pMode->HDisplay + 2;
     pMode->HSyncEnd      = pMode->HDisplay + 4;
     pMode->HTotal        = pMode->HDisplay + 6;
@@ -427,11 +412,8 @@ vbox_output_get_modes (xf86OutputPtr output)
          * from a previous session. */
         if (!rc || (0 == x) || (0 == y))
             rc = vboxRetrieveVideoMode(pScrn, &x, &y, &bpp);
-        if (rc && (0 != x) && (0 != y)) {
-            /* We prefer a slightly smaller size to a slightly larger one */
-            x -= (x % 8);
-            vbox_output_add_mode(&pModes, NULL, x, y, TRUE, FALSE);
-        }
+        if (rc && (0 != x) && (0 != y))
+            vbox_output_add_mode(pVBox, &pModes, NULL, x, y, TRUE, FALSE);
     }
     /* Also report any modes the user may have requested in the xorg.conf
      * configuration file. */
@@ -439,7 +421,7 @@ vbox_output_get_modes (xf86OutputPtr output)
     {
         int x, y;
         if (2 == sscanf(pScrn->display->modes[i], "%dx%d", &x, &y))
-            vbox_output_add_mode(&pModes, pScrn->display->modes[i], x, y,
+            vbox_output_add_mode(pVBox, &pModes, pScrn->display->modes[i], x, y,
                                  FALSE, TRUE);
     }
     TRACE_EXIT();
@@ -666,6 +648,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     Gamma gzeros = {0.0, 0.0, 0.0};
     rgb rzeros = {0, 0, 0};
     xf86OutputPtr output;
+    unsigned DispiId;
 
     /* Are we really starting the server, or is this just a dummy run? */
     if (flags & PROBE_DETECT)
@@ -732,6 +715,15 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Using the PCI information caused problems with non-powers-of-two
        sized video RAM configurations */
     pScrn->videoRam = inl(VBE_DISPI_IOPORT_DATA) / 1024;
+
+    /* Check if the chip restricts horizontal resolution or not. */
+    outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    outw(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_ANYX);
+    DispiId = inw(VBE_DISPI_IOPORT_DATA);
+    if (DispiId == VBE_DISPI_ID_ANYX)
+        pVBox->fAnyX = TRUE;
+    else
+        pVBox->fAnyX = FALSE;
 
     /* Query the host for the preferred colour depth */
     {
@@ -897,7 +889,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
 
     /* Needed before we initialise DRI. */
-    pScrn->virtualX = (pScrn->virtualX + 7) & ~7;
     pScrn->displayWidth = pScrn->virtualX;
 
 #ifdef VBOX_DRI

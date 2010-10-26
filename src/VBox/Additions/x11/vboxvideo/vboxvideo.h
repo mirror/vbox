@@ -136,6 +136,7 @@ if (!(expr)) \
 #define VBE_DISPI_INDEX_VIRT_WIDTH      0x6
 #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
 #define VBE_DISPI_ID2                   0xB0C2
+#define VBE_DISPI_ID_ANYX               0xBE02
 #define VBE_DISPI_DISABLED              0x00
 #define VBE_DISPI_ENABLED               0x01
 #define VBE_DISPI_LFB_ENABLED           0x40
@@ -219,6 +220,7 @@ typedef struct _VBOXRec
     int viewportX, viewportY;
     VMMDevMemory *pVMMDevMemory;
     VBVAMEMORY *pVbvaMemory;
+    Bool fAnyX;   /* Unrestricted horizontal resolution flag. */
 #ifdef VBOX_DRI
     Bool useDRI;
     int cVisualConfigs;
