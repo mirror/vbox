@@ -2263,7 +2263,7 @@
 
   <interface
      name="IVFSExplorer" extends="$unknown"
-     uuid="2bb864a1-02a3-4474-a1d4-fb5f23b742e1"
+     uuid="003d7f92-d38e-487f-b790-8c5e8631cb2f"
      wsmap="managed"
      >
     <desc>
@@ -2322,6 +2322,14 @@
 
       <param name="aTypes" type="unsigned long" safearray="yes" dir="out">
         <desc>The list of types for the entries.</desc>
+      </param>
+
+      <param name="aSizes" type="unsigned long" safearray="yes" dir="out">
+        <desc>The list of sizes (in bytes) for the entries.</desc>
+      </param>
+
+      <param name="aModes" type="unsigned long" safearray="yes" dir="out">
+        <desc>The list of file modes (in octal form) for the entries.</desc>
       </param>
     </method>
 

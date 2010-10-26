@@ -47,12 +47,16 @@ struct VFSExplorer::Data
 {
     struct DirEntry
     {
-        DirEntry(Utf8Str aName, VFSFileType_T aType)
-          : name(aName)
-          , type(aType) {}
+        DirEntry(Utf8Str strName, VFSFileType_T fileType, uint64_t cbSize, uint32_t fMode)
+          : name(strName)
+          , type(fileType)
+          , size(cbSize)
+          , mode(fMode) {}
 
         Utf8Str name;
         VFSFileType_T type;
+        uint64_t size;
+        uint32_t mode;
     };
 
     VFSType_T storageType;
@@ -259,20 +263,25 @@ int VFSExplorer::TaskVFSExplorer::uploadProgress(unsigned uPercent, void *pvUser
 
 VFSFileType_T VFSExplorer::RTToVFSFileType(int aType) const
 {
-    VFSFileType_T t;
-    switch(aType)
-    {
-        default:
-        case RTDIRENTRYTYPE_UNKNOWN: t = VFSFileType_Unknown; break;
-        case RTDIRENTRYTYPE_FIFO: t = VFSFileType_Fifo; break;
-        case RTDIRENTRYTYPE_DEV_CHAR: t = VFSFileType_DevChar; break;
-        case RTDIRENTRYTYPE_DIRECTORY: t = VFSFileType_Directory; break;
-        case RTDIRENTRYTYPE_DEV_BLOCK: t = VFSFileType_DevBlock; break;
-        case RTDIRENTRYTYPE_FILE: t = VFSFileType_File; break;
-        case RTDIRENTRYTYPE_SYMLINK: t = VFSFileType_SymLink; break;
-        case RTDIRENTRYTYPE_SOCKET: t = VFSFileType_Socket; break;
-        case RTDIRENTRYTYPE_WHITEOUT: t = VFSFileType_WhiteOut; break;
-    }
+    int a = aType & RTFS_TYPE_MASK;
+    VFSFileType_T t = VFSFileType_Unknown;
+    if ((a & RTFS_TYPE_DIRECTORY) == RTFS_TYPE_DIRECTORY)
+        t = VFSFileType_Directory;
+    else if ((a & RTFS_TYPE_FILE) == RTFS_TYPE_FILE)
+        t = VFSFileType_File;
+    else if ((a & RTFS_TYPE_SYMLINK) == RTFS_TYPE_SYMLINK)
+        t = VFSFileType_SymLink;
+    else if ((a & RTFS_TYPE_FIFO) == RTFS_TYPE_FIFO)
+        t = VFSFileType_Fifo;
+    else if ((a & RTFS_TYPE_DEV_CHAR) == RTFS_TYPE_DEV_CHAR)
+        t = VFSFileType_DevChar;
+    else if ((a & RTFS_TYPE_DEV_BLOCK) == RTFS_TYPE_DEV_BLOCK)
+        t = VFSFileType_DevBlock;
+    else if ((a & RTFS_TYPE_SOCKET) == RTFS_TYPE_SOCKET)
+        t = VFSFileType_Socket;
+    else if ((a & RTFS_TYPE_WHITEOUT) == RTFS_TYPE_WHITEOUT)
+        t = VFSFileType_WhiteOut;
+
     return t;
 }
 
@@ -298,16 +307,16 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
 
         if (aTask->progress)
             aTask->progress->SetCurrentOperationProgress(33);
-        RTDIRENTRY entry;
+        RTDIRENTRYEX entry;
         while (RT_SUCCESS(vrc))
         {
-            vrc = RTDirRead(pDir, &entry, NULL);
+            vrc = RTDirReadEx(pDir, &entry, NULL, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
             if (RT_SUCCESS(vrc))
             {
                 Utf8Str name(entry.szName);
-                if (name != "." &&
-                    name != "..")
-                    fileList.push_back(VFSExplorer::Data::DirEntry(name, RTToVFSFileType(entry.enmType)));
+                if (   name != "."
+                    && name != "..")
+                    fileList.push_back(VFSExplorer::Data::DirEntry(name, RTToVFSFileType(entry.Info.Attr.fMode), entry.Info.cbObject, entry.Info.Attr.fMode & (RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG | RTFS_UNIX_IRWXO)));
             }
         }
         if (aTask->progress)
@@ -420,7 +429,8 @@ HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
             PCRTS3BUCKETENTRY pTmpBuckets = pBuckets;
             while (pBuckets)
             {
-                fileList.push_back(VFSExplorer::Data::DirEntry(pBuckets->pszName, VFSFileType_Directory));
+                /* Set always read/write permissions of the current logged in user. */
+                fileList.push_back(VFSExplorer::Data::DirEntry(pBuckets->pszName, VFSFileType_Directory, 0, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
                 pBuckets = pBuckets->pNext;
             }
             RTS3BucketsDestroy(pTmpBuckets);
@@ -436,7 +446,8 @@ HRESULT VFSExplorer::updateS3(TaskVFSExplorer *aTask)
             while (pKeys)
             {
                 Utf8Str name(pKeys->pszName);
-                fileList.push_back(VFSExplorer::Data::DirEntry(pKeys->pszName, VFSFileType_File));
+                /* Set always read/write permissions of the current logged in user. */
+                fileList.push_back(VFSExplorer::Data::DirEntry(pKeys->pszName, VFSFileType_File, pKeys->cbFile, RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR));
                 pKeys = pKeys->pNext;
             }
             RTS3KeysDestroy(pTmpKeys);
@@ -598,7 +609,7 @@ STDMETHODIMP VFSExplorer::CdUp(IProgress **aProgress)
     return Cd(Bstr(strUpPath).raw(), aProgress);
 }
 
-STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes))
+STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes), ComSafeArrayOut(ULONG, aSizes), ComSafeArrayOut(ULONG, aModes))
 {
     if (ComSafeArrayOutIsNull(aNames) ||
         ComSafeArrayOutIsNull(aTypes))
@@ -609,8 +620,10 @@ STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayO
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> sfaNames((ULONG)m->entryList.size());
-    com::SafeArray<ULONG> sfaTypes((VFSFileType_T)m->entryList.size());
+    com::SafeArray<BSTR> sfaNames(m->entryList.size());
+    com::SafeArray<ULONG> sfaTypes(m->entryList.size());
+    com::SafeArray<ULONG> sfaSizes(m->entryList.size());
+    com::SafeArray<ULONG> sfaModes(m->entryList.size());
 
     std::list<VFSExplorer::Data::DirEntry>::const_iterator it;
     size_t i = 0;
@@ -622,10 +635,14 @@ STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayO
         Bstr bstr(entry.name);
         bstr.cloneTo(&sfaNames[i]);
         sfaTypes[i] = entry.type;
+        sfaSizes[i] = entry.size;
+        sfaModes[i] = entry.mode;
     }
 
     sfaNames.detachTo(ComSafeArrayOutArg(aNames));
     sfaTypes.detachTo(ComSafeArrayOutArg(aTypes));
+    sfaSizes.detachTo(ComSafeArrayOutArg(aSizes));
+    sfaModes.detachTo(ComSafeArrayOutArg(aModes));
 
     return S_OK;
 }

@@ -57,7 +57,7 @@ class ATL_NO_VTABLE VFSExplorer :
     STDMETHOD(Cd)(IN_BSTR aDir, IProgress **aProgress);
     STDMETHOD(CdUp)(IProgress **aProgress);
 
-    STDMETHOD(EntryList)(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes));
+    STDMETHOD(EntryList)(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes), ComSafeArrayOut(ULONG, aSizes), ComSafeArrayOut(ULONG, aModes));
 
     STDMETHOD(Exists)(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOut(BSTR, aExists));
 
