@@ -232,14 +232,17 @@ int handleCreateVM(HandlerArg *a)
 
     do
     {
-        ComPtr<IMachine> machine;
-
+        Bstr bstrSettingsFile;
         CHECK_ERROR_BREAK(a->virtualBox,
-                          CreateMachine(name.raw(),
+                          ComposeMachineFilename(name.raw(),
+                                                 baseFolder.raw(),
+                                                 bstrSettingsFile.asOutParam()));
+        ComPtr<IMachine> machine;
+        CHECK_ERROR_BREAK(a->virtualBox,
+                          CreateMachine(bstrSettingsFile.raw(),
+                                        name.raw(),
                                         osTypeId.raw(),
-                                        baseFolder.raw(),
                                         Guid(id).toUtf16().raw(),
-                                        FALSE,
                                         machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());

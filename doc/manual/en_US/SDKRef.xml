@@ -3441,6 +3441,16 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         </listitem>
 
         <listitem>
+          <para><xref linkend="IVirtualBox__createMachine"
+          xreflabel="IVirtualBox::createMachine()" /> is no longer restricted
+          to creating machines in the default "Machines" folder, but can now
+          create machines at arbitrary locations. For this to work, the
+          parameter list had to be changed. The "Override" parameter has been
+          removed since the target files can now be known before the call and
+          the caller can remove the files in question.</para>
+        </listitem>
+
+        <listitem>
           <para>IConsole::forgetSavedState has been renamed to <xref
           linkend="IConsole__discardSavedState"
           xreflabel="IConsole::discardSavedState()" />.</para>
@@ -3503,6 +3513,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <computeroutput>location</computeroutput>, which is used to decide
           for the disk nameing.</para>
         </listitem>
+
         <listitem>
           <para><xref linkend="IAppliance__write"
           xreflabel="IAppliance::write()" /> received an extra parameter

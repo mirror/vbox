@@ -332,9 +332,7 @@ public:
                  const Utf8Str &strConfigFile,
                  const Utf8Str &strName,
                  const Guid &aId,
-                 GuestOSType *aOsType = NULL,
-                 BOOL aOverride = FALSE,
-                 BOOL aNameSync = TRUE);
+                 GuestOSType *aOsType = NULL);
 
     // initializer for loading existing machine XML (either registered or not)
     HRESULT init(VirtualBox *aParent,
@@ -358,7 +356,7 @@ protected:
                      const Utf8Str &strConfigFile);
     HRESULT initDataAndChildObjects();
     HRESULT registeredInit();
-    HRESULT tryCreateMachineConfigFile(BOOL aOverride);
+    HRESULT tryCreateMachineConfigFile();
     void uninitDataAndChildObjects();
 
 public:

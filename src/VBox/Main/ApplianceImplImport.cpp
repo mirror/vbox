@@ -1815,11 +1815,10 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (FAILED(rc)) throw rc;
 
     /* Create the machine */
-    rc = mVirtualBox->CreateMachine(Bstr(stack.strNameVBox).raw(),
+    rc = mVirtualBox->CreateMachine(NULL, /* machine name: use default */
+                                    Bstr(stack.strNameVBox).raw(),
                                     Bstr(stack.strOsTypeVBox).raw(),
-                                    NULL,
-                                    NULL,
-                                    FALSE,
+                                    NULL, /* uuid */
                                     pNewMachine.asOutParam());
     if (FAILED(rc)) throw rc;
 

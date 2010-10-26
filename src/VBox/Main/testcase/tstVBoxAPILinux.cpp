@@ -188,9 +188,12 @@ void createVM(IVirtualBox *virtualBox)
      * First create a unnamed new VM. It will be unconfigured and not be saved
      * in the configuration until we explicitely choose to do so.
      */
-    nsCOMPtr <IMachine> machine;
-    rc = virtualBox->CreateMachine(NS_LITERAL_STRING("A brand new name").get(),
-                                   nsnull, nsnull, nsnull, false, getter_AddRefs(machine));
+    nsCOMPtr<IMachine> machine;
+    rc = virtualBox->CreateMachine(NULL,
+                                   NS_LITERAL_STRING("A brand new name").get(),
+                                   nsnull,
+                                   false,
+                                   getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {
         printf("Error: could not create machine! rc=%08X\n", rc);
@@ -214,7 +217,7 @@ void createVM(IVirtualBox *virtualBox)
      * its description (win2k would be "Windows 2000") by getting the
      * guest OS type collection and enumerating it.
      */
-    nsCOMPtr <IGuestOSType> osType;
+    nsCOMPtr<IGuestOSType> osType;
     rc = virtualBox->GetGuestOSType(NS_LITERAL_STRING("win2k").get(),
                                     getter_AddRefs(osType));
     if (NS_FAILED(rc))

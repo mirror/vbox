@@ -1515,10 +1515,23 @@
 
     <method name="composeMachineFilename">
       <desc>
-        Returns the full path of the settings file name that <link to="#createMachine" />
-        would use. This method gets called by createMachine(), but calling this method
-        independently might be helpful if one needs to create the machine directory
-        to place files (such as disk images) there before actually creating the machine.
+        Returns a recommended full path of the settings file name for a new virtual
+        machine.
+
+        This API serves two purposes:
+
+        <ul>
+          <li>It gets called by <link to="#createMachine" /> if NULL is specified
+          for the @a settingsFile argument there, which means that API should use
+          a recommended default file name.</li>
+
+          <li>It can be called manually by a client software before creating a machine,
+            e.g. if that client wants to pre-create the machine directory to create
+            virtual hard disks in that directory together with the new machine
+            settings file. In that case, the file name should be stripped from the
+            full settings file path returned by this function to obtain the
+            machine directory.</li>
+        </ul>
 
         See the <link to="IMachine::name"/> attribute description for more details about
         the machine name.
@@ -1528,23 +1541,22 @@
         <i>machine settings subfolder</i>. Both the settings subfolder and file
         will have a name that corresponds to the name of the virtual machine.
         You can specify where to create the machine setting subfolder using the
-        @a baseFolder argument. The base folder can be absolute (full path) or
-        relative to the <link to="IVirtualBox::homeFolder">VirtualBox home
-        directory</link>.
+        @a baseFolder argument.
 
         If @a baseFolder is a @c null or empty string (which is recommended), the
-        <link to="ISystemProperties::defaultMachineFolder">default machine
-        settings folder</link> will be used as a base folder for the created
-        machine. Otherwise the given base folder will be used. In either case,
-        the full path to the resulting settings file has the following
-        structure:
+        default machine settings folder
+        (see <link to="ISystemProperties::defaultMachineFolder" />) will be used as
+        a base folder for the created machine. Otherwise the given base folder
+        will be used.
+
+        In either case, the full path to the resulting settings file has the
+        following structure:
         <pre>
           &lt;base_folder&gt;/&lt;machine_name&gt;/&lt;machine_name&gt;.xml
         </pre>
 
-
-        This method does not access the host disks. In particular, it does not check for
-        whether a machine of this name already exists.
+        This method does not access the host disks. In particular, it does not check
+        for whether a machine of this name already exists.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Suggested machine name.</desc>
@@ -1559,7 +1571,20 @@
 
     <method name="createMachine">
       <desc>
-        Creates a new virtual machine.
+        Creates a new virtual machine by creating a machine settings file at
+        the given location.
+
+        VirtualBox machine settings files use a custom XML dialect. Starting
+        with VirtualBox 4.0, a ".vbox" extension is recommended, but not enforced,
+        and machine files can be created at arbitrary locations. However, it is
+        is recommended that machines are created in the "VirtualBox VMs" folder
+        created in the user's home directory
+        (e.g. "/home/user/VirtualBox VMs/name/name.vbox").
+
+        If you specify NULL for the @a settingsFile argument,
+        <link to="#composeMachineFilename" /> is called automatically to have
+        such a recommended name composed based on the machine name given in
+        the @a name argument.
 
         The new machine is created unregistered, with the initial configuration
         set according to the specified guest OS type. A typical sequence of
@@ -1592,10 +1617,6 @@
         guest OS types listed in the <link to="IVirtualBox::guestOSTypes"/>
         array.
 
-        This method uses the <link to="#composeMachineFilename" /> method to determine
-        where to create the machine's directory and settings file. Please refer
-        to the additional remarks and restrictions there.
-
         If the resulting settings file already exists, this method will fail
         with <link to="VBOX_E_FILE_ERROR"/>.
 
@@ -1622,20 +1643,19 @@
         </result>
       </desc>
 
+      <param name="settingsFile" type="wstring" dir="in">
+        <desc>Fully qualified path where the settings file should be created,
+        or NULL for a default folder and file based on the @a name argument
+        (see <link to="#composeMachineFilename" />).</desc>
+      </param>
       <param name="name" type="wstring" dir="in">
         <desc>Machine name.</desc>
       </param>
       <param name="osTypeId" type="wstring" dir="in">
         <desc>Guest OS Type ID.</desc>
       </param>
-      <param name="baseFolder" type="wstring" dir="in">
-        <desc>Base machine folder (optional).</desc>
-      </param>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>Machine UUID (optional).</desc>
-      </param>
-      <param name="override" type="boolean" dir="in">
-        <desc>Create the VM even if there are conflicting files.</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>

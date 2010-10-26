@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
                "   - webtest gethost <vboxref>: IVirtualBox::getHost().\n"
                "   - webtest getpc <vboxref>: IVirtualBox::getPerformanceCollector().\n"
                "   - webtest getmachines <vboxref>: IVirtualBox::getMachines().\n"
-               "   - webtest createmachine <vboxref> <baseFolder> <name>: IVirtualBox::createMachine().\n"
+               "   - webtest createmachine <vboxref> <settingsPath> <name>: IVirtualBox::createMachine().\n"
                "   - webtest registermachine <vboxref> <machineref>: IVirtualBox::registerMachine().\n"
                " - IHost:\n"
                "   - webtest getdvddrives <hostref>: IHost::getDVDDrives.\n"
@@ -224,9 +224,9 @@ int main(int argc, char* argv[])
         {
             _vbox__IVirtualBox_USCOREcreateMachine req;
             req._USCOREthis = argv[2];
-            req.baseFolder = argv[3];
+            req.settingsFile = argv[3];
             req.name = argv[4];
-            std::cout << "createmachine: baseFolder = \"" << req.baseFolder << "\", name = \"" << req.name << "\"\n";
+            std::cout << "createmachine: settingsFile = \"" << req.settingsFile << "\", name = \"" << req.name << "\"\n";
             _vbox__IVirtualBox_USCOREcreateMachineResponse resp;
 
             if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREcreateMachine(&soap,
