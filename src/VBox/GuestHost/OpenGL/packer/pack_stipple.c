@@ -11,7 +11,7 @@
 
 void PACK_APIENTRY crPackPolygonStipple( const GLubyte *mask )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int nodata = crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     int packet_length = sizeof(int);
@@ -21,7 +21,7 @@ void PACK_APIENTRY crPackPolygonStipple( const GLubyte *mask )
     else
         packet_length += 32*32/8;
 
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA_AI(int, nodata);
     if (nodata)
     {
@@ -32,4 +32,5 @@ void PACK_APIENTRY crPackPolygonStipple( const GLubyte *mask )
        crMemcpy( data_ptr, mask, 32*32/8 );
     }
     WRITE_OPCODE( pc, CR_POLYGONSTIPPLE_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

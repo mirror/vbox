@@ -9,7 +9,7 @@
 
 static void __handleMaterialData( GLenum face, GLenum pname, const GLfloat *params )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned int packet_length = sizeof( int ) + sizeof( face ) + sizeof( pname );
     unsigned int params_length = 0;
     unsigned char *data_ptr;
@@ -34,7 +34,7 @@ static void __handleMaterialData( GLenum face, GLenum pname, const GLfloat *para
     }
     packet_length += params_length;
 
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, int, packet_length );
     WRITE_DATA( sizeof( int ) + 0, GLenum, face );
     WRITE_DATA( sizeof( int ) + 4, GLenum, pname );
@@ -52,15 +52,17 @@ static void __handleMaterialData( GLenum face, GLenum pname, const GLfloat *para
 
 void PACK_APIENTRY crPackMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     __handleMaterialData( face, pname, params );
     WRITE_OPCODE( pc, CR_MATERIALFV_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackMaterialiv(GLenum face, GLenum pname, const GLint *params)
 {
     /* floats and ints are the same size, so the packing should be the same */
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     __handleMaterialData( face, pname, (const GLfloat *) params );
     WRITE_OPCODE( pc, CR_MATERIALIV_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

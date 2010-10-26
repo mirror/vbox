@@ -9,7 +9,7 @@
 
 static GLboolean __handleLightData( GLenum light, GLenum pname, const GLfloat *params )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned int packet_length = sizeof( int ) + sizeof( light ) + sizeof( pname );
     unsigned int params_length = 0;
     unsigned char *data_ptr;
@@ -37,7 +37,7 @@ static GLboolean __handleLightData( GLenum light, GLenum pname, const GLfloat *p
             return GL_FALSE;
     }
     packet_length += params_length;
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, int, packet_length );
     WRITE_DATA( sizeof( int ) + 0, GLenum, light );
     WRITE_DATA( sizeof( int ) + 4, GLenum, pname );
@@ -56,22 +56,24 @@ static GLboolean __handleLightData( GLenum light, GLenum pname, const GLfloat *p
 
 void PACK_APIENTRY crPackLightfv (GLenum light, GLenum pname, const GLfloat *params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handleLightData( light, pname, params ))
         WRITE_OPCODE( pc, CR_LIGHTFV_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackLightiv (GLenum light, GLenum pname, const GLint *params)
 {
     /* floats and ints are the same size, so the packing should be the same */
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handleLightData( light, pname, (const GLfloat *) params ))
         WRITE_OPCODE( pc, CR_LIGHTIV_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 static GLboolean __handleLightModelData( GLenum pname, const GLfloat *params )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned int packet_length = sizeof( int ) + sizeof( pname );
     unsigned int params_length = 0;
     unsigned char *data_ptr;
@@ -90,7 +92,7 @@ static GLboolean __handleLightModelData( GLenum pname, const GLfloat *params )
             return GL_FALSE;
     }
     packet_length += params_length;
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, int, packet_length );
     WRITE_DATA( sizeof( int ) + 0, GLenum, pname );
     WRITE_DATA( sizeof( int ) + 4, GLfloat, params[0] );
@@ -105,15 +107,17 @@ static GLboolean __handleLightModelData( GLenum pname, const GLfloat *params )
 
 void PACK_APIENTRY crPackLightModelfv (GLenum pname, const GLfloat *params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handleLightModelData( pname, params ))
         WRITE_OPCODE( pc, CR_LIGHTMODELFV_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackLightModeliv (GLenum pname, const GLint *params)
 {
     /* floats and ints are the same size, so the packing should be the same */
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handleLightModelData( pname, (const GLfloat *) params ))
         WRITE_OPCODE( pc, CR_LIGHTMODELIV_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

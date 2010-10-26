@@ -117,7 +117,7 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     else:
         print 'void PACK_APIENTRY crPack%s( %s )' % (func_name, apiutil.MakeDeclarationString(params))
     print '{'
-    print '\tGET_PACKER_CONTEXT(pc);'
+    print '\tCR_GET_PACKER_CONTEXT(pc);'
 
     # Save original function name
     orig_func_name = func_name
@@ -167,16 +167,16 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
     packet_length = apiutil.PacketLength(nonVecParams)
 
     if packet_length == 0 and not is_extended:
-        print "\tGET_BUFFERED_POINTER_NO_ARGS( pc );"
+        print "\tCR_GET_BUFFERED_POINTER_NO_ARGS( pc );"
     elif func_name[:9] == "Translate" or func_name[:5] == "Color":
         # XXX WTF is the purpose of this?
         if is_extended:
             packet_length += 8
-        print "\tGET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, %d );" % packet_length
+        print "\tCR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, %d, GL_TRUE );" % packet_length
     else:
         if is_extended:
             packet_length += 8
-        print "\tGET_BUFFERED_POINTER( pc, %d );" % packet_length
+        print "\tCR_GET_BUFFERED_POINTER( pc, %d );" % packet_length
     UpdateCurrentPointer( func_name )
 
     if is_extended:
@@ -208,6 +208,8 @@ def PrintFunc( func_name, params, is_swapped, can_have_pointers ):
         print "\tWRITE_OPCODE( pc, CR_EXTEND_OPCODE );"
     else:
         print "\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name )
+
+    print '\tCR_UNLOCK_PACKER_CONTEXT(pc);'
     print '}\n'
 
 

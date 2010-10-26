@@ -258,27 +258,33 @@ int crPackCanHoldBuffer( const CRPackBuffer *src )
 {
 	const int num_data = crPackNumData(src);
 	const int num_opcode = crPackNumOpcodes(src);
-	GET_PACKER_CONTEXT(pc);
-	return crPackCanHoldOpcode( pc, num_opcode, num_data );
+    int res;
+	CR_GET_PACKER_CONTEXT(pc);
+    CR_LOCK_PACKER_CONTEXT(pc);
+	res = crPackCanHoldOpcode( pc, num_opcode, num_data );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
+    return res;
 }
 
 
 int crPackCanHoldBoundedBuffer( const CRPackBuffer *src )
 {
 	const int len_aligned = (src->data_current - src->opcode_current - 1 + 3) & ~3;
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	/* 24 is the size of the bounds-info packet... */
 	return crPackCanHoldOpcode( pc, 1, len_aligned + 24 );
 }
 
 void crPackAppendBuffer( const CRPackBuffer *src )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	const int num_data = crPackNumData(src);
 	const int num_opcode = crPackNumOpcodes(src);
 
 	CRASSERT(num_data >= 0);
 	CRASSERT(num_opcode >= 0);
+
+    CR_LOCK_PACKER_CONTEXT(pc);
 
 	/* don't append onto ourself! */
 	CRASSERT(pc->currentBuffer);
@@ -289,10 +295,14 @@ void crPackAppendBuffer( const CRPackBuffer *src )
 		if (src->holds_BeginEnd)
 		{
 			crWarning( "crPackAppendBuffer: overflowed the destination!" );
+            CR_UNLOCK_PACKER_CONTEXT(pc);
 			return;
 		}
 		else
+        {
 			crError( "crPackAppendBuffer: overflowed the destination!" );
+            CR_UNLOCK_PACKER_CONTEXT(pc);
+        }
 	}
 
 	/* Copy the buffer data/operands which are at the head of the buffer */
@@ -307,18 +317,20 @@ void crPackAppendBuffer( const CRPackBuffer *src )
 	pc->buffer.holds_BeginEnd |= src->holds_BeginEnd;
 	pc->buffer.in_BeginEnd = src->in_BeginEnd;
 	pc->buffer.holds_List |= src->holds_List;
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 
 void
 crPackAppendBoundedBuffer( const CRPackBuffer *src, const CRrecti *bounds )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	const GLbyte *payload = (const GLbyte *) src->opcode_current + 1;
 	const int num_opcodes = crPackNumOpcodes(src);
 	const int length = src->data_current - src->opcode_current - 1;
 
 	CRASSERT(pc);
+    CR_LOCK_PACKER_CONTEXT(pc);
 	CRASSERT(pc->currentBuffer);
 	CRASSERT(pc->currentBuffer != src);
 
@@ -331,10 +343,14 @@ crPackAppendBoundedBuffer( const CRPackBuffer *src, const CRrecti *bounds )
 		if (src->holds_BeginEnd)
 		{
 			crWarning( "crPackAppendBoundedBuffer: overflowed the destination!" );
+            CR_UNLOCK_PACKER_CONTEXT(pc);
 			return;
 		}
 		else
+        {
 			crError( "crPackAppendBoundedBuffer: overflowed the destination!" );
+            CR_UNLOCK_PACKER_CONTEXT(pc);
+        }
 	}
 
 	if (pc->swapping)
@@ -345,6 +361,7 @@ crPackAppendBoundedBuffer( const CRPackBuffer *src, const CRrecti *bounds )
 	pc->buffer.holds_BeginEnd |= src->holds_BeginEnd;
 	pc->buffer.in_BeginEnd = src->in_BeginEnd;
 	pc->buffer.holds_List |= src->holds_List;
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 
@@ -360,16 +377,18 @@ static unsigned char *sanityCheckPointer = NULL;
  */
 void *crPackAlloc( unsigned int size )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 
 	/* include space for the length and make the payload word-aligned */
 	size = ( size + sizeof(unsigned int) + 0x3 ) & ~0x3;
 
+    CR_LOCK_PACKER_CONTEXT(pc);
+
 	if ( crPackCanHoldOpcode( pc, 1, size ) )
 	{
 		/* we can just put it in the current buffer */
-		GET_BUFFERED_POINTER(pc, size );  /* NOTE: this sets data_ptr */
+		CR_GET_BUFFERED_POINTER_NOLOCK(pc, size );  /* NOTE: this sets data_ptr */
 	}
 	else 
 	{
@@ -377,7 +396,7 @@ void *crPackAlloc( unsigned int size )
 		pc->Flush( pc->flush_arg );
 		if ( crPackCanHoldOpcode( pc, 1, size ) )
 		{
-			GET_BUFFERED_POINTER(pc, size );  /* NOTE: this sets data_ptr */
+			CR_GET_BUFFERED_POINTER_NOLOCK(pc, size );  /* NOTE: this sets data_ptr */
 		}
 		else
 		{
@@ -444,7 +463,7 @@ void *crPackAlloc( unsigned int size )
  */
 void crHugePacket( CROpcode opcode, void *packet )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 #ifndef CHROMIUM_THREADSAFE
 	CRASSERT(sanityCheckPointer == packet);
 	sanityCheckPointer = NULL;
@@ -458,9 +477,15 @@ void crHugePacket( CROpcode opcode, void *packet )
 
 void crPackFree( void *packet )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
+    
 	if ( IS_BUFFERED( packet ) )
+    {
+        CR_UNLOCK_PACKER_CONTEXT(pc);
 		return;
+    }
+
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 	
 	/* the pointer passed in doesn't include the space for the single
 	 * opcode (4 bytes because of the alignment requirement) or the

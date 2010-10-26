@@ -26,11 +26,11 @@ void PACK_APIENTRY crPackWindowVisibleRegion( GLint window, GLint cRects, GLint 
 {
     GLint i, size, cnt;
 
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     (void) pc;
     size = 16 + cRects * 4 * sizeof(GLint);
-    GET_BUFFERED_POINTER( pc, size );
+    CR_GET_BUFFERED_POINTER( pc, size );
     WRITE_DATA( 0, GLint, size );
     WRITE_DATA( 4, GLenum, CR_WINDOWVISIBLEREGION_EXTEND_OPCODE );
     WRITE_DATA( 8, GLint, window );
@@ -46,6 +46,7 @@ void PACK_APIENTRY crPackWindowVisibleRegion( GLint window, GLint cRects, GLint 
         cnt += 16;
     }
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackWindowVisibleRegionSWAP( GLint window, GLint cRects, GLint * pRects )

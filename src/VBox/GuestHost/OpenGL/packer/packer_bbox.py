@@ -166,7 +166,7 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 			packet_length += 2
 
 
-	print "\tGET_PACKER_CONTEXT(pc);"
+	print "\tCR_GET_PACKER_CONTEXT(pc);"
 	print "\tunsigned char *data_ptr;"
 
 	if normalized:
@@ -194,7 +194,7 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 		else:
 			print "\tCREATE_%dD_FLOATS();" % num_coords
 
-	print "\tGET_BUFFERED%s_POINTER( pc, %d );" % (countSuffix, packet_length)
+	print "\tCR_GET_BUFFERED%s_POINTER( pc, %d );" % (countSuffix, packet_length)
 
 	# Bounding box code
 	if isVertexAttrib:
@@ -259,6 +259,9 @@ def PrintFunction( func_name, extSuffix, num_coords, argtype,
 			print "\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name + "ARB" )
 		else:
 			print "\tWRITE_OPCODE( pc, %s );" % apiutil.OpcodeName( func_name )
+
+	print "\tCR_UNLOCK_PACKER_CONTEXT(pc);"
+
 
 	print '}\n'
 

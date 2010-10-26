@@ -297,7 +297,7 @@ crPackDeleteTextures(GLsizei n, const GLuint * textures)
 static void
 __handleTexEnvData(GLenum target, GLenum pname, const GLfloat * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int params_length;
 
@@ -317,7 +317,7 @@ __handleTexEnvData(GLenum target, GLenum pname, const GLfloat * params)
 
     packet_length += params_length;
 
-    GET_BUFFERED_POINTER(pc, packet_length);
+    CR_GET_BUFFERED_POINTER(pc, packet_length);
     WRITE_DATA(0, int, packet_length);
     WRITE_DATA(sizeof(int) + 0, GLenum, target);
     WRITE_DATA(sizeof(int) + 4, GLenum, pname);
@@ -328,18 +328,20 @@ __handleTexEnvData(GLenum target, GLenum pname, const GLfloat * params)
 void PACK_APIENTRY
 crPackTexEnvfv(GLenum target, GLenum pname, const GLfloat * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     __handleTexEnvData(target, pname, params);
     WRITE_OPCODE(pc, CR_TEXENVFV_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
 crPackTexEnviv(GLenum target, GLenum pname, const GLint * params)
 {
     /* floats and ints are the same size, so the packing should be the same */
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     __handleTexEnvData(target, pname, (const GLfloat *) params);
     WRITE_OPCODE(pc, CR_TEXENVIV_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
@@ -379,7 +381,7 @@ static void
 __handleTexGenData(GLenum coord, GLenum pname,
                                      int sizeof_param, const GLvoid * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length =
         sizeof(int) + sizeof(coord) + sizeof(pname) + sizeof_param;
@@ -390,7 +392,7 @@ __handleTexGenData(GLenum coord, GLenum pname,
         params_length += 3 * sizeof_param;
     }
 
-    GET_BUFFERED_POINTER(pc, packet_length);
+    CR_GET_BUFFERED_POINTER(pc, packet_length);
     WRITE_DATA(0, int, packet_length);
     WRITE_DATA(sizeof(int) + 0, GLenum, coord);
     WRITE_DATA(sizeof(int) + 4, GLenum, pname);
@@ -400,25 +402,28 @@ __handleTexGenData(GLenum coord, GLenum pname,
 void PACK_APIENTRY
 crPackTexGendv(GLenum coord, GLenum pname, const GLdouble * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     __handleTexGenData(coord, pname, sizeof(*params), params);
     WRITE_OPCODE(pc, CR_TEXGENDV_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
 crPackTexGenfv(GLenum coord, GLenum pname, const GLfloat * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     __handleTexGenData(coord, pname, sizeof(*params), params);
     WRITE_OPCODE(pc, CR_TEXGENFV_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
 crPackTexGeniv(GLenum coord, GLenum pname, const GLint * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     __handleTexGenData(coord, pname, sizeof(*params), params);
     WRITE_OPCODE(pc, CR_TEXGENIV_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
@@ -442,7 +447,7 @@ crPackTexGeni(GLenum coord, GLenum pname, GLint param)
 static GLboolean
 __handleTexParameterData(GLenum target, GLenum pname, const GLfloat * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = sizeof(int) + sizeof(target) + sizeof(pname);
     int num_params = 0;
@@ -503,7 +508,7 @@ __handleTexParameterData(GLenum target, GLenum pname, const GLfloat * params)
     }
     packet_length += num_params * sizeof(*params);
 
-    GET_BUFFERED_POINTER(pc, packet_length);
+    CR_GET_BUFFERED_POINTER(pc, packet_length);
     WRITE_DATA(0, int, packet_length);
     WRITE_DATA(sizeof(int) + 0, GLenum, target);
     WRITE_DATA(sizeof(int) + 4, GLenum, pname);
@@ -514,17 +519,19 @@ __handleTexParameterData(GLenum target, GLenum pname, const GLfloat * params)
 void PACK_APIENTRY
 crPackTexParameterfv(GLenum target, GLenum pname, const GLfloat * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handleTexParameterData(target, pname, params))
         WRITE_OPCODE(pc, CR_TEXPARAMETERFV_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
 crPackTexParameteriv(GLenum target, GLenum pname, const GLint * params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handleTexParameterData(target, pname, (GLfloat *) params))
         WRITE_OPCODE(pc, CR_TEXPARAMETERIV_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
@@ -687,7 +694,7 @@ crPackAreTexturesResident(GLsizei n, const GLuint * textures,
                                                     GLboolean * residences, GLboolean * return_val,
                                                     int *writeback)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length;
 
@@ -699,7 +706,7 @@ crPackAreTexturesResident(GLsizei n, const GLuint * textures,
         n * sizeof(*textures) +         /* textures */
         8 + 8;
 
-    GET_BUFFERED_POINTER(pc, packet_length);
+    CR_GET_BUFFERED_POINTER(pc, packet_length);
     WRITE_DATA(0, int, packet_length);
     WRITE_DATA(4, GLenum, CR_ARETEXTURESRESIDENT_EXTEND_OPCODE);
     WRITE_DATA(8, GLsizei, n);
@@ -707,6 +714,7 @@ crPackAreTexturesResident(GLsizei n, const GLuint * textures,
     WRITE_NETWORK_POINTER(12 + n * sizeof(*textures),   (void *) residences);
     WRITE_NETWORK_POINTER(20 + n * sizeof(*textures), (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 
@@ -1001,10 +1009,10 @@ void PACK_APIENTRY crPackCompressedTexSubImage3DARB( GLenum target, GLint level,
 
 void PACK_APIENTRY crPackGetCompressedTexImageARB( GLenum target, GLint level, GLvoid *img, int *writeback )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(target)+sizeof(level)+2*8;
     unsigned char *data_ptr;
-    GET_BUFFERED_POINTER( pc, packet_length );
+    CR_GET_BUFFERED_POINTER( pc, packet_length );
 
     WRITE_DATA_AI(int, packet_length);
     WRITE_DATA_AI(GLenum, CR_GETCOMPRESSEDTEXIMAGEARB_EXTEND_OPCODE);
@@ -1013,4 +1021,5 @@ void PACK_APIENTRY crPackGetCompressedTexImageARB( GLenum target, GLint level, G
     WRITE_NETWORK_POINTER(0, (void *) img );
     WRITE_NETWORK_POINTER(8, (void *) writeback );
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

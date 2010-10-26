@@ -66,12 +66,14 @@ struct CRPackContext_t
     int updateBBOX;
     int swapping;
     CRPackBuffer *currentBuffer;
+    CRmutex mutex;
     char *file;  /**< for debugging only */
     int line;    /**< for debugging only */
 };
 
 
 extern DECLEXPORT(CRPackContext *) crPackNewContext(int swapping);
+extern DECLEXPORT(void) crPackDeleteContext(CRPackContext *pc);
 extern DECLEXPORT(void) crPackSetContext( CRPackContext *pc );
 extern DECLEXPORT(CRPackContext *) crPackGetContext( void );
 
@@ -137,10 +139,14 @@ extern DECLEXPORT(void) crPackExpandMultiDrawElementsEXTSWAP( GLenum mode, const
 
 #ifdef CHROMIUM_THREADSAFE
 extern CRtsd _PackerTSD;
-#define GET_PACKER_CONTEXT(C) CRPackContext *C = (CRPackContext *) crGetTSD(&_PackerTSD)
+#define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = (CRPackContext *) crGetTSD(&_PackerTSD)
+#define CR_LOCK_PACKER_CONTEXT(PC) crLockMutex(&((PC)->mutex))
+#define CR_UNLOCK_PACKER_CONTEXT(PC) crUnlockMutex(&((PC)->mutex))
 #else
 extern DLLDATA(CRPackContext) cr_packer_globals;
-#define GET_PACKER_CONTEXT(C) CRPackContext *C = &cr_packer_globals
+#define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = &cr_packer_globals
+#define CR_LOCK_PACKER_CONTEXT(PC)
+#define CR_UNLOCK_PACKER_CONTEXT(PC)
 #endif
 
 
@@ -188,16 +194,17 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
  * Alloc space for a message of 'len' bytes (plus 1 opcode).
  * Only flush if buffer is full.
  */
-#define GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, len )   \
-  do {                              \
-    THREADASSERT( pc );                     \
-    CRASSERT( pc->currentBuffer );              \
-    if ( !crPackCanHoldOpcode( pc, 1, (len) ) ) {       \
-      pc->Flush( pc->flush_arg );               \
-      CRASSERT(crPackCanHoldOpcode( pc, 1, (len) ) );       \
-    }                               \
-    data_ptr = pc->buffer.data_current;             \
-    pc->buffer.data_current += (len);               \
+#define CR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH(pc, len, lock)    \
+  do {                                                              \
+    THREADASSERT( pc );                                             \
+    if (lock) CR_LOCK_PACKER_CONTEXT(pc);                           \
+    CRASSERT( pc->currentBuffer );                                  \
+    if ( !crPackCanHoldOpcode( pc, 1, (len) ) ) {                   \
+      pc->Flush( pc->flush_arg );                                   \
+      CRASSERT(crPackCanHoldOpcode( pc, 1, (len) ) );               \
+    }                                                               \
+    data_ptr = pc->buffer.data_current;                             \
+    pc->buffer.data_current += (len);                               \
   } while (0)
 
 
@@ -205,30 +212,45 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
  * As above, flush if the buffer contains vertex data and we're
  * no longer inside glBegin/glEnd.
  */
-#define GET_BUFFERED_POINTER( pc, len )                 \
-  do {                                  \
-    CRASSERT( pc->currentBuffer );                  \
+#define CR_GET_BUFFERED_POINTER( pc, len )                          \
+  do {                                                              \
+    CR_LOCK_PACKER_CONTEXT(pc);                                     \
+    CRASSERT( pc->currentBuffer );                                  \
     if ( pc->buffer.holds_BeginEnd && !pc->buffer.in_BeginEnd ) {   \
-      pc->Flush( pc->flush_arg );                   \
-      pc->buffer.holds_BeginEnd = 0;                    \
-    }                                   \
-    GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, len );          \
+      pc->Flush( pc->flush_arg );                                   \
+      pc->buffer.holds_BeginEnd = 0;                                \
+    }                                                               \
+    CR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, len, GL_FALSE ); \
+  } while (0)
+
+/**
+ * As above, but without lock.
+ */
+#define CR_GET_BUFFERED_POINTER_NOLOCK( pc, len )                   \
+  do {                                                              \
+    CRASSERT( pc->currentBuffer );                                  \
+    if ( pc->buffer.holds_BeginEnd && !pc->buffer.in_BeginEnd ) {   \
+      pc->Flush( pc->flush_arg );                                   \
+      pc->buffer.holds_BeginEnd = 0;                                \
+    }                                                               \
+    CR_GET_BUFFERED_POINTER_NO_BEGINEND_FLUSH( pc, len, GL_FALSE ); \
   } while (0)
 
 
 /**
  * As above, but for vertex data between glBegin/End (counts vertices).
  */
-#define GET_BUFFERED_COUNT_POINTER( pc, len )       \
-  do {                          \
-    CRASSERT( pc->currentBuffer );          \
-    if ( !crPackCanHoldOpcode( pc, 1, (len) ) ) {   \
-      pc->Flush( pc->flush_arg );           \
+#define CR_GET_BUFFERED_COUNT_POINTER( pc, len )        \
+  do {                                                  \
+    CR_LOCK_PACKER_CONTEXT(pc);                         \
+    CRASSERT( pc->currentBuffer );                      \
+    if ( !crPackCanHoldOpcode( pc, 1, (len) ) ) {       \
+      pc->Flush( pc->flush_arg );                       \
       CRASSERT( crPackCanHoldOpcode( pc, 1, (len) ) );  \
-    }                           \
-    data_ptr = pc->buffer.data_current;         \
-    pc->current.vtx_count++;                \
-    pc->buffer.data_current += (len);           \
+    }                                                   \
+    data_ptr = pc->buffer.data_current;                 \
+    pc->current.vtx_count++;                            \
+    pc->buffer.data_current += (len);                   \
   } while (0)
 
 
@@ -236,8 +258,8 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
  * Allocate space for a msg/command that has no arguments, such
  * as glFinish().
  */
-#define GET_BUFFERED_POINTER_NO_ARGS( pc ) \
-  GET_BUFFERED_POINTER( pc, 4 );  \
+#define CR_GET_BUFFERED_POINTER_NO_ARGS( pc )  \
+  CR_GET_BUFFERED_POINTER( pc, 4 );            \
   WRITE_DATA( 0, GLuint, 0xdeadbeef )
 
 #define WRITE_DATA( offset, type, data ) \

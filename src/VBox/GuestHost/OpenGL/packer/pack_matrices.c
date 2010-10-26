@@ -9,10 +9,10 @@
 
 void PACK_APIENTRY crPackMultMatrixd( const GLdouble *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m );
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DOUBLE( 0*sizeof(double), m[ 0] );
     WRITE_DOUBLE( 1*sizeof(double), m[ 1] );
     WRITE_DOUBLE( 2*sizeof(double), m[ 2] );
@@ -30,14 +30,15 @@ void PACK_APIENTRY crPackMultMatrixd( const GLdouble *m )
     WRITE_DOUBLE( 14*sizeof(double), m[14] );
     WRITE_DOUBLE( 15*sizeof(double), m[15] );
     WRITE_OPCODE( pc, CR_MULTMATRIXD_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackMultMatrixf( const GLfloat *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m );
-    GET_BUFFERED_POINTER(pc, packet_length ); 
+    CR_GET_BUFFERED_POINTER(pc, packet_length ); 
     WRITE_DATA( 0*sizeof(GLfloat), GLfloat, m[ 0] );
     WRITE_DATA( 1*sizeof(GLfloat), GLfloat, m[ 1] );
     WRITE_DATA( 2*sizeof(GLfloat), GLfloat, m[ 2] );
@@ -55,14 +56,15 @@ void PACK_APIENTRY crPackMultMatrixf( const GLfloat *m )
     WRITE_DATA( 14*sizeof(GLfloat), GLfloat, m[14] );
     WRITE_DATA( 15*sizeof(GLfloat), GLfloat, m[15] );
     WRITE_OPCODE( pc, CR_MULTMATRIXF_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackLoadMatrixd( const GLdouble *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m );
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DOUBLE( 0*sizeof(double), m[ 0] );
     WRITE_DOUBLE( 1*sizeof(double), m[ 1] );
     WRITE_DOUBLE( 2*sizeof(double), m[ 2] );
@@ -80,14 +82,15 @@ void PACK_APIENTRY crPackLoadMatrixd( const GLdouble *m )
     WRITE_DOUBLE( 14*sizeof(double), m[14] );
     WRITE_DOUBLE( 15*sizeof(double), m[15] );
     WRITE_OPCODE( pc, CR_LOADMATRIXD_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackLoadMatrixf( const GLfloat *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m );
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0*sizeof(GLfloat), GLfloat, m[ 0] );
     WRITE_DATA( 1*sizeof(GLfloat), GLfloat, m[ 1] );
     WRITE_DATA( 2*sizeof(GLfloat), GLfloat, m[ 2] );
@@ -105,14 +108,15 @@ void PACK_APIENTRY crPackLoadMatrixf( const GLfloat *m )
     WRITE_DATA( 14*sizeof(GLfloat), GLfloat, m[14] );
     WRITE_DATA( 15*sizeof(GLfloat), GLfloat, m[15] );
     WRITE_OPCODE( pc, CR_LOADMATRIXF_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackMultTransposeMatrixdARB( const GLdouble *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m ) + sizeof(GLint) + sizeof(GLenum);
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, GLint, packet_length );
     WRITE_DATA( 4, GLenum, CR_MULTTRANSPOSEMATRIXDARB_EXTEND_OPCODE );
     WRITE_DOUBLE( 8 + 0*sizeof(double), m[ 0] );
@@ -132,14 +136,15 @@ void PACK_APIENTRY crPackMultTransposeMatrixdARB( const GLdouble *m )
     WRITE_DOUBLE( 8 + 14*sizeof(double), m[14] );
     WRITE_DOUBLE( 8 + 15*sizeof(double), m[15] );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackMultTransposeMatrixfARB( const GLfloat *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m ) + sizeof(GLint) + sizeof(GLenum);
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, GLint, packet_length );
     WRITE_DATA( 4, GLenum, CR_MULTTRANSPOSEMATRIXFARB_EXTEND_OPCODE );
     WRITE_DATA( 8 + 0*sizeof(GLfloat), GLfloat, m[ 0] );
@@ -159,14 +164,15 @@ void PACK_APIENTRY crPackMultTransposeMatrixfARB( const GLfloat *m )
     WRITE_DATA( 8 + 14*sizeof(GLfloat), GLfloat, m[14] );
     WRITE_DATA( 8 + 15*sizeof(GLfloat), GLfloat, m[15] );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackLoadTransposeMatrixdARB( const GLdouble *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m ) + sizeof(GLint) + sizeof(GLenum);
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, GLint, packet_length );
     WRITE_DATA( 4, GLenum, CR_LOADTRANSPOSEMATRIXDARB_EXTEND_OPCODE );
     WRITE_DOUBLE( 8 + 0*sizeof(double), m[ 0] );
@@ -186,14 +192,15 @@ void PACK_APIENTRY crPackLoadTransposeMatrixdARB( const GLdouble *m )
     WRITE_DOUBLE( 8 + 14*sizeof(double), m[14] );
     WRITE_DOUBLE( 8 + 15*sizeof(double), m[15] );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackLoadTransposeMatrixfARB( const GLfloat *m )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     int packet_length = 16*sizeof( *m ) + sizeof(GLint) + sizeof(GLenum);
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, GLint, packet_length );
     WRITE_DATA( 4, GLenum, CR_LOADTRANSPOSEMATRIXFARB_EXTEND_OPCODE );
     WRITE_DATA( 8 + 0*sizeof(GLfloat), GLfloat, m[ 0] );
@@ -213,4 +220,5 @@ void PACK_APIENTRY crPackLoadTransposeMatrixfARB( const GLfloat *m )
     WRITE_DATA( 8 + 14*sizeof(GLfloat), GLfloat, m[14] );
     WRITE_DATA( 8 + 15*sizeof(GLfloat), GLfloat, m[15] );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

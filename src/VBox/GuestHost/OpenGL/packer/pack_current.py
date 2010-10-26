@@ -24,7 +24,7 @@ print """
 
 void crPackOffsetCurrentPointers( int offset )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	GLnormal_p		*normal		= &(pc->current.c.normal);
 	GLcolor_p		*color		= &(pc->current.c.color);
 	GLsecondarycolor_p	*secondaryColor	= &(pc->current.c.secondaryColor);
@@ -59,7 +59,7 @@ print """
 
 void crPackNullCurrentPointers( void )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	CRCurrentStateAttr	*c		= &(pc->current.c);
 """
 print '\tmemset ( c, 0, sizeof (CRCurrentStateAttr));'
