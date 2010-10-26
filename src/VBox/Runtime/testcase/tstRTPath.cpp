@@ -366,6 +366,32 @@ int main()
     }
 
     /*
+     * RTPathJoinA - reuse the append tests.
+     */
+    RTTestSub(hTest, "RTPathJoinA");
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszAppendTests); i += 3)
+    {
+        const char *pszInput  = s_apszAppendTests[i];
+        const char *pszAppend = s_apszAppendTests[i + 1];
+        const char *pszExpect = s_apszAppendTests[i + 2];
+
+        char *pszPathDst;
+        RTTESTI_CHECK(pszPathDst = RTPathJoinA(pszInput, pszAppend));
+        if (!pszPathDst)
+            continue;
+        if (strcmp(pszPathDst, pszExpect))
+        {
+            RTTestIFailed("Unexpected result\n"
+                          "   input: '%s'\n"
+                          "  append: '%s'\n"
+                          "  output: '%s'\n"
+                          "expected: '%s'",
+                          pszInput, pszAppend, pszPathDst, pszExpect);
+        }
+        RTStrFree(pszPathDst);
+    }
+
+    /*
      * RTPathStripTrailingSlash
      */
     static const char *s_apszStripTrailingSlash[] =

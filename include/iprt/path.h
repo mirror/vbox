@@ -480,6 +480,19 @@ RTDECL(int) RTPathJoin(char *pszPathDst, size_t cbPathDst, const char *pszPathSr
                        const char *pszAppend);
 
 /**
+ * Same as RTPathJoin, except that the output buffer is allocated.
+ *
+ * @returns Buffer containing the joined up path, call RTStrFree to free.  NULL
+ *          on allocation failure.
+ * @param   pszPathSrc      The base path to copy into @a pszPathDst before
+ *                          appending @a pszAppend.
+ * @param   pszAppend       The partial path to append to pszPathSrc. This can
+ *                          be NULL, in which case nothing is done.
+ *
+ */
+RTDECL(char *) RTPathJoinA(const char *pszPathSrc, const char *pszAppend);
+
+/**
  * Callback for RTPathTraverseList that's called for each element.
  *
  * @returns IPRT style status code. Return VINF_TRY_AGAIN to continue, any other
