@@ -72,6 +72,7 @@ public:
     STDMETHOD(COMGETTER(RecommendedUsbTablet))(BOOL *aRecommendedUsbTablet);
     STDMETHOD(COMGETTER(RecommendedRtcUseUtc))(BOOL *aRecommendedRtcUseUtc);
     STDMETHOD(COMGETTER(RecommendedChipset)) (ChipsetType_T *aChipsetType);
+    STDMETHOD(COMGETTER(RecommendedAudioController)) (AudioControllerType_T *aAudioController);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
@@ -101,6 +102,7 @@ private:
     const StorageControllerType_T mHdStorageControllerType;
     const StorageBus_T mHdStorageBusType;
     const ChipsetType_T mChipsetType;
+    const AudioControllerType_T mAudioControllerType;
 };
 
 #endif // ____H_GUESTOSTYPEIMPL

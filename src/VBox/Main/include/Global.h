@@ -68,6 +68,7 @@ public:
         const StorageControllerType_T  hdStorageControllerType;
         const StorageBus_T             hdStorageBusType;
         const ChipsetType_T            chipsetType;
+        const AudioControllerType_T    audioControllerType;
     };
 
     static const OSType sOSTypes[SchemaDefs::OSTypeId_COUNT];

@@ -7566,7 +7566,11 @@
 
      <attribute name="recommendedChipset" type="ChipsetType" readonly="yes">
       <desc>Recommended chipset type.</desc>
-    </attribute>
+     </attribute>
+
+     <attribute name="recommendedAudioController" type="AudioControllerType" readonly="yes">
+      <desc>Recommended audio type.</desc>
+     </attribute>
 
   </interface>
 
