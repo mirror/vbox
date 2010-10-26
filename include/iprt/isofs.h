@@ -62,7 +62,7 @@ typedef struct RTISOFSDATESHORT
     uint8_t hour;
     uint8_t minute;
     uint8_t second;
-    int8_t 	gmt_offset;
+    int8_t  gmt_offset;
 } RTISOFSDATESHORT, *PRTISOFSDATESHORT;
 
 typedef struct RTISOFSDATELONG
@@ -80,19 +80,19 @@ typedef struct RTISOFSDATELONG
 /* Directory Record. */
 typedef struct RTISOFSDIRRECORD
 {
-	uint8_t record_length;
-	uint8_t extented_attr_length;
-	uint32_t extent_location;
+    uint8_t record_length;
+    uint8_t extented_attr_length;
+    uint32_t extent_location;
     uint32_t extent_location_big;
-	uint32_t extent_data_length; /* Number of bytes (file) / len (directory). */
+    uint32_t extent_data_length; /* Number of bytes (file) / len (directory). */
     uint32_t extent_data_length_big;
     RTISOFSDATESHORT date;
-	uint8_t flags;
-	uint8_t interleave_unit_size;
+    uint8_t flags;
+    uint8_t interleave_unit_size;
     uint8_t interleave_gap_size;
-	uint16_t volume_sequence_number;
+    uint16_t volume_sequence_number;
     uint16_t volume_sequence_number_big;
-	uint8_t name_len;
+    uint8_t name_len;
     /* Starting here there will be the actual directory entry name
      * and a padding of 1 byte if name_len is odd. */
 } RTISOFSDIRRECORD, *PRTISOFSDIRRECORD;
@@ -100,23 +100,23 @@ typedef struct RTISOFSDIRRECORD
 /* Primary Volume Descriptor. */
 typedef struct RTISOFSPRIVOLDESC
 {
-	uint8_t type;
-	char name_id[6];
-	uint8_t version;
-	char system_id[RTISOFS_MAX_SYSTEM_ID];
-	char volume_id[RTISOFS_MAX_VOLUME_ID];
-	uint8_t unused2[8];
-	uint32_t volume_space_size; /* Number of sectors, Little Endian. */
-	uint32_t volume_space_size_big; /* Number of sectors Big Endian. */
+    uint8_t type;
+    char name_id[6];
+    uint8_t version;
+    char system_id[RTISOFS_MAX_SYSTEM_ID];
+    char volume_id[RTISOFS_MAX_VOLUME_ID];
+    uint8_t unused2[8];
+    uint32_t volume_space_size; /* Number of sectors, Little Endian. */
+    uint32_t volume_space_size_big; /* Number of sectors Big Endian. */
     uint8_t unused3[32];
-	uint16_t volume_set_size;
+    uint16_t volume_set_size;
     uint16_t volume_set_size_big;
     uint16_t volume_sequence_number;
     uint16_t volume_sequence_number_big;
     uint16_t logical_block_size; /* 2048. */
     uint16_t logical_block_size_big;
-	uint32_t path_table_size; /* Size in bytes. */
-	uint32_t path_table_size_big; /* Size in bytes. */
+    uint32_t path_table_size; /* Size in bytes. */
+    uint32_t path_table_size_big; /* Size in bytes. */
     uint32_t path_table_start_first;
     uint32_t path_table_start_second;
     uint32_t path_table_start_first_big;
@@ -171,44 +171,46 @@ typedef struct RTISOFSFILE
 
 #ifdef IN_RING3
 /**
+ * Opens an ISO file.
  *
+ * The following limitations apply:
+ * - Fixed sector size (2048 bytes).
+ * - No extensions (Joliet, RockRidge etc.) support (yet).
+ * - Only primary volume descriptor (PVD) handled.
  *
- * @return  int
- *
- * @param   pszFileName
- * @param   pFile
+ * @return  IPRT status code.
+ * @param   pFile           Pointer to ISO handle.
+ * @param   pszFileName     Path to ISO file to open.
  */
 RTR3DECL(int) RTIsoFsOpen(PRTISOFSFILE pFile, const char *pszFileName);
 
 /**
+ * Closes an ISO file.
  *
- *
- *
- * @param   pFile
+ * @param   pFile       Pointer to open ISO file returned by RTIsoFsOpen().
  */
 RTR3DECL(void) RTIsoFsClose(PRTISOFSFILE pFile);
 
 /**
+ * Retrieves the offset + length (both in bytes) of a given file
+ * stored in the ISO.
  *
- *
- * @return  int
- *
- * @param   pFile
- * @param   pszPath
- * @param   pcbOffset
- * @param   pcbLength
+ * @return  IPRT status code.
+ * @param   pFile       Pointer to open ISO file returned by RTIsoFsOpen().
+ * @param   pszPath     Path of file within the ISO to retrieve information for.
+ * @param   pcbOffset   Pointer to store the file's absolute offset within the ISO.
+ * @param   pcbLength   Pointer to store the file's size.
  */
 RTR3DECL(int) RTIsoFsGetFileInfo(PRTISOFSFILE pFile, const char *pszPath,
                                  uint32_t *pcbOffset, size_t *pcbLength);
 
 /**
+ * Extracts a file from an ISO to the given destination.
  *
- *
- * @return  int
- *
- * @param   pFile
- * @param   pszSource
- * @param   pszDest
+ * @return  IPRT status code.
+ * @param   pFile       Pointer to open ISO file returned by RTIsoFsOpen().
+ * @param   pszPath     Path of file within the ISO to extract.
+ * @param   pszDest     Where to store the extracted file.
  */
 RTR3DECL(int) RTIsoFsExtractFile(PRTISOFSFILE pFile, const char *pszSource,
                                  const char *pszDest);
