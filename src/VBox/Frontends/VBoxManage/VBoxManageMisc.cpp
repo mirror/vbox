@@ -243,6 +243,7 @@ int handleCreateVM(HandlerArg *a)
                                         name.raw(),
                                         osTypeId.raw(),
                                         Guid(id).toUtf16().raw(),
+                                        FALSE /* forceOverwrite */,
                                         machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());

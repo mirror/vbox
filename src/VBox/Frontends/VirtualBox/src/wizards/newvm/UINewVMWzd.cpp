@@ -646,7 +646,8 @@ bool UINewVMWzdPage5::constructMachine()
         m_Machine = vbox.CreateMachine(QString::null,       // auto-compose filename
                                        field("name").toString(),
                                        typeId,
-                                       QString::null);      // machine ID
+                                       QString::null,       // machine ID
+                                       false);              // forceOverwrite
         if (!vbox.isOk())
         {
             vboxProblem().cannotCreateMachine(vbox, this);
@@ -658,7 +659,6 @@ bool UINewVMWzdPage5::constructMachine()
         if (field("hardDiskId").toString().isNull() || !field("hardDisk").value<CMedium>().isNull())
             m_Machine.SetExtraData(VBoxDefs::GUI_FirstRun, "yes");
     }
-
 
     /* RAM size */
     m_Machine.SetMemorySize(field("ram").toInt());

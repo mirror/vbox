@@ -3445,9 +3445,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           xreflabel="IVirtualBox::createMachine()" /> is no longer restricted
           to creating machines in the default "Machines" folder, but can now
           create machines at arbitrary locations. For this to work, the
-          parameter list had to be changed. The "Override" parameter has been
-          removed since the target files can now be known before the call and
-          the caller can remove the files in question.</para>
+          parameter list had to be changed.</para>
         </listitem>
 
         <listitem>

@@ -1373,7 +1373,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="4bbb7840-f46a-4672-90e2-c4bf65c3c74c"
+    uuid="6e123115-af60-49b3-9727-d3f302306cd2"
     wsmap="managed"
   >
     <desc>
@@ -1656,6 +1656,9 @@
       </param>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>Machine UUID (optional).</desc>
+      </param>
+      <param name="forceOverwrite" type="boolean" dir="in">
+        <desc>If true, an existing machine settings file will be overwritten.</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>
