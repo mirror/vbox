@@ -35,6 +35,7 @@ GuestOSType::GuestOSType()
     , mHdStorageControllerType(StorageControllerType_PIIX3)
     , mHdStorageBusType(StorageBus_IDE)
     , mChipsetType(ChipsetType_PIIX3)
+    , mAudioControllerType(AudioControllerType_AC97)
 {
 }
 
@@ -79,7 +80,8 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)/*const char *aFamilyId, 
                           StorageBus_T aDvdStorageBusType,
                           StorageControllerType_T aHdStorageControllerType,
                           StorageBus_T aHdStorageBusType,
-                          ChipsetType_T aChipsetType*/
+                          ChipsetType_T aChipsetType
+                          AudioControllerType_T aAudioControllerType*/
 {
 #if 0
     LogFlowThisFunc(("aFamilyId='%s', aFamilyDescription='%s', "
@@ -119,6 +121,7 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)/*const char *aFamilyId, 
     unconst(mHdStorageControllerType)   = ostype.hdStorageControllerType;
     unconst(mHdStorageBusType)          = ostype.hdStorageBusType;
     unconst(mChipsetType)               = ostype.chipsetType;
+    unconst(mAudioControllerType)       = ostype.audioControllerType;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -426,6 +429,18 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedChipset) (ChipsetType_T *aChipset
 
     /* chipset type is constant during life time, no need to lock */
     *aChipsetType = mChipsetType;
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedAudioController) (AudioControllerType_T *aAudioController)
+{
+    CheckComArgOutPointerValid(aAudioController);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    *aAudioController = mAudioControllerType;
 
     return S_OK;
 }
