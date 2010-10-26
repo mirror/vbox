@@ -69,7 +69,8 @@ static volatile bool    g_fCopyCanceled = false;
  */
 typedef struct DIRECTORYENTRY
 {
-    char       *pszPath;
+    char       *pszSourcePath;
+    char       *pszDestPath;
     RTLISTNODE  Node;
 } DIRECTORYENTRY, *PDIRECTORYENTRY;
 
@@ -91,7 +92,7 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            copyto <vmname>|<uuid>\n"
                  "                            <source on host> <destination on guest>\n"
                  "                            --username <name> --password <password>\n"
-                 "                            [--recursive] [--verbose] [--flags <flags>]\n"
+                 "                            [--dryrun] [--recursive] [--verbose] [--flags <flags>]\n"
                  "\n");
 }
 
@@ -625,32 +626,30 @@ static void ctrlCopySignalHandler(int iSignal)
     ASMAtomicWriteBool(&g_fCopyCanceled, true);
 }
 
-/**
- * TODO
- *
- * @return  IPRT status code.
- * @return  int
- * @param   pszPath
- * @param   pList
- */
-int ctrlCopyDirectoryEntryAppend(const char *pszPath, PRTLISTNODE pList)
-{
-    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("Appending to pList=%p: %s\n", pList, pszPath));
+int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
+                                 PRTLISTNODE pList)
+{
+    AssertPtrReturn(pszFileSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFileDest, VERR_INVALID_POINTER);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
 
     PDIRECTORYENTRY pNode = (PDIRECTORYENTRY)RTMemAlloc(sizeof(DIRECTORYENTRY));
     if (pNode == NULL)
         return VERR_NO_MEMORY;
 
-    pNode->pszPath = NULL;
-    if (RT_SUCCESS(RTStrAAppend(&pNode->pszPath, pszPath)))
+    pNode->pszSourcePath = NULL;
+    pNode->pszDestPath = NULL;
+    if (RT_SUCCESS(RTStrAAppend(&pNode->pszSourcePath, pszFileSource)))
     {
-        pNode->Node.pPrev = NULL;
-        pNode->Node.pNext = NULL;
-        RTListAppend(pList, &pNode->Node);
-        return VINF_SUCCESS;
+        if (RT_SUCCESS(RTStrAAppend(&pNode->pszDestPath, pszFileDest)))
+        {
+            pNode->Node.pPrev = NULL;
+            pNode->Node.pNext = NULL;
+            RTListAppend(pList, &pNode->Node);
+            return VINF_SUCCESS;
+        }
+        return VERR_NO_MEMORY;
     }
     return VERR_NO_MEMORY;
 }
@@ -660,37 +659,48 @@ int ctrlCopyDirectoryEntryAppend(const char *pszPath, PRTLISTNODE pList)
  *
  * @return  IPRT status code.
  * @return  int
- * @param   pszDirectory
+ * @param   pszRootDir
+ * @param   pszSubDir
  * @param   pszFilter
  * @param   uFlags
  * @param   pcObjects
  * @param   pList
  */
-int ctrlCopyDirectoryRead(const char *pszDirectory, const char *pszFilter,
+int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const char *pszFilter,
                           uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
 {
-    AssertPtrReturn(pszDirectory, VERR_INVALID_POINTER);
-    /* Filter is optional. */
+    AssertPtrReturn(pszRootDir, VERR_INVALID_POINTER);
+    /* Sub directory is optional. */
+    /* Filter directory is optional. */
     AssertPtrReturn(pcObjects, VERR_INVALID_POINTER);
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("Reading directory: %s, filter: %s\n",
-                 pszDirectory, pszFilter ? pszFilter : "<None>"));
-
     PRTDIR pDir = NULL;
-    int rc = RTDirOpenFiltered(&pDir, pszDirectory,
+
+    int rc = VINF_SUCCESS;
+    char szCurDir[RTPATH_MAX];
+    if (RTStrPrintf(szCurDir, sizeof(szCurDir), pszRootDir))
+    {
+        if (pszSubDir != NULL)
+            rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
+        if (RT_SUCCESS(rc) && pszFilter != NULL)
+            rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszFilter);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    if (pszFilter)
+        rc = RTDirOpenFiltered(&pDir, szCurDir,
 #ifdef RT_OS_WINDOWS
                                RTDIRFILTER_WINNT);
 #else
                                RTDIRFILTER_UNIX);
 #endif
-    char *pszDirectoryStrip = RTStrDup(pszDirectory);
-    if (!pszDirectoryStrip)
-        rc = VERR_NO_MEMORY;
+    else
+        rc = RTDirOpen(&pDir, szCurDir);
 
     if (RT_SUCCESS(rc))
     {
-        RTPathStripFilename(pszDirectoryStrip);
         for (;;)
         {
             RTDIRENTRY DirEntry;
@@ -711,21 +721,53 @@ int ctrlCopyDirectoryRead(const char *pszDirectory, const char *pszFilter,
                         break;
                     }
                     if (uFlags & CopyFileFlag_Recursive)
-                        rc = ctrlCopyDirectoryRead(DirEntry.szName, pszFilter,
-                                                   uFlags, pcObjects, pList);
+                    {
+                        char *pszNewSub = NULL;
+                        if (pszSubDir)
+                            RTStrAPrintf(&pszNewSub, "%s%s/", pszSubDir, DirEntry.szName);
+                        else
+                            RTStrAPrintf(&pszNewSub, "%s/", DirEntry.szName);
+
+                        if (pszNewSub)
+                        {
+                            rc = ctrlCopyDirectoryRead(pszRootDir, pszNewSub, pszFilter,
+                                                       uFlags, pcObjects, pList);
+                            RTStrFree(pszNewSub);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
                     break;
 
                 case RTDIRENTRYTYPE_FILE:
                 {
-                    char *pszFile;
-                    if (RTStrAPrintf(&pszFile, "%s%c%s",
-                                     pszDirectoryStrip, RTPATH_SLASH, DirEntry.szName))
+                    char *pszFileSource = NULL;
+                    char *pszFileDest = NULL;
+                    if (RTStrAPrintf(&pszFileSource, "%s%s%s",
+                                     pszRootDir, pszSubDir ? pszSubDir : "",
+                                     DirEntry.szName))
                     {
-                        rc = ctrlCopyDirectoryEntryAppend(pszFile, pList);
+                        if (!RTStrAPrintf(&pszFileDest, "%s%s",
+                                          pszSubDir ? pszSubDir : "",
+                                          DirEntry.szName))
+                        {
+                            rc = VERR_NO_MEMORY;
+                        }
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = ctrlCopyDirectoryEntryAppend(pszFileSource, pszFileDest, pList);
                         if (RT_SUCCESS(rc))
                             *pcObjects = *pcObjects + 1;
-                        RTStrFree(pszFile);
                     }
+
+                    if (pszFileSource)
+                        RTStrFree(pszFileSource);
+                    if (pszFileDest)
+                        RTStrFree(pszFileDest);
                     break;
                 }
 
@@ -733,8 +775,7 @@ int ctrlCopyDirectoryRead(const char *pszDirectory, const char *pszFilter,
                     if (   (uFlags & CopyFileFlag_Recursive)
                         && (uFlags & CopyFileFlag_FollowLinks))
                     {
-                        rc = ctrlCopyDirectoryRead(DirEntry.szName, pszFilter,
-                                                   uFlags, pcObjects, pList);
+                        /* TODO */
                     }
                     break;
 
@@ -744,7 +785,6 @@ int ctrlCopyDirectoryRead(const char *pszDirectory, const char *pszFilter,
             if (RT_FAILURE(rc))
                 break;
         }
-        RTStrFree(pszDirectoryStrip);
     }
 
     if (pDir)
@@ -756,9 +796,12 @@ int ctrlCopyDirectoryRead(const char *pszDirectory, const char *pszFilter,
  * TODO
  *
  * @return  IPRT status code.
+ * @return  int
  * @param   pszSource
  * @param   pszDest
  * @param   uFlags
+ * @param   pcObjects
+ * @param   pList
  */
 int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
                  uint32_t *pcObjects, PRTLISTNODE pList)
@@ -768,7 +811,7 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
     AssertPtrReturn(pcObjects, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pList, VERR_INVALID_PARAMETER);
 
-    int rc;
+    int rc = VINF_SUCCESS;
     char *pszSourceAbs = RTPathAbsDup(pszSource);
     if (pszSourceAbs)
     {
@@ -776,16 +819,55 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
             && RTFileExists(pszSourceAbs)) /* We have a single file ... */
         {
             RTListInit(pList);
-            rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pList);
+            rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pszDest, pList);
             *pcObjects = 1;
         }
         else /* ... or a directory. */
         {
-            RTListInit(pList);
-            rc = ctrlCopyDirectoryRead(pszSourceAbs, NULL /* Filter */,
-                                       uFlags, pcObjects, pList);
-            if (*pcObjects == 0)
-                rc = VERR_NOT_FOUND;
+            /* Append trailing slash to absolute directory. */
+            if (RTDirExists(pszSourceAbs))
+                RTStrAAppend(&pszSourceAbs, RTPATH_SLASH_STR);
+
+            /* Extract directory filter (e.g. "*.exe"). */
+            char *pszFilter = RTPathFilename(pszSourceAbs);
+            char *pszSourceAbsRoot = RTStrDup(pszSourceAbs);
+            if (pszSourceAbsRoot)
+            {
+                if (pszFilter)
+                {
+                    RTPathStripFilename(pszSourceAbsRoot);
+                    RTStrAAppend(&pszSourceAbsRoot, RTPATH_SLASH_STR);
+                }
+                else
+                {
+                    /*
+                     * If we have more than one file to copy, make sure that we have
+                     * a trailing slash so that we can construct a full path name
+                     * (e.g. "foo.txt" -> "c:/foo/temp.txt") as destination.
+                     */
+                    size_t cch = strlen(pszSourceAbsRoot);
+                    if (    cch > 1
+                        &&  !RTPATH_IS_SLASH(pszSourceAbsRoot[cch - 1])
+                        &&  !RTPATH_IS_SLASH(pszSourceAbsRoot[cch - 2]))
+                    {
+                        rc = RTStrAAppend(&pszSourceAbsRoot, RTPATH_SLASH_STR);
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    RTListInit(pList);
+                    rc = ctrlCopyDirectoryRead(pszSourceAbsRoot, NULL /* Sub directory */,
+                                               pszFilter,
+                                               uFlags, pcObjects, pList);
+                    if (*pcObjects == 0)
+                        rc = VERR_NOT_FOUND;
+                }
+
+                RTStrFree(pszSourceAbsRoot);
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
         RTStrFree(pszSourceAbs);
     }
@@ -810,8 +892,10 @@ void ctrlCopyDestroy(PRTLISTNODE pList)
         PDIRECTORYENTRY pNext = RTListNodeGetNext(&pNode->Node, DIRECTORYENTRY, Node);
         bool fLast = RTListNodeIsLast(pList, &pNode->Node);
 
-        if (pNode->pszPath)
-            RTStrFree(pNode->pszPath);
+        if (pNode->pszSourcePath)
+            RTStrFree(pNode->pszSourcePath);
+        if (pNode->pszDestPath)
+            RTStrFree(pNode->pszDestPath);
         RTListNodeRemove(&pNode->Node);
         RTMemFree(pNode);
 
@@ -967,6 +1051,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
     uint32_t uFlags = CopyFileFlag_None;
     bool fVerbose = false;
     bool fCopyRecursive = false;
+    bool fDryRun = false;
 
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
@@ -993,6 +1078,10 @@ static int handleCtrlCopyTo(HandlerArg *a)
                 Utf8Password = a->argv[i + 1];
                 ++i;
             }
+        }
+        else if (!strcmp(a->argv[i], "--dryrun"))
+        {
+            fDryRun = true;
         }
         else if (!strcmp(a->argv[i], "--flags"))
         {
@@ -1069,6 +1158,13 @@ static int handleCtrlCopyTo(HandlerArg *a)
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
 
+            if (fVerbose)
+            {
+                if (fDryRun)
+                    RTPrintf("Dry run - no files copied!\n");
+                RTPrintf("Gathering file information ...\n");
+            }
+
             RTLISTNODE listToCopy;
             uint32_t cObjects = 0;
             int vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), uFlags,
@@ -1092,7 +1188,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
             }
             else
             {
-                if (fVerbose)
+                if (RT_SUCCESS(vrc) && fVerbose)
                 {
                     if (fCopyRecursive)
                         RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
@@ -1109,10 +1205,11 @@ static int handleCtrlCopyTo(HandlerArg *a)
                     RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
                     {
                         if (fVerbose)
-                            RTPrintf("Copying \"%s\" (%u of %u) ...\n",
-                                     pNode->pszPath, uCurObject, cObjects);
-                        vrc = ctrlCopyFile(guest, pNode->pszPath, Utf8Dest.c_str(),
-                                           Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
+                            RTPrintf("Copying \"%s\" (%u/%u) ...\n",
+                                     pNode->pszSourcePath, uCurObject, cObjects);
+                        if (!fDryRun)
+                            vrc = ctrlCopyFile(guest, pNode->pszSourcePath, pNode->pszDestPath,
+                                               Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
                         if (RT_FAILURE(vrc))
                             break;
                         uCurObject++;
