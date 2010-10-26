@@ -1819,6 +1819,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                     Bstr(stack.strNameVBox).raw(),
                                     Bstr(stack.strOsTypeVBox).raw(),
                                     NULL, /* uuid */
+                                    FALSE, /* fForceOverwrite */
                                     pNewMachine.asOutParam());
     if (FAILED(rc)) throw rc;
 

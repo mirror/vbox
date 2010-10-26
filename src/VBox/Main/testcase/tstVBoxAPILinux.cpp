@@ -189,10 +189,11 @@ void createVM(IVirtualBox *virtualBox)
      * in the configuration until we explicitely choose to do so.
      */
     nsCOMPtr<IMachine> machine;
-    rc = virtualBox->CreateMachine(NULL,
+    rc = virtualBox->CreateMachine(NULL,        /* settings file */
                                    NS_LITERAL_STRING("A brand new name").get(),
-                                   nsnull,
-                                   false,
+                                   nsnull,      /* ostype */
+                                   nsnull,      /* machine uuid */
+                                   false,       /* forceOverwrite */
                                    getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {

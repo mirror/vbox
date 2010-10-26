@@ -126,6 +126,7 @@ public:
                               IN_BSTR aName,
                               IN_BSTR aOsTypeId,
                               IN_BSTR aId,
+                              BOOL forceOverwrite,
                               IMachine **aMachine);
     STDMETHOD(OpenMachine) (IN_BSTR aSettingsFile, IMachine **aMachine);
     STDMETHOD(RegisterMachine) (IMachine *aMachine);

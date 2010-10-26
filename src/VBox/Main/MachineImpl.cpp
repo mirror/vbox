@@ -252,15 +252,17 @@ void Machine::FinalRelease()
  *                      be relative to the VirtualBox config directory).
  *  @param strName      name for the machine
  *  @param aId          UUID for the new machine.
- *  @param aOsType      Optional OS Type of this machine.
+ *  @param aOsType      OS Type of this machine or NULL.
+ *  @param fForceOverwrite Whether to overwrite an existing machine settings file.
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
 HRESULT Machine::init(VirtualBox *aParent,
                       const Utf8Str &strConfigFile,
                       const Utf8Str &strName,
+                      GuestOSType *aOsType,
                       const Guid &aId,
-                      GuestOSType *aOsType /* = NULL */)
+                      bool fForceOverwrite)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("(Init_New) aConfigFile='%s'\n", strConfigFile.c_str()));
@@ -272,7 +274,7 @@ HRESULT Machine::init(VirtualBox *aParent,
     HRESULT rc = initImpl(aParent, strConfigFile);
     if (FAILED(rc)) return rc;
 
-    rc = tryCreateMachineConfigFile();
+    rc = tryCreateMachineConfigFile(fForceOverwrite);
     if (FAILED(rc)) return rc;
 
     if (SUCCEEDED(rc))
@@ -472,7 +474,7 @@ HRESULT Machine::init(VirtualBox *aParent,
     HRESULT rc = initImpl(aParent, strConfigFile);
     if (FAILED(rc)) return rc;
 
-    rc = tryCreateMachineConfigFile();
+    rc = tryCreateMachineConfigFile(false /* fForceOverwrite */);
     if (FAILED(rc)) return rc;
 
     rc = initDataAndChildObjects();
@@ -568,7 +570,7 @@ HRESULT Machine::initImpl(VirtualBox *aParent,
  * the settings file could not be written (e.g. because machine dir is read-only).
  * @return
  */
-HRESULT Machine::tryCreateMachineConfigFile()
+HRESULT Machine::tryCreateMachineConfigFile(bool fForceOverwrite)
 {
     HRESULT rc = S_OK;
 
@@ -581,9 +583,20 @@ HRESULT Machine::tryCreateMachineConfigFile()
     {
         if (RT_SUCCESS(vrc))
             RTFileClose(f);
-        rc = setError(VBOX_E_FILE_ERROR,
-                      tr("Machine settings file '%s' already exists"),
-                      mData->m_strConfigFileFull.c_str());
+        if (!fForceOverwrite)
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Machine settings file '%s' already exists"),
+                          mData->m_strConfigFileFull.c_str());
+        else
+        {
+            /* try to delete the config file, as otherwise the creation
+             * of a new settings file will fail. */
+            int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
+            if (RT_FAILURE(vrc2))
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("Could not delete the existing settings file '%s' (%Rrc)"),
+                              mData->m_strConfigFileFull.c_str(), vrc2);
+        }
     }
     else if (    vrc != VERR_FILE_NOT_FOUND
               && vrc != VERR_PATH_NOT_FOUND
