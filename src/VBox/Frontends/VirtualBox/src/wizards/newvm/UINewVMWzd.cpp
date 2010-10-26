@@ -666,6 +666,9 @@ bool UINewVMWzdPage5::constructMachine()
     /* VRAM size - select maximum between recommended and minimum for fullscreen */
     m_Machine.SetVRAMSize (qMax (type.GetRecommendedVRAM(),
                                 (ULONG) (VBoxGlobal::requiredVideoMemory(&m_Machine) / _1M)));
+    
+    /* Selecting recommended chipset type */
+    m_Machine.SetChipsetType(type.GetRecommendedChipset());
 
     /* Selecting recommended Audio Controller */
     m_Machine.GetAudioAdapter().SetAudioController(type.GetRecommendedAudioController());
@@ -868,4 +871,3 @@ void UINewVMWzdPage5::setMachine(const CMachine &machine)
 {
     m_Machine = machine;
 }
-
