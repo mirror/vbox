@@ -92,6 +92,10 @@ typedef struct
     uint32_t            Alignment0;
 #endif
 
+    /** PCI bus which is attached to the host-to-PCI bridge. */
+    PCIBUS              aPciBus;
+
+
     /** I/O APIC irq levels */
     volatile uint32_t   uaPciApicIrqLevels[PCI_APIC_IRQ_PINS];
 
@@ -104,17 +108,13 @@ typedef struct
     uint8_t             uBus;
 #endif
     /* Physical address of PCI config space MMIO region */
-     uint64_t            u64PciConfigMMioAddress;
+    uint64_t            u64PciConfigMMioAddress;
     /* Length of PCI config space MMIO region */
-    uint64_t             u64PciConfigMMioLength;
+    uint64_t            u64PciConfigMMioLength;
 
 
     /** Config register. */
     uint32_t            uConfigReg;
-
-    /** PCI bus which is attached to the host-to-PCI bridge. */
-    PCIBUS              aPciBus;
-
 } PCIGLOBALS, *PPCIGLOBALS;
 
 
@@ -188,8 +188,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
 // mapping, we take n=6 approach
 DECLINLINE(void) ich9pciPhysToPciAddr(PPCIGLOBALS pGlobals, RTGCPHYS GCPhysAddr, PciAddress* pPciAddr)
 {
-    GCPhysAddr = GCPhysAddr - pGlobals->u64PciConfigMMioAddress;
-    pPciAddr->iBus          = (GCPhysAddr >> 20) & ((1<<8)       - 1);
+    pPciAddr->iBus          = (GCPhysAddr >> 20) & ((1<<6)       - 1);
     pPciAddr->iDeviceFunc   = (GCPhysAddr >> 12) & ((1<<(5+3))   - 1); // 5 bits - device, 3 bits - function
     pPciAddr->iRegister     = (GCPhysAddr >>  0) & ((1<<(6+4+2)) - 1); // 6 bits - register, 4 bits - extended register, 2 bits -Byte Enable
 }
@@ -289,13 +288,14 @@ PDMBOTHCBDECL(int)  ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, R
     return VERR_IOM_IOPORT_UNUSED;
 }
 
-static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr, uint32_t val, int len)
+static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr,
+                                uint32_t val, int len, int rcReschedule)
 {
 
     if (pAddr->iRegister > 0xff)
     {
         LogRel(("PCI: attempt to write extended register: %x (%d) <- val\n", pAddr->iRegister, len, val));
-        return 0;
+        return VINF_SUCCESS;
     }
 
     if (pAddr->iBus != 0)
@@ -310,7 +310,7 @@ static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr, uint32_
                 pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, pAddr->iBus, pAddr->iDeviceFunc, pAddr->iRegister, val, len);
             }
 #else
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return rcReschedule;
 #endif
         }
     }
@@ -323,7 +323,7 @@ static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr, uint32_
             Log(("ich9pciConfigWrite: %s: addr=%02x val=%08x len=%d\n", aDev->name, pAddr->iRegister, val, len));
             aDev->Int.s.pfnConfigWrite(aDev, pAddr->iRegister, val, len);
 #else
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return rcReschedule;
 #endif
         }
     }
@@ -345,7 +345,7 @@ static int ich9pciDataWrite(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, i
     /* Compute destination device */
     ich9pciStateToPciAddr(pGlobals, addr, &aPciAddr);
 
-    return ich9pciDataWriteAddr(pGlobals, &aPciAddr, val, len);
+    return ich9pciDataWriteAddr(pGlobals, &aPciAddr, val, len, VINF_IOM_HC_IOPORT_WRITE);
 }
 
 /**
@@ -375,7 +375,8 @@ PDMBOTHCBDECL(int)  ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
     return rc;
 }
 
-static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int len, uint32_t *pu32)
+static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int len,
+                               uint32_t *pu32, int rcReschedule)
 {
     if (pPciAddr->iRegister > 0xff)
     {
@@ -397,7 +398,7 @@ static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int l
                 *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, pPciAddr->iBus, pPciAddr->iDeviceFunc, pPciAddr->iRegister, len);
             }
 #else
-            return VINF_IOM_HC_IOPORT_READ;
+            return rcReschedule;
 #endif
         }
     }
@@ -410,7 +411,7 @@ static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int l
             *pu32 = aDev->Int.s.pfnConfigRead(aDev, pPciAddr->iRegister, len);
             Log(("ich9pciDataReadAddr: %s: addr=%02x val=%08x len=%d\n", aDev->name, pPciAddr->iRegister, *pu32, len));
 #else
-            return VINF_IOM_HC_IOPORT_READ;
+            return rcReschedule;
 #endif
         }
     }
@@ -433,7 +434,7 @@ static int ich9pciDataRead(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_
     /* Compute destination device */
     ich9pciStateToPciAddr(pGlobals, addr, &aPciAddr);
 
-    return ich9pciDataReadAddr(pGlobals, &aPciAddr, len, pu32);
+    return ich9pciDataReadAddr(pGlobals, &aPciAddr, len, pu32, VINF_IOM_HC_IOPORT_READ);
 }
 
 /**
@@ -570,9 +571,9 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
     PciAddress aDest;
     uint32_t u32 = 0;
 
-    Log2(("ich9pciMcfgMMIOWrite: %p(%d) \n", GCPhysAddr, cb));
+    Log2(("ich9pciMcfgMMIOWrite: %RGp(%d) \n", GCPhysAddr, cb));
 
-    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+    PCI_LOCK(pDevIns, VINF_IOM_HC_MMIO_WRITE);
 
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
@@ -591,7 +592,7 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
             Assert(false);
             break;
     }
-    int rc = ich9pciDataWriteAddr(pGlobals, &aDest, u32, cb);
+    int rc = ich9pciDataWriteAddr(pGlobals, &aDest, u32, cb, VINF_IOM_HC_MMIO_WRITE);
     PCI_UNLOCK(pDevIns);
 
     return rc;
@@ -603,28 +604,35 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCP
     PciAddress  aDest;
     uint32_t    rv = 0xffffffff;
 
-    Log2(("ich9pciMcfgMMIORead: %p(%d) \n", GCPhysAddr, cb));
+    LogFlow(("ich9pciMcfgMMIORead: %RGp(%d) \n", GCPhysAddr, cb));
 
-    PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
+    PCI_LOCK(pDevIns, VINF_IOM_HC_MMIO_READ);
 
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
-    int rc = ich9pciDataReadAddr(pGlobals, &aDest, cb, &rv);
+    int rc = ich9pciDataReadAddr(pGlobals, &aDest, cb, &rv, VINF_IOM_HC_MMIO_READ);
 
-    switch (cb)
+    Log2(("ich9pciMcfgMMIORead: %02x:%02x:%02x reg %x(%d) gave %x %Rrc\n", 
+          aDest.iBus, aDest.iDeviceFunc >> 3, aDest.iDeviceFunc & 0x7, aDest.iRegister,
+          cb, rv, rc));
+
+    if (RT_SUCCESS(rc))
     {
-        case 1:
-            *(uint8_t*)pv   = (uint8_t)rv;
-            break;
-        case 2:
-            *(uint16_t*)pv  = (uint16_t)rv;
-            break;
-        case 4:
-            *(uint32_t*)pv  = (uint32_t)rv;
-            break;
-        default:
-            Assert(false);
-            break;
+        switch (cb)
+        {
+            case 1:
+                *(uint8_t*)pv   = (uint8_t)rv;
+                break;
+            case 2:
+                *(uint16_t*)pv  = (uint16_t)rv;
+                break;
+            case 4:
+                *(uint32_t*)pv  = (uint32_t)rv;
+                break;
+            default:
+                Assert(false);
+                break;
+        }
     }
     PCI_UNLOCK(pDevIns);
 
@@ -1403,7 +1411,8 @@ static uint32_t ich9pciConfigRead(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
     aPciAddr.iDeviceFunc = uDevFn;
     aPciAddr.iRegister = addr;
 
-    int rc = ich9pciDataReadAddr(pGlobals, &aPciAddr, len, &u32Val);
+    /* cannot be rescheduled, as already in R3 */
+    int rc = ich9pciDataReadAddr(pGlobals, &aPciAddr, len, &u32Val, VERR_INTERNAL_ERROR);
     AssertRC(rc);
     switch (len)
     {
@@ -1425,7 +1434,9 @@ static void ich9pciConfigWrite(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevF
     aPciAddr.iDeviceFunc = uDevFn;
     aPciAddr.iRegister = addr;
 
-    ich9pciDataWriteAddr(pGlobals, &aPciAddr, val, len);
+    /* cannot be rescheduled, as already in R3 */
+    int rc = ich9pciDataWriteAddr(pGlobals, &aPciAddr, val, len, VERR_INTERNAL_ERROR);
+    AssertRC(rc);
 }
 
 static void ich9pciSetRegionAddress(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDevFn, int iRegion, uint32_t addr)
@@ -2299,40 +2310,40 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
             return rc;
         }
 
-         if (fGCEnabled)
-         {
-
-             rc = PDMDevHlpMMIORegisterRC(pDevIns,
-                                          pGlobals->u64PciConfigMMioAddress,
-                                          pGlobals->u64PciConfigMMioLength,
-                                          0,
-                                          "ich9pciMcfgMMIOWrite",
-                                          "ich9pciMcfgMMIORead",
-                                          NULL /* fill */);
-             if (RT_FAILURE(rc))
-             {
-                 AssertMsgRC(rc, ("Cannot register MCFG MMIO (GC): %Rrc\n", rc));
-                 return rc;
-             }
-         }
-
-
-         if (fR0Enabled)
-         {
-
-             rc = PDMDevHlpMMIORegisterR0(pDevIns,
-                                          pGlobals->u64PciConfigMMioAddress,
-                                          pGlobals->u64PciConfigMMioLength,
-                                          0,
-                                          "ich9pciMcfgMMIOWrite",
-                                          "ich9pciMcfgMMIORead",
-                                          NULL /* fill */);
-             if (RT_FAILURE(rc))
-             {
-                 AssertMsgRC(rc, ("Cannot register MCFG MMIO (R0): %Rrc\n", rc));
-                 return rc;
-             }
-         }
+        if (fGCEnabled)
+        {
+            
+            rc = PDMDevHlpMMIORegisterRC(pDevIns,
+                                         pGlobals->u64PciConfigMMioAddress,
+                                         pGlobals->u64PciConfigMMioLength,
+                                         0,
+                                         "ich9pciMcfgMMIOWrite",
+                                         "ich9pciMcfgMMIORead",
+                                         NULL /* fill */);
+            if (RT_FAILURE(rc))
+            {
+                AssertMsgRC(rc, ("Cannot register MCFG MMIO (GC): %Rrc\n", rc));
+                return rc;
+            }
+        }
+        
+        
+        if (fR0Enabled)
+        {
+            
+            rc = PDMDevHlpMMIORegisterR0(pDevIns,
+                                         pGlobals->u64PciConfigMMioAddress,
+                                         pGlobals->u64PciConfigMMioLength,
+                                         0,
+                                         "ich9pciMcfgMMIOWrite",
+                                         "ich9pciMcfgMMIORead",
+                                         NULL /* fill */);
+            if (RT_FAILURE(rc))
+            {
+                AssertMsgRC(rc, ("Cannot register MCFG MMIO (R0): %Rrc\n", rc));
+                return rc;
+            }
+        }
     }
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_ICH9PCI_SAVED_STATE_VERSION_CURRENT,
@@ -2398,7 +2409,11 @@ static DECLCALLBACK(void) ich9pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelt
     for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
         if (pBus->apDevices[i])
+        {
             pBus->apDevices[i]->Int.s.pBusRC += offDelta;
+            if (pBus->apDevices[i]->Int.s.pMsixPageRC)
+                pBus->apDevices[i]->Int.s.pMsixPageRC += offDelta;
+        }
     }
 
 }
