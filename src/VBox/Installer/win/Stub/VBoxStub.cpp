@@ -120,25 +120,28 @@ static int ReadData(HINSTANCE   hInst,
 {
     do
     {
-        AssertBreakStmt(pszDataName, "Resource name is empty!");
+        AssertMsgBreak(pszDataName, ("Resource name is empty!\n"));
 
         /* Find our resource. */
         HRSRC hRsrc = FindResourceEx(hInst, RT_RCDATA, pszDataName, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
-        AssertBreakStmt(hRsrc, "Could not find resource!");
+        AssertMsgBreak(hRsrc, ("Could not find resource!\n"));
 
         /* Get resource size. */
         *pdwSize = SizeofResource(hInst, hRsrc);
-        AssertBreakStmt(*pdwSize > 0, "Size of resource is invalid!");
+        AssertMsgBreak((*pdwSize > 0, "Size of resource is invalid!\n"));
 
         /* Get pointer to resource. */
         HGLOBAL hData = LoadResource(hInst, hRsrc);
-        AssertBreakStmt(hData, "Could not load resource!");
+        AssertMsgBreak(hData, ("Could not load resource!\n"));
 
         /* Lock resource. */
         *ppvResource = LockResource(hData);
-        AssertBreakStmt(*ppvResource, "Could not lock resource!");
+        AssertMsgBreak(*ppvResource, ("Could not lock resource!\n"));
+        return VINF_SUCCESS;
+
     } while (0);
-    return *ppvResource ? VINF_SUCCESS : VERR_IO_GEN_FAILURE;
+
+    return VERR_IO_GEN_FAILURE;
 }
 
 
@@ -156,7 +159,9 @@ static int GetTempFileAlloc(const char  *pszTempPath,
                             const char  *pszTargetFileName,
                             char       **ppszTempFile)
 {
-    return RTStrAPrintf(ppszTempFile, "%s\\%s", pszTempPath, pszTargetFileName);
+    if (RTStrAPrintf(ppszTempFile, "%s\\%s", pszTempPath, pszTargetFileName) >= 0)
+        return VINF_SUCCESS;
+    return VERR_NO_STR_MEMORY;
 }
 
 
@@ -178,14 +183,14 @@ static int ExtractFile(const char *pszResourceName,
 
     do
     {
-        AssertBreakStmt(pszResourceName, "Resource pointer invalid!");
-        AssertBreakStmt(pszTempFile, "Temp file pointer invalid!");
+        AssertMsgBreak(pszResourceName, ("Resource pointer invalid!\n"));
+        AssertMsgBreak(pszTempFile, ("Temp file pointer invalid!"));
 
         /* Read the data of the built-in resource. */
         PVOID pvData = NULL;
         DWORD dwDataSize = 0;
         rc = ReadData(NULL, pszResourceName, &pvData, &dwDataSize);
-        AssertRCBreakStmt(rc, "Could not read resource data!");
+        AssertMsgRCBreak(rc, ("Could not read resource data!\n"));
 
         /* Create new (and replace an old) file. */
         rc = RTFileOpen(&fh, pszTempFile,
@@ -193,14 +198,14 @@ static int ExtractFile(const char *pszResourceName,
                         | RTFILE_O_WRITE
                         | RTFILE_O_DENY_NOT_DELETE
                         | RTFILE_O_DENY_WRITE);
-        AssertRCBreakStmt(rc, "Could not open file for writing!");
+        AssertMsgRCBreak(rc, ("Could not open file for writing!\n"));
         bCreatedFile = TRUE;
 
         /* Write contents to new file. */
         size_t cbWritten = 0;
         rc = RTFileWrite(fh, pvData, dwDataSize, &cbWritten);
-        AssertRCBreakStmt(rc, "Could not open file for writing!");
-        AssertBreakStmt((dwDataSize == cbWritten), "File was not extracted completely! Disk full?");
+        AssertMsgRCBreak(rc, ("Could not open file for writing!\n"));
+        AssertMsgBreak(dwDataSize == cbWritten, ("File was not extracted completely! Disk full?\n"));
 
     } while (0);
 
@@ -345,11 +350,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     BOOL fSilent = FALSE;
     BOOL fEnableLogging = FALSE;
     BOOL bExit = FALSE;
-    char *pszTempPathFull = NULL; /* Contains the final extraction directory later. */
 
     /* Temp variables for arguments. */
-    char szExtractPath[1024] = {0};
-    char szMSIArgs[1024] = {0};
+    char szExtractPath[RTPATH_MAX] = {0};
+    char szMSIArgs[RTPATH_MAX] = {0};
 
     /* Process arguments. */
     for (int i = 0; i < iArgC; i++)
@@ -381,7 +385,6 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                  && (iArgC > i))
         {
             vrc = ::StringCbCat(szExtractPath, sizeof(szExtractPath), pArgV[i+1]);
-            pszTempPathFull = szExtractPath; /* Point to the new path. */
             i++; /* Avoid the specify path from being parsed */
         }
 
@@ -444,22 +447,21 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
     HRESULT hr = S_OK;
 
-    do
+    do /* break loop */
     {
         /* Get/create our temp path (only if not already set). */
-        if (pszTempPathFull == NULL)
+        if (szExtractPath[0] == '\0')
         {
-            char szTemp[_MAX_PATH] = {0};
-            vrc = RTPathTemp(szTemp, sizeof(szTemp));
-            AssertRCBreakStmt(vrc, "Could not retrieve temp directory!");
-            vrc = RTStrAPrintf(&pszTempPathFull, "%s\\VirtualBox", szTemp);
-            AssertRCBreakStmt(vrc, "Could not construct temp directory!");
-        }
+            vrc = RTPathTemp(szExtractPath, sizeof(szExtractPath));
+            AssertMsgRCBreak(vrc, ("Could not retrieve temp directory!\n"));
 
-        if (!RTDirExists(pszTempPathFull))
+            vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "VirtualBox");
+            AssertMsgRCBreak(vrc, ("Could not construct temp directory!\n"));
+        }
+        if (!RTDirExists(szExtractPath))
         {
-            vrc = RTDirCreate(pszTempPathFull, 0700);
-            AssertRCBreakStmt(vrc, "Could not create temp directory!");
+            vrc = RTDirCreate(szExtractPath, 0700);
+            AssertMsgRCBreak(vrc, ("Could not create temp directory!\n"));
         }
 
         /* Get our executable path */
@@ -471,7 +473,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         PVBOXSTUBPKGHEADER pHeader = NULL;
         DWORD cbHeader = 0;
         vrc = ReadData(NULL, "MANIFEST", (LPVOID*)&pHeader, &cbHeader);
-        AssertRCBreakStmt(vrc, "Manifest not found!");
+        AssertMsgRCBreak(vrc, ("Manifest not found!\n"));
 
         /* Extract files. */
         for (BYTE k = 0; k < pHeader->byCntPkgs; k++)
@@ -482,15 +484,15 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
             hr = ::StringCchPrintf(szHeaderName, _MAX_PATH, "HDR_%02d", k);
             vrc = ReadData(NULL, szHeaderName, (LPVOID*)&pPackage, &cbPackage);
-            AssertRCBreakStmt(vrc, "Header not found!"); /** @todo include header name, how? */
+            AssertMsgRCBreak(vrc, ("Header not found!\n")); /** @todo include header name, how? */
 
             if (PackageIsNeeded(pPackage) || fExtractOnly)
             {
                 char *pszTempFile = NULL;
-                vrc = GetTempFileAlloc(pszTempPathFull, pPackage->szFileName, &pszTempFile);
-                AssertRCBreakStmt(vrc, "Could not create name for temporary extracted file!");
+                vrc = GetTempFileAlloc(szExtractPath, pPackage->szFileName, &pszTempFile);
+                AssertMsgRCBreak(vrc, ("Could not create name for temporary extracted file!\n"));
                 vrc = Extract(pPackage, pszTempFile);
-                AssertRCBreakStmt(vrc, "Could not extract file!");
+                AssertMsgRCBreak(vrc, ("Could not extract file!\n"));
                 RTStrFree(pszTempFile);
             }
         }
@@ -501,11 +503,10 @@ int WINAPI WinMain(HINSTANCE  hInstance,
              * Copy ".custom" directory into temp directory so that the extracted .MSI
              * file(s) can use it.
              */
-            char *pszPathCustomDir;
-            vrc = RTStrAPrintf(&pszPathCustomDir, "%s\\.custom", szPathExe);
-            if (RT_SUCCESS(vrc) && RTDirExists(pszPathCustomDir))
+            char *pszPathCustomDir = RTPathJoinA(szPathExe, ".custom");
+            if (pszPathCustomDir && RTDirExists(pszPathCustomDir))
             {
-                vrc = CopyDir(pszTempPathFull, pszPathCustomDir);
+                vrc = CopyDir(szExtractPath, pszPathCustomDir);
                 if (RT_FAILURE(vrc)) /* Don't fail if it's missing! */
                     vrc = VINF_SUCCESS;
 
@@ -521,14 +522,14 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
                 hr = StringCchPrintf(szHeaderName, _MAX_PATH, "HDR_%02d", k);
                 vrc = ReadData(NULL, szHeaderName, (LPVOID*)&pPackage, &cbPackage);
-                AssertRCBreakStmt(vrc, "Package not found!");
+                AssertMsgRCBreak(vrc, ("Package not found!\n"));
 
                 if (PackageIsNeeded(pPackage))
                 {
                     char *pszTempFile = NULL;
 
-                    vrc = GetTempFileAlloc(pszTempPathFull, pPackage->szFileName, &pszTempFile);
-                    AssertRCBreakStmt(vrc, "Could not create name for temporary action file!");
+                    vrc = GetTempFileAlloc(szExtractPath, pPackage->szFileName, &pszTempFile);
+                    AssertMsgRCBreak(vrc, ("Could not create name for temporary action file!\n"));
 
                     /* Handle MSI files. */
                     if (RTStrICmp(RTPathExt(pszTempFile), ".msi") == 0)
@@ -538,19 +539,17 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                                                                   ? INSTALLUILEVEL_NONE
                                                                   : INSTALLUILEVEL_FULL,
                                                                     NULL);
-                        AssertBreakStmt((UILevel != INSTALLUILEVEL_NOCHANGE), "Could not set installer UI level!");
+                        AssertMsgBreak(UILevel != INSTALLUILEVEL_NOCHANGE, ("Could not set installer UI level!\n"));
 
                         /* Enable logging? */
                         if (fEnableLogging)
                         {
-                            char *pszLog = NULL;
-                            vrc = RTStrAPrintf(&pszLog, "%s\\VBoxInstallLog.txt", pszTempPathFull);
-                            char *pszMSILog = NULL;
-                            AssertRCBreakStmt(vrc, "Could not convert MSI log string to current codepage!");
+                            char *pszLog = RTPathJoinA(szExtractPath, "VBoxInstallLog.txt");
+                            AssertMsgRCBreak(vrc, ("Could not convert MSI log string to current codepage!\n"));
                             UINT uLogLevel = MsiEnableLog(INSTALLLOGMODE_VERBOSE,
                                                           pszLog, INSTALLLOGATTRIBUTES_FLUSHEACHLINE);
                             RTStrFree(pszLog);
-                            AssertBreakStmt((uLogLevel == ERROR_SUCCESS), "Could not set installer logging level!");
+                            AssertMsgBreak(uLogLevel == ERROR_SUCCESS, ("Could not set installer logging level!\n"));
                         }
 
                         UINT uStatus = ::MsiInstallProductA(pszTempFile, szMSIArgs);
@@ -595,7 +594,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         {
             for (int i=0; i<5; i++)
             {
-                vrc = RTDirRemoveRecursive(pszTempPathFull, 0 /*fFlags*/);
+                vrc = RTDirRemoveRecursive(szExtractPath, 0 /*fFlags*/);
                 if (RT_SUCCESS(vrc))
                     break;
                 RTThreadSleep(3000 /* Wait 3 seconds.*/);
@@ -606,18 +605,14 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
     if (RT_SUCCESS(vrc))
     {
-        if (    fExtractOnly
-            && !fSilent
-            )
+        if (   fExtractOnly
+            && !fSilent)
         {
-            ShowInfo("Files were extracted to: %s", pszTempPathFull);
+            ShowInfo("Files were extracted to: %s", szExtractPath);
         }
 
         /** @todo Add more post installation stuff here if required. */
     }
-
-    if (strlen(szExtractPath) <= 0)
-        RTStrFree(pszTempPathFull);
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL)
