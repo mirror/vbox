@@ -921,7 +921,10 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
      */
     pImage->pBlockAllocationTable = (uint32_t *)RTMemAllocZ(pImage->cBlockAllocationTableEntries * sizeof(uint32_t));
     if (!pImage->pBlockAllocationTable)
+    {
+        RTMemFree(pBlockAllocationTable);
         return VERR_NO_MEMORY;
+    }
 
     for (i = 0; i < pImage->cBlockAllocationTableEntries; i++)
         pImage->pBlockAllocationTable[i] = RT_BE2H_U32(pBlockAllocationTable[i]);
@@ -1516,9 +1519,17 @@ static int vhdCreate(const char *pszFilename, uint64_t cbSize,
 
     /* Get I/O interface. */
     pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsImage, VDINTERFACETYPE_IOINT);
-    AssertPtrReturn(pImage->pInterfaceIO, VERR_INVALID_PARAMETER);
+    if (RT_UNLIKELY(!VALID_PTR(pImage->pInterfaceIO)))
+    {
+        RTMemFree(pImage);
+        return VERR_INVALID_PARAMETER;
+    }
     pImage->pInterfaceIOCallbacks = VDGetInterfaceIOInt(pImage->pInterfaceIO);
-    AssertPtrReturn(pImage->pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
+    if (RT_UNLIKELY(!VALID_PTR(pImage->pInterfaceIOCallbacks)))
+    {
+        RTMemFree(pImage);
+        return VERR_INVALID_PARAMETER;
+    }
 
     rc = vhdCreateImage(pImage, cbSize, uImageFlags, pszComment,
                         pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags,
