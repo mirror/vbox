@@ -10,13 +10,18 @@
 
 void PACK_APIENTRY crPackBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload, GLint len, GLint num_opcodes )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     /* Don't get the buffered_ptr here because we've already 
      * verified that there's enough space for everything. */
 
-    unsigned char *data_ptr = pc->buffer.data_current;
-    int len_aligned     = ( len + 0x3 ) & ~0x3;
-    int total_len = 24 + len_aligned;
+    unsigned char *data_ptr;
+    int len_aligned, total_len;
+
+    CR_LOCK_PACKER_CONTEXT(pc);
+
+    data_ptr = pc->buffer.data_current;
+    len_aligned     = ( len + 0x3 ) & ~0x3;
+    total_len = 24 + len_aligned;
 
     WRITE_DATA( 0, int, total_len );
     WRITE_DATA( 4, int, bounds->x1 );
@@ -41,4 +46,5 @@ void PACK_APIENTRY crPackBoundsInfoCR( const CRrecti *bounds, const GLbyte *payl
 
     WRITE_OPCODE( pc, CR_BOUNDSINFOCR_OPCODE );
     pc->buffer.data_current += 24 + len_aligned;
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

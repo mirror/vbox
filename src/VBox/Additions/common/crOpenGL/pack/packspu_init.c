@@ -69,6 +69,25 @@ packSPUSelfDispatch(SPUDispatchTable *self)
 static int
 packSPUCleanup(void)
 {
+    int i;
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&_PackMutex);
+#endif
+    for (i=0; i<pack_spu.numThreads; ++i)
+    {
+        if (pack_spu.thread[i].packer)
+        {
+            crPackDeleteContext(pack_spu.thread[i].packer);
+        }
+    }
+
+    crFreeTSD(&_PackerTSD);
+    crFreeTSD(&_PackTSD);
+    
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&_PackMutex);
+    crFreeMutex(&_PackMutex);
+#endif
     return 1;
 }
 

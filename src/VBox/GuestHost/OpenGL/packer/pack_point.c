@@ -12,7 +12,7 @@
 
 static GLboolean __handlePointDataf( GLenum pname, const GLfloat *params )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     int params_length = 0;
     int packet_length = 2 * sizeof( int ) + sizeof( pname );
     unsigned char *data_ptr;
@@ -36,7 +36,7 @@ static GLboolean __handlePointDataf( GLenum pname, const GLfloat *params )
     }
     packet_length += params_length;
 
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, GLint, packet_length );
     WRITE_DATA( 4, GLenum, CR_POINTPARAMETERFVARB_EXTEND_OPCODE );
     WRITE_DATA( 8, GLenum, pname );
@@ -51,16 +51,17 @@ static GLboolean __handlePointDataf( GLenum pname, const GLfloat *params )
 
 void PACK_APIENTRY crPackPointParameterfvARB(GLenum pname, const GLfloat *params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handlePointDataf( pname, params ))
         WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 #endif
 
 static GLboolean __handlePointDatai( GLenum pname, const GLint *params )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     int params_length = 0;
     int packet_length = 2 * sizeof( int ) + sizeof( pname );
     unsigned char *data_ptr;
@@ -84,7 +85,7 @@ static GLboolean __handlePointDatai( GLenum pname, const GLint *params )
     }
     packet_length += params_length;
 
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, GLint, packet_length );
     WRITE_DATA( 4, GLenum, CR_POINTPARAMETERIV_EXTEND_OPCODE );
     WRITE_DATA( 8, GLenum, pname );
@@ -99,7 +100,8 @@ static GLboolean __handlePointDatai( GLenum pname, const GLint *params )
 
 void PACK_APIENTRY crPackPointParameteriv(GLenum pname, const GLint *params)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     if (__handlePointDatai( pname, params ))
         WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

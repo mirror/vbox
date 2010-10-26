@@ -29,10 +29,10 @@ void PACK_APIENTRY crPackVertexPointer( GLint size, GLenum type, GLsizei stride,
      * @todo Because of that we'd only transfer lowest 32bit as there're no 4gb+VBOs (yet?).
      * Look at glgets regarding max vertices in arrays.
 	 */
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 24;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_VERTEXPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLint, size );
@@ -40,14 +40,15 @@ void PACK_APIENTRY crPackVertexPointer( GLint size, GLenum type, GLsizei stride,
 	WRITE_DATA( 16, GLsizei, stride );
 	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 24;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_COLORPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLint, size );
@@ -55,28 +56,30 @@ void PACK_APIENTRY crPackColorPointer( GLint size, GLenum type, GLsizei stride, 
 	WRITE_DATA( 16, GLsizei, stride );
 	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackNormalPointer( GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 20;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_NORMALPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, type );
 	WRITE_DATA( 12, GLsizei, stride );
 	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackTexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 24;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_TEXCOORDPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLint, size );
@@ -84,41 +87,44 @@ void PACK_APIENTRY crPackTexCoordPointer( GLint size, GLenum type, GLsizei strid
 	WRITE_DATA( 16, GLsizei, stride );
 	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackEdgeFlagPointer( GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 16;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_EDGEFLAGPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLsizei, stride );
 	WRITE_DATA( 12, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackIndexPointer( GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 20;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_INDEXPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, type );
 	WRITE_DATA( 12, GLsizei, stride );
 	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackSecondaryColorPointerEXT( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 24;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_SECONDARYCOLORPOINTEREXT_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLint, size );
@@ -126,28 +132,30 @@ void PACK_APIENTRY crPackSecondaryColorPointerEXT( GLint size, GLenum type, GLsi
 	WRITE_DATA( 16, GLsizei, stride );
 	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackFogCoordPointerEXT( GLenum type, GLsizei stride, const GLvoid * pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 20;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_FOGCOORDPOINTEREXT_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, type );
 	WRITE_DATA( 12, GLsizei, stride );
 	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackVertexAttribPointerARB( GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 32;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_VERTEXATTRIBPOINTERARB_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLint, index );
@@ -157,14 +165,15 @@ void PACK_APIENTRY crPackVertexAttribPointerARB( GLuint index, GLint size, GLenu
 	WRITE_DATA( 24, GLsizei, stride );
 	WRITE_DATA( 28, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackVertexAttribPointerNV( GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 28;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_VERTEXATTRIBPOINTERNV_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLint, index );
@@ -173,20 +182,22 @@ void PACK_APIENTRY crPackVertexAttribPointerNV( GLuint index, GLint size, GLenum
 	WRITE_DATA( 20, GLsizei, stride );
 	WRITE_DATA( 24, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackInterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	int packet_length = 20;
-	GET_BUFFERED_POINTER( pc, packet_length );
+	CR_GET_BUFFERED_POINTER( pc, packet_length );
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_INTERLEAVEDARRAYS_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, format );
 	WRITE_DATA( 12, GLsizei, stride );
 	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 

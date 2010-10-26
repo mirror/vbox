@@ -62,10 +62,10 @@ void PACK_APIENTRY crPackCallLists(GLint n, GLenum type,
 
 void PACK_APIENTRY crPackNewList( GLuint list, GLenum mode )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     (void) pc;
-    GET_BUFFERED_POINTER( pc, 16 );
+    CR_GET_BUFFERED_POINTER( pc, 16 );
     WRITE_DATA( 0, GLint, 16 );
     WRITE_DATA( 4, GLenum, CR_NEWLIST_EXTEND_OPCODE );
     WRITE_DATA( 8, GLuint, list );
@@ -73,15 +73,17 @@ void PACK_APIENTRY crPackNewList( GLuint list, GLenum mode )
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
     pc->buffer.in_List = GL_TRUE;
     pc->buffer.holds_List = GL_TRUE;
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackEndList( void )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
-    GET_BUFFERED_POINTER( pc, 8 );
+    CR_GET_BUFFERED_POINTER( pc, 8 );
     WRITE_DATA( 0, GLint, 8 );
     WRITE_DATA( 4, GLenum, CR_ENDLIST_EXTEND_OPCODE );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
     pc->buffer.in_List = GL_FALSE;
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

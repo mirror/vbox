@@ -63,7 +63,7 @@ void PACK_APIENTRY crPackReadPixels(GLint x, GLint y, GLsizei width,
                                     const CRPixelPackState *packstate,
                                     int *writeback)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     GLint stride = 0;
     GLint bytes_per_row;
@@ -88,7 +88,7 @@ void PACK_APIENTRY crPackReadPixels(GLint x, GLint y, GLsizei width,
                 stride = bytes_per_row + (packstate->alignment - remainder);
     }
 
-    GET_BUFFERED_POINTER(pc, 48 + sizeof(CRNetworkPointer) );
+    CR_GET_BUFFERED_POINTER(pc, 48 + sizeof(CRNetworkPointer) );
     WRITE_DATA( 0,  GLint,  x );
     WRITE_DATA( 4,  GLint,  y );
     WRITE_DATA( 8,  GLsizei,  width );
@@ -103,6 +103,7 @@ void PACK_APIENTRY crPackReadPixels(GLint x, GLint y, GLsizei width,
     WRITE_DATA( 44, GLint, packstate->rowLength );
     WRITE_NETWORK_POINTER( 48, (char *) pixels );
     WRITE_OPCODE( pc, CR_READPIXELS_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 /* Round N up to the next multiple of 8 */
@@ -204,10 +205,10 @@ crPackGetTexImage( GLenum target, GLint level, GLenum format, GLenum type,
                                      GLvoid * pixels, const CRPixelPackState * packstate,
                                      int * writeback )
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
     (void) pc;
-    GET_BUFFERED_POINTER( pc, 40 );
+    CR_GET_BUFFERED_POINTER( pc, 40 );
     WRITE_DATA( 0, GLint, 40 );
     WRITE_DATA( 4, GLenum, CR_GETTEXIMAGE_EXTEND_OPCODE );
     WRITE_DATA( 8, GLenum, target );
@@ -217,4 +218,5 @@ crPackGetTexImage( GLenum target, GLint level, GLenum format, GLenum type,
     WRITE_NETWORK_POINTER( 24, (void *) pixels );
     WRITE_NETWORK_POINTER( 32, (void *) writeback );
     WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

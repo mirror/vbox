@@ -87,10 +87,10 @@ crPackBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size,
 void PACK_APIENTRY 
 crPackGetBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size, void * data, int * writeback )
 {
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 	(void) pc;
-	GET_BUFFERED_POINTER( pc, 36 );
+	CR_GET_BUFFERED_POINTER( pc, 36 );
 	WRITE_DATA( 0, GLint, 36 );
 	WRITE_DATA( 4, GLenum, CR_GETBUFFERSUBDATAARB_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, target );
@@ -99,6 +99,7 @@ crPackGetBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size
 	WRITE_NETWORK_POINTER( 20, (void *) data );
 	WRITE_NETWORK_POINTER( 28, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY

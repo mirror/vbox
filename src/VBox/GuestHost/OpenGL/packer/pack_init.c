@@ -23,6 +23,7 @@ CRPackContext *crPackNewContext( int swapping )
     CRPackContext *pc = crCalloc(sizeof(CRPackContext));
     if (!pc)
         return NULL;
+    crInitMutex(&pc->mutex);
 #else
     GET_PACKER_CONTEXT(pc);
         crMemZero( pc, sizeof(CRPackContext));
@@ -34,6 +35,13 @@ CRPackContext *crPackNewContext( int swapping )
     return pc;
 }
 
+void crPackDeleteContext(CRPackContext *pc)
+{
+#ifdef CHROMIUM_THREADSAFE
+    crFreeMutex(&pc->mutex);
+    crFree(pc);
+#endif
+}
 
 /* Set packing context for the calling thread */
 void crPackSetContext( CRPackContext *pc )

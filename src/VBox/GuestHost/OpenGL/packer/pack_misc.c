@@ -9,7 +9,7 @@
 
 void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsizei count, const GLvoid *values)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
     unsigned int header_length = 2 * sizeof(int) + sizeof(target) + sizeof(type) + sizeof(count);
     unsigned int packet_length;
     unsigned int params_length = 0;
@@ -45,7 +45,7 @@ void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsize
 
     packet_length = header_length + params_length;
 
-    GET_BUFFERED_POINTER(pc, packet_length );
+    CR_GET_BUFFERED_POINTER(pc, packet_length );
     WRITE_DATA( 0, GLint, packet_length );
     WRITE_DATA( 4, GLenum, CR_CHROMIUMPARAMETERVCR_EXTEND_OPCODE );
     WRITE_DATA( 8, GLenum, target );
@@ -89,15 +89,16 @@ void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsize
     default:
         __PackError( __LINE__, __FILE__, GL_INVALID_ENUM,
                                  "crPackChromiumParametervCR(bad type)" );
+        CR_UNLOCK_PACKER_CONTEXT(pc);
         return;
     }
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackDeleteQueriesARB(GLsizei n, const GLuint * ids)
 {
     unsigned char *data_ptr;
     int packet_length = sizeof(GLenum)+sizeof(n)+n*sizeof(*ids);
-    GET_PACKER_CONTEXT(pc);
     if (!ids) return;
     data_ptr = (unsigned char *) crPackAlloc(packet_length);
     WRITE_DATA(0, GLenum, CR_DELETEQUERIESARB_EXTEND_OPCODE);

@@ -21,7 +21,7 @@ crPackCreateContext( const char *dpyName, GLint visual, GLint shareCtx,
                      GLint *return_value, int *writeback )
 {
 	char displayName[DISPLAY_NAME_LEN];
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
         int len = DISPLAY_NAME_LEN + 32;
 
@@ -36,7 +36,7 @@ crPackCreateContext( const char *dpyName, GLint visual, GLint shareCtx,
 		displayName[0] = 0;
 	}
 
-	GET_BUFFERED_POINTER(pc, len);
+	CR_GET_BUFFERED_POINTER(pc, len);
 	WRITE_DATA( 0, GLint, len );
 	WRITE_DATA( 4, GLenum, CR_CREATECONTEXT_EXTEND_OPCODE );
 	WRITE_BYTES( 8, displayName, DISPLAY_NAME_LEN );
@@ -45,6 +45,7 @@ crPackCreateContext( const char *dpyName, GLint visual, GLint shareCtx,
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 16, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 24, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY
@@ -52,7 +53,7 @@ crPackCreateContextSWAP( const char *dpyName, GLint visual, GLint shareCtx,
                          GLint *return_value, int *writeback )
 {
 	char displayName[DISPLAY_NAME_LEN];
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
         int len = DISPLAY_NAME_LEN + 32;
 
@@ -67,7 +68,7 @@ crPackCreateContextSWAP( const char *dpyName, GLint visual, GLint shareCtx,
 		displayName[0] = 0;
 	}
 
-	GET_BUFFERED_POINTER(pc, len);
+	CR_GET_BUFFERED_POINTER(pc, len);
 	WRITE_DATA( 0, GLint, SWAP32(len) );
 	WRITE_DATA( 4, GLenum, SWAP32(CR_CREATECONTEXT_EXTEND_OPCODE) );
 	WRITE_BYTES( 8, displayName, DISPLAY_NAME_LEN );
@@ -76,13 +77,14 @@ crPackCreateContextSWAP( const char *dpyName, GLint visual, GLint shareCtx,
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 16, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 24, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 
 void PACK_APIENTRY crPackWindowCreate( const char *dpyName, GLint visBits, GLint *return_value, int *writeback )
 {
 	char displayName[DISPLAY_NAME_LEN];
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 
 	/* clear the buffer, to silence valgrind */
@@ -96,7 +98,7 @@ void PACK_APIENTRY crPackWindowCreate( const char *dpyName, GLint visBits, GLint
 		displayName[0] = 0;
 	}
 
-	GET_BUFFERED_POINTER(pc, DISPLAY_NAME_LEN + 28 );
+	CR_GET_BUFFERED_POINTER(pc, DISPLAY_NAME_LEN + 28 );
 	WRITE_DATA( 0, GLint, 28 );
 	WRITE_DATA( 4, GLenum, CR_WINDOWCREATE_EXTEND_OPCODE );
 	WRITE_BYTES( 8, displayName, DISPLAY_NAME_LEN );
@@ -104,12 +106,13 @@ void PACK_APIENTRY crPackWindowCreate( const char *dpyName, GLint visBits, GLint
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 12, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 20, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
 void PACK_APIENTRY crPackWindowCreateSWAP( const char *dpyName, GLint visBits, GLint *return_value, int *writeback )
 {
 	char displayName[DISPLAY_NAME_LEN];
-	GET_PACKER_CONTEXT(pc);
+	CR_GET_PACKER_CONTEXT(pc);
 	unsigned char *data_ptr;
 
 	/* clear the buffer, to silence valgrind */
@@ -123,7 +126,7 @@ void PACK_APIENTRY crPackWindowCreateSWAP( const char *dpyName, GLint visBits, G
 		displayName[0] = 0;
 	}
 
-	GET_BUFFERED_POINTER(pc, DISPLAY_NAME_LEN + 28 );
+	CR_GET_BUFFERED_POINTER(pc, DISPLAY_NAME_LEN + 28 );
 	WRITE_DATA( 0, GLint, SWAP32(28) );
 	WRITE_DATA( 4, GLenum, SWAP32(CR_WINDOWCREATE_EXTEND_OPCODE) );
 	WRITE_BYTES( 8, displayName, DISPLAY_NAME_LEN );
@@ -131,4 +134,5 @@ void PACK_APIENTRY crPackWindowCreateSWAP( const char *dpyName, GLint visBits, G
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 12, (void *) return_value );
 	WRITE_NETWORK_POINTER( DISPLAY_NAME_LEN + 20, (void *) writeback );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+    CR_UNLOCK_PACKER_CONTEXT(pc);
 }

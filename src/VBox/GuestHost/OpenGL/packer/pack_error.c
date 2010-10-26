@@ -26,7 +26,7 @@ void crPackErrorFunction( CRPackContext *pc, CRPackErrorHandlerFunc function )
  */
 void __PackError( int line, const char *file, GLenum error, const char *info)
 {
-    GET_PACKER_CONTEXT(pc);
+    CR_GET_PACKER_CONTEXT(pc);
 
     if (pc->Error)
         pc->Error( line, file, error, info );
