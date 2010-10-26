@@ -100,7 +100,7 @@ RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
      * Calc the length and check if there is space before copying.
      */
     size_t cch = g_cchrtProcExePath;
-    if (cch <= cchExecName)
+    if (cch < cchExecName)
     {
         memcpy(pszExecName, g_szrtProcExePath, cch);
         pszExecName[cch] = '\0';
