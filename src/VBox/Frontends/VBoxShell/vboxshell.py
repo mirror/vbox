@@ -1625,7 +1625,7 @@ def findAssertCmd(ctx, args):
        log  = args[2]
 
     uOffset = 0
-    ere = re.compile(r'Expression: ')
+    ere = re.compile(r'(Expression:|\!\!\!\!\!\!)')
     active = False
     context = 0
     while True:
