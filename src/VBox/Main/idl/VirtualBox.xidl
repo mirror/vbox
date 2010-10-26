@@ -1373,7 +1373,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="2ecb8c49-ce8a-41fc-96da-9a438b44e4b1"
+    uuid="4bbb7840-f46a-4672-90e2-c4bf65c3c74c"
     wsmap="managed"
   >
     <desc>
