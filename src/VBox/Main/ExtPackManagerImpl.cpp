@@ -27,6 +27,7 @@
 #include <iprt/path.h>
 
 #include <VBox/com/array.h>
+#include <VBox/log.h>
 #include "AutoCaller.h"
 
 
