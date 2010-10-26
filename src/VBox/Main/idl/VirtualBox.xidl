@@ -13952,6 +13952,111 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
   </interface>
 
+  <!--
+  // IExtPackManager
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="IExtPack" extends="$unknown"
+    uuid="1b69431b-b22f-454a-977d-7d50986defcb"
+    wsmap="suppress"
+    >
+    <desc>
+      Interface for querying interfaces and information relating to an
+      extension pack.  The extension pack specific interfaces can be queried
+      via the IUnknown::QueryInterface method.
+    </desc>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>The extension pack name.  This is unique.</desc>
+    </attribute>
+    <attribute name="version" type="wstring" readonly="yes">
+      <desc>
+        The extension pack version string.  This is on the same form as
+        other VirtualBox version strings, i.e.: "1.2.3", "1.2.3_BETA1",
+        "1.2.3-OSE", "1.2.3r45678", "1.2.3r45678-OSE", "1.2.3_BETA1-r45678"
+        or "1.2.3_BETA1-r45678-OSE"
+      </desc>
+    </attribute>
+    <attribute name="revision" type="unsigned long" readonly="yes">
+      <desc>The extension pack internal revision number.</desc>
+    </attribute>
+    <attribute name="usable" type="boolean" readonly="yes">
+      <desc>
+        Indicates whether the extension pack is usable or not.  An
+        extension pack that is not compatible with the current VirtualBox
+        version will be flagged as not usable.
+      </desc>
+    </attribute>
+    <attribute name="whyUnusable" type="wstring" readonly="yes">
+      <desc>
+        String indicating why the extension pack is not usable.  This is an
+        empty string if usable and always a non-empty string if not usable.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IExtPackManager" extends="$unknown"
+    uuid="ba1fbfca-53f1-471c-b5a1-416386f0f52b"
+    wsmap="suppress"
+    >
+    <desc>
+      Interface for managing VirtualBox Extension Packs.
+
+      TODO: Describe extension packs, how they are managed and how to create
+            one.
+    </desc>
+
+    <attribute name="installedExtPacks" type="IExtPack" safearray="yes" readonly="yes">
+      <desc>
+        List of the installed extension packs.
+      </desc>
+    </attribute>
+
+    <method name="find">
+      <desc>
+        Returns the extension pack with the specified name if found.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No extension pack matching @a name was found.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>The name of the extension pack to locate.</desc>
+      </param>
+      <param name="returnData" type="IExtPack" dir="return">
+        <desc>The extension pack if found.</desc>
+      </param>
+    </method>
+
+    <method name="install">
+      <param name="path" type="wstring" dir="in">
+        <desc>The path of the extension pack tarball.</desc>
+      </param>
+      <param name="name" type="wstring" dir="out">
+        <desc>The name of the installed extension pack.</desc>
+      </param>
+    </method>
+
+    <method name="uninstall">
+      <desc>Uninstalls an extension pack, removing all related files.</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>The name of the extension pack to uninstall.</desc>
+      </param>
+      <param name="forcedRemoval" type="boolean" dir="in">
+        <desc>
+          Forced removal of the extension pack.  This means that the uninstall
+          hook will not be called.
+        </desc>
+      </param>
+    </method>
+  </interface>
+
+  <!--
+  // Events
+  /////////////////////////////////////////////////////////////////////////
+  -->
   <enum
      name="VBoxEventType"
      uuid="e085d0b1-05e6-4f40-a709-b7266fbdb236">

@@ -91,6 +91,9 @@
 #include <StorageControllerImpl.h>
 #include <AudioAdapterImpl.h>
 #include <SystemPropertiesImpl.h>
+#ifdef VBOX_WITH_EXTPACK
+# include <ExtPackManagerImpl.h>
+#endif
 
 /* implement nsISupports parts of our objects with support for nsIClassInfo */
 
@@ -201,6 +204,14 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PerformanceMetric, IPerformanceMetric)
 
 NS_DECL_CLASSINFO(BIOSSettings)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(BIOSSettings, IBIOSSettings)
+
+#ifdef VBOX_WITH_EXTPACK
+NS_DECL_CLASSINFO(ExtPack)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPack, IExtPack)
+
+NS_DECL_CLASSINFO(ExtPackManager)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
