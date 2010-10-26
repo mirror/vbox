@@ -3509,7 +3509,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           <para><xref linkend="IMachine__export"
           xreflabel="IMachine::export()" /> received an extra parameter
           <computeroutput>location</computeroutput>, which is used to decide
-          for the disk nameing.</para>
+          for the disk naming.</para>
         </listitem>
 
         <listitem>
@@ -3517,6 +3517,15 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
           xreflabel="IAppliance::write()" /> received an extra parameter
           <computeroutput>manifest</computeroutput>, which can suppress
           creating the manifest file on export.</para>
+        </listitem>
+
+        <listitem>
+          <para><xref linkend="IVFSExplorer__entryList"
+          xreflabel="IVFSExplorer::entryList()" /> received two extra
+          parameters <computeroutput>sizes</computeroutput> and
+          <computeroutput>modes</computeroutput>, which contains the sizes (in
+          bytes) and the file access modes (in octal form) of the returned
+          files.</para>
         </listitem>
 
         <listitem>
