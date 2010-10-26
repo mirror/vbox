@@ -35,6 +35,7 @@
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
+#include <iprt/param.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
