@@ -382,7 +382,6 @@ static int sys_thread_adapter(RTTHREAD ThreadSelf, void *pvUser)
 sys_thread_t sys_thread_new(void (* thread)(void *arg), void *arg, int prio)
 {
     int rc;
-    char *pszThread = NULL;
 #if SYS_LIGHTWEIGHT_PROT
     SYS_ARCH_DECL_PROTECT(old_level);
 #endif
@@ -399,9 +398,8 @@ sys_thread_t sys_thread_new(void (* thread)(void *arg), void *arg, int prio)
     Assert(g_cThreads <= THREADS_MAX);
     g_aTLS[id].thread = thread;
     g_aTLS[id].arg = arg;
-    RTStrAPrintf(&pszThread, "lwIP%u", id);
-    rc = RTThreadCreate(&tid, sys_thread_adapter, &g_aTLS[id], 0,
-                        RTTHREADTYPE_IO, 0, pszThread);
+    rc = RTThreadCreateF(&tid, sys_thread_adapter, &g_aTLS[id], 0,
+                         RTTHREADTYPE_IO, 0, "lwIP%u", id);
     if (RT_FAILURE(rc))
     {
         g_cThreads--;

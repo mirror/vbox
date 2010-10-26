@@ -1699,11 +1699,11 @@ static int vmdkDescBaseSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 {
     char *pszValueQuoted;
 
-    int rc = RTStrAPrintf(&pszValueQuoted, "\"%s\"", pszValue);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDesc, pszKey,
-                        pszValueQuoted);
+    RTStrAPrintf(&pszValueQuoted, "\"%s\"", pszValue);
+    if (!pszValueQuoted)
+        return VERR_NO_STR_MEMORY;
+    int rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDesc, pszKey,
+                            pszValueQuoted);
     RTStrFree(pszValueQuoted);
     return rc;
 }
@@ -1869,9 +1869,9 @@ static int vmdkDescDDBSetStr(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 
     if (pszVal)
     {
-        rc = RTStrAPrintf(&pszValQuoted, "\"%s\"", pszVal);
-        if (RT_FAILURE(rc))
-            return rc;
+        RTStrAPrintf(&pszValQuoted, "\"%s\"", pszVal);
+        if (!pszValQuoted)
+            return VERR_NO_STR_MEMORY;
     }
     else
         pszValQuoted = NULL;
@@ -1887,11 +1887,11 @@ static int vmdkDescDDBSetUuid(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 {
     char *pszUuid;
 
-    int rc = RTStrAPrintf(&pszUuid, "\"%RTuuid\"", pUuid);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDDB, pszKey,
-                        pszUuid);
+    RTStrAPrintf(&pszUuid, "\"%RTuuid\"", pUuid);
+    if (!pszUuid)
+        return VERR_NO_STR_MEMORY;
+    int rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDDB, pszKey,
+                            pszUuid);
     RTStrFree(pszUuid);
     return rc;
 }
@@ -1901,11 +1901,11 @@ static int vmdkDescDDBSetU32(PVMDKIMAGE pImage, PVMDKDESCRIPTOR pDescriptor,
 {
     char *pszValue;
 
-    int rc = RTStrAPrintf(&pszValue, "\"%d\"", uValue);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDDB, pszKey,
-                        pszValue);
+    RTStrAPrintf(&pszValue, "\"%d\"", uValue);
+    if (!pszValue)
+        return VERR_NO_STR_MEMORY;
+    int rc = vmdkDescSetStr(pImage, pDescriptor, pDescriptor->uFirstDDB, pszKey,
+                            pszValue);
     RTStrFree(pszValue);
     return rc;
 }
@@ -3446,7 +3446,6 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                 }
                 else
                 {
-                    size_t cbDirname;
                     char *pszDirname = RTStrDup(pImage->pszFilename);
                     if (!pszDirname)
                     {
@@ -3454,12 +3453,13 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
                         goto out;
                     }
                     RTPathStripFilename(pszDirname);
-                    cbDirname = strlen(pszDirname);
-                    rc = RTStrAPrintf(&pszFullname, "%s%c%s", pszDirname,
-                                      RTPATH_SLASH, pExtent->pszBasename);
+                    pszFullname = RTPathJoinA(pszDirname, pExtent->pszBasename);
                     RTStrFree(pszDirname);
-                    if (RT_FAILURE(rc))
+                    if (!pszFullname)
+                    {
+                        rc = VERR_NO_STR_MEMORY;
                         goto out;
+                    }
                 }
                 pExtent->pszFullname = pszFullname;
             }
@@ -3719,18 +3719,14 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
                 pExtent->pszBasename = pszBasename;
 
                 /* Set up full name for partition extent. */
-                size_t cbDirname;
                 char *pszDirname = RTStrDup(pImage->pszFilename);
                 if (!pszDirname)
-                    return VERR_NO_MEMORY;
+                    return VERR_NO_STR_MEMORY;
                 RTPathStripFilename(pszDirname);
-                cbDirname = strlen(pszDirname);
-                char *pszFullname;
-                rc = RTStrAPrintf(&pszFullname, "%s%c%s", pszDirname,
-                                  RTPATH_SLASH, pExtent->pszBasename);
+                char *pszFullname = RTPathJoinA(pszDirname, pExtent->pszBasename);
                 RTStrFree(pszDirname);
-                if (RT_FAILURE(rc))
-                    return rc;
+                if (!pszDirname)
+                    return VERR_NO_STR_MEMORY;
                 pExtent->pszFullname = pszFullname;
                 pExtent->enmType = VMDKETYPE_FLAT;
                 pExtent->cNominalSectors = VMDK_BYTE2SECTOR(pPart->cbData);
@@ -3887,18 +3883,18 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
             {
                 if (cExtents == 1)
-                    rc = RTStrAPrintf(&pszTmp, "%s-flat%s", pszBasenameBase,
-                                      pszBasenameExt);
+                    RTStrAPrintf(&pszTmp, "%s-flat%s", pszBasenameBase,
+                                 pszBasenameExt);
                 else
-                    rc = RTStrAPrintf(&pszTmp, "%s-f%03d%s", pszBasenameBase,
-                                      i+1, pszBasenameExt);
+                    RTStrAPrintf(&pszTmp, "%s-f%03d%s", pszBasenameBase,
+                                 i+1, pszBasenameExt);
             }
             else
-                rc = RTStrAPrintf(&pszTmp, "%s-s%03d%s", pszBasenameBase, i+1,
-                                  pszBasenameExt);
+                RTStrAPrintf(&pszTmp, "%s-s%03d%s", pszBasenameBase, i+1,
+                             pszBasenameExt);
             RTStrFree(pszBasenameBase);
-            if (RT_FAILURE(rc))
-                return rc;
+            if (!pszTmp)
+                return VERR_NO_STR_MEMORY;
             cbTmp = strlen(pszTmp) + 1;
             char *pszBasename = (char *)RTMemTmpAlloc(cbTmp);
             if (!pszBasename)
@@ -3910,13 +3906,13 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
                 cbExtent = RT_MIN(cbRemaining, VMDK_2G_SPLIT_SIZE);
         }
         char *pszBasedirectory = RTStrDup(pImage->pszFilename);
+        if (!pszBasedirectory)
+            return VERR_NO_STR_MEMORY;
         RTPathStripFilename(pszBasedirectory);
-        char *pszFullname;
-        rc = RTStrAPrintf(&pszFullname, "%s%c%s", pszBasedirectory,
-                          RTPATH_SLASH, pExtent->pszBasename);
+        char *pszFullname = RTPathJoinA(pszBasedirectory, pExtent->pszBasename);
         RTStrFree(pszBasedirectory);
-        if (RT_FAILURE(rc))
-            return rc;
+        if (!pszFullname)
+            return VERR_NO_STR_MEMORY;
         pExtent->pszFullname = pszFullname;
 
         /* Create file for extent. */
@@ -4109,12 +4105,10 @@ static int vmdkCreateStreamImage(PVMDKIMAGE pImage, uint64_t cbSize,
 
     char *pszBasedirectory = RTStrDup(pImage->pszFilename);
     RTPathStripFilename(pszBasedirectory);
-    char *pszFullname;
-    rc = RTStrAPrintf(&pszFullname, "%s%c%s", pszBasedirectory,
-                      RTPATH_SLASH, pExtent->pszBasename);
+    char *pszFullname = RTPathJoinA(pszBasedirectory, pExtent->pszBasename);
     RTStrFree(pszBasedirectory);
-    if (RT_FAILURE(rc))
-        return rc;
+    if (!pszFullname)
+        return VERR_NO_STR_MEMORY;
     pExtent->pszFullname = pszFullname;
 
     /* Create file for extent. Make it write only, no reading allowed. */

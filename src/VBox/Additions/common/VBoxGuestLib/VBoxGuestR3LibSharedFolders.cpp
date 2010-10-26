@@ -279,10 +279,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMountPrefix(char **ppszPrefix)
         if (rc == VERR_NOT_FOUND) /* No prefix set? Then set the default. */
         {
 #endif
-            if (RTStrAPrintf(ppszPrefix, "sf_"))
-                rc = VINF_SUCCESS;
-            else
-                rc = VERR_NO_MEMORY;
+            rc = RTStrDupEx(ppszPrefix, "sf_");
 #ifdef VBOX_WITH_GUEST_PROPS
         }
         VbglR3GuestPropDisconnect(u32ClientIdGuestProp);

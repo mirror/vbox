@@ -83,19 +83,17 @@ int main(int argc, char **argv)
 
     const char *pszTestDir = ".";
 
-    char *pszFilter1 = NULL;
-    rc = RTStrAPrintf(&pszFilter1, "%s%c%s", pszTestDir, RTPATH_SLASH, "xyxzxq*");
-    if (RT_FAILURE(rc))
+    char *pszFilter1 = RTPathJoinA(pszTestDir, "xyxzxq*");
+    if (!pszFilter1)
     {
-        RTPrintf("tstDir-3: cannot create non-match filter! rc=%Rrc\n", rc);
+        RTPrintf("tstDir-3: cannot create non-match filter!\n");
         return 1;
     }
 
-    char *pszFilter2 = NULL;
-    rc = RTStrAPrintf(&pszFilter2, "%s%c%s", pszTestDir, RTPATH_SLASH, "*");
-    if (RT_FAILURE(rc))
+    char *pszFilter2 = RTPathJoinA(pszTestDir, "*");
+    if (!pszFilter2)
     {
-        RTPrintf("tstDir-3: cannot create match filter! rc=%Rrc\n", rc);
+        RTPrintf("tstDir-3: cannot create match filter!\n");
         return 1;
     }
 

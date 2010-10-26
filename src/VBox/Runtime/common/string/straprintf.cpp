@@ -139,7 +139,11 @@ static DECLCALLBACK(size_t) strallocoutput(void *pvArg, const char *pachChars, s
 
 RTDECL(int) RTStrAPrintfVTag(char **ppszBuffer, const char *pszFormat, va_list args, const char *pszTag)
 {
+#ifdef IN_RING3
     char            szBuf[2048];
+#else
+    char            szBuf[256];
+#endif
     STRALLOCARG     Arg;
     Arg.fAllocated  = false;
     Arg.cchBuffer   = sizeof(szBuf);

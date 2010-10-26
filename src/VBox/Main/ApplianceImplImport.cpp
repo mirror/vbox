@@ -873,8 +873,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
     char szOSTmpDir[RTPATH_MAX];
     RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
     /* The template for the temporary directory created below */
-    char *pszTmpDir;
-    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
+    char *pszTmpDir = RTPathJoinA(szOSTmpDir, "vbox-ovf-XXXXXX");
     list< pair<Utf8Str, ULONG> > filesList;
     Utf8Str strTmpOvf;
 
@@ -1303,8 +1302,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
     char szOSTmpDir[RTPATH_MAX];
     RTPathTemp(szOSTmpDir, sizeof(szOSTmpDir));
     /* The template for the temporary directory created below */
-    char *pszTmpDir;
-    RTStrAPrintf(&pszTmpDir, "%s"RTPATH_SLASH_STR"vbox-ovf-XXXXXX", szOSTmpDir);
+    char *pszTmpDir = RTPathJoinA(szOSTmpDir, "vbox-ovf-XXXXXX");
     list< pair<Utf8Str, ULONG> > filesList;
 
     HRESULT rc = S_OK;

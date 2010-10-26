@@ -969,7 +969,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
         char *pszPassthroughDevice = NULL;
         rc = RTStrAPrintf(&pszPassthroughDevice, "/dev/%s%u",
                           DeviceCCB.cgdl.periph_name, DeviceCCB.cgdl.unit_number);
-        if (RT_SUCCESS(rc))
+        if (rc >= 0)
         {
             RTFILE PassthroughDevice;
 
@@ -1012,6 +1012,8 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
                     RTFileClose(PassthroughDevice);
             }
         }
+        else
+            rc = VERR_NO_STR_MEMORY;
     }
     else
         rc = RTErrConvertFromErrno(errno);

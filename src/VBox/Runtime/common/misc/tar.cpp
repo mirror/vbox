@@ -1297,16 +1297,18 @@ RTR3DECL(int) RTTarExtractFiles(const char *pszTarFile, const char *pszOutputDir
         }
 
         uint64_t cbOverallWritten = 0;
-        for(size_t i=0; i < cFiles; ++i)
+        for (size_t i = 0; i < cFiles; ++i)
         {
             RTTARFILE hFile;
             rc = RTTarFileOpen(hTar, &hFile, papszFiles[i], RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
             if (RT_FAILURE(rc))
                 break;
-            char *pszTargetFile;
-            rc = RTStrAPrintf(&pszTargetFile, "%s/%s", pszOutputDir, papszFiles[i]);
-            if (RT_FAILURE(rc))
+            char *pszTargetFile = RTPathJoinA(pszOutputDir, papszFiles[i]);
+            if (!pszTargetFile)
+            {
+                rc = VERR_NO_STR_MEMORY;
                 break;
+            }
             rc = rtTarExtractFileToFile(hFile, pszTargetFile, cbOverallSize, cbOverallWritten, pfnProgressCallback, pvUser);
             RTStrFree(pszTargetFile);
             RTTarFileClose(hFile);

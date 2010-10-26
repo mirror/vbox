@@ -206,7 +206,7 @@ USBLIB_DECL(int) USBLibGetClientInfo(char *pszDeviceIdent, char **ppszClientPath
     if (RT_SUCCESS(rc))
     {
         *pInstance = Req.Instance;
-        rc = RTStrAPrintf(ppszClientPath, "%s", Req.achClientPath);
+        rc = RTStrDupEx(ppszClientPath, Req.achClientPath);
         if (RT_SUCCESS(rc))
             return VINF_SUCCESS;
 
