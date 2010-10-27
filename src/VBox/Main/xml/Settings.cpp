@@ -71,6 +71,7 @@
 #include <iprt/process.h>
 #include <iprt/ldr.h>
 #include <iprt/cpp/lock.h>
+#include <iprt/system.h>
 
 // generated header
 #include "SchemaDefs.h"
@@ -1530,7 +1531,6 @@ Hardware::Hardware()
           fHardwareVirt(true),
           fHardwareVirtExclusive(HWVIRTEXCLUSIVEDEFAULT),
           fNestedPaging(true),
-          fLargePages(false),
           fVPID(true),
           fHardwareVirtForce(false),
           fSyntheticCpu(false),
@@ -1562,6 +1562,25 @@ Hardware::Hardware()
      */
 #if HC_ARCH_BITS == 64 || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     fPAE = true;
+#endif
+
+    /* The default value of large page supports depends on the host:
+     * - 64 bits host -> true if sufficient RAM available.
+     * - 32 bits host -> false
+     */
+#if HC_ARCH_BITS == 64
+    uint64_t cbRam = 0;
+
+    if (    RTSystemQueryTotalRam(&cbRam) == VINF_SUCCESS
+        &&  cbRam >= (UINT64_C(6) * _1G))
+    {
+        fLargePages = true;
+    }
+    else
+        fLargePages = false;
+#else
+    /* Not supported on 32 bits hosts. */
+    fLargePages = false;
 #endif
 }
 
@@ -3195,8 +3214,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (hw.ulCpuExecutionCap != 100)
         pelmCPU->setAttribute("executionCap", hw.ulCpuExecutionCap);
 
-    if (hw.fLargePages)
-        pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
+    /* Always save this setting as we have changed the default in 4.0 (on for large memory 64-bit systems). */
+    pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
 
     if (m->sv >= SettingsVersion_v1_9)
         pelmCPU->createChild("HardwareVirtForce")->setAttribute("enabled", hw.fHardwareVirtForce);
