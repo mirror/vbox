@@ -66,6 +66,7 @@ static int getDefaultIfaceName(char *pszName)
                 return VINF_SUCCESS;
             }
         }
+        fclose(fp);
     }
     return VERR_INTERNAL_ERROR;
 }
