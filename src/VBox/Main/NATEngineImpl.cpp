@@ -184,7 +184,7 @@ NATEngine::GetNetworkSettings(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULO
     if (aSockSnd)
         *aSockSnd = mData->mSockSnd;
     if (aSockRcv)
-         *aSockSnd = mData->mSockRcv;
+         *aSockRcv = mData->mSockRcv;
     if (aTcpWndSnd)
          *aTcpWndSnd = mData->mTcpSnd;
     if (aTcpWndRcv)
