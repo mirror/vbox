@@ -2015,11 +2015,16 @@ check_darwinversion()
   case "$darwin_ver" in
     10\.*)
       darwin_ver="10.6"
-      sdk=/Developer/SDKs/MacOSX10.5.sdk
-      CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
+      if [ "$BUILD_MACHINE" = "x86" ]; then
+          sdk=/Developer/SDKs/MacOSX10.5.sdk
+          CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
+          cnf_append "VBOX_MACOS_10_5_WORKAROUND" "1"
+      else
+          sdk=/Developer/SDKs/MacOSX10.6.sdk
+          CXX_FLAGS="-mmacosx-version-min=10.6 -isysroot $sdk -Wl,-syslibroot,$sdk"
+      fi
 #      test "$CC" = "gcc" && CC="gcc-4.0"
 #      test "$CXX" = "g++" && CXX="g++-4.0"
-      cnf_append "VBOX_MACOS_10_5_WORKAROUND" "1"
       ;;
     9\.*)
       darwin_ver="10.5"
