@@ -332,8 +332,7 @@ static int rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
                 if (pCurRecord->record_length == 0)
                     break;
 
-                Assert(   pCurRecord->name_len  > 0
-                       && pCurRecord->name_len <= RTISOFS_MAX_STRING_LEN);
+                Assert(pCurRecord->name_len <= RTISOFS_MAX_STRING_LEN);
                 char *pszName = RTStrAlloc(pCurRecord->name_len + 1);
                 AssertPtr(pszName);
                 Assert(idx + sizeof(RTISOFSDIRRECORD) < cbRead);

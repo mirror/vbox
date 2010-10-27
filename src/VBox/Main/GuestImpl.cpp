@@ -39,6 +39,8 @@
 #include <iprt/path.h>
 #include <VBox/pgm.h>
 
+#include <memory>
+
 // defines
 /////////////////////////////////////////////////////////////////////////////
 
@@ -244,7 +246,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                      * copy over/pipe the data into a file on the guest (with
                      * system rights, no username/password specified).
                      */
-                    rc = pGuest->executeProcessInternal(Bstr("vbox_cat").raw(),
+                    rc = pGuest->executeProcessInternal(Bstr("vbox_cat"),
                                                         ExecuteProcessFlag_WaitForProcessStartOnly,
                                                         ComSafeArrayAsInParam(args),
                                                         ComSafeArrayAsInParam(env),
@@ -331,7 +333,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                  */
                 ComPtr<IProgress> progressInstaller;
                 ULONG uPID;
-                rc = pGuest->executeProcessInternal(Bstr(strInstallerPath).raw(), 0 /* Flags */,
+                rc = pGuest->executeProcessInternal(Bstr(strInstallerPath),
+                                                    0 /* Flags */,
                                                     ComSafeArrayAsInParam(installerArgs),
                                                     ComSafeArrayAsInParam(installerEnv),
                                                     Bstr("") /* Username */,

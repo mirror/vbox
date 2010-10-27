@@ -43,7 +43,7 @@ RT_C_DECLS_BEGIN
 #define RTISOFS_MAX_VOLUMESET_ID   128
 #define RTISOFS_MAX_PREPARER_ID    128
 #define RTISOFS_MAX_APPLICATION_ID 128
-#define RTISOFS_MAX_STRING_LEN     256
+#define RTISOFS_MAX_STRING_LEN     255
 
 /** Standard ID of volume descriptors. */
 #define RTISOFS_STANDARD_ID        "CD001"
