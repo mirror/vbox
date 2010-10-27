@@ -1905,6 +1905,54 @@ static bool vboxNetFltLinuxPromiscuous(PVBOXNETFLTINS pThis)
     return fRc;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+/**
+ * Helper for detecting TAP devices.
+ */
+static bool vboxNetFltIsTapDevice(PVBOXNETFLTINS pThis, struct net_device *pDev)
+{
+    if (pDev->ethtool_ops && pDev->ethtool_ops->get_drvinfo)
+    {
+        struct ethtool_drvinfo Info;
+
+        memset(&Info, 0, sizeof(Info));
+        Info.cmd = ETHTOOL_GDRVINFO;
+        pDev->ethtool_ops->get_drvinfo(pDev, &Info);
+        Log3(("vboxNetFltIsTapDevice: driver=%s version=%s bus_info=%s\n",
+              Info.driver, Info.version, Info.bus_info));
+
+        return !strncmp(Info.driver,   "tun", 4)
+            && !strncmp(Info.bus_info, "tap", 4);
+    }
+
+    return false;
+}
+
+/**
+ * Helper for updating the link state of TAP devices.
+ * Only TAP devices are affected.
+ */
+static void vboxNetFltSetTapLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev, bool fLinkUp)
+{
+    if (vboxNetFltIsTapDevice(pThis, pDev))
+    {
+        Log3(("vboxNetFltSetTapLinkState: bringing %s tap device link state\n",
+              fLinkUp ? "up" : "down"));
+        netif_tx_lock_bh(pDev);
+        if (fLinkUp)
+            netif_carrier_on(pDev);
+        else
+            netif_carrier_off(pDev);
+        netif_tx_unlock_bh(pDev);
+    }
+}
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36) */
+DECLINLINE(void) vboxNetFltSetTapLinkState(PVBOXNETFLTINS pThis, struct net_device *pDev, bool fLinkUp)
+{
+    /* Nothing to do for pre-2.6.36 kernels. */
+}
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36) */
+
 /**
  * Internal worker for vboxNetFltLinuxNotifierCallback.
  *
@@ -1947,6 +1995,12 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
 #ifdef VBOXNETFLT_WITH_QDISC
     vboxNetFltLinuxQdiscInstall(pThis, pDev);
 #endif /* VBOXNETFLT_WITH_QDISC */
+
+    /*
+     * If attaching to TAP interface we need to bring the link state up
+     * starting from 2.6.36 kernel.
+     */
+    vboxNetFltSetTapLinkState(pThis, pDev, true);
 
     /*
      * Set indicators that require the spinlock. Be abit paranoid about racing
@@ -2320,6 +2374,8 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 
     if (fRegistered)
     {
+        vboxNetFltSetTapLinkState(pThis, pDev, false);
+
 #ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
         skb_queue_purge(&pThis->u.s.XmitQueue);
 #endif
