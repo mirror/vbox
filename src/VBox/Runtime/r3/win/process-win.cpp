@@ -898,8 +898,6 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                 CloseHandle(hTokenUserDesktop);
             rtProcUserLogoff(hTokenLogon);
         }
-        else
-            dwErr = rc; /* rtProcUserLogon() failed. */
     }
 
     if (dwErr != NO_ERROR)
