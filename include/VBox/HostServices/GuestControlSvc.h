@@ -68,7 +68,8 @@ enum eProcessStatus
 };
 
 /**
- * Input flags, set by the host.
+ * Input flags, set by the host. This is needed for
+ * handling flags on the guest side.
  * Note: Has to match Main's ProcessInputFlag_* flags!
  */
 #define INPUT_FLAG_NONE             0

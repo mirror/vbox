@@ -332,11 +332,13 @@ static int rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
                 if (pCurRecord->record_length == 0)
                     break;
 
-                Assert(pCurRecord->name_len > 0);
+                Assert(   pCurRecord->name_len  > 0
+                       && pCurRecord->name_len <= RTISOFS_MAX_STRING_LEN);
                 char *pszName = RTStrAlloc(pCurRecord->name_len + 1);
                 AssertPtr(pszName);
                 Assert(idx + sizeof(RTISOFSDIRRECORD) < cbRead);
                 memcpy(pszName, &uBuffer[idx + sizeof(RTISOFSDIRRECORD)], pCurRecord->name_len);
+                pszName[pCurRecord->name_len] = '\0'; /* Force string termination. */
 
                 if (   pCurRecord->name_len == 1
                     && pszName[0] == 0x0)

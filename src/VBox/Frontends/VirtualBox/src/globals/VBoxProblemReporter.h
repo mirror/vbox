@@ -371,6 +371,8 @@ public:
     void cannotExportAppliance (const CMachine &aMachine, CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotExportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;
 
+    void cannotUpdateGuestAdditions (const CProgress &aProgress, QWidget *aParent /* = NULL */) const;
+
     void warnAboutIncorrectPort(QWidget *pParent) const;
     bool confirmCancelingPortForwardingDialog(QWidget *pParent) const;
 

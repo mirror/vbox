@@ -1139,10 +1139,16 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
 
         if (RT_SUCCESS(rc) && pszCmdTool)
         {
+            /* Disable service flag bit, because we're executing the internal
+             * tool with the profile which was used to start VBoxService. */
+            fFlags &= ~RTPROC_FLAGS_SERVICE;
+
             rc = RTProcCreateEx(pszCmdTool, papszArgsTool ? papszArgsTool : papszArgs,
                                 hEnv, fFlags,
-                                phStdIn, phStdOut, phStdErr, pszAsUser,
-                                pszPassword, phProcess);
+                                phStdIn, phStdOut, phStdErr,
+                                strlen(pszAsUser) ? pszAsUser : NULL,
+                                strlen(pszPassword) ? pszPassword : NULL,
+                                phProcess);
             if (papszArgsTool)
                 RTGetOptArgvFree(papszArgsTool);
             RTStrFree(pszCmdTool);
