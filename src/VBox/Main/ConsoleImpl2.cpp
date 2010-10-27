@@ -3036,6 +3036,19 @@ int Console::configMedium(PCFGMNODE pLunL0,
                     }
                 }
 
+                switch (enmType)
+                {
+                    case DeviceType_DVD:
+                        InsertConfigString(pCfg, "Type", "DVD");
+                        break;
+                    case DeviceType_Floppy:
+                        InsertConfigString(pCfg, "Type", "Floppy");
+                        break;
+                    case DeviceType_HardDisk:
+                    default:
+                        InsertConfigString(pCfg, "Type", "HardDisk");
+                }
+
                 /* Pass all custom parameters. */
                 bool fHostIP = true;
                 SafeArray<BSTR> names;

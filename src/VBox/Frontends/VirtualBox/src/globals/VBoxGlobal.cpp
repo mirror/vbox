@@ -4059,12 +4059,13 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
 }
 
 /**
- * Figures out which hard disk formats are currently supported by VirtualBox.
+ * Figures out which medium formats are currently supported by VirtualBox for
+ * the given device type.
  * Returned is a list of pairs with the form
  *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
  */
 /* static */
-QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
+QList <QPair <QString, QString> > VBoxGlobal::MediumBackends(KDeviceType enmType)
 {
     CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
     QVector<CMediumFormat> mediumFormats = systemProperties.GetMediumFormats();
@@ -4072,15 +4073,53 @@ QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
     for (int i = 0; i < mediumFormats.size(); ++ i)
     {
         /* File extensions */
-        QVector <QString> fileExtensions = mediumFormats [i].GetFileExtensions();
+        QVector <QString> fileExtensions;
+        QVector <KDeviceType> deviceTypes;
+
+        mediumFormats [i].DescribeFileExtensions(fileExtensions, deviceTypes);
+
         QStringList f;
         for (int a = 0; a < fileExtensions.size(); ++ a)
-            f << QString ("*.%1").arg (fileExtensions [a]);
+            if (deviceTypes [a] == enmType)
+                f << QString ("*.%1").arg (fileExtensions [a]);
         /* Create a pair out of the backend description and all suffix's. */
         if (!f.isEmpty())
             backendPropList << QPair<QString, QString> (mediumFormats [i].GetName(), f.join(" "));
     }
     return backendPropList;
+}
+
+/**
+ * Figures out which hard disk formats are currently supported by VirtualBox.
+ * Returned is a list of pairs with the form
+ *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
+ */
+/* static */
+QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
+{
+    return MediumBackends(KDeviceType_HardDisk);
+}
+
+/**
+ * Figures out which CD/DVD disk formats are currently supported by VirtualBox.
+ * Returned is a list of pairs with the form
+ *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
+ */
+/* static */
+QList <QPair <QString, QString> > VBoxGlobal::DVDBackends()
+{
+    return MediumBackends(KDeviceType_DVD);
+}
+
+/**
+ * Figures out which floppy disk formats are currently supported by VirtualBox.
+ * Returned is a list of pairs with the form
+ *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
+ */
+/* static */
+QList <QPair <QString, QString> > VBoxGlobal::FloppyBackends()
+{
+    return MediumBackends(KDeviceType_Floppy);
 }
 
 /* static */

@@ -299,6 +299,9 @@ private:
 
     Utf8Str vdError(int aVRC);
 
+    VDTYPE convertDeviceType();
+    DeviceType_T convertToDeviceType(VDTYPE enmType);
+
     static DECLCALLBACK(void) vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                                           const char *pszFormat, va_list va);
 

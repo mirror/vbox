@@ -513,10 +513,10 @@ typedef struct VMDKGRAINALLOCASYNC
 *******************************************************************************/
 
 /** NULL-terminated array of supported file extensions. */
-static const char *const s_apszVmdkFileExtensions[] =
+static const VDFILEEXTENSION s_aVmdkFileExtensions[] =
 {
-    "vmdk",
-    NULL
+    {"vmdk", VDTYPE_HDD},
+    {NULL, VDTYPE_INVALID}
 };
 
 /*******************************************************************************
@@ -5703,9 +5703,10 @@ static char *vmdkStrReplace(const char *pszWhere, const char *pszWhat,
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int vmdkCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                            PVDINTERFACE pVDIfsImage)
+                            PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
-    LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
+    LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p penmType=%#p\n",
+                 pszFilename, pVDIfsDisk, pVDIfsImage, penmType));
     int rc = VINF_SUCCESS;
     PVMDKIMAGE pImage;
 
@@ -5737,6 +5738,9 @@ static int vmdkCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     vmdkFreeImage(pImage, false);
     RTMemFree(pImage);
 
+    if (RT_SUCCESS(rc))
+        *penmType = VDTYPE_HDD;
+
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -5745,7 +5749,7 @@ out:
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
                     PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                    void **ppBackendData)
+                    VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc;
@@ -7321,8 +7325,8 @@ VBOXHDDBACKEND g_VmdkBackend =
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
     | VD_CAP_CREATE_SPLIT_2G | VD_CAP_DIFF | VD_CAP_FILE | VD_CAP_ASYNC
     | VD_CAP_VFS,
-    /* papszFileExtensions */
-    s_apszVmdkFileExtensions,
+    /* paFileExtensions */
+    s_aVmdkFileExtensions,
     /* paConfigInfo */
     NULL,
     /* hPlugin */

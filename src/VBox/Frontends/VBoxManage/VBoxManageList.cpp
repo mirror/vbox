@@ -62,6 +62,17 @@ static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
 }
 #endif
 
+static const char*getDeviceTypeText(DeviceType_T enmType)
+{
+    switch (enmType)
+    {
+        case DeviceType_HardDisk: return "HardDisk";
+        case DeviceType_DVD: return "DVD";
+        case DeviceType_Floppy: return "Floppy";
+    }
+    return "Unknown";
+}
+
 static void listMedia(const ComPtr<IVirtualBox> aVirtualBox,
                       const com::SafeIfaceArray<IMedium> &aMedia,
                       const char *pszParentUUIDStr)
@@ -603,11 +614,12 @@ int handleList(HandlerArg *a)
 
                 /* File extensions */
                 com::SafeArray <BSTR> fileExtensions;
+                com::SafeArray <DeviceType_T> deviceTypes;
                 CHECK_ERROR(mediumFormats[i],
-                            COMGETTER(FileExtensions)(ComSafeArrayAsOutParam(fileExtensions)));
+                            DescribeFileExtensions(ComSafeArrayAsOutParam(fileExtensions), ComSafeArrayAsOutParam(deviceTypes)));
                 for (size_t j = 0; j < fileExtensions.size(); ++j)
                 {
-                    RTPrintf("%ls", Bstr(fileExtensions[j]).raw());
+                    RTPrintf("%ls (%s)", Bstr(fileExtensions[j]).raw(), getDeviceTypeText(deviceTypes[j]));
                     if (j != fileExtensions.size()-1)
                         RTPrintf(",");
                 }

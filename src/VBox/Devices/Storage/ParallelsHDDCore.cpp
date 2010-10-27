@@ -104,10 +104,10 @@ typedef struct PARALLELSIMAGE
 *******************************************************************************/
 
 /** NULL-terminated array of supported file extensions. */
-static const char *const s_apszParallelsFileExtensions[] =
+static const VDFILEEXTENSION s_aParallelsFileExtensions[] =
 {
-    "hdd",
-    NULL
+    {"hdd", VDTYPE_HDD},
+    {NULL, VDTYPE_INVALID}
 };
 
 /***************************************************
@@ -414,7 +414,7 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                                 PVDINTERFACE pVDIfsImage)
+                                 PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     int rc;
     PVDIOSTORAGE pStorage;
@@ -470,6 +470,9 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
         }
     }
 
+    if (RT_SUCCESS(rc))
+        *penmType = VDTYPE_HDD;
+
     pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
     return rc;
 }
@@ -477,7 +480,7 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int parallelsOpen(const char *pszFilename, unsigned uOpenFlags,
                          PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                         void **ppBackendData)
+                         VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc;
@@ -1000,14 +1003,13 @@ static int parallelsSetComment(void *pBackendData, const char *pszComment)
 
     AssertPtr(pImage);
 
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-
     if (pImage)
-        rc = VERR_NOT_SUPPORTED;
+    {
+        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            rc = VERR_VD_IMAGE_READ_ONLY;
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
     else
         rc = VERR_VD_NOT_OPENED;
 
@@ -1356,8 +1358,8 @@ VBOXHDDBACKEND g_ParallelsBackend =
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS,
-    /* papszFileExtensions */
-    s_apszParallelsFileExtensions,
+    /* paFileExtensions */
+    s_aParallelsFileExtensions,
     /* paConfigInfo */
     NULL,
     /* hPlugin */

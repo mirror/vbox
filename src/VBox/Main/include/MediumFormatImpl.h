@@ -52,18 +52,20 @@ public:
         Utf8Str     strDefaultValue;
     };
 
-    typedef std::list<Utf8Str>  StrList;
-    typedef std::list<Property> PropertyList;
+    typedef std::list<Utf8Str>      StrList;
+    typedef std::list<DeviceType_T> DeviceTypeList;
+    typedef std::list<Property>     PropertyList;
 
     struct Data
     {
         Data() : capabilities(0) {}
 
-        const Utf8Str       strId;
-        const Utf8Str       strName;
-        const StrList       llFileExtensions;
-        const uint64_t      capabilities;
-        const PropertyList  llProperties;
+        const Utf8Str        strId;
+        const Utf8Str        strName;
+        const StrList        llFileExtensions;
+        const DeviceTypeList llDeviceTypes;
+        const uint64_t       capabilities;
+        const PropertyList   llProperties;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(MediumFormat, IMediumFormat)
@@ -90,10 +92,11 @@ public:
     // IMediumFormat properties
     STDMETHOD(COMGETTER(Id))(BSTR *aId);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
-    STDMETHOD(COMGETTER(FileExtensions))(ComSafeArrayOut(BSTR, aFileExtensions));
     STDMETHOD(COMGETTER(Capabilities))(ULONG *aCaps);
 
     // IMediumFormat methods
+    STDMETHOD(DescribeFileExtensions)(ComSafeArrayOut(BSTR, aFileExtensions),
+                                      ComSafeArrayOut(DeviceType_T, aDeviceTypes));
     STDMETHOD(DescribeProperties)(ComSafeArrayOut(BSTR, aNames),
                                   ComSafeArrayOut(BSTR, aDescriptions),
                                   ComSafeArrayOut(DataType_T, aTypes),

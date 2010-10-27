@@ -25,11 +25,36 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
-
+#include <iprt/path.h>
 
 /*******************************************************************************
 *   Constants And Macros, Structures and Typedefs                              *
 *******************************************************************************/
+/**
+ * ISO volume descriptor.
+ */
+#pragma pack(1)
+typedef struct ISOVOLDESC
+{
+    union
+    {
+        /** Byte view. */
+        uint8_t au8[2048];
+        /** Field view. */
+        struct
+        {
+            /** Descriptor type. */
+            uint8_t u8Type;
+            /** Standard identifier */
+            uint8_t au8Id[5];
+            /** Descriptor version. */
+            uint8_t u8Version;
+            /** Rest depends on the descriptor type. */
+        } fields;
+    };
+} ISOVOLDESC, *PISOVOLDESC;
+#pragma pack()
+AssertCompileSize(ISOVOLDESC, 2048);
 
 /**
  * Raw image data structure.
@@ -81,12 +106,12 @@ typedef struct RAWIMAGE
 *******************************************************************************/
 
 /** NULL-terminated array of supported file extensions. */
-static const char *const s_apszRawFileExtensions[] =
+static const VDFILEEXTENSION s_aRawFileExtensions[] =
 {
-    /** @todo At the moment this backend doesn't claim any extensions, but it might
-     * be useful to add a few later. However this needs careful testing, as the
-     * CheckIfValid function never returns success. */
-    NULL
+    {"iso", VDTYPE_DVD},
+    {"img", VDTYPE_FLOPPY},
+    {"ima", VDTYPE_FLOPPY},
+    {NULL, VDTYPE_INVALID}
 };
 
 /*******************************************************************************
@@ -483,10 +508,20 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                           PVDINTERFACE pVDIfsImage)
+                           PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
-    LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
+    LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
+    PVDIOSTORAGE pStorage = NULL;
+    uint64_t cbFile;
     int rc = VINF_SUCCESS;
+    ISOVOLDESC IsoVolDesc;
+    char *pszExtension = NULL;
+
+    /* Get I/O interface. */
+    PVDINTERFACE pInterfaceIO = VDInterfaceGet(pVDIfsImage, VDINTERFACETYPE_IOINT);
+    AssertPtrReturn(pInterfaceIO, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIOINT pInterfaceIOCallbacks = VDGetInterfaceIOInt(pInterfaceIO);
+    AssertPtrReturn(pInterfaceIOCallbacks, VERR_INVALID_PARAMETER);
 
     if (   !VALID_PTR(pszFilename)
         || !*pszFilename)
@@ -495,8 +530,69 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
         goto out;
     }
 
-    /* Always return failure, to avoid opening everything as a raw image. */
-    rc = VERR_VD_RAW_INVALID_HEADER;
+    pszExtension = RTPathExt(pszFilename);
+
+    /*
+     * Open the file and read the footer.
+     */
+    rc = pInterfaceIOCallbacks->pfnOpen(pInterfaceIO->pvUser, pszFilename,
+                                        VDOpenFlagsToFileOpenFlags(VD_OPEN_FLAGS_READONLY,
+                                                                   false /* fCreate */),
+                                        &pStorage);
+    if (RT_SUCCESS(rc))
+        rc = pInterfaceIOCallbacks->pfnGetSize(pInterfaceIO->pvUser, pStorage,
+                                               &cbFile);
+
+    /* Try to guess the image type based on the extension. */
+    if (   RT_SUCCESS(rc)
+        && pszExtension)
+    {
+        if (!strcmp(pszExtension, ".iso")) /* DVD images. */
+        {
+            if (cbFile >= (32768 + sizeof(ISOVOLDESC)))
+            {
+                rc = pInterfaceIOCallbacks->pfnReadSync(pInterfaceIO->pvUser, pStorage,
+                                                        32768, &IsoVolDesc, sizeof(IsoVolDesc), NULL);
+            }
+            else
+                rc = VERR_VD_RAW_INVALID_HEADER;
+
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Do we recognize this stuff?
+                 */
+                if (   !memcmp(IsoVolDesc.fields.au8Id, "BEA01", 5)
+                    || !memcmp(IsoVolDesc.fields.au8Id, "BOOT2", 5)
+                    || !memcmp(IsoVolDesc.fields.au8Id, "CD001", 5)
+                    || !memcmp(IsoVolDesc.fields.au8Id, "CDW02", 5)
+                    || !memcmp(IsoVolDesc.fields.au8Id, "NSR02", 5)
+                    || !memcmp(IsoVolDesc.fields.au8Id, "NSR03", 5)
+                    || !memcmp(IsoVolDesc.fields.au8Id, "TEA01", 5))
+                {
+                    *penmType = VDTYPE_DVD;
+                    rc = VINF_SUCCESS;
+                }
+                else
+                    rc = VERR_VD_RAW_INVALID_HEADER;
+            }
+        }
+        else if (!strcmp(pszExtension, ".img") || !strcmp(pszExtension, ".ima")) /* Floppy images */
+        {
+            if (!(cbFile % 512))
+            {
+                *penmType = VDTYPE_FLOPPY;
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = VERR_VD_RAW_INVALID_HEADER;
+        }
+    }
+    else
+        rc = VERR_VD_RAW_INVALID_HEADER;
+
+    if (pStorage)
+        pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -506,7 +602,7 @@ out:
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                   void **ppBackendData)
+                   VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc;
@@ -1039,14 +1135,13 @@ static int rawSetComment(void *pBackendData, const char *pszComment)
 
     AssertPtr(pImage);
 
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-
     if (pImage)
-        rc = VERR_NOT_SUPPORTED;
+    {
+        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            rc = VERR_VD_IMAGE_READ_ONLY;
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
     else
         rc = VERR_VD_NOT_OPENED;
 
@@ -1291,13 +1386,13 @@ static int rawAsyncFlush(void *pBackendData, PVDIOCTX pIoCtx)
 VBOXHDDBACKEND g_RawBackend =
 {
     /* pszBackendName */
-    "raw",
+    "RAW",
     /* cbSize */
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
     VD_CAP_CREATE_FIXED | VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS,
-    /* papszFileExtensions */
-    s_apszRawFileExtensions,
+    /* paFileExtensions */
+    s_aRawFileExtensions,
     /* paConfigInfo */
     NULL,
     /* hPlugin */

@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  *
  * VirtualBox COM class implementation
@@ -67,13 +66,33 @@ HRESULT MediumFormat::init(const VDBACKENDINFO *aVDInfo)
     /* The capabilities of the backend */
     unconst(m.capabilities) = aVDInfo->uBackendCaps;
     /* Save the supported file extensions in a list */
-    if (aVDInfo->papszFileExtensions)
+    if (aVDInfo->paFileExtensions)
     {
-        const char *const *papsz = aVDInfo->papszFileExtensions;
-        while (*papsz != NULL)
+        PCVDFILEEXTENSION papExtension = aVDInfo->paFileExtensions;
+        while (papExtension->pszExtension != NULL)
         {
-            unconst(m.llFileExtensions).push_back(*papsz);
-            ++papsz;
+            DeviceType_T devType;
+
+            unconst(m.llFileExtensions).push_back(papExtension->pszExtension);
+
+            switch(papExtension->enmType)
+            {
+                case VDTYPE_HDD:
+                    devType = DeviceType_HardDisk;
+                    break;
+                case VDTYPE_DVD:
+                    devType = DeviceType_DVD;
+                    break;
+                case VDTYPE_FLOPPY:
+                    devType = DeviceType_Floppy;
+                    break;
+                default:
+                    AssertMsgFailed(("Invalid enm type %d!\n", papExtension->enmType));
+                    return E_INVALIDARG;
+            }
+
+            unconst(m.llDeviceTypes).push_back(devType);
+            ++papExtension;
         }
     }
     /* Save a list of configure properties */
@@ -161,6 +180,7 @@ void MediumFormat::uninit()
 
     unconst(m.llProperties).clear();
     unconst(m.llFileExtensions).clear();
+    unconst(m.llDeviceTypes).clear();
     unconst(m.capabilities) = 0;
     unconst(m.strName).setNull();
     unconst(m.strId).setNull();
@@ -195,25 +215,6 @@ STDMETHODIMP MediumFormat::COMGETTER(Name)(BSTR *aName)
     return S_OK;
 }
 
-STDMETHODIMP MediumFormat::COMGETTER(FileExtensions)(ComSafeArrayOut(BSTR, aFileExtensions))
-{
-    CheckComArgOutSafeArrayPointerValid(aFileExtensions);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* this is const, no need to lock */
-    com::SafeArray<BSTR> fileExtentions(m.llFileExtensions.size());
-    int i = 0;
-    for (StrList::const_iterator it = m.llFileExtensions.begin();
-         it != m.llFileExtensions.end();
-         ++it, ++i)
-        (*it).cloneTo(&fileExtentions[i]);
-    fileExtentions.detachTo(ComSafeArrayOutArg(aFileExtensions));
-
-    return S_OK;
-}
-
 STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
 {
     CheckComArgOutPointerValid(aCaps);
@@ -230,6 +231,34 @@ STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     ComAssertRet(m.capabilities == ((ULONG)m.capabilities), E_FAIL);
 
     *aCaps = (ULONG) m.capabilities;
+
+    return S_OK;
+}
+
+STDMETHODIMP MediumFormat::DescribeFileExtensions(ComSafeArrayOut(BSTR, aFileExtensions),
+                                                  ComSafeArrayOut(DeviceType_T, aDeviceTypes))
+{
+    CheckComArgOutSafeArrayPointerValid(aFileExtensions);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* this is const, no need to lock */
+    com::SafeArray<BSTR> fileExtentions(m.llFileExtensions.size());
+    int i = 0;
+    for (StrList::const_iterator it = m.llFileExtensions.begin();
+         it != m.llFileExtensions.end();
+         ++it, ++i)
+        (*it).cloneTo(&fileExtentions[i]);
+    fileExtentions.detachTo(ComSafeArrayOutArg(aFileExtensions));
+
+    com::SafeArray<DeviceType_T> deviceTypes(m.llDeviceTypes.size());
+    i = 0;
+    for (DeviceTypeList::const_iterator it = m.llDeviceTypes.begin();
+         it != m.llDeviceTypes.end();
+         ++it, ++i)
+        deviceTypes[i] = (*it);
+    deviceTypes.detachTo(ComSafeArrayOutArg(aDeviceTypes));
 
     return S_OK;
 }

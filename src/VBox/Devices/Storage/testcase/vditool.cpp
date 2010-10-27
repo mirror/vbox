@@ -103,7 +103,7 @@ static int NewImage(const char *pszFilename, uint32_t cMBs)
         return rc;
 
     PVBOXHDD hdd;
-    rc = VDCreate(NULL, &hdd);
+    rc = VDCreate(NULL, VDTYPE_HDD, &hdd);
     if (RT_FAILURE(rc))
         return PrintDone(rc);
 

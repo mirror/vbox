@@ -1023,22 +1023,13 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* remember the open mode (defaults to ReadWrite) */
     m->hddOpenMode = enOpenMode;
 
-    if (aDeviceType == DeviceType_HardDisk)
-        rc = setLocation(aLocation);
-    else
-    {
-        if (aDeviceType == DeviceType_DVD)
-            m->type = MediumType_Readonly;
-        else
-            m->type = MediumType_Writethrough;
-        rc = setLocation(aLocation, "RAW");
-    }
-    if (FAILED(rc)) return rc;
+    if (aDeviceType == DeviceType_DVD)
+        m->type = MediumType_Readonly;
+    else if (aDeviceType == DeviceType_Floppy)
+        m->type = MediumType_Writethrough;
 
-    if (    aDeviceType == DeviceType_DVD
-         || aDeviceType == DeviceType_Floppy)
-        // create new UUID
-        unconst(m->id).create();
+    rc = setLocation(aLocation);
+    if (FAILED(rc)) return rc;
 
     /* get all the information about the medium from the storage unit */
     rc = queryInfo(false /* fSetImageId */, false /* fSetParentId */);
@@ -3659,6 +3650,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
         /* detect the backend from the storage unit if importing */
         if (isImport)
         {
+            VDTYPE enmType = VDTYPE_INVALID;
             char *backendName = NULL;
 
             int vrc = VINF_SUCCESS;
@@ -3673,14 +3665,14 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
             if (RT_SUCCESS(vrc))
             {
                 vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                                  locationFull.c_str(), &backendName);
+                                  locationFull.c_str(), &backendName, &enmType);
             }
             else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
             {
                 /* assume it's not a file, restore the original location */
                 locationFull = aLocation;
                 vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                                  locationFull.c_str(), &backendName);
+                                  locationFull.c_str(), &backendName, &enmType);
             }
 
             if (RT_FAILURE(vrc))
@@ -3700,6 +3692,16 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
                      * the format object must be there */
                     AssertComRCReturnRC(rc);
                 }
+            }
+            else if (m->devType != convertToDeviceType(enmType))
+            {
+                /*
+                 * The user tried to use a image as a device which is not supported
+                 * by the backend.
+                 */
+                return setError(E_FAIL,
+                                tr("The medium '%s' can't be used as the requested device type"),
+                                locationFull.c_str());
             }
             else
             {
@@ -3842,7 +3844,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         }
 
         PVBOXHDD hdd;
-        vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -4091,7 +4093,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         try
         {
             PVBOXHDD hdd;
-            vrc = VDCreate(m->vdDiskIfaces, &hdd);
+            vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
             try
@@ -4206,6 +4208,56 @@ HRESULT Medium::setStateError()
     }
 
     return rc;
+}
+
+/**
+ * Converts the Medium device type to the VD type.
+ */
+VDTYPE Medium::convertDeviceType()
+{
+    VDTYPE enmType;
+
+    switch (m->devType)
+    {
+        case DeviceType_HardDisk:
+            enmType = VDTYPE_HDD;
+            break;
+        case DeviceType_DVD:
+            enmType = VDTYPE_DVD;
+            break;
+        case DeviceType_Floppy:
+            enmType = VDTYPE_FLOPPY;
+            break;
+        default:
+            ComAssertFailedThrow(E_FAIL);
+    }
+
+    return enmType;
+}
+
+/**
+ * Converts from the VD type to the medium type.
+ */
+DeviceType_T Medium::convertToDeviceType(VDTYPE enmType)
+{
+    DeviceType_T devType;
+
+    switch (enmType)
+    {
+        case VDTYPE_HDD:
+            devType = DeviceType_HardDisk;
+            break;
+        case VDTYPE_DVD:
+            devType = DeviceType_DVD;
+            break;
+        case VDTYPE_FLOPPY:
+            devType = DeviceType_Floppy;
+            break;
+        default:
+            ComAssertFailedThrow(E_FAIL);
+    }
+
+    return devType;
 }
 
 /**
@@ -5739,7 +5791,7 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
     try
     {
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -5880,7 +5932,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         Assert(m->state == MediumState_Creating);
 
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         /* unlock before the potentially lengthy operation */
@@ -6017,7 +6069,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
         Assert(m->state == MediumState_LockedRead);
 
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         /* the two media are now protected by their non-default states;
@@ -6186,7 +6238,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
     try
     {
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -6511,7 +6563,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
         }
 
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -6563,7 +6615,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                 throw rc;
 
             PVBOXHDD targetHdd;
-            vrc = VDCreate(m->vdDiskIfaces, &targetHdd);
+            vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &targetHdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
             try
@@ -6739,7 +6791,7 @@ HRESULT Medium::taskDeleteHandler(Medium::DeleteTask &task)
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         Utf8Str format(m->strFormat);
@@ -6811,7 +6863,7 @@ HRESULT Medium::taskResetHandler(Medium::ResetTask &task)
         /// to add a VDResetDiff() API call
 
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         Guid id = m->id;
@@ -6949,7 +7001,7 @@ HRESULT Medium::taskCompactHandler(Medium::CompactTask &task)
     try
     {
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -7046,7 +7098,7 @@ HRESULT Medium::taskResizeHandler(Medium::ResizeTask &task)
     try
     {
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -7148,7 +7200,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -7196,7 +7248,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
                 throw rc;
 
             PVBOXHDD targetHdd;
-            vrc = VDCreate(m->vdDiskIfaces, &targetHdd);
+            vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &targetHdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
             try
@@ -7283,7 +7335,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
 
 
         PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
 
         try
@@ -7317,7 +7369,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
                 throw rc;
 
             PVBOXHDD targetHdd;
-            vrc = VDCreate(m->vdDiskIfaces, &targetHdd);
+            vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &targetHdd);
             ComAssertRCThrow(vrc, E_FAIL);
 
             try

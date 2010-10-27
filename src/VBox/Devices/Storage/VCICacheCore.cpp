@@ -1900,14 +1900,13 @@ static int vciSetComment(void *pBackendData, const char *pszComment)
 
     AssertPtr(pCache);
 
-    if (pCache->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-
     if (pCache)
-        rc = VERR_NOT_SUPPORTED;
+    {
+        if (pCache->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            rc = VERR_VD_IMAGE_READ_ONLY;
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
     else
         rc = VERR_VD_NOT_OPENED;
 

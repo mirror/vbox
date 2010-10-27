@@ -37,10 +37,10 @@
 *******************************************************************************/
 
 /** NULL-terminated array of supported file extensions. */
-static const char *const s_apszVdiFileExtensions[] =
+static const VDFILEEXTENSION s_aVdiFileExtensions[] =
 {
-    "vdi",
-    NULL
+    {"vdi", VDTYPE_HDD},
+    {NULL, VDTYPE_INVALID}
 };
 
 /*******************************************************************************
@@ -998,7 +998,7 @@ static int vdiFlushImageAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int vdiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                           PVDINTERFACE pVDIfsImage)
+                           PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     int rc = VINF_SUCCESS;
@@ -1027,6 +1027,9 @@ static int vdiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     vdiFreeImage(pImage, false);
     RTMemFree(pImage);
 
+    if (RT_SUCCESS(rc))
+        *penmType = VDTYPE_HDD;
+
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1035,7 +1038,7 @@ out:
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                   void **ppBackendData)
+                   VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc;
@@ -1700,36 +1703,35 @@ static int vdiSetComment(void *pBackendData, const char *pszComment)
 
     AssertPtr(pImage);
 
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-
     if (pImage)
     {
-        size_t cchComment = pszComment ? strlen(pszComment) : 0;
-        if (cchComment >= VDI_IMAGE_COMMENT_SIZE)
-        {
-            LogFunc(("pszComment is too long, %d bytes!\n", cchComment));
-            rc = VERR_VD_VDI_COMMENT_TOO_LONG;
-            goto out;
-        }
-
-        /* we don't support old style images */
-        if (GET_MAJOR_HEADER_VERSION(&pImage->Header) == 1)
-        {
-            /*
-             * Update the comment field, making sure to zero out all of the previous comment.
-             */
-            memset(pImage->Header.u.v1.szComment, '\0', VDI_IMAGE_COMMENT_SIZE);
-            memcpy(pImage->Header.u.v1.szComment, pszComment, cchComment);
-
-            /* write out new the header */
-            rc = vdiUpdateHeader(pImage);
-        }
+        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            rc = VERR_VD_IMAGE_READ_ONLY;
         else
-            rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
+        {
+            size_t cchComment = pszComment ? strlen(pszComment) : 0;
+            if (cchComment >= VDI_IMAGE_COMMENT_SIZE)
+            {
+                LogFunc(("pszComment is too long, %d bytes!\n", cchComment));
+                rc = VERR_VD_VDI_COMMENT_TOO_LONG;
+                goto out;
+            }
+
+            /* we don't support old style images */
+            if (GET_MAJOR_HEADER_VERSION(&pImage->Header) == 1)
+            {
+                /*
+                 * Update the comment field, making sure to zero out all of the previous comment.
+                 */
+                memset(pImage->Header.u.v1.szComment, '\0', VDI_IMAGE_COMMENT_SIZE);
+                memcpy(pImage->Header.u.v1.szComment, pszComment, cchComment);
+
+                /* write out new the header */
+                rc = vdiUpdateHeader(pImage);
+            }
+            else
+                rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
+        }
     }
     else
         rc = VERR_VD_NOT_OPENED;
@@ -2656,8 +2658,8 @@ VBOXHDDBACKEND g_VDIBackend =
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
     | VD_CAP_DIFF | VD_CAP_FILE | VD_CAP_ASYNC | VD_CAP_VFS,
-    /* papszFileExtensions */
-    s_apszVdiFileExtensions,
+    /* paFileExtensions */
+    s_aVdiFileExtensions,
     /* paConfigInfo */
     NULL,
     /* hPlugin */
