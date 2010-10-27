@@ -1595,7 +1595,7 @@ static const uint8_t cursor_glyph[32 * 4] = {
  * - underline
  * - flashing
  */
-static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
+static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool reset_dirty)
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
     int cx_min, cx_max, linesize, x_incr;
@@ -1722,7 +1722,8 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
                     cx_min = cx;
                 if (cx > cx_max)
                     cx_max = cx;
-                *ch_attr_ptr = ch_attr;
+                if (reset_dirty)
+                    *ch_attr_ptr = ch_attr;
 #ifdef WORDS_BIGENDIAN
                 ch = ch_attr >> 8;
                 cattr = ch_attr & 0xff;
@@ -1961,7 +1962,7 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
 /*
  * graphic modes
  */
-static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
+static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize, bool reset_dirty)
 {
     int y1, y2, y, update, page_min, page_max, linesize, y_start, double_scan;
     int width, height, shift_control, line_offset, page0, page1, bwidth, bits;
@@ -2133,7 +2134,7 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
         s->pDrv->pfnUpdateRect(s->pDrv, 0, y_start, disp_width, y - y_start);
     }
     /* reset modified pages */
-    if (page_max != -1) {
+    if (page_max != -1 && reset_dirty) {
         vga_reset_dirty(s, page_min, page_max + TARGET_PAGE_SIZE);
     }
     memset(s->invalidated_y_table, 0, ((height + 31) >> 5) * 4);
@@ -2174,7 +2175,7 @@ static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint3
 #define GMODE_GRAPH    1
 #define GMODE_BLANK 2
 
-static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
+static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize, bool reset_dirty)
 {
     int rc = VINF_SUCCESS;
     int full_update, graphic_mode;
@@ -2228,10 +2229,10 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
             /* Do a complete redraw, which will pick up a new screen resolution. */
             if (s->gr[6] & 1) {
                 s->graphic_mode = GMODE_GRAPH;
-                rc = vga_draw_graphic(s, 1, false);
+                rc = vga_draw_graphic(s, 1, false, reset_dirty);
             } else {
                 s->graphic_mode = GMODE_TEXT;
-                rc = vga_draw_text(s, 1, false);
+                rc = vga_draw_text(s, 1, false, reset_dirty);
             }
 
             if (fBlank) {
@@ -2256,10 +2257,10 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
         }
         switch(graphic_mode) {
         case GMODE_TEXT:
-            rc = vga_draw_text(s, full_update, fFailOnResize);
+            rc = vga_draw_text(s, full_update, fFailOnResize, reset_dirty);
             break;
         case GMODE_GRAPH:
-            rc = vga_draw_graphic(s, full_update, fFailOnResize);
+            rc = vga_draw_graphic(s, full_update, fFailOnResize, reset_dirty);
             break;
         case GMODE_BLANK:
         default:
@@ -4338,7 +4339,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
         pThis->fRemappedVGA = false;
     }
 
-    rc = vga_update_display(pThis, false, false);
+    rc = vga_update_display(pThis, false, false, true);
     if (rc != VINF_SUCCESS)
     {
         PDMCritSectLeave(&pThis->lock);
@@ -4366,7 +4367,7 @@ static int updateDisplayAll(PVGASTATE pThis)
 
     pThis->graphic_mode = -1; /* force full update */
 
-    return vga_update_display(pThis, true, false);
+    return vga_update_display(pThis, true, false, true);
 }
 
 
@@ -4510,7 +4511,7 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
              * screen in the external buffer.
              * If there is a pending resize, the function will fail.
              */
-            rc = vga_update_display(pThis, false, true);
+            rc = vga_update_display(pThis, false, true, false);
 
             /* Restore. */
             pThis->pDrv = pConnectorSaved;
