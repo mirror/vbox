@@ -1,4 +1,3 @@
-#ifdef VBOX
 /* $Id$ */
 /** @file
  * DevVGA - VBox VGA/VESA device.
@@ -44,16 +43,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#ifndef VBOX
-/** The default amount of VRAM. */
-#define VGA_VRAM_DEFAULT    (_4M)
-/** The maximum amount of VRAM. */
-#define VGA_VRAM_MAX        (128 * _1M)
-/** The minimum amount of VRAM. */
-#define VGA_VRAM_MIN        (_1M)
-#else
-/* moved to DevVGA.h */
-#endif
 
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
@@ -386,15 +375,6 @@ DECLINLINE(void) vga_reset_dirty(VGAState *pThis, RTGCPHYS offVRAMStart, RTGCPHY
     ASMBitClearRange(&pThis->au32DirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
 }
 
-#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-#endif /* VBOX */
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
-
-#ifndef VBOX
-#include "vl.h"
-#include "vga_int.h"
-#endif /* !VBOX */
-
 #ifdef LOG_ENABLED
 //#define DEBUG_VGA
 //#define DEBUG_VGA_MEM
@@ -405,10 +385,7 @@ DECLINLINE(void) vga_reset_dirty(VGAState *pThis, RTGCPHYS offVRAMStart, RTGCPHY
 #endif
 
 /* force some bits to zero */
-#ifdef VBOX
-static
-#endif /* VBOX */
-const uint8_t sr_mask[8] = {
+static const uint8_t sr_mask[8] = {
     (uint8_t)~0xfc,
     (uint8_t)~0xc2,
     (uint8_t)~0xf0,
@@ -419,10 +396,7 @@ const uint8_t sr_mask[8] = {
     (uint8_t)~0x00,
 };
 
-#ifdef VBOX
-static
-#endif /* VBOX */
-const uint8_t gr_mask[16] = {
+static const uint8_t gr_mask[16] = {
     (uint8_t)~0xf0, /* 0x00 */
     (uint8_t)~0xf0, /* 0x01 */
     (uint8_t)~0xf0, /* 0x02 */
@@ -519,16 +493,11 @@ static const uint32_t dmask4[4] = {
     PAT(0xffffffff),
 };
 
-#if defined(VBOX) && defined(IN_RING3)
+#if defined(IN_RING3)
 static uint32_t expand4[256];
 static uint16_t expand2[256];
 static uint8_t expand4to8[16];
-#endif /* VBOX && IN_RING3 */
-
-#ifndef VBOX
-VGAState *vga_state;
-int vga_io_memory;
-#endif /* !VBOX */
+#endif /* IN_RING3 */
 
 static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
 {
@@ -649,12 +618,8 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         } else {
             index = s->ar_index & 0x1f;
             switch(index) {
-#ifndef VBOX
-            case 0x00 ... 0x0f:
-#else /* VBOX */
             case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
             case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
-#endif /* VBOX */
                 s->ar[index] = val & 0x3f;
                 break;
             case 0x10:
@@ -891,7 +856,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 val == VBE_DISPI_ID4) {
                 s->vbe_regs[s->vbe_index] = val;
             }
-#ifdef VBOX
             if (val == VBE_DISPI_ID_VBOX_VIDEO) {
                 s->vbe_regs[s->vbe_index] = val;
             } else if (val == VBE_DISPI_ID_ANYX) {
@@ -902,7 +866,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 s->vbe_regs[s->vbe_index] = val;
             }
 #endif /* VBOX_WITH_HGSMI */
-#endif /* VBOX */
             break;
         case VBE_DISPI_INDEX_XRES:
             if (val <= VBE_DISPI_MAX_XRES) {
@@ -976,7 +939,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             if ((val & VBE_DISPI_ENABLED) &&
                 !(s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)) {
                 int h, shift_control;
-#ifdef VBOX
                 /* Check the values before we screw up with a resolution which is too big or small. */
                 size_t cb = s->vbe_regs[VBE_DISPI_INDEX_XRES];
                 if (s->vbe_regs[VBE_DISPI_INDEX_BPP] == 4)
@@ -1003,7 +965,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                     return VINF_SUCCESS; /* Note: silent failure like before */
                 }
 #endif  /* KEEP_SCAN_LINE_LENGTH defined */
-#endif /* VBOX */
 
 #ifndef KEEP_SCAN_LINE_LENGTH
                 s->vbe_regs[VBE_DISPI_INDEX_VIRT_WIDTH] =
@@ -1020,13 +981,8 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 
                 /* clear the screen (should be done in BIOS) */
                 if (!(val & VBE_DISPI_NOCLEARMEM)) {
-#ifndef VBOX
-                    memset(s->vram_ptr, 0,
-                           s->vbe_regs[VBE_DISPI_INDEX_YRES] * s->vbe_line_offset);
-#else /* VBOX */
                     memset(s->CTX_SUFF(vram_ptr), 0,
                            s->vbe_regs[VBE_DISPI_INDEX_YRES] * s->vbe_line_offset);
-#endif /* VBOX */
                 }
 
                 /* we initialize the VGA graphic mode (should be done
@@ -1056,17 +1012,14 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 }
                 s->gr[0x05] = (s->gr[0x05] & ~0x60) | (shift_control << 5);
                 s->cr[0x09] &= ~0x9f; /* no double scan */
-#ifdef VBOX
                 /* sunlover 30.05.2007
                  * The ar_index remains with bit 0x20 cleared after a switch from fullscreen
                  * DOS mode on Windows XP guest. That leads to GMODE_BLANK in vga_update_display.
                  * But the VBE mode is graphics, so not a blank anymore.
                  */
                 s->ar_index |= 0x20;
-#endif /* VBOX */
             } else {
                 /* XXX: the bios should do that */
-#ifdef VBOX
                 /* sunlover 21.12.2006
                  * Here is probably more to reset. When this was executed in GC
                  * then the *update* functions could not detect a mode change.
@@ -1077,7 +1030,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                  * VBE_DISPI_INDEX_ENABLE case always in RING3 in order to call the
                  * LFBChange callback.
                  */
-#endif /* VBOX */
                 s->bank_offset = 0;
             }
             s->vbe_regs[s->vbe_index] = val;
@@ -1127,7 +1079,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             }
             break;
         case VBE_DISPI_INDEX_VBOX_VIDEO:
-#ifdef VBOX
 #ifndef IN_RING3
             return VINF_IOM_HC_IOPORT_WRITE;
 #else
@@ -1145,7 +1096,6 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                 s->pDrv->pfnProcessDisplayData(s->pDrv, s->CTX_SUFF(vram_ptr), val & 0xFFFF);
             }
 #endif /* IN_RING3 */
-#endif /* VBOX */
             break;
         default:
             break;
@@ -1156,11 +1106,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 #endif
 
 /* called for accesses between 0xa0000 and 0xc0000 */
-#ifdef VBOX
 static uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr, int *prc)
-#else
-uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
-#endif /* VBOX */
 {
     VGAState *s = (VGAState*)opaque;
     int memory_map_mode, plane;
@@ -1171,9 +1117,8 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
 #endif
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
-#ifdef VBOX
     RTGCPHYS GCPhys = addr; /* save original address */
-#endif
+
     addr &= 0x1ffff;
     switch(memory_map_mode) {
     case 0:
@@ -1198,9 +1143,6 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
 
     if (s->sr[4] & 0x08) {
         /* chain 4 mode : simplest access */
-#ifndef VBOX
-        ret = s->vram_ptr[addr];
-#else /* VBOX */
 # ifndef IN_RC
         /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
         if (   (s->sr[2] & 3) == 3
@@ -1216,26 +1158,17 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
 # endif /* IN_RC */
         VERIFY_VRAM_READ_OFF_RETURN(s, addr, *prc);
         ret = s->CTX_SUFF(vram_ptr)[addr];
-#endif /* VBOX */
     } else if (!(s->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
         /* odd/even mode (aka text mode mapping) */
         plane = (s->gr[4] & 2) | (addr & 1);
-#ifndef VBOX
-        ret = s->vram_ptr[((addr & ~1) << 1) | plane];
-#else /* VBOX */
         /* See the comment for a similar line in vga_mem_writeb. */
         RTGCPHYS off = ((addr & ~1) << 2) | plane;
         VERIFY_VRAM_READ_OFF_RETURN(s, off, *prc);
         ret = s->CTX_SUFF(vram_ptr)[off];
-#endif /* VBOX */
     } else {
         /* standard VGA latched access */
-#ifndef VBOX
-        s->latch = ((uint32_t *)s->vram_ptr)[addr];
-#else /* VBOX */
         VERIFY_VRAM_READ_OFF_RETURN(s, addr, *prc);
         s->latch = ((uint32_t *)s->CTX_SUFF(vram_ptr))[addr];
-#endif /* VBOX */
 
         if (!(s->gr[5] & 0x08)) {
             /* read mode 0 */
@@ -1255,43 +1188,8 @@ uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-#ifndef VBOX
-static uint32_t vga_mem_readw(void *opaque, target_phys_addr_t addr)
-{
-    uint32_t v;
-#ifdef TARGET_WORDS_BIGENDIAN
-    v = vga_mem_readb(opaque, addr) << 8;
-    v |= vga_mem_readb(opaque, addr + 1);
-#else
-    v = vga_mem_readb(opaque, addr);
-    v |= vga_mem_readb(opaque, addr + 1) << 8;
-#endif
-    return v;
-}
-
-static uint32_t vga_mem_readl(void *opaque, target_phys_addr_t addr)
-{
-    uint32_t v;
-#ifdef TARGET_WORDS_BIGENDIAN
-    v = vga_mem_readb(opaque, addr) << 24;
-    v |= vga_mem_readb(opaque, addr + 1) << 16;
-    v |= vga_mem_readb(opaque, addr + 2) << 8;
-    v |= vga_mem_readb(opaque, addr + 3);
-#else
-    v = vga_mem_readb(opaque, addr);
-    v |= vga_mem_readb(opaque, addr + 1) << 8;
-    v |= vga_mem_readb(opaque, addr + 2) << 16;
-    v |= vga_mem_readb(opaque, addr + 3) << 24;
-#endif
-    return v;
-}
-#endif /* !VBOX */
-
 /* called for accesses between 0xa0000 and 0xc0000 */
-#ifdef VBOX
-static
-#endif /* VBOX */
-int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
+static int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 {
     VGAState *s = (VGAState*)opaque;
     int memory_map_mode, plane, write_mode, b, func_select, mask;
@@ -1302,9 +1200,8 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #endif
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
-#ifdef VBOX
     RTGCPHYS GCPhys = addr; /* save original address */
-#endif
+
     addr &= 0x1ffff;
     switch(memory_map_mode) {
     case 0:
@@ -1332,9 +1229,6 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
         plane = addr & 3;
         mask = (1 << plane);
         if (s->sr[2] & mask) {
-#ifndef VBOX
-            s->vram_ptr[addr] = val;
-#else /* VBOX */
 # ifndef IN_RC
             /* If all planes are accessible, then map the page to the frame buffer and make it writable. */
             if (   (s->sr[2] & 3) == 3
@@ -1348,47 +1242,30 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 
             VERIFY_VRAM_WRITE_OFF_RETURN(s, addr);
             s->CTX_SUFF(vram_ptr)[addr] = val;
-#endif /* VBOX */
 #ifdef DEBUG_VGA_MEM
             Log(("vga: chain4: [0x%x]\n", addr));
 #endif
             s->plane_updated |= mask; /* only used to detect font change */
-#ifndef VBOX
-            cpu_physical_memory_set_dirty(s->vram_offset + addr);
-#else /* VBOX */
             vga_set_dirty(s, addr);
-#endif /* VBOX */
         }
     } else if (!(s->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
         /* odd/even mode (aka text mode mapping) */
         plane = (s->gr[4] & 2) | (addr & 1);
         mask = (1 << plane);
         if (s->sr[2] & mask) {
-#ifndef VBOX
-            addr = ((addr & ~1) << 1) | plane;
-#else
             /* 'addr' is offset in a plane, bit 0 selects the plane.
              * Mask the bit 0, convert plane index to vram offset,
              * that is multiply by the number of planes,
              * and select the plane byte in the vram offset.
              */
             addr = ((addr & ~1) << 2) | plane;
-#endif /* VBOX */
-#ifndef VBOX
-            s->vram_ptr[addr] = val;
-#else /* VBOX */
             VERIFY_VRAM_WRITE_OFF_RETURN(s, addr);
             s->CTX_SUFF(vram_ptr)[addr] = val;
-#endif /* VBOX */
 #ifdef DEBUG_VGA_MEM
             Log(("vga: odd/even: [0x%x]\n", addr));
 #endif
             s->plane_updated |= mask; /* only used to detect font change */
-#ifndef VBOX
-            cpu_physical_memory_set_dirty(s->vram_offset + addr);
-#else /* VBOX */
             vga_set_dirty(s, addr);
-#endif /* VBOX */
         }
     } else {
         /* standard VGA latched access */
@@ -1496,58 +1373,20 @@ int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
         mask = s->sr[2];
         s->plane_updated |= mask; /* only used to detect font change */
         write_mask = mask16[mask];
-#ifndef VBOX
-        ((uint32_t *)s->vram_ptr)[addr] =
-            (((uint32_t *)s->vram_ptr)[addr] & ~write_mask) |
-            (val & write_mask);
-#else /* VBOX */
         ((uint32_t *)s->CTX_SUFF(vram_ptr))[addr] =
             (((uint32_t *)s->CTX_SUFF(vram_ptr))[addr] & ~write_mask) |
             (val & write_mask);
-#endif /* VBOX */
 #ifdef DEBUG_VGA_MEM
             Log(("vga: latch: [0x%x] mask=0x%08x val=0x%08x\n",
                    addr * 4, write_mask, val));
 #endif
-#ifndef VBOX
-            cpu_physical_memory_set_dirty(s->vram_offset + (addr << 2));
-#else /* VBOX */
             vga_set_dirty(s, (addr << 2));
-#endif /* VBOX */
     }
 
     return VINF_SUCCESS;
 }
 
-#ifndef VBOX
-static void vga_mem_writew(void *opaque, target_phys_addr_t addr, uint32_t val)
-{
-#ifdef TARGET_WORDS_BIGENDIAN
-    vga_mem_writeb(opaque, addr, (val >> 8) & 0xff);
-    vga_mem_writeb(opaque, addr + 1, val & 0xff);
-#else
-    vga_mem_writeb(opaque, addr, val & 0xff);
-    vga_mem_writeb(opaque, addr + 1, (val >> 8) & 0xff);
-#endif
-}
-
-static void vga_mem_writel(void *opaque, target_phys_addr_t addr, uint32_t val)
-{
-#ifdef TARGET_WORDS_BIGENDIAN
-    vga_mem_writeb(opaque, addr, (val >> 24) & 0xff);
-    vga_mem_writeb(opaque, addr + 1, (val >> 16) & 0xff);
-    vga_mem_writeb(opaque, addr + 2, (val >> 8) & 0xff);
-    vga_mem_writeb(opaque, addr + 3, val & 0xff);
-#else
-    vga_mem_writeb(opaque, addr, val & 0xff);
-    vga_mem_writeb(opaque, addr + 1, (val >> 8) & 0xff);
-    vga_mem_writeb(opaque, addr + 2, (val >> 16) & 0xff);
-    vga_mem_writeb(opaque, addr + 3, (val >> 24) & 0xff);
-#endif
-}
-#endif /* !VBOX */
-
-#if !defined(VBOX) || defined(IN_RING3)
+#if defined(IN_RING3)
 typedef void vga_draw_glyph8_func(uint8_t *d, int linesize,
                              const uint8_t *font_ptr, int h,
                              uint32_t fgcol, uint32_t bgcol);
@@ -1694,13 +1533,11 @@ static void vga_get_offsets(VGAState *s,
         /* compute line_offset in bytes */
         line_offset = s->cr[0x13];
         line_offset <<= 3;
-#ifdef VBOX
         if (!(s->cr[0x14] & 0x40) && !(s->cr[0x17] & 0x40))
         {
             /* Word mode. Used for odd/even modes. */
             line_offset *= 2;
         }
-#endif /* VBOX */
 
         /* starting address */
         start_addr = s->cr[0x0d] | (s->cr[0x0c] << 8);
@@ -1799,11 +1636,7 @@ static const uint8_t cursor_glyph[32 * 4] = {
  * - underline
  * - flashing
  */
-#ifndef VBOX
-static void vga_draw_text(VGAState *s, int full_update)
-#else
 static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
-#endif /* !VBOX */
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
     int cx_min, cx_max, linesize, x_incr;
@@ -1827,18 +1660,10 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
         s->font_offsets[0] = offset;
         full_update = 1;
     }
-#ifndef VBOX
-    font_base[0] = s->vram_ptr + offset;
-#else /* VBOX */
     font_base[0] = s->CTX_SUFF(vram_ptr) + offset;
-#endif /* VBOX */
 
     offset = (((v >> 5) & 1) | ((v >> 1) & 6)) * 8192 * 4 + 2;
-#ifndef VBOX
-    font_base[1] = s->vram_ptr + offset;
-#else /* VBOX */
     font_base[1] = s->CTX_SUFF(vram_ptr) + offset;
-#endif /* VBOX */
     if (offset != s->font_offsets[1]) {
         s->font_offsets[1] = offset;
         full_update = 1;
@@ -1852,11 +1677,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
     full_update |= update_basic_params(s);
 
     line_offset = s->line_offset;
-#ifndef VBOX
-    s1 = s->vram_ptr + (s->start_addr * 4);
-#else /* VBOX */
     s1 = s->CTX_SUFF(vram_ptr) + (s->start_addr * 8); /** @todo r=bird: Add comment why we do *8 instead of *4, it's not so obvious... */
-#endif /* VBOX */
 
     /* total width & height */
     cheight = (s->cr[9] & 0x1f) + 1;
@@ -1865,11 +1686,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
         cw = 9;
     if (s->sr[1] & 0x08)
         cw = 16; /* NOTE: no 18 pixel wide */
-#ifndef VBOX
-    x_incr = cw * ((s->ds->depth + 7) >> 3);
-#else /* VBOX */
     x_incr = cw * ((s->pDrv->cBits + 7) >> 3);
-#endif /* VBOX */
     width = (s->cr[0x01] + 1);
     if (s->cr[0x06] == 100) {
         /* ugly hack for CGA 160x100x16 - explain me the logic */
@@ -1882,32 +1699,18 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
     }
     if ((height * width) > CH_ATTR_SIZE) {
         /* better than nothing: exit if transient size is too big */
-#ifndef VBOX
-        return;
-#else
         return VINF_SUCCESS;
-#endif /* VBOX */
     }
 
     if (width != (int)s->last_width || height != (int)s->last_height ||
         cw != s->last_cw || cheight != s->last_ch) {
-#ifdef VBOX
         if (fFailOnResize)
         {
             /* The caller does not want to call the pfnResize. */
             return VERR_TRY_AGAIN;
         }
-#endif /* VBOX */
         s->last_scr_width = width * cw;
         s->last_scr_height = height * cheight;
-#ifndef VBOX
-        dpy_resize(s->ds, s->last_scr_width, s->last_scr_height);
-        s->last_width = width;
-        s->last_height = height;
-        s->last_ch = cheight;
-        s->last_cw = cw;
-        full_update = 1;
-#else /* VBOX */
         /* For text modes the direct use of guest VRAM is not implemented, so bpp and cbLine are 0 here. */
         int rc = s->pDrv->pfnResize(s->pDrv, 0, NULL, 0, s->last_scr_width, s->last_scr_height);
         s->last_width = width;
@@ -1918,7 +1721,6 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
         if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
             return rc;
         AssertRC(rc);
-#endif /* VBOX */
     }
     cursor_offset = ((s->cr[0x0e] << 8) | s->cr[0x0f]) - s->start_addr;
     if (cursor_offset != s->cursor_offset ||
@@ -1934,27 +1736,16 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
         s->cursor_start = s->cr[0xa];
         s->cursor_end = s->cr[0xb];
     }
-#ifndef VBOX
-    cursor_ptr = s->vram_ptr + (s->start_addr + cursor_offset) * 4;
-
-    depth_index = get_depth_index(s->ds->depth);
-#else /* VBOX */
     cursor_ptr = s->CTX_SUFF(vram_ptr) + (s->start_addr + cursor_offset) * 8;
     depth_index = get_depth_index(s->pDrv->cBits);
-#endif /* VBOX */
     if (cw == 16)
         vga_draw_glyph8 = vga_draw_glyph16_table[depth_index];
     else
         vga_draw_glyph8 = vga_draw_glyph8_table[depth_index];
     vga_draw_glyph9 = vga_draw_glyph9_table[depth_index];
 
-#ifndef VBOX
-    dest = s->ds->data;
-    linesize = s->ds->linesize;
-#else /* VBOX */
     dest = s->pDrv->pu8Data;
     linesize = s->pDrv->cbScanline;
-#endif /* VBOX */
     ch_attr_ptr = s->last_ch_attr;
     cy_start = -1;
     cx_max_upd = -1;
@@ -2017,20 +1808,9 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
                 }
             }
             d1 += x_incr;
-#ifndef VBOX
-            src += 4;
-#else
             src += 8; /* Every second byte of a plane is used in text mode. */
-#endif
-
             ch_attr_ptr++;
         }
-#ifndef VBOX
-        if (cx_max != -1) {
-            dpy_update(s->ds, cx_min * cw, cy * cheight,
-                       (cx_max - cx_min + 1) * cw, cheight);
-        }
-#else
         if (cx_max != -1) {
             /* Keep track of the bounding rectangle for updates. */
             if (cy_start == -1)
@@ -2047,17 +1827,14 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize)
             cx_max_upd = -1;
             cx_min_upd = width;
         }
-#endif
         dest += linesize * cheight;
         s1 += line_offset;
     }
-#ifdef VBOX
     if (cy_start >= 0)
         /* Flush any remaining changes to display. */
         s->pDrv->pfnUpdateRect(s->pDrv, cx_min_upd * cw, cy_start * cheight,
                                (cx_max_upd - cx_min_upd + 1) * cw, (cy - cy_start) * cheight);
         return VINF_SUCCESS;
-#endif /* VBOX */
 }
 
 enum {
@@ -2160,21 +1937,6 @@ static void vga_get_resolution(VGAState *s, int *pwidth, int *pheight)
     *pheight = height;
 }
 
-#ifndef VBOX
-void vga_invalidate_scanlines(VGAState *s, int y1, int y2)
-{
-    int y;
-    if (y1 >= VGA_MAX_HEIGHT)
-        return;
-    if (y2 >= VGA_MAX_HEIGHT)
-        y2 = VGA_MAX_HEIGHT;
-    for(y = y1; y < y2; y++) {
-        s->invalidated_y_table[y >> 5] |= 1 << (y & 0x1f);
-    }
-}
-#endif /* !VBOX*/
-
-#ifdef VBOX
 /**
  * Performs the display driver resizing when in graphics mode.
  *
@@ -2236,16 +1998,11 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
         update_palette16(s);
     return VINF_SUCCESS;
 }
-#endif /* VBOX */
 
 /*
  * graphic modes
  */
-#ifndef VBOX
-static void vga_draw_graphic(VGAState *s, int full_update)
-#else
 static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
-#endif /* !VBOX */
 {
     int y1, y2, y, update, page_min, page_max, linesize, y_start, double_scan;
     int width, height, shift_control, line_offset, page0, page1, bwidth, bits;
@@ -2321,19 +2078,6 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
             break;
         }
     }
-#ifndef VBOX
-    vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(s->ds->depth)];
-
-    if (disp_width != s->last_width ||
-        height != s->last_height) {
-        dpy_resize(s->ds, disp_width, height);
-        s->last_scr_width = disp_width;
-        s->last_scr_height = height;
-        s->last_width = disp_width;
-        s->last_height = height;
-        full_update = 1;
-    }
-#else /* VBOX */
     if (    disp_width     != (int)s->last_width
         ||  height         != (int)s->last_height
         ||  s->get_bpp(s)  != (int)s->last_bpp
@@ -2351,7 +2095,6 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
     }
     vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(s->pDrv->cBits)];
 
-#endif /* VBOX */
     if (s->cursor_invalidate)
         s->cursor_invalidate(s);
 
@@ -2361,21 +2104,12 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
            width, height, v, line_offset, s->cr[9], s->cr[0x17], s->line_compare, s->sr[0x01]));
 #endif
     addr1 = (s->start_addr * 4);
-#ifndef VBOX
-    bwidth = width * 4;
-#else /* VBOX */
     bwidth = (width * bits + 7) / 8;    /* The visible width of a scanline. */
-#endif /* VBOX */
     y_start = -1;
     page_min = 0x7fffffff;
     page_max = -1;
-#ifndef VBOX
-    d = s->ds->data;
-    linesize = s->ds->linesize;
-#else /* VBOX */
     d = s->pDrv->pu8Data;
     linesize = s->pDrv->cbScanline;
-#endif /* VBOX */
 
     y1 = 0;
     y2 = s->cr[0x09] & 0x1F;    /* starting row scan count */
@@ -2390,18 +2124,6 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
         if (!(s->cr[0x17] & 2)) {
             addr = (addr & ~(1 << 16)) | ((y1 & 2) << 15);
         }
-#ifndef VBOX
-        page0 = s->vram_offset + (addr & TARGET_PAGE_MASK);
-        page1 = s->vram_offset + ((addr + bwidth - 1) & TARGET_PAGE_MASK);
-        update = full_update |
-            cpu_physical_memory_get_dirty(page0, VGA_DIRTY_FLAG) |
-            cpu_physical_memory_get_dirty(page1, VGA_DIRTY_FLAG);
-        if ((page1 - page0) > TARGET_PAGE_SIZE) {
-            /* if wide line, can use another page */
-            update |= cpu_physical_memory_get_dirty(page0 + TARGET_PAGE_SIZE,
-                                                    VGA_DIRTY_FLAG);
-        }
-#else /* VBOX */
         page0 = addr & TARGET_PAGE_MASK;
         page1 = (addr + bwidth - 1) & TARGET_PAGE_MASK;
         update = full_update | vga_is_dirty(s, page0) | vga_is_dirty(s, page1);
@@ -2409,7 +2131,6 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
             /* if wide line, can use another page */
             update |= vga_is_dirty(s, page0 + TARGET_PAGE_SIZE);
         }
-#endif /* VBOX */
         /* explicit invalidation for the hardware cursor */
         update |= (s->invalidated_y_table[y >> 5] >> (y & 0x1f)) & 1;
         if (update) {
@@ -2419,23 +2140,14 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
                 page_min = page0;
             if (page1 > page_max)
                 page_max = page1;
-#ifndef VBOX
-            vga_draw_line(s, d, s->vram_ptr + addr, width);
-#else /* VBOX */
             if (s->fRenderVRAM)
                 vga_draw_line(s, d, s->CTX_SUFF(vram_ptr) + addr, width);
-#endif /* VBOX */
             if (s->cursor_draw_line)
                 s->cursor_draw_line(s, d, y);
         } else {
             if (y_start >= 0) {
                 /* flush to display */
-#ifndef VBOX
-                dpy_update(s->ds, 0, y_start,
-                           disp_width, y - y_start);
-#else /* VBOX */
                 s->pDrv->pfnUpdateRect(s->pDrv, 0, y_start, disp_width, y - y_start);
-#endif /* VBOX */
                 y_start = -1;
             }
         }
@@ -2459,52 +2171,18 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize)
     }
     if (y_start >= 0) {
         /* flush to display */
-#ifndef VBOX
-        dpy_update(s->ds, 0, y_start,
-                   disp_width, y - y_start);
-#else /* VBOX */
         s->pDrv->pfnUpdateRect(s->pDrv, 0, y_start, disp_width, y - y_start);
-#endif /* VBOX */
     }
     /* reset modified pages */
     if (page_max != -1) {
-#ifndef VBOX
-        cpu_physical_memory_reset_dirty(page_min, page_max + TARGET_PAGE_SIZE,
-                                        VGA_DIRTY_FLAG);
-#else /* VBOX */
         vga_reset_dirty(s, page_min, page_max + TARGET_PAGE_SIZE);
-#endif /* VBOX */
     }
     memset(s->invalidated_y_table, 0, ((height + 31) >> 5) * 4);
-#ifdef VBOX
     return VINF_SUCCESS;
-#endif /* VBOX */
 }
 
 static void vga_draw_blank(VGAState *s, int full_update)
 {
-#ifndef VBOX
-    int i, w, val;
-    uint8_t *d;
-
-    if (!full_update)
-        return;
-    if (s->last_scr_width <= 0 || s->last_scr_height <= 0)
-        return;
-    if (s->ds->depth == 8)
-        val = s->rgb_to_pixel(0, 0, 0);
-    else
-        val = 0;
-    w = s->last_scr_width * ((s->ds->depth + 7) >> 3);
-    d = s->ds->data;
-    for(i = 0; i < s->last_scr_height; i++) {
-        memset(d, val, w);
-        d += s->ds->linesize;
-    }
-    dpy_update(s->ds, 0, 0,
-               s->last_scr_width, s->last_scr_height);
-#else  /* VBOX */
-
     int i, w, val;
     uint8_t *d;
     uint32_t cbScanline = s->pDrv->cbScanline;
@@ -2526,43 +2204,26 @@ static void vga_draw_blank(VGAState *s, int full_update)
         d += cbScanline;
     }
     s->pDrv->pfnUpdateRect(s->pDrv, 0, 0, s->last_scr_width, s->last_scr_height);
-#endif /* VBOX */
 }
 
-#ifdef VBOX
 static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {
 }
-#endif /* VBOX */
 
 
 #define GMODE_TEXT     0
 #define GMODE_GRAPH    1
 #define GMODE_BLANK 2
 
-#ifndef VBOX
-void vga_update_display(void)
-{
-    VGAState *s = vga_state;
-#else /* VBOX */
 static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
 {
     int rc = VINF_SUCCESS;
-#endif /* VBOX */
     int full_update, graphic_mode;
 
-#ifndef VBOX
-    if (s->ds->depth == 0) {
-#else /* VBOX */
     if (s->pDrv->cBits == 0) {
-#endif /* VBOX */
         /* nothing to do */
     } else {
-#ifndef VBOX
-        switch(s->ds->depth) {
-#else /* VBOX */
         switch(s->pDrv->cBits) {
-#endif /* VBOX */
         case 8:
             s->rgb_to_pixel = rgb_to_pixel8_dup;
             break;
@@ -2578,7 +2239,6 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
             break;
         }
 
-#ifdef VBOX
         if (fUpdateAll) {
             /* A full update is requested. Special processing for a "blank" mode is required, because
              * the request must process all pending resolution changes.
@@ -2624,7 +2284,6 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
             }
             return rc;
         }
-#endif /* VBOX */
 
         full_update = 0;
         if (!(s->ar_index & 0x20) || (s->sr[0x01] & 0x20)) {
@@ -2638,16 +2297,10 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
         }
         switch(graphic_mode) {
         case GMODE_TEXT:
-#ifdef VBOX
-            rc =
-#endif /* VBOX */
-            vga_draw_text(s, full_update, fFailOnResize);
+            rc = vga_draw_text(s, full_update, fFailOnResize);
             break;
         case GMODE_GRAPH:
-#ifdef VBOX
-            rc =
-#endif /* VBOX */
-            vga_draw_graphic(s, full_update, fFailOnResize);
+            rc = vga_draw_graphic(s, full_update, fFailOnResize);
             break;
         case GMODE_BLANK:
         default:
@@ -2655,43 +2308,8 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize)
             break;
         }
     }
-#ifdef VBOX
     return rc;
-#endif /* VBOX */
 }
-
-/* force a full display refresh */
-#ifndef VBOX
-void vga_invalidate_display(void)
-{
-    VGAState *s = vga_state;
-
-    s->last_width = -1;
-    s->last_height = -1;
-}
-#endif /* !VBOX */
-
-#ifndef VBOX /* see vgaR3Reset() */
-static void vga_reset(VGAState *s)
-{
-    memset(s, 0, sizeof(VGAState));
-    s->graphic_mode = -1; /* force full update */
-}
-#endif /* !VBOX */
-
-#ifndef VBOX
-static CPUReadMemoryFunc *vga_mem_read[3] = {
-    vga_mem_readb,
-    vga_mem_readw,
-    vga_mem_readl,
-};
-
-static CPUWriteMemoryFunc *vga_mem_write[3] = {
-    vga_mem_writeb,
-    vga_mem_writew,
-    vga_mem_writel,
-};
-#endif /* !VBOX */
 
 static void vga_save(QEMUFile *f, void *opaque)
 {
@@ -2739,11 +2357,6 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     int is_vbe, i;
     uint32_t u32Dummy;
 
-#ifndef VBOX /* checked by the caller. */
-    if (version_id > VGA_SAVEDSTATE_VERSION)
-        return -EINVAL;
-#endif /* VBOX */
-
     qemu_get_be32s(f, &s->latch);
     qemu_get_8s(f, &s->sr_index);
     qemu_get_buffer(f, s->sr, 8);
@@ -2770,14 +2383,10 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     is_vbe = qemu_get_byte(f);
 #ifdef CONFIG_BOCHS_VBE
     if (!is_vbe)
-# ifndef VBOX
-        return -EINVAL;
-# else /* VBOX */
     {
         Log(("vga_load: !is_vbe !!\n"));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-# endif /* VBOX */
     qemu_get_be16s(f, &s->vbe_index);
     for(i = 0; i < VBE_DISPI_INDEX_NB_SAVED; i++)
         qemu_get_be16s(f, &s->vbe_regs[i]);
@@ -2788,14 +2397,10 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     s->vbe_bank_max = (s->vram_size >> 16) - 1;
 #else
     if (is_vbe)
-# ifndef VBOX
-        return -EINVAL;
-# else /* VBOX */
     {
         Log(("vga_load: is_vbe !!\n"));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-# endif /* VBOX */
 #endif
 
     /* force refresh */
@@ -2803,22 +2408,8 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     return 0;
 }
 
-#ifndef VBOX /* see vgaR3IORegionMap */
-static void vga_map(PCIDevice *pci_dev, int region_num,
-                    uint32_t addr, uint32_t size, int type)
-{
-    VGAState *s = vga_state;
-
-    cpu_register_physical_memory(addr, s->vram_size, s->vram_offset);
-}
-#endif
-
-#ifndef VBOX /* see vgaR3Construct */
-void vga_common_init(VGAState *s, DisplayState *ds, uint8_t *vga_ram_base,
-                     unsigned long vga_ram_offset, int vga_ram_size)
-#else
+/* see vgaR3Construct */
 static void vga_init_expand(void)
-#endif
 {
     int i, j, v, b;
 
@@ -2844,115 +2435,10 @@ static void vga_init_expand(void)
         }
         expand4to8[i] = v;
     }
-#ifdef VBOX
-}
-#else /* !VBOX */
-    vga_reset(s);
-
-    s->vram_ptr = vga_ram_base;
-    s->vram_offset = vga_ram_offset;
-    s->vram_size = vga_ram_size;
-    s->ds = ds;
-    s->get_bpp = vga_get_bpp;
-    s->get_offsets = vga_get_offsets;
-    s->get_resolution = vga_get_resolution;
-    /* XXX: currently needed for display */
-    vga_state = s;
 }
 
+#endif /* !IN_RING0 */
 
-int vga_initialize(PCIBus *bus, DisplayState *ds, uint8_t *vga_ram_base,
-                   unsigned long vga_ram_offset, int vga_ram_size)
-{
-    VGAState *s;
-
-    s = qemu_mallocz(sizeof(VGAState));
-    if (!s)
-        return -1;
-
-    vga_common_init(s, ds, vga_ram_base, vga_ram_offset, vga_ram_size);
-
-    register_savevm("vga", 0, 1, vga_save, vga_load, s);
-
-    register_ioport_write(0x3c0, 16, 1, vga_ioport_write, s);
-
-    register_ioport_write(0x3b4, 2, 1, vga_ioport_write, s);
-    register_ioport_write(0x3d4, 2, 1, vga_ioport_write, s);
-    register_ioport_write(0x3ba, 1, 1, vga_ioport_write, s);
-    register_ioport_write(0x3da, 1, 1, vga_ioport_write, s);
-
-    register_ioport_read(0x3c0, 16, 1, vga_ioport_read, s);
-
-    register_ioport_read(0x3b4, 2, 1, vga_ioport_read, s);
-    register_ioport_read(0x3d4, 2, 1, vga_ioport_read, s);
-    register_ioport_read(0x3ba, 1, 1, vga_ioport_read, s);
-    register_ioport_read(0x3da, 1, 1, vga_ioport_read, s);
-    s->bank_offset = 0;
-
-#ifdef CONFIG_BOCHS_VBE
-    s->vbe_regs[VBE_DISPI_INDEX_ID] = VBE_DISPI_ID0;
-    s->vbe_bank_max = (s->vram_size >> 16) - 1;
-#if defined (TARGET_I386)
-    register_ioport_read(0x1ce, 1, 2, vbe_ioport_read_index, s);
-    register_ioport_read(0x1cf, 1, 2, vbe_ioport_read_data, s);
-
-    register_ioport_write(0x1ce, 1, 2, vbe_ioport_write_index, s);
-    register_ioport_write(0x1cf, 1, 2, vbe_ioport_write_data, s);
-
-    /* old Bochs IO ports */
-    register_ioport_read(0xff80, 1, 2, vbe_ioport_read_index, s);
-    register_ioport_read(0xff81, 1, 2, vbe_ioport_read_data, s);
-
-    register_ioport_write(0xff80, 1, 2, vbe_ioport_write_index, s);
-    register_ioport_write(0xff81, 1, 2, vbe_ioport_write_data, s);
-#else
-    register_ioport_read(0x1ce, 1, 2, vbe_ioport_read_index, s);
-    register_ioport_read(0x1d0, 1, 2, vbe_ioport_read_data, s);
-
-    register_ioport_write(0x1ce, 1, 2, vbe_ioport_write_index, s);
-    register_ioport_write(0x1d0, 1, 2, vbe_ioport_write_data, s);
-#endif
-#endif /* CONFIG_BOCHS_VBE */
-
-    vga_io_memory = cpu_register_io_memory(0, vga_mem_read, vga_mem_write, s);
-    cpu_register_physical_memory(isa_mem_base + 0x000a0000, 0x20000,
-                                 vga_io_memory);
-
-    if (bus) {
-        PCIDevice *d;
-        uint8_t *pci_conf;
-
-        d = pci_register_device(bus, "VGA",
-                                sizeof(PCIDevice),
-                                -1, NULL, NULL);
-        pci_conf = d->config;
-        pci_conf[0x00] = 0x34; // dummy VGA (same as Bochs ID)
-        pci_conf[0x01] = 0x12;
-        pci_conf[0x02] = 0x11;
-        pci_conf[0x03] = 0x11;
-        pci_conf[0x0a] = 0x00; // VGA controller
-        pci_conf[0x0b] = 0x03;
-        pci_conf[0x0e] = 0x00; // header_type
-
-        /* XXX: vga_ram_size must be a power of two */
-        pci_register_io_region(d, 0, vga_ram_size,
-                               PCI_ADDRESS_SPACE_MEM_PREFETCH, vga_map);
-    } else {
-#ifdef CONFIG_BOCHS_VBE
-        /* XXX: use optimized standard vga accesses */
-        cpu_register_physical_memory(VBE_DISPI_LFB_PHYSICAL_ADDRESS,
-                                     vga_ram_size, vga_ram_offset);
-#endif
-    }
-    return 0;
-}
-#endif /* !VBOX */
-
-#endif /* !VBOX || !IN_RC || !IN_RING0 */
-
-
-
-#ifdef VBOX /* VirtualBox code start */
 
 
 /* -=-=-=-=-=- all contexts -=-=-=-=-=- */
@@ -5254,22 +4740,14 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     /* Also check if coords are greater than the display resolution. */
     if (x + w > s->pDrv->cx)
     {
-#ifndef VBOX
-        w = s->pDrv->cx > x? s->pDrv->cx - x: 0;
-#else
         // x < 0 is not possible here
         w = s->pDrv->cx > (uint32_t)x? s->pDrv->cx - x: 0;
-#endif
     }
 
     if (y + h > s->pDrv->cy)
     {
-#ifndef VBOX
-        h = s->pDrv->cy > y? s->pDrv->cy - y: 0;
-#else
         // y < 0 is not possible here
         h = s->pDrv->cy > (uint32_t)y? s->pDrv->cy - y: 0;
-#endif
     }
 
 #ifdef DEBUG_sunlover
@@ -5797,11 +5275,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 # endif
                     RTLogPrintf("%c", ch);
 
-#ifndef VBOX
-                    src += 4;
-#else
                     src += 8; /* Every second byte of a plane is used in text mode. */
-#endif
                 }
                 if (cx_max != -1)
                     RTLogPrintf("\n");
@@ -6293,17 +5767,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpIOPortRegister(pDevIns,  0x1cf,  1, NULL, vgaIOPortWriteVBEData, vgaIOPortReadVBEData, NULL, NULL, "VGA/VBE - Data");
     if (RT_FAILURE(rc))
         return rc;
-#if 0
-    /* This now causes conflicts with Win2k & XP; it is not aware this range is taken
-       and tries to map other devices there */
-    /* Old Bochs. */
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0xff80,  1, NULL, vgaIOPortWriteVBEIndex, vgaIOPortReadVBEIndex, "VGA/VBE - Index Old");
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns, 0xff81,  1, NULL, vgaIOPortWriteVBEData, vgaIOPortReadVBEData, "VGA/VBE - Data Old");
-    if (RT_FAILURE(rc))
-        return rc;
-#endif
 #endif /* CONFIG_BOCHS_VBE */
 
     /* guest context extension */
@@ -6331,19 +5794,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = PDMDevHlpIOPortRegisterRC(pDevIns,  0x1cf,  1, 0, "vgaIOPortWriteVBEData", "vgaIOPortReadVBEData", NULL, NULL, "VGA/VBE - Data (GC)");
         if (RT_FAILURE(rc))
             return rc;
-
-#if 0
-        /* This now causes conflicts with Win2k & XP; they are not aware this range is taken
-           and try to map other devices there */
-        /* Old Bochs. */
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0xff80,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", "VGA/VBE - Index Old (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, 0xff81,  1, 0, "vgaIOPortWriteVBEData", "vgaIOPortReadVBEData", "VGA/VBE - Index Old (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-#endif
-
 #endif /* CONFIG_BOCHS_VBE */
     }
 
@@ -6372,19 +5822,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         rc = PDMDevHlpIOPortRegisterR0(pDevIns,  0x1cf,  1, 0, "vgaIOPortWriteVBEData", "vgaIOPortReadVBEData", NULL, NULL, "VGA/VBE - Data (GC)");
         if (RT_FAILURE(rc))
             return rc;
-
-#if 0
-        /* This now causes conflicts with Win2k & XP; they are not aware this range is taken
-           and try to map other devices there */
-        /* Old Bochs. */
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0xff80,  1, 0, "vgaIOPortWriteVBEIndex", "vgaIOPortReadVBEIndex", "VGA/VBE - Index Old (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, 0xff81,  1, 0, "vgaIOPortWriteVBEData", "vgaIOPortReadVBEData", "VGA/VBE - Index Old (GC)");
-        if (RT_FAILURE(rc))
-            return rc;
-#endif
-
 #endif /* CONFIG_BOCHS_VBE */
     }
 
@@ -7009,7 +6446,6 @@ const PDMDEVREG g_DeviceVga =
 };
 
 #endif /* !IN_RING3 */
-#endif /* VBOX */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 
 /*
