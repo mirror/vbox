@@ -7617,19 +7617,19 @@
       <desc>Guest Additions are not loaded.</desc>
     </const>
     <const name="System"   value="1">
-        <desc>Guest drivers are loaded.</desc>
+      <desc>Guest drivers are loaded.</desc>
     </const>
     <const name="Userland" value="2">
-        <desc>Common components (such as application services) are loaded.</desc>
+      <desc>Common components (such as application services) are loaded.</desc>
     </const>
     <const name="Desktop"  value="3">
-        <desc>Per-user desktop components are loaded.</desc>
+      <desc>Per-user desktop components are loaded.</desc>
     </const>
   </enum>
 
   <enum
     name="ExecuteProcessFlag"
-    uuid="9a24c17d-bd46-4207-b247-517fdd6d6b8f"
+    uuid="3258e8a5-ba0c-43d5-86b5-cf91405fddc0"
   >
     <desc>
       Guest process execution flags.
@@ -7637,6 +7637,11 @@
 
     <const name="None"                    value="0">
       <desc>No flag set.</desc>
+    </const>
+
+    <const name="WaitForProcessStartOnly" value="1">
+      <desc>Only use the specified timeout value to wait for starting the guest process - the guest
+        process itself then uses an infinite timeout.</desc>
     </const>
 
     <const name="IgnoreOrphanedProcesses" value="2">
@@ -7687,7 +7692,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="ed69cdce-2905-4275-872b-3c743a85c584"
+     uuid="5a4f265c-0c0e-495a-8ff6-7d68682e276b"
      wsmap="managed"
      >
     <desc>
@@ -7987,12 +7992,12 @@
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>
-          Foo.
+          Source file on the host to copy.
         </desc>
       </param>
       <param name="dest" type="wstring" dir="in">
         <desc>
-          Bar.
+          Destination path on the guest.
         </desc>
       </param>
       <param name="userName" type="wstring" dir="in">
@@ -8045,6 +8050,26 @@
         <desc>
           Number of bytes written.
         </desc>
+      </param>
+    </method>
+
+    <method name="updateGuestAdditions">
+      <desc>
+        Updates already installed Guest Additions in a VM
+        (Windows guests only).
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while updating.
+        </result>
+
+      </desc>
+      <param name="source" type="wstring" dir="in">
+        <desc>
+          Path to the Guest Additions .ISO file to use for the upate.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 

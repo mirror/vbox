@@ -2380,14 +2380,24 @@ void VBoxProblemReporter::cannotExportAppliance (const CProgress &aProgress, CAp
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-void VBoxProblemReporter::warnAboutIncorrectPort(QWidget *pParent) const
+void VBoxProblemReporter::cannotUpdateGuestAdditions (const CProgress &aProgress, QWidget *aParent /* = NULL */) const
+{
+    AssertWrapperOk (aProgress);
+
+    message (aParent ? aParent : mainWindowShown(),
+             Error,
+             tr ("Failed to update Guest Additions."),
+             formatErrorInfo (aProgress.GetErrorInfo()));
+}
+
+void VBoxProblemReporter::warnAboutIncorrectPort (QWidget *pParent) const
 {
     message(pParent, Error,
             tr("The current port forwarding rules are not valid. "
                "None of the host or guest port values may be set to zero."));
 }
 
-bool VBoxProblemReporter::confirmCancelingPortForwardingDialog(QWidget *pParent) const
+bool VBoxProblemReporter::confirmCancelingPortForwardingDialog (QWidget *pParent) const
 {
     return messageOkCancel(pParent, Question,
         tr("<p>There are unsaved changes in the port forwarding configuration.</p>"

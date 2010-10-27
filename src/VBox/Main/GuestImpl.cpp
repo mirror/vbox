@@ -34,6 +34,7 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
+#include <iprt/isofs.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
 #include <VBox/pgm.h>
@@ -45,6 +46,330 @@
 /////////////////////////////////////////////////////////////////////////////
 
 DEFINE_EMPTY_CTOR_DTOR (Guest)
+
+struct Guest::TaskGuest
+{
+    enum TaskType
+    {
+        UpdateGuestAdditions = 100
+    };
+
+    TaskGuest(TaskType aTaskType, Guest *aThat, Progress *aProgress)
+        : taskType(aTaskType),
+          pGuest(aThat),
+          progress(aProgress),
+          rc(S_OK)
+    {}
+    ~TaskGuest() {}
+
+    int startThread();
+    static int taskThread(RTTHREAD aThread, void *pvUser);
+    static int uploadProgress(unsigned uPercent, void *pvUser);
+
+    TaskType taskType;
+    Guest *pGuest;
+    ComObjPtr<Progress> progress;
+    HRESULT rc;
+
+    /* Task data. */
+    Utf8Str strSource;
+};
+
+int Guest::TaskGuest::startThread()
+{
+    int vrc = RTThreadCreate(NULL, Guest::TaskGuest::taskThread, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Guest::Task");
+
+    if (RT_FAILURE(vrc))
+        return Guest::setErrorStatic(E_FAIL, Utf8StrFmt("Could not create taskThreadGuest (%Rrc)\n", vrc));
+
+    return vrc;
+}
+
+/* static */
+DECLCALLBACK(int) Guest::TaskGuest::taskThread(RTTHREAD /* aThread */, void *pvUser)
+{
+    std::auto_ptr<TaskGuest> task(static_cast<TaskGuest*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+
+    Guest *pGuest = task->pGuest;
+
+    LogFlowFuncEnter();
+    LogFlowFunc(("Guest %p\n", pGuest));
+
+    HRESULT rc = S_OK;
+
+    switch (task->taskType)
+    {
+#ifdef VBOX_WITH_GUEST_CONTROL
+        case TaskGuest::UpdateGuestAdditions:
+        {
+            rc = pGuest->taskUpdateGuestAdditions(task.get());
+            break;
+        }
+#endif
+        default:
+            AssertMsgFailed(("Invalid task type %u specified!\n", task->taskType));
+            break;
+    }
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
+/* static */
+int Guest::TaskGuest::uploadProgress(unsigned uPercent, void *pvUser)
+{
+    Guest::TaskGuest *pTask = *(Guest::TaskGuest**)pvUser;
+
+    if (pTask &&
+        !pTask->progress.isNull())
+    {
+        BOOL fCanceled;
+        pTask->progress->COMGETTER(Canceled)(&fCanceled);
+        if (fCanceled)
+            return -1;
+        pTask->progress->SetCurrentOperationProgress(uPercent);
+    }
+    return VINF_SUCCESS;
+}
+
+#ifdef VBOX_WITH_GUEST_CONTROL
+HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
+{
+    LogFlowFuncEnter();
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    try
+    {
+        Guest *pGuest = aTask->pGuest;
+        AssertPtr(pGuest);
+        /*Console *pConsole = pGuest->mParent;
+        AssertPtr(pConsole);
+        Console *pMachine = pConsole->machine();
+        AssertPtr(pMachine);*/
+
+        if (aTask->progress)
+            aTask->progress->SetCurrentOperationProgress(10);
+
+        /*
+         * Determine guest type to know which installer stuff
+         * we need. At the moment only Windows guests are supported.
+         */
+        Utf8Str installerImage;
+        Utf8Str osType = pGuest->mData.mOSTypeId;
+        if (   osType.contains("Microsoft", Utf8Str::CaseInsensitive)
+            || osType.contains("Windows", Utf8Str::CaseInsensitive))
+        {
+            if (osType.contains("64", Utf8Str::CaseInsensitive))
+                installerImage = "VBOXWINDOWSADDITIONS_AMD64.EXE";
+            else
+                installerImage = "VBOXWINDOWSADDITIONS_X86.EXE";
+            /* Since the installers are located in the root directory,
+             * no further path processing needs to be done (yet). */
+        }
+
+        /* No (suited) installer found? Bail out. */
+        if (installerImage.isEmpty())
+            throw setError(VBOX_E_FILE_ERROR, tr("Guest OS not supported for automatic Guest Additions updating yet"));
+
+        /*
+         * Try to open the .ISO file and locate the specified installer.
+         */
+        RTISOFSFILE iso;
+        int vrc = RTIsoFsOpen(&iso, aTask->strSource.c_str());
+        if (RT_SUCCESS(vrc))
+        {
+            uint32_t cbOffset;
+            size_t cbLength;
+            vrc = RTIsoFsGetFileInfo(&iso, installerImage.c_str(), &cbOffset, &cbLength);
+            if (   RT_SUCCESS(vrc)
+                && cbOffset
+                && cbLength)
+            {
+                vrc = RTFileSeek(iso.file, cbOffset, RTFILE_SEEK_BEGIN, NULL);
+            }
+
+            /** @todo Only Windows! */
+            Utf8Str strInstallerPath = "C:\\Windows\\VBoxWindowsAdditions.exe";
+
+            if (RT_FAILURE(vrc))
+            {
+                switch (vrc)
+                {
+                    case VERR_FILE_NOT_FOUND:
+                        rc = setError(VBOX_E_IPRT_ERROR, tr("Installer file was not found on medium"));
+                        break;
+
+                    default:
+                        rc = setError(VBOX_E_IPRT_ERROR, tr("An unknown error occured, rc=%Rrc"), vrc);
+                        break;
+                }
+            }
+            else
+            {
+                /* Okay, we're ready to transfer the bits! */
+                if (aTask->progress)
+                    aTask->progress->SetCurrentOperationProgress(15);
+
+                /* Prepare command line args. */
+                com::SafeArray<IN_BSTR> args;
+                com::SafeArray<IN_BSTR> env;
+
+                char szOutput[RTPATH_MAX];
+                if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", strInstallerPath.c_str()))
+                {
+                    args.push_back(Bstr("vbox_cat").raw()); /* The actual (internal) tool to use (as argv[0]). */
+                    args.push_back(Bstr(szOutput).raw());   /* We want to write a file ... */
+                }
+                else
+                    rc = setError(VBOX_E_IPRT_ERROR, tr("Error preparing command line fopr copy operation"));
+
+                if (SUCCEEDED(rc))
+                {
+                    ComPtr<IProgress> progressCopy;
+                    ULONG uPID;
+
+                    /*
+                     * Start built-in "vbox_cat" tool (inside VBoxService) to
+                     * copy over/pipe the data into a file on the guest (with
+                     * system rights, no username/password specified).
+                     */
+                    rc = pGuest->executeProcessInternal(Bstr("vbox_cat").raw(),
+                                                        ExecuteProcessFlag_WaitForProcessStartOnly,
+                                                        ComSafeArrayAsInParam(args),
+                                                        ComSafeArrayAsInParam(env),
+                                                        Bstr("admin")  /* Username */,
+                                                        Bstr("password")  /* Password */,
+                                                        10 * 1000 /* Wait 10s for getting the process started */,
+                                                        &uPID, progressCopy.asOutParam());
+                    if (SUCCEEDED(rc))
+                    {
+                        if (aTask->progress)
+                            aTask->progress->SetCurrentOperationProgress(20);
+
+                        /* Wait for process to exit ... */
+                        BOOL fCompleted = FALSE;
+                        BOOL fCanceled = FALSE;
+
+                        size_t cbRead;
+                        size_t cbToRead;
+                        SafeArray<BYTE> aInputData(_64K);
+                        while (   SUCCEEDED(progressCopy->COMGETTER(Completed(&fCompleted)))
+                               && !fCompleted)
+                        {
+                            cbToRead = RT_MIN(cbLength, _64K);
+                            vrc = RTFileRead(iso.file, (uint8_t*)aInputData.raw(), cbToRead, &cbRead);
+                            if (   cbRead
+                                && RT_SUCCESS(vrc))
+                            {
+                                aInputData.resize(cbRead);
+
+                                /* Did we reach the end of the content
+                                 * we want to transfer (last chunk)? */
+                                ULONG uFlags = ProcessInputFlag_None;
+                                if (cbRead < _64K)
+                                    uFlags |= ProcessInputFlag_EndOfFile;
+
+                                /* Transfer the current chunk ... */
+                                ULONG uBytesWritten;
+                                rc = SetProcessInput(uPID, uFlags,
+                                                     ComSafeArrayAsInParam(aInputData), &uBytesWritten);
+                                if (FAILED(rc))
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    cbLength -= uBytesWritten;
+                                }
+
+                                /* Progress canceled by Main API? */
+                                if (   SUCCEEDED(progressCopy->COMGETTER(Canceled(&fCanceled)))
+                                    && fCanceled)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            RTIsoFsClose(&iso);
+
+            if (SUCCEEDED(rc))
+            {
+                /*
+                 * Installer was transferred successfully, so let's start it
+                 * (with system rights).
+                 */
+                if (aTask->progress)
+                    aTask->progress->SetCurrentOperationProgress(66);
+
+                /* Prepare command line args for installer. */
+                com::SafeArray<IN_BSTR> installerArgs;
+                com::SafeArray<IN_BSTR> installerEnv;
+
+                /** @todo Only Windows! */
+                installerArgs.push_back(Bstr(strInstallerPath).raw()); /* The actual (internal) installer image (as argv[0]). */
+                installerArgs.push_back(Bstr("/S").raw());             /* We want to install in silent mode. */
+                installerArgs.push_back(Bstr("/l").raw());             /* ... and logging enabled. */
+
+                /*
+                 * Start built-in "vbox_cat" tool (inside VBoxService) to
+                 * copy over/pipe the data into a file on the guest (with
+                 * system rights, no username/password specified).
+                 */
+                ComPtr<IProgress> progressInstaller;
+                ULONG uPID;
+                rc = pGuest->executeProcessInternal(Bstr(strInstallerPath).raw(), 0 /* Flags */,
+                                                    ComSafeArrayAsInParam(installerArgs),
+                                                    ComSafeArrayAsInParam(installerEnv),
+                                                    Bstr("") /* Username */,
+                                                    Bstr("") /* Password */,
+                                                    0 /* Timeout */,
+                                                    &uPID, progressInstaller.asOutParam());
+                if (SUCCEEDED(rc))
+                {
+                    /* Nothing yet. */
+                }
+            }
+        }
+    }
+    catch(HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    /* Clean up */
+    if (aTask->progress)
+        aTask->progress->SetCurrentOperationProgress(99);
+
+    /* Assign data. */
+    if (rc == S_OK)
+    {
+    }
+
+    aTask->rc = rc;
+
+    if (!aTask->progress.isNull())
+        aTask->progress->notifyComplete(rc);
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+#endif
 
 HRESULT Guest::FinalConstruct()
 {
@@ -62,7 +387,7 @@ void Guest::FinalRelease()
 /**
  * Initializes the guest object.
  */
-HRESULT Guest::init (Console *aParent)
+HRESULT Guest::init(Console *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
@@ -1100,14 +1425,37 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
     if (RT_UNLIKELY((aUserName) == NULL || *(aUserName) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
 
+    LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
+            Utf8Str(aCommand).c_str(), Utf8Str(aUserName).c_str()));
+
+    return executeProcessInternal(aCommand, aFlags,aArguments, aEnvironment,
+                                  aUserName, aPassword, aTimeoutMS, aPID, aProgress);
+#endif
+}
+
+HRESULT Guest::executeProcessInternal(Bstr aCommand, ULONG aFlags,
+                                      ComSafeArrayIn(Bstr, aArguments), ComSafeArrayIn(Bstr, aEnvironment),
+                                      Bstr aUserName, Bstr aPassword,
+                                      ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress)
+{
+/** @todo r=bird: Eventually we should clean up all the timeout parameters
+ *        in the API and have the same way of specifying infinite waits!  */
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else  /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Validate flags. */
     if (aFlags)
     {
-        if (!(aFlags & ExecuteProcessFlag_IgnoreOrphanedProcesses))
-            return E_INVALIDARG;
+        if (   !(aFlags & ExecuteProcessFlag_IgnoreOrphanedProcesses)
+            && !(aFlags & ExecuteProcessFlag_WaitForProcessStartOnly))
+        {
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+        }
     }
 
     HRESULT rc = S_OK;
@@ -1188,9 +1536,6 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     }
                 }
 
-                LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
-                        Utf8Command.c_str(), Utf8UserName.c_str()));
-
                 if (RT_SUCCESS(vrc))
                 {
                     PCALLBACKDATAEXECSTATUS pData = (PCALLBACKDATAEXECSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECSTATUS));
@@ -1212,7 +1557,17 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
                     paParms[i++].setPointer((void*)pvEnv, cbEnv);
                     paParms[i++].setPointer((void*)Utf8UserName.c_str(), (uint32_t)Utf8UserName.length() + 1);
                     paParms[i++].setPointer((void*)Utf8Password.c_str(), (uint32_t)Utf8Password.length() + 1);
-                    paParms[i++].setUInt32(aTimeoutMS);
+
+                    /*
+                     * If the WaitForProcessStartOnly flag is set, we only want to define and wait for a timeout
+                     * until the process was started - the process itself then gets an infinit timeout for execution.
+                     * This is handy when we want to start a process inside a worker thread within a certain timeout
+                     * but let the started process perform lengthly operations then.
+                     */
+                    if (aFlags & ExecuteProcessFlag_WaitForProcessStartOnly)
+                        paParms[i++].setUInt32(UINT32_MAX /* Infinite timeout */);
+                    else
+                        paParms[i++].setUInt32(aTimeoutMS);
 
                     VMMDev *vmmDev;
                     {
@@ -1382,8 +1737,11 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
         }
 
         if (RT_FAILURE(vrc))
-            LogRel(("Executing guest process \"%s\" as user \"%s\" failed with %Rrc\n",
-                    Utf8Command.c_str(), Utf8UserName.c_str(), vrc));
+        {
+            if (!Utf8UserName.isEmpty()) /* Skip logging internal calls. */
+                LogRel(("Executing guest process \"%s\" as user \"%s\" failed with %Rrc\n",
+                        Utf8Command.c_str(), Utf8UserName.c_str(), vrc));
+        }
     }
     catch (std::bad_alloc &)
     {
@@ -1833,7 +2191,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else  /* VBOX_WITH_GUEST_CONTROL */
+#else /* VBOX_WITH_GUEST_CONTROL */
     using namespace guestControl;
 
     CheckComArgStrNotEmptyOrNull(aSource);
@@ -1913,16 +2271,17 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                     {
                         LogRel(("Copying file \"%s\" to guest \"%s\" ...\n",
                                 Utf8Source.c_str(), Utf8Dest.c_str()));
-
                         /*
                          * Okay, since we gathered all stuff we need until now to start the
                          * actual copying, start the guest part now.
                          */
-                        rc = ExecuteProcess(Bstr("vbox_cat").raw(), 0 /* Flags */,
+                        rc = ExecuteProcess(Bstr("vbox_cat").raw(),
+                                            ExecuteProcessFlag_WaitForProcessStartOnly,
                                             ComSafeArrayAsInParam(args),
                                             ComSafeArrayAsInParam(env),
                                             Bstr(Utf8UserName).raw(),
-                                            Bstr(Utf8Password).raw(), 0 /* Timeout */,
+                                            Bstr(Utf8Password).raw(),
+                                            10 * 1000 /* Wait 10s for getting the process started */,
                                             &uPID, execProgress.asOutParam());
                     }
 
@@ -1984,6 +2343,57 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, IProgress **aProgress)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    CheckComArgStrNotEmptyOrNull(aSource);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    ComObjPtr<Progress> progress;
+    try
+    {
+        /* Create the progress object. */
+        progress.createObject();
+
+        rc = progress->init(static_cast<IGuest*>(this),
+                            Bstr(tr("Updating Guest Additions")).raw(),
+                            TRUE /* aCancelable */);
+        if (FAILED(rc)) throw rc;
+
+        /* Initialize our worker task. */
+        std::auto_ptr<TaskGuest> task(new TaskGuest(TaskGuest::UpdateGuestAdditions, this, progress));
+
+        /* Assign data. */
+        task->strSource = (Utf8Str(aSource));
+
+        rc = task->startThread();
+        if (FAILED(rc)) throw rc;
+
+        /* Don't destruct on success. */
+        task.release();
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    if (SUCCEEDED(rc))
+        /* Return progress to the caller. */
+        progress.queryInterfaceTo(aProgress);
+
+    return rc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1998,7 +2408,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2056,7 +2466,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2081,7 +2491,7 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aR
 void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2124,7 +2534,7 @@ void Guest::setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatus
 void Guest::setSupportedFeatures(uint32_t fCaps, uint32_t fActive)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 

@@ -104,23 +104,36 @@ public:
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
+    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, IProgress **aProgress);
 
     // Public methods that are not in IDL (only called internally).
+    HRESULT executeProcessInternal(Bstr aCommand, ULONG aFlags,
+                                   ComSafeArrayIn(Bstr, aArguments), ComSafeArrayIn(Bstr, aEnvironment),
+                                   Bstr aUserName, Bstr aPassword,
+                                   ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
     void setSupportedFeatures(uint32_t fCaps, uint32_t fActive);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
     BOOL isPageFusionEnabled();
-
 # ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest notifications. */
     static DECLCALLBACK(int) doGuestCtrlNotification(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
 # endif
+    static HRESULT setErrorStatic(HRESULT aResultCode,
+                                  const Utf8Str &aText)
+    {
+        return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
+    }
 
 private:
 
-# ifdef VBOX_WITH_GUEST_CONTROL
+    // Internal tasks
+    struct TaskGuest; /* Worker thread helper. */
+#ifdef VBOX_WITH_GUEST_CONTROL
+    HRESULT taskUpdateGuestAdditions(TaskGuest *aTask);
+
     struct CallbackContext
     {
         eVBoxGuestCtrlCallbackType  mType;

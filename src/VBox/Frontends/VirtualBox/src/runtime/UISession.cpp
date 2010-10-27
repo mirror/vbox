@@ -354,81 +354,125 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 {
     CMachine machine = session().GetMachine();
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strUuid;
 
-    CMedium image = vbox.FindMedium(strSource, KDeviceType_DVD);
-    if (image.isNull())
+#ifdef DEBUG_andy
+    /*
+     * If the already installed Guest Additions indicate a
+     * high enough run level (at the moment this is level "Desktop",
+     * which means that a user has to be logged in to acknowledge
+     * WHQL popups), try an automatic Guest Additions update.
+     */
+    CGuest guest = session().GetConsole().GetGuest();
+    QString osType = guest.GetOSTypeId();
+    ULONG ulGuestAdditionsRunLevel = guest.GetAdditionsRunLevel();
+    if (   ulGuestAdditionsRunLevel >= AdditionsRunLevelType_System // Desktop
+#if 1  /* Only Windows is supported at the moment! */
+        && (   osType.contains("Microsoft", Qt::CaseInsensitive)
+            || osType.contains("Windows", Qt::CaseInsensitive)
+           )
+#endif
+       )
     {
-        image = vbox.OpenMedium(strSource, KDeviceType_DVD, KAccessMode_ReadWrite);
-        if (vbox.isOk())
-            strUuid = image.GetId();
-    }
-    else
-        strUuid = image.GetId();
-
-    if (!vbox.isOk())
-    {
-        vboxProblem().cannotOpenMedium(0, vbox, VBoxDefs::MediumType_DVD, strSource);
-        return;
-    }
-
-    AssertMsg(!strUuid.isNull(), ("Guest Additions image UUID should be valid!\n"));
-
-    QString strCntName;
-    LONG iCntPort = -1, iCntDevice = -1;
-    /* Searching for the first suitable slot */
-    {
-        CStorageControllerVector controllers = machine.GetStorageControllers();
-        int i = 0;
-        while (i < controllers.size() && strCntName.isNull())
+#ifdef DEBUG_andy
+        CProgress progressInstall = guest.UpdateGuestAdditions("c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso");
+#else
+        CProgress progressInstall = guest.UpdateGuestAdditions(strSource);
+#endif
+#if 0
+        bool fResult = guest.isOk();
+        if (fResult)
         {
-            CStorageController controller = controllers[i];
-            CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-            int j = 0;
-            while (j < attachments.size() && strCntName.isNull())
+            vboxProblem().showModalProgressDialog(progressInstall, tr("Updating Guest Additions ..."), mainMachineWindow());
+            if (progressInstall.GetCanceled())
+                return;
+            if (!progressInstall.isOk() || progressInstall.GetResultCode() != 0)
             {
-                CMediumAttachment attachment = attachments[j];
-                if (attachment.GetType() == KDeviceType_DVD)
-                {
-                    strCntName = controller.GetName();
-                    iCntPort = attachment.GetPort();
-                    iCntDevice = attachment.GetDevice();
-                }
-                ++ j;
+                vboxProblem().cannotUpdateGuestAdditions(progressInstall, mainMachineWindow());
+                return;
             }
-            ++ i;
         }
+#endif
     }
-
-    if (!strCntName.isNull())
+    else /* Fallback to only mounting the .ISO file. */
     {
-        bool fIsMounted = false;
-
-        VBoxMedium vmedium = vboxGlobal().findMedium(strUuid);
-        CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
-
-        /* Mount medium to the predefined port/device */
-        machine.MountMedium(strCntName, iCntPort, iCntDevice, medium, false /* force */);
-        if (machine.isOk())
-            fIsMounted = true;
+#endif /* DEBUG_andy */
+        QString strUuid;
+        CMedium image = vbox.FindMedium(strSource, KDeviceType_DVD);
+        if (image.isNull())
+        {
+            image = vbox.OpenMedium(strSource, KDeviceType_DVD, KAccessMode_ReadWrite);
+            if (vbox.isOk())
+                strUuid = image.GetId();
+        }
         else
+            strUuid = image.GetId();
+
+        if (!vbox.isOk())
         {
-            /* Ask for force mounting */
-            if (vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
-                                                  true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
+            vboxProblem().cannotOpenMedium(0, vbox, VBoxDefs::MediumType_DVD, strSource);
+            return;
+        }
+
+        AssertMsg(!strUuid.isNull(), ("Guest Additions image UUID should be valid!\n"));
+
+        QString strCntName;
+        LONG iCntPort = -1, iCntDevice = -1;
+        /* Searching for the first suitable slot */
+        {
+            CStorageControllerVector controllers = machine.GetStorageControllers();
+            int i = 0;
+            while (i < controllers.size() && strCntName.isNull())
             {
-                /* Force mount medium to the predefined port/device */
-                machine.MountMedium(strCntName, iCntPort, iCntDevice, medium, true /* force */);
-                if (machine.isOk())
-                    fIsMounted = true;
-                else
-                    vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
-                                                      true /* mount? */, false /* retry? */);
+                CStorageController controller = controllers[i];
+                CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
+                int j = 0;
+                while (j < attachments.size() && strCntName.isNull())
+                {
+                    CMediumAttachment attachment = attachments[j];
+                    if (attachment.GetType() == KDeviceType_DVD)
+                    {
+                        strCntName = controller.GetName();
+                        iCntPort = attachment.GetPort();
+                        iCntDevice = attachment.GetDevice();
+                    }
+                    ++ j;
+                }
+                ++ i;
             }
         }
+
+        if (!strCntName.isNull())
+        {
+            bool fIsMounted = false;
+
+            VBoxMedium vmedium = vboxGlobal().findMedium(strUuid);
+            CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
+
+            /* Mount medium to the predefined port/device */
+            machine.MountMedium(strCntName, iCntPort, iCntDevice, medium, false /* force */);
+            if (machine.isOk())
+                fIsMounted = true;
+            else
+            {
+                /* Ask for force mounting */
+                if (vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
+                                                      true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
+                {
+                    /* Force mount medium to the predefined port/device */
+                    machine.MountMedium(strCntName, iCntPort, iCntDevice, medium, true /* force */);
+                    if (machine.isOk())
+                        fIsMounted = true;
+                    else
+                        vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
+                                                          true /* mount? */, false /* retry? */);
+                }
+            }
+        }
+        else
+            vboxProblem().cannotMountGuestAdditions(machine.GetName());
+#ifdef DEBUG_andy
     }
-    else
-        vboxProblem().cannotMountGuestAdditions(machine.GetName());
+#endif /* DEBUG_andy */
 }
 
 void UISession::sltCloseVirtualSession()
