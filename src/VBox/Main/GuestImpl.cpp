@@ -246,12 +246,12 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                      * copy over/pipe the data into a file on the guest (with
                      * system rights, no username/password specified).
                      */
-                    rc = pGuest->executeProcessInternal(Bstr("vbox_cat"),
+                    rc = pGuest->executeProcessInternal(Bstr("vbox_cat").raw(),
                                                         ExecuteProcessFlag_WaitForProcessStartOnly,
                                                         ComSafeArrayAsInParam(args),
                                                         ComSafeArrayAsInParam(env),
-                                                        Bstr("admin")  /* Username */,
-                                                        Bstr("password")  /* Password */,
+                                                        Bstr("admin").raw()    /* Username */,
+                                                        Bstr("password").raw() /* Password */,
                                                         10 * 1000 /* Wait 10s for getting the process started */,
                                                         &uPID, progressCopy.asOutParam());
                     if (SUCCEEDED(rc))
@@ -333,12 +333,12 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                  */
                 ComPtr<IProgress> progressInstaller;
                 ULONG uPID;
-                rc = pGuest->executeProcessInternal(Bstr(strInstallerPath),
+                rc = pGuest->executeProcessInternal(Bstr(strInstallerPath).raw(),
                                                     0 /* Flags */,
                                                     ComSafeArrayAsInParam(installerArgs),
                                                     ComSafeArrayAsInParam(installerEnv),
-                                                    Bstr("") /* Username */,
-                                                    Bstr("") /* Password */,
+                                                    Bstr("").raw() /* Username */,
+                                                    Bstr("").raw() /* Password */,
                                                     0 /* Timeout */,
                                                     &uPID, progressInstaller.asOutParam());
                 if (SUCCEEDED(rc))
@@ -1431,14 +1431,14 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
     LogRel(("Executing guest process \"%s\" as user \"%s\" ...\n",
             Utf8Str(aCommand).c_str(), Utf8Str(aUserName).c_str()));
 
-    return executeProcessInternal(aCommand, aFlags,aArguments, aEnvironment,
+    return executeProcessInternal(aCommand, aFlags, aArguments, aEnvironment,
                                   aUserName, aPassword, aTimeoutMS, aPID, aProgress);
 #endif
 }
 
-HRESULT Guest::executeProcessInternal(Bstr aCommand, ULONG aFlags,
-                                      ComSafeArrayIn(Bstr, aArguments), ComSafeArrayIn(Bstr, aEnvironment),
-                                      Bstr aUserName, Bstr aPassword,
+HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
+                                      ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
+                                      IN_BSTR aUserName, IN_BSTR aPassword,
                                       ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress)
 {
 /** @todo r=bird: Eventually we should clean up all the timeout parameters
