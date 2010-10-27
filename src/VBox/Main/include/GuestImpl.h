@@ -107,9 +107,9 @@ public:
     STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, IProgress **aProgress);
 
     // Public methods that are not in IDL (only called internally).
-    HRESULT executeProcessInternal(Bstr aCommand, ULONG aFlags,
-                                   ComSafeArrayIn(Bstr, aArguments), ComSafeArrayIn(Bstr, aEnvironment),
-                                   Bstr aUserName, Bstr aPassword,
+    HRESULT executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
+                                   ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
+                                   IN_BSTR aUserName, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
