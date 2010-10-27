@@ -346,7 +346,7 @@ void dvdCreateDeviceStrings(const char *pcszVendor, const char *pcszModel,
     size_t cchModel = strLenStripped(pcszModel);
 
     /* Create a cleaned version of the model string for the UDI string. */
-    for (unsigned i = 0; pcszModel[i] != '\0' && i < sizeof(szCleaned); ++i)
+    for (unsigned i = 0; i < sizeof(szCleaned) && pcszModel[i] != '\0'; ++i)
         if (   (pcszModel[i] >= '0' && pcszModel[i] <= '9')
             || (pcszModel[i] >= 'A' && pcszModel[i] <= 'z'))
             szCleaned[i] = pcszModel[i];
