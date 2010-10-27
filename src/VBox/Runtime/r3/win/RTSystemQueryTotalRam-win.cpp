@@ -37,9 +37,22 @@
 #include <iprt/string.h>
 
 
-
-
 RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb)
+{
+    MEMORYSTATUSEX MemStatus;
+
+    AssertPtrReturn(pcb, VERR_INVALID_POINTER);
+
+    MemStatus.dwLength = sizeof(MemStatus);
+    if (!GlobalMemoryStatusEx(&MemStatus))
+        return RTErrConvertFromWin32(GetLastError());
+
+    *pcb = MemStatus.ullTotalPhys;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb)
 {
     MEMORYSTATUSEX MemStatus;
 
