@@ -900,7 +900,8 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
         }
     }
 
-    if (dwErr != NO_ERROR)
+    if (   RT_SUCCESS(rc)
+        && dwErr != NO_ERROR)
     {
         /*
          * Map some important or much used Windows error codes
@@ -924,8 +925,6 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                 break;
         }
     }
-    else
-        rc = VINF_SUCCESS;
     return rc;
 }
 
