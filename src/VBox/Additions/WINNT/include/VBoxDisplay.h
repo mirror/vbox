@@ -26,6 +26,9 @@
 # define VBOXESC_DBGPRINT                   0xABCD9005
 # define VBOXESC_SCREENLAYOUT               0xABCD9006
 # define VBOXESC_SWAPCHAININFO              0xABCD9007
+# define VBOXESC_UHGSMI_ALLOCATE            0xABCD9008
+# define VBOXESC_UHGSMI_DEALLOCATE          0xABCD9009
+# define VBOXESC_UHGSMI_SUBMIT              0xABCD900A
 
 typedef struct
 {

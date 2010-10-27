@@ -795,3 +795,535 @@ VOID vboxWddmVGuidFree(PDEVICE_EXTENSION pDevExt)
         pDevExt->VideoGuid.Buffer = NULL;
     }
 }
+
+/* mm */
+
+NTSTATUS vboxMmInit(PVBOXWDDM_MM pMm, UINT cPages)
+{
+    UINT cbBuffer = VBOXWDDM_ROUNDBOUND(cPages, 8) >> 3;
+    cbBuffer = VBOXWDDM_ROUNDBOUND(cbBuffer, 4);
+    PULONG pBuf = (PULONG)vboxWddmMemAllocZero(cbBuffer);
+    if (!pBuf)
+    {
+        Assert(0);
+        return STATUS_NO_MEMORY;
+    }
+    RtlInitializeBitMap(&pMm->BitMap, pBuf, cPages);
+    pMm->cPages = cPages;
+    pMm->cAllocs = 0;
+    pMm->pBuffer = pBuf;
+    return STATUS_SUCCESS;
+}
+
+ULONG vboxMmAlloc(PVBOXWDDM_MM pMm, UINT cPages)
+{
+    ULONG iPage = RtlFindClearBitsAndSet(&pMm->BitMap, cPages, 0);
+    if (iPage == 0xFFFFFFFF)
+    {
+        Assert(0);
+        return VBOXWDDM_MM_VOID;
+    }
+
+    ++pMm->cAllocs;
+    return iPage;
+}
+
+VOID vboxMmFree(PVBOXWDDM_MM pMm, UINT iPage, UINT cPages)
+{
+    Assert(RtlAreBitsSet(&pMm->BitMap, iPage, cPages));
+    RtlClearBits(&pMm->BitMap, iPage, cPages);
+    --pMm->cAllocs;
+    Assert(pMm->cAllocs < UINT32_MAX);
+}
+
+NTSTATUS vboxMmTerm(PVBOXWDDM_MM pMm)
+{
+    Assert(!pMm->cAllocs);
+    vboxWddmMemFree(pMm->pBuffer);
+    pMm->pBuffer = NULL;
+    return STATUS_SUCCESS;
+}
+
+
+
+typedef struct VBOXVIDEOCM_ALLOC
+{
+    VBOXWDDM_HANDLE hGlobalHandle;
+    uint32_t offData;
+    uint32_t cbData;
+} VBOXVIDEOCM_ALLOC, *PVBOXVIDEOCM_ALLOC;
+
+typedef struct VBOXVIDEOCM_ALLOC_REF
+{
+    PVBOXVIDEOCM_ALLOC_CONTEXT pContext;
+    VBOXWDDM_HANDLE hSessionHandle;
+    PVBOXVIDEOCM_ALLOC pAlloc;
+    union
+    {
+        PKEVENT pSynchEvent;
+        PRKSEMAPHORE pSynchSemaphore;
+    };
+    VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
+    MDL Mdl;
+} VBOXVIDEOCM_ALLOC_REF, *PVBOXVIDEOCM_ALLOC_REF;
+
+
+NTSTATUS vboxVideoCmAllocAlloc(PVBOXVIDEOCM_ALLOC_MGR pMgr, PVBOXVIDEOCM_ALLOC pAlloc)
+{
+    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+    UINT cbSize = pAlloc->cbData;
+    UINT cPages = BYTES_TO_PAGES(cbSize);
+    ExAcquireFastMutex(&pMgr->Mutex);
+    UINT iPage = vboxMmAlloc(&pMgr->Mm, cPages);
+    if (iPage != VBOXWDDM_MM_VOID)
+    {
+        uint32_t offData = pMgr->offData + (iPage << PAGE_SHIFT);
+        Assert(offData + cbSize <= pMgr->offData + pMgr->cbData);
+        pAlloc->offData = offData;
+        pAlloc->hGlobalHandle = vboxWddmHTablePut(&pMgr->AllocTable, pAlloc);
+        ExReleaseFastMutex(&pMgr->Mutex);
+        if (VBOXWDDM_HANDLE_INVALID != pAlloc->hGlobalHandle)
+            return STATUS_SUCCESS;
+
+        Assert(0);
+        Status = STATUS_NO_MEMORY;
+        vboxMmFree(&pMgr->Mm, iPage, cPages);
+    }
+    else
+    {
+        Assert(0);
+        ExReleaseFastMutex(&pMgr->Mutex);
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+    return Status;
+}
+
+VOID vboxVideoCmAllocDealloc(PVBOXVIDEOCM_ALLOC_MGR pMgr, PVBOXVIDEOCM_ALLOC pAlloc)
+{
+    UINT cbSize = pAlloc->cbData;
+    UINT cPages = BYTES_TO_PAGES(cbSize);
+    UINT iPage = BYTES_TO_PAGES(pAlloc->offData - pMgr->offData);
+    ExAcquireFastMutex(&pMgr->Mutex);
+    vboxWddmHTableRemove(&pMgr->AllocTable, pAlloc->hGlobalHandle);
+    vboxMmFree(&pMgr->Mm, iPage, cPages);
+    ExReleaseFastMutex(&pMgr->Mutex);
+}
+
+
+NTSTATUS vboxVideoAMgrAllocCreate(PVBOXVIDEOCM_ALLOC_MGR pMgr, UINT cbSize, PVBOXVIDEOCM_ALLOC *ppAlloc)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXVIDEOCM_ALLOC pAlloc = (PVBOXVIDEOCM_ALLOC)vboxWddmMemAllocZero(sizeof (*pAlloc));
+    if (pAlloc)
+    {
+        pAlloc->cbData = cbSize;
+        Status = vboxVideoCmAllocAlloc(pMgr, pAlloc);
+        if (Status == STATUS_SUCCESS)
+        {
+            *ppAlloc = pAlloc;
+            return STATUS_SUCCESS;
+        }
+
+        Assert(0);
+        vboxWddmMemFree(pAlloc);
+    }
+    else
+    {
+        Assert(0);
+        Status = STATUS_NO_MEMORY;
+    }
+
+    return Status;
+}
+
+VOID vboxVideoAMgrAllocDestroy(PVBOXVIDEOCM_ALLOC_MGR pMgr, PVBOXVIDEOCM_ALLOC pAlloc)
+{
+    vboxVideoCmAllocDealloc(pMgr, pAlloc);
+    vboxWddmMemFree(pAlloc);
+}
+
+NTSTATUS vboxVideoAMgrCtxAllocMap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDEOCM_ALLOC pAlloc, PVBOXVIDEOCM_UM_ALLOC pUmAlloc)
+{
+    PVBOXVIDEOCM_ALLOC_MGR pMgr = pContext->pMgr;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    union
+    {
+        PKEVENT pSynchEvent;
+        PRKSEMAPHORE pSynchSemaphore;
+    };
+
+    switch (pUmAlloc->enmSynchType)
+    {
+        case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
+            Status = ObReferenceObjectByHandle(pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExEventObjectType, UserMode,
+                    (PVOID*)&pSynchEvent,
+                    NULL);
+            Assert(Status == STATUS_SUCCESS);
+            break;
+        case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
+            Status = ObReferenceObjectByHandle(pUmAlloc->hSynch, EVENT_MODIFY_STATE, *ExSemaphoreObjectType, UserMode,
+                    (PVOID*)&pSynchSemaphore,
+                    NULL);
+            Assert(Status == STATUS_SUCCESS);
+            break;
+        case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
+            pSynchEvent = NULL;
+            Status = STATUS_SUCCESS;
+            break;
+        default:
+            drprintf((__FUNCTION__ ": ERROR: invalid synch info type(%d)\n", pUmAlloc->enmSynchType));
+            AssertBreakpoint();
+            Status = STATUS_INVALID_PARAMETER;
+            break;
+    }
+
+    if (Status == STATUS_SUCCESS)
+    {
+        PVOID BaseVa = pMgr->pvData + pAlloc->offData - pMgr->offData;
+        SIZE_T cbLength = pAlloc->cbData;
+
+        PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmMemAllocZero(sizeof (*pAllocRef) + sizeof (PFN_NUMBER) * ADDRESS_AND_SIZE_TO_SPAN_PAGES(BaseVa, cbLength));
+        if (pAllocRef)
+        {
+            MmInitializeMdl(&pAllocRef->Mdl, BaseVa, cbLength);
+            __try
+            {
+                MmProbeAndLockPages(&pAllocRef->Mdl, KernelMode, IoWriteAccess);
+            }
+            __except(EXCEPTION_EXECUTE_HANDLER)
+            {
+                Assert(0);
+                Status = STATUS_UNSUCCESSFUL;
+            }
+
+            if (Status == STATUS_SUCCESS)
+            {
+                PVOID pvUm = MmMapLockedPagesSpecifyCache(&pAllocRef->Mdl, UserMode, MmNonCached,
+                          NULL, /* PVOID BaseAddress */
+                          FALSE, /* ULONG BugCheckOnFailure */
+                          NormalPagePriority);
+                if (pvUm)
+                {
+                    pAllocRef->pContext = pContext;
+                    pAllocRef->pAlloc = pAlloc;
+                    pAllocRef->enmSynchType = pUmAlloc->enmSynchType;
+                    pAllocRef->pSynchEvent = pSynchEvent;
+                    ExAcquireFastMutex(&pContext->Mutex);
+                    pAllocRef->hSessionHandle = vboxWddmHTablePut(&pContext->AllocTable, pAllocRef);
+                    ExReleaseFastMutex(&pContext->Mutex);
+                    if (VBOXWDDM_HANDLE_INVALID != pAllocRef->hSessionHandle)
+                    {
+                        pUmAlloc->hAlloc = pAllocRef->hSessionHandle;
+                        pUmAlloc->cbData = pAlloc->cbData;
+                        pUmAlloc->pvData = (uint8_t*)pvUm;
+                        return STATUS_SUCCESS;
+                    }
+                }
+                else
+                {
+                    Assert(0);
+                    Status = STATUS_INSUFFICIENT_RESOURCES;
+                }
+
+                MmUnlockPages(&pAllocRef->Mdl);
+            }
+
+            vboxWddmMemFree(pAllocRef);
+        }
+        else
+        {
+            Assert(0);
+            Status = STATUS_NO_MEMORY;
+        }
+
+        if (pSynchEvent)
+        {
+            ObDereferenceObject(pSynchEvent);
+        }
+    }
+    else
+    {
+        Assert(0);
+    }
+
+
+    return Status;
+}
+
+NTSTATUS vboxVideoAMgrCtxAllocUnmap(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDISP_KMHANDLE hSesionHandle, PVBOXVIDEOCM_ALLOC *ppAlloc)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    ExAcquireFastMutex(&pContext->Mutex);
+    PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmHTableRemove(&pContext->AllocTable, hSesionHandle);
+    ExReleaseFastMutex(&pContext->Mutex);
+    if (pAllocRef)
+    {
+        MmUnlockPages(&pAllocRef->Mdl);
+        *ppAlloc = pAllocRef->pAlloc;
+        if (pAllocRef->pSynchEvent)
+        {
+            ObDereferenceObject(pAllocRef->pSynchEvent);
+        }
+        vboxWddmMemFree(pAllocRef);
+    }
+    else
+    {
+        Assert(0);
+        Status = STATUS_INVALID_PARAMETER;
+    }
+
+    return Status;
+}
+
+static PVBOXVIDEOCM_ALLOC_REF vboxVideoAMgrCtxAllocRefAcquire(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDISP_KMHANDLE hSesionHandle)
+{
+    ExAcquireFastMutex(&pContext->Mutex);
+    PVBOXVIDEOCM_ALLOC_REF pAllocRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmHTableGet(&pContext->AllocTable, hSesionHandle);
+    ExReleaseFastMutex(&pContext->Mutex);
+    return pAllocRef;
+}
+
+static VOID vboxVideoCmCtxAllocRefRelease(PVBOXVIDEOCM_ALLOC_REF pRef)
+{
+
+}
+
+
+
+NTSTATUS vboxVideoAMgrCtxAllocCreate(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDEOCM_UM_ALLOC pUmAlloc)
+{
+    PVBOXVIDEOCM_ALLOC pAlloc;
+    PVBOXVIDEOCM_ALLOC_MGR pMgr = pContext->pMgr;
+    NTSTATUS Status = vboxVideoAMgrAllocCreate(pMgr, pUmAlloc->cbData, &pAlloc);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = vboxVideoAMgrCtxAllocMap(pContext, pAlloc, pUmAlloc);
+        if (Status == STATUS_SUCCESS)
+            return STATUS_SUCCESS;
+        else
+        {
+            Assert(0);
+        }
+        vboxVideoAMgrAllocDestroy(pMgr, pAlloc);
+    }
+    else
+    {
+        Assert(0);
+    }
+    return Status;
+}
+
+NTSTATUS vboxVideoAMgrCtxAllocDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDISP_KMHANDLE hSesionHandle)
+{
+    PVBOXVIDEOCM_ALLOC pAlloc;
+    PVBOXVIDEOCM_ALLOC_MGR pMgr = pContext->pMgr;
+    NTSTATUS Status = vboxVideoAMgrCtxAllocUnmap(pContext, hSesionHandle, &pAlloc);
+    if (Status == STATUS_SUCCESS)
+    {
+        vboxVideoAMgrAllocDestroy(pMgr, pAlloc);
+    }
+    else
+    {
+        Assert(0);
+    }
+    return Status;
+}
+
+static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
+{
+    PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvContext;
+    PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
+    VBOXVDMACMD_CHROMIUM_CMD *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHROMIUM_CMD);
+    UINT cBufs = pBody->cBuffers;
+    for (UINT i = 0; i < cBufs; ++i)
+    {
+        VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[i];
+        PVBOXVIDEOCM_ALLOC_REF pRef = (PVBOXVIDEOCM_ALLOC_REF)pBufCmd->u64GuesData;
+        if (!pBufCmd->u32GuesData)
+        {
+            /* signal completion */
+            switch (pRef->enmSynchType)
+            {
+                case VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT:
+                    KeSetEvent(pRef->pSynchEvent, 3, FALSE);
+                    break;
+                case VBOXUHGSMI_SYNCHOBJECT_TYPE_SEMAPHORE:
+                    KeReleaseSemaphore(pRef->pSynchSemaphore,
+                        3,
+                        1,
+                        FALSE);
+                    break;
+                case VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE:
+                    break;
+                default:
+                    Assert(0);
+            }
+        }
+
+        vboxVideoCmCtxAllocRefRelease(pRef);
+    }
+
+    vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
+}
+
+NTSTATUS vboxVideoAMgrCtxAllocSubmit(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALLOC_CONTEXT pContext, UINT cBuffers, VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *paBuffers)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    UINT cbCmd = VBOXVDMACMD_SIZE_FROMBODYSIZE(RT_OFFSETOF(VBOXVDMACMD_CHROMIUM_CMD, aBuffers[cBuffers]));
+
+    PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, cbCmd);
+    if (pDr)
+    {
+        // vboxVdmaCBufDrCreate zero initializes the pDr
+        pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR;
+        pDr->cbBuf = cbCmd;
+        pDr->rc = VERR_NOT_IMPLEMENTED;
+
+        PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
+        pHdr->enmType = VBOXVDMACMD_TYPE_CHROMIUM_CMD;
+        pHdr->u32CmdSpecific = 0;
+        VBOXVDMACMD_CHROMIUM_CMD *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHROMIUM_CMD);
+        pBody->cBuffers = cBuffers;
+        for (UINT i = 0; i < cBuffers; ++i)
+        {
+            VBOXVDMACMD_CHROMIUM_BUFFER *pBufCmd = &pBody->aBuffers[i];
+            VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *pBufInfo = &paBuffers[i];
+            PVBOXVIDEOCM_ALLOC_REF pRef = vboxVideoAMgrCtxAllocRefAcquire(pContext, pBufInfo->hAlloc);
+            if (pRef)
+            {
+                pBufCmd->offBuffer = pRef->pAlloc->offData + pBufInfo->Info.offData;
+                pBufCmd->cbBuffer = pBufInfo->Info.cbData;
+                pBufCmd->u32GuesData = pBufInfo->Info.fSubFlags.bDoNotSignalCompletion;
+                pBufCmd->u64GuesData = (uint64_t)pRef;
+            }
+            else
+            {
+                Assert(0);
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+        }
+
+        if (Status == STATUS_SUCCESS)
+        {
+            PVBOXVDMADDI_CMD pDdiCmd = VBOXVDMADDI_CMD_FROM_BUF_DR(pDr);
+            vboxVdmaDdiCmdInit(pDdiCmd, 0, NULL, vboxVideoAMgrAllocSubmitCompletion, pDr);
+            vboxVdmaDdiCmdSubmittedNotDx(pDdiCmd);
+            int rc = vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
+            Assert(rc == VINF_SUCCESS);
+            if (RT_SUCCESS(rc))
+            {
+                return STATUS_SUCCESS;
+            }
+        }
+
+        vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
+    }
+    else
+    {
+        Assert(0);
+        /* @todo: try flushing.. */
+        drprintf((__FUNCTION__": vboxVdmaCBufDrCreate returned NULL\n"));
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    return Status;
+}
+
+NTSTATUS vboxVideoAMgrCreate(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr, uint32_t offData, uint32_t cbData)
+{
+    Assert(!(offData & (PAGE_SIZE -1)));
+    Assert(!(cbData & (PAGE_SIZE -1)));
+    offData = VBOXWDDM_ROUNDBOUND(offData, PAGE_SIZE);
+    cbData &= (~(PAGE_SIZE -1));
+    Assert(cbData);
+    if (!cbData)
+        return STATUS_INVALID_PARAMETER;
+
+    ExInitializeFastMutex(&pMgr->Mutex);
+    NTSTATUS Status = vboxWddmHTableCreate(&pMgr->AllocTable, 64);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = vboxMmInit(&pMgr->Mm, BYTES_TO_PAGES(cbData));
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            PHYSICAL_ADDRESS PhysicalAddress = {0};
+            PhysicalAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + offData;
+            pMgr->pvData = (uint8_t*)MmMapIoSpace(PhysicalAddress, cbData, MmNonCached);
+            Assert(pMgr->pvData);
+            if (pMgr->pvData)
+            {
+                pMgr->offData = offData;
+                pMgr->cbData = cbData;
+                return STATUS_SUCCESS;
+            }
+            else
+            {
+                Status = STATUS_UNSUCCESSFUL;
+            }
+            vboxMmTerm(&pMgr->Mm);
+        }
+        vboxWddmHTableDestroy(&pMgr->AllocTable);
+    }
+
+    return Status;
+}
+
+NTSTATUS vboxVideoAMgrDestroy(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr)
+{
+    MmUnmapIoSpace(pMgr->pvData, pMgr->cbData);
+    vboxMmTerm(&pMgr->Mm);
+    vboxWddmHTableDestroy(&pMgr->AllocTable);
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxVideoAMgrCtxCreate(PVBOXVIDEOCM_ALLOC_MGR pMgr, PVBOXVIDEOCM_ALLOC_CONTEXT pCtx)
+{
+    NTSTATUS Status = STATUS_NOT_SUPPORTED;
+    if (pMgr->pvData)
+    {
+        ExInitializeFastMutex(&pCtx->Mutex);
+        Status = vboxWddmHTableCreate(&pCtx->AllocTable, 32);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            pCtx->pMgr = pMgr;
+            return STATUS_SUCCESS;
+        }
+    }
+    return Status;
+}
+
+NTSTATUS vboxVideoAMgrCtxDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pCtx)
+{
+    if (!pCtx->pMgr)
+        return STATUS_SUCCESS;
+
+    VBOXWDDM_HTABLE_ITERATOR Iter;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    vboxWddmHTableIterInit(&pCtx->AllocTable, &Iter);
+    do
+    {
+        PVBOXVIDEOCM_ALLOC_REF pRef = (PVBOXVIDEOCM_ALLOC_REF)vboxWddmHTableIterNext(&Iter, NULL);
+        if (!pRef)
+            break;
+
+        Status = vboxVideoAMgrCtxAllocDestroy(pCtx, pRef->hSessionHandle);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status != STATUS_SUCCESS)
+            break;
+        //        vboxWddmHTableIterRemoveCur(&Iter);
+    } while (1);
+
+    if (Status == STATUS_SUCCESS)
+    {
+        vboxWddmHTableDestroy(&pCtx->AllocTable);
+    }
+
+    return Status;
+}
+

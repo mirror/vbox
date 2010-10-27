@@ -888,6 +888,8 @@ BOOLEAN DxgkDdiInterruptRoutine(
             bNeedDpc = TRUE;
         }
 
+        bNeedDpc |= !vboxVdmaDdiCmdIsCompletedListEmptyIsr(&pDevExt->DdiCmdQueue);
+
         if (pDevExt->bNotifyDxDpc)
         {
 //            Assert(bNeedDpc == TRUE);
@@ -2533,7 +2535,7 @@ DxgkDdiPreemptCommand(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+//    AssertBreakpoint();
     /* @todo: fixme: implement */
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
@@ -3209,6 +3211,53 @@ DxgkDdiEscape(
         PVBOXDISPIFESCAPE pEscapeHdr = (PVBOXDISPIFESCAPE)pEscape->pPrivateDriverData;
         switch (pEscapeHdr->escapeCode)
         {
+            case VBOXESC_UHGSMI_SUBMIT:
+            {
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                PVBOXDISPIFESCAPE_UHGSMI_SUBMIT pSubmit = (PVBOXDISPIFESCAPE_UHGSMI_SUBMIT)pEscapeHdr;
+                Assert(pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_UHGSMI_SUBMIT)
+                        && pEscape->PrivateDriverDataSize == RT_OFFSETOF(VBOXDISPIFESCAPE_UHGSMI_SUBMIT, aBuffers[pEscapeHdr->u32CmdSpecific]));
+                if (pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD)
+                        && pEscape->PrivateDriverDataSize == RT_OFFSETOF(VBOXDISPIFESCAPE_UHGSMI_SUBMIT, aBuffers[pEscapeHdr->u32CmdSpecific]))
+                {
+                    Status = vboxVideoAMgrCtxAllocSubmit(pDevExt, &pContext->AllocContext, pEscapeHdr->u32CmdSpecific, pSubmit->aBuffers);
+                    Assert(Status == STATUS_SUCCESS);
+                }
+                else
+                    Status = STATUS_BUFFER_TOO_SMALL;
+
+                break;
+            }
+            case VBOXESC_UHGSMI_ALLOCATE:
+            {
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                PVBOXDISPIFESCAPE_UHGSMI_ALLOCATE pAlocate = (PVBOXDISPIFESCAPE_UHGSMI_ALLOCATE)pEscapeHdr;
+                Assert(pEscape->PrivateDriverDataSize == sizeof (VBOXDISPIFESCAPE_UHGSMI_ALLOCATE));
+                if (pEscape->PrivateDriverDataSize == sizeof (VBOXDISPIFESCAPE_UHGSMI_ALLOCATE))
+                {
+                    Status = vboxVideoAMgrCtxAllocCreate(&pContext->AllocContext, &pAlocate->Alloc);
+                    Assert(Status == STATUS_SUCCESS);
+                }
+                else
+                    Status = STATUS_BUFFER_TOO_SMALL;
+
+                break;
+            }
+            case VBOXESC_UHGSMI_DEALLOCATE:
+            {
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                PVBOXDISPIFESCAPE_UHGSMI_DEALLOCATE pDealocate = (PVBOXDISPIFESCAPE_UHGSMI_DEALLOCATE)pEscapeHdr;
+                Assert(pEscape->PrivateDriverDataSize == sizeof (VBOXDISPIFESCAPE_UHGSMI_DEALLOCATE));
+                if (pEscape->PrivateDriverDataSize == sizeof (VBOXDISPIFESCAPE_UHGSMI_DEALLOCATE))
+                {
+                    Status = vboxVideoAMgrCtxAllocDestroy(&pContext->AllocContext, pDealocate->hAlloc);
+                    Assert(Status == STATUS_SUCCESS);
+                }
+                else
+                    Status = STATUS_BUFFER_TOO_SMALL;
+
+                break;
+            }
             case VBOXESC_GETVBOXVIDEOCMCMD:
             {
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
@@ -3379,6 +3428,21 @@ DxgkDdiCollectDbgInfo(
     return STATUS_SUCCESS;
 }
 
+typedef struct VBOXWDDM_QUERYCURFENCE_CB
+{
+    PDEVICE_EXTENSION pDevExt;
+    ULONG MessageNumber;
+    ULONG uLastCompletedCmdFenceId;
+} VBOXWDDM_QUERYCURFENCE_CB, *PVBOXWDDM_QUERYCURFENCE_CB;
+
+static BOOLEAN vboxWddmQueryCurrentFenceCb(PVOID Context)
+{
+    PVBOXWDDM_QUERYCURFENCE_CB pdc = (PVBOXWDDM_QUERYCURFENCE_CB)Context;
+    BOOL bRc = DxgkDdiInterruptRoutine(pdc->pDevExt, pdc->MessageNumber);
+    pdc->uLastCompletedCmdFenceId = pdc->pDevExt->u.primary.Vdma.uLastCompletedPagingBufferCmdFenceId;
+    return bRc;
+}
+
 NTSTATUS
 APIENTRY
 DxgkDdiQueryCurrentFence(
@@ -3387,8 +3451,23 @@ DxgkDdiQueryCurrentFence(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
-    /* @todo: fixme: implement */
+    vboxVDbgBreakF();
+
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    VBOXWDDM_QUERYCURFENCE_CB context = {0};
+    context.pDevExt = pDevExt;
+    BOOLEAN bRet;
+    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
+            pDevExt->u.primary.DxgkInterface.DeviceHandle,
+            vboxWddmQueryCurrentFenceCb,
+            &context,
+            0, /* IN ULONG MessageNumber */
+            &bRet);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        pCurrentFence->CurrentFence = context.uLastCompletedCmdFenceId;
+    }
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
@@ -4986,31 +5065,41 @@ DxgkDdiCreateContext(
                 {
                     case VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D:
                     {
-                        ExInitializeFastMutex(&pContext->SwapchainMutex);
-                        Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
+                        Status = vboxVideoAMgrCtxCreate(&pDevExt->AllocMgr, &pContext->AllocContext);
                         Assert(Status == STATUS_SUCCESS);
                         if (Status == STATUS_SUCCESS)
                         {
-                            pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
-                            Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                            ExInitializeFastMutex(&pContext->SwapchainMutex);
+                            Status = vboxWddmHTableCreate(&pContext->Swapchains, 4);
                             Assert(Status == STATUS_SUCCESS);
                             if (Status == STATUS_SUCCESS)
                             {
-    //                            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-    //                            ExAcquireFastMutex(&pDevExt->ContextMutex);
-                                ASMAtomicIncU32(&pDevExt->cContexts3D);
-    //                            ExReleaseFastMutex(&pDevExt->ContextMutex);
-                            }
-                            else
-                            {
+                                pContext->enmType = VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D;
+                                Status = vboxVideoCmCtxAdd(&pDevice->pAdapter->CmMgr, &pContext->CmContext, (HANDLE)pInfo->hUmEvent, pInfo->u64UmInfo);
+                                Assert(Status == STATUS_SUCCESS);
+                                if (Status == STATUS_SUCCESS)
+                                {
+        //                            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+        //                            ExAcquireFastMutex(&pDevExt->ContextMutex);
+                                    ASMAtomicIncU32(&pDevExt->cContexts3D);
+        //                            ExReleaseFastMutex(&pDevExt->ContextMutex);
+                                    break;
+                                }
                                 vboxWddmHTableDestroy(&pContext->Swapchains);
                             }
                         }
                         break;
                     }
-                    case VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D:
                     case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D:
                     case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL:
+                    {
+                        Status = vboxVideoAMgrCtxCreate(&pDevExt->AllocMgr, &pContext->AllocContext);
+                        Assert(Status == STATUS_SUCCESS);
+                        if (Status != STATUS_SUCCESS)
+                            break;
+                        /* do not break to go to the _2D branch and do the rest stuff */
+                    }
+                    case VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D:
                     {
                         pContext->enmType = pInfo->enmType;
                         break;
@@ -5068,12 +5157,17 @@ DxgkDdiDestroyContext(
         Assert(cContexts < UINT32_MAX/2);
     }
 
-    NTSTATUS Status = vboxVideoCmCtxRemove(&pContext->pDevice->pAdapter->CmMgr, &pContext->CmContext);
+    NTSTATUS Status = vboxVideoAMgrCtxDestroy(&pContext->AllocContext);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
-        vboxWddmSwapchainCtxDestroyAll(pDevExt, pContext);
-        vboxWddmMemFree(pContext);
+        Status = vboxVideoCmCtxRemove(&pContext->pDevice->pAdapter->CmMgr, &pContext->CmContext);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            vboxWddmSwapchainCtxDestroyAll(pDevExt, pContext);
+            vboxWddmMemFree(pContext);
+        }
     }
 
     dfprintf(("<== "__FUNCTION__ ", hContext(0x%x)\n", hContext));

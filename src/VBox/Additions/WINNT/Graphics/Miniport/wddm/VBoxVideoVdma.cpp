@@ -1072,6 +1072,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo
     pInfo->fEnabled           = FALSE;
 
 #ifdef VBOX_WITH_VDMA
+    KeInitializeSpinLock(&pInfo->HeapLock);
     Assert((offBuffer & 0xfff) == 0);
     Assert((cbBuffer & 0xfff) == 0);
     Assert(offBuffer);
@@ -1198,13 +1199,19 @@ int vboxVdmaDestroy (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
 #ifdef VBOX_WITH_VDMA
 void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
 {
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pInfo->HeapLock, &OldIrql);
     VBoxSHGSMICommandFree (&pInfo->CmdHeap, pDr);
+    KeReleaseSpinLock(&pInfo->HeapLock, OldIrql);
 }
 
 PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData)
 {
     uint32_t cbDr = VBOXVDMACBUF_DR_SIZE(cbTrailingData);
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pInfo->HeapLock, &OldIrql);
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)VBoxSHGSMICommandAlloc (&pInfo->CmdHeap, cbDr, HGSMI_CH_VBVA, VBVA_VDMA_CMD);
+    KeReleaseSpinLock(&pInfo->HeapLock, OldIrql);
     Assert(pDr);
     if (pDr)
         memset (pDr, 0, cbDr);
@@ -1344,12 +1351,12 @@ static VOID vboxVdmaDdiCmdNotifyCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDM
         case DXGK_INTERRUPT_DMA_COMPLETED:
             notify.InterruptType = DXGK_INTERRUPT_DMA_COMPLETED;
             notify.DmaCompleted.SubmissionFenceId = pCmd->u32FenceId;
-            if (pCmd->pContext)
-            {
-                notify.DmaCompleted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
-                pCmd->pContext->uLastCompletedCmdFenceId = pCmd->u32FenceId;
-            }
-            else
+//            if (pCmd->pContext)
+//            {
+//                notify.DmaCompleted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
+//                pCmd->pContext->uLastCompletedCmdFenceId = pCmd->u32FenceId;
+//            }
+//            else
             {
                 pDevExt->u.primary.Vdma.uLastCompletedPagingBufferCmdFenceId = pCmd->u32FenceId;
             }
@@ -1361,12 +1368,12 @@ static VOID vboxVdmaDdiCmdNotifyCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDM
             Assert(0);
             notify.InterruptType = DXGK_INTERRUPT_DMA_PREEMPTED;
             notify.DmaPreempted.PreemptionFenceId = pCmd->u32FenceId;
-            if (pCmd->pContext)
-            {
-                notify.DmaPreempted.LastCompletedFenceId = pCmd->pContext->uLastCompletedCmdFenceId;
-                notify.DmaPreempted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
-            }
-            else
+//            if (pCmd->pContext)
+//            {
+//                notify.DmaPreempted.LastCompletedFenceId = pCmd->pContext->uLastCompletedCmdFenceId;
+//                notify.DmaPreempted.NodeOrdinal = pCmd->pContext->NodeOrdinal;
+//            }
+//            else
             {
                 notify.DmaPreempted.LastCompletedFenceId = pDevExt->u.primary.Vdma.uLastCompletedPagingBufferCmdFenceId;
             }
@@ -1411,6 +1418,12 @@ VOID vboxVdmaDdiQueueInit(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQue
 
 BOOLEAN vboxVdmaDdiCmdCompletedIrq(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD_QUEUE pQueue, PVBOXVDMADDI_CMD pCmd, DXGK_INTERRUPT_TYPE enmComplType)
 {
+    if (VBOXVDMADDI_STATE_NOT_DX_CMD == pCmd->enmState)
+    {
+        InsertTailList(&pQueue->DpcCmdQueue, &pCmd->QueueEntry);
+        return FALSE;
+    }
+
     BOOLEAN bQueued = pCmd->enmState > VBOXVDMADDI_STATE_NOT_QUEUED;
     BOOLEAN bComplete = FALSE;
     Assert(!bQueued || pQueue->cQueuedCmds);
