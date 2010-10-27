@@ -60,11 +60,11 @@ typedef struct VBOXHDDBACKEND
     uint64_t uBackendCaps;
 
     /**
-     * Pointer to a NULL-terminated array of strings, containing the supported
+     * Pointer to a NULL-terminated array, containing the supported
      * file extensions. Note that some backends do not work on files, so this
      * pointer may just contain NULL.
      */
-    const char * const *papszFileExtensions;
+    PCVDFILEEXTENSION paFileExtensions;
 
     /**
      * Pointer to an array of structs describing each supported config key.
@@ -86,8 +86,10 @@ typedef struct VBOXHDDBACKEND
      * @param   pszFilename     Name of the image file.
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+     * @param   penmType        Returns the supported device type on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename, PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage));
+    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                                PVDINTERFACE pVDIfsImage, VDTYPE *penmType));
 
     /**
      * Open a disk image.
@@ -98,11 +100,12 @@ typedef struct VBOXHDDBACKEND
      * @param   uOpenFlags      Image file open mode, see VD_OPEN_FLAGS_* constants.
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+     * @param   enmType         Requested type of the image.
      * @param   ppBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(int, pfnOpen, (const char *pszFilename, unsigned uOpenFlags,
                                         PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                                        void **ppBackendData));
+                                        VDTYPE enmType, void **ppBackendData));
 
     /**
      * Create a disk image.

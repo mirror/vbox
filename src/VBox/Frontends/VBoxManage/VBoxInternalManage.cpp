@@ -554,8 +554,9 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
 
     /* just try it */
     char *pszFormat = NULL;
+    VDTYPE enmType = VDTYPE_INVALID;
     int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         argv[1], &pszFormat);
+                         argv[1], &pszFormat, &enmType);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Format autodetect failed: %Rrc", rc);
@@ -576,7 +577,7 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
                         &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(pVDIfs, &pDisk);
+    rc = VDCreate(pVDIfs, enmType, &pDisk);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Cannot create the virtual disk container: %Rrc", rc);
@@ -616,8 +617,9 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 
     /* just try it */
     char *pszFormat = NULL;
+    VDTYPE enmType = VDTYPE_INVALID;
     int rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         argv[0], &pszFormat);
+                         argv[0], &pszFormat, &enmType);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Format autodetect failed: %Rrc", rc);
@@ -638,7 +640,7 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
                         &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(pVDIfs, &pDisk);
+    rc = VDCreate(pVDIfs, enmType, &pDisk);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Cannot create the virtual disk container: %Rrc", rc);
@@ -1432,7 +1434,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                          &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
-    vrc = VDCreate(pVDIfs, &pDisk);
+    vrc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk); /* Raw VMDK's are harddisk only. */
     if (RT_FAILURE(vrc))
     {
         RTMsgError("Cannot create the virtual disk container: %Rrc", vrc);
@@ -1542,7 +1544,7 @@ static int CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
                              &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
-    vrc = VDCreate(pVDIfs, &pDisk);
+    vrc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
     if (RT_FAILURE(vrc))
     {
         RTMsgError("Cannot create the virtual disk container: %Rrc", vrc);
@@ -1626,7 +1628,8 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
                              &vdInterfaceErrorCallbacks, NULL, &pVDIfs);
     AssertRC(vrc);
 
-    vrc = VDCreate(pVDIfs, &pDisk);
+    /** @todo: Support convert to raw for floppy and DVD images too. */
+    vrc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
     if (RT_FAILURE(vrc))
     {
         RTMsgError("Cannot create the virtual disk container: %Rrc", vrc);
@@ -1650,9 +1653,10 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     if (srcformat.isEmpty())
     {
         char *pszFormat = NULL;
+        VDTYPE enmType = VDTYPE_INVALID;
         vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                          src.c_str(), &pszFormat);
-        if (RT_FAILURE(vrc))
+                          src.c_str(), &pszFormat, &enmType);
+        if (RT_FAILURE(vrc) || enmType != VDTYPE_HDD)
         {
             VDCloseAll(pDisk);
             if (!fWriteToStdOut)
@@ -1660,7 +1664,10 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
                 RTFileClose(outFile);
                 RTFileDelete(dst.c_str());
             }
-            RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);
+            if (RT_FAILURE(vrc))
+                RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);
+            else
+                RTMsgError("Only converting harddisk images is supported");
             return 1;
         }
         srcformat = pszFormat;
@@ -1738,6 +1745,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
     int vrc;
     PVBOXHDD pSrcDisk = NULL;
     PVBOXHDD pDstDisk = NULL;
+    VDTYPE enmSrcType = VDTYPE_INVALID;
 
     /* Parse the arguments. */
     for (int i = 0; i < argc; i++)
@@ -1799,7 +1807,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         {
             char *pszFormat = NULL;
             vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                              src.c_str(), &pszFormat);
+                              src.c_str(), &pszFormat, &enmSrcType);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);
@@ -1809,7 +1817,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
             RTStrFree(pszFormat);
         }
 
-        vrc = VDCreate(pVDIfs, &pSrcDisk);
+        vrc = VDCreate(pVDIfs, enmSrcType, &pSrcDisk);
         if (RT_FAILURE(vrc))
         {
             RTMsgError("Cannot create the source virtual disk container: %Rrc", vrc);
@@ -1828,7 +1836,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         if (dstformat.isEmpty())
             dstformat = "VDI";
 
-        vrc = VDCreate(pVDIfs, &pDstDisk);
+        vrc = VDCreate(pVDIfs, enmSrcType, &pDstDisk);
         if (RT_FAILURE(vrc))
         {
             RTMsgError("Cannot create the destination virtual disk container: %Rrc", vrc);

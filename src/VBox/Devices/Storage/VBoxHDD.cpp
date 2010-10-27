@@ -156,6 +156,9 @@ struct VBOXHDD
     /** Structure signature (VBOXHDDDISK_SIGNATURE). */
     uint32_t            u32Signature;
 
+    /** Image type. */
+    VDTYPE              enmType;
+
     /** Number of opened images. */
     unsigned            cImages;
 
@@ -439,9 +442,7 @@ extern VBOXHDDBACKEND g_VmdkBackend;
 extern VBOXHDDBACKEND g_VDIBackend;
 extern VBOXHDDBACKEND g_VhdBackend;
 extern VBOXHDDBACKEND g_ParallelsBackend;
-#ifdef VBOX_WITH_DMG
 extern VBOXHDDBACKEND g_DmgBackend;
-#endif
 #ifdef VBOX_WITH_ISCSI
 extern VBOXHDDBACKEND g_ISCSIBackend;
 #endif
@@ -450,14 +451,12 @@ static unsigned g_cBackends = 0;
 static PVBOXHDDBACKEND *g_apBackends = NULL;
 static PVBOXHDDBACKEND aStaticBackends[] =
 {
-    &g_RawBackend,
     &g_VmdkBackend,
     &g_VDIBackend,
     &g_VhdBackend,
-    &g_ParallelsBackend
-#ifdef VBOX_WITH_DMG
-    ,&g_DmgBackend
-#endif
+    &g_ParallelsBackend,
+    &g_DmgBackend,
+    &g_RawBackend
 #ifdef VBOX_WITH_ISCSI
     ,&g_ISCSIBackend
 #endif
@@ -3583,7 +3582,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
     {
         pEntries[i].pszBackend = g_apBackends[i]->pszBackendName;
         pEntries[i].uBackendCaps = g_apBackends[i]->uBackendCaps;
-        pEntries[i].papszFileExtensions = g_apBackends[i]->papszFileExtensions;
+        pEntries[i].paFileExtensions = g_apBackends[i]->paFileExtensions;
         pEntries[i].paConfigInfo = g_apBackends[i]->paConfigInfo;
         pEntries[i].pfnComposeLocation = g_apBackends[i]->pfnComposeLocation;
         pEntries[i].pfnComposeName = g_apBackends[i]->pfnComposeName;
@@ -3621,7 +3620,7 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
         {
             pEntry->pszBackend = g_apBackends[i]->pszBackendName;
             pEntry->uBackendCaps = g_apBackends[i]->uBackendCaps;
-            pEntry->papszFileExtensions = g_apBackends[i]->papszFileExtensions;
+            pEntry->paFileExtensions = g_apBackends[i]->paFileExtensions;
             pEntry->paConfigInfo = g_apBackends[i]->paConfigInfo;
             return VINF_SUCCESS;
         }
@@ -3636,9 +3635,10 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
  *
  * @returns VBox status code.
  * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+ * @param   enmType         Type of the image container.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
+VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *ppDisk)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = NULL;
@@ -3655,6 +3655,7 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
         if (pDisk)
         {
             pDisk->u32Signature = VBOXHDDDISK_SIGNATURE;
+            pDisk->enmType      = enmType;
             pDisk->cImages      = 0;
             pDisk->pBase        = NULL;
             pDisk->pLast        = NULL;
@@ -3808,7 +3809,7 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
  *                          The returned pointer must be freed using RTStrFree().
  */
 VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                              const char *pszFilename, char **ppszFormat)
+                              const char *pszFilename, char **ppszFormat, VDTYPE *penmType)
 {
     int rc = VERR_NOT_SUPPORTED;
     VDINTERFACEIOINT VDIIOIntCallbacks;
@@ -3824,6 +3825,9 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(VALID_PTR(ppszFormat),
                     ("ppszFormat=%#p\n", ppszFormat),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(ppszFormat),
+                    ("penmType=%#p\n", penmType),
                     VERR_INVALID_PARAMETER);
 
     if (!g_apBackends)
@@ -3885,7 +3889,7 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
         if (g_apBackends[i]->pfnCheckIfValid)
         {
             rc = g_apBackends[i]->pfnCheckIfValid(pszFilename, pVDIfsDisk,
-                                                  pVDIfsImage);
+                                                  pVDIfsImage, penmType);
             if (    RT_SUCCESS(rc)
                 /* The correct backend has been found, but there is a small
                  * incompatibility so that the file cannot be used. Stop here
@@ -4047,6 +4051,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                                       uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
                                       pDisk->pVDIfsDisk,
                                       pImage->pVDIfsImage,
+                                      pDisk->enmType,
                                       &pImage->pBackendData);
         /* If the open in read-write mode failed, retry in read-only mode. */
         if (RT_FAILURE(rc))
@@ -4062,6 +4067,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                                                | VD_OPEN_FLAGS_READONLY,
                                                pDisk->pVDIfsDisk,
                                                pImage->pVDIfsImage,
+                                               pDisk->enmType,
                                                &pImage->pBackendData);
             if (RT_FAILURE(rc))
             {
@@ -7185,7 +7191,7 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
 
         pBackendInfo->pszBackend = pImage->Backend->pszBackendName;
         pBackendInfo->uBackendCaps = pImage->Backend->uBackendCaps;
-        pBackendInfo->papszFileExtensions = pImage->Backend->papszFileExtensions;
+        pBackendInfo->paFileExtensions = pImage->Backend->paFileExtensions;
         pBackendInfo->paConfigInfo = pImage->Backend->paConfigInfo;
     } while (0);
 

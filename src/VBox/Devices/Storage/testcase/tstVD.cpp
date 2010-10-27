@@ -91,7 +91,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
                         NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, &pVD);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDCreateBase(pVD, pszBackend, pszFilename, cbSize,
@@ -149,7 +149,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
                         NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, &pVD);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDOpen(pVD, pszBackend, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
@@ -504,6 +504,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     int rc;
     PVBOXHDD pVD = NULL;
     char *pszFormat;
+    VDTYPE enmType = VDTYPE_INVALID;
     VDGEOMETRY PCHS = { 0, 0, 0 };
     VDGEOMETRY LCHS = { 0, 0, 0 };
     uint64_t u64DiskSize = 1000 * _1M;
@@ -538,7 +539,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     AssertRC(rc);
 
 
-    rc = VDCreate(&VDIError, &pVD);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     RTFILE File;
@@ -547,7 +548,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     {
         RTFileClose(File);
         rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                         pszBaseFilename, &pszFormat);
+                         pszBaseFilename, &pszFormat, &enmType);
         RTPrintf("VDGetFormat() pszFormat=%s rc=%Rrc\n", pszFormat, rc);
         if (RT_SUCCESS(rc) && strcmp(pszFormat, pszBackend))
         {
@@ -663,7 +664,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     AssertRC(rc);
 
 
-    rc = VDCreate(&VDIError, &pVD);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     RTFILE File;
@@ -737,7 +738,7 @@ static int tstVmdkRename(const char *src, const char *dst)
                         NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, &pVD);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDOpen(pVD, "VMDK", src, VD_OPEN_FLAGS_NORMAL, NULL);
@@ -788,7 +789,7 @@ static int tstVmdkCreateRenameOpen(const char *src, const char *dst,
                         NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, &pVD);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDOpen(pVD, "VMDK", dst, VD_OPEN_FLAGS_NORMAL, NULL);

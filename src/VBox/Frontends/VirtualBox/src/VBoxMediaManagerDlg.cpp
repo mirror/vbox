@@ -980,45 +980,51 @@ void VBoxMediaManagerDlg::doAddMedium()
     if (dir.isEmpty() || !QFileInfo (dir).exists())
         dir = mVBox.GetHomeFolder();
 
+    QList < QPair <QString, QString> > filterList;
+    QStringList backends;
+    QStringList allPrefix;
+    QString     allType;
+
     switch (type)
     {
-        case VBoxDefs::MediumType_HardDisk:
-        {
-            QList < QPair <QString, QString> > filterList = vboxGlobal().HDDBackends();
-            QStringList backends;
-            QStringList allPrefix;
-            for (int i = 0; i < filterList.count(); ++i)
-            {
-                QPair <QString, QString> item = filterList.at (i);
-                /* Create one backend filter string */
-                backends << QString ("%1 (%2)").arg (item.first). arg (item.second);
-                /* Save the suffix's for the "All" entry */
-                allPrefix << item.second;
-            }
-            if (!allPrefix.isEmpty())
-                backends.insert (0, tr ("All hard disk images (%1)").arg (allPrefix.join (" ").trimmed()));
-            backends << tr ("All files (*)");
-            filter = backends.join (";;").trimmed();
-
-            title = tr ("Select a hard disk image file");
-            break;
-        }
         case VBoxDefs::MediumType_DVD:
         {
-            filter = tr ("CD/DVD-ROM images (*.iso);;All files (*)");
+            filterList = vboxGlobal().DVDBackends();
             title = tr ("Select a CD/DVD-ROM disk image file");
+            allType = tr ("CD/DVD-ROM disk");
+            break;
+        }
+        case VBoxDefs::MediumType_HardDisk:
+        {
+            filterList = vboxGlobal().HDDBackends();
+            title = tr ("Select a hard disk image file");
+            allType = tr ("hard disk");
             break;
         }
         case VBoxDefs::MediumType_Floppy:
         {
-            filter = tr ("Floppy images (*.img);;All files (*)");
+            filterList = vboxGlobal().FloppyBackends();
             title = tr ("Select a floppy disk image file");
+            allType = tr ("floppy disk");
             break;
         }
         default:
             AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::MediumType.\n"));
             break;
     }
+
+    for (int i = 0; i < filterList.count(); ++i)
+    {
+        QPair <QString, QString> item = filterList.at (i);
+        /* Create one backend filter string */
+        backends << QString ("%1 (%2)").arg (item.first). arg (item.second);
+        /* Save the suffix's for the "All" entry */
+        allPrefix << item.second;
+    }
+    if (!allPrefix.isEmpty())
+        backends.insert (0, tr ("All %1 images (%2)").arg (allType). arg (allPrefix.join (" ").trimmed()));
+    backends << tr ("All files (*)");
+    filter = backends.join (";;").trimmed();
 
     QStringList files = QIFileDialog::getOpenFileNames (dir, filter, this, title);
     foreach (QString loc, files)

@@ -670,17 +670,28 @@ void ConfigFileBase::readMedium(MediaType t,
                 med.hdType = MediumType_Writethrough;
             else if (strType == "SHAREABLE")
                 med.hdType = MediumType_Shareable;
+            else if (strType == "READONLY")
+                med.hdType = MediumType_Readonly;
             else
                 throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute must be one of Normal, Immutable or Writethrough"));
         }
     }
-    else if (m->sv < SettingsVersion_v1_4)
+    else
     {
-        // DVD and floppy images before 1.4 had "src" attribute instead of "location"
-        if (!(elmMedium.getAttributeValue("src", med.strLocation)))
-            throw ConfigFileError(this, &elmMedium, N_("Required %s/@src attribute is missing"), elmMedium.getName());
+        if (m->sv < SettingsVersion_v1_4)
+        {
+            // DVD and floppy images before 1.4 had "src" attribute instead of "location"
+            if (!(elmMedium.getAttributeValue("src", med.strLocation)))
+                throw ConfigFileError(this, &elmMedium, N_("Required %s/@src attribute is missing"), elmMedium.getName());
 
-        fNeedsLocation = false;
+            fNeedsLocation = false;
+        }
+
+        if (!(elmMedium.getAttributeValue("format", med.strFormat)))
+        {
+            // DVD and floppy images before 1.11 had no format attribute. assign the default.
+            med.strFormat = "RAW";
+        }
     }
 
     if (fNeedsLocation)
@@ -978,24 +989,31 @@ void ConfigFileBase::buildUSBDeviceFilters(xml::ElementNode &elmParent,
  * @param m
  * @param level
  */
-void ConfigFileBase::buildHardDisk(xml::ElementNode &elmMedium,
-                                   const Medium &mdm,
-                                   uint32_t level)          // 0 for "root" call, incremented with each recursion
+void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
+                                 DeviceType_T devType,
+                                 const Medium &mdm,
+                                 uint32_t level)          // 0 for "root" call, incremented with each recursion
 {
-    xml::ElementNode *pelmHardDisk = elmMedium.createChild("HardDisk");
-    pelmHardDisk->setAttribute("uuid", mdm.uuid.toStringCurly());
-    pelmHardDisk->setAttribute("location", mdm.strLocation);
-    pelmHardDisk->setAttribute("format", mdm.strFormat);
+    xml::ElementNode *pelmMedium;
+
+    if (devType == DeviceType_HardDisk)
+        pelmMedium = elmMedium.createChild("HardDisk");
+    else
+        pelmMedium = elmMedium.createChild("Image");
+
+    pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
+    pelmMedium->setAttribute("location", mdm.strLocation);
+    pelmMedium->setAttribute("format", mdm.strFormat);
     if (mdm.fAutoReset)
-        pelmHardDisk->setAttribute("autoReset", mdm.fAutoReset);
+        pelmMedium->setAttribute("autoReset", mdm.fAutoReset);
     if (mdm.strDescription.length())
-        pelmHardDisk->setAttribute("Description", mdm.strDescription);
+        pelmMedium->setAttribute("Description", mdm.strDescription);
 
     for (StringsMap::const_iterator it = mdm.properties.begin();
          it != mdm.properties.end();
          ++it)
     {
-        xml::ElementNode *pelmProp = pelmHardDisk->createChild("Property");
+        xml::ElementNode *pelmProp = pelmMedium->createChild("Property");
         pelmProp->setAttribute("name", it->first);
         pelmProp->setAttribute("value", it->second);
     }
@@ -1007,8 +1025,9 @@ void ConfigFileBase::buildHardDisk(xml::ElementNode &elmMedium,
             mdm.hdType == MediumType_Normal ? "Normal" :
             mdm.hdType == MediumType_Immutable ? "Immutable" :
             mdm.hdType == MediumType_Writethrough ? "Writethrough" :
-            mdm.hdType == MediumType_Shareable ? "Shareable" : "INVALID";
-        pelmHardDisk->setAttribute("type", pcszType);
+            mdm.hdType == MediumType_Shareable ? "Shareable" :
+            mdm.hdType == MediumType_Readonly ? "Readonly" : "INVALID";
+        pelmMedium->setAttribute("type", pcszType);
     }
 
     for (MediaList::const_iterator it = mdm.llChildren.begin();
@@ -1016,9 +1035,10 @@ void ConfigFileBase::buildHardDisk(xml::ElementNode &elmMedium,
          ++it)
     {
         // recurse for children
-        buildHardDisk(*pelmHardDisk, // parent
-                      *it,           // settings::Medium
-                      ++level);      // recursion level
+        buildMedium(*pelmMedium, // parent
+                    devType,     // device type
+                    *it,         // settings::Medium
+                    ++level);    // recursion level
     }
 }
 
@@ -1043,7 +1063,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
          it != mr.llHardDisks.end();
          ++it)
     {
-        buildHardDisk(*pelmHardDisks, *it, 0);
+        buildMedium(*pelmHardDisks, DeviceType_HardDisk, *it, 0);
     }
 
     xml::ElementNode *pelmDVDImages = pelmMediaRegistry->createChild("DVDImages");
@@ -1051,12 +1071,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
          it != mr.llDvdImages.end();
          ++it)
     {
-        const Medium &mdm = *it;
-        xml::ElementNode *pelmMedium = pelmDVDImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
-        pelmMedium->setAttribute("location", mdm.strLocation);
-        if (mdm.strDescription.length())
-            pelmMedium->setAttribute("Description", mdm.strDescription);
+        buildMedium(*pelmDVDImages, DeviceType_DVD, *it, 0);
     }
 
     xml::ElementNode *pelmFloppyImages = pelmMediaRegistry->createChild("FloppyImages");
@@ -1064,12 +1079,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
          it != mr.llFloppyImages.end();
          ++it)
     {
-        const Medium &mdm = *it;
-        xml::ElementNode *pelmMedium = pelmFloppyImages->createChild("Image");
-        pelmMedium->setAttribute("uuid", mdm.uuid.toStringCurly());
-        pelmMedium->setAttribute("location", mdm.strLocation);
-        if (mdm.strDescription.length())
-            pelmMedium->setAttribute("Description", mdm.strDescription);
+        buildMedium(*pelmFloppyImages, DeviceType_Floppy, *it, 0);
     }
 }
 

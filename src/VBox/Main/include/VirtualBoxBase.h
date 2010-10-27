@@ -163,6 +163,28 @@ public:
 #endif
 
 /**
+ *  Special version of the AssertFailed macro to be used within VirtualBoxBase
+ *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
+ *
+ *  In the debug build, this macro is equivalent to AssertFailed.
+ *  In the release build, this macro uses |setError(E_FAIL, ...)| to set the
+ *  error info from the asserted expression.
+ *
+ *  @see VirtualBoxSupportErrorInfoImpl::setError
+ *
+ */
+#if defined (DEBUG)
+#define ComAssertFailed()    AssertFailed()
+#else
+#define ComAssertFailed()    \
+    do { \
+        setError(E_FAIL, \
+                 "Assertion failed: at '%s' (%d) in %s.\nPlease contact the product vendor!", \
+                 __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+    } while (0)
+#endif
+
+/**
  *  Special version of the AssertMsg macro to be used within VirtualBoxBase
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
@@ -279,6 +301,9 @@ public:
 /** Special version of ComAssertComRC that just throws rc if rc does not succeed */
 #define ComAssertComRCThrowRC(rc)                 \
     if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw rc; } } else do {} while (0)
+/** Special version of ComAssert that throws eval */
+#define ComAssertFailedThrow(eval)                \
+    if (1) { ComAssertFailed(); { throw (eval); } } else do {} while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
 

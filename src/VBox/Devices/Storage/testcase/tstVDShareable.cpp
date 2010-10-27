@@ -91,9 +91,9 @@ static int tstVDCreateShareDelete(const char *pszBackend, const char *pszFilenam
                         NULL, &pVDIfs);
     AssertRC(rc);
 
-    rc = VDCreate(&VDIError, &pVD);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
-    rc = VDCreate(&VDIError, &pVD2);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD2);
     CHECK("VDCreate() #2");
 
     rc = VDCreateBase(pVD, pszBackend, pszFilename, cbSize,

@@ -123,6 +123,7 @@ int handleSetUUID(HandlerArg *a)
 {
     const char *pszFilename = NULL;
     char *pszFormat = NULL;
+    VDTYPE enmType = VDTYPE_INVALID;
     RTUUID imageUuid;
     RTUUID parentUuid;
     bool fSetImageUuid = false;
@@ -187,13 +188,13 @@ int handleSetUUID(HandlerArg *a)
     {
         /* Don't pass error interface, as that would triggers error messages
          * because some backends fail to open the image. */
-        rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat);
+        rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
         if (RT_FAILURE(rc))
             return errorRuntime("Format autodetect failed: %Rrc\n", rc);
     }
 
     PVBOXHDD pVD = NULL;
-    rc = VDCreate(pVDIfs, &pVD);
+    rc = VDCreate(pVDIfs, enmType, &pVD);
     if (RT_FAILURE(rc))
         return errorRuntime("Cannot create the virtual disk container: %Rrc\n", rc);
 
@@ -624,6 +625,7 @@ int handleConvert(HandlerArg *a)
     bool fStdIn = false;
     bool fStdOut = false;
     const char *pszSrcFormat = NULL;
+    VDTYPE enmSrcType = VDTYPE_HDD;
     const char *pszDstFormat = NULL;
     const char *pszVariant = NULL;
     PVBOXHDD pSrcDisk = NULL;
@@ -787,17 +789,19 @@ int handleConvert(HandlerArg *a)
         /* try to determine input format if not specified */
         if (!pszSrcFormat)
         {
-            char *pszFormat;
-            rc = VDGetFormat(NULL, NULL, pszSrcFilename, &pszFormat);
+            char *pszFormat = NULL;
+            VDTYPE enmType = VDTYPE_INVALID;
+            rc = VDGetFormat(NULL, NULL, pszSrcFilename, &pszFormat, &enmType);
             if (RT_FAILURE(rc))
             {
                 errorSyntax("No file format specified, please specify format: %Rrc\n", rc);
                 break;
             }
             pszSrcFormat = pszFormat;
+            enmSrcType = enmType;
         }
 
-        rc = VDCreate(pVDIfs, &pSrcDisk);
+        rc = VDCreate(pVDIfs, enmSrcType, &pSrcDisk);
         if (RT_FAILURE(rc))
         {
             errorRuntime("Error while creating source disk container: %Rrc\n", rc);
@@ -813,7 +817,7 @@ int handleConvert(HandlerArg *a)
             break;
         }
 
-        rc = VDCreate(pVDIfs, &pDstDisk);
+        rc = VDCreate(pVDIfs, VDTYPE_HDD, &pDstDisk);
         if (RT_FAILURE(rc))
         {
             errorRuntime("Error while creating the destination disk container: %Rrc\n", rc);
@@ -882,11 +886,12 @@ int handleInfo(HandlerArg *a)
 
     /* just try it */
     char *pszFormat = NULL;
-    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat);
+    VDTYPE enmType = VDTYPE_INVALID;
+    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 
-    rc = VDCreate(pVDIfs, &pDisk);
+    rc = VDCreate(pVDIfs, enmType, &pDisk);
     if (RT_FAILURE(rc))
         return errorRuntime("Error while creating the virtual disk container: %Rrc\n", rc);
 
@@ -939,11 +944,12 @@ int handleCompact(HandlerArg *a)
 
     /* just try it */
     char *pszFormat = NULL;
-    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat);
+    VDTYPE enmType = VDTYPE_INVALID;
+    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
         return errorSyntax("Format autodetect failed: %Rrc\n", rc);
 
-    rc = VDCreate(pVDIfs, &pDisk);
+    rc = VDCreate(pVDIfs, enmType, &pDisk);
     if (RT_FAILURE(rc))
         return errorRuntime("Error while creating the virtual disk container: %Rrc\n", rc);
 

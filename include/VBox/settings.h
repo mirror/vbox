@@ -184,9 +184,10 @@ protected:
     void buildUSBDeviceFilters(xml::ElementNode &elmParent,
                                const USBDeviceFiltersList &ll,
                                bool fHostMode);
-    void buildHardDisk(xml::ElementNode &elmMedium,
-                       const Medium &m,
-                       uint32_t level);
+    void buildMedium(xml::ElementNode &elmMedium,
+                     DeviceType_T devType,
+                     const Medium &m,
+                     uint32_t level);
     void buildMediaRegistry(xml::ElementNode &elmParent,
                             const MediaRegistry &mr);
     void clearDocument();

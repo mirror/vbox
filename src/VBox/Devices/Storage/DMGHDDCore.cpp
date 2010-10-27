@@ -406,10 +406,10 @@ typedef struct DMGINFLATESTATE
 *******************************************************************************/
 
 /** NULL-terminated array of supported file extensions. */
-static const char *const s_apszDmgFileExtensions[] =
+static const VDFILEEXTENSION s_aDmgFileExtensions[] =
 {
-    "dmg",
-    NULL
+    {"dmg", VDTYPE_DVD},
+    {NULL, VDTYPE_INVALID}
 };
 
 /*******************************************************************************
@@ -1591,9 +1591,10 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                           PVDINTERFACE pVDIfsImage)
+                           PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
-    LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
+    LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p penmType=%#p\n",
+                 pszFilename, pVDIfsDisk, pVDIfsImage, penmType));
     int rc;
     PVDIOSTORAGE pStorage;
     uint64_t cbFile, offFtr = 0;
@@ -1638,7 +1639,10 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
             &&  Ftr.cbFooter    == sizeof(Ftr))
         {
             if (dmgUdifFtrIsValid(&Ftr, offFtr))
+            {
                 rc = VINF_SUCCESS;
+                *penmType = VDTYPE_DVD;
+            }
             else
             {
                 DMG_PRINTF(("Bad DMG: '%s' offFtr=%RTfoff\n", pszFilename, offFtr));
@@ -1658,7 +1662,7 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int dmgOpen(const char *pszFilename, unsigned uOpenFlags,
                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                   void **ppBackendData)
+                   VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc = VINF_SUCCESS;
@@ -2135,19 +2139,18 @@ static int dmgGetComment(void *pBackendData, char *pszComment,
 static int dmgSetComment(void *pBackendData, const char *pszComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
-    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+    PDMGIMAGE pImage = (PDMGIMAGE)pBackendData;
     int rc;
 
-    AssertPtr(pThis);
+    AssertPtr(pImage);
 
-    if (pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+    if (pImage)
     {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
+        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            rc = VERR_VD_IMAGE_READ_ONLY;
+        else
+            rc = VERR_NOT_SUPPORTED;
     }
-
-    if (pThis)
-        rc = VERR_NOT_SUPPORTED;
     else
         rc = VERR_VD_NOT_OPENED;
 
@@ -2345,8 +2348,8 @@ VBOXHDDBACKEND g_DmgBackend =
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
     VD_CAP_FILE | VD_CAP_VFS,
-    /* papszFileExtensions */
-    s_apszDmgFileExtensions,
+    /* paFileExtensions */
+    s_aDmgFileExtensions,
     /* paConfigInfo */
     NULL,
     /* hPlugin */

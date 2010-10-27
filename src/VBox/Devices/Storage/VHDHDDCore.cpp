@@ -240,10 +240,10 @@ typedef struct VHDIMAGEEXPAND
 *******************************************************************************/
 
 /** NULL-terminated array of supported file extensions. */
-static const char *const s_apszVhdFileExtensions[] =
+static const VDFILEEXTENSION s_aVhdFileExtensions[] =
 {
-    "vhd",
-    NULL
+    {"vhd", VDTYPE_HDD},
+    {NULL, VDTYPE_INVALID}
 };
 
 /*******************************************************************************
@@ -1379,7 +1379,7 @@ out:
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
-                           PVDINTERFACE pVDIfsImage)
+                           PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
     LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
     int rc;
@@ -1415,7 +1415,10 @@ static int vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     if (RT_FAILURE(rc) || (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0))
         rc = VERR_VD_VHD_INVALID_HEADER;
     else
+    {
+        *penmType = VDTYPE_HDD;
         rc = VINF_SUCCESS;
+    }
 
     pInterfaceIOCallbacks->pfnClose(pInterfaceIO->pvUser, pStorage);
 
@@ -1427,7 +1430,7 @@ out:
 /** @copydoc VBOXHDDBACKEND::pfnOpen */
 static int vhdOpen(const char *pszFilename, unsigned uOpenFlags,
                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                   void **ppBackendData)
+                   VDTYPE enmType, void **ppBackendData)
 {
     LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
     int rc = VINF_SUCCESS;
@@ -2136,14 +2139,13 @@ static int vhdSetComment(void *pBackendData, const char *pszComment)
 
     AssertPtr(pImage);
 
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-
     if (pImage)
-        rc = VERR_NOT_SUPPORTED;
+    {
+        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            rc = VERR_VD_IMAGE_READ_ONLY;
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
     else
         rc = VERR_VD_NOT_OPENED;
 
@@ -3019,8 +3021,8 @@ VBOXHDDBACKEND g_VhdBackend =
     VD_CAP_UUID | VD_CAP_DIFF | VD_CAP_FILE |
     VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC |
     VD_CAP_ASYNC | VD_CAP_VFS,
-    /* papszFileExtensions */
-    s_apszVhdFileExtensions,
+    /* paFileExtensions */
+    s_aVhdFileExtensions,
     /* paConfigInfo */
     NULL,
     /* hPlugin */

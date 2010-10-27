@@ -275,7 +275,7 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     AssertRC(rc);
 
 
-    rc = VDCreate(pVDIfs, &pVD);
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pVD);
     CHECK("VDCreate()");
 
     rc = VDCreateBase(pVD, pTest->pcszBackend, pTest->pcszBaseImage, cbDisk,

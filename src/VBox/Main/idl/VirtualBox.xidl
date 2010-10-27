@@ -467,7 +467,8 @@
     </const>
     <const name="v1_11"     value="13">
       <desc>Settings version "1.11", written by VirtualBox 4.0.x.</desc>
-      <!-- Machine changes: HD Audio controller, per-machine disk registries
+      <!-- Machine changes: HD Audio controller, per-machine disk registries,
+           /@format attribute for DVD and floppy images.
            -->
     </const>
     <const name="Future"     value="99999">
@@ -10146,7 +10147,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IMediumFormat" extends="$unknown"
-     uuid="89f52554-d469-4799-9fad-1705e86a08b1"
+     uuid="4e9a873f-0599-434a-8345-619ef3fb3111"
      wsmap="managed"
      >
     <desc>
@@ -10194,21 +10195,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="fileExtensions" type="wstring" safearray="yes" readonly="yes">
-      <desc>
-        Array of strings containing the supported file extensions.
-
-        The first extension in the array is the extension preferred by the
-        backend. It is recommended to use this extension when specifying a
-        location of the storage unit for a new medium.
-
-        Note that some backends do not work on files, so this array may be
-        empty.
-
-        <see>IMediumFormat::capabilities</see>
-      </desc>
-    </attribute>
-
     <attribute name="capabilities" type="unsigned long" readonly="yes">
       <desc>
         Capabilities of the format as a set of bit flags.
@@ -10217,6 +10203,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="MediumFormatCapabilities"/>.
       </desc>
     </attribute>
+
+    <method name="describeFileExtensions">
+      <desc>
+        Returns two arrays describing the supported file extensions.
+
+        The first array contains the supported extensions and the seconds one
+        the type each extension supports. Both have the same size.
+
+        Note that some backends do not work on files, so this array may be
+        empty.
+
+        <see>IMediumFormat::capabilities</see>
+      </desc>
+      <param  name="extensions" type="wstring" safearray="yes" dir="out">
+        <desc>The array of supported extensions.</desc>
+      </param>
+      <param  name="type" type="DeviceType" safearray="yes" dir="out">
+        <desc>The array which indicates the device type for every given extension.</desc>
+      </param>
+    </method>
 
     <method name="describeProperties">
       <desc>

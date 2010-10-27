@@ -246,6 +246,22 @@ DECLINLINE(uint32_t) VDOpenFlagsToFileOpenFlags(unsigned uOpenFlags, bool fCreat
 #define VD_CAP_VFS                  RT_BIT(9)
 /** @}*/
 
+/** @name VBox HDD container type.
+ * @{
+ */
+typedef enum VDTYPE
+{
+    /** Invalid. */
+    VDTYPE_INVALID = 0,
+    /** HardDisk */
+    VDTYPE_HDD,
+    /** CD/DVD */
+    VDTYPE_DVD,
+    /** Floppy. */
+    VDTYPE_FLOPPY
+} VDTYPE;
+/** @}*/
+
 /**
  * Supported interface types.
  */
@@ -1528,6 +1544,23 @@ typedef VDCONFIGINFO *PVDCONFIGINFO;
 typedef const VDCONFIGINFO *PCVDCONFIGINFO;
 
 /**
+ * Structure describing a file extension.
+ */
+typedef struct VDFILEEXTENSION
+{
+    /** Pointer to the NULL-terminated string containing the extension. */
+    const char *pszExtension;
+    /** The device type the extension supports. */
+    VDTYPE      enmType;
+} VDFILEEXTENSION;
+
+/** Pointer to a structure describing a file extension. */
+typedef VDFILEEXTENSION *PVDFILEEXTENSION;
+
+/** Pointer to a const structure describing a file extension. */
+typedef const VDFILEEXTENSION *PCVDFILEEXTENSION;
+
+/**
  * Data structure for returning a list of backend capabilities.
  */
 typedef struct VDBACKENDINFO
@@ -1539,7 +1572,7 @@ typedef struct VDBACKENDINFO
     /** Pointer to a NULL-terminated array of strings, containing the supported
      * file extensions. Note that some backends do not work on files, so this
      * pointer may just contain NULL. */
-    const char * const *papszFileExtensions;
+    PCVDFILEEXTENSION paFileExtensions;
     /** Pointer to an array of structs describing each supported config key.
      * Terminated by a NULL config key. Note that some backends do not support
      * the configuration interface, so this pointer may just contain NULL.
@@ -1999,9 +2032,10 @@ VBOXDDU_DECL(int) VDBackendInfoOne(const char *pszBackend, PVDBACKENDINFO pEntry
  *
  * @return  VBox status code.
  * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+ * @param   enmType         Type of the image container.
  * @param   ppDisk          Where to store the reference to HDD container.
  */
-VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk);
+VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *ppDisk);
 
 /**
  * Destroys HDD container.
@@ -2023,9 +2057,10 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk);
  * @param   pszFilename     Name of the image file for which the backend is queried.
  * @param   ppszFormat      Receives pointer of the UTF-8 string which contains the format name.
  *                          The returned pointer must be freed using RTStrFree().
+ * @param   penmType        Where to store the type of the image.
  */
 VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
-                              const char *pszFilename, char **ppszFormat);
+                              const char *pszFilename, char **ppszFormat, VDTYPE *penmType);
 
 /**
  * Opens an image file.

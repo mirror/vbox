@@ -629,7 +629,10 @@ public:
                                 const char *aClassName = NULL,
                                 bool aRecursive = false);
 
+    static QList <QPair <QString, QString> > MediumBackends(KDeviceType enmDeviceType);
     static QList <QPair <QString, QString> > HDDBackends();
+    static QList <QPair <QString, QString> > DVDBackends();
+    static QList <QPair <QString, QString> > FloppyBackends();
 
     /* Qt 4.2.0 support function */
     static inline void setLayoutMargin (QLayout *aLayout, int aMargin)

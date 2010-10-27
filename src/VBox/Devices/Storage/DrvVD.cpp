@@ -2003,6 +2003,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     bool        fUseNewIo = false;
     unsigned    iLevel = 0;
     PCFGMNODE   pCurNode = pCfg;
+    VDTYPE      enmType = VDTYPE_HDD;
 
     for (;;)
     {
@@ -2016,7 +2017,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "Format\0Path\0"
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
-                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0");
+                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0");
         }
         else
         {
@@ -2131,6 +2132,28 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             }
             else
                 rc = VINF_SUCCESS;
+
+            char *psz;
+            rc = CFGMR3QueryStringAlloc(pCfg, "Type", &psz);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_BLOCK_NO_TYPE, N_("Failed to obtain the type"));
+                break;
+            }
+            else if (!strcmp(psz, "HardDisk"))
+                enmType = VDTYPE_HDD;
+            else if (!strcmp(psz, "DVD"))
+                enmType = VDTYPE_DVD;
+            else if (!strcmp(psz, "Floppy"))
+                enmType = VDTYPE_FLOPPY;
+            else
+            {
+                rc = PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_BLOCK_UNKNOWN_TYPE, RT_SRC_POS,
+                                         N_("Unknown type \"%s\""), psz);
+                MMR3HeapFree(psz);
+                break;
+            }
+            MMR3HeapFree(psz); psz = NULL;
         }
 
         PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");
@@ -2269,7 +2292,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         if (RT_SUCCESS(rc))
         {
-            rc = VDCreate(pThis->pVDIfsDisk, &pThis->pDisk);
+            rc = VDCreate(pThis->pVDIfsDisk, enmType, &pThis->pDisk);
             /* Error message is already set correctly. */
         }
     }

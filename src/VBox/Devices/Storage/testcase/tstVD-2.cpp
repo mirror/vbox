@@ -85,6 +85,21 @@ VDINTERFACECONFIG icc = {
     tstQuery
 };
 
+static const char *tstVDDeviceType(VDTYPE enmType)
+{
+    switch (enmType)
+    {
+        case VDTYPE_HDD:
+            return "HardDisk";
+        case VDTYPE_DVD:
+            return "DVD";
+        case VDTYPE_FLOPPY:
+            return "Floppy";
+        default:
+            return "Unknown";
+    }
+}
+
 static int tstVDBackendInfo(void)
 {
     int rc;
@@ -107,17 +122,17 @@ static int tstVDBackendInfo(void)
     {
         RTPrintf("Backend %u: name=%s capabilities=%#06x extensions=",
                  i, aVDInfo[i].pszBackend, aVDInfo[i].uBackendCaps);
-        if (aVDInfo[i].papszFileExtensions)
+        if (aVDInfo[i].paFileExtensions)
         {
-            const char *const *papsz = aVDInfo[i].papszFileExtensions;
-            while (*papsz != NULL)
+            PCVDFILEEXTENSION pa = aVDInfo[i].paFileExtensions;
+            while (pa->pszExtension != NULL)
             {
-                if (papsz != aVDInfo[i].papszFileExtensions)
+                if (pa != aVDInfo[i].paFileExtensions)
                     RTPrintf(",");
-                RTPrintf("%s", *papsz);
-                papsz++;
+                RTPrintf("%s (%s)", pa->pszExtension, tstVDDeviceType(pa->enmType));
+                pa++;
             }
-            if (papsz == aVDInfo[i].papszFileExtensions)
+            if (pa == aVDInfo[i].paFileExtensions)
                 RTPrintf("<EMPTY>");
         }
         else

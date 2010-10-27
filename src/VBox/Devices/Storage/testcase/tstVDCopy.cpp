@@ -69,6 +69,8 @@ int main(int argc, char *argv[])
     char *pszVD2 = NULL;
     char *pbBuf1 = NULL;
     char *pbBuf2 = NULL;
+    VDTYPE enmTypeVD1 = VDTYPE_INVALID;
+    VDTYPE enmTypeVD2 = VDTYPE_INVALID;
 
 #define CHECK(str) \
     do \
@@ -97,17 +99,17 @@ int main(int argc, char *argv[])
     AssertRC(rc);
 
     rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                     argv[1], &pszVD1);
+                     argv[1], &pszVD1, &enmTypeVD1);
     CHECK("VDGetFormat() hdd1");
 
     rc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                     argv[2], &pszVD2);
+                     argv[2], &pszVD2, &enmTypeVD2);
     CHECK("VDGetFormat() hdd2");
 
-    rc = VDCreate(&VDIError, &pVD1);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD1);
     CHECK("VDCreate() hdd1");
 
-    rc = VDCreate(&VDIError, &pVD2);
+    rc = VDCreate(&VDIError, VDTYPE_HDD, &pVD2);
     CHECK("VDCreate() hdd1");
 
     rc = VDOpen(pVD1, pszVD1, argv[1], VD_OPEN_FLAGS_NORMAL, NULL);
