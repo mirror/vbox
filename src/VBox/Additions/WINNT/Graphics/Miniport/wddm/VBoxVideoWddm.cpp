@@ -3211,6 +3211,7 @@ DxgkDdiEscape(
         PVBOXDISPIFESCAPE pEscapeHdr = (PVBOXDISPIFESCAPE)pEscape->pPrivateDriverData;
         switch (pEscapeHdr->escapeCode)
         {
+#ifdef VBOX_WITH_VDMA
             case VBOXESC_UHGSMI_SUBMIT:
             {
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
@@ -3228,6 +3229,7 @@ DxgkDdiEscape(
 
                 break;
             }
+#endif
             case VBOXESC_UHGSMI_ALLOCATE:
             {
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;

@@ -1130,6 +1130,7 @@ NTSTATUS vboxVideoAMgrCtxAllocDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXD
     return Status;
 }
 
+#ifdef VBOX_WITH_VDMA
 static DECLCALLBACK(VOID) vboxVideoAMgrAllocSubmitCompletion(PDEVICE_EXTENSION pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
 {
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)pvContext;
@@ -1230,6 +1231,7 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALL
 
     return Status;
 }
+#endif
 
 NTSTATUS vboxVideoAMgrCreate(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr, uint32_t offData, uint32_t cbData)
 {
