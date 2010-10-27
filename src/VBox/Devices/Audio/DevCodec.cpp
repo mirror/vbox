@@ -1908,8 +1908,7 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     //** @todo r=michaln: Was this meant to be 'HDA' or something like that? (AC'97 was on ICH0)
     AUD_register_card ("ICH0", &pState->card);
 
-    /* @todo: AFG:f00[0xA] -> quemu's voices */
-
+    /* 44.1 kHz */
     as.freq = 44100; 
     as.nchannels = 2;
     as.fmt = AUD_FMT_S16;
@@ -1918,43 +1917,45 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     do{                                                                                                                     \
         AUDIO_FORMAT_SELECTOR((pState), Out, (base), (mult), div) = AUD_open_out(&(pState)->card,                           \
             AUDIO_FORMAT_SELECTOR(pState, Out, (base), (mult), (div)), name ".out", (pState), (out_callback), &(as));       \
-        Assert(AUDIO_FORMAT_SELECTOR(pState, Out, (base), (mult), (div)));                                                  \
         if (!AUDIO_FORMAT_SELECTOR(pState, Out, (base), (mult), (div)))                                                     \
             LogRel (("HDAcodec: WARNING: Unable to open PCM OUT(%s)!\n", name ".out"));                                     \
         AUDIO_FORMAT_SELECTOR(pState, In, (base), (mult), (div)) = AUD_open_in(&(pState)->card,                             \
             AUDIO_FORMAT_SELECTOR(pState, In, (base), (mult), (div)), name ".in", (pState), (in_callback), &(as));          \
-        Assert(AUDIO_FORMAT_SELECTOR((pState), In, (base), (mult), (div)));                                                 \
         if (!AUDIO_FORMAT_SELECTOR(pState, In, (base), (mult), (div)))                                                      \
             LogRel (("HDAcodec: WARNING: Unable to open PCM IN(%s)!\n", name ".in"));                                       \
     } while(0)
+    #define IS_FORMAT_SUPPORTED_BY_HOST(pState, base, mult, div) (AUDIO_FORMAT_SELECTOR((pState), Out, (base), (mult), (div)) \
+        && AUDIO_FORMAT_SELECTOR((pState), In, (base), (mult), (div)))
     
+    pState->pNodes[1].node.au32F00_param[0xA] = RT_BIT(17); /* 16-bit samples */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_DIV_X1, "hda44_1", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] = RT_BIT(17)|RT_BIT(5);
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_MULT_X1) ? RT_BIT(5) : 0;
 
 #ifdef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
     as.freq *= 2; /* 2 * 44.1kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X2, AFMT_DIV_X1, "hda44_1_2x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(7);
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X2, AFMT_MULT_X1) ? RT_BIT(7) : 0;
 
     as.freq *= 2; /* 4 * 44.1kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_DIV_X1, "hda44_1_4x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(9);
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_MULT_X1) ? RT_BIT(9) : 0;
 
     as.freq = 48000; 
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_DIV_X1, "hda48", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(6);
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_MULT_X1) ? RT_BIT(6) : 0;
 
 # if 0
     as.freq *= 2; /* 2 * 48kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X2, AFMT_DIV_X1, "hda48_2x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(8);
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X2, AFMT_MULT_X1) ? RT_BIT(8) : 0;
 
     as.freq *= 2; /* 4 * 48kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X4, AFMT_DIV_X1, "hda48_4x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= RT_BIT(10);
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X4, AFMT_MULT_X1) ? RT_BIT(10) : 0;
 # endif
 #endif
     #undef SETUP_AUDIO_FORMAT
+    #undef IS_FORMAT_SUPPORTED_BY_HOST
 
     codecToAudVolume(&pState->pNodes[pState->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
     codecToAudVolume(&pState->pNodes[pState->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
