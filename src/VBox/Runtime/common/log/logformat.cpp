@@ -71,7 +71,7 @@ RT_EXPORT_SYMBOL(RTLogFormatV);
 
 /**
  * Callback to format VBox formatting extentions.
- * See @ref pg_rt_str_format_rt for a reference on the format types.
+ * See @ref pg_rt_str_format for a reference on the format types.
  *
  * @returns The number of bytes formatted.
  * @param   pvArg           Formatter argument.

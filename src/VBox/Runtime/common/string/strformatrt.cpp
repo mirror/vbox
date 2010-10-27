@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,129 +24,6 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/** @page pg_rt_str_format_rt   The IPRT String Format Extensions
- *
- * The string formatter supports most of the non-float format types and flags.
- * See RTStrFormatV() for the full tail there. In addition we've added a number
- * of iprt specific format types for the iprt typedefs and other useful stuff.
- * Note that several of these are similar to \%p and doesn't care much if you try
- * add formating flags/width/precision.
- *
- *
- * Group 1, the basic runtime typedefs (excluding those which obviously are pointer).
- *      - \%RTbool          - Takes a bool value and prints 'true', 'false', or '!%d!'.
- *      - \%RTfile          - Takes a #RTFILE value.
- *      - \%RTfmode         - Takes a #RTFMODE value.
- *      - \%RTfoff          - Takes a #RTFOFF value.
- *      - \%RTfp16          - Takes a #RTFAR16 value.
- *      - \%RTfp32          - Takes a #RTFAR32 value.
- *      - \%RTfp64          - Takes a #RTFAR64 value.
- *      - \%RTgid           - Takes a #RTGID value.
- *      - \%RTino           - Takes a #RTINODE value.
- *      - \%RTint           - Takes a #RTINT value.
- *      - \%RTiop           - Takes a #RTIOPORT value.
- *      - \%RTldrm          - Takes a #RTLDRMOD value.
- *      - \%RTmac           - Takes a #PCRTMAC pointer.
- *      - \%RTnaddr         - Takes a #PCRTNETADDR value.
- *      - \%RTnaipv4        - Takes a #RTNETADDRIPV4 value.
- *      - \%RTnaipv6        - Takes a #PCRTNETADDRIPV6 value.
- *      - \%RTnthrd         - Takes a #RTNATIVETHREAD value.
- *      - \%RTnthrd         - Takes a #RTNATIVETHREAD value.
- *      - \%RTproc          - Takes a #RTPROCESS value.
- *      - \%RTptr           - Takes a #RTINTPTR or #RTUINTPTR value (but not void *).
- *      - \%RTreg           - Takes a #RTCCUINTREG value.
- *      - \%RTsel           - Takes a #RTSEL value.
- *      - \%RTsem           - Takes a #RTSEMEVENT, #RTSEMEVENTMULTI, #RTSEMMUTEX, #RTSEMFASTMUTEX, or #RTSEMRW value.
- *      - \%RTsock          - Takes a #RTSOCKET value.
- *      - \%RTthrd          - Takes a #RTTHREAD value.
- *      - \%RTuid           - Takes a #RTUID value.
- *      - \%RTuint          - Takes a #RTUINT value.
- *      - \%RTunicp         - Takes a #RTUNICP value.
- *      - \%RTutf16         - Takes a #RTUTF16 value.
- *      - \%RTuuid          - Takes a #PCRTUUID and will print the UUID as a string.
- *      - \%RTxuint         - Takes a #RTUINT or #RTINT value, formatting it as hex.
- *      - \%RGi             - Takes a #RTGCINT value.
- *      - \%RGp             - Takes a #RTGCPHYS value.
- *      - \%RGr             - Takes a #RTGCUINTREG value.
- *      - \%RGu             - Takes a #RTGCUINT value.
- *      - \%RGv             - Takes a #RTGCPTR, #RTGCINTPTR or #RTGCUINTPTR value.
- *      - \%RGx             - Takes a #RTGCUINT or #RTGCINT value, formatting it as hex.
- *      - \%RHi             - Takes a #RTHCINT value.
- *      - \%RHp             - Takes a #RTHCPHYS value.
- *      - \%RHr             - Takes a #RTHCUINTREG value.
- *      - \%RHu             - Takes a #RTHCUINT value.
- *      - \%RHv             - Takes a #RTHCPTR, #RTHCINTPTR or #RTHCUINTPTR value.
- *      - \%RHx             - Takes a #RTHCUINT or #RTHCINT value, formatting it as hex.
- *      - \%RRv             - Takes a #RTRCPTR, #RTRCINTPTR or #RTRCUINTPTR value.
- *      - \%RCi             - Takes a #RTINT value.
- *      - \%RCp             - Takes a #RTCCPHYS value.
- *      - \%RCr             - Takes a #RTCCUINTREG value.
- *      - \%RCu             - Takes a #RTUINT value.
- *      - \%RCv             - Takes a #uintptr_t, #intptr_t, void * value.
- *      - \%RCx             - Takes a #RTUINT or #RTINT value, formatting it as hex.
- *
- *
- * Group 2, the generic integer types which are prefered over relying on what
- * bit-count a 'long', 'short',  or 'long long' has on a platform. This are
- * highly prefered for the [u]intXX_t kind of types.
- *      - \%RI[8|16|32|64]  - Signed integer value of the specifed bit count.
- *      - \%RU[8|16|32|64]  - Unsigned integer value of the specifed bit count.
- *      - \%RX[8|16|32|64]  - Hexadecimal integer value of the specifed bit count.
- *
- *
- * Group 3, hex dumpers and other complex stuff which requires more than simple formatting.
- *      - \%Rhxd            - Takes a pointer to the memory which is to be dumped in typical
- *                            hex format. Use the precision to specify the length, and the width to
- *                            set the number of bytes per line. Default width and precision is 16.
- *      - \%Rhxs            - Takes a pointer to the memory to be displayed as a hex string,
- *                            i.e. a series of space separated bytes formatted as two digit hex value.
- *                            Use the precision to specify the length. Default length is 16 bytes.
- *                            The width, if specified, is ignored.
- *      - \%Rrc             - Takes an integer iprt status code as argument. Will insert the
- *                            status code define corresponding to the iprt status code.
- *      - \%Rrs             - Takes an integer iprt status code as argument. Will insert the
- *                            short description of the specified status code.
- *      - \%Rrf             - Takes an integer iprt status code as argument. Will insert the
- *                            full description of the specified status code.
- *      - \%Rra             - Takes an integer iprt status code as argument. Will insert the
- *                            status code define + full description.
- *      - \%Rwc             - Takes a long Windows error code as argument. Will insert the status
- *                            code define corresponding to the Windows error code.
- *      - \%Rwf             - Takes a long Windows error code as argument. Will insert the
- *                            full description of the specified status code.
- *      - \%Rwa             - Takes a long Windows error code as argument. Will insert the
- *                            error code define + full description.
- *
- *      - \%Rhrc            - Takes a COM/XPCOM status code as argument. Will insert the status
- *                            code define corresponding to the Windows error code.
- *      - \%Rhrf            - Takes a COM/XPCOM status code as argument. Will insert the
- *                            full description of the specified status code.
- *      - \%Rhra            - Takes a COM/XPCOM error code as argument. Will insert the
- *                            error code define + full description.
- *
- *      - \%Rfn             - Pretty printing of a function or method. It drops the
- *                            return code and parameter list.
- *      - \%Rbn             - Prints the base name.  For dropping the path in
- *                            order to save space when printing a path name.
- *
- * On other platforms, \%Rw? simply prints the argument in a form of 0xXXXXXXXX.
- *
- *
- * Group 4, structure dumpers.
- *
- *      - \%RDtimespec      - Takes a PCRTTIMESPEC.
- *
- *
- * Group 5, XML / HTML escapers.
- *      - \%RMas            - Takes a string pointer (const char *) and outputs
- *                            it as an attribute value with the proper escaping.
- *                            This typically ends up in double quotes.
- *
- *      - \%RMes            - Takes a string pointer (const char *) and outputs
- *                            it as an element with the necessary escaping.
- *
- *
- */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -173,7 +50,7 @@
 
 /**
  * Callback to format iprt formatting extentions.
- * See @ref pg_rt_str_format_rt for a reference on the format types.
+ * See @ref pg_rt_str_format for a reference on the format types.
  *
  * @returns The number of bytes formatted.
  * @param   pfnOutput       Pointer to output function.
