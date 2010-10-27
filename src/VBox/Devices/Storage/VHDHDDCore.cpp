@@ -519,7 +519,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
         case VHD_PLATFORM_CODE_W2KU:
             /* Update unicode absolute name. */
             pszTmp = (char*)RTMemTmpAllocZ(cbMaxLen);
-            if (!pvBuf)
+            if (!pszTmp)
             {
                 rc = VERR_NO_MEMORY;
                 goto out;
