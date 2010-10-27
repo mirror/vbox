@@ -40,6 +40,9 @@
 #include "ProgressImpl.h"
 #include "NetworkAdapterImpl.h"
 #include "NATEngineImpl.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
+#endif
 
 #include "SessionImpl.h"
 #include "ConsoleImpl.h"
@@ -71,6 +74,12 @@ NS_DECL_CLASSINFO(SharedFolder)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)
 NS_DECL_CLASSINFO(VRDEServerInfo)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDEServerInfo, IVRDEServerInfo)
+#ifdef VBOX_WITH_EXTPACK
+NS_DECL_CLASSINFO(ExtPack)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPack, IExtPack)
+NS_DECL_CLASSINFO(ExtPackManager)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
+#endif
 
 NS_DECL_CLASSINFO(Session)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
