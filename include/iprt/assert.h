@@ -1322,6 +1322,25 @@ RT_C_DECLS_END
         } \
     } while (0)
 
+/** @def AssertLogRelMsgStmt
+ * Assert that an expression is true, execute \a stmt and break if it isn't
+ * Strict builds will hit a breakpoint, non-strict will only do LogRel.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ * @param   stmt    Statement to execute in case of a failed assertion.
+ */
+#define AssertLogRelMsgStmt(expr, a, stmt) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertLogRelMsg2(a); \
+            RTAssertPanic(); \
+            stmt; \
+        } \
+    } while (0)
+
 /** @def AssertLogRelMsgReturn
  * Assert that an expression is true, return \a rc if it isn't.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.
@@ -1337,6 +1356,29 @@ RT_C_DECLS_END
             RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
             RTAssertLogRelMsg2(a); \
             RTAssertPanic(); \
+            return (rc); \
+        } \
+    } while (0)
+
+/** @def AssertLogRelMsgReturnStmt
+ * Assert that an expression is true, execute \a stmt and return \a rc if it
+ * isn't.
+ * Strict builds will hit a breakpoint, non-strict will only do LogRel.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ * @param   rc      What is to be presented to return.
+ * @param   stmt    Statement to execute before return in case of a failed
+ *                  assertion.
+ */
+#define AssertLogRelMsgReturnStmt(expr, a, rc, stmt) \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            RTAssertLogRelMsg1(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertLogRelMsg2(a); \
+            RTAssertPanic(); \
+            stmt; \
             return (rc); \
         } \
     } while (0)
@@ -2103,6 +2145,18 @@ RT_C_DECLS_END
  */
 #define AssertLogRelRCReturn(rc, rcRet)         AssertLogRelMsgRCReturn(rc, ("%Rra\n", (rc)), rcRet)
 
+/** @def AssertLogRelRCReturnStmt
+ * Asserts a iprt status code successful, executing \a stmt and returning \a rc
+ * if it isn't.
+ *
+ * @param   rc      iprt status code.
+ * @param   rcRet   What is to be presented to return.
+ * @param   stmt    Statement to execute before returning in case of a failed
+ *                  assertion.
+ * @remark  rc is referenced multiple times.
+ */
+#define AssertLogRelRCReturnStmt(rc, rcRet, stmt) AssertLogRelMsgRCReturnStmt(rc, ("%Rra\n", (rc)), rcRet, stmt)
+
 /** @def AssertLogRelRCReturnVoid
  * Asserts a iprt status code successful, returning (void) if it isn't.
  *
@@ -2146,6 +2200,18 @@ RT_C_DECLS_END
  * @remark  rc is referenced multiple times.
  */
 #define AssertLogRelMsgRCReturn(rc, msg, rcRet) AssertLogRelMsgReturn(RT_SUCCESS_NP(rc), msg, rcRet)
+
+/** @def AssertLogRelMsgRCReturnStmt
+ * Asserts a iprt status code successful, execute \a stmt and return on
+ * failure.
+ *
+ * @param   rc      iprt status code.
+ * @param   msg     printf argument list (in parenthesis).
+ * @param   rcRet   What is to be presented to return.
+ * @param   stmt    Statement to execute before break in case of a failed assertion.
+ * @remark  rc is referenced multiple times.
+ */
+#define AssertLogRelMsgRCReturnStmt(rc, msg, rcRet, stmt) AssertLogRelMsgReturnStmt(RT_SUCCESS_NP(rc), msg, rcRet, stmt)
 
 /** @def AssertLogRelMsgRCReturnVoid
  * Asserts a iprt status code successful.
