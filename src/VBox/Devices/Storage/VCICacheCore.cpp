@@ -156,14 +156,14 @@ typedef struct VciTreeNode
 AssertCompileSize(VciTreeNode, 8 * VCI_BLOCK_SIZE);
 
 /** Node type: Internal node containing links to other nodes (VciTreeNodeInternal). */
-#define VCI_TREE_NODE_TYPE_INTERNAL UINT8_C(0x00000001)
+#define VCI_TREE_NODE_TYPE_INTERNAL UINT8_C(0x01)
 /** Node type: Leaf of the tree (VciCacheExtent). */
-#define VCI_TREE_NODE_TYPE_LEAF     UINT8_C(0x00000002)
+#define VCI_TREE_NODE_TYPE_LEAF     UINT8_C(0x02)
 
 /** Number of cache extents described by one node. */
-#define VCI_TREE_EXTENTS_PER_NODE        (sizeof(VciTreeNode)-1 / sizeof(VciCacheExtent))
+#define VCI_TREE_EXTENTS_PER_NODE        ((sizeof(VciTreeNode)-1) / sizeof(VciCacheExtent))
 /** Number of internal nodes managed by one tree node. */
-#define VCI_TREE_INTERNAL_NODES_PER_NODE (sizeof(VciTreeNode)-1 / sizeof(VciTreeNodeInternal))
+#define VCI_TREE_INTERNAL_NODES_PER_NODE ((sizeof(VciTreeNode)-1) / sizeof(VciTreeNodeInternal))
 
 /**
  * VCI block bitmap header.
