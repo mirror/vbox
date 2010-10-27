@@ -22,6 +22,7 @@
 #include "ExtPackManagerImpl.h"
 
 #include <iprt/dir.h>
+#include <iprt/file.h>
 #include <iprt/ldr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -377,8 +378,35 @@ STDMETHODIMP ExtPackManager::Find(IN_BSTR a_bstrName, IExtPack **a_pExtPack)
 
 STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
 {
-    NOREF(a_bstrTarball); NOREF(a_pbstrName);
-    return E_NOTIMPL;
+    CheckComArgNotNull(a_bstrTarball);
+    CheckComArgOutPointerValid(a_pbstrName);
+    Utf8Str strTarball(a_bstrTarball);
+
+    /*
+     * Check that the file exists and that we can access it.
+     */
+    HRESULT hrc;
+    if (RTFileExists(strTarball.c_str()))
+    {
+        RTFILE hFile;
+        int vrc = RTFileOpen(&hFile, strTarball.c_str(), RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * .
+             */
+
+
+            RTFileClose(hFile);
+        }
+        else
+            hrc = setError(E_FAIL, tr("Failed to open '%s' (%Rrc)"), strTarball.c_str(), vrc);
+    }
+    else if (RTPathExists(strTarball.c_str()))
+        hrc = setError(E_FAIL, tr("'%s' is not a regular file"), strTarball.c_str());
+    else
+        hrc = setError(E_FAIL, tr("File '%s' was inaccessible or not found"), strTarball.c_str());
+    return hrc;
 }
 
 STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval)
