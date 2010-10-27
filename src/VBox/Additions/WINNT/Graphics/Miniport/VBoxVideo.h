@@ -492,52 +492,6 @@ RT_C_DECLS_BEGIN
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2);
 RT_C_DECLS_END
 
-VP_STATUS VBoxVideoFindAdapter(
-   IN PVOID HwDeviceExtension,
-   IN PVOID HwContext,
-   IN PWSTR ArgumentString,
-   IN OUT PVIDEO_PORT_CONFIG_INFO ConfigInfo,
-   OUT PUCHAR Again);
-
-BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension);
-
-BOOLEAN VBoxVideoStartIO(
-   PVOID HwDeviceExtension,
-   PVIDEO_REQUEST_PACKET RequestPacket);
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension);
-#endif
-
-
-BOOLEAN VBoxVideoResetHW(
-   PVOID HwDeviceExtension,
-   ULONG Columns,
-   ULONG Rows);
-
-VP_STATUS VBoxVideoGetPowerState(
-   PVOID HwDeviceExtension,
-   ULONG HwId,
-   PVIDEO_POWER_MANAGEMENT VideoPowerControl);
-
-VP_STATUS VBoxVideoSetPowerState(
-   PVOID HwDeviceExtension,
-   ULONG HwId,
-   PVIDEO_POWER_MANAGEMENT VideoPowerControl);
-
-VP_STATUS VBoxVideoGetChildDescriptor(
-   PVOID HwDeviceExtension,
-   PVIDEO_CHILD_ENUM_INFO ChildEnumInfo,
-   PVIDEO_CHILD_TYPE VideoChildType,
-   PUCHAR pChildDescriptor,
-   PULONG pUId,
-   PULONG pUnused);
-
-
-void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension,
-                                VBOXVIDEOPORTPROCS *pCallbacks,
-                                PVIDEO_PORT_CONFIG_INFO pConfigInfo);
-
 #else
 
 /* XPDM-WDDM common API */
@@ -910,10 +864,7 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
         int iDisplay, /* negative would mean this is a miniport handler */
         uint8_t u8Channel);
 
-VOID VBoxVideoHGSMIDpc(
-    IN PVOID  HwDeviceExtension,
-    IN PVOID  Context
-    );
+void hgsmiProcessHostCommandQueue(PVBOXVIDEO_COMMON pCommon);
 
 void HGSMIClearIrq (PVBOXVIDEO_COMMON pCommon);
 
