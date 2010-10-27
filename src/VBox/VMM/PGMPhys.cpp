@@ -38,6 +38,7 @@
 #include <iprt/asm.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 
 
 /*******************************************************************************
@@ -3843,6 +3844,16 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
  */
 VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
 {
+#ifdef PGM_WITH_LARGE_PAGES
+    uint64_t cbAvailableMem;
+
+    if (    RTSystemQueryAvailableRam(&cbAvailableMem) == VINF_SUCCESS
+        &&  cbAvailableMem < (UINT64_C(2) * _1G))
+    {
+        /** Too little free RAM left; don't bother as the host might try to move memory around, which is very expensive. */
+        return VINF_EM_NO_MEMORY;
+    }
+
     pgmLock(pVM);
 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatAllocLargePage, a);
@@ -3917,6 +3928,9 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
 
     pgmUnlock(pVM);
     return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif /* PGM_WITH_LARGE_PAGES */
 }
 
 
