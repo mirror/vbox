@@ -205,8 +205,18 @@ DECLINLINE(int) rtTarReadHeaderRecord(RTFILE hFile, PRTTARRECORD pRecord)
     uint32_t sum;
     rc = RTStrToUInt32Full(pRecord->h.chksum, 8, &sum);
     if (RT_SUCCESS(rc) && sum == check)
-        return VINF_SUCCESS;
-    return VERR_TAR_CHKSUM_MISMATCH;
+    {
+        /* Make sure the strings are zero terminated. */
+        pRecord->h.name[sizeof(pRecord->h.name) - 1]         = 0;
+        pRecord->h.linkname[sizeof(pRecord->h.linkname) - 1] = 0;
+        pRecord->h.magic[sizeof(pRecord->h.magic) - 1]       = 0;
+        pRecord->h.uname[sizeof(pRecord->h.uname) - 1]       = 0;
+        pRecord->h.gname[sizeof(pRecord->h.gname) - 1]       = 0;
+    }
+    else
+        rc = VERR_TAR_CHKSUM_MISMATCH;
+
+    return rc;
 }
 
 DECLINLINE(int) rtTarCreateHeaderRecord(PRTTARRECORD pRecord, const char *pszSrcName, uint64_t cbSize, RTUID uid, RTGID gid, RTFMODE fmode, int64_t mtime)
