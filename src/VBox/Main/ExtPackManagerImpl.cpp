@@ -31,6 +31,7 @@
 #include <iprt/pipe.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
+#include <iprt/cpp/xml.h>
 
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
@@ -47,10 +48,13 @@
  * is why it has to be a separate program.
  */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-# define VBOX_EXTPACK_HELPER_NAME   "VBoxExtPackHelper.exe"
+# define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelper.exe"
 #else
-# define VBOX_EXTPACK_HELPER_NAME   "VBoxExtPackHelper"
+# define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelper"
 #endif
+/** @name VBOX_EXTPACK_DESCRIPTION_NAME
+ * The name of the description file in an extension pack.  */
+#define VBOX_EXTPACK_DESCRIPTION_NAME   "ExtPack.xml"
 
 
 /*******************************************************************************
@@ -142,7 +146,23 @@ HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
     /*
      * Read the description file.
      */
+    char szFile[RTPATH_MAX];
+    vrc = RTPathJoin(szFile, sizeof(szFile), szDir, VBOX_EXTPACK_DESCRIPTION_NAME);
+    AssertLogRelRCReturn(vrc, E_FAIL);
 
+    xml::Document       Doc;
+    xml::XmlFileParser  Parser;
+    try
+    {
+        Parser.read(szFile, Doc);
+        xml::ElementNode *pRoot = Doc.getRootElement();
+        NOREF(pRoot);
+    }
+    catch (xml::XmlError Err)
+    {
+        m->fUsable          = true;
+        m->strWhyUnusable   = tr("");
+    }
 
     return S_OK;
 }
@@ -547,9 +567,11 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
                  * This refresh is theorically subject to races, but it's of
                  * the don't-do-that variety.
                  */
+                const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
                 hrc = runSetUidToRootHelper("uninstall",
                                             "--basepath", m->strBasePath.c_str(),
                                             "--name",     strName.c_str(),
+                                            pszForcedOpt, /* Last as it may be NULL. */
                                             NULL);
                 if (SUCCEEDED(hrc))
                 {
