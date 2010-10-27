@@ -375,15 +375,6 @@ DECLINLINE(void) vga_reset_dirty(VGAState *pThis, RTGCPHYS offVRAMStart, RTGCPHY
     ASMBitClearRange(&pThis->au32DirtyBitmap[0], offVRAMStart >> PAGE_SHIFT, offVRAMEnd >> PAGE_SHIFT);
 }
 
-#ifdef LOG_ENABLED
-//#define DEBUG_VGA
-//#define DEBUG_VGA_MEM
-//#define DEBUG_VGA_REG
-
-#define DEBUG_BOCHS_VBE
-
-#endif
-
 /* force some bits to zero */
 static const uint8_t sr_mask[8] = {
     (uint8_t)~0xfc,
@@ -533,9 +524,7 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
             break;
         case 0x3c5:
             val = s->sr[s->sr_index];
-#ifdef DEBUG_VGA_REG
-            Log(("vga: read SR%x = 0x%02x\n", s->sr_index, val));
-#endif
+            Log2(("vga: read SR%x = 0x%02x\n", s->sr_index, val));
             break;
         case 0x3c7:
             val = s->dac_state;
@@ -561,9 +550,7 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
             break;
         case 0x3cf:
             val = s->gr[s->gr_index];
-#ifdef DEBUG_VGA_REG
-            Log(("vga: read GR%x = 0x%02x\n", s->gr_index, val));
-#endif
+            Log2(("vga: read GR%x = 0x%02x\n", s->gr_index, val));
             break;
         case 0x3b4:
         case 0x3d4:
@@ -572,9 +559,7 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
         case 0x3b5:
         case 0x3d5:
             val = s->cr[s->cr_index];
-#ifdef DEBUG_VGA_REG
-            Log(("vga: read CR%x = 0x%02x\n", s->cr_index, val));
-#endif
+            Log2(("vga: read CR%x = 0x%02x\n", s->cr_index, val));
             break;
         case 0x3ba:
         case 0x3da:
@@ -588,9 +573,7 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
             break;
         }
     }
-#if defined(DEBUG_VGA)
     Log(("VGA: read addr=0x%04x data=0x%02x\n", addr, val));
-#endif
     return val;
 }
 
@@ -599,9 +582,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     VGAState *s = (VGAState*)opaque;
     int index;
 
-#ifdef DEBUG_VGA
     Log(("VGA: write addr=0x%04x data=0x%02x\n", addr, val));
-#endif
 
     /* check port range access depending on color/monochrome mode */
     if ((addr >= 0x3b0 && addr <= 0x3bf && (s->msr & MSR_COLOR_EMULATION)) ||
@@ -650,9 +631,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         s->sr_index = val & 7;
         break;
     case 0x3c5:
-#ifdef DEBUG_VGA_REG
-        Log(("vga: write SR%x = 0x%02x\n", s->sr_index, val));
-#endif
+        Log2(("vga: write SR%x = 0x%02x\n", s->sr_index, val));
         s->sr[s->sr_index] = val & sr_mask[s->sr_index];
 
 #ifndef IN_RC
@@ -690,9 +669,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         s->gr_index = val & 0x0f;
         break;
     case 0x3cf:
-#ifdef DEBUG_VGA_REG
-        Log(("vga: write GR%x = 0x%02x\n", s->gr_index, val));
-#endif
+        Log2(("vga: write GR%x = 0x%02x\n", s->gr_index, val));
         s->gr[s->gr_index] = val & gr_mask[s->gr_index];
 
 #ifndef IN_RC
@@ -714,9 +691,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         break;
     case 0x3b5:
     case 0x3d5:
-#ifdef DEBUG_VGA_REG
-        Log(("vga: write CR%x = 0x%02x\n", s->cr_index, val));
-#endif
+        Log2(("vga: write CR%x = 0x%02x\n", s->cr_index, val));
         /* handle CR0-7 protection */
         if ((s->cr[0x11] & 0x80) && s->cr_index <= 7) {
             /* can always write bit 4 of CR7 */
@@ -793,9 +768,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
     } else {
         val = 0;
     }
-#ifdef DEBUG_BOCHS_VBE
     Log(("VBE: read index=0x%x val=0x%x\n", s->vbe_index, val));
-#endif
     return val;
 }
 
@@ -844,9 +817,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
     uint32_t max_bank;
 
     if (s->vbe_index <= VBE_DISPI_INDEX_NB) {
-#ifdef DEBUG_BOCHS_VBE
         Log(("VBE: write index=0x%x val=0x%x\n", s->vbe_index, val));
-#endif
         switch(s->vbe_index) {
         case VBE_DISPI_INDEX_ID:
             if (val == VBE_DISPI_ID0 ||
@@ -1112,9 +1083,7 @@ static uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr, int *prc)
     int memory_map_mode, plane;
     uint32_t ret;
 
-#ifdef DEBUG_VGA_MEM
-    Log(("vga: read [0x%x] -> ", addr));
-#endif
+    Log3(("vga: read [0x%x] -> ", addr));
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
     RTGCPHYS GCPhys = addr; /* save original address */
@@ -1182,9 +1151,7 @@ static uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr, int *prc)
             ret = (~ret) & 0xff;
         }
     }
-#ifdef DEBUG_VGA_MEM
-    Log((" 0x%02x\n", ret));
-#endif
+    Log3((" 0x%02x\n", ret));
     return ret;
 }
 
@@ -1195,9 +1162,7 @@ static int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
     int memory_map_mode, plane, write_mode, b, func_select, mask;
     uint32_t write_mask, bit_mask, set_mask;
 
-#ifdef DEBUG_VGA_MEM
-    Log(("vga: [0x%x] = 0x%02x\n", addr, val));
-#endif
+    Log3(("vga: [0x%x] = 0x%02x\n", addr, val));
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
     RTGCPHYS GCPhys = addr; /* save original address */
@@ -1242,9 +1207,7 @@ static int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 
             VERIFY_VRAM_WRITE_OFF_RETURN(s, addr);
             s->CTX_SUFF(vram_ptr)[addr] = val;
-#ifdef DEBUG_VGA_MEM
-            Log(("vga: chain4: [0x%x]\n", addr));
-#endif
+            Log3(("vga: chain4: [0x%x]\n", addr));
             s->plane_updated |= mask; /* only used to detect font change */
             vga_set_dirty(s, addr);
         }
@@ -1261,9 +1224,7 @@ static int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
             addr = ((addr & ~1) << 2) | plane;
             VERIFY_VRAM_WRITE_OFF_RETURN(s, addr);
             s->CTX_SUFF(vram_ptr)[addr] = val;
-#ifdef DEBUG_VGA_MEM
-            Log(("vga: odd/even: [0x%x]\n", addr));
-#endif
+            Log3(("vga: odd/even: [0x%x]\n", addr));
             s->plane_updated |= mask; /* only used to detect font change */
             vga_set_dirty(s, addr);
         }
@@ -1376,10 +1337,8 @@ static int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
         ((uint32_t *)s->CTX_SUFF(vram_ptr))[addr] =
             (((uint32_t *)s->CTX_SUFF(vram_ptr))[addr] & ~write_mask) |
             (val & write_mask);
-#ifdef DEBUG_VGA_MEM
-            Log(("vga: latch: [0x%x] mask=0x%08x val=0x%08x\n",
+            Log3(("vga: latch: [0x%x] mask=0x%08x val=0x%08x\n",
                    addr * 4, write_mask, val));
-#endif
             vga_set_dirty(s, (addr << 2));
     }
 
@@ -5210,84 +5169,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 
     /* Clear the VRAM ourselves. */
     if (pThis->vram_ptrR3 && pThis->vram_size)
-    {
-#ifdef LOG_ENABLED /** @todo separate function. */
-        /* First dump the textmode contents to the log; handy for capturing Windows blue screens. */
-        uint8_t graphic_mode;
-        VGAState *s = pThis;
-
-        if (!(s->ar_index & 0x20)) {
-            graphic_mode = GMODE_BLANK;
-        } else {
-            graphic_mode = s->gr[6] & 1;
-        }
-        switch(graphic_mode)
-        case GMODE_TEXT:
-        {
-            int cw, height, width, cheight, cx_min, cx_max, cy, cx;
-            int x_incr;
-            uint8_t *s1, *src, ch, cattr;
-            int line_offset;
-            uint16_t ch_attr;
-
-            line_offset = s->line_offset;
-            s1 = s->CTX_SUFF(vram_ptr) + (s->start_addr * 4);
-
-            /* total width & height */
-            cheight = (s->cr[9] & 0x1f) + 1;
-            cw = 8;
-            if (!(s->sr[1] & 0x01))
-                cw = 9;
-            if (s->sr[1] & 0x08)
-                cw = 16; /* NOTE: no 18 pixel wide */
-            x_incr = cw * ((s->pDrv->cBits + 7) >> 3);
-            width = (s->cr[0x01] + 1);
-            if (s->cr[0x06] == 100) {
-                /* ugly hack for CGA 160x100x16 - explain me the logic */
-                height = 100;
-            } else {
-                height = s->cr[0x12] |
-                    ((s->cr[0x07] & 0x02) << 7) |
-                    ((s->cr[0x07] & 0x40) << 3);
-                height = (height + 1) / cheight;
-            }
-            if ((height * width) > CH_ATTR_SIZE) {
-                /* better than nothing: exit if transient size is too big */
-                break;
-            }
-            RTLogPrintf("VGA textmode BEGIN (%dx%d):\n\n", height, width);
-            for(cy = 0; cy < height; cy++) {
-                src = s1;
-                cx_min = width;
-                cx_max = -1;
-                for(cx = 0; cx < width; cx++) {
-                    ch_attr = *(uint16_t *)src;
-                    if (cx < cx_min)
-                        cx_min = cx;
-                    if (cx > cx_max)
-                        cx_max = cx;
-# ifdef WORDS_BIGENDIAN
-                    ch = ch_attr >> 8;
-                    cattr = ch_attr & 0xff;
-# else
-                    ch = ch_attr & 0xff;
-                    cattr = ch_attr >> 8;
-# endif
-                    RTLogPrintf("%c", ch);
-
-                    src += 8; /* Every second byte of a plane is used in text mode. */
-                }
-                if (cx_max != -1)
-                    RTLogPrintf("\n");
-
-                s1 += line_offset;
-            }
-            RTLogPrintf("VGA textmode END:\n\n");
-        }
-
-#endif /* LOG_ENABLED */
         memset(pThis->vram_ptrR3, 0, pThis->vram_size);
-    }
 
     /*
      * Zero most of it.
