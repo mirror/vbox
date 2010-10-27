@@ -62,6 +62,7 @@ public:
     /** @name Internal interfaces used by ExtPackManager.
      * @{ */
     void *getCallbackTable();
+    HRESULT refresh(bool *pfCanDelete);
     /** @}  */
 
 private:
@@ -108,9 +109,15 @@ class ATL_NO_VTABLE ExtPackManager :
 
     /** @name Internal interfaces used by other Main classes.
      * @{ */
-    int callAllConfigHooks(IConsole *a_pConsole, PVM a_pVM);
-    int callAllNewMachineHooks(IMachine *a_pMachine);
+    int         callAllConfigHooks(IConsole *a_pConsole, PVM a_pVM);
+    int         callAllNewMachineHooks(IMachine *a_pMachine);
     /** @}  */
+
+private:
+    HRESULT     runSetUidToRootHelper(const char *a_pszCommand, ...);
+    ExtPack    *findExtPack(const char *a_pszName);
+    void        removeExtPack(const char *a_pszName);
+    HRESULT     refreshExtPack(const char *a_pszName, bool a_fUnsuableIsError, ExtPack **a_ppExtPack);
 
 private:
     struct Data;
