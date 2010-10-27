@@ -1423,9 +1423,187 @@ DECLINLINE(char *) RTLatin1PrevCp(const char *psz)
 }
 
 
+/** @page pg_rt_str_format  The IPRT Format Strings
+ *
+ * IPRT implements most of the commonly used format types and flags with the
+ * exception of floating point which is completely missing.  In addition IPRT
+ * provides a number of IPRT specific format types for the IPRT typedefs and
+ * other useful things.  Note that several of these extensions are similar to
+ * \%p and doesn't care much if you try add formating flags/width/precision.
+ *
+ *
+ * Group 0a, The commonly used format types:
+ *      - \%s   - Takes a pointer to a zero terminated string (UTF-8) and
+ *                prints it with the optionally adjustment (width, -) and
+ *                length restriction (precision).
+ *      - \%ls  - Same as \%s except that the input is UTF-16 (output UTF-8).
+ *      - \%Ls  - Same as \%s except that the input is UCS-32 (output UTF-8).
+ *      - \%S   - R3: Same as \%s except it is printed in the current codeset
+ *                instead of UTF-8 (source is still UTF-8).
+ *                Other contexts: Same as \%s.
+ *      - \%lS  - Same as \%S except that the input is UTF-16 (output UTF-8).
+ *      - \%LS  - Same as \%S except that the input is UCS-32 (output UTF-8).
+ *      - \%c   - Takes a char and prints it.
+ *      - \%d   - Takes a signed integer and prints it as decimal. Thousand
+ *                separator (\'), zero padding (0), adjustment (-+), width,
+ *                precision
+ *      - \%i   - Same as \%d.
+ *      - \%u   - Takes an unsigned integer and prints it as decimal. Thousand
+ *                separator (\'), zero padding (0), adjustment (-+), width,
+ *                precision
+ *      - \%x   - Takes an unsigned integer and prints it as lowercased
+ *                hexadecimal.  The special hash (\#) flag causes a '0x'
+ *                prefixed to be printed. Zero padding (0), adjustment (-+),
+ *                width, precision.
+ *      - \%X   - Same as \%x except that it is uppercased.
+ *      - \%o   - Takes an unsigned (?) integer and prints it as octal. Zero
+ *                padding (0), adjustment (-+), width, precision.
+ *      - \%p   - Takes a pointer (void technically) and prints it. Zero
+ *                padding (0), adjustment (-+), width, precision.
+ *
+ * The \%d, \%i, \%u, \%x, \%X and \%o format types support the following
+ * argument type specifiers:
+ *      - \%ll  - long long (uint64_t).
+ *      - \%L   - long long (uint64_t).
+ *      - \%l   - long (uint32_t, uint64_t)
+ *      - \%h   - short (int16_t).
+ *      - \%hh  - char (int8_t).
+ *      - \%H   - char (int8_t).
+ *      - \%z   - size_t.
+ *      - \%j   - intmax_t (int64_t).
+ *      - \%t   - ptrdiff_t.
+ * The type in parentheses is typical sizes, however when printing those types
+ * you are better off using the special group 2 format types below (\%RX32 and
+ * such).
+ *
+ *
+ * Group 0b, IPRT format tricks:
+ *      - %M    - Replaces the format string, takes a string pointer.
+ *      - %N    - Nested formatting, takes a pointer to a format string
+ *                followed by the pointer to a va_list variable.  The va_list
+ *                variable will not be modified and the caller must do va_end()
+ *                on it.  Make sure the va_list variable is NOT in a parameter
+ *                list or some gcc versions/targets may get it all wrong.
+ *
+ *
+ * Group 1, the basic runtime typedefs (excluding those which obviously are
+ * pointer):
+ *      - \%RTbool          - Takes a bool value and prints 'true', 'false', or '!%d!'.
+ *      - \%RTfile          - Takes a #RTFILE value.
+ *      - \%RTfmode         - Takes a #RTFMODE value.
+ *      - \%RTfoff          - Takes a #RTFOFF value.
+ *      - \%RTfp16          - Takes a #RTFAR16 value.
+ *      - \%RTfp32          - Takes a #RTFAR32 value.
+ *      - \%RTfp64          - Takes a #RTFAR64 value.
+ *      - \%RTgid           - Takes a #RTGID value.
+ *      - \%RTino           - Takes a #RTINODE value.
+ *      - \%RTint           - Takes a #RTINT value.
+ *      - \%RTiop           - Takes a #RTIOPORT value.
+ *      - \%RTldrm          - Takes a #RTLDRMOD value.
+ *      - \%RTmac           - Takes a #PCRTMAC pointer.
+ *      - \%RTnaddr         - Takes a #PCRTNETADDR value.
+ *      - \%RTnaipv4        - Takes a #RTNETADDRIPV4 value.
+ *      - \%RTnaipv6        - Takes a #PCRTNETADDRIPV6 value.
+ *      - \%RTnthrd         - Takes a #RTNATIVETHREAD value.
+ *      - \%RTnthrd         - Takes a #RTNATIVETHREAD value.
+ *      - \%RTproc          - Takes a #RTPROCESS value.
+ *      - \%RTptr           - Takes a #RTINTPTR or #RTUINTPTR value (but not void *).
+ *      - \%RTreg           - Takes a #RTCCUINTREG value.
+ *      - \%RTsel           - Takes a #RTSEL value.
+ *      - \%RTsem           - Takes a #RTSEMEVENT, #RTSEMEVENTMULTI, #RTSEMMUTEX, #RTSEMFASTMUTEX, or #RTSEMRW value.
+ *      - \%RTsock          - Takes a #RTSOCKET value.
+ *      - \%RTthrd          - Takes a #RTTHREAD value.
+ *      - \%RTuid           - Takes a #RTUID value.
+ *      - \%RTuint          - Takes a #RTUINT value.
+ *      - \%RTunicp         - Takes a #RTUNICP value.
+ *      - \%RTutf16         - Takes a #RTUTF16 value.
+ *      - \%RTuuid          - Takes a #PCRTUUID and will print the UUID as a string.
+ *      - \%RTxuint         - Takes a #RTUINT or #RTINT value, formatting it as hex.
+ *      - \%RGi             - Takes a #RTGCINT value.
+ *      - \%RGp             - Takes a #RTGCPHYS value.
+ *      - \%RGr             - Takes a #RTGCUINTREG value.
+ *      - \%RGu             - Takes a #RTGCUINT value.
+ *      - \%RGv             - Takes a #RTGCPTR, #RTGCINTPTR or #RTGCUINTPTR value.
+ *      - \%RGx             - Takes a #RTGCUINT or #RTGCINT value, formatting it as hex.
+ *      - \%RHi             - Takes a #RTHCINT value.
+ *      - \%RHp             - Takes a #RTHCPHYS value.
+ *      - \%RHr             - Takes a #RTHCUINTREG value.
+ *      - \%RHu             - Takes a #RTHCUINT value.
+ *      - \%RHv             - Takes a #RTHCPTR, #RTHCINTPTR or #RTHCUINTPTR value.
+ *      - \%RHx             - Takes a #RTHCUINT or #RTHCINT value, formatting it as hex.
+ *      - \%RRv             - Takes a #RTRCPTR, #RTRCINTPTR or #RTRCUINTPTR value.
+ *      - \%RCi             - Takes a #RTINT value.
+ *      - \%RCp             - Takes a #RTCCPHYS value.
+ *      - \%RCr             - Takes a #RTCCUINTREG value.
+ *      - \%RCu             - Takes a #RTUINT value.
+ *      - \%RCv             - Takes a #uintptr_t, #intptr_t, void * value.
+ *      - \%RCx             - Takes a #RTUINT or #RTINT value, formatting it as hex.
+ *
+ *
+ * Group 2, the generic integer types which are prefered over relying on what
+ * bit-count a 'long', 'short',  or 'long long' has on a platform. This are
+ * highly prefered for the [u]intXX_t kind of types:
+ *      - \%RI[8|16|32|64]  - Signed integer value of the specifed bit count.
+ *      - \%RU[8|16|32|64]  - Unsigned integer value of the specifed bit count.
+ *      - \%RX[8|16|32|64]  - Hexadecimal integer value of the specifed bit count.
+ *
+ *
+ * Group 3, hex dumpers and other complex stuff which requires more than simple
+ * formatting:
+ *      - \%Rhxd            - Takes a pointer to the memory which is to be dumped in typical
+ *                            hex format. Use the precision to specify the length, and the width to
+ *                            set the number of bytes per line. Default width and precision is 16.
+ *      - \%Rhxs            - Takes a pointer to the memory to be displayed as a hex string,
+ *                            i.e. a series of space separated bytes formatted as two digit hex value.
+ *                            Use the precision to specify the length. Default length is 16 bytes.
+ *                            The width, if specified, is ignored.
+ *      - \%Rrc             - Takes an integer iprt status code as argument. Will insert the
+ *                            status code define corresponding to the iprt status code.
+ *      - \%Rrs             - Takes an integer iprt status code as argument. Will insert the
+ *                            short description of the specified status code.
+ *      - \%Rrf             - Takes an integer iprt status code as argument. Will insert the
+ *                            full description of the specified status code.
+ *      - \%Rra             - Takes an integer iprt status code as argument. Will insert the
+ *                            status code define + full description.
+ *      - \%Rwc             - Takes a long Windows error code as argument. Will insert the status
+ *                            code define corresponding to the Windows error code.
+ *      - \%Rwf             - Takes a long Windows error code as argument. Will insert the
+ *                            full description of the specified status code.
+ *      - \%Rwa             - Takes a long Windows error code as argument. Will insert the
+ *                            error code define + full description.
+ *
+ *      - \%Rhrc            - Takes a COM/XPCOM status code as argument. Will insert the status
+ *                            code define corresponding to the Windows error code.
+ *      - \%Rhrf            - Takes a COM/XPCOM status code as argument. Will insert the
+ *                            full description of the specified status code.
+ *      - \%Rhra            - Takes a COM/XPCOM error code as argument. Will insert the
+ *                            error code define + full description.
+ *
+ *      - \%Rfn             - Pretty printing of a function or method. It drops the
+ *                            return code and parameter list.
+ *      - \%Rbn             - Prints the base name.  For dropping the path in
+ *                            order to save space when printing a path name.
+ *
+ * On other platforms, \%Rw? simply prints the argument in a form of 0xXXXXXXXX.
+ *
+ *
+ * Group 4, structure dumpers:
+ *      - \%RDtimespec      - Takes a PCRTTIMESPEC.
+ *
+ *
+ * Group 5, XML / HTML escapers:
+ *      - \%RMas            - Takes a string pointer (const char *) and outputs
+ *                            it as an attribute value with the proper escaping.
+ *                            This typically ends up in double quotes.
+ *
+ *      - \%RMes            - Takes a string pointer (const char *) and outputs
+ *                            it as an element with the necessary escaping.
+ *
+ *
+ */
 
 #ifndef DECLARED_FNRTSTROUTPUT          /* duplicated in iprt/log.h */
-#define DECLARED_FNRTSTROUTPUT
+# define DECLARED_FNRTSTROUTPUT
 /**
  * Output callback.
  *
@@ -1508,7 +1686,7 @@ typedef FNSTRFORMAT *PFNSTRFORMAT;
  * @param   pvArgOutput Argument to the output worker.
  * @param   pfnFormat   Custom format worker.
  * @param   pvArgFormat Argument to the format worker.
- * @param   pszFormat   Format string pointer.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   InArgs      Argument list.
  */
 RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *pszFormat, va_list InArgs);
@@ -1525,7 +1703,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
  * @param   pvArgOutput Argument to the output worker.
  * @param   pfnFormat   Custom format worker.
  * @param   pvArgFormat Argument to the format worker.
- * @param   pszFormat   Format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         Argument list.
  */
 RTDECL(size_t) RTStrFormat(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRFORMAT pfnFormat, void *pvArgFormat, const char *pszFormat, ...);
@@ -1627,7 +1805,7 @@ RTDECL(int) RTStrFormatTypeSetUser(const char *pszType, void *pvUser);
  *          terminator.
  * @param   pszBuffer   Output buffer.
  * @param   cchBuffer   Size of the output buffer.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
  */
 RTDECL(size_t) RTStrPrintfV(char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args);
@@ -1639,7 +1817,7 @@ RTDECL(size_t) RTStrPrintfV(char *pszBuffer, size_t cchBuffer, const char *pszFo
  *          terminator.
  * @param   pszBuffer   Output buffer.
  * @param   cchBuffer   Size of the output buffer.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
 RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...);
@@ -1654,7 +1832,7 @@ RTDECL(size_t) RTStrPrintf(char *pszBuffer, size_t cchBuffer, const char *pszFor
  * @param   pvArg       Argument to the pfnFormat function.
  * @param   pszBuffer   Output buffer.
  * @param   cchBuffer   Size of the output buffer.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
  */
 RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args);
@@ -1668,7 +1846,7 @@ RTDECL(size_t) RTStrPrintfExV(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuff
  * @param   pvArg       Argument to the pfnFormat function.
  * @param   pszBuffer   Output buffer.
  * @param   cchBuffer   Size of the output buffer.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
 RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffer, size_t cchBuffer, const char *pszFormat, ...);
@@ -1683,7 +1861,7 @@ RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffe
  * @param   ppszBuffer  Where to store the pointer to the allocated output buffer.
  *                      The buffer should be freed using RTStrFree().
  *                      On failure *ppszBuffer will be set to NULL.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
  */
 #define RTStrAPrintfV(ppszBuffer, pszFormat, args)      RTStrAPrintfVTag((ppszBuffer), (pszFormat), (args), RTSTR_TAG)
@@ -1697,7 +1875,7 @@ RTDECL(size_t) RTStrPrintfEx(PFNSTRFORMAT pfnFormat, void *pvArg, char *pszBuffe
  * @param   ppszBuffer  Where to store the pointer to the allocated output buffer.
  *                      The buffer should be freed using RTStrFree().
  *                      On failure *ppszBuffer will be set to NULL.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
@@ -1712,7 +1890,7 @@ RTDECL(int) RTStrAPrintfVTag(char **ppszBuffer, const char *pszFormat, va_list a
  * @param   ppszBuffer  Where to store the pointer to the allocated output buffer.
  *                      The buffer should be freed using RTStrFree().
  *                      On failure *ppszBuffer will be set to NULL.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
 DECLINLINE(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...)
@@ -1735,7 +1913,7 @@ DECLINLINE(int) RTStrAPrintf(char **ppszBuffer, const char *pszFormat, ...)
  *                      The buffer should be freed using RTStrFree().
  *                      On failure *ppszBuffer will be set to NULL.
  * @param   pszTag      Allocation tag used for statistics and such.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
 DECLINLINE(int) RTStrAPrintfTag(char **ppszBuffer, const char *pszTag, const char *pszFormat, ...)
@@ -1753,7 +1931,7 @@ DECLINLINE(int) RTStrAPrintfTag(char **ppszBuffer, const char *pszTag, const cha
  *
  * @returns Formatted string. Use RTStrFree() to free it. NULL when out of
  *          memory.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
  */
 #define RTStrAPrintf2V(pszFormat, args)     RTStrAPrintf2VTag((pszFormat), (args), RTSTR_TAG)
@@ -1763,7 +1941,7 @@ DECLINLINE(int) RTStrAPrintfTag(char **ppszBuffer, const char *pszTag, const cha
  *
  * @returns Formatted string. Use RTStrFree() to free it. NULL when out of
  *          memory.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   args        The format argument.
  * @param   pszTag      Allocation tag used for statistics and such.
  */
@@ -1774,7 +1952,7 @@ RTDECL(char *) RTStrAPrintf2VTag(const char *pszFormat, va_list args, const char
  *
  * @returns Formatted string. Use RTStrFree() to free it. NULL when out of
  *          memory.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
 DECLINLINE(char *) RTStrAPrintf2(const char *pszFormat, ...)
@@ -1793,7 +1971,7 @@ DECLINLINE(char *) RTStrAPrintf2(const char *pszFormat, ...)
  * @returns Formatted string. Use RTStrFree() to free it. NULL when out of
  *          memory.
  * @param   pszTag      Allocation tag used for statistics and such.
- * @param   pszFormat   The format string.
+ * @param   pszFormat   Pointer to the format string, @see pg_rt_str_format.
  * @param   ...         The format argument.
  */
 DECLINLINE(char *) RTStrAPrintf2Tag(const char *pszTag, const char *pszFormat, ...)
