@@ -186,15 +186,11 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 
     if (context >= 0 && window >= 0) {
         mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
-        if (!mural && window == MAGIC_OFFSET &&
-                !cr_server.clients[0]->conn->actual_network) {
-            /* We're reading from a file and not a real network connection so
-             * we have to fudge the window id here.
-             */
-            window = 0;
-            mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
+        if (!mural)
+        {
+            crWarning("CRServer: invalid window %d passed to crServerDispatchMakeCurrent()");
+            return;
         }
-        CRASSERT(mural);
 
         /* Update the state tracker's current context */
         ctx = (CRContext *) crHashtableSearch(cr_server.contextTable, context);
