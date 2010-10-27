@@ -1564,11 +1564,10 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
                     else
                         rc = VERR_VD_DMG_INVALID_HEADER;
 
+                    RTMemFree(pBlkx);
+
                     if (RT_FAILURE(rc))
-                    {
-                        RTMemFree(pBlkx);
                         break;
-                    }
                 }
             }
             else
