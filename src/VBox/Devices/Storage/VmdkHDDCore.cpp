@@ -2468,32 +2468,12 @@ static int vmdkParseDescriptor(PVMDKIMAGE pImage, char *pDescData,
 }
 
 /**
- * Internal: write/update the descriptor part of the image.
+ * Internal : Prepares the descriptor to write to the image.
  */
-static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
+static int vmdkDescriptorPrepare(PVMDKIMAGE pImage, uint64_t cbLimit,
+                                 void **ppvData, size_t *pcbData)
 {
     int rc = VINF_SUCCESS;
-    uint64_t cbLimit;
-    uint64_t uOffset;
-    PVMDKFILE pDescFile;
-
-    if (pImage->pDescData)
-    {
-        /* Separate descriptor file. */
-        uOffset = 0;
-        cbLimit = 0;
-        pDescFile = pImage->pFile;
-    }
-    else
-    {
-        /* Embedded descriptor file. */
-        uOffset = VMDK_SECTOR2BYTE(pImage->pExtents[0].uDescriptorSector);
-        cbLimit = VMDK_SECTOR2BYTE(pImage->pExtents[0].cDescriptorSectors);
-        pDescFile = pImage->pExtents[0].pFile;
-    }
-    /* Bail out if there is no file to write to. */
-    if (pDescFile == NULL)
-        return VERR_INVALID_PARAMETER;
 
     /*
      * Allocate temporary descriptor buffer.
@@ -2534,7 +2514,7 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
                     rc = VERR_NO_MEMORY;
                     break;
                 }
-                pszDescriptorNew = pszDescriptor;
+                pszDescriptor = pszDescriptorNew;
                 cbDescriptor += cb + 4 * _1K;
             }
         }
@@ -2551,14 +2531,54 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
 
     if (RT_SUCCESS(rc))
     {
-        rc = vmdkFileWriteSync(pImage, pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, NULL);
+        *ppvData = pszDescriptor;
+        *pcbData = offDescriptor;
+    }
+
+    return rc;
+}
+
+/**
+ * Internal: write/update the descriptor part of the image.
+ */
+static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
+{
+    int rc = VINF_SUCCESS;
+    uint64_t cbLimit;
+    uint64_t uOffset;
+    PVMDKFILE pDescFile;
+    void *pvDescriptor;
+    size_t cbDescriptor;
+
+    if (pImage->pDescData)
+    {
+        /* Separate descriptor file. */
+        uOffset = 0;
+        cbLimit = 0;
+        pDescFile = pImage->pFile;
+    }
+    else
+    {
+        /* Embedded descriptor file. */
+        uOffset = VMDK_SECTOR2BYTE(pImage->pExtents[0].uDescriptorSector);
+        cbLimit = VMDK_SECTOR2BYTE(pImage->pExtents[0].cDescriptorSectors);
+        pDescFile = pImage->pExtents[0].pFile;
+    }
+    /* Bail out if there is no file to write to. */
+    if (pDescFile == NULL)
+        return VERR_INVALID_PARAMETER;
+
+    rc = vmdkDescriptorPrepare(pImage, cbLimit, &pvDescriptor, &cbDescriptor);
+    if (RT_SUCCESS(rc))
+    {
+        rc = vmdkFileWriteSync(pImage, pDescFile, uOffset, pvDescriptor, cbLimit ? cbLimit : cbDescriptor, NULL);
         if (RT_FAILURE(rc))
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
     }
 
     if (RT_SUCCESS(rc) && !cbLimit)
     {
-        rc = vmdkFileSetSize(pImage, pDescFile, offDescriptor);
+        rc = vmdkFileSetSize(pImage, pDescFile, cbDescriptor);
         if (RT_FAILURE(rc))
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error truncating descriptor in '%s'"), pImage->pszFilename);
     }
@@ -2566,7 +2586,7 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
     if (RT_SUCCESS(rc))
         pImage->Descriptor.fDirty = false;
 
-    RTMemFree(pszDescriptor);
+    RTMemFree(pvDescriptor);
     return rc;
 }
 
@@ -2579,6 +2599,8 @@ static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
     uint64_t cbLimit;
     uint64_t uOffset;
     PVMDKFILE pDescFile;
+    void *pvDescriptor;
+    size_t cbDescriptor;
 
     if (pImage->pDescData)
     {
@@ -2598,63 +2620,10 @@ static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
     if (pDescFile == NULL)
         return VERR_INVALID_PARAMETER;
 
-    /*
-     * Allocate temporary descriptor buffer.
-     * In case there is no limit allocate a default
-     * and increase if required.
-     */
-    size_t cbDescriptor = cbLimit ? cbLimit : 4 * _1K;
-    char *pszDescriptor = (char *)RTMemAllocZ(cbDescriptor);
-    unsigned offDescriptor = 0;
-
-    if (!pszDescriptor)
-        return VERR_NO_MEMORY;
-
-    for (unsigned i = 0; i < pImage->Descriptor.cLines; i++)
-    {
-        const char *psz = pImage->Descriptor.aLines[i];
-        size_t cb = strlen(psz);
-
-        /*
-         * Increase the descriptor if there is no limit and
-         * there is not enough room left for this line.
-         */
-        if (offDescriptor + cb + 1 > cbDescriptor)
-        {
-            if (cbLimit)
-            {
-                rc = vmdkError(pImage, VERR_BUFFER_OVERFLOW, RT_SRC_POS, N_("VMDK: descriptor too long in '%s'"), pImage->pszFilename);
-                break;
-            }
-            else
-            {
-                char *pszDescriptorNew = NULL;
-                LogFlow(("Increasing descriptor cache\n"));
-
-                pszDescriptorNew = (char *)RTMemRealloc(pszDescriptor, cbDescriptor + cb + 4 * _1K);
-                if (!pszDescriptorNew)
-                {
-                    rc = VERR_NO_MEMORY;
-                    break;
-                }
-                pszDescriptorNew = pszDescriptor;
-                cbDescriptor += cb + 4 * _1K;
-            }
-        }
-
-        if (cb > 0)
-        {
-            memcpy(pszDescriptor + offDescriptor, psz, cb);
-            offDescriptor += cb;
-        }
-
-        memcpy(pszDescriptor + offDescriptor, "\n", 1);
-        offDescriptor++;
-    }
-
+    rc = vmdkDescriptorPrepare(pImage, cbLimit, &pvDescriptor, &cbDescriptor);
     if (RT_SUCCESS(rc))
     {
-        rc = vmdkFileWriteMetaAsync(pImage, pDescFile, uOffset, pszDescriptor, cbLimit ? cbLimit : offDescriptor, pIoCtx, NULL, NULL);
+        rc = vmdkFileWriteMetaAsync(pImage, pDescFile, uOffset, pvDescriptor, cbLimit ? cbLimit : cbDescriptor, pIoCtx, NULL, NULL);
         if (   RT_FAILURE(rc)
             && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error writing descriptor in '%s'"), pImage->pszFilename);
@@ -2662,7 +2631,7 @@ static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
 
     if (RT_SUCCESS(rc) && !cbLimit)
     {
-        rc = vmdkFileSetSize(pImage, pDescFile, offDescriptor);
+        rc = vmdkFileSetSize(pImage, pDescFile, cbDescriptor);
         if (RT_FAILURE(rc))
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error truncating descriptor in '%s'"), pImage->pszFilename);
     }
@@ -2670,7 +2639,7 @@ static int vmdkWriteDescriptorAsync(PVMDKIMAGE pImage, PVDIOCTX pIoCtx)
     if (RT_SUCCESS(rc))
         pImage->Descriptor.fDirty = false;
 
-    RTMemFree(pszDescriptor);
+    RTMemFree(pvDescriptor);
     return rc;
 
 }
