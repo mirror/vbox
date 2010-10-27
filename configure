@@ -180,6 +180,7 @@ fail()
   if [ -z "$nofatal" -o "x$1" != "x" ]; then
     cleanup
     rm -f $ENV
+    echo "Check $LOG for details"
     exit 1
   fi
 }
@@ -486,7 +487,7 @@ check_bcc()
   if check_avail "$BCC" BCC; then
     bcc_ver=`$BCC -v 2>&1|grep version|sed 's+^bcc: version \(.*\)+\1+'`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "BCC not found"
       fail
     else
       echo "compiling the following source file:" >> $LOG
@@ -504,7 +505,7 @@ EOF
       echo "$BCC -B $bcc_dir -C-c -3 -S -o $ODIR.tmp_out $ODIR.tmp_src.c" >> $LOG
       $BCC -B $bcc_dir -C-c -3 -S -o $ODIR.tmp_out $ODIR.tmp_src.c >> $LOG 2>&1
       if [ $? -ne 0 ]; then
-        log_failure "not found"
+        log_failure "BCC not working"
         fail
       else
         log_success "found version $bcc_ver"
@@ -526,7 +527,7 @@ check_as86()
   if check_avail "$AS86" AS86; then
     as86_ver=`$AS86 -v 2>&1|grep version|sed 's+^as86 version: \(.*\)+\1+'`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "as86 not found"
       fail
     else
       log_success "found version $as86_ver"
@@ -545,7 +546,7 @@ check_yasm()
   if check_avail "$YASM" YASM; then
     yasm_ver=`$YASM --version|grep "^yasm"|sed 's+^yasm \(.*\)+\1+'`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "yasm not found"
       fail
     else
       yasm_maj=`echo $yasm_ver|cut -d. -f1`
@@ -572,7 +573,7 @@ check_iasl()
   if check_avail "$IASL" IASL; then
     iasl_ver=`$IASL|grep version|sed 's+^ASL.*version \([0-9]*\).*+\1+'`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "iasl not found"
       fail
     else
       log_success "found version $iasl_ver"
@@ -591,7 +592,7 @@ check_xsltproc()
   if check_avail "$XSLTPROC" XSLTPROC; then
     xsltproc_ver=`$XSLTPROC --version`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "xsltproc not found"
       fail
     else
       log_success "found"
@@ -610,7 +611,7 @@ check_mkisofs()
   if which_wrapper $GENISOIMAGE > /dev/null; then
     mkisofs_ver=`$GENISOIMAGE --version`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "mkisofs not found"
       fail
     else
       log_success "found $mkisofs_ver"
@@ -619,7 +620,7 @@ check_mkisofs()
   elif check_avail "$MKISOFS" MKISOFS; then
     mkisofs_ver=`$MKISOFS --version`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "mkisofs not working"
       fail
     else
       log_success "found $mkisofs_ver"
@@ -640,7 +641,7 @@ check_libxml2()
     if which_wrapper pkg-config > /dev/null; then
       libxml2_ver=`pkg-config libxml-2.0 --modversion 2>> $LOG`
       if [ $? -ne 0 ]; then
-        log_failure "not found"
+        log_failure "libxml2 not found"
         fail
       else
         FLGXML2=`pkg-config libxml-2.0 --cflags`
@@ -672,7 +673,7 @@ EOF
     elif which_wrapper xml2-config; then
       libxml2_ver=`xml2-config --version`
       if [ $? -ne 0 ]; then
-        log_failure "not found"
+        log_failure "xml2-config not found"
         fail
       else
         log_success "found version $libxml2_ver"
@@ -723,7 +724,7 @@ check_libxslt()
     if which_wrapper pkg-config > /dev/null; then
       libxslt_ver=`pkg-config libxslt --modversion 2>> $LOG`
       if [ $? -ne 0 ]; then
-        log_failure "not found"
+        log_failure "libxslt not found"
         fail
       else
         FLGXSLT=`pkg-config libxslt --cflags`
@@ -755,7 +756,7 @@ EOF
     elif which_wrapper xslt-config; then
       libxslt_ver=`xslt-config --version`
       if [ $? -ne 0 ]; then
-        log_failure "not found"
+        log_failure "xslt-config not working"
         fail
       else
         log_success "found version $libxslt_ver"
@@ -803,7 +804,7 @@ check_libidl()
   if which_wrapper libIDL-config-2 > /dev/null; then
     libidl_ver=`libIDL-config-2 --version`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "libIDL-config-2 not working"
       fail
     else
       log_success "found version $libidl_ver"
@@ -813,7 +814,7 @@ check_libidl()
   elif check_avail "libIDL-config" libIDL-config; then
     libidl_ver=`libIDL-config --version`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "libIDL-config not working"
       fail
     else
       log_success "found version $libidl_ver"
@@ -1018,7 +1019,7 @@ EOF
       return 0;
     fi
   fi
-  echo "not found."
+  echo "pam0.x not found"
   test_header linux_pam
   cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
@@ -1106,7 +1107,7 @@ EOF
       fi
     fi
   else
-    log_failure "not found"
+    log_failure "SDL not found"
     fail
   fi
 }
@@ -1460,7 +1461,7 @@ check_qt4()
             PKG_CONFIG_PATH=/usr/lib/qt4/lib/pkgconfig \
             pkg-config QtCore --modversion 2>> $LOG`
         if [ $? -ne 0 ]; then
-          log_failure "not found"
+          log_failure "QtCore not found"
           fail
         else
           FLGQT4=`\
@@ -1564,7 +1565,7 @@ EOF
             if which_wrapper "$q/bin/moc-qt4" > /dev/null; then
               moc_ver=`$q/bin/moc-qt4 -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
               if [ $? -ne 0 ]; then
-                log_failure "not found"
+                log_failure "moc-qt4 not working"
                 fail
               else
                 log_success "found version $moc_ver"
@@ -1578,7 +1579,7 @@ EOF
             elif which_wrapper "$q/bin/moc" > /dev/null; then
               moc_ver=`$q/bin/moc -v 2>&1|sed 's+^.*(Qt \(.*\))+\1+'`
               if [ $? -ne 0 ]; then
-                log_failure "not found"
+                log_failure "moc not working"
                 fail
               else
                 log_success "found version $moc_ver"
@@ -1593,11 +1594,11 @@ EOF
         fi
       fi
     else
-      log_failure "not found"
+      log_failure "qt4 not working"
       fail
     fi
   else
-    log_failure "not found"
+    log_failure "qt4 not found"
     fail
   fi
 }
@@ -1677,7 +1678,7 @@ check_kchmviewer()
   if check_avail "$KCHMVIEWER" KCHMVIEWER; then
     kchmviewer_ver=`$KCHMVIEWER --version|grep "^KchmViewer:"|sed 's+^KchmViewer: \(.*\)+\1+'`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "kchmviewer not working"
       fail
     else
       log_success "found version $kchmviewer_ver"
@@ -1887,11 +1888,11 @@ EOF
       cnf_append "VBOX_PATH_PYTHON_INC" "$p/include/$d"
       cnf_append "VBOX_LIB_PYTHON"      "$p/$b/lib$d.so"
     else
-      log_failure "not found"
+      log_failure "Python not working"
       fail
     fi
   else
-    log_failure "not found"
+    log_failure "Python not found"
     fail
   fi
 }
@@ -2060,7 +2061,7 @@ check_makeself()
   if check_avail "$MAKESELF" makeself; then
     makeself_ver=`$MAKESELF --version|grep version|sed 's+^Makeself.*version \([0-9\.]*\).*+\1+'`
     if [ $? -ne 0 ]; then
-      log_failure "not found"
+      log_failure "makeself not working"
       fail
     else
       log_success "found version $makeself_ver"
