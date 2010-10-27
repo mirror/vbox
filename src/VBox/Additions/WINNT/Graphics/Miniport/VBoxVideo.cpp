@@ -57,6 +57,47 @@ uint32_t gCustomBPP  = 0;
 
 int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 
+static VP_STATUS VBoxVideoFindAdapter(
+   IN PVOID HwDeviceExtension,
+   IN PVOID HwContext,
+   IN PWSTR ArgumentString,
+   IN OUT PVIDEO_PORT_CONFIG_INFO ConfigInfo,
+   OUT PUCHAR Again);
+
+static BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension);
+
+static BOOLEAN VBoxVideoStartIO(
+   PVOID HwDeviceExtension,
+   PVIDEO_REQUEST_PACKET RequestPacket);
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+static BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension);
+#endif
+
+
+static BOOLEAN VBoxVideoResetHW(
+   PVOID HwDeviceExtension,
+   ULONG Columns,
+   ULONG Rows);
+
+static VP_STATUS VBoxVideoGetPowerState(
+   PVOID HwDeviceExtension,
+   ULONG HwId,
+   PVIDEO_POWER_MANAGEMENT VideoPowerControl);
+
+static VP_STATUS VBoxVideoSetPowerState(
+   PVOID HwDeviceExtension,
+   ULONG HwId,
+   PVIDEO_POWER_MANAGEMENT VideoPowerControl);
+
+static VP_STATUS VBoxVideoGetChildDescriptor(
+   PVOID HwDeviceExtension,
+   PVIDEO_CHILD_ENUM_INFO ChildEnumInfo,
+   PVIDEO_CHILD_TYPE VideoChildType,
+   PUCHAR pChildDescriptor,
+   PULONG pUId,
+   PULONG pUnused);
+
 #ifndef VBOX_WITH_WDDM
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 {
@@ -163,6 +204,10 @@ VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
 {
     return VideoPortSetRegistryParameters(Reg, pName, &Val, sizeof(Val));
 }
+
+static void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension,
+                                VBOXVIDEOPORTPROCS *pCallbacks,
+                                PVIDEO_PORT_CONFIG_INFO pConfigInfo);
 
 #endif /* #ifndef VBOX_WITH_WDDM */
 
@@ -1758,6 +1803,16 @@ BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
 
+static VOID VBoxVideoHGSMIDpc(
+    IN PVOID  HwDeviceExtension,
+    IN PVOID  Context
+    )
+{
+    PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION)HwDeviceExtension;
+
+    hgsmiProcessHostCommandQueue(commonFromDeviceExt(PrimaryExtension));
+}
+
 BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
 {
     PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)HwDeviceExtension;
@@ -1772,7 +1827,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
                 if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
                 {
                     /* schedule a DPC*/
-                    BOOLEAN bResult = PrimaryExtension->u.primary.VideoPortProcs.pfnQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, (PVOID)1);
+                    BOOLEAN bResult = PrimaryExtension->u.primary.VideoPortProcs.pfnQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, NULL);
                     Assert(bResult);
                 }
                 /* clear the IRQ */
@@ -2879,6 +2934,229 @@ VP_STATUS VBoxVideoGetChildDescriptor(
 
     return ERROR_NO_MORE_DEVICES;
 }
+
+
+#ifndef VBOX_WITH_WDDM
+VP_STATUS vboxWaitForSingleObjectVoid(IN PVOID  HwDeviceExtension, IN PVOID  Object, IN PLARGE_INTEGER  Timeout  OPTIONAL)
+{
+    return ERROR_INVALID_FUNCTION;
+}
+
+LONG vboxSetEventVoid(IN PVOID  HwDeviceExtension, IN PEVENT  pEvent)
+{
+    return 0;
+}
+
+VOID vboxClearEventVoid (IN PVOID  HwDeviceExtension, IN PEVENT  pEvent)
+{
+}
+
+VP_STATUS vboxCreateEventVoid(IN PVOID  HwDeviceExtension, IN ULONG  EventFlag, IN PVOID  Unused, OUT PEVENT  *ppEvent)
+{
+    return ERROR_INVALID_FUNCTION;
+}
+
+VP_STATUS vboxDeleteEventVoid(IN PVOID  HwDeviceExtension, IN PEVENT  pEvent)
+{
+    return ERROR_INVALID_FUNCTION;
+}
+
+VP_STATUS vboxCreateSpinLockVoid (IN PVOID  HwDeviceExtension, OUT PSPIN_LOCK  *SpinLock)
+{
+    return ERROR_INVALID_FUNCTION;
+}
+
+VP_STATUS vboxDeleteSpinLockVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock)
+{
+    return ERROR_INVALID_FUNCTION;
+}
+
+VOID vboxAcquireSpinLockVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock, OUT PUCHAR  OldIrql)
+{
+}
+
+VOID vboxReleaseSpinLockVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock, IN UCHAR  NewIrql)
+{
+}
+
+VOID vboxAcquireSpinLockAtDpcLevelVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock)
+{
+}
+
+VOID vboxReleaseSpinLockFromDpcLevelVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock)
+{
+}
+
+PVOID vboxAllocatePoolVoid(IN PVOID  HwDeviceExtension, IN VBOXVP_POOL_TYPE  PoolType, IN size_t  NumberOfBytes, IN ULONG  Tag)
+{
+    return NULL;
+}
+
+VOID vboxFreePoolVoid(IN PVOID  HwDeviceExtension, IN PVOID  Ptr)
+{
+}
+
+BOOLEAN vboxQueueDpcVoid(IN PVOID  HwDeviceExtension, IN PMINIPORT_DPC_ROUTINE  CallbackRoutine, IN PVOID  Context)
+{
+    return FALSE;
+}
+
+void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPORTPROCS *pCallbacks, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
+{
+    memset(pCallbacks, 0, sizeof(VBOXVIDEOPORTPROCS));
+
+    if (vboxQueryWinVersion() <= WINNT4)
+    {
+        /* VideoPortGetProcAddress is available for >= win2k */
+        pCallbacks->pfnWaitForSingleObject = vboxWaitForSingleObjectVoid;
+        pCallbacks->pfnSetEvent = vboxSetEventVoid;
+        pCallbacks->pfnClearEvent = vboxClearEventVoid;
+        pCallbacks->pfnCreateEvent = vboxCreateEventVoid;
+        pCallbacks->pfnDeleteEvent = vboxDeleteEventVoid;
+        pCallbacks->pfnCreateSpinLock = vboxCreateSpinLockVoid;
+        pCallbacks->pfnDeleteSpinLock = vboxDeleteSpinLockVoid;
+        pCallbacks->pfnAcquireSpinLock = vboxAcquireSpinLockVoid;
+        pCallbacks->pfnReleaseSpinLock = vboxReleaseSpinLockVoid;
+        pCallbacks->pfnAcquireSpinLockAtDpcLevel = vboxAcquireSpinLockAtDpcLevelVoid;
+        pCallbacks->pfnReleaseSpinLockFromDpcLevel = vboxReleaseSpinLockFromDpcLevelVoid;
+        pCallbacks->pfnAllocatePool = vboxAllocatePoolVoid;
+        pCallbacks->pfnFreePool = vboxFreePoolVoid;
+        pCallbacks->pfnQueueDpc = vboxQueueDpcVoid;
+        return;
+    }
+
+    pCallbacks->pfnWaitForSingleObject = (PFNWAITFORSINGLEOBJECT)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortWaitForSingleObject");
+    Assert(pCallbacks->pfnWaitForSingleObject);
+
+    pCallbacks->pfnSetEvent = (PFNSETEVENT)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortSetEvent");
+    Assert(pCallbacks->pfnSetEvent);
+
+    pCallbacks->pfnClearEvent = (PFNCLEAREVENT)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortClearEvent");
+    Assert(pCallbacks->pfnClearEvent);
+
+    pCallbacks->pfnCreateEvent = (PFNCREATEEVENT)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortCreateEvent");
+    Assert(pCallbacks->pfnCreateEvent);
+
+    pCallbacks->pfnDeleteEvent = (PFNDELETEEVENT)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortDeleteEvent");
+    Assert(pCallbacks->pfnDeleteEvent);
+
+    if(pCallbacks->pfnWaitForSingleObject
+            && pCallbacks->pfnSetEvent
+            && pCallbacks->pfnClearEvent
+            && pCallbacks->pfnCreateEvent
+            && pCallbacks->pfnDeleteEvent)
+    {
+        pCallbacks->fSupportedTypes |= VBOXVIDEOPORTPROCS_EVENT;
+    }
+    else
+    {
+        pCallbacks->pfnWaitForSingleObject = vboxWaitForSingleObjectVoid;
+        pCallbacks->pfnSetEvent = vboxSetEventVoid;
+        pCallbacks->pfnClearEvent = vboxClearEventVoid;
+        pCallbacks->pfnCreateEvent = vboxCreateEventVoid;
+        pCallbacks->pfnDeleteEvent = vboxDeleteEventVoid;
+    }
+
+    pCallbacks->pfnCreateSpinLock = (PFNCREATESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortCreateSpinLock");
+    Assert(pCallbacks->pfnCreateSpinLock);
+
+    pCallbacks->pfnDeleteSpinLock = (PFNDELETESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortDeleteSpinLock");
+    Assert(pCallbacks->pfnDeleteSpinLock);
+
+    pCallbacks->pfnAcquireSpinLock = (PFNACQUIRESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortAcquireSpinLock");
+    Assert(pCallbacks->pfnAcquireSpinLock);
+
+    pCallbacks->pfnReleaseSpinLock = (PFNRELEASESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortReleaseSpinLock");
+    Assert(pCallbacks->pfnReleaseSpinLock);
+
+    pCallbacks->pfnAcquireSpinLockAtDpcLevel = (PFNACQUIRESPINLOCKATDPCLEVEL)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortAcquireSpinLockAtDpcLevel");
+    Assert(pCallbacks->pfnAcquireSpinLockAtDpcLevel);
+
+    pCallbacks->pfnReleaseSpinLockFromDpcLevel = (PFNRELEASESPINLOCKFROMDPCLEVEL)(pConfigInfo->VideoPortGetProcAddress)
+                (PrimaryExtension,
+                 (PUCHAR)"VideoPortReleaseSpinLockFromDpcLevel");
+    Assert(pCallbacks->pfnReleaseSpinLockFromDpcLevel);
+
+    if(pCallbacks->pfnCreateSpinLock
+            && pCallbacks->pfnDeleteSpinLock
+            && pCallbacks->pfnAcquireSpinLock
+            && pCallbacks->pfnReleaseSpinLock
+            && pCallbacks->pfnAcquireSpinLockAtDpcLevel
+            && pCallbacks->pfnReleaseSpinLockFromDpcLevel)
+    {
+        pCallbacks->fSupportedTypes |= VBOXVIDEOPORTPROCS_SPINLOCK;
+    }
+    else
+    {
+        pCallbacks->pfnCreateSpinLock = vboxCreateSpinLockVoid;
+        pCallbacks->pfnDeleteSpinLock = vboxDeleteSpinLockVoid;
+        pCallbacks->pfnAcquireSpinLock = vboxAcquireSpinLockVoid;
+        pCallbacks->pfnReleaseSpinLock = vboxReleaseSpinLockVoid;
+        pCallbacks->pfnAcquireSpinLockAtDpcLevel = vboxAcquireSpinLockAtDpcLevelVoid;
+        pCallbacks->pfnReleaseSpinLockFromDpcLevel = vboxReleaseSpinLockFromDpcLevelVoid;
+    }
+
+    pCallbacks->pfnAllocatePool = (PFNALLOCATEPOOL)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortAllocatePool");
+    Assert(pCallbacks->pfnAllocatePool);
+
+    pCallbacks->pfnFreePool = (PFNFREEPOOL)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortFreePool");
+    Assert(pCallbacks->pfnFreePool);
+
+    if(pCallbacks->pfnAllocatePool
+            && pCallbacks->pfnFreePool)
+    {
+        pCallbacks->fSupportedTypes |= VBOXVIDEOPORTPROCS_POOL;
+    }
+    else
+    {
+        pCallbacks->pfnAllocatePool = vboxAllocatePoolVoid;
+        pCallbacks->pfnFreePool = vboxFreePoolVoid;
+    }
+
+    pCallbacks->pfnQueueDpc = (PFNQUEUEDPC)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortQueueDpc");
+    Assert(pCallbacks->pfnQueueDpc);
+
+    if(pCallbacks->pfnQueueDpc)
+    {
+        pCallbacks->fSupportedTypes |= VBOXVIDEOPORTPROCS_DPC;
+    }
+    else
+    {
+        pCallbacks->pfnQueueDpc = vboxQueueDpcVoid;
+    }
+
+#ifdef DEBUG_misha
+    Assert(pCallbacks->fSupportedTypes & VBOXVIDEOPORTPROCS_EVENT);
+    Assert(pCallbacks->fSupportedTypes & VBOXVIDEOPORTPROCS_SPINLOCK);
+#endif
+}
+#endif
 
 
 static DECLCALLBACK(void) vboxVbvaFlush (void *pvFlush)
