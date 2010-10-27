@@ -334,12 +334,12 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 ComPtr<IProgress> progressInstaller;
                 ULONG uPID;
                 rc = pGuest->executeProcessInternal(Bstr(strInstallerPath).raw(),
-                                                    0 /* Flags */,
+                                                    ExecuteProcessFlag_WaitForProcessStartOnly,
                                                     ComSafeArrayAsInParam(installerArgs),
                                                     ComSafeArrayAsInParam(installerEnv),
                                                     Bstr("").raw() /* Username */,
                                                     Bstr("").raw() /* Password */,
-                                                    0 /* Timeout */,
+                                                    10 * 1000 /* Wait 10s for getting the process started */,
                                                     &uPID, progressInstaller.asOutParam());
                 if (SUCCEEDED(rc))
                 {
