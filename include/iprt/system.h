@@ -70,6 +70,21 @@ typedef enum RTSYSOSINFO
 RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchInfo);
 
 /**
+ * Queries the total amount of RAM in the system.
+ *
+ * This figure does not given any information about how much memory is
+ * currently available. Use RTSystemQueryAvailableRam instead.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and *pcb on sucess.
+ * @retval  VERR_ACCESS_DENIED if the information isn't accessible to the
+ *          caller.
+ *
+ * @param   pcb             Where to store the result (in bytes).
+ */
+RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb);
+
+/**
  * Queries the total amount of RAM accessible to the system.
  *
  * This figure should not include memory that is installed but not used,
@@ -83,7 +98,7 @@ RTDECL(int) RTSystemQueryOSInfo(RTSYSOSINFO enmInfo, char *pszInfo, size_t cchIn
  *
  * @param   pcb             Where to store the result (in bytes).
  */
-RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb);
+RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb);
 
 /**
  * Queries the amount of RAM that is currently locked down or in some other
