@@ -308,6 +308,8 @@ typedef struct _DEVICE_EXTENSION
    uint8_t * pvVisibleVram;
 
    VBOXVIDEOCM_MGR CmMgr;
+   /* hgsmi allocation manager */
+   VBOXVIDEOCM_ALLOC_MGR AllocMgr;
    VBOXVDMADDI_CMD_QUEUE DdiCmdQueue;
    LIST_ENTRY SwapchainList3D;
    /* mutex for context list operations */

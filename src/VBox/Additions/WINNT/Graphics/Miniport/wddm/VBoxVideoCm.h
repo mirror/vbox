@@ -24,6 +24,7 @@ typedef struct VBOXVIDEOCM_CTX
     LIST_ENTRY SessionEntry;
     struct VBOXVIDEOCM_SESSION *pSession;
     uint64_t u64UmData;
+    VBOXWDDM_HTABLE AllocTable;
 } VBOXVIDEOCM_CTX, *PVBOXVIDEOCM_CTX;
 
 void vboxVideoCmCtxInitEmpty(PVBOXVIDEOCM_CTX pContext);

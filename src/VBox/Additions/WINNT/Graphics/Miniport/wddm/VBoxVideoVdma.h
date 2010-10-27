@@ -21,6 +21,7 @@
 typedef enum
 {
     VBOXVDMADDI_STATE_UNCKNOWN = 0,
+    VBOXVDMADDI_STATE_NOT_DX_CMD,
     VBOXVDMADDI_STATE_NOT_QUEUED,
     VBOXVDMADDI_STATE_PENDING,
     VBOXVDMADDI_STATE_SUBMITTED,
@@ -67,6 +68,12 @@ DECLINLINE(VOID) vboxVdmaDdiCmdInit(PVBOXVDMADDI_CMD pCmd,
     pCmd->pContext = pContext;
     pCmd->pfnComplete = pfnComplete;
     pCmd->pvComplete = pvComplete;
+}
+
+DECLINLINE(VOID) vboxVdmaDdiCmdSubmittedNotDx(PVBOXVDMADDI_CMD pCmd)
+{
+    Assert(pCmd->enmState == VBOXVDMADDI_STATE_NOT_QUEUED);
+    pCmd->enmState = VBOXVDMADDI_STATE_NOT_DX_CMD;
 }
 
 NTSTATUS vboxVdmaDdiCmdFenceComplete(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_CONTEXT pContext, uint32_t u32FenceId, DXGK_INTERRUPT_TYPE enmComplType);
@@ -253,13 +260,11 @@ typedef struct VBOXVDMAGG
 typedef struct VBOXVDMAINFO
 {
 #ifdef VBOX_WITH_VDMA
+    KSPIN_LOCK HeapLock;
     HGSMIHEAP CmdHeap;
 #endif
     UINT      uLastCompletedPagingBufferCmdFenceId;
     BOOL      fEnabled;
-#if 0
-    VBOXVDMASUBMIT Submitter;
-#endif
     /* dma-related commands list processed on the guest w/o host part involvement (guest-guest commands) */
     VBOXVDMAGG DmaGg;
 } VBOXVDMAINFO, *PVBOXVDMAINFO;

@@ -1463,8 +1463,6 @@ bool crVBoxHGSMIInit(CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl, unsigne
         return false;
     }
 
-    return false;
-
     g_crvboxhgsmi.recv_list = rfl;
     g_crvboxhgsmi.close_list = cfl;
     if (g_crvboxhgsmi.initialized)

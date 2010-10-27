@@ -96,4 +96,50 @@ NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT DWORD val
 UNICODE_STRING* vboxWddmVGuidGet(PDEVICE_EXTENSION pDevExt);
 VOID vboxWddmVGuidFree(PDEVICE_EXTENSION pDevExt);
 
+#define VBOXWDDM_MM_VOID 0xffffffffUL
+
+typedef struct VBOXWDDM_MM
+{
+    RTL_BITMAP BitMap;
+    UINT cPages;
+    UINT cAllocs;
+    PULONG pBuffer;
+} VBOXWDDM_MM, *PVBOXWDDM_MM;
+
+NTSTATUS vboxMmInit(PVBOXWDDM_MM pMm, UINT cPages);
+ULONG vboxMmAlloc(PVBOXWDDM_MM pMm, UINT cPages);
+VOID vboxMmFree(PVBOXWDDM_MM pMm, UINT iPage, UINT cPages);
+NTSTATUS vboxMmTerm(PVBOXWDDM_MM pMm);
+
+typedef struct VBOXVIDEOCM_ALLOC_MGR
+{
+    /* synch lock */
+    FAST_MUTEX Mutex;
+    VBOXWDDM_HTABLE AllocTable;
+    VBOXWDDM_MM Mm;
+//    PHYSICAL_ADDRESS PhData;
+    uint8_t *pvData;
+    uint32_t offData;
+    uint32_t cbData;
+} VBOXVIDEOCM_ALLOC_MGR, *PVBOXVIDEOCM_ALLOC_MGR;
+
+typedef struct VBOXVIDEOCM_ALLOC_CONTEXT
+{
+    PVBOXVIDEOCM_ALLOC_MGR pMgr;
+    /* synch lock */
+    FAST_MUTEX Mutex;
+    VBOXWDDM_HTABLE AllocTable;
+} VBOXVIDEOCM_ALLOC_CONTEXT, *PVBOXVIDEOCM_ALLOC_CONTEXT;
+
+NTSTATUS vboxVideoAMgrCreate(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr, uint32_t offData, uint32_t cbData);
+NTSTATUS vboxVideoAMgrDestroy(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALLOC_MGR pMgr);
+
+NTSTATUS vboxVideoAMgrCtxCreate(PVBOXVIDEOCM_ALLOC_MGR pMgr, PVBOXVIDEOCM_ALLOC_CONTEXT pCtx);
+NTSTATUS vboxVideoAMgrCtxDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pCtx);
+
+NTSTATUS vboxVideoAMgrCtxAllocCreate(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, PVBOXVIDEOCM_UM_ALLOC pUmAlloc);
+NTSTATUS vboxVideoAMgrCtxAllocDestroy(PVBOXVIDEOCM_ALLOC_CONTEXT pContext, VBOXDISP_KMHANDLE hSesionHandle);
+
+NTSTATUS vboxVideoAMgrCtxAllocSubmit(PDEVICE_EXTENSION pDevExt, PVBOXVIDEOCM_ALLOC_CONTEXT pContext, UINT cBuffers, VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *paBuffers);
+
 #endif /* #ifndef ___VBoxVideoMisc_h__ */

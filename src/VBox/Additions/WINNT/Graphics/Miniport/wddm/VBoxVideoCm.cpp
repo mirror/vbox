@@ -288,6 +288,7 @@ bool vboxVideoCmSessionCtxRemove(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX
 /* the session gets destroyed once the last context is removed from it */
 NTSTATUS vboxVideoCmSessionCreate(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESSION *ppSession, PKEVENT pUmEvent, PVBOXVIDEOCM_CTX pContext)
 {
+    NTSTATUS Status = STATUS_UNSUCCESSFUL;
     PVBOXVIDEOCM_SESSION pSession = (PVBOXVIDEOCM_SESSION)vboxWddmMemAllocZero(sizeof (VBOXVIDEOCM_SESSION));
     Assert(pSession);
     if (pSession)
@@ -302,8 +303,13 @@ NTSTATUS vboxVideoCmSessionCreate(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESSION *p
         InsertHeadList(&pMgr->SessionList, &pSession->QueueEntry);
         *ppSession = pSession;
         return STATUS_SUCCESS;
+//        vboxWddmMemFree(pSession);
     }
-    return STATUS_NO_MEMORY;
+    else
+    {
+        Status = STATUS_NO_MEMORY;
+    }
+    return Status;
 }
 
 #define VBOXCMENTRY_2_SESSION(_pE) ((PVBOXVIDEOCM_SESSION)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXVIDEOCM_SESSION, QueueEntry)))
@@ -495,3 +501,4 @@ VOID vboxVideoCmUnlock(PVBOXVIDEOCM_CTX pContext)
 {
     ExReleaseFastMutex(&pContext->pSession->Mutex);
 }
+

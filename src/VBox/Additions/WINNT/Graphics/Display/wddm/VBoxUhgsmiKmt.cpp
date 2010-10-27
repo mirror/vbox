@@ -25,6 +25,17 @@ typedef struct VBOXUHGSMI_BUFFER_PRIVATE_KMT
     UINT aLockPageIndices[1];
 } VBOXUHGSMI_BUFFER_PRIVATE_KMT, *PVBOXUHGSMI_BUFFER_PRIVATE_KMT;
 
+typedef struct VBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC
+{
+    VBOXUHGSMI_BUFFER Base;
+    PVBOXUHGSMI_PRIVATE_KMT pHgsmi;
+    VBOXVIDEOCM_UM_ALLOC Alloc;
+} VBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC, *PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC;
+
+#define VBOXUHGSMIKMT_GET_BUFFER(_p) VBOXUHGSMIKMT_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_KMT)
+#define VBOXUHGSMIKMTESC_GET_PRIVATE(_p, _t) ((_t*)(((uint8_t*)_p) - RT_OFFSETOF(_t, Base)))
+#define VBOXUHGSMIKMTESC_GET_BUFFER(_p) VBOXUHGSMIKMTESC_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC)
+
 DECLCALLBACK(int) vboxUhgsmiKmtBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
 {
     PVBOXUHGSMI_BUFFER_PRIVATE_KMT pBuffer = VBOXUHGSMIKMT_GET_BUFFER(pBuf);
@@ -206,12 +217,187 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUHGSM
     return VERR_GENERAL_FAILURE;
 }
 
-HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
-{
-    pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtBufferCreate;
-    pHgsmi->BasePrivate.Base.pfnBufferSubmitAsynch = vboxUhgsmiKmtBufferSubmitAsynch;
-    pHgsmi->BasePrivate.hClient = NULL;
 
+DECLCALLBACK(int) vboxUhgsmiKmtEscBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, void**pvLock)
+{
+    PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC pBuffer = VBOXUHGSMIKMTESC_GET_BUFFER(pBuf);
+    *pvLock = pBuffer->Alloc.pvData + offLock;
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) vboxUhgsmiKmtEscBufferUnlock(PVBOXUHGSMI_BUFFER pBuf)
+{
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) vboxUhgsmiKmtEscBufferDestroy(PVBOXUHGSMI_BUFFER pBuf)
+{
+    PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC pBuffer = VBOXUHGSMIKMTESC_GET_BUFFER(pBuf);
+    PVBOXUHGSMI_PRIVATE_KMT pPrivate = pBuffer->pHgsmi;
+    D3DKMT_ESCAPE DdiEscape = {0};
+    VBOXDISPIFESCAPE_UHGSMI_DEALLOCATE DeallocInfo = {0};
+    DdiEscape.hAdapter = pPrivate->Adapter.hAdapter;
+    DdiEscape.hDevice = pPrivate->Device.hDevice;
+    DdiEscape.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    //Buf.DdiEscape.Flags.HardwareAccess = 1;
+    DdiEscape.pPrivateDriverData = &DeallocInfo;
+    DdiEscape.PrivateDriverDataSize = sizeof (DeallocInfo);
+    DdiEscape.hContext = pPrivate->Context.hContext;
+
+    DeallocInfo.EscapeHdr.escapeCode = VBOXESC_UHGSMI_DEALLOCATE;
+    DeallocInfo.hAlloc = pBuffer->Alloc.hAlloc;
+
+    HRESULT hr = pPrivate->Callbacks.pfnD3DKMTEscape(&DdiEscape);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        if (pBuffer->Base.bSynchCreated)
+        {
+            CloseHandle(pBuffer->Base.hSynch);
+        }
+        RTMemFree(pBuffer);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_GENERAL_FAILURE;
+}
+
+DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
+        VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType, HVBOXUHGSMI_SYNCHOBJECT hSynch,
+        PVBOXUHGSMI_BUFFER* ppBuf)
+{
+    bool bSynchCreated = false;
+    if (!cbBuf)
+        return VERR_INVALID_PARAMETER;
+
+    int rc = vboxUhgsmiBaseEventChkCreate(enmSynchType, &hSynch, &bSynchCreated);
+    AssertRC(rc);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    cbBuf = VBOXWDDM_ROUNDBOUND(cbBuf, 0x1000);
+    Assert(cbBuf);
+    uint32_t cPages = cbBuf >> 12;
+    Assert(cPages);
+
+    PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pHgsmi);
+    PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC pBuf = (PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC)RTMemAllocZ(RT_OFFSETOF(VBOXUHGSMI_BUFFER_PRIVATE_KMT, aLockPageIndices[cPages]));
+    Assert(pBuf);
+    if (pBuf)
+    {
+        struct
+        {
+            D3DKMT_ESCAPE DdiEscape;
+            VBOXDISPIFESCAPE_UHGSMI_ALLOCATE AllocInfo;
+        } Buf;
+        memset(&Buf, 0, sizeof (Buf));
+        Buf.DdiEscape.hAdapter = pPrivate->Adapter.hAdapter;
+        Buf.DdiEscape.hDevice = pPrivate->Device.hDevice;
+        Buf.DdiEscape.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+        //Buf.DdiEscape.Flags.HardwareAccess = 1;
+        Buf.DdiEscape.pPrivateDriverData = &Buf.AllocInfo;
+        Buf.DdiEscape.PrivateDriverDataSize = sizeof (Buf.AllocInfo);
+        Buf.DdiEscape.hContext = pPrivate->Context.hContext;
+
+        Buf.AllocInfo.EscapeHdr.escapeCode = VBOXESC_UHGSMI_ALLOCATE;
+        Buf.AllocInfo.Alloc.cbData = cbBuf;
+        Buf.AllocInfo.Alloc.hSynch = hSynch;
+        Buf.AllocInfo.Alloc.enmSynchType = enmSynchType;
+
+        HRESULT hr = pPrivate->Callbacks.pfnD3DKMTEscape(&Buf.DdiEscape);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            pBuf->Alloc = Buf.AllocInfo.Alloc;
+            Assert(pBuf->Alloc.pvData);
+            pBuf->pHgsmi = pPrivate;
+            pBuf->Base.pfnLock = vboxUhgsmiKmtEscBufferLock;
+            pBuf->Base.pfnUnlock = vboxUhgsmiKmtEscBufferUnlock;
+//            pBuf->Base.pfnAdjustValidDataRange = vboxUhgsmiKmtBufferAdjustValidDataRange;
+            pBuf->Base.pfnDestroy = vboxUhgsmiKmtEscBufferDestroy;
+
+            pBuf->Base.hSynch = hSynch;
+            pBuf->Base.enmSynchType = enmSynchType;
+            pBuf->Base.cbBuffer = Buf.AllocInfo.Alloc.cbData;
+            pBuf->Base.bSynchCreated = bSynchCreated;
+
+            *ppBuf = &pBuf->Base;
+
+            return VINF_SUCCESS;
+        }
+
+        RTMemFree(pBuf);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    if (bSynchCreated)
+        CloseHandle(hSynch);
+
+    return rc;
+}
+
+DECLCALLBACK(int) vboxUhgsmiKmtEscBufferSubmitAsynch(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers)
+{
+    /* we no chromium will not submit more than three buffers actually,
+     * for simplicity allocate it statically on the stack  */
+    struct
+    {
+        VBOXDISPIFESCAPE_UHGSMI_SUBMIT SubmitInfo;
+        VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE aBufInfos[3];
+    } Buf;
+
+    if (cBuffers > RT_ELEMENTS(Buf.aBufInfos) + 1)
+    {
+        Assert(0);
+        return VERR_INVALID_PARAMETER;
+    }
+
+
+    PVBOXUHGSMI_PRIVATE_KMT pPrivate = VBOXUHGSMIKMT_GET(pHgsmi);
+    D3DKMT_ESCAPE DdiEscape = {0};
+
+    DdiEscape.hAdapter = pPrivate->Adapter.hAdapter;
+    DdiEscape.hDevice = pPrivate->Device.hDevice;
+    DdiEscape.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    //Buf.DdiEscape.Flags.HardwareAccess = 1;
+    DdiEscape.pPrivateDriverData = &Buf.SubmitInfo;
+    DdiEscape.PrivateDriverDataSize = RT_OFFSETOF(VBOXDISPIFESCAPE_UHGSMI_SUBMIT, aBuffers[cBuffers]);
+    DdiEscape.hContext = pPrivate->Context.hContext;
+
+    Buf.SubmitInfo.EscapeHdr.escapeCode = VBOXESC_UHGSMI_SUBMIT;
+    Buf.SubmitInfo.EscapeHdr.u32CmdSpecific = cBuffers;
+    for (UINT i = 0; i < cBuffers; ++i)
+    {
+        VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE *pSubmInfo = &Buf.SubmitInfo.aBuffers[i];
+        PVBOXUHGSMI_BUFFER_SUBMIT pBufInfo = &aBuffers[i];
+        PVBOXUHGSMI_BUFFER_PRIVATE_KMT_ESC pBuf = VBOXUHGSMIKMTESC_GET_BUFFER(pBufInfo->pBuf);
+        pSubmInfo->hAlloc = pBuf->Alloc.hAlloc;
+        pSubmInfo->Info.fSubFlags = pBufInfo->fFlags;
+        if (pBufInfo->fFlags.bEntireBuffer)
+        {
+            pSubmInfo->Info.offData = 0;
+            pSubmInfo->Info.cbData = pBuf->Base.cbBuffer;
+        }
+        else
+        {
+            pSubmInfo->Info.offData = pBufInfo->offData;
+            pSubmInfo->Info.cbData = pBufInfo->cbData;
+        }
+    }
+
+    HRESULT hr = pPrivate->Callbacks.pfnD3DKMTEscape(&DdiEscape);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        return VINF_SUCCESS;
+    }
+
+    return VERR_GENERAL_FAILURE;
+}
+
+static HRESULT vboxUhgsmiKmtEngineCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
+{
     HRESULT hr = vboxDispKmtCallbacksInit(&pHgsmi->Callbacks);
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -238,7 +424,21 @@ HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
     }
     return hr;
 }
+HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
+{
+    pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtBufferCreate;
+    pHgsmi->BasePrivate.Base.pfnBufferSubmitAsynch = vboxUhgsmiKmtBufferSubmitAsynch;
+    pHgsmi->BasePrivate.hClient = NULL;
+    return vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
+}
 
+HRESULT vboxUhgsmiKmtEscCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
+{
+    pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtEscBufferCreate;
+    pHgsmi->BasePrivate.Base.pfnBufferSubmitAsynch = vboxUhgsmiKmtEscBufferSubmitAsynch;
+    pHgsmi->BasePrivate.hClient = NULL;
+    return vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
+}
 
 HRESULT vboxUhgsmiKmtDestroy(PVBOXUHGSMI_PRIVATE_KMT pHgsmi)
 {

@@ -153,10 +153,11 @@ typedef struct VBOXWDDM_CONTEXT
     VBOXWDDM_CONTEXT_TYPE enmType;
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
-    UINT uLastCompletedCmdFenceId;
+//    UINT uLastCompletedCmdFenceId;
     FAST_MUTEX SwapchainMutex;
     VBOXWDDM_HTABLE Swapchains;
     VBOXVIDEOCM_CTX CmContext;
+    VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;
 } VBOXWDDM_CONTEXT, *PVBOXWDDM_CONTEXT;
 
 #define VBOXWDDMENTRY_2_SWAPCHAIN(_pE) ((PVBOXWDDM_SWAPCHAIN)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_SWAPCHAIN, DevExtListEntry)))
