@@ -43,3 +43,9 @@ RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb)
     AssertPtrReturn(pcb, VERR_INVALID_POINTER);
     return VERR_NOT_IMPLEMENTED;
 }
+
+RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb)
+{
+    AssertPtrReturn(pcb, VERR_INVALID_POINTER);
+    return VERR_NOT_IMPLEMENTED;
+}
