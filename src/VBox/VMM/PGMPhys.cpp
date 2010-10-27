@@ -3851,6 +3851,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
         &&  cbAvailableMem < (UINT64_C(2) * _1G))
     {
         /** Too little free RAM left; don't bother as the host might try to move memory around, which is very expensive. */
+        LogRel(("PGMR3PhysAllocateLargeHandyPage: refuse to allocate large page; available memory on the host: %RX64\n", cbAvailableMem));
         return VINF_EM_NO_MEMORY;
     }
 
