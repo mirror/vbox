@@ -10118,7 +10118,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         The format backend operates on files (the <link to="IMedium::location"/>
         attribute of the medium specifies a file used to store medium
         data; for a list of supported file extensions see
-        <link to="IMediumFormat::DescribeFileExtensions"/>).
+        <link to="IMediumFormat::describeFileExtensions"/>).
       </desc>
     </const>
 
