@@ -1929,29 +1929,29 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     
     pState->pNodes[1].node.au32F00_param[0xA] = RT_BIT(17); /* 16-bit samples */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_DIV_X1, "hda44_1", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_MULT_X1) ? RT_BIT(5) : 0;
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_DIV_X1) ? RT_BIT(5) : 0;
 
 #ifdef VBOX_WITH_AUDIO_FLEXIBLE_FORMAT
     as.freq *= 2; /* 2 * 44.1kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X2, AFMT_DIV_X1, "hda44_1_2x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X2, AFMT_MULT_X1) ? RT_BIT(7) : 0;
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X2, AFMT_DIV_X1) ? RT_BIT(7) : 0;
 
     as.freq *= 2; /* 4 * 44.1kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_DIV_X1, "hda44_1_4x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_MULT_X1) ? RT_BIT(9) : 0;
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_DIV_X1) ? RT_BIT(9) : 0;
 
     as.freq = 48000; 
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_DIV_X1, "hda48", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_MULT_X1) ? RT_BIT(6) : 0;
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_DIV_X1) ? RT_BIT(6) : 0;
 
 # if 0
     as.freq *= 2; /* 2 * 48kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X2, AFMT_DIV_X1, "hda48_2x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X2, AFMT_MULT_X1) ? RT_BIT(8) : 0;
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X2, AFMT_DIV_X1) ? RT_BIT(8) : 0;
 
     as.freq *= 2; /* 4 * 48kHz */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X4, AFMT_DIV_X1, "hda48_4x", as, pi_callback, po_callback);
-    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X4, AFMT_MULT_X1) ? RT_BIT(10) : 0;
+    pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X4, AFMT_DIV_X1) ? RT_BIT(10) : 0;
 # endif
 #endif
     #undef SETUP_AUDIO_FORMAT
