@@ -355,7 +355,11 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     CMachine machine = session().GetMachine();
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
-#ifdef DEBUG_andy
+    /*
+     * Flag indicating whether we want to do the usual .ISO mounting or not.
+     * First try updating the Guest Additions directly without mounting the .ISO.
+     */
+    bool fDoMount = false;
     /*
      * If the already installed Guest Additions indicate a
      * high enough run level (at the moment this is level "Desktop",
@@ -374,28 +378,33 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
        )
     {
 #ifdef DEBUG_andy
-        CProgress progressInstall = guest.UpdateGuestAdditions("c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso");
+        CProgress progressInstall = guest.UpdateGuestAdditions("c:\\Downloads\\VBoxGuestAdditions-r67158.iso");
 #else
         CProgress progressInstall = guest.UpdateGuestAdditions(strSource);
 #endif
-#if 0
         bool fResult = guest.isOk();
         if (fResult)
         {
-            vboxProblem().showModalProgressDialog(progressInstall, tr("Updating Guest Additions ..."), mainMachineWindow());
+            vboxProblem().showModalProgressDialog(progressInstall, tr("Install"),
+                                                  mainMachineWindow(), 0 /* No delay */);
             if (progressInstall.GetCanceled())
                 return;
             if (!progressInstall.isOk() || progressInstall.GetResultCode() != 0)
             {
                 vboxProblem().cannotUpdateGuestAdditions(progressInstall, mainMachineWindow());
-                return;
+                fDoMount = true; /* Since automatic updating failed, fall back to .ISO mounting. */
             }
         }
-#endif
     }
-    else /* Fallback to only mounting the .ISO file. */
+    else
     {
-#endif /* DEBUG_andy */
+        /* Running guest OS not suitable (yet) for automatic updating,
+         * fall back to .ISO mounting. */
+        fDoMount = true;
+    }
+
+    if (fDoMount) /* Fallback to only mounting the .ISO file. */
+    {
         QString strUuid;
         CMedium image = vbox.FindMedium(strSource, KDeviceType_DVD);
         if (image.isNull())
@@ -470,9 +479,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
         }
         else
             vboxProblem().cannotMountGuestAdditions(machine.GetName());
-#ifdef DEBUG_andy
     }
-#endif /* DEBUG_andy */
 }
 
 void UISession::sltCloseVirtualSession()

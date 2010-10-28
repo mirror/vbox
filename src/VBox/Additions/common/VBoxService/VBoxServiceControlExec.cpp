@@ -1132,7 +1132,8 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
         }
         else if (RTStrStr(pszExec, "vbox_") == pszExec)
         {
-            /* We want to use the internal toolbox. */
+            /* We want to use the internal toolbox (all internal
+             * tools are starting with "vbox_" (e.g. "vbox_cat"). */
             pszCmdTool = RTStrDup(szVBoxService);
             rc = VBoxServiceControlExecPrepareToolboxArgv(pszCmdTool, papszArgs, &papszArgsTool);
         }
@@ -1157,10 +1158,17 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
     }
 #endif
 
+    /* If no user name specified run with current credentials.
+     * This is prohibited via official Main API! */
+    if (!strlen(pszAsUser))
+        fFlags &= ~RTPROC_FLAGS_SERVICE;
+
     /* Do normal execution. */
     rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
-                        phStdIn, phStdOut, phStdErr, pszAsUser,
-                        pszPassword, phProcess);
+                        phStdIn, phStdOut, phStdErr,
+                        strlen(pszAsUser) ? pszAsUser : NULL,
+                        strlen(pszPassword) ? pszPassword : NULL,
+                        phProcess);
     return rc;
 }
 
