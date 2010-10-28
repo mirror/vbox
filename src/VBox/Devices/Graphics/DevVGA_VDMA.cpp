@@ -510,9 +510,11 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
         vboxVDMARectlUnite(&updateRectl, &pBlt->dstRectl);
     }
 
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
     int iView = 0;
     /* @todo: fixme: check if update is needed and get iView */
     vboxVDMANotifyPrimaryUpdate (pVdma->pVGAState, iView, &updateRectl);
+#endif
 
     return cbBlt;
 }
@@ -645,7 +647,7 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
                 Assert((uint32_t)cbBlt <= cbBuffer);
                 if (cbBlt >= 0)
                 {
-                    if (cbBlt == cbBuffer)
+                    if ((uint32_t)cbBlt == cbBuffer)
                         return VINF_SUCCESS;
                     else
                     {
@@ -665,7 +667,7 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
                 Assert((uint32_t)cbTransfer <= cbBuffer);
                 if (cbTransfer >= 0)
                 {
-                    if (cbTransfer == cbBuffer)
+                    if ((uint32_t)cbTransfer == cbBuffer)
                         return VINF_SUCCESS;
                     else
                     {
