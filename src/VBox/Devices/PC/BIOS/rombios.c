@@ -9282,7 +9282,7 @@ look_drive1:
   jz   f1_missing  ;; jump if no drive1
   or   bl, #0x70   ;; drive1 determined, multi-rate, has changed line
 f1_missing:
-                   ;; leave high bits in BL zero'd
+                   ;; leave high bits in BL zerod
   mov  0x048f, bl  ;; put new val in BDA (diskette controller information)
   ;; -----------------------------------------------------------------
 
@@ -11391,12 +11391,12 @@ post_default_ints:
 
 
   ;; Manufacturing Test 40:12
-  ;;   zero'd out above
+  ;;   zerod out above
 
 #ifndef VBOX
   ;; Warm Boot Flag 0040:0072
   ;;   value of 1234h = skip memory checks
-  ;;   zero'd out above
+  ;;   zerod out above
 #endif /* !VBOX */
 
 
