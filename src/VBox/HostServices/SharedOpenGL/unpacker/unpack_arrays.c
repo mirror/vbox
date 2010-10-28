@@ -163,6 +163,8 @@ static void crUnpackSetClientPointerByIndex(int index, GLint size,
                                             GLenum type, GLboolean normalized,
                                             GLsizei stride, const GLvoid *pointer, CRClientState *c)
 {
+    /*crDebug("crUnpackSetClientPointerByIndex: %i(s=%i, t=0x%x, n=%i, str=%i) -> %p", index, size, type, normalized, stride, pointer);*/
+
     if (index<7)
     {
         switch (index)
@@ -224,6 +226,8 @@ void crUnpackExtendLockArraysEXT(void)
     
     offset = 2*sizeof(int)+12;
 
+    /*crDebug("crUnpackExtendLockArraysEXT(%i, %i) ne=%i", first, count, numenabled);*/
+
     for (i=0; i<numenabled; ++i)
     {
         index = READ_DATA(offset, int);
@@ -233,7 +237,11 @@ void crUnpackExtendLockArraysEXT(void)
         data = crAlloc((first+count)*cp->bytesPerIndex);
         crMemcpy(data+first*cp->bytesPerIndex, DATA_POINTER(offset, GLvoid), count*cp->bytesPerIndex);
         offset += count*cp->bytesPerIndex;
+        /*crDebug("crUnpackExtendLockArraysEXT: old cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
+                index, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
         crUnpackSetClientPointerByIndex(index, cp->size, cp->type, cp->normalized, 0, data, c);
+        /*crDebug("crUnpackExtendLockArraysEXT: new cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
+                index, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
     }
     cr_unpackDispatch.LockArraysEXT(first, count);
 }
@@ -245,6 +253,8 @@ void crUnpackExtendUnlockArraysEXT(void)
     CRClientState *c = &g->client;
     CRClientPointer *cp;
 
+    /*crDebug("crUnpackExtendUnlockArraysEXT");*/
+
     cr_unpackDispatch.UnlockArraysEXT();
 
     for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
@@ -252,7 +262,11 @@ void crUnpackExtendUnlockArraysEXT(void)
         cp = crStateGetClientPointerByIndex(i, &c->array);
         if (cp->enabled)
         {
+            /*crDebug("crUnpackExtendUnlockArraysEXT: old cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
+                    i, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
             crUnpackSetClientPointerByIndex(i, cp->size, cp->type, cp->normalized, cp->prevStride, cp->prevPtr, c);
+            /*crDebug("crUnpackExtendUnlockArraysEXT: new cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
+                    i, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
         }
     }
 }
