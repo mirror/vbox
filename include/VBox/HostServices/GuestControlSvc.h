@@ -75,6 +75,12 @@ enum eProcessStatus
 #define INPUT_FLAG_NONE             0
 #define INPUT_FLAG_EOF              RT_BIT(0)
 
+/*
+ * Internal tools built into VBoxService which are
+ * used in order to accomplish tasks host<->guest.
+ */
+#define VBOXSERVICE_TOOL_CAT        "vbox_cat"
+
 /**
  * Input status, reported by the client.
  */

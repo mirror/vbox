@@ -53,6 +53,9 @@ struct Guest::TaskGuest
 {
     enum TaskType
     {
+        /** Update Guest Additions by directly copying the required installer
+         *  off the .ISO file, transfer it to the guest and execute the installer
+         *  with system priviledges. */
         UpdateGuestAdditions = 100
     };
 
@@ -147,7 +150,11 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+    /*
+     * Do *not* take a write lock here since we don't (and won't)
+     * touch any class-specific data (of IGuest) here - only the member functions
+     * which get called here can do that.
+     */
 
     HRESULT rc = S_OK;
 
@@ -201,7 +208,9 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 vrc = RTFileSeek(iso.file, cbOffset, RTFILE_SEEK_BEGIN, NULL);
             }
 
-            /** @todo Only Windows! */
+            /** @todo Only Windows! Don't use percent (like %TEMP%) env vars -- Windows
+             *        will quote it like "%TEMP%" which results in a *not* working command
+             *        line! */
             Utf8Str strInstallerPath = "C:\\Windows\\VBoxWindowsAdditions.exe";
 
             if (RT_FAILURE(vrc))
@@ -213,13 +222,13 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         break;
 
                     default:
-                        rc = setError(VBOX_E_IPRT_ERROR, tr("An unknown error occured, rc=%Rrc"), vrc);
+                        rc = setError(VBOX_E_IPRT_ERROR, tr("An unknown error occured (%Rrc)"), vrc);
                         break;
                 }
             }
             else
             {
-                /* Okay, we're ready to transfer the bits! */
+                /* Okay, we're ready to start our copy routine on the guest! */
                 if (aTask->progress)
                     aTask->progress->SetCurrentOperationProgress(15);
 
@@ -230,8 +239,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 char szOutput[RTPATH_MAX];
                 if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", strInstallerPath.c_str()))
                 {
-                    args.push_back(Bstr("vbox_cat").raw()); /* The actual (internal) tool to use (as argv[0]). */
-                    args.push_back(Bstr(szOutput).raw());   /* We want to write a file ... */
+                    args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw()); /* The actual (internal) tool to use (as argv[0]). */
+                    args.push_back(Bstr(szOutput).raw());             /* We want to write a file ... */
                 }
                 else
                     rc = setError(VBOX_E_IPRT_ERROR, tr("Error preparing command line fopr copy operation"));
@@ -246,7 +255,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                      * copy over/pipe the data into a file on the guest (with
                      * system rights, no username/password specified).
                      */
-                    rc = pGuest->executeProcessInternal(Bstr("vbox_cat").raw(),
+                    rc = pGuest->executeProcessInternal(Bstr(VBOXSERVICE_TOOL_CAT).raw(),
                                                         ExecuteProcessFlag_WaitForProcessStartOnly,
                                                         ComSafeArrayAsInParam(args),
                                                         ComSafeArrayAsInParam(env),
@@ -269,37 +278,41 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                         while (   SUCCEEDED(progressCopy->COMGETTER(Completed(&fCompleted)))
                                && !fCompleted)
                         {
+                            /* cbLength contains remaining bytes of our installer file
+                             * opened above to read. */
                             cbToRead = RT_MIN(cbLength, _64K);
-                            vrc = RTFileRead(iso.file, (uint8_t*)aInputData.raw(), cbToRead, &cbRead);
-                            if (   cbRead
-                                && RT_SUCCESS(vrc))
+                            if (cbToRead)
                             {
-                                aInputData.resize(cbRead);
-
-                                /* Did we reach the end of the content
-                                 * we want to transfer (last chunk)? */
-                                ULONG uFlags = ProcessInputFlag_None;
-                                if (cbRead < _64K)
-                                    uFlags |= ProcessInputFlag_EndOfFile;
-
-                                /* Transfer the current chunk ... */
-                                ULONG uBytesWritten;
-                                rc = SetProcessInput(uPID, uFlags,
-                                                     ComSafeArrayAsInParam(aInputData), &uBytesWritten);
-                                if (FAILED(rc))
+                                vrc = RTFileRead(iso.file, (uint8_t*)aInputData.raw(), cbToRead, &cbRead);
+                                if (   cbRead
+                                    && RT_SUCCESS(vrc))
                                 {
-                                    break;
-                                }
-                                else
-                                {
+                                    /* Did we reach the end of the content
+                                     * we want to transfer (last chunk)? */
+                                    ULONG uFlags = ProcessInputFlag_None;
+                                    if (cbRead < _64K)
+                                    {
+                                        uFlags |= ProcessInputFlag_EndOfFile;
+                                        if (cbRead > 0) /* Don't allow an empty array! */
+                                            aInputData.resize(cbRead); /* Adjust array size (less than 64K read). */
+                                    }
+
+                                    /* Transfer the current chunk ... */
+                                    ULONG uBytesWritten;
+                                    rc = SetProcessInput(uPID, uFlags,
+                                                         ComSafeArrayAsInParam(aInputData), &uBytesWritten);
+                                    if (FAILED(rc))
+                                        break;
+
+                                    Assert(cbLength >= uBytesWritten);
                                     cbLength -= uBytesWritten;
-                                }
 
-                                /* Progress canceled by Main API? */
-                                if (   SUCCEEDED(progressCopy->COMGETTER(Canceled(&fCanceled)))
-                                    && fCanceled)
-                                {
-                                    break;
+                                    /* Progress canceled by Main API? */
+                                    if (   SUCCEEDED(progressCopy->COMGETTER(Canceled(&fCanceled)))
+                                        && fCanceled)
+                                    {
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -323,13 +336,18 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
 
                 /** @todo Only Windows! */
                 installerArgs.push_back(Bstr(strInstallerPath).raw()); /* The actual (internal) installer image (as argv[0]). */
-                installerArgs.push_back(Bstr("/S").raw());             /* We want to install in silent mode. */
-                installerArgs.push_back(Bstr("/l").raw());             /* ... and logging enabled. */
+                /* Note that starting at Windows Vista the lovely session 0 separation applies:
+                 * This means that if we run an application with the profile/security context
+                 * of VBoxService (system rights!) we're not able to show any UI. */
+                installerArgs.push_back(Bstr("/S").raw());      /* We want to install in silent mode. */
+                installerArgs.push_back(Bstr("/l").raw());      /* ... and logging enabled. */
+                /* Don't quit VBoxService during upgrade because it still is used for this
+                 * piece of code we're in right now (that is, here!) ... */
+                installerArgs.push_back(Bstr("/no_vboxservice_exit").raw());
 
                 /*
-                 * Start built-in "vbox_cat" tool (inside VBoxService) to
-                 * copy over/pipe the data into a file on the guest (with
-                 * system rights, no username/password specified).
+                 * Start the just copied over installer with system rights
+                 * in silent mode on the guest.
                  */
                 ComPtr<IProgress> progressInstaller;
                 ULONG uPID;
@@ -2263,8 +2281,8 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                     char szOutput[RTPATH_MAX];
                     if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", Utf8Dest.c_str()))
                     {
-                        args.push_back(Bstr("vbox_cat").raw()); /* The actual (internal) tool to use (as argv[0]). */
-                        args.push_back(Bstr(szOutput).raw());   /* We want to write a file ... */
+                        args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw()); /* The actual (internal) tool to use (as argv[0]). */
+                        args.push_back(Bstr(szOutput).raw());             /* We want to write a file ... */
                     }
                     else
                         rc = setError(VBOX_E_IPRT_ERROR, tr("Error preparing command line"));
@@ -2279,7 +2297,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                          * Okay, since we gathered all stuff we need until now to start the
                          * actual copying, start the guest part now.
                          */
-                        rc = ExecuteProcess(Bstr("vbox_cat").raw(),
+                        rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_CAT).raw(),
                                             ExecuteProcessFlag_WaitForProcessStartOnly,
                                             ComSafeArrayAsInParam(args),
                                             ComSafeArrayAsInParam(env),
@@ -2376,7 +2394,8 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, IProgress **aProgress)
         /* Initialize our worker task. */
         std::auto_ptr<TaskGuest> task(new TaskGuest(TaskGuest::UpdateGuestAdditions, this, progress));
 
-        /* Assign data. */
+        /* Assign data - in that case aSource is the full path
+         * to the Guest Additions .ISO we want to mount. */
         task->strSource = (Utf8Str(aSource));
 
         rc = task->startThread();
