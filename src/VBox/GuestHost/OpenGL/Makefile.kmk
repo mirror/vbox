@@ -115,6 +115,10 @@ VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 ## @todo kBuild: recheck this (note to self).
 VBoxOGLhostcrutil_LIBS.win = $(VBoxOGLcrutil_LIBS.win)
 VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLhostcrutil_DEFS.win.x86 = $(subst VBOX_WITH_CRHGSMI,,$(VBoxOGLcrutil_DEFS.win.x86)) 
+VBoxOGLhostcrutil_LIBS.win.x86 = $(subst $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB),,$(VBoxOGLcrutil_LIBS.win.x86))
+endif
 
 #
 # Generate files for VBoxOGLcrutil and VBoxOGLhostcrutil.
