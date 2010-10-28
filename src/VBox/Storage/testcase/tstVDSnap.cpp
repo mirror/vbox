@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>

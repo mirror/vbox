@@ -18,7 +18,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <VBox/err.h>
 #include <VBox/version.h>
 #include <iprt/initterm.h>

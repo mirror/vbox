@@ -30,7 +30,7 @@
 #include <iprt/asm.h>
 #include <iprt/stream.h>
 #include <iprt/circbuf.h>
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 
 /******************************************************************************
  *   Structures and Typedefs                                                  *

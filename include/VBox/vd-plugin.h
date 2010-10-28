@@ -26,7 +26,7 @@
 #ifndef __VBoxHDD_Plugin_h__
 #define __VBoxHDD_Plugin_h__
 
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 
 
 /** @name VBox HDD backend write flags

@@ -17,7 +17,7 @@
  */
 
 #include <VBox/err.h>
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/file.h>

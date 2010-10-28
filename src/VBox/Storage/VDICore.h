@@ -21,7 +21,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #ifndef VBOX_VDICORE_VD
 #include <VBox/pdm.h>
 #endif /* !VBOX_VDICORE_VD */

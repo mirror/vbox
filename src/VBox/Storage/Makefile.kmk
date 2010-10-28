@@ -1,0 +1,54 @@
+# $Id$
+## @file
+# Sub-Makefile for the Storage library.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+
+ifndef VBOX_OSE
+ include $(PATH_SUB_CURRENT)/VDFormats/Makefile.kmk
+endif
+
+#
+# StorageLib - The storage Library.
+#
+LIBRARIES += StorageLib StorageLibNoDB
+
+StorageLib_TEMPLATE = VBoxR3Static
+StorageLib_SDKS.win = WINPSDK $(VBOX_WINDDK) VBOX_NTDLL
+StorageLib_DEFS     = IN_VBOXDDU
+StorageLib_SOURCES  = \
+	VD.cpp \
+	VDI.cpp \
+	VMDK.cpp \
+	VHD.cpp \
+	DMG.cpp \
+	Parallels.cpp \
+	ISCSI.cpp \
+	RAW.cpp \
+	VCICache.cpp
+
+StorageLibNoDB_TEMPLATE = VBoxR3Static
+StorageLibNoDB_SDKS.win = WINPSDK $(VBOX_WINDDK)
+StorageLibNoDB_DEFS     = IN_VBOXDDU VBOX_HDD_NO_DYNAMIC_BACKENDS
+StorageLibNoDB_SOURCES  = \
+	$(StorageLib_SOURCES)
+
+# generate rules
+include $(KBUILD_PATH)/subfooter.kmk
+

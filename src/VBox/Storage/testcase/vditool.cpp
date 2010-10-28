@@ -18,7 +18,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <iprt/alloc.h>
 #include <iprt/file.h>
 #include <iprt/stream.h>
