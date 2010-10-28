@@ -65,7 +65,6 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/cpp/xml.h>               /* xml::XmlFileWriter::s_psz*Suff. */
 #include <iprt/string.h>
-#include <iprt/system.h>
 
 #include <VBox/com/array.h>
 
@@ -154,16 +153,7 @@ Machine::HWData::HWData()
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
 #if HC_ARCH_BITS == 64
-    /* Default value decision pending. */
-    uint64_t cbRam = 0;
-
-    if (    RTSystemQueryTotalRam(&cbRam) == VINF_SUCCESS
-        &&  cbRam >= (UINT64_C(6) * _1G))
-    {
-        mHWVirtExLargePagesEnabled = true;
-    }
-    else
-        mHWVirtExLargePagesEnabled = false;
+    mHWVirtExLargePagesEnabled = true;
 #else
     /* Not supported on 32 bits hosts. */
     mHWVirtExLargePagesEnabled = false;

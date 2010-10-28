@@ -71,7 +71,6 @@
 #include <iprt/process.h>
 #include <iprt/ldr.h>
 #include <iprt/cpp/lock.h>
-#include <iprt/system.h>
 
 // generated header
 #include "SchemaDefs.h"
@@ -1575,19 +1574,11 @@ Hardware::Hardware()
 #endif
 
     /* The default value of large page supports depends on the host:
-     * - 64 bits host -> true if sufficient RAM available.
+     * - 64 bits host -> true
      * - 32 bits host -> false
      */
 #if HC_ARCH_BITS == 64
-    uint64_t cbRam = 0;
-
-    if (    RTSystemQueryTotalRam(&cbRam) == VINF_SUCCESS
-        &&  cbRam >= (UINT64_C(6) * _1G))
-    {
-        fLargePages = true;
-    }
-    else
-        fLargePages = false;
+    fLargePages = true;
 #else
     /* Not supported on 32 bits hosts. */
     fLargePages = false;
