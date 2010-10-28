@@ -146,6 +146,7 @@ enum
     MODIFYVM_VRDEREUSECON,
     MODIFYVM_VRDEVIDEOCHANNEL,
     MODIFYVM_VRDEVIDEOCHANNELQUALITY,
+    MODIFYVM_VRDELIBRARY,
     MODIFYVM_VRDE,
 #endif
     MODIFYVM_RTCUSEUTC,
@@ -270,6 +271,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdereusecon",             MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdevideochannel",         MODIFYVM_VRDEVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },
+    { "--vrdelibrary",              MODIFYVM_VRDELIBRARY,               RTGETOPT_REQ_STRING },
     { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
 #endif
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
@@ -1823,6 +1825,25 @@ int handleModifyVM(HandlerArg *a)
             }
 
 #ifdef VBOX_WITH_VRDP
+            case MODIFYVM_VRDELIBRARY:
+            {
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
+
+                if (vrdeServer)
+                {
+                    if (strcmp(ValueUnion.psz, "default") != 0)
+                    {
+                        Bstr bstr(ValueUnion.psz);
+                        CHECK_ERROR(vrdeServer, COMSETTER(VRDELibrary)(bstr.raw()));
+                    }
+                    else
+                        CHECK_ERROR(vrdeServer, COMSETTER(VRDELibrary)(NULL));
+                }
+                break;
+            }
+
             case MODIFYVM_VRDESETPROPERTY:
             {
                 ComPtr<IVRDEServer> vrdeServer;

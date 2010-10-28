@@ -1205,6 +1205,47 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
 }
 
 /**
+ * Creates an <VRDE> node under the given parent element with
+ * <VRDELibrary> children according to the contents of the given
+ * list.
+ *
+ * @param elmParent
+ * @param me
+ */
+void MainConfigFile::buildVRDE(xml::ElementNode &elmParent,
+                               const VRDELibrariesList &me)
+{
+    if (me.size())
+    {
+        xml::ElementNode *pelmVRDE = elmParent.createChild("VRDE");
+        for (VRDELibrariesList::const_iterator it = me.begin();
+             it != me.end();
+             ++it)
+        {
+            const Utf8Str &strName = *it;
+            xml::ElementNode *pelmThis = pelmVRDE->createChild("VRDELibrary");
+            pelmThis->setAttribute("name", strName);
+        }
+    }
+}
+
+void MainConfigFile::readVRDE(const xml::ElementNode &elmVRDE)
+{
+    xml::NodesLoop nl1(elmVRDE);
+    const xml::ElementNode *pelmLibrary;
+    while ((pelmLibrary = nl1.forAllNodes()))
+    {
+        if (pelmLibrary->nameEquals("VRDELibrary"))
+        {
+            Utf8Str strName;
+            if (pelmLibrary->getAttributeValue("name", strName))
+                llVRDELibraries.push_back(strName);
+            else
+                throw ConfigFileError(this, pelmLibrary, N_("Required VRDELibrary/@name attribute is missing"));
+        }
+    }
+}
+/**
  * Constructor.
  *
  * If pstrFilename is != NULL, this reads the given settings file into the member
@@ -1267,6 +1308,8 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                     }
                     else if (pelmGlobalChild->nameEquals("USBDeviceFilters"))
                         readUSBDeviceFilters(*pelmGlobalChild, host.llUSBDeviceFilters);
+                    else if (pelmGlobalChild->nameEquals("VRDE"))
+                        readVRDE(*pelmGlobalChild);
                 }
             } // end if (pelmRootChild->nameEquals("Global"))
         }
@@ -1359,6 +1402,8 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
                           host.llUSBDeviceFilters,
                           true);               // fHostMode
 
+    buildVRDE(*pelmGlobal, llVRDELibraries);
+
     // now go write the XML
     xml::XmlFileWriter writer(*m->pDoc);
     writer.write(m->strFilename.c_str(), true /*fSafe*/);
@@ -1383,14 +1428,14 @@ bool VRDESettings::operator==(const VRDESettings& v) const
 {
     return (    (this == &v)
              || (    (fEnabled                  == v.fEnabled)
-                  && (strPort                   == v.strPort)
-                  && (strNetAddress             == v.strNetAddress)
                   && (authType                  == v.authType)
                   && (ulAuthTimeout             == v.ulAuthTimeout)
                   && (fAllowMultiConnection     == v.fAllowMultiConnection)
                   && (fReuseSingleConnection    == v.fReuseSingleConnection)
                   && (fVideoChannel             == v.fVideoChannel)
                   && (ulVideoChannelQuality     == v.ulVideoChannelQuality)
+                  && (strVRDELibrary            == v.strVRDELibrary)
+                  && (mapProperties             == v.mapProperties)
                 )
            );
 }
@@ -2451,8 +2496,12 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
             pelmHwChild->getAttributeValue("enabled", hw.vrdeSettings.fEnabled);
-            pelmHwChild->getAttributeValue("port", hw.vrdeSettings.strPort);
-            pelmHwChild->getAttributeValue("netAddress", hw.vrdeSettings.strNetAddress);
+
+            Utf8Str str;
+            if (pelmHwChild->getAttributeValue("port", str))
+                hw.vrdeSettings.mapProperties["TCP/Ports"] = str;
+            if (pelmHwChild->getAttributeValue("netAddress", str))
+                hw.vrdeSettings.mapProperties["TCP/Address"] = str;
 
             Utf8Str strAuthType;
             if (pelmHwChild->getAttributeValue("authType", strAuthType))
@@ -2479,6 +2528,28 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmVideoChannel->getAttributeValue("enabled", hw.vrdeSettings.fVideoChannel);
                 pelmVideoChannel->getAttributeValue("quality", hw.vrdeSettings.ulVideoChannelQuality);
                 hw.vrdeSettings.ulVideoChannelQuality = RT_CLAMP(hw.vrdeSettings.ulVideoChannelQuality, 10, 100);
+            }
+            pelmHwChild->getAttributeValue("VRDELibrary", hw.vrdeSettings.strVRDELibrary);
+
+            const xml::ElementNode *pelmProperties = pelmHwChild->findChildElement("VRDEProperties");
+            if (pelmProperties != NULL)
+            {
+                xml::NodesLoop nl(*pelmProperties);
+                const xml::ElementNode *pelmProperty;
+                while ((pelmProperty = nl.forAllNodes()))
+                {
+                    if (pelmProperty->nameEquals("Property"))
+                    {
+                        /* <Property name="TCP/Ports" value="3000-3002"/> */
+                        Utf8Str strName, strValue;
+                        if (    ((pelmProperty->getAttributeValue("name", strName)))
+                             && ((pelmProperty->getAttributeValue("value", strValue)))
+                           )
+                            hw.vrdeSettings.mapProperties[strName] = strValue;
+                        else
+                            throw ConfigFileError(this, pelmProperty, N_("Required VRDE Property/@name or @value attribute is missing"));
+                    }
+                }
             }
         }
         else if (pelmHwChild->nameEquals("BIOS"))
@@ -3367,12 +3438,24 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmVRDE = pelmHardware->createChild("RemoteDisplay");
     pelmVRDE->setAttribute("enabled", hw.vrdeSettings.fEnabled);
-    Utf8Str strPort = hw.vrdeSettings.strPort;
-    if (!strPort.length())
-        strPort = "3389";
-    pelmVRDE->setAttribute("port", strPort);
-    if (hw.vrdeSettings.strNetAddress.length())
-        pelmVRDE->setAttribute("netAddress", hw.vrdeSettings.strNetAddress);
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        /* In VBox 4.0 these attributes are replaced with "Properties". */
+        Utf8Str strPort;
+        StringsMap::const_iterator it = hw.vrdeSettings.mapProperties.find("TCP/Ports");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            strPort = it->second;
+        if (!strPort.length())
+            strPort = "3389";
+        pelmVRDE->setAttribute("port", strPort);
+
+        Utf8Str strAddress; 
+        it = hw.vrdeSettings.mapProperties.find("TCP/Address");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            strAddress = it->second;
+        if (strAddress.length())
+            pelmVRDE->setAttribute("netAddress", strAddress);
+    }
     const char *pcszAuthType;
     switch (hw.vrdeSettings.authType)
     {
@@ -3394,6 +3477,25 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         xml::ElementNode *pelmVideoChannel = pelmVRDE->createChild("VideoChannel");
         pelmVideoChannel->setAttribute("enabled", hw.vrdeSettings.fVideoChannel);
         pelmVideoChannel->setAttribute("quality", hw.vrdeSettings.ulVideoChannelQuality);
+    }
+    if (m->sv >= SettingsVersion_v1_11)
+    {
+        if (hw.vrdeSettings.strVRDELibrary.length())
+            pelmVRDE->setAttribute("VRDELibrary", hw.vrdeSettings.strVRDELibrary);
+        if (hw.vrdeSettings.mapProperties.size() > 0)
+        {
+            xml::ElementNode *pelmProperties = pelmVRDE->createChild("VRDEProperties");
+            for (StringsMap::const_iterator it = hw.vrdeSettings.mapProperties.begin();
+                 it != hw.vrdeSettings.mapProperties.end();
+                 ++it)
+            {
+                const Utf8Str &strName = it->first;
+                const Utf8Str &strValue = it->second;
+                xml::ElementNode *pelm = pelmProperties->createChild("Property");
+                pelm->setAttribute("name", strName);
+                pelm->setAttribute("value", strValue);
+            }
+        }
     }
 
     xml::ElementNode *pelmBIOS = pelmHardware->createChild("BIOS");
@@ -4258,7 +4360,26 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              || mediaRegistry.llHardDisks.size()
              || mediaRegistry.llDvdImages.size()
              || mediaRegistry.llFloppyImages.size()
+             || !hardwareMachine.vrdeSettings.strVRDELibrary.isEmpty()
            )
+            m->sv = SettingsVersion_v1_11;
+    }
+
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        /* If the properties contain elements other than "TCP/Ports" and "TCP/Address",
+         * then increase the version to VBox 4.0.
+         */
+        int cOldProperties = 0;
+
+        StringsMap::const_iterator it = hardwareMachine.vrdeSettings.mapProperties.find("TCP/Ports");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            cOldProperties++;
+        it = hardwareMachine.vrdeSettings.mapProperties.find("TCP/Address");
+        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+            cOldProperties++;
+
+        if (hardwareMachine.vrdeSettings.mapProperties.size() != cOldProperties)
             m->sv = SettingsVersion_v1_11;
     }
 

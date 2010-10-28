@@ -66,6 +66,8 @@ class ConfigFileError;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef std::list<com::Utf8Str> VRDELibrariesList;
+
 /**
  * USB device filter definition. This struct is used both in MainConfigFile
  * (for global USB filters) and MachineConfigFile (for machine filters).
@@ -253,6 +255,8 @@ public:
 
     void readMachineRegistry(const xml::ElementNode &elmMachineRegistry);
     void readDHCPServers(const xml::ElementNode &elmDHCPServers);
+    void readVRDE(const xml::ElementNode &elmVRDE);
+    void buildVRDE(xml::ElementNode &elmParent, const VRDELibrariesList &me);
 
     void write(const com::Utf8Str strFilename);
 
@@ -262,6 +266,7 @@ public:
     MachinesRegistry        llMachines;
     DHCPServersList         llDhcpServers;
     StringsMap              mapExtraDataItems;
+    VRDELibrariesList       llVRDELibraries;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -290,14 +295,14 @@ struct VRDESettings
     bool operator==(const VRDESettings& v) const;
 
     bool            fEnabled;
-    com::Utf8Str    strPort;
-    com::Utf8Str    strNetAddress;
     AuthType_T      authType;
     uint32_t        ulAuthTimeout;
     bool            fAllowMultiConnection,
                     fReuseSingleConnection,
                     fVideoChannel;
     uint32_t        ulVideoChannelQuality;
+    com::Utf8Str    strVRDELibrary;
+    StringsMap      mapProperties;
 };
 
 /**

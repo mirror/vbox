@@ -205,7 +205,8 @@ enum enOptionCodes
     LISTUSBHOST,
     LISTUSBFILTERS,
     LISTSYSTEMPROPERTIES,
-    LISTDHCPSERVERS
+    LISTDHCPSERVERS,
+    LISTVRDELIBRARIES
 };
 
 static const RTGETOPTDEF g_aListOptions[]
@@ -231,6 +232,7 @@ static const RTGETOPTDEF g_aListOptions[]
         { "usbfilters",         LISTUSBFILTERS,         RTGETOPT_REQ_NOTHING },
         { "systemproperties",   LISTSYSTEMPROPERTIES,   RTGETOPT_REQ_NOTHING },
         { "dhcpservers",        LISTDHCPSERVERS,        RTGETOPT_REQ_NOTHING },
+        { "vrdelibraries",      LISTVRDELIBRARIES,      RTGETOPT_REQ_NOTHING },
       };
 
 int handleList(HandlerArg *a)
@@ -273,6 +275,7 @@ int handleList(HandlerArg *a)
             case LISTUSBFILTERS:
             case LISTSYSTEMPROPERTIES:
             case LISTDHCPSERVERS:
+            case LISTVRDELIBRARIES:
                 if (command)
                     return errorSyntax(USAGE_LIST, "Too many subcommands for \"list\" command.\n");
 
@@ -932,6 +935,17 @@ int handleList(HandlerArg *a)
                 svr->COMGETTER(Enabled)(&bEnabled);
                 RTPrintf("Enabled:        %s\n", bEnabled ? "Yes" : "No");
                 RTPrintf("\n");
+            }
+        }
+        break;
+        case LISTVRDELIBRARIES:
+        {
+            SafeArray<BSTR> libs;
+            CHECK_ERROR(a->virtualBox, VRDEListLibraries(ComSafeArrayAsOutParam(libs)));
+            for (size_t i = 0; i < libs.size(); ++i)
+            {
+                Bstr bstrName(libs[i]);
+                RTPrintf("%lS\n", bstrName.raw());
             }
         }
         break;

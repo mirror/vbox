@@ -119,7 +119,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            bridgedifs|dhcpservers|hostinfo|\n"
 #endif
                      "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
-                     "                            usbhost|usbfilters|systemproperties\n"
+                     "                            usbhost|usbfilters|systemproperties|\n"
+                     "                            vrdelibraries\n"
                      "\n");
     }
 
@@ -312,6 +313,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         {
             RTStrmPrintf(pStrm,
                      "                            [--vrde on|off]\n"
+                     "                            [--vrdelibrary default|<name>\n"
                      "                            [--vrdesetproperty <name=[value]>]\n"
                      "                            [--vrdeauthtype null|external|guest]\n"
                      "                            [--vrdemulticon on|off]\n"
@@ -727,6 +729,13 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #if defined(VBOX_WITH_NETFLT)
                      "                                   --ifname <hostonly_if_name>\n"
 #endif
+                     "\n");
+    }
+    if (u64Cmd & USAGE_VRDE)
+    {
+        RTStrmPrintf(pStrm,
+                     "VBoxManage vrde             register <name>\n"
+                     "VBoxManage vrde             unregister <name>\n"
                      "\n");
     }
 }

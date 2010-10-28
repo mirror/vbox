@@ -96,6 +96,7 @@
 #define USAGE_DEBUGLOG              RT_BIT_64(52)
 #define USAGE_SETHDPARENTUUID       RT_BIT_64(53)
 #define USAGE_PASSWORDHASH          RT_BIT_64(54)
+#define USAGE_VRDE                  RT_BIT_64(55)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -208,6 +209,7 @@ int handleSetExtraData(HandlerArg *a);
 int handleSetProperty(HandlerArg *a);
 int handleSharedFolder(HandlerArg *a);
 int handleVMStatistics(HandlerArg *a);
+int handleVRDE(HandlerArg *a);
 
 /* VBoxManageDisk.cpp */
 int handleCreateHardDisk(HandlerArg *a);
