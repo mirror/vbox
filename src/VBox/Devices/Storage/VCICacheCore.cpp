@@ -77,7 +77,7 @@ typedef struct VciHdr
     /** Reserved for future use. */
     uint8_t     abReserved[951];
 } VciHdr, *PVciHdr;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(VciHdr, 2 * VCI_BLOCK_SIZE);
 
 /** VCI signature to identify a valid image. */
@@ -118,7 +118,7 @@ typedef struct VciCacheExtent
     /** First block in the image where the data is stored. */
     uint64_t    u64BlockAddr;
 } VciCacheExtent, *PVciCacheExtent;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(VciCacheExtent, 38);
 
 /**
@@ -136,7 +136,7 @@ typedef struct VciTreeNodeInternal
     /** Block address in the image where the next node in the tree is stored. */
     uint64_t    u64ChildAddr;
 } VciTreeNodeInternal, *PVciTreeNodeInternal;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(VciTreeNodeInternal, 20);
 
 /**
@@ -152,7 +152,7 @@ typedef struct VciTreeNode
     /** Data in the node. */
     uint8_t     au8Data[4095];
 } VciTreeNode, *PVciTreeNode;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(VciTreeNode, 8 * VCI_BLOCK_SIZE);
 
 /** Node type: Internal node containing links to other nodes (VciTreeNodeInternal). */
@@ -188,7 +188,7 @@ typedef struct VciBlkMap
     /** Reserved for future use. */
     uint8_t      au8Reserved[472];
 } VciBlkMap, *PVciBlkMap;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(VciBlkMap, VCI_BLOCK_SIZE);
 
 /** The magic which identifies a block map. */
