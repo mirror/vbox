@@ -198,7 +198,9 @@ VirtualBox_LIBS.linux += Xinerama
 VirtualBox_LIBS.solaris += Xinerama
 VirtualBox_LIBS.freebsd += Xinerama
 
+ifneq ($(KBUILD_TARGET),win)
 VirtualBox_CXXFLAGS += -Wno-switch
+endif
 
 ifdef VBOX_WITH_VIDEOHWACCEL
 # Necessary for save state support
