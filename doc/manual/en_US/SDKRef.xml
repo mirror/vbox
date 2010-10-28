@@ -2115,7 +2115,7 @@ es.unregisterListener(listener); </screen></para>
           agg.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
           registered = True
           end = time.time() + dur
-          while  time.time() < end:
+          while  time.time() &lt; end:
               ev = agg.getEvent(listener, 1000)
               processEent(ev)
           agg.unregisterListener(listener)</screen>
