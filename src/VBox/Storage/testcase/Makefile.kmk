@@ -88,6 +88,7 @@ ifdef VBOX_WITH_TESTCASES
 
  vbox-img_SOURCES = \
 	vbox-img.cpp
+ vbox-img_DEFS = IN_VBOXDDU IN_VBOXDDU_STATIC IN_RT_R3
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
