@@ -19,15 +19,15 @@
         <para>Open Virtualization Format Archive (OVA) support</para>
       </listitem>
 
+      <listitem>
+        <para>VMM: Support more than 1.5/2 GB guest RAM on 32-bit hosts</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
 
     <itemizedlist>
-
-      <listitem>
-        <para>VMM: Support more than 1.5/2 GB guest RAM on 32-bit hosts</para>
-      </listitem>
 
       <listitem>
         <para>VMM: Enable large page support by default on 64-bit hosts
