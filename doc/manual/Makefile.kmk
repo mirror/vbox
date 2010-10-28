@@ -66,7 +66,7 @@ BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
 ##########################################################################################
 ifdef VBOX_WITH_DOCS
  # Default language
- VBOX_MANUAL_LANGUAGES = en_US
+ VBOX_MANUAL_ADD_LANGUAGES = en_US fr_FR
 
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
   ## @todo make this an install target, drop the BLDDIRS.
@@ -94,13 +94,15 @@ ifdef VBOX_WITH_DOCS
   OTHERS.linux += \
   	$(VBOX_PATH_BIN_CHM)
 
-  OTHERS += \
-  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf)
-  ifdef VBOX_WITH_DOCS_CHM
-  OTHERS.win += \
-  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm)
-  OTHERS.linux += \
-  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm)
+  ifdef VBOX_WITH_DOCS_TRANSLATIONS
+   OTHERS += \
+   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/UserManual_$(f).pdf)
+   ifdef VBOX_WITH_DOCS_CHM
+   OTHERS.win += \
+   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm)
+   OTHERS.linux += \
+   	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_BIN)/VirtualBox_$(f).chm)
+   endif
   endif
  endif # !VBOX_ONLY_SDK
  ifdef VBOX_ONLY_DOCS
