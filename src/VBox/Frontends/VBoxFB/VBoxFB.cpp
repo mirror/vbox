@@ -38,7 +38,7 @@ void showusage()
     printf("\nThe following parameters are supported:\n"
             "--startvm uuid       start VM with UUID 'uuid'\n"
             "--fixedres WxHxBPP   always use fixed host resolution\n"
-            "--listhostmodes      display list of suported host display modes and exit\n"
+            "--listhostmodes      display list of supported host display modes and exit\n"
             "--scale              scale guest video mode to host video mode\n"
             "--nodirectblit       disable direct blitting, use intermediate framebuffer\n"
             "--showlabel          show VM name on top of the VM display\n");

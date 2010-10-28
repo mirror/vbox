@@ -641,7 +641,7 @@ void UIRegistrationWzdPage1::populateCountries()
          << "Andorra"
          << "Angola"
          << "Anguilla"
-         << "Antartica"
+         << "Antarctica"
          << "Antigua & Barbuda"
          << "Argentina"
          << "Armenia"

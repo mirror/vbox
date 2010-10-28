@@ -220,7 +220,7 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #ifdef RT_OS_WINDOWS
         (u64Cmd & USAGE_MODINSTALL)
         ? "  modinstall\n"
-          "       Installs the neccessary driver for the host OS\n"
+          "       Installs the necessary driver for the host OS\n"
           "\n"
         : "",
         (u64Cmd & USAGE_MODUNINSTALL)
