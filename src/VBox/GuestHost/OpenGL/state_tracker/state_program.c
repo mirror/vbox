@@ -1589,12 +1589,17 @@ void STATE_APIENTRY crStateDisableVertexAttribArrayARB(GLuint index)
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
+    CRStateBits *sb = GetCurrentBits();
+    CRClientBits *cb = &(sb->client);
+
     if (index >= g->limits.maxVertexProgramAttribs) {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glEnableVertexAttribArrayARB(index)");
         return;
     }
     c->array.a[index].enabled = GL_FALSE;
+    DIRTY(cb->dirty, g->neg_bitid);
+    DIRTY(cb->enableClientState, g->neg_bitid);
 }
 
 
@@ -1602,12 +1607,17 @@ void STATE_APIENTRY crStateEnableVertexAttribArrayARB(GLuint index)
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
+    CRStateBits *sb = GetCurrentBits();
+    CRClientBits *cb = &(sb->client);
+
     if (index >= g->limits.maxVertexProgramAttribs) {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glEnableVertexAttribArrayARB(index)");
         return;
     }
     c->array.a[index].enabled = GL_TRUE;
+    DIRTY(cb->dirty, g->neg_bitid);
+    DIRTY(cb->enableClientState, g->neg_bitid);
 }
 
 
