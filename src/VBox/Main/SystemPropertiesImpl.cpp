@@ -742,7 +742,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultVRDELibrary)(BSTR *aVRDELibrary)
     BOOL fFound = FALSE;
     HRESULT rc = mParent->VRDEIsLibraryRegistered(Bstr(m->strDefaultVRDELibrary).raw(), &fFound);
 
-    if (!fFound)
+    if (FAILED(rc)|| !fFound)
         return setError(E_FAIL, "The library is not registered\n");
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -764,9 +764,9 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultVRDELibrary)(IN_BSTR aVRDELibrar
     if (!bstrLibrary.isEmpty())
     {
         BOOL fFound = FALSE;
-        HRESULT rc = mParent->VRDEIsLibraryRegistered(bstrLibrary.raw(), &fFound);
+        rc = mParent->VRDEIsLibraryRegistered(bstrLibrary.raw(), &fFound);
 
-        if (!fFound)
+        if (FAILED(rc) || !fFound)
             return setError(E_FAIL, "The library is not registered\n");
     }
 
