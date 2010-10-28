@@ -48,7 +48,7 @@ endif
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable #vbox-img
+ PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable vbox-img
  tstVD_TEMPLATE = VBOXR3TSTEXE
  tstVD-2_TEMPLATE = VBOXR3TSTEXE
  tstVDCopy_TEMPLATE = VBOXR3TSTEXE
@@ -62,7 +62,6 @@ ifdef VBOX_WITH_TESTCASES
  tstVDShareable_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDSetUuid_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  vbox-img_LIBS = \
-	$(PATH_LIB)/StorageLibNoDB$(VBOX_SUFF_LIB) \
 	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)
   vbox-img_LIBS += \
@@ -87,8 +86,17 @@ ifdef VBOX_WITH_TESTCASES
  tstVDShareable_SOURCES = tstVDShareable.cpp
 
  vbox-img_SOURCES = \
-	vbox-img.cpp
- vbox-img_DEFS = IN_VBOXDDU IN_VBOXDDU_STATIC IN_RT_R3
+	vbox-img.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VD.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VDI.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VMDK.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VHD.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/DMG.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/Parallels.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/ISCSI.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/RAW.cpp \
+	$(VBOX_PATH_STORAGE_SRC)/VCICache.cpp
+ vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS IN_RT_R3
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
