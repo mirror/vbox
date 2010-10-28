@@ -59,7 +59,7 @@ typedef struct DRVMAINDISPLAY
     PPDMIDISPLAYPORT            pUpPort;
     /** Our display connector interface. */
     PDMIDISPLAYCONNECTOR        IConnector;
-#if defined(VBOX_WITH_VIDEOHWACCEL)
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI)
     /** VBVA callbacks */
     PPDMIDISPLAYVBVACALLBACKS   pVBVACallbacks;
 #endif
