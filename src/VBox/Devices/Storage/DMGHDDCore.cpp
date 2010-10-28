@@ -1192,7 +1192,11 @@ static const char *dmgOpenXmlToRsrc(PDMGIMAGE pThis, char const *pszXml)
             strcpy(&pThis->aRsrcs[iRsrc].szName[0], "plst");
         }
         else
-            return psz;
+        {
+            SKIP_AHEAD(psz, "</array>");
+            continue;
+        }
+
 
         /*
          * Descend into the array and add the elements to the resource entry.
