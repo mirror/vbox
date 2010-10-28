@@ -290,6 +290,8 @@ static bool vboxVDMACmdCheckCrCmd(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR p
                     }
                     break;
                 }
+                default:
+                    break;
             }
         }
     }
@@ -326,7 +328,7 @@ int vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PV
 
 #endif
 
-
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
 /* to simplify things and to avoid extra backend if modifications we assume the VBOXVDMA_RECTL is the same as VBVACMDHDR */
 AssertCompile(sizeof(VBOXVDMA_RECTL) == sizeof(VBVACMDHDR));
 AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, left) == RT_SIZEOFMEMB(VBVACMDHDR, x));
@@ -352,6 +354,7 @@ static int vboxVDMANotifyPrimaryUpdate (PVGASTATE pVGAState, unsigned uScreenId,
 
     return VINF_SUCCESS;
 }
+#endif
 
 static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma,
         uint8_t *pvDstSurf, const uint8_t *pvSrcSurf,
