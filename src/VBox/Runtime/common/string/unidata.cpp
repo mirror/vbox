@@ -22569,7 +22569,7 @@ static const uint8_t g_afRTUniFlags0x02f800[] =
 };
 
 
-const RTUNIFLAGSRANGE g_aRTUniFlagRanges[] =
+const RTUNIFLAGSRANGE g_aRTUniFlagsRanges[] =
 {
     { 0x000000, 0x003401, &g_afRTUniFlags0x000000[0] },
     { 0x004db5, 0x004e01, &g_afRTUniFlags0x004db5[0] },
