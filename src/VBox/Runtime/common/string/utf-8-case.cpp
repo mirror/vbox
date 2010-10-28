@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,8 +71,8 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
     for (;;)
     {
         /* Get the codepoints */
-        RTUNICP cp1;
-        int rc = RTStrGetCpEx(&psz1, &cp1);
+        RTUNICP uc1;
+        int rc = RTStrGetCpEx(&psz1, &uc1);
         if (RT_FAILURE(rc))
         {
             AssertRC(rc);
@@ -80,8 +80,8 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
             break;
         }
 
-        RTUNICP cp2;
-        rc = RTStrGetCpEx(&psz2, &cp2);
+        RTUNICP uc2;
+        rc = RTStrGetCpEx(&psz2, &uc2);
         if (RT_FAILURE(rc))
         {
             AssertRC(rc);
@@ -91,20 +91,20 @@ RTDECL(int) RTStrICmp(const char *psz1, const char *psz2)
         }
 
         /* compare */
-        int iDiff = cp1 - cp2;
+        int iDiff = uc1 - uc2;
         if (iDiff)
         {
-            iDiff = RTUniCpToUpper(cp1) != RTUniCpToUpper(cp2);
+            iDiff = RTUniCpToUpper(uc1) != RTUniCpToUpper(uc2);
             if (iDiff)
             {
-                iDiff = RTUniCpToLower(cp1) - RTUniCpToLower(cp2); /* lower case diff last! */
+                iDiff = RTUniCpToLower(uc1) - RTUniCpToLower(uc2); /* lower case diff last! */
                 if (iDiff)
                     return iDiff;
             }
         }
 
         /* hit the terminator? */
-        if (!cp1)
+        if (!uc1)
             return 0;
     }
 
@@ -149,9 +149,9 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
     for (;;)
     {
         /* Get the codepoints */
-        RTUNICP cp1;
+        RTUNICP uc1;
         size_t cchMax2 = cchMax;
-        int rc = RTStrGetCpNEx(&psz1, &cchMax, &cp1);
+        int rc = RTStrGetCpNEx(&psz1, &cchMax, &uc1);
         if (RT_FAILURE(rc))
         {
             AssertRC(rc);
@@ -160,8 +160,8 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
             break;
         }
 
-        RTUNICP cp2;
-        rc = RTStrGetCpNEx(&psz2, &cchMax2, &cp2);
+        RTUNICP uc2;
+        rc = RTStrGetCpNEx(&psz2, &cchMax2, &uc2);
         if (RT_FAILURE(rc))
         {
             AssertRC(rc);
@@ -172,20 +172,20 @@ RTDECL(int) RTStrNICmp(const char *psz1, const char *psz2, size_t cchMax)
         }
 
         /* compare */
-        int iDiff = cp1 - cp2;
+        int iDiff = uc1 - uc2;
         if (iDiff)
         {
-            iDiff = RTUniCpToUpper(cp1) != RTUniCpToUpper(cp2);
+            iDiff = RTUniCpToUpper(uc1) != RTUniCpToUpper(uc2);
             if (iDiff)
             {
-                iDiff = RTUniCpToLower(cp1) - RTUniCpToLower(cp2); /* lower case diff last! */
+                iDiff = RTUniCpToLower(uc1) - RTUniCpToLower(uc2); /* lower case diff last! */
                 if (iDiff)
                     return iDiff;
             }
         }
 
         /* hit the terminator? */
-        if (!cp1 || cchMax == 0)
+        if (!uc1 || cchMax == 0)
             return 0;
     }
 
@@ -277,18 +277,30 @@ RTDECL(char *) RTStrToLower(char *psz)
 {
     /*
      * Loop the code points in the string, converting them one by one.
-     * ASSUMES that the code points for upper and lower case are encoded
-     *         with the exact same length.
+     *
+     * ASSUMES that the folded code points have an encoding that is equal or
+     *         shorter than the original (this is presently correct).
      */
-    /** @todo Handled bad encodings correctly+quietly, remove assumption,
-     *        optimize. */
-    char *pszCur = psz;
-    while (*pszCur)
+    const char *pszSrc = psz;
+    char       *pszDst = psz;
+    RTUNICP     uc;
+    do
     {
-        RTUNICP cp = RTStrGetCp(pszCur);
-        cp = RTUniCpToLower(cp);
-        pszCur = RTStrPutCp(pszCur, cp);
-    }
+        int rc = RTStrGetCpEx(&pszSrc, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            uc = RTUniCpToLower(uc);
+            pszDst = RTStrPutCp(pszDst, uc);
+        }
+        else
+        {
+            /* bad encoding, just copy it quietly (uc == RTUNICP_INVALID (!= 0)). */
+            AssertRC(rc);
+            *pszDst++ = pszSrc[-1];
+        }
+        Assert((uintptr_t)pszDst <= (uintptr_t)pszSrc);
+    } while (uc != 0);
+
     return psz;
 }
 RT_EXPORT_SYMBOL(RTStrToLower);
@@ -298,18 +310,30 @@ RTDECL(char *) RTStrToUpper(char *psz)
 {
     /*
      * Loop the code points in the string, converting them one by one.
-     * ASSUMES that the code points for upper and lower case are encoded
-     *         with the exact same length.
+     *
+     * ASSUMES that the folded code points have an encoding that is equal or
+     *         shorter than the original (this is presently correct).
      */
-    /** @todo Handled bad encodings correctly+quietly, remove assumption,
-     *        optimize. */
-    char *pszCur = psz;
-    while(*pszCur)
+    const char *pszSrc = psz;
+    char       *pszDst = psz;
+    RTUNICP     uc;
+    do
     {
-        RTUNICP cp = RTStrGetCp(pszCur);
-        cp = RTUniCpToUpper(cp);
-        pszCur = RTStrPutCp(pszCur, cp);
-    }
+        int rc = RTStrGetCpEx(&pszSrc, &uc);
+        if (RT_SUCCESS(rc))
+        {
+            uc = RTUniCpToUpper(uc);
+            pszDst = RTStrPutCp(pszDst, uc);
+        }
+        else
+        {
+            /* bad encoding, just copy it quietly (uc == RTUNICP_INVALID (!= 0)). */
+            AssertRC(rc);
+            *pszDst++ = pszSrc[-1];
+        }
+        Assert((uintptr_t)pszDst <= (uintptr_t)pszSrc);
+    } while (uc != 0);
+
     return psz;
 }
 RT_EXPORT_SYMBOL(RTStrToUpper);
