@@ -351,6 +351,8 @@ endif
 # Enable Wddm Video driver for Vista+ guests
 VBOX_WITH_WDDM = 1
 VBOXWDDM_WITH_VBVA=1
+VBOX_WITH_VDMA=1
+VBOX_WITH_CRHGSMI=1
 # Enable VBVA lock
 VBOX_WITH_OLD_VBVA_LOCK = 1
 # Enable the Intel PXE ROM (replaces Etherboot).

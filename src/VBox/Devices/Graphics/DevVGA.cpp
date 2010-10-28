@@ -5393,6 +5393,10 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     LogFlow(("vgaR3Destruct:\n"));
 
+#ifdef VBOX_WITH_VDMA
+    vboxVDMADestruct(pThis->pVdma);
+#endif
+
     /*
      * Free MM heap pointers.
      */
