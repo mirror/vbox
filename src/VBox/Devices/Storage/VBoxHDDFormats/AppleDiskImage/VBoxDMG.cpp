@@ -106,7 +106,7 @@ typedef struct VBOXUDIF
     uint64_t            cSectors;               /**< 0x1ec - The sector count. Warning! Unaligned!                 (fUDISectorCount) */
     uint32_t            au32Unknown[3];         /**< 0x1f4 - Unknown stuff, hdiutil doesn't dump it... */
 } VBOXUDIF;
-#pragma pack(0)
+#pragma pack()
 AssertCompileSize(VBOXUDIF, 512);
 AssertCompileMemberOffset(VBOXUDIF, cbRsrc,   0x030);
 AssertCompileMemberOffset(VBOXUDIF, cbXml,    0x0e0);
