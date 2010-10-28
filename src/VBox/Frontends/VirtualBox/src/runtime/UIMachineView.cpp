@@ -387,7 +387,7 @@ void UIMachineView::prepareFrameBuffer()
      * framebuffer size. On X11 this will be additional done when the machine
      * state was 'saved'. */
     if (session().GetMachine().GetState() == KMachineState_Saved)
-        QSize size = guestSizeHint();
+        size = guestSizeHint();
 #endif /* Q_WS_X11 */
     /* If there is a preview image saved, we will resize the framebuffer to the
      * size of that image. */
@@ -519,10 +519,10 @@ QSize UIMachineView::sizeHint() const
     // TODO: Fix all DEBUGGER stuff!
     /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done by DevVGA if provoked before power on. */
     QSize fb(m_pFrameBuffer->width(), m_pFrameBuffer->height());
-    if (fb.width() < 16 || fb.height() < 16) 
+    if (fb.width() < 16 || fb.height() < 16)
     {
         CMachine machine = uisession()->session().GetMachine();
-        if (   vboxGlobal().isStartPausedEnabled() 
+        if (   vboxGlobal().isStartPausedEnabled()
             || vboxGlobal().isDebuggerAutoShowEnabled(machine))
         fb = QSize(640, 480);
     }
