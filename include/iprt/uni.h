@@ -125,12 +125,12 @@ DECLINLINE(RTUNICP) rtUniCpFlags(RTUNICP CodePoint)
         if (pCur->EndCP > CodePoint)
         {
             if (pCur->BeginCP <= CodePoint)
-                CodePoint = pCur->pafFlags[CodePoint - pCur->BeginCP];
+                return pCur->pafFlags[CodePoint - pCur->BeginCP];
             break;
         }
         pCur++;
     } while (pCur->EndCP != RTUNICP_MAX);
-    return CodePoint;
+    return 0;
 }
 
 

@@ -1019,7 +1019,7 @@ int PrintFlags(void)
      * Print flags table.
      */
     Stream2Init();
-    Stream2Printf("const RTUNIFLAGSRANGE g_aRTUniFlagRanges[] =\n"
+    Stream2Printf("const RTUNIFLAGSRANGE g_aRTUniFlagsRanges[] =\n"
                   "{\n");
     RTUNICP i = 0;
     int iStart = -1;
