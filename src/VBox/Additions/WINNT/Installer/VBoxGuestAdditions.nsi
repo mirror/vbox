@@ -175,6 +175,7 @@ Var g_iScreenBpp            ; Cmd line: Screen depth ("/depth=X")
 Var g_iScreenX              ; Cmd line: Screen resolution X ("/resx=X")
 Var g_iScreenY              ; Cmd line: Screen resolution Y ("/resy=Y")
 Var g_iSfOrder              ; Cmd line: Order of Shared Folders network provider (0=first, 1=second, ...)
+Var g_bIgnoreUnknownOpts    ; Cmd line: Ignore unknown options (don't display the help)
 Var g_bNoVBoxServiceExit    ; Cmd line: Do not quit VBoxService before updating - install on next reboot
 Var g_bNoVideoDrv           ; Cmd line: Do not install the VBoxVideo driver
 Var g_bNoGuestDrv           ; Cmd line: Do not install the VBoxGuest driver
@@ -256,6 +257,10 @@ Function HandleCommandLine
         Goto usage
         ${Break}
 
+      ${Case} '/ignore_unknownopts' ; Not officially documented
+        StrCpy $g_bIgnoreUnknownOpts "true"
+        ${Break}
+
       ${Case} '/l'
       ${Case} '/log'
       ${Case} '/logging'
@@ -333,6 +338,9 @@ Function HandleCommandLine
         ${Break}
 
     ${EndSwitch}
+
+next_param:
+
     IntOp $2 $2 + 1
 
   ${EndWhile}
@@ -340,6 +348,11 @@ Function HandleCommandLine
 
 usage:
 
+  ; If we were told to ignore unknown (invalid) options, just return to
+  ; the parsing loop ...
+  ${If} $g_bIgnoreUnknownOpts == "true"
+    Goto next_param
+  ${EndIf}
   MessageBox MB_OK "${PRODUCT_NAME} Installer$\r$\n$\r$\n \
                     Usage: VBoxWindowsAdditions-$%BUILD_TARGET_ARCH% [OPTIONS] [/l] [/S] [/D=<PATH>]$\r$\n$\r$\n \
                     Options:$\r$\n \
@@ -969,6 +982,7 @@ Function .onInit
   StrCpy $g_strAddVerBuild "0"
   StrCpy $g_strAddVerRev "0"
 
+  StrCpy $g_bIgnoreUnknownOpts "false"
   StrCpy $g_bLogEnable "false"
   StrCpy $g_bFakeWHQL "false"
   StrCpy $g_bForceInstall "false"
