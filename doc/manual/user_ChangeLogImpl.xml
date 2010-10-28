@@ -30,6 +30,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: Enable large page support by default on 64-bit hosts
+              (applies to nested paging only)</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: fixed guru meditation when running Minix (VT-x only; bug #6557)</para>
       </listitem>
 
