@@ -29,7 +29,7 @@ endif
 #
 LIBRARIES += StorageLib StorageLibNoDB
 
-StorageLib_TEMPLATE = VBoxR3Static
+StorageLib_TEMPLATE = VBOXR3STATIC
 StorageLib_SDKS.win = WINPSDK $(VBOX_WINDDK) VBOX_NTDLL
 StorageLib_DEFS     = IN_VBOXDDU
 StorageLib_SOURCES  = \
@@ -43,7 +43,7 @@ StorageLib_SOURCES  = \
 	RAW.cpp \
 	VCICache.cpp
 
-StorageLibNoDB_TEMPLATE = VBoxR3Static
+StorageLibNoDB_TEMPLATE = VBOXR3STATIC
 StorageLibNoDB_SDKS.win = WINPSDK $(VBOX_WINDDK)
 StorageLibNoDB_DEFS     = IN_VBOXDDU VBOX_HDD_NO_DYNAMIC_BACKENDS
 StorageLibNoDB_SOURCES  = \
