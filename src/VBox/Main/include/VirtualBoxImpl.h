@@ -160,6 +160,7 @@ public:
     STDMETHOD(VRDERegisterLibrary)(IN_BSTR aName);
     STDMETHOD(VRDEUnregisterLibrary)(IN_BSTR aName);
     STDMETHOD(VRDEListLibraries)(ComSafeArrayOut(BSTR, aNames));
+    STDMETHOD(VRDEIsLibraryRegistered)(IN_BSTR aName, BOOL *aRegistered);
     /* public methods only for internal purposes */
 
     /**

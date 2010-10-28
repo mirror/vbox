@@ -887,3 +887,26 @@ int handleVMStatistics(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+int handleVRDE(HandlerArg *a)
+{
+    HRESULT rc = S_OK;
+
+    if (a->argc != 2)
+        return errorSyntax(USAGE_VRDE, "Incorrect number of parameters");
+
+    if (!strcmp(a->argv[0], "register"))
+    {
+        Bstr name = a->argv[1];
+        CHECK_ERROR(a->virtualBox, VRDERegisterLibrary(name.raw()));
+    }
+    else if (!strcmp(a->argv[0], "unregister"))
+    {
+        Bstr name = a->argv[1];
+        CHECK_ERROR(a->virtualBox, VRDEUnregisterLibrary(name.raw()));
+    }
+    else
+        return errorSyntax(USAGE_VRDE, "Invalid parameter");
+
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+

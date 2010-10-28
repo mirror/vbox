@@ -739,6 +739,12 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultVRDELibrary)(BSTR *aVRDELibrary)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    BOOL fFound = FALSE;
+    HRESULT rc = mParent->VRDEIsLibraryRegistered(Bstr(m->strDefaultVRDELibrary).raw(), &fFound);
+
+    if (!fFound)
+        return setError(E_FAIL, "The library is not registered\n");
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->strDefaultVRDELibrary.cloneTo(aVRDELibrary);
@@ -751,8 +757,21 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultVRDELibrary)(IN_BSTR aVRDELibrar
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    HRESULT rc;
+
+    Bstr bstrLibrary(aVRDELibrary);
+
+    if (!bstrLibrary.isEmpty())
+    {
+        BOOL fFound = FALSE;
+        HRESULT rc = mParent->VRDEIsLibraryRegistered(bstrLibrary.raw(), &fFound);
+
+        if (!fFound)
+            return setError(E_FAIL, "The library is not registered\n");
+    }
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = setDefaultVRDELibrary(aVRDELibrary);
+    rc = setDefaultVRDELibrary(bstrLibrary);
     alock.release();
 
     if (SUCCEEDED(rc))

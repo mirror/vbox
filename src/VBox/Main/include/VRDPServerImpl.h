@@ -23,11 +23,7 @@
 #include "VirtualBoxBase.h"
 
 #include <VBox/VRDPAuth.h>
-
-namespace settings
-{
-    struct VRDESettings;
-}
+#include <VBox/settings.h>
 
 class ATL_NO_VTABLE VRDEServer :
     public VirtualBoxBase,
@@ -38,14 +34,14 @@ public:
     struct Data
     {
         BOOL mEnabled;
-        Bstr mPorts;
-        Bstr mAddress;
         AuthType_T mAuthType;
         ULONG mAuthTimeout;
         BOOL mAllowMultiConnection;
         BOOL mReuseSingleConnection;
         BOOL mVideoChannel;
         ULONG mVideoChannelQuality;
+        Bstr mVRDELibrary;
+        settings::StringsMap mProperties;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(VRDEServer, IVRDEServer)
@@ -86,6 +82,8 @@ public:
     STDMETHOD(COMSETTER(VideoChannel)) (BOOL aVideoChannel);
     STDMETHOD(COMGETTER(VideoChannelQuality)) (ULONG *aVideoChannelQuality);
     STDMETHOD(COMSETTER(VideoChannelQuality)) (ULONG aVideoChannelQuality);
+    STDMETHOD(COMGETTER(VRDELibrary)) (BSTR *aValue);
+    STDMETHOD(COMSETTER(VRDELibrary)) (IN_BSTR aValue);
 
     // IVRDEServer methods
     STDMETHOD(SetVRDEProperty) (IN_BSTR aKey, IN_BSTR aValue);

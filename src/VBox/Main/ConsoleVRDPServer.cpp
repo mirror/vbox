@@ -776,14 +776,9 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
                 break;
             }
 
-            /* features are mapped to "VRDP/Feature/NAME" extra data. */
-            com::Utf8Str extraData("VRDP/Feature/");
-            extraData += pFeature->achInfo;
+            Log(("VRDE_QP_FEATURE [%s]\n", pFeature->achInfo));
 
             com::Bstr bstrValue;
-
-            /* @todo these features should be per client. */
-            NOREF(pFeature->u32ClientId);
 
             if (   RTStrICmp(pFeature->achInfo, "Client/DisableDisplay") == 0
                 || RTStrICmp(pFeature->achInfo, "Client/DisableInput") == 0
@@ -792,11 +787,37 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
                 || RTStrICmp(pFeature->achInfo, "Client/DisableClipboard") == 0
                )
             {
+                /* @todo these features should be per client. */
+                NOREF(pFeature->u32ClientId);
+
+                /* These features are mapped to "VRDE/Feature/NAME" extra data. */
+                com::Utf8Str extraData("VRDE/Feature/");
+                extraData += pFeature->achInfo;
+
                 HRESULT hrc = server->mConsole->machine()->GetExtraData(com::Bstr(extraData).raw(),
                                                                         bstrValue.asOutParam());
-                if (hrc == S_OK && !bstrValue.isEmpty())
+                if (FAILED(hrc) || bstrValue.isEmpty())
                 {
-                    rc = VINF_SUCCESS;
+                    /* Also try the old "VRDP/Feature/NAME" */
+                    extraData = "VRDP/Feature/";
+                    extraData += pFeature->achInfo;
+
+                    hrc = server->mConsole->machine()->GetExtraData(com::Bstr(extraData).raw(),
+                                                                    bstrValue.asOutParam());
+                    if (FAILED(hrc) || bstrValue.isEmpty())
+                    {
+                        rc = VERR_NOT_SUPPORTED;
+                    }
+                }
+            }
+            else if (RTStrNCmp(pFeature->achInfo, "Property/", 9) == 0)
+            {
+                /* Generic properties. */
+                const char *pszPropertyName = &pFeature->achInfo[9];
+                HRESULT hrc = server->mConsole->getVRDEServer()->GetVRDEProperty(Bstr(pszPropertyName).raw(), bstrValue.asOutParam());
+                if (FAILED(hrc))
+                {
+                    rc = VERR_NOT_SUPPORTED;
                 }
             }
             else
@@ -1259,35 +1280,19 @@ int ConsoleVRDPServer::Launch(void)
     /* 
      * Check that a VRDE library name is set.
      */
+    Bstr library;
     Utf8Str filename;
 
-    ComPtr<IMachine> machine;
-    HRESULT hrc = mConsole->COMGETTER(Machine)(machine.asOutParam());
+    IVRDEServer *server = mConsole->getVRDEServer();
+    Assert(server);
 
+    HRESULT hrc = server->COMGETTER(VRDELibrary)(library.asOutParam());
     if (SUCCEEDED(hrc))
     {
-        ComPtr<IVirtualBox> virtualBox;
-        hrc = machine->COMGETTER(Parent)(virtualBox.asOutParam());
-
-        if (SUCCEEDED(hrc))
-        {
-            ComPtr<ISystemProperties> systemProperties;
-            hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-
-            if (SUCCEEDED(hrc))
-            {
-                Bstr library;
-                hrc = systemProperties->COMGETTER(DefaultVRDELibrary)(library.asOutParam());
-
-                if (SUCCEEDED(hrc))
-                {
-                    filename = library;
-                }
-            }
-        }
+        filename = library;
     }
 
-    if (FAILED(hrc) || filename.isEmpty())
+    if (filename.isEmpty())
     {
         return VINF_NOT_SUPPORTED;
     }
@@ -1295,8 +1300,6 @@ int ConsoleVRDPServer::Launch(void)
     /*
      * Load the VRDE library and start the server, if it is enabled.
      */
-    IVRDEServer *server = mConsole->getVRDEServer();
-    Assert(server);
     BOOL fEnabled = FALSE;
 
     hrc = server->COMGETTER(Enabled)(&fEnabled);

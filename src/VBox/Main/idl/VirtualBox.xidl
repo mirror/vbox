@@ -1374,7 +1374,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="6e123115-af60-49b3-9727-d3f302306cd2"
+    uuid="b59d8e0a-9aeb-4196-a5e9-398970ddbae5"
     wsmap="managed"
   >
     <desc>
@@ -2219,6 +2219,18 @@
       </desc>
       <param name="names" type="wstring" dir="return" safearray="yes">
         <desc>Array of names of the libraries.</desc>
+      </param>
+    </method>
+
+    <method name="VRDEIsLibraryRegistered">
+      <desc>
+        Check if the library is registered.
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>The library name.</desc>
+      </param>
+      <param name="registered" type="boolean" dir="return">
+        <desc>Whether the library is registered.</desc>
       </param>
     </method>
 
@@ -5695,7 +5707,7 @@
 
   <interface
      name="IVRDEServerInfo" extends="$unknown"
-     uuid="6890123c-5218-42ba-9afd-c71699475115"
+     uuid="714434a1-58c3-4aab-9049-7652c5df113b"
      wsmap="struct"
      >
      <desc>
@@ -12425,6 +12437,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="videoChannelQuality" type="unsigned long">
       <desc>
         Image quality in percents.
+      </desc>
+    </attribute>
+
+    <attribute name="VRDELibrary" type="wstring">
+      <desc>
+        VRDE library used by this VM. Overrides
+        <link to="ISystemProperties::defaultVRDELibrary"/>.
       </desc>
     </attribute>
 
