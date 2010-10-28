@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2007-2009 Oracle Corporation
+ * Copyright (C) 2007-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,29 +27,46 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#include <iprt/cpp/ministring.h>
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include <iprt/cpp/ministring.h>
 using namespace iprt;
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 const size_t MiniString::npos = ~(size_t)0;
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Allocation block alignment used when appending bytes to a string. */
+#define IPRT_MINISTRING_APPEND_ALIGNMENT    64
+
 
 MiniString &MiniString::append(const MiniString &that)
 {
-    size_t lenThat = that.length();
-    if (lenThat)
+    size_t cchThat = that.length();
+    if (cchThat)
     {
-        size_t lenThis = length();
-        size_t cbBoth = lenThis + lenThat + 1;
+        size_t cchThis = length();
+        size_t cchBoth = cchThis + cchThat;
 
-        reserve(cbBoth);
-            // calls realloc(cbBoth) and sets m_cbAllocated; may throw bad_alloc.
+        if (cchBoth >= m_cbAllocated)
+        {
+            reserve(RT_ALIGN_Z(cchBoth + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
+            // calls realloc(cchBoth + 1) and sets m_cbAllocated; may throw bad_alloc.
 #ifndef RT_EXCEPTIONS_ENABLED
-        AssertRelease(capacity() >= cbBoth);
+            AssertRelease(capacity() > cchBoth);
 #endif
+        }
 
-        memcpy(m_psz + lenThis, that.m_psz, lenThat);
-        m_psz[lenThis + lenThat] = '\0';
-        m_cbLength = cbBoth - 1;
+        memcpy(m_psz + cchThis, that.m_psz, cchThat);
+        m_psz[cchBoth] = '\0';
+        m_cch = cchBoth;
     }
     return *this;
 }
@@ -60,39 +77,72 @@ MiniString &MiniString::append(const char *pszThat)
     if (cchThat)
     {
         size_t cchThis = length();
-        size_t cbBoth = cchThis + cchThat + 1;
+        size_t cchBoth = cchThis + cchThat;
 
-        reserve(cbBoth);
-            // calls realloc(cbBoth) and sets m_cbAllocated; may throw bad_alloc.
+        if (cchBoth >= m_cbAllocated)
+        {
+            reserve(RT_ALIGN_Z(cchBoth + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
+            // calls realloc(cchBoth + 1) and sets m_cbAllocated; may throw bad_alloc.
 #ifndef RT_EXCEPTIONS_ENABLED
-        AssertRelease(capacity() >= cbBoth);
+            AssertRelease(capacity() > cchBoth);
 #endif
+        }
 
-        memcpy(m_psz + cchThis, pszThat, cchThat);
-        m_psz[cbBoth - 1] = '\0';
-        m_cbLength = cbBoth - 1;
+        memcpy(&m_psz[cchThis], pszThat, cchThat);
+        m_psz[cchBoth] = '\0';
+        m_cch = cchBoth;
     }
     return *this;
 }
 
-MiniString& MiniString::append(char c)
+MiniString& MiniString::append(char ch)
 {
-    if (c)
+    Assert((unsigned char)ch < 0x80);                  /* Don't create invalid UTF-8. */
+    if (ch)
     {
         // allocate in chunks of 20 in case this gets called several times
-        if (m_cbLength + 1 >= m_cbAllocated)
+        if (m_cch + 1 >= m_cbAllocated)
         {
-            reserve(m_cbLength + 10);
+            reserve(RT_ALIGN_Z(m_cch + 2, IPRT_MINISTRING_APPEND_ALIGNMENT));
             // calls realloc(cbBoth) and sets m_cbAllocated; may throw bad_alloc.
 #ifndef RT_EXCEPTIONS_ENABLED
-            AssertRelease(capacity() >= m_cbLength + 1);
+            AssertRelease(capacity() > m_cch + 1);
 #endif
         }
 
-        m_psz[m_cbLength] = c;
-        m_psz[m_cbLength + 1] = '\0';
-        ++m_cbLength;
+        m_psz[m_cch] = ch;
+        m_psz[++m_cch] = '\0';
     }
+    return *this;
+}
+
+MiniString &MiniString::appendCodePoint(RTUNICP uc)
+{
+    /*
+     * Single byte encoding.
+     */
+    if (uc < 0x80)
+        return MiniString::append((char)uc);
+
+    /*
+     * Multibyte encoding.
+     * Assume max encoding length when resizing the string, that's simpler.
+     */
+    AssertReturn(uc <= UINT32_C(0x7fffffff), *this);
+
+    if (m_cch + 6 >= m_cbAllocated)
+    {
+        reserve(RT_ALIGN_Z(m_cch + 6 + 1, IPRT_MINISTRING_APPEND_ALIGNMENT));
+        // calls realloc(cbBoth) and sets m_cbAllocated; may throw bad_alloc.
+#ifndef RT_EXCEPTIONS_ENABLED
+        AssertRelease(capacity() > m_cch + 6);
+#endif
+    }
+
+    char *pszNext = RTStrPutCp(&m_psz[m_cch], uc);
+    m_cch = pszNext - m_psz;
+    *pszNext = '\0';
+
     return *this;
 }
 
@@ -147,7 +197,7 @@ MiniString MiniString::substr(size_t pos /*= 0*/, size_t n /*= npos*/)
                 AssertRelease(capacity() >= cbCopy + 1);
 #endif
                 memcpy(ret.m_psz, pFirst, cbCopy);
-                ret.m_cbLength = cbCopy;
+                ret.m_cch = cbCopy;
                 ret.m_psz[cbCopy] = '\0';
             }
         }

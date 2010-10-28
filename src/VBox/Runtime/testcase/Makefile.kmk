@@ -67,6 +67,7 @@ PROGRAMS += \
 	tstRTHeapOffset \
 	tstRTHeapSimple \
 	tstRTInlineAsm \
+	tstIprtMiniString \
 	tstLdr \
 	tstLdrLoad \
 	tstRTList \
@@ -255,6 +256,9 @@ tstRTInlineAsmPIC3_TEMPLATE = VBOXR3TSTEXE
 tstRTInlineAsmPIC3_SOURCES = tstRTInlineAsm.cpp
 tstRTInlineAsmPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
 tstRTInlineAsmPIC3_DEFS = PIC
+
+tstIprtMiniString_TEMPLATE = VBOXR3TSTEXE
+tstIprtMiniString_SOURCES = tstIprtMiniString.cpp
 
 tstLdr_SOURCES = tstLdr.cpp
 
