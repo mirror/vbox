@@ -328,7 +328,7 @@ void UIMachineViewScale::prepareFrameBuffer()
      * framebuffer size. On X11 this will be additional done when the machine
      * state was 'saved'. */
     if (session().GetMachine().GetState() == KMachineState_Saved)
-        QSize size = guestSizeHint();
+        size = guestSizeHint();
 #endif /* Q_WS_X11 */
     /* If there is a preview image saved, we will resize the framebuffer to the
      * size of that image. */
