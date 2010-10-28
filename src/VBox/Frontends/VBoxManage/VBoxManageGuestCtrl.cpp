@@ -955,7 +955,7 @@ int ctrlCopyFile(IGuest *pGuest, const char *pszSource, const char *pszDest,
                 else
                 {
                     if (RT_FAILURE(vrc))
-                        RTMsgError("Error while looking up error code, rc=%Rrc", vrc);
+                        RTMsgError("Error while looking up error code, rc=%Rrc\n", vrc);
                     else
                         com::GluePrintRCMessage(iRc);
                 }
@@ -1158,7 +1158,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                                                    Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
                         }
                         else
-                            RTMsgError("Error building destination file name, rc=%Rrc", vrc);
+                            RTMsgError("Error building destination file name, rc=%Rrc\n", vrc);
                         if (RT_FAILURE(vrc))
                             break;
                         uCurObject++;
@@ -1281,9 +1281,9 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
                 {
                     com::ProgressErrorInfo info(progress);
                     if (info.isBasicAvailable())
-                        RTMsgError("Failed to start Guest Additions update. Error message: %lS", info.getText().raw());
+                        RTMsgError("Failed to start Guest Additions update. Error message: %lS\n", info.getText().raw());
                     else
-                        RTMsgError("Failed to start Guest Additions update. No error message available!");
+                        RTMsgError("Failed to start Guest Additions update. No error message available!\n");
                 }
                 else
                 {
