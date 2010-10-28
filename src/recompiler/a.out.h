@@ -297,7 +297,7 @@ struct external_reloc {
 
 
 #define IMAGE_SCN_LNK_NRELOC_OVFL            0x01000000  /* Section contains extended relocations. */
-#define IMAGE_SCN_MEM_NOT_CACHED             0x04000000  /* Section is not cachable.               */
+#define IMAGE_SCN_MEM_NOT_CACHED             0x04000000  /* Section is not cacheable.              */
 #define IMAGE_SCN_MEM_NOT_PAGED              0x08000000  /* Section is not pageable.               */
 #define IMAGE_SCN_MEM_SHARED                 0x10000000  /* Section is shareable.                  */
 

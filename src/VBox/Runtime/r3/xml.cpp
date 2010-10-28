@@ -55,7 +55,7 @@
  * of libxml, among other things.
  *
  * The constructor and destructor of this structure are used to perform global
- * module initiaizaton and cleanup. There must be only one global variable of
+ * module initialization and cleanup. There must be only one global variable of
  * this structure.
  */
 static
@@ -1649,7 +1649,7 @@ void XmlFileWriter::writeInternal(const char *pcszFilename, bool fSafe)
     long rc = xmlSaveDoc(saveCtxt, m->pDoc->m->plibDocument);
     if (rc == -1)
     {
-        /* look if there was a forwared exception from the lower level */
+        /* look if there was a forwarded exception from the lower level */
 //         if (m->trappedErr.get() != NULL)
 //             m->trappedErr->rethrow();
 

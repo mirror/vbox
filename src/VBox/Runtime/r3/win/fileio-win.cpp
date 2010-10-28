@@ -474,7 +474,7 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize)
          */
         if (MySetFilePointer(File, cbSize, NULL, FILE_BEGIN))
         {
-            /* file pointer setted */
+            /* set file pointer */
             if (SetEndOfFile((HANDLE)File))
             {
                 /*
@@ -487,7 +487,7 @@ RTR3DECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize)
             }
 
             /*
-             * Failed, try restore file pointer.
+             * Failed, try restoring the file pointer.
              */
             rc = GetLastError();
             MySetFilePointer(File, offCurrent, NULL, FILE_BEGIN);

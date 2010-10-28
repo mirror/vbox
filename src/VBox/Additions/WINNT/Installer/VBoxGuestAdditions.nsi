@@ -217,7 +217,7 @@ Function HandleCommandLine
 
   ${WordFind} $0 " " "#" $1                   ; Get number of parameters in cmd line
   ${If} $0 == $1                              ; If result matches the input then
-    StrCpy $1 "1"                             ; no delimeter was found. Correct to 1 word total.
+    StrCpy $1 "1"                             ; no delimiter was found. Correct to 1 word total.
   ${EndIf}
 
   ${While} $2 <= $1                           ; Loop through all params
@@ -226,7 +226,7 @@ Function HandleCommandLine
     ${WordFind} $3 "=" "+1" $4                ; Get current param name
     ${WordFind} $3 "=" "+2" $5                ; Get current param value
 
-    ${StrFilter} $4 "-" "" "" $4              ; Transfor param name to lowercase
+    ${StrFilter} $4 "-" "" "" $4              ; Transfer param name to lowercase
 
     ; Enable for debugging
     ;MessageBox MB_OK "#$2 of #$1, param='$3', name=$4, val=$5"
@@ -942,7 +942,7 @@ exit:
 
 FunctionEnd
 
-; This function is called when a critical error occured
+; This function is called when a critical error occurred
 Function .onInstFailed
 
   MessageBox MB_ICONSTOP $(VBOX_ERROR_INST_FAILED) /SD IDOK

@@ -2529,7 +2529,7 @@ def natAlias(ctx, mach, nicnum, nat, args=[]):
     """This command shows/alters NAT's alias settings.
     usage: nat <vm> <nicnum> alias [default|[log] [proxyonly] [sameports]]
     default - set settings to default values
-    log - switch on alias loging
+    log - switch on alias logging
     proxyonly - switch proxyonly mode on
     sameports - enforces NAT using the same ports
     """

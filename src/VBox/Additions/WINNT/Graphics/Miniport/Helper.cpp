@@ -138,7 +138,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, ui
         }
         else
         {
-            /* Retry using old inteface. */
+            /* Retry using old interface. */
             AssertCompile(sizeof(VMMDevVideoModeSupportedRequest2) >= sizeof(VMMDevVideoModeSupportedRequest));
             VMMDevVideoModeSupportedRequest *req = (VMMDevVideoModeSupportedRequest *)req2;
             req->header.size        = sizeof(VMMDevVideoModeSupportedRequest);

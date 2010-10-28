@@ -88,7 +88,7 @@ typedef struct RTFILEAIOREQINTERNAL
     void                  *pvUser;
     /** Completion context we are assigned to. */
     PRTFILEAIOCTXINTERNAL  pCtxInt;
-    /** Number of bytes actually transfered. */
+    /** Number of bytes actually transferred. */
     size_t                 cbTransfered;
     /** Status code. */
     int                    Rc;
@@ -552,7 +552,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
             /*
              * Retrieve the status code here already because the
              * user may omit the RTFileAioReqGetRC() call and
-             * we will leak kernel ressources then.
+             * we will leak kernel resources then.
              * This will result in errors during submission
              * of other requests as soon as the max_aio_queue_per_proc
              * limit is reached.

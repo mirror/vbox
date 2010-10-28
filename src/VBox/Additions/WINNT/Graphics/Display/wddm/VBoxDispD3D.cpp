@@ -1036,7 +1036,7 @@ int vboxCapsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
 
         uint32_t cbFormatOps = cFormats * sizeof (FORMATOP);
         cbFormatOps = (cbFormatOps + 7) & ~3;
-        /* ensure the surf descs are 8 byte alligned */
+        /* ensure the surf descs are 8 byte aligned */
         uint32_t offSurfDescs = (cbFormatOps + 7) & ~3;
         uint32_t cbSurfDescs = cSurfDescs * sizeof (DDSURFACEDESC);
         uint32_t cbBuf = offSurfDescs + cbSurfDescs;
@@ -1452,7 +1452,7 @@ D3DPOOL vboxDDI2D3DPool(D3DDDI_POOL enmPool)
     case D3DDDIPOOL_VIDEOMEMORY:
     case D3DDDIPOOL_LOCALVIDMEM:
     case D3DDDIPOOL_NONLOCALVIDMEM:
-        /* @todo: what would be propper here? */
+        /* @todo: what would be proper here? */
         return D3DPOOL_DEFAULT;
     default:
         Assert(0);
@@ -3802,7 +3802,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
             if (hr == S_OK)
             {
                 hr = pDevice9If->DrawPrimitive(pData->PrimitiveType,
-                        0 /* <- since we use our owne StreamSource buffer which has data at the very beginning*/,
+                        0 /* <- since we use our own StreamSource buffer which has data at the very beginning*/,
                         pData->PrimitiveCount);
                 Assert(hr == S_OK);
             }
@@ -7381,7 +7381,7 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
         }
         else
         {
-            /* this is a "generic" resource whose creation is initiaded by the UMD */
+            /* this is a "generic" resource whose creation is initiated by the UMD */
             Assert(pData->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO));
             if (pData->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO))
             {

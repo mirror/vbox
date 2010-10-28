@@ -85,9 +85,9 @@ VMMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
  * This routine will load the Host Context Ring-0 and Guest
  * Context VMM modules.
  *
- * @returns VBox stutus code.
+ * @returns VBox status code.
  * @param   pUVM        Pointer to the user mode VM structure.
- * @param   pvVMMR0Mod  The opqaue returned by PDMR3LdrLoadVMMR0.
+ * @param   pvVMMR0Mod  The opaque returned by PDMR3LdrLoadVMMR0.
  */
 int pdmR3LdrInitU(PUVM pUVM)
 {
@@ -186,7 +186,7 @@ VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
     {
         /*
          * The relocation have to be done in two passes so imports
-         * can be correctely resolved. The first pass will update
+         * can be correctly resolved. The first pass will update
          * the ImageBase saving the current value in OldImageBase.
          * The second pass will do the actual relocation.
          */
@@ -285,7 +285,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
     if (pModule)
     {
         pModule->eType = PDMMOD_TYPE_R3;
-        memcpy(pModule->szName, pszName, cchName); /* memory is zero'ed, no need to copy terminator :-) */
+        memcpy(pModule->szName, pszName, cchName); /* memory is zero'd, no need to copy terminator :-) */
         memcpy(pModule->szFilename, pszFilename, cchFilename);
         memcpy(&pModule->szFilename[cchFilename], pszSuff, cchSuff);
 

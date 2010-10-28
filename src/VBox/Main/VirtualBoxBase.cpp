@@ -104,7 +104,7 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
 /**
  * Increments the number of calls to this object by one.
  *
- * After this method succeeds, it is guaranted that the object will remain
+ * After this method succeeds, it is guaranteed that the object will remain
  * in the Ready (or in the Limited) state at least until #releaseCaller() is
  * called.
  *
@@ -123,13 +123,13 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
  * determines whether the caller represents this limited functionality or
  * not.
  *
- * This method succeeeds (and increments the number of callers) only if the
+ * This method succeeds (and increments the number of callers) only if the
  * current object's state is Ready. Otherwise, it will return E_ACCESSDENIED
  * to indicate that the object is not operational. There are two exceptions
  * from this rule:
  * <ol>
  *   <li>If the @a aLimited argument is |true|, then this method will also
- *       succeeed if the object's state is Limited (or Ready, of course).
+ *       succeed if the object's state is Limited (or Ready, of course).
  *   </li>
  *   <li>If this method is called from the same thread that placed
  *       the object to InInit or InUninit state (i.e. either from within the
@@ -148,13 +148,13 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
  * and should return the failed result code to its own caller.
  *
  * @param aState        Where to store the current object's state (can be
- *                      used in overriden methods to determine the cause of
+ *                      used in overridden methods to determine the cause of
  *                      the failure).
  * @param aLimited      |true| to add a limited caller.
  *
  * @return              S_OK on success or E_ACCESSDENIED on failure.
  *
- * @note It is preferrable to use the #addLimitedCaller() rather than
+ * @note It is preferable to use the #addLimitedCaller() rather than
  *       calling this method with @a aLimited = |true|, for better
  *       self-descriptiveness.
  *
@@ -777,7 +777,7 @@ AutoUninitSpan::~AutoUninitSpan()
  * Note that this method will call uninit() methods of child objects. If
  * these methods need to call the parent object during uninitialization,
  * #uninitDependentChildren() must be called before the relevant part of the
- * parent is uninitialized: usually at the begnning of the parent
+ * parent is uninitialized: usually at the beginning of the parent
  * uninitialization sequence.
  *
  * Keep in mind that the uninitialized child objects may be no longer available

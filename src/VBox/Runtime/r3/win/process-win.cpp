@@ -347,7 +347,7 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
         return VINF_SUCCESS;
     if (dwErr != NO_ERROR)
         return RTErrConvertFromWin32(dwErr);
-    return VERR_NOT_FOUND; /* No error occured, but we didn't find the right process. */
+    return VERR_NOT_FOUND; /* No error occurred, but we didn't find the right process. */
 }
 
 
@@ -526,7 +526,7 @@ static int rtProcUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pw
 
 
 /**
- * Logs off a user, specified by the given tokken.
+ * Logs off a user, specified by the given token.
  *
  * @param   hToken      The token (=user) to log off.
  */
@@ -740,7 +740,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
          *   user. This of course is only possible if that user is logged in (over
          *   physical console or terminal services).
          * - If we found the user's Explorer/VBoxTray app, use and modify the token to
-         *   use it in order to allow the newly started process acess the user's
+         *   use it in order to allow the newly started process to access the user's
          *   desktop. If there's no Explorer/VBoxTray app we cannot display the started
          *   process (but run it without UI).
          *

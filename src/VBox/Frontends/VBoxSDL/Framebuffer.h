@@ -162,7 +162,7 @@ private:
     uint32_t mCenterYOffset;
     /** flag whether we're in fullscreen mode */
     bool  mfFullscreen;
-    /** flag wheter we keep the host screen resolution when switching to
+    /** flag whether we keep the host screen resolution when switching to
      *  fullscreen or not */
     bool  mfKeepHostRes;
     /** framebuffer update semaphore */

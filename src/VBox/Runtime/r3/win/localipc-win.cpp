@@ -410,7 +410,7 @@ RTDECL(int) RTLocalIpcServerListen(RTLOCALIPCSERVER hServer, PRTLOCALIPCSESSION 
                 else
                 {
                     /*
-                     * We failed to create a new instance for the server, diconnect
+                     * We failed to create a new instance for the server, disconnect
                      * the client and fail. Don't try service the client here.
                      */
                     rc = RTErrConvertFromWin32(err);

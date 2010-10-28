@@ -253,7 +253,7 @@ RTDECL(int) RTLdrGetBits(RTLDRMOD hLdrMod, void *pvBits, RTUINTPTR BaseAddress, 
  * @returns iprt status code.
  * @param   hLdrMod             The loader module handle.
  * @param   pvBits              Where the image bits are.
- *                              Must've been passed to RTLdrGetBits().
+ *                              Must have been passed to RTLdrGetBits().
  * @param   NewBaseAddress      The new base address.
  * @param   OldBaseAddress      The old base address.
  * @param   pfnGetImport        Callback function for resolving imports one by one.

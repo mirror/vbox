@@ -27,7 +27,7 @@
 
 /** @class QIArrowButtonPress
  *
- *  The QIArrowButtonPress class is an arrow tool-botton with text-label,
+ *  The QIArrowButtonPress class is an arrow tool-button with text-label,
  *  used as back/next buttons in QIMessageBox class.
  *
  */

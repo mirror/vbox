@@ -87,7 +87,7 @@ typedef struct UVM
     PCVMM2USERMETHODS   pVmm2UserMethods;
 
 #if HC_ARCH_BITS == 32
-    /** Align the next member on a 32 byte boundrary. */
+    /** Align the next member on a 32 byte boundary. */
     uint8_t             abAlignment0[HC_ARCH_BITS == 32 ? 12 : 0];
 #endif
 

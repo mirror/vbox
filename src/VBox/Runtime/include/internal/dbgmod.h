@@ -150,7 +150,7 @@ typedef struct RTDBGMODVTDBG
     DECLCALLBACKMEMBER(RTDBGSEGIDX, pfnRvaToSegOff)(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg);
 
     /**
-     * Image size when mapped if segments are mapped adjecently.
+     * Image size when mapped if segments are mapped adjacently.
      *
      * For ELF, PE, and Mach-O images this is (usually) a natural query, for LX and
      * NE and such it's a bit odder and the answer may not make much sense for them.
@@ -272,7 +272,7 @@ typedef struct RTDBGMODVTDBG
     /**
      * Queries symbol information by address.
      *
-     * The returned symbol is what the debug info interpreter consideres the symbol
+     * The returned symbol is what the debug info interpreter considers the symbol
      * most applicable to the specified address. This usually means a symbol with an
      * address equal or lower than the requested.
      *

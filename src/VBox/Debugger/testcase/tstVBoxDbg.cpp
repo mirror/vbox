@@ -106,7 +106,7 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Summay and exit.
+     * Summary and exit.
      */
     if (!cErrors)
         RTPrintf(TESTCASE ": SUCCESS\n");

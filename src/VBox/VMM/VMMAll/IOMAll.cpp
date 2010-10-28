@@ -97,7 +97,7 @@ VMMDECL(bool) IOMIsLockOwner(PVM pVM)
  * @todo Get rid of this code. Use DISQueryParamVal instead
  *
  * @param   pCpu                Pointer to current disassembler context.
- * @param   pParam              Pointer to parameter of instruction to proccess.
+ * @param   pParam              Pointer to parameter of instruction to process.
  * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
  * @param   pu64Data            Where to store retrieved data.
  * @param   pcbSize             Where to store the size of data (1, 2, 4, 8).
@@ -191,7 +191,7 @@ bool iomGetRegImmData(PDISCPUSTATE pCpu, PCOP_PARAMETER pParam, PCPUMCTXCORE pRe
  *
  * @returns true on success.
  * @param   pCpu                Pointer to current disassembler context.
- * @param   pParam              Pointer to parameter of instruction to proccess.
+ * @param   pParam              Pointer to parameter of instruction to process.
  * @param   pRegFrame           Pointer to CPUMCTXCORE guest structure.
  * @param   u64Data             8/16/32/64 bit data to store.
  */
@@ -1044,7 +1044,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretCheckPortIOAccess(PVM pVM, PCPUMCTXCORE pCtxCo
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine (GC pointer of course).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  */
@@ -1069,7 +1069,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTA
     if (rcStrict == VINF_SUCCESS)
     {
         /*
-         * Attemp to read the port.
+         * Attempt to read the port.
          */
         uint32_t u32Data = UINT32_C(0xffffffff);
         rcStrict = IOMIOPortRead(pVM, uPort, &u32Data, cbSize);
@@ -1104,7 +1104,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretIN(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTA
  * @retval  VINF_TRPM_XCPT_DISPATCHED   The exception was raised and dispatched for raw-mode execution. (TRPMRaiseXcptErr)
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
- * @param   pVM         The virtual machine (GC pointer ofcourse).
+ * @param   pVM         The virtual machine (GC pointer of course).
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  */

@@ -36,7 +36,7 @@
  *    everywhere else) VirtualBox client application from the same source code
  *    (including common smart C++ templates for automatic interface pointer
  *    reference counter and string data management);
- * b) simpler XPCOM initialization and shutdown (only a signle method call
+ * b) simpler XPCOM initialization and shutdown (only a single method call
  *    that does everything right).
  *
  * Currently, there is no separate sample program that uses the VirtualBox MS

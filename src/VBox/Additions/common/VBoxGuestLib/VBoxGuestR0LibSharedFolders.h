@@ -149,7 +149,7 @@ DECLVBGL(int) vboxCallQueryMapName (PVBSFCLIENT pClient, SHFLROOT root, SHFLSTRI
  * @retval  pCreateParms See the structure description in shflsvc.h
  *
  * @note This function reports errors as follows.  The return value is always
- *       VINF_SUCCESS unless an exceptional condition occurrs - out of
+ *       VINF_SUCCESS unless an exceptional condition occurs - out of
  *       memory, invalid arguments, etc.  If the file or folder could not be
  *       opened or created, pCreateParms->Handle will be set to
  *       SHFL_HANDLE_NIL on return.  In this case the value in

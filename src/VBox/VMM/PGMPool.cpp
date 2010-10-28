@@ -127,7 +127,7 @@ static const DBGCCMD    g_aCmds[] =
 #endif
 
 /**
- * Initalizes the pool
+ * Initializes the pool
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.

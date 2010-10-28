@@ -914,7 +914,7 @@ DECLINLINE(X86PDEPAE) pgmGstGetLongModePDE(PVMCPU pVCpu, RTGCPTR64 GCPtr)
     /*
      * Note! To keep things simple, ASSUME invalid physical addresses will
      *       cause X86_TRAP_PF_RSVD.  This isn't a problem until we start
-     *       supporing 52-bit wide physical guest addresses.
+     *       supporting 52-bit wide physical guest addresses.
      */
     PCX86PML4       pGuestPml4 = pgmGstGetLongModePML4Ptr(pVCpu);
     const unsigned  iPml4      = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;

@@ -187,7 +187,7 @@ static void vboxGlobalCleanup()
 /** @internal
  *
  *  Determines the rendering mode from the argument. Sets the appropriate
- *  default rendering mode if the argumen is NULL.
+ *  default rendering mode if the argument is NULL.
  */
 static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 {
@@ -247,7 +247,7 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 
 /** @class VBoxGlobal
  *
- *  The VBoxGlobal class incapsulates the global VirtualBox data.
+ *  The VBoxGlobal class encapsulates the global VirtualBox data.
  *
  *  There is only one instance of this class per VirtualBox application,
  *  the reference to it is returned by the static instance() method, or by
@@ -376,7 +376,7 @@ bool VBoxGlobal::setSettings (VBoxGlobalSettings &gs)
     }
 
     /* We don't assign gs to our gset member here, because VBoxCallback
-     * will update gset as necessary when new settings are successfullly
+     * will update gset as necessary when new settings are successfully
      * sent to the VirtualBox server by gs.save(). */
 
     return true;
@@ -576,7 +576,7 @@ QList<QRect> XGetDesktopList()
     /* Get current display: */
     Display* pDisplay = QX11Info::display();
 
-    /* If thats Xinerama desktop: */
+    /* If it's a Xinerama desktop: */
     if (XineramaIsActive(pDisplay))
     {
         /* Reading Xinerama data: */
@@ -697,10 +697,10 @@ const QRect VBoxGlobal::availableGeometry(int iScreen) const
     /* Get current application desktop: */
     QDesktopWidget *pDesktopWidget = QApplication::desktop();
 
-    /* If thats virtual desktop: */
+    /* If it's a virtual desktop: */
     if (pDesktopWidget->isVirtualDesktop())
     {
-        /* If thats Xinerama desktop: */
+        /* If it's a Xinerama desktop: */
         if (XineramaIsActive(pDisplay))
         {
             /* Get desktops list: */
@@ -1336,11 +1336,11 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
 
 /**
  * Searches for the given hard disk in the list of known media descriptors and
- * calls VBoxMedium::details() on the found desriptor.
+ * calls VBoxMedium::details() on the found descriptor.
  *
- * If the requeststed hard disk is not found (for example, it's a new hard disk
+ * If the requested hard disk is not found (for example, it's a new hard disk
  * for a new VM created outside our UI), then media enumeration is requested and
- * the search is repeated. We assume that the secont attempt always succeeds and
+ * the search is repeated. We assume that the second attempt always succeeds and
  * assert otherwise.
  *
  * @note Technically, the second attempt may fail if, for example, the new hard
@@ -2293,7 +2293,7 @@ static void addHardDisksToList (const CMediumVector &aVector,
  * Before the enumeration is started, the current media list (a list returned by
  * #currentMediaList()) is populated with all registered media and the
  * #mediumEnumStarted() signal is emitted. The enumeration thread then walks this
- * list, checks for media acessiblity and emits #mediumEnumerated() signals of
+ * list, checks for media accessibility and emits #mediumEnumerated() signals of
  * each checked medium. When all media are checked, the enumeration thread is
  * stopped and the #mediumEnumFinished() signal is emitted.
  *
@@ -2303,7 +2303,7 @@ static void addHardDisksToList (const CMediumVector &aVector,
  * alphabetically by the location attribute and comes in the following order:
  * <ol>
  *  <li>All hard disks. If a hard disk has children, these children
- *      (alphabetically sorted) immediately follow their parent and terefore
+ *      (alphabetically sorted) immediately follow their parent and therefore
  *      appear before its next sibling hard disk.</li>
  *  <li>All CD/DVD images.</li>
  *  <li>All Floppy images.</li>
@@ -2400,7 +2400,7 @@ void VBoxGlobal::startEnumeratingMedia()
  */
 void VBoxGlobal::addMedium (const VBoxMedium &aMedium)
 {
-    /* Note that we maitain the same order here as #startEnumeratingMedia() */
+    /* Note that we maintain the same order here as #startEnumeratingMedia() */
 
     VBoxMediaList::iterator it = mMediaList.begin();
 
@@ -3648,7 +3648,7 @@ QString VBoxGlobal::locationForHTML (const QString &aFileName)
  *  - UUIDs be put inside <nobr> and marked
  *    with green color;
  *  - replaces new line chars with </p><p> constructs to form paragraphs
- *    (note that <p> and </p> are not appended to the beginnign and to the
+ *    (note that <p> and </p> are not appended to the beginning and to the
  *     end of the string respectively, to allow the result be appended
  *     or prepended to the existing paragraph).
  *
@@ -3715,7 +3715,7 @@ QString VBoxGlobal::replaceHtmlEntities(QString strText)
  *  - UUIDs be put inside <nobr> and marked
  *    with italic style;
  *  - replaces new line chars with </p><p> constructs to form paragraphs
- *    (note that <p> and </p> are not appended to the beginnign and to the
+ *    (note that <p> and </p> are not appended to the beginning and to the
  *     end of the string respectively, to allow the result be appended
  *     or prepended to the existing paragraph).
  */
@@ -3883,7 +3883,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
         CARD32 *desktop = (CARD32 *) XXGetProperty (dpy, aWId, XA_CARDINAL,
                                                     "_NET_WM_DESKTOP");
         if (desktop == NULL)
-            /* if the NetWM propery is not supported try to find the desktop
+            /* if the NetWM properly is not supported try to find the desktop
              * ID using the GNOME WM property */
             desktop = (CARD32 *) XXGetProperty (dpy, aWId, XA_CARDINAL,
                                                 "_WIN_WORKSPACE");
@@ -3930,7 +3930,7 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
 }
 
 /**
- *  Removes the acceletartor mark (the ampersand symbol) from the given string
+ *  Removes the accelerator mark (the ampersand symbol) from the given string
  *  and returns the result. The string is supposed to be a menu item's text
  *  that may (or may not) contain the accelerator mark.
  *
@@ -3940,10 +3940,10 @@ bool VBoxGlobal::activateWindow (WId aWId, bool aSwitchDesktop /* = true */)
  *  whole. If such a pattern is not found, then the '&' character is simply
  *  removed from the string.
  *
- *  @note This function removes only the first occurense of the accelerator
+ *  @note This function removes only the first occurrence of the accelerator
  *  mark.
  *
- *  @param aText Menu item's text to remove the acceletaror mark from.
+ *  @param aText Menu item's text to remove the accelerator mark from.
  *
  *  @return The resulting string.
  */
@@ -4048,7 +4048,7 @@ QWidget *VBoxGlobal::findWidget (QWidget *aParent, const char *aName,
     }
 
     /* Find the first children of aParent with the appropriate properties.
-     * Please note that this call is recursivly. */
+     * Please note that this call is recursively. */
     QList<QWidget *> list = qFindChildren<QWidget *> (aParent, aName);
     foreach(QWidget *child, list)
     {
@@ -5158,7 +5158,7 @@ void VBoxUSBMenu::processAboutToShow()
             QAction *action = addAction (vboxGlobal().details (usb));
             action->setCheckable (true);
             mUSBDevicesMap [action] = usb;
-            /* check if created item was alread attached to this session */
+            /* check if created item was already attached to this session */
             if (!mConsole.isNull())
             {
                 CUSBDevice attachedUSB =

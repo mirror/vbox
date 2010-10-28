@@ -146,7 +146,7 @@ NTSTATUS _stdcall VBoxUSBPnPCompletion(DEVICE_OBJECT *fido, IRP *Irp, void *cont
     }
 
     //
-    // On the way up, pagable might become clear. Mimic the driver below us.
+    // On the way up, pageable might become clear. Mimic the driver below us.
     //
     if (!(pdx->NextLowerDriver->Flags & DO_POWER_PAGABLE)) {
 
@@ -441,7 +441,7 @@ NTSTATUS _stdcall VBoxUSBDispatchIO(PDEVICE_OBJECT DeviceObject, PIRP Irp)
         break;
     }
 
-    /* depricated */
+    /* deprecated */
     case SUPUSBFLT_IOCTL_IGNORE_DEVICE:
     {
         break;

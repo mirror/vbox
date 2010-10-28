@@ -216,7 +216,7 @@ VMMDECL(int)  PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlag
  *
  * @returns VINF_SUCCESS, VERR_PAGE_NOT_PRESENT or VERR_NOT_FOUND.
  * @param   pVM                 The VM handle.
- * @param   GCPtr               The page addresss.
+ * @param   GCPtr               The page address.
  * @param   pfFlags             Where to return the flags.  Optional.
  * @param   pHCPhys             Where to return the address.  Optional.
  */

@@ -1144,7 +1144,7 @@ endif
 
 
 #
-# HACK ALLERT! Make testcase run during build on SELinux boxes.
+# HACK ALERT!  Make testcase run during build on SELinux boxes.
 #              Create a dummy DLL that ensure that VBoxRT is installed
 #              during the DLL pass and cleaned up later.
 #

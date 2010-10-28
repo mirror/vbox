@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Path Convertions, Darwin.
+ * IPRT - Path Conversions, Darwin.
  *
  * On darwin path names on the disk are decomposed using normalization
  * form D (NFD).  Since this behavior is unique for the Mac, we will precompose

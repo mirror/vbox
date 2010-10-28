@@ -362,7 +362,7 @@ static int iomInterpretMOVS(PVM pVM, bool fWriteAccess, PCPUMCTXCORE pRegFrame, 
         pVM->iom.s.cMovsMaxBytes = cTransfers << SIZE_2_SHIFT(cb);
 #endif
 
-/** @todo re-evaluate on page boundraries. */
+/** @todo re-evaluate on page boundaries. */
 
     RTGCPHYS Phys = GCPhysFault;
     int rc;

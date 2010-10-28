@@ -629,7 +629,7 @@ typedef struct PDMDRVHLPRC
     DECLRCCALLBACKMEMBER(bool, pfnAssertOther,(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction));
 
     /**
-     * Notify FTM about a checkpoint occurance
+     * Notify FTM about a checkpoint occurrence
      *
      * @param   pDrvIns             The driver instance.
      * @param   enmType             Checkpoint type
@@ -725,7 +725,7 @@ typedef struct PDMDRVHLPR0
     DECLR0CALLBACKMEMBER(bool, pfnAssertOther,(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction));
 
     /**
-     * Notify FTM about a checkpoint occurance
+     * Notify FTM about a checkpoint occurrence
      *
      * @param   pDrvIns             The driver instance.
      * @param   enmType             Checkpoint type
@@ -1215,7 +1215,7 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnCallR0,(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_t u64Arg));
 
     /**
-     * Notify FTM about a checkpoint occurance
+     * Notify FTM about a checkpoint occurrence
      *
      * @param   pDrvIns             The driver instance.
      * @param   enmType             Checkpoint type

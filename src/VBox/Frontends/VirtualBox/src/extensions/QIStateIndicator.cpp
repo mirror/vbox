@@ -54,8 +54,8 @@ QIStateIndicator::QIStateIndicator (int aState)
 
     setSizePolicy (QSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed));
 
-    /* we will precompose the pixmap background using the widget bacground in
-     * drawContents(), so try to set the correct bacground origin for the
+    /* we will precompose the pixmap background using the widget background in
+     * drawContents(), so try to set the correct background origin for the
      * case when a pixmap is used as a widget background. */
 //    if (aParent)
 //        setBackgroundOrigin (aParent->backgroundOrigin());

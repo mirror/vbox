@@ -1043,7 +1043,7 @@ SetupMouse(InputInfoPtr pInfo)
 	usleep(50000);
 	xf86WriteSerial(pInfo->fd, "R", 1);	/* Set Output Rate = "45 rps" */
 	usleep(50000);
-	xf86WriteSerial(pInfo->fd, "I\x20", 2);	/* Set Incrememtal Mode "20" */
+	xf86WriteSerial(pInfo->fd, "I\x20", 2);	/* Set Incremental Mode "20" */
 	usleep(50000);
 	xf86WriteSerial(pInfo->fd, "E", 1);	/* Set Data Type = "Relative */
 	usleep(50000);
@@ -1146,7 +1146,7 @@ MouseReadInput(InputInfoPtr pInfo)
     /*
      * Set blocking to -1 on the first call because we know there is data to
      * read. Xisb automatically clears it after one successful read so that
-     * succeeding reads are preceeded by a select with a 0 timeout to prevent
+     * succeeding reads are preceded by a select with a 0 timeout to prevent
      * read from blocking indefinitely.
      */
     XisbBlockDuration(pMse->buffer, -1);
@@ -1199,11 +1199,11 @@ MouseReadInput(InputInfoPtr pInfo)
 		 */
 		/*
 		 * [KAZU-030897]
-		 * Receive the fourth byte only when preceeding three bytes
+		 * Receive the fourth byte only when preceding three bytes
 		 * have been detected (pBufP >= pMse->protoPara[4]).  In the
 		 * previous versions, the test was pBufP == 0; we may have
-		 * mistakingly received a byte even if we didn't see anything
-		 * preceeding the byte.
+		 * mistakenly received a byte even if we didn't see anything
+		 * preceding the byte.
 		 */
 
 #ifdef EXTMOUSEDEBUG
@@ -1795,7 +1795,7 @@ MouseConvert(InputInfoPtr pInfo, int first, int num, int v0, int v1, int v2,
  * action = 0: nothing
  * action < 0: ButtonRelease
  *
- * The comment preceeding each section is the current emulation state.
+ * The comment preceding each section is the current emulation state.
  * The comments to the right are of the form
  *      <button state> (<events>) -> <new emulation state>
  * which should be read as

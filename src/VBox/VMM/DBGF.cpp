@@ -29,7 +29,7 @@
  * The interface is working in a manner similar to the win32, linux and os2
  * debugger interfaces. The interface has an asynchronous nature. This comes
  * from the fact that the VMM and the Debugger are running in different threads.
- * They are refered to as the "emulation thread" and the "debugger thread", or
+ * They are referred to as the "emulation thread" and the "debugger thread", or
  * as the "ping thread" and the "pong thread, respectivly. (The last set of
  * names comes from the use of the Ping-Pong synchronization construct from the
  * RTSem API.)
@@ -39,7 +39,7 @@
  *
  * @section sec_dbgf_scenario   Usage Scenario
  *
- * The debugger starts by attaching to the VM. For pratical reasons we limit the
+ * The debugger starts by attaching to the VM. For practical reasons we limit the
  * number of concurrently attached debuggers to 1 per VM. The action of
  * attaching to the VM causes the VM to check and generate debug events.
  *
@@ -49,7 +49,7 @@
  * for the emulation thread to send a ping, thus indicating that there is an
  * event waiting to be processed.
  *
- * An event can be a respons to a command issued previously, the hitting of a
+ * An event can be a response to a command issued previously, the hitting of a
  * breakpoint, or running into a bad/fatal VMM condition. The debugger now has
  * the ping and must respond to the event at hand - the VMM is waiting. This
  * usually means that the user of the debugger must do something, but it doesn't
@@ -145,7 +145,7 @@ VMMR3DECL(int) DBGFR3Init(PVM pVM)
 
 
 /**
- * Termiantes and cleans up resources allocated by the DBGF.
+ * Terminates and cleans up resources allocated by the DBGF.
  *
  * @returns VBox status code.
  * @param   pVM     VM Handle.
@@ -286,7 +286,7 @@ bool dbgfR3WaitForAttach(PVM pVM, DBGFEVENTTYPE enmEvent)
  * The function checks and executes pending commands from the debugger.
  *
  * @returns VINF_SUCCESS normally.
- * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happend.
+ * @returns VERR_DBGF_RAISE_FATAL_ERROR to pretend a fatal error happened.
  * @param   pVM         VM Handle.
  */
 VMMR3DECL(int) DBGFR3VMMForcedAction(PVM pVM)
@@ -375,7 +375,7 @@ static DBGFEVENTCTX dbgfR3FigureEventCtx(PVM pVM)
 
 /**
  * The common event prologue code.
- * It will set the 'stopped-in-hyper' flag, make sure someone's attach,
+ * It will set the 'stopped-in-hyper' flag, make sure someone is attached,
  * and perhaps process any high priority pending actions (none yet).
  *
  * @returns VBox status.
@@ -951,7 +951,7 @@ VMMR3DECL(int) DBGFR3Detach(PVM pVM)
  *
  * @returns VBox status. Will not return VBOX_INTERRUPTED.
  * @param   pVM         VM handle.
- * @param   cMillies    Number of millies to wait.
+ * @param   cMillies    Number of millis to wait.
  * @param   ppEvent     Where to store the event pointer.
  */
 VMMR3DECL(int) DBGFR3EventWait(PVM pVM, RTMSINTERVAL cMillies, PCDBGFEVENT *ppEvent)
@@ -1069,7 +1069,7 @@ VMMR3DECL(int) DBGFR3Resume(PVM pVM)
  * Step Into.
  *
  * A single step event is generated from this command.
- * The current implementation is not reliable, so don't rely on the event comming.
+ * The current implementation is not reliable, so don't rely on the event coming.
  *
  * @returns VBox status.
  * @param   pVM     VM handle.
@@ -1096,7 +1096,7 @@ VMMR3DECL(int) DBGFR3Step(PVM pVM, VMCPUID idCpu)
 
 
 /**
- * Call this to single step programatically.
+ * Call this to single step programmatically.
  *
  * You must pass down the return code to the EM loop! That's
  * where the actual single stepping take place (at least in the

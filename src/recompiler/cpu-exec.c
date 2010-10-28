@@ -349,7 +349,7 @@ int cpu_exec(CPUState *env1)
                 if (RT_UNLIKELY(interrupt_request != 0))
 #endif
                 {
-                    /** @todo: reconscille with what QEMU really does */
+                    /** @todo: reconcile with what QEMU really does */
 
                     /* Single instruction exec request, we execute it and return (one way or the other).
                        The caller will always reschedule after doing this operation! */
@@ -802,7 +802,7 @@ int cpu_exec(CPUState *env1)
                        jump normally, then does the exception return when the
                        CPU tries to execute code at the magic address.
                        This will cause the magic PC value to be pushed to
-                       the stack if an interrupt occured at the wrong time.
+                       the stack if an interrupt occurred at the wrong time.
                        We avoid this by disabling interrupts when
                        pc contains a magic address.  */
                     if (interrupt_request & CPU_INTERRUPT_HARD
@@ -849,7 +849,7 @@ int cpu_exec(CPUState *env1)
                         next_tb = 0;
                     }
 #endif
-                   /* Don't use the cached interupt_request value,
+                   /* Don't use the cached interrupt_request value,
                       do_interrupt may have updated the EXITTB flag. */
                     if (env->interrupt_request & CPU_INTERRUPT_EXITTB) {
                         env->interrupt_request &= ~CPU_INTERRUPT_EXITTB;

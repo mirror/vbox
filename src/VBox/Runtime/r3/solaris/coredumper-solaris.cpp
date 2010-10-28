@@ -168,7 +168,7 @@ static int WriteFileNoIntr(RTFILE hFile, const void *pcv, size_t cbToRead)
 
 
 /**
- * Read from a given offet in the process' address space.
+ * Read from a given offset in the process' address space.
  *
  * @param pVBoxProc         Pointer to the VBox process.
  * @param pv                Where to read the data into.
@@ -802,7 +802,7 @@ static int ProcReadThreads(PVBOXCORE pVBoxCore)
                 if (RT_SUCCESS(rc))
                 {
                     /*
-                     * Threre can still be more lwpsinfo_t's than lwpstatus_t's, build the
+                     * There can still be more lwpsinfo_t's than lwpstatus_t's, build the
                      * lists accordingly.
                      */
                     pStatus = (lwpstatus_t *)((uintptr_t)pStatusHdr + sizeof(prheader_t));

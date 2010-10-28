@@ -113,7 +113,7 @@ private:
     /* Tool-bar alignment */
     Alignment m_alignment;
 
-    /* Wether to animate showing/hiding the toolbar */
+    /* Whether to animate showing/hiding the toolbar */
     bool m_fAnimated;
 
     /* Interval (in milli seconds) for scrolling the toolbar, default is 20 msec */

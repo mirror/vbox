@@ -27,7 +27,7 @@
 
 /** @class QIArrowButtonSwitch
  *
- *  The QIArrowButtonSwitch class is an arrow tool-botton with text-label,
+ *  The QIArrowButtonSwitch class is an arrow tool-button with text-label,
  *  used as collaps/expand switch in QIMessageBox class.
  *
  */

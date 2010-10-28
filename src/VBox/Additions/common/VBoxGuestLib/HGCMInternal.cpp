@@ -749,7 +749,7 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBA
  * @returns rc, unless RTR0MemUserCopyTo fails.
  * @param   pCallInfo           Call info structure to update.
  * @param   pHGCMCall           HGCM call request.
- * @param   pParmInfo           Paramter locking/buffering info.
+ * @param   pParmInfo           Parameter locking/buffering info.
  * @param   fIsUser             Is it a user (true) or kernel request.
  * @param   rc                  The current result code. Passed along to
  *                              preserve informational status codes.

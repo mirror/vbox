@@ -101,7 +101,7 @@ DECLINLINE(uint32_t) sdbm(const char *str, size_t *pcch)
  * Inserts a string into a unique string space.
  *
  * @returns true on success.
- * @returns false if the string collieded with an existing string.
+ * @returns false if the string collided with an existing string.
  * @param   pStrSpace       The space to insert it into.
  * @param   pStr            The string node.
  */

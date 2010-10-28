@@ -342,7 +342,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
                  || (abSense[12] == 0x2a && abSense[13] == 0 /* parameters changed */)                        //???
                  || (abSense[12] == 0x3f && abSense[13] == 0 /* target operating conditions have changed */)  //???
                  || (abSense[12] == 0x3f && abSense[13] == 2 /* changed operating definition */)              //???
-                 || (abSense[12] == 0x3f && abSense[13] == 3 /* inquery parameters changed */)
+                 || (abSense[12] == 0x3f && abSense[13] == 3 /* inquiry parameters changed */)
                  || (abSense[12] == 0x3f && abSense[13] == 5 /* device identifier changed */)
                  )
             )
@@ -652,7 +652,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
 
 
 #ifdef VBOX_WITH_SUID_WRAPPER
-/* These functions would have to go into a seperate solaris binary with
+/* These functions would have to go into a separate solaris binary with
  * the setuid permission set, which would run the user-SCSI ioctl and
  * return the value. BUT... this might be prohibitively slow.
  */
@@ -660,7 +660,7 @@ static int drvHostDvdSendCmd(PPDMIBLOCK pInterface, const uint8_t *pbCmd,
 
 /**
  * Checks if the current user is authorized using Solaris' role-based access control.
- * Made as a seperate function with so that it need not be invoked each time we need
+ * Made as a separate function with so that it need not be invoked each time we need
  * to gain root access.
  *
  * @returns VBox error code.

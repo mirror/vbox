@@ -92,7 +92,7 @@ RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb);
  * here is slower than swapping out a MB of pages to disk.
  *
  * @returns IPRT status code.
- * @retval  VINF_SUCCESS and *pcb on sucess.
+ * @retval  VINF_SUCCESS and *pcb on success.
  * @retval  VERR_ACCESS_DENIED if the information isn't accessible to the
  *          caller.
  *
@@ -105,7 +105,7 @@ RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb);
  * way made impossible to virtualize within reasonably short time.
  *
  * The purposes of this API is, when combined with RTSystemQueryTotalRam, to
- * be able to determin an absolute max limit for how much fixed memory it is
+ * be able to determine an absolute max limit for how much fixed memory it is
  * (theoretically) possible to allocate (or lock down).
  *
  * The kind memory covered by this function includes:
@@ -113,7 +113,7 @@ RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb);
  *        and RTR0MemObjLockKernel makes,
  *      - kernel pools and heaps - like for instance the ring-0 variant
  *        of RTMemAlloc taps into,
- *      - fixed (not pagable) kernel allocations - like for instance
+ *      - fixed (not pageable) kernel allocations - like for instance
  *        all the RTR0MemObjAlloc* functions makes,
  *      - any similar memory that isn't easily swapped out, discarded,
  *        or flushed to disk.
@@ -129,7 +129,7 @@ RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb);
  * and put them back into normal circulation, they should be included in
  * the memory accounted for here.
  *
- * @retval  VINF_SUCCESS and *pcb on sucess.
+ * @retval  VINF_SUCCESS and *pcb on success.
  * @retval  VERR_NOT_SUPPORTED if the information isn't available on the
  *          system in general. The caller must handle this scenario.
  * @retval  VERR_ACCESS_DENIED if the information isn't accessible to the

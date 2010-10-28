@@ -36,7 +36,7 @@
 
 <!--
   this includes a computed VirtualBox element definition that contains
-  a proper 'version' attribute constraint (e.g. recent verison number
+  a proper 'version' attribute constraint (e.g. recent version number
   and platform suffix)
 -->
 <xsd:include schemaLocation="VirtualBox-settings-root.xsd"/>

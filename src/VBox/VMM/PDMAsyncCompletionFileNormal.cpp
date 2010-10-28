@@ -149,7 +149,7 @@ static void pdmacFileAioMgrNormalEndpointsSortByLoad(PPDMACEPFILEMGR pAioMgr)
     }
 
 #ifdef DEBUG
-    /* Validate sorting alogrithm */
+    /* Validate sorting algorithm */
     unsigned cEndpoints = 0;
     pEpCurr = pAioMgr->pEndpointsHead;
 
@@ -202,7 +202,7 @@ static bool pdmacFileAioMgrNormalRemoveEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE 
     {
         Assert(!pEndpointRemove->pFlushReq);
 
-        /* Reopen the file so that the new endpoint can reassociate with the file */
+        /* Reopen the file so that the new endpoint can re-associate with the file */
         RTFileClose(pEndpointRemove->File);
         int rc = RTFileOpen(&pEndpointRemove->File, pEndpointRemove->Core.pszUri, pEndpointRemove->fFlags);
         AssertRC(rc);
@@ -429,7 +429,7 @@ DECLINLINE(bool) pdmacFileAioMgrNormalRcIsFatal(int rcReq)
  * Error handler which will create the failsafe managers and destroy the failed I/O manager.
  *
  * @returns VBox status code
- * @param   pAioMgr    The I/O manager the error ocurred on.
+ * @param   pAioMgr    The I/O manager the error occurred on.
  * @param   rc         The error code.
  */
 static int pdmacFileAioMgrNormalErrorHandler(PPDMACEPFILEMGR pAioMgr, int rc, RT_SRC_POS_DECL)
@@ -768,7 +768,7 @@ static int pdmacFileAioMgrNormalTaskPrepareBuffered(PPDMACEPFILEMGR pAioMgr,
      * and will be executed when the active one completes. (The method below
      * which checks whether a range is already used will add the task)
      *
-     * This is neccessary because of the requirement to align all requests to a 512 boundary
+     * This is necessary because of the requirement to align all requests to a 512 boundary
      * which is enforced by the host OS (Linux and Windows atm). It is possible that
      * we have to process unaligned tasks and need to align them using bounce buffers.
      * While the data is fetched from the file another request might arrive writing to
@@ -854,7 +854,7 @@ static int pdmacFileAioMgrNormalTaskPrepareNonBuffered(PPDMACEPFILEMGR pAioMgr,
      * and will be executed when the active one completes. (The method below
      * which checks whether a range is already used will add the task)
      *
-     * This is neccessary because of the requirement to align all requests to a 512 boundary
+     * This is necessary because of the requirement to align all requests to a 512 boundary
      * which is enforced by the host OS (Linux and Windows atm). It is possible that
      * we have to process unaligned tasks and need to align them using bounce buffers.
      * While the data is fetched from the file another request might arrive writing to
@@ -1287,7 +1287,7 @@ static int pdmacFileAioMgrNormalCheckEndpoints(PPDMACEPFILEMGR pAioMgr)
         else if (   !pEndpoint->AioMgr.cRequestsActive
                  && pEndpoint->enmState != PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE)
         {
-            /* Reopen the file so that the new endpoint can reassociate with the file */
+            /* Reopen the file so that the new endpoint can re-associate with the file */
             RTFileClose(pEndpoint->File);
             rc = RTFileOpen(&pEndpoint->File, pEndpoint->Core.pszUri, pEndpoint->fFlags);
             AssertRC(rc);
@@ -1364,7 +1364,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
         }
         else
         {
-            /* Free the lock and process pending tasks if neccessary */
+            /* Free the lock and process pending tasks if necessary */
             pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
             rc = pdmacFileAioMgrNormalProcessTaskList(pTasksWaiting, pAioMgr, pEndpoint);
             AssertRC(rc);
@@ -1383,7 +1383,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                 pTask->pNext = pEndpoint->AioMgr.pReqsPendingHead;
                 pEndpoint->AioMgr.pReqsPendingHead = pTask;
 
-                /* Create a new failsafe manager if neccessary. */
+                /* Create a new failsafe manager if necessary. */
                 if (!pEndpoint->AioMgr.fMoving)
                 {
                     PPDMACEPFILEMGR pAioMgrFailsafe;
@@ -1529,7 +1529,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
 
                 pdmacFileAioMgrNormalRequestFree(pAioMgr, hReq);
 
-                /* Free the lock and process pending tasks if neccessary */
+                /* Free the lock and process pending tasks if necessary */
                 pTasksWaiting = pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
                 if (pTasksWaiting)
                 {

@@ -794,7 +794,7 @@ static void testLo1(void)
         }
     }
 
-    /* Enter the first 4 critsects in ascending order and thereby definining
+    /* Enter the first 4 critsects in ascending order and thereby defining
        this as a valid lock order.  */
     RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
@@ -983,7 +983,7 @@ static void testLo2(void)
     RTTEST_CHECK(g_hTest, RTCritSectSetSubClass(&g_aCritSects[0], RTLOCKVAL_SUB_CLASS_ANY)  == RTLOCKVAL_SUB_CLASS_NONE);
     RTTEST_CHECK(g_hTest, RTCritSectSetSubClass(&g_aCritSects[0], RTLOCKVAL_SUB_CLASS_NONE) == RTLOCKVAL_SUB_CLASS_ANY);
 
-    /* Enter the first 4 critsects in ascending order and thereby definining
+    /* Enter the first 4 critsects in ascending order and thereby defining
        this as a valid lock order.  */
     RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[0]), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTCritSectEnter(&g_aCritSects[1]), VINF_SUCCESS);
@@ -1043,7 +1043,7 @@ static void testLo3(void)
     RTTEST_CHECK(g_hTest, RTSemRWSetSubClass(g_ahSemRWs[0], RTLOCKVAL_SUB_CLASS_ANY)  == RTLOCKVAL_SUB_CLASS_NONE);
     RTTEST_CHECK(g_hTest, RTSemRWSetSubClass(g_ahSemRWs[0], RTLOCKVAL_SUB_CLASS_NONE) == RTLOCKVAL_SUB_CLASS_ANY);
 
-    /* Enter the first 4 critsects in ascending order and thereby definining
+    /* Enter the first 4 critsects in ascending order and thereby defining
        this as a valid lock order.  */
     RTTEST_CHECK_RC(g_hTest, RTSemRWRequestWrite(g_ahSemRWs[0], RT_INDEFINITE_WAIT), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemRWRequestRead( g_ahSemRWs[1], RT_INDEFINITE_WAIT), VINF_SUCCESS);
@@ -1135,7 +1135,7 @@ static void testLo4(void)
     RTTEST_CHECK(g_hTest, RTSemMutexSetSubClass(g_ahSemMtxes[0], RTLOCKVAL_SUB_CLASS_ANY)  == RTLOCKVAL_SUB_CLASS_NONE);
     RTTEST_CHECK(g_hTest, RTSemMutexSetSubClass(g_ahSemMtxes[0], RTLOCKVAL_SUB_CLASS_NONE) == RTLOCKVAL_SUB_CLASS_ANY);
 
-    /* Enter the first 4 critsects in ascending order and thereby definining
+    /* Enter the first 4 critsects in ascending order and thereby defining
        this as a valid lock order.  */
     RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[0], RT_INDEFINITE_WAIT), VINF_SUCCESS);
     RTTEST_CHECK_RC(g_hTest, RTSemMutexRequest(g_ahSemMtxes[1], RT_INDEFINITE_WAIT), VINF_SUCCESS);

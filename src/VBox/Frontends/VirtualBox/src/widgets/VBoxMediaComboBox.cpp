@@ -274,7 +274,7 @@ void VBoxMediaComboBox::appendItem (const VBoxMedium &aMedium)
     {
         /* We are adding the direct machine diff in !mShowDiffs mode. Since its
          * base hard disk has been already appended (enumerated before), we want
-         * to replace the base with the diff to avoid shownig both (both would
+         * to replace the base with the diff to avoid showing both (both would
          * be labeled using the base filename and therefore look like
          * duplicates). Note though that these visual duplicates are still
          * possible in !mShowDiffs mode if the same base hard disk is attached*

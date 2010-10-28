@@ -888,7 +888,7 @@ static void rtldrPEConvert32BitOptionalHeaderTo64Bit(PIMAGE_OPTIONAL_HEADER64 pO
     pOptHdr64->SizeOfStackReserve = u32SizeOfStackReserve;
 
     /* The rest matches except for BaseOfData which has been merged into ImageBase in the 64-bit version..
-     * Thus, ImageBase needs some special treatement. It will probably work fine assigning one to the
+     * Thus, ImageBase needs some special treatment. It will probably work fine assigning one to the
      * other since this is all declared volatile, but taking now chances, we'll use a temp variable.
      */
     Assert(RT_OFFSETOF(IMAGE_OPTIONAL_HEADER32, SizeOfStackReserve) == RT_OFFSETOF(IMAGE_OPTIONAL_HEADER64, SizeOfStackReserve));
@@ -1469,7 +1469,7 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
                     break;
                 }
 
-                /** @todo Rainy Day: Implement further verfication using openssl. */
+                /** @todo Rainy Day: Implement further verification using openssl. */
 
                 /* next */
                 off += cbCur;

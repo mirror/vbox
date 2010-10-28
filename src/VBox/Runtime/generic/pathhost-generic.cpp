@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Path Convertions, generic pass through.
+ * IPRT - Path Conversions, generic pass through.
  */
 
 /*

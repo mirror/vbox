@@ -629,7 +629,7 @@ static enum hrtimer_restart rtTimerLinuxHrCallback(struct hrtimer *pHrTimer)
     }
 
     /*
-     * Some state change occured while we were in the callback routine.
+     * Some state change occurred while we were in the callback routine.
      */
     for (;;)
     {
@@ -772,7 +772,7 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
     }
 
     /*
-     * Some state change occured while we were in the callback routine.
+     * Some state change occurred while we were in the callback routine.
      */
     for (;;)
     {
@@ -1500,7 +1500,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     /*
      * If this is running on ALL cpus, we'll have to register a callback
      * for MP events (so timers can be started/stopped on cpus going
-     * online/offline). We also create the spinlock for syncrhonizing
+     * online/offline). We also create the spinlock for synchronizing
      * stop/start/mp-event.
      */
     if (cCpus > 1)

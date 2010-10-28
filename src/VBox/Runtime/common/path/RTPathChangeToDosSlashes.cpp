@@ -33,7 +33,7 @@
 
 
 /**
- * Changes all the slahes in the specified path to DOS style.
+ * Changes all the slashes in the specified path to DOS style.
  *
  * Unless @a fForce is set, nothing will be done when on a UNIX flavored system
  * since paths wont work with DOS style slashes there.

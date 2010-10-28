@@ -1979,7 +1979,7 @@ static void stubInitXDamageExtension(ContextInfo *pContext)
 
     pContext->damageInitFailed = True;
 
-    /* Open second xserver connection to make sure we'd recieve all the xdamage messages 
+    /* Open second xserver connection to make sure we'd receive all the xdamage messages 
      * and those wouldn't be eaten by application even queue */
     pContext->damageDpy = XOpenDisplay(DisplayString(pContext->dpy));
 

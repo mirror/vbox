@@ -1330,7 +1330,7 @@ void Guest::destroyCtrlCallbackContext(Guest::CallbackMapIter it)
 
             /*
              * To get waitForCompletion completed (unblocked) we have to notify it if necessary (only
-             * cancle won't work!). This could happen if the client thread (e.g. VBoxService, thread of a spawned process)
+             * cancel won't work!). This could happen if the client thread (e.g. VBoxService, thread of a spawned process)
              * is disconnecting without having the chance to sending a status message before, so we
              * have to abort here to make sure the host never hangs/gets stuck while waiting for the
              * progress object to become signalled.
@@ -1473,7 +1473,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
          * - Operation 2 (1): Wait for process to exit.
          * If this progress completed successfully (S_OK), the process
          * started and exited normally. In any other case an error/exception
-         * occured.
+         * occurred.
          */
         ComObjPtr <Progress> progress;
         rc = progress.createObject();

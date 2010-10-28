@@ -57,7 +57,7 @@
  * @param   pvFault     The fault address (cr2).
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
+ *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  */
 VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {

@@ -580,8 +580,8 @@ efiFwVolFindFileByType(EFI_FFS_FILE_HEADER const *pFfsFile, uint8_t const *pbEnd
 static int efiFindEntryPoint(EFI_FFS_FILE_HEADER const *pFfsFile, uint32_t cbFfsFile, RTGCPHYS *pImageBase, uint8_t **ppbImage)
 {
     /*
-     * Sections headers are lays at the begining of block it describes,
-     * the first section header is located immidiately after FFS header.
+     * Sections headers are lays at the beginning of block it describes,
+     * the first section header is located immediately after FFS header.
      */
     EFI_FILE_SECTION_POINTER uSecHdrPtr;
     uint8_t const * const    pbFfsFileEnd = (uint8_t *)pFfsFile + cbFfsFile;

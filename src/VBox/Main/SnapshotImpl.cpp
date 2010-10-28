@@ -52,7 +52,7 @@
  *  Progress callback handler for lengthy operations
  *  (corresponds to the FNRTPROGRESS typedef).
  *
- *  @param uPercentage  Completetion precentage (0-100).
+ *  @param uPercentage  Completion percentage (0-100).
  *  @param pvUser       Pointer to the Progress instance.
  */
 static DECLCALLBACK(int) progressCallback(unsigned uPercentage, void *pvUser)
@@ -800,7 +800,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
  *
  *  @param aNode        <Snapshot> node to save the snapshot to.
  *  @param aSnapshot    Snapshot to save.
- *  @param aAttrsOnly   If true, only updatge user-changeable attrs.
+ *  @param aAttrsOnly   If true, only update user-changeable attrs.
  */
 HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
 {
@@ -842,7 +842,7 @@ HRESULT Snapshot::uninitRecursively(AutoWriteLock &writeLock,
 
     HRESULT rc = S_OK;
 
-    // make a copy of the Guid for logging before we uninit ourselfs
+    // make a copy of the Guid for logging before we uninit ourselves
 #ifdef LOG_ENABLED
     Guid uuid = getId();
     Utf8Str name = getName();
@@ -958,7 +958,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
 
     HRESULT rc = S_OK;
 
-    /* create copies of all shared folders (mHWData after attiching a copy
+    /* create copies of all shared folders (mHWData after attaching a copy
      * contains just references to original objects) */
     for (HWData::SharedFolderList::iterator it = mHWData->mSharedFolders.begin();
          it != mHWData->mSharedFolders.end();
@@ -1044,7 +1044,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
 /**
  *  Initializes the SnapshotMachine object when loading from the settings file.
  *
- *  @param aMachine machine the snapshot belngs to
+ *  @param aMachine machine the snapshot belongs to
  *  @param aHWNode          <Hardware> node
  *  @param aHDAsNode        <HardDiskAttachments> node
  *  @param aSnapshotId      snapshot ID of this snapshot machine
@@ -1319,7 +1319,7 @@ struct SessionMachine::DeleteSnapshotTask
  * on the _client_ (in the Console). This is different from restoring
  * or deleting snapshots, which start threads on the server.
  *
- * This does the server-side work of taking a snapshot: it creates diffencing
+ * This does the server-side work of taking a snapshot: it creates differencing
  * images for all hard disks attached to the machine and then creates a
  * Snapshot object with a corresponding SnapshotMachine to save the VM settings.
  *
@@ -2337,7 +2337,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             // has exited after setting the machine state to MachineState_DeletingSnapshot
 
         ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
-        // no need to lock the snapshot machine since it is const by definiton
+        // no need to lock the snapshot machine since it is const by definition
         Guid machineId = pSnapMachine->getId();
 
         // save the snapshot ID (for callbacks)
@@ -2555,7 +2555,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
                 /* Delete the differencing hard disk (has no children). Two
                  * exceptions: if it's the last medium in the chain or if it's
-                 * a backward merge we don't want to handle due to complextity.
+                 * a backward merge we don't want to handle due to complexity.
                  * In both cases leave the image in place. If it's the first
                  * exception the user can delete it later if he wants. */
                 if (!pMedium->getParent().isNull())

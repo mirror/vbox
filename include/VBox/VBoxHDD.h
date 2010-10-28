@@ -674,7 +674,7 @@ typedef struct VDINTERFACEIO
      * Initiate a asynchronous read request.
      *
      * @return  VBox status code.
-     * @param   pvUser         The opqaue user data passed on container creation.
+     * @param   pvUser         The opaque user data passed on container creation.
      * @param   pStorage       The storage handle.
      * @param   uOffset        The offset to start reading from.
      * @param   paSegments     Scatter gather list to store the data in.
@@ -2018,7 +2018,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
                                 unsigned *pcEntriesUsed);
 
 /**
- * Lists the capablities of a backend indentified by its name.
+ * Lists the capabilities of a backend identified by its name.
  *
  * @return  VBox status code.
  * @param   pszBackend      The backend name (case insensitive).

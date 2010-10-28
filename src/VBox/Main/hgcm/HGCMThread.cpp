@@ -98,7 +98,7 @@ class HGCMThread: public HGCMObject
         uint32_t m_fu32ThreadFlags;
 
         /* Message queue variables. Messages are inserted at tail of message
-         * queue. They are consumed by worker thread sequently. If a message was
+         * queue. They are consumed by worker thread sequentially. If a message was
          * consumed, it is removed from message queue.
          */
 

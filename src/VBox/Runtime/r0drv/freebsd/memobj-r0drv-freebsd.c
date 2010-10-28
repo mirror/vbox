@@ -374,7 +374,7 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                                         0,                    /* lowest physical address*/
                                         _4G-1,                /* highest physical address */
                                         PAGE_SIZE,            /* alignment. */
-                                        0);                   /* boundrary */
+                                        0);                   /* boundary */
     if (pMemFreeBSD->Core.pv)
     {
         pMemFreeBSD->Core.u.Cont.Phys = vtophys(pMemFreeBSD->Core.pv);
@@ -491,7 +491,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
                                         0,                    /* lowest physical address*/
                                         _4G-1,                /* highest physical address */
                                         uAlignment,           /* alignment. */
-                                        0);                   /* boundrary */
+                                        0);                   /* boundary */
     if (pMemFreeBSD->Core.pv)
     {
         pMemFreeBSD->Core.u.Cont.Phys = vtophys(pMemFreeBSD->Core.pv);

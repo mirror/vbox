@@ -68,7 +68,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The vminfo interval (millseconds). */
+/** The vminfo interval (milliseconds). */
 static uint32_t                 g_cMsVMInfoInterval = 0;
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI          g_hVMInfoEvent = NIL_RTSEMEVENTMULTI;
@@ -234,13 +234,13 @@ static int vboxserviceVMInfoWriteUsers(void)
 # endif
 
 #elif defined(RT_OS_FREEBSD)
-    /** @todo FreeBSD: Port logged on user info retrival.
+    /** @todo FreeBSD: Port logged on user info retrieval.
      *                 However, FreeBSD 9 supports utmpx, so we could use the code
      *                 block below (?). */
     rc = VERR_NOT_IMPLEMENTED;
 
 #elif defined(RT_OS_OS2)
-    /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrival. */
+    /** @todo OS/2: Port logged on (LAN/local/whatever) user info retrieval. */
     rc = VERR_NOT_IMPLEMENTED;
 
 #else
@@ -672,7 +672,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
 
 #endif /* !RT_OS_WINDOWS */
 
-#if 0 /* Zapping not enabled yet, needds more testing first. */
+#if 0 /* Zapping not enabled yet, needs more testing first. */
     /*
      * Zap all stale network interface data if the former (saved) network ifaces count
      * is bigger than the current one.

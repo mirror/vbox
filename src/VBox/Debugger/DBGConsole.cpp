@@ -53,7 +53,7 @@
  *
  * @subsection sec_dbg_op_address       Addressing modes
  *
- *      - Default is flat. For compatability '%' also means flat.
+ *      - Default is flat. For compatibility '%' also means flat.
  *      - Segmented addresses are specified selector:offset.
  *      - Physical addresses are specified using '%%'.
  *      - The default target for the addressing is the guest context, the '#'
@@ -172,7 +172,7 @@ static int dbgcProcessLog(PDBGC pDbgc);
 
 
 /**
- * Initalizes g_bmOperatorChars.
+ * Initializes g_bmOperatorChars.
  */
 static void dbgcInitOpCharBitMap(void)
 {
@@ -995,7 +995,7 @@ int dbgcEvalSub(PDBGC pDbgc, char *pszExpr, size_t cchExpr, PDBGCVAR pResult)
             rc = pOpSplit->pfnHandlerUnary(pDbgc, &Arg, pResult);
     }
     else
-        /* plain expression or using unary operators perhaps with paratheses. */
+        /* plain expression or using unary operators perhaps with parentheses. */
         rc = dbgcEvalSubUnary(pDbgc, pszExpr, cchExpr, pResult);
 
     return rc;
@@ -1092,7 +1092,7 @@ static int dbgcProcessArguments(PDBGC pDbgc, PCDBGCCMD pCmd, char *pszArgs, PDBG
             }
             /*
              * When quoted we ignore everything but the quotation char.
-             * We use the REXX way of escaping the quotation char, i.e. double occurence.
+             * We use the REXX way of escaping the quotation char, i.e. double occurrence.
              */
             else if (ch == '\'' || ch == '"' || ch == '`')
             {

@@ -878,7 +878,7 @@ void ConfigFileBase::createStubDocument()
             strExt = ".vbox";
         }
 
-        // and append something likd "-1.3-linux.xml"
+        // and append something like "-1.3-linux.xml"
         strFilenameNew.append("-");
         strFilenameNew.append(m->strSettingsVersionFull);       // e.g. "1.3-linux"
         strFilenameNew.append(strExt);                          // .xml for main config, .vbox for machine config
@@ -3837,7 +3837,7 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
  *   This parameter is ignored unless the settings version is at least v1.9, which
  *   is always the case when this gets called for OVF export.
  * @param pllElementsWithUuidAttributes If not NULL, must point to a list of element node
- *   pointers to which we will append all allements that we created here that contain
+ *   pointers to which we will append all elements that we created here that contain
  *   UUID attributes. This allows the OVF export code to quickly replace the internal
  *   media UUIDs with the UUIDs of the media that were exported.
  */

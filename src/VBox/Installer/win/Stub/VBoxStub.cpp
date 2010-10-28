@@ -289,7 +289,7 @@ static BOOL PackageIsNeeded(PVBOXSTUBPKG pPackage)
 
 
 /**
- * Recursivly copies a directory to another location.
+ * Recursively copies a directory to another location.
  *
  * @returns iprt status code.
  *

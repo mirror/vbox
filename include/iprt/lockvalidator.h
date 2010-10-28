@@ -389,7 +389,7 @@ RTDECL(void) RTLockValidatorRecExclSetOwner(PRTLOCKVALRECEXCL pRec, RTTHREAD hTh
  * Check the exit order and release (unset) the ownership.
  *
  * This is called by routines implementing releasing an exclusive lock,
- * typically before getting down to the final lock releaseing.  Can be used for
+ * typically before getting down to the final lock releasing.  Can be used for
  * recursive releasing instead of RTLockValidatorRecExclUnwind.
  *
  * @retval  VINF_SUCCESS on success.
@@ -704,7 +704,7 @@ RTDECL(void) RTLockValidatorRecSharedAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD h
  * Removes an owner from a shared locking record.
  *
  * Takes recursion into account.  This function is typically called before
- * releaseing the lock.
+ * releasing the lock.
  *
  * @param   pRec                The validator record.
  * @param   hThread             The thread handle of the owner.  NIL_RTTHREAD is
@@ -742,7 +742,7 @@ RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTH
 /**
  * Check the signaller of an event.
  *
- * This is called by routines implementing releasing the event sempahore (both
+ * This is called by routines implementing releasing the event semaphore (both
  * kinds).
  *
  * @retval  VINF_SUCCESS on success.

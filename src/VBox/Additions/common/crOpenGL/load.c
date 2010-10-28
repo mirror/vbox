@@ -763,7 +763,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
 
         hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, 1);
 
-        /* ensure the window is in synch to avoid possible incorrect host notifications  */
+        /* ensure the window is in sync to avoid possible incorrect host notifications  */
         {
             BOOL bRc = MoveWindow(pRegions->hWnd, winX, winY, winW, winH, FALSE /*BOOL bRepaint*/);
             if (!bRc)

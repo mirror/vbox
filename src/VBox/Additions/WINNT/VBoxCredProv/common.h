@@ -43,7 +43,7 @@ struct FIELD_STATE_PAIR
     CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE cpfis;
 };
 
-// These two arrays are seperate because a credential provider might
+// These two arrays are separate because a credential provider might
 // want to set up a credential with various combinations of field state pairs
 // and field descriptors.
 

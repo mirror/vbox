@@ -529,7 +529,7 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb, 
         }
         else
         {
-            /* paritial match at the end of the page? */
+            /* partial match at the end of the page? */
             if (!memcmp(pb + 1, &pabNeedle[1], cb - 1))
             {
                 /* We're copying one byte more that we really need here, but wtf. */
@@ -566,7 +566,7 @@ static bool pgmR3DbgScanPage(const uint8_t *pbPage, int32_t *poff, uint32_t cb, 
  *                          and less or equal to 4GB.
  * @param   pabNeedle       The byte string to search for.
  * @param   cbNeedle        The length of the byte string. Max 256 bytes.
- * @param   pGCPhysHit      Where to store the address of the first occurence on success.
+ * @param   pGCPhysHit      Where to store the address of the first occurrence on success.
  */
 VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, RTGCPHYS GCPhysAlign,
                                     const uint8_t *pabNeedle, size_t cbNeedle, PRTGCPHYS pGCPhysHit)
@@ -726,7 +726,7 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
  * @param   cbRange         The number of bytes to search. Max 256 bytes.
  * @param   pabNeedle       The byte string to search for.
  * @param   cbNeedle        The length of the byte string.
- * @param   pGCPtrHit       Where to store the address of the first occurence on success.
+ * @param   pGCPtrHit       Where to store the address of the first occurrence on success.
  */
 VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR cbRange, RTGCPTR GCPtrAlign,
                                    const uint8_t *pabNeedle, size_t cbNeedle, PRTGCUINTPTR pGCPtrHit)
@@ -1135,7 +1135,7 @@ static int pgmR3DumpHierarchyShwPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS 
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
  * @param   HCPhys      The physical address of the page directory table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
@@ -1231,7 +1231,7 @@ static int  pgmR3DumpHierarchyShwPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
  * @param   HCPhys      The physical address of the page directory pointer table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
@@ -1325,7 +1325,7 @@ static int  pgmR3DumpHierarchyShwPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPH
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pVM         The VM handle.
  * @param   HCPhys      The physical address of the table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int pgmR3DumpHierarchyShwPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
@@ -1449,7 +1449,7 @@ static int pgmR3DumpHierarchyShw32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
  * @param   HCPhys      The physical address of the table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS HCPhys, unsigned cMaxDepth)
 {
@@ -1804,7 +1804,7 @@ static int pgmR3DumpHierarchyGstPaePT(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS 
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
  * @param   GCPhys      The physical address of the table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int  pgmR3DumpHierarchyGstPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS GCPhys, unsigned cMaxDepth)
 {
@@ -1901,7 +1901,7 @@ static int  pgmR3DumpHierarchyGstPaePD(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
  * @param   GCPhys      The physical address of the table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int  pgmR3DumpHierarchyGstPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPHYS GCPhys, unsigned cMaxDepth)
 {
@@ -1997,7 +1997,7 @@ static int  pgmR3DumpHierarchyGstPaePDPT(PPGMR3DUMPHIERARCHYSTATE pState, RTGCPH
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pVM         The VM handle.
  * @param   GCPhys      The physical address of the table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int pgmR3DumpHierarchyGstPaePML4(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS GCPhys, unsigned cMaxDepth)
 {
@@ -2125,7 +2125,7 @@ static int pgmR3DumpHierarchyGst32BitPT(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
  * @returns VBox status code (VINF_SUCCESS).
  * @param   pState      The dumper state.
  * @param   GCPhys      The physical address of the table.
- * @param   cMaxDepth   The maxium depth.
+ * @param   cMaxDepth   The maximum depth.
  */
 static int pgmR3DumpHierarchyGst32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHYS GCPhys, unsigned cMaxDepth)
 {

@@ -412,7 +412,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             Log(("WM_RENDERALLFORMATS\n"));
 
             /* Do nothing. The clipboard formats will be unavailable now, because the
-             * windows is to be destroyed and therefore the guest side becames inactive.
+             * windows is to be destroyed and therefore the guest side becomes inactive.
              */
             if (OpenClipboard (hwnd))
             {
@@ -625,7 +625,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 
     pClient->pCtx->pClient = pClient;
 
-    /* Synch the host clipboard content with the client. */
+    /* Sync the host clipboard content with the client. */
     vboxClipboardSync (pClient);
 
     return VINF_SUCCESS;
@@ -633,7 +633,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
-    /* Synch the host clipboard content with the client. */
+    /* Sync the host clipboard content with the client. */
     vboxClipboardChanged (pClient->pCtx);
 
     return VINF_SUCCESS;

@@ -449,7 +449,7 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
     for(;;)
     {
         /*
-         * To prevent concurent execution of sending/receving threads
+         * To prevent concurrent execution of sending/receiving threads
          */
 #ifndef RT_OS_WINDOWS
         nFDs = slirp_get_nsock(pThis->m_pNATState);
@@ -458,7 +458,7 @@ static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
         if (polls == NULL)
             return VERR_NO_MEMORY;
 
-        /* don't pass the managemant pipe */
+        /* don't pass the management pipe */
         slirp_select_fill(pThis->m_pNATState, &nFDs, &polls[1]);
         unsigned int cMsTimeout = slirp_get_timeout_ms(pThis->m_pNATState);
 

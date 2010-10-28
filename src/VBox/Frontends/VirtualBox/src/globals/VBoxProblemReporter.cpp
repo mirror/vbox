@@ -74,8 +74,8 @@ bool VBoxProblemReporter::isAnyWarningShown()
 {
     /* Check if at least one warning is alive!
      * All warnings are stored in m_warnings list as live pointers,
-     * thats why if some warning was deleted from another place,
-     * it's pointer here become equal NULL... */
+     * this is why if some warning was deleted from another place,
+     * its pointer here will equal NULL... */
     for (int i = 0; i < m_warnings.size(); ++i)
         if (m_warnings[i])
             return true;
@@ -130,7 +130,7 @@ void VBoxProblemReporter::closeAllWarnings()
  *      One of values of the Type enum, that defines the message box
  *      title and icon.
  *  @param  aMessage
- *      Message text to display (can contain sinmple Qt-html tags).
+ *      Message text to display (can contain simple Qt-html tags).
  *  @param  aDetails
  *      Detailed message description displayed under the main message text using
  *      QTextEdit (that provides rich text support and scrollbars when necessary).
@@ -2079,7 +2079,7 @@ bool VBoxProblemReporter::remindAboutInaccessibleMedia()
  * Shows user a proposal to either convert configuration files or
  * Exit the application leaving all as already is.
  *
- * @param aFileList      List of files for auto-convertion (may use Qt HTML).
+ * @param aFileList      List of files for auto-conversion (may use Qt HTML).
  * @param aAfterRefresh  @true when called after the VM refresh.
  *
  * @return QIMessageBox::Ok (Save + Backup), QIMessageBox::Cancel (Exit)

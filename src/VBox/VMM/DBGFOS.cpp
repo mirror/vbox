@@ -295,7 +295,7 @@ static DECLCALLBACK(int) dbgfR3OSDetect(PVM pVM, char *pszName, size_t cchName)
 
 
 /**
- * Detectes the guest OS and try dig out symbols and useful stuff.
+ * Detects the guest OS and try dig out symbols and useful stuff.
  *
  * When called the 2nd time, symbols will be updated that if the OS
  * is the same.

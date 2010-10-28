@@ -1238,9 +1238,9 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
              */
             pCaps->SchedulingCaps.MultiEngineAware = 1;
             pCaps->MemoryManagementCaps.Value = 0;
-            /* @todo: this corelates with pCaps->SchedulingCaps.MultiEngineAware */
+            /* @todo: this correlates with pCaps->SchedulingCaps.MultiEngineAware */
             pCaps->MemoryManagementCaps.PagingNode = 0;
-            /* @todo: this corelates with pCaps->SchedulingCaps.MultiEngineAware */
+            /* @todo: this correlates with pCaps->SchedulingCaps.MultiEngineAware */
             pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = 1;
 
             break;
@@ -3635,7 +3635,7 @@ DxgkDdiRecommendFunctionalVidPn(
                     &Resolution,
                     pModeInfos, cModeInfos, &cModeInfos2, &iPreferredModeInfo);
             Assert(Status == STATUS_SUCCESS);
-            Assert(iPreferredModeInfo >= 0); /* the array should contain the preffered info */
+            Assert(iPreferredModeInfo >= 0); /* the array should contain the preferred info */
             if (Status != STATUS_SUCCESS)
                 drprintf((__FUNCTION__": second call to VBoxWddmGetModesForResolution failed Status(0x%x), cModeInfos(%d), cModeInfos2(%d)\n", Status, cModeInfos, cModeInfos2));
         }
@@ -4047,7 +4047,7 @@ DxgkDdiRecommendMonitorModes(
                     continue;
             }
 
-            /* error has occured, release & break */
+            /* error has occurred, release & break */
             pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnReleaseModeInfo(
                     pRecommendMonitorModesArg->hMonitorSourceModeSet, pNewMonitorSourceModeInfo);
             break;
@@ -4268,7 +4268,7 @@ DxgkDdiOpenAllocation(
                             /* we have queried host for some surface info, like pitch & size,
                              * need to return it back to the UMD (User Mode Drive) */
                             pAllocInfo->SurfDesc = pAllocation->SurfDesc;
-                            /* success, just contionue */
+                            /* success, just continue */
                             continue;
                         }
                         else

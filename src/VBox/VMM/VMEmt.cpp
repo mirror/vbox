@@ -418,7 +418,7 @@ static int vmR3HaltMethod12ReadConfigU(PUVM pUVM)
     /*
      * Query overrides.
      *
-     * I don't have time to bother with niceities such as invalid value checks
+     * I don't have time to bother with niceties such as invalid value checks
      * here right now. sorry.
      */
     PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pUVM->pVM), "/VMM/HaltedMethod1");
@@ -461,7 +461,7 @@ static DECLCALLBACK(int) vmR3HaltMethod1Init(PUVM pUVM)
 
 /**
  * Method 1 - Block whenever possible, and when lagging behind
- * switch to spinning for 10-30ms with occational blocking until
+ * switch to spinning for 10-30ms with occasional blocking until
  * the lag has been eliminated.
  */
 static DECLCALLBACK(int) vmR3HaltMethod1Halt(PUVMCPU pUVCpu, const uint32_t fMask, uint64_t u64Now)
@@ -630,7 +630,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Init(PUVM pUVM)
     /*
      * Query overrides.
      *
-     * I don't have time to bother with niceities such as invalid value checks
+     * I don't have time to bother with niceties such as invalid value checks
      * here right now. sorry.
      */
     PCFGMNODE pCfg = CFGMR3GetChild(CFGMR3GetRoot(pUVM->pVM), "/VMM/HaltedGlobal1");

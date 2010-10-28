@@ -943,7 +943,7 @@ int handleExportAppliance(HandlerArg *a)
             ComPtr<IMachine> pMachine = *itM;
             ComPtr<IVirtualSystemDescription> pVSD;
             CHECK_ERROR_BREAK(pMachine, Export(pAppliance, Bstr(pszAbsFilePath).raw(), pVSD.asOutParam()));
-            // Add additional info to the virtal system description if the user wants so
+            // Add additional info to the virtual system description if the user wants so
             ArgsMap *pmapArgs = NULL;
             ArgsMapsMap::iterator itm = mapArgsMapsPerVsys.find(i);
             if (itm != mapArgsMapsPerVsys.end())

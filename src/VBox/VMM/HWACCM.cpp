@@ -2379,7 +2379,7 @@ VMMR3DECL(bool) HWACCMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
 
 
 /**
- * Notifcation from EM about a rescheduling into hardware assisted execution
+ * Notification from EM about a rescheduling into hardware assisted execution
  * mode.
  *
  * @param   pVCpu       Pointer to the current virtual cpu structure.
@@ -2390,7 +2390,7 @@ VMMR3DECL(void) HWACCMR3NotifyScheduled(PVMCPU pVCpu)
 }
 
 /**
- * Notifcation from EM about returning from instruction emulation (REM / EM).
+ * Notification from EM about returning from instruction emulation (REM / EM).
  *
  * @param   pVCpu       Pointer to the current virtual cpu structure.
  */
@@ -2777,7 +2777,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersio
     }
 #endif
 
-    /* Recheck all VCPUs if we can go staight into hwaccm execution mode. */
+    /* Recheck all VCPUs if we can go straight into hwaccm execution mode. */
     if (HWACCMIsEnabled(pVM))
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)

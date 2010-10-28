@@ -142,7 +142,7 @@ void UIExportApplianceWzdPage1::initializePage()
 
 void UIExportApplianceWzdPage1::cleanupPage()
 {
-    /* Do NOT call superclass method, it will clean defailt (initially set) field - 'selectedVMName'! */
+    /* Do NOT call superclass method, it will clean default (initially set) field - 'selectedVMName'! */
 }
 
 bool UIExportApplianceWzdPage1::isComplete() const
@@ -472,7 +472,7 @@ void UIExportApplianceWzdPage4::initializePage()
 
 void UIExportApplianceWzdPage4::cleanupPage()
 {
-    /* Do NOT call superclass method, it will clean defailt (initially set) field - 'applianceWidget'! */
+    /* Do NOT call superclass method, it will clean default (initially set) field - 'applianceWidget'! */
 }
 
 bool UIExportApplianceWzdPage4::validatePage()

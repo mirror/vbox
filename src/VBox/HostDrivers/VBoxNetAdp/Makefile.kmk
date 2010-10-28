@@ -93,7 +93,7 @@ endif # darwin
 
 ifeq ($(KBUILD_TARGET),linux)
  #
- # Install source files for compliation on Linux.
+ # Install source files for compilation on Linux.
  # files_vboxnetadp defines VBOX_VBOXNETADP_SOURCES.
  #
  include $(PATH_SUB_CURRENT)/linux/files_vboxnetadp
@@ -142,7 +142,7 @@ endif # linux
 
 ifeq ($(KBUILD_TARGET),freebsd)
  #
- # Install source files for compliation on FreeBSD.
+ # Install source files for compilation on FreeBSD.
  # files_vboxnetadp defines VBOX_VBOXNETADP_SOURCES.
  #
  include $(PATH_SUB_CURRENT)/freebsd/files_vboxnetadp

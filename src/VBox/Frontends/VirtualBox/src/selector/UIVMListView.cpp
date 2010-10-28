@@ -527,8 +527,8 @@ void UIVMItemPainter::blendContent(QPainter *pPainter, const QStyleOptionViewIte
      * on the widget, cause the composition modes are not working correctly.
      * The same count for doing composition on a QPixmap. The work around is to
      * draw all into a QPixmap (also the background color/gradient, otherwise
-     * the antialiasing is messed up), bliting this into a QImage to make the
-     * composition stuff and finally bliting this QImage into the QWidget.
+     * the antialiasing is messed up), blitting this into a QImage to make the
+     * composition stuff and finally blitting this QImage into the QWidget.
      * Yipi a yeah. Btw, no problem on Linux at all. */
     QPixmap basePixmap(r.width(), r.height());//
     /* Initialize with the base image color. */
@@ -626,7 +626,7 @@ void UIVMItemPainter::calcLayout(const QModelIndex &aIndex,
 {
     const int nameSpaceWidth = fontMetric(aIndex, Qt::FontRole).width(' ');
     const int stateSpaceWidth = fontMetric(aIndex, UIVMItemModel::MachineStateFontRole).width(' ');
-    /* Really basic layout managment.
+    /* Really basic layout management.
      * First layout as usual */
     aOSType->moveTo(m_Margin, m_Margin);
     aVMName->moveTo(m_Margin + aOSType->width() + m_Spacing, m_Margin);
@@ -640,7 +640,7 @@ void UIVMItemPainter::calcLayout(const QModelIndex &aIndex,
     /* All items in the layout: */
     QRectList allLayout;
     allLayout << aOSType << aVMName << aShot << statesLayout;
-    /* Now verticaly center the items based on the reference item */
+    /* Now vertically center the items based on the reference item */
     statesLayout.alignVCenterTo(aStateIcon);
     allLayout.alignVCenterTo(aOSType);
 }

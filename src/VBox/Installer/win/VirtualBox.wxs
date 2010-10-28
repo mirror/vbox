@@ -214,7 +214,7 @@
 <?if $(env.VBOX_WITH_DOCS_PACKING) = "yes" ?>
                     <Directory Id="documents" Name="doc">
                         <!-- The documentation is a separate component. This allows to split the install process
-                             into pieces if ever necessary. Maintanance is easier, too. The following component
+                             into pieces if ever necessary. Maintenance is easier, too. The following component
                              will be installed in the "doc" folder. -->
                         <Component Id="docs" Guid="40BD12C5-89A8-4B81-8A5E-5EEE2C2763C4">
                             <?include $(env.PATH_TARGET)\Files_Doc.wxi ?>

@@ -2295,7 +2295,7 @@ enqueue:
 #else
             cur_drv->last_sect = fdctrl->fifo[3];
 #endif
-            /* Bochs BIOS is buggy and don't send format informations
+            /* Bochs BIOS is buggy and don't send format information
              * for each sector. So, pretend all's done right now...
              */
             fdctrl->data_state &= ~FD_STATE_FORMAT;
@@ -2619,7 +2619,7 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
                    ("Failed to attach LUN#%d. rc=%Rrc\n", drv->iLUN, rc));
         switch (rc) {
         case VERR_ACCESS_DENIED:
-            /* Error already catched by DrvHostBase */
+            /* Error already cached by DrvHostBase */
             break;
         case VERR_PDM_NO_ATTACHED_DRIVER:
             /* Legal on architectures without a floppy controller */

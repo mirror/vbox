@@ -25,7 +25,7 @@
 #include "VBoxVMSettingsNetwork.gen.h"
 #include "VBoxVMSettingsPortForwardingDlg.h"
 
-/* VBox Forwardes */
+/* VBox Forwards */
 class VBoxVMSettingsNetworkPage;
 class QITabWidget;
 

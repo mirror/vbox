@@ -152,14 +152,14 @@ typedef struct DRVINTNET
 
     /** Number of GSO packets sent. */
     STAMCOUNTER                     StatSentGso;
-    /** Number of GSO packets recevied. */
+    /** Number of GSO packets received. */
     STAMCOUNTER                     StatReceivedGso;
     /** Number of packets send from ring-0. */
     STAMCOUNTER                     StatSentR0;
-    /** The number of times we've had to wake up the xmit thread to contine the
+    /** The number of times we've had to wake up the xmit thread to continue the
      *  ring-0 job. */
     STAMCOUNTER                     StatXmitWakeupR0;
-    /** The number of times we've had to wake up the xmit thread to contine the
+    /** The number of times we've had to wake up the xmit thread to continue the
      *  ring-3 job. */
     STAMCOUNTER                     StatXmitWakeupR3;
     /** The times the xmit thread has been told to process the ring. */
@@ -319,7 +319,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_BeginXmit(PPDMINETWORKUP pInterface, bool fOnWork
         /** @todo Does this actually make sense if the other dude is an EMT and so
          *        forth?  I seriously think this is ring-0 only...
          * We might end up waking up the xmit thread unnecessarily here, even when in
-         * ring-0... This needs some more thought and opitmizations when the ring-0 bits
+         * ring-0... This needs some more thought and optimizations when the ring-0 bits
          * are working. */
 #ifdef IN_RING3
         if (    !fOnWorkerThread
@@ -368,7 +368,7 @@ PDMBOTHCBDECL(int) drvIntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
      * Allocate room in the ring buffer.
      *
      * In ring-3 we may have to process the xmit ring before there is
-     * sufficient buffer space since we might've stacked up a few frames to the
+     * sufficient buffer space since we might have stacked up a few frames to the
      * trunk while in ring-0.  (There is not point of doing this in ring-0.)
      */
     PINTNETHDR pHdr = NULL;             /* gcc silliness */
@@ -566,7 +566,7 @@ static DECLCALLBACK(void) drvR3IntNetUp_NotifyLinkChanged(PPDMINETWORKUP pInterf
 /* -=-=-=-=- Transmit Thread -=-=-=-=- */
 
 /**
- * Async I/O thread for defered packet transmission.
+ * Async I/O thread for deferred packet transmission.
  *
  * @returns VBox status code. Returning failure will naturally terminate the thread.
  * @param   pDrvIns     The internal networking driver instance.
@@ -1439,7 +1439,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 
     /** @cfgm{SharedMacOnWire, boolean, false}
      * Whether to shared the MAC address of the host interface when using the wire. When
-     * attaching to a wireless NIC this option is usally a requirement.
+     * attaching to a wireless NIC this option is usually a requirement.
      */
     bool fSharedMacOnWire;
     rc = CFGMR3QueryBoolDef(pCfg, "SharedMacOnWire", &fSharedMacOnWire, false);

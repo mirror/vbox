@@ -277,7 +277,7 @@ extern int testmath(void)
     CHECKLL(testremainder(), 1);
 
 
-    /* Only works in extended precision, while double precesion is defaul on BSD (including Darwin) */
+    /* Only works in extended precision, while double precision is default on BSD (including Darwin) */
     set_cw(0x37f);
     CHECK(rintl(1.0L), 1.0);
     CHECK(rintl(1.4L), 1.0);
@@ -418,7 +418,7 @@ static inline void fpush(void)
 
 static inline void fpop(void)
 {
-    env->fptags[env->fpstt] = 1; /* invvalidate stack entry */
+    env->fptags[env->fpstt] = 1; /* invalidate stack entry */
     env->fpstt = (env->fpstt + 1) & 7;
 }
 

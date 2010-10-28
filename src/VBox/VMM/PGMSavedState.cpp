@@ -75,7 +75,7 @@
 #define PGM_STATE_REC_MMIO2_ZERO        UINT8_C(0x03)
 /** Virgin ROM page. Followed by protection (8-bit) and the raw bits. */
 #define PGM_STATE_REC_ROM_VIRGIN        UINT8_C(0x04)
-/** Raw shadowed ROM page. The protection (8-bit) preceeds the raw bits. */
+/** Raw shadowed ROM page. The protection (8-bit) precedes the raw bits. */
 #define PGM_STATE_REC_ROM_SHW_RAW       UINT8_C(0x05)
 /** Zero shadowed ROM page. The protection (8-bit) is the only payload. */
 #define PGM_STATE_REC_ROM_SHW_ZERO      UINT8_C(0x06)
@@ -85,7 +85,7 @@
 #define PGM_STATE_REC_LAST              PGM_STATE_REC_ROM_PROT
 /** End marker. */
 #define PGM_STATE_REC_END               UINT8_C(0xff)
-/** Flag indicating that the data is preceeded by the page address.
+/** Flag indicating that the data is preceded by the page address.
  *  For RAW pages this is a RTGCPHYS.  For MMIO2 and ROM pages this is a 8-bit
  *  range ID and a 32-bit page index.
  */
@@ -477,7 +477,7 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
 static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, bool fFinalPass)
 {
     if (FTMIsDeltaLoadSaveActive(pVM))
-        return VINF_SUCCESS;    /* nothing to do as we deal with those pages seperately */
+        return VINF_SUCCESS;    /* nothing to do as we deal with those pages separately */
 
     /*
      * The Shadowed ROMs.
@@ -1259,7 +1259,7 @@ static void pgmR3StateVerifyCrc32ForPage(void const *pvPage, PPGMRAMRANGE pCur, 
 
 
 /**
- * Verfies the CRC-32 for a RAM page.
+ * Verifies the CRC-32 for a RAM page.
  *
  * @param   pVM                 The VM handle.
  * @param   pCur                The current RAM range.
@@ -2328,7 +2328,7 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     uint32_t i = 0;
     for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; ; pRam = pRam->pNextR3, i++)
     {
-        /* Check the seqence number / separator. */
+        /* Check the sequence number / separator. */
         uint32_t u32Sep;
         int rc = SSMR3GetU32(pSSM, &u32Sep);
         if (RT_FAILURE(rc))
@@ -2939,7 +2939,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     uint32_t i = 0;
     for (;; i++)
     {
-        rc = SSMR3GetU32(pSSM, &u32Sep);        /* seqence number */
+        rc = SSMR3GetU32(pSSM, &u32Sep);        /* sequence number */
         if (RT_FAILURE(rc))
             return rc;
         if (u32Sep == ~0U)

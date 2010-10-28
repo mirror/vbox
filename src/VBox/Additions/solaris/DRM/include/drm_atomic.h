@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010 Oracle Corpotation
+ * Copyright 2009-2010 Oracle Corporation
  * All rights reserved.
  * Use is subject to license terms.
  */

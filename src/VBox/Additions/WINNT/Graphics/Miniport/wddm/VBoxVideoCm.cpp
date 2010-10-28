@@ -44,9 +44,9 @@ typedef struct VBOXVIDEOCM_SESSION
     LIST_ENTRY ContextList;
     /* commands list  */
     LIST_ENTRY CommandsList;
-    /* event used to notify UMD about penging commands */
+    /* event used to notify UMD about pending commands */
     PKEVENT pUmEvent;
-    /* synch lock */
+    /* sync lock */
     FAST_MUTEX Mutex;
     /* indicates whether event signaling is needed on cmd add */
     bool bEventNeeded;
@@ -148,7 +148,7 @@ void vboxVideoCmCmdRelease(void *pvCmd)
 }
 
 /**
- * @param pvCmd memory byffer returned by vboxVideoCmCmdCreate
+ * @param pvCmd memory buffer returned by vboxVideoCmCmdCreate
  * @param cbSize should be <= cbSize posted to vboxVideoCmCmdCreate on command creation
  */
 void vboxVideoCmCmdSubmit(void *pvCmd, uint32_t cbSize)

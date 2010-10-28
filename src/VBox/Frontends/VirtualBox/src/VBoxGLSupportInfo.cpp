@@ -573,7 +573,7 @@ bool VBoxVHWAInfo::isVHWASupported() const
     }
 
 #ifndef DEBUGVHWASTRICT
-    /* in case we do not support shaders & multitexturing we can not supprt dst colorkey,
+    /* in case we do not support shaders & multitexturing we can not support dst colorkey,
      * no sense to report Video Acceleration supported */
     if(!mglInfo.isFragmentShaderSupported())
     {

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * UsbMSD - USB Mass Stoage Device Emulation.
+ * UsbMSD - USB Mass Storage Device Emulation.
  */
 
 /*
@@ -225,7 +225,7 @@ typedef struct USBMSD
      *  time.  Only signalled when fSignalResetSem is set. */
     RTSEMEVENTMULTI     hEvtReset;
     /** The reset URB.
-     * This is waiting for SCSI requestion completion before finishing the reset. */
+     * This is waiting for SCSI request completion before finishing the reset. */
     PVUSBURB            pResetUrb;
 
     /**
@@ -1074,7 +1074,7 @@ static int usbMsdHandleBulkHostToDev(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 return VINF_SUCCESS;
 
             /*
-             * Make sure we've got a request and a sufficent buffer space.
+             * Make sure we've got a request and a sufficient buffer space.
              *
              * Note! This will make sure the buffer is ZERO as well, thus
              *       saving us the trouble of clearing the output buffer on

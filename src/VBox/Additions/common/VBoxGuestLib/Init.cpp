@@ -73,7 +73,7 @@ static void vbglR0QueryHostVersion (void)
  * because these values are provided by the VBoxGuest driver and it might
  * be loaded later than other drivers.
  *
- * The VbglEnter checks the current library status, tries to retrive these
+ * The VbglEnter checks the current library status, tries to retrieve these
  * values and fails if they are unavailable.
  *
  */

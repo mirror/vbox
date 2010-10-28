@@ -255,7 +255,7 @@ typedef struct _CLIPRECTS {
 
 typedef struct _VRDPCLIPRECTS
 {
-    RECTL rclDstOrig; /* Original bounding rectancle. */
+    RECTL rclDstOrig; /* Original bounding rectangle. */
     RECTL rclDst;     /* Bounding rectangle of all rects. */
     CLIPRECTS rects;  /* Rectangles to update. */
 } VRDPCLIPRECTS;

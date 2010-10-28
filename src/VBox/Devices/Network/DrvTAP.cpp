@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DrvTAP - Universial TAP network transport driver.
+ * DrvTAP - Universal TAP network transport driver.
  */
 
 /*
@@ -420,7 +420,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 
                 /*
                  * A return code != VINF_SUCCESS means that we were woken up during a VM
-                 * state transistion. Drop the packet and wait for the next one.
+                 * state transition. Drop the packet and wait for the next one.
                  */
                 if (RT_FAILURE(rc1))
                     continue;

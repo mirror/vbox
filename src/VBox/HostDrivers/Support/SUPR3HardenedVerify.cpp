@@ -197,7 +197,7 @@ static SUPVERIFIEDDIR   g_aSupVerifiedDirs[kSupID_End];
 
 
 /**
- * Assembles the path to a dirtory.
+ * Assembles the path to a directory.
  *
  * @returns VINF_SUCCESS on success, some error code on failure (fFatal
  *          decides whether it returns or not).
@@ -612,8 +612,8 @@ static int supR3HardenedVerifySameFile(int iFile, const char *pszFilename, bool 
  *
  * @returns VINF_SUCCESS on success.
  *          VERR_NOT_FOUND if the file isn't in the table, this isn't ever a fatal error.
- *          On verfication failure, an error code will be returned when fFatal is clear,
- *          otherwise the program will be termindated.
+ *          On verification failure, an error code will be returned when fFatal is clear,
+ *          otherwise the program will be terminated.
  *
  * @param   pszFilename         The filename.
  * @param   fFatal              Whether validation failures should be treated as
@@ -710,12 +710,12 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
  * Verifies all the known files.
  *
  * @returns VINF_SUCCESS on success.
- *          On verfication failure, an error code will be returned when fFatal is clear,
- *          otherwise the program will be termindated.
+ *          On verification failure, an error code will be returned when fFatal is clear,
+ *          otherwise the program will be terminated.
  *
  * @param   fFatal              Whether validation failures should be treated as
  *                              fatal (true) or not (false).
- * @param   fLeaveFilesOpen     If set, all the verfied files are left open.
+ * @param   fLeaveFilesOpen     If set, all the verified files are left open.
  * @param   pszProgName         Optional program name. This is used by SUPR3HardenedMain
  *                              to verify that both the executable and corresponding
  *                              DLL/DYLIB/SO are valid.

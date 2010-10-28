@@ -208,7 +208,7 @@ public:
      *
      * It is vitally important that updateCallback is fed the data in the right
      * order. The code make very definite ASSUMPTIONS about the ordering being
-     * stricly sorted and taking the slash into account when doing so.
+     * strictly sorted and taking the slash into account when doing so.
      *
      * @returns true if we reset the model and it's necessary to set the root index.
      * @param   a_rPatStr       The selection pattern.
@@ -405,13 +405,13 @@ protected:
     static PDBGGUISTATSNODE removeNode(PDBGGUISTATSNODE pNode);
 
     /**
-     * Removes a node from the tree and destroys it and all its decentands.
+     * Removes a node from the tree and destroys it and all its descendants.
      *
      * @param   pNode       The node.
      */
     static void removeAndDestroyNode(PDBGGUISTATSNODE pNode);
 
-    /** Removes a node from the tree and destroys it and all its decentands
+    /** Removes a node from the tree and destroys it and all its descendants
      * performing the required Qt signalling. */
     void removeAndDestroy(PDBGGUISTATSNODE pNode);
 
@@ -428,7 +428,7 @@ protected:
      * This is for logging and clipboard.
      *
      * @param   a_pNode     The node.
-     * @param   a_rString   The string to append the strigified node to.
+     * @param   a_rString   The string to append the stringified node to.
      */
     static void stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a_rString);
 
@@ -438,7 +438,7 @@ protected:
      * This is for logging and clipboard.
      *
      * @param   a_pNode     The node.
-     * @param   a_rString   The string to append the strigified node to.
+     * @param   a_rString   The string to append the stringified node to.
      */
     static void stringifyNode(PDBGGUISTATSNODE a_pNode, QString &a_rString);
 
@@ -519,7 +519,7 @@ protected:
 
 public:
 
-    /** @name Overriden QAbstractItemModel methods
+    /** @name Overridden QAbstractItemModel methods
      * @{ */
     virtual int columnCount(const QModelIndex &a_rParent) const;
     virtual QVariant data(const QModelIndex &a_rIndex, int a_eRole) const;
@@ -1308,7 +1308,7 @@ VBoxDbgStatsModel::nextNode(PDBGGUISTATSNODE pNode)
     if (!pNode)
         return NULL;
 
-    /* decend to children. */
+    /* descend to children. */
     if (pNode->cChildren)
         return pNode->papChildren[0];
 
@@ -1353,7 +1353,7 @@ VBoxDbgStatsModel::prevNode(PDBGGUISTATSNODE pNode)
     if (!pParent)
         return NULL;
 
-    /* previous sibling's latest decendant (better expression anyone?). */
+    /* previous sibling's latest descendant (better expression anyone?). */
     if (pNode->iSelf > 0)
     {
         pNode = pParent->papChildren[pNode->iSelf - 1];
@@ -1417,7 +1417,7 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
      * handled in the same rough way.
      *
      * Might consider optimizing insertion at some later point since this
-     * is a normal occurance (dynamic statistics in PATM, IOM, MM, ++).
+     * is a normal occurrence (dynamic statistics in PATM, IOM, MM, ++).
      */
     Assert(pszName[0] == '/');
     Assert(m_szUpdateParent[m_cchUpdateParent - 1] == '/');
@@ -1607,7 +1607,7 @@ VBoxDbgStatsModel::updateCallbackAdvance(PDBGGUISTATSNODE pNode)
         PDBGGUISTATSNODE pParent = pNode->pParent;
         if (pNode->cChildren)
         {
-            /* decend to the first child. */
+            /* descend to the first child. */
             Assert(m_cchUpdateParent + pNode->cchName + 2 < sizeof(m_szUpdateParent));
             memcpy(&m_szUpdateParent[m_cchUpdateParent], pNode->pszName, pNode->cchName);
             m_cchUpdateParent += pNode->cchName;
@@ -1652,7 +1652,7 @@ VBoxDbgStatsModel::updateCallbackAdvance(PDBGGUISTATSNODE pNode)
             }
         }
 
-        /* decend to a node containing data and finalize the globals. (ASSUMES leaf has data.) */
+        /* descend to a node containing data and finalize the globals. (ASSUMES leaf has data.) */
         if (m_iUpdateChild != UINT32_MAX)
         {
             while (   pNode->enmType == STAMTYPE_INVALID
@@ -1806,7 +1806,7 @@ VBoxDbgStatsModel::updateDone(bool a_fSuccess)
         /*
          * Send dataChanged events.
          *
-         * We do this here instead of from the updateCallback because it lesses
+         * We do this here instead of from the updateCallback because it reduces
          * the clutter in that method and allow us to emit bulk signals in an
          * easier way because we can traverse the tree in a different fashion.
          */

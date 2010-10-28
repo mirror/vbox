@@ -336,7 +336,7 @@ struct AutoLockBase::Data
     CountsVector    acUnlockedInLeave;  // for each lock handle, how many times the handle was unlocked in leave(); otherwise 0
 
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
-    // information about where the lock occured (passed down from the AutoLock classes)
+    // information about where the lock occurred (passed down from the AutoLock classes)
     const char      *pcszFile;
     unsigned        uLine;
     const char      *pcszFunction;
@@ -676,7 +676,7 @@ bool AutoWriteLock::isWriteLockOnCurrentThread() const
 }
 
  /**
- * Returns the current write lock level of the managed smaphore. The lock
+ * Returns the current write lock level of the managed semaphore. The lock
  * level determines the number of nested #lock() calls on the given
  * semaphore handle. Returns @c 0 if the managed semaphore is @c
  * NULL.

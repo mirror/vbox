@@ -110,7 +110,7 @@ public:
 
 
 /**
- * Teleporter state used by the destiation side.
+ * Teleporter state used by the destination side.
  */
 class TeleporterStateTrg : public TeleporterState
 {

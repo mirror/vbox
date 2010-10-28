@@ -1408,7 +1408,7 @@ swap4(GLuint *ui, GLuint n)
 
 
 /**
- * Return number of bytes of storage needed to accomodate an
+ * Return number of bytes of storage needed to accommodate an
  * image with the given format, type, and size.
  * \return size in bytes or -1 if bad format or type
  */
@@ -1435,7 +1435,7 @@ unsigned int crImageSize( GLenum format, GLenum type, GLsizei width, GLsizei hei
 }
 
 /**
- * Return number of bytes of storage needed to accomodate a
+ * Return number of bytes of storage needed to accommodate a
  * 3D texture with the give format, type, and size.
  * \return size in bytes or -1 if bad format or type
  */

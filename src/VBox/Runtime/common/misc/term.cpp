@@ -202,7 +202,7 @@ RTDECL(void) RTTermRunCallbacks(RTTERMREASON enmReason, int32_t iStatus)
            || enmReason == RTTERMREASON_UNLOAD);
 
     /*
-     * Run the callback list. This is a bit paranoid in order to guard aginst
+     * Run the callback list. This is a bit paranoid in order to guard against
      * recursive calls to RTTermRunCallbacks.
      */
     while (g_hFastMutex != NIL_RTSEMFASTMUTEX)

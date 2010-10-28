@@ -528,7 +528,7 @@ static BOOL vboxIsPrefixOK (const WCHAR *FilePathName, ULONG PathNameLength)
     BOOL PrefixOK;
 
     /* The FilePathName here looks like: \vboxsrv\... */
-    if (PathNameLength >= 8 * sizeof (WCHAR)) /* Number of bytes in '\vboxsrv'unicode string. */
+    if (PathNameLength >= 8 * sizeof (WCHAR)) /* Number of bytes in '\vboxsrv' unicode string. */
     {
         PrefixOK =  (FilePathName[0] == L'\\');
         PrefixOK &= (FilePathName[1] == L'V') || (FilePathName[1] == L'v');
@@ -813,7 +813,7 @@ NTSTATUS DriverEntry (IN PDRIVER_OBJECT  DriverObject,
     }
 
     /* Set filter mask */
-    if (vboxCtlGuestFilterMask (VMMDEV_EVENT_HGCM, 0)) /** @todo r=bird: Why are we doing this? And more importantely, why are we clearing it further down. We're not the only HGCM user, are we? */
+    if (vboxCtlGuestFilterMask (VMMDEV_EVENT_HGCM, 0)) /** @todo r=bird: Why are we doing this? And more importantly, why are we clearing it further down. We're not the only HGCM user, are we? */
     {
         Log (("VBOXSF: DriverEntry: ERROR while setting guest event filter mask!\n"));
         return STATUS_UNSUCCESSFUL;
@@ -1159,7 +1159,7 @@ VOID VBoxMRxInitUnwind (IN PDRIVER_OBJECT DriverObject, IN MRX_VBOX_INIT_STATES 
 
  Arguments:
 
- VBoxMRxInitState - tells how far we got into the intialization
+ VBoxMRxInitState - tells how far we got into the initialization
 
  Return Value:
 
@@ -1383,7 +1383,7 @@ NTSTATUS VBoxMRxInitializeTables (void)
     VBoxMRxDispatch.MRxLowIOSubmit[LOWIO_OP_NOTIFY_CHANGE_DIRECTORY] = VBoxMRxNotifyChangeDirectory;
 
     //
-    // Miscellanous
+    // Miscellaneous
     //
 
     VBoxMRxDispatch.MRxCompleteBufferingStateChangeRequest = VBoxMRxCompleteBufferingStateChangeRequest;

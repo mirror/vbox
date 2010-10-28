@@ -94,8 +94,8 @@ RT_C_DECLS_END
  *
  * We have to associate the ethernet header with each packet we're sending
  * because things like icmp will inherit the tag it self so the tag along
- * isn't sufficent to identify our mbufs. For the icmp scenario the ethernet
- * header naturarlly changes before the packet is send pack, so let check it.
+ * isn't sufficient to identify our mbufs. For the icmp scenario the ethernet
+ * header naturally changes before the packet is send pack, so let check it.
  */
 typedef struct VBOXNETFLTTAG
 {
@@ -131,7 +131,7 @@ RT_C_DECLS_END
 static VBOXNETFLTGLOBALS g_VBoxNetFltGlobals;
 
 /** The unique tag id for this module.
- * This is basically a unique string hash that lives on untill reboot.
+ * This is basically a unique string hash that lives on until reboot.
  * It is used for tagging mbufs. */
 static mbuf_tag_id_t g_idTag;
 
@@ -323,7 +323,7 @@ DECLINLINE(bool) vboxNetFltDarwinMBufIsOur(PVBOXNETFLTINS pThis, mbuf_t pMBuf, v
  */
 static mbuf_t vboxNetFltDarwinMBufFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG)
 {
-    /// @todo future? mbuf_how_t How = preemtion enabled ? MBUF_DONTWAIT : MBUF_WAITOK;
+    /// @todo future? mbuf_how_t How = preemption enabled ? MBUF_DONTWAIT : MBUF_WAITOK;
     mbuf_how_t How = MBUF_WAITOK;
 
     /*
@@ -349,11 +349,11 @@ static mbuf_t vboxNetFltDarwinMBufFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG)
      * to a new mbuf anyway.
      *
      * So, in the end it's better to just do it the simple way that will work
-     * 100%, even if it involes some extra work (alloc + copy) we really wished
+     * 100%, even if it involves some extra work (alloc + copy) we really wished
      * to avoid.
      * 
      * Note. We can't make use of the physical addresses on darwin because the 
-     *       way the mbuf / cluster stuffe works (see mbuf_data_to_physical and 
+     *       way the mbuf / cluster stuff works (see mbuf_data_to_physical and 
      *       mcl_to_paddr).
      */
     mbuf_t pPkt = NULL;
@@ -1055,7 +1055,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
             /*
              * This api is a bit weird, the best reference is the code.
              *
-             * Also, we have a bit or race conditions wrt the maintance of
+             * Also, we have a bit or race conditions wrt the maintenance of
              * host the interface promiscuity for vboxNetFltPortOsIsPromiscuous.
              */
             unsigned const cPromiscBefore = VBOX_GET_PCOUNT(pIfNet);

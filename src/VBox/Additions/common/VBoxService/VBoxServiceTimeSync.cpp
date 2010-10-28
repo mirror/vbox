@@ -34,8 +34,8 @@
  *
  * There are a number of very odd case where adjusting is needed. Here
  * are some of them:
- *      -# Timer device emulation inaccurancies (like rounding).
- *      -# Inaccurancies in time source VirtualBox uses.
+ *      -# Timer device emulation inaccuracies (like rounding).
+ *      -# Inaccuracies in time source VirtualBox uses.
  *      -# The Guest and/or Host OS doesn't perform proper time keeping. This
  *         come about as a result of OS and/or hardware issues.
  *
@@ -48,7 +48,7 @@
  * Now, there is any amount of trouble we can cause by changing the time.
  * Most applications probably uses the wall time when they need to measure
  * things. A walltime that is being juggled about every so often, even if just
- * a little bit, could occationally upset these measurements by for instance
+ * a little bit, could occasionally upset these measurements by for instance
  * yielding negative results.
  *
  * This bottom line here is that the time sync service isn't really supposed
@@ -64,7 +64,7 @@
  * could just as easily come out as 0. (OS/2 and Windows guest only updates
  * the current time when the timer ticks for instance.) The good thing is
  * that this isn't really a problem since we won't ever do anything unless
- * the drift is noticable.
+ * the drift is noticeable.
  *
  * It now boils down to these three (configuration) factors:
  *  -# g_TimesyncMinAdjust - The minimum drift we will ever bother with.
@@ -102,7 +102,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The timesync interval (millseconds). */
+/** The timesync interval (milliseconds). */
 uint32_t g_TimeSyncInterval = 0;
 /**
  * @see pg_vboxservice_timesync
@@ -158,7 +158,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncPreInit(void)
 
     /*
      * Read the service options from the VM's guest properties.
-     * Note that these options can be overriden by the command line options later.
+     * Note that these options can be overridden by the command line options later.
      */
     uint32_t uGuestPropSvcClientID;
     int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
@@ -288,7 +288,7 @@ static DECLCALLBACK(int) VBoxServiceTimeSyncInit(void)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Adjust priviledges of this process so we can make system time adjustments.
+         * Adjust privileges of this process so we can make system time adjustments.
          */
         if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &g_hTokenProcess))
         {

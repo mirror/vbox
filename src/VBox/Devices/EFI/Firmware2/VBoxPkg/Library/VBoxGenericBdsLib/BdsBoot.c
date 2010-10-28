@@ -37,7 +37,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 BOOLEAN mEnumBootDevice = FALSE;
 
 ///
-/// This GUID is used for an EFI Variable that stores the front device pathes
+/// This GUID is used for an EFI Variable that stores the front device paths
 /// for a partial device path that starts with the HD node.
 ///
 EFI_GUID  mHdBootVariablePrivateGuid = { 0xfab7e9e1, 0x39dd, 0x4f2b, { 0x84, 0x8, 0xe2, 0xe, 0x90, 0x6c, 0xb6, 0xde } };
@@ -241,7 +241,7 @@ BdsLibBootViaBootOption (
   }
 
   //
-  // If the boot option point to Internal FV shell, make sure it is valid
+  // If the boot option points to Internal FV shell, make sure it is valid
   //
   Status = BdsLibUpdateFvFileDevicePath (&DevicePath, PcdGetPtr(PcdShellFile));
   if (!EFI_ERROR(Status)) {
@@ -355,7 +355,7 @@ BdsLibBootViaBootOption (
 
   DEBUG((DEBUG_INFO, "%a:%d LoadingImage '%s' - %r\n", __FILE__, __LINE__, DevPathToTxt->ConvertDevicePathToText(DevicePath, TRUE, FALSE), Status));
   //
-  // If we didn't find an image directly, we need to try as if it is a removable device boot opotion
+  // If we didn't find an image directly, we need to try as if it is a removable device boot option
   // and load the image according to the default boot behavior for removable device.
   //
   if (EFI_ERROR (Status)) {
@@ -460,7 +460,7 @@ Done:
 
   @param  HardDriveDevicePath    EFI Device Path to boot, if it starts with a hard
                                  drive media device path.
-  @return A Pointer to the full device path or NULL if a valid Hard Drive devic path
+  @return A Pointer to the full device path or NULL if a valid Hard Drive device path
           cannot be found.
 
 **/
@@ -1466,7 +1466,7 @@ BdsLibGetBootableHandle (
   Status = gBS->LocateDevicePath (&gEfiBlockIoProtocolGuid, &UpdatedDevicePath, &Handle);
   if (EFI_ERROR (Status)) {
     //
-    // Skip the case that the boot option point to a simple file protocol which does not consume block Io protocol,
+    // Skip the case that the boot option points to a simple file protocol which does not consume block Io protocol,
     //
     Status = gBS->LocateDevicePath (&gEfiSimpleFileSystemProtocolGuid, &UpdatedDevicePath, &Handle);
     if (EFI_ERROR (Status)) {
@@ -1772,7 +1772,7 @@ BdsGetBootTypeFromDevicePath (
 }
 
 /**
-  Check whether the Device path in a boot option point to a valid bootable device,
+  Check whether the Device path in a boot option points to a valid bootable device,
   And if CheckMedia is true, check the device is ready to boot now.
 
   @param  DevPath     the Device path in a boot option
@@ -1793,7 +1793,7 @@ BdsLibIsValidEFIBootOptDevicePath (
 }
 
 /**
-  Check whether the Device path in a boot option point to a valid bootable device,
+  Check whether the Device path in a boot option points to a valid bootable device,
   And if CheckMedia is true, check the device is ready to boot now.
   If Description is not NULL and the device path point to a fixed BlockIo
   device, check the description whether conflict with other auto-created
@@ -1862,7 +1862,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
   }
 
   //
-  // If the boot option point to a file, it is a valid EFI boot option,
+  // If the boot option points to a file, it is a valid EFI boot option,
   // and assume it is ready to boot now
   //
   while (!IsDevicePathEnd (TempDevicePath)) {
@@ -1879,7 +1879,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
   //
   if (EfiGetNameGuidFromFwVolDevicePathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) LastDeviceNode) != NULL) {
     //
-    // If the boot option point to Internal FV shell, make sure it is valid
+    // If the boot option points to Internal FV shell, make sure it is valid
     //
     TempDevicePath = DevPath;
     Status = BdsLibUpdateFvFileDevicePath (&TempDevicePath, PcdGetPtr(PcdShellFile));
@@ -1894,7 +1894,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
   }
 
   //
-  // If the boot option point to a blockIO device:
+  // If the boot option points to a blockIO device:
   //    if it is a removable blockIo device, it is valid.
   //    if it is a fixed blockIo device, check its description confliction.
   //
@@ -1930,7 +1930,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
     }
   } else {
     //
-    // if the boot option point to a simple file protocol which does not consume block Io protocol, it is also a valid EFI boot option,
+    // if the boot option points to a simple file protocol which does not consume block Io protocol, it is also a valid EFI boot option,
     //
     Status = gBS->LocateDevicePath (&gEfiSimpleFileSystemProtocolGuid, &TempDevicePath, &Handle);
     if (!EFI_ERROR (Status)) {

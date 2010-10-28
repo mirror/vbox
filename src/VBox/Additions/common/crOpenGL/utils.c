@@ -331,7 +331,7 @@ void driInitSingleExtension( GLcontext * ctx,
 
 
 /**
- * Utility function used by drivers to test the verions of other components.
+ * Utility function used by drivers to test the versions of other components.
  *
  * If one of the version requirements is not met, a message is logged using
  * \c __driUtilMessage.
@@ -471,7 +471,7 @@ GLboolean driClipRectToFramebuffer( const GLframebuffer *buffer,
  * are the blue value, bits [10:5] are the green value, and bits [4:0] are
  * the red value.
  * 
- * One sublte issue is the combination of \c GL_RGB  or \c GL_BGR and either
+ * One subtle issue is the combination of \c GL_RGB  or \c GL_BGR and either
  * of the \c GL_UNSIGNED_INT_8_8_8_8 modes.  The resulting mask values in the
  * \c __GLcontextModes structure is \b identical to the \c GL_RGBA or
  * \c GL_BGRA case, except the \c alphaMask is zero.  This means that, as

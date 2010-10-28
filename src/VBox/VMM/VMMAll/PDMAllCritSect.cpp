@@ -330,7 +330,7 @@ VMMDECL(int) PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy)
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
@@ -431,7 +431,7 @@ VMMDECL(int) PDMCritSectTryEnter(PPDMCRITSECT pCritSect)
  * @param   pszFile             The file where the lock is being acquired from.
  *                              Optional.
  * @param   iLine               The line number in that file.  Optional (0).
- * @param   pszFunction         The functionn where the lock is being acquired
+ * @param   pszFunction         The function where the lock is being acquired
  *                              from.  Optional.
  */
 VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
@@ -685,7 +685,7 @@ VMMDECL(bool) PDMCritSectIsOwned(PCPDMCRITSECT pCritSect)
 /**
  * Checks if anyone is waiting on the critical section we own.
  *
- * @returns true if someone is waitings.
+ * @returns true if someone is waiting.
  * @returns false if no one is waiting.
  * @param   pCritSect   The critical section.
  */

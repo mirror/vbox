@@ -901,7 +901,7 @@ int EnumerateDevices (LPCTSTR BaseName, LPCTSTR Machine, DWORD Flags, int argc, 
 
     if (argc > skip && argv[skip][0] == WILD_CHAR && !argv[skip][1])
     {
-        /* Catch convinient case of specifying a single argument '*' */
+        /* Catch convenient case of specifying a single argument '*' */
         all = TRUE;
         skip++;
     }
@@ -1337,7 +1337,7 @@ UINT DumpDeviceDriversCallback (IN PVOID Context, IN UINT Notification, IN UINT_
 int DeleteOEMInfCallback (HDEVINFO Devs, PSP_DEVINFO_DATA DevInfo, DWORD Index, LPVOID Context)
 {
     /* Do this by 'searching' for the current driver
-     mimmicing a copy-only install to our own file queue
+     mimicking a copy-only install to our own file queue
      and then parsing that file queue */
     SP_DEVINSTALL_PARAMS deviceInstallParams;
     SP_DRVINFO_DATA driverInfoData;
@@ -1493,7 +1493,7 @@ int UninstallDriver (_TCHAR* a_pszHwID)
 int MatchDriverCallback (HDEVINFO Devs, PSP_DEVINFO_DATA DevInfo, DWORD Index, LPVOID Context)
 {
     /* Do this by 'searching' for the current driver
-     mimmicing a copy-only install to our own file queue
+     mimicking a copy-only install to our own file queue
      and then parsing that file queue */
     SP_DRVINFO_DATA driverInfoData;
     SP_DRVINFO_DETAIL_DATA driverInfoDetail;

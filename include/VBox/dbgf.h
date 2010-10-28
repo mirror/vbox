@@ -864,7 +864,7 @@ VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 #define DBGF_DISAS_FLAGS_32BIT_MODE         UINT32_C(0x30000000)
 /** Disassemble in 64-bit mode. */
 #define DBGF_DISAS_FLAGS_64BIT_MODE         UINT32_C(0x40000000)
-/** The dissassembly mode mask. */
+/** The disassembly mode mask. */
 #define DBGF_DISAS_FLAGS_MODE_MASK          UINT32_C(0x70000000)
 /** Mask containing the valid flags. */
 #define DBGF_DISAS_FLAGS_VALID_MASK         UINT32_C(0x7000007f)

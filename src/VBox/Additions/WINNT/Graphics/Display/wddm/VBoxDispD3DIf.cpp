@@ -100,7 +100,7 @@ static DWORD WINAPI vboxDispWorkerThread(void *pvUser)
             break;
 
         Assert(bResult != -1);
-        if(bResult == -1) /* error occured */
+        if(bResult == -1) /* error occurred */
             break;
 
         switch (Msg.message)

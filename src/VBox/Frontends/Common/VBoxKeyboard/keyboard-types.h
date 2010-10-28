@@ -42,7 +42,7 @@
 
 /**
  * This table contains a set of known keycode mappings for a set of known
- * keyboard types.  The most important type will be the almost ubiquious PC
+ * keyboard types.  The most important type will be the almost ubiquitous PC
  * keyboard, but as far as I know some VNC servers and some Sunrays for
  * example use different mappings.  I only used a minimal set of key mappings
  * in this table (perhaps slightly too minimal...) because I wanted to be sure
@@ -76,7 +76,7 @@ static keyboard_type main_keyboard_type_list[] = {
       0x64, 0x66, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a },
     { "evdev", 0x25, 0x32, 0x42, 0x17, 0x9, 0x24, 0x6f, 0x74,
       0x71, 0x72, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a },
-    { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } /* Sentinal */
+    { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } /* Sentinel */
 };
 
 unsigned main_keyboard_type_scans[][256] = {
@@ -114,6 +114,6 @@ unsigned main_keyboard_type_scans[][256] = {
       0x0, 0x165, 0x0, 0x0, 0x0, 0x165, 0x166, 0x167, 0x168, 0x169, 0x16a, 0x16b, 0x16c, 0x16d, 0x0, 0x143,
       0x141, 0x0, 0x157, 0x105, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0
     },
-    { 0 } /* Sentinal */
+    { 0 } /* Sentinel */
 };
 

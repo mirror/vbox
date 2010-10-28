@@ -274,7 +274,7 @@ int main(int argc, char **argv)
     env->regs[R_EBP] = 0x0900;
     env->regs[R_EDI] = 0xfffe;
 
-    /* inform the emulator of the mmaped memory */
+    /* inform the emulator of the mapped memory */
     page_set_flags(0x00000000, 0x110000, 
                    PAGE_WRITE | PAGE_READ | PAGE_EXEC | PAGE_VALID);
 

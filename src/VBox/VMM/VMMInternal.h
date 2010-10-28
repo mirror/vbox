@@ -590,7 +590,7 @@ VMMR0DECL(void) vmmR0LoggerWrapper(const char *pszFormat, ...);
 VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger);
 
 /**
- * Interal R0 logger worker: Custom prefix.
+ * Internal R0 logger worker: Custom prefix.
  *
  * @returns Number of chars written.
  *

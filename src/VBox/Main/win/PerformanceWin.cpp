@@ -245,7 +245,7 @@ int CollectorWin::getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *
             Log(("NtQuerySystemInformation() -> 0x%x\n", status));
             return RTErrConvertFromNtStatus(status);
         }
-        /* Sum up values accross all processors */
+        /* Sum up values across all processors */
         *user = *kernel = *idle = 0;
         for (unsigned i = 0; i < ulReturned / sizeof(sppi[0]); ++i)
         {

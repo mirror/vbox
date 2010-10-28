@@ -35,8 +35,8 @@ crServerDispatchReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
     {
         GLvoid *pbo_offset;
 
-        /*pixels are actualy a pointer to location of 8byte network pointer in hgcm buffer
-          regarless of guest/host bitness we're using only 4lower bytes as there're no
+        /*pixels are actually a pointer to location of 8byte network pointer in hgcm buffer
+          regardless of guest/host bitness we're using only 4lower bytes as there're no
           pbo>4gb (yet?)
          */
         pbo_offset = (GLvoid*) ((uintptr_t) *((GLint*)pixels));

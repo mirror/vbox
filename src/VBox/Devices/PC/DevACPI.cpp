@@ -149,10 +149,10 @@ enum
     SYSTEM_INFO_INDEX_HPET_STATUS       = 2,
     SYSTEM_INFO_INDEX_SMC_STATUS        = 3,
     SYSTEM_INFO_INDEX_FDC_STATUS        = 4,
-    SYSTEM_INFO_INDEX_CPU0_STATUS       = 5,  /**< For compatability with older saved states. */
-    SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,  /**< For compatability with older saved states. */
-    SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,  /**< For compatability with older saved states. */
-    SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,  /**< For compatability with older saved states. */
+    SYSTEM_INFO_INDEX_CPU0_STATUS       = 5,  /**< For compatibility with older saved states. */
+    SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,  /**< For compatibility with older saved states. */
+    SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,  /**< For compatibility with older saved states. */
+    SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,  /**< For compatibility with older saved states. */
     SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11, /**< Contains a flag indicating whether the CPU is locked or not */
@@ -373,9 +373,9 @@ struct ACPITBLFADT
 #define SCI_INT         9
     uint32_t            u32SMICmd;              /**< system port address of SMI command port */
 #define SMI_CMD         0x0000442e
-    uint8_t             u8AcpiEnable;           /**< SMICmd val to disable ownship of ACPIregs */
+    uint8_t             u8AcpiEnable;           /**< SMICmd val to disable ownership of ACPIregs */
 #define ACPI_ENABLE     0xa1
-    uint8_t             u8AcpiDisable;          /**< SMICmd val to re-enable ownship of ACPIregs */
+    uint8_t             u8AcpiDisable;          /**< SMICmd val to re-enable ownership of ACPIregs */
 #define ACPI_DISABLE    0xa0
     uint8_t             u8S4BIOSReq;            /**< SMICmd val to enter S4BIOS state */
     uint8_t             u8PStateCnt;            /**< SMICmd val to assume processor performance
@@ -528,7 +528,7 @@ struct ACPITBLHPET
     uint16_t      u32MinTick;                   /**< minimum clock ticks which can be set without
                                                      lost interrupts while the counter is programmed
                                                      to operate in periodic mode. Unit: clock tick. */
-    uint8_t       u8Attributes;                 /**< page protextion and OEM attribute. */
+    uint8_t       u8Attributes;                 /**< page protection and OEM attribute. */
 };
 AssertCompileSize(ACPITBLHPET, 56);
 
@@ -660,7 +660,7 @@ public:
     {
         m_cCpus  = cCpus;
         m_cIsos  = cIsos;
-        m_pbData = NULL;                /* size() uses this and gcc will complain if not initilized. */
+        m_pbData = NULL;                /* size() uses this and gcc will complain if not initialized. */
         uint32_t cb = size();
         m_pbData = (uint8_t *)RTMemAllocZ(cb);
     }
@@ -1640,7 +1640,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                     *pu32 = (uint32_t)s->u64PciConfigMMioLength;
                     break;
 
-                /* This is only for compatability with older saved states that
+                /* This is only for compatibility with older saved states that
                    may include ACPI code that read these values.  Legacy is
                    a wonderful thing, isn't it? :-) */
                 case SYSTEM_INFO_INDEX_CPU0_STATUS:
@@ -2588,7 +2588,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"HpetEnabled\""));
-    /* query MCFG configuartion */
+    /* query MCFG configuration */
     rc = CFGMR3QueryU64Def(pCfg, "McfgBase", &s->u64PciConfigMMioAddress, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,

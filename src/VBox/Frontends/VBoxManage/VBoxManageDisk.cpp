@@ -163,7 +163,7 @@ static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
     { "-comment",       'c', RTGETOPT_REQ_STRING },     // deprecated
     { "--remember",     'r', RTGETOPT_REQ_NOTHING },
     { "-remember",      'r', RTGETOPT_REQ_NOTHING },    // deprecated
-    { "--register",     'r', RTGETOPT_REQ_NOTHING },    // deprecated (inofficial)
+    { "--register",     'r', RTGETOPT_REQ_NOTHING },    // deprecated (unofficial)
     { "-register",      'r', RTGETOPT_REQ_NOTHING },    // deprecated
 };
 
@@ -1068,7 +1068,7 @@ int handleAddiSCSIDisk(HandlerArg *a)
         /** @todo move the location stuff to Main, which can use pfnComposeName
          * from the disk backends to construct the location properly. Also do
          * not use slashes to separate the parts, as otherwise only the last
-         * element comtaining information will be shown. */
+         * element containing information will be shown. */
         if (lun.isEmpty() || lun == "0" || lun == "enc0")
         {
             CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk(Bstr("iSCSI").raw(),
@@ -1201,7 +1201,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
     rc = a->virtualBox->FindMedium(Bstr(FilenameOrUuid).raw(),
                                    DeviceType_HardDisk,
                                    hardDisk.asOutParam());
-    /* no? well, then it's an unkwnown image */
+    /* no? well, then it's an unknown image */
     if (FAILED(rc))
     {
         rc = a->virtualBox->OpenMedium(Bstr(FilenameOrUuid).raw(),

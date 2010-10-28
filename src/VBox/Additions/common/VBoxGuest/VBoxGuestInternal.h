@@ -77,7 +77,7 @@ typedef struct VBOXGUESTWAIT
  */
 typedef struct VBOXGUESTMEMBALLOON
 {
-    /** Mutext protecting the members below from concurrent access.. */
+    /** Mutex protecting the members below from concurrent access.. */
     RTSEMFASTMUTEX              hMtx;
     /** The current number of chunks in the balloon. */
     uint32_t                    cChunks;
@@ -156,7 +156,7 @@ typedef struct VBOXGUESTDEVEXT
     /** Align the next bit on a 64-byte boundary and make sure it starts at the same
      *  offset in both 64-bit and 32-bit builds.
      *
-     * @remarks The aligments of the members that are larger than 48 bytes should be
+     * @remarks The alignments of the members that are larger than 48 bytes should be
      *          64-byte for cache line reasons. structs containing small amounts of
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).

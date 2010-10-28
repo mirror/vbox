@@ -105,7 +105,7 @@ static void ARRAYSPU_APIENTRY arrayspu_ArrayElement( GLint index )
         }
     }
 
-    /* Now do conventional arrays, unless overriden by generic arrays above */
+    /* Now do conventional arrays, unless overridden by generic arrays above */
     for (unit = 0 ; unit < crStateGetCurrent()->limits.maxTextureUnits ; unit++)
     {
         if (array->t[unit].enabled && !(vpEnabled && array->a[VERT_ATTRIB_TEX0+unit].enabled))

@@ -123,7 +123,7 @@ static const uint16_t g_aiDayOfYearLeap[12 + 1] =
 #define OFF_YEAR_IDX_0_YEAR 1670
 
 /**
- * The number of days the 1st of january a year is offseted from 1970-01-01.
+ * The number of days the 1st of January a year is offseted from 1970-01-01.
  */
 static const int32_t g_aoffYear[] =
 {
@@ -316,8 +316,8 @@ RTDECL(PRTTIME) RTTimeExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 
     /*
      * We've now got a number of days relative to 1970-01-01.
-     * To get the correct year number we have to mess with leap years. Fortunatly,
-     * the represenation we've got only supports a few hundred years, so we can
+     * To get the correct year number we have to mess with leap years. Fortunately,
+     * the representation we've got only supports a few hundred years, so we can
      * generate a table and perform a simple two way search from the modulus 365 derived.
      */
     iYear = OFF_YEAR_IDX_EPOCH + i32Div / 365;
@@ -660,7 +660,7 @@ PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
 RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
 {
     /*
-     * Validate that we've got the minium of stuff handy.
+     * Validate that we've got the minimum of stuff handy.
      */
     AssertReturn(VALID_PTR(pTime), NULL);
     AssertMsgReturn(!(pTime->fFlags & ~RTTIME_FLAGS_MASK), ("%#x\n", pTime->fFlags), NULL);

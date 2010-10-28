@@ -228,7 +228,7 @@ RT_EXPORT_SYMBOL(RTNetIPv4AddUDPChecksum);
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pTcpHdr         Pointer to the TCP header to checksum, network
- *                          endian (big). Assums the caller has already validate
+ *                          endian (big). Assumes the caller has already validate
  *                          it and made sure the entire header is present.
  * @param   u32Sum          The 32-bit intermediate checksum value.
  */
@@ -274,7 +274,7 @@ DECLINLINE(uint32_t) rtNetIPv4AddTCPChecksum(PCRTNETTCP pTcpHdr, uint32_t u32Sum
  *
  * @returns 32-bit intermediary checksum value.
  * @param   pTcpHdr         Pointer to the TCP header to checksum, network
- *                          endian (big). Assums the caller has already validate
+ *                          endian (big). Assumes the caller has already validate
  *                          it and made sure the entire header is present.
  * @param   u32Sum          The 32-bit intermediate checksum value.
  */
@@ -430,7 +430,7 @@ RT_EXPORT_SYMBOL(RTNetIPv4UDPChecksum);
 
 
 /**
- * Simple verficiation of an UDP packet size.
+ * Simple verification of an UDP packet size.
  *
  * @returns true if valid, false if invalid.
  * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
@@ -456,7 +456,7 @@ DECLINLINE(bool) rtNetIPv4IsUDPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETUDP pUdpHdr,
 
 
 /**
- * Simple verficiation of an UDP packet size.
+ * Simple verification of an UDP packet size.
  *
  * @returns true if valid, false if invalid.
  * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
@@ -472,7 +472,7 @@ RT_EXPORT_SYMBOL(RTNetIPv4IsUDPSizeValid);
 
 
 /**
- * Simple verficiation of an UDP packet (size + checksum).
+ * Simple verification of an UDP packet (size + checksum).
  *
  * @returns true if valid, false if invalid.
  * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
@@ -550,7 +550,7 @@ RT_EXPORT_SYMBOL(RTNetTCPChecksum);
 
 
 /**
- * Verficiation of a TCP header.
+ * Verification of a TCP header.
  *
  * @returns true if valid, false if invalid.
  * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
@@ -582,7 +582,7 @@ DECLINLINE(bool) rtNetIPv4IsTCPSizeValid(PCRTNETIPV4 pIpHdr, PCRTNETTCP pTcpHdr,
 
 
 /**
- * Simple verficiation of an TCP packet size.
+ * Simple verification of an TCP packet size.
  *
  * @returns true if valid, false if invalid.
  * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).
@@ -599,7 +599,7 @@ RT_EXPORT_SYMBOL(RTNetIPv4IsTCPSizeValid);
 
 
 /**
- * Simple verficiation of an TCP packet (size + checksum).
+ * Simple verification of an TCP packet (size + checksum).
  *
  * @returns true if valid, false if invalid.
  * @param   pIpHdr          Pointer to the IPv4 header, in network endian (big).

@@ -486,7 +486,7 @@ static bool g_fInitialized = false;
 
 
     /*
-     * Try open (aquire) it.
+     * Try open (acquire) it.
      */
     USBHANDLE hDevice = 0;
     int urc = rc = g_pfnUsbOpen(&hDevice, idVendor, idProduct, bcdDevice, iEnum);
@@ -509,7 +509,7 @@ static bool g_fInitialized = false;
                     pProxyDev->Backend.pv = pDevOs2;
 
                     /** @todo
-                     * Determin the active configuration.
+                     * Determine the active configuration.
                      */
                     //pProxyDev->cIgnoreSetConfigs = 1;
                     //pProxyDev->iActiveCfg = 1;

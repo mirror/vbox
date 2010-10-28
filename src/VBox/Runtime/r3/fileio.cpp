@@ -292,7 +292,7 @@ RTDECL(int) RTFileCopyByHandles(RTFILE FileSrc, RTFILE FileDst)
  *                      This file will be created.
  * @param   fFlags      Flags, any of the RTFILECOPY_FLAGS_ \#defines.
  * @param   pfnProgress Pointer to callback function for reporting progress.
- * @param   pvUser      User argument to pass to pfnProgress along with the completion precentage.
+ * @param   pvUser      User argument to pass to pfnProgress along with the completion percentage.
  */
 RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags, PFNRTPROGRESS pfnProgress, void *pvUser)
 {
@@ -356,7 +356,7 @@ RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags
  *                      On successful returns the file position is at the end of the file.
  *                      On failures the file position and size is undefined.
  * @param   pfnProgress Pointer to callback function for reporting progress.
- * @param   pvUser      User argument to pass to pfnProgress along with the completion precentage.
+ * @param   pvUser      User argument to pass to pfnProgress along with the completion percentage.
  */
 RTDECL(int) RTFileCopyByHandlesEx(RTFILE FileSrc, RTFILE FileDst, PFNRTPROGRESS pfnProgress, void *pvUser)
 {

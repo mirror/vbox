@@ -95,7 +95,7 @@ typedef struct RTFILEAIOREQINTERNAL
     volatile bool                fCanceled;
     /** Opaque user data. */
     void                        *pvUser;
-    /** Number of bytes actually transfered. */
+    /** Number of bytes actually transferred. */
     size_t                       cbTransfered;
     /** Status code. */
     int                          Rc;
@@ -945,7 +945,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, RTMSINTERVAL
                     if (rcReq == 0)
                     {
                         pReq->Rc = VINF_SUCCESS;
-                        /* Call aio_return() to free ressources. */
+                        /* Call aio_return() to free resources. */
                         pReq->cbTransfered = aio_return(&pReq->AioCB);
                     }
                     else

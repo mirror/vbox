@@ -358,7 +358,7 @@ gt_SkipV86Entry:
 %endif
 
     ;
-    ; Check if we're in Hypervisor when this happend.
+    ; Check if we're in Hypervisor when this happened.
     ;
     test    dword [esp + CPUMCTXCORE.eflags], X86_EFL_VM
     jnz short gt_NotHyperVisor
@@ -851,7 +851,7 @@ ti_SkipV86Entry:
 %endif
 
     ;
-    ; Check if we're in Hypervisor when this happend.
+    ; Check if we're in Hypervisor when this happened.
     ;
     test    byte [esp + 08h + ESPOFF], 3h ; check CPL of the cs selector
     jnz short gi_NotHyperVisor
@@ -905,7 +905,7 @@ gi_NotHyperVisor:
     ;
     ; We're in hypervisor mode which means no guest context
     ; and special care to be taken to restore the hypervisor
-    ; context correctely.
+    ; context correctly.
     ;
     ; ATM the only place this can happen is when entering a trap handler.
     ; We make ASSUMPTIONS about this in respects to the WP CR0 bit
@@ -1011,11 +1011,11 @@ ENDPROC TRPMGCHandlerTrap12
 ; one of the intermediate memory contexts instead of the shadow context.
 ; The handler will unconditionally print an report to the comport configured
 ; for the COM_S_* macros before attempting to return to the host. If it it ends
-; up double faulting more than 10 times, it will simply cause an tripple fault
+; up double faulting more than 10 times, it will simply cause an triple fault
 ; to get us out of the mess.
 ;
-; @param    esp         Half way down the hypvervisor stack + the trap frame.
-; @param    ebp         Half way down the hypvervisor stack.
+; @param    esp         Half way down the hypervisor stack + the trap frame.
+; @param    ebp         Half way down the hypervisor stack.
 ; @param    eflags      Interrupts disabled, nested flag is probably set (we don't care).
 ; @param    ecx         The address of the hypervisor TSS.
 ; @param    edi         Same as ecx.

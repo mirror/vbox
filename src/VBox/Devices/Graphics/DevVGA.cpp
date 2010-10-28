@@ -161,7 +161,7 @@ typedef BMPINFO *PBMPINFO;
 /** OS/2 1.x Information Header Format. */
 typedef struct
 {
-    uint32_t      Size;           /* Size of Remianing Header   */
+    uint32_t      Size;           /* Size of Remaining Header   */
     uint16_t      Width;          /* Width of Bitmap in Pixels  */
     uint16_t      Height;         /* Height of Bitmap in Pixels */
     uint16_t      Planes;         /* Number of Planes           */
@@ -174,7 +174,7 @@ typedef OS2HDR *POS2HDR;
 /** OS/2 2.0 Information Header Format. */
 typedef struct
 {
-    uint32_t      Size;           /* Size of Remianing Header   */
+    uint32_t      Size;           /* Size of Remaining Header         */
     uint32_t      Width;          /* Width of Bitmap in Pixels        */
     uint32_t      Height;         /* Height of Bitmap in Pixels       */
     uint16_t      Planes;         /* Number of Planes                 */
@@ -185,7 +185,7 @@ typedef struct
     uint32_t      YPelsPerMeter;  /* Vert. Resolution in Pixels/Meter */
     uint32_t      ClrUsed;        /* Number of Colors in Color Table  */
     uint32_t      ClrImportant;   /* Number of Important Colors       */
-    uint16_t      Units;          /* Resolution Mesaurement Used      */
+    uint16_t      Units;          /* Resolution Measurement Used      */
     uint16_t      Reserved;       /* Reserved FIelds (always 0)       */
     uint16_t      Recording;      /* Orientation of Bitmap            */
     uint16_t      Rendering;      /* Halftone Algorithm Used on Image */
@@ -201,7 +201,7 @@ typedef OS22HDR *POS22HDR;
 /** Windows 3.x Information Header Format. */
 typedef struct
 {
-    uint32_t      Size;           /* Size of Remianing Header   */
+    uint32_t      Size;           /* Size of Remaining Header         */
     uint32_t      Width;          /* Width of Bitmap in Pixels        */
     uint32_t      Height;         /* Height of Bitmap in Pixels       */
     uint16_t      Planes;         /* Number of Planes                 */
@@ -705,7 +705,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         case 0x09:
         case 0x0c:
         case 0x0d:
-        case 0x12: /* veritcal display end */
+        case 0x12: /* vertical display end */
             s->cr[s->cr_index] = val;
             break;
 
@@ -3091,7 +3091,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  * @param   pDevIns     Pointer device instance.
  * @param   pvUser      User argument - ignored.
  * @param   GCPhysAddr  Physical address of memory to read.
- * @param   pv          Where to store readed data.
+ * @param   pv          Where to store read data.
  * @param   cb          Bytes to read.
  */
 PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
@@ -4404,7 +4404,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
  *
  * @returns VBox status code.
  * @param   pInterface          Pointer to this interface.
- * @param   cMilliesInterval    Number of millies between two refreshes.
+ * @param   cMilliesInterval    Number of millis between two refreshes.
  * @see     PDMIKEYBOARDPORT::pfnSetRefreshRate() for details.
  */
 static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint32_t cMilliesInterval)
@@ -4588,7 +4588,7 @@ static DECLCALLBACK(int) vgaPortDisplayBlt(PPDMIDISPLAYPORT pInterface, const vo
         &&  cy + y <= pThis->pDrv->cy)
     {
         /*
-         * Determin bytes per pixel in the destination buffer.
+         * Determine bytes per pixel in the destination buffer.
          */
         size_t  cbPixelDst = 0;
         switch (pThis->pDrv->cBits)
@@ -5939,7 +5939,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 # endif  /* VRAM_SIZE_FIX defined */
 
     /*
-     * Copy default modes with subtractred YResolution.
+     * Copy default modes with subtracted YResolution.
      */
     if (cyReduction)
     {

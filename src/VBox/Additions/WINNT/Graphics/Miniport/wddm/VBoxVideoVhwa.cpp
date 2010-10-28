@@ -730,7 +730,7 @@ int vboxVhwaHlpCheckInit(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_
         return VERR_NOT_SUPPORTED;
 
     int rc = VINF_SUCCESS;
-    /* @todo: need a better synch */
+    /* @todo: need a better sync */
     uint32_t cNew = ASMAtomicIncU32(&pSource->Vhwa.cOverlaysCreated);
     if (cNew == 1)
     {
@@ -773,7 +773,7 @@ int vboxVhwaHlpCheckTerm(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_
 
     Assert(!!(pSource->Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED));
 
-    /* @todo: need a better synch */
+    /* @todo: need a better sync */
     uint32_t cNew = ASMAtomicDecU32(&pSource->Vhwa.cOverlaysCreated);
     int rc = VINF_SUCCESS;
     if (!cNew)

@@ -36,7 +36,7 @@
 RTDECL(int) RTErrConvertFromDarwinKern(int iNativeCode)
 {
     /*
-     * 'optimzied' success case.
+     * 'optimized' success case.
      */
     if (iNativeCode == KERN_SUCCESS)
         return VINF_SUCCESS;

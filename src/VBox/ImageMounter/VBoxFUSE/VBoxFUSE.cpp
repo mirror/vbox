@@ -402,7 +402,7 @@ static int vboxfuseNodeAlloc(size_t cbNode, const char *pszName, VBOXFUSETYPE en
 /**
  * Inserts a node into a directory
  *
- * The caller has locked and referneced the directory as well as checked that
+ * The caller has locked and referenced the directory as well as checked that
  * the name doesn't already exist within it. On success both the reference and
  * and link counters will be incremented.
  *
@@ -591,7 +591,7 @@ static int vboxfuseFlatImageCreate(const char *pszPath, const char *pszImage, PV
 /**
  * Looks up a file in the tree.
  *
- * Upon successfull return the returned node is both referenced and locked. The
+ * Upon successful return the returned node is both referenced and locked. The
  * call will have to release and unlock it.
  *
  * @returns VBox status code
@@ -639,7 +639,7 @@ static int vboxfuseTreeLookup(const char *pszPath, PVBOXFUSENODE *ppNode)
 
         /*
          * Look it up.
-         * This is safe as the directory will hold a refernece to each node
+         * This is safe as the directory will hold a reference to each node
          * so the nodes cannot possibly be destroyed while we're searching them.
          */
         PVBOXFUSENODE   pNode = NULL;
@@ -683,7 +683,7 @@ static int vboxfuseTreeLookup(const char *pszPath, PVBOXFUSENODE *ppNode)
 
 
 /**
- * Errno convertsion wrapper around vboxfuseTreeLookup().
+ * Errno conversion wrapper around vboxfuseTreeLookup().
  *
  * @returns 0 on success, negated errno on failure.
  * @param   pszPath     The path to the file.
@@ -701,7 +701,7 @@ static int vboxfuseTreeLookupErrno(const char *pszPath, PVBOXFUSENODE *ppNode)
 /**
  * Looks up a parent directory in the tree.
  *
- * Upon successfull return the returned directory is both referenced and locked.
+ * Upon successful return the returned directory is both referenced and locked.
  * The call will have to release and unlock it.
  *
  * @returns VBox status code.
@@ -761,7 +761,7 @@ static int vboxfuseTreeLookupParent(const char *pszPath, const char **ppszName, 
 
         /*
          * Look it up.
-         * This is safe as the directory will hold a refernece to each node
+         * This is safe as the directory will hold a reference to each node
          * so the nodes cannot possibly be destroyed while we're searching them.
          */
         PVBOXFUSENODE   pNode = NULL;
@@ -799,7 +799,7 @@ static int vboxfuseTreeLookupParent(const char *pszPath, const char **ppszName, 
  * Looks up a parent directory in the tree and checking that the specified child
  * doesn't already exist.
  *
- * Upon successfull return the returned directory is both referenced and locked.
+ * Upon successful return the returned directory is both referenced and locked.
  * The call will have to release and unlock it.
  *
  * @returns VBox status code.

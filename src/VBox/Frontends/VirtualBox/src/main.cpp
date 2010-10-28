@@ -65,7 +65,7 @@
 
 #include <cstdio>
 
-/* XXX Temporarily. Don't rely on ther user to hack the Makefile himsef! */
+/* XXX Temporarily. Don't rely on the user to hack the Makefile himself! */
 QString g_QStrHintLinuxNoMemory = QApplication::tr(
   "This error means that the kernel driver was either not able to "
   "allocate enough memory or that some mapping operation failed."

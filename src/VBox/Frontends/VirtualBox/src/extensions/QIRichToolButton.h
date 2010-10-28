@@ -26,7 +26,7 @@
 
 /** @class QIRichToolButton
  *
- *  The QIRichToolButton class is a tool-botton with separate text-label.
+ *  The QIRichToolButton class is a tool-button with separate text-label.
  *
  */
 class QIRichToolButton : public QWidget

@@ -619,7 +619,7 @@ private:
  * starting with the small letter. Utility methods should be not normally
  * called by the end-user client application.
  *
- * @param  I    Interface class (i.e. IUnknown/nsISupports derivant).
+ * @param  I    Interface class (i.e. derived from IUnknown/nsISupports).
  * @param  B    Base class, either COMBase (by default) or COMBaseWithEI.
  */
 template <class I, class B = COMBase>

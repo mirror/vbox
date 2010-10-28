@@ -704,7 +704,7 @@ DECLCALLBACK(int) Medium::Task::fntMediumTask(RTTHREAD aThread, void *pvUser)
  * PFNVDPROGRESS callback handler for Task operations.
  *
  * @param pvUser      Pointer to the Progress instance.
- * @param uPercent    Completetion precentage (0-100).
+ * @param uPercent    Completion percentage (0-100).
  */
 /*static*/
 DECLCALLBACK(int) Medium::Task::vdProgressCall(void *pvUser, unsigned uPercent)
@@ -1147,7 +1147,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         m->autoReset = false;
 
     /* properties (after setting the format as it populates the map). Note that
-     * if some properties are not supported but preseint in the settings file,
+     * if some properties are not supported but present in the settings file,
      * they will still be read and accessible (for possible backward
      * compatibility; we can also clean them up from the XML upon next
      * XML format version change if we wish) */
@@ -1323,7 +1323,7 @@ void Medium::uninit()
 
     if (m->state == MediumState_Deleting)
     {
-        /* we are being uninitialized after've been deleted by merge.
+        /* we are being reinitialized after we've been deleted by merge.
          * Reparenting has already been done so don't touch it here (we are
          * now orphans and removeDependentChild() will assert) */
         Assert(m->pParent.isNull());
@@ -1495,7 +1495,7 @@ STDMETHODIMP Medium::COMSETTER(Location)(IN_BSTR aLocation)
     /// @todo NEWMEDIA for file names, add the default extension if no extension
     /// is present (using the information from the VD backend which also implies
     /// that one more parameter should be passed to setLocation() requesting
-    /// that functionality since it is only allwed when called from this method
+    /// that functionality since it is only allowed when called from this method
 
     /// @todo NEWMEDIA rename the file and set m->location on success, then save
     /// the global registry (and local registries of portable VMs referring to
@@ -3218,7 +3218,7 @@ ComObjPtr<Medium> Medium::getBase(uint32_t *aLevel /*= NULL*/)
 
 /**
  * Returns @c true if this medium cannot be modified because it has
- * dependants (children) or is part of the snapshot. Related to the medium
+ * dependents (children) or is part of the snapshot. Related to the medium
  * type and posterity, not to the current media state.
  *
  * @note Locks this object and medium tree for reading.
@@ -4936,7 +4936,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
             else if (   m->state == MediumState_LockedWrite
                      || m->state == MediumState_LockedRead)
             {
-                /* Either mark it for deletiion in locked state or allow
+                /* Either mark it for deletion in locked state or allow
                  * others to have done so. */
                 if (m->preLockState == MediumState_Created)
                     markLockedForDeletion();
@@ -5084,7 +5084,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
  * involved media and delete @a aMediumLockList.
  *
  * When this method fails (regardless of the @a aWait mode), it is a caller's
- * responsiblity to undo state changes and delete @a aMediumLockList using
+ * responsibility to undo state changes and delete @a aMediumLockList using
  * #cancelMergeTo().
  *
  * If @a aProgress is not NULL but the object it points to is @c null then a new
@@ -6221,7 +6221,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
  * Implementation code for the "merge" task.
  *
  * This task always gets started from Medium::mergeTo() and can run
- * synchronously or asynchrously depending on the "wait" parameter passed to
+ * synchronously or asynchronously depending on the "wait" parameter passed to
  * that function. If we run synchronously, the caller expects the bool
  * *pfNeedsGlobalSaveSettings to be set before returning; otherwise (in asynchronous
  * mode), we save the settings ourselves.
@@ -6773,7 +6773,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
  * Implementation code for the "delete" task.
  *
  * This task always gets started from Medium::deleteStorage() and can run
- * synchronously or asynchrously depending on the "wait" parameter passed to
+ * synchronously or asynchronously depending on the "wait" parameter passed to
  * that function.
  *
  * @param task

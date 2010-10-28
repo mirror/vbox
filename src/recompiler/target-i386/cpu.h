@@ -135,7 +135,7 @@
 #define VIP_MASK                0x00100000
 #define ID_MASK                 0x00200000
 
-/* hidden flags - used internally by qemu to represent additionnal cpu
+/* hidden flags - used internally by qemu to represent additional cpu
    states. Only the CPL, INHIBIT_IRQ, SMM and SVMI are not redundant. We avoid
    using the IOPL_MASK, TF_MASK and VM_MASK bit position to ease oring
    with eflags. */
@@ -253,7 +253,7 @@
 #define MSR_IA32_APICBASE_ENABLE        (1<<11)
 #define MSR_IA32_APICBASE_BASE          (0xfffff<<12)
 
-#ifndef MSR_IA32_SYSENTER_CS /* VBox x86.h klugde */
+#ifndef MSR_IA32_SYSENTER_CS /* VBox x86.h kludge */
 #define MSR_IA32_SYSENTER_CS            0x174
 #define MSR_IA32_SYSENTER_ESP           0x175
 #define MSR_IA32_SYSENTER_EIP           0x176

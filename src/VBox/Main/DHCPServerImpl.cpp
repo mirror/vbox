@@ -234,7 +234,7 @@ STDMETHODIMP DHCPServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
 
 STDMETHODIMP DHCPServer::Start(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR aTrunkType)
 {
-    /* Silently ignore attepmts to run disabled servers. */
+    /* Silently ignore attempts to run disabled servers. */
     if (!m.enabled)
         return S_OK;
 

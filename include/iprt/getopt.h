@@ -246,7 +246,7 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
  * argument formats, if desired.
  *
  * This is to be called in a loop until it returns 0 (meaning that all options
- * were parsed) or a negative value (meaning that an error occured). How non-option
+ * were parsed) or a negative value (meaning that an error occurred). How non-option
  * arguments are dealt with depends on the flags passed to RTGetOptInit. The default
  * (fFlags = 0) is to return VINF_GETOPT_NOT_OPTION with pValueUnion->psz pointing to
  * the argument string.

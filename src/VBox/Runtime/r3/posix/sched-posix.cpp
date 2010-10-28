@@ -122,7 +122,7 @@ typedef struct
 *******************************************************************************/
 /**
  * Thread level priorities based on a 0..31 priority range
- * as specified as the minium for SCHED_RR/FIFO. FreeBSD
+ * as specified as the minimum for SCHED_RR/FIFO. FreeBSD
  * seems to be using this (needs more research to be
  * certain).
  */
@@ -310,7 +310,7 @@ static enum
      * NT offers if you wondered.) Linux on the other hand doesn't provide this
      * for processes with SCHED_OTHER policy, and I'm not sure if we want to
      * play around with using the real-time SCHED_RR and SCHED_FIFO which would
-     * require special privilegdes anyway.
+     * require special privileges anyway.
      */
     OSPRIOSUP_PROCESS_AND_THREAD_LEVEL,
     /** A rough thread level priority only.
@@ -802,7 +802,7 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
                  * implementation is actually in use, and how many sensible patches which
                  * are installed.
                  * I need to find a system where this problem shows up in order to come up
-                 * with a proper fix. There's an pthread_create attribute for not inherting
+                 * with a proper fix. There's an pthread_create attribute for not inheriting
                  * scheduler stuff I think...
                  */
                 rc = VINF_SUCCESS;
@@ -812,7 +812,7 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
         }
 
         /*
-         * Any thread created before we determin the default config, remains unchanged!
+         * Any thread created before we determine the default config, remains unchanged!
          * The prober thread above is one of those.
          */
         default:

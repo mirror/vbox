@@ -211,7 +211,7 @@ NTSTATUS VBoxMRxSrvCallWinnerNotify (IN PMRX_SRV_CALL pSrvCall, IN BOOLEAN ThisM
 
  pSrvCall               - the Server Call
 
- ThisMinirdrIsTheWinner - TRUE if this mini rdr is the choosen one.
+ ThisMinirdrIsTheWinner - TRUE if this mini rdr is the chosen one.
 
  pSrvCallContext  - the server call context created by the mini redirector.
 

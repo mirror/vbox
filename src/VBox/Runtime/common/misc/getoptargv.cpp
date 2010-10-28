@@ -44,7 +44,7 @@
  * Array indexed by the quoting type and 7-bit ASCII character.
  *
  * We include some extra stuff here that the corresponding shell would normally
- * require qouting of.
+ * require quoting of.
  */
 static uint8_t const g_abmQuoteChars[RTGETOPTARGV_CNV_QUOTE_MASK + 1][128/8] =
 {

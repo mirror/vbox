@@ -173,7 +173,7 @@ VMMR0DECL(void) ModuleTerm(void)
 
 
 /**
- * Initaties the R0 driver for a particular VM instance.
+ * Initiates the R0 driver for a particular VM instance.
  *
  * @returns VBox status code.
  *
@@ -1313,7 +1313,7 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger)
 }
 
 /**
- * Interal R0 logger worker: Custom prefix.
+ * Internal R0 logger worker: Custom prefix.
  *
  * @returns Number of chars written.
  *

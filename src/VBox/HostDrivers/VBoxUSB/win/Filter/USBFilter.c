@@ -257,7 +257,7 @@ Return Value:
 
     //
     // Let us use remove lock to keep count of IRPs so that we don't
-    // deteach and delete our deviceobject until all pending I/Os in our
+    // detach and delete our deviceobject until all pending I/Os in our
     // devstack are completed. Remlock is required to protect us from
     // various race conditions where our driver can get unloaded while we
     // are still running dispatch or completion code.
@@ -554,8 +554,8 @@ Return Value:
     case IRP_MN_DEVICE_USAGE_NOTIFICATION:
 
         //
-        // On the way down, pagable might become set. Mimic the driver
-        // above us. If no one is above us, just set pagable.
+        // On the way down, pageable might become set. Mimic the driver
+        // above us. If no one is above us, just set pageable.
         //
         if ((DeviceObject->AttachedDevice == NULL) ||
             (DeviceObject->AttachedDevice->Flags & DO_POWER_PAGABLE)) {
@@ -583,8 +583,8 @@ Return Value:
     case IRP_MN_QUERY_CAPABILITIES:
 #endif
         //
-        // On the way down, pagable might become set. Mimic the driver
-        // above us. If no one is above us, just set pagable.
+        // On the way down, pageable might become set. Mimic the driver
+        // above us. If no one is above us, just set pageable.
         //
         if ((DeviceObject->AttachedDevice == NULL) ||
             (DeviceObject->AttachedDevice->Flags & DO_POWER_PAGABLE)) {
@@ -706,7 +706,7 @@ Return Value:
     }
 
     //
-    // On the way up, pagable might become clear. Mimic the driver below us.
+    // On the way up, pageable might become clear. Mimic the driver below us.
     //
     if (!(deviceExtension->NextLowerDriver->Flags & DO_POWER_PAGABLE)) {
 

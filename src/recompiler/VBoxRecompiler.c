@@ -765,7 +765,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     tlb_flush(&pRem->Env, 1);
 
     /*
-     * Stop ignoring ignornable notifications.
+     * Stop ignoring ignorable notifications.
      */
     ASMAtomicDecU32(&pVM->rem.s.cIgnoreAll);
 
@@ -1295,7 +1295,7 @@ bool remR3CanExecuteRaw(CPUState *env, RTGCPTR eip, unsigned fFlags, int *piExce
      * Here we only support 16 & 32 bits protected mode ring 3 code that has no IO privileges
      * or 32 bits protected mode ring 0 code
      *
-     * The tests are ordered by the likelyhood of being true during normal execution.
+     * The tests are ordered by the likelihood of being true during normal execution.
      */
     if (fFlags & (HF_TF_MASK | HF_INHIBIT_IRQ_MASK))
     {
@@ -1693,7 +1693,7 @@ void remR3TimersRun(CPUState *env)
 
 
 /**
- * Record trap occurance
+ * Record trap occurrence
  *
  * @returns VBox status code
  * @param   env             Pointer to the CPU environment.
@@ -1792,7 +1792,7 @@ void remR3RecordCall(CPUState *env)
  *
  * @remark  The caller has to check for important FFs before calling REMR3Run. REMR3State will
  *          no do this since the majority of the callers don't want any unnecessary of events
- *          pending that would immediatly interrupt execution.
+ *          pending that would immediately interrupt execution.
  */
 REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 {
@@ -3789,7 +3789,7 @@ void disas(FILE *phFile, void *pvCode, unsigned long cb)
             {
                 DISAS_PRINTF("disas error\n");
                 cbInstr = 1;
-#ifdef RT_ARCH_AMD64 /** @todo remove when DISInstr starts supporing 64-bit code. */
+#ifdef RT_ARCH_AMD64 /** @todo remove when DISInstr starts supporting 64-bit code. */
                 break;
 #endif
             }
@@ -3970,7 +3970,7 @@ REMR3DECL(void) REMR3NotifyInterruptClear(PVM pVM, PVMCPU pVCpu)
  * @param   pVM             VM Handle.
  * @param   pVCpuDst        The target cpu for this notification.
  *                          TM will not broadcast pending timer events, but use
- *                          a decidated EMT for them. So, only interrupt REM
+ *                          a dedicated EMT for them. So, only interrupt REM
  *                          execution if the given CPU is executing in REM.
  * @thread  Any.
  */
@@ -4498,7 +4498,7 @@ void cpu_abort(CPUState *env, const char *pszFormat, ...)
  * Aborts the VM.
  *
  * @param   rc      VBox error code.
- * @param   pszTip  Hint about why/when this happend.
+ * @param   pszTip  Hint about why/when this happened.
  */
 void remAbort(int rc, const char *pszTip)
 {

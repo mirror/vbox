@@ -400,7 +400,7 @@ typedef struct _SHFLDIRINFO
     /** The length of the short field (number of RTUTF16 chars).
      * It is 16-bit for reasons of alignment. */
     uint16_t        cucShortName;
-    /** The short name for 8.3 compatability.
+    /** The short name for 8.3 compatibility.
      * Empty string if not available.
      */
     RTUTF16         uszShortName[14];
@@ -727,9 +727,9 @@ typedef struct _VBoxSFWrite
 #define SHFL_LOCK_MODE_MASK  (0x3)
 /** Cancel lock on the given range. */
 #define SHFL_LOCK_CANCEL     (0x0)
-/** Aquire read only lock. Prevent write to the range. */
+/** Acquire read only lock. Prevent write to the range. */
 #define SHFL_LOCK_SHARED     (0x1)
-/** Aquire write lock. Prevent both write and read to the range. */
+/** Acquire write lock. Prevent both write and read to the range. */
 #define SHFL_LOCK_EXCLUSIVE  (0x2)
 
 /** Do not wait for lock if it can not be acquired at the time. */

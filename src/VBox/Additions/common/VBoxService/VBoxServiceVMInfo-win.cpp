@@ -246,7 +246,7 @@ void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs)
 }
 
 /**
- * Determins whether the specified session has processes on the system.
+ * Determines whether the specified session has processes on the system.
  *
  * @returns true if it has, false if it doesn't.
  * @param   pSession        The session.

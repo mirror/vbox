@@ -27,7 +27,7 @@
   /* XPCOM_GLUE is defined when the client uses the standalone glue
    * (i.e. dynamically picks up the existing XPCOM shared library installation).
    * This is not the case for VirtualBox XPCOM clients (they are always
-   * distrubuted with the self-built XPCOM library, and therefore have a binary
+   * distributed with the self-built XPCOM library, and therefore have a binary
    * dependency on it) but left here for clarity.
    */
 # if defined(XPCOM_GLUE)
@@ -258,7 +258,7 @@ HRESULT Initialize()
 
     rc = CoInitializeEx(NULL, flags);
 
-    /// @todo the below rough method of changing the aparment type doesn't
+    /// @todo the below rough method of changing the apartment type doesn't
     /// work on some systems for unknown reason (CoUninitialize() simply does
     /// nothing there, or at least all 10 000 of subsequent CoInitializeEx()
     /// continue to return RPC_E_CHANGED_MODE there). The problem on those

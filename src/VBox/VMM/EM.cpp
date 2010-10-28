@@ -885,7 +885,7 @@ DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
  *
  * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle.
- * @param   pfFFDone    Where to store an indicator telling wheter or not
+ * @param   pfFFDone    Where to store an indicator telling whether or not
  *                      FFs were done before returning.
  *
  */
@@ -946,7 +946,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
             /*
              * We might have missed the raising of VMREQ, TIMER and some other
-             * imporant FFs while we were busy switching the state. So, check again.
+             * important FFs while we were busy switching the state. So, check again.
              */
             if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
                 ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
@@ -1119,7 +1119,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Here we only support 16 & 32 bits protected mode ring 3 code that has no IO privileges
      * or 32 bits protected mode ring 0 code
      *
-     * The tests are ordered by the likelyhood of being true during normal execution.
+     * The tests are ordered by the likelihood of being true during normal execution.
      */
     if (EFlags.u32 & (X86_EFL_TF /* | HF_INHIBIT_IRQ_MASK*/))
     {

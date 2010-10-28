@@ -358,7 +358,7 @@ public:
                 if (!onMainThread)
                 {
                     /* Failed to start the timer, post the shutdown event
-                     * manually if not on the main thread alreay. */
+                     * manually if not on the main thread already. */
                     ShutdownTimer(NULL, NULL, 0);
                 }
                 else
@@ -539,7 +539,7 @@ public:
                      * shutdown. Since the object is fully deleted here, there
                      * is a chance to fix the error and request a new
                      * instantiation before the server terminates. However,
-                     * the main reason to maintain the shoutdown delay on
+                     * the main reason to maintain the shutdown delay on
                      * failure is to let the front-end completely fetch error
                      * info from a server-side IVirtualBoxErrorInfo object. */
                     sInstance->Release();
@@ -659,7 +659,7 @@ static const nsModuleComponentInfoEx components[] =
         "VirtualBox component",
         CLSID_VirtualBox,
         NS_VIRTUALBOX_CONTRACTID,
-        VirtualBoxConstructor, // constructor funcion
+        VirtualBoxConstructor, // constructor function
         NULL, // registration function
         NULL, // deregistration function
         VirtualBoxClassFactory::FactoryDestructor, // factory destructor function
@@ -1054,7 +1054,7 @@ int main(int argc, char **argv)
 
         /* stop accepting new events. Clients that happen to resolve our
          * name and issue a CreateInstance() request after this point will
-         * get NS_ERROR_ABORT once we hande the remaining messages. As a
+         * get NS_ERROR_ABORT once we handle the remaining messages. As a
          * result, they should try to start a new server process. */
         gEventQ->StopAcceptingEvents();
 

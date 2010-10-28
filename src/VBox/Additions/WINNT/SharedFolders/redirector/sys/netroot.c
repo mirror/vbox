@@ -36,7 +36,7 @@ NTSTATUS VBoxMRxUpdateNetRootState (IN OUT PMRX_NET_ROOT pNetRoot)
 
  Notes:
 
- By diffrentiating the mini redirector state from the net root condition it is possible
+ By differentiating the mini redirector state from the net root condition it is possible
  to permit a variety of reconnect strategies. It is conceivable that the RDBSS considers
  a net root to be good while the underlying mini redirector might mark it as invalid
  and reconnect on the fly.
@@ -203,7 +203,7 @@ NTSTATUS VBoxMRxCreateVNetRoot (IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootCont
     // These two cases can be distinguished by checking if the context associated with
     // NET_ROOT is NULL. Since the construction of NET_ROOT's/V_NET_ROOT's are serialized
     // by the wrapper this is a safe check.
-    // ( The wrapper cannot have more then one thread tryingto initialize the same
+    // ( The wrapper cannot have more then one thread trying to initialize the same
     // NET_ROOT).
     //
     // The above is not really true in our case. Since we have asked the wrapper,

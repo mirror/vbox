@@ -108,8 +108,8 @@ typedef enum
 #define OPTYPE_COND_CONTROLFLOW         RT_BIT(10)
 #define OPTYPE_INTERRUPT                RT_BIT(11)
 #define OPTYPE_ILLEGAL                  RT_BIT(12)
-#define OPTYPE_RRM_DANGEROUS            RT_BIT(14)  /**< Some additional dangerouse ones when recompiling raw r0. */
-#define OPTYPE_RRM_DANGEROUS_16         RT_BIT(15)  /**< Some additional dangerouse ones when recompiling 16-bit raw r0. */
+#define OPTYPE_RRM_DANGEROUS            RT_BIT(14)  /**< Some additional dangerous ones when recompiling raw r0. */
+#define OPTYPE_RRM_DANGEROUS_16         RT_BIT(15)  /**< Some additional dangerous ones when recompiling 16-bit raw r0. */
 #define OPTYPE_RRM_MASK                 (OPTYPE_RRM_DANGEROUS | OPTYPE_RRM_DANGEROUS_16)
 #define OPTYPE_INHIBIT_IRQS             RT_BIT(16)  /**< Will or can inhibit irqs (sti, pop ss, mov ss) */
 #define OPTYPE_PORTIO_READ              RT_BIT(17)
@@ -545,7 +545,7 @@ typedef struct _OPCODE
  * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
- * @param   pvCodeBlock     Pointer to the strunction to disassemble.
+ * @param   pvCodeBlock     Pointer to the structure to disassemble.
  * @param   cbMax           Maximum number of bytes to disassemble.
  * @param   pcbSize         Where to store the size of the instruction.
  *                          NULL is allowed.
@@ -553,10 +553,10 @@ typedef struct _OPCODE
  *
  * @todo    Define output callback.
  * @todo    Using signed integers as sizes is a bit odd. There are still
- *          some GCC warnings about mixing signed and unsigend integers.
+ *          some GCC warnings about mixing signed and unsigned integers.
  * @todo    Need to extend this interface to include a code address so we
- *          can dissassemble GC code. Perhaps a new function is better...
- * @remark  cbMax isn't respected as a boundry. DISInstr() will read beyond cbMax.
+ *          can disassemble GC code. Perhaps a new function is better...
+ * @remark  cbMax isn't respected as a boundary. DISInstr() will read beyond cbMax.
  *          This means *pcbSize >= cbMax sometimes.
  */
 DISDECL(int) DISBlock(PDISCPUSTATE pCpu, RTUINTPTR pvCodeBlock, unsigned cbMax, unsigned *pSize);
@@ -583,7 +583,7 @@ DISDECL(int) DISInstr(PDISCPUSTATE pCpu, RTUINTPTR pu8Instruction, unsigned u32E
  * @returns VBox error code
  * @param   pCpu            Pointer to cpu structure which have DISCPUSTATE::mode
  *                          set correctly.
- * @param   pu8Instruction  Pointer to the strunction to disassemble.
+ * @param   pu8Instruction  Pointer to the structure to disassemble.
  * @param   u32EipOffset    Offset to add to instruction address to get the real virtual address
  * @param   pcbSize         Where to store the size of the instruction.
  *                          NULL is allowed.

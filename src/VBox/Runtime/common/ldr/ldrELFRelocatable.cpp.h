@@ -181,7 +181,7 @@ static int RTLDRELF_NAME(Symbol)(PRTLDRMODELF pModElf, Elf_Addr BaseAddr, PFNRTL
     const char *pszName = ELF_STR(pModElf, pSym->st_name);
 
     /*
-     * Determin the symbol value.
+     * Determine the symbol value.
      *
      * Symbols needs different treatment depending on which section their are in.
      * Undefined and absolute symbols goes into special non-existing sections.
@@ -225,7 +225,7 @@ static int RTLDRELF_NAME(Symbol)(PRTLDRMODELF pModElf, Elf_Addr BaseAddr, PFNRTL
             break;
 
         /*
-         * All other symbols are adressed relative to their section and need to be fixed up.
+         * All other symbols are addressed relative to their section and need to be fixed up.
          */
         default:
             if (pSym->st_shndx >= pModElf->Ehdr.e_shnum)
@@ -340,7 +340,7 @@ static int RTLDRELF_NAME(RelocateSection)(PRTLDRMODELF pModElf, Elf_Addr BaseAdd
             }
 
             /*
-             * Trunacated 32-bit value (zero-extendedable to the 64-bit value).
+             * Truncated 32-bit value (zero-extendedable to the 64-bit value).
              */
             case R_X86_64_32:
             {
@@ -1044,7 +1044,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Validate the section headers, allocate memory for the sections (determin the image size),
+                 * Validate the section headers, allocate memory for the sections (determine the image size),
                  * and find relevant sections.
                  */
                 for (unsigned i = 0; i < pModElf->Ehdr.e_shnum; i++)

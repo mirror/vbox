@@ -259,7 +259,7 @@ VOID WINAPI WlxDisplaySASNotice(PVOID pWlxContext)
 {
     Log(("VBoxGINA::WlxDisplaySASNotice\n"));
 
-    /* check if there are credentials for us, if so simulat C-A-D */
+    /* check if there are credentials for us, if so simulate C-A-D */
     if (credentialsAvailable())
     {
         Log(("VBoxGINA::WlxDisplaySASNotice: simulating C-A-D\n"));

@@ -514,7 +514,7 @@ static DECLCALLBACK(int) MyDisasInstrRead(RTUINTPTR uSrcAddr, uint8_t *pbDst, ui
     {
         /*
          * Jumping up the stream.
-         * This occures when the byte sequence is added to the output string.
+         * This occurs when the byte sequence is added to the output string.
          */
         uint64_t offReq64 = uSrcAddr - pState->uAddress;
         if (offReq64 < 32)
@@ -944,7 +944,7 @@ int main(int argc, char **argv)
             while (*psz)
             {
                 /** @todo this stuff belongs in IPRT, same stuff as mac address reading. Could be reused for IPv6 with a different item size.*/
-                /* skip white space, and for the benfit of linux panics '<' and '>'. */
+                /* skip white space, and for the benefit of linux panics '<' and '>'. */
                 while (RT_C_IS_SPACE(ch2 = *psz) || ch2 == '<' || ch2 == '>')
                 {
                     if (ch2 == '<')

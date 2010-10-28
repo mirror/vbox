@@ -2309,7 +2309,7 @@ Return Value:
 
     //
     // Enable the keyboard and mouse devices and their interrupts.  Note
-    // that it is required that this operation happen during intialization
+    // that it is required that this operation happen during initialization
     // time, because the i8042 Output Buffer Full bit gets set in the
     // Controller Command Byte when the keyboard/mouse is used, even if
     // the device is disabled.  Hence, we cannot successfully perform

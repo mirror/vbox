@@ -58,7 +58,7 @@ TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Debug"         # Debug info (ILINK308.kmk?
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Map"           # Generate map file (ILINK308.kmk?)
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Linenumbers"   # Map file with linenumbers.
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Exepack:2"     # Compress the file using exepack 2.
-TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Alignment:32"  # Pack LX pages on 32 byte boundraries (default is 512 bytes).
+TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Alignment:32"  # Pack LX pages on 32 byte boundaries (default is 512 bytes).
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/NoDefaultLibrarySearch"
 TEMPLATE_VBOXOS2VAC308_LDFLAGS := $(strip $(TEMPLATE_VBOXOS2VAC308_LDFLAGS))
 

@@ -1855,7 +1855,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 #elif defined(RT_OS_OS2)
                     /*
                      * The TAP driver does all the opening and setting up,
-                     * as it was originally was ment to be (stupid fork() problems).
+                     * as it was originally was meant to be (stupid fork() problems).
                      */
                     rc = CFGMR3InsertString(pCfg, "Device", g_aNetDevs[ulInstance].pszName); UPDATE_RC();
                     if (g_aNetDevs[ulInstance].fHaveConnectTo)

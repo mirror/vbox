@@ -151,7 +151,7 @@ static char *FirstField(char **ppsz, char *pszLine)
  * Get the next field in a field enumeration.
  *
  * @returns Pointer to the next field.
- * @param   ppsz        Where to get and store the string postition.
+ * @param   ppsz        Where to get and store the string position.
  */
 static char *NextField(char **ppsz)
 {
@@ -264,7 +264,7 @@ static RTUNICP ToRange(const char *psz, PRTUNICP pLast)
 }
 
 /**
- * For converting the decompisition mappings field and similar.
+ * For converting the decomposition mappings field and similar.
  *
  * @returns Mapping array or NULL if none.
  * @param   psz                 The string to convert.  Can be empty.

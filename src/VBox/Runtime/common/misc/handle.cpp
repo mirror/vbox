@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Generic Handle Manipluation.
+ * IPRT - Generic Handle Manipulation.
  */
 
 /*

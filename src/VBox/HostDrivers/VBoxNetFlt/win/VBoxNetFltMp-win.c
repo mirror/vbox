@@ -209,7 +209,7 @@ vboxNetFltWinPtRegisterDevice(
         {
 #ifdef VBOXNETFLT_WITH_IOCTL_SECURITY
             /* NdisMRegisterDevice does not offers us the ability to set security attributes */
-            /* need to do this "manualy" for the device to be accessible by the non-privileged users */
+            /* need to do this "manually" for the device to be accessible by the non-privileged users */
             Status = vboxNetFltWinSetSecurity(&DeviceLinkUnicodeString);
             Assert(Status == STATUS_SUCCESS);
             if(Status != STATUS_SUCCESS)
@@ -346,8 +346,8 @@ static NDIS_STATUS vboxNetFltWinMpInitialize(
         pAdapt->hMiniportHandle = MiniportAdapterHandle;
 
         Assert(vboxNetFltWinGetOpState(&pAdapt->MPState) == kVBoxNetDevOpState_Initializing);
-        /* the MP state should be already set to kVBoxNetDevOpState_Initializing, just a paranoya
-         * in case NDIS for some reason calls us in some unregular way */
+        /* the MP state should be already set to kVBoxNetDevOpState_Initializing, just a paranoia
+         * in case NDIS for some reason calls us in some irregular way */
         vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Initializing);
 
         LogFlow(("==> Miniport Initialize: Adapt %p\n", pAdapt));
@@ -495,7 +495,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpDoDeinitialization(PADAPT pAdapt)
     Assert(vboxNetFltWinGetOpState(&pAdapt->MPState) == kVBoxNetDevOpState_Initialized);
     /*
      * Set the flag that the miniport below is unbinding, so the request handlers will
-     * fail any request comming later
+     * fail any request coming later
      */
     RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
 
@@ -1150,7 +1150,7 @@ vboxNetFltWinMpQueryPNPCapabilities(
 #endif /* ifndef VBOXNETADP*/
 
 /**
- * This routine does all the procssing for a request with a SetPower Oid
+ * This routine does all the processing for a request with a SetPower Oid
  * The miniport shoud accept  the Set Power and transition to the new state
  *
  * The Set Power should not be passed to the miniport below
@@ -1615,7 +1615,7 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
             // fallthrough:
         case OID_GEN_MEDIA_IN_USE:
             //
-            // Specifiy a complete list of the media types that the NIC
+            // Specify a complete list of the media types that the NIC
             // currently uses.
             //
             pInfo = (PVOID) &Medium;
@@ -1649,7 +1649,7 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
 
         case OID_GEN_MAXIMUM_FRAME_SIZE:
             //
-            // Specifiy the maximum network packet size, in bytes, that the
+            // Specify the maximum network packet size, in bytes, that the
             // NIC supports excluding the header. A NIC driver that emulates
             // another medium type for binding to a transport must ensure that
             // the maximum frame size for a protocol-supplied net packet does
@@ -1836,7 +1836,7 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
 
         case OID_GEN_CURRENT_PACKET_FILTER:
             //
-            // Specifiy the types of net packets such as directed, broadcast
+            // Specify the types of net packets such as directed, broadcast
             // multicast, for which a protocol receives indications from a
             // NIC driver. After NIC is initialized, a protocol driver
             // can send a set OID_GEN_CURRENT_PACKET_FILTER to a non-zero value,
@@ -1894,7 +1894,7 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
             //
             // Return the MAC address the NIC is currently programmed to
             // use. Note that this address could be different from the
-            // permananent address as the user can override using
+            // permanent address as the user can override using
             // registry. Read NdisReadNetworkAddress doc for more info.
             //
             {
@@ -2128,7 +2128,7 @@ Return Value:
     while (FALSE);
 
     //
-    // Program the hardware to add suport for these muticast addresses
+    // Program the hardware to add support for these multicast addresses
     //
 
     LogFlow(("<== vboxNetFltWinMpSetMulticastList\n"));

@@ -88,7 +88,7 @@ typedef struct BUSLOGICDEVICE
     uint32_t                      Alignment0;
 #endif
 
-    /** Our base interace. */
+    /** Our base interface. */
     PDMIBASE                      IBase;
     /** SCSI port interface. */
     PDMISCSIPORT                  ISCSIPort;
@@ -563,7 +563,7 @@ AssertCompileSize(RequestInitializeExtendedMailbox, 5);
 #pragma pack(1)
 typedef struct Mailbox
 {
-    /** Physical adress of the CCB structure in the guest memory. */
+    /** Physical address of the CCB structure in the guest memory. */
     uint32_t u32PhysAddrCCB;
     /** Type specific data. */
     union
@@ -3033,7 +3033,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("BusLogic: Failed to initialize task cache\n"));
 
-    /* Intialize task queue. */
+    /* Initialize task queue. */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
                               buslogicNotifyQueueConsumer, true, "BugLogicTask", &pThis->pNotifierQueueR3);
     if (RT_FAILURE(rc))

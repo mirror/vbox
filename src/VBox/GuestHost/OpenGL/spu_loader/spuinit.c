@@ -69,7 +69,7 @@ static int validate_one_option( const SPUOptions *opt,
         return validate_float( response, min, max );
     case CR_ENUM:
         /* Make sure response string is present in the min string.
-         * For enums, the min string is a comma-separted list of valid values.
+         * For enums, the min string is a comma-separated list of valid values.
          */
         CRASSERT(opt->numValues == 1); /* an enum limitation for now */
         {

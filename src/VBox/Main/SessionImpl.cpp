@@ -833,7 +833,7 @@ HRESULT Session::unlockMachine(bool aFinalRelease, bool aFromServer)
         /* The session object is going to be uninitialized before it has been
          * assigned a direct console of the machine the client requested to open
          * a remote session to using IVirtualBox:: openRemoteSession(). It is OK
-         * only if this close reqiest comes from the server (for example, it
+         * only if this close request comes from the server (for example, it
          * detected that the VM process it started terminated before opening a
          * direct session). Otherwise, it means that the client is too fast and
          * trying to close the session before waiting for the progress object it

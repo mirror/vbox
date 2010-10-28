@@ -1,5 +1,5 @@
 /** @file
- * IPRT - String Manipluation.
+ * IPRT - String Manipulation.
  */
 
 /*
@@ -284,7 +284,7 @@ RTDECL(int)  RTStrDupExTag(char **ppszString, const char *pszString, const char 
 RTDECL(char *) RTStrDupNTag(const char *pszString, size_t cchMax, const char *pszTag);
 
 /**
- * Appends a string onto an existing IPRT allocated string (defaul tag).
+ * Appends a string onto an existing IPRT allocated string (default tag).
  *
  * @retval  VINF_SUCCESS
  * @retval  VERR_NO_STR_MEMORY if we failed to reallocate the string, @a *ppsz
@@ -2302,7 +2302,7 @@ RTDECL(bool) RTStrSimplePatternMultiMatch(const char *pszPatterns, size_t cchPat
  * Compares two version strings RTStrICmp fashion.
  *
  * The version string is split up into sections at punctuation, spaces,
- * underscores, dashes and pluss signs.  The sections are then split up into
+ * underscores, dashes and plus signs.  The sections are then split up into
  * numeric and string sub-sections.  Finally, the sub-sections are compared
  * in a numeric or case insesntivie fashion depending on what they are.
  *
@@ -2774,7 +2774,7 @@ typedef struct RTSTRSPACECORE
     uint32_t        Key;
     /** Pointer to the left leaf node. Don't touch. */
     PRTSTRSPACECORE pLeft;
-    /** Pointer to the left rigth node. Don't touch. */
+    /** Pointer to the left right node. Don't touch. */
     PRTSTRSPACECORE pRight;
     /** Pointer to the list of string with the same key. Don't touch. */
     PRTSTRSPACECORE pList;
@@ -3156,7 +3156,7 @@ RTDECL(int)  RTUtf16ToLatin1Tag(PCRTUTF16 pwszString, char **ppszString, const c
  *                          insufficient.
  *
  *                          If cch is zero or *ppsz is NULL, then a buffer of
- *                          sufficent size is allocated. cch can be used to
+ *                          sufficient size is allocated. cch can be used to
  *                          specify a minimum size of this buffer. Use
  *                          RTUtf16Free() to free the result.
  *
@@ -3194,7 +3194,7 @@ RTDECL(int)  RTUtf16ToLatin1Tag(PCRTUTF16 pwszString, char **ppszString, const c
  *                          insufficient.
  *
  *                          If cch is zero or *ppsz is NULL, then a buffer of
- *                          sufficent size is allocated. cch can be used to
+ *                          sufficient size is allocated. cch can be used to
  *                          specify a minimum size of this buffer. Use
  *                          RTUtf16Free() to free the result.
  *

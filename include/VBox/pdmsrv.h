@@ -271,7 +271,7 @@ typedef struct PDMSRVINS
     /** The base interface of the service.
      * The service constructor initializes this. */
     PDMIBASE                    IBase;
-    /* padding to make achInstanceData aligned at 16 byte boundrary. */
+    /* padding to make achInstanceData aligned at 16 byte boundary. */
     uint32_t                    au32Padding[2];
     /** Pointer to driver instance data. */
     R3PTRTYPE(void *)           pvInstanceData;

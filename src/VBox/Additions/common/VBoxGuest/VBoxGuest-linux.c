@@ -60,7 +60,7 @@
 # define PCI_DEV_PUT(x)         do {} while(0)
 #endif
 
-/* 2.4.x compatability macros that may or may not be defined. */
+/* 2.4.x compatibility macros that may or may not be defined. */
 #ifndef IRQ_RETVAL
 # define irqreturn_t            void
 # define IRQ_RETVAL(n)

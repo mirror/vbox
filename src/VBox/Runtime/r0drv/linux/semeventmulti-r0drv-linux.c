@@ -180,7 +180,7 @@ RTDECL(int) RTSemEventMultiSignal(RTSEMEVENTMULTI hEventMultiSem)
     rtR0SemEventMultiLnxRetain(pThis);
 
     /*
-     * Signal the event object.  The cause of the parnoia here is racing to try
+     * Signal the event object.  The cause of the paranoia here is racing to try
      * deal with racing RTSemEventMultiSignal calls (should probably be
      * forbidden, but it's relatively easy to handle).
      */

@@ -1487,7 +1487,7 @@ DECL_FORCE_INLINE(int) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
  *
  * @returns VBox strict informational status code for EM scheduling. No failures
  *          will be returned here, those are for the caller only.  When
- *          fIsCaller is set, VINF_SUCESS is always returned.
+ *          fIsCaller is set, VINF_SUCCESS is always returned.
  *
  * @param   pVM                 The VM handle.
  * @param   pVCpu               The VMCPU structure for the calling EMT.

@@ -87,7 +87,7 @@ typedef struct PDMIBASE
 #define PDMIBASE_IID                            "a2299c0d-b709-4551-aa5a-73f59ffbed74"
 
 /**
- * Helper macro for quering an interface from PDMIBASE.
+ * Helper macro for querying an interface from PDMIBASE.
  *
  * @returns Correctly typed PDMIBASE::pfnQueryInterface return value.
  *
@@ -150,7 +150,7 @@ typedef PDMIBASERC *PPDMIBASERC;
 #define PDMIBASERC_IID                          "f6a6c649-6cb3-493f-9737-4653f221aeca"
 
 /**
- * Helper macro for quering an interface from PDMIBASERC.
+ * Helper macro for querying an interface from PDMIBASERC.
  *
  * @returns PDMIBASERC::pfnQueryInterface return value.
  *
@@ -222,7 +222,7 @@ typedef PDMIBASER0 *PPDMIBASER0;
 #define PDMIBASER0_IID                          "9c9b99b8-7f53-4f59-a3c2-5bc9659c7944"
 
 /**
- * Helper macro for quering an interface from PDMIBASER0.
+ * Helper macro for querying an interface from PDMIBASER0.
  *
  * @returns PDMIBASER0::pfnQueryInterface return value.
  *
@@ -486,7 +486,7 @@ typedef struct PDMIDISPLAYPORT
      *
      * @returns VBox status code.
      * @param   pInterface          Pointer to this interface.
-     * @param   cMilliesInterval    Number of millies between two refreshes.
+     * @param   cMilliesInterval    Number of millis between two refreshes.
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetRefreshRate,(PPDMIDISPLAYPORT pInterface, uint32_t cMilliesInterval));
@@ -1707,7 +1707,7 @@ typedef struct PDMIHOSTPARALLELPORT
     DECLR3CALLBACKMEMBER(int, pfnNotifyRead,(PPDMIHOSTPARALLELPORT pInterface, const void *pvBuf, size_t *pcbRead));
 
     /**
-     * Notify device/driver that an interrupt has occured.
+     * Notify device/driver that an interrupt has occurred.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -2060,10 +2060,10 @@ typedef struct PDMIVMMDEVPORT
 #define PDMIVMMDEVPORT_IID                      "d7e52035-3b6c-422e-9215-2a75646a945d"
 
 
-/** Pointer to a HPET legacy notifcation interface. */
+/** Pointer to a HPET legacy notification interface. */
 typedef struct PDMIHPETLEGACYNOTIFY *PPDMIHPETLEGACYNOTIFY;
 /**
- * HPET legacy notifcation interface.
+ * HPET legacy notification interface.
  */
 typedef struct PDMIHPETLEGACYNOTIFY
 {
@@ -2713,7 +2713,7 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
      * @param   pInterface          Pointer to this interface.
      * @param   pCmd                The Video HW Acceleration Command that was
      *                              completed.
-     * @todo r=bird: if asynch means asyncronous; then
+     * @todo r=bird: if async means asynchronous; then
      *                   s/pfnVHWACommandCompleteAsynch/pfnVHWACommandCompleteAsync/;
      *               fi
      */

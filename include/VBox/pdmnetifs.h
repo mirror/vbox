@@ -164,7 +164,7 @@ typedef struct PDMINETWORKDOWN
     DECLR3CALLBACKMEMBER(void, pfnXmitPending,(PPDMINETWORKDOWN pInterface));
 
 } PDMINETWORKDOWN;
-/** PDMINETWORKDOWN inteface ID. */
+/** PDMINETWORKDOWN interface ID. */
 #define PDMINETWORKDOWN_IID                     "52b8cdbb-a087-493b-baa7-81ec3b803e06"
 
 

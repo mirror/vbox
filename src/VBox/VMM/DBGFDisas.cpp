@@ -55,7 +55,7 @@ typedef struct
     PVMCPU          pVCpu;
     /** The address space for resolving symbol. */
     RTDBGAS         hAs;
-    /** Pointer to the first byte in the segemnt. */
+    /** Pointer to the first byte in the segment. */
     RTGCUINTPTR     GCPtrSegBase;
     /** Pointer to the byte after the end of the segment. (might have wrapped!) */
     RTGCUINTPTR     GCPtrSegEnd;
@@ -86,7 +86,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR pSrc, uint8_t *pDest, ui
 
 
 /**
- * Calls the dissassembler with the proper reader functions and such for disa
+ * Calls the disassembler with the proper reader functions and such for disa
  *
  * @returns VBox status code.
  * @param   pVM         VM handle
@@ -163,7 +163,7 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
 
 #if 0
 /**
- * Calls the dissassembler for disassembling the next instruction.
+ * Calls the disassembler for disassembling the next instruction.
  *
  * @returns VBox status code.
  * @param   pState      The disas CPU state.
@@ -183,7 +183,7 @@ static int dbgfR3DisasInstrNext(PDBGFDISASSTATE pState)
 
 
 /**
- * Done with the dissassembler state, free associated resources.
+ * Done with the disassembler state, free associated resources.
  *
  * @param   pState      The disas CPU state ++.
  */
@@ -248,7 +248,7 @@ static DECLCALLBACK(int) dbgfR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
             }
         }
 
-        /* check the segemnt limit */
+        /* check the segment limit */
         if (!pState->f64Bits && PtrSrc > pState->cbSegLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 
@@ -318,7 +318,7 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
  * @returns VBox status code.
  * @param       pVM             The VM handle.
  * @param       pVCpu           The virtual CPU handle.
- * @param       Sel             The code selector. This used to determin the 32/16 bit ness and
+ * @param       Sel             The code selector. This used to determine the 32/16 bit ness and
  *                              calculation of the actual instruction address.
  * @param       pGCPtr          Pointer to the variable holding the code address
  *                              relative to the base of Sel.
@@ -559,7 +559,7 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   idCpu           The ID of virtual CPU.
- * @param   Sel             The code selector. This used to determin the 32/16 bit ness and
+ * @param   Sel             The code selector. This used to determine the 32/16 bit ness and
  *                          calculation of the actual instruction address.
  * @param   GCPtr           The code address relative to the base of Sel.
  * @param   fFlags          Flags controlling where to start and how to format.
@@ -625,7 +625,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint32_t c
  *
  * @returns VBox status code.
  * @param   pVCpu           VMCPU handle.
- * @param   pszPrefix       Short prefix string to the dissassembly string. (optional)
+ * @param   pszPrefix       Short prefix string to the disassembly string. (optional)
  */
 VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszPrefix)
 {
@@ -650,7 +650,7 @@ VMMR3DECL(int) DBGFR3DisasInstrCurrentLogInternal(PVMCPU pVCpu, const char *pszP
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   pVCpu           The virtual CPU handle, defaults to CPU 0 if NULL.
- * @param   Sel             The code selector. This used to determin the 32/16 bit-ness and
+ * @param   Sel             The code selector. This used to determine the 32/16 bit-ness and
  *                          calculation of the actual instruction address.
  * @param   GCPtr           The code address relative to the base of Sel.
  */

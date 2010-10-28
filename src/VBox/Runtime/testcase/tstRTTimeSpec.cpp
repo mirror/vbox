@@ -308,7 +308,7 @@ int main()
     CHECK_TIME(&T1, 2007,12,06, 02,15,23,        1, 340, 3, 0, RTTIME_FLAGS_TYPE_UTC | RTTIME_FLAGS_COMMON_YEAR);
 
     /*
-     * Convertsions.
+     * Conversions.
      */
 #define CHECK_NSEC(Ts1, T2) \
     do { \

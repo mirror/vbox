@@ -95,17 +95,17 @@ InitializeIdeControllerDriver (
     Chipset Ide Driver EntryPoint function. It follows the standard EFI driver 
     model. It's called by StartImage() of DXE Core
     
-  Argments:
+  Arguments:
   
-    ImageHnadle  -- While the driver image loaded be the ImageLoader(), 
+    ImageHandle  -- While the driver image loaded be the ImageLoader(), 
                     an image handle is assigned to this driver binary, 
                     all activities of the driver is tied to this ImageHandle
     *SystemTable -- A pointer to the system table, for all BS(Boo Services) and
                     RT(Runtime Services)
 
-  Retruns:
+  Returns:
   
-    Always call EfiLibInstallDriverBindingProtocol( ) and retrun the result
+    Always call EfiLibInstallDriverBindingProtocol( ) and return the result
 
 --*/
 {
@@ -466,7 +466,7 @@ IdeInitDisqualifyMode (
 Routine Description:
 
   This function is called by IdeBus driver to disqualify unsupported operation
-  mode on specfic IDE device
+  mode on specific IDE device
 
 Arguments:
 

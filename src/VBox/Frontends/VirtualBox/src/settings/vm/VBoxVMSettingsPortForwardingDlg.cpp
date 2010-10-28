@@ -665,7 +665,7 @@ void VBoxVMSettingsPortForwardingDlg::retranslateUi()
     /* Set window title: */
     setWindowTitle(tr("Port Forwarding Rules"));
 
-    /* Table trnslations: */
+    /* Table translations: */
     m_pTableView->setWhatsThis(tr("This table contains a list of port forwarding rules."));
 
     /* Set action's text: */

@@ -631,10 +631,10 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
     psurf->ppdev        = ppdev;
 
     //
-    // On NT4.0 we create a GDI managed bitmap as the primay surface. But
+    // On NT4.0 we create a GDI managed bitmap as the primary surface. But
     // on NT5.0 we create a device managed primary.
     //
-    // On NT4.0 we still use our driver's accleration capabilities by
+    // On NT4.0 we still use our driver's acceleration capabilities by
     // doing a trick with EngLockSurface on the GDI managed primary.
     //
 
@@ -686,7 +686,7 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
 
         //
         // Jam in the value of dhsurf into screen SURFOBJ. We do this to
-        // make sure the driver acclerates Drv calls we hook and not
+        // make sure the driver accelerates Drv calls we hook and not
         // punt them back to GDI as the SURFOBJ's dhsurf = 0.
         //
         ppdev->psoScreenBitmap = EngLockSurface(hsurf);

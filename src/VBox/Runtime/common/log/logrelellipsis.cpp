@@ -43,7 +43,7 @@
  * @param   pLogger     Pointer to logger instance.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
- *                      The value ~0U is reserved for compatability with RTLogLogger[V] and is
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
  *                      only for internal usage!
  * @param   pszFormat   Format string.
  * @param   ...         Format arguments.

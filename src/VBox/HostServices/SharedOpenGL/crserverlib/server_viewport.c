@@ -146,7 +146,7 @@ crServerComputeViewportBounds(const CRViewportState *v, CRMuralInfo *mural)
 			p.x2 = (GLfloat) (extent->clippedImagewindow.x2 - vpx) / vpw;
 			p.y2 = (GLfloat) (extent->clippedImagewindow.y2 - vpy) / vph;
 
-			/* XXX not sure this clamping is really neeed anymore
+			/* XXX not sure this clamping is really need anymore
 			 */
 			if (p.x1 < 0.0) { 
 				p.x1 = 0.0;

@@ -121,7 +121,7 @@ VBGLR3DECL(int) VbglR3GuestPropConnect(uint32_t *pu32ClientId)
     Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
     RT_ZERO(Info.Loc.u);
     strcpy(Info.Loc.u.host.achName, "VBoxGuestPropSvc");
-    Info.u32ClientID = UINT32_MAX;  /* try make valgrid shut up. */
+    Info.u32ClientID = UINT32_MAX;  /* try make valgrind shut up. */
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CONNECT, &Info, sizeof(Info));
     if (RT_SUCCESS(rc))
@@ -358,7 +358,7 @@ VBGLR3DECL(int) VbglR3GuestPropRead(uint32_t u32ClientId, const char *pszName,
      * Buffer layout: Value\0Flags\0.
      *
      * If the caller cares about any of these strings, make sure things are
-     * propertly terminated (paranoia).
+     * properly terminated (paranoia).
      */
     if (    RT_SUCCESS(rc)
         &&  (ppszValue != NULL || ppszFlags != NULL))
@@ -653,7 +653,7 @@ VBGLR3DECL(int) VbglR3GuestPropEnum(uint32_t u32ClientId,
     {
         /*
          * Transfer ownership of the buffer to the handle structure and
-         * call VbglR3GuestPropEnumNext to retriev the first entry.
+         * call VbglR3GuestPropEnumNext to retrieve the first entry.
          */
         Handle->pchNext = Handle->pchBuf = Buf.release();
         Handle->pchBufEnd = Handle->pchBuf + cchBuf;
@@ -909,7 +909,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
      * Buffer layout: Name\0Value\0Flags\0.
      *
      * If the caller cares about any of these strings, make sure things are
-     * propertly terminated (paranoia).
+     * properly terminated (paranoia).
      */
     if (    RT_SUCCESS(rc)
         &&  (ppszName != NULL || ppszValue != NULL || ppszFlags != NULL))

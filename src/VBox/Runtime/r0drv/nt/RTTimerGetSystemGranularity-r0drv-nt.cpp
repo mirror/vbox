@@ -42,7 +42,7 @@ RTDECL(uint32_t) RTTimerGetSystemGranularity(void)
 {
     /*
      * Get the default/max timer increment value, return it if ExSetTimerResolution
-     * isn't available. Accoring to the sysinternals guys NtQueryTimerResolution
+     * isn't available. According to the sysinternals guys NtQueryTimerResolution
      * is only available in userland and they find it equally annoying.
      */
     ULONG ulTimeInc = KeQueryTimeIncrement();

@@ -651,7 +651,7 @@ typedef struct _PORT_MOUSE_EXTENSION {
     //
     // The tick count (since system boot) at which the mouse last interrupted.
     // Retrieved via KeQueryTickCount.  Used to determine whether a byte of
-    // the mouse data packet has been lost.  Allows the driver to synch
+    // the mouse data packet has been lost.  Allows the driver to sync
     // up with the true mouse input state.
     //
 
@@ -674,7 +674,7 @@ typedef struct _PORT_MOUSE_EXTENSION {
     //
     // Number of interval timer ticks to wait before deciding that the
     // next mouse interrupt is for the start of a new packet.  Used to
-    // synch up again if a byte of the mouse packet gets lost.
+    // sync up again if a byte of the mouse packet gets lost.
     //
 
     ULONG SynchTickCount;
@@ -820,7 +820,7 @@ typedef struct _DEVICE_EXTENSION {
     LONG TimerCount;
 
     //
-    // Set at intialization to indicate that the register
+    // Set at initialization to indicate that the register
     // addresses must be unmapped when the driver is unloaded.
     //
 

@@ -60,7 +60,7 @@
 /**
  * DHCP configuration item.
  *
- * This is all public data because I'm too lazy to do it propertly right now.
+ * This is all public data because I'm too lazy to do it properly right now.
  */
 class VBoxNetDhcpCfg
 {
@@ -1360,7 +1360,7 @@ public:
     /**
      * Begin an option.
      *
-     * @returns true on succes, false if we're out of space.
+     * @returns true on success, false if we're out of space.
      *
      * @param   uOption     The option number.
      * @param   cb          The amount of data.
@@ -1558,7 +1558,7 @@ public:
      * Adds the terminating END option.
      *
      * The END will always be added as we're reserving room for it, however, we
-     * might've dropped previous options due to overflows and that is what the
+     * might have dropped previous options due to overflows and that is what the
      * return status indicates.
      *
      * @returns true on success, false on a (previous) overflow.

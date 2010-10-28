@@ -72,7 +72,7 @@ typedef struct VciHdr
     uint32_t    cBlkMap;
     /** UUID of the image. */
     RTUUID      uuidImage;
-    /** Modifcation UUID for the cache. */
+    /** Modification UUID for the cache. */
     RTUUID      uuidModification;
     /** Reserved for future use. */
     uint8_t     abReserved[951];
@@ -778,7 +778,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
 }
 
 /**
- * Saves the block map in the cache image. All neccessary on disk structures
+ * Saves the block map in the cache image. All necessary on disk structures
  * are written.
  *
  * @returns VBox status code.

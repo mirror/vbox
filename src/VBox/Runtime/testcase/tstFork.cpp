@@ -56,7 +56,7 @@ int main()
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Skipped\n");
 #else
     /*
-     * Get values that are supposed to or change accross the fork.
+     * Get values that are supposed to or change across the fork.
      */
     RTPROCESS const ProcBefore = RTProcSelf();
 

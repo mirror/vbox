@@ -2660,7 +2660,7 @@ void disasmAddChar(char *psz, char ch)
  *      XCHG
  *      XOR
  *
- * @param   pCpu    Fully dissassembled instruction.
+ * @param   pCpu    Fully disassembled instruction.
  */
 void disValidateLockSequence(PDISCPUSTATE pCpu)
 {

@@ -32,7 +32,7 @@
 BEGINCODE
 
 ;;
-; The PAUSE variant of NOP for helping hyperthreaded CPUs detecing spin locks.
+; The PAUSE variant of NOP for helping hyperthreaded CPUs detecting spin locks.
 ;
 BEGINPROC_EXPORTED ASMNopPause
         pause

@@ -77,12 +77,12 @@
 ;; @def MYPUSHSEGS
 ; Macro saving all segment registers on the stack.
 ; @param 1  full width register name
-; @param 2  16-bit regsiter name for \a 1.
+; @param 2  16-bit register name for \a 1.
 
 ;; @def MYPOPSEGS
 ; Macro restoring all segment registers on the stack
 ; @param 1  full width register name
-; @param 2  16-bit regsiter name for \a 1.
+; @param 2  16-bit register name for \a 1.
 
 %ifdef MAYBE_64_BIT
   ; Save a host and load the corresponding guest MSR (trashes rdx & rcx)

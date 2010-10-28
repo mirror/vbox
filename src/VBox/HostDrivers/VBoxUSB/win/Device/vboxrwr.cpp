@@ -136,7 +136,7 @@ Routine Description:
     This routine creates a VBOXUSB_RW_CONTEXT for a read/write.
     This read/write is performed in stages of VBoxUSB_MAX_TRANSFER_SIZE.
     once a stage of transfer is complete, then the irp is circulated again,
-    until the requested length of tranfer is performed.
+    until the requested length of transfer is performed.
 
 Arguments:
 

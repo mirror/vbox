@@ -276,7 +276,7 @@ STDMETHODIMP HostUSBDevice::COMGETTER(PortVersion)(USHORT *aPortVersion)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Port version is 2 (EHCI) if and only if the device runs at high speed;
-     * if speed is unknown, fall back to the old and innacurate method.
+     * if speed is unknown, fall back to the old and inaccurate method.
      */
     if (mUsb->enmSpeed == USBDEVICESPEED_UNKNOWN)
         *aPortVersion = mUsb->bcdUSB >> 8;
@@ -481,7 +481,7 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
     setState(kHostUSBDeviceState_AttachingToVM, kHostUSBDeviceState_UsedByVM);
 
     /*
-     * The VM process will query the object, so grab a refernce to ourselves and leave the locks.
+     * The VM process will query the object, so grab a reference to ourselves and leave the locks.
      */
     ComPtr<IUSBDevice> d = this;
 
@@ -493,7 +493,7 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
     /*
      * Call the VM process (IPC) and request it to attach the device.
      *
-     * There are many reasonas for this to fail, so, as a consequence we don't
+     * There are many reasons for this to fail, so, as a consequence we don't
      * assert the return code as it will crash the daemon and annoy the heck
      * out of people.
      */
@@ -572,7 +572,7 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
     /*
      * Call the VM process (IPC) and request it to detach the device.
      *
-     * There are many reasonas for this to fail, so, as a consequence we don't
+     * There are many reasons for this to fail, so, as a consequence we don't
      * assert the return code as it will crash the daemon and annoy the heck
      * out of people.
      */
@@ -835,7 +835,7 @@ bool HostUSBDevice::wasActuallyDetached()
  * If a transition is pending, mIsPhysicallyDetached will be set and
  * handled when the transition advances forward.
  *
- * Otherwsie the device will be detached from any VM currently using it - this
+ * Otherwise the device will be detached from any VM currently using it - this
  * involves IPC and will temporarily abandond locks - and all the device data
  * reset.
  *
@@ -1099,7 +1099,7 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
 #  undef  HOSTUSBDEVICE_FUZZY_STATE
 # endif
     /*
-     * For some hosts we'll have to be pretty carefule here because
+     * For some hosts we'll have to be pretty careful here because
      * they don't always have a clue what is going on. This is
      * particularly true on linux and solaris, while windows and
      * darwin generally knows a bit more.
@@ -1111,7 +1111,7 @@ bool HostUSBDevice::updateState(PCUSBDEVICE aDev, bool *aRunFilters, SessionMach
         switch (mUsb->enmState)
         {
             /*
-             * Little fuzzyness here, except where we fake capture.
+             * Little fuzziness here, except where we fake capture.
              */
             case USBDEVICESTATE_USED_BY_HOST:
                 switch (mUniState)
@@ -1687,7 +1687,7 @@ bool HostUSBDevice::hasAsyncOperationTimedOut() const
  *
  * This method will verify that the state transition is a legal one
  * according to the statemachine. It will also take care of the
- * associated house keeping and determin if filters needs to be applied.
+ * associated house keeping and determine if filters needs to be applied.
  *
  * @param   aNewState           The new state.
  * @param   aNewPendingState    The final state of a transition when applicable.
@@ -2385,7 +2385,7 @@ bool HostUSBDevice::failTransition()
 
 
 /**
- * Determins the canonical state of the device.
+ * Determines the canonical state of the device.
  *
  * @returns canonical state.
  *

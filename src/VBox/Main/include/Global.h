@@ -188,7 +188,7 @@ public:
     /**
      * Try convert a VirtualBox status code (VBox/err.h) to a COM status code.
      *
-     * This is mainly inteded for dealing with vboxStatusCodeFromCOM() return
+     * This is mainly intended for dealing with vboxStatusCodeFromCOM() return
      * values.  If used on anything else, it won't be able to cope with most of the
      * input!
      *

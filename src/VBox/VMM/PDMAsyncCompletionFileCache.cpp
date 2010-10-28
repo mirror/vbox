@@ -748,8 +748,8 @@ static bool pdmacFileCacheAddDirtyEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, 
 
 
 /**
- * Completes a task segment freeing all ressources and completes the task handle
- * if everything was transfered.
+ * Completes a task segment freeing all resources and completes the task handle
+ * if everything was transferred.
  *
  * @returns Next task segment handle.
  * @param   pTaskSeg          Task segment to complete.
@@ -789,14 +789,14 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int 
     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint = pEntry->pEndpoint;
     PPDMACFILEENDPOINTCACHE pEndpointCache = &pEndpoint->DataCache;
 
-    /* Reference the entry now as we are clearing the I/O in progres flag
+    /* Reference the entry now as we are clearing the I/O in progress flag
      * which protects the entry till now. */
     pdmacFileEpCacheEntryRef(pEntry);
 
     RTSemRWRequestWrite(pEndpoint->DataCache.SemRWEntries, RT_INDEFINITE_WAIT);
     pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IO_IN_PROGRESS;
 
-    /* Process waiting segment list. The data in entry might have changed inbetween. */
+    /* Process waiting segment list. The data in entry might have changed in-between. */
     bool fDirty = false;
     PPDMACFILETASKSEG pComplete = pEntry->pWaitingHead;
     PPDMACFILETASKSEG pCurr     = pComplete;
@@ -906,7 +906,7 @@ static void pdmacFileCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pv
 }
 
 /**
- * Initializies the I/O cache.
+ * Initializes the I/O cache.
  *
  * returns VBox status code.
  * @param    pClassFile    The global class data for file endpoints.
@@ -1174,7 +1174,7 @@ static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 }
 
 /**
- * Destroys all cache ressources used by the given endpoint.
+ * Destroys all cache resources used by the given endpoint.
  *
  * @returns nothing.
  * @param    pEndpoint    The endpoint to the destroy.
@@ -1357,7 +1357,7 @@ DECLINLINE(void) pdmacFileEpCacheEntryAddWaitingSegment(PPDMACFILECACHEENTRY pEn
  * in exclusive mode.
  *
  * @returns true if the flag in fSet is set and the one in fClear is clear.
- *          false othwerise.
+ *          false otherwise.
  *          The R/W semaphore is only held if true is returned.
  *
  * @param   pEndpointCache   The endpoint cache instance data.
@@ -1374,7 +1374,7 @@ DECLINLINE(bool) pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(PPDMACFILEENDPOI
 
     if (fPassed)
     {
-        /* Acquire the lock and check again becuase the completion callback might have raced us. */
+        /* Acquire the lock and check again because the completion callback might have raced us. */
         RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
 
         fFlags = ASMAtomicReadU32(&pEntry->fFlags);
@@ -1887,7 +1887,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                                                    PDMACTASKFILETRANSFER_READ);
             }
 #else
-            /* Clip read size if neccessary. */
+            /* Clip read size if necessary. */
             PPDMACFILECACHEENTRY pEntryAbove;
             pdmacFileEpCacheGetCacheBestFitEntryByOffset(pEndpointCache, off,
                                                          &pEntryAbove, NULL);
@@ -1992,7 +1992,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                                                                     PDMACFILECACHE_ENTRY_IS_DIRTY,
                                                                     0))
                 {
-                    /* If it is dirty but not in progrss just update the data. */
+                    /* If it is dirty but not in progress just update the data. */
                     if (!(pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS))
                     {
                         pdmacFileEpCacheCopyFromIoMemCtx(&IoMemCtx,

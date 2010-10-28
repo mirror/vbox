@@ -83,7 +83,7 @@ typedef struct PDMASYNCCOMPLETIONTEMPLATE
             R3PTRTYPE(PFNPDMASYNCCOMPLETEDRV)   pfnCompleted;
             /** Pointer to the driver instance owning the template. */
             R3PTRTYPE(PPDMDRVINS)               pDrvIns;
-            /** User agument given during template creation.
+            /** User argument given during template creation.
              *  This is only here to make things much easier
              *  for DrVVD. */
             void                               *pvTemplateUser;
@@ -122,7 +122,7 @@ typedef struct PDMACBWMGR
     struct PDMACBWMGR                          *pNext;
     /** Pointer to the shared UVM structure. */
     PPDMASYNCCOMPLETIONEPCLASS                  pEpClass;
-    /** Identifer of the manager. */
+    /** Identifier of the manager. */
     char                                       *pszId;
     /** Maximum number of bytes the endpoints are allowed to transfer (Max is 4GB/s currently) */
     volatile uint32_t                           cbTransferPerSecMax;
@@ -735,7 +735,7 @@ bool pdmacEpIsTransferAllowed(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint32_t cb
         {
             fAllowed = false;
 
-            /* We are out of ressources  Check if we can update again. */
+            /* We are out of resources  Check if we can update again. */
             uint64_t tsNow          = RTTimeSystemNanoTS();
             uint64_t tsUpdatedLast  = ASMAtomicUoReadU64(&pBwMgr->tsUpdatedLast);
 
@@ -809,7 +809,7 @@ void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, boo
 /**
  * Worker initializing a endpoint class.
  *
- * @returns VBox statis code.
+ * @returns VBox status code.
  * @param   pVM        Pointer to the shared VM instance data.
  * @param   pEpClass   Pointer to the endpoint class structure.
  * @param   pCfgHandle Pointer to the the CFGM tree.

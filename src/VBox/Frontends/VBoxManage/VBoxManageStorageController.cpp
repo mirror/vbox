@@ -200,7 +200,7 @@ int handleStorageAttach(HandlerArg *a)
     }
 
     /* for sata controller check if the port count is big enough
-     * to accomodate the current port which is being assigned
+     * to accommodate the current port which is being assigned
      * else just increase the port count
      */
     {

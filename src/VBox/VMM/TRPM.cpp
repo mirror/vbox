@@ -41,7 +41,7 @@
  * traps.  The latter group may be recoverable depending on when they happen and
  * whether there is a handler for it, otherwise it will cause a guru meditation.
  *
- * TRPM disgishishes the between the first two (virt and guest traps) and the
+ * TRPM distinguishes the between the first two (virt and guest traps) and the
  * latter (hyper) by checking the CPL of the trapping code, if CPL == 0 then
  * it's a hyper trap otherwise it's a virt/guest trap.  There are three trap
  * dispatcher tables, one ad-hoc for one time traps registered via
@@ -1379,7 +1379,7 @@ VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
     RTGCPTR   GCPtrIDTELast = GCPtrIDTE + (cEntries - 1) * sizeof(VBOXIDTE);
 
     /*
-     * Outer loop: interate pages.
+     * Outer loop: iterate pages.
      */
     while (GCPtrIDTE <= GCPtrIDTELast)
     {

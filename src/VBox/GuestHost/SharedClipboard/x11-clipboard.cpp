@@ -622,7 +622,7 @@ static int clipInit(CLIPBACKEND *pCtx)
 
     /* Make sure we are thread safe */
     XtToolkitThreadInitialize();
-    /* Set up the Clipbard application context and main window.  We call all
+    /* Set up the Clipboard application context and main window.  We call all
      * these functions directly instead of calling XtOpenApplication() so
      * that we can fail gracefully if we can't get an X11 display. */
     XtToolkitInitialize();
@@ -1439,7 +1439,7 @@ static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
     if (!pwszDest)
         rc = VERR_NO_MEMORY;
 
-    /* And do the convertion, bearing in mind that Latin-1 expands "naturally"
+    /* And do the conversion, bearing in mind that Latin-1 expands "naturally"
      * to Utf-16. */
     if (RT_SUCCESS(rc))
     {

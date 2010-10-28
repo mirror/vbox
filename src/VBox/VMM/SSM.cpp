@@ -105,7 +105,7 @@
  *       - type 1: Terminator with CRC-32 and unit size.
  *       - type 2: Raw data record.
  *       - type 3: Raw data compressed by LZF. The data is prefixed by a 8-bit
- *                 field countining the length of the uncompressed data given in
+ *                 field containing the length of the uncompressed data given in
  *                 1KB units.
  *       - type 4: Zero data. The record header is followed by a 8-bit field
  *                 counting the length of the zero data given in 1KB units.
@@ -185,7 +185,7 @@
 
 /** @name SSMFILEHDR::fFlags
  * @{ */
-/** The stream is checkesummed up to the footer using CRC-32. */
+/** The stream is checksummed up to the footer using CRC-32. */
 #define SSMFILEHDR_FLAGS_STREAM_CRC32           RT_BIT_32(0)
 /** Indicates that the file was produced by a live save. */
 #define SSMFILEHDR_FLAGS_STREAM_LIVE_SAVE       RT_BIT_32(1)
@@ -471,7 +471,7 @@ typedef struct SSMHANDLE
 
     /** Pointer to the progress callback function. */
     PFNVMPROGRESS           pfnProgress;
-    /** User specified arguemnt to the callback function. */
+    /** User specified argument to the callback function. */
     void                   *pvUser;
     /** Next completion percentage. (corresponds to offEstProgress) */
     unsigned                uPercent;
@@ -976,7 +976,7 @@ static DECLCALLBACK(int) ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uP
 static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
     /*
-     * String table containg pairs of variable and value string.
+     * String table containing pairs of variable and value string.
      * Terminated by two empty strings.
      */
     SSMR3PutStrZ(pSSM, "Build Type");
@@ -1101,7 +1101,7 @@ static DECLCALLBACK(int) ssmR3LiveControlLoadExec(PVM pVM, PSSMHANDLE pSSM, uint
  * @param   cbGuess         The guessed data unit size.
  * @param   pszBefore       Name of data unit to be placed in front of.
  *                          Optional.
- * @param   ppUnit          Where to store the insterted unit node.
+ * @param   ppUnit          Where to store the inserted unit node.
  *                          Caller must fill in the missing details.
  */
 static int ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance,
@@ -1165,7 +1165,7 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance,
         return VERR_NO_MEMORY;
 
     /*
-     * Fill in (some) data. (Stuff is zero'ed.)
+     * Fill in (some) data. (Stuff is zero'd.)
      */
     pUnit->u32Version   = uVersion;
     pUnit->u32Instance  = uInstance;
@@ -1407,7 +1407,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uIns
  *                          Use NULL to deregister all data units for that device instance.
  * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
- * @remark  Only for dynmaic data units and dynamic unloaded modules.
+ * @remark  Only for dynamic data units and dynamic unloaded modules.
  */
 VMMR3_INT_DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance)
 {
@@ -1483,7 +1483,7 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const cha
  *                          Use NULL to deregister all data units for that driver instance.
  * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique. Ignored if pszName is NULL.
- * @remark  Only for dynmaic data units and dynamic unloaded modules.
+ * @remark  Only for dynamic data units and dynamic unloaded modules.
  */
 VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance)
 {
@@ -1554,7 +1554,7 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const cha
  * @param   pVM             The VM handle.
  * @param   enmType         Unit type
  * @param   pszName         Data unit name.
- * @remark  Only for dynmaic data units.
+ * @remark  Only for dynamic data units.
  */
 static int ssmR3DeregisterByNameAndType(PVM pVM, const char *pszName, SSMUNITTYPE enmType)
 {
@@ -1610,7 +1610,7 @@ static int ssmR3DeregisterByNameAndType(PVM pVM, const char *pszName, SSMUNITTYP
  * @returns VBox status.
  * @param   pVM             The VM handle.
  * @param   pszName         Data unit name.
- * @remark  Only for dynmaic data units.
+ * @remark  Only for dynamic data units.
  */
 VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
 {
@@ -1624,7 +1624,7 @@ VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName)
  * @returns VBox status.
  * @param   pVM             The VM handle.
  * @param   pszName         Data unit name.
- * @remark  Only for dynmaic data units.
+ * @remark  Only for dynamic data units.
  */
 VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
 {
@@ -2600,7 +2600,7 @@ static uint8_t const *ssmR3StrmReadDirect(PSSMSTRM pStrm, size_t cbToRead)
 
     /*
      * Too lazy to fetch more data for the odd case that we're
-     * exactly at the boundrary between two buffers.
+     * exactly at the boundary between two buffers.
      */
     PSSMSTRMBUF pBuf = pStrm->pCur;
     if (RT_LIKELY(pBuf))
@@ -2707,7 +2707,7 @@ static void ssmR3StrmDisableChecksumming(PSSMSTRM pStrm)
 /**
  * Used by SSMR3Seek to position the stream at the new unit.
  *
- * @returns VBox stutus code.
+ * @returns VBox status code.
  * @param   pStrm       The strem handle.
  * @param   off         The seek offset.
  * @param   uMethod     The seek method.
@@ -2810,7 +2810,7 @@ static bool ssmR3StrmIsFile(PSSMSTRM pStrm)
  * @param   poff        Where to optionally store the position.  Useful when
  *                      using a negative off.
  *
- * @remarks Failures occuring while peeking will not be raised on the stream.
+ * @remarks Failures occurring while peeking will not be raised on the stream.
  */
 static int ssmR3StrmPeekAt(PSSMSTRM pStrm, RTFOFF off, void *pvBuf, size_t cbToRead, uint64_t *poff)
 {
@@ -5228,7 +5228,7 @@ static int ssmR3DoLiveExecVoteLoop(PVM pVM, PSSMHANDLE pSSM)
     /*
      * The pass loop.
      *
-     * The number of interations is restricted for two reasons, first
+     * The number of iterations is restricted for two reasons, first
      * to make sure
      */
 #define SSM_MAX_PASSES  _1M
@@ -5454,7 +5454,7 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, uint32_t cMsMaxDowntime,
     if (RT_SUCCESS(rc))
     {
         /*
-         * Return and let the requstor thread do the pfnLiveExec/Vote part
+         * Return and let the requestor thread do the pfnLiveExec/Vote part
          * via SSMR3SaveFinishLive
          */
         pSSM->enmOp = SSMSTATE_LIVE_STEP1;
@@ -6032,7 +6032,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
                     return rc;
                 if (cbToRead > cbBuf)
                 {
-                    /* Spill the remainer into the data buffer. */
+                    /* Spill the remainder into the data buffer. */
                     memset(&pSSM->u.Read.abDataBuffer[0], 0, cbToRead - cbBuf);
                     pSSM->u.Read.cbDataBuffer  = cbToRead - (uint32_t)cbBuf;
                     pSSM->u.Read.offDataBuffer = 0;
@@ -8626,7 +8626,7 @@ VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pSSM                The SSM handle.
  * @param   pszUnit             The unit to seek to.
- * @param   iInstance           The particulart insance we seek.
+ * @param   iInstance           The particular instance we seek.
  * @param   piVersion           Where to store the unit version number.
  */
 static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion)
@@ -8694,7 +8694,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
  * @param   cDirEntries         The number of directory entries.
  * @param   offDir              The directory offset in the file.
  * @param   pszUnit             The unit to seek to.
- * @param   iInstance           The particulart insance we seek.
+ * @param   iInstance           The particular instance we seek.
  * @param   piVersion           Where to store the unit version number.
  */
 static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, uint32_t cDirEntries, uint64_t offDir,
@@ -8781,7 +8781,7 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
  * @returns VBox status code.
  * @param   pSSM                The SSM handle.
  * @param   pszUnit             The unit to seek to.
- * @param   iInstance           The particulart insance we seek.
+ * @param   iInstance           The particular instance we seek.
  * @param   piVersion           Where to store the unit version number.
  */
 static int ssmR3FileSeekV2(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion)
@@ -8970,7 +8970,7 @@ VMMR3DECL(uint32_t) SSMR3HandleMaxDowntime(PSSMHANDLE pSSM)
  * @param   pSSM            The saved state handle.
  *
  * @remarks This method should ONLY be used for hacks when loading OLDER saved
- *          state that have data layout or semantical changes without the
+ *          state that have data layout or semantic changes without the
  *          compulsory version number change.
  */
 VMMR3DECL(uint32_t) SSMR3HandleHostBits(PSSMHANDLE pSSM)
@@ -8988,7 +8988,7 @@ VMMR3DECL(uint32_t) SSMR3HandleHostBits(PSSMHANDLE pSSM)
  * @param   pSSM            The saved state handle.
  *
  * @remarks This method should ONLY be used for hacks when loading OLDER saved
- *          state that have data layout or semantical changes without the
+ *          state that have data layout or semantic changes without the
  *          compulsory version number change.  Be VERY careful with this
  *          function since it will return different values for OSE builds!
  */
@@ -9013,7 +9013,7 @@ VMMR3DECL(uint32_t)     SSMR3HandleRevision(PSSMHANDLE pSSM)
  * @param   pSSM            The saved state handle.
  *
  * @remarks This method should ONLY be used for hacks when loading OLDER saved
- *          state that have data layout or semantical changes without the
+ *          state that have data layout or semantic changes without the
  *          compulsory version number change.
  */
 VMMR3DECL(uint32_t)     SSMR3HandleVersion(PSSMHANDLE pSSM)
@@ -9041,7 +9041,7 @@ VMMR3DECL(uint32_t)     SSMR3HandleVersion(PSSMHANDLE pSSM)
  * @param   pSSM            The saved state handle.
  *
  * @remarks This method should ONLY be used for hacks when loading OLDER saved
- *          state that have data layout or semantical changes without the
+ *          state that have data layout or semantic changes without the
  *          compulsory version number change.
  */
 VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM)

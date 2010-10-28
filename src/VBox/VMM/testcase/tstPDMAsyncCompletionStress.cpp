@@ -133,7 +133,7 @@ typedef struct PDMACTESTFILE
     unsigned                   cSegments;
     /** Pointer to the array describing how the file is assembled
      * of the test pattern. Used for comparing read data to ensure
-     * that no corruption occured.
+     * that no corruption occurred.
      */
     PPDMACTESTFILESEG          paSegs;
     /** Maximum number of active tasks for this endpoint. */

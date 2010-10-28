@@ -166,7 +166,7 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackSpecific(PRTTIMER pTimer, void *pv
 /**
  * Callback which changes the interval at each invocation.
  *
- * The changes are goverened by TSTRTR0TIMERS1::ChangeInterval.  The callback
+ * The changes are governed by TSTRTR0TIMERS1::ChangeInterval.  The callback
  * calls RTTimerStop at iActionShot.
  *
  * @param   pTimer      The timer.

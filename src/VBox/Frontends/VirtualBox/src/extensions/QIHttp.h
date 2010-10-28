@@ -114,7 +114,7 @@ public:
         return QHttp::request (aHeader);
     }
 
-    /* This method is doing effictevely the same as abort()
+    /* This method is doing effectively the same as abort()
      * but in its turn trying to do all after other things been done. */
     void abortAll()
     {

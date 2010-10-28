@@ -64,7 +64,7 @@ typedef struct MMHEAPSTAT
     struct MMHEAP          *pHeap;
 #ifdef MMR3HEAP_WITH_STATISTICS
 # if HC_ARCH_BITS == 32
-    /** Aligning the statistics on an 8 byte boundrary (for uint64_t and STAM). */
+    /** Aligning the statistics on an 8 byte boundary (for uint64_t and STAM). */
     void                   *pvAlignment;
 # endif
     /** Number of allocation. */
@@ -211,7 +211,7 @@ typedef struct MMUKHEAP
     /** The VM handle. */
     PUVM                    pUVM;
 #if HC_ARCH_BITS == 32
-    /** Aligning the statistics on an 8 byte boundrary (for uint64_t and STAM). */
+    /** Aligning the statistics on an 8 byte boundary (for uint64_t and STAM). */
     void                   *pvAlignment;
 #endif
     /** Heap global statistics. */
@@ -345,15 +345,15 @@ typedef struct MMHYPERHEAP
     PDMCRITSECT             Lock;
     /** The HC ring-3 address of the heap. */
     R3PTRTYPE(uint8_t *)    pbHeapR3;
-    /** The HC ring-3 address of the shared VM strcture. */
+    /** The HC ring-3 address of the shared VM structure. */
     PVMR3                   pVMR3;
     /** The HC ring-0 address of the heap. */
     R0PTRTYPE(uint8_t *)    pbHeapR0;
-    /** The HC ring-0 address of the shared VM strcture. */
+    /** The HC ring-0 address of the shared VM structure. */
     PVMR0                   pVMR0;
     /** The RC address of the heap. */
     RCPTRTYPE(uint8_t *)    pbHeapRC;
-    /** The RC address of the shared VM strcture. */
+    /** The RC address of the shared VM structure. */
     PVMRC                   pVMRC;
     /** The amount of free memory in the heap. */
     uint32_t                cbFree;
@@ -552,7 +552,7 @@ typedef struct MMPAGEPOOL
     /** Number of free pages in pool. */
     uint32_t                            cFreePages;
 # if HC_ARCH_BITS == 32
-    /** Aligning the statistics on an 8 byte boundrary. */
+    /** Aligning the statistics on an 8 byte boundary. */
     uint32_t                            u32Alignment;
 # endif
     /** Number of alloc calls. */
@@ -633,7 +633,7 @@ typedef struct MMLOOKUPHYPER
     /** Byte offset from the start of this record to the next.
      * If the value is NIL_OFFSET the chain is terminated. */
     int32_t                 offNext;
-    /** Offset into the hypvervisor memory area. */
+    /** Offset into the hypervisor memory area. */
     uint32_t                off;
     /** Size of this part. */
     uint32_t                cb;

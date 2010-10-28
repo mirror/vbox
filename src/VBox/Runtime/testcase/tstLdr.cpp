@@ -44,7 +44,7 @@
 static bool     g_fDontBitchOnResolveFailure = false;
 /** Whether it's kernel model code or not.. */
 static bool     g_fKernel = true;
-/** Module architectur bit count. */
+/** Module architecture bit count. */
 static uint32_t g_cBits = HC_ARCH_BITS;
 
 

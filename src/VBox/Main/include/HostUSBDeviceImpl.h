@@ -291,7 +291,7 @@ private:
      * This is mainly a measure to reduce the number of HostUSBDeviceState values. */
     HostUSBDeviceState mPendingUniState;
     /** Previous state.
-     * This is used for bailing out when a transition like caputure fails. */
+     * This is used for bailing out when a transition like capture fails. */
     HostUSBDeviceState mPrevUniState;
     /** Indicator set by onDetachedPhys and check when advancing a transitional state. */
     bool mIsPhysicallyDetached;

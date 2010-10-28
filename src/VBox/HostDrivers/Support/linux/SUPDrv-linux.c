@@ -231,7 +231,7 @@ static struct dev_pm_ops gPlatformPMOps =
     .suspend = VBoxDrvSuspend,  /* before entering deep sleep */
     .resume  = VBoxDrvResume,   /* after wakeup from deep sleep */
     .freeze  = VBoxDrvSuspend,  /* before creating hibernation image */
-    .restore = VBoxDrvResume,   /* after wakeing up from hibernation */
+    .restore = VBoxDrvResume,   /* after waking up from hibernation */
 };
 # endif
 
@@ -409,14 +409,14 @@ static int __init VBoxDrvLinuxInit(void)
 
 #ifdef CONFIG_X86_LOCAL_APIC
     /*
-     * If an NMI occurs while we are inside the world switcher the macine will crash.
+     * If an NMI occurs while we are inside the world switcher the machine will crash.
      * The Linux NMI watchdog generates periodic NMIs increasing a counter which is
      * compared with another counter increased in the timer interrupt handler. Therefore
      * we don't allow to setup an NMI watchdog.
      */
 # if !defined(VBOX_REDHAT_KABI)
     /*
-     * First test: NMI actiated? Works only works with Linux 2.6 -- 2.4 does not export
+     * First test: NMI activated? Works only works with Linux 2.6 -- 2.4 does not export
      *             the nmi_watchdog variable.
      */
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined CONFIG_X86_64
@@ -471,7 +471,7 @@ static int __init VBoxDrvLinuxInit(void)
      */
 #  else /* < 2.6.19 */
     /*
-     * Older 2.6 kernels: nmi_watchdog is not initalized by default
+     * Older 2.6 kernels: nmi_watchdog is not initialized by default
      */
     if (nmi_watchdog != NMI_NONE)
         goto nmi_activated;
@@ -502,7 +502,7 @@ static int __init VBoxDrvLinuxInit(void)
                 /* 2.6.31+: The performance counter framework will initialize the LVTPC
                  * vector as NMI. We can't disable the framework but the kernel loader
                  * script will do 'echo 2 > /proc/sys/kernel/perf_counter_paranoid'
-                 * which hopefilly prevents any usage of hardware performance counters
+                 * which hopefully prevents any usage of hardware performance counters
                  * and therefore triggering of NMIs.
                  * 2.6.32+: CONFIG_PERF_COUNTERS => CONFIG_PERF_EVENTS */
                 printk(KERN_ERR DEVICE_NAME

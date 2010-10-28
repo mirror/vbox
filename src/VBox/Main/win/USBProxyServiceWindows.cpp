@@ -64,7 +64,7 @@ HRESULT USBProxyServiceWindows::init(void)
     AssertReturn(mhEventInterrupt != INVALID_HANDLE_VALUE, E_FAIL);
 
     /*
-     * Initalize the USB lib and stuff.
+     * Initialize the USB lib and stuff.
      */
     int rc = USBLibInit();
     if (RT_SUCCESS(rc))

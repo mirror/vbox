@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Path Convertions, POSIX.
+ * IPRT - Path Conversions, POSIX.
  */
 
 /*

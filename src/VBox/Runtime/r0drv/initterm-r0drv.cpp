@@ -56,7 +56,7 @@ static int32_t volatile g_crtR0Users = 0;
 
 
 /**
- * Initalizes the ring-0 driver runtime library.
+ * Initializes the ring-0 driver runtime library.
  *
  * @returns iprt status code.
  * @param   fReserved       Flags reserved for the future.

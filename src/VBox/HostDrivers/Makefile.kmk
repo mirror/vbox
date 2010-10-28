@@ -41,7 +41,7 @@ if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
 
  if1of ($(KBUILD_TARGET),linux freebsd)
   #
-  # Install the Makefile for module compliation on Linux and FreeBSD hosts
+  # Install the Makefile for module compilation on Linux and FreeBSD hosts
   #
   INSTALLS += HostDrivers-src
   HostDrivers-src_INST            = bin/src/

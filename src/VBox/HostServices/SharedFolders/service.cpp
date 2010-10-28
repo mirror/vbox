@@ -53,7 +53,7 @@
  * Current mappings and root identifiers are saved when VM is saved.
  *
  * Guest may use any of these mappings. Full path information
- * about an object on a mapping consists of the root indentifier and
+ * about an object on a mapping consists of the root identifier and
  * a full path of object.
  *
  * Guest IFS connects to the service and calls SHFL_FN_QUERY_MAP

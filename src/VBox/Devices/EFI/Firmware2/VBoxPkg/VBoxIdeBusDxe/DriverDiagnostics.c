@@ -16,7 +16,7 @@
  */
 
 /** @file
-  Implementation of UEFI driver Dialnostics protocol which to perform diagnostic on the IDE
+  Implementation of UEFI driver Diagnostics protocol which to perform diagnostic on the IDE
   Bus controller.
   
   Copyright (c) 2006 - 2008, Intel Corporation                                                         

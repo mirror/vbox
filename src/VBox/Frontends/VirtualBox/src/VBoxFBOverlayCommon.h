@@ -33,7 +33,7 @@
 #ifdef DEBUG
  #define VBOXQGL_ASSERTNOERR() \
     do { GLenum err = glGetError(); \
-        if(err != GL_NO_ERROR) VBOXQGLLOG(("gl error ocured (0x%x)\n", err)); \
+        if(err != GL_NO_ERROR) VBOXQGLLOG(("gl error occurred (0x%x)\n", err)); \
         Assert(err == GL_NO_ERROR); \
     }while(0)
 

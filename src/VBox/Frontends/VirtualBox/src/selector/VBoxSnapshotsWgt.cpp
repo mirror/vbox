@@ -466,7 +466,7 @@ void VBoxSnapshotsWgt::onCurrentChanged (QTreeWidgetItem *aItem)
     mDeleteSnapshotAction->setEnabled (   canTakeDeleteSnapshot
                                        && mCurSnapshotItem && item && !item->isCurrentStateItem());
 
-    /* Enable/disable the details action regardles of the session state */
+    /* Enable/disable the details action regardless of the session state */
     mShowSnapshotDetailsAction->setEnabled (mCurSnapshotItem && item && !item->isCurrentStateItem());
 
     /* Enable/disable taking snapshots */

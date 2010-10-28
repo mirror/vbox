@@ -21,7 +21,7 @@
 #include <Common/BaseTypes.h>
 
 //
-// Basical data type definitions introduced in UEFI.
+// Basic data type definitions introduced in UEFI.
 // 
 typedef struct {
   UINT32  Data1;

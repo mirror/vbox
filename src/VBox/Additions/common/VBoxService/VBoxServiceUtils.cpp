@@ -187,7 +187,7 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
 #ifdef RT_OS_WINDOWS
 
 /**
- * Helper for VBoxServiceGetFileVersion and attemps to read and parse
+ * Helper for VBoxServiceGetFileVersion and attempts to read and parse
  * FileVersion.
  *
  * @returns Success indicator.

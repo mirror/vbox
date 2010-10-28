@@ -254,7 +254,7 @@ typedef struct _DEVICE_EXTENSION {
 
     KEVENT NoIdleReqPendEvent;
 
-    // default power state to power down to on self-susped
+    // default power state to power down to on self-suspend
     ULONG PowerDownLevel;
 
     // remote wakeup variables

@@ -170,7 +170,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         return VERR_CPU_OFFLINE;
 
     /*
-     * Calc when it should start fireing.
+     * Calc when it should start firing.
      */
     u64First += RTTimeNanoTS();
 

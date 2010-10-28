@@ -47,7 +47,7 @@ RTDECL(int) RTMemPoolCreate(PRTMEMPOOL phMemPool, const char *pszName);
  * @returns IPRT status code.
  *
  * @param   hMemPool        The handle to the pool. The nil handle and
- *                          RTMEMPOOL_DEFAULT are quitely ignored (retval
+ *                          RTMEMPOOL_DEFAULT are quietly ignored (retval
  *                          VINF_SUCCESS).
  */
 RTDECL(int) RTMemPoolDestroy(RTMEMPOOL hMemPool);
@@ -64,9 +64,9 @@ RTDECL(int) RTMemPoolDestroy(RTMEMPOOL hMemPool);
 RTDECL(void *) RTMemPoolAlloc(RTMEMPOOL hMemPool, size_t cb) RT_NO_THROW;
 
 /**
- * Allocates zero'ed memory.
+ * Allocates zero'd memory.
  *
- * Instead of memset(pv, 0, sizeof()) use this when you want zero'ed
+ * Instead of memset(pv, 0, sizeof()) use this when you want zero'd
  * memory. This keeps the code smaller and the heap can skip the memset
  * in about 0.42% of calls :-).
  *
@@ -124,13 +124,13 @@ RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) R
  *                          performance cost.
  * @param   pv              Pointer to memory block.
  *
- * @remarks This is the same a RTMemPoolRelease but included here as a seperate
+ * @remarks This is the same a RTMemPoolRelease but included here as a separate
  *          function to simplify code migration.
  */
 RTDECL(void) RTMemPoolFree(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW;
 
 /**
- * Retains a refernece to a memory block in a pool.
+ * Retains a reference to a memory block in a pool.
  *
  * @returns New reference count, UINT32_MAX on error (asserted).
  *

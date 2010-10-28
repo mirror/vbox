@@ -1203,10 +1203,10 @@ HRESULT Progress::notifyCompleteV(HRESULT aResultCode,
  * Notify the progress object that we're almost at the point of no return.
  *
  * This atomically checks for and disables cancelation.  Calls to
- * IProgress::Cancel() made after a successfull call to this method will fail
+ * IProgress::Cancel() made after a successful call to this method will fail
  * and the user can be told.  While this isn't entirely clean behavior, it
  * prevents issues with an irreversible actually operation succeeding while the
- * user belive it was rolled back.
+ * user believe it was rolled back.
  *
  * @returns Success indicator.
  * @retval  true on success.

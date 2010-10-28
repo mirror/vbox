@@ -211,7 +211,7 @@ enum eHostFn
 {
     /**
      * Set properties in a block.  The parameters are pointers to
-     * NULL-terminated arrays containing the paramters.  These are, in order,
+     * NULL-terminated arrays containing the parameters.  These are, in order,
      * name, value, timestamp, flags.  Strings are stored as pointers to
      * mutable utf8 data.  All parameters must be supplied.
      */

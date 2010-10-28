@@ -42,7 +42,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** Array of switcher defininitions.
+/** Array of switcher definitions.
  * The type and index shall match!
  */
 static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
@@ -118,7 +118,7 @@ int vmmR3SwitcherInit(PVM pVM)
     }
 
     /*
-     * Allocate continguous pages for switchers and deal with
+     * Allocate contiguous pages for switchers and deal with
      * conflicts in the intermediate mapping of the code.
      */
     pVM->vmm.s.cbCoreCode = RT_ALIGN_32(cbCoreCode, PAGE_SIZE);

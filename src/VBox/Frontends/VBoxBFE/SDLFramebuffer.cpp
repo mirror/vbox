@@ -397,7 +397,7 @@ void SDLFramebuffer::resize()
  * @param   x left column
  * @param   y top row
  * @param   w width in pixels
- * @param   h heigh in pixels
+ * @param   h height in pixels
  */
 void SDLFramebuffer::update(int x, int y, int w, int h)
 {

@@ -99,7 +99,7 @@ RTDECL(uint32_t) RTMpGetArraySize(void);
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu);
 
 /**
- * Gets set of the CPUs present in the system pluss any that may
+ * Gets set of the CPUs present in the system plus any that may
  * possibly be hotplugged later.
  *
  * @returns pSet.

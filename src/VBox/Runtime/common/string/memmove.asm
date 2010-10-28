@@ -59,7 +59,7 @@ RT_NOCRT_BEGINPROC memmove
         ;
         ; Decide which direction to perform the copy in.
         ;
-%if 1 ; keep it simpe for now.
+%if 1 ; keep it simple for now.
         cmp     xDI, xSI
         jnb     .backward
 

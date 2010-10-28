@@ -215,7 +215,7 @@ typedef struct INTNETHDR
     /** The size of the frame. */
     uint16_t        cbFrame;
     /** The offset from the start of this header to where the actual frame starts.
-     * This is used to keep the frame it self continguous in virtual memory and
+     * This is used to keep the frame it self contiguous in virtual memory and
      * thereby both simplify access as well as the descriptor. */
     int32_t         offFrame;
 } INTNETHDR;
@@ -481,7 +481,7 @@ typedef struct INTNETTRUNKSWPORT
      * be possible to save some unnecessary address translation and memory locking
      * in the network stack.  (Internal networking knows the physical address for
      * all the INTNETBUF data and that it's locked memory.)  There is a negative
-     * side effects though, frames that crosses page boundraries will require
+     * side effects though, frames that crosses page boundaries will require
      * multiple scather / gather segments.
      *
      * @returns The old setting.
@@ -803,7 +803,7 @@ typedef INTNETTRUNKFACTORY *PINTNETTRUNKFACTORY;
 /**
  * The trunk connection type.
  *
- * Used by IntNetR0Open and assoicated interfaces.
+ * Used by IntNetR0Open and associated interfaces.
  */
 typedef enum INTNETTRUNKTYPE
 {

@@ -53,7 +53,7 @@
 
 /** @def MyLogIt
  * Copy of LogIt that works even when logging is completely disabled (e.g. in
- * release builds) and doesn't interefere with the default release logger
+ * release builds) and doesn't interfere with the default release logger
  * instance (which is already in use by the VM process).
  *
  * @warning Logging using MyLog* is intended only as a temporary mean to debug

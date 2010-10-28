@@ -102,7 +102,7 @@ typedef struct TRPM
      *
      * This configuration option is provided for speeding up guest like Solaris
      * that put the IDT on the same page as a whole lot of other data that is
-     * freqently updated. The updates will cause #PFs and have to be interpreted
+     * frequently updated. The updates will cause #PFs and have to be interpreted
      * by PGMInterpretInstruction which is slow compared to raw execution.
      *
      * If the guest is well behaved and doesn't change the IDT after loading it,
@@ -112,7 +112,7 @@ typedef struct TRPM
      */
     bool                    fSafeToDropGuestIDTMonitoring;
 
-    /** Padding to get the IDTs at a 16 byte alignement. */
+    /** Padding to get the IDTs at a 16 byte alignment. */
     uint8_t                 abPadding1[6];
     /** IDTs. Aligned at 16 byte offset for speed. */
     VBOXIDTE                aIdt[256];

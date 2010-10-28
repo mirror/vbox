@@ -206,7 +206,7 @@ Function ${un}StrStrAdv
       ${EndIf}
     ${EndIf}
 
-    ; After the comparasion, confirm that it is the
+    ; After the comparison, confirm that it is the
     ; value we want.
 
     ${If} $R3 = 1

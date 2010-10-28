@@ -159,7 +159,7 @@ RTDECL(int)     RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABL
  *
  * @param   hHandleTable    The handle to the handle table.
  * @param   pvObj           The object to associate with the new handle.
- *                          This must be aligned on a 4 byte boundrary.
+ *                          This must be aligned on a 4 byte boundary.
  * @param   ph              Where to return the handle on success.
  *
  * @remarks Do not call this if RTHANDLETABLE_FLAGS_CONTEXT was used during creation.
@@ -200,7 +200,7 @@ RTDECL(void *)  RTHandleTableFree(RTHANDLETABLE hHandleTable, uint32_t h);
  *
  * @param   hHandleTable    The handle to the handle table.
  * @param   pvObj           The object to associate with the new handle.
- *                          This must be aligned on a 4 byte boundrary.
+ *                          This must be aligned on a 4 byte boundary.
  * @param   pvCtx           The context to associate with the new handle.
  * @param   ph              Where to return the handle on success.
  *

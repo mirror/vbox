@@ -171,7 +171,7 @@ static HRESULT vboxDispCmSessionCmdQueryData(PVBOXDISPCM_SESSION pSession, PVBOX
     DdiEscape.PrivateDriverDataSize = cbCmd;
 
     pCmd->EscapeHdr.escapeCode = VBOXESC_GETVBOXVIDEOCMCMD;
-    /* lock to ensure the context is not distructed */
+    /* lock to ensure the context is not destroyed */
     EnterCriticalSection(&pSession->CritSect);
     /* use any context for identifying the kernel CmSession. We're using the first one */
     PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);

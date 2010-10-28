@@ -189,7 +189,7 @@ RTDECL(int) RTStrAAppendExNVTag(char **ppsz, size_t cPairs, va_list va, const ch
         return VINF_SUCCESS;
 
     /*
-     * Determin the length of each string and calc the new total.
+     * Determine the length of each string and calc the new total.
      */
     struct RTStrAAppendExNVStruct
     {

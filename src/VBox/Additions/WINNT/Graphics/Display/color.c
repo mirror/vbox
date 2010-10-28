@@ -45,7 +45,7 @@
 * This function takes a value from 0 - 255 and uses it to create an
 * 8x8 pile of bits in the form of a 1BPP bitmap.  It can also take an
 * RGB value and make an 8x8 bitmap.  These can then be used as brushes
-* to simulate color unavaible on the device.
+* to simulate color unavailable on the device.
 *
 * For monochrome the basic algorithm is equivalent to turning on bits
 * in the 8x8 array according to the following order:
@@ -59,7 +59,7 @@
 *  15 47 07 39 13 45 05 37
 *  63 31 55 23 61 29 53 21
 *
-* Reference: A Survey of Techniques for the Display of Continous
+* Reference: A Survey of Techniques for the Display of Continuous
 *            Tone Pictures on Bilevel Displays,;
 *            Jarvis, Judice, & Ninke;
 *            COMPUTER GRAPHICS AND IMAGE PROCESSING 5, pp 13-40, (1976)
@@ -583,7 +583,7 @@ OUT ULONG *pul)
         ulBlu  = (ULONG) ((PALETTEENTRY *) &rgb)->peBlue;
 
         // I = .30R + .59G + .11B
-        // For convience the following ratios are used:
+        // For convenience the following ratios are used:
         //
         //  77/256 = 30.08%
         // 151/256 = 58.98%

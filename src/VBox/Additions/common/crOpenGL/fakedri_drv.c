@@ -224,7 +224,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
         pEnd = &patch[5];
     }
 
-    /* Get aligned start adress we're going to patch*/
+    /* Get aligned start address we're going to patch*/
     alPatch = (void*) ((uintptr_t)dlip.dli_saddr & ~(uintptr_t)(PAGESIZE-1));
 
 #ifndef VBOX_NO_MESA_PATCH_REPORTS

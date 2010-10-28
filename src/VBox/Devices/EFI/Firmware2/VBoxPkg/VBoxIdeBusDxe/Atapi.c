@@ -256,14 +256,14 @@ PioReadWriteData (
   UINT16      *PtrBuffer;
 
   //
-  // No data transfer is premitted.
+  // No data transfer is permitted.
   //
   if (ByteCount == 0) {
     return EFI_SUCCESS;
   }
   //
   // for performance, we assert the ByteCount is an even number
-  // which is actually a resonable assumption  
+  // which is actually a reasonable assumption  
   ASSERT((ByteCount%2) == 0);
   
   PtrBuffer         = Buffer;
@@ -845,7 +845,7 @@ AtapiRequestSense (
     (*SenseCounts)++;
     //
     // We limit MAX sense data count to 20 in order to avoid dead loop. Some
-    // incompatible ATAPI devices don't retrive NO_SENSE when there is no media.
+    // incompatible ATAPI devices don't retrieve NO_SENSE when there is no media.
     // In this case, dead loop occurs if we don't have a gatekeeper. 20 is
     // supposed to be large enough for any ATAPI device.
     //
@@ -1153,7 +1153,7 @@ IsLS120orZipWriteProtected (
 
   //
   // the Get Media Status Command is only valid
-  // if a Set Features/Enable Media Status Command has been priviously issued.
+  // if a Set Features/Enable Media Status Command has been previously issued.
   //
   if (LS120GetMediaStatus (IdeDev) == EFI_WRITE_PROTECTED) {
 

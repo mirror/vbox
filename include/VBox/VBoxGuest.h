@@ -80,9 +80,9 @@
 /** @name VBoxGuest IOCTL codes and structures.
  *
  * The range 0..15 is for basic driver communication.
- * The range 16..31 is for HGCM communcation.
+ * The range 16..31 is for HGCM communication.
  * The range 32..47 is reserved for future use.
- * The range 48..63 is for OS specific communcation.
+ * The range 48..63 is for OS specific communication.
  * The 7th bit is reserved for future hacks.
  * The 8th bit is reserved for distinguishing between 32-bit and 64-bit
  * processes in future 64-bit guest additions.
@@ -98,7 +98,7 @@
  *          to be valid.
  *
  *          For Solaris we will have to do something special though, 255 isn't
- *          sufficent for all we need. A 4KB restriction (BSD) is probably not
+ *          sufficient for all we need. A 4KB restriction (BSD) is probably not
  *          too problematic (yet) as a general one.
  *
  *          More info can be found in SUPDRVIOC.h and related sources.
@@ -214,13 +214,13 @@ typedef struct VBoxGuestPortInfo
 /** @name Result codes for VBoxGuestWaitEventInfo::u32Result
  * @{
  */
-/** Successful completion, an event occured. */
+/** Successful completion, an event occurred. */
 #define VBOXGUEST_WAITEVENT_OK          (0)
 /** Successful completion, timed out. */
 #define VBOXGUEST_WAITEVENT_TIMEOUT     (1)
 /** Wait was interrupted. */
 #define VBOXGUEST_WAITEVENT_INTERRUPTED (2)
-/** An error occured while processing the request. */
+/** An error occurred while processing the request. */
 #define VBOXGUEST_WAITEVENT_ERROR       (3)
 /** @} */
 
@@ -233,7 +233,7 @@ typedef struct VBoxGuestWaitEventInfo
     uint32_t u32EventMaskIn;
     /** result code */
     uint32_t u32Result;
-    /** events occured */
+    /** events occurred */
     uint32_t u32EventFlagsOut;
 } VBoxGuestWaitEventInfo;
 AssertCompileSize(VBoxGuestWaitEventInfo, 16);

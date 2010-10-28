@@ -281,7 +281,7 @@ STDMETHODIMP FFmpegFB::COMGETTER(Height) (ULONG *height)
  * Return the colour depth of our frame buffer.  Note that we actually
  * store the pixel format, not the colour depth internally, since
  * when display sets FramebufferPixelFormat_Opaque, it
- * wants to retreive FramebufferPixelFormat_Opaque and
+ * wants to retrieve FramebufferPixelFormat_Opaque and
  * nothing else.
  *
  * @returns            COM status code
@@ -597,7 +597,7 @@ STDMETHODIMP FFmpegFB::RequestResize(ULONG aScreenId, ULONG pixelFormat,
  * @param   bpp       video mode bit depth in bits per pixel
  * @param   supported pointer to result variable
  *
- * As far as I know, the only restruction we have on video modes is that
+ * As far as I know, the only restriction we have on video modes is that
  * we have to have an even number of horizontal and vertical pixels.
  * I sincerely doubt that anything else will be requested, and if it
  * is anyway, we will just silently amputate one line when we write to
@@ -759,7 +759,7 @@ HRESULT FFmpegFB::open_codec()
     pCodecContext->max_b_frames = 1;
     pCodecContext->pix_fmt = PIX_FMT_YUV420P;
     /* taken from the ffmpeg output example */
-    // some formats want stream headers to be seperate
+    // some formats want stream headers to be separate
     if (!strcmp(pOutFormat->name, "mp4")
         || !strcmp(pOutFormat->name, "mov")
         || !strcmp(pOutFormat->name, "3gp"))

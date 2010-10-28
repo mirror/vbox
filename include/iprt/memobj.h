@@ -199,9 +199,9 @@ RTR0DECL(int) RTR0MemObjAllocContTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   R3Ptr           User virtual address. This is rounded down to a page
- *                          boundrary.
+ *                          boundary.
  * @param   cb              Number of bytes to lock. This is rounded up to
- *                          nearest page boundrary.
+ *                          nearest page boundary.
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an
@@ -224,9 +224,9 @@ RTR0DECL(int) RTR0MemObjAllocContTag(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecu
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   R3Ptr           User virtual address. This is rounded down to a page
- *                          boundrary.
+ *                          boundary.
  * @param   cb              Number of bytes to lock. This is rounded up to
- *                          nearest page boundrary.
+ *                          nearest page boundary.
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an
@@ -249,8 +249,8 @@ RTR0DECL(int) RTR0MemObjLockUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t c
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   pv              Kernel virtual address. This is rounded down to a page boundrary.
- * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
+ * @param   pv              Kernel virtual address. This is rounded down to a page boundary.
+ * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundary.
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  *
@@ -264,8 +264,8 @@ RTR0DECL(int) RTR0MemObjLockUserTag(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t c
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   pv              Kernel virtual address. This is rounded down to a page boundrary.
- * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
+ * @param   pv              Kernel virtual address. This is rounded down to a page boundary.
+ * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundary.
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
  * @param   pszTag          Allocation tag used for statistics and such.
@@ -281,7 +281,7 @@ RTR0DECL(int) RTR0MemObjLockKernelTag(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, 
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          Pass NIL_RTHCPHYS if any address is acceptable.
  */
 #define RTR0MemObjAllocPhys(pMemObj, cb, PhysHighest) \
@@ -294,7 +294,7 @@ RTR0DECL(int) RTR0MemObjLockKernelTag(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, 
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          Pass NIL_RTHCPHYS if any address is acceptable.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
@@ -307,7 +307,7 @@ RTR0DECL(int) RTR0MemObjAllocPhysTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Ph
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          Pass NIL_RTHCPHYS if any address is acceptable.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
@@ -322,7 +322,7 @@ RTR0DECL(int) RTR0MemObjAllocPhysTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Ph
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          Pass NIL_RTHCPHYS if any address is acceptable.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
@@ -345,7 +345,7 @@ RTR0DECL(int) RTR0MemObjAllocPhysExTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS 
  *
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          Pass NIL_RTHCPHYS if any address is acceptable.
  */
 #define RTR0MemObjAllocPhysNC(pMemObj, cb, PhysHighest) \
@@ -366,7 +366,7 @@ RTR0DECL(int) RTR0MemObjAllocPhysExTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS 
  *
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          Pass NIL_RTHCPHYS if any address is acceptable.
  * @param   pszTag          Allocation tag used for statistics and such.
  */
@@ -389,8 +389,8 @@ RTR0DECL(int) RTR0MemObjAllocPhysNCTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS 
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   Phys            The physical address to start at. This is rounded down to the
- *                          nearest page boundrary.
- * @param   cb              The size of the object in bytes. This is rounded up to nearest page boundrary.
+ *                          nearest page boundary.
+ * @param   cb              The size of the object in bytes. This is rounded up to nearest page boundary.
  * @param   uCachePolicy    One of the RTMEM_CACHE_XXX modes.
  */
 #define RTR0MemObjEnterPhys(pMemObj, Phys, cb, uCachePolicy) \
@@ -404,8 +404,8 @@ RTR0DECL(int) RTR0MemObjAllocPhysNCTag(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS 
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   Phys            The physical address to start at. This is rounded down to the
- *                          nearest page boundrary.
- * @param   cb              The size of the object in bytes. This is rounded up to nearest page boundrary.
+ *                          nearest page boundary.
+ * @param   cb              The size of the object in bytes. This is rounded up to nearest page boundary.
  * @param   uCachePolicy    One of the RTMEM_CACHE_XXX modes.
  * @param   pszTag          Allocation tag used for statistics and such.
  */

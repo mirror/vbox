@@ -24,7 +24,7 @@
 
 /** @name DBGDiggerCommonParseElf32Mod and DBGDiggerCommonParseElf64Mod flags
  * @{ */
-/** Wheter to adjust the symbol values or not. */
+/** Whether to adjust the symbol values or not. */
 #define DBG_DIGGER_ELF_ADJUST_SYM_VALUE     RT_BIT_32(0)
 /** Indicates that we're missing section headers and that
  * all section indexes are to be considered invalid. (Solaris hack.)

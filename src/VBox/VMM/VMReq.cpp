@@ -47,7 +47,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  * Allocate and queue a call request.
  *
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use VMR3ReqWait() to check for completation. In the other case
+ * to 0 and use VMR3ReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using VMR3ReqFree().
  *
@@ -60,7 +60,7 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  *                          one of the following special values:
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happends.
+ *                          This will be NULL or a valid request pointer not matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
@@ -340,7 +340,7 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunc
  * Allocate and queue a call request to a void function.
  *
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use VMR3ReqWait() to check for completation. In the other case
+ * to 0 and use VMR3ReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using VMR3ReqFree().
  *
@@ -353,7 +353,7 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunc
  *                          one of the following special values:
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
+ *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
@@ -380,7 +380,7 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTE
  * Allocate and queue a call request.
  *
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use VMR3ReqWait() to check for completation. In the other case
+ * to 0 and use VMR3ReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using VMR3ReqFree().
  *
@@ -393,7 +393,7 @@ VMMR3DECL(int) VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTE
  *                          one of the following special values:
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
+ *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
  *                          contains VMREQFLAGS_NO_WAIT when it will be optional and always NULL.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
@@ -770,7 +770,7 @@ VMMR3DECL(int) VMR3ReqFree(PVMREQ pReq)
  * The quest must be allocated using VMR3ReqAlloc() and contain
  * all the required data.
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use VMR3ReqWait() to check for completation. In the other case
+ * to 0 and use VMR3ReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  *
  * @returns VBox status code.

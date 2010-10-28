@@ -1944,7 +1944,7 @@ public:
           mOverlay(pView->viewport(), pView, aSession, id),
           mpView (pView)
     {
-        /* synch with framebuffer */
+        /* sync with framebuffer */
         mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this), QPoint(mpView->contentsX(), mpView->contentsY()));
     }
 

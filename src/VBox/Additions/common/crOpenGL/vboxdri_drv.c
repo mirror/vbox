@@ -26,7 +26,7 @@
  *
  * Todo:
  *   -- Use malloced (rather than framebuffer) memory for backbuffer
- *   -- 32bpp is hardwared -- fix
+ *   -- 32bpp is hardwired -- fix
  *
  * NOTES:
  *   -- No mechanism for cliprects or resize notification --
@@ -625,7 +625,7 @@ fbSwapBuffers( __DRIdrawablePrivate *dPriv )
 	 int offset = 0;
          char *tmp = _mesa_malloc(currentPitch);
 
-         _mesa_notifySwapBuffers( ctx );  /* flush pending rendering comands */
+         _mesa_notifySwapBuffers( ctx );  /* flush pending rendering commands */
 
          ASSERT(frontBuffer);
          ASSERT(backBuffer);

@@ -1,5 +1,5 @@
 /*
- *  Save/restore host registrs.
+ *  Save/restore host registers.
  *
  *  Copyright (c) 2007 CodeSourcery
  *
@@ -27,7 +27,7 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-/* The GCC global register vairable extension is used to reserve some
+/* The GCC global register variable extension is used to reserve some
    host registers for use by dyngen.  However only the core parts of the
    translation engine are compiled with these settings.  We must manually
    save/restore these registers when called from regular code.

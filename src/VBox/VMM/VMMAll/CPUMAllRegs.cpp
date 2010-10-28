@@ -855,7 +855,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             break;
 
         case MSR_IA32_THERM_STATUS:
-            /* CPU temperature reltive to TCC, to actually activate, CPUID leaf 6 EAX[0] must be set */
+            /* CPU temperature relative to TCC, to actually activate, CPUID leaf 6 EAX[0] must be set */
             *puValue = ( 1 << 31) /* validity bit */
                      | (20 << 16) /* degrees till TCC */;
             break;
@@ -1855,7 +1855,7 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
 
 
 /**
- * Recalculates the hypvervisor DRx register values based on
+ * Recalculates the hypervisor DRx register values based on
  * current guest registers and DBGF breakpoints.
  *
  * This is called whenever a guest DRx register is modified and when DBGF

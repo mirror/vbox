@@ -261,7 +261,7 @@ typedef struct VMMDevState
     VMMDevCpuEventType  enmCpuHotPlugEvent;
     /** Core id of the CPU to change */
     uint32_t            idCpuCore;
-    /** Package id of the CPU to changhe */
+    /** Package id of the CPU to change */
     uint32_t            idCpuPackage;
 
     uint32_t            StatMemBalloonChunks;

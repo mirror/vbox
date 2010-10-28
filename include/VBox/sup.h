@@ -202,7 +202,7 @@ typedef enum SUPGIPMODE
 /** Pointer to the Global Information Page.
  *
  * This pointer is valid as long as SUPLib has a open session. Anyone using
- * the page must treat this pointer as higly volatile and not trust it beyond
+ * the page must treat this pointer as highly volatile and not trust it beyond
  * one transaction.
  *
  * @remark  The GIP page is read-only to everyone but the support driver and
@@ -344,7 +344,7 @@ SUPDECL(int) SUPSemEventCreate(PSUPDRVSESSION pSession, PSUPSEMEVENT phEvent);
  *
  * @returns VBox status code.
  * @retval  VINF_OBJECT_DESTROYED if the semaphore was destroyed.
- * @retval  VINF_SUCCESS if the handle was successfully closed but the sempahore
+ * @retval  VINF_SUCCESS if the handle was successfully closed but the semaphore
  *          object remained alive because of other references.
  *
  * @param   pSession            The session handle of the caller.
@@ -435,7 +435,7 @@ SUPDECL(int) SUPSemEventMultiCreate(PSUPDRVSESSION pSession, PSUPSEMEVENTMULTI p
  *
  * @returns VBox status code.
  * @retval  VINF_OBJECT_DESTROYED if the semaphore was destroyed.
- * @retval  VINF_SUCCESS if the handle was successfully closed but the sempahore
+ * @retval  VINF_SUCCESS if the handle was successfully closed but the semaphore
  *          object remained alive because of other references.
  *
  * @param   pSession            The session handle of the caller.
@@ -540,7 +540,7 @@ SUPR3DECL(int) SUPR3Uninstall(void);
  *
  * This is exported as "TrustedMain" by the dynamic libraries which contains the
  * "real" application binary for which the hardened stub is built.  The entry
- * point is invoked upon successfull initialization of the support library and
+ * point is invoked upon successful initialization of the support library and
  * runtime.
  *
  * @returns main kind of exit code.
@@ -575,7 +575,7 @@ typedef enum SUPINITOP
  * This is exported as "TrustedError" by the dynamic libraries which contains
  * the "real" application binary for which the hardened stub is built.
  *
- * @param   pszWhere        Where the error occured (function name).
+ * @param   pszWhere        Where the error occurred (function name).
  * @param   enmWhat         Which operation went wrong.
  * @param   rc              The status code.
  * @param   pszMsgFmt       Error message format string.
@@ -615,7 +615,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 
 /**
  * Initializes the support library.
- * Each succesful call to SUPR3Init() must be countered by a
+ * Each successful call to SUPR3Init() must be countered by a
  * call to SUPR3Term(false).
  *
  * @returns VBox status code.
@@ -717,7 +717,7 @@ typedef enum SUPLOGGER
  * @param   enmWhich    Which logger.
  * @param   pszFlags    The flags settings.
  * @param   pszGroups   The groups settings.
- * @param   pszDest     The destionation specificier.
+ * @param   pszDest     The destination specificier.
  */
 SUPR3DECL(int) SUPR3LoggerSettings(SUPLOGGER enmWhich, const char *pszFlags, const char *pszGroups, const char *pszDest);
 
@@ -728,7 +728,7 @@ SUPR3DECL(int) SUPR3LoggerSettings(SUPLOGGER enmWhich, const char *pszFlags, con
  * @param   enmWhich    Which logger to create.
  * @param   pszFlags    The flags settings.
  * @param   pszGroups   The groups settings.
- * @param   pszDest     The destionation specificier.
+ * @param   pszDest     The destination specificier.
  */
 SUPR3DECL(int) SUPR3LoggerCreate(SUPLOGGER enmWhich, const char *pszFlags, const char *pszGroups, const char *pszDest);
 
@@ -1166,7 +1166,7 @@ typedef R0PTRTYPE(FNSUPR0SERVICEREQHANDLER *) PFNSUPR0SERVICEREQHANDLER;
 #define SUPDRV_IDC_VERSION      UINT32_C(0x00010000)
 
 /**
- * Inter-Driver Communcation Handle.
+ * Inter-Driver Communication Handle.
  */
 typedef union SUPDRVIDCHANDLE
 {

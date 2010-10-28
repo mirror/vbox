@@ -134,7 +134,7 @@ struct GuestCall
 
     /** The standard constructor */
     GuestCall() : mFunction(0) {}
-    /** The normal contructor */
+    /** The normal constructor */
     GuestCall(VBOXHGCMCALLHANDLE aHandle, uint32_t aFunction,
               VBOXHGCMSVCPARM aParms[], int aRc)
               : mHandle(aHandle), mFunction(aFunction), mParms(aParms),
@@ -1287,7 +1287,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         else
         {
             std::auto_ptr<Service> apService;
-            /* No exceptions may propogate outside. */
+            /* No exceptions may propagate outside. */
             try {
                 apService = std::auto_ptr<Service>(new Service(ptable->pHelpers));
             } catch (int rcThrown) {

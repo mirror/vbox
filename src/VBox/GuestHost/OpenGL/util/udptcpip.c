@@ -29,7 +29,7 @@ typedef int socklen_t;
 #define IP_MTU	14
 #endif
 #include <netinet/in.h>
-#if !defined(IRIX) /* ip6.h might not be present on other unix varients either */
+#if !defined(IRIX) /* ip6.h might not be present on other unix variants either */
 #include <netinet/ip6.h>
 #endif
 #include <netinet/udp.h>

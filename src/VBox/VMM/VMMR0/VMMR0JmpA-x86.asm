@@ -31,7 +31,7 @@
 %define STACK_PADDING   0eeeeeeeeh
 
 
-; For vmmR0LoggerWrapper. (The other architecture(s) use(s) C99 variadict macros.)
+; For vmmR0LoggerWrapper. (The other architecture(s) use(s) C99 variadic macros.)
 extern NAME(RTLogLogger)
 
 
@@ -155,7 +155,7 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     ecx, [esp + 0ch]            ; pvArg1
     mov     edx, [esp + 10h]            ; pvArg2
     mov     eax, [esp + 08h]            ; pfn
-    sub     esp, 12                     ; align the stack on a 16-byte boundrary.
+    sub     esp, 12                     ; align the stack on a 16-byte boundary.
     mov     [esp      ], ecx
     mov     [esp + 04h], edx
     call    eax

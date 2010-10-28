@@ -16,7 +16,7 @@
  */
 
 /** @file
-  The file ontaining the helper functions implement of the Ide Bus driver
+  The file containing the helper functions implement of the Ide Bus driver
   
   Copyright (c) 2006 - 2008, Intel Corporation
   All rights reserved. This program and the accompanying materials
@@ -91,7 +91,7 @@ IDEReadPortWMultiple (
   UINTN   Size;
 
   //
-  // Prepare an 16-bit alligned working buffer. CpuIo will return failure and
+  // Prepare an 16-bit aligned working buffer. CpuIo will return failure and
   // not perform actual I/O operations if buffer pointer passed in is not at
   // natural boundary. The "Buffer" argument is passed in by user and may not
   // at 16-bit natural boundary.
@@ -204,7 +204,7 @@ IDEWritePortWMultiple (
   UINTN   Size;
 
   //
-  // Prepare an 16-bit alligned working buffer. CpuIo will return failure and
+  // Prepare an 16-bit aligned working buffer. CpuIo will return failure and
   // not perform actual I/O operations if buffer pointer passed in is not at
   // natural boundary. The "Buffer" argument is passed in by user and may not
   // at 16-bit natural boundary.
@@ -290,7 +290,7 @@ IDEWritePortWMultiple (
            
   @retval EFI_UNSUPPORTED return this value when the BARs is not IO type
   @retval EFI_SUCCESS     Get the Base address successfully
-  @retval other           read the pci configureation data error
+  @retval other           read the pci configuration data error
 
 **/
 EFI_STATUS
@@ -409,7 +409,7 @@ GetIdeRegistersBaseAddr (
   This function is used to requery IDE resources. The IDE controller will
   probably switch between native and legacy modes during the EFI->CSM->OS
   transfer. We do this everytime before an BlkIo operation to ensure its
-  succeess.
+  success.
 
   @param  IdeDev The BLK_IO private data which specifies the IDE device
   
@@ -1233,7 +1233,7 @@ ReleaseIdeResources (
   }
 
   //
-  // Release all the resourses occupied by the IDE_BLK_IO_DEV
+  // Release all the resources occupied by the IDE_BLK_IO_DEV
   //
 
   if (IdeBlkIoDevice->SenseData != NULL) {

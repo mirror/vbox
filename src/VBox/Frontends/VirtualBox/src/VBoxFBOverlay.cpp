@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxFBOverlay implementaion
+ * VBoxFBOverlay implementation
  */
 
 /*
@@ -1086,7 +1086,7 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
     }
     else
     {
-        // ensure we don't have empty functions /* paranoya for for ATI on linux */
+        // ensure we don't have empty functions /* paranoia for for ATI on linux */
         apShaders[cShaders++] = &mShaderMainOverlayNoCKey;
     }
 
@@ -2205,7 +2205,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
     /* in case the Framebuffer is working in "not using VRAM" mode,
      * we need to report the pitch, etc. info of the form guest expects from us*/
     VBoxVHWAColorFormat reportedFormat;
-    /* paranoya to ensure the VBoxVHWAColorFormat API works properly */
+    /* paranoia to ensure the VBoxVHWAColorFormat API works properly */
     Assert(!reportedFormat.isValid());
     bool bNoPBO = false;
     bool bPrimary = false;
@@ -2396,7 +2396,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
     }
     else
     {
-        /* this is the case of Framebuffer not using Gueat VRAM */
+        /* this is the case of Framebuffer not using Guest VRAM */
         /* can happen for primary surface creation only */
         Assert(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_PRIMARYSURFACE);
         pCmd->SurfInfo.pitch = (reportedFormat.bitsPerPixel() * surf->width() + 7) / 8;
@@ -2518,7 +2518,7 @@ int VBoxVHWAImage::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
         }
     }
 
-    /* just in case we destroy a visible overlay sorface */
+    /* just in case we destroy a visible overlay surface */
     mRepaintNeeded = true;
 
     void * test = mSurfHandleTable.remove(pCmd->u.in.hSurf);
@@ -3445,7 +3445,7 @@ int VBoxVHWAImage::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * p
                 }
             }
 #ifdef VBOXQGL_STATE_DEBUG
-            else if(u32Version == 1) /* read the 0 overlay count to ensure the following VBOXQGL_LOAD_STOP succeedes */
+            else if(u32Version == 1) /* read the 0 overlay count to ensure the following VBOXQGL_LOAD_STOP succeeds */
             {
                 rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
                 Assert(u32 == 0);
@@ -3796,7 +3796,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
             dispSize,
             dispRect,
             dispRect,
-            dispRect, /* we do not know viewport at the stage of recise, set as a disp rect, it will be updated on repaint */
+            dispRect, /* we do not know viewport at the stage of precise, set as a disp rect, it will be updated on repaint */
             format,
             (VBoxVHWAColorKey*)NULL, (VBoxVHWAColorKey*)NULL, (VBoxVHWAColorKey*)NULL, (VBoxVHWAColorKey*)NULL,
 #ifdef VBOXVHWA_USE_TEXGROUP
@@ -4330,7 +4330,7 @@ void VBoxQGLOverlay::onResizeEventPostprocess (const VBoxFBSizeInfo &re, const Q
         Assert(!mNeedOverlayRepaint);
         mGlCurrent = false;
         makeCurrent();
-        /* need to ensure we're in synch */
+        /* need to ensure we're in sync */
         mNeedOverlayRepaint = vboxSynchGl();
     }
 

@@ -156,7 +156,7 @@ HRESULT USBProxyServiceLinux::init(void)
 
 
 /**
- * Initializiation routine for the usbfs based operation.
+ * Initialization routine for the usbfs based operation.
  *
  * @returns iprt status code.
  */
@@ -233,7 +233,7 @@ int USBProxyServiceLinux::initUsbfs(void)
 
 
 /**
- * Initializiation routine for the sysfs based operation.
+ * Initialization routine for the sysfs based operation.
  *
  * @returns iprt status code
  */
@@ -280,7 +280,7 @@ USBProxyServiceLinux::~USBProxyServiceLinux()
 
 
 /**
- * If any Usbfs-releated resources are currently allocated, then free them
+ * If any Usbfs-related resources are currently allocated, then free them
  * and mark them as freed.
  */
 void USBProxyServiceLinux::doUsbfsCleanupAsNeeded()

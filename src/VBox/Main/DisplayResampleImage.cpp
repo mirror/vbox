@@ -194,7 +194,7 @@ void gdImageCopyResampled (uint8_t *dst,
     }
 }
 
-/* Fast interger implementation for 32 bpp bitmap scaling.
+/* Fast integer implementation for 32 bpp bitmap scaling.
  * Use fixed point values * 16.
  */
 typedef int32_t FIXEDPOINT;

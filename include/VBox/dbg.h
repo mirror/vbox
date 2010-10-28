@@ -148,7 +148,7 @@ typedef struct DBGCVARDESC
     /** The minimal number of times this argument may occur.
      * Use 0 here to inidicate that the argument is optional. */
     unsigned    cTimesMin;
-    /** Maximum number of occurences.
+    /** Maximum number of occurrences.
      * Use ~0 here to indicate infinite. */
     unsigned    cTimesMax;
     /** Argument category. */
@@ -854,7 +854,7 @@ DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
 DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvUser);
 
 /**
- * Terminates any running TCP base debugger consolse service.
+ * Terminates any running TCP base debugger console service.
  *
  * @returns VBox status.
  * @param   pVM         VM handle.

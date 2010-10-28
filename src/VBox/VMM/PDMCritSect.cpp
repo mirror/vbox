@@ -81,7 +81,7 @@ void pdmR3CritSectRelocate(PVM pVM)
  *
  * This is called at the very end of the termination process.  It is also called
  * at the end of vmR3CreateU failure cleanup, which may cause it to be called
- * twice depending on hwere vmR3CreateU actually failed.  We have to do the
+ * twice depending on where vmR3CreateU actually failed.  We have to do the
  * latter call because other components expect the critical sections to be
  * automatically deleted.
  *
@@ -110,7 +110,7 @@ VMMDECL(int) PDMR3CritSectTerm(PVM pVM)
 
 
 /**
- * Initalizes a critical section and inserts it into the list.
+ * Initializes a critical section and inserts it into the list.
  *
  * @returns VBox status code.
  * @param   pVM             The Vm handle.
@@ -118,7 +118,7 @@ VMMDECL(int) PDMR3CritSectTerm(PVM pVM)
  * @param   pvKey           The owner key.
  * @param   RT_SRC_POS_DECL The source position.
  * @param   pszName         The name of the critical section (for statistics).
- * @param   pszNameFmt      Format string for namging the critical section.  For
+ * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   va              Arguments for the format string.
  */
@@ -197,7 +197,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
  * @param   pDevIns         Device instance.
  * @param   pCritSect       Pointer to the critical section.
  * @param   RT_SRC_POS_DECL Use RT_SRC_POS.
- * @param   pszNameFmt      Format string for namging the critical section.  For
+ * @param   pszNameFmt      Format string for naming the critical section.  For
  *                          statistics and lock validation.
  * @param   ...             Arguments for the format string.
  * @thread  EMT(0)
@@ -269,7 +269,7 @@ int pdmR3CritSectInitDriver(PVM pVM, PPDMDRVINS pDrvIns, PPDMCRITSECT pCritSect,
  * @param   pPrev       The previous critical section in the list.
  * @param   fFinal      Set if this is the final call and statistics shouldn't be deregistered.
  *
- * @remarks Caller must've entered the ListCritSect.
+ * @remarks Caller must have entered the ListCritSect.
  */
 static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect, PPDMCRITSECTINT pPrev, bool fFinal)
 {
@@ -363,7 +363,7 @@ static int pdmR3CritSectDeleteByKey(PVM pVM, void *pvKey)
 
 
 /**
- * Deletes all undeleted critical sections initalized by a given device.
+ * Deletes all undeleted critical sections initialized by a given device.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
@@ -376,7 +376,7 @@ int pdmR3CritSectDeleteDevice(PVM pVM, PPDMDEVINS pDevIns)
 
 
 /**
- * Deletes all undeleted critical sections initalized by a given driver.
+ * Deletes all undeleted critical sections initialized by a given driver.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
@@ -475,7 +475,7 @@ VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
     /*
      * If we're lucky, then one of the waiters has entered the lock already.
      * We spin a little bit in hope for this to happen so we can avoid the
-     * yield deatour.
+     * yield detour.
      */
     if (ASMAtomicUoReadS32(&pCritSect->s.Core.cNestings) == 0)
     {
@@ -511,7 +511,7 @@ VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
  * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
  *
  * @param   pCritSect       The critical section.
- * @param   EventToSignal   The semapore that should be signalled.
+ * @param   EventToSignal   The semaphore that should be signalled.
  */
 VMMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal)
 {

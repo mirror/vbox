@@ -204,7 +204,7 @@ void stubUseXFont( Display *dpy, Font font, int first, int count, int listbase )
 		height = ch->ascent + ch->descent;
 		x0 = -ch->lbearing;
 		y0 = ch->descent - 0;  /* XXX used to subtract 1 here */
-		                       /* but that caused a conformace failure */
+		                       /* but that caused a conformance failure */
 		dx = ch->width;
 		dy = 0;
 

@@ -81,7 +81,7 @@ static int supR0IdcNtCallInternal(PDEVICE_OBJECT pDeviceObject, PFILE_OBJECT pFi
             rcNt = KeWaitForSingleObject(&Event,            /* Object */
                                          Executive,         /* WaitReason */
                                          KernelMode,        /* WaitMode */
-                                         FALSE,             /* Altertable */
+                                         FALSE,             /* Alertable */
                                          NULL);             /* TimeOut */
             rcNt = IoStatusBlock.Status;
         }

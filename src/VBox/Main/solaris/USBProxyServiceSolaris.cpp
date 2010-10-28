@@ -280,7 +280,7 @@ static int solarisWalkDeviceNode(di_node_t Node, void *pvArg)
              * Mandatory.
              * snv_85 and above have usb-dev-descriptor node properties, but older one's do not.
              * So if we cannot obtain the entire device descriptor, we try falling back to the
-             * invidividual properties (those must not fail, if it does we drop the device).
+             * individual properties (those must not fail, if it does we drop the device).
              */
             uchar_t *pDevData = NULL;
             int cbProp = di_prop_lookup_bytes(DDI_DEV_T_ANY, Node, "usb-dev-descriptor", &pDevData);

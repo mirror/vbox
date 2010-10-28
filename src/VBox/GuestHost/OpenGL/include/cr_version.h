@@ -32,7 +32,7 @@
 #define CR_OPENGL_VERSION_2_0 1
 #define CR_OPENGL_VERSION_2_1 1
 
-/* Version (string) of OpenGL functionality suported by Chromium */
+/* Version (string) of OpenGL functionality supported by Chromium */
 #ifdef CR_OPENGL_VERSION_2_1
 # define CR_OPENGL_VERSION_STRING "2.1"
 #elif defined(CR_OPENGL_VERSION_2_0)

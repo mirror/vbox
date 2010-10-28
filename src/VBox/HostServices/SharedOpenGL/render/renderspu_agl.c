@@ -780,7 +780,7 @@ void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *window)
                    window->x + window->width,
                    window->y + window->height);
         SectRgn(render_spu.hRootVisibleRegion, rgn, rgn);
-        /* Because the clipping is done in the coodinate space of the OpenGL
+        /* Because the clipping is done in the coordinate space of the OpenGL
          * window we have to remove the x/y position from the newly created
          * region. */
         OffsetRgn (rgn, -window->x, -window->y);

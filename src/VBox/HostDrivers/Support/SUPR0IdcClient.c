@@ -42,7 +42,7 @@ static PSUPDRVIDCHANDLE volatile g_pMainHandle = NULL;
  * Opens the IDC interface of the support driver.
  *
  * This will perform basic version negotiations and fail if the
- * minmum requirements aren't met.
+ * minimum requirements aren't met.
  *
  * @returns VBox status code.
  * @param   pHandle             The handle structure (output).

@@ -59,7 +59,7 @@ typedef struct TranslationBlock TranslationBlock;
 #define OPC_MAX_SIZE (OPC_BUF_SIZE - MAX_OP_PER_INSTR)
 
 /* Maximum size a TCG op can expand to.  This is complicated because a
-   single op may require several host instructions and regirster reloads.
+   single op may require several host instructions and register reloads.
    For now take a wild guess at 128 bytes, which should allow at least
    a couple of fixup instructions per argument.  */
 #define TCG_MAX_OP_SIZE 128

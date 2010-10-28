@@ -558,7 +558,7 @@ static int pulse_init_in (HWVoiceIn *hw, audsettings_t *as)
     pPulse->BufAttr.fragsize    = (pa_bytes_per_second(&pPulse->SampleSpec)
                                   * conf.buffer_msecs_in) / 1000;
     pPulse->BufAttr.maxlength   = (pPulse->BufAttr.fragsize * 3) / 2;
-    /* Other memebers of pa_buffer_attr are ignored for record streams */
+    /* Other members of pa_buffer_attr are ignored for record streams */
 
     if (pulse_open (1, &pPulse->pStream, &pPulse->SampleSpec, &pPulse->BufAttr))
         return -1;

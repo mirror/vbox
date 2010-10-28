@@ -403,7 +403,7 @@ static void VBoxServiceClipboardOS2RenderFormat(USHORT usFmt)
     bool fSucceeded = false;
 
     /*
-     * Determin which format.
+     * Determine which format.
      */
     uint32_t fFormat;
     if (    usFmt == CF_TEXT
@@ -740,7 +740,7 @@ static MRESULT EXPENTRY VBoxServiceClipboardOS2WinProc(HWND hwnd, ULONG msg, MPA
                 &&  g_enmState != kClipboardState_Polling)
                 break;
 
-            /* Lost the position as clipboard viwer?*/
+            /* Lost the position as clipboard viewer?*/
             if (g_enmState == kClipboardState_Viewer)
             {
                 if (WinQueryClipbrdViewer(g_habWorker) == hwnd)

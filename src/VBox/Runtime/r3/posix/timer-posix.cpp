@@ -113,7 +113,7 @@ typedef struct RTTIMER
                                 * we (might) have code assuming that signals doesn't screw around
                                 * on existing threads. (It would be sufficient to have one thread
                                 * per signal of course since the signal will be masked while it's
-                                * running, however, it may just cause more compilcations than its
+                                * running, however, it may just cause more complications than its
                                 * worth - sigwait/sigwaitinfo work atomically anyway...)
                                 * Also, must block the signal in the thread main procedure too. */
     /** The timer thread. */
@@ -149,11 +149,11 @@ typedef struct RTTIMER
 #ifdef IPRT_WITH_POSIX_TIMERS
 
 /**
- * RTOnce callback that initalizes the critical section.
+ * RTOnce callback that initializes the critical section.
  *
  * @returns RTCritSectInit return code.
- * @param   pvUser1     NULL, ignopred.
- * @param   pvUser2     NULL, ignopred.
+ * @param   pvUser1     NULL, ignored.
+ * @param   pvUser2     NULL, ignored.
  *
  */
 static DECLCALLBACK(int) rtTimerOnce(void *pvUser1, void *pvUser2)

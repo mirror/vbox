@@ -1029,7 +1029,7 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
 #else
      /*
      * We must clear VIP/VIF too on interrupt entry, as otherwise FreeBSD
-     * gets confused by seeingingly changed EFLAGS. See #3491 and
+     * gets confused by seemingly changed EFLAGS. See #3491 and
      * public bug #2341.
      */
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK | VIF_MASK | VIP_MASK);
@@ -1305,7 +1305,7 @@ static void do_interrupt64(int intno, int is_int, int error_code,
 #else
     /*
      * We must clear VIP/VIF too on interrupt entry, as otherwise FreeBSD
-     * gets confused by seeingingly changed EFLAGS. See #3491 and
+     * gets confused by seemingly changed EFLAGS. See #3491 and
      * public bug #2341.
      */
     env->eflags &= ~(TF_MASK | VM_MASK | RF_MASK | NT_MASK | VIF_MASK | VIP_MASK);
@@ -5610,7 +5610,7 @@ uint32_t raw_compute_eflags(CPUX86State *env1)
 /**
  * Reads byte from virtual address in guest memory area.
  * XXX: is it working for any addresses? swapped out pages?
- * @returns readed data byte.
+ * @returns read data byte.
  * @param   env1    CPU environment.
  * @param   pvAddr  GC Virtual address.
  */
@@ -5627,7 +5627,7 @@ uint8_t read_byte(CPUX86State *env1, target_ulong addr)
 /**
  * Reads byte from virtual address in guest memory area.
  * XXX: is it working for any addresses? swapped out pages?
- * @returns readed data byte.
+ * @returns read data byte.
  * @param   env1    CPU environment.
  * @param   pvAddr  GC Virtual address.
  */
@@ -5644,7 +5644,7 @@ uint16_t read_word(CPUX86State *env1, target_ulong addr)
 /**
  * Reads byte from virtual address in guest memory area.
  * XXX: is it working for any addresses? swapped out pages?
- * @returns readed data byte.
+ * @returns read data byte.
  * @param   env1    CPU environment.
  * @param   pvAddr  GC Virtual address.
  */
@@ -5661,7 +5661,7 @@ uint32_t read_dword(CPUX86State *env1, target_ulong addr)
 /**
  * Writes byte to virtual address in guest memory area.
  * XXX: is it working for any addresses? swapped out pages?
- * @returns readed data byte.
+ * @returns read data byte.
  * @param   env1    CPU environment.
  * @param   pvAddr  GC Virtual address.
  * @param   val     byte value

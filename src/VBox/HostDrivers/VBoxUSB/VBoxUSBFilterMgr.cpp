@@ -71,7 +71,7 @@ typedef struct VBOXUSBFILTER *PVBOXUSBFILTER;
 typedef PVBOXUSBFILTER *PPVBOXUSBFILTER;
 
 /**
- * VBoxUSB internal filter represenation.
+ * VBoxUSB internal filter representation.
  */
 typedef struct VBOXUSBFILTER
 {
@@ -116,7 +116,7 @@ static VBOXUSBFILTERLIST    g_aLists[USBFILTERTYPE_END];
 
 
 /**
- * Initalizes the VBoxUSB filter manager.
+ * Initializes the VBoxUSB filter manager.
  *
  * @returns IPRT status code.
  */
@@ -396,7 +396,7 @@ RTPROCESS VBoxUSBFilterMatch(PCUSBFILTER pDevice, uintptr_t *puId)
                  * Take list specific actions and return.
                  *
                  * The code does NOT implement the case where there are two or more
-                 * filter clients, and one of them is releaseing a device that's
+                 * filter clients, and one of them is releasing a device that's
                  * requested by some of the others. It's just too much work for a
                  * situation that noone will encounter.
                  */

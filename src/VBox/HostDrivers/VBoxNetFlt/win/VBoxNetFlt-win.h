@@ -897,7 +897,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMemAlloc(PVOID* ppMemBuf, UINT cbLength);
 DECLHIDDEN(void) vboxNetFltWinMemFree(PVOID pMemBuf);
 
 /* convenience method used which allocates and initializes the PINTNETSG containing one
- * segment refering the buffer of size cbBufSize
+ * segment referring the buffer of size cbBufSize
  * the allocated PINTNETSG should be freed with the vboxNetFltWinMemFree.
  *
  * This is used when our ProtocolReceive callback is called and we have to return the indicated NDIS_PACKET
@@ -1003,7 +1003,7 @@ DECLINLINE(bool) vboxNetFltWinIsLoopedBackPacket(PNDIS_PACKET pPacket)
 #endif
 
 /**************************************************************
- * utility methofs for ndis packet creation/initialization    *
+ * utility methods for ndis packet creation/initialization    *
  **************************************************************/
 
 #define VBOXNETFLT_OOB_INIT(_p) \

@@ -400,7 +400,7 @@ static void vdiInitHeader(PVDIHEADER pHeader, uint32_t uImageFlags,
  */
 static int vdiValidateHeader(PVDIHEADER pHeader)
 {
-    /* Check version-dependend header parameters. */
+    /* Check version-dependent header parameters. */
     switch (GET_MAJOR_HEADER_VERSION(pHeader))
     {
         case 0:
@@ -2521,7 +2521,7 @@ static int vdiResize(void *pBackendData, uint64_t cbSize,
                     break;
                 }
 
-                /* Allocate buffer for overwrting with zeroes. */
+                /* Allocate buffer for overwriting with zeroes. */
                 pvZero = RTMemAllocZ(pImage->cbTotalBlockData);
                 if (!pvZero)
                 {

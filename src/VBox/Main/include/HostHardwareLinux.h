@@ -41,7 +41,7 @@ public:
         /** The device node of the drive. */
         iprt::MiniString mDevice;
         /** A unique identifier for the device, if available.  This should be
-         * kept consistant accross different probing methods of a given
+         * kept consistent across different probing methods of a given
          * platform if at all possible. */
         iprt::MiniString mUdi;
         /** A textual description of the drive. */

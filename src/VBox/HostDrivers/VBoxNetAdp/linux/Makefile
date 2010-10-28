@@ -178,7 +178,7 @@ ifeq ($(BUILD_TYPE),debug)
 endif
 
 # By default we use remap_pfn_range() kernel API to make kernel pages
-# visible for userland. Unfortuately, it leads to situation that
+# visible for userland. Unfortunately, it leads to situation that
 # during debug session all structures on that page (such as PVM pointer)
 # are not accessible to the debugger (see #3214).
 # This code enables experimental support

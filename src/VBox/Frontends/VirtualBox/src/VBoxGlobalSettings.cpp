@@ -32,7 +32,7 @@
 
 /** @class VBoxGlobalSettingsData
  *
- *  The VBoxGlobalSettingsData class incapsulates the global settings
+ *  The VBoxGlobalSettingsData class encapsulates the global settings
  *  of the VirtualBox.
  */
 
@@ -151,11 +151,11 @@ bool VBoxGlobalSettings::isFeatureActive (const char *aFeature) const
 /**
  *  Loads the settings from the (global) extra data area of VirtualBox.
  *
- *  If an error occures while accessing extra data area, the method immediately
+ *  If an error occurs while accessing extra data area, the method immediately
  *  returns and the vbox argument will hold all error info (and therefore
  *  vbox.isOk() will be false to indicate this).
  *
- *  If an error occures while setting the value of some property, the method
+ *  If an error occurs while setting the value of some property, the method
  *  also returns immediately. #operator !() will return false in this case
  *  and #lastError() will contain the error message.
  *
@@ -181,7 +181,7 @@ void VBoxGlobalSettings::load (CVirtualBox &vbox)
 /**
  *  Saves the settings to the (global) extra data area of VirtualBox.
  *
- *  If an error occures while accessing extra data area, the method immediately
+ *  If an error occurs while accessing extra data area, the method immediately
  *  returns and the vbox argument will hold all error info (and therefore
  *  vbox.isOk() will be false to indicate this).
  */
@@ -228,7 +228,7 @@ QString VBoxGlobalSettings::publicProperty (const QString &publicName) const
  *  This method (as opposed to #setProperty (const char *name, const QVariant& value))
  *  validates the value against the property's regexp.
  *
- *  If an error occures while setting the value of the property, #operator !()
+ *  If an error occurs while setting the value of the property, #operator !()
  *  will return false after this method returns true, and #lastError() will contain
  *  the error message.
  *

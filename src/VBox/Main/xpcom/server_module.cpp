@@ -1,6 +1,6 @@
 /** @file
  *
- * XPCOM server process hepler module implementation functions
+ * XPCOM server process helper module implementation functions
  */
 
 /*

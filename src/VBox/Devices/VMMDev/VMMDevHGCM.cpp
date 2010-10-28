@@ -2198,7 +2198,7 @@ DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBO
 
 /** @todo no longer necessary to forward to EMT, but it might be more
  *        efficient...? */
-    /* Not safe to execute asynchroneously; forward to EMT */
+    /* Not safe to execute asynchronously; forward to EMT */
     int rc = VMR3ReqCallVoidNoWait(PDMDevHlpGetVM(pVMMDevState->pDevIns), VMCPUID_ANY,
                                    (PFNRT)hgcmCompletedWorker, 3, pInterface, result, pCmd);
     AssertRC(rc);
@@ -2390,8 +2390,8 @@ int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t uVe
                 AssertRCReturn(rc, rc);
             }
 
-            /* Allocate only VBOXHGCMCMD structure. vmmdevHGCMLoadStateDone will rellocate the command
-             * with aditional space for parameters and for pointer/pagelists buffer.
+            /* Allocate only VBOXHGCMCMD structure. vmmdevHGCMLoadStateDone will reallocate the command
+             * with additional space for parameters and for pointer/pagelists buffer.
              */
             PVBOXHGCMCMD pCmd = (PVBOXHGCMCMD)RTMemAllocZ (sizeof (VBOXHGCMCMD));
             AssertReturn(pCmd, VERR_NO_MEMORY);

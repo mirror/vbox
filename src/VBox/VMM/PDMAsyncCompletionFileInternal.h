@@ -46,7 +46,7 @@
 RT_C_DECLS_BEGIN
 
 /**
- * A few forward declerations.
+ * A few forward declarations.
  */
 typedef struct PDMASYNCCOMPLETIONENDPOINTFILE *PPDMASYNCCOMPLETIONENDPOINTFILE;
 /** Pointer to a request segment. */
@@ -172,7 +172,7 @@ typedef struct PDMACEPFILEMGR
     RTMEMCACHE                             hMemCacheRangeLocks;
     /** Critical section protecting the blocking event handling. */
     RTCRITSECT                             CritSectBlockingEvent;
-    /** Event sempahore for blocking external events.
+    /** Event semaphore for blocking external events.
      * The caller waits on it until the async I/O manager
      * finished processing the event. */
     RTSEMEVENT                             EventSemBlock;
@@ -531,7 +531,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     STAMPROFILEADV                         StatWrite;
 #endif
 
-    /** Event sempahore for blocking external events.
+    /** Event semaphore for blocking external events.
      * The caller waits on it until the async I/O manager
      * finished processing the event. */
     RTSEMEVENT                             EventSemBlock;

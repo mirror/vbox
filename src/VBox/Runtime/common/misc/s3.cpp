@@ -767,7 +767,7 @@ RTR3DECL(int) RTS3GetBucketKeys(RTS3 hS3, const char* pszBucketName, PCRTS3KEYEN
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
 
     RTS3TMPMEMCHUNK chunk = { NULL, 0 };
-    /* Set the callback which recieve the content */
+    /* Set the callback which receive the content */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_WRITEFUNCTION, rtS3WriteMemoryCallback);
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_WRITEDATA, (void *)&chunk);
 
@@ -794,7 +794,7 @@ RTR3DECL(int) RTS3GetBucketKeys(RTS3 hS3, const char* pszBucketName, PCRTS3KEYEN
             xmlFreeDoc(pDoc);
         }
     }
-    /* Free the tempory memory */
+    /* Free the temporary memory */
     RTMemFree(chunk.pszMem);
 
     return rc;

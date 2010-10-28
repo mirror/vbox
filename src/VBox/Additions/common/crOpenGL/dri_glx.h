@@ -42,7 +42,7 @@ extern DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrentReadSGI)(Display *display, GLXD
 extern DECLEXPORT(const char *) VBOXGLXTAG(glXGetScreenDriver)(Display *dpy, int scrNum);
 extern DECLEXPORT(Display *) VBOXGLXTAG(glXGetCurrentDisplayEXT)(void);
 extern DECLEXPORT(void) VBOXGLXTAG(glXFreeContextEXT)(Display *dpy, GLXContext ctx);
-/*Mesa insternal*/
+/*Mesa internal*/
 extern DECLEXPORT(int) VBOXGLXTAG(glXQueryContextInfoEXT)(Display *dpy, GLXContext ctx);
 extern DECLEXPORT(void *) VBOXGLXTAG(glXAllocateMemoryMESA)(Display *dpy, int scrn,
                                                        size_t size, float readFreq,

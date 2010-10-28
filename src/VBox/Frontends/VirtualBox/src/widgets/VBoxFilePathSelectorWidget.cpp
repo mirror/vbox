@@ -212,7 +212,7 @@ QString VBoxFilePathSelectorWidget::defaultSaveExt() const
  *
  * May be used in @c activated() signal handlers to distinguish between
  * non-path items like "Other..." or "Reset" that get temporarily activated
- * when performing the corresponding actiojn and the item that contains a
+ * when performing the corresponding action and the item that contains a
  * real selected file/folder path.
  */
 bool VBoxFilePathSelectorWidget::isPathSelected() const

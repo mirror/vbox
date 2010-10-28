@@ -43,7 +43,7 @@ crTransformBBox( float xmin, float ymin, float zmin,
 	 *            \|    .|
 	 *             6 --- 7
 	 *  
-	 *  c array contains the edge connectivitiy list
+	 *  c array contains the edge connectivity list
 	 */
 
 	static const int c[8][3] = {	

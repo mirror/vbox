@@ -55,7 +55,7 @@ HRESULT ProgressProxy::FinalConstruct()
 }
 
 /**
- * Initalize it as a one operation Progress object.
+ * Initialize it as a one operation Progress object.
  *
  * This is used by SessionMachine::OnSessionEnd.
  */

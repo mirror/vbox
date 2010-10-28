@@ -156,7 +156,7 @@ __clip(double *poly, int nvert, double *clip_to_poly, int nclip_to_vert,
 
 	/* 
 	 * First, compute normals for the clip poly. This 
-	 * breaks for multiple (3+) adjacent colinear verticies
+	 * breaks for multiple (3+) adjacent colinear vertices
  	 */
 	clip_normals = (double *)crAlloc(nclip_to_vert*2*sizeof(double));
 	for (a=0; a<nclip_to_vert; a++)
@@ -306,7 +306,7 @@ __execute_combination(CRPoly **base, int n, int *mask, CRPoly **head)
 		if (a == n) break;
 	}
 
-	/* can't subract something from nothing! */
+	/* can't subtract something from nothing! */
 	if (got_intr)
 		*head = intr;
 	else
@@ -381,7 +381,7 @@ __execute_combination(CRPoly **base, int n, int *mask, CRPoly **head)
 
 /*
  * Here we generate all valid bitmaps to represent union/difference
- * conbinations. Each bitmap is N elements long, where N is the 
+ * combinations. Each bitmap is N elements long, where N is the 
  * number of polys [quads] that we are testing for overlap
  */
 static void
@@ -450,7 +450,7 @@ __generate_masks(int n, int ***mask, int *nmasks)
  *
  * In the map, 1 == union, 0 == difference
  *
- * (*res)[a] is the head of a poly list for all the polys that conver 
+ * (*res)[a] is the head of a poly list for all the polys that convert 
  * regions of overlap between a+1 polys ((*res)[0] == NULL)
  */ 
 void

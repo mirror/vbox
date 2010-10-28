@@ -15,5 +15,5 @@ Where have the Windows drivers gone?
   with the selected architecture (x86 or amd64) to prevent mixing up
   the drivers.
 
-  To get further help with the command line parameteres of the installer,
+  To get further help with the command line parameters of the installer,
   type: VBoxWindowsAdditions-<arch> /?

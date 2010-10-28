@@ -599,9 +599,9 @@ copy_revprops(svn_ra_session_t *from_session,
 /*** Initialization Editor ***/
 
 /* This editor has the job of creating the initial state for a destination
- * respository that starts witout history before a certain starting revision.
+ * repository that starts without history before a certain starting revision.
  * Going the export/import way would lose the versioned properties. Unversioned
- * properies are dropped, because they don't belong to the initial snapshot.
+ * properties are dropped, because they don't belong to the initial snapshot.
  *
  * It needs to create an entire tree in a single commit.
  */
@@ -1194,7 +1194,7 @@ initialize_cmd(apr_getopt_t *os, void *b, apr_pool_t *pool)
 
 
 
-/*** Syncronization Editor ***/
+/*** Synchronization Editor ***/
 
 /* This editor has a couple of jobs.
  *
@@ -2208,7 +2208,7 @@ close_edit(void *edit_baton,
   }
 #endif /* VBOX */
 
-  /* If we haven't opened the root yet, that means we're transfering
+  /* If we haven't opened the root yet, that means we're transferring
      an empty revision, probably because we aren't allowed to see the
      contents for some reason.  In any event, we need to open the root
      and close it again, before we can close out the edit, or the
@@ -2303,7 +2303,7 @@ get_sync_editor(const svn_delta_editor_t *wrapped_editor,
 
 /*** `svnsync sync' ***/
 
-/* Baton for syncronizing the destination repository while locked. */
+/* Baton for synchronizing the destination repository while locked. */
 typedef struct {
   apr_hash_t *config;
   svn_ra_callbacks2_t *callbacks;
@@ -2342,12 +2342,12 @@ commit_callback(const svn_commit_info_t *commit_info,
 
 
 /* Set *FROM_SESSION to an RA session associated with the source
- * repository of the syncronization, as determined by reading
+ * repository of the synchronization, as determined by reading
  * svn:sync- properties from the destination repository (associated
  * with TO_SESSION).  Set LAST_MERGED_REV to the value of the property
- * which records the most recently syncronized revision.
+ * which records the most recently synchronized revision.
 *** VBOX
- * Set START_REV_STR to the propery which records the starting revision.
+ * Set START_REV_STR to the properly which records the starting revision.
 *** VBOX
  *
  * CALLBACKS is a vtable of RA callbacks to provide when creating
@@ -2424,7 +2424,7 @@ open_source_session(svn_ra_session_t **from_session,
 }
 
 
-/* Syncronize the repository associated with RA session TO_SESSION,
+/* Synchronize the repository associated with RA session TO_SESSION,
  * using information found in baton B, while the repository is
  * locked.  Implements `with_locked_func_t' interface.
  */
@@ -2485,8 +2485,8 @@ do_synchronize(svn_ra_session_t *to_session, void *b, apr_pool_t *pool)
      So, any time that currently-copying is not set, then
      last-merged-rev should be the HEAD revision of the destination
      repository.  That is, if we didn't fall over in the middle of a
-     previous syncronization, then our destination repository should
-     have exactly as many revisions in it as we've syncronized.
+     previous synchronization, then our destination repository should
+     have exactly as many revisions in it as we've synchronized.
 
      Alternately, if currently-copying *is* set, it must
      be either last-merged-rev or last-merged-rev + 1, and the HEAD

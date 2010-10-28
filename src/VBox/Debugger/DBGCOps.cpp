@@ -140,7 +140,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
 
 
 /**
- * Switch the factors/whatver so we preserve pointers.
+ * Switch the factors/whatever so we preserve pointers.
  * Far pointers are considered more  important that physical and flat pointers.
  *
  * @param   pArg1           The left side argument.  Input & output.
@@ -201,7 +201,7 @@ const unsigned g_cOps = RT_ELEMENTS(g_aOps);
 
 
 /**
- * Convers an argument to a number value.
+ * Converts an argument to a number value.
  *
  * @returns VBox status code.
  * @param   pDbgc               The DBGC instance.
@@ -298,7 +298,7 @@ static DECLCALLBACK(int) dbgcOpMinus(PDBGC pDbgc, PCDBGCVAR pArg, PDBGCVAR pResu
 
 
 /**
- * Pluss (unary).
+ * Plus (unary).
  *
  * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
@@ -1102,7 +1102,7 @@ static DECLCALLBACK(int) dbgcOpAdd(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR pArg2
 
 
 /**
- * Subtration operator (binary).
+ * Subtraction operator (binary).
  *
  * @returns VINF_SUCCESS on success.
  * @returns VBox evaluation / parsing error code on failure.
@@ -1631,7 +1631,7 @@ static DECLCALLBACK(int) dbgcOpRangeTo(PDBGC pDbgc, PCDBGCVAR pArg1, PCDBGCVAR p
  * @param   pDbgc           The debug console instance.
  * @param   pszExpr         Pointer to the expression string which might start with an operator.
  * @param   fPreferBinary   Whether to favour binary or unary operators.
- *                          Caller must assert that it's the disired type! Both types will still
+ *                          Caller must assert that it's the desired type! Both types will still
  *                          be returned, this is only for resolving duplicates.
  * @param   chPrev          The previous char. Some operators requires a blank in front of it.
  */
@@ -1659,7 +1659,7 @@ PCDBGCOP dbgcOperatorLookup(PDBGC pDbgc, const char *pszExpr, bool fPreferBinary
             pOp = &g_aOps[iOp];
 
             /*
-             * Prefered type?
+             * Preferred type?
              */
             if (g_aOps[iOp].fBinary == fPreferBinary)
                 break;

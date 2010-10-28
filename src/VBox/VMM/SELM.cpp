@@ -248,7 +248,7 @@ VMMR3DECL(int) SELMR3InitFinalize(PVM pVM)
 {
     /** @cfgm{/DoubleFault,bool,false}
      * Enables catching of double faults in the raw-mode context VMM code.  This can
-     * be used when the tripple faults or hangs occure and one suspect an unhandled
+     * be used when the triple faults or hangs occur and one suspect an unhandled
      * double fault.  This is not enabled by default because it means making the
      * hyper selectors writeable for all supervisor code, including the guest's.
      * The double fault is a task switch and thus requires write access to the GDT
@@ -402,7 +402,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
          */
         CPUMSetHyperGDTR(pVCpu, MMHyperR3ToRC(pVM, paGdt), SELM_GDT_ELEMENTS * sizeof(paGdt[0]) - 1);
 
-        /** @todo selector relocations should be a seperate operation? */
+        /** @todo selector relocations should be a separate operation? */
         CPUMSetHyperCS(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_CS]);
         CPUMSetHyperDS(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
         CPUMSetHyperES(pVCpu, pVM->selm.s.aHyperSel[SELM_HYPER_SEL_DS]);
@@ -1104,7 +1104,7 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
          */
 
         /*
-         * First, determin the current LDT selector.
+         * First, determine the current LDT selector.
          */
         RTSEL SelLdt = CPUMGetGuestLDTR(pVCpu);
         if ((SelLdt & X86_SEL_MASK) == 0)
@@ -1851,7 +1851,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
         uint32_t cr4 = CPUMGetGuestCR4(pVCpu);
         int rc = PGMPhysSimpleReadGCPtr(pVCpu, &Tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, IntRedirBitmap));
         AssertReturn(   rc == VINF_SUCCESS
-                        /* Happends early in XP boot during page table switching. */
+                        /* Happens early in XP boot during page table switching. */
                      || (   (rc == VERR_PAGE_TABLE_NOT_PRESENT || rc == VERR_PAGE_NOT_PRESENT)
                          && !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF)),
                      false);

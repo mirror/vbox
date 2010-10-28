@@ -20,14 +20,14 @@
  *
  * The guidelines extends the VBox coding guidelines (@ref pg_vbox_guideline)
  * and consists of a compulsory part and an optional part. It is very important
- * that the rules of the compusory part is followed. That will prevent obvious
+ * that the rules of the compulsory part is followed. That will prevent obvious
  * bugs, and it will ease porting the code to 32/64 and 64/32 bits setups.
  *
  *
  *
  * @section sec_vmm_guideline_compulsory        Compulsory
  *
- * It is of vital importance is to distiguish between addresses - both virtual
+ * It is of vital importance is to distinguish between addresses - both virtual
  * and physical - applying to Guest Context and Host Context. To assist the
  * coder in this, a set of types and macros have been created. Another vital
  * thing is that structures shared between the two contexts ends up with the
@@ -83,7 +83,7 @@
  * There are the general VBox guidelines, see @ref sec_vbox_guideline_optional.
  * In addition to these for the following rules applies to the VMM:
  *
- *      - Prefixes GCPtr and HCPtr are prefered over suffixes HC and GC of
+ *      - Prefixes GCPtr and HCPtr are preferred over suffixes HC and GC of
  *        pointers.
  *
  *      - Prefixes GCPhys and HCPhys are generally used for physical addresses,

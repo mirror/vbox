@@ -146,7 +146,7 @@ VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
      *   us one before we get to the setsid.
      * - When the parent exit(0) we will become an orphan and re-parented to
      *   the init process.
-     * - Because of the Linux / System V sematics of assigning the controlling
+     * - Because of the Linux / System V semantics of assigning the controlling
      *   tty automagically when a session leader first opens a tty, we will
      *   fork() once more on Linux to get rid of the session leadership role.
      */

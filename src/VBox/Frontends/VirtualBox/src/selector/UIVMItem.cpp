@@ -337,7 +337,7 @@ bool UIVMItem::switchTo()
 
     HWND hwnd = mWinId;
 
-    /* if there are ownees (modal and modeless dialogs, etc), find the
+    /* if there are blockers (modal and modeless dialogs, etc), find the
      * topmost one */
     HWND hwndAbove = NULL;
     do

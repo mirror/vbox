@@ -49,7 +49,7 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef RTALLOC_EFENCE_TRACE
-/** Spinlock protecting the allthe blocks globals. */
+/** Spinlock protecting the all the block's globals. */
 static volatile uint32_t    g_BlocksLock;
 /** Tree tracking the allocations. */
 static AVLPVTREE            g_BlocksTree;
@@ -102,7 +102,7 @@ DECLINLINE(void) rtmemLog(const char *pszOp, const char *pszFormat, ...)
 #ifdef RTALLOC_EFENCE_TRACE
 
 /**
- * Aquires the lock.
+ * Acquires the lock.
  */
 DECLINLINE(void) rtmemBlockLock(void)
 {

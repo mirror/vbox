@@ -318,7 +318,7 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
 }
 
 
-/* add sizeof header + page allign */
+/* add sizeof header + page align */
 #define CRVBOXHGSMI_PAGE_ALIGN(_s) (((_s)  + 0xfff) & ~0xfff)
 #define CRVBOXHGSMI_BUF_HDR_SIZE() (sizeof (CRVBOXHGSMIBUFFER))
 #define CRVBOXHGSMI_BUF_SIZE(_s) CRVBOXHGSMI_PAGE_ALIGN((_s) + CRVBOXHGSMI_BUF_HDR_SIZE())
@@ -329,10 +329,10 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
 
 static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLock(PCRVBOXHGSMI_CLIENT pClient, uint32_t cbBuffer)
 {
-    /* in theory it is OK to use one cmd buffer for asynch cmd submission
+    /* in theory it is OK to use one cmd buffer for async cmd submission
      * because bDiscard flag should result in allocating a new memory backend if the
      * allocation is still in use.
-     * However, NOTE: since one and the same semaphore synch event is used for completion notification,
+     * However, NOTE: since one and the same semaphore sync event is used for completion notification,
      * for the notification mechanism working as expected
      * 1. host must complete commands in the same order as it receives them
      * (to avoid situation when guest receives notification for another command completion)
@@ -355,10 +355,10 @@ static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLock(PCRVBOXHGSMI_CLIENT pClient, ui
 
 static CRVBOXHGSMIHDR *_crVBoxHGSMICmdBufferLockRo(PCRVBOXHGSMI_CLIENT pClient, uint32_t cbBuffer)
 {
-    /* in theory it is OK to use one cmd buffer for asynch cmd submission
+    /* in theory it is OK to use one cmd buffer for async cmd submission
      * because bDiscard flag should result in allocating a new memory backend if the
      * allocation is still in use.
-     * However, NOTE: since one and the same semaphore synch event is used for completion notification,
+     * However, NOTE: since one and the same semaphore sync event is used for completion notification,
      * for the notification mechanism working as expected
      * 1. host must complete commands in the same order as it receives them
      * (to avoid situation when guest receives notification for another command completion)

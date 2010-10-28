@@ -113,7 +113,7 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
 #else
 /* Load helpers invoked from generated code, and TCG makes an assumption
    that valid value takes the whole register, why gcc after 4.3 may
-   use only lower part of register for smaller types. So force promoution. */
+   use only lower part of register for smaller types. So force promotion. */
 DATA_TYPE_PROMOTED REGPARM
 glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                     int mmu_idx)

@@ -429,7 +429,7 @@ typedef struct _STRING_DESCRIPTOR_NODE
 } STRING_DESCRIPTOR_NODE, *PSTRING_DESCRIPTOR_NODE;
 
 //
-// Structures assocated with TreeView items through the lParam.  When an item
+// Structures associated with TreeView items through the lParam.  When an item
 // is selected, the lParam is retrieved and the structure it which it points
 // is used to display information in the edit control.
 //
@@ -1667,7 +1667,7 @@ GetConfigDescriptor (
     //     bmRequest = 0x80
     //     bRequest  = 0x06
     //
-    // We must inititialize these fields:
+    // We must initialize these fields:
     //     wValue    = Descriptor Type (high) and Descriptor Index (low byte)
     //     wIndex    = Zero (or Language ID for String Descriptors)
     //     wLength   = Length of descriptor buffer
@@ -1737,7 +1737,7 @@ GetConfigDescriptor (
     //     bmRequest = 0x80
     //     bRequest  = 0x06
     //
-    // We must inititialize these fields:
+    // We must initialize these fields:
     //     wValue    = Descriptor Type (high) and Descriptor Index (low byte)
     //     wIndex    = Zero (or Language ID for String Descriptors)
     //     wLength   = Length of descriptor buffer
@@ -2088,7 +2088,7 @@ GetStringDescriptor (
     //     bmRequest = 0x80
     //     bRequest  = 0x06
     //
-    // We must inititialize these fields:
+    // We must initialize these fields:
     //     wValue    = Descriptor Type (high) and Descriptor Index (low byte)
     //     wIndex    = Zero (or Language ID for String Descriptors)
     //     wLength   = Length of descriptor buffer
@@ -2784,7 +2784,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
         }
 
         AssertMsg((int32_t)numdev.cUSBDevices >= 0, ("%d", numdev.cUSBDevices));
-        if ((int32_t)numdev.cUSBDevices <= 0) /** @todo why does this return -1. Happend here when detaching a captured device which hadn't yet been opened by a VM process. */
+        if ((int32_t)numdev.cUSBDevices <= 0) /** @todo why does this return -1. Happened here when detaching a captured device which hadn't yet been opened by a VM process. */
             break;
 
         Log(("Monitor detected %d captured devices\n", numdev.cUSBDevices));

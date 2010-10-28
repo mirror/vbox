@@ -880,7 +880,7 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbDa
                 crDebug("crStateGLSLProgramCacheUniforms: expanding array uniform, size=%i", size);
 
                 /*For array uniforms it's valid to query location of 1st element as both uniform and uniform[0].
-                 *The name returned by glGetActiveUniform is driver dependant,
+                 *The name returned by glGetActiveUniform is driver dependent,
                  *atleast it's with [0] on win/ati and without [0] on linux/nvidia.
                  */                
                 if (!pIndexStr)

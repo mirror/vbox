@@ -2204,7 +2204,7 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
-     * (w/o treting it as a failure), for example, as in OSE */
+     * (w/o treating it as a failure), for example, as in OSE */
     NOREF(aUSBController);
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_VUSB */
@@ -4094,7 +4094,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
     // than the deadlock we had here before. The actual changing of the extradata
     // is then performed under the write lock and race-free.
 
-    // look up the old value first; if nothing's changed then we need not do anything
+    // look up the old value first; if nothing has changed then we need not do anything
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); // hold read lock only while looking up
         settings::StringsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(strKey);
@@ -4225,7 +4225,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
                         tr("Cannot unregister the machine '%s' while it is locked"),
                         mUserData->s.strName.c_str());
 
-    // wait for state dependants to drop to zero
+    // wait for state dependents to drop to zero
     ensureNoStateDependencies();
 
     if (!mData->mAccessible)
@@ -4233,7 +4233,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
         // inaccessible maschines can only be unregistered; uninitialize ourselves
         // here because currently there may be no unregistered that are inaccessible
         // (this state combination is not supported). Note releasing the caller and
-        // leaving the lock before alling uninit()
+        // leaving the lock before calling uninit()
         alock.leave();
         autoCaller.release();
 
@@ -6039,7 +6039,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
     /*
      *  Note that we don't leave the lock here before calling the client,
      *  because it doesn't need to call us back if called with a NULL argument.
-     *  Leaving the lock herer is dangerous because we didn't prepare the
+     *  Leaving the lock here is dangerous because we didn't prepare the
      *  launch data yet, but the client we've just started may happen to be
      *  too fast and call openSession() that will fail (because of PID, etc.),
      *  so that the Machine will never get out of the Spawning session state.
@@ -6296,7 +6296,7 @@ HRESULT Machine::prepareRegister()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* wait for state dependants to drop to zero */
+    /* wait for state dependents to drop to zero */
     ensureNoStateDependencies();
 
     if (!mData->mAccessible)
@@ -6436,7 +6436,7 @@ void Machine::releaseStateDependency()
 /**
  *  Performs machine state checks based on the @a aDepType value. If a check
  *  fails, this method will set extended error info, otherwise it will return
- *  S_OK. It is supposed, that on failure, the caller will immedieately return
+ *  S_OK. It is supposed, that on failure, the caller will immediately return
  *  the return value of this method to the upper level.
  *
  *  When @a aDepType is AnyStateDep, this method always returns S_OK.
@@ -6472,7 +6472,7 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         case MutableStateDep:
         {
             if (   mData->mRegistered
-                && (   !isSessionMachine()  /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                && (   !isSessionMachine()  /** @todo This was just converted raw; Check if Running and Paused should actually be included here... (Live Migration) */
                     || (   mData->mMachineState != MachineState_Paused
                         && mData->mMachineState != MachineState_Running
                         && mData->mMachineState != MachineState_Aborted
@@ -6489,7 +6489,7 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
         case MutableOrSavedStateDep:
         {
             if (   mData->mRegistered
-                && (   !isSessionMachine() /** @todo This was just convered raw; Check if Running and Paused should actually be included here... (Live Migration) */
+                && (   !isSessionMachine() /** @todo This was just converted raw; Check if Running and Paused should actually be included here... (Live Migration) */
                     || (   mData->mMachineState != MachineState_Paused
                         && mData->mMachineState != MachineState_Running
                         && mData->mMachineState != MachineState_Aborted
@@ -6708,7 +6708,7 @@ void Machine::uninitDataAndChildObjects()
  *  parent for complex machine data objects such as shared folders, etc.
  *
  *  For primary Machine objects and for SnapshotMachine objects, returns this
- *  object's pointer itself. For SessoinMachine objects, returns the peer
+ *  object's pointer itself. For SessionMachine objects, returns the peer
  *  (primary) machine pointer.
  */
 Machine* Machine::getMachine()
@@ -6719,11 +6719,11 @@ Machine* Machine::getMachine()
 }
 
 /**
- * Makes sure that there are no machine state dependants. If necessary, waits
- * for the number of dependants to drop to zero.
+ * Makes sure that there are no machine state dependents. If necessary, waits
+ * for the number of dependents to drop to zero.
  *
  * Make sure this method is called from under this object's write lock to
- * guarantee that no new dependants may be added when this method returns
+ * guarantee that no new dependents may be added when this method returns
  * control to the caller.
  *
  * @note Locks this object for writing. The lock will be released while waiting
@@ -6737,7 +6737,7 @@ void Machine::ensureNoStateDependencies()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Wait for all state dependants if necessary */
+    /* Wait for all state dependents if necessary */
     if (mData->mMachineStateDeps != 0)
     {
         /* lazy semaphore creation */
@@ -6749,7 +6749,7 @@ void Machine::ensureNoStateDependencies()
 
         ++mData->mMachineStateChangePending;
 
-        /* reset the semaphore before waiting, the last dependant will signal
+        /* reset the semaphore before waiting, the last dependent will signal
          * it */
         RTSemEventMultiReset(mData->mMachineStateDepsSem);
 
@@ -6781,7 +6781,7 @@ HRESULT Machine::setMachineState(MachineState_T aMachineState)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* wait for state dependants to drop to zero */
+    /* wait for state dependents to drop to zero */
     ensureNoStateDependencies();
 
     if (mData->mMachineState != aMachineState)
@@ -6938,7 +6938,7 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     /*
      *  NOTE: the assignment below must be the last thing to do,
      *  otherwise it will be not possible to change the settings
-     *  somewehere in the code above because all setters will be
+     *  somewhere in the code above because all setters will be
      *  blocked by checkStateDependency(MutableStateDep).
      */
 
@@ -8094,7 +8094,7 @@ HRESULT Machine::saveAllSnapshots(settings::MachineConfigFile &config)
  *  Saves the VM hardware configuration. It is assumed that the
  *  given node is empty.
  *
- *  @param aNode    <Hardware> node to save the VM hardware confguration to.
+ *  @param aNode    <Hardware> node to save the VM hardware configuration to.
  */
 HRESULT Machine::saveHardware(settings::Hardware &data)
 {
@@ -8313,7 +8313,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 /**
  *  Saves the storage controller configuration.
  *
- *  @param aNode    <StorageControllers> node to save the VM hardware confguration to.
+ *  @param aNode    <StorageControllers> node to save the VM hardware configuration to.
  */
 HRESULT Machine::saveStorageControllers(settings::Storage &data)
 {
@@ -8366,7 +8366,7 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
 }
 
 /**
- *  Saves the hard disk confguration.
+ *  Saves the hard disk configuration.
  */
 HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageController,
                                     settings::StorageController &data)
@@ -9261,7 +9261,7 @@ bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */) const
 
     AssertReturn(!strDirName.isEmpty(), false);
 
-    /* if we don't rename anything on name change, return false shorlty */
+    /* if we don't rename anything on name change, return false shortly */
     if (!mUserData->s.fNameSync)
         return false;
 
@@ -9455,7 +9455,7 @@ void Machine::commit()
             AutoWriteLock peerlock(mPeer COMMA_LOCKVAL_SRC_POS);
 
             /* Commit all changes to new controllers (this will reshare data with
-             * peers for thos who have peers) */
+             * peers for those who have peers) */
             StorageControllerList *newList = new StorageControllerList();
             StorageControllerList::const_iterator it = mStorageControllers->begin();
             while (it != mStorageControllers->end())
@@ -9549,7 +9549,7 @@ void Machine::copyFrom(Machine *aThat)
 
     mHWData.assignCopy(aThat->mHWData);
 
-    // create copies of all shared folders (mHWData after attiching a copy
+    // create copies of all shared folders (mHWData after attaching a copy
     // contains just references to original objects)
     for (HWData::SharedFolderList::iterator it = mHWData->mSharedFolders.begin();
          it != mHWData->mSharedFolders.end();
@@ -9967,7 +9967,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     if (autoUninitSpan.initFailed())
     {
         /* We've been called by init() because it's failed. It's not really
-         * necessary (nor it's safe) to perform the regular uninit sequense
+         * necessary (nor it's safe) to perform the regular uninit sequence
          * below, the following is enough.
          */
         LogFlowThisFunc(("Initialization failed.\n"));
@@ -10115,7 +10115,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 
     /*
      *  An expected uninitialization can come only from #checkForDeath().
-     *  Otherwise it means that something's got really wrong (for examlple,
+     *  Otherwise it means that something's gone really wrong (for example,
      *  the Session implementation has released the VirtualBox reference
      *  before it triggered #OnSessionEnd(), or before releasing IPC semaphore,
      *  etc). However, it's also possible, that the client releases the IPC
@@ -10780,12 +10780,12 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
         mHWData.backup();
 
         /** @todo r=bird: The careful memory handling doesn't work out here because
-         *  the catch block won't undo any damange we've done.  So, if push_back throws
+         *  the catch block won't undo any damage we've done.  So, if push_back throws
          *  bad_alloc then you've lost the value.
          *
          *  Another thing. Doing a linear search here isn't extremely efficient, esp.
          *  since values that changes actually bubbles to the end of the list.  Using
-         *  something that has an efficient lookup and can tollerate a bit of updates
+         *  something that has an efficient lookup and can tolerate a bit of updates
          *  would be nice.  RTStrSpace is one suggestion (it's not perfect).  Some
          *  combination of RTStrCache (for sharing names and getting uniqueness into
          *  the bargain) and hash/tree is another. */
@@ -11651,7 +11651,7 @@ HRESULT SessionMachine::updateMachineStateOnClient()
          * process in this case is waiting inside Session::close() for the
          * "end session" process object to complete, while #uninit() called by
          * #checkForDeath() on the Watcher thread is waiting for the pending
-         * operation to complete. For now, we accept this inconsitent behavior
+         * operation to complete. For now, we accept this inconsistent behavior
          * and simply do nothing here. */
 
         if (mData->mSession.mState == SessionState_Unlocking)

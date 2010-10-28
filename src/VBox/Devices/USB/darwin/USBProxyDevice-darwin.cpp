@@ -1178,7 +1178,7 @@ static int usbProxyDarwinOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, vo
                                 CFRunLoopAddSource(pDevOsX->RunLoopRef, pDevOsX->RunLoopSrcRef, g_pRunLoopMode);
 
                                 /*
-                                 * Determin the active configuration.
+                                 * Determine the active configuration.
                                  * Can cause hangs, so drop it for now.
                                  */
                                 /** @todo test Palm. */
@@ -1773,7 +1773,7 @@ static void usbProxyDarwinUrbCancel(PVUSBURB pUrb)
              pUrb->pszDesc, pProxyDev->pUsbIns->pszName, pUrb->EndPt));
 
     /*
-     * Determin the interface / endpoint ref and invoke AbortPipe.
+     * Determine the interface / endpoint ref and invoke AbortPipe.
      */
     IOReturn irc = kIOReturnSuccess;
     if (!pUrb->EndPt)

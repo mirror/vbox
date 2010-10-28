@@ -98,7 +98,7 @@ typedef unsigned char (*PFNQUEUEDPC) (void* HwDeviceExtension, void (*CallbackRo
 
 typedef struct VBOXVIDEOPORTPROCS
 {
-    /* ored VBOXVIDEOPORTPROCS_xxx constants describing the supported functyionality */
+    /* ored VBOXVIDEOPORTPROCS_xxx constants describing the supported functionality */
     uint32_t fSupportedTypes;
 
     PFNWAITFORSINGLEOBJECT pfnWaitForSingleObject;

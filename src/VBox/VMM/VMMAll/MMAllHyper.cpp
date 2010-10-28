@@ -404,7 +404,7 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
                     }
                     else
                     {
-                        /* make new head node, mark it USED for simplisity. */
+                        /* make new head node, mark it USED for simplicity. */
                         PMMHYPERCHUNK pPrev = (PMMHYPERCHUNK)pHeap->CTX_SUFF(pbHeap);
                         Assert(pPrev == &pFree->core);
                         pPrev->offPrev = 0;
@@ -617,7 +617,7 @@ static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)
      * be freed either.
      *
      * So, for this to work, the last FREE chunk needs to end on a page aligned
-     * boundrary.
+     * boundary.
      */
     PMMHYPERCHUNKFREE pFree = (PMMHYPERCHUNKFREE)((char *)pHeap->CTX_SUFF(pbHeap) + pHeap->offFreeTail);
     ASSERT_CHUNK_FREE(pHeap, pFree);
@@ -1129,7 +1129,7 @@ static void mmHyperHeapDumpOne(PMMHYPERHEAP pHeap, PMMHYPERCHUNKFREE pCur)
 
 #ifdef MMHYPER_HEAP_STRICT
 /**
- * Internal consitency check.
+ * Internal consistency check.
  */
 static void mmHyperHeapCheck(PMMHYPERHEAP pHeap)
 {

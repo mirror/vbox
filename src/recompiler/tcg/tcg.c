@@ -46,7 +46,7 @@
 #include "config.h"
 #include "qemu-common.h"
 
-/* Note: the long term plan is to reduce the dependancies on the QEMU
+/* Note: the long term plan is to reduce the dependencies on the QEMU
    CPU definitions. Currently they are used for qemu_ld/st
    instructions */
 #define NO_CPU_IO_DEFS
@@ -60,7 +60,7 @@
 #ifdef VBOX
 /*
  * Liveness analysis doesn't work well with 32-bit hosts and 64-bit targets,
- * second element of the register pair to store 64-bit value is consedered
+ * second element of the register pair to store 64-bit value is considered
  * dead, it seems.
  * @todo: fix it in compiler
  */
@@ -1464,7 +1464,7 @@ static void temp_save(TCGContext *s, int temp, TCGRegSet allocated_regs)
     }
 }
 
-/* save globals to their cannonical location and assume they can be
+/* save globals to their canonical location and assume they can be
    modified be the following code. 'allocated_regs' is used in case a
    temporary registers needs to be allocated to store a constant. */
 static void save_globals(TCGContext *s, TCGRegSet allocated_regs)

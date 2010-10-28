@@ -932,7 +932,7 @@ VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInsta
  * @param   iLun            The Logical Unit in which to look for the driver.
  * @param   pszDriver       The name of the driver which to detach.  If NULL
  *                          then the entire driver chain is detatched.
- * @param   iOccurance      The occurance of that driver in the chain.  This is
+ * @param   iOccurance      The occurrence of that driver in the chain.  This is
  *                          usually 0.
  * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @thread  EMT
@@ -1004,7 +1004,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
  * @param   pszDriver       The name of the driver which to detach and replace.
  *                          If NULL then the entire driver chain is to be
  *                          reattached.
- * @param   iOccurance      The occurance of that driver in the chain.  This is
+ * @param   iOccurance      The occurrence of that driver in the chain.  This is
  *                          usually 0.
  * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @param   pCfg            The configuration of the new driver chain that is

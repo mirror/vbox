@@ -29,7 +29,7 @@
 
   @par Revision Reference:
   2002-6: Add Atapi6 enhancement, support >120GB hard disk, including
-  update - ATAIdentity() func
+  update - ATAIdentify() func
   update - AtaBlockIoReadBlocks() func
   update - AtaBlockIoWriteBlocks() func
   add    - AtaAtapi6Identify() func
@@ -50,7 +50,7 @@
 
   @retval EFI_SUCCESS       The disk specified by IdeDev is a Atapi6 supported one and 
                             48-bit addressing must be used
-  @retval EFI_UNSUPPORTED   The disk dosn't not support Atapi6 or it supports but the 
+  @retval EFI_UNSUPPORTED   The disk doesn't not support Atapi6 or it supports but the 
                             capacity is below 120G, 48bit addressing is not needed
   @retval  EFI_DEVICE_ERROR      The identify data in IdeDev is incorrect
   @retval  EFI_INVALID_PARAMETER The identify data in IdeDev is NULL.
@@ -84,7 +84,7 @@ AtaAtapi6Identify (
 
   if ((Atapi6IdentifyStruct->AtapiData.cmd_set_support_83 & BIT10) == 0) {
     //
-    // The device dosn't support 48 bit addressing
+    // The device doesn't support 48 bit addressing
     //
     return EFI_UNSUPPORTED;
   }
@@ -574,7 +574,7 @@ AtaPioDataIn (
   Increment = 256;
 
   //
-  // used to record bytes of currently transfered data
+  // used to record bytes of currently transferred data
   //
   WordCount = 0;
 
@@ -1140,11 +1140,11 @@ AtaSoftReset (
   This function is used to send out ATA commands conforms to the PIO Data In 
   Protocol, supporting ATA/ATAPI-6 standard
 
-  Comparing with ATA-3 data in protocol, we have two differents here:
+  Comparing with ATA-3 data in protocol, we have two differences here:
   1. Do NOT wait for DRQ clear before sending command into IDE device.(the
   wait will frequently fail... cause writing function return error)
 
-  2. Do NOT wait for DRQ clear after all data readed.(the wait greatly
+  2. Do NOT wait for DRQ clear after all data read.(the wait greatly
   slow down writing performance by 100 times!)
 
   @param IdeDev       pointer pointing to IDE_BLK_IO_DEV data structure, used
@@ -1153,7 +1153,7 @@ AtaSoftReset (
   @param ByteCount    data size in byte unit of the buffer.
   @param AtaCommand   value of the Command Register
   @param StartLba     the start LBA of this transaction
-  @param SectorCount  the count of sectors to be transfered
+  @param SectorCount  the count of sectors to be transferred
 
   @retval EFI_SUCCESS      send out the ATA command and device send required data successfully.
   @retval EFI_DEVICE_ERROR command sent failed.
@@ -1196,7 +1196,7 @@ AtaPioDataInExt (
     );
 
   //
-  // Wait for DRDY singnal asserting. ATAPI device needn't wait
+  // Wait for DRDY signal asserting. ATAPI device needn't wait
   //
   if ( (IdeDev->Type == IdeHardDisk)  ||
         (IdeDev->Type == Ide48bitAddressingHardDisk)) {
@@ -1258,7 +1258,7 @@ AtaPioDataInExt (
   Increment = 256;
 
   //
-  // used to record bytes of currently transfered data
+  // used to record bytes of currently transferred data
   //
   WordCount = 0;
 
@@ -1639,7 +1639,7 @@ DoAtaUdma (
     if (RemainBlockNum >= MaxDmaCommandSectors) {
       //
       //  SectorCount is used to record the number of sectors to be read
-      //  Max 65536 sectors can be transfered at a time.
+      //  Max 65536 sectors can be transferred at a time.
       //
       NumberOfBlocks = MaxDmaCommandSectors;
       RemainBlockNum -= MaxDmaCommandSectors;
@@ -2004,7 +2004,7 @@ AtaReadSectorsExt (
     if (BlocksRemaining >= 0x10000) {
       //
       //  SectorCount is used to record the number of sectors to be read
-      //  Max 65536 sectors can be transfered at a time.
+      //  Max 65536 sectors can be transferred at a time.
       //
       SectorCount = 0xffff;
     } else {
@@ -2124,7 +2124,7 @@ AtaBlkIoReadBlocks (
   Status = EFI_SUCCESS;
   if (IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     //
-    // For ATA/ATAPI-6 device(capcity > 120GB), use ATA-6 read block mechanism
+    // For ATA/ATAPI-6 device(capacity > 120GB), use ATA-6 read block mechanism
     //
     if (IdeBlkIoDevice->UdmaMode.Valid) {
       Status = AtaUdmaReadExt (IdeBlkIoDevice, Buffer, Lba, NumberOfBlocks);
@@ -2154,11 +2154,11 @@ AtaBlkIoReadBlocks (
   This function is used to send out ATA commands conforms to the
   PIO Data Out Protocol, supporting ATA/ATAPI-6 standard
 
-  Comparing with ATA-3 data out protocol, we have two differents here:<BR>
+  Comparing with ATA-3 data out protocol, we have two differences here:<BR>
   1. Do NOT wait for DRQ clear before sending command into IDE device.(the
   wait will frequently fail... cause writing function return error)
 
-  2. Do NOT wait for DRQ clear after all data readed.(the wait greatly
+  2. Do NOT wait for DRQ clear after all data read.(the wait greatly
   slow down writing performance by 100 times!)
 
   @param IdeDev       pointer pointing to IDE_BLK_IO_DEV data structure, used
@@ -2167,7 +2167,7 @@ AtaBlkIoReadBlocks (
   @param ByteCount    data size in byte unit of the buffer.
   @param AtaCommand   value of the Command Register
   @param StartLba     the start LBA of this transaction
-  @param SectorCount  the count of sectors to be transfered
+  @param SectorCount  the count of sectors to be transferred
 
   @retval EFI_SUCCESS      send out the ATA command and device receive required
                            data successfully.
@@ -2211,7 +2211,7 @@ AtaPioDataOutExt (
     );
 
   //
-  // Wait for DRDY singnal asserting.
+  // Wait for DRDY signal asserting.
   //
   Status = DRDYReady (IdeDev, ATATIMEOUT);
   if (EFI_ERROR (Status)) {
@@ -2265,7 +2265,7 @@ AtaPioDataOutExt (
   Increment = 256;
 
   //
-  // used to record bytes of currently transfered data
+  // used to record bytes of currently transferred data
   //
   WordCount = 0;
 
@@ -2396,7 +2396,7 @@ AtaWriteSectorsExt (
     if (BlocksRemaining >= 0x10000) {
       //
       //  SectorCount is used to record the number of sectors to be written.
-      //  Max 65536 sectors can be transfered at a time.
+      //  Max 65536 sectors can be transferred at a time.
       //
       SectorCount = 0xffff;
     } else {
@@ -2511,7 +2511,7 @@ AtaBlkIoWriteBlocks (
   Status = EFI_SUCCESS;
   if (IdeBlkIoDevice->Type == Ide48bitAddressingHardDisk) {
     //
-    // For ATA/ATAPI-6 device(capcity > 120GB), use ATA-6 write block mechanism
+    // For ATA/ATAPI-6 device(capacity > 120GB), use ATA-6 write block mechanism
     //
     if (IdeBlkIoDevice->UdmaMode.Valid) {
       Status = AtaUdmaWriteExt (IdeBlkIoDevice, Buffer, Lba, NumberOfBlocks);

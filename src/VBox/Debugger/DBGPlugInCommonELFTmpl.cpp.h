@@ -155,7 +155,7 @@ int DBGDiggerCommonParseElfMod(PVM pVM, const char *pszModName, const char *pszF
     }
 
     /*
-     * Validate the symbol table and determin the max section index
+     * Validate the symbol table and determine the max section index
      * when DBG_DIGGER_ELF_FUNNY_SHDRS is flagged.
      */
     uint32_t     uMaxShIdx = fFlags & DBG_DIGGER_ELF_FUNNY_SHDRS ? 0 : pEhdr->e_shnum - 1;

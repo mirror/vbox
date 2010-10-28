@@ -82,9 +82,9 @@ typedef struct X86EFLAGSBITS
     unsigned    u1VM : 1;
     /** Bit 18 - AC - Alignment check flag - System flag. Works with CR0.AM. */
     unsigned    u1AC : 1;
-    /** Bit 19 - VIF - Virtual interupt flag - System flag. */
+    /** Bit 19 - VIF - Virtual interrupt flag - System flag. */
     unsigned    u1VIF : 1;
-    /** Bit 20 - VIP - Virtual interupt pending flag - System flag. */
+    /** Bit 20 - VIP - Virtual interrupt pending flag - System flag. */
     unsigned    u1VIP : 1;
     /** Bit 21 - ID - CPUID flag - System flag. If this responds to flipping CPUID is supported. */
     unsigned    u1ID : 1;
@@ -176,9 +176,9 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_VM          RT_BIT(17)
 /** Bit 18 - AC - Alignment check flag - System flag. Works with CR0.AM. */
 #define X86_EFL_AC          RT_BIT(18)
-/** Bit 19 - VIF - Virtual interupt flag - System flag. */
+/** Bit 19 - VIF - Virtual interrupt flag - System flag. */
 #define X86_EFL_VIF         RT_BIT(19)
-/** Bit 20 - VIP - Virtual interupt pending flag - System flag. */
+/** Bit 20 - VIP - Virtual interrupt pending flag - System flag. */
 #define X86_EFL_VIP         RT_BIT(20)
 /** Bit 21 - ID - CPUID flag - System flag. If this responds to flipping CPUID is supported. */
 #define X86_EFL_ID          RT_BIT(21)
@@ -808,7 +808,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 
 #define MSR_IA32_PLATFORM_ID                0x17
 
-#ifndef MSR_IA32_APICBASE /* qemu cpu.h klugde */
+#ifndef MSR_IA32_APICBASE /* qemu cpu.h kludge */
 #define MSR_IA32_APICBASE                   0x1b
 #endif
 
@@ -842,7 +842,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_MTRR_CAP                   0xFE
 
 
-#ifndef MSR_IA32_SYSENTER_CS /* qemu cpu.h klugde */
+#ifndef MSR_IA32_SYSENTER_CS /* qemu cpu.h kludge */
 /** SYSENTER_CS - the R0 CS, indirectly giving R0 SS, R3 CS and R3 DS.
  * R0 SS == CS + 8
  * R3 CS == CS + 16
@@ -2131,11 +2131,11 @@ typedef union X86DESC
     /** Gate descriptor view. */
     X86DESCGATE     Gate;
 
-    /** 8 bit unsigned interger view. */
+    /** 8 bit unsigned integer view. */
     uint8_t         au8[8];
-    /** 16 bit unsigned interger view. */
+    /** 16 bit unsigned integer view. */
     uint16_t        au16[4];
-    /** 32 bit unsigned interger view. */
+    /** 32 bit unsigned integer view. */
     uint32_t        au32[2];
 } X86DESC;
 AssertCompileSize(X86DESC, 8);
@@ -2309,13 +2309,13 @@ typedef union X86DESC64
     /** Gate descriptor view. */
     X86DESC64GATE       Gate;
 
-    /** 8 bit unsigned interger view. */
+    /** 8 bit unsigned integer view. */
     uint8_t             au8[16];
-    /** 16 bit unsigned interger view. */
+    /** 16 bit unsigned integer view. */
     uint16_t            au16[8];
-    /** 32 bit unsigned interger view. */
+    /** 32 bit unsigned integer view. */
     uint32_t            au32[4];
-    /** 64 bit unsigned interger view. */
+    /** 64 bit unsigned integer view. */
     uint64_t            au64[2];
 } X86DESC64;
 AssertCompileSize(X86DESC64, 16);

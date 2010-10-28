@@ -57,7 +57,7 @@ namespace guestControl {
  * @todo
  *
  * @todo Respect spaces when quoting for arguments, e.g. "c:\\program files\\".
- * @todo Handle empty ("") argguments.
+ * @todo Handle empty ("") arguments.
  */
 int gctrlPrepareExecArgv(char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs)
 {

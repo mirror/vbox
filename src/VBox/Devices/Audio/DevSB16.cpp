@@ -1933,7 +1933,7 @@ const PDMDEVREG g_DeviceSB16 =
     sizeof(SB16State),
     /* pfnConstruct */
     sb16Construct,
-    /* pfnDesctruct */
+    /* pfnDestruct */
     NULL,
     /* pfnRelocate */
     NULL,

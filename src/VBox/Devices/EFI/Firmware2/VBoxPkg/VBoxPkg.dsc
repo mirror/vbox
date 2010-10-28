@@ -406,7 +406,7 @@
   # mingw set 0x4000000 as a default image base that is the reason 
   # PCD module loaded in the middle of space grub supposed to load
   # boot images. 
-  # this base address choosen looking at 
+  # this base address chosen looking at 
   # Shell> memmap 
   # in the place where Image.c locates the rest of the modules.
   GCC:*_*_*_DLINK_FLAGS = --image-base 0x1f000000 

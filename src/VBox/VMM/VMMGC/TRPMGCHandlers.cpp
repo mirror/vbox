@@ -145,7 +145,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
 
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
     /*
-     * We should poll the timers occationally.
+     * We should poll the timers occasionally.
      * We must *NOT* do this too frequently as it adds a significant overhead
      * and it'll kill us if the trap load is high. (See #1354.)
      * (The heuristic is not very intelligent, we should really check trap
@@ -190,7 +190,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
             )
        )
     {
-        /* The out of memory condition naturally outrang the others. */
+        /* The out of memory condition naturally outranks the others. */
         if (RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)))
             rc = VINF_EM_NO_MEMORY;
         /* Pending Ring-3 action. */
@@ -915,7 +915,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  *
  * @param   pVM         Pointer to the shared VM structure.
  * @param   pVCpu       The virtual CPU handle.
- * @param   pRegFrame   Pointer to the registre frame for the trap.
+ * @param   pRegFrame   Pointer to the register frame for the trap.
  *                      This will be updated on successful return.
  */
 DECLINLINE(int) trpmGCTrap0dHandlerRdTsc(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
@@ -1268,7 +1268,7 @@ DECLASM(int) TRPMGCHyperTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
 
 
 /**
- * Deal with hypervisor traps occuring when resuming execution on a trap.
+ * Deal with hypervisor traps occurring when resuming execution on a trap.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.

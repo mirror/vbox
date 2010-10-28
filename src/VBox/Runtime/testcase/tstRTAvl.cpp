@@ -189,7 +189,7 @@ static bool TrackerNewRandomEx(PTRACKER pTracker, uint32_t *pKey, uint32_t *pKey
     }
 
     /*
-     * Determin the range.
+     * Determine the range.
      */
     uint32_t KeyLast;
     if (cMaxKeys == 1 || !pKeyLast)
@@ -314,7 +314,7 @@ DECLINLINE(void) ProgressPrintf(unsigned cMax, const char *pszFormat, ...)
 
 /**
  * Prints a progress indicator dot.
- * @param   iCur    The current operation. (can be decending too)
+ * @param   iCur    The current operation. (can be descending too)
  * @param   cMax    The max number of operations (exclusive).
  */
 DECLINLINE(void) Progress(unsigned iCur, unsigned cMax)

@@ -101,7 +101,7 @@ typedef struct INTNETMACTAB
 
     /** The host MAC address (reported). */
     RTMAC                   HostMac;
-    /** The host promisucous setting (reported). */
+    /** The host promiscuous setting (reported). */
     bool                    fHostPromiscuous;
     /** Whether the host is active. */
     bool                    fHostActive;
@@ -312,7 +312,7 @@ typedef struct INTNETTRUNKIF
     uint32_t                cIntDstTabs;
     /** The task time destination tables.
      * @remarks intnetR0NetworkEnsureTabSpace and others ASSUMES this immediately
-     *          preceeds apIntDstTabs so that these two tables can be used as one
+     *          precedes apIntDstTabs so that these two tables can be used as one
      *          contiguous one. */
     PINTNETDSTTAB           apTaskDstTabs[2];
     /** The interrupt / disabled-preemption time destination tables.
@@ -352,7 +352,7 @@ typedef struct INTNETNETWORK
     void                   *pvObj;
     /** Pointer to the temporary buffer that is used when snooping fragmented packets.
      * This is allocated after this structure if we're sharing the MAC address with
-     * the host. The buffer is INTNETNETWORK_TMP_SIZE big and aligned on a 64-byte boundrary. */
+     * the host. The buffer is INTNETNETWORK_TMP_SIZE big and aligned on a 64-byte boundary. */
     uint8_t                *pbTmp;
     /** Network creation flags (INTNET_OPEN_FLAGS_*). */
     uint32_t                fFlags;
@@ -2167,7 +2167,7 @@ static void intnetR0TrunkIfSnoopArp(PINTNETNETWORK pNetwork, PCINTNETSG pSG)
 
 #ifdef INTNET_WITH_DHCP_SNOOPING
 /**
- * Snoop up addresses from ARP and DHCP traffic from frames comming
+ * Snoop up addresses from ARP and DHCP traffic from frames coming
  * over the trunk connection.
  *
  * The caller is responsible for do some basic filtering before calling
@@ -2269,7 +2269,7 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
  *
  * This will fish out the source IP address and add it to the cache.
  * Then it will look for DHCPRELEASE requests (?) and anything else
- * that we migh find useful later.
+ * that we might find useful later.
  *
  * @param   pIf             The interface that's sending the frame.
  * @param   pIpHdr          Pointer to the IPv4 header in the frame.
@@ -2339,7 +2339,7 @@ static void intnetR0IfSnoopIPv4SourceAddr(PINTNETIF pIf, PCRTNETIPV4 pIpHdr, uin
  *
  * @param   pIf             The interface that's sending the frame.
  * @param   pHdr            The ARP header.
- * @param   cbPacket        The size of the packet (migth be larger than the ARP
+ * @param   cbPacket        The size of the packet (might be larger than the ARP
  *                          request 'cause of min ethernet frame size).
  * @param   pfSgFlags       Pointer to the SG flags. This is used to tag the packet so we
  *                          don't have to repeat the frame parsing in intnetR0TrunkIfSend.
@@ -2540,7 +2540,7 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
 static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETIF pIfSender, PINTNETSG pSG, uint32_t fDst)
 {
     /*
-     * Since we're only using this for GSO frame comming from the internal
+     * Since we're only using this for GSO frame coming from the internal
      * network interfaces and never the trunk, we can assume there is only
      * one segment.  This simplifies the code quite a bit.
      */
@@ -2665,7 +2665,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
         {
             /*
              * APR IPv4: replace hardware (MAC) addresses because these end up
-             *           in ARP caches. So, if we don't the other machiens will
+             *           in ARP caches. So, if we don't the other machines will
              *           send the packets to the MAC address of the guest
              *           instead of the one of the host, which won't work on
              *           wireless of course...
@@ -2999,7 +2999,7 @@ static INTNETSWDECISION intnetR0NetworkSharedMacFixAndSwitchBroadcast(PINTNETNET
         intnetR0NetworkEditDhcpFromIntNet(pNetwork, pSG, pEthHdr);
 
     /*
-     * Snoop address info from packet orginating from the trunk connection.
+     * Snoop address info from packet originating from the trunk connection.
      */
     if (fSrc)
     {
@@ -3158,7 +3158,7 @@ static void intnetR0NetworkReleaseDstTab(PINTNETNETWORK pNetwork, PINTNETDSTTAB 
  * @param   pNetwork            The network.
  * @param   pDstTab             The destination table.
  * @param   pSG                 The frame to send.
- * @param   pIfSender           The sender interface.  NULL if it origined via
+ * @param   pIfSender           The sender interface.  NULL if it originated via
  *                              the trunk.
  */
 static void intnetR0NetworkDeliver(PINTNETNETWORK pNetwork, PINTNETDSTTAB pDstTab, PINTNETSG pSG, PINTNETIF pIfSender)
@@ -3362,7 +3362,7 @@ INTNETR0DECL(int) IntNetR0IfSend(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession)
             INTNETSWDECISION    enmSwDecision = INTNETSWDECISION_BROADCAST;
             INTNETSG            Sg; /** @todo this will have to be changed if we're going to use async sending
                                      * with buffer sharing for some OS or service. Darwin copies everything so
-                                     * I won't bother allocating and managing SGs rigth now. Sorry. */
+                                     * I won't bother allocating and managing SGs right now. Sorry. */
             PINTNETHDR          pHdr;
             while ((pHdr = IntNetRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
             {
@@ -3748,14 +3748,14 @@ INTNETR0DECL(int) IntNetR0IfSetMacAddressReq(PSUPDRVSESSION pSession, PINTNETIFS
  */
 static int intnetR0NetworkSetIfActive(PINTNETNETWORK pNetwork, PINTNETIF pIf, bool fActive)
 {
-    /* quick santiy check */
+    /* quick sanity check */
     AssertPtr(pNetwork);
     AssertPtr(pIf);
 
     /*
      * The address spinlock of the network protects the variables, while the
      * big lock protects the calling of pfnSetState.  Grab both lock at once
-     * to save us the extra hazzle.
+     * to save us the extra hassle.
      */
     PINTNETTRUNKIF  pTrunk  = NULL;
     RTSPINLOCKTMP   Tmp     = RTSPINLOCKTMP_INITIALIZER;
@@ -4302,7 +4302,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
         return rc;
 
     /*
-     * Allocate the interface and initalize it.
+     * Allocate the interface and initialize it.
      */
     PINTNETIF pIf = (PINTNETIF)RTMemAllocZ(sizeof(*pIf));
     if (!pIf)
@@ -4386,7 +4386,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                     pIf->pNetwork = pNetwork;
 
                     /*
-                     * Grab a busy reference (paranoia) to the trunk before releaseing
+                     * Grab a busy reference (paranoia) to the trunk before releasing
                      * the spinlock and then notify it about the new interface.
                      */
                     PINTNETTRUNKIF pTrunk = pNetwork->MacTab.pTrunk;
@@ -5133,7 +5133,7 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
  * @param   pSession        The current session.
  * @param   pszNetwork      The network name. This has a valid length.
  * @param   enmTrunkType    The trunk type.
- * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
+ * @param   pszTrunk        The trunk name. Its meaning is specific to the type.
  * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
  * @param   ppNetwork       Where to store the pointer to the network on success.
  */
@@ -5232,7 +5232,7 @@ static int intnetR0OpenNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
  * @param   pszNetwork      The name of the network. This must be at least one character long and no longer
  *                          than the INTNETNETWORK::szName.
  * @param   enmTrunkType    The trunk type.
- * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
+ * @param   pszTrunk        The trunk name. Its meaning is specific to the type.
  * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
  * @param   ppNetwork       Where to store the network. In the case of failure
  *                          whatever is returned here should be dereferenced
@@ -5364,7 +5364,7 @@ static int intnetR0CreateNetwork(PINTNET pIntNet, PSUPDRVSESSION pSession, const
  * @param   pSession        The session handle.
  * @param   pszNetwork      The network name.
  * @param   enmTrunkType    The trunk type.
- * @param   pszTrunk        The trunk name. Its meaning is specfic to the type.
+ * @param   pszTrunk        The trunk name. Its meaning is specific to the type.
  * @param   fFlags          Flags, see INTNET_OPEN_FLAGS_*.
  * @param   fRestrictAccess Whether new participants should be subjected to access check or not.
  * @param   cbSend          The send buffer size.
@@ -5553,7 +5553,7 @@ INTNETR0DECL(void) IntNetR0Term(void)
 
 
 /**
- * Initalizes the internal network ring-0 service.
+ * Initializes the internal network ring-0 service.
  *
  * @returns VBox status code.
  */

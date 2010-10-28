@@ -16,5 +16,5 @@
 #/
 Here could be some help how to manage files on efi-app ISO
 
-VBoxInterceptor - intercepts calls to gBS and gRT, outputs a lot of traffics to dev_efi.e.l2, (please be pacient ;))
+VBoxInterceptor - intercepts calls to gBS and gRT, outputs a lot of traffics to dev_efi.e.l2, (please be patient ;))
     Shell> load VBoxInterceptor.efi

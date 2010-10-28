@@ -325,7 +325,7 @@ public:
 
 #define COMMA ,
 #define NO_COMMA
-/* Actual invocation macroses for different number of parameters */
+/* Actual invocation macros for different number of parameters */
 #define CONSOLE_DO_CALLBACKS0(CallbackMethod)                           \
     CONSOLE_DO_CALLBACKS_GEN(CallbackMethod,  PREP_ARGS0(), NO_COMMA)
 #define CONSOLE_DO_CALLBACKS1(CallbackMethod,Arg1)                      \
@@ -1736,7 +1736,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
     /* task is now owned by powerDownThread(), so release it */
     task.release();
 
-    /* go to Stopping state to forbid state-dependant operations */
+    /* go to Stopping state to forbid state-dependent operations */
     setMachineState(MachineState_Stopping);
 
     /* pass the progress to the caller */
@@ -5099,7 +5099,7 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
             szError, vrc);
 
     /* If we've made any directory changes, flush the directory to increase
-       the likelyhood that the log file will be usable after a system panic.
+       the likelihood that the log file will be usable after a system panic.
 
        Tip: Try 'export VBOX_RELEASE_LOG_FLAGS=flush' if the last bits of the log
             is missing. Just don't have too high hopes for this to help. */
@@ -6989,7 +6989,7 @@ HRESULT Console::powerDownHostInterfaces()
  * and VMR3Teleport.
  *
  * @param   pVM         The VM handle.
- * @param   uPercent    Completetion precentage (0-100).
+ * @param   uPercent    Completion percentage (0-100).
  * @param   pvUser      Pointer to the VMProgressTask structure.
  * @return  VINF_SUCCESS.
  */
@@ -7356,7 +7356,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     try
     {
         // Create the VMM device object, which starts the HGCM thread; do this only
-        // once for the console, for the pathologican case that the same console
+        // once for the console, for the pathological case that the same console
         // object is used to power up a VM twice. VirtualBox 4.0: we now do that
         // here instead of the Console constructor (see Console::init())
         if (!console->m_pVMMDev)
@@ -8029,7 +8029,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
     /*
      * Fix up the machine state.
      *
-     * For live snapshots we do all the work, for the two other variantions we
+     * For live snapshots we do all the work, for the two other variations we
      * just update the local copy.
      */
     MachineState_T enmMachineState;

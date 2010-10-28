@@ -1057,7 +1057,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
      */
     unsigned    cTries = 32;
     int         iRangeLeft = (int)pDbgc->DisasmPos.u64Range;
-    if (iRangeLeft == 0)                /* klugde for 'r'. */
+    if (iRangeLeft == 0)                /* kludge for 'r'. */
         iRangeLeft = -1;
     for (;;)
     {
@@ -1204,7 +1204,7 @@ static DECLCALLBACK(int) dbgcCmdListSource(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     bool        fFirst = 1;
     DBGFLINE    LinePrev = { 0, 0, "" };
     int         iRangeLeft = (int)pDbgc->SourcePos.u64Range;
-    if (iRangeLeft == 0)                /* klugde for 'r'. */
+    if (iRangeLeft == 0)                /* kludge for 'r'. */
         iRangeLeft = -1;
     for (;;)
     {
@@ -1743,7 +1743,7 @@ static DECLCALLBACK(int) dbgcCmdStack(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
                                     , pFrame->AddrPC.Sel, pFrame->AddrPC.off);
         else
         {
-            RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value; /** @todo this isn't 100% correct for segemnted stuff. */
+            RTGCINTPTR offDisp = pFrame->AddrPC.FlatPtr - pFrame->pSymPC->Value; /** @todo this isn't 100% correct for segmented stuff. */
             if (offDisp > 0)
                 rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, " %s+%llx", pFrame->pSymPC->szName, (int64_t)offDisp);
             else if (offDisp < 0)
@@ -2106,11 +2106,11 @@ static DECLCALLBACK(int) dbgcCmdDumpDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM 
     for (unsigned i = 0; i < cArgs; i++)
     {
          /*
-          * Retrive the selector value from the argument.
+          * Retrieve the selector value from the argument.
           * The parser may confuse pointers and numbers if more than one
           * argument is given, that that into account.
           */
-        /* check that what've got makes sense as we don't trust the parser yet. */
+        /* check that what we got makes sense as we don't trust the parser yet. */
         if (    paArgs[i].enmType != DBGCVAR_TYPE_NUMBER
             &&  !DBGCVAR_ISPOINTER(paArgs[i].enmType))
             return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number or pointer type but %d.\n", i, paArgs[i].enmType);
@@ -2240,7 +2240,7 @@ static DECLCALLBACK(int) dbgcCmdDumpIDT(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
      */
     for (unsigned i = 0; i < cArgs; i++)
     {
-        /* check that what've got makes sense as we don't trust the parser yet. */
+        /* check that what we got makes sense as we don't trust the parser yet. */
         if (paArgs[i].enmType != DBGCVAR_TYPE_NUMBER)
             return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: arg #%u isn't of number type but %d.\n", i, paArgs[i].enmType);
         if (paArgs[i].u.u64Number < 256)
@@ -2514,7 +2514,7 @@ static DECLCALLBACK(int) dbgcCmdDumpMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
  * @param   pfLME   Where to store the long mode enabled indicator.
  * @param   pfPSE   Where to store the page size extension indicator.
  * @param   pfPGE   Where to store the page global enabled indicator.
- * @param   pfNXE   Where to store the no-execution enabled inidicator.
+ * @param   pfNXE   Where to store the no-execution enabled indicator.
  */
 static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool *pfPSE, bool *pfPGE, bool *pfNXE)
 {
@@ -2545,7 +2545,7 @@ static RTGCPHYS dbgcGetGuestPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool
  * @param   pfLME   Where to store the long mode enabled indicator.
  * @param   pfPSE   Where to store the page size extension indicator.
  * @param   pfPGE   Where to store the page global enabled indicator.
- * @param   pfNXE   Where to store the no-execution enabled inidicator.
+ * @param   pfNXE   Where to store the no-execution enabled indicator.
  */
 static RTHCPHYS dbgcGetShadowPageMode(PDBGC pDbgc, bool *pfPAE, bool *pfLME, bool *pfPSE, bool *pfPGE, bool *pfNXE)
 {
@@ -2620,7 +2620,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     const unsigned cbEntry = fPAE ? sizeof(X86PTEPAE) : sizeof(X86PTE);
 
     /*
-     * Setup default arugment if none was specified.
+     * Setup default argument if none was specified.
      * Fix address / index confusion.
      */
     DBGCVAR VarDefault;
@@ -2684,7 +2684,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageDir(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     else
     {
         /*
-         * Determin the range.
+         * Determine the range.
          */
         switch (paArgs[0].enmRangeType)
         {
@@ -3058,7 +3058,7 @@ static DECLCALLBACK(int) dbgcCmdDumpPageTable(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHl
     else
     {
         /*
-         * Determin the range.
+         * Determine the range.
          */
         switch (paArgs[0].enmRangeType)
         {
@@ -3349,7 +3349,7 @@ static DECLCALLBACK(int) dbgcCmdDumpTSS(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
     }
 
     /*
-     * Determin the TSS type if none is currently given.
+     * Determine the TSS type if none is currently given.
      */
     if (enmTssType == kTssToBeDetermined)
     {
@@ -4023,7 +4023,7 @@ static DECLCALLBACK(int) dbgcCmdSearchMem(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     //    return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "parser error\n");
 
     /*
-     * Repeate previous search?
+     * Repeat previous search?
      */
     if (cArgs == 0)
         return dbgcCmdWorkerSearchMemResume(pCmdHlp, pVM, pResult);

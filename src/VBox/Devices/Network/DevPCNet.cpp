@@ -483,7 +483,7 @@ struct INITBLK32
     uint16_t res3;      /**< reserved */
     uint16_t ladrf1;    /**< logical address filter  0..15 */
     uint16_t ladrf2;    /**< logical address filter 16..31 */
-    uint16_t ladrf3;    /**< logibal address filter 32..47 */
+    uint16_t ladrf3;    /**< logical address filter 32..47 */
     uint16_t ladrf4;    /**< logical address filter 48..63 */
     uint32_t rdra;      /**< address of receive descriptor ring */
     uint32_t tdra;      /**< address of transmit descriptor ring */
@@ -546,7 +546,7 @@ typedef struct RMD
         uint32_t res:4;         /**< reserved */
         uint32_t bam:1;         /**< broadcast address match */
         uint32_t lafm:1;        /**< logical filter address match */
-        uint32_t pam:1;         /**< physcial address match */
+        uint32_t pam:1;         /**< physical address match */
         uint32_t bpe:1;         /**< bus parity error */
         uint32_t enp:1;         /**< end of packet */
         uint32_t stp:1;         /**< start of packet */
@@ -1811,7 +1811,7 @@ static int pcnetTdtePoll(PCNetState *pThis, TMD *tmd)
         CSR_PXBC(pThis) = CSR_CXBC(pThis);
         CSR_PXST(pThis) = CSR_CXST(pThis);
 
-        /* set current trasmit decriptor. */
+        /* set current transmit descriptor. */
         CSR_CXDA(pThis) = cxda;
         CSR_CXBC(pThis) = tmd->tmd1.bcnt;
         CSR_CXST(pThis) = ((uint32_t *)tmd)[1] >> 16;
@@ -2202,7 +2202,7 @@ DECLINLINE(int) pcnetXmitSendBuf(PCNetState *pThis, bool fLoopback, PPDMSCATTERG
 static void pcnetXmitRead1stSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, unsigned cbFrame,
                                  PPDMSCATTERGATHER pSgBuf)
 {
-    AssertFailed(); /* This path is not suppost to be taken atm */
+    AssertFailed(); /* This path is not supposed to be taken atm */
 
     pSgBuf->cbUsed = cbFrame;
     for (uint32_t iSeg = 0; ; iSeg++)
@@ -2225,7 +2225,7 @@ static void pcnetXmitRead1stSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, unsi
 static void pcnetXmitReadMoreSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, unsigned cbFrame,
                                   PPDMSCATTERGATHER pSgBuf)
 {
-    AssertFailed(); /* This path is not suppost to be taken atm */
+    AssertFailed(); /* This path is not supposed to be taken atm */
 
     /* Find the segment which we'll put the next byte into. */
     size_t      off    = pSgBuf->cbUsed;
@@ -2360,7 +2360,7 @@ static void pcnetTransmit(PCNetState *pThis)
     pThis->aCSR[0] &= ~0x0008;
 
     /*
-     * Transmit pending packets if possible, defere it if we cannot do it
+     * Transmit pending packets if possible, defer it if we cannot do it
      * in the current context.
      */
 #if defined(IN_RING0) || defined(IN_RC)
@@ -2391,7 +2391,7 @@ static int pcnetAsyncTransmit(PCNetState *pThis, bool fOnWorkerThread)
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
     /*
-     * Just cleard transmit demand if the transmitter is off.
+     * Just cleared transmit demand if the transmitter is off.
      */
     if (RT_UNLIKELY(!CSR_TXON(pThis)))
     {
@@ -3942,7 +3942,7 @@ static DECLCALLBACK(void) pcnetTimerSoftInt(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 /**
  * Restore timer callback.
  *
- * This is only called when've restored a saved state and temporarily
+ * This is only called when we restore a saved state and temporarily
  * disconnected the network link to inform the guest that network connections
  * should be considered lost.
  *
@@ -5148,7 +5148,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     {
         /*
          * Initialize shared memory between host and guest for descriptors and RX buffers. Most guests
-         * should not care if there is an additional PCI ressource but just in case we made this configurable.
+         * should not care if there is an additional PCI resource but just in case we made this configurable.
          */
         rc = PDMDevHlpMMIO2Register(pDevIns, 2, PCNET_GUEST_SHARED_MEMORY_SIZE, 0, (void **)&pThis->pSharedMMIOR3, "PCNetShMem");
         if (RT_FAILURE(rc))
@@ -5229,7 +5229,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->pXmitQueueRC = PDMQueueRCPtr(pThis->pXmitQueueR3);
 
     /*
-     * Create the RX notifer signaller.
+     * Create the RX notifier signaller.
      */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
                               pcnetCanRxQueueConsumer, true, "PCNet-Rcv", &pThis->pCanRxQueueR3);

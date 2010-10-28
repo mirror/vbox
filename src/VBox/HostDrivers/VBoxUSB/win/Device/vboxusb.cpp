@@ -211,7 +211,7 @@ Arguments:
     DriverObject - Store the pointer to the object representing us.
 
     PhysicalDeviceObject - Pointer to the device object created by the
-                           undelying bus driver.
+                           underlying bus driver.
 
 Return:
 

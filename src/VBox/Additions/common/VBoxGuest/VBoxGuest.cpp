@@ -567,7 +567,7 @@ static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     }
 
     /*
-     * Try inflate / defalte the balloon as requested.
+     * Try inflate / default the balloon as requested.
      */
     rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, cbChangeMemBalloonReq, VMMDevReq_ChangeMemBalloon);
     if (RT_FAILURE(rc))
@@ -687,7 +687,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
 #endif
 
     /*
-     * Initalize the data.
+     * Initialize the data.
      */
     pDevExt->IOPortBase = IOPortBase;
     pDevExt->pVMMDevMemory = NULL;
@@ -2090,7 +2090,7 @@ static int VBoxGuestCommonIOCtl_Log(const char *pch, size_t cbData, size_t *pcbD
 
 
 /**
- * Common IOCtl for user to kernel and kernel to kernel communcation.
+ * Common IOCtl for user to kernel and kernel to kernel communication.
  *
  * This function only does the basic validation and then invokes
  * worker functions that takes care of each specific function.
@@ -2308,7 +2308,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
     bool                    fOurIrq;
 
     /*
-     * Make sure we've initalized the device extension.
+     * Make sure we've initialized the device extension.
      */
     if (RT_UNLIKELY(!pReq))
         return false;

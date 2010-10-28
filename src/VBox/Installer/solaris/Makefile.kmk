@@ -494,7 +494,7 @@ include $(KBUILD_PATH)/subfooter.kmk
 #
 
 ## @todo r=bird: makepackage.sh packing a directory tree, right? So, there is no guarantee that it's not
-#                containing any obsolete files the way packing is performed here. Consider recursivly
+#                containing any obsolete files the way packing is performed here. Consider recursively
 #                invoking $(MAKE) vbox_copy_sdk_files (or similar) to do the copying after $(RM) -Rf the
 #                directory tree.
 $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \

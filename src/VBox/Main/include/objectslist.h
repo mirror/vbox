@@ -50,7 +50,7 @@ public:
 
     typedef typename MyList::iterator iterator;
     typedef typename MyList::const_iterator const_iterator;
-        // typename is necessary to de-ambiguate "::iterator" in templates; see
+        // typename is necessary to disambiguate "::iterator" in templates; see
         // the "this might hurt your head" part in
         // http://www.parashift.com/c++-faq-lite/templates.html#faq-35.18
 

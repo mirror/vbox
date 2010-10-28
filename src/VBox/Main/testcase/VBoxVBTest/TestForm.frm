@@ -93,7 +93,7 @@ End Sub
 
 Private Sub getMachieListCmd_Click()
     
-    ' Clear the old list conrents
+    ' Clear the old list contents
     
     machineList.Clear
     machineList.Refresh

@@ -46,7 +46,7 @@
  * Parses a number.
  *
  * @returns Valid number on success.
- * @returns 0 if invalid number. All necesary bitching has been done.
+ * @returns 0 if invalid number. All necessary bitching has been done.
  * @param   psz     Pointer to the nic number.
  */
 static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)

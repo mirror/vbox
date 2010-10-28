@@ -565,7 +565,7 @@ Considerations:
     If you are creating another device object (to communicate with user mode
     via IOCTLs), then this function must act differently based on the intended
     device object.  If the IRP is being sent to the solitary device object, then
-    this function should just complete the IRP (becuase there is no more stack
+    this function should just complete the IRP (because there is no more stack
     locations below it).  If the IRP is being sent to the PnP built stack, then
     the IRP should be passed down the stack.
 
@@ -862,7 +862,7 @@ Return Value:
 
         //
         // We must now complete the IRP, since we stopped it in the
-        // completetion routine with MORE_PROCESSING_REQUIRED.
+        // completion routine with MORE_PROCESSING_REQUIRED.
         //
         Irp->IoStatus.Status = status;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -1029,7 +1029,7 @@ Arguments:
     ContinueProcessing - If TRUE, i8042prt will proceed with normal processing of
                          the interrupt.  If FALSE, i8042prt will return from the
                          interrupt after this function returns.  Also, if FALSE,
-                         it is this functions responsibilityt to report the input
+                         it is this functions responsibility to report the input
                          packet via the function provided in the hook IOCTL or via
                          queueing a DPC within this driver and calling the
                          service callback function acquired from the connect IOCTL

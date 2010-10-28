@@ -1229,7 +1229,7 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     ui32 = crHashtableNumElements(pContext->program.programHash);
     rc = SSMR3PutU32(pSSM, ui32);
     AssertRCReturn(rc, rc);
-    /* Save defauls programs */
+    /* Save defaults programs */
     crStateSaveProgramCB(0, pContext->program.defaultVertexProgram, pSSM);
     crStateSaveProgramCB(0, pContext->program.defaultFragmentProgram, pSSM);
     /* Save all the rest */
@@ -1768,7 +1768,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
     /* Load pixel/vertex programs */
     rc = SSMR3GetU32(pSSM, &uiNumElems);
     AssertRCReturn(rc, rc);
-    /* Load defauls programs */
+    /* Load defaults programs */
     rc = crStateLoadProgram(&pContext->program.defaultVertexProgram, pSSM);
     AssertRCReturn(rc, rc);
     rc = crStateLoadProgram(&pContext->program.defaultFragmentProgram, pSSM);

@@ -127,7 +127,7 @@ typedef struct RTLOCKVALDDSTACK
     /** The stack entries. */
     RTLOCKVALDDENTRY        a[32];
 } RTLOCKVALDDSTACK;
-/** Pointer to a deadlock detction stack. */
+/** Pointer to a deadlock detection stack. */
 typedef RTLOCKVALDDSTACK *PRTLOCKVALDDSTACK;
 
 
@@ -158,7 +158,7 @@ typedef struct RTLOCKVALCLASSREFCHUNK *PRTLOCKVALCLASSREFCHUNK;
 typedef struct RTLOCKVALCLASSREFCHUNK
 {
     /** Array of refs. */
-#if 0 /** @todo for testing alloction of new chunks. */
+#if 0 /** @todo for testing allocation of new chunks. */
     RTLOCKVALCLASSREF       aRefs[ARCH_BITS == 32 ? 10 : 8];
 #else
     RTLOCKVALCLASSREF       aRefs[2];
@@ -1406,7 +1406,7 @@ DECL_FORCE_INLINE(bool) rtLockValidatorClassIsPriorClass(RTLOCKVALCLASSINT *pCla
  * @returns VINF_SUCCESS, VERR_NO_MEMORY or VERR_SEM_LV_WRONG_ORDER.
  * @param   pClass              The class to work on.
  * @param   pPriorClass         The class to add.
- * @param   fAutodidacticism    Whether we're teaching ourselfs (true) or
+ * @param   fAutodidacticism    Whether we're teaching ourselves (true) or
  *                              somebody is teaching us via the API (false).
  * @param   pSrcPos             Where this rule was added (optional).
  */
@@ -1871,7 +1871,7 @@ static uint32_t rtLockValidatorStackDepth(PRTTHREADINT pThread)
  * Checks if the stack contains @a pRec.
  *
  * @returns true / false.
- * @param   pThreadSelf         The curren thread.
+ * @param   pThreadSelf         The current thread.
  * @param   pRec                The lock record.
  */
 static bool rtLockValidatorStackContainsRec(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec)
@@ -2013,7 +2013,7 @@ static void rtLockValidatorStackPop(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION
  *
  * @param   pThreadSelf         The current thread.
  * @param   pRec                The lock record.
- * @param   pSrcPos             Where the recursion occured.
+ * @param   pSrcPos             Where the recursion occurred.
  */
 static void rtLockValidatorStackPushRecursion(PRTTHREADINT pThreadSelf, PRTLOCKVALRECUNION pRec, PCRTLOCKVALSRCPOS pSrcPos)
 {

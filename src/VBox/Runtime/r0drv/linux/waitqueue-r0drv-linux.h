@@ -56,7 +56,7 @@ typedef struct RTR0SEMLNXWAIT
     union
     {
 #ifdef IPRT_LINUX_HAS_HRTIMER
-        /** The timeout when fHighRes is true. Absolute, so no updateing. */
+        /** The timeout when fHighRes is true. Absolute, so no updating. */
         ktime_t     KtTimeout;
 #endif
         /** The timeout when fHighRes is false.  Updated after waiting. */
@@ -193,7 +193,7 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
  * Prepares the next wait.
  *
  * This must be called before rtR0SemLnxWaitDoIt, and the caller should check
- * the exit conditions inbetween the two calls.
+ * the exit conditions in-between the two calls.
  *
  * @param   pWait               The wait structure.
  */

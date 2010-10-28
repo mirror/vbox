@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxDMG - Intepreter for Apple Disk Images (DMG).
+ * VBoxDMG - Interpreter for Apple Disk Images (DMG).
  */
 
 /*
@@ -150,7 +150,7 @@ typedef const DMGUDIF *PCDMGUDIF;
 /**
  * BLKX data.
  *
- * This contains the start offset and size of raw data sotred in the image.
+ * This contains the start offset and size of raw data stored in the image.
  *
  * All fields are stored in big endian format.
  */
@@ -1161,7 +1161,7 @@ static const char *dmgOpenXmlToRsrc(PDMGIMAGE pThis, char const *pszXml)
     REQUIRE_WORD(psz, ">");
 
     /*
-     * Decend down to the 'resource-fork' dictionary.
+     * Descend down to the 'resource-fork' dictionary.
      * ASSUME it's the only top level dictionary.
      */
     /* <dict> <key>resource-fork</key> */
@@ -1195,7 +1195,7 @@ static const char *dmgOpenXmlToRsrc(PDMGIMAGE pThis, char const *pszXml)
             return psz;
 
         /*
-         * Decend into the array and add the elements to the resource entry.
+         * Descend into the array and add the elements to the resource entry.
          */
         /* <array> */
         REQUIRE_TAG(psz, "array");

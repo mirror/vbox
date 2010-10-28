@@ -525,7 +525,7 @@ void UIMachine::loadMachineSettings()
          * But user can alter extra data manually in machine xml file and set there
          * more than one visual representation mode flags. Shame on such user!
          * There is no reason to enter in more than one visual representation mode
-         * at machine start, so we are chosing first of requested modes: */
+         * at machine start, so we are choosing first of requested modes: */
         bool fIsSomeExtendedModeChosen = false;
 
         if (!fIsSomeExtendedModeChosen)

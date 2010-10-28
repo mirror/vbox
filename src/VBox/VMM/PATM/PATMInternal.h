@@ -232,7 +232,7 @@ typedef struct
 
     int32_t                     nrCalls;
 
-    /** Last original guest instruction pointer; used for disassmebly log. */
+    /** Last original guest instruction pointer; used for disassembly log. */
     RTRCPTR                   pLastDisasmInstrGC;
 
     /** Keeping track of multiple ret instructions. */
@@ -311,7 +311,7 @@ typedef struct _PATCHINFO
 
     /* First opcode byte, that's overwritten when a patch is marked dirty. */
     uint8_t         bDirtyOpcode;
-    uint8_t         Alignment2[7];      /**< Align the structure size on a 8-byte boundrary. */
+    uint8_t         Alignment2[7];      /**< Align the structure size on a 8-byte boundary. */
 } PATCHINFO, *PPATCHINFO;
 
 #define PATCHCODE_PTR_GC(pPatch)    (RTRCPTR)  (pVM->patm.s.pPatchMemGC + (pPatch)->pPatchBlockOffset)
@@ -453,7 +453,7 @@ typedef struct PATM
     {
         RTGCPHYS            GCPhys;
         RTRCPTR             pCachedData;
-        RTRCPTR             Alignment0; /**< Align the structure size on a 8-byte boundrary. */
+        RTRCPTR             Alignment0; /**< Align the structure size on a 8-byte boundary. */
     } mmio;
 
     /* Temporary storage during load/save state */
@@ -462,7 +462,7 @@ typedef struct PATM
         R3PTRTYPE(PSSMHANDLE) pSSM;
         uint32_t            cPatches;
 #if HC_ARCH_BITS == 64
-        uint32_t            Alignment0; /**< Align the structure size on a 8-byte boundrary. */
+        uint32_t            Alignment0; /**< Align the structure size on a 8-byte boundary. */
 #endif
     } savedstate;
 
@@ -523,7 +523,7 @@ typedef struct PATM
     STAMCOUNTER             StatFunctionLookupReplace;
     STAMCOUNTER             StatFunctionLookupInsert;
     uint32_t                StatU32FunctionMaxSlotsUsed;
-    uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundrary. */
+    uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundary. */
 } PATM, *PPATM;
 
 
@@ -706,14 +706,14 @@ RT_C_DECLS_BEGIN
 /**
  * #PF Virtual Handler callback for Guest access a page monitored by PATM
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this's the EIP, if not it's pvFault.)
+ *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  */
 VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 

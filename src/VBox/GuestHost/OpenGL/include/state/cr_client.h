@@ -41,7 +41,7 @@ typedef struct {
 
 /*
  * NOTE!!!! If you change this structure, search through the code for
- * occurances of 'defaultPacking' and fix the static initializations!!!!
+ * occurrences of 'defaultPacking' and fix the static initializations!!!!
  */
 typedef struct {
     GLint       rowLength;

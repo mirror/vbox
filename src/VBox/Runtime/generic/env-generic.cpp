@@ -666,7 +666,7 @@ RT_EXPORT_SYMBOL(RTEnvGetExecEnvP);
 
 
 /**
- * RTSort callback for comparing two environment varibles.
+ * RTSort callback for comparing two environment variables.
  *
  * @returns -1, 0, 1. See PFNRTSORTCMP.
  * @param   pvElement1          Variable 1.

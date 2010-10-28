@@ -59,7 +59,7 @@ typedef unsigned long long uint64_t;
 #endif
 
 /* if Solaris/__sun__, don't typedef int8_t, as it will be typedef'd
-   prior to this and will cause an error in compliation, conflicting
+   prior to this and will cause an error in compilation, conflicting
    with /usr/include/sys/int_types.h, line 75 */
 #ifndef __sun__
 typedef signed char int8_t;

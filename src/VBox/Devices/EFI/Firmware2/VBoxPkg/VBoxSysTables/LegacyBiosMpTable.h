@@ -33,7 +33,7 @@ Module Name:
   LegacyBiosMpTable.h
 
 Abstract:
-  Defives data structures per Multi Processor Specification Ver 1.4.
+  Defines data structures per Multi Processor Specification Ver 1.4.
 
 --*/
 

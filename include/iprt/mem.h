@@ -99,9 +99,9 @@ RT_C_DECLS_BEGIN
 RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Allocates zero'ed temporary memory with default tag.
+ * Allocates zero'd temporary memory with default tag.
  *
- * Same as RTMemTmpAlloc() but the memory will be zero'ed.
+ * Same as RTMemTmpAlloc() but the memory will be zero'd.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure, assertion raised in strict builds.
@@ -110,9 +110,9 @@ RTDECL(void *)  RTMemTmpAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
 #define RTMemTmpAllocZ(cb)              RTMemTmpAllocZTag((cb), RTMEM_TAG)
 
 /**
- * Allocates zero'ed temporary memory with custom tag.
+ * Allocates zero'd temporary memory with custom tag.
  *
- * Same as RTMemTmpAlloc() but the memory will be zero'ed.
+ * Same as RTMemTmpAlloc() but the memory will be zero'd.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL on failure, assertion raised in strict builds.
@@ -152,9 +152,9 @@ RTDECL(void)    RTMemTmpFree(void *pv) RT_NO_THROW;
 RTDECL(void *)  RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Allocates zero'ed memory with default tag.
+ * Allocates zero'd memory with default tag.
  *
- * Instead of memset(pv, 0, sizeof()) use this when you want zero'ed
+ * Instead of memset(pv, 0, sizeof()) use this when you want zero'd
  * memory. This keeps the code smaller and the heap can skip the memset
  * in about 0.42% of calls :-).
  *
@@ -165,9 +165,9 @@ RTDECL(void *)  RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
 #define RTMemAllocZ(cb)                 RTMemAllocZTag((cb), RTMEM_TAG)
 
 /**
- * Allocates zero'ed memory with custom tag.
+ * Allocates zero'd memory with custom tag.
  *
- * Instead of memset(pv, 0, sizeof()) use this when you want zero'ed
+ * Instead of memset(pv, 0, sizeof()) use this when you want zero'd
  * memory. This keeps the code smaller and the heap can skip the memset
  * in about 0.42% of calls :-).
  *
@@ -422,7 +422,7 @@ RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb) RT_NO_THROW;
 RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
 
 /**
- * Allocate zero'ed page aligned memory with default tag.
+ * Allocate zero'd page aligned memory with default tag.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL if we're out of memory.
@@ -431,7 +431,7 @@ RTDECL(void *) RTMemPageAllocTag(size_t cb, const char *pszTag) RT_NO_THROW;
 #define RTMemPageAllocZ(cb)             RTMemPageAllocZTag((cb), RTMEM_TAG)
 
 /**
- * Allocate zero'ed page aligned memory with custom tag.
+ * Allocate zero'd page aligned memory with custom tag.
  *
  * @returns Pointer to the allocated memory.
  * @returns NULL if we're out of memory.
@@ -563,7 +563,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv);
 /**
  * Are user mode and kernel mode address ranges distinctly different.
  *
- * This determins whether RTR0MemKernelIsValidAddr and RTR0MemUserIsValidAddr
+ * This determines whether RTR0MemKernelIsValidAddr and RTR0MemUserIsValidAddr
  * can be used for deciding whether some arbitrary address is a user mode or a
  * kernel mode one.
  *

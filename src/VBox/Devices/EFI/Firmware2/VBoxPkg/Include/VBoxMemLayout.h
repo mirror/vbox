@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxMemLayou.h - Constants defining the memory layout. (Merge with DevEFI?)
+ * VBoxMemLayout.h - Constants defining the memory layout. (Merge with DevEFI?)
  */
 
 /*

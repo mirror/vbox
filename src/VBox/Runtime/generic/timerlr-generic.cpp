@@ -2,7 +2,7 @@
 /** @file
  * IPRT - Low Resolution Timers, Generic.
  *
- * This code is more or less identicial to timer-generic.cpp, so
+ * This code is more or less identical to timer-generic.cpp, so
  * bugfixes goes into both files.
  */
 

@@ -51,7 +51,7 @@ int  supSvcDisplayTooManyArgsError(const char *pszAction, int argc, char **argv,
 /** @name OS Backend
  * @{ */
 /**
- * Logs the message to the appropirate system log.
+ * Logs the message to the appropriate system log.
  *
  * @param   psMsg       The log string.
  */

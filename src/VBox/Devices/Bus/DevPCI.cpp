@@ -1034,7 +1034,7 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
 
                 /*
                  * Set the prefetch base and limit registers. We currently have no device with a prefetchable region
-                 * which may be behind a bridge. Thatswhy it is unconditionally disabled here atm by writing a higher value into
+                 * which may be behind a bridge. That's why it is unconditionally disabled here atm by writing a higher value into
                  * the base register than in the limit register.
                  */
                 pci_config_writew(pGlobals, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, 0xfff0);
@@ -1061,7 +1061,7 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                     u8RessourceType = pci_config_readb(pGlobals, uBus, uDevFn, u32Address);
                     pci_config_writel(pGlobals, uBus, uDevFn, u32Address, UINT32_C(0xffffffff));
                     u32Size = pci_config_readl(pGlobals, uBus, uDevFn, u32Address);
-                    /* Clear ressource information depending on ressource type. */
+                    /* Clear resource information depending on resource type. */
                     if ((u8RessourceType & 0x01) == 1) /* I/O */
                         u32Size &= ~(0x01);
                     else                        /* MMIO */
@@ -2474,7 +2474,7 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
      * for them.
      * The bus number is mainly for the setIrq function to indicate
      * when the host bus is reached which will have iBus = 0.
-     * Thathswhy the + 1.
+     * That's why the + 1.
      */
     pBus->iBus = iInstance + 1;
 

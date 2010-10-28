@@ -27,7 +27,7 @@
  *
  * On WIN64 we're not aware of any GCC port which can emit code using the MSC
  * calling convention. So, we're in for some real fun here. The choice is between
- * porting GCC to AMD64 WIN64 and comming up with some kind of wrapper around
+ * porting GCC to AMD64 WIN64 and coming up with some kind of wrapper around
  * either the win32 build or the 64-bit linux build.
  *
  *  -# Porting GCC will be a lot of work. For one thing the calling convention differs
@@ -111,7 +111,7 @@
    @endverbatim
  *
  * Direction flag is preserved as cleared.
- * The stack must be aligned on a 16-byte boundrary before the 'call/jmp' instruction.
+ * The stack must be aligned on a 16-byte boundary before the 'call/jmp' instruction.
  *
  *
  *
@@ -139,7 +139,7 @@
    @endverbatim
  *
  * Dunno what the direction flag is...
- * The stack must be aligned on a 16-byte boundrary before the 'call/jmp' instruction.
+ * The stack must be aligned on a 16-byte boundary before the 'call/jmp' instruction.
  *
  *
  * Thus, When GCC code is calling MSC code we don't really have to preserve

@@ -33,7 +33,7 @@ Revision History:
 #include <bugcodes.h>
 #include <ntiologc.h>
 //
-// Kernel Mutex Level Numbers (must be globallly assigned within executive)
+// Kernel Mutex Level Numbers (must be globally assigned within executive)
 // The third token in the name is the sub-component name that defines and
 // uses the level number.
 //
@@ -304,7 +304,7 @@ VOID
 // is greater than the maximum target depth, or current DPC request rate is
 // less the minimum target rate, then a DPC interrupt is requested on the
 // host processor and the DPC will be processed when the interrupt occurs.
-// Otherwise, no DPC interupt is requested and the DPC execution will be
+// Otherwise, no DPC interrupt is requested and the DPC execution will be
 // delayed until the DPC queue depth is greater that the target depth or the
 // minimum DPC rate is less than the target rate.
 //
@@ -317,13 +317,13 @@ VOID
 // Otherwise, the DPC execution will be delayed on the target processor until
 // the DPC queue depth on the target processor is greater that the maximum
 // target depth or the minimum DPC rate on the target processor is less than
-// the target mimimum rate.
+// the target minimum rate.
 //
 // If the DPC is being queued to the current processor and the DPC is not of
 // low importance, the current DPC queue depth is greater than the maximum
 // target depth, or the minimum DPC rate is less than the minimum target rate,
 // then a DPC interrupt is request on the current processor and the DPV will
-// be processed whne the interrupt occurs. Otherwise, no DPC interupt is
+// be processed whne the interrupt occurs. Otherwise, no DPC interrupt is
 // requested and the DPC execution will be delayed until the DPC queue depth
 // is greater that the target depth or the minimum DPC rate is less than the
 // target rate.
@@ -336,7 +336,7 @@ typedef enum _KDPC_IMPORTANCE {
 } KDPC_IMPORTANCE;
 
 //
-// Define DPC type indicies.
+// Define DPC type indices.
 //
 
 #define DPC_NORMAL 0
@@ -535,7 +535,7 @@ typedef enum _LOCK_OPERATION {
 
 //
 // Disable these two pragmas that evaluate to "sti" "cli" on x86 so that driver
-// writers to not leave them inadvertantly in their code.
+// writers to not leave them inadvertently in their code.
 //
 
 #if !defined(MIDL_PASS)
@@ -680,7 +680,7 @@ MemoryBarrier (
 #define YieldProcessor() __asm { rep nop }
 
 //
-// Prefetch is not supported on all x86 procssors.
+// Prefetch is not supported on all x86 processors.
 //
 
 #define PreFetchCacheLine(l, a)
@@ -748,7 +748,7 @@ typedef FLOATING_SAVE_AREA *PFLOATING_SAVE_AREA;
 // Context Frame
 //
 //  This frame has a several purposes: 1) it is used as an argument to
-//  NtContinue, 2) is is used to constuct a call frame for APC delivery,
+//  NtContinue, 2) is is used to construct a call frame for APC delivery,
 //  and 3) it is used in the user level thread creation routines.
 //
 //  The layout of the record conforms to a standard call frame.
@@ -791,14 +791,14 @@ typedef struct _CONTEXT {
 
     //
     // This section is specified/returned if the
-    // ContextFlags word contians the flag CONTEXT_FLOATING_POINT.
+    // ContextFlags word contains the flag CONTEXT_FLOATING_POINT.
     //
 
     FLOATING_SAVE_AREA FloatSave;
 
     //
     // This section is specified/returned if the
-    // ContextFlags word contians the flag CONTEXT_SEGMENTS.
+    // ContextFlags word contains the flag CONTEXT_SEGMENTS.
     //
 
     ULONG   SegGs;
@@ -808,7 +808,7 @@ typedef struct _CONTEXT {
 
     //
     // This section is specified/returned if the
-    // ContextFlags word contians the flag CONTEXT_INTEGER.
+    // ContextFlags word contains the flag CONTEXT_INTEGER.
     //
 
     ULONG   Edi;
@@ -820,7 +820,7 @@ typedef struct _CONTEXT {
 
     //
     // This section is specified/returned if the
-    // ContextFlags word contians the flag CONTEXT_CONTROL.
+    // ContextFlags word contains the flag CONTEXT_CONTROL.
     //
 
     ULONG   Ebp;
@@ -1341,7 +1341,7 @@ typedef struct _LEGACY_SAVE_AREA {
 // Context Frame
 //
 //  This frame has a several purposes: 1) it is used as an argument to
-//  NtContinue, 2) is is used to constuct a call frame for APC delivery,
+//  NtContinue, 2) is is used to construct a call frame for APC delivery,
 //  and 3) it is used in the user level thread creation routines.
 //
 //
@@ -5718,7 +5718,7 @@ typedef struct _FILE_FS_DEVICE_INFORMATION {
                                                                 
 
 //
-// Define segement buffer structure for scatter/gather read/write.
+// Define segment buffer structure for scatter/gather read/write.
 //
 
 typedef union _FILE_SEGMENT_ELEMENT {
@@ -7542,7 +7542,7 @@ ExfInterlockedCompareExchange64(
 #endif      // __WINBASE__ && !NONTOSPINTERLOCK
 
 //
-// Turn these instrinsics off until the compiler can handle them
+// Turn these intrinsics off until the compiler can handle them
 //
 #if (_MSC_FULL_VER > 13009037)
 
@@ -9695,7 +9695,7 @@ InterlockedXor (
 //
 // Routine Description:
 //
-//    This function cases ordering of memory acceses generated by the compiler.
+//    This function cases ordering of memory accesses generated by the compiler.
 //
 //
 // Arguments:
@@ -9735,7 +9735,7 @@ _ReadWriteBarrier (
 //
 // Routine Description:
 //
-//    This function cases ordering of memory acceses as generated by the compiler and 
+//    This function cases ordering of memory accesses as generated by the compiler and 
 //    as seen by other processors.
 //
 //
@@ -10343,7 +10343,7 @@ typedef enum _ALTERNATIVE_ARCHITECTURE_TYPE {
 //    Layout exactness is required for Wow64 support of 32bit applications
 //    on Win64 systems.
 //
-//    The layout itself cannot change since this sturcture has been exported
+//    The layout itself cannot change since this structure has been exported
 //    in ntddk, ntifs.h, and nthal.h for some time.
 //
 
@@ -10490,7 +10490,7 @@ typedef struct _KUSER_SHARED_DATA {
 
     //
     // This field indicates the status of the 64-bit COM+ package on the system.
-    // It indicates whether the Itermediate Language (IL) COM+ images need to
+    // It indicates whether the Intermediate Language (IL) COM+ images need to
     // use the 64-bit COM+ runtime or the 32-bit COM+ runtime.
     //
 
@@ -10870,7 +10870,7 @@ typedef struct _CM_PARTIAL_RESOURCE_DESCRIPTOR {
 // A Partial Resource List is what can be found in the ARC firmware
 // or will be generated by ntdetect.com.
 // The configuration manager will transform this structure into a Full
-// resource descriptor when it is about to store it in the regsitry.
+// resource descriptor when it is about to store it in the registry.
 //
 // Note: There must a be a convention to the order of fields of same type,
 // (defined on a device by device basis) so that the fields can make sense
@@ -10922,7 +10922,7 @@ typedef struct _CM_RESOURCE_LIST {
 // Define the structures used to interpret configuration data of
 // \\Registry\machine\hardware\description tree.
 // Basically, these structures are used to interpret component
-// sepcific data.
+// specific data.
 //
 
 //
@@ -11022,7 +11022,7 @@ typedef struct _EISA_MEMORY_CONFIGURATION {
 
 
 //
-// Interrupt configurationn of eisa data block structure
+// Interrupt configuration of eisa data block structure
 //
 
 typedef struct _EISA_IRQ_DESCRIPTOR {
@@ -13420,7 +13420,7 @@ Arguments:
 
     Lookaside - Supplies a pointer to a nonpaged lookaside list structure.
 
-    Entry - Supples a pointer to the entry that is inserted in the
+    Entry - Supplies a pointer to the entry that is inserted in the
         lookaside list.
 
 Return Value:
@@ -13578,7 +13578,7 @@ Arguments:
 
     Lookaside - Supplies a pointer to a nonpaged lookaside list structure.
 
-    Entry - Supples a pointer to the entry that is inserted in the
+    Entry - Supplies a pointer to the entry that is inserted in the
         lookaside list.
 
 Return Value:
@@ -15508,7 +15508,7 @@ typedef struct _SECURITY_SUBJECT_CONTEXT {
 //
 //  Initial Privilege Set - Room for three privileges, which should
 //  be enough for most applications.  This structure exists so that
-//  it can be imbedded in an ACCESS_STATE structure.  Use PRIVILEGE_SET
+//  it can be embedded in an ACCESS_STATE structure.  Use PRIVILEGE_SET
 //  for all other references to Privilege sets.
 //
 
@@ -16771,7 +16771,7 @@ typedef struct _DRIVER_OBJECT {
     UNICODE_STRING DriverName;
 
     //
-    // The following section is for registry support.  Thise is a pointer
+    // The following section is for registry support.  This is a pointer
     // to the path to the hardware information in the registry
     //
 
@@ -17528,7 +17528,7 @@ typedef struct _IO_STACK_LOCATION {
         } VerifyVolume;
 
         //
-        // Parameters for Scsi with internal device contorl.
+        // Parameters for Scsi with internal device control.
         //
 
         struct {
@@ -17763,7 +17763,7 @@ typedef struct _CONFIGURATION_INFORMATION {
 
     //
     // These next two fields indicate ownership of one of the two IO address
-    // spaces that are used by WD1003-compatable disk controllers.
+    // spaces that are used by WD1003-compatible disk controllers.
     //
 
     BOOLEAN AtDiskPrimaryAddressClaimed;    // 0x1F0 - 0x1FF
@@ -19721,7 +19721,7 @@ IoCsqRemoveNextIrp(
 //
 // This routine is called from timeout or DPCs.
 // The context is presumably part of the DPC or timer context.
-// If succesfull returns the IRP associated with context.
+// If successful returns the IRP associated with context.
 //
 
 PIRP
@@ -20955,10 +20955,10 @@ typedef enum _HAL_QUERY_INFORMATION_CLASS {
 typedef enum _HAL_SET_INFORMATION_CLASS {
     HalProfileSourceInterval,
     HalProfileSourceInterruptHandler,
-    HalMcaRegisterDriver,              // Registring Machine Check Abort driver
+    HalMcaRegisterDriver,              // Registering Machine Check Abort driver
     HalKernelErrorHandler,
-    HalCmcRegisterDriver,              // Registring Processor Corrected Machine Check driver
-    HalCpeRegisterDriver,              // Registring Corrected Platform  Error driver
+    HalCmcRegisterDriver,              // Registering Processor Corrected Machine Check driver
+    HalCpeRegisterDriver,              // Registering Corrected Platform  Error driver
     HalMcaLog,
     HalCmcLog,
     HalCpeLog,
@@ -22994,9 +22994,9 @@ typedef struct _PCI_MSI_CAPABILITY {
 //
 // ---
 //
-//      All resources comsumed by a PCI device start as unitialized
+//      All resources consumed by a PCI device start as unitialized
 //      under NT.  An uninitialized memory or I/O base address can be
-//      determined by checking it's corrisponding enabled bit in the
+//      determined by checking it's corresponding enabled bit in the
 //      PCI_COMMON_CONFIG.Command value.  An InterruptLine is unitialized
 //      if it contains the value of -1.
 //

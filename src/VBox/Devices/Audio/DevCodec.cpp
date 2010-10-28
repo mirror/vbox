@@ -1443,7 +1443,7 @@ static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
         *pu32Reg &= ~CODEC_VERB_4BIT_DATA;
 
     *pu32Reg |= cmd & CODEC_VERB_4BIT_DATA;
-    /* Propogate next power state only if AFG is on or verb modifies AFG power state */
+    /* Propagate next power state only if AFG is on or verb modifies AFG power state */
     if (   CODEC_NID(cmd) == 1 /* AFG */
         || !pState->pNodes[1].afg.u32F05_param)
     {

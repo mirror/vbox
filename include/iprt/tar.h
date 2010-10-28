@@ -93,7 +93,7 @@ RTR3DECL(int) RTTarClose(RTTAR hTar);
  *
  * @returns IPRT status code.
  *
- * @param   hTar           The hande of the tar archive.
+ * @param   hTar           The handle of the tar archive.
  * @param   phFile         Where to store the handle to the opened file.
  * @param   pszFilename    Path to the file which is to be opened. (UTF-8)
  * @param   fOpen          Open flags, i.e a combination of the RTFILE_O_* defines.

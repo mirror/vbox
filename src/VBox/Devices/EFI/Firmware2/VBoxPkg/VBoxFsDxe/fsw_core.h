@@ -336,7 +336,7 @@ struct fsw_volume_stat {
 struct fsw_dnode_stat {
     fsw_u64     used_bytes;         //!< Bytes actually used by the file on disk
     void        (*store_time_posix)(struct fsw_dnode_stat *sb, int which, fsw_u32 posix_time);   //!< Callback for storing a Posix-style timestamp
-    void        (*store_attr_posix)(struct fsw_dnode_stat *sb, fsw_u16 posix_mode);   //!< Callbock for storing a Posix-style file mode
+    void        (*store_attr_posix)(struct fsw_dnode_stat *sb, fsw_u16 posix_mode);   //!< Callback for storing a Posix-style file mode
     void        *host_data;         //!< Hook for a host-specific data structure
 };
 

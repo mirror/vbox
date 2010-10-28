@@ -921,7 +921,7 @@ int HGCMService::loadClientState (uint32_t u32ClientId, PSSMHANDLE pSSM)
 
 /** The method creates a service and references it.
  *
- * @param pszServcieLibrary  The library to be loaded.
+ * @param pszServiceLibrary  The library to be loaded.
  * @param pszServiceName     The name of the service.
  * @return VBox rc.
  * @thread main HGCM

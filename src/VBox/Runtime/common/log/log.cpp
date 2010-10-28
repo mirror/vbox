@@ -1129,7 +1129,7 @@ static unsigned rtlogGroupFlags(const char *psz)
     unsigned fFlags = 0;
 
     /*
-     * Litteral flags.
+     * Literal flags.
      */
     while (*psz == '.')
     {
@@ -1533,7 +1533,7 @@ RT_EXPORT_SYMBOL(RTLogGetFlags);
 
 
 /**
- * Updates the logger desination using the specified string.
+ * Updates the logger destination using the specified string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
  * @param   pLogger             Logger instance (NULL for default logger).
@@ -1979,7 +1979,7 @@ RT_EXPORT_SYMBOL(RTLogLoggerV);
  * @param   pLogger     Pointer to logger instance. If NULL the default logger instance will be attempted.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
- *                      The value ~0U is reserved for compatability with RTLogLogger[V] and is
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
  *                      only for internal usage!
  * @param   pszFormat   Format string.
  * @param   args        Format arguments.
@@ -2161,8 +2161,8 @@ static DECLCALLBACK(size_t) rtR0LogLoggerExFallbackOutput(void *pv, const char *
  * This will happen when we're at a too high IRQL on Windows for instance and
  * needs to be dealt with or we'll drop a lot of log output. This fallback will
  * only output to some of the log destinations as a few of them may be doing
- * dangerouse things. We won't be doing any prefixing here either, at least not
- * for the present, because it's too much hazzle.
+ * dangerous things. We won't be doing any prefixing here either, at least not
+ * for the present, because it's too much hassle.
  *
  * @param   fDestFlags  The destination flags.
  * @param   fFlags      The logger flags.

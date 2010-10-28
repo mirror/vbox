@@ -126,7 +126,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
             ASMAtomicCmpXchgU64(&s_u64Last, u64NewLast, u64Last);
         }
 
-        /* calcuate the return value */
+        /* calculate the return value */
         u64 = ulNow;
         u64 *= TICK_NSEC;
         u64 += cRollovers * (_4G * TICK_NSEC);

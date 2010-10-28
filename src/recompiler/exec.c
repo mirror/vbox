@@ -523,7 +523,7 @@ static void tlb_unprotect_code_phys(CPUState *env, ram_addr_t ram_addr,
 #endif
 
 #if defined(CONFIG_USER_ONLY)
-/* Currently it is not recommanded to allocate big chunks of data in
+/* Currently it is not recommended to allocate big chunks of data in
    user mode. It will change when a dedicated libc will be used */
 #define USE_STATIC_CODE_GEN_BUFFER
 #endif
@@ -555,7 +555,7 @@ static void code_gen_alloc(unsigned long tb_size)
         /* in user mode, phys_ram_size is not meaningful */
         code_gen_buffer_size = DEFAULT_CODE_GEN_BUFFER_SIZE;
 #else
-        /* XXX: needs ajustments */
+        /* XXX: needs adjustments */
         code_gen_buffer_size = (unsigned long)(phys_ram_size / 4);
 #endif
 
@@ -1696,7 +1696,7 @@ void cpu_single_step(CPUState *env, int enabled)
 #if defined(TARGET_HAS_ICE)
     if (env->singlestep_enabled != enabled) {
         env->singlestep_enabled = enabled;
-        /* must flush all the translated code to avoid inconsistancies */
+        /* must flush all the translated code to avoid inconsistencies */
         /* XXX: only flush what is necessary */
         tb_flush(env);
     }
@@ -2392,7 +2392,7 @@ int tlb_set_page_exec(CPUState *env, target_ulong vaddr,
 }
 #if 0
 /* called from signal handler: invalidate the code and unprotect the
-   page. Return TRUE if the fault was succesfully handled. */
+   page. Return TRUE if the fault was successfully handled. */
 int page_unprotect(target_ulong addr, unsigned long pc, void *puc)
 {
 #if !defined(CONFIG_SOFTMMU)
@@ -2513,7 +2513,7 @@ int page_get_flags(target_ulong address)
 }
 
 /* modify the flags of a page and invalidate the code if
-   necessary. The flag PAGE_WRITE_ORG is positionned automatically
+   necessary. The flag PAGE_WRITE_ORG is positioned automatically
    depending on PAGE_WRITE */
 void page_set_flags(target_ulong start, target_ulong end, int flags)
 {
@@ -2579,7 +2579,7 @@ int page_check_range(target_ulong start, target_ulong len, int flags)
 }
 
 /* called from signal handler: invalidate the code and unprotect the
-   page. Return TRUE if the fault was succesfully handled. */
+   page. Return TRUE if the fault was successfully handled. */
 int page_unprotect(target_ulong address, unsigned long pc, void *puc)
 {
     unsigned int page_index, prot, pindex;

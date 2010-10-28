@@ -89,7 +89,7 @@
  * usual R0 vs R3 vs. RC thing.  Then there are multiple threads, and then there
  * is the timer thread that periodically checks whether any timers has expired
  * without EMT noticing.  On the API level, all but the create and save APIs
- * must be mulithreaded.  EMT will always run the timers.
+ * must be multithreaded.  EMT will always run the timers.
  *
  * The design is using a doubly linked list of active timers which is ordered
  * by expire date.  This list is only modified by the EMT thread.  Updates to
@@ -294,7 +294,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     }
 
     /*
-     * Determin the TSC configuration and frequency.
+     * Determine the TSC configuration and frequency.
      */
     /* mode */
     /** @cfgm{/TM/TSCVirtualized,bool,true}
@@ -760,7 +760,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
              *
              * This test isn't correct with respect to fixed/non-fixed TSC and
              * older models, but this isn't relevant since the result is currently
-             * only used for making a descision on AMD-V models.
+             * only used for making a decision on AMD-V models.
              */
             ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
             if (uEAX >= 0x80000007)
@@ -941,7 +941,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     /*
-     * Create a timer for freshing the CPU load stats.
+     * Create a timer for refreshing the CPU load stats.
      */
     PTMTIMER pTimer;
     rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, tmR3CpuLoadTimer, NULL, "CPU Load Timer", &pTimer);
@@ -1232,7 +1232,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     {
         AssertMsgFailed(("The real clock frequency differs! Saved: %'RU64 Binary: %'RU64\n",
                          u64Hz, TMCLOCK_FREQ_REAL));
-        return VERR_SSM_VIRTUAL_CLOCK_HZ; /* missleading... */
+        return VERR_SSM_VIRTUAL_CLOCK_HZ; /* misleading... */
     }
 
     /* the cpu tick clock. */
@@ -1772,7 +1772,7 @@ DECLINLINE(bool) tmR3AnyExpiredTimers(PVM pVM)
 
 
 /**
- * Schedulation timer callback.
+ * Schedule timer callback.
  *
  * @param   pTimer      Timer handle.
  * @param   pvUser      VM handle.
@@ -1880,7 +1880,7 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
     STAM_PROFILE_ADV_STOP(&pVM->tm.s.aStatDoQueues[TMCLOCK_REAL], s3);
 
 #ifdef VBOX_STRICT
-    /* check that we didn't screwup. */
+    /* check that we didn't screw up. */
     tmTimerQueuesSanityChecks(pVM, "TMR3TimerQueuesDo");
 #endif
 
@@ -1983,7 +1983,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
  *
  * This scheduling is a bit different from the other queues as it need
  * to implement the special requirements of the timer synchronous virtual
- * clock, thus this 2nd queue run funcion.
+ * clock, thus this 2nd queue run function.
  *
  * @param   pVM             The VM to run the timers for.
  *
@@ -2012,7 +2012,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
      * same as the head timer) and some configurable period (100000ns) up towards the
      * current virtual time. This period might also need to be restricted by the catch-up
      * rate so frequent calls to this function won't accelerate the time too much, however
-     * this will be implemented at a later point if neccessary.
+     * this will be implemented at a later point if necessary.
      *
      * Without this frame we would 1) having to run timers much more frequently
      * and 2) lag behind at a steady rate.
@@ -2542,7 +2542,7 @@ VMM_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
  * @returns VBox status code, all errors are asserted.
  * @param   pVM         The VM handle.
  * @param   pVCpu       The virtual CPU handle.
- * @thread  EMT corrsponding to the virtual CPU handle.
+ * @thread  EMT corresponding to the virtual CPU handle.
  */
 VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
 {
@@ -2585,7 +2585,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code, all errors are asserted.
  * @param   pVM         The VM handle.
  * @param   pVCpu       The virtual CPU handle.
- * @thread  EMT corrsponding to the virtual CPU handle.
+ * @thread  EMT corresponding to the virtual CPU handle.
  */
 VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
 {

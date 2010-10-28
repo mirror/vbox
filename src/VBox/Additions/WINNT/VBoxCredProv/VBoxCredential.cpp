@@ -108,7 +108,7 @@ int VBoxCredential::Update(const char *pszUser,
      * Update domain name (can be NULL) and will
      * be later replaced by the local computer name in the
      * Kerberos authentication package or by the first part
-     * of the principcal name.
+     * of the principal name.
      */
     if (pszDomain && strlen(pszDomain))
     {
@@ -138,7 +138,7 @@ int VBoxCredential::Update(const char *pszUser,
         else
         {
             /*
-             * Oky, no display name, but mabye it's a
+             * Oky, no display name, but maybe it's a
              * principal name from which we have to extract the
              * domain from? (jdoe@my-domain.sub.net.com -> jdoe in
              * domain my-domain.sub.net.com.)
@@ -449,7 +449,7 @@ BOOL VBoxCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAcc
 
 /*
  * Extracts the actual account name & domain from a (raw) account data string. This might
- * be a prncipal or FQDN string.
+ * be a principal or FQDN string.
  */
 BOOL VBoxCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain)
 {

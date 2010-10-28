@@ -188,7 +188,7 @@ void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_
  * @param   fFlags          Flags indicating which actions to take.
  *                          See VMSETRTERR_FLAGS_* for details on each flag.
  *
- * @param   pszErrorId      Unique error identificator string. This is used by
+ * @param   pszErrorId      Unique error identification string. This is used by
  *                          the frontends and maybe other devices or drivers, so
  *                          once an ID has been selected it's essentially
  *                          unchangable. Employ camelcase when constructing the

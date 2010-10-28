@@ -1413,7 +1413,7 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
  * reservation for the memory (with GMM), and setup the per-page
  * tracking structures (PGMPAGE).
  *
- * @returns VBox stutus code.
+ * @returns VBox status code.
  * @param   pVM             Pointer to the shared VM structure.
  * @param   GCPhys          The physical address of the RAM.
  * @param   cb              The size of the RAM.

@@ -1091,7 +1091,7 @@ static void vbvaRgnDirtyRect (VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMD
     /*
      * Here update rectangles are accumulated to form an update area.
      * @todo
-     * Now the simpliest method is used which builds one rectangle that
+     * Now the simplest method is used which builds one rectangle that
      * includes all update areas. A bit more advanced method can be
      * employed here. The method should be fast however.
      */
@@ -1630,7 +1630,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
     /* Current record is complete. If it is not empty, process it. */
     if (cbRecord)
     {
-        /* The size of largest contiguos chunk in the ring biffer. */
+        /* The size of largest contiguous chunk in the ring biffer. */
         uint32_t u32BytesTillBoundary = VBVA_RING_BUFFER_SIZE - mpVbvaMemory->off32Data;
 
         /* The ring buffer pointer. */
@@ -2844,7 +2844,7 @@ void Display::updateDisplayData(void)
     /*
      *  Sanity check. Note that this method may be called on EMT after Console
      *  has started the power down procedure (but before our #drvDestruct() is
-     *  called, in which case pVM will aleady be NULL but mpDrv will not). Since
+     *  called, in which case pVM will already be NULL but mpDrv will not). Since
      *  we don't really need pVM to proceed, we avoid this check in the release
      *  build to save some ms (necessary to construct SafeVMPtrQuiet) in this
      *  time-critical method.
@@ -3533,7 +3533,7 @@ void Display::handleCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBO
             rc = VERR_INVALID_STATE;
     }
 
-    /* we are here because something went wrong with command prosessing, complete it */
+    /* we are here because something went wrong with command processing, complete it */
     handleCrHgsmiCommandCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CMD, &parm);
 }
 
@@ -3559,7 +3559,7 @@ void Display::handleCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBO
             rc = VERR_INVALID_STATE;
     }
 
-    /* we are here because something went wrong with command prosessing, complete it */
+    /* we are here because something went wrong with command processing, complete it */
     handleCrHgsmiControlCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CTL, &parm);
 }
 

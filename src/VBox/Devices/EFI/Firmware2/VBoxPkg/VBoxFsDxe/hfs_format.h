@@ -63,7 +63,7 @@
  * hfs_format.c
  *
  * This file describes the on-disk format for HFS and HFS Plus volumes.
- * The HFS Plus volume format is desciibed in detail in Apple Technote 1150.
+ * The HFS Plus volume format is described in detail in Apple Technote 1150.
  *
  * http://developer.apple.com/technotes/tn/tn1150.html
  *
@@ -516,7 +516,7 @@ struct HFSPlusAttrExtents {
 typedef struct HFSPlusAttrExtents HFSPlusAttrExtents;
 
 /*
- * Atrributes B-tree Data Record
+ * Attributes B-tree Data Record
  *
  * For small attributes, whose entire value is stored
  * within a single B-tree record.

@@ -155,7 +155,7 @@ Function ${un}WriteLogUI
 
 log:
 
-  ; Dump log to see what happend
+  ; Dump log to see what happened
   StrCpy $0 "$INSTDIR\${un}install_ui.log"
   Push $0
   Call ${un}DumpLog

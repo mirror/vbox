@@ -190,7 +190,7 @@ clip_line(const CRVertex *v0in, const CRVertex *v1in,
 /*
  * We use 6 instances of this code to clip agains the 6 planes.
  * For each plane, we define the OUTSIDE and COMPUTE_INTERSECTION
- * macros apprpriately.
+ * macros appropriately.
  */
 #define GENERAL_CLIP                                                    \
    if (OUTSIDE(v0)) {                                                   \

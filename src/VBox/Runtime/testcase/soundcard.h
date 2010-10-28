@@ -148,7 +148,7 @@
 typedef struct synth_control
 {
 	int devno;	/* Synthesizer # */
-	char data[4000]; /* Device spesific command/data record */
+	char data[4000]; /* Device specific command/data record */
 }synth_control;
 
 typedef struct remove_sample
@@ -329,7 +329,7 @@ struct sysex_info {
 #define SEQ_MIDIPUTC		5
 #define SEQ_DRUMON		6	/*** OBSOLETE ***/
 #define SEQ_DRUMOFF		7	/*** OBSOLETE ***/
-#define SEQ_ECHO		TMR_ECHO	/* For synching programs with output */
+#define SEQ_ECHO		TMR_ECHO	/* For syncing programs with output */
 #define SEQ_AFTERTOUCH		9
 #define SEQ_CONTROLLER		10
 
@@ -751,7 +751,7 @@ typedef struct copr_msg {
 /* 
  * The AD1848 codec and compatibles have three line level inputs
  * (line, aux1 and aux2). Since each card manufacturer have assigned
- * different meanings to these inputs, it's inpractical to assign
+ * different meanings to these inputs, it's impractical to assign
  * specific meanings (line, cd, synth etc.) to them.
  */
 #define SOUND_MIXER_LINE1	14	/* Input source 1  (aux1) */
@@ -921,7 +921,7 @@ typedef unsigned char mixer_record[128];
 #define SOUND_MIXER_ACCESS		_SIOWR('M', 102, mixer_record)
 
 /*
- * Two ioctls for special souncard function
+ * Two ioctls for special soundcard function
  */
 #define SOUND_MIXER_AGC  _SIOWR('M', 103, int)
 #define SOUND_MIXER_3DSE  _SIOWR('M', 104, int)
@@ -1234,7 +1234,7 @@ extern int OSS_write_patch2(int fd, unsigned char *buf, int len);
 #define SEQ_PANNING(dev, voice, pos) SEQ_CONTROL(dev, voice, CTL_PAN, (pos+128) / 2)
 
 /*
- * Timing and syncronization macros
+ * Timing and synchronization macros
  */
 
 #define _TIMER_EVENT(ev, parm)		{_SEQ_NEEDBUF(8);\

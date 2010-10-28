@@ -647,8 +647,8 @@ stubGetWindowGeometry(WindowInfo *window, int *x, int *y, unsigned int *w, unsig
     dpy = stubGetWindowDisplay(window);
 
     //@todo: Performing those checks is expensive operation, especially for simple apps with high FPS.
-    //       Disabling those tripples glxgears fps, thus using xevens instead of per frame polling is much more preffered.
-    //@todo: Check similiar on windows guests, though doubtfull as there're no XSync like calls on windows.
+    //       Disabling those triples glxgears fps, thus using xevents instead of per frame polling is much more preferred.
+    //@todo: Check similar on windows guests, though doubtful as there're no XSync like calls on windows.
     if (window && dpy)
     {
         XLOCK(dpy);
@@ -1091,7 +1091,7 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
 
     /* Update window mapping state.
      * Basically, this lets us hide render SPU windows which correspond
-     * to unmapped application windows.  Without this, perfly (for example)
+     * to unmapped application windows.  Without this, "pertly" (for example)
      * opens *lots* of temporary windows which otherwise clutter the screen.
      */
     if (stub.trackWindowVisibility && window->type == CHROMIUM && window->drawable) {

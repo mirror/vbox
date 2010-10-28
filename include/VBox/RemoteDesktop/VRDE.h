@@ -140,7 +140,7 @@ typedef uint32_t VRDEUSBDEVID;
  *
  */
 
-/* VRDE layout has no aligments. */
+/* VRDE layout has no alignments. */
 #pragma pack(1)
 /* Common header for all VRDE USB packets. After the reply hdr follows *PARM* or *RET* data. */
 typedef struct _VRDEUSBPKTHDR

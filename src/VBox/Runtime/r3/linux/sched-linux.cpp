@@ -27,7 +27,7 @@
 /*
  * !WARNING!
  *
- * When talking about lowering and raising priority, we do *NOT* refere to
+ * When talking about lowering and raising priority, we do *NOT* refer to
  * the common direction priority values takes on unix systems (lower means
  * higher). So, when we raise the priority of a linux thread the nice
  * value will decrease, and when we lower the priority the nice value
@@ -166,7 +166,7 @@ static const PROCPRIORITYTYPE g_aTypesLinuxRestricted[RTTHREADTYPE_END] =
 /**
  * All threads have the same priority.
  *
- * This is typically choosen when we find that we can't raise the priority
+ * This is typically chosen when we find that we can't raise the priority
  * to the process default of a thread created by a low priority thread.
  */
 static const PROCPRIORITYTYPE g_aTypesLinuxFlat[RTTHREADTYPE_END] =

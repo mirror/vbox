@@ -141,7 +141,7 @@ static uint32_t volatile g_cErrors;
  * Similar to RTTESTI_CHECK_MSG
  *
  * @param   expr            The expression to evaluate.
- * @param   DetailsArgs     Format string + arguments - in paranthesis.
+ * @param   DetailsArgs     Format string + arguments - in parenthesis.
  */
 #define RTR0TESTR0_CHECK_MSG(expr, DetailsArgs) \
     do { \

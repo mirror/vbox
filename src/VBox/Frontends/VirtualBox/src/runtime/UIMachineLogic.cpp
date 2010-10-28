@@ -1376,7 +1376,7 @@ void UIMachineLogic::sltPrepareUSBMenu()
             connect(attachUSBAction, SIGNAL(triggered(bool)), this, SLOT(sltAttachUSBDevice()));
             pMenu->addAction(attachUSBAction);
 
-            /* Check if that USB device was alread attached to this session: */
+            /* Check if that USB device was already attached to this session: */
             CConsole console = session().GetConsole();
             CUSBDevice attachedDevice = console.FindUSBDeviceById(device.GetId());
             attachUSBAction->setChecked(!attachedDevice.isNull());

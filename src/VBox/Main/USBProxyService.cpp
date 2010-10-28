@@ -546,7 +546,7 @@ void USBProxyService::removeFilter(void *aId)
 
 
 /**
- * A VM is trying to capture a device, do necessary preperations.
+ * A VM is trying to capture a device, do necessary preparations.
  *
  * @returns VBox status code.
  * @param   aDevice     The device in question.
@@ -1089,7 +1089,7 @@ bool USBProxyService::updateDeviceState(HostUSBDevice *aDevice, PUSBDEVICE aUSBD
 
 
 /**
- * Handle a device which state changed in some siginificant way.
+ * Handle a device which state changed in some significant way.
  *
  * This means things like running filters and subsequent capturing and
  * VM attaching. This may result in IPC and temporary lock abandonment.

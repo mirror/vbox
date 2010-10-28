@@ -84,7 +84,7 @@ RTDECL(int)  RTConvVarCreateEx(PRTCONDVAR phCondVar, uint32_t fFlags, RTLOCKVALC
  *
  * @returns iprt status code.
  * @param   hCondVar            Handle of the condition variable.  NIL_RTCONDVAR
- *                              is quitely ignored (VINF_SUCCESS).
+ *                              is quietly ignored (VINF_SUCCESS).
  */
 RTDECL(int)  RTConvVarDestroy(RTCONDVAR hCondVar);
 

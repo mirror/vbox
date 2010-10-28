@@ -90,7 +90,7 @@ struct RTSEMEVENTMULTIINTERNAL
     bool                fMonotonicClock;
 };
 
-/** The valus of the u32State variable in RTSEMEVENTMULTIINTERNAL.
+/** The values of the u32State variable in RTSEMEVENTMULTIINTERNAL.
  * @{ */
 /** The object isn't initialized. */
 #define EVENTMULTI_STATE_UNINITIALIZED   0
@@ -359,7 +359,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
 /**
  * Handle polling (timeout already expired at the time of the call).
  *
- * @returns VINF_SUCCESs, VERR_TIMEOUT, VERR_SEM_DESTROYED.
+ * @returns VINF_SUCCESS, VERR_TIMEOUT, VERR_SEM_DESTROYED.
  * @param   pThis               The semaphore.
  */
 DECLINLINE(int) rtSemEventMultiPosixWaitPoll(struct RTSEMEVENTMULTIINTERNAL *pThis)
@@ -382,7 +382,7 @@ DECLINLINE(int) rtSemEventMultiPosixWaitPoll(struct RTSEMEVENTMULTIINTERNAL *pTh
 
 
 /**
- * Implemens the indefinite wait.
+ * Implements the indefinite wait.
  *
  * @returns See RTSemEventMultiWaitEx.
  * @param   pThis               The semaphore.

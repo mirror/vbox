@@ -3,7 +3,7 @@
 /*
  * Sample client for the VirtualBox webservice, written in PHP.
  *
- * Run the VirtualBox web service server first; see the VirtualBOx
+ * Run the VirtualBox web service server first; see the VirtualBox
  * SDK reference for details.
  *
  * Copyright (C) 2009-2010 Oracle Corporation

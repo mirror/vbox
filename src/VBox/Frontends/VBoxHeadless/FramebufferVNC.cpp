@@ -514,7 +514,7 @@ STDMETHODIMP VNCFB::COMGETTER(Height) (ULONG *height)
  * Return the colour depth of our frame buffer.  Note that we actually
  * store the pixel format, not the colour depth internally, since
  * when display sets FramebufferPixelFormat_Opaque, it
- * wants to retreive FramebufferPixelFormat_Opaque and
+ * wants to retrieve FramebufferPixelFormat_Opaque and
  * nothing else.
  *
  * @returns            COM status code

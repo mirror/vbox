@@ -117,7 +117,7 @@ typedef const PDMUSBDESCCACHE *PCPDMUSBDESCCACHE;
 /** PDM USB Device Registration Structure,
  *
  * This structure is used when registering a device from VBoxUsbRegister() in HC Ring-3.
- * The PDM will make use of this structure untill the VM is destroyed.
+ * The PDM will make use of this structure until the VM is destroyed.
  */
 typedef struct PDMUSBREG
 {
@@ -147,7 +147,7 @@ typedef struct PDMUSBREG
      * @param   iInstance   Instance number. Use this to figure out which registers
      *                      and such to use. The instance number is also found in
      *                      pUsbDev->iInstance, but since it's likely to be
-     *                      freqently used PDM passes it as parameter.
+     *                      frequently used PDM passes it as parameter.
      * @param   pCfg        Configuration node handle for the device.  Use this to
      *                      obtain the configuration of the device instance.  It is
      *                      also found in pUsbDev->pCfg, but since it is primary
@@ -708,7 +708,7 @@ typedef struct PDMUSBINS
     /** Device name for using when logging.
      * The constructor sets this and the destructor frees it. */
     R3PTRTYPE(char *)           pszName;
-    /** Padding to make achInstanceData aligned at 32 byte boundrary. */
+    /** Padding to make achInstanceData aligned at 32 byte boundary. */
     uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 5 : 2];
     /** Device instance data. The size of this area is defined
      * in the PDMUSBREG::cbInstanceData field. */

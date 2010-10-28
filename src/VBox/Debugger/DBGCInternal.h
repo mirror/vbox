@@ -92,7 +92,7 @@ typedef DBGCBP *PDBGCBP;
 /**
  * Named variable.
  *
- * Always allocated from heap in one signle block.
+ * Always allocated from heap in one single block.
  */
 typedef struct DBGCNAMEDVAR
 {
@@ -171,7 +171,7 @@ typedef struct DBGC
     /** Counter use to suppress the printing of the headers. */
     uint8_t             cPagingHierarchyDumps;
 
-    /** Current dissassembler position. */
+    /** Current disassembler position. */
     DBGCVAR             DisasmPos;
     /** Current source position. (flat GC) */
     DBGCVAR             SourcePos;

@@ -177,7 +177,7 @@ void usb_unregister_event_cbs(
 
 /*
  * USB CPR support
- *	A client driver must call this funtion in pre-suspend event handler
+ *	A client driver must call this function in pre-suspend event handler
  *	to inform the USBA framework that it can't suspend because
  *	driver instance or device could not be quiesced.
  */
@@ -572,8 +572,8 @@ typedef int (*usb_dev_driver_callback_t)(
  *	cb		- callback function
  *
  * Return Values:
- *	USB_SUCCESS	- the registeration was successful
- *	USB_FAILURE	- the registeration failed
+ *	USB_SUCCESS	- the registration was successful
+ *	USB_FAILURE	- the registration failed
  */
 int usb_register_dev_driver(
 	dev_info_t			*dip,

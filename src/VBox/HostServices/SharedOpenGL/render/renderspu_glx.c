@@ -387,7 +387,7 @@ chooseFBConfig( Display *dpy, int screen, GLbitfield visAttribs )
             render_spu.ws.glXGetFBConfigAttrib(dpy, fbconfig[i],
                                                GLX_DOUBLEBUFFER, &db);
             if ((visAttribs & CR_DOUBLE_BIT) == 0 && db) {
-                /* omit fbconfig with uneeded DB */
+                /* omit fbconfig with unneeded DB */
                 continue;
             }
 

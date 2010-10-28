@@ -73,7 +73,7 @@ typedef struct RTSTRCACHECHUNK
 {
     /** Pointer to the main string cache structure. */
     struct RTSTRCACHEINT   *pCache;
-    /** Padding to align the entries on a 32-byte boundrary. */
+    /** Padding to align the entries on a 32-byte boundary. */
     uint32_t                au32Padding[8 - (ARCH_BITS == 64) - 4];
     /** The index of the first unused entry. */
     uint32_t                iUnused;

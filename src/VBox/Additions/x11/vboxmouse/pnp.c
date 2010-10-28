@@ -58,7 +58,7 @@ typedef struct {
 
 /* PnP EISA/product IDs */
 static symtab_t pnpprod[] = {
-    { "KML0001",  PROT_THINKING },	/* Kensignton ThinkingMouse */
+    { "KML0001",  PROT_THINKING },	/* Kensington ThinkingMouse */
     { "MSH0001",  PROT_IMSERIAL },	/* MS IntelliMouse */
     { "MSH0004",  PROT_IMSERIAL },	/* MS IntelliMouse TrackBall */
     { "KYEEZ00",  PROT_MS },		/* Genius EZScroll */
@@ -91,14 +91,14 @@ static symtab_t pnpprod[] = {
     { "PNP0F09",  PROT_MS },		/* MS BallPoint serial */
     { "PNP0F0A",  PROT_MS },		/* MS PnP serial */
     { "PNP0F0B",  PROT_MS },		/* MS PnP BallPoint serial */
-    { "PNP0F0C",  PROT_MS },		/* MS serial comatible */
-    { "PNP0F0D",  PROT_BM },		/* MS InPort comatible */
-    { "PNP0F0E",  PROT_PS2 },		/* MS PS/2 comatible */
-    { "PNP0F0F",  PROT_MS },		/* MS BallPoint comatible */
+    { "PNP0F0C",  PROT_MS },		/* MS serial compatible */
+    { "PNP0F0D",  PROT_BM },		/* MS InPort compatible */
+    { "PNP0F0E",  PROT_PS2 },		/* MS PS/2 compatible */
+    { "PNP0F0F",  PROT_MS },		/* MS BallPoint compatible */
 #ifdef notyet
     { "PNP0F10",  PROT_??? },		/* TI QuickPort */
 #endif
-    { "PNP0F11",  PROT_BM },		/* MS bus comatible */
+    { "PNP0F11",  PROT_BM },		/* MS bus compatible */
     { "PNP0F12",  PROT_PS2 },		/* Logitech PS/2 */
     { "PNP0F13",  PROT_PS2 },		/* PS/2 */
 #ifdef notyet
@@ -220,7 +220,7 @@ pnpgets(InputInfoPtr pInfo, char *buf)
 	xf86SerialModemClearBits(pInfo->fd, i);
         usleep(200000);
 
-	/* wait for respose, 2nd phase (2.1.6) */
+	/* wait for response, 2nd phase (2.1.6) */
 	xf86FlushInput(pInfo->fd);
         i = TIOCM_DTR | TIOCM_RTS;	/* DTR = 1, RTS = 1 */
 	xf86SerialModemSetBits(pInfo->fd, i);
@@ -245,7 +245,7 @@ pnpgets(InputInfoPtr pInfo, char *buf)
     pnpOpts = xf86OptionListCreate(pnpSerial, -1, 1);
     xf86SetSerial(pInfo->fd, pnpOpts);
 
-    /* wait for respose */
+    /* wait for response */
     xf86FlushInput(pInfo->fd);
     i = XF86_M_DTR | XF86_M_RTS;	/* DTR = 1, RTS = 1 */
     xf86SerialModemSetBits(pInfo->fd, i);

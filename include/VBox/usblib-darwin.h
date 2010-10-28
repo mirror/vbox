@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
 /** @name VBoxUSB specific device properties.
  * VBoxUSB makes use of the OWNER property for communicating between the probe and
  * start stage.
- * USBProxyServiceDarwin makes use of all of them to correctly determin the state
+ * USBProxyServiceDarwin makes use of all of them to correctly determine the state
  * of the device.
  * @{ */
 /** Contains the pid of the current client. If 0, the kernel is the current client. */

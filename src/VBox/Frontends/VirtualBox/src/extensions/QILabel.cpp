@@ -32,10 +32,10 @@
 #include <QPainter>
 #include <QStyleOptionFocusRect>
 
-/* Local inclused */
+/* Local includes */
 #include "QILabel.h"
 
-/* Some constant predefines */
+/* Some constant regular expressions */
 const QRegExp QILabel::mCopyRegExp = QRegExp ("<[^>]*>");
 QRegExp QILabel::mElideRegExp = QRegExp ("(<compact\\s+elipsis=\"(start|middle|end)\"?>([^<]*)</compact>)");
 

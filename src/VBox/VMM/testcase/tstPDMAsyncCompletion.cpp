@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
         }
 
         /*
-         * Create event semaphor.
+         * Create event semaphore.
          */
         rc = RTSemEventCreate(&g_FinishedEventSem);
         AssertRC(rc);

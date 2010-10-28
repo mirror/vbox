@@ -157,7 +157,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
                       0,                    /* lowest physical address*/
                       _4G-1,                /* highest physical address */
                       PAGE_SIZE,            /* alignment. */
-                      0);                   /* boundrary */
+                      0);                   /* boundary */
     if (pv)
     {
         Assert(!((uintptr_t)pv & PAGE_OFFSET_MASK));
