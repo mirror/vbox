@@ -1473,7 +1473,7 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
 }
 
 /**
- * Readable VT-x if was active *and* the current switcher turned off paging
+ * Enable VT-x if was active *and* the current switcher turned off paging
  *
  * @returns VBox status code.
  * @param   pVM          VM handle.
