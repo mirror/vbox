@@ -48,7 +48,7 @@ endif
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable vbox-img
+ PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap tstVDShareable #vbox-img
  tstVD_TEMPLATE = VBOXR3TSTEXE
  tstVD-2_TEMPLATE = VBOXR3TSTEXE
  tstVDCopy_TEMPLATE = VBOXR3TSTEXE
