@@ -78,7 +78,7 @@ typedef struct RTMEMPOOLINT
     PRTMEMPOOLENTRY volatile    pHead;
     /** The number of entries in the pool (for statistical purposes). */
     uint32_t volatile           cEntries;
-    /** User data assoicated with the pool. */
+    /** User data associated with the pool. */
     void                       *pvUser;
     /** The pool name. (variable length)  */
     char                        szName[8];

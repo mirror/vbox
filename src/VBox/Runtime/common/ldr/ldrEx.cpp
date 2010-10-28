@@ -100,7 +100,7 @@ int rtldrOpenWithReader(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch
     }
 
     /*
-     * Create image intepreter instance depending on the signature.
+     * Create image interpreter instance depending on the signature.
      */
     if (uSign.u32 == IMAGE_NT_SIGNATURE)
 #ifdef LDR_WITH_PE
@@ -239,7 +239,7 @@ RT_EXPORT_SYMBOL(RTLdrGetBits);
  * @returns iprt status code.
  * @param   hLdrMod             The loader module handle.
  * @param   pvBits              Where the image bits are.
- *                              Must've been passed to RTLdrGetBits().
+ *                              Must have been passed to RTLdrGetBits().
  * @param   NewBaseAddress      The new base address.
  * @param   OldBaseAddress      The old base address.
  * @param   pfnGetImport        Callback function for resolving imports one by one.

@@ -63,7 +63,7 @@ int rtR0InitNative(void)
     {
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         /*
-         * Detech whether spl*() is preserving the interrupt flag or not.
+         * Detect whether spl*() is preserving the interrupt flag or not.
          * This is a problem on S10.
          */
         RTCCUINTREG uOldFlags = ASMIntDisableFlags();

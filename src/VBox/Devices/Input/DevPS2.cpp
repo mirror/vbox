@@ -494,7 +494,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         /* ignore that - I don't know what is its use */
         break;
     /* Make OS/2 happy. */
-    /* The 8042 RAM is readble using commands 0x20 thru 0x3f, and writable
+    /* The 8042 RAM is readable using commands 0x20 thru 0x3f, and writable
        by 0x60 thru 0x7f. Now days only the firs byte, the mode, is used.
        We'll ignore the writes (0x61..7f) and return 0 for all the reads
        just to make some OS/2 debug stuff a bit happier. */

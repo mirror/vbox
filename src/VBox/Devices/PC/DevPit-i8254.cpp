@@ -116,7 +116,7 @@ typedef struct PITChannelState
     /* irq handling */
     int64_t next_transition_time;
     int32_t irq;
-    /** Number of release log entries. Used to prevent floading. */
+    /** Number of release log entries. Used to prevent flooding. */
     uint32_t cRelLogEntries;
 
     uint32_t count; /* can be 65536 */

@@ -64,7 +64,7 @@ static void Usage(char *pszName)
  *      0 - success.
  *     -1 - no root permission
  *     -2 - insufficient arguments
- *     -3 - abormal termination of udpate_drv (not likely)
+ *     -3 - abnormal termination of update_drv (not likely)
  *     -4 - update_drv failed (mostly trying to add already existing alias)
  */
 static int UpdateDrv(AliasOp Op, char *pszAlias, char *pszDrv)

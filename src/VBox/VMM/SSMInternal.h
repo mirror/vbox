@@ -59,7 +59,7 @@ typedef struct SSMUNIT
     PSSMUNIT                pNext;
 
     /** Called in this save/load operation.
-     * The flag is used to determin whether there is need for a call to
+     * The flag is used to determine whether there is need for a call to
      * done or not. */
     bool                    fCalled;
     /** Finished its live part.

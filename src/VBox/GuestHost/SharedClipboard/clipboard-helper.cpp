@@ -19,7 +19,7 @@
 #include <VBox/log.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 
-/** @todo use const where appropriate; delinuxifiy the code (*Lin* -> *Host*); use AssertLogRel*. */
+/** @todo use const where appropriate; delinuxify the code (*Lin* -> *Host*); use AssertLogRel*. */
 
 int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
 {

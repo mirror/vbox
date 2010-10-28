@@ -210,7 +210,7 @@ typedef EFI_COMMON_SECTION_HEADER EFI_PIC_SECTION;
 typedef EFI_COMMON_SECTION_HEADER EFI_PEI_DEPEX_SECTION;
 
 //
-// Leaf section which constains the position-independent-code image.
+// Leaf section which contains the position-independent-code image.
 // 
 typedef EFI_COMMON_SECTION_HEADER EFI_TE_SECTION;
 

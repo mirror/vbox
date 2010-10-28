@@ -18,7 +18,7 @@
 ;#define _I8042LOG_
 ;
 ;//
-;//  Status values are 32 bit values layed out as follows:
+;//  Status values are 32 bit values arranged as follows:
 ;//
 ;//   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
 ;//   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0

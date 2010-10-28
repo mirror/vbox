@@ -225,10 +225,10 @@ struct CRConnection {
     uint32_t u32InjectClientID;
 #endif
     /* Used on host side to indicate that we are not allowed to store above pointers for later use
-     * in crVBoxHGCMReceiveMessage. As those messages are going to be processed after the correspoding 
+     * in crVBoxHGCMReceiveMessage. As those messages are going to be processed after the corresponding 
      * HGCM call is finished and memory is freed. So we have to store a copy.
      * This happens when message processing for client associated with this connection 
-     * is blocked by another client, which has send us glBegin call and we're waiting to recieve glEnd.
+     * is blocked by another client, which has send us glBegin call and we're waiting to receive glEnd.
      */
     uint8_t  allow_redir_ptr;
 

@@ -181,7 +181,7 @@ public:
     /**
      * Returns @c true if this medium is attached to any VM (in the current
      * state or in a snapshot) in which case #usage() will contain a string with
-     * comma-sparated VM names (with snapshot names, if any, in parenthesis).
+     * comma-separated VM names (with snapshot names, if any, in parenthesis).
      */
     bool isUsed() const { return !mUsage.isNull(); }
 

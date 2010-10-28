@@ -101,7 +101,7 @@ typedef struct DRVDISKSEGMENT
     size_t           cbSeg;
     /** Data for this segment */
     uint8_t         *pbSeg;
-    /** Numbner of entries in the I/O array. */
+    /** Number of entries in the I/O array. */
     unsigned         cIoLogEntries;
     /** Array of I/O log references. */
     PIOLOGENT        apIoLog[1];

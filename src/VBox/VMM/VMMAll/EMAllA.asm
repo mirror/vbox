@@ -39,7 +39,7 @@
 %endif
 
 ;; @def RT_ARCH_AMD64
-; Indicator for whether we can deal with 8 byte operatands. (Darwin fun again.)
+; Indicator for whether we can deal with 8 byte operands. (Darwin fun again.)
 %ifdef RT_ARCH_AMD64
  %define CAN_DO_8_BYTE_OP  1
 %endif

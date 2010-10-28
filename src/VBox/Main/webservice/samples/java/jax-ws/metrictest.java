@@ -216,7 +216,7 @@ public class metrictest implements Runnable
         Runtime.getRuntime().addShutdownHook(new Thread(c));
         // Start metric collection
         c.setup();
-        // Obtain and print out stats continuosly until ctrl-C is pressed
+        // Obtain and print out stats continuously until ctrl-C is pressed
         while (true)
         {
             Thread.sleep(1000); // Sleep for a second

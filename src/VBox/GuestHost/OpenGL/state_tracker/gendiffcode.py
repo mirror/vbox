@@ -240,12 +240,12 @@ def gendiffcode(fname, state_name, docopy, doinvalid):
 								sys.stdout.write(target+"->"+elem)
 						print ");"
 
-## Do the sync if nessesary
+## Do the sync if necessary
 			if docopy and guardbit != "extensions":
 				for elem in  mainelem:
 					print tab+current+"->"+elem+" = "+target+"->"+elem+";"
 
-			## Do the clear if nessesary
+			## Do the clear if necessary
 			if doinvalid:
 				if guardbit != "":
 					print tab+"FILLDIRTY(%(bit)s->%(guardbit)s);"%vars()

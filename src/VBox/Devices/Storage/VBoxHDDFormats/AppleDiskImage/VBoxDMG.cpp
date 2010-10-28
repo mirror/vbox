@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxDMG - Intepreter for Apple Disk Images (DMG).
+ * VBoxDMG - Interpreter for Apple Disk Images (DMG).
  */
 
 /*
@@ -788,7 +788,7 @@ static const char *vboxdmgOpenXmlToRsrc(PVBOXDMG pThis, char const *pszXml)
     REQUIRE_WORD(psz, ">");
 
     /*
-     * Decend down to the 'resource-fork' dictionary.
+     * Descend down to the 'resource-fork' dictionary.
      * ASSUME it's the only top level dictionary.
      */
     /* <dict> <key>resource-fork</key> */
@@ -822,7 +822,7 @@ static const char *vboxdmgOpenXmlToRsrc(PVBOXDMG pThis, char const *pszXml)
             return psz;
 
         /*
-         * Decend into the array and add the elements to the resource entry.
+         * Descend into the array and add the elements to the resource entry.
          */
         /* <array> */
         REQUIRE_TAG(psz, "array");
@@ -905,7 +905,7 @@ static const char *vboxdmgOpenXmlToRsrc(PVBOXDMG pThis, char const *pszXml)
  * structures from the image.
  *
  * This worker is really just a construct to avoid gotos and do-break-while-zero
- * uglyness.
+ * ugliness.
  *
  * @returns VBox status code.
  * @param   pThis       The DMG instance data.

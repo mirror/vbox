@@ -118,7 +118,7 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer);
 RTR3DECL(int) RTTcpServerListen(PRTTCPSERVER pServer, PFNRTTCPSERVE pfnServe, void *pvUser);
 
 /**
- * Listen and accept one incomming connection.
+ * Listen and accept one incoming connection.
  *
  * This is an alternative to RTTcpServerListen for the use the callbacks are not
  * possible.

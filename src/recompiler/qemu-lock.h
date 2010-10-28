@@ -29,7 +29,7 @@
    system emulation doesn't need/use locking, NPTL userspace uses
    pthread mutexes, and non-NPTL userspace isn't threadsafe anyway.
    In either case a spinlock is probably the wrong kind of lock.
-   Spinlocks are only good if you know annother CPU has the lock and is
+   Spinlocks are only good if you know another CPU has the lock and is
    likely to release it soon.  In environments where you have more threads
    than physical CPUs (the extreme case being a single CPU host) a spinlock
    simply wastes CPU until the OS decides to preempt it.  */

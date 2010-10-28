@@ -128,7 +128,7 @@ static int usbProxyFreeBSDEndpointClose(PUSBPROXYDEV pProxyDev, int Endpoint);
 /**
  * Wrapper for the ioctl call.
  *
- * This wrapper will repeate the call if we get an EINTR or EAGAIN. It can also
+ * This wrapper will repeat the call if we get an EINTR or EAGAIN. It can also
  * handle ENODEV (detached device) errors.
  *
  * @returns whatever ioctl returns.
@@ -520,7 +520,7 @@ static int usbProxyFreeBSDReset(PUSBPROXYDEV pProxyDev, bool fResetOnFreeBSD)
     for (unsigned i = 0; i < USBFBSD_MAXENDPOINTS; i++)
         usbProxyFreeBSDEndpointClose(pProxyDev, i);
 
-    /* We need to release kernel ressources first. */
+    /* We need to release kernel resources first. */
     struct usb_fs_uninit UsbFsUninit;
     UsbFsUninit.dummy = 0;
 
@@ -535,7 +535,7 @@ static int usbProxyFreeBSDReset(PUSBPROXYDEV pProxyDev, bool fResetOnFreeBSD)
         return RTErrConvertFromErrno(errno);
 #endif
 
-    /* Allocate kernel ressources again. */
+    /* Allocate kernel resources again. */
     struct usb_fs_init UsbFsInit;
 
     UsbFsInit.pEndpoints   = pDevFBSD->paXferEndpoints;
@@ -586,7 +586,7 @@ static int usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
     for (unsigned i = 0; i < USBFBSD_MAXENDPOINTS; i++)
         usbProxyFreeBSDEndpointClose(pProxyDev, i);
 
-    /* We need to release kernel ressources first. */
+    /* We need to release kernel resources first. */
     struct usb_fs_uninit UsbFsUninit;
     UsbFsUninit.dummy = 0;
 
@@ -595,7 +595,7 @@ static int usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
 
     int iCfgIndex = 0;
 
-    /* Get theconfiguration index matching the value. */
+    /* Get the configuration index matching the value. */
     for (iCfgIndex = 0; iCfgIndex < pProxyDev->DevDesc.bNumConfigurations; iCfgIndex++)
     {
         if (pProxyDev->paCfgDescs[iCfgIndex].Core.bConfigurationValue == iCfg)
@@ -616,7 +616,7 @@ static int usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
         return false;
     }
 
-    /* Allocate kernel ressources again. */
+    /* Allocate kernel resources again. */
     struct usb_fs_init UsbFsInit;
 
     UsbFsInit.pEndpoints   = pDevFBSD->paXferEndpoints;
@@ -680,7 +680,7 @@ static int usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt
     for (unsigned i = 0; i < USBFBSD_MAXENDPOINTS; i++)
         usbProxyFreeBSDEndpointClose(pProxyDev, i);
 
-    /* We need to release kernel ressources first. */
+    /* We need to release kernel resources first. */
     struct usb_fs_uninit UsbFsUninit;
     UsbFsUninit.dummy = 0;
 
@@ -697,7 +697,7 @@ static int usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt
         return false;
     }
 
-    /* Allocate kernel ressources again. */
+    /* Allocate kernel resources again. */
     struct usb_fs_init UsbFsInit;
 
     UsbFsInit.pEndpoints   = pDevFBSD->paXferEndpoints;

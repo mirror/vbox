@@ -49,7 +49,7 @@ static int  rtReqProcessOne(PRTREQ pReq);
 
 
 /**
- * Create a request packet queueu
+ * Create a request packet queue
  *
  * @returns iprt status code.
  * @param   ppQueue         Where to store the request queue pointer.
@@ -73,7 +73,7 @@ RT_EXPORT_SYMBOL(RTReqCreateQueue);
 
 
 /**
- * Destroy a request packet queueu
+ * Destroy a request packet queue
  *
  * @returns iprt status code.
  * @param   pQueue          The request queue.
@@ -119,7 +119,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies)
     /*
      * Process loop.
      *
-     * We do not repeat the outer loop if we've got an informationtional status code
+     * We do not repeat the outer loop if we've got an informational status code
      * since that code needs processing by our caller.
      */
     int rc = VINF_SUCCESS;
@@ -186,7 +186,7 @@ RT_EXPORT_SYMBOL(RTReqProcess);
  * Allocate and queue a call request.
  *
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completation. In the other case
+ * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using RTReqFree().
  *
@@ -221,7 +221,7 @@ RT_EXPORT_SYMBOL(RTReqCall);
  * Allocate and queue a call request to a void function.
  *
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completation. In the other case
+ * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using RTReqFree().
  *
@@ -231,7 +231,7 @@ RT_EXPORT_SYMBOL(RTReqCall);
  *
  * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happends.
+ *                          This will be NULL or a valid request pointer not matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
@@ -256,7 +256,7 @@ RT_EXPORT_SYMBOL(RTReqCallVoid);
  * Allocate and queue a call request to a void function.
  *
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completation. In the other case
+ * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using RTReqFree().
  *
@@ -266,7 +266,7 @@ RT_EXPORT_SYMBOL(RTReqCallVoid);
  *
  * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
+ *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
  *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
@@ -293,7 +293,7 @@ RT_EXPORT_SYMBOL(RTReqCallEx);
  * Allocate and queue a call request.
  *
  * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completation. In the other case
+ * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using RTReqFree().
  *
@@ -303,7 +303,7 @@ RT_EXPORT_SYMBOL(RTReqCallEx);
  *
  * @param   pQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happends, unless fFlags
+ *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
  *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
@@ -638,8 +638,8 @@ RT_EXPORT_SYMBOL(RTReqFree);
  *
  * The quest must be allocated using RTReqAlloc() and contain
  * all the required data.
- * If it's disired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completation. In the other case
+ * If it's desired to poll on the completion of the request set cMillies
+ * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  *
  * @returns iprt status code.

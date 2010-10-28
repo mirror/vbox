@@ -492,7 +492,7 @@ Return Value:
     //
     // Read the first configuration descriptor
     // This requires two steps:
-    // 1. Read the fixed sized configuration desciptor (CD)
+    // 1. Read the fixed sized configuration descriptor (CD)
     // 2. Read the CD with all embedded interface and endpoint descriptors
     //
 
@@ -1780,7 +1780,7 @@ Return Value:
 
         //
         // since its safe to surprise-remove this device, we shall
-        // set the SurpriseRemoveOK flag to supress any dialog to
+        // set the SurpriseRemoveOK flag to suppress any dialog to
         // user.
         //
 
@@ -2029,7 +2029,7 @@ Return Value:
             if(cancelRoutine) {
 
                 //
-                // the cancel routine for this IRP hasnt been called yet
+                // the cancel routine for this IRP hasn't been called yet
                 // so queue the IRP in the cancelledIrp list and complete
                 // after releasing the lock
                 //
@@ -2104,7 +2104,7 @@ VBoxUSB_GetRegistryDword(
 
 Routine Description:
 
-    This routine reads the specified reqistry value.
+    This routine reads the specified registry value.
 
 Arguments:
 

@@ -55,7 +55,7 @@
 #define B64_2_NUM(c) ((c >= 'A' && c <= 'Z') ? (c - 'A') : (c >= 'a' && c <= 'z') ? (c - 'a' + 26) : (c >= '0' && c <= '9') ? (c - '0' + 52) : (c == '+') ? 62 : (c == '/') ? 63 : -1)
 
 
-/** Minumum CHAP_MD5 challenge length in bytes. */
+/** Minimum CHAP_MD5 challenge length in bytes. */
 #define CHAP_MD5_CHALLENGE_MIN 16
 /** Maximum CHAP_MD5 challenge length in bytes. */
 #define CHAP_MD5_CHALLENGE_MAX 24
@@ -102,7 +102,7 @@ typedef enum SCSIDEVTYPE
 /** Mask for extracting the SCSI device type out of the first byte of the INQUIRY response. */
 #define SCSI_DEVTYPE_MASK 0x1f
 
-/** Mask to extract the CmdQue bit out of the seventh byte of the INQUIRY resposne. */
+/** Mask to extract the CmdQue bit out of the seventh byte of the INQUIRY response. */
 #define SCSI_INQUIRY_CMDQUE_MASK 0x02
 
 /** Maximum PDU payload size we can handle in one piece. Greater or equal than
@@ -420,7 +420,7 @@ typedef FNISCSIEXEC *PFNISCSIEXEC;
  */
 typedef struct ISCSICMDSYNC
 {
-    /** Event sempahore to wakeup the waiting thread. */
+    /** Event semaphore to wakeup the waiting thread. */
     RTSEMEVENT EventSem;
     /** Status code of the command. */
     int        rcCmd;
@@ -2371,7 +2371,7 @@ static int iscsiSendPDUAsync(PISCSIIMAGE pImage)
  *
  * @return VBOX status code.
  * @param  pImage      The iSCSI connection state to be used.
- * @param  paRes       Pointer to the array of iSCSI repsonse sections.
+ * @param  paRes       Pointer to the array of iSCSI response sections.
  * @param  cnRes       Number of valid iSCSI response sections in the array.
  */
 static int iscsiRecvPDUProcess(PISCSIIMAGE pImage, PISCSIRES paRes, uint32_t cnRes)

@@ -340,7 +340,7 @@ vboxDDTexParameter(GLcontext *ctx, GLenum target,
 }
 
 /*Note, checking glGetError before and after those calls is the only way 
- *to return if we succeded to get value or not, but it will add 2 sync calls and
+ *to return if we succeeded to get value or not, but it will add 2 sync calls and
  *will reset glGetError value returned in case application calls it explicitly
  */
 static GLboolean 

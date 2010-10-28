@@ -431,7 +431,7 @@ typedef struct EMCPU
     RTRCPTR                 padding0;
 #endif
 
-    /** Tree for keeping track of cli occurances (debug only). */
+    /** Tree for keeping track of cli occurrences (debug only). */
     R3PTRTYPE(PAVLGCPTRNODECORE) pCliStatTree;
     STAMCOUNTER             StatTotalClis;
 #if 0

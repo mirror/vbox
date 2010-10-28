@@ -72,7 +72,7 @@ static char         g_szNotExitingDirFile[RTPATH_MAX];
 /**
  * Benchmark an operation.
  * @param   stmt        Statement to benchmark.
- * @param   what        String litteral describing what's being benchmarked..
+ * @param   what        String literal describing what's being benchmarked..
  */
 #define TIME_OP(stmt, what) \
     do \

@@ -50,7 +50,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** The pipe buffer size we prefere. */
+/** The pipe buffer size we prefer. */
 #define RTPIPE_NT_SIZE      _64K
 
 
@@ -144,7 +144,7 @@ extern "C" NTSYSAPI NTSTATUS WINAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BL
 /**
  * Wrapper for getting FILE_PIPE_LOCAL_INFORMATION via the NT API.
  *
- * @returns Success inidicator (true/false).
+ * @returns Success indicator (true/false).
  * @param   pThis               The pipe.
  * @param   pInfo               The info structure.
  */
@@ -583,7 +583,7 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
             pThis->cUsers++;
 
             /*
-             * Kick of a an overlapped read.  It should return immedately if
+             * Kick of a an overlapped read.  It should return immediately if
              * there is bytes in the buffer.  If not, we'll cancel it and see
              * what we get back.
              */
@@ -655,7 +655,7 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_
             while (cbToRead > 0)
             {
                 /*
-                 * Kick of a an overlapped read.  It should return immedately if
+                 * Kick of a an overlapped read.  It should return immediately if
                  * there is bytes in the buffer.  If not, we'll cancel it and see
                  * what we get back.
                  */
@@ -739,7 +739,7 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
                 Assert(!pThis->fIOPending);
 
                 /* Adjust the number of bytes to write to fit into the current
-                   buffer quota, unless we've promissed stuff in RTPipeSelectOne.
+                   buffer quota, unless we've promised stuff in RTPipeSelectOne.
                    WriteQuotaAvailable better not be zero when it shouldn't!! */
                 FILE_PIPE_LOCAL_INFORMATION Info;
                 if (   !pThis->fPromisedWritable
@@ -1148,7 +1148,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
  * @returns Valid handle on success, INVALID_HANDLE_VALUE on failure.
  * @param   hPipe               The pipe handle.
  * @param   fEvents             The events we're polling for.
- * @param   ph                  wher to put the primary handle.
+ * @param   ph                  where to put the primary handle.
  */
 int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph)
 {

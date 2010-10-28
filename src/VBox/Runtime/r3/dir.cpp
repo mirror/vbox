@@ -219,7 +219,7 @@ static bool rtDirFilterWinNtMatchDosStar(unsigned iDepth, RTUNICP uc, const char
 
         /*
          * Ok, we've got zero or more characters.
-         * We'll try match starting at each occurence of this character.
+         * We'll try match starting at each occurrence of this character.
          */
         default:
         {
@@ -343,7 +343,7 @@ static bool rtDirFilterWinNtMatchStar(unsigned iDepth, RTUNICP uc, const char *p
 
             /*
              * Ok, we've got zero or more characters.
-             * We'll try match starting at each occurence of this character.
+             * We'll try match starting at each occurrence of this character.
              */
             default:
             {
@@ -568,7 +568,7 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
      * Allocate and initialize the directory handle.
      *
      * The posix definition of Data.d_name allows it to be < NAME_MAX + 1,
-     * thus the horrible uglyness here. Solaris uses d_name[1] for instance.
+     * thus the horrible ugliness here. Solaris uses d_name[1] for instance.
      */
 #ifndef RT_OS_WINDOWS
     long cbNameMax = pathconf(szRealPath, _PC_NAME_MAX);

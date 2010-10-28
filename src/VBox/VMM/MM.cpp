@@ -93,7 +93,7 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
  * necessarily be in the continuation of the current heap memory in all (or any)
  * context.
  *
- * All allocations are tagged. Per tag allocation statistics will be maintaing
+ * All allocations are tagged. Per tag allocation statistics will be maintaining
  * and exposed thru STAM when VBOX_WITH_STATISTICS is defined.
  *
  *
@@ -102,7 +102,7 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
  * The ring-3 heap is a wrapper around the RTMem API adding allocation
  * statistics and automatic cleanup on VM destruction.
  *
- * Per tag allocation statistics will be maintaing and exposed thru STAM when
+ * Per tag allocation statistics will be maintaining and exposed thru STAM when
  * VBOX_WITH_STATISTICS is defined.
  *
  *
@@ -112,14 +112,14 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
  * page aligned and page sized memory objects. The pool provides facilities to
  * convert back and forth between (host) physical and virtual addresses (within
  * the pool of course). Several specialized interfaces are provided for the most
- * common alloctions and convertions to save the caller from bothersome casting
+ * common allocations and conversions to save the caller from bothersome casting
  * and extra parameter passing.
  *
  *
  * @section sec_mm_locked   Locked Process Memory
  *
  * MM manages the locked process memory. This is used for a bunch of things
- * (count the LOCKED entries in the'info hma' output found in @ref sec_mm_hma),
+ * (count the LOCKED entries in the 'info hma' output found in @ref sec_mm_hma),
  * but the main consumer of memory is currently for guest RAM. There is an
  * ongoing rewrite that will move all the guest RAM allocation to PGM and
  * GMM.
@@ -164,7 +164,7 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** The current saved state versino of MM. */
+/** The current saved state version of MM. */
 #define MM_SAVED_STATE_VERSION      2
 
 
@@ -214,14 +214,14 @@ VMMR3DECL(int) MMR3InitUVM(PUVM pUVM)
  * Initializes the MM.
  *
  * MM is managing the virtual address space (among other things) and
- * setup the hypvervisor memory area mapping in the VM structure and
- * the hypvervisor alloc-only-heap. Assuming the current init order
- * and components the hypvervisor memory area looks like this:
+ * setup the hypervisor memory area mapping in the VM structure and
+ * the hypervisor alloc-only-heap. Assuming the current init order
+ * and components the hypervisor memory area looks like this:
  *      -# VM Structure.
  *      -# Hypervisor alloc only heap (also call Hypervisor memory region).
  *      -# Core code.
  *
- * MM determins the virtual address of the hypvervisor memory area by
+ * MM determines the virtual address of the hypervisor memory area by
  * checking for location at previous run. If that property isn't available
  * it will choose a default starting location, currently 0xa0000000.
  *
@@ -326,7 +326,7 @@ VMMR3DECL(int) MMR3InitPaging(PVM pVM)
     /** @cfgm{RamHoleSize, uint32_t, 0, 4032MB, 512MB}
      * Specifies the size of the memory hole. The memory hole is used
      * to avoid mapping RAM to the range normally used for PCI memory regions.
-     * Must be aligned on a 4MB boundrary. */
+     * Must be aligned on a 4MB boundary. */
     uint32_t cbRamHole;
     rc = CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
     AssertLogRelMsgRCReturn(rc, ("Configuration error: Failed to query integer \"RamHoleSize\", rc=%Rrc.\n", rc), rc);
@@ -789,7 +789,7 @@ VMMR3DECL(int) MMR3HCPhys2HCVirt(PVM pVM, RTHCPHYS HCPhys, void **ppv)
 
 /**
  * Get the size of the base RAM.
- * This usually means the size of the first contigous block of physical memory.
+ * This usually means the size of the first contiguous block of physical memory.
  *
  * @returns The guest base RAM size.
  * @param   pVM         The VM handle.

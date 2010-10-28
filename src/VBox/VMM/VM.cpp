@@ -27,7 +27,7 @@
  *
  * In hindsight this component is a big design mistake, all this stuff really
  * belongs in the VMM component.  It just seemed like a kind of ok idea at a
- * time when the VMM bit was a kind of vague.  'VM' also happend to be the name
+ * time when the VMM bit was a kind of vague.  'VM' also happened to be the name
  * of the per-VM instance structure (see vm.h), so it kind of made sense.
  * However as it turned out, VMM(.cpp) is almost empty all it provides in ring-3
  * is some minor functionally and some "routing" services.
@@ -224,7 +224,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
 
     /*
      * Create the UVM so we can register the at-error callback
-     * and consoliate a bit of cleanup code.
+     * and consolidate a bit of cleanup code.
      */
     PUVM pUVM = NULL;                   /* shuts up gcc */
     int rc = vmR3CreateUVM(cCpus, pVmm2UserMethods, &pUVM);
@@ -1701,7 +1701,7 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, uint32_t cMsMaxDowntime, const char *
 
 
 /**
- * Commmon worker for VMR3Save and VMR3Teleport.
+ * Common worker for VMR3Save and VMR3Teleport.
  *
  * @returns VBox status code.
  *
@@ -1805,7 +1805,7 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
  * @thread      Non-EMT.
  * @vmstate     Suspended or Running
  * @vmstateto   Saving+Suspended or
- *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
+ *              RunningLS+SuspendingLS+SuspendedLS+Saving+Suspended.
  */
 VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser, bool *pfSuspended)
 {
@@ -1857,7 +1857,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
  * @thread      Any
  * @vmstate     Suspended or Running
  * @vmstateto   Saving+Suspended or
- *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
+ *              RunningLS+SuspendingLS+SuspendedLS+Saving+Suspended.
  */
 VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, bool *pfSuspended,
                           bool fSkipStateChanges)
@@ -1901,7 +1901,7 @@ VMMR3DECL(int) VMR3SaveFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUse
  * @thread      Non-EMT.
  * @vmstate     Suspended or Running
  * @vmstateto   Saving+Suspended or
- *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
+ *              RunningLS+SuspendingLS+SuspendedLS+Saving+Suspended.
  */
 VMMR3DECL(int) VMR3Teleport(PVM pVM, uint32_t cMsMaxDowntime, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
                             PFNVMPROGRESS pfnProgress, void *pvProgressUser, bool *pfSuspended)
@@ -2048,7 +2048,7 @@ VMMR3DECL(int) VMR3LoadFromFile(PVM pVM, const char *pszFilename, PFNVMPROGRESS 
 
 
 /**
- * VMR3LoadFromFile for arbritrary file streams.
+ * VMR3LoadFromFile for arbitrary file streams.
  *
  * @returns VBox status code.
  *
@@ -2087,7 +2087,7 @@ VMMR3DECL(int) VMR3LoadFromStream(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStre
 
 
 /**
- * VMR3LoadFromFileFT for arbritrary file streams.
+ * VMR3LoadFromFileFT for arbitrary file streams.
  *
  * @returns VBox status code.
  *
@@ -2808,7 +2808,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
  * communication structures residing in RAM when done in the other order.  I.e. the device must be
  * quiesced first, then we clear the memory and plan tables. Probably have to make these things
  * explicit in some way, some memory setup pass or something.
- * (Example: DevAHCI may assert if memory is zeroed before it've read the FIS.)
+ * (Example: DevAHCI may assert if memory is zeroed before it has read the FIS.)
  *
  * @bugref{4467}
  */
@@ -3259,7 +3259,7 @@ static int vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, .
 #endif
 
     /*
-     * Grab the lock and see if any of the proposed transisions works out.
+     * Grab the lock and see if any of the proposed transitions works out.
      */
     va_start(va, cTransitions);
     int     rc          = VERR_VM_INVALID_VM_STATE;
@@ -3886,7 +3886,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
  * EMT rendezvous worker that vmR3SetRuntimeErrorCommon uses to safely change
  * the state to FatalError(LS).
  *
- * @returns VERR_VM_INVALID_VM_STATE or VINF_EM_SUSPENED.  (This is a strict
+ * @returns VERR_VM_INVALID_VM_STATE or VINF_EM_SUSPEND.  (This is a strict
  *          return code, see FNVMMEMTRENDEZVOUS.)
  *
  * @param   pVM             The VM handle.
@@ -4097,7 +4097,7 @@ VMMR3DECL(uint32_t) VMR3GetRuntimeErrorCount(PVM pVM)
 
 
 /**
- * Gets the ID virtual of the virtual CPU assoicated with the calling thread.
+ * Gets the ID virtual of the virtual CPU associated with the calling thread.
  *
  * @returns The CPU ID. NIL_VMCPUID if the thread isn't an EMT.
  *

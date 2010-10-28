@@ -106,11 +106,11 @@ static size_t strLenStripped(const char *pcsz)
 /**
  * Get the name of a floppy drive according to the Linux floppy driver.
  * @returns true on success, false if the name was not available (i.e. the
- *          device was not readible, or the file name wasn't a PC floppy
+ *          device was not readable, or the file name wasn't a PC floppy
  *          device)
  * @param  pcszNode  the path to the device node for the device
  * @param  Number    the Linux floppy driver number for the drive.  Required.
- * @param  pszName   where to store the name retreived
+ * @param  pszName   where to store the name retrieved
  */
 static bool floppyGetName(const char *pcszNode, unsigned Number,
                           floppy_drive_name pszName)
@@ -602,7 +602,7 @@ private:
     bool misConsistent;
     /** Is this entry a valid specimen of what we are looking for? */
     bool misValid;
-    /** Human readible drive description string */
+    /** Human readable drive description string */
     char mszDesc[256];
     /** Unique identifier for the drive.  Should be identical to hal's UDI for
      * the device.  May not be unique for two identical drives. */
@@ -923,7 +923,7 @@ static bool devFindDeviceRecursive(char *pszPath, size_t cchPath,
  *        systems with a static /dev tree, as the current code tries to open
  *        any device node with a major/minor combination that could belong to
  *        a CD-ROM device, and opening a non-existent device can take a non.
- *        negligeable time on Linux.  If it is ever necessary to improve this
+ *        negligible time on Linux.  If it is ever necessary to improve this
  *        (static /dev trees are no longer very fashionable these days, and
  *        sysfs looks like it will be with us for a while), we could further
  *        reduce the number of device nodes we open by checking whether the
@@ -1257,7 +1257,7 @@ hotplugInotifyImpl::hotplugInotifyImpl(void) :
 {
 #  ifdef DEBUG
     /* Excercise the code path (term() on a not-fully-initialised object) as
-     * well as we can.  On an uninitialised object this method is a sematic
+     * well as we can.  On an uninitialised object this method is a semantic
      * no-op. */
     mWatches.mhInotify = -1; /* term will access this variable */
     term();

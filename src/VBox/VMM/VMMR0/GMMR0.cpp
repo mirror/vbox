@@ -30,7 +30,7 @@
  * The allocation chunks has fixed sized, the size defined at compile time
  * by the #GMM_CHUNK_SIZE \#define.
  *
- * Each chunk is given an unquie ID. Each page also has a unique ID. The
+ * Each chunk is given an unique ID. Each page also has a unique ID. The
  * relation ship between the two IDs is:
  * @code
  *  GMM_CHUNK_SHIFT = log2(GMM_CHUNK_SIZE / PAGE_SIZE);
@@ -93,7 +93,7 @@
  *
  * The per page cost in kernel space is 32-bit plus whatever RTR0MEMOBJ
  * entails. In addition there is the chunk cost of approximately
- * (sizeof(RT0MEMOBJ) + sizof(CHUNK)) / 2^CHUNK_SHIFT bytes per page.
+ * (sizeof(RT0MEMOBJ) + sizeof(CHUNK)) / 2^CHUNK_SHIFT bytes per page.
  *
  * On Windows the per page #RTR0MEMOBJ cost is 32-bit on 32-bit windows
  * and 64-bit on 64-bit windows (a PFN_NUMBER in the MDL). So, 64-bit per page.
@@ -111,7 +111,7 @@
  * @subsection sub_gmm_locking  Serializing
  *
  * One simple fast mutex will be employed in the initial implementation, not
- * two as metioned in @ref subsec_pgmPhys_Serializing.
+ * two as mentioned in @ref subsec_pgmPhys_Serializing.
  *
  * @see @ref subsec_pgmPhys_Serializing
  *
@@ -292,7 +292,7 @@ typedef GMMPAGE *PGMMPAGE;
  * @{ */
 /** A private page. */
 #define GMM_PAGE_STATE_PRIVATE          0
-/** A private page - alternative value used on the 32-bit implemenation.
+/** A private page - alternative value used on the 32-bit implementation.
  * This will never be used on 64-bit hosts. */
 #define GMM_PAGE_STATE_PRIVATE_32       1
 /** A shared page. */
@@ -488,7 +488,7 @@ typedef struct GMM
     GMMCHUNKFREESET     Shared;
 
     /** Shared module tree (global). */
-    /** @todo seperate trees for distinctly different guest OSes. */
+    /** @todo separate trees for distinctly different guest OSes. */
     PAVLGCPTRNODECORE   pGlobalSharedModuleTree;
 
     /** The maximum number of pages we're allowed to allocate.
@@ -1114,7 +1114,7 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
  * @param   idCpu           VCPU id
  * @param   cBasePages      The number of pages that may be allocated for the base RAM and ROMs.
  *                          This does not include MMIO2 and similar.
- * @param   cShadowPages    The number of pages that may be allocated for shadow pageing structures.
+ * @param   cShadowPages    The number of pages that may be allocated for shadow paging structures.
  * @param   cFixedPages     The number of pages that may be allocated for fixed objects like the
  *                          hyper heap, MMIO2 and similar.
  * @param   enmPolicy       The OC policy to use on this VM.
@@ -1153,7 +1153,7 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePag
             &&  !pGVM->gmm.s.Reserved.cShadowPages)
         {
             /*
-             * Check if we can accomodate this.
+             * Check if we can accommodate this.
              */
             /* ... later ... */
             if (RT_SUCCESS(rc))
@@ -1215,7 +1215,7 @@ GMMR0DECL(int) GMMR0InitialReservationReq(PVM pVM, VMCPUID idCpu, PGMMINITIALRES
  * @param   idCpu           VCPU id
  * @param   cBasePages      The number of pages that may be allocated for the base RAM and ROMs.
  *                          This does not include MMIO2 and similar.
- * @param   cShadowPages    The number of pages that may be allocated for shadow pageing structures.
+ * @param   cShadowPages    The number of pages that may be allocated for shadow paging structures.
  * @param   cFixedPages     The number of pages that may be allocated for fixed objects like the
  *                          hyper heap, MMIO2 and similar.
  *
@@ -1249,7 +1249,7 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePage
             &&  pGVM->gmm.s.Reserved.cShadowPages)
         {
             /*
-             * Check if we can accomodate this.
+             * Check if we can accommodate this.
              */
             /* ... later ... */
             if (RT_SUCCESS(rc))
@@ -2358,7 +2358,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
             return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
         }
 
-        /* Allocate a new continous chunk. */
+        /* Allocate a new continuous chunk. */
         rc = gmmR0AllocateOneChunk(pGMM, &pGMM->Private, pGVM->hSelf, GMMCHUNKTYPE_CONTINUOUS, &pChunk);
         if (RT_FAILURE(rc))
         {
@@ -2927,7 +2927,7 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
  * @returns VBox status code:
  * @retval  VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH
  * @retval  VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH
- * @retval  VERR_GMM_OVERCOMMITED_TRY_AGAIN_IN_A_BIT - reset condition
+ * @retval  VERR_GMM_OVERCOMMITTED_TRY_AGAIN_IN_A_BIT - reset condition
  *          indicating that we won't necessarily have sufficient RAM to boot
  *          the VM again and that it should pause until this changes (we'll try
  *          balloon some other VM).  (For standard deflate we have little choice
@@ -2958,7 +2958,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
         return rc;
 
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
@@ -3137,7 +3137,7 @@ GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ
         return rc;
 
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
@@ -3538,7 +3538,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
     Log(("GMMR0RegisterSharedModule %s %s base %RGv size %x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
 
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
@@ -3658,7 +3658,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
                 /* Save reference. */
                 pRecVM->pGlobalModule = pGlobalModule;
                 if (    fNewModule
-                    ||  pRecVM->fCollision == true) /* colliding module unregistered and new one registerd since the last check */
+                    ||  pRecVM->fCollision == true) /* colliding module unregistered and new one registered since the last check */
                 {
                     pGlobalModule->cUsers++;
                     Log(("GMMR0RegisterSharedModule: using existing module %s cUser=%d!\n", pszModuleName, pGlobalModule->cUsers));
@@ -3738,7 +3738,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     Log(("GMMR0UnregisterSharedModule %s %s base=%RGv size %x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
 
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
@@ -4055,7 +4055,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
         return rc;
 
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
@@ -4122,7 +4122,7 @@ GMMR0DECL(int) GMMR0CheckSharedModulesStart(PVM pVM)
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
 
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     int rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
@@ -4175,7 +4175,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 
 # ifndef DEBUG_sandervl
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);
@@ -4286,7 +4286,7 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
 
     /*
-     * Take the sempahore and do some more validations.
+     * Take the semaphore and do some more validations.
      */
     int rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRC(rc);

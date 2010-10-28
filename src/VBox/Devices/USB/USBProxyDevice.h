@@ -66,7 +66,7 @@ typedef struct USBPROXYBACK
     int  (* pfnOpen)(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend);
 
     /**
-     * Optional callback for initalizing the device after the configuration
+     * Optional callback for initializing the device after the configuration
      * has been established.
      *
      * @returns VBox status code.
@@ -182,7 +182,7 @@ typedef struct USBPROXYDEV
 
     /** Pointer to the backend. */
     PCUSBPROXYBACK      pOps;
-    /** The currently active configration.
+    /** The currently active configuration.
      * It's -1 if no configuration is active. This is set to -1 before open and reset,
      * the backend will change it if open or reset implies SET_CONFIGURATION. */
     int                 iActiveCfg;

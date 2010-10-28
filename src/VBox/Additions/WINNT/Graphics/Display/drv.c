@@ -34,7 +34,7 @@
  * The VRDP mode pipeline consists of 3 types of commands:
  *
  * 1) RDP orders: BitBlt, RectFill, Text.
- *        These are the simpliest ones.
+ *        These are the simplest ones.
  *
  * 2) Caching: Bitmap, glyph, brush.
  *        The driver maintains a bitmap (or other objects) cache.

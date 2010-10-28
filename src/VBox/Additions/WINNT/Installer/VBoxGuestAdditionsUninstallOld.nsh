@@ -32,7 +32,7 @@ handle_result:
 
   ; Note that here a race might going on after the user clicked on
   ; "Reboot now" in the installer ran above and this installer cleaning
-  ; up aftwards.
+  ; up afterwards.
 
   ; ... so try to abort the current reboot / shutdown caused by the installer ran before
   Call ${un}AbortShutdown
@@ -289,7 +289,7 @@ Function ${un}Uninstall_Innotek
 
 common:
 
-  ; Remove left over files which were not entirely catched by the formerly running
+  ; Remove left over files which were not entirely cached by the formerly running
   ; uninstaller
   DeleteRegKey HKLM "SOFTWARE\innotek\VirtualBox Guest Additions"
   DeleteRegKey HKLM "SOFTWARE\innotek"

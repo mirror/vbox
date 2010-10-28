@@ -648,7 +648,7 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
 
 
     /*
-     * Repeate the summary to stderr so we don't have to scroll half a mile up.
+     * Repeat the summary to stderr so we don't have to scroll half a mile up.
      */
     if (Hlp.szSummary[0])
         RTStrmPrintf(g_pStdErr,

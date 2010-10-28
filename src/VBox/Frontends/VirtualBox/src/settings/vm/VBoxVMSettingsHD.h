@@ -35,7 +35,7 @@
 #include "VBoxVMSettingsHD.gen.h"
 #include "COMDefs.h"
 
-/* Local forwardes */
+/* Local forwards */
 class AttachmentItem;
 class ControllerItem;
 

@@ -30,25 +30,25 @@
  *
  * In raw-mode I/O port access is trapped (\#GP(0)) by ensuring that the actual
  * IOPL is 0 regardless of what the guest IOPL is. The \#GP handler use the
- * dissassembler (DIS) to figure which instruction caused it (there are a number
+ * disassembler (DIS) to figure which instruction caused it (there are a number
  * of instructions in addition to the I/O ones) and if it's an I/O port access
  * it will hand it to IOMGCIOPortHandler (via EMInterpretPortIO).
  * IOMGCIOPortHandler will lookup the port in the AVL tree of registered
  * handlers. If found, the handler will be called otherwise default action is
  * taken. (Default action is to write into the void and read all set bits.)
  *
- * Memory Mapped I/O (MMIO) is implemented as a sligtly special case of PGM
+ * Memory Mapped I/O (MMIO) is implemented as a slightly special case of PGM
  * access handlers. An MMIO range is registered with IOM which then registers it
  * with the PGM access handler sub-system. The access handler catches all
  * access and will be called in the context of a \#PF handler. In RC and R0 this
- * handler is IOMMMIOHandler while in ring-3 it's IOMR3MMIOHandler (althought in
+ * handler is IOMMMIOHandler while in ring-3 it's IOMR3MMIOHandler (although in
  * ring-3 there can be alternative ways). IOMMMIOHandler will attempt to emulate
  * the instruction that is doing the access and pass the corresponding reads /
  * writes to the device.
  *
- * Emulating I/O port access is less complex and should be sligtly faster than
+ * Emulating I/O port access is less complex and should be slightly faster than
  * emulating MMIO, so in most cases we should encourage the OS to use port I/O.
- * Devices which are freqently accessed should register GC handlers to speed up
+ * Devices which are frequently accessed should register GC handlers to speed up
  * execution.
  *
  *
@@ -487,7 +487,7 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  * Registers a I/O port ring-3 handler.
  *
  * This API is called by PDM on behalf of a device. Devices must first register
- * ring-3 ranges before any GC and R0 ranges can be registerd using IOMR3IOPortRegisterRC()
+ * ring-3 ranges before any GC and R0 ranges can be registered using IOMR3IOPortRegisterRC()
  * and IOMR3IOPortRegisterR0().
  *
  *

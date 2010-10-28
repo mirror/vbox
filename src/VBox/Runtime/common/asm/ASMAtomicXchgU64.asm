@@ -37,7 +37,7 @@ BEGINCODE
 ; @param    pu64     x86:ebp+8   gcc:rdi  msc:rcx
 ; @param    u64New   x86:ebp+c   gcc:rsi  msc:rdx
 ;
-; @returns  bool result: true if succesfully exchanged, false if not.
+; @returns  bool result: true if successfully exchanged, false if not.
 ;           x86:al
 ;
 BEGINPROC_EXPORTED ASMAtomicXchgU64

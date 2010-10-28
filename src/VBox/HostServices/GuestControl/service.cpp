@@ -41,7 +41,7 @@
  * processed, these clients will be set into a deferred state (that is being blocked
  * to return until a new command is available).
  *
- * If a client needs to inform the host that something happend, it can send a
+ * If a client needs to inform the host that something happened, it can send a
  * message to a low level HGCM callback registered in Main. This callback contains
  * the actual data as well as the context ID to let the host do the next necessary
  * steps for this context. This context ID makes it possible to wait for an event
@@ -80,7 +80,7 @@ namespace guestControl {
 /**
  * Structure for holding all clients with their
  * generated host contexts. This is necessary for
- * mainting the relationship between a client and its context IDs.
+ * maintaining the relationship between a client and its context IDs.
  */
 struct ClientContexts
 {
@@ -89,7 +89,7 @@ struct ClientContexts
     /** The list of contexts a client is assigned to. */
     std::list< uint32_t > mContextList;
 
-    /** The normal contructor. */
+    /** The normal constructor. */
     ClientContexts(uint32_t aClientID)
                    : mClientID(aClientID) {}
 };
@@ -112,9 +112,9 @@ struct ClientWaiter
     /** Number of parameters */
     uint32_t mNumParms;
 
-    /** The standard contructor. */
+    /** The standard constructor. */
     ClientWaiter() : mClientID(0), mHandle(0), mParms(NULL), mNumParms(0) {}
-    /** The normal contructor. */
+    /** The normal constructor. */
     ClientWaiter(uint32_t aClientID, VBOXHGCMCALLHANDLE aHandle,
               VBOXHGCMSVCPARM aParms[], uint32_t cParms)
               : mClientID(aClientID), mHandle(aHandle), mParms(aParms), mNumParms(cParms) {}
@@ -135,7 +135,7 @@ struct HostCmd
     /** Dynamic structure for holding the HGCM parms */
     VBOXGUESTCTRPARAMBUFFER mParmBuf;
 
-    /** The standard contructor. */
+    /** The standard constructor. */
     HostCmd() : mContextID(0) {}
 };
 /** The host cmd list + iterator type */
@@ -736,7 +736,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         switch (eFunction)
         {
             /*
-             * The guest asks the host for the next messsage to process.
+             * The guest asks the host for the next message to process.
              */
             case GUEST_GET_HOST_MSG:
                 LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
@@ -878,7 +878,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
         else
         {
             std::auto_ptr<Service> apService;
-            /* No exceptions may propogate outside. */
+            /* No exceptions may propagate outside. */
             try {
                 apService = std::auto_ptr<Service>(new Service(ptable->pHelpers));
             } catch (int rcThrown) {

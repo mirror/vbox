@@ -591,7 +591,7 @@ PUSBDEVICE USBProxyServiceLinux::getDevices (void)
 
             /*
              * Interpret the line.
-             * (Ordered by normal occurence.)
+             * (Ordered by normal occurrence.)
              */
             char ch = psz[0];
             if (psz[1] != ':')

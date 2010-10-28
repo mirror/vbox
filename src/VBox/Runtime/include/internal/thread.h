@@ -51,7 +51,7 @@ RT_C_DECLS_BEGIN
 #endif
 
 /**
- * Internal represenation of a thread.
+ * Internal representation of a thread.
  */
 typedef struct RTTHREADINT
 {

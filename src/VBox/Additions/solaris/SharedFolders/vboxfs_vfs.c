@@ -408,7 +408,7 @@ sffs_unmount(vfs_t *vfsp, int flag, cred_t *cr)
 	int error;
 
 	/*
-	 * generic securty check
+	 * generic security check
 	 */
 	LogFlowFunc(("sffs_unmount() of sffs=0x%p\n", sffs));
 	if ((error = secpolicy_fs_unmount(cr, vfsp)) != 0)

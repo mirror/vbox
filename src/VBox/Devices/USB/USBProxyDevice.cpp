@@ -305,7 +305,7 @@ static int copy_interface(PVUSBINTERFACE pIf, uint8_t ifnum,
             if ( ifd->bInterfaceNumber != ifnum )
                 break;
 
-            /* Check we didnt see this alternate setting already
+            /* Check we didn't see this alternate setting already
              * because that will break stuff
              */
             alt = ifd->bAlternateSetting;

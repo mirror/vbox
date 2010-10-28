@@ -297,7 +297,7 @@ typedef struct CPUM
     bool                    fSyntheticCpu;
     /** The (more) portable CPUID level.  */
     uint8_t                 u8PortableCpuIdLevel;
-    /** Indiciates that a state restore is pending.
+    /** Indicates that a state restore is pending.
      * This is used to verify load order dependencies (PGM). */
     bool                    fPendingRestore;
     uint8_t                 abPadding[HC_ARCH_BITS == 64 ? 5 : 1];
@@ -312,7 +312,7 @@ typedef struct CPUM
     CPUMCPUID               GuestCpuIdDef;
 
 #if HC_ARCH_BITS == 32
-    /** Align the next member, and thereby the structure, on a 64-byte boundrary. */
+    /** Align the next member, and thereby the structure, on a 64-byte boundary. */
     uint8_t                 abPadding2[4];
 #endif
 
@@ -332,13 +332,13 @@ typedef struct CPUMCPU
 {
     /**
      * Hypervisor context.
-     * Aligned on a 64-byte boundrary.
+     * Aligned on a 64-byte boundary.
      */
     CPUMCTX                 Hyper;
 
     /**
      * Saved host context. Only valid while inside GC.
-     * Aligned on a 64-byte boundrary.
+     * Aligned on a 64-byte boundary.
      */
     CPUMHOSTCTX             Host;
 
@@ -349,13 +349,13 @@ typedef struct CPUMCPU
 
     /**
      * Guest context.
-     * Aligned on a 64-byte boundrary.
+     * Aligned on a 64-byte boundary.
      */
     CPUMCTX                 Guest;
 
     /**
      * Guest context - misc MSRs
-     * Aligned on a 64-byte boundrary.
+     * Aligned on a 64-byte boundary.
      */
     CPUMCTXMSR              GuestMsr;
 
@@ -390,7 +390,7 @@ typedef struct CPUMCPU
     /** Have we entered the recompiler? */
     bool                    fRemEntered;
 
-    /** Align the structure on a 64-byte boundrary. */
+    /** Align the structure on a 64-byte boundary. */
     uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 34 : 26];
 } CPUMCPU, *PCPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */

@@ -1866,7 +1866,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
 }
 
 /**
- * Unloads the neccessary driver.
+ * Unloads the necessary driver.
  *
  * @returns VBox status code
  */
@@ -1883,7 +1883,7 @@ int CmdModUninstall(void)
 }
 
 /**
- * Loads the neccessary driver.
+ * Loads the necessary driver.
  *
  * @returns VBox status code
  */

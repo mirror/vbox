@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Event Sempahore, Windows.
+ * IPRT - Event Semaphore, Windows.
  */
 
 /*

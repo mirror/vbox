@@ -401,7 +401,7 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
  *
  * @returns The offset into the GSO frame of the payload.
  * @param   pGso                The GSO context data.
- * @param   pbFrame             Pointer to the GSO frame.  Used for retriving
+ * @param   pbFrame             Pointer to the GSO frame.  Used for retrieving
  *                              the header prototype and for checksumming the
  *                              payload.  The buffer is not modified.
  * @param   cbFrame             The size of the GSO frame.

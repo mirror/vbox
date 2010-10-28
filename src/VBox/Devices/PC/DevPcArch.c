@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * DevPcArch - PC Architechture Device.
+ * DevPcArch - PC Architecture Device.
  */
 
 /*

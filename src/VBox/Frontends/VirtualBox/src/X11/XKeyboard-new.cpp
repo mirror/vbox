@@ -246,7 +246,7 @@ int getKeysymsPerKeycode()
 /**
  * Initialize X11 keyboard including the remapping specified in the
  * global property GUI/RemapScancodes. This property is a string of
- * comma-seperated x=y pairs, where x is the X11 keycode and y is the
+ * comma-separated x=y pairs, where x is the X11 keycode and y is the
  * keyboard scancode that is emitted when the key attached to the X11
  * keycode is pressed.
  */

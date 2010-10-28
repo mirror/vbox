@@ -354,7 +354,7 @@ typedef struct CPUMCTX
     /** @} */
 
 # if 0
-    /** Padding to align the size on a 64 byte boundrary. */
+    /** Padding to align the size on a 64 byte boundary. */
     uint32_t        padding[6];
 # endif
 } CPUMCTX;

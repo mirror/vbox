@@ -611,7 +611,7 @@ static DECLCALLBACK(OSStatus) caPlaybackCallback(void* inRefCon,
         csToRead = csAvail - csReads;
         cbToRead = csToRead << caVoice->hw.info.shift; /* samples -> bytes */
         CA_EXT_DEBUG_LOG(("CoreAudio: [Output] Try reading %RU32 samples (%RU32 bytes)\n", csToRead, cbToRead));
-        /* Try to aquire the necessary block from the ring buffer. */
+        /* Try to acquire the necessary block from the ring buffer. */
         IORingBufferAquireReadBlock(caVoice->pBuf, cbToRead, &pcSrc, &cbToRead);
         /* How much to we get? */
         csToRead = cbToRead >> caVoice->hw.info.shift; /* bytes -> samples */
@@ -875,7 +875,7 @@ static int caInitOutput(HWVoiceOut *hw)
         return -1;
     }
 
-    /* There are buggy devices (e.g. my bluetooth headset) which doesn't honor
+    /* There are buggy devices (e.g. my Bluetooth headset) which doesn't honor
      * the frame buffer size set in the previous calls. So finally get the
      * frame buffer size after the AudioUnit was initialized. */
     uSize = sizeof(cFrames);
@@ -960,7 +960,7 @@ static int coreaudio_run_out(HWVoiceOut *hw)
     /* How much space is available in the ring buffer */
     csAvail = IORingBufferFree(caVoice->pBuf) >> hw->info.shift; /* bytes -> samples */
 
-    /* How much data is availabe. Use the smaller size of the too. */
+    /* How much data is available. Use the smaller size of the too. */
     csAvail = RT_MIN(csAvail, (uint32_t)audio_pcm_hw_get_live_out(hw));
 
     CA_EXT_DEBUG_LOG(("CoreAudio: [Output] Start writing buffer with %RU32 samples (%RU32 bytes)\n", csAvail, csAvail << hw->info.shift));
@@ -972,7 +972,7 @@ static int coreaudio_run_out(HWVoiceOut *hw)
         csToWrite = RT_MIN(csAvail - csWritten, (uint32_t)(hw->samples - hw->rpos));
         cbToWrite = csToWrite << hw->info.shift; /* samples -> bytes */
         CA_EXT_DEBUG_LOG(("CoreAudio: [Output] Try writing %RU32 samples (%RU32 bytes)\n", csToWrite, cbToWrite));
-        /* Try to aquire the necessary space from the ring buffer. */
+        /* Try to acquire the necessary space from the ring buffer. */
         IORingBufferAquireWriteBlock(caVoice->pBuf, cbToWrite, &pcDst, &cbToWrite);
         /* How much to we get? */
         csToWrite = cbToWrite >> hw->info.shift;
@@ -1433,7 +1433,7 @@ static DECLCALLBACK(OSStatus) caRecordingCallback(void* inRefCon,
             csToWrite = csAvail - csWritten;
             cbToWrite = csToWrite << caVoice->hw.info.shift;
             CA_EXT_DEBUG_LOG(("CoreAudio: [Input] Try writing %RU32 samples (%RU32 bytes)\n", csToWrite, cbToWrite));
-            /* Try to aquire the necessary space from the ring buffer. */
+            /* Try to acquire the necessary space from the ring buffer. */
             IORingBufferAquireWriteBlock(caVoice->pBuf, cbToWrite, &pcDst, &cbToWrite);
             /* How much to we get? */
             csToWrite = cbToWrite >> caVoice->hw.info.shift;
@@ -1772,7 +1772,7 @@ static int caInitInput(HWVoiceIn *hw)
         return -1;
     }
 
-    /* There are buggy devices (e.g. my bluetooth headset) which doesn't honor
+    /* There are buggy devices (e.g. my Bluetooth headset) which doesn't honor
      * the frame buffer size set in the previous calls. So finally get the
      * frame buffer size after the AudioUnit was initialized. */
     uSize = sizeof(cFrames);
@@ -1897,7 +1897,7 @@ static int coreaudio_run_in(HWVoiceIn *hw)
         csToRead = RT_MIN(csAvail - csReads, (uint32_t)(hw->samples - hw->wpos));
         cbToRead = csToRead << hw->info.shift;
         CA_EXT_DEBUG_LOG(("CoreAudio: [Input] Try reading %RU32 samples (%RU32 bytes)\n", csToRead, cbToRead));
-        /* Try to aquire the necessary block from the ring buffer. */
+        /* Try to acquire the necessary block from the ring buffer. */
         IORingBufferAquireReadBlock(caVoice->pBuf, cbToRead, &pcSrc, &cbToRead);
         /* How much to we get? */
         csToRead = cbToRead >> hw->info.shift;

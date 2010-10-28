@@ -133,7 +133,7 @@ typedef struct
     /** Helper variable for keeping track of what
      *  already was processed and what not. */
     uint32_t    cbOffset;
-    /** Cirtical section protecting this buffer structure. */
+    /** Critical section protecting this buffer structure. */
     RTCRITSECT  CritSect;
     /** Indicates the health condition of the child process. */
     bool        fAlive;

@@ -83,7 +83,7 @@
  *      Log6    - Native ioctl flow noise.
  *
  * Logging requires BUILD_TYPE=debug and possibly changes to the logger
- * instanciation in log-vbox.c(pp).
+ * instantiation in log-vbox.c(pp).
  */
 
 
@@ -1852,7 +1852,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
 
 
 /**
- * Inter-Driver Communcation (IDC) worker.
+ * Inter-Driver Communication (IDC) worker.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
@@ -2867,7 +2867,7 @@ SUPR0DECL(int) SUPR0PageAllocEx(PSUPDRVSESSION pSession, uint32_t cPages, uint32
  * @param   offSub      Where to start mapping. Must be page aligned.
  * @param   cbSub       How much to map. Must be page aligned.
  * @param   fFlags      Flags, MBZ.
- * @param   ppvR0       Where to reutrn the address of the ring-0 mapping on
+ * @param   ppvR0       Where to return the address of the ring-0 mapping on
  *                      success.
  */
 SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_t offSub, uint32_t cbSub,
@@ -2921,7 +2921,7 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
     if (hMemObj != NIL_RTR0MEMOBJ)
     {
         /*
-         * Do some furter input validations before calling IPRT.
+         * Do some further input validations before calling IPRT.
          * (Cleanup is done indirectly by telling RTR0MemObjFree to include mappings.)
          */
         size_t cbMemObj = RTR0MemObjSize(hMemObj);
@@ -3011,7 +3011,7 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
         ||  hMemObjR3 != NIL_RTR0MEMOBJ)
     {
         /*
-         * Do some furter input validations before calling IPRT.
+         * Do some further input validations before calling IPRT.
          */
         size_t cbMemObj = hMemObjR0 != NIL_RTR0PTR ? RTR0MemObjSize(hMemObjR0) : RTR0MemObjSize(hMemObjR3);
         if (    offSub < cbMemObj
@@ -5107,7 +5107,7 @@ static DECLCALLBACK(void) supdrvDetermineAsyncTscWorker(RTCPUID idCpu, void *pvU
  * case we have to choose the asynchronous timer mode.
  *
  * @param   poffMin     Pointer to the determined difference between different cores.
- * @return  false if the time stamp counters appear to be synchron, true otherwise.
+ * @return  false if the time stamp counters appear to be synchronized, true otherwise.
  */
 static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
 {
@@ -5177,7 +5177,7 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
 
 
 /**
- * Determin the GIP TSC mode.
+ * Determine the GIP TSC mode.
  *
  * @returns The most suitable TSC mode.
  * @param   pDevExt     Pointer to the device instance data.
@@ -5187,20 +5187,20 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
     /*
      * On SMP we're faced with two problems:
      *      (1) There might be a skew between the CPU, so that cpu0
-     *          returns a TSC that is sligtly different from cpu1.
+     *          returns a TSC that is slightly different from cpu1.
      *      (2) Power management (and other things) may cause the TSC
      *          to run at a non-constant speed, and cause the speed
      *          to be different on the cpus. This will result in (1).
      *
      * So, on SMP systems we'll have to select the ASYNC update method
-     * if there are symphoms of these problems.
+     * if there are symptoms of these problems.
      */
     if (RTMpGetCount() > 1)
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
         uint64_t u64DiffCoresIgnored;
 
-        /* Permit the user and/or the OS specfic bits to force async mode. */
+        /* Permit the user and/or the OS specific bits to force async mode. */
         if (supdrvOSGetForcedAsyncTscMode(pDevExt))
             return SUPGIPMODE_ASYNC_TSC;
 
@@ -5242,7 +5242,7 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
  * @param   pGip        Pointer to the read-write kernel mapping of the GIP.
  * @param   HCPhys      The physical address of the GIP.
  * @param   u64NanoTS   The current nanosecond timestamp.
- * @param   uUpdateHz   The update freqence.
+ * @param   uUpdateHz   The update frequency.
  */
 static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPHYS HCPhys, uint64_t u64NanoTS, unsigned uUpdateHz)
 {
@@ -5399,7 +5399,7 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
         u32UpdateIntervalTSC += u32;
         u32UpdateIntervalTSC >>= 1;
 
-        /* Value choosen for a 2GHz Athlon64 running linux 2.6.10/11, . */
+        /* Value chosen for a 2GHz Athlon64 running linux 2.6.10/11, . */
         u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 14;
     }
     else if (pGip->u32UpdateHz >= 90)
@@ -5408,7 +5408,7 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
         u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[(iTSCHistoryHead - 1) & 7];
         u32UpdateIntervalTSC >>= 1;
 
-        /* value choosen on a 2GHz thinkpad running windows */
+        /* value chosen on a 2GHz thinkpad running windows */
         u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 7;
     }
     else
@@ -5439,7 +5439,7 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
 static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
 {
     /*
-     * Determin the relevant CPU data.
+     * Determine the relevant CPU data.
      */
     PSUPGIPCPU pGipCpu;
     if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)

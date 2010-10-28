@@ -17,12 +17,12 @@
  * 2. GLX emulation interface - the glX*() functions are emulated here.
  *    When glXCreateContext() is called we may either create a real, native
  *    GLX context or a Chromium context (depending on match_window_title and
- *    mimimum_window_size).
+ *    minimum_window_size).
  *
  * 3. WGL emulation interface - the wgl*() functions are emulated here.
  *    When wglCreateContext() is called we may either create a real, native
  *    WGL context or a Chromium context (depending on match_window_title and
- *    mimimum_window_size).
+ *    minimum_window_size).
  *
  *
  */

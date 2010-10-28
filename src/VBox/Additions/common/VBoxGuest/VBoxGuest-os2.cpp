@@ -328,7 +328,7 @@ static int vboxGuestOS2MapMemory(void)
 
 
 /**
- * Called fromn VBoxGuestOS2Init to determin which OS/2 version this is.
+ * Called fromn VBoxGuestOS2Init to determine which OS/2 version this is.
  *
  * @returns VBox OS/2 type.
  */

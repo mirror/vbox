@@ -201,7 +201,7 @@ RTDECL(int) RTDbgAsCreate(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastA
     if (!pDbgAs)
         return VERR_NO_MEMORY;
 
-    /* initalize it. */
+    /* initialize it. */
     pDbgAs->u32Magic    = RTDBGAS_MAGIC;
     pDbgAs->cRefs       = 1;
     pDbgAs->hLock       = NIL_RTSEMRW;
@@ -1021,7 +1021,7 @@ RT_EXPORT_SYMBOL(RTDbgAsModuleByAddr);
  * @param   pszName         The module name.
  * @param   iName           There can be more than one module by the same name
  *                          in an address space. This argument indicates which
- *                          is ment. (0 based)
+ *                          is meant. (0 based)
  * @param   phMod           Where to the return the retained module handle.
  */
 RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iName, PRTDBGMOD phMod)

@@ -41,7 +41,7 @@
  * Checks whether user credentials are available to the guest or not.
  *
  * @returns IPRT status value; VINF_SUCCESS if credentials are available,
- *          VERR_NOT_FOUND if not. Otherwise an error is occured.
+ *          VERR_NOT_FOUND if not. Otherwise an error is occurred.
  */
 VBGLR3DECL(int) VbglR3CredentialsQueryAvailability(void)
 {

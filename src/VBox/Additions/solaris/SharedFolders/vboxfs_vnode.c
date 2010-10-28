@@ -482,7 +482,7 @@ sfnode_rename(sfnode_t *node, sfnode_t *newparent, char *path)
 			 * - re-insert the AVL name
 			 */
 			ASSERT(strlen(n->sf_path) > old_len);
-			tail = n->sf_path + old_len; /* includes intial "/" */
+			tail = n->sf_path + old_len; /* includes initial "/" */
 			new_path = kmem_alloc(len + strlen(tail) + 1,
 			    KM_SLEEP);
 			strcpy(new_path, path);

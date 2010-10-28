@@ -131,7 +131,7 @@ RTDECL(int) RTHandleTableDestroy(RTHANDLETABLE hHandleTable, PFNRTHANDLETABLEDEL
     uint32_t            i;
 
     /*
-     * Validate input, quitely ignore the NIL handle.
+     * Validate input, quietly ignore the NIL handle.
      */
     if (hHandleTable == NIL_RTHANDLETABLE)
         return VINF_SUCCESS;

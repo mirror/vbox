@@ -242,7 +242,7 @@ VBOXDDU_DECL(int) VSCSILunCreate(PVSCSILUN phVScsiLun, VSCSILUNTYPE enmLunType,
  * Destroy virtual SCSI LUN.
  *
  * @returns VBox status code.
- * @param   hVScsiLun               The virtal SCSI LUN handle to destroy.
+ * @param   hVScsiLun               The virtual SCSI LUN handle to destroy.
  */
 VBOXDDU_DECL(int) VSCSILunDestroy(VSCSILUN hVScsiLun);
 

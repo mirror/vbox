@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Implemenation of IHost.
+ * Implementation of IHost.
  */
 
 /*

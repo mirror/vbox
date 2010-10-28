@@ -35,7 +35,7 @@
  * fall back on the pthread based implementation if glibc is known to contain
  * the bug fix.
  *
- * The external refernce to epoll_pwait is a hack which prevents that we link
+ * The external reference to epoll_pwait is a hack which prevents that we link
  * against glibc < 2.6.
  */
 #include "../posix/semeventmulti-posix.cpp"

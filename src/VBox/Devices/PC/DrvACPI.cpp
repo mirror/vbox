@@ -91,7 +91,7 @@ typedef struct DRVACPI
     /** The poller thread. */
     PPDMTHREAD          pPollerThread;
     /** Synchronize access to the above fields.
-     * XXX A spinlock is probaly cheaper ... */
+     * XXX A spinlock is probably cheaper ... */
     RTCRITSECT          CritSect;
     /** Event semaphore the poller thread is sleeping on. */
     RTSEMEVENT          hPollerSleepEvent;

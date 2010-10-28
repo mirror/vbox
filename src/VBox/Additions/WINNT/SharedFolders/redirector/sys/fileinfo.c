@@ -1114,7 +1114,7 @@ NTSTATUS VBoxMRxQueryFileInformation (IN PRX_CONTEXT RxContext)
 
             /*
              *  Note: We use the address of the FCB to determine the
-             *  index number of the file.  If we have to maintain persistance between
+             *  index number of the file.  If we have to maintain persistence between
              *  file opens for this request, then we might have to do something
              *  like checksuming the reserved fields on a FUNIQUE SMB response.
              *
@@ -1294,7 +1294,7 @@ NTSTATUS VBoxMRxQueryFileInformation (IN PRX_CONTEXT RxContext)
             Log(("VBOXSF: VBoxMRxQueryFileInformation: FileInternalInformation: Buffer = 0x%08x\n", pInfoBuffer));
 
             /* Note: We use the address of the FCB to determine the
-             index number of the file.  If we have to maintain persistance between
+             index number of the file.  If we have to maintain persistence between
              file opens for this request, then we might have to do something
              like checksuming the reserved fields on a FUNIQUE SMB response.
 

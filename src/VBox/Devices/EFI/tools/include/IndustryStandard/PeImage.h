@@ -104,7 +104,7 @@ typedef struct {
 
 #define EFI_IMAGE_FILE_RELOCS_STRIPPED      0x0001  // Relocation info stripped from file.
 #define EFI_IMAGE_FILE_EXECUTABLE_IMAGE     0x0002  // File is executable  (i.e. no unresolved externel references).
-#define EFI_IMAGE_FILE_LINE_NUMS_STRIPPED   0x0004  // Line nunbers stripped from file.
+#define EFI_IMAGE_FILE_LINE_NUMS_STRIPPED   0x0004  // Line numbers stripped from file.
 #define EFI_IMAGE_FILE_LOCAL_SYMS_STRIPPED  0x0008  // Local symbols stripped from file.
 #define EFI_IMAGE_FILE_BYTES_REVERSED_LO    0x0080  // Bytes of machine word are reversed.
 #define EFI_IMAGE_FILE_32BIT_MACHINE        0x0100  // 32 bit word machine.
@@ -308,7 +308,7 @@ typedef EFI_IMAGE_NT_HEADERS64          EFI_IMAGE_NT_HEADERS;
 #elif defined (MDE_CPU_EBC)
 
 //
-// This is just to make sure you can cross compile with the EBC compiiler.
+// This is just to make sure you can cross compile with the EBC compiler.
 // It does not make sense to have a PE loader coded in EBC. You need to 
 // understand the basic 
 //

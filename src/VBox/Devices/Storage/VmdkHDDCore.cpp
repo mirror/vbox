@@ -3812,7 +3812,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
     AssertPtr(pszBasenameSubstr);
     size_t cbBasenameSubstr = strlen(pszBasenameSubstr) + 1;
 
-    /* Create searate descriptor file if necessary. */
+    /* Create separate descriptor file if necessary. */
     if (cExtents != 1 || (uImageFlags & VD_IMAGE_FLAGS_FIXED))
     {
         rc = vmdkFileOpen(pImage, &pImage->pFile, pImage->pszFilename,
@@ -3965,7 +3965,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
             {
                 /* The spec says version is 1 for all VMDKs, but the vast
                  * majority of streamOptimized VMDKs actually contain
-                 * version 3 - so go with the majority. Both are acepted. */
+                 * version 3 - so go with the majority. Both are accepted. */
                 pExtent->uVersion = 3;
                 pExtent->uCompression = VMDK_COMPRESSION_DEFLATE;
             }
@@ -4109,7 +4109,7 @@ static int vmdkCreateStreamImage(PVMDKIMAGE pImage, uint64_t cbSize,
 
     /* The spec says version is 1 for all VMDKs, but the vast
      * majority of streamOptimized VMDKs actually contain
-     * version 3 - so go with the majority. Both are acepted. */
+     * version 3 - so go with the majority. Both are accepted. */
     pExtent->uVersion = 3;
     pExtent->uCompression = VMDK_COMPRESSION_DEFLATE;
     pExtent->fFooter = true;

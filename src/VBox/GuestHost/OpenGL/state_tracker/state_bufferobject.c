@@ -716,7 +716,7 @@ crStateGetBufferPointervARB(GLenum target, GLenum pname, GLvoid **params)
 /**
  * We need to check if the GL_EXT_vertex/pixel_buffer_object extensions
  * are supported before calling any of the diff_api functions.
- * This flag indidcates if the extensions is available (1), not available (0)
+ * This flag indicates if the extensions is available (1), not available (0)
  * or needs to be tested for (-1).
  * If we don't do this, we can segfault inside OpenGL.
  * Ideally, the render SPU should no-op unsupported GL functions, but

@@ -2,7 +2,7 @@
   Generic BDS library defines general interfaces for BDS driver including:
     1) BDS boot policy interface
     2) BDS boot device connect interface
-    3) BDS Misc interfaces for mainting boot variable, ouput string.
+    3) BDS Misc interfaces for maintaining boot variable, output string.
 
 Copyright (c) 2004 - 2009, Intel Corporation. <BR>
 All rights reserved. This program and the accompanying materials
@@ -113,7 +113,7 @@ BdsLibBootNext (
 
   @param  Option                 The boot option to be processed
   @param  DevicePath             The device path describing where to load the
-                                 boot image or the legcy BBS device path to boot
+                                 boot image or the legacy BBS device path to boot
                                  the legacy OS
   @param  ExitDataSize           The size of exit data.
   @param  ExitData               Data returned when Boot image failed.
@@ -361,7 +361,7 @@ BdsLibRegisterNewOption (
   );
 
 //
-// Bds connect and disconnect driver lib funcions
+// Bds connect and disconnect driver lib functions
 //
 /**
   This function connects all system drivers with the corresponding controllers. 
@@ -628,7 +628,7 @@ ShadowAllOptionRom (
 /**
   Delete all the invalid legacy boot options.
 
-  @retval EFI_SUCCESS             All invalide legacy boot options are deleted.
+  @retval EFI_SUCCESS             All invalid legacy boot options are deleted.
   @retval EFI_OUT_OF_RESOURCES    Fail to allocate necessary memory.
   @retval EFI_NOT_FOUND           Fail to retrieve variable of boot order.
 
@@ -660,7 +660,7 @@ BdsAddNonExistingLegacyBootOptions (
 
   @retval EFI_SUCCESS           The boot devices are added successfully.
   @retval EFI_NOT_FOUND         The legacy boot devices are not found.
-  @retval EFI_OUT_OF_RESOURCES  Memmory or storage is not enough.
+  @retval EFI_OUT_OF_RESOURCES  Memory or storage is not enough.
   @retval EFI_DEVICE_ERROR      Fail to add the legacy device boot order into EFI variable
                                 because of hardware error.
 **/
@@ -686,7 +686,7 @@ BdsRefreshBbsTableForBoot (
   );
 
 /**
-  Delete the Boot Option from EFI Variable. The Boot Order Arrray
+  Delete the Boot Option from EFI Variable. The Boot Order Array
   is also updated.
 
   @param OptionNumber    The number of Boot option want to be deleted.
@@ -851,7 +851,7 @@ MatchPartitionDevicePathNode (
 
   @param  HardDriveDevicePath    EFI Device Path to boot, if it starts with a hard
                                  drive media device path.
-  @return A Pointer to the full device path or NULL if a valid Hard Drive devic path
+  @return A Pointer to the full device path or NULL if a valid Hard Drive device path
           cannot be found.
 
 **/
@@ -950,7 +950,7 @@ BdsLibSaveMemoryTypeInformation (
 /**
   This function checks if a Fv file device path is valid, according to a file GUID. If it is invalid,
   it tries to return the valid device path.
-  FV address maybe changes for memory layout adjust from time to time, use this funciton
+  FV address maybe changes for memory layout adjust from time to time, use this function
   could promise the Fv file device path is right.
 
   @param  DevicePath             on input, the Fv file device path to check. On

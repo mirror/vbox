@@ -572,7 +572,7 @@ typedef struct QEMUSnapshotInfo {
     char id_str[128]; /* unique snapshot id */
     /* the following fields are informative. They are not needed for
        the consistency of the snapshot */
-    char name[256]; /* user choosen name */
+    char name[256]; /* user chosen name */
     uint32_t vm_state_size; /* VM state info size */
     uint32_t date_sec; /* UTC date of the snapshot */
     uint32_t date_nsec;
@@ -1284,7 +1284,7 @@ SCSIDevice *scsi_disk_init(BlockDriverState *bdrv,
 void scsi_disk_destroy(SCSIDevice *s);
 
 int32_t scsi_send_command(SCSIDevice *s, uint32_t tag, uint8_t *buf, int lun);
-/* SCSI data transfers are asynchrnonous.  However, unlike the block IO
+/* SCSI data transfers are asynchronous.  However, unlike the block IO
    layer the completion routine may be called directly by
    scsi_{read,write}_data.  */
 void scsi_read_data(SCSIDevice *s, uint32_t tag);

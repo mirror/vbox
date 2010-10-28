@@ -44,7 +44,7 @@
 #include <iprt/uuid.h>
 #include <VBox/version.h>
 
-/** r=bird: why is this here in the agnositc code? */
+/** r=bird: why is this here in the agnostic code? */
 #ifdef RT_OS_DARWIN
 # include <net/ethernet.h>
 # include <net/if_ether.h>
@@ -802,7 +802,7 @@ DECLHIDDEN(bool) vboxNetAdpCanUnload(PVBOXNETADPGLOBALS pGlobals)
  * thus it's not possible to make idc initialization from the driver startup routine for it,
  * though the "base is still needed for the driver to functions".
  * @param pGlobals
- * @return VINF_SUCCESS on succes, VERR_WRONG_ORDER if we're busy.
+ * @return VINF_SUCCESS on success, VERR_WRONG_ORDER if we're busy.
  */
 DECLHIDDEN(int) vboxNetAdpTryDeleteIdc(PVBOXNETADPGLOBALS pGlobals)
 {
@@ -925,7 +925,7 @@ DECLHIDDEN(void) vboxNetAdpDeleteGlobalsBase(PVBOXNETADPGLOBALS pGlobals)
 /**
  * Called by the native part when the OS wants the driver to unload.
  *
- * @returns VINF_SUCCESS on succes, VERR_WRONG_ORDER if we're busy.
+ * @returns VINF_SUCCESS on success, VERR_WRONG_ORDER if we're busy.
  *
  * @param   pGlobals        Pointer to the globals.
  */

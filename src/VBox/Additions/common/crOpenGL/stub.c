@@ -214,7 +214,7 @@ void APIENTRY stub_GetChromiumParametervCR( GLenum target, GLuint index, GLenum 
 
 /*
  *  Updates geometry info for given spu window.
- *  Returns GL_TRUE if it changed since last call, GL_FALSE overwise.
+ *  Returns GL_TRUE if it changed since last call, GL_FALSE otherwise.
  *  bForceUpdate - forces dispatching of geometry info even if it's unchanged
  */
 GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate)
@@ -255,7 +255,7 @@ GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate)
 #ifdef WINDOWS
 /*
  *  Updates visible regions for given spu window.
- *  Returns GL_TRUE if regions changed since last call, GL_FALSE overwise.
+ *  Returns GL_TRUE if regions changed since last call, GL_FALSE otherwise.
  */
 GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
 {
@@ -479,7 +479,7 @@ void stubCheckXExtensions(WindowInfo *pWindow)
 
 /*
  *  Updates visible regions for given spu window.
- *  Returns GL_TRUE if regions changed since last call, GL_FALSE overwise.
+ *  Returns GL_TRUE if regions changed since last call, GL_FALSE otherwise.
  */
 GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
 {

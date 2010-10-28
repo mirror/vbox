@@ -29,7 +29,7 @@
  * So there we have to make sure they are first delivered to the main GUI
  * thread and later executed there. The second reason is, that the initiator
  * method may hold a lock on a object which has to be manipulated in the event
- * consumer. Doing this without being asynchrony would lead to a dead lock. To
+ * consumer. Doing this without being asynchronous would lead to a dead lock. To
  * avoid both problems we send signals as a queued connection to the event
  * consumer. Qt will create a event for us, place it in the main GUI event
  * queue and deliver it later on. */

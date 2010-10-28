@@ -223,7 +223,7 @@ _copy_map_points1d(GLint size, GLint ustride, GLint uorder,
 /*
  * Copy 2-parametric evaluator control points from user-specified
  * memory space to a buffer of contiguous control points.
- * Additional memory is allocated to be used by the horner and
+ * Additional memory is allocated to be used by the Horner and
  * de Casteljau evaluation schemes.
  *
  * Input:  see glMap2f for details
@@ -244,7 +244,7 @@ _copy_map_points2f(GLint size,
 	}
 
 	/* max(uorder, vorder) additional points are used in      */
-	/* horner evaluation and uorder*vorder additional */
+	/* Horner evaluation and uorder*vorder additional */
 	/* values are needed for de Casteljau                     */
 	dsize = (uorder == 2 && vorder == 2) ? 0 : uorder * vorder;
 	hsize = (uorder > vorder ? uorder : vorder) * size;
@@ -287,7 +287,7 @@ _copy_map_points2d(GLint size,
 	}
 
 	/* max(uorder, vorder) additional points are used in      */
-	/* horner evaluation and uorder*vorder additional */
+	/* Horner evaluation and uorder*vorder additional */
 	/* values are needed for de Casteljau                     */
 	dsize = (uorder == 2 && vorder == 2) ? 0 : uorder * vorder;
 	hsize = (uorder > vorder ? uorder : vorder) * size;

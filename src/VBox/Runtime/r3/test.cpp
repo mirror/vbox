@@ -93,7 +93,7 @@ typedef struct RTTESTINT
     RTTESTLVL           enmMaxLevel;
 
 
-    /** Critical section seralizing output. */
+    /** Critical section serializing output. */
     RTCRITSECT          OutputLock;
     /** The output stream. */
     PRTSTREAM           pOutStrm;
@@ -109,7 +109,7 @@ typedef struct RTTESTINT
 
     /** The current sub-test. */
     const char         *pszSubTest;
-    /** The lenght of the sub-test name. */
+    /** The length of the sub-test name. */
     size_t              cchSubTest;
     /** Whether we've reported the sub-test result or not. */
     bool                fSubTestReported;
@@ -152,7 +152,7 @@ typedef RTTESTINT *PRTTESTINT;
     } while (0)
 
 /** Gets and validates a test instance.
- * If the handle is nil, we will try retrive it from the test TLS entry.
+ * If the handle is nil, we will try retrieve it from the test TLS entry.
  */
 #define RTTEST_GET_VALID_RETURN(pTest)  \
     do { \
@@ -164,7 +164,7 @@ typedef RTTESTINT *PRTTESTINT;
 
 
 /** Gets and validates a test instance.
- * If the handle is nil, we will try retrive it from the test TLS entry.
+ * If the handle is nil, we will try retrieve it from the test TLS entry.
  */
 #define RTTEST_GET_VALID_RETURN_RC(pTest, rc)  \
     do { \
@@ -1425,8 +1425,8 @@ static const char *rtTestUnitName(RTTESTUNIT enmUnit)
         case RTTESTUNIT_PACKETS_PER_SEC:        return "packets/s";
         case RTTESTUNIT_FRAMES:                 return "frames";
         case RTTESTUNIT_FRAMES_PER_SEC:         return "frames/";
-        case RTTESTUNIT_OCCURRENCES:            return "occurences";
-        case RTTESTUNIT_OCCURRENCES_PER_SEC:    return "occurences/s";
+        case RTTESTUNIT_OCCURRENCES:            return "occurrences";
+        case RTTESTUNIT_OCCURRENCES_PER_SEC:    return "occurrences/s";
         case RTTESTUNIT_ROUND_TRIP:             return "roundtrips";
         case RTTESTUNIT_CALLS:                  return "calls";
         case RTTESTUNIT_CALLS_PER_SEC:          return "calls/s";
@@ -1435,7 +1435,7 @@ static const char *rtTestUnitName(RTTESTUNIT enmUnit)
         case RTTESTUNIT_NS:                     return "ns";
         case RTTESTUNIT_NS_PER_CALL:            return "ns/call";
         case RTTESTUNIT_NS_PER_FRAME:           return "ns/frame";
-        case RTTESTUNIT_NS_PER_OCCURRENCE:      return "ns/occurences";
+        case RTTESTUNIT_NS_PER_OCCURRENCE:      return "ns/occurrences";
         case RTTESTUNIT_NS_PER_PACKET:          return "ns/packet";
         case RTTESTUNIT_NS_PER_ROUND_TRIP:      return "ns/roundtrips";
 

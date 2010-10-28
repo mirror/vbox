@@ -189,7 +189,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void);
  * Millisecond granular sleep function.
  *
  * @returns VINF_SUCCESS on success.
- * @returns VERR_INTERRUPTED if a signal or other asynchronous stuff happend
+ * @returns VERR_INTERRUPTED if a signal or other asynchronous stuff happened
  *          which interrupt the peaceful sleep.
  * @param   cMillies    Number of milliseconds to sleep.
  *                      0 milliseconds means yielding the timeslice - deprecated!
@@ -444,7 +444,7 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread);
  *          possible. In that case, it means no call to RTThreadPreemptDisable
  *          has been made and interrupts are still enabled.
  *
- * @returns true if preemtion is enabled, false if preemetion is disabled.
+ * @returns true if preemption is enabled, false if preemetion is disabled.
  * @param   hThread             Must be NIL_RTTHREAD for now.
  */
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread);
@@ -666,7 +666,7 @@ RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUs
 /**
  * Thread termination callback for destroying a non-zero TLS entry.
  *
- * @remarks It is not permittable to use any RTTls APIs at this time. Doing so
+ * @remarks It is not permitable to use any RTTls APIs at this time. Doing so
  *          may lead to endless loops, crashes, and other bad stuff.
  *
  * @param   pvValue     The current value.

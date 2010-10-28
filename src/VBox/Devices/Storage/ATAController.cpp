@@ -1535,7 +1535,7 @@ static bool atapiPassthroughSS(AHCIATADevState *s)
             uint8_t u8Cmd = s->aATAPICmd[0];
             do
             {
-                /* don't log superflous errors */
+                /* don't log superfluous errors */
                 if (    rc == VERR_DEV_IO_ERROR
                     && (   u8Cmd == SCSI_TEST_UNIT_READY
                         || u8Cmd == SCSI_READ_CAPACITY
@@ -1690,7 +1690,7 @@ static bool atapiGetEventStatusNotificationSS(AHCIATADevState *s)
                 /* mount */
                 ataH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
-                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x02; /* new medium */
                 pbBuf[5] = 0x02; /* medium present / door closed */
                 pbBuf[6] = 0x00;
@@ -1702,7 +1702,7 @@ static bool atapiGetEventStatusNotificationSS(AHCIATADevState *s)
                 /* umount */
                 ataH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
-                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x03; /* media removal */
                 pbBuf[5] = 0x00; /* medium absent / door closed */
                 pbBuf[6] = 0x00;
@@ -1725,7 +1725,7 @@ static bool atapiGetEventStatusNotificationSS(AHCIATADevState *s)
             default:
                 ataH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x01; /* operational change request / notification */
-                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x00;
                 pbBuf[5] = 0x00;
                 pbBuf[6] = 0x00;
@@ -3881,7 +3881,7 @@ static void ataAsyncSignalIdle(PAHCIATACONTROLLER pCtl)
 }
 
 
-/** Asynch I/O thread for an interface. Once upon a time this was readable
+/** Async I/O thread for an interface. Once upon a time this was readable
  * code with several loops and a different semaphore for each purpose. But
  * then came the "how can one save the state in the middle of a PIO transfer"
  * question. The solution was to use an ASM, which is what's there now. */
@@ -4562,7 +4562,7 @@ static DECLCALLBACK(int) ataBMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int
 #endif
 
 /**
- * Reset the controller to an intial state.
+ * Reset the controller to an initial state.
  *
  * @returns VBox status.
  * @param   pDevIns     The device instance data.

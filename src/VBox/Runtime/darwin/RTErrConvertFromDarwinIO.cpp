@@ -36,7 +36,7 @@
 RTDECL(int) RTErrConvertFromDarwinIO(int iNativeCode)
 {
     /*
-     * 'optimzied' success case.
+     * 'optimized' success case.
      */
     if (iNativeCode == kIOReturnSuccess)
         return VINF_SUCCESS;

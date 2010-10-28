@@ -190,7 +190,7 @@ RTDECL(int) RTSemXRoadsDestroy(RTSEMXROADS hXRoads)
  * Internal worker for RTSemXRoadsNSEnter and RTSemXRoadsEWEnter.
  *
  * @returns IPRT status code.
- * @param   pThis               The semaphore instace.
+ * @param   pThis               The semaphore instance.
  * @param   fDir                The direction.
  * @param   uCountShift         The shift count for getting the count.
  * @param   fCountMask          The mask for getting the count.
@@ -322,7 +322,7 @@ DECL_FORCE_INLINE(int) rtSemXRoadsEnter(RTSEMXROADSINTERNAL *pThis, uint64_t fDi
  * Internal worker for RTSemXRoadsNSLeave and RTSemXRoadsEWLeave.
  *
  * @returns IPRT status code.
- * @param   pThis               The semaphore instace.
+ * @param   pThis               The semaphore instance.
  * @param   fDir                The direction.
  * @param   uCountShift         The shift count for getting the count.
  * @param   fCountMask          The mask for getting the count.

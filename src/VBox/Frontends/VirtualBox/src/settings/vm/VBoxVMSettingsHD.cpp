@@ -1534,7 +1534,7 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
     /* Draw item background */
     QItemDelegate::drawBackground (aPainter, aOption, aIndex);
 
-    /* Setup foregroung settings */
+    /* Setup foreground settings */
     QPalette::ColorGroup cg = state & QStyle::State_Active ? QPalette::Active : QPalette::Inactive;
     bool isSelected = state & QStyle::State_Selected;
     bool isFocused = state & QStyle::State_HasFocus;

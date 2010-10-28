@@ -364,7 +364,7 @@ typedef VUSBPORTBITMAP *PVUSBPORTBITMAP;
 typedef struct VUSBIROOTHUBPORT
 {
     /**
-     * Get the number of avilable ports in the hub.
+     * Get the number of available ports in the hub.
      *
      * @returns The number of ports available.
      * @param   pInterface      Pointer to this structure.
@@ -422,7 +422,7 @@ typedef struct VUSBIROOTHUBPORT
      * Handle transfer errors.
      *
      * VUSB calls this when a transfer attempt failed. This function will respond
-     * indicating wheter to retry or complete the URB with failure.
+     * indicating whether to retry or complete the URB with failure.
      *
      * @returns Retry indicator.
      * @param   pInterface      Pointer to this structure.
@@ -900,7 +900,7 @@ typedef struct VUSBURBISOCPKT
 {
     /** The size of the packet.
      * IN: The packet size. I.e. the number of bytes to the next packet or end of buffer.
-     * OUT: The actual size transfered. */
+     * OUT: The actual size transferred. */
     uint16_t        cb;
     /** The offset of the packet. (Relative to VUSBURB::abData[0].)
      * OUT: This can be changed by the USB device if it does some kind of buffer squeezing. */

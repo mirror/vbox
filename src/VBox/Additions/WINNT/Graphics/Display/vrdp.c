@@ -575,7 +575,7 @@ static BOOL vrdpIntersectRectWithBounds (RECTL *prclIntersect,
         return TRUE;
     }
 
-    /* No intesection. */
+    /* No intersection. */
     return FALSE;
 }
 

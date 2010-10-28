@@ -53,7 +53,7 @@
  * \#PF Handler callback for physical memory accesses without a RC/R0 handler.
  * This simply pushes everything to the HC handler.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -71,7 +71,7 @@ VMMDECL(int) pgmPhysHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCO
  * \#PF Handler callback for Guest ROM range write access.
  * We simply ignore the writes or fall back to the recompiler if we don't support the instruction.
  *
- * @returns VBox status code (appropritate for trap handling and GC return).
+ * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
@@ -437,7 +437,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
     if (PGM_PAGE_IS_SHARED(pPage))
     {
-        /* Mark this shared page for freeing/derefencing. */
+        /* Mark this shared page for freeing/dereferencing. */
         pVM->pgm.s.aHandyPages[iHandyPage].idSharedPage = PGM_PAGE_GET_PAGEID(pPage);
         Assert(PGM_PAGE_GET_PAGEID(pPage) != NIL_GMM_PAGEID);
 
@@ -1629,7 +1629,7 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
  *
  * @returns The R3Ptr, NIL_RTR3PTR on failure.
  * @param   pVM         The VM handle.
- * @param   GCPhys      The GC Physical addresss.
+ * @param   GCPhys      The GC Physical address.
  * @param   cbRange     Physical range.
  *
  * @deprecated  Avoid when possible.
@@ -2053,7 +2053,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
     }
     /*
      * A virtual handler without any interfering physical handlers.
-     * Hopefully it'll conver the whole write.
+     * Hopefully it'll convert the whole write.
      */
     else if (!PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage))
     {

@@ -28,7 +28,7 @@ Notes:
 
 
 //
-//  Values are 32 bit values layed out as follows:
+//  Values are 32 bit values arranged as follows:
 //
 //   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
 //   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
@@ -2086,7 +2086,7 @@ Notes:
 //
 // MessageText:
 //
-//  The driver mistakenly marked a part of it's image pagable instead of nonpagable.
+//  The driver mistakenly marked a part of its image pagable instead of non-pagable.
 //
 #define DRIVER_PORTION_MUST_BE_NONPAGED  ((ULONG)0x000000D3L)
 

@@ -405,7 +405,7 @@ DECLINLINE(bool) tmTimerTryWithLink(PTMTIMER pTimer, TMTIMERSTATE enmStateNew, T
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
 
 /**
- * Worker for tmTimerPollInternal that handles misses when the decidate timer
+ * Worker for tmTimerPollInternal that handles misses when the dedicated timer
  * EMT is polling.
  *
  * @returns See tmTimerPollInternal.
@@ -549,7 +549,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t 
 
     /*
      * Check for TMCLOCK_VIRTUAL_SYNC expiration.
-     * This isn't quite as stright forward if in a catch-up, not only do
+     * This isn't quite as straight forward if in a catch-up, not only do
      * we have to adjust the 'now' but when have to adjust the delta as well.
      */
 
@@ -1190,7 +1190,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
                      *              Figure a safe way of activating this timer while the queue is
                      *              being run.
                      *        (99.9% sure this that the assertion is caused by DevAPIC.cpp
-                     *        re-starting the timer in respons to a initial_count write.) */
+                     *        re-starting the timer in response to a initial_count write.) */
                 }
                 /* fall thru */
             case TMTIMERSTATE_EXPIRED_DELIVER:
@@ -1336,7 +1336,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
  *
  * @returns VBox status.
  * @param   pTimer          Timer handle as returned by one of the create functions.
- * @param   cMilliesToNext  Number of millieseconds to the next tick.
+ * @param   cMilliesToNext  Number of milliseconds to the next tick.
  */
 VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
 {
@@ -1595,7 +1595,7 @@ VMMDECL(uint64_t) TMTimerGet(PTMTIMER pTimer)
 
 
 /**
- * Get the freqency of the timer clock.
+ * Get the frequency of the timer clock.
  *
  * @returns Clock frequency (as Hz of course).
  * @param   pTimer          Timer handle as returned by one of the create functions.
@@ -1660,7 +1660,7 @@ VMMDECL(uint64_t) TMTimerGetMilli(PTMTIMER pTimer)
  * @returns nanoseconds.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   u64Ticks        The clock ticks.
- * @remark  There could be rounding errors here. We just do a simple integere divide
+ * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
 VMMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
@@ -1689,7 +1689,7 @@ VMMDECL(uint64_t) TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks)
  * @returns microseconds.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   u64Ticks        The clock ticks.
- * @remark  There could be rounding errors here. We just do a simple integere divide
+ * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
 VMMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
@@ -1718,7 +1718,7 @@ VMMDECL(uint64_t) TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks)
  * @returns milliseconds.
  * @param   pTimer          Timer handle as returned by one of the create functions.
  * @param   u64Ticks        The clock ticks.
- * @remark  There could be rounding errors here. We just do a simple integere divide
+ * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
 VMMDECL(uint64_t) TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks)

@@ -381,7 +381,7 @@ int pdmR3UsbLoadModules(PVM pVM)
 /**
  * Send the init-complete notification to all the USB devices.
  *
- * This is called from pdmR3DevInit() after it has do its noficiation round.
+ * This is called from pdmR3DevInit() after it has do its notification round.
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
@@ -465,7 +465,7 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
  *                          In the pdmR3UsbInstantiateDevices() case (pInstanceNode != NULL) this is
  *                          the actual config node and will not be cleaned up.
  *
- * @parma   iUsbVersion     The USB version prefered by the device.
+ * @parma   iUsbVersion     The USB version preferred by the device.
  */
 static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int iInstance, PCRTUUID pUuid, PCFGMNODE pInstanceNode, PCFGMNODE *ppConfig, uint32_t iUsbVersion)
 {
@@ -829,7 +829,7 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM             The VM handle.
- * @param   pUuid           The UUID thats to be associated with the device.
+ * @param   pUuid           The UUID to be associated with the device.
  * @param   fRemote         Whether it's a remove or local device.
  * @param   pszAddress      The address string.
  * @param   pvBackend       Pointer to the backend.
@@ -908,7 +908,7 @@ VMMR3DECL(int) PDMR3USBCreateProxyDevice(PVM pVM, PCRTUUID pUuid, bool fRemote, 
  *
  * The device must be detached from the HUB at this point.
  *
- * @param   pVM             Pointer to the stahred VM structure.
+ * @param   pVM             Pointer to the shared VM structure.
  * @param   pUsbIns         The USB device instance to destroy.
  * @thread  EMT
  */

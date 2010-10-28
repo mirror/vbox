@@ -107,7 +107,7 @@ ASM_START
         mov   dx, _scsi_cmd_data_in.io_base + 2[bp] ;; SCSI data read port
 
         rep
-          insb ;; CX dwords transfered from port(DX) to ES:[DI]
+          insb ;; CX dwords transferred from port(DX) to ES:[DI]
 
         pop  bp
 ASM_END
@@ -167,7 +167,7 @@ ASM_START
         mov   ds, ax      ;; segment in ds
 
         rep
-          outsb ;; CX bytes transfered from DS:[SI] to port(DX)
+          outsb ;; CX bytes transferred from DS:[SI] to port(DX)
 
         pop  ds
         pop  bp

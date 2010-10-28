@@ -147,7 +147,7 @@ static struct modlinkage g_VBoxUSBMonSolarisModLinkage =
 typedef struct vboxusbmon_client_t
 {
     dev_info_t                 *pDip;                       /* Client device info. pointer */
-    VBOXUSB_CLIENT_INFO         Info;                       /* Client registeration data. */
+    VBOXUSB_CLIENT_INFO         Info;                       /* Client registration data. */
     struct vboxusbmon_client_t *pNext;                      /* Pointer to next client */
 } vboxusbmon_client_t;
 
@@ -663,7 +663,7 @@ static int VBoxUSBMonSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, c
 
 
 /**
- * IOCtl processor for user to kernel and kernel to kernel communcation.
+ * IOCtl processor for user to kernel and kernel to kernel communication.
  *
  * @returns  VBox status code.
  *

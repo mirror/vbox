@@ -380,7 +380,7 @@ __driParseEvents(__DRIcontextPrivate *pcp, __DRIdrawablePrivate *pdp)
        (*psp->DriverAPI.HandleBufferAttach)(pdp, pcp, last_ba);
 
     /* If there was a drawable config event in the buffer and it
-     * changed the size of the window, all buffer auxillary buffer
+     * changed the size of the window, all buffer auxiliary buffer
      * attachments prior to that are invalid (as opposed to the front
      * buffer case discussed above).  In that case we can start
      * looking for buffer attachment after the last drawable config
@@ -677,7 +677,7 @@ driDestroyContext(__DRIcontext *pcp)
  * \internal
  * This function allocates and fills a __DRIcontextPrivateRec structure.  It
  * performs some device independent initialization and passes all the
- * relevent information to __DriverAPIRec::CreateContext to create the
+ * relevant information to __DriverAPIRec::CreateContext to create the
  * context.
  *
  */
@@ -822,7 +822,7 @@ setupLoaderExtensions(__DRIscreen *psp,
  * \param pSAREA       Pointer the the SAREA.
  * \param fd           Device handle for the DRM.
  * \param extensions   ??
- * \param driver_modes  Returns modes suppoted by the driver
+ * \param driver_modes  Returns modes supported by the driver
  * \param loaderPrivate  ??
  * 
  * \note There is no need to check the minimum API version in this

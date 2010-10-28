@@ -911,7 +911,7 @@
  *      - in <method> context, must not be specified (the default value
  *        will apply)
  *  @param define
- *      'yes' to procuce inlined definition outside the class
+ *      'yes' to produce inlined definition outside the class
  *      declaration, or
  *      empty string to produce method declaration only (w/o body)
  *  @param namespace

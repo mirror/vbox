@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Basic Frontend (BFE):
- * Implemenation of USBProxyService class
+ * Implementation of USBProxyService class
  */
 
 /*

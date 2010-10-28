@@ -67,7 +67,7 @@ typedef struct DRVCHAR
     RTTHREAD                    ReceiveThread;
     /** Send thread ID. */
     RTTHREAD                    SendThread;
-    /** Send event semephore */
+    /** Send event semaphore */
     RTSEMEVENT                  SendSem;
 
     /** Internal send FIFO queue */

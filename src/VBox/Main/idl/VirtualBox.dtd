@@ -1,5 +1,5 @@
 <!--
-     Unoffical DTD for the VirtualBox.xidl file. This is not currently used:
+     Unofficial DTD for the VirtualBox.xidl file. This is not currently used:
      neither by the VirtualBox build process nor at runtime, so it's not shipped
      with the product either, and thus not guaranteed to be up to date.
      It is still the only sort-of-documentation available about what is valid

@@ -676,7 +676,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 
     g_hackVBoxServerSaveLoadCallsLeft--;
 
-    /* Do nothing untill we're being called last time */
+    /* Do nothing until we're being called last time */
     if (g_hackVBoxServerSaveLoadCallsLeft>0)
     {
         return VINF_SUCCESS;
@@ -794,7 +794,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
     g_hackVBoxServerSaveLoadCallsLeft--;
 
-    /* Do nothing untill we're being called last time */
+    /* Do nothing until we're being called last time */
     if (g_hackVBoxServerSaveLoadCallsLeft>0)
     {
         return VINF_SUCCESS;

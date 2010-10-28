@@ -23,7 +23,7 @@
 #include "COMDefs.h"
 #include "UISettingsDialog.h"
 
-/* Dialog which encapsulate all the specific funtionalities of the Global Settings */
+/* Dialog which encapsulate all the specific functionalities of the Global Settings */
 class UIGLSettingsDlg : public UISettingsDialog
 {
     Q_OBJECT;
@@ -57,7 +57,7 @@ private:
     bool isAvailable(int id);
 };
 
-/* Dialog which encapsulate all the specific funtionalities of the Virtual Machine Settings */
+/* Dialog which encapsulate all the specific functionalities of the Virtual Machine Settings */
 class UIVMSettingsDlg : public UISettingsDialog
 {
     Q_OBJECT;

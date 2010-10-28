@@ -83,7 +83,7 @@
             LogFlow (("*** in[%u]=%d\n", i, in [i]));
 
         // Use SafeArray to create the return array (the same technique is used
-        // for output array paramters)
+        // for output array parameters)
 
         SafeArray <LONG> ret (in.size() * 2);
         for (size_t i = 0; i < in.size(); ++ i)

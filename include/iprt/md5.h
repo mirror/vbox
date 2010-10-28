@@ -107,7 +107,7 @@ RTDECL(int) RTMd5ToString(uint8_t const pabDigest[RTMD5_HASH_SIZE], char *pszDig
  *
  * @returns IPRT status code.
  *
- * @param   pszDigest   The strigified digest. Leading and trailing spaces are
+ * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
  * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)

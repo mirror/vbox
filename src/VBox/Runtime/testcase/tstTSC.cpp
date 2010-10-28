@@ -199,7 +199,7 @@ static int tstTSCCalcDrift(void)
     }
 
     /*
-     * Retry untill we get lucky (or give up).
+     * Retry until we get lucky (or give up).
      */
     for (unsigned cTries = 0; ; cTries++)
     {

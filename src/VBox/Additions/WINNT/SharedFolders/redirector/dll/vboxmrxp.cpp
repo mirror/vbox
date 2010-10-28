@@ -106,7 +106,7 @@ NPGetCaps (DWORD nIndex)
 
  Routine Description:
 
- This routine returns the capaboilities of the Null Mini redirector
+ This routine returns the capabilities of the Null Mini redirector
  network provider implementation
 
  Arguments:
@@ -187,7 +187,7 @@ NPLogonNotify (PLUID lpLogonId,
 
  lpAuthenInfo  - the authentication Information
 
- lpPreviousAuthentInfoType - the previous aunthentication information type
+ lpPreviousAuthentInfoType - the previous authentication information type
 
  lpPreviousAuthentInfo - the previous authentication information
 
@@ -233,7 +233,7 @@ NPPasswordChangeNotify (LPCWSTR lpAuthentInfoType,
 
  lpAuthenInfo  - the authentication Information
 
- lpPreviousAuthentInfoType - the previous aunthentication information type
+ lpPreviousAuthentInfoType - the previous authentication information type
 
  lpPreviousAuthentInfo - the previous authentication information
 
@@ -1382,7 +1382,7 @@ NPEnumResource (HANDLE hEnum, LPDWORD lpcCount, LPVOID lpBuffer, LPDWORD lpBuffe
                     wzLocalName[2] = L'\0';
                     Status = SendToMiniRdr(IOCTL_MRX_VBOX_GETCONN, wzLocalName, 3 * sizeof(WCHAR), (PVOID)wzRemoteName, &CopyBytes);
 
-                    // if something strange happended then just say there are no more entries
+                    // if something strange happened then just say there are no more entries
                     if (Status != WN_SUCCESS || CopyBytes == 0)
                     {
                         Status = WN_NO_MORE_ENTRIES;
@@ -1458,7 +1458,7 @@ NPEnumResource (HANDLE hEnum, LPDWORD lpcCount, LPVOID lpBuffer, LPDWORD lpBuffe
 
                     Status = SendToMiniRdr(IOCTL_MRX_VBOX_GETGLOBALCONN, &byConnectionList[i], sizeof(byConnectionList[i]), (PVOID)wzRemoteName, &CopyBytes);
 
-                    // if something strange happended then just say there are no more entries
+                    // if something strange happened then just say there are no more entries
                     if (Status != WN_SUCCESS || CopyBytes == 0)
                     {
                         Status = WN_NO_MORE_ENTRIES;
@@ -1603,7 +1603,7 @@ NPGetResourceParent (LPNETRESOURCE lpNetResource, LPVOID lpBuffer, LPDWORD lpBuf
 {
     Log(("VBOXNP: NPGetResourceParent: lpNetResource %p, lpBuffer %p, lpBufferSize %p\n",
          lpNetResource, lpBuffer, lpBufferSize));
-    /* Contruct a new NETRESOURCE which is syntactically a parent of lpNetResource,
+    /* Construct a new NETRESOURCE which is syntactically a parent of lpNetResource,
      * then call NPGetResourceInformation to actually fill the buffer.
      */
     if (!lpNetResource || !lpNetResource->lpRemoteName || !lpBufferSize)
@@ -1952,7 +1952,7 @@ NPGetUniversalName (LPCWSTR lpLocalPath, DWORD dwInfoLevel, LPVOID lpBuffer, LPD
 
  dwInfoLevel  - the desired info level
 
- lpBuffer - the buffer for the univeral name
+ lpBuffer - the buffer for the universal name
 
  lpBufferSize - the buffer size
 

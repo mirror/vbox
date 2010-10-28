@@ -31,11 +31,11 @@
 
 
 /**
- * Initalizes an USBFILTER structure.
+ * Initializes an USBFILTER structure.
  *
  * @param   pFilter     The filter to initialize.
  * @param   enmType     The filter type. If not valid, the filter will not
- *                      be properly initalized and all other calls will fail.
+ *                      be properly initialized and all other calls will fail.
  */
 USBLIB_DECL(void) USBFilterInit(PUSBFILTER pFilter, USBFILTERTYPE enmType)
 {
@@ -151,7 +151,7 @@ static int usbfilterReadNumberDecimal(const char *pszExpr, unsigned uBase, const
 
 
 /**
- * Reads a number from a numbereric expression.
+ * Reads a number from a numeric expression.
  *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if all is fine. *ppszExpr and *pu16Val are updated.
@@ -289,7 +289,7 @@ static int usbfilterValidateStringPattern(const char *psz)
 
 
 /**
- * Thorougly validates the USB Filter.
+ * Thoroughly validates the USB Filter.
  *
  * @returns Appropriate VBox status code.
  * @param   pFilter     The filter to validate.
@@ -1466,7 +1466,7 @@ USBLIB_DECL(USBFILTERMATCH) USBFilterGetMatchingMethod(PCUSBFILTER pFilter, USBF
 
 
 /**
- * Gets the numerica value of a field.
+ * Gets the numeric value of a field.
  *
  * The field must contain a number, we're not doing any conversions for you.
  *
@@ -1491,7 +1491,7 @@ USBLIB_DECL(int) USBFilterQueryNum(PUSBFILTER pFilter, USBFILTERIDX enmFieldIdx,
 
 
 /**
- * Gets the numerica value of a field.
+ * Gets the numeric value of a field.
  *
  * The field must contain a number, we're not doing any conversions for you.
  *

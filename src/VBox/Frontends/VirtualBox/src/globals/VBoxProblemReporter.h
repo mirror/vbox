@@ -40,7 +40,7 @@ class VBoxMedium;
  * error to the user and give him the opportunity to select an action (when
  * appropriate).
  *
- * Every problem sutiation has its own (correspondingly named) method in this
+ * Every problem situation has its own (correspondingly named) method in this
  * class that takes a list of arguments necessary to describe the situation and
  * to provide the appropriate actions. The method then returns the choice to the
  * caller.

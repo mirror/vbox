@@ -67,7 +67,7 @@ static int win32Error(PVM pVM);
 typedef struct DBGFMOD *PDBGFMOD;
 
 /**
- * Internal represenation of a symbol.
+ * Internal representation of a symbol.
  */
 typedef struct DBGFSYM
 {

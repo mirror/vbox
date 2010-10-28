@@ -123,7 +123,7 @@ RT_C_DECLS_BEGIN
 
 
 /** Validates a flags parameter containing RTPATH_F_*.
- * @remarks The parameters will be referneced multiple times. */
+ * @remarks The parameters will be referenced multiple times. */
 #define RTPATH_F_IS_VALID(fFlags, fIgnore) \
     (    ((fFlags) & ~(uint32_t)(fIgnore)) == RTPATH_F_ON_LINK \
       || ((fFlags) & ~(uint32_t)(fIgnore)) == RTPATH_F_FOLLOW_LINK )
@@ -259,7 +259,7 @@ RTDECL(void) RTPathStripExt(char *pszPath);
 RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath);
 
 /**
- * Changes all the slahes in the specified path to DOS style.
+ * Changes all the slashes in the specified path to DOS style.
  *
  * Unless @a fForce is set, nothing will be done when on a UNIX flavored system
  * since paths wont work with DOS style slashes there.
@@ -271,7 +271,7 @@ RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath);
 RTDECL(char *) RTPathChangeToDosSlashes(char *pszPath, bool fForce);
 
 /**
- * Changes all the slahes in the specified path to unix style.
+ * Changes all the slashes in the specified path to unix style.
  *
  * Unless @a fForce is set, nothing will be done when on a UNIX flavored system
  * since paths wont work with DOS style slashes there.
@@ -394,9 +394,9 @@ RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc,
  * @param   pszPath2    Path to compare (must be an absolute path).
  *
  * @remarks File system details are currently ignored. This means that you won't
- *          get case-insentive compares on unix systems when a path goes into a
+ *          get case-insensitive compares on unix systems when a path goes into a
  *          case-insensitive filesystem like FAT, HPFS, HFS, NTFS, JFS, or
- *          similar. For NT, OS/2 and similar you'll won't get case-sensitve
+ *          similar. For NT, OS/2 and similar you'll won't get case-sensitive
  *          compares on a case-sensitive file system.
  */
 RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2);
@@ -419,7 +419,7 @@ RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2);
  *                          No trailing directory slash!
  *
  * @remarks This API doesn't currently handle root directory compares in a
- *          manner consistant with the other APIs. RTPathStartsWith(pszSomePath,
+ *          manner consistent with the other APIs. RTPathStartsWith(pszSomePath,
  *          "/") will not work if pszSomePath isn't "/".
  */
 RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);

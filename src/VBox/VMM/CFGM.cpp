@@ -1297,7 +1297,7 @@ VMMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE 
     if (pNode)
     {
         /*
-         * If given a path we have to deal with it component by compontent.
+         * If given a path we have to deal with it component by component.
          */
         while (*pszName == '/')
             pszName++;
@@ -2713,7 +2713,7 @@ static DECLCALLBACK(void) cfgmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
 
 
 /**
- * Recursivly prints a path name.
+ * Recursively prints a path name.
  */
 static void cfgmR3DumpPath(PCFGMNODE pNode, PCDBGFINFOHLP pHlp)
 {

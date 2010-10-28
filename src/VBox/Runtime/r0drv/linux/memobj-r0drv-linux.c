@@ -78,7 +78,7 @@ typedef struct RTR0MEMOBJLNX
     /** Set if the allocation is contiguous.
      * This means it has to be given back as one chunk. */
     bool                fContiguous;
-    /** Set if we've vmap'ed thed memory into ring-0. */
+    /** Set if we've vmap'ed the memory into ring-0. */
     bool                fMappedToRing0;
     /** The pages in the apPages array. */
     size_t              cPages;
@@ -694,7 +694,7 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
 
     /*
      * There are two clear cases and that's the <=16MB and anything-goes ones.
-     * When the physical address limit is somewhere inbetween those two we'll
+     * When the physical address limit is somewhere in-between those two we'll
      * just have to try, starting with HIGHUSER and working our way thru the
      * different types, hoping we'll get lucky.
      *
@@ -797,7 +797,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
         /*
          * Get user pages.
          */
-        rc = get_user_pages(pTask,                  /* Task for fault acounting. */
+        rc = get_user_pages(pTask,                  /* Task for fault accounting. */
                             pTask->mm,              /* Whose pages. */
                             R3Ptr,                  /* Where from. */
                             cPages,                 /* How many pages. */

@@ -183,7 +183,7 @@ int hgcmMsgSend (HGCMMSGHANDLE hMsg);
 int hgcmMsgGet (HGCMTHREADHANDLE hThread, HGCMMsgCore **ppMsg);
 
 
-/** Worker thread has processed a message previuosly obtained with hgcmMsgGet.
+/** Worker thread has processed a message previously obtained with hgcmMsgGet.
  *
  * @param pMsg          Processed message pointer.
  * @param result        Result code, VBox erro code.

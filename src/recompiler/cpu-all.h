@@ -1087,7 +1087,7 @@ extern int use_icount;
 #define CPU_INTERRUPT_FIQ    0x10 /* Fast interrupt pending.  */
 #define CPU_INTERRUPT_HALT   0x20 /* CPU halt wanted */
 #define CPU_INTERRUPT_SMI    0x40 /* (x86 only) SMI interrupt pending */
-#define CPU_INTERRUPT_DEBUG  0x80 /* Debug event occured.  */
+#define CPU_INTERRUPT_DEBUG  0x80 /* Debug event occurred.  */
 #define CPU_INTERRUPT_VIRQ   0x100 /* virtual interrupt pending.  */
 #define CPU_INTERRUPT_NMI    0x200 /* NMI pending. */
 
@@ -1192,7 +1192,7 @@ extern uint8_t *phys_ram_dirty;
 
 /* MMIO pages are identified by a combination of an IO device index and
    3 flags.  The ROMD code stores the page ram offset in iotlb entry,
-   so only a limited number of ids are avaiable.  */
+   so only a limited number of ids are available.  */
 
 #define IO_MEM_SHIFT       3
 #define IO_MEM_NB_ENTRIES  (1 << (TARGET_PAGE_BITS  - IO_MEM_SHIFT))

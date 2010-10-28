@@ -51,11 +51,11 @@ EFI_DRIVER_CONFIGURATION_PROTOCOL gIDEBusDriverConfiguration = {
 };
 
 /**
-  Interprete keyboard input.
+  Interpret keyboard input.
 
-  @retval  EFI_ABORTED  Get an 'ESC' key inputed.
-  @retval  EFI_SUCCESS  Get an 'Y' or 'y' inputed.
-  @retval  EFI_NOT_FOUND Get an 'N' or 'n' inputed..
+  @retval  EFI_ABORTED  Get an 'ESC' key inputted.
+  @retval  EFI_SUCCESS  Get an 'Y' or 'y' inputted.
+  @retval  EFI_NOT_FOUND Get an 'N' or 'n' inputted..
 
 **/
 EFI_STATUS

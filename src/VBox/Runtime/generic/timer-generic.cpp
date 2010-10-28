@@ -190,7 +190,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         return VERR_TIMER_ACTIVE;
 
     /*
-     * Calc when it should start fireing and give the thread a kick so it get going.
+     * Calc when it should start firing and give the thread a kick so it get going.
      */
     u64First += RTTimeNanoTS();
     ASMAtomicXchgU64(&pTimer->iTick, 0);

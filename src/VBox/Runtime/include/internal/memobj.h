@@ -357,7 +357,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
  * @returns IPRT status code.
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate, page aligned.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          NIL_RTHCPHYS if any address is acceptable.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are PAGE_SIZE, _2M, _4M and _1G.
@@ -372,7 +372,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
  *          physical memory on this platform.
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   cb              Number of bytes to allocate, page aligned.
- * @param   PhysHighest     The highest permittable address (inclusive).
+ * @param   PhysHighest     The highest permitable address (inclusive).
  *                          NIL_RTHCPHYS if any address is acceptable.
  */
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest);

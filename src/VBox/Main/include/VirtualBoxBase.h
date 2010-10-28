@@ -624,7 +624,7 @@ public:
     virtual ~VirtualBoxBase();
 
     /**
-     * Unintialization method.
+     * Uninitialization method.
      *
      * Must be called by all final implementations (component classes) when the
      * last reference to the object is released, before calling the destructor.
@@ -674,7 +674,7 @@ public:
     virtual const char* getComponentName() const = 0;
 
     /**
-     * Virtual method which determins the locking class to be used for validating
+     * Virtual method which determines the locking class to be used for validating
      * lock order with the standard member lock handle. This method is overridden
      * in a number of subclasses.
      */
@@ -750,7 +750,7 @@ private:
 /**
  * Base class to track VirtualBoxBaseNEXT chlidren of the component.
  *
- * This class is a preferrable VirtualBoxBase replacement for components that
+ * This class is a preferable VirtualBoxBase replacement for components that
  * operate with collections of child components. It gives two useful
  * possibilities:
  *
@@ -763,7 +763,7 @@ private:
  *      non-interface methods) provided that no other child components implement
  *      the same original COM interface IUnknown is queried from.
  * </li><li>
- *      When the parent object uninitializes itself, it can easily unintialize
+ *      When the parent object uninitializes itself, it can easily uninitialize
  *      all its VirtualBoxBase derived children (using their
  *      VirtualBoxBase::uninit() implementations). This is done simply by
  *      calling the #uninitDependentChildren() method.

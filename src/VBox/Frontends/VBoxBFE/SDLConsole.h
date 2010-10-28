@@ -34,7 +34,7 @@
 #include "ConsoleImpl.h"
 #include <iprt/string.h>
 
-/** Pointer shape change event data strucure */
+/** Pointer shape change event data structure */
 struct PointerShapeChangeData
 {
     PointerShapeChangeData (BOOL aVisible, BOOL aAlpha, ULONG aXHot, ULONG aYHot,

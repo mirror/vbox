@@ -73,7 +73,7 @@ public:
         bool fGuestCapsLock   = (fCapsLock != FALSE);
         bool fGuestScrollLock = (fScrollLock != FALSE);
 
-        /* Might need to resynch in case the guest itself changed the LED status. */
+        /* Might need to resync in case the guest itself changed the LED status. */
         if (m_InputSynch.fClientNumLock != fGuestNumLock)
         {
             m_InputSynch.cGuestNumLockAdaptions = 2;

@@ -54,7 +54,7 @@ typedef struct DRVSCSIHOST
     /** The SCSI connector interface .   */
     PDMISCSICONNECTOR       ISCSIConnector;
 
-    /** PAth to the device file. */
+    /** Path to the device file. */
     char                   *pszDevicePath;
     /** Handle to the device. */
     RTFILE                  DeviceFile;
@@ -166,7 +166,7 @@ DECLINLINE(void) drvscsihostCmdOk(PPDMSCSIREQUEST pRequest)
  * in case the device does not provide this info.
  *
  * @returns transfer direction of the command.
- *          SCSIHOSTTXDIR_NONE if no data is transfered.
+ *          SCSIHOSTTXDIR_NONE if no data is transferred.
  *          SCSIHOSTTXDIR_FROM_DEVICE if the data is read from the device.
  *          SCSIHOSTTXDIR_TO_DEVICE   if the data is written to the device.
  * @param   uCommand The command byte.

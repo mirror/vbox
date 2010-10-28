@@ -1412,7 +1412,7 @@ void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
             mVMModel->addItem(new UIVMItem(m));
             mVMModel->sort();
             /* Make sure the description, ... pages are properly updated.
-             * Actualy we haven't call the next method, but unfortunately Qt
+             * Actually we haven't call the next method, but unfortunately Qt
              * seems buggy if the new item is on the same position as the
              * previous one. So go on the safe side and call this by our self. */
             vmListViewCurrentChanged();

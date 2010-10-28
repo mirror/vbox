@@ -42,7 +42,7 @@
  * Internal EventSource data structures are optimized for fast event delivery, while
  * listener registration/unregistration operations are expected being pretty rare.
  * Passive mode listeners keep an internal event queue for all events they receive,
- * and all waitable events are addded to the pending events map. This map keeps track
+ * and all waitable events are added to the pending events map. This map keeps track
  * of how many listeners are still not acknowledged their event, and once this counter
  * reach zero, element is removed from pending events map, and event is marked as processed.
  * Thus if passive listener's user forgets to call IEventSource's EventProcessed()

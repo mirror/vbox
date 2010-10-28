@@ -58,7 +58,7 @@ protected:
      *  Returns true if current isNull() and isValid() values make further
      *  detailed matching meaningful, otherwise returns false.
      *  Must be called as a first method of every isMatch() implementation,
-     *  so that isMatch() will immediately return false if isPreMatch() retuns
+     *  so that isMatch() will immediately return false if isPreMatch() returns
      *  false.
      */
     bool isPreMatch() const
@@ -485,7 +485,7 @@ public:
         : F (Bstr (aString)), mString (aString) {}
 
     /**
-     *  Assings a new filter string to this object and recreates the parser.
+     *  Assigns a new filter string to this object and recreates the parser.
      *  If the string format is invalid, #isValid() will return false.
      */
     Matchable &operator= (const Bstr &aString)

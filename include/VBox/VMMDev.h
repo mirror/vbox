@@ -424,7 +424,7 @@ AssertCompileSize(VMMDevReqHostVersion, 24+16);
 
 
 /**
- * Guest capabilites structure.
+ * Guest capabilities structure.
  *
  * Used by VMMDevReq_ReportGuestCapabilities.
  */
@@ -438,7 +438,7 @@ typedef struct
 AssertCompileSize(VMMDevReqGuestCapabilities, 24+4);
 
 /**
- * Guest capabilites structure, version 2.
+ * Guest capabilities structure, version 2.
  *
  * Used by VMMDevReq_SetGuestCapabilities.
  */
@@ -1670,7 +1670,7 @@ typedef struct
     uint32_t flags;        /**< VBOX_HGCM_F_PARM_*. */
     uint16_t offFirstPage; /**< Offset in the first page where data begins. */
     uint16_t cPages;       /**< Number of pages. */
-    RTGCPHYS64 aPages[1];  /**< Page addesses. */
+    RTGCPHYS64 aPages[1];  /**< Page addresses. */
 } HGCMPageListInfo;
 AssertCompileSize(HGCMPageListInfo, 4+2+2+8);
 

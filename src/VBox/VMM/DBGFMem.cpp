@@ -511,7 +511,7 @@ VMMDECL(int) DBGFR3SelInfoValidateCS(PCDBGFSELINFO pSelInfo, RTSEL SelCPL)
 
 
 /**
- * Convers a PGM paging mode to a set of DBGFPGDMP_XXX flags.
+ * Converts a PGM paging mode to a set of DBGFPGDMP_XXX flags.
  *
  * @returns Flags. UINT32_MAX if the mode is invalid (asserted).
  * @param   enmMode             The mode.

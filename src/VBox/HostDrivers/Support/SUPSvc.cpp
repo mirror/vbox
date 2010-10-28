@@ -282,7 +282,7 @@ void supSvcStopAndDestroyServices(void)
 
 
 /**
- * Logs the message to the appropirate system log.
+ * Logs the message to the appropriate system log.
  *
  * In debug builds this will also put it in the debug log.
  *
@@ -298,7 +298,7 @@ void supSvcLogErrorStr(const char *pszMsg)
 
 
 /**
- * Logs the message to the appropirate system log.
+ * Logs the message to the appropriate system log.
  *
  * In debug builds this will also put it in the debug log.
  *
@@ -324,7 +324,7 @@ void supSvcLogErrorV(const char *pszFormat, va_list va)
 
 
 /**
- * Logs the error message to the appropirate system log.
+ * Logs the error message to the appropriate system log.
  *
  * In debug builds this will also put it in the debug log.
  *

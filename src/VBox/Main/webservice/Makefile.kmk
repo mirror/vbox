@@ -595,7 +595,7 @@ $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts \
 	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- $(VBOX_SOAPCPP2) $(VBOXWEB_SOAPCPP2_SKIP_FILES) -L -2 -w -I$(VBOX_PATH_GSOAP_IMPORT) $(GSOAPH_RELEVANT)
 	$(APPEND) $@ done
 
-# copy the generated headers and stuff. This has to be a seperate rule if we
+# copy the generated headers and stuff. This has to be a separate rule if we
 # want to use wildcard (all commands are expaned when the rule is evaluated).
 $(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts: $(VBOXWEB_OUT_DIR)/gsoap_generate_all_ts | $$(dir $$@)
 	$(RM) -f $@

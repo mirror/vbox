@@ -831,7 +831,7 @@ void RemoteUSBBackend::PollRemoteDevices (void)
              */
             AddRef ();
 
-            /* Goto the disabled state. When a responce will be received
+            /* Goto the disabled state. When a response will be received
              * the state will be changed to the SendRequest.
              */
             menmPollRemoteDevicesStatus = PollRemoteDevicesStatus_WaitNegotiateResponse;

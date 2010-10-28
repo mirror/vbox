@@ -88,7 +88,7 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
                 return NULL;
         }
 
-        /* This basicall calls the SPU's SPULoad() function */
+        /* This basically calls the SPU's SPULoad() function */
         if (!the_spu->entry_point( &(the_spu->name), &(the_spu->super_name),
                                    &(the_spu->init), &(the_spu->self),
                                    &(the_spu->cleanup),

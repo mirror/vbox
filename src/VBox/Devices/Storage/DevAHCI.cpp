@@ -27,7 +27,7 @@
  * the preferred one.  The second implements the I/O ports used for booting from
  * the hard disk and for guests which don't have an AHCI SATA driver.
  *
- * The data is transfered in an asychronous way using one thread per implemented
+ * The data is transferred in an asynchronous way using one thread per implemented
  * port or using the new async completion interface which is still under
  * development. [not quite up to date]
  */
@@ -267,7 +267,7 @@ typedef struct AHCIPORTTASKSTATE
     CmdHdr                     cmdHdr;
     /** The command Fis for this task. */
     uint8_t                    cmdFis[AHCI_CMDFIS_TYPE_H2D_SIZE];
-    /** The ATAPI comnmand data. */
+    /** The ATAPI command data. */
     uint8_t                    aATAPICmd[ATAPI_PACKET_SIZE];
     /** Size of one sector for the ATAPI transfer. */
     size_t                     cbATAPISector;
@@ -2497,7 +2497,7 @@ static void ahciDumpFisInfo(PAHCIPort pAhciPort, uint8_t *cmdFis)
  * Dump info about the command header
  *
  * @returns nothing
- * @param   pAhciPort   Poitner to the port the command header was read from.
+ * @param   pAhciPort   Pointer to the port the command header was read from.
  * @param   pCmdHdr     The command header to print info from.
  */
 static void ahciDumpCmdHdrInfo(PAHCIPort pAhciPort, CmdHdr *pCmdHdr)
@@ -2569,7 +2569,7 @@ static void ahciPostFirstD2HFisIntoMemory(PAHCIPort pAhciPort)
 }
 
 /**
- * Post the FIS in the memory area allocated by the guest and set interrupt if neccessary.
+ * Post the FIS in the memory area allocated by the guest and set interrupt if necessary.
  *
  * @returns VBox status code
  * @param   pAhciPort  The port which "receives" the FIS.
@@ -3081,7 +3081,7 @@ static int atapiGetEventStatusNotificationSS(PAHCIPORTTASKSTATE pAhciPortTaskSta
                 /* mount */
                 ataH2BE_U16(abBuf + 0, 6);
                 abBuf[2] = 0x04; /* media */
-                abBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                abBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 abBuf[4] = 0x02; /* new medium */
                 abBuf[5] = 0x02; /* medium present / door closed */
                 abBuf[6] = 0x00;
@@ -3093,7 +3093,7 @@ static int atapiGetEventStatusNotificationSS(PAHCIPORTTASKSTATE pAhciPortTaskSta
                 /* umount */
                 ataH2BE_U16(abBuf + 0, 6);
                 abBuf[2] = 0x04; /* media */
-                abBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                abBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 abBuf[4] = 0x03; /* media removal */
                 abBuf[5] = 0x00; /* medium absent / door closed */
                 abBuf[6] = 0x00;
@@ -3116,7 +3116,7 @@ static int atapiGetEventStatusNotificationSS(PAHCIPORTTASKSTATE pAhciPortTaskSta
             default:
                 ataH2BE_U16(abBuf + 0, 6);
                 abBuf[2] = 0x01; /* operational change request / notification */
-                abBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                abBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 abBuf[4] = 0x00;
                 abBuf[5] = 0x00;
                 abBuf[6] = 0x00;
@@ -3655,7 +3655,7 @@ static int atapiPassthroughSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort p
             uint8_t u8Cmd = pAhciPortTaskState->aATAPICmd[0];
             do
             {
-                /* don't log superflous errors */
+                /* don't log superfluous errors */
                 if (    rc == VERR_DEV_IO_ERROR
                     && (   u8Cmd == SCSI_TEST_UNIT_READY
                         || u8Cmd == SCSI_READ_CAPACITY
@@ -4804,9 +4804,9 @@ static int ahciScatterGatherListAllocate(PAHCIPORTTASKSTATE pAhciPortTaskState, 
  * @param   pAhciPort              The ahci port.
  * @param   pAhciPortTaskState     The task state which contains the S/G list entries.
  * @param   fReadonly              If the mappings should be readonly.
- * @param   cSGEntriesProcessed    Number of entries the normal creator procecssed
+ * @param   cSGEntriesProcessed    Number of entries the normal creator processed
  *                                 before an error occurred. Used to free
- *                                 any ressources allocated before.
+ *                                 any resources allocated before.
  * @thread  EMT
  */
 static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState,
@@ -4925,7 +4925,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
     PPDMDEVINS pDevIns = pAhciPort->CTX_SUFF(pDevIns);
     unsigned   cActualSGEntry;
     unsigned   cSGEntriesR3 = 0;               /* Needed scatter gather list entries in R3. */
-    unsigned   cSGEntriesProcessed = 0;        /* Number of SG entries procesed. */
+    unsigned   cSGEntriesProcessed = 0;        /* Number of SG entries processed. */
     SGLEntry   aSGLEntry[32];                  /* Holds read sg entries from guest. Biggest seen number of entries a guest set up. */
     unsigned   cSGLEntriesGCRead;
     unsigned   cSGLEntriesGCLeft;              /* Available scatter gather list entries in GC */
@@ -5486,7 +5486,7 @@ static void ahciCopyFromSGListIntoBuffer(PPDMDEVINS pDevIns, PAHCIPORTTASKSTATES
 /**
  * Copy the content of a buffer to a scatter gather list.
  *
- * @returns Number of bytes transfered.
+ * @returns Number of bytes transferred.
  * @param   pAhciPortTaskState    The task state which contains the S/G list entries.
  * @param   pvBuf                 Pointer to the buffer which should be copied.
  * @param   cbBuf                 Size of the buffer.
@@ -5581,7 +5581,7 @@ bool ahciIsRedoSetWarning(PAHCIPort pAhciPort, int rc)
 }
 
 /**
- * Complete a data transfer task by freeing all occupied ressources
+ * Complete a data transfer task by freeing all occupied resources
  * and notifying the guest.
  *
  * @returns VBox status code
@@ -6283,7 +6283,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, 1000);
         if (rc == VERR_TIMEOUT)
         {
-            /* No I/O requests inbetween. Reset statistics and wait again. */
+            /* No I/O requests in-between. Reset statistics and wait again. */
             pAhciPort->StatIORequestsPerSecond.c = 0;
             rc = RTSemEventWait(pAhciPort->AsyncIORequestSem, RT_INDEFINITE_WAIT);
         }

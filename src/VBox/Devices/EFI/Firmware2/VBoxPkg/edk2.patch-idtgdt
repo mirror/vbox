@@ -121,7 +121,7 @@ Index: UefiCpuPkg/CpuDxe/CpuDxe.c
    UINTN           CurrentHandler;
  
 @@ -1015,27 +1016,33 @@
-   // Intialize IDT
+   // Initialize IDT
    //
    CurrentHandler = (UINTN)AsmIdtVector00;
 +

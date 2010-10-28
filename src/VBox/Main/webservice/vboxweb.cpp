@@ -362,7 +362,7 @@ public:
         }
 
         // enqueue the socket of this connection and post eventsem so that
-        // one of the threads (possibly the one just creatd) can pick it up
+        // one of the threads (possibly the one just created) can pick it up
         m_llSocketsQ.push_back(s);
         cItems = m_llSocketsQ.size();
         qlock.release();
@@ -625,7 +625,7 @@ int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
  */
 int main(int argc, char* argv[])
 {
-    // intialize runtime
+    // initialize runtime
     int rc = RTR3Init();
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
@@ -717,7 +717,7 @@ int main(int argc, char* argv[])
     }
 #endif
 
-    // intialize COM/XPCOM
+    // initialize COM/XPCOM
     HRESULT hrc = com::Initialize();
     if (FAILED(hrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to initialize COM! hrc=%Rhrc\n", hrc);
@@ -1116,7 +1116,7 @@ WebServiceSession::~WebServiceSession()
 }
 
 /**
- *  Authenticate the username and password against an authentification authority.
+ *  Authenticate the username and password against an authentication authority.
  *
  *  @return 0 if the user was successfully authenticated, or an error code
  *  otherwise.

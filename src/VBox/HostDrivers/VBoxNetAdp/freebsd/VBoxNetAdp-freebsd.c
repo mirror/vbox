@@ -201,7 +201,7 @@ static void VBoxNetAdpFreeBSDNetinit(void *priv)
 
 /**
  * Transmit packets.
- * netflt has aldready done everything for us so we just hand the
+ * netflt has already done everything for us so we just hand the
  * packets to BPF and increment the packet stats.
  */
 static void VBoxNetAdpFreeBSDNetstart(struct ifnet *ifp)

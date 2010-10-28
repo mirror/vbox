@@ -1672,7 +1672,7 @@ Return Value:
 
     //
     // Return the decremented timer count in NewTimerCount.  The
-    // TimerCounter itself could change between the time this KeSynch'ed
+    // TimerCounter itself could change between the time this KeSync'ed
     // routine returns to the TimeOutDpc, and the time the TimeOutDpc
     // looks at the value.  The TimeOutDpc will use NewTimerCount.
     //

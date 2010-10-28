@@ -22,7 +22,7 @@ Revision History:
 #define _NTIOLOGC_
 
 //
-//  Status values are 32 bit values layed out as follows:
+//  Status values are 32 bit values arranged as follows:
 //
 //   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
 //   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
@@ -47,7 +47,7 @@ Revision History:
 //
 
 //
-//  Values are 32 bit values layed out as follows:
+//  Values are 32 bit values arranged as follows:
 //
 //   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
 //   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
@@ -302,7 +302,7 @@ Revision History:
 //  A conflict has been detected between two drivers which claimed equivalent DMA
 //  channels.
 //  Driver %2, with device <%3>, claimed the DMA Channel in data address 0x28, with
-//  optinal port in data address 0x2c.
+//  optimal port in data address 0x2c.
 //
 #define IO_ERR_DMA_CONFLICT_DETECTED     ((NTSTATUS)0xC0040017L)
 
@@ -344,7 +344,7 @@ Revision History:
 //
 //  The device could not allocate one or more required resources due to conflicts
 //  with other devices.  The device DMA setting of '%2' could not be
-//  satisified due to a conflict with Driver '%3'.
+//  satisfied due to a conflict with Driver '%3'.
 //
 #define IO_ERR_DMA_RESOURCE_CONFLICT     ((NTSTATUS)0xC004001BL)
 
@@ -355,7 +355,7 @@ Revision History:
 //
 //  The device could not allocate one or more required resources due to conflicts
 //  with other devices.  The device interrupt setting of '%2' could not be
-//  satisified due to a conflict with Driver '%3'.
+//  satisfied due to a conflict with Driver '%3'.
 //
 #define IO_ERR_INTERRUPT_RESOURCE_CONFLICT ((NTSTATUS)0xC004001CL)
 
@@ -366,7 +366,7 @@ Revision History:
 //
 //  The device could not allocate one or more required resources due to conflicts
 //  with other devices.  The device memory setting of '%2' could not be
-//  satisified due to a conflict with Driver '%3'.
+//  satisfied due to a conflict with Driver '%3'.
 //
 #define IO_ERR_MEMORY_RESOURCE_CONFLICT  ((NTSTATUS)0xC004001DL)
 
@@ -377,7 +377,7 @@ Revision History:
 //
 //  The device could not allocate one or more required resources due to conflicts
 //  with other devices.  The device port setting of '%2' could not be
-//  satisified due to a conflict with Driver '%3'.
+//  satisfied due to a conflict with Driver '%3'.
 //
 #define IO_ERR_PORT_RESOURCE_CONFLICT    ((NTSTATUS)0xC004001EL)
 
@@ -510,7 +510,7 @@ Revision History:
 //
 // MessageText:
 //
-//  The system could not sucessfully load the crash dump driver.
+//  The system could not successfully load the crash dump driver.
 //
 #define IO_DUMP_DRIVER_LOAD_FAILURE      ((NTSTATUS)0xC004002DL)
 

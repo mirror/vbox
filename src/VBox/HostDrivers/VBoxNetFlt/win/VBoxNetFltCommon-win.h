@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxNetFltCommon.h - Network Filter Driver (Host), Windows Specific Code. Common headeer with commonly used defines and decls
+ * VBoxNetFltCommon.h - Network Filter Driver (Host), Windows Specific Code. Common header with commonly used defines and decls
  */
 
 /*
@@ -181,7 +181,7 @@ typedef struct VBOXNETFLTINS *PVBOXNETFLTINS;
 /** flag specifying the packet was originated by our driver
  * i.e. we could use it on our needs and should not return it
  * we are enqueueing "our" packets on ProtocolReceive call-back when
- * Ndis does not give us a receive acket (the driver below us has called NdisM..IndicateReceive)
+ * Ndis does not give us a receive packet (the driver below us has called NdisM..IndicateReceive)
  * this is supported for Ndis Packet only */
 #define PACKET_MINE                 0x00000004
 
@@ -211,7 +211,7 @@ typedef LIST_ENTRY PACKET_QUEUE, *PPACKET_QUEUE;
 
 /*
  * we are using non-interlocked versions of LIST_ENTRY-related operations macros and synchronize
- * access to the queue and its elements by aquiring/releasing a spinlock using Ndis[Acquire,Release]Spinlock
+ * access to the queue and its elements by acquiring/releasing a spinlock using Ndis[Acquire,Release]Spinlock
  *
  * we are NOT using interlocked versions of insert/remove head/tail list functions because we need to iterate though
  * the queue elements as well as remove elements from the midle of the queue
@@ -394,7 +394,7 @@ typedef struct _ADAPT
     /** ndis buffer pool used for sends */
     NDIS_HANDLE                    hSendBufferPoolHandle;
     /** open/close adapter status.
-     * Since ndis adapter open and close requests may complete assynchronously,
+     * Since ndis adapter open and close requests may complete asynchronously,
      * we are using event mechanism to wait for open/close completion
      * the status field is being set by the completion call-back */
     NDIS_STATUS                    Status;
@@ -442,7 +442,7 @@ typedef struct _SEND_RSVD
 #endif
 } SEND_RSVD, *PSEND_RSVD;
 
-/** represents the data stored in the protocol recerved field of ndis packet on NdisTransferData processing*/
+/** represents the data stored in the protocol reserved field of ndis packet on NdisTransferData processing*/
 typedef struct _TRANSFERDATA_RSVD
 {
     /** next packet in a list */

@@ -410,7 +410,7 @@ void UIVMPreviewWindow::repaintBGImages()
     m_wRect = cr.adjusted(10, 10, -10, -10);
     m_vRect = m_wRect.adjusted(m_vMargin, m_vMargin, -m_vMargin, -m_vMargin).adjusted(-3, -3, 3, 3);
 
-    /* First draw the shadow. Its a rounded rectangle which get blured. */
+    /* First draw the shadow. Its a rounded rectangle which get blurred. */
     QImage imageW(cr.size(), QImage::Format_ARGB32);
     QColor bg = pal.color(QPalette::Base);
     bg.setAlpha(0); /* We want blur to transparent _and_ whatever the base color is. */

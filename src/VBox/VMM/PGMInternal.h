@@ -684,7 +684,7 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
  *
  * The format of this structure is complicated because we have to fit a lot
  * of information into as few bits as possible. The format is also subject
- * to change (there is one comming up soon). Which means that for we'll be
+ * to change (there is one coming up soon). Which means that for we'll be
  * using PGM_PAGE_GET_*, PGM_PAGE_IS_ and PGM_PAGE_SET_* macros for *all*
  * accesses to the structure.
  */
@@ -971,9 +971,9 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_PDE_TYPE_DONTCARE             0
 /** Must use a page table to map the range. */
 #define PGM_PAGE_PDE_TYPE_PT                   1
-/** Can use a page directory entry to map the continous range. */
+/** Can use a page directory entry to map the continuous range. */
 #define PGM_PAGE_PDE_TYPE_PDE                  2
-/** Can use a page directory entry to map the continous range - temporarily disabled (by page monitoring). */
+/** Can use a page directory entry to map the continuous range - temporarily disabled (by page monitoring). */
 #define PGM_PAGE_PDE_TYPE_PDE_DISABLED         3
 /** @} */
 
@@ -1034,7 +1034,7 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { (pPage)->u16MiscY.au8[0] = (_uState); } while (0)
 
 /**
- * Checks if the page has any physical access handlers, including temporariliy disabled ones.
+ * Checks if the page has any physical access handlers, including temporarily disabled ones.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
@@ -1405,14 +1405,14 @@ typedef PGMROMRANGE *PPGMROMRANGE;
  * Live save per page data for an MMIO2 page.
  *
  * Not using PGMLIVESAVERAMPAGE here because we cannot use normal write monitoring
- * of MMIO2 pages.  The current approach is using some optimisitic SHA-1 +
+ * of MMIO2 pages.  The current approach is using some optimistic SHA-1 +
  * CRC-32 for detecting changes as well as special handling of zero pages.  This
  * is a TEMPORARY measure which isn't perfect, but hopefully it is good enough
  * for speeding things up.  (We're using SHA-1 and not SHA-256 or SHA-512
  * because of speed (2.5x and 6x slower).)
  *
  * @todo Implement dirty MMIO2 page reporting that can be enabled during live
- *       save but normally is disabled.  Since we can write monitore guest
+ *       save but normally is disabled.  Since we can write monitor guest
  *       accesses on our own, we only need this for host accesses.  Shouldn't be
  *       too difficult for DevVGA, VMMDev might be doable, the planned
  *       networking fun will be fun since it involves ring-0.
@@ -1473,7 +1473,7 @@ typedef struct PGMMMIO2RANGE
     uint8_t                             iRegion;
     /** The saved state range ID. */
     uint8_t                             idSavedState;
-    /** Alignment padding for putting the ram range on a PGMPAGE alignment boundrary. */
+    /** Alignment padding for putting the ram range on a PGMPAGE alignment boundary. */
     uint8_t                             abAlignemnt[HC_ARCH_BITS == 32 ? 12 : 12];
     /** Live save per page tracking data. */
     R3PTRTYPE(PPGMLIVESAVEMMIO2PAGE)    paLSPages;
@@ -1565,7 +1565,7 @@ typedef PGMCHUNKR3MAPTLBE *PPGMCHUNKR3MAPTLBE;
  *
  * @remarks We use a TLB to speed up lookups by avoiding walking the AVL.
  *          At first glance this might look kinda odd since AVL trees are
- *          supposed to give the most optimial lookup times of all trees
+ *          supposed to give the most optimal lookup times of all trees
  *          due to their balancing. However, take a tree with 1023 nodes
  *          in it, that's 10 levels, meaning that most searches has to go
  *          down 9 levels before they find what they want. This isn't fast
@@ -1652,7 +1652,7 @@ typedef PGMPAGER3MAPTLB *PPGMPAGER3MAPTLB;
  * Raw-mode context dynamic mapping cache entry.
  *
  * Because of raw-mode context being reloctable and all relocations are applied
- * in ring-3, this has to be defined here and be RC specfic.
+ * in ring-3, this has to be defined here and be RC specific.
  *
  * @sa PGMRZDYNMAPENTRY, PGMR0DYNMAPENTRY.
  */
@@ -1722,7 +1722,7 @@ typedef PGMRCDYNMAP *PPGMRCDYNMAP;
 /**
  * Mapping cache usage set entry.
  *
- * @remarks 16-bit ints was choosen as the set is not expected to be used beyond
+ * @remarks 16-bit ints was chosen as the set is not expected to be used beyond
  *          the dynamic ring-0 and (to some extent) raw-mode context mapping
  *          cache.  If it's extended to include ring-3, well, then something
  *          will have be changed here...
@@ -1796,10 +1796,10 @@ typedef PGMMAPSET *PPGMMAPSET;
 #define PGMMAPSET_HASH(HCPhys)      (((HCPhys) >> PAGE_SHIFT) & 127)
 
 
-/** @name Context neutrual page mapper TLB.
+/** @name Context neutral page mapper TLB.
  *
  * Hoping to avoid some code and bug duplication parts of the GCxxx->CCPtr
- * code is writting in a kind of context neutrual way. Time will show whether
+ * code is writting in a kind of context neutral way. Time will show whether
  * this actually makes sense or not...
  *
  * @todo this needs to be reconsidered and dropped/redone since the ring-0
@@ -2100,7 +2100,7 @@ typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
  * The shadow page pool instance data.
  *
  * It's all one big allocation made at init time, except for the
- * pages that is. The user nodes follows immediatly after the
+ * pages that is. The user nodes follows immediately after the
  * page structures.
  */
 typedef struct PGMPOOL
@@ -2183,7 +2183,7 @@ typedef struct PGMPOOL
 #ifdef VBOX_WITH_STATISTICS
     /** The high water mark for cUsedPages. */
     uint16_t                    cUsedPagesHigh;
-    uint32_t                    Alignment1;         /**< Align the next member on a 64-bit boundrary. */
+    uint32_t                    Alignment1;         /**< Align the next member on a 64-bit boundary. */
     /** Profiling pgmPoolAlloc(). */
     STAMPROFILEADV              StatAlloc;
     /** Profiling pgmR3PoolClearDoIt(). */
@@ -2290,9 +2290,9 @@ typedef struct PGMPOOL
     /** Times we've had to flush because of overflow. */
     STAMCOUNTER                 StatDirtyPageOverFlowFlush;
 
-    /** The high wather mark for cModifiedPages. */
+    /** The high water mark for cModifiedPages. */
     uint16_t                    cModifiedPagesHigh;
-    uint16_t                    Alignment2[3];      /**< Align the next member on a 64-bit boundrary. */
+    uint16_t                    Alignment2[3];      /**< Align the next member on a 64-bit boundary. */
 
     /** The number of cache hits. */
     STAMCOUNTER                 StatCacheHits;
@@ -2307,11 +2307,11 @@ typedef struct PGMPOOL
     /** The number of uncacheable allocations. */
     STAMCOUNTER                 StatCacheUncacheable;
 #else
-    uint32_t                    Alignment3;         /**< Align the next member on a 64-bit boundrary. */
+    uint32_t                    Alignment3;         /**< Align the next member on a 64-bit boundary. */
 #endif
     /** The AVL tree for looking up a page by its HC physical address. */
     AVLOHCPHYSTREE              HCPhysTree;
-    uint32_t                    Alignment4;         /**< Align the next member on a 64-bit boundrary. */
+    uint32_t                    Alignment4;         /**< Align the next member on a 64-bit boundary. */
     /** Array of pages. (cMaxPages in length)
      * The Id is the index into thist array.
      */
@@ -2394,7 +2394,7 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE pPage)
 /** The mask applied after shifting the tracking data down by
  * PGMPOOL_TD_CREFS_SHIFT. */
 #define PGMPOOL_TD_CREFS_MASK           0x3
-/** The cRefs value used to indiciate that the idx is the head of a
+/** The cRefs value used to indicate that the idx is the head of a
  * physical cross reference list. */
 #define PGMPOOL_TD_CREFS_PHYSEXT        PGMPOOL_TD_CREFS_MASK
 /** The shift used to get idx. */
@@ -2460,7 +2460,7 @@ typedef struct PGMPTWALKCORE
      *  (input). */
     RTGCPTR         GCPtr;
 
-    /** The guest physcial address that is the result of the walk.
+    /** The guest physical address that is the result of the walk.
      * @remarks only valid if fSucceeded is set.  */
     RTGCPHYS        GCPhys;
 
@@ -2769,7 +2769,7 @@ typedef struct PGMMODEDATA
  * PGM statistics.
  *
  * These lives on the heap when compiled in as they would otherwise waste
- * unecessary space in release builds.
+ * unnecessary space in release builds.
  */
 typedef struct PGMSTATS
 {
@@ -2902,7 +2902,7 @@ typedef struct PGM
     /** We're not in a state which permits writes to guest memory.
      * (Only used in strict builds.) */
     bool                            fNoMorePhysWrites;
-    /** Alignment padding that makes the next member start on a 8 byte boundrary. */
+    /** Alignment padding that makes the next member start on a 8 byte boundary. */
     bool                            afAlignment1[3];
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
@@ -3005,19 +3005,19 @@ typedef struct PGM
      * @{ */
     /** Pointer to the intermediate page directory - Normal. */
     R3PTRTYPE(PX86PD)               pInterPD;
-    /** Pointer to the intermedate page tables - Normal.
+    /** Pointer to the intermediate page tables - Normal.
      * There are two page tables, one for the identity mapping and one for
      * the host context mapping (of the core code). */
     R3PTRTYPE(PX86PT)               apInterPTs[2];
-    /** Pointer to the intermedate page tables - PAE. */
+    /** Pointer to the intermediate page tables - PAE. */
     R3PTRTYPE(PX86PTPAE)            apInterPaePTs[2];
-    /** Pointer to the intermedate page directory - PAE. */
+    /** Pointer to the intermediate page directory - PAE. */
     R3PTRTYPE(PX86PDPAE)            apInterPaePDs[4];
-    /** Pointer to the intermedate page directory - PAE. */
+    /** Pointer to the intermediate page directory - PAE. */
     R3PTRTYPE(PX86PDPT)             pInterPaePDPT;
-    /** Pointer to the intermedate page-map level 4 - AMD64. */
+    /** Pointer to the intermediate page-map level 4 - AMD64. */
     R3PTRTYPE(PX86PML4)             pInterPaePML4;
-    /** Pointer to the intermedate page directory - AMD64. */
+    /** Pointer to the intermediate page directory - AMD64. */
     R3PTRTYPE(PX86PDPT)             pInterPaePDPT64;
     /** The Physical Address (HC) of the intermediate Page Directory - Normal. */
     RTHCPHYS                        HCPhysInterPD;
@@ -3040,7 +3040,7 @@ typedef struct PGM
     /** The address of the ring-0 mapping cache if we're making use of it.  */
     RTR0PTR                         pvR0DynMapUsed;
 #if HC_ARCH_BITS == 32
-    /** Alignment padding that makes the next member start on a 8 byte boundrary. */
+    /** Alignment padding that makes the next member start on a 8 byte boundary. */
     uint32_t                        u32Alignment2;
 #endif
 
@@ -3100,7 +3100,7 @@ typedef struct PGM
      * @{ */
     /** The host physical address of the invalid MMIO page. */
     RTHCPHYS                        HCPhysMmioPg;
-    /** The host pysical address of the invalid MMIO page pluss all invalid
+    /** The host pysical address of the invalid MMIO page plus all invalid
      * physical address bits set.  This is used to trigger X86_TRAP_PF_RSVD.
      * @remarks Check fLessThan52PhysicalAddressBits before use. */
     RTHCPHYS                        HCPhysInvMmioPg;
@@ -3317,7 +3317,7 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatRZDynMapHCPageInlMisses;        /**< RZ: Misses that falls back to the code common. */
     STAMPROFILE StatRZDynMapHCPage;                 /**< RZ: Calls to pgmRZDynMapHCPageCommon. */
     STAMCOUNTER StatRZDynMapSetOptimize;            /**< RZ: Calls to pgmRZDynMapOptimizeAutoSet. */
-    STAMCOUNTER StatRZDynMapSetSearchFlushes;       /**< RZ: Set search restorting to subset flushes. */
+    STAMCOUNTER StatRZDynMapSetSearchFlushes;       /**< RZ: Set search restoring to subset flushes. */
     STAMCOUNTER StatRZDynMapSetSearchHits;          /**< RZ: Set search hits. */
     STAMCOUNTER StatRZDynMapSetSearchMisses;        /**< RZ: Set search misses. */
     STAMCOUNTER StatRZDynMapPage;                   /**< RZ: Calls to pgmR0DynMapPage. */
@@ -3522,7 +3522,7 @@ typedef struct PGMCPU
 #endif
 
     /** The guest's page directories, R3 pointers.
-     * These are individual pointers and don't have to be adjecent.
+     * These are individual pointers and don't have to be adjacent.
      * These don't have to be up-to-date - use pgmGstGetPaePD() to access them. */
     R3PTRTYPE(PX86PDPAE)            apGstPaePDsR3[4];
     /** The guest's page directories, R0 pointers.

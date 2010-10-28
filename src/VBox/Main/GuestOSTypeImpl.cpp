@@ -388,7 +388,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedHpet)(BOOL *aRecommendedHpet)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* HPET recomendation is constant during life time, no need to lock */
+    /* HPET recommendation is constant during life time, no need to lock */
     *aRecommendedHpet = !!(mOSHint & VBOXOSHINT_HPET);
 
     return S_OK;

@@ -145,7 +145,7 @@ RTDECL(int)  RTSemEventCreateEx(PRTSEMEVENT phEventSem, uint32_t fFlags, RTLOCKV
  *
  * @returns iprt status code.
  * @param   hEventSem           Handle of the event semaphore.  NIL_RTSEMEVENT
- *                              is quitely ignored (VINF_SUCCESS).
+ *                              is quietly ignored (VINF_SUCCESS).
  */
 RTDECL(int)  RTSemEventDestroy(RTSEMEVENT hEventSem);
 
@@ -494,7 +494,7 @@ RTDECL(int) RTSemMutexCreateEx(PRTSEMMUTEX phMutexSem, uint32_t fFlags,
  * Destroy a mutex semaphore.
  *
  * @returns iprt status code.
- * @param   hMutexSem           The mutex semaphore to destroy.  NIL is quitely
+ * @param   hMutexSem           The mutex semaphore to destroy.  NIL is quietly
  *                              ignored (VINF_SUCCESS).
  */
 RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem);
@@ -1355,7 +1355,7 @@ DECLINLINE(bool) RTSemPongShouldWait(PRTPINGPONG pPP)
 /** @defgroup grp_rt_sems_xroads    RTSemXRoads - Crossroads
  *
  * The crossroads semaphore is intended to prevent two classes of incompatible
- * events from occuring simultaneously, like south/north bound traffic and
+ * events from occurring simultaneously, like south/north bound traffic and
  * west/east bound traffic at a 4-way junction.
  *
  * @remarks In order to simplify the implementation, the current flow is always

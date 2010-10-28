@@ -634,7 +634,7 @@ static void vboxNetFltLinuxQdiscInstall(PVBOXNETFLTINS pThis, struct net_device 
         atomic_inc(&pNew->refcnt);
 #  endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32) */
 # endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
-        /* Synch the queue len with our child */
+        /* Sync the queue len with our child */
         pNew->q.qlen = pPriv->pChild->q.qlen;
     }
     else
@@ -807,7 +807,7 @@ static void __exit VBoxNetFltLinuxUnload(void)
 
 
 /**
- * Experiment where we filter trafic from the host to the internal network
+ * Experiment where we filter traffic from the host to the internal network
  * before it reaches the NIC driver.
  *
  * The current code uses a very ugly hack and only works on kernels using the
@@ -880,7 +880,7 @@ static int vboxNetFltLinuxStartXmitFilter(struct sk_buff *pSkb, struct net_devic
     pOverride->cTotal++;
 
     /*
-     * Do the filtering base on the defaul OUI of our virtual NICs
+     * Do the filtering base on the default OUI of our virtual NICs
      *
      * Note! In a real solution, we would ask the switch whether the
      *       destination MAC is 100% to be on the internal network and then
@@ -1131,7 +1131,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
 
         /*
          * We need to set checksum fields even if the packet goes to the host
-         * directly as it may be immediately forwared by IP layer @bugref{5020}.
+         * directly as it may be immediately forwarded by IP layer @bugref{5020}.
          */
         Assert(skb_headlen(pPkt) >= pSG->GsoCtx.cbHdrs);
         pPkt->ip_summed  = CHECKSUM_PARTIAL;
@@ -1839,7 +1839,7 @@ static void vboxNetFltLinuxXmitTask(void *pWork)
 #endif /* !VBOXNETFLT_LINUX_NO_XMIT_QUEUE */
 
 /**
- * Reports the GSO capabilites of the hardware NIC.
+ * Reports the GSO capabilities of the hardware NIC.
  *
  * @param   pThis               The net filter instance.  The caller hold a
  *                              reference to this.
@@ -1888,7 +1888,7 @@ static void vboxNetFltLinuxReportNicGsoCapabilities(PVBOXNETFLTINS pThis)
 }
 
 /**
- * Helper that determins whether the host (ignoreing us) is operating the
+ * Helper that determines whether the host (ignoreing us) is operating the
  * interface in promiscuous mode or not.
  */
 static bool vboxNetFltLinuxPromiscuous(PVBOXNETFLTINS pThis)
@@ -2018,7 +2018,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     Log(("vboxNetFltLinuxAttachToInterface: this=%p: Packet handler installed.\n", pThis));
 
     /*
-     * If the above succeeded report GSO capabilites,  if not undo and
+     * If the above succeeded report GSO capabilities,  if not undo and
      * release the device.
      */
     if (!pDev)
@@ -2274,7 +2274,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
         /*
          * This api is a bit weird, the best reference is the code.
          *
-         * Also, we have a bit or race conditions wrt the maintance of
+         * Also, we have a bit or race conditions wrt the maintenance of
          * host the interface promiscuity for vboxNetFltPortOsIsPromiscuous.
          */
 #ifdef LOG_ENABLED

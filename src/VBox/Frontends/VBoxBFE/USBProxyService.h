@@ -36,7 +36,7 @@ public:
     virtual ~USBProxyService();
 
     /**
-     * A VM is trying to capture a device, do necessary preperations.
+     * A VM is trying to capture a device, do necessary preparations.
      *
      * @returns VBox status code.
      * @param   pDevice     The device in question.

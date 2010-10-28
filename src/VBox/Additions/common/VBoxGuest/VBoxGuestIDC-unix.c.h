@@ -1,6 +1,6 @@
 /* $Rev$ */
 /** @file
- * VBoxGuest - Inter Driver Communcation, unix implementation.
+ * VBoxGuest - Inter Driver Communication, unix implementation.
  *
  * This file is included by the platform specific source file.
  */

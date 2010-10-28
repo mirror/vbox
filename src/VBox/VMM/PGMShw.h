@@ -217,7 +217,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
  *
  * @returns VBox status code.
  * @param   pVCpu       The VMCPU to operate on.
- * @param   offDelta    The reloation offset.
+ * @param   offDelta    The relocation offset.
  */
 PGM_SHW_DECL(int, Relocate)(PVMCPU pVCpu, RTGCPTR offDelta)
 {

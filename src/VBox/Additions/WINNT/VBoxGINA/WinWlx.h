@@ -395,7 +395,7 @@ typedef struct _WLX_MPR_NOTIFY_INFO {
     // Cleartext password of the user account.  If the OldPassword
     // field is non-null, then this field contains the new password
     // in a password change operation.  The string pointed to by
-    // this field must be separately allocated and will be seperately
+    // this field must be separately allocated and will be separately
     // deallocated by Winlogon.
     //
 

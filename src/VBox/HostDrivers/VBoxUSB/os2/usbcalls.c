@@ -52,7 +52,7 @@
 #include "usbcalls.h"
 
 #define  IOCAT_USBRES            0x000000A0  /* USB Resource device control */
-#define  IOCTLF_NUMDEVICE        0x00000031  /* Get Number of pluged in Devices */
+#define  IOCTLF_NUMDEVICE        0x00000031  /* Get Number of plugged in Devices */
 #define  IOCTLF_GETINFO          0x00000032  /* Get Info About a device */
 #define  IOCTLF_AQUIREDEVICE     0x00000033
 #define  IOCTLF_RELEASEDEVICE    0x00000034
@@ -122,8 +122,8 @@ typedef struct
   USHORT usVendorID;
   USHORT usProductID;
   USHORT usBCDDevice;
-  USHORT usDeviceNumber; /* Get the usDeviceNumber device in the system fi. if 2 aquire the 2nd device
-                            0 means first not aquired device. */
+  USHORT usDeviceNumber; /* Get the usDeviceNumber device in the system fi. if 2 acquire the 2nd device
+                            0 means first not acquired device. */
 } AQUIREDEV, *PAQUIREDEV;
 
 typedef struct
@@ -163,7 +163,7 @@ typedef struct
 #define ISO_DIRMASK 0x80
 typedef struct
 {
-  ULONG  hSemAccess;        /* Syncronise access to the Pos values */
+  ULONG  hSemAccess;        /* Synchronise access to the Pos values */
   ULONG  hDevice;
   USHORT usPosWrite;
   USHORT usPosRead;
@@ -274,7 +274,7 @@ InitUsbCalls(void)
       for(i=0;i< g_ulNumIsoRingBuffers;i++,pIter++)
       {
         pIter->hDevice        = 0;
-        pIter->hSemAccess     = 0;      /* Syncronise access to the Pos values */
+        pIter->hSemAccess     = 0;      /* Synchronise access to the Pos values */
         pIter->usPosWrite     = 0;
         pIter->usPosRead      = 0;
         pIter->usBufSize      = 16*1023;
@@ -671,7 +671,7 @@ UsbOpen( PUSBHANDLE pHandle,
                     &Aquire, ulParmLen, &ulParmLen,
                     pHandle, ulDataLen, &ulDataLen);
 
-  /* @@ ToDO maybe gether some info about device here (endpoints etc for savety checks) */
+  /* @@ ToDO maybe gether some info about device here (endpoints etc for safety checks) */
   return rc;
 
 }
@@ -820,7 +820,7 @@ UsbBulkRead2( USBHANDLE Handle,
 
     if (BulkRequest.usDataProcessed != ulDataLen)
     {
-      /* Transfered less than we wanted? so something is wrong,
+      /* Transferred less than we wanted? so something is wrong,
          or device doesn't wish to send more, exit loop */
       rc = USB_ERROR_LESSTRANSFERED;
       break;

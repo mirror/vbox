@@ -1547,7 +1547,7 @@ static void ich9pciBiosInitBridge(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
 
     /*
      * Set the prefetch base and limit registers. We currently have no device with a prefetchable region
-     * which may be behind a bridge. Thatswhy it is unconditionally disabled here atm by writing a higher value into
+     * which may be behind a bridge. That's why it is unconditionally disabled here atm by writing a higher value into
      * the base register than in the limit register.
      */
     ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_PREF_MEMORY_BASE, 0xfff0, 2);
@@ -2541,7 +2541,7 @@ static DECLCALLBACK(int)   ich9pcibridgeConstruct(PPDMDEVINS pDevIns,
      * for them.
      * The bus number is mainly for the setIrq function to indicate
      * when the host bus is reached which will have iBus = 0.
-     * Thathswhy the + 1.
+     * That's why the + 1.
      */
     pBus->iBus = iInstance + 1;
 

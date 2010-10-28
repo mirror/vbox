@@ -40,7 +40,7 @@ typedef struct _JOB
 } JOB, *PJOB;
 
 /**
- * represents the queue of jobs processed by the worker thred
+ * represents the queue of jobs processed by the worker thread
  *
  * we use the thread to process tasks which are required to be done at passive level
  * our callbacks may be called at APC level by IntNet, there are some tasks that we can not create at APC,
@@ -507,7 +507,7 @@ static NDIS_STATUS vboxNetFltWinQuPostPacket(PADAPT pAdapt, PNDIS_PACKET pPacket
 
     if (pMyPacket)
     {
-        /* we have successfuly initialized our packet, post it to the host or to the wire */
+        /* we have successfully initialized our packet, post it to the host or to the wire */
         if(bSrcHost)
         {
 #if defined(DEBUG_NETFLT_PACKETS) || !defined(VBOX_LOOPBACK_USEFLAGS)
@@ -600,7 +600,7 @@ DECLHIDDEN(bool) vboxNetFltWinPostIntnet(PVBOXNETFLTINS pNetFltIf, PVOID pvPacke
      *
      * Besides that the NDIS_PACKET contained in the queue could be either the one passed to us in our send/receive callback
      * or the one created by us. The latter is possible in case our ProtocolReceive callback is called and we call NdisTransferData
-     * in this case we need to allocate the packet the data to be transfered to.
+     * in this case we need to allocate the packet the data to be transferred to.
      * If the enqueued packet is the one allocated by us the PACKET_MINE flag is set
      * */
     if((fFlags & PACKET_SG) == 0)
@@ -1825,7 +1825,7 @@ DECLHIDDEN(PNDIS_PACKET) vboxNetFltWinNdisPacketFromSG(PADAPT pAdapt, PINTNETSG 
 }
 
 /*
- * frees NDIS_PACKET creaed with vboxNetFltWinNdisPacketFromSG
+ * frees NDIS_PACKET created with vboxNetFltWinNdisPacketFromSG
  */
 DECLHIDDEN(void) vboxNetFltWinFreeSGNdisPacket(PNDIS_PACKET pPacket, bool bFreeMem)
 {
@@ -2156,7 +2156,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitBind(PADAPT *ppAdapt, PNDIS_STRING pO
         ANSI_STRING AnsiString;
         int rc;
         PVBOXNETFLTINS pInstance;
-        USHORT cbAnsiName = pBindToMiniportName->Length;/* the lenght is is bytes ; *2 ;RtlUnicodeStringToAnsiSize(pBindToMiniportName)*/
+        USHORT cbAnsiName = pBindToMiniportName->Length;/* the length is is bytes ; *2 ;RtlUnicodeStringToAnsiSize(pBindToMiniportName)*/
         CREATE_INSTANCE_CONTEXT Context;
         RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
@@ -2986,7 +2986,7 @@ static void vboxNetFltWinInitIdcProbingWorker(PINIT_IDC_INFO pInitIdcInfo)
             }
         }
 
-        /* it's interupted */
+        /* it's interrupted */
         rc = VERR_INTERRUPTED;
     }
 
@@ -3110,7 +3110,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinDetachFromInterface(PADAPT pAdapt, bool bOn
     Assert(pThis);
 /*    Assert(!pThis->fActive); */
 
-    /* paranoya to ensyre the instance is not removed while we're waiting on the mutex
+    /* paranoia to ensyre the instance is not removed while we're waiting on the mutex
      * in case ndis does something unpredictable, e.g. calls our miniport halt independently
      * from protocol unbind and concurrently with it*/
     vboxNetFltRetain(pThis, false);
@@ -3147,7 +3147,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinDetachFromInterface(PADAPT pAdapt, bool bOn
 #ifndef VBOXNETADP
             Assert(vboxNetFltWinGetOpState(&pAdapt->PTState) == kVBoxNetDevOpState_Deinitialized);
 #endif
-//            /* paranoya */
+//            /* paranoia */
 //            vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Deinitialized);
 //#ifndef VBOXNETADP
 //            vboxNetFltWinSetOpState(&pAdapt->PTState, kVBoxNetDevOpState_Deinitialized);
@@ -3316,7 +3316,7 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
 #ifndef VBOXNETADP
                             Assert(vboxNetFltWinGetOpState(&pAdapt->PTState) == kVBoxNetDevOpState_Initialized);
 #endif
-//                            /* paranoya */
+//                            /* paranoia */
 ////                            vboxNetFltWinSetAdaptState(&pAdapt->MPState, kVBoxNetDevOpState_Initialized);
 //#ifndef VBOXNETADP
 //                            vboxNetFltWinSetOpState(&pAdapt->PTState, kVBoxNetDevOpState_Initialized);
@@ -3363,7 +3363,7 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
 #ifndef VBOXNETADP
             Assert(vboxNetFltWinGetOpState(&pAdapt->PTState) == kVBoxNetDevOpState_Deinitialized);
 #endif
-//            /* paranoya */
+//            /* paranoia */
 //            vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Deinitialized);
 //#ifndef VBOXNETADP
 //            vboxNetFltWinSetOpState(&pAdapt->PTState, kVBoxNetDevOpState_Deinitialized);

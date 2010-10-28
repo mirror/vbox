@@ -18,7 +18,7 @@
 %include "VBox/asmdefs.mac"
 
 ;
-; Determin the default stack switching unless specified explicitly.
+; Determine the default stack switching unless specified explicitly.
 ;
 %ifndef VMM_R0_SWITCH_STACK
  %ifndef VMM_R0_NO_SWITCH_STACK

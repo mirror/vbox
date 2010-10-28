@@ -67,7 +67,7 @@ USBLIB_DECL(int) USBLibInit(void);
 /**
  * Terminates the USBLib component.
  *
- * Must match successfull USBLibInit calls.
+ * Must match successful USBLibInit calls.
  *
  * @returns VBox status code.
  */

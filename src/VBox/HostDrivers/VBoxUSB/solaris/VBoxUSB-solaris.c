@@ -207,7 +207,7 @@ typedef struct vboxusb_ep_t
     list_t                  hIsocInUrbs;     /* Isoc. IN inflight URBs */
     uint16_t                cIsocInUrbs;     /* Number of Isoc. IN inflight URBs */
     list_t                  hIsocInLandedReqs;   /* Isoc. IN landed requests */
-    uint16_t                cbIsocInLandedReqs;  /* Cummulative size of landed Isoc. IN requests */
+    uint16_t                cbIsocInLandedReqs;  /* Cumulative size of landed Isoc. IN requests */
     size_t                  cbMaxIsocData;   /* Maximum size of Isoc. IN landed buffer */
 } vboxusb_ep_t;
 
@@ -285,7 +285,7 @@ typedef struct vboxusb_state_t
     pollhead_t              PollHead;        /* Handle to pollhead for waking polling processes  */
     int                     fPoll;           /* Polling status flag */
     RTPROCESS               Process;         /* The process (id) of the session */
-    VBOXUSBREQ_CLIENT_INFO  ClientInfo;      /* Registeration data */
+    VBOXUSBREQ_CLIENT_INFO  ClientInfo;      /* Registration data */
     vboxusb_power_t        *pPower;          /* Power Management */
 } vboxusb_state_t;
 
@@ -1125,7 +1125,7 @@ int VBoxUSBSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cred_t *pCr
 
 
 /**
- * IOCtl processor for user to kernel and kernel to kernel communcation.
+ * IOCtl processor for user to kernel and kernel to kernel communication.
  *
  * @returns  VBox status code.
  *
@@ -2830,7 +2830,7 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
     else
     {
         /*
-         * Remove from head and move to tail so that when several URBs are reaped continously we get to use
+         * Remove from head and move to tail so that when several URBs are reaped continuously we get to use
          * up each one free 'head'.
          */
         list_remove_head(&pState->hUrbs);

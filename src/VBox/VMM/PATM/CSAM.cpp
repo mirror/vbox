@@ -229,7 +229,7 @@ VMMR3DECL(int) CSAMR3Init(PVM pVM)
     AssertRCReturn(rc, rc);
 
     /*
-     * Register save and load state notificators.
+     * Register save and load state notifiers.
      */
     rc = SSMR3RegisterInternal(pVM, "CSAM", 0, CSAM_SSM_VERSION, sizeof(pVM->csam.s) + PAGE_SIZE*16,
                                NULL, NULL, NULL,

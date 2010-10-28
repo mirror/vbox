@@ -189,7 +189,7 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
         fFlags &= ~RTSTR_F_THOUSAND_SEP;
 
     /*
-     * Determin value length
+     * Determine value length
      */
     cchValue = 0;
     if (ullValue.ulHi || (fFlags & RTSTR_F_64BIT))

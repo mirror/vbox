@@ -424,7 +424,7 @@ The exception model is the same as the dyngen one.
   the speed of the translation.
 
 - Don't hesitate to use helpers for complicated or seldom used target
-  intructions. There is little performance advantage in using TCG to
+  instructions. There is little performance advantage in using TCG to
   implement target instructions taking more than about twenty TCG
   instructions.
 

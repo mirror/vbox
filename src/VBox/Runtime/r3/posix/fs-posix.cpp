@@ -106,7 +106,7 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
     AssertMsgReturn(VALID_PTR(pu32Serial), ("%p", pu32Serial), VERR_INVALID_PARAMETER);
 
     /*
-     * Conver the path and query the stats.
+     * Convert the path and query the stats.
      * We're simply return the device id.
      */
     char const *pszNativeFsPath;

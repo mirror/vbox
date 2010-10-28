@@ -315,7 +315,7 @@ typedef struct VDIOCTX
             uint64_t                     uOffsetSaved;
             /** Saved transfer size */
             size_t                       cbTransferLeftSaved;
-            /** Number of bytes transfered from the parent if this context completes. */
+            /** Number of bytes transferred from the parent if this context completes. */
             size_t                       cbTransferParent;
             /** Number of bytes to pre read */
             size_t                       cbPreRead;
@@ -372,7 +372,7 @@ typedef struct VDIOTASK
         /** User data transfer. */
         struct
         {
-            /** Number of bytes this task transfered. */
+            /** Number of bytes this task transferred. */
             uint32_t             cbTransfer;
             /** Pointer to the I/O context the task belongs. */
             PVDIOCTX             pIoCtx;
@@ -702,7 +702,7 @@ static PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
  * @param   pcbRead  Where to store the number of bytes actually read.
  *                   On success this indicates the number of bytes read from the cache.
  *                   If VERR_VD_BLOCK_FREE is returned this gives the number of bytes
- *                   whih are not in the cache.
+ *                   which are not in the cache.
  *                   In both cases everything beyond this value
  *                   might or might not be in the cache.
  */
@@ -1439,7 +1439,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
             cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
         else
             cbWriteCopy = 0;
-        /* Figure out how much we cannnot read from the image, because
+        /* Figure out how much we cannot read from the image, because
          * the last block to write might exceed the nominal size of the
          * image for technical reasons. */
         size_t cbFill;
@@ -1501,7 +1501,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
 
     if (cbPostRead)
     {
-        /* Figure out how much we cannnot read from the image, because
+        /* Figure out how much we cannot read from the image, because
          * the last block to write might exceed the nominal size of the
          * image for technical reasons. */
         if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
@@ -1672,7 +1672,7 @@ static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
             cbWriteCopy = RT_MIN(cbWrite - cbThisWrite, cbPostRead);
         else
             cbWriteCopy = 0;
-        /* Figure out how much we cannnot read from the image, because
+        /* Figure out how much we cannot read from the image, because
          * the last block to write might exceed the nominal size of the
          * image for technical reasons. */
         size_t cbFill;
@@ -1868,7 +1868,7 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
 
     if (cbPostRead)
     {
-        /* Figure out how much we cannnot read from the image, because
+        /* Figure out how much we cannot read from the image, because
          * the last block to write might exceed the nominal size of the
          * image for technical reasons. */
         if (uOffset + cbThisWrite + cbPostRead > pDisk->cbSize)
@@ -3594,7 +3594,7 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
 }
 
 /**
- * Lists the capablities of a backend indentified by its name.
+ * Lists the capabilities of a backend identified by its name.
  *
  * @returns VBox status code.
  * @param   pszBackend      The backend name.
@@ -4335,7 +4335,7 @@ VBOXDDU_DECL(int) VDCacheOpen(PVBOXHDD pDisk, const char *pszBackend,
 
         /*
          * Check that the modification UUID of the cache and last image
-         * match. If not the image was modified inbetween without the cache.
+         * match. If not the image was modified in-between without the cache.
          * The cache might contain stale data.
          */
         RTUUID UuidImage, UuidCache;
@@ -5521,7 +5521,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         /*
          * Make sure the child is readonly
          * for the child -> parent merge direction
-         * if neccessary.
+         * if necessary.
         */
         if (   nImageFrom > nImageTo
             && pImageChild
@@ -6694,7 +6694,7 @@ VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
  * @returns Virtual disk size in bytes.
  * @returns 0 if no image with specified number was not opened.
  * @param   pDisk           Pointer to HDD container.
- * @param   nImage          Image number, counds from 0. 0 is always base image of container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
  */
 VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage)
 {

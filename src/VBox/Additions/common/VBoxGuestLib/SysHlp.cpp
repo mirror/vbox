@@ -105,9 +105,9 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
      * Lock depending on context.
      *
      * Note: We will later use the memory object here to convert the HGCM
-     *       linear buffer paramter into a physical page list. This is why
+     *       linear buffer parameter into a physical page list. This is why
      *       we lock both kernel pages on all systems, even those where we
-     *       know they aren't pagable.
+     *       know they aren't pageable.
      */
     if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
         rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, fAccess, NIL_RTR0PROCESS);

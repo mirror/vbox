@@ -131,7 +131,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         UHPT,  32, // if HPET enabled
         USMC,  32, // if SMC enabled
         UFDC,  32, // if floppy controller enabled
-        // UCP0-UCP3 no longer used and only kept here for saved state compatibilty
+        // UCP0-UCP3 no longer used and only kept here for saved state compatibility
         UCP0,  32,
         UCP1,  32,
         UCP2,  32,
@@ -517,7 +517,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             {
                  Return (HBCA)
             }
-            Name (_BBN, 0x00) // base bus adddress (bus number)
+            Name (_BBN, 0x00) // base bus address (bus number)
             Name (_UID, 0x00)
 
             // Method that returns routing table; also opens PCI to I/O APIC 
@@ -806,7 +806,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             Device (GIGE)
             {
                 /**
-                 * Generic NIC, accoring to
+                 * Generic NIC, according to
                  * http://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456c/devids.txt
                  * Needed by some Windows guests.
                  */

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * tstRunTescases - Driver program for running VBox testcase (tst* testcase/tst*).
+ * tstRunTestcases - Driver program for running VBox testcase (tst* testcase/tst*).
  */
 
 /*

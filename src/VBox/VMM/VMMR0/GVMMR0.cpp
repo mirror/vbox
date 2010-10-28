@@ -166,7 +166,7 @@ typedef struct GVMMHOSTCPU
         bool volatile       fStarting;
         /** The index of the next history entry (mod it). */
         uint32_t            iHzHistory;
-        /** Hitoricized uDesiredHz values.  The array wraps around, new entries
+        /** Historicized uDesiredHz values.  The array wraps around, new entries
          * are added at iHzHistory. This is updated approximately every
          * GVMMHOSTCPU_PPT_HIST_INTERVAL_NS by the timer callback. */
         uint32_t            aHzHistory[8];
@@ -308,7 +308,7 @@ static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pT
 /**
  * Initializes the GVMM.
  *
- * This is called while owninng the loader sempahore (see supdrvIOCtl_LdrLoad()).
+ * This is called while owning the loader semaphore (see supdrvIOCtl_LdrLoad()).
  *
  * @returns VBox status code.
  */
@@ -1176,7 +1176,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     AssertRC(rc);
 
     /*
-     * This is a tad slow but a doubly linked list is too much hazzle.
+     * This is a tad slow but a doubly linked list is too much hassle.
      */
     if (RT_UNLIKELY(pHandle->iNext >= RT_ELEMENTS(pGVMM->aHandles)))
     {
@@ -1380,7 +1380,7 @@ GVMMR0DECL(PGVM) GVMMR0ByHandle(uint32_t hGVM)
  *                          Be very careful if not taking the lock as it's possible that
  *                          the VM will disappear then.
  *
- * @remark  This will not assert on an invalid pVM but try return sliently.
+ * @remark  This will not assert on an invalid pVM but try return silently.
  */
 static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
 {
@@ -2351,7 +2351,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
     }
 
     /*
-     * Enumerate the VMs and add the ones visibile to the statistics.
+     * Enumerate the VMs and add the ones visible to the statistics.
      */
     pStats->cVMs = 0;
     pStats->cEMTs = 0;
@@ -2497,7 +2497,7 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
     }
 
     /*
-     * Enumerate the VMs and add the ones visibile to the statistics.
+     * Enumerate the VMs and add the ones visible to the statistics.
      */
     if (ASMMemIsAll8(&pStats->SchedSum, sizeof(pStats->SchedSum), 0))
     {

@@ -98,7 +98,7 @@ RTR3DECL(void) RTR3Term(void);
 
 #ifdef IN_RING0
 /**
- * Initalizes the ring-0 driver runtime library.
+ * Initializes the ring-0 driver runtime library.
  *
  * @returns iprt status code.
  * @param   fReserved       Flags reserved for the future.

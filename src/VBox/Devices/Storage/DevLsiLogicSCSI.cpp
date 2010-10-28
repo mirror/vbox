@@ -84,7 +84,7 @@ typedef struct LSILOGICDEVICE
     uint32_t                      Alignment0;
 #endif
 
-    /** Our base interace. */
+    /** Our base interface. */
     PDMIBASE                      IBase;
     /** SCSI port interface. */
     PDMISCSIPORT                  ISCSIPort;
@@ -323,7 +323,7 @@ typedef struct LSILOGICTASKSTATESGENTRY
 } LSILOGICTASKSTATESGENTRY, *PLSILOGICTASKSTATESGENTRY;
 
 /**
- * Task state object which holds all neccessary data while
+ * Task state object which holds all necessary data while
  * processing the request from the guest.
  */
 typedef struct LSILOGICTASKSTATE
@@ -432,7 +432,7 @@ static void lsilogicUpdateInterrupt(PLSILOGICSCSI pThis)
 
 /**
  * Sets a given interrupt status bit in the status register and
- * updates the interupt status.
+ * updates the interrupt status.
  *
  * @returns nothing.
  * @param   pLsiLogic    Pointer to the device instance.
@@ -446,7 +446,7 @@ DECLINLINE(void) lsilogicSetInterrupt(PLSILOGICSCSI pLsiLogic, uint32_t uStatus)
 
 /**
  * Clears a given interrupt status bit in the status register and
- * updates the interupt status.
+ * updates the interrupt status.
  *
  * @returns nothing.
  * @param   pLsiLogic    Pointer to the device instance.
@@ -633,7 +633,7 @@ static void lsilogicTaskStateDtor(RTMEMCACHE hMemCache, void *pvObj, void *pvUse
 #endif /* IN_RING3 */
 
 /**
- * Takes neccessary steps to finish a reply frame.
+ * Takes necessary steps to finish a reply frame.
  *
  * @returns nothing
  * @param   pLsiLogic       Pointer to the device instance
@@ -1377,7 +1377,7 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser,
 #ifdef IN_RING3
 
 /**
- * Copies a contigous buffer into the scatter gather list provided by the guest.
+ * Copies a contiguous buffer into the scatter gather list provided by the guest.
  *
  * @returns nothing
  * @param   pTaskState    Pointer to the task state which contains the SGL.
@@ -3122,7 +3122,7 @@ static void lsilogicInitializeConfigurationPagesSas(PLSILOGICSCSI pThis)
     pManufacturingPage7->u.fields.u8NumPhys = pThis->cPorts;
     pPages->pManufacturingPage7 = pManufacturingPage7;
 
-    /* SAS I/O unit page 0 - Port specific informations. */
+    /* SAS I/O unit page 0 - Port specific information. */
     pPages->cbSASIOUnitPage0 = LSILOGICSCSI_SASIOUNIT0_GET_SIZE(pThis->cPorts);
     PMptConfigurationPageSASIOUnit0 pSASPage0 = (PMptConfigurationPageSASIOUnit0)RTMemAllocZ(pPages->cbSASIOUnitPage0);
     AssertPtr(pSASPage0);
@@ -3146,14 +3146,14 @@ static void lsilogicInitializeConfigurationPagesSas(PLSILOGICSCSI pThis)
     pSASPage1->u.fields.u16AdditionalControlFlags = 0;
     pPages->pSASIOUnitPage1 = pSASPage1;
 
-    /* SAS I/O unit page 2 - Port specific informations. */
+    /* SAS I/O unit page 2 - Port specific information. */
     pPages->SASIOUnitPage2.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
                                                                  | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
     pPages->SASIOUnitPage2.u.fields.ExtHeader.u8PageNumber     = 2;
     pPages->SASIOUnitPage2.u.fields.ExtHeader.u8ExtPageType    = MPT_CONFIGURATION_PAGE_TYPE_EXTENDED_SASIOUNIT;
     pPages->SASIOUnitPage2.u.fields.ExtHeader.u16ExtPageLength = sizeof(MptConfigurationPageSASIOUnit2) / 4;
 
-    /* SAS I/O unit page 3 - Port specific informations. */
+    /* SAS I/O unit page 3 - Port specific information. */
     pPages->SASIOUnitPage3.u.fields.ExtHeader.u8PageType       =   MPT_CONFIGURATION_PAGE_ATTRIBUTE_READONLY
                                                                  | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED;
     pPages->SASIOUnitPage3.u.fields.ExtHeader.u8PageNumber     = 3;
@@ -3364,22 +3364,22 @@ static void lsilogicInitializeConfigurationPages(PLSILOGICSCSI pLsiLogic)
                                               MptConfigurationPageManufacturing5, 5,
                                               MPT_CONFIGURATION_PAGE_ATTRIBUTE_PERSISTENT_READONLY);
 
-    /* Manufacturing Page 6 - Product sepcific settings. */
+    /* Manufacturing Page 6 - Product specific settings. */
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage6,
                                               MptConfigurationPageManufacturing6, 6,
                                               MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE);
 
-    /* Manufacturing Page 8 -  Product sepcific settings. */
+    /* Manufacturing Page 8 -  Product specific settings. */
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage8,
                                               MptConfigurationPageManufacturing8, 8,
                                               MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE);
 
-    /* Manufacturing Page 9 -  Product sepcific settings. */
+    /* Manufacturing Page 9 -  Product specific settings. */
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage9,
                                               MptConfigurationPageManufacturing9, 9,
                                               MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE);
 
-    /* Manufacturing Page 10 -  Product sepcific settings. */
+    /* Manufacturing Page 10 -  Product specific settings. */
     MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(&pPages->ManufacturingPage10,
                                               MptConfigurationPageManufacturing10, 10,
                                               MPT_CONFIGURATION_PAGE_ATTRIBUTE_CHANGEABLE);
@@ -5085,7 +5085,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Intialize task queue. (Need two items to handle SMP guest concurrency.) */
+    /* Initialize task queue. (Need two items to handle SMP guest concurrency.) */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
                               lsilogicNotifyQueueConsumer, true,
                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI

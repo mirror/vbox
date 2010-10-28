@@ -831,7 +831,7 @@ static DECLCALLBACK(BOOLEAN) vboxVidPnCheckAddMonitorModesEnum(struct _DEVICE_EX
         {
             if (vboxVidPnMatchVideoSignal(&dummyMode.VideoSignalInfo, &pMonitorSMI->VideoSignalInfo))
             {
-                /* mark it as unneened */
+                /* mark it as unneeded */
                 pData->pResolutions[i].cx = 0;
                 break;
             }

@@ -49,7 +49,7 @@ RT_C_DECLS_BEGIN
  *
  * This macro shall only be used with the IOM APIs where it's mentioned
  * in the return value description. And there is must be used to correctly
- * determin if the call succeeded and things like the EIP needs updating.
+ * determine if the call succeeded and things like the EIP needs updating.
  *
  *
  * @returns Success indicator (true/false).

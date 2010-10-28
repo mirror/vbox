@@ -80,7 +80,7 @@ typedef struct DEVINTNETIP
     PPDMINETWORKUP   pDrv;
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
-    /** MAC adress. */
+    /** MAC address. */
     RTMAC                   MAC;
     /** Static IP address of the interface. */
     char                   *pszIP;

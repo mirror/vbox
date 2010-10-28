@@ -38,7 +38,7 @@ public:
         m_pWindowMenu->addAction(m_pMinimizeAction);
         connect(m_pMinimizeAction, SIGNAL(triggered(bool)),
                 this, SLOT(minimizeActive(bool)));
-        /* Make sure all already available windows are proberly registered on
+        /* Make sure all already available windows are properly registered on
          * this menu. */
         for (int i=0; i < winList.size(); ++i)
             addWindow(winList.at(i));

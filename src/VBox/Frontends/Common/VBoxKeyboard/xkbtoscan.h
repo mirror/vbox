@@ -24,7 +24,7 @@
  * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license 
  * other than GPL or LGPL is available it will apply instead, Sun elects to use
  * the Lesser General Public License version 2.1 (LGPLv2) at this time for any 
- * a choice of LGPL license versions is made available with the language indica
+ * a choice of LGPL license versions is made available with the language indicating
  * that LGPLv2 or any later version may be used, or where a choice of which ver
  * of the LGPL is applied is otherwise unspecified.
  */

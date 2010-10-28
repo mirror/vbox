@@ -430,13 +430,13 @@ typedef union _ERROR_CACHE_CHECK    {
         ULONGLONG Reserved3:2;             //      52-53
         ULONGLONG InstructionSet:1;        //      54   : 0 - IA64 instruction, 1- IA32 instruction
         ULONGLONG InstructionSetValid:1;   //      55   : InstructionSet field is valid
-        ULONGLONG PrivilegeLevel:2;        //      56-57: Privlege level of instrustion
+        ULONGLONG PrivilegeLevel:2;        //      56-57: Privilege level of instruction
         ULONGLONG PrivilegeLevelValid:1;   //      58   : PrivilegeLevel field is Valid
         ULONGLONG MachineCheckCorrected:1; //      59   : 1 - Machine Check Corrected
         ULONGLONG TargetAddressValid:1;    //      60   : Target Address is valid
         ULONGLONG RequestIdValid:1;        //      61   : RequestId is valid
         ULONGLONG ResponderIdValid:1;      //      62   : ResponderId is valid
-        ULONGLONG PreciseIPValid:1;        //      63   : Precise Inststruction Pointer is Valid
+        ULONGLONG PreciseIPValid:1;        //      63   : Precise Instruction Pointer is Valid
     };
 } ERROR_CACHE_CHECK, *PERROR_CACHE_CHECK;
 
@@ -468,13 +468,13 @@ typedef union _ERROR_TLB_CHECK  {
         ULONGLONG Reserved3:30;            //      24-53
         ULONGLONG InstructionSet:1;        //      54   : 0 - IA64 instruction, 1- IA32 instruction
         ULONGLONG InstructionSetValid:1;   //      55   : InstructionSet field is valid
-        ULONGLONG PrivilegeLevel:2;        //      56-57: Privlege level of instrustion
+        ULONGLONG PrivilegeLevel:2;        //      56-57: Privilege level of instruction
         ULONGLONG PrivilegeLevelValid:1;   //      58   : PrivilegeLevel field is Valid
         ULONGLONG MachineCheckCorrected:1; //      59   : 1 - Machine Check Corrected
         ULONGLONG TargetAddressValid:1;    //      60   : Target Address is valid
         ULONGLONG RequestIdValid:1;        //      61   : RequestId is valid
         ULONGLONG ResponderIdValid:1;      //      62   : ResponderId is valid
-        ULONGLONG PreciseIPValid:1;        //      63   : Precise Inststruction Pointer is Valid
+        ULONGLONG PreciseIPValid:1;        //      63   : Precise Instruction Pointer is Valid
     };
 } ERROR_TLB_CHECK, *PERROR_TLB_CHECK;
 
@@ -506,13 +506,13 @@ typedef union _ERROR_BUS_CHECK  {
         ULONGLONG Reserved2:22;            //      32-53
         ULONGLONG InstructionSet:1;        //      54   : 0 - IA64 instruction, 1- IA32 instruction
         ULONGLONG InstructionSetValid:1;   //      55   : InstructionSet field is valid
-        ULONGLONG PrivilegeLevel:2;        //      56-57: Privlege level of instrustion
+        ULONGLONG PrivilegeLevel:2;        //      56-57: Privilege level of instruction
         ULONGLONG PrivilegeLevelValid:1;   //      58   : PrivilegeLevel field is Valid
         ULONGLONG MachineCheckCorrected:1; //      59   : 1 - Machine Check Corrected
         ULONGLONG TargetAddressValid:1;    //      60   : Target Address is valid
         ULONGLONG RequestIdValid:1;        //      61   : RequestId is valid
         ULONGLONG ResponderIdValid:1;      //      62   : ResponderId is valid
-        ULONGLONG PreciseIPValid:1;        //      63   : Precise Inststruction Pointer is Valid
+        ULONGLONG PreciseIPValid:1;        //      63   : Precise Instruction Pointer is Valid
     };
 } ERROR_BUS_CHECK, *PERROR_BUS_CHECK;
 
@@ -550,11 +550,11 @@ typedef union _ERROR_REGFILE_CHECK  {
         ULONGLONG Reserved1:38;            //      16-53
         ULONGLONG InstructionSet:1;        //      54   : 0 - IA64 instruction, 1- IA32 instruction
         ULONGLONG InstructionSetValid:1;   //      55   : InstructionSet field is valid
-        ULONGLONG PrivilegeLevel:2;        //      56-57: Privlege level of instrustion
+        ULONGLONG PrivilegeLevel:2;        //      56-57: Privilege level of instruction
         ULONGLONG PrivilegeLevelValid:1;   //      58   : PrivilegeLevel field is Valid
         ULONGLONG MachineCheckCorrected:1; //      59   : 1 - Machine Check Corrected
         ULONGLONG Reserved2:3;             //      60-62
-        ULONGLONG PreciseIPValid:1;        //      63   : Precise Inststruction Pointer is Valid
+        ULONGLONG PreciseIPValid:1;        //      63   : Precise Instruction Pointer is Valid
     };
 } ERROR_REGFILE_CHECK, *PERROR_REGFILE_CHECK;
 
@@ -582,13 +582,13 @@ typedef union _ERROR_MS_CHECK  {
         ULONGLONG Reserved2:14;            //      40-53
         ULONGLONG InstructionSet:1;        //      54   : 0 - IA64 instruction, 1- IA32 instruction
         ULONGLONG InstructionSetValid:1;   //      55   : InstructionSet field is valid
-        ULONGLONG PrivilegeLevel:2;        //      56-57: Privlege level of instrustion
+        ULONGLONG PrivilegeLevel:2;        //      56-57: Privilege level of instruction
         ULONGLONG PrivilegeLevelValid:1;   //      58   : PrivilegeLevel field is Valid
         ULONGLONG MachineCheckCorrected:1; //      59   : 1 - Machine Check Corrected
         ULONGLONG TargetAddressValid:1;    //      60   : Target Address is valid
         ULONGLONG RequestIdValid:1;        //      61   : RequestId is valid
         ULONGLONG ResponderIdValid:1;      //      62   : ResponderId is valid
-        ULONGLONG PreciseIPValid:1;        //      63   : Precise Inststruction Pointer is Valid
+        ULONGLONG PreciseIPValid:1;        //      63   : Precise Instruction Pointer is Valid
     };
 } ERROR_MS_CHECK, *PERROR_MS_CHECK;
 
@@ -652,8 +652,8 @@ typedef union _ERROR_PROCESSOR_STATE_PARAMETER {
     ULONGLONG   StateParameter;
     struct {
         ULONGLONG reserved0:2;  //   0-1 : reserved
-        ULONGLONG rz:1;         //     2 : Rendez-vous successful
-        ULONGLONG ra:1;         //     3 : Rendez-vous attempted
+        ULONGLONG rz:1;         //     2 : Rendezvous successful
+        ULONGLONG ra:1;         //     3 : Rendezvous attempted
         ULONGLONG me:1;         //     4 : Distinct Multiple errors
         ULONGLONG mn:1;         //     5 : Min-state Save Area registered
         ULONGLONG sy:1;         //     6 : Storage integrity synchronized
@@ -732,7 +732,7 @@ typedef union _ERROR_PROCESSOR_STATIC_INFO_VALID {
 
 typedef struct _ERROR_PROCESSOR_STATIC_INFO  {
     ERROR_PROCESSOR_STATIC_INFO_VALID Valid;
-    UCHAR      MinState[ /* SAL Specs, July 2000 and Jan 2001 state approximatively: */ 1024];
+    UCHAR      MinState[ /* SAL Specs, July 2000 and Jan 2001 state approximately: */ 1024];
     ULONGLONG  BR      [ 8 ];
     ULONGLONG  CR      [ /* SAL Specs, July 2000 states that it is processor dependent */ 128 ];
     ULONGLONG  AR      [ /* SAL Specs, July 2000 states that it is processor dependent */ 128 ];
@@ -953,7 +953,7 @@ typedef union _ERROR_PCI_BUS_VALID    {
         ULONGLONG CmdType:1;                //       5: Command Type             valid bit
         ULONGLONG RequestorId:1;            //       6: Requestor Identifier     valid bit
         ULONGLONG ResponderId:1;            //       7: Responder Identifier     valid bit
-        ULONGLONG TargetId:1;               //       8: Target    Identifer      valid bit
+        ULONGLONG TargetId:1;               //       8: Target    Identifier     valid bit
         ULONGLONG OemId:1;                  //       9: OEM Identification       valid bit
         ULONGLONG OemData:1;                //      10: OEM Data                 valid bit
         ULONGLONG Reserved:53;              //   11-63: Reserved
@@ -1094,7 +1094,7 @@ typedef struct _ERROR_SYSTEM_EVENT_LOG    {
     UCHAR                        SensorType;   // Sensor Type code of the sensor that generated event
     UCHAR                        SensorNumber; // Number of the sensor that generated event
     UCHAR                        EventDir;     // Event Dir
-                                               //   Bit 7 - 0: asserted, 1: desasserted
+                                               //   Bit 7 - 0: asserted, 1: unasserted
                                                // Event Type
                                                //   Bit 6:0 - Event Type code
     UCHAR                        Data1;        // Event data field

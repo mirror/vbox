@@ -53,7 +53,7 @@ VBGLR3DECL(int) VbglR3SharedFolderConnect(uint32_t *pu32ClientId)
     Info.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
     RT_ZERO(Info.Loc.u);
     strcpy(Info.Loc.u.host.achName, "VBoxSharedFolders");
-    Info.u32ClientID = UINT32_MAX;  /* try make valgrid shut up. */
+    Info.u32ClientID = UINT32_MAX;  /* try make valgrind shut up. */
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CONNECT, &Info, sizeof(Info));
     if (RT_SUCCESS(rc))

@@ -327,7 +327,7 @@ typedef struct vboxnetflt_stream_t
 typedef struct vboxnetflt_promisc_stream_t
 {
     vboxnetflt_stream_t Stream;           /* dedicated/promiscuous stream */
-    bool fPromisc;                        /* cached promiscous value */
+    bool fPromisc;                        /* cached promiscuous value */
     bool fRawMode;                        /* whether raw mode request was successful */
     uint32_t ModeReqId;                   /* track MIOCTLs for swallowing our fake request acknowledgements */
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
@@ -1117,7 +1117,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
                         case DL_OK_ACK:
                         {
                             /*
-                             * Swallow our fake promiscous request acknowledgement.
+                             * Swallow our fake promiscuous request acknowledgement.
                              */
                             dl_ok_ack_t *pOkAck = (dl_ok_ack_t *)pMsg->b_rptr;
                             if (pOkAck->dl_correct_primitive == DL_PROMISCON_REQ)
@@ -1382,7 +1382,7 @@ static void vboxNetFltSolarisPromiscReqWrapExcl(queue_t *pQueue, mblk_t *pMsg)
 
 /**
  * Callback wrapper for qtimeout() to safely send promiscuous requests. This is
- * called at the inner perimenter with shared lock.
+ * called at the inner perimeter with shared lock.
  *
  * @param pvData            Pointer to vboxnetflt_promisc_params_t. See
  *                          vboxNetFltPortOsSetActive().
@@ -2092,7 +2092,7 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
     LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisAttachIp4 pThis=%p fAttach=%d\n", pThis, fAttach));
 
     /*
-     * Statuatory Warning: Hackish code ahead.
+     * Statutory Warning: Hackish code ahead.
      */
     char *pszModName = DEVICE_NAME;
 
@@ -2359,7 +2359,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
     LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisAttachIp6 pThis=%p fAttach=%d\n", pThis, fAttach));
 
     /*
-     * Statuatory Warning: Hackish code ahead.
+     * Statutory Warning: Hackish code ahead.
      */
     char *pszModName = DEVICE_NAME;
 
@@ -2699,7 +2699,7 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
             /*
              * If Ip6 interface is not plumbed and an Ip6 polling interval is specified, we need
-             * to begin polling to attach on the Ip6 interface whenver it comes up.
+             * to begin polling to attach on the Ip6 interface whenever it comes up.
              */
             if (   rc2 == VERR_INTNET_FLT_IF_NOT_FOUND
                 && g_VBoxNetFltSolarisPollInterval != -1)
@@ -3256,7 +3256,7 @@ DECLINLINE(bool) vboxNetFltPortSolarisIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pM
 {
     /*
      * MAC address change acknowledgements are intercepted on the read side
-     * hence theoritically we are always update to date with any changes.
+     * hence theoretically we are always update to date with any changes.
      */
     return pThis->u.s.MacAddr.au16[0] == pMac->au16[0]
         && pThis->u.s.MacAddr.au16[1] == pMac->au16[1]

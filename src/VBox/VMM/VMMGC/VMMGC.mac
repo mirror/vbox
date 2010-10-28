@@ -83,7 +83,7 @@
 ; @param    %4  The user data member.
 %macro TRPM_HANDLER 4
 
-VMMR0_SEG %1                            ; switch to the record segemnt.
+VMMR0_SEG %1                            ; switch to the record segment.
 
     dd  %%current_instr                 ; uStartEip
     dd  %2                              ; uEndEip
@@ -126,7 +126,7 @@ TRPM_HANDLER Trap0e, 0, %1, %2
 
 
 ;; @def TRPM_NP_GP_HANDLER
-; Sets up a segment not present fault and genernal protection fault handler
+; Sets up a segment not present fault and general protection fault handler
 ; for the current (=next) instruction.
 ;
 ; @param    %1  Address of the handler function.

@@ -91,7 +91,7 @@ typedef struct CFGMNODE
 {
     /** Pointer to the next node (on this level). */
     PCFGMNODE       pNext;
-    /** Pointer to the previuos node (on this level). */
+    /** Pointer to the previous node (on this level). */
     PCFGMNODE       pPrev;
     /** Pointer Parent node. */
     PCFGMNODE       pParent;

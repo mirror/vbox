@@ -731,7 +731,7 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
         case 0x03: /* version */
             val =   APIC_HW_VERSION                                     |
                     ((APIC_LVT_NB - 1) << 16) /* Max LVT index */       |
-                    (0 << 24) /* Support for EOI broadcast supression */;
+                    (0 << 24) /* Support for EOI broadcast suppression */;
             break;
         case 0x08:
             val = apic->tpr;

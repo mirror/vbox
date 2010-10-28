@@ -41,7 +41,7 @@ RT_C_DECLS_BEGIN
 int rtR0InitNative(void);
 
 /**
- * Platform specific terminiation.
+ * Platform specific termination.
  */
 void rtR0TermNative(void);
 

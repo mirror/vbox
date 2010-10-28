@@ -282,7 +282,7 @@ private:
     int mcRects;
     /** Do we support the X shaped window extension? */
     bool mSupportsShape;
-    /** Is seamles mode currently enabled?  */
+    /** Is seamless mode currently enabled?  */
     bool mEnabled;
     /** Have there been changes since the last time we sent a notification? */
     bool mChanged;

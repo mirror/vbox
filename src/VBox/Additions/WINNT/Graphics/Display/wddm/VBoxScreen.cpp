@@ -449,7 +449,7 @@ HRESULT vboxScreenMonRun()
             break;
         }
 
-        if(bResult == -1) /* error occured */
+        if(bResult == -1) /* error occurred */
         {
             DWORD winEr = GetLastError();
             hr = HRESULT_FROM_WIN32(winEr);

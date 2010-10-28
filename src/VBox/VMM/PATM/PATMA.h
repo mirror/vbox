@@ -35,7 +35,7 @@
 #define PATM_CPUID_STD_PTR                      0xF1ABCD09
 #define PATM_CPUID_EXT_PTR                      0xF1ABCD0a
 #define PATM_CPUID_DEF_PTR                      0xF1ABCD0b
-#define PATM_STACKBASE                          0xF1ABCD0c    /** Stack to store our private patch return addesses */
+#define PATM_STACKBASE                          0xF1ABCD0c    /** Stack to store our private patch return addresses */
 #define PATM_STACKBASE_GUEST                    0xF1ABCD0d    /** Stack to store guest return addresses */
 #define PATM_STACKPTR                           0xF1ABCD0e
 #define PATM_PATCHBASE                          0xF1ABCD0f

@@ -81,7 +81,7 @@ static RTFILE g_File = NIL_RTFILE;
 #endif
 /** User counter.
  * A counter of the number of times the library has been initialised, for use with
- * X.org drivers, where the library may be shared by multiple independant modules
+ * X.org drivers, where the library may be shared by multiple independent modules
  * inside a single process space.
  */
 static uint32_t volatile g_cInits = 0;
@@ -124,7 +124,7 @@ static int vbglR3Init(const char *pszDeviceName)
 #if defined(RT_OS_WINDOWS)
     /*
      * Have to use CreateFile here as we want to specify FILE_FLAG_OVERLAPPED
-     * and possible some other bits not availble thru iprt/file.h.
+     * and possible some other bits not available thru iprt/file.h.
      */
     HANDLE hFile = CreateFile(pszDeviceName,
                               GENERIC_READ | GENERIC_WRITE,
@@ -197,7 +197,7 @@ static int vbglR3Init(const char *pszDeviceName)
 
 #else
 
-    /* The default implemenation. (linux, solaris, freebsd) */
+    /* The default implementation. (linux, solaris, freebsd) */
     RTFILE File;
     int rc = RTFileOpen(&File, pszDeviceName, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
@@ -289,7 +289,7 @@ VBGLR3DECL(void) VbglR3Term(void)
 
 
 /**
- * Internal wrapper around various OS specific ioctl implemenations.
+ * Internal wrapper around various OS specific ioctl implementations.
  *
  * @returns VBox status code as returned by VBoxGuestCommonIOCtl, or
  *          an failure returned by the OS specific ioctl APIs.
@@ -309,7 +309,7 @@ int vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     if (!DeviceIoControl(g_hFile, iFunction, pvData, (DWORD)cbData, pvData, (DWORD)cbData, &cbReturned, NULL))
     {
 /** @todo The passing of error codes needs to be tested and fixed (as does *all* the other hosts except for
- * OS/2).  The idea is that the VBox status codes in ring-0 should be transfered without loss down to
+ * OS/2).  The idea is that the VBox status codes in ring-0 should be transferred without loss down to
  * ring-3. However, it's not vitally important right now (obviously, since the other guys has been
  * ignoring it for 1+ years now).  On Linux and Solaris the transfer is done, but it is currently not
  * lossless, so still needs fixing. */

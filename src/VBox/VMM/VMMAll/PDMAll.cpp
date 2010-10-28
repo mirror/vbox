@@ -159,7 +159,7 @@ VMMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   GCAddr          Request address.
- * @param   u8Value         REquest value.
+ * @param   u8Value         Request value.
  */
 VMMDECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue)
 {

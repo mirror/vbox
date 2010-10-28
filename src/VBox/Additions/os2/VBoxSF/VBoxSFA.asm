@@ -86,7 +86,7 @@ global %1_EndProc
     push    es                          ; bp - 4
 
     ; Reserve the 32-bit parameter and align the stack on a 16 byte
-    ; boundrary to make GCC really happy.
+    ; boundary to make GCC really happy.
     sub     sp, %2
     and     sp, 0fff0h
 
@@ -275,7 +275,7 @@ FS_NAME:
 %define FSA_REMOTE      0001h           ; remote file system.
 %define FSA_UNC         0002h           ; implements UNC.
 %define FSA_LOCK        0004h           ; needs lock notification.
-%define FSA_LVL7        0008h           ; accept level 7 (case perserving path request).
+%define FSA_LVL7        0008h           ; accept level 7 (case preserving path request).
 %define FSA_PSVR        0010h           ; (named) pipe server.
 %define FSA_LARGEFILE   0020h           ; large file support.
 align 16

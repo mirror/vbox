@@ -187,7 +187,7 @@ static vm_map_offset_t rtR0MemObjDarwinGetMapMin(vm_map_t pMap)
  *
  * @param   HCPhys      The address to start reading at.
  * @param   cb          How many bytes to read.
- * @param   pvDst       Where to put the bytes. This is zero'ed on failure.
+ * @param   pvDst       Where to put the bytes. This is zero'd on failure.
  */
 static void rtR0MemObjDarwinReadPhys(RTHCPHYS HCPhys, size_t cb, void *pvDst)
 {
@@ -823,7 +823,7 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
                         /* HACK ALERT! */
                         rtR0MemObjDarwinTouchPages(pv, cbSub);
                         /** @todo First, the memory should've been mapped by now, and second, it
-                         *        shouild have the wired attribute in the PTE (bit 9). Neither is
+                         *        should have the wired attribute in the PTE (bit 9). Neither is
                          *        seems to be the case. The disabled locking code doesn't make any
                          *        difference, which is extremely odd, and breaks
                          *        rtR0MemObjNativeGetPagePhysAddr (getPhysicalSegment64 -> 64 for the

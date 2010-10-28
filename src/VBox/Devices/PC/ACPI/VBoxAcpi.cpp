@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxAcpi - VirtualBox ACPI maniputation functionality.
+ * VBoxAcpi - VirtualBox ACPI manipulation functionality.
  */
 
 /*

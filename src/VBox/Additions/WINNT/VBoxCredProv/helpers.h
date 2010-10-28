@@ -49,7 +49,7 @@ HRESULT KerbInteractiveLogonPack(
     DWORD* pcb
     );
 
-//unpackages the "packed" version of the creds in-place into the "unpacked" version
+//unpacks the "packed" version of the creds in-place into the "unpacked" version
 void KerbInteractiveLogonUnpackInPlace(
     KERB_INTERACTIVE_UNLOCK_LOGON* pkiul
     );

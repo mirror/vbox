@@ -167,7 +167,7 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
         return rc;
 
     /*
-     * Register save and load state notificators.
+     * Register save and load state notifiers.
      */
     rc = SSMR3RegisterInternal(pVM, "PATM", 0, PATM_SSM_VERSION, sizeof(pVM->patm.s) + PATCH_MEMORY_SIZE  + PAGE_SIZE + PATM_STACK_TOTAL_SIZE + PAGE_SIZE,
                                NULL, NULL, NULL,
@@ -1306,7 +1306,7 @@ static int patmAnalyseBlockCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_
     }
     else
     {
-        /* No unconditinal jumps or calls without fixed displacements. */
+        /* No unconditional jumps or calls without fixed displacements. */
         if (    (pCpu->pCurInstr->optype & OPTYPE_CONTROLFLOW)
              && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
            )
@@ -1462,7 +1462,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
     }
     else
     {
-        // no unconditinal jumps or calls without fixed displacements
+        // no unconditional jumps or calls without fixed displacements
         if (    (pCpu->pCurInstr->optype & OPTYPE_CONTROLFLOW)
              && (pCpu->pCurInstr->opcode == OP_JMP || pCpu->pCurInstr->opcode == OP_CALL)
            )
@@ -5551,7 +5551,7 @@ failure:
 PPATCHINFO PATMFindActivePatchByEntrypoint(PVM pVM, RTRCPTR pInstrGC, bool fIncludeHints)
 {
     PPATMPATCHREC pPatchRec = (PPATMPATCHREC)RTAvloU32GetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTree, pInstrGC, false);
-    /* if the patch is enabled, the pointer is not indentical to the privileged patch ptr and it lies within 5 bytes of this priv instr ptr, then we've got a hit! */
+    /* if the patch is enabled, the pointer is not identical to the privileged patch ptr and it lies within 5 bytes of this priv instr ptr, then we've got a hit! */
     if (pPatchRec)
     {
         if (    pPatchRec->patch.uState == PATCH_ENABLED

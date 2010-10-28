@@ -114,7 +114,7 @@ private:
  *
  *  Implicit sharing means that instances of the generated class point to the
  *  same data object of the managed structure until any one of them tries
- *  to change it. When it happens that instane makes a deep copy of the object
+ *  to change it. When it happens that instance makes a deep copy of the object
  *  (through its copy constructor) and does the actual change on that copy,
  *  keeping the original data unchanged. This technique is also called
  *  "copy on write". Also, any instance can excplicitly stop sharing the data
@@ -187,7 +187,7 @@ private:
  *  @endcode
  *
  *  If some members of the structure need to be private (and therefore
- *  unaccessible through the pointers returned by data() and vData()) you can
+ *  inaccessible through the pointers returned by data() and vData()) you can
  *  simply declare the wrapper class (the ACard class in the example above)
  *  as a friend of the structure and still use the above approach.
  *

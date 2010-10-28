@@ -1096,7 +1096,7 @@
       <desc>BIOS Firmware.</desc>
     </const>
     <const name="EFI"            value="2">
-      <desc>EFI Firmware, bitness detetced basing on OS type.</desc>
+      <desc>EFI Firmware, bitness detected basing on OS type.</desc>
     </const>
     <const name="EFI32"          value="3">
       <desc>Efi firmware, 32-bit.</desc>
@@ -1120,7 +1120,7 @@
       <desc>No mouse.</desc>
     </const>
     <const name="PS2Mouse"       value="2">
-      <desc>PS/2 auxillary device, a.k.a. mouse.</desc>
+      <desc>PS/2 auxiliary device, a.k.a. mouse.</desc>
     </const>
     <const name="USBMouse"       value="3">
       <desc>USB mouse (relative pointer).</desc>
@@ -1299,13 +1299,13 @@
 
     <attribute name="lowerIP" type="wstring" readonly="yes">
       <desc>
-        specifies from IP adrres in server address range
+        specifies from IP address in server address range
       </desc>
     </attribute>
 
     <attribute name="upperIP" type="wstring" readonly="yes">
       <desc>
-        specifies to IP adrres in server address range
+        specifies to IP address in server address range
       </desc>
     </attribute>
 
@@ -2420,7 +2420,7 @@
 
           <li>Finally, call <link to="#importMachines" /> to  create virtual machines in
               VirtualBox as instances of <link to="IMachine" /> that match the information in the
-              virtual system descriptions. After this call suceeded, the UUIDs of the machines created
+              virtual system descriptions. After this call succeeded, the UUIDs of the machines created
               can be found in the <link to="#machines" /> array attribute.
           </li>
         </ol>
@@ -2711,7 +2711,7 @@
       <li>
         "Name": the name to give to the new virtual machine. There can be at most one such array item;
         if none is present on import, then an automatic name will be created from the operating system
-        type. The correponding item im @a aOvfValues[] will contain the suggested virtual machine name
+        type. The corresponding item im @a aOvfValues[] will contain the suggested virtual machine name
         from the OVF file, and @a aVBoxValues[] will contain a suggestion for a unique VirtualBox
         <link to="IMachine" /> name that does not exist yet.
       </li>
@@ -3504,7 +3504,7 @@
 
         Reading this property is only valid after the last call to
         <link to="#accessible"/> returned @c false (i.e. the
-        machine is currently unaccessible). Otherwise, a @c null
+        machine is currently inaccessible). Otherwise, a @c null
         IVirtualBoxErrorInfo object will be returned.
       </desc>
     </attribute>
@@ -4121,7 +4121,7 @@
         will not return to "Unlocked" until the remote session has also unlocked
         the machine (i.e. the machine has stopped running).
 
-        Lauching a VM process can take some time (a new VM is started in a new process,
+        Launching a VM process can take some time (a new VM is started in a new process,
         for which memory and other resources need to be set up). Because of this,
         an <link to="IProgress" /> object is returned to allow the caller to wait
         for this asynchronous operation to be completed. Until then, the caller's
@@ -5069,7 +5069,7 @@
     <method name="delete">
       <desc>
         Deletes the files associated with this machine from disk. If medium objects are passed
-        in with the @a aMedia argument, they are closed and, if closing was succesful, their
+        in with the @a aMedia argument, they are closed and, if closing was successful, their
         storage files are deleted as well. For convenience, this array of media files can be
         the same as the one returned from a previous <link to="#unregister" /> call.
 
@@ -5825,7 +5825,7 @@
 
     <attribute name="machine" type="IMachine" readonly="yes">
       <desc>
-        Machine object this console is sessioned with.
+        Machine object for this console session.
         <note>
           This is a convenience property, it has the same value as
           <link to="ISession::machine"/> of the corresponding session
@@ -5839,7 +5839,7 @@
         Current execution state of the machine.
         <note>
           This property always returns the same value as the corresponding
-          property of the IMachine object this console is sessioned with.
+          property of the IMachine object for this console session.
           For the process that owns (executes) the VM, this is the
           preferable way of querying the VM state, because no IPC
           calls are made.
@@ -6855,7 +6855,7 @@
       <param name="subLeaf" type="unsigned long" dir="in">
         <desc>
           CPUID leaf sub index (ecx).  This currently only applies to cache
-          information on Intel CPUs.  Use 0 if retriving values for
+          information on Intel CPUs.  Use 0 if retrieving values for
           <link to="IMachine::setCPUIDLeaf"/>.
         </desc>
       </param>
@@ -8481,10 +8481,10 @@
     </const>
     <const name="Inaccessible" value="4">
       <desc>
-        Medium accessiblity check (see <link to="IMedium::refreshState" />) has
+        Medium accessibility check (see <link to="IMedium::refreshState" />) has
         not yet been performed, or else, associated medium storage is not
         accessible. In the first case, <link to="IMedium::lastAccessError"/>
-        is empty, in the second case, it describes the error that occured.
+        is empty, in the second case, it describes the error that occurred.
       </desc>
     </const>
     <const name="Creating" value="5">
@@ -8759,7 +8759,7 @@
       All media can be also divided in two groups: <i>base</i> media and
       <i>differencing</i> media. A base medium contains all sectors of the
       medium data in its own storage and therefore can be used independently.
-      In contrast, a differencing mediun is a "delta" to some other medium and
+      In contrast, a differencing medium is a "delta" to some other medium and
       contains only those sectors which differ from that other medium, which is
       then called a <i>parent</i>. The differencing medium is said to be
       <i>linked to</i> that parent. The parent may be itself a differencing
@@ -10867,7 +10867,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="processVHWACommand">
       <desc>
         Posts a Video HW Acceleration Command to the frame buffer for processing.
-        The commands used for 2D video acceleration (DDraw surface creation/destroying, blitting, scaling, color covnersion, overlaying, etc.)
+        The commands used for 2D video acceleration (DDraw surface creation/destroying, blitting, scaling, color conversion, overlaying, etc.)
         are posted from quest to the host to be processed by the host hardware.
 
         <note>
@@ -12150,7 +12150,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <note>
         Due to differences in USB stack implementations in Linux and Win32,
-        states USBDeviceState_Busy and USBDeviceState_vailable are applicable
+        states USBDeviceState_Busy and USBDeviceState_Unavailable are applicable
         only to the Linux version of the product. This also means that (<link
         to="IConsole::attachUSBDevice"/>) can only succeed on Win32 if the
         device state is USBDeviceState_Held.
@@ -12535,7 +12535,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Whether the folder defined by the host path is currently
         accessible or not.
-        For example, the folder can be unaccessible if it is placed
+        For example, the folder can be inaccessible if it is placed
         on the network share that is not available by the time
         this property is read.
       </desc>
@@ -14517,7 +14517,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           VirtualBox 4.0 however, events are now objects with an interface hierarchy.
         </li>
 
-        <li>Passive listeners are somewhat tricker to implement, but do not require
+        <li>Passive listeners are somewhat trickier to implement, but do not require
           a client function to be callable, which is not an option with scripting
           languages or web service clients. Internally the <link to="IEventSource" />
           implementation maintains an event queue for each passive listener, and

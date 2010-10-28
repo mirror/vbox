@@ -55,7 +55,7 @@
 /*
  * TIOCM_LOOP is not defined in the above header files for some reason but in asm/termios.h.
  * But inclusion of this file however leads to compilation errors because of redefinition of some
- * structs. Thatswhy it is defined here until a better solution is found.
+ * structs. That's why it is defined here until a better solution is found.
  */
 #  ifndef TIOCM_LOOP
 #   define TIOCM_LOOP 0x8000
@@ -106,7 +106,7 @@ typedef struct DRVHOSTSERIAL
     PPDMTHREAD                  pSendThread;
     /** Status lines monitor thread. */
     PPDMTHREAD                  pMonitorThread;
-    /** Send event semephore */
+    /** Send event semaphore */
     RTSEMEVENT                  SendSem;
 
     /** the device path */
@@ -117,7 +117,7 @@ typedef struct DRVHOSTSERIAL
     RTFILE                      DeviceFile;
 # ifdef RT_OS_DARWIN
     /** The device handle used for reading.
-     * Used to prevent the read selecto from blocking the writes. */
+     * Used to prevent the read select from blocking the writes. */
     RTFILE                      DeviceFileR;
 # endif
     /** The read end of the control pipe */
@@ -1050,11 +1050,11 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
      * Linux is a bit difficult as the thread is sleeping in an ioctl call.
      * So there is no way to have a wakeup pipe.
      *
-     * 1. Thatswhy we set the serial device into loopback mode and change one of the
+     * 1. That's why we set the serial device into loopback mode and change one of the
      *    modem control bits.
      *    This should make the ioctl call return.
      *
-     * 2. We still got reports about long shutdown times. It may bepossible
+     * 2. We still got reports about long shutdown times. It may be possible
      *    that the loopback mode is not implemented on all devices.
      *    The next possible solution is to close the device file to make the ioctl
      *    return with EBADF and be able to suspend the thread.
@@ -1434,7 +1434,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no char port interface above"), pDrvIns->iInstance);
 
     /*
-     * Create the receive, send and monitor threads pluss the related send semaphore.
+     * Create the receive, send and monitor threads plus the related send semaphore.
      */
     rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pRecvThread, pThis, drvHostSerialRecvThread, drvHostSerialWakeupRecvThread, 0, RTTHREADTYPE_IO, "SerRecv");
     if (RT_FAILURE(rc))

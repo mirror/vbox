@@ -1136,7 +1136,7 @@ private:
     friend class Snapshot;
 };
 
-// third party methods that depend on SnapshotMachine definiton
+// third party methods that depend on SnapshotMachine definition
 
 inline const Guid &Machine::getSnapshotId() const
 {

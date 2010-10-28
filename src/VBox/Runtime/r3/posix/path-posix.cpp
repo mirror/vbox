@@ -86,7 +86,7 @@ RTDECL(int) RTPathReal(const char *pszPath, char *pszRealPath, size_t cchRealPat
 
 /**
  * Cleans up a path specifier a little bit.
- * This includes removing duplicate slashes, uncessary single dots, and
+ * This includes removing duplicate slashes, unnecessary single dots, and
  * trailing slashes. Also, replaces all RTPATH_SLASH characters with '/'.
  *
  * @returns Number of bytes in the clean path.
@@ -700,7 +700,7 @@ static bool rtPathSame(const char *pszNativeSrc, const char *pszNativeDst)
  *
  * @returns IPRT status code.
  * @param   pszSrc      The source path.
- * @param   pszDst      The destintation path.
+ * @param   pszDst      The destination path.
  * @param   fRename     The rename flags.
  * @param   fFileType   The filetype. We use the RTFMODE filetypes here. If it's 0,
  *                      anything goes. If it's RTFS_TYPE_DIRECTORY we'll check that the
@@ -725,7 +725,7 @@ DECLHIDDEN(int) rtPathPosixRename(const char *pszSrc, const char *pszDst, unsign
              * We have to check this first to avoid getting errnous VERR_ALREADY_EXISTS
              * errors from the next step.
              *
-             * There are race conditions here (perhaps unlikly ones but still), but I'm
+             * There are race conditions here (perhaps unlikely ones but still), but I'm
              * afraid there is little with can do to fix that.
              */
             struct stat SrcStat;

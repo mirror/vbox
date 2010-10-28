@@ -150,7 +150,7 @@ typedef struct RTZIPCOMP
         /** Simple storing. */
         struct
         {
-            /** Current buffer postition. (where to start write) */
+            /** Current buffer position. (where to start write) */
             uint8_t    *pb;
         } Store;
 #endif
@@ -166,7 +166,7 @@ typedef struct RTZIPCOMP
         /** LZF stream. */
         struct
         {
-            /** Current output buffer postition. */
+            /** Current output buffer position. */
             uint8_t    *pbOutput;
             /** The input buffer position. */
             uint8_t    *pbInput;
@@ -213,7 +213,7 @@ typedef struct RTZIPDECOMP
         /** Simple storing. */
         struct
         {
-            /** Current buffer postition. (where to start read) */
+            /** Current buffer position. (where to start read) */
             uint8_t    *pb;
             /** Number of bytes left in the buffer. */
             size_t      cbBuffer;
@@ -232,7 +232,7 @@ typedef struct RTZIPDECOMP
         struct
         {
 # ifndef RTZIP_LZF_BLOCK_BY_BLOCK
-            /** Current input buffer postition. */
+            /** Current input buffer position. */
             uint8_t    *pbInput;
             /** The number of bytes left in the input buffer. */
             size_t      cbInput;
@@ -423,7 +423,7 @@ static DECLCALLBACK(int) rtZipStoreDecompInit(PRTZIPDECOMP pZip)
  */
 static int zipErrConvertFromZlib(int rc)
 {
-    /** @todo proper zlib error convertion. */
+    /** @todo proper zlib error conversion. */
     switch (rc)
     {
         case Z_ERRNO:
@@ -643,7 +643,7 @@ static DECLCALLBACK(int) rtZipZlibDecompInit(PRTZIPDECOMP pZip)
  */
 static int zipErrConvertFromBZlib(int rc)
 {
-    /** @todo proper bzlib error convertion. */
+    /** @todo proper bzlib error conversion. */
     switch (rc)
     {
         case BZ_SEQUENCE_ERROR:
@@ -939,7 +939,7 @@ static int rtZipLZFCompressBuffer(PRTZIPCOMP pZip, const uint8_t *pbBuf, size_t 
         }
 
         /*
-         * Upate the header and advance the input buffer.
+         * Update the header and advance the input buffer.
          */
         pHdr->cbData = cbOutput;
         //pHdr->u32CRC = RTCrc32(pbBuf, cbInput); - too slow
@@ -1296,7 +1296,7 @@ static DECLCALLBACK(int) rtZipLZFDecompDestroy(PRTZIPDECOMP pZip)
 
 
 /**
- * Initalize the decompressor instance.
+ * Initialize the decompressor instance.
  * @returns iprt status code.
  * @param   pZip        The decompressor instance.
  */
@@ -1346,7 +1346,7 @@ RTDECL(int)     RTZipCompCreate(PRTZIPCOMP *ppZip, void *pvUser, PFNRTZIPOUT pfn
         return VERR_NO_MEMORY;
 
     /*
-     * Determin auto type.
+     * Determine auto type.
      */
     if (enmType == RTZIPTYPE_AUTO)
     {
@@ -1539,7 +1539,7 @@ RT_EXPORT_SYMBOL(RTZipDecompCreate);
 static int rtzipDecompInit(PRTZIPDECOMP pZip)
 {
     /*
-     * Read the first byte from the stream so we can determin the type.
+     * Read the first byte from the stream so we can determine the type.
      */
     uint8_t u8Type;
     int rc = pZip->pfnIn(pZip->pvUser, &u8Type, sizeof(u8Type), NULL);
@@ -1547,7 +1547,7 @@ static int rtzipDecompInit(PRTZIPDECOMP pZip)
         return rc;
 
     /*
-     * Determin type and do type specific init.
+     * Determine type and do type specific init.
      */
     pZip->enmType = (RTZIPTYPE)u8Type;
     rc = VERR_NOT_SUPPORTED;

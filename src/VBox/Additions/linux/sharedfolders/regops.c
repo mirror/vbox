@@ -121,7 +121,7 @@ static ssize_t sf_reg_read(struct file *file, char *buf, size_t size, loff_t *of
         return -EINVAL;
     }
 
-    /** XXX Check read permission accoring to inode->i_mode! */
+    /** XXX Check read permission according to inode->i_mode! */
 
     if (!size)
         return 0;
@@ -208,7 +208,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size, lof
         *off = pos;
     }
 
-    /** XXX Check write permission accoring to inode->i_mode! */
+    /** XXX Check write permission according to inode->i_mode! */
 
     if (!size)
         return 0;

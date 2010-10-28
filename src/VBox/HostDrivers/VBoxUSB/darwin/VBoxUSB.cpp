@@ -3,7 +3,7 @@
  * VirtualBox USB driver for Darwin.
  *
  * This driver is responsible for hijacking USB devices when any of the
- * VBoxSVC daemons requests it. It is also responsible for arbriating
+ * VBoxSVC daemons requests it. It is also responsible for arbitrating
  * access to hijacked USB devices.
  */
 
@@ -286,7 +286,7 @@ static RTSEMFASTMUTEX g_Mtx = NIL_RTSEMFASTMUTEX;
 org_virtualbox_VBoxUSBClient * volatile org_virtualbox_VBoxUSBClient::s_pHead = NULL;
 org_virtualbox_VBoxUSBDevice * volatile org_virtualbox_VBoxUSBDevice::s_pHead = NULL;
 
-/** Global instance count - just for checking prooving that everything is destroyed correctly. */
+/** Global instance count - just for checking proving that everything is destroyed correctly. */
 static volatile uint32_t g_cInstances = 0;
 
 
@@ -992,7 +992,7 @@ org_virtualbox_VBoxUSBDevice::free()
  * a ridiculously high score if we find it, thus making it extremely likely
  * that we'll be the first driver to be started. We'll also set a couple of
  * attributes so that it's not necessary to do a rematch in init to find
- * the appropriate filter (might not be necssary..., see todo).
+ * the appropriate filter (might not be necessary..., see todo).
  *
  * @returns Service instance to be started and *pi32Score if matching.
  *          NULL if not a device suitable for this driver.
@@ -1283,7 +1283,7 @@ org_virtualbox_VBoxUSBDevice::terminate(IOOptionBits fOptions)
      *
      * But, when we're unloaded the provider service isn't terminated, and
      * for some funny reason we're frequently causing kernel panics when the
-     * device is deteached (after we're unloaded). So, for now, let's try
+     * device is detached (after we're unloaded). So, for now, let's try
      * re-enumerate it in stop.
      *
      * To avoid creating unnecessary trouble we'll try guess if we're being
@@ -1320,7 +1320,7 @@ org_virtualbox_VBoxUSBDevice::message(UInt32 enmMsg, IOService *pProvider, void 
         /*
          * This message is send to the current IOService client from IOService::handleOpen(),
          * expecting it to call pProvider->close() if it agrees to the other party seizing
-         * the service. It is also called in IOSerivce::didTerminate() and perhaps some other
+         * the service. It is also called in IOService::didTerminate() and perhaps some other
          * odd places. The way to find out is to examin the pvArg, which would be including
          * kIOServiceSeize if it's the handleOpen case.
          *
@@ -1711,7 +1711,7 @@ org_virtualbox_VBoxUSBInterface::stop(IOService *pProvider)
     Log(("org_virtualbox_VBoxUSBInterface::stop([%p], %p {%s})\n", this, pProvider, pProvider->getName()));
 
     /*
-     * Close and relase the IOUSBInterface if didn't do that already in message().
+     * Close and release the IOUSBInterface if didn't do that already in message().
      */
     if (m_pInterface)
     {

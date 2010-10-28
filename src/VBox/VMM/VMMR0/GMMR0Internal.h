@@ -29,7 +29,7 @@ typedef struct GMMVMSIZES
     /** The number of pages of base memory.
      * This is the sum of RAM, ROMs and handy pages. */
     uint64_t        cBasePages;
-    /** The number of pages for the shadow pool. (Can be sequeezed for memory.) */
+    /** The number of pages for the shadow pool. (Can be squeezed for memory.) */
     uint32_t        cShadowPages;
     /** The number of pages for fixed allocations like MMIO2 and the hyper heap. */
     uint32_t        cFixedPages;
@@ -78,10 +78,10 @@ typedef struct GMMPERVM
     uint64_t            cPrivatePages;
     /** The current number of shared pages. */
     uint64_t            cSharedPages;
-    /** The current over-comitment policy. */
+    /** The current over-commitment policy. */
     GMMOCPOLICY         enmPolicy;
     /** The VM priority for arbitrating VMs in low and out of memory situation.
-     * Like which VMs to start sequeezing first. */
+     * Like which VMs to start squeezing first. */
     GMMPRIORITY         enmPriority;
 
     /** The current number of ballooned pages. */

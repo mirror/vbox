@@ -268,7 +268,7 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvData)
 
 
 /**
- * Terminates any running TCP base debugger consolse service.
+ * Terminates any running TCP base debugger console service.
  *
  * @returns VBox status.
  * @param   pVM         VM handle.

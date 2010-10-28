@@ -345,7 +345,7 @@ VBoxVgaControllerDriverStart (
 
   PciAttributesSaved = FALSE;
   //
-  // Allocate Private context data for UGA Draw inteface.
+  // Allocate Private context data for UGA Draw interface.
   //
   Private = AllocateZeroPool (sizeof (VBOX_VGA_PRIVATE_DATA));
   if (Private == NULL) {

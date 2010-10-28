@@ -105,7 +105,7 @@ RTDECL(int) RTSha1ToString(uint8_t const pabDigest[RTSHA1_HASH_SIZE], char *pszD
  *
  * @returns IPRT status code.
  *
- * @param   pszDigest   The strigified digest. Leading and trailing spaces are
+ * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
  * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
@@ -208,7 +208,7 @@ RTDECL(int) RTSha256ToString(uint8_t const pabDigest[RTSHA256_HASH_SIZE], char *
  *
  * @returns IPRT status code.
  *
- * @param   pszDigest   The strigified digest. Leading and trailing spaces are
+ * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
  * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)
@@ -287,7 +287,7 @@ RTDECL(int) RTSha512ToString(uint8_t const pabDigest[RTSHA512_HASH_SIZE], char *
  *
  * @returns IPRT status code.
  *
- * @param   pszDigest   The strigified digest. Leading and trailing spaces are
+ * @param   pszDigest   The stringified digest. Leading and trailing spaces are
  *                      ignored.
  * @param   pabDigest   Where to store the hash. (What is passed is a pointer to
  *                      the caller's buffer.)

@@ -1301,7 +1301,7 @@ static DECLCALLBACK(int) vusbDevResetThread(RTTHREAD Thread, void *pvUser)
     int rc = pArgs->rc = vusbDevResetWorker(pArgs->pDev, pArgs->fResetOnLinux);
 
     /*
-     * We use a timer to commuicate the result back to EMT.
+     * We use a timer to communicate the result back to EMT.
      * This avoids suspend + poweroff issues, and it should give
      * us more accurate scheduling than making this thread sleep.
      */

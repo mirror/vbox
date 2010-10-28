@@ -20,7 +20,7 @@
 
 
 /*
- * Determine which view and projection matrices to use when in stere mode.
+ * Determine which view and projection matrices to use when in stereo mode.
  * Return 0 = left eye, 1 = right eye.
  */
 int crServerGetCurrentEye(void)
@@ -141,7 +141,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadIdentity( void )
  *
  * If you're not using Cg, you may have to tell Chromium which program
  * parameters contain the projection matrix.
- * In this case, look at the OpenGL appliation's vertex program code to
+ * In this case, look at the OpenGL application's vertex program code to
  * determine which program parameters contain the projection matrix.
  * Then set the crserver's 'vertprog_projection_param' config option to
  * the number of the parameter which holds the first row of the matrix.

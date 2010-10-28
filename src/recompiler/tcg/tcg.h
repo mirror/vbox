@@ -113,7 +113,7 @@ typedef int TCGType;
 
 typedef tcg_target_ulong TCGArg;
 
-/* Define a type and accessor macros for varables.  Using a struct is
+/* Define a type and accessor macros for variables.  Using a struct is
    nice because it gives some level of type safely.  Ideally the compiler
    be able to see through all this.  However in practice this is not true,
    expecially on targets with braindamaged ABIs (e.g. i386).
@@ -197,9 +197,9 @@ typedef struct TCGTemp {
     unsigned int fixed_reg:1;
     unsigned int mem_coherent:1;
     unsigned int mem_allocated:1;
-    unsigned int temp_local:1; /* If true, the temp is saved accross
+    unsigned int temp_local:1; /* If true, the temp is saved across
                                   basic blocks. Otherwise, it is not
-                                  preserved accross basic blocks. */
+                                  preserved across basic blocks. */
     unsigned int temp_allocated:1; /* never used for code gen */
     /* index of next free temp of same base type, -1 if end */
     int next_free_temp;

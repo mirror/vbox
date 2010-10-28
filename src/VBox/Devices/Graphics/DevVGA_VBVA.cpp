@@ -219,7 +219,7 @@ static bool vbvaFetchCmd (VBVAPARTIALRECORD *pPartialRecord, VBVABUFFER *pVBVA, 
     {
         /* Current record is being written by guest. '=' is important here,
          * because the guest will do a FLUSH at this condition.
-         * This partual record is too large for the ring buffer and must
+         * This partial record is too large for the ring buffer and must
          * be accumulated in an allocated buffer.
          */
         if (cbRecord >= pVBVA->cbData - pVBVA->cbPartialWriteThreshold)
@@ -240,7 +240,7 @@ static bool vbvaFetchCmd (VBVAPARTIALRECORD *pPartialRecord, VBVABUFFER *pVBVA, 
     /* Current record is complete. If it is not empty, process it. */
     if (cbRecord)
     {
-        /* The size of largest contiguos chunk in the ring biffer. */
+        /* The size of largest contiguous chunk in the ring biffer. */
         uint32_t u32BytesTillBoundary = pVBVA->cbData - pVBVA->off32Data;
 
         /* The pointer to data in the ring buffer. */
@@ -1401,7 +1401,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             }
             else if (pConf32->u32Index == VBOX_VBVA_CONF32_HOST_HEAP_SIZE)
             {
-                /* @todo a value caclucated from the vram size */
+                /* @todo a value calculated from the vram size */
                 pConf32->u32Value = 64*_1K;
             }
             else

@@ -130,9 +130,9 @@ static int rtPathCompare(const char *pszPath1, const char *pszPath2, bool fLimit
  * @param   pszPath2    Path to compare (must be an absolute path).
  *
  * @remarks File system details are currently ignored. This means that you won't
- *          get case-insentive compares on unix systems when a path goes into a
+ *          get case-insensitive compares on unix systems when a path goes into a
  *          case-insensitive filesystem like FAT, HPFS, HFS, NTFS, JFS, or
- *          similar. For NT, OS/2 and similar you'll won't get case-sensitve
+ *          similar. For NT, OS/2 and similar you'll won't get case-sensitive
  *          compares on a case-sensitive file system.
  */
 RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2)
@@ -159,7 +159,7 @@ RTDECL(int) RTPathCompare(const char *pszPath1, const char *pszPath2)
  *                          No trailing directory slash!
  *
  * @remarks This API doesn't currently handle root directory compares in a
- *          manner consistant with the other APIs. RTPathStartsWith(pszSomePath,
+ *          manner consistent with the other APIs. RTPathStartsWith(pszSomePath,
  *          "/") will not work if pszSomePath isn't "/".
  */
 RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath)

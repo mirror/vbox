@@ -511,13 +511,13 @@ typedef struct DARWINUSBNOTIFY
     io_iterator_t AttachIterator;
     /** The 2nd attach notification iterator. */
     io_iterator_t AttachIterator2;
-    /** The detach notificaiton iterator. */
+    /** The detach notification iterator. */
     io_iterator_t DetachIterator;
 } DARWINUSBNOTIFY, *PDARWINUSBNOTIFY;
 
 
 /**
- * Run thru an interrator.
+ * Run thru an iterator.
  *
  * The docs says this is necessary to start getting notifications,
  * so this function is called in the callbacks and right after
@@ -613,7 +613,7 @@ void *DarwinSubscribeUSBNotifications(void)
             CFRunLoopAddSource(RunLoopRef, pNotify->NotifyRLSrc, CFSTR(VBOX_IOKIT_MODE_STRING));
 
             /*
-             * Create the notifcation callbacks.
+             * Create the notification callbacks.
              */
             kern_return_t rc = IOServiceAddMatchingNotification(pNotify->NotifyPort,
                                                                 kIOPublishNotification,
@@ -686,7 +686,7 @@ void DarwinUnsubscribeUSBNotifications(void *pvOpaque)
 
 
 /**
- * Decends recursivly into a IORegistry tree locating the first object of a given class.
+ * Descends recursively into a IORegistry tree locating the first object of a given class.
  *
  * The search is performed depth first.
  *
@@ -724,7 +724,7 @@ static io_object_t darwinFindObjectByClass(io_object_t Object, const char *pszCl
 
 
 /**
- * Decends recursivly into IOUSBMassStorageClass tree to check whether
+ * Descends recursively into IOUSBMassStorageClass tree to check whether
  * the MSD is mounted or not.
  *
  * The current heuristic is to look for the IOMedia class.
@@ -1005,7 +1005,7 @@ PUSBDEVICE DarwinGetUSBDevices(void)
                 }
 #endif
                 /*
-                 * Try determin the state.
+                 * Try determine the state.
                  */
                 darwinDeterminUSBDeviceState(pCur, USBDevice, PropsRef);
 
@@ -1304,7 +1304,7 @@ PDARWINDVD DarwinGetDVDDrives(void)
          * Get the properties we use to identify the DVD drive.
          *
          * While there is a (weird 12 byte) GUID, it isn't persistent
-         * accross boots. So, we have to use a combination of the
+         * across boots. So, we have to use a combination of the
          * vendor name and product name properties with an optional
          * sequence number for identification.
          */
@@ -1404,7 +1404,7 @@ PDARWINETHERNIC DarwinGetEthernetControllers(void)
      * services in the IOKit.
      *
      * For some really stupid reason I don't get all the controllers if I look for
-     * objects that are instances of IOEthernetController or its decendants (only
+     * objects that are instances of IOEthernetController or its descendants (only
      * get the  AirPort on my mac pro). But fortunately using IOEthernetInterface
      * seems to work. Weird s**t!
      */

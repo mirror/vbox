@@ -161,7 +161,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define ICH6_HDA_CORBSIZE_SZ 0x3
 #define CORBSIZE_SZ(pState) (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ)
 #define CORBSIZE_SZ_CAP(pState) (HDA_REG(pState, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ_CAP)
-/* till ich 10 sizes of CORB and RIRB are harcoded to 256 in real hw */
+/* till ich 10 sizes of CORB and RIRB are hardcoded to 256 in real hw */
 
 #define ICH6_HDA_REG_RIRLBASE  20 /* 0x50 */
 #define RIRLBASE(pState) (HDA_REG((pState), RIRLBASE))
@@ -379,7 +379,7 @@ typedef struct INTELHDLinkState
     HDABDLEDESC  stInBdle;
     HDABDLEDESC  stOutBdle;
     HDABDLEDESC  stMicBdle;
-    /* Interrupt on completition */
+    /* Interrupt on completion */
     bool        fCviIoc;
     uint64_t    u64CORBBase;
     uint64_t    u64RIRBBase;
@@ -1587,7 +1587,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     else
         pThis->hda.pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->hda.cbRirbBuf);
 
-    /* Accoding to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20
+    /* According to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33 */
     SDCTL(&pThis->hda, 0) = 0x40000;
     SDCTL(&pThis->hda, 1) = 0x40000;

@@ -85,7 +85,7 @@
 #define UART_IIR_RLSI       0x06        /* Receiver line status interrupt */
 #define UART_IIR_CTI        0x0C        /* Character Timeout Indication */
 
-#define UART_IIR_FENF       0x80        /* Fifo enabled, but not functionning */
+#define UART_IIR_FENF       0x80        /* Fifo enabled, but not functioning */
 #define UART_IIR_FE         0xC0        /* Fifo enabled */
 
 /*
@@ -195,7 +195,7 @@ struct SerialState
     uint8_t                         thr; /**< transmit holding register */
     uint8_t                         tsr; /**< transmit shift register */
     uint8_t                         ier; /**< interrupt enable register */
-    uint8_t                         iir; /**< interrupt itentification register, R/O */
+    uint8_t                         iir; /**< interrupt identification register, R/O */
     uint8_t                         lcr; /**< line control register */
     uint8_t                         mcr; /**< modem control register */
     uint8_t                         lsr; /**< line status register, R/O */

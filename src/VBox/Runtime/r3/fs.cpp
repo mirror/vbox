@@ -54,7 +54,7 @@
  * Converts dos-style attributes to Unix attributes.
  *
  * @returns
- * @param   fMode       The mode mask containing dos-style attibutes only.
+ * @param   fMode       The mode mask containing dos-style attributes only.
  * @param   pszName     The filename which this applies to (exe check).
  * @param   cbName      The length of that filename. (optional, set 0)
  */
@@ -106,7 +106,7 @@ RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName)
  * Converts Unix attributes to Dos-style attributes.
  *
  * @returns File mode mask.
- * @param   fMode       The mode mask containing dos-style attibutes only.
+ * @param   fMode       The mode mask containing dos-style attributes only.
  * @param   pszName     The filename which this applies to (hidden check).
  * @param   cbName      The length of that filename. (optional, set 0)
  */

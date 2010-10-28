@@ -439,7 +439,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 
 /** @def LOG_DISABLED
  * Use this compile time define to disable all logging macros. It can
- * be overriden for each of the logging macros by the LOG_ENABLE*
+ * be overridden for each of the logging macros by the LOG_ENABLE*
  * compile time defines.
  */
 
@@ -456,7 +456,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 
 /*
- * Determin whether logging is enabled and forcefully normalize the indicators.
+ * Determine whether logging is enabled and forcefully normalize the indicators.
  */
 #if (defined(DEBUG) || defined(LOG_ENABLED)) && !defined(LOG_DISABLED)
 # undef  LOG_DISABLED
@@ -874,7 +874,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 
 /*
- * Determin whether release logging is enabled and forcefully normalize the indicators.
+ * Determine whether release logging is enabled and forcefully normalize the indicators.
  */
 #if !defined(RTLOG_REL_DISABLED) || defined(RTLOG_REL_ENABLED)
 # undef  RTLOG_REL_DISABLED
@@ -1137,7 +1137,7 @@ DECLINLINE(bool) LogRelIsItEnabledInternal(void *pvInst, unsigned iGroup, unsign
  * @param   pLogger     Pointer to logger instance.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
- *                      The value ~0U is reserved for compatability with RTLogLogger[V] and is
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
  *                      only for internal usage!
  * @param   pszFormat   Format string.
  * @param   ...         Format arguments.
@@ -1154,7 +1154,7 @@ RTDECL(void) RTLogRelLogger(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup,
  * @param   pLogger     Pointer to logger instance. If NULL the default release instance is attempted.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
- *                      The value ~0U is reserved for compatability with RTLogLogger[V] and is
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
  *                      only for internal usage!
  * @param   pszFormat   Format string.
  * @param   args        Format arguments.
@@ -1205,7 +1205,7 @@ RTDECL(bool) RTLogRelSetBuffering(bool fBuffered);
 #endif
 
 /** @def LOG_TO_COM
- * Redirects the normal loging macros to the serial versions.
+ * Redirects the normal logging macros to the serial versions.
  */
 
 /** @def LOG_NO_COM
@@ -1577,7 +1577,7 @@ RTDECL(bool) RTLogSetBuffering(PRTLOGGER pLogger, bool fBuffered);
 RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
 
 /**
- * Updates the logger desination using the specified string.
+ * Updates the logger destination using the specified string.
  *
  * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
  * @param   pLogger             Logger instance (NULL for default logger).
@@ -1634,7 +1634,7 @@ RTDECL(void) RTLogLoggerV(PRTLOGGER pLogger, const char *pszFormat, va_list args
  * @param   pLogger     Pointer to logger instance. If NULL the default logger instance will be attempted.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
- *                      The value ~0U is reserved for compatability with RTLogLogger[V] and is
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
  *                      only for internal usage!
  * @param   pszFormat   Format string.
  * @param   ...         Format arguments.
@@ -1651,7 +1651,7 @@ RTDECL(void) RTLogLoggerEx(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, 
  * @param   pLogger     Pointer to logger instance. If NULL the default logger instance will be attempted.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
- *                      The value ~0U is reserved for compatability with RTLogLogger[V] and is
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
  *                      only for internal usage!
  * @param   pszFormat   Format string.
  * @param   args        Format arguments.
@@ -1742,7 +1742,7 @@ RTDECL(size_t)  RTLogComPrintfV(const char *pszFormat, va_list args);
 
 /**
  * Log Hook Buffer.
- * Use to commuicate between the logger and a log consumer.
+ * Use to communicate between the logger and a log consumer.
  */
 typedef struct RTLOGHOOKBUFFER
 {
@@ -1785,7 +1785,7 @@ typedef RTLOGHOOKBUFFER *PRTLOGHOOKBUFFER;
 RTDECL(int)     RTLogRegisterHook(PRTLOGGER pLogger, PRTLOGHOOKBUFFER pBuffer);
 
 /**
- * Deregister a logging hook registerd with RTLogRegisterHook().
+ * Deregister a logging hook registered with RTLogRegisterHook().
  *
  * @returns iprt status code.
  * @param   pBuffer     Pointer to a logger hook buffer.

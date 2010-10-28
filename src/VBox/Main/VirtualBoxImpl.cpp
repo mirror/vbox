@@ -1689,7 +1689,7 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
     // than the deadlock we had here before. The actual changing of the extradata
     // is then performed under the write lock and race-free.
 
-    // look up the old value first; if nothing's changed then we need not do anything
+    // look up the old value first; if nothing has changed then we need not do anything
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); // hold read lock only while looking up
         settings::StringsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(strKey);
@@ -3020,7 +3020,7 @@ HRESULT VirtualBox::checkMediaForConflicts(const Guid &aId,
  * diff images for snapshots) in the global registry that will need
  * to have their paths updated. Before 3.2, Machine::saveSettings
  * used to call VirtualBox::saveSettings implicitly, which was both
- * unintuitive and caused locking order problems. Now, we remeber
+ * unintuitive and caused locking order problems. Now, we remember
  * such pending name changes with this method so that
  * VirtualBox::saveSettings() can process them properly.
  */

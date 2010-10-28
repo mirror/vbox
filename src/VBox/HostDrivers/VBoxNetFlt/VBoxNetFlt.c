@@ -382,7 +382,7 @@ static bool vboxNetFltMaybeRediscovered(PVBOXNETFLTINS pThis)
     /*
      * Don't do rediscovery if we're called with preemption disabled.
      *
-     * Note! This may cause trouble if we're always called with preemptioni
+     * Note! This may cause trouble if we're always called with preemption
      *       disabled and vboxNetFltOsMaybeRediscovered actually does some real
      *       work.  For the time being though, only Darwin and FreeBSD depends
      *       on these call outs and neither supports sending with preemption
@@ -1143,9 +1143,9 @@ DECLHIDDEN(int) vboxNetFltSearchCreateInstance(PVBOXNETFLTGLOBALS pGlobals, cons
                            upsetting the OS specific code...  */
                         /** @todo This reconnect stuff should be serialized correctly for static
                          *        devices. Shouldn't it? In the dynamic case we're using the INTNET
-                         *        outbound thrunk lock, but that doesn't quite cut it here, or does
+                         *        outbound thunk lock, but that doesn't quite cut it here, or does
                          *        it? We could either transition to initializing  or make a callback
-                         *        while owning the mutext here... */
+                         *        while owning the mutex here... */
                         if (enmState == kVBoxNetFltInsState_Disconnecting)
                         {
                             do
@@ -1323,7 +1323,7 @@ static DECLCALLBACK(void) vboxNetFltFactoryRelease(PINTNETTRUNKFACTORY pIfFactor
  *
  * @returns Pointer to an interface. NULL if not supported.
  *
- * @param   pSupDrvFactory      Pointer to the componet factory registration structure.
+ * @param   pSupDrvFactory      Pointer to the component factory registration structure.
  * @param   pSession            The session - unused.
  * @param   pszInterfaceUuid    The factory interface id.
  */

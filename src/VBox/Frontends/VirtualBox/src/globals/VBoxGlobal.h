@@ -535,7 +535,7 @@ public:
 
     /**
      * Returns a list of all currently registered media. This list is used to
-     * globally track the accessiblity state of all media on a dedicated thread.
+     * globally track the accessibility state of all media on a dedicated thread.
      *
      * Note that the media list is initially empty (i.e. before the enumeration
      * process is started for the first time using #startEnumeratingMedia()).
@@ -823,8 +823,8 @@ inline VBoxGlobal &vboxGlobal() { return VBoxGlobal::instance(); }
 // Helper classes
 ////////////////////////////////////////////////////////////////////////////////
 
-/* Generic asyncronous event.
- * This abstract class is intended to provide a conveinent way
+/* Generic asynchronous event.
+ * This abstract class is intended to provide a convenient way
  * to execute code on the main GUI thread asynchronously to the calling party.
  * This is done by putting necessary actions to the handle() function
  * in a subclass and then posting an instance of the subclass using post().
@@ -852,7 +852,7 @@ private:
     uint m_uDelay;
 };
 
-/* Asyncronous event poster.
+/* Asynchronous event poster.
  * This class is used to post async event into VBoxGlobal event handler
  * taking into account delay set during async event creation procedure. */
 class UIAsyncEventPoster : public QObject

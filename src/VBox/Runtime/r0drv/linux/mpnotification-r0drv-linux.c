@@ -113,7 +113,7 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
             break;
 
         /*
-         * Pick the earlies possible offline event.
+         * Pick the earliest possible offline event.
          * The only important thing here is that we get the event and that
          * it's exactly one.
          */

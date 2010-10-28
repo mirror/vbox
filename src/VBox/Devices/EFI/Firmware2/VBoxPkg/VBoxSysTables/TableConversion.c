@@ -68,7 +68,7 @@ ConvertAcpiTable (
   Table     - pointer to the table
 
   Returns:
-  EFI_SUCEESS - Convert Table successfully
+  EFI_SUCCESS - Convert Table successfully
   Other       - Failed
 
   --*/
@@ -108,7 +108,7 @@ ConvertSmbiosTable (
 
   Routine Description:
 
-  Convert Smbios Table if the Location of the SMBios Table is lower than Addres 0x100000
+  Convert Smbios Table if the Location of the SMBios Table is lower than Address 0x100000
   Assumption here:
   As in legacy Bios, Smbios table is required to place in E/F Seg,
   So here we just check if the range is F seg,
@@ -117,7 +117,7 @@ ConvertSmbiosTable (
   Table     - pointer to the table
 
   Returns:
-  EFI_SUCEESS - Convert Table successfully
+  EFI_SUCCESS - Convert Table successfully
   Other       - Failed
 
   --*/
@@ -194,7 +194,7 @@ ConvertMpsTable (
 
   Routine Description:
 
-  Convert MP Table if the Location of the SMBios Table is lower than Addres 0x100000
+  Convert MP Table if the Location of the SMBios Table is lower than Address 0x100000
   Assumption here:
   As in legacy Bios, MP table is required to place in E/F Seg,
   So here we just check if the range is E/F seg,
@@ -203,7 +203,7 @@ ConvertMpsTable (
   Table     - pointer to the table
 
   Returns:
-  EFI_SUCEESS - Convert Table successfully
+  EFI_SUCCESS - Convert Table successfully
   Other       - Failed
 
   --*/
@@ -305,7 +305,7 @@ ConvertSystemTable (
   Table     - pointer to the table
 
   Returns:
-  EFI_SUCEESS - Convert Table successfully
+  EFI_SUCCESS - Convert Table successfully
   Other       - Failed
 
   --*/

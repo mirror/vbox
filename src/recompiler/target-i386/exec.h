@@ -364,7 +364,7 @@ static inline void fpop(void)
 DECLINLINE(void) fpop(void)
 #endif
 {
-    env->fptags[env->fpstt] = 1; /* invvalidate stack entry */
+    env->fptags[env->fpstt] = 1; /* invalidate stack entry */
     env->fpstt = (env->fpstt + 1) & 7;
 }
 

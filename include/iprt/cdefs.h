@@ -2016,7 +2016,7 @@
 /** @def RT_LOCK_STRICT
  * The \#define RT_LOCK_STRICT controls whether deadlock detection and related
  * checks are done in the lock and semaphore code.  It is by default enabled in
- * RT_STRICT builds, but this behavior can be overriden by defining
+ * RT_STRICT builds, but this behavior can be overridden by defining
  * RT_LOCK_NO_STRICT. */
 #if !defined(RT_LOCK_STRICT) && !defined(RT_LOCK_NO_STRICT) && defined(RT_STRICT)
 # define RT_LOCK_STRICT
@@ -2030,7 +2030,7 @@
 /** @def RT_LOCK_STRICT_ORDER
  * The \#define RT_LOCK_STRICT_ORDER controls whether locking order is checked
  * by the lock and semaphore code.  It is by default enabled in RT_STRICT
- * builds, but this behavior can be overriden by defining
+ * builds, but this behavior can be overridden by defining
  * RT_LOCK_NO_STRICT_ORDER. */
 #if !defined(RT_LOCK_STRICT_ORDER) && !defined(RT_LOCK_NO_STRICT_ORDER) && defined(RT_STRICT)
 # define RT_LOCK_STRICT_ORDER

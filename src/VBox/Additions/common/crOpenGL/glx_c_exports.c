@@ -64,7 +64,7 @@ DECLEXPORT(void) VBOXGLXENTRYTAG(glXFreeContextEXT)(Display *dpy, GLXContext ctx
     return glxim.FreeContextEXT(dpy, ctx);
 }
 
-/*Mesa insternal*/
+/*Mesa internal*/
 DECLEXPORT(int) VBOXGLXENTRYTAG(glXQueryContextInfoEXT)(Display *dpy, GLXContext ctx)
 {
     return glxim.QueryContextInfoEXT(dpy, ctx);

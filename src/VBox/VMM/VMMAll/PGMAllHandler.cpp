@@ -73,7 +73,7 @@ static void pgmHandlerPhysicalResetRamFlags(PVM pVM, PPGMPHYSHANDLER pCur);
  * @param   pfnHandlerRC    The RC handler.
  * @param   pvUserRC        User argument to the RC handler. This can be a value
  *                          less that 0x10000 or a (non-null) pointer that is
- *                          automatically relocatated.
+ *                          automatically relocated.
  * @param   pszDesc         Pointer to description string. This must not be freed.
  */
 VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast,
@@ -1008,7 +1008,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
  * replacement page must be an MMIO2 page.
  *
  * The caller must do required page table modifications. You can get away
- * without making any modifations since it's an MMIO page, the cost is an extra
+ * without making any modifications since it's an MMIO page, the cost is an extra
  * \#PF which will the resync the page.
  *
  * Call PGMHandlerPhysicalReset() to restore the MMIO page.
@@ -1134,7 +1134,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
  * replacement page must be an MMIO2 page.
  *
  * The caller must do required page table modifications. You can get away
- * without making any modifations since it's an MMIO page, the cost is an extra
+ * without making any modifications since it's an MMIO page, the cost is an extra
  * \#PF which will the resync the page.
  *
  * Call PGMHandlerPhysicalReset() to restore the MMIO page.
@@ -1366,7 +1366,7 @@ static void pgmHandlerVirtualInsertAliased(PVM pVM, PPGMPHYS2VIRTHANDLER pPhys2V
     /*
      * First find the node which is conflicting with us.
      */
-    /** @todo Deal with partial overlapping. (Unlikly situation, so I'm too lazy to do anything about it now.) */
+    /** @todo Deal with partial overlapping. (Unlikely situation, so I'm too lazy to do anything about it now.) */
     /** @todo check if the current head node covers the ground we do. This is highly unlikely
      * and I'm too lazy to implement this now as it will require sorting the list and stuff like that. */
     PPGMPHYS2VIRTHANDLER pHead = (PPGMPHYS2VIRTHANDLER)RTAvlroGCPhysGet(&pVM->pgm.s.CTX_SUFF(pTrees)->PhysToVirtHandlers, pPhys2Virt->Core.Key);

@@ -26,8 +26,8 @@
  * @section         sec_pgm_modes           Paging Modes
  *
  * There are three memory contexts: Host Context (HC), Guest Context (GC)
- * and intermediate context. When talking about paging HC can also be refered to
- * as "host paging", and GC refered to as "shadow paging".
+ * and intermediate context. When talking about paging HC can also be referred to
+ * as "host paging", and GC referred to as "shadow paging".
  *
  * We define three basic paging modes: 32-bit, PAE and AMD64. The host paging mode
  * is defined by the host operating system. The mode used in the shadow paging mode
@@ -130,7 +130,7 @@
  * rest of this section is going to be about these handlers.
  *
  * We'll go thru the life cycle of a handler and try make sense of it all, don't know
- * how successfull this is gonna be...
+ * how successful this is gonna be...
  *
  * 1. A handler is registered thru the PGMR3HandlerVirtualRegister and
  * PGMHandlerVirtualRegisterEx APIs. We check for conflicting virtual handlers
@@ -210,7 +210,7 @@
  * @subsection subsec_pgmPhys_Definitions       Definitions
  *
  * Allocation chunk - A RTR0MemObjAllocPhysNC object and the tracking
- * machinery assoicated with it.
+ * machinery associated with it.
  *
  *
  *
@@ -329,7 +329,7 @@
  * (global and guest page) easy to use and keeping them from eating too much
  * memory. We have limited virtual memory resources available when operating in
  * 32-bit kernel space (on 64-bit there'll it's quite a different story). The
- * tracking structures will be attemted designed such that we can deal with up
+ * tracking structures will be attempted designed such that we can deal with up
  * to 32GB of memory on a 32-bit system and essentially unlimited on 64-bit ones.
  *
  *
@@ -448,10 +448,10 @@
  *      - The over-commitment management, including the allocating/freeing
  *        chunks, is serialized by a ring-0 mutex lock (a fast one since the
  *        more mundane mutex implementation is broken on Linux).
- *      - A separeate mutex is protecting the set of allocation chunks so
+ *      - A separate mutex is protecting the set of allocation chunks so
  *        that pages can be shared or/and freed up while some other VM is
  *        allocating more chunks. This mutex can be take from under the other
- *        one, but not the otherway around.
+ *        one, but not the other way around.
  *
  *
  * @subsection subsec_pgmPhys_Request           VM Request interface
@@ -512,7 +512,7 @@
  * memory objects it contains. It will therefore require the first ring-0 mutex
  * discussed in @ref subsec_pgmPhys_Serializing. We
  * some double house keeping wrt to who has mapped what I think, since both
- * VMMR0.r0 and RTR0MemObj will keep track of mapping relataions
+ * VMMR0.r0 and RTR0MemObj will keep track of mapping relations
  *
  * The ring-3 part will be protected by the pgm critsect. For simplicity, we'll
  * require anyone that desires to do changes to the mapping cache to do that
@@ -560,7 +560,7 @@
  *
  * Whether we'll continue to use the current MM locked memory management
  * for this I don't quite know (I'd prefer not to and just ditch that all
- * togther), we'll see what's simplest to do.
+ * together), we'll see what's simplest to do.
  *
  *
  *
@@ -2059,7 +2059,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     }
 
     /*
-     * Determin the max physical address width (MAXPHYADDR) and apply it to
+     * Determine the max physical address width (MAXPHYADDR) and apply it to
      * all the mask members and stuff.
      */
     uint32_t cMaxPhysAddrWidth;

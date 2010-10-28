@@ -174,7 +174,7 @@ void STATE_APIENTRY crStateCombinerParameterivNV( GLenum pname, const GLint *par
 	}
 	else
 	{
-		/* Only one paramater: */
+		/* Only one parameter: */
 		*fparams = (GLfloat) *params;
 	}
 	crStateCombinerParameterfvNV( pname, fparams );

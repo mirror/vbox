@@ -284,7 +284,7 @@ typedef struct SUPLDROPEN
     {
         struct
         {
-            /** Size of the image we'll be loading (includeing tables). */
+            /** Size of the image we'll be loading (including tables). */
             uint32_t        cbImageWithTabs;
             /** The size of the image bits. (Less or equal to cbImageWithTabs.) */
             uint32_t        cbImageBits;
@@ -771,7 +771,7 @@ typedef struct SUPPAGEUNLOCK
     {
         struct
         {
-            /** Start of page range of a range previuosly pinned. */
+            /** Start of page range of a range previously pinned. */
             RTR3PTR         pvR3;
         } In;
     } u;
@@ -780,7 +780,7 @@ typedef struct SUPPAGEUNLOCK
 
 
 /** @name SUP_IOCTL_CONT_ALLOC
- * Allocate contious memory.
+ * Allocate continuous memory.
  * @{
  */
 #define SUP_IOCTL_CONT_ALLOC                            SUP_CTL_CODE_SIZE(16, SUP_IOCTL_CONT_ALLOC_SIZE)
@@ -816,7 +816,7 @@ typedef struct SUPCONTALLOC
 /** @name SUP_IOCTL_CONT_FREE Input.
  * @{
  */
-/** Free contious memory. */
+/** Free continuous memory. */
 #define SUP_IOCTL_CONT_FREE                             SUP_CTL_CODE_SIZE(17, SUP_IOCTL_CONT_FREE_SIZE)
 #define SUP_IOCTL_CONT_FREE_SIZE                        sizeof(SUPCONTFREE)
 #define SUP_IOCTL_CONT_FREE_SIZE_IN                     sizeof(SUPCONTFREE)
@@ -1080,7 +1080,7 @@ typedef struct SUPSEMOP
 #define SUPSEMOP_WAIT       0
 /** Signal the semaphore. */
 #define SUPSEMOP_SIGNAL     1
-/** Reset the sempahore (only applicable to SUP_SEM_TYPE_EVENT_MULTI). */
+/** Reset the semaphore (only applicable to SUP_SEM_TYPE_EVENT_MULTI). */
 #define SUPSEMOP_RESET      2
 /** Close the semaphore handle. */
 #define SUPSEMOP_CLOSE      3
@@ -1140,7 +1140,7 @@ typedef struct SUPSEMOP2
 #define SUPSEMOP2_WAIT_NS_REL       2
 /** Signal the semaphore. */
 #define SUPSEMOP2_SIGNAL            3
-/** Reset the sempahore (only applicable to SUP_SEM_TYPE_EVENT_MULTI). */
+/** Reset the semaphore (only applicable to SUP_SEM_TYPE_EVENT_MULTI). */
 #define SUPSEMOP2_RESET             4
 /** Close the semaphore handle. */
 #define SUPSEMOP2_CLOSE             5

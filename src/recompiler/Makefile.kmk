@@ -37,7 +37,7 @@ endif
 # The primary REM module definition.
 #
 # This is extended by one of the VBoxREM* modules below.  Currently, this
-# isn't done by inheritance because of some obscure bug wrt inherting from
+# isn't done by inheritance because of some obscure bug wrt inheriting from
 # unused targets that I'm not going to fix now.
 #
 ifneq ($(KBUILD_TARGET),win)

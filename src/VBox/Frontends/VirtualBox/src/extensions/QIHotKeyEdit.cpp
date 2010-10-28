@@ -161,7 +161,7 @@ QIHotKeyEdit::~QIHotKeyEdit()
  *
  *  @note
  *      The key value is platform-dependent. On Win32 it is the
- *      virtial key, on Linux it is the first (0) keysym corresponding
+ *      virtual key, on Linux it is the first (0) keysym corresponding
  *      to the keycode.
  */
 void QIHotKeyEdit::setKey (int aKeyVal)
@@ -173,12 +173,12 @@ void QIHotKeyEdit::setKey (int aKeyVal)
 
 /**@@ QIHotKeyEdit::key() const
  *
- *  Returns the value of the last recodred hot key.
+ *  Returns the value of the last recorded hot key.
  *  O means there is no hot key.
  *
  *  @note
  *      The key value is platform-dependent. On Win32 it is the
- *      virtial key, on Linux it is the first (0) keysym corresponding
+ *      virtual key, on Linux it is the first (0) keysym corresponding
  *      to the keycode.
  */
 
@@ -348,7 +348,7 @@ void QIHotKeyEdit::retranslateUi()
  *
  *  @note
  *      The key value is platform-dependent. On Win32 it is the
- *      virtial key, on Linux it is the first (0) keysym corresponding
+ *      virtual key, on Linux it is the first (0) keysym corresponding
  *      to the keycode.
  */
 /* static */

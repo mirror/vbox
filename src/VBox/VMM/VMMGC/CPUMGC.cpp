@@ -39,7 +39,7 @@ RT_C_DECLS_END
 
 
 /**
- * Deal with traps occuring during segment loading and IRET
+ * Deal with traps occurring during segment loading and IRET
  * when resuming guest context.
  *
  * @returns VBox status code.
@@ -67,7 +67,7 @@ DECLCALLBACK(int) cpumGCHandleNPAndGP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
     }
 
     /*
-     * Take action based on what's happended.
+     * Take action based on what's happened.
      */
     switch (uUser & CPUM_HANDLER_TYPEMASK)
     {

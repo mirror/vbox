@@ -494,7 +494,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
         mlock.release();
 
         /* When changing the host adapter, adapt the CFGM logic to make this
-         * change immediately effect and to notifiy the guest that the network
+         * change immediately effect and to notify the guest that the network
          * might have changed, therefore changeAdapter=TRUE. */
         mParent->onNetworkAdapterChange(this, TRUE);
     }
@@ -550,7 +550,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwor
         mlock.release();
 
         /* When changing the internal network, adapt the CFGM logic to make this
-         * change immediately effect and to notifiy the guest that the network
+         * change immediately effect and to notify the guest that the network
          * might have changed, therefore changeAdapter=TRUE. */
         mParent->onNetworkAdapterChange(this, TRUE);
     }
@@ -978,7 +978,7 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
-             * and thus return error along with dettaching all
+             * and thus return error along with detaching all
              * attachments.
              */
             Detach();
@@ -1026,7 +1026,7 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
         {
             /* If changing the attachment failed then we can't assume that the
              * previous attachment will attach correctly and thus return error
-             * along with dettaching all attachments.
+             * along with detaching all attachments.
              */
             Detach();
             return rc;
@@ -1081,7 +1081,7 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
-             * and thus return error along with dettaching all
+             * and thus return error along with detaching all
              * attachments.
              */
             Detach();
@@ -1129,7 +1129,7 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
-             * and thus return error along with dettaching all
+             * and thus return error along with detaching all
              * attachments.
              */
             Detach();
@@ -1172,7 +1172,7 @@ STDMETHODIMP NetworkAdapter::AttachToVDE()
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
-             * and thus return error along with dettaching all
+             * and thus return error along with detaching all
              * attachments.
              */
             Detach();
@@ -1321,7 +1321,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
 /**
  *  Saves settings to the given adapter node.
  *
- *  Note that the given Adapter node is comletely empty on input.
+ *  Note that the given Adapter node is completely empty on input.
  *
  *  @param aAdapterNode <Adapter> node.
  *

@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /** @file
- * VBox OpenGL: GLSL related fucntions
+ * VBox OpenGL: GLSL related functions
  */
 
 /*

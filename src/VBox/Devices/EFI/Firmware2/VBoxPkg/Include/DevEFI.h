@@ -28,7 +28,7 @@
  * @{
  */
 
-/** The base of the I/O ports used for interfaction between the EFI firmware and DevEFI. */
+/** The base of the I/O ports used for interaction between the EFI firmware and DevEFI. */
 #define EFI_PORT_BASE           0xEF10
 /** The number of ports. */
 #define EFI_PORT_COUNT          0x0004

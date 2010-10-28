@@ -152,7 +152,7 @@ protected slots:
 
 private slots:
 
-    /* "Machine" menu funtionality */
+    /* "Machine" menu functionality */
     void sltToggleGuestAutoresize(bool fEnabled);
     void sltAdjustWindow();
     void sltToggleMouseIntegration(bool fDisabled);
@@ -167,7 +167,7 @@ private slots:
     void sltACPIShutdown();
     void sltClose();
 
-    /* "Device" menu funtionality */
+    /* "Device" menu functionality */
     void sltPrepareStorageMenu();
     void sltMountStorageMedium();
     void sltPrepareUSBMenu();

@@ -174,7 +174,7 @@ static int usbProxyLinuxFindActiveConfig(PUSBPROXYDEV pProxyDev, const char *psz
 /**
  * Wrapper for the ioctl call.
  *
- * This wrapper will repeate the call if we get an EINTR or EAGAIN. It can also
+ * This wrapper will repeat the call if we get an EINTR or EAGAIN. It can also
  * handle ENODEV (detached device) errors.
  *
  * @returns whatever ioctl returns.
@@ -715,7 +715,7 @@ static int usbProxyLinuxInit(PUSBPROXYDEV pProxyDev)
         usbProxyLinuxSetConnected(pProxyDev, iIf, false, true);
 
     /*
-     * Determin the active configuration.
+     * Determine the active configuration.
      *
      * If there isn't any active configuration, we will get EHOSTUNREACH (113) errors
      * when trying to read the device descriptors in usbProxyDevCreate. So, we'll make
@@ -1049,7 +1049,7 @@ static int usbProxyLinuxReset(PUSBPROXYDEV pProxyDev, bool fResetOnLinux)
 #else /* !NO_PORT_RESET */
 
     /*
-     * This is the alternative, we will allways reset when asked to do so.
+     * This is the alternative, we will always reset when asked to do so.
      *
      * The problem we're facing here is that on reset failure linux will do
      * a 'logical reconnect' on the device. This will invalidate the current
@@ -1623,7 +1623,7 @@ static void vusbProxyLinuxUrbDoTimeouts(PUSBPROXYDEV pProxyDev, PUSBPROXYDEVLNX 
             }
         }
 #if 0
-        /* Disabled for the time beeing as some USB devices have URBs pending for an unknown amount of time.
+        /* Disabled for the time being as some USB devices have URBs pending for an unknown amount of time.
          * One example is the OmniKey CardMan 3821. */
         else if (u64MilliTS - pCur->u64SubmitTS >= 200*1000 /* 200 sec (180 sec has been observed with XP) */)
             pCur->fTimedOut = true;

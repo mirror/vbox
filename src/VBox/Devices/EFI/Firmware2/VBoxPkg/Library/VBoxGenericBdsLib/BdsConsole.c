@@ -82,9 +82,9 @@ IsNvNeed (
   @param  VarName            The name of the EFI console variable.
   @param  ConsoleGuid        Specified Console protocol GUID.
   @param  ConsoleHandle      On IN,  console handle in System Table to be checked.
-                             On OUT, new console hanlde in system table.
+                             On OUT, new console handle in system table.
   @param  ProtocolInterface  On IN,  console protocol on console handle in System Table to be checked.
-                             On OUT, new console protocol on new console hanlde in system table.
+                             On OUT, new console protocol on new console handle in system table.
 
   @retval TRUE               System Table has been updated.
   @retval FALSE              System Table hasn't been updated.
@@ -183,7 +183,7 @@ UpdateSystemTableConsole (
   } while (Instance != NULL);
 
   //
-  // No any available console devcie found.
+  // No any available console device found.
   //
   return FALSE;
 }
@@ -404,7 +404,7 @@ BdsLibConnectConsoleVariable (
       Status = BdsLibConnectDevicePath (Instance);
       if (EFI_ERROR (Status)) {
         //
-        // Delete the instance from the console varialbe
+        // Delete the instance from the console variable
         //
         BdsLibUpdateConsoleVariable (ConVarName, NULL, Instance);
       } else {
@@ -426,7 +426,7 @@ BdsLibConnectConsoleVariable (
 
 /**
   This function will search every simpletext device in current system,
-  and make every simpletext device as pertantial console device.
+  and make every simpletext device as a potential console device.
 
 **/
 VOID

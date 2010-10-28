@@ -1148,7 +1148,7 @@ Return Value:
         // to execute will free this irp. We need to have this schema so that
         // 1. completion routine does not attempt to touch the irp freed by
         //    CancelSelectSuspend routine.
-        // 2. CancelSelectSuspend routine doesnt wait for ever for the completion
+        // 2. CancelSelectSuspend routine doesn't wait for ever for the completion
         //    routine to complete!
         //
         DeviceExtension->FreeIdleIrpCount = 2;
@@ -1322,7 +1322,7 @@ Return Value:
         // increment the count. In the HoldIoRequestWorkerRoutine, the
         // count is decremented twice (one for the system Irp and the
         // other for the device Irp. An increment here compensates for
-        // the sytem irp..The decrement corresponding to this increment
+        // the system irp..The decrement corresponding to this increment
         // is in the completion function
         //
 
@@ -1594,7 +1594,7 @@ Return Value:
         //
         // This routine has the irp pointer.
         // It is safe to call IoCancelIrp because we know that
-        // the compleiton routine will not free this irp unless...
+        // the completion routine will not free this irp unless...
         //
         //
         if(IoCancelIrp(irp)) {

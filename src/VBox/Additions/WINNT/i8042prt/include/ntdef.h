@@ -565,7 +565,7 @@ typedef NTSTATUS *PNTSTATUS;
 /*lint -restore */  // Resume checking for different typedefs.
 
 //
-//  Status values are 32 bit values layed out as follows:
+//  Status values are 32 bit values arranged as follows:
 //
 //   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
 //   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
@@ -1833,7 +1833,7 @@ typedef enum _SUITE_TYPE {
 #else // lint
 
 // Note: lint -e530 says don't complain about uninitialized variables for
-// this varible.  Error 527 has to do with unreachable code.
+// this variable.  Error 527 has to do with unreachable code.
 // -restore restores checking to the -save state
 
 #define UNREFERENCED_PARAMETER(P)          \

@@ -17,7 +17,7 @@
 #pragma hdrstop
 
 //
-// File System Control funcitonality
+// File System Control functionality
 //
 
 

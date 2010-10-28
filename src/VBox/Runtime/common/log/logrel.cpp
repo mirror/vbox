@@ -61,7 +61,7 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 #ifdef IN_RC
-/** Default relese logger instance. */
+/** Default release logger instance. */
 extern "C" DECLIMPORT(RTLOGGERRC)   g_RelLogger;
 #else /* !IN_RC */
 /** Default release logger instance. */
@@ -110,7 +110,7 @@ RT_EXPORT_SYMBOL(RTLogRelSetDefaultInstance);
  * @param   pLogger     Pointer to logger instance. If NULL the default release instance is attempted.
  * @param   fFlags      The logging flags.
  * @param   iGroup      The group.
- *                      The value ~0U is reserved for compatability with RTLogLogger[V] and is
+ *                      The value ~0U is reserved for compatibility with RTLogLogger[V] and is
  *                      only for internal usage!
  * @param   pszFormat   Format string.
  * @param   args        Format arguments.

@@ -698,7 +698,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
  *
  * Meaning, that the guest is setting up the parent process for Copy-On-Write.
  *
- * @returns true if it's likly that we're forking, otherwise false.
+ * @returns true if it's likely that we're forking, otherwise false.
  * @param   pPool       The pool.
  * @param   pDis        The disassembled instruction.
  * @param   offFault    The access offset.
@@ -2616,7 +2616,7 @@ void pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
 /**
  * Removes the page from the list of modified pages and resets the
- * moficiation counter.
+ * modification counter.
  *
  * @param   pPool   The pool.
  * @param   pPage   The page which is believed to be in the list of modified pages.
@@ -2705,7 +2705,7 @@ int pgmPoolSyncCR3(PVMCPU pVCpu)
      * When monitoring shadowed pages, we reset the modification counters on CR3 sync.
      * Occasionally we will have to clear all the shadow page tables because we wanted
      * to monitor a page which was mapped by too many shadowed page tables. This operation
-     * sometimes refered to as a 'lightweight flush'.
+     * sometimes referred to as a 'lightweight flush'.
      */
 # ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
     if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)

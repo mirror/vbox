@@ -50,7 +50,7 @@
 
 
 /**
- * Constructs the path of a sysfs file from the format paramaters passed,
+ * Constructs the path of a sysfs file from the format parameters passed,
  * prepending a prefix if the path is relative.
  *
  * @returns The number of characters returned, or -1 and errno set to ERANGE on
@@ -90,7 +90,7 @@ static ssize_t rtLinuxConstructPathV(char *pszBuf, size_t cchBuf,
 
 
 /**
- * Constructs the path of a sysfs file from the format paramaters passed,
+ * Constructs the path of a sysfs file from the format parameters passed,
  * prepending a prefix if the path is relative.
  *
  * @returns The number of characters returned, or -1 and errno set to ERANGE on
@@ -117,7 +117,7 @@ static ssize_t rtLinuxConstructPath(char *pszBuf, size_t cchBuf,
 
 
 /**
- * Constructs the path of a sysfs file from the format paramaters passed,
+ * Constructs the path of a sysfs file from the format parameters passed,
  * prepending "/sys/" if the path is relative.
  *
  * @returns The number of characters returned, or -1 and errno set to ERANGE on

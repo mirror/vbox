@@ -41,7 +41,7 @@ EndIf
 ControlCommand($sysprop_Title, "", "SysTabControl321", "TabRight", "")
 ControlCommand($sysprop_Title, "", "SysTabControl321", "TabRight", "")
 
-Sleep(200)                                      ; Wait a while for tab switchig above
+Sleep(200)                                      ; Wait a while for tab switching above
 ControlClick($sysprop_Title, "", 14007)         ; Button 'Driver Signing'
 
 WinWait($drvsig_Title, "", 5)

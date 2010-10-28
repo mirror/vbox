@@ -49,11 +49,11 @@ RT_C_DECLS_BEGIN
 /** @} */
 
 /**
- * Polls on the specified poll set until an event occures on one of the handles
+ * Polls on the specified poll set until an event occurs on one of the handles
  * or the timeout expires.
  *
  * @returns IPRT status code.
- * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
+ * @retval  VINF_SUCCESS if an event occurred on a handle.  Note that these
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
  * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
@@ -65,7 +65,7 @@ RT_C_DECLS_BEGIN
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait for ever.
  * @param   pfEvents            Where to return details about the events that
- *                              occured.  Optional.
+ *                              occurred.  Optional.
  * @param   pid                 Where to return the ID associated with the
  *                              handle when calling RTPollSetAdd.  Optional.
  *
@@ -79,7 +79,7 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
  * Same as RTPoll except that it will return when interrupted.
  *
  * @returns IPRT status code.
- * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
+ * @retval  VINF_SUCCESS if an event occurred on a handle.  Note that these
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
  * @retval  VERR_CONCURRENT_ACCESS if another thread is already accessing the set. The
  *          user is responsible for ensuring single threaded access.
@@ -93,7 +93,7 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
  * @param   cMillies            Number of milliseconds to wait.  Use
  *                              RT_INDEFINITE_WAIT to wait for ever.
  * @param   pfEvents            Where to return details about the events that
- *                              occured.  Optional.
+ *                              occurred.  Optional.
  * @param   pid                 Where to return the ID associated with the
  *                              handle when calling RTPollSetAdd.  Optional.
  */
@@ -128,7 +128,7 @@ RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
  *          set.
  *
  * @param   hPollSet            The poll set to modify.
- * @param   pHandle             The handle to add.  NIL handles are quitely
+ * @param   pHandle             The handle to add.  NIL handles are quietly
  *                              ignored.
  * @param   fEvents             Which events to poll for.
  * @param   id                  The handle ID.

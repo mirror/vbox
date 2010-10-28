@@ -251,7 +251,7 @@ typedef struct RTDIRENTRYEX
     /** The length of the short field (number of RTUTF16 entries (not chars)).
      * It is 16-bit for reasons of alignment. */
     uint16_t        cwcShortName;
-    /** The short name for 8.3 compatability.
+    /** The short name for 8.3 compatibility.
      * Empty string if not available.
      * Since the length is a bit tricky for a UTF-8 encoded name, and since this
      * is practically speaking only a windows thing, it is encoded as UCS-2. */

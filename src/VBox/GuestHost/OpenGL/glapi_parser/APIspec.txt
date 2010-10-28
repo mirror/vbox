@@ -73,7 +73,7 @@
 #     chromium        pack
 #
 #  paramaction An optional list of action names for the Chromium packertest program. 
-#       specfied by     parmaction  argument    property name
+#       specfied by     paramaction  argument    property name
 #`      Possible property names include
 #           makeStripeImage -
 #           enableTex   -

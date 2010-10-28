@@ -31,9 +31,9 @@
  * @section sec_dev_vusb_urb     The Life of an URB
  *
  * The URB is created when the HCI calls the roothub (VUSB) method pfnNewUrb.
- * VUSB has a pool of URBs, if no free URBs are availabe a new one is
+ * VUSB has a pool of URBs, if no free URBs are available a new one is
  * allocated. The returned URB starts life in the ALLOCATED state and all
- * fields are initalized with sensible defaults.
+ * fields are initialized with sensible defaults.
  *
  * The HCI then copies any request data into the URB if it's an host2dev
  * transfer. It then submits the URB by calling the pfnSubmitUrb roothub
@@ -84,7 +84,7 @@
  * transfer directions the status of the transfer has to be kept around for
  * the STATUS stage.
  *
- * To complicate matters futher, VUSB must intercept and in some cases emulate
+ * To complicate matters further, VUSB must intercept and in some cases emulate
  * some of the standard requests in order to keep the virtual device state
  * correct and provide the correct virtualization of a device.
  *

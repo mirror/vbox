@@ -48,7 +48,7 @@ XPCOMEventQSocketListener *COMBase::sSocketListener = 0;
 # endif
 
 /**
- *  Internal class to asyncronously handle IPC events on the GUI thread
+ *  Internal class to asynchronously handle IPC events on the GUI thread
  *  using the event queue socket FD and QSocketNotifier.
  */
 class XPCOMEventQSocketListener : public QObject

@@ -1345,7 +1345,7 @@ static int is_fast_jcc_case(DisasContext *s, int b)
 }
 
 /* generate a conditional jump to label 'l1' according to jump opcode
-   value 'b'. In the fast case, T0 is guaranted not to be used. */
+   value 'b'. In the fast case, T0 is guaranteed not to be used. */
 #ifndef VBOX
 static inline void gen_jcc1(DisasContext *s, int cc_op, int b, int l1)
 #else /* VBOX */
@@ -2763,7 +2763,7 @@ static void gen_setcc(DisasContext *s, int b)
         tcg_temp_free(t0);
     } else {
         /* slow case: it is more efficient not to generate a jump,
-           although it is questionnable whether this optimization is
+           although it is questionable whether this optimization is
            worth to */
         inv = b & 1;
         jcc_op = (b >> 1) & 7;

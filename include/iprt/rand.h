@@ -181,7 +181,7 @@ RTDECL(int) RTRandAdvDestroy(RTRAND hRand) RT_NO_THROW;
  *
  * The different generators may have specialized methods for
  * seeding, use one of those if you desire better control
- * over ther result.
+ * over the result.
  *
  * @returns IPRT status code.
  * @retval  VERR_NOT_SUPPORTED if it isn't a pseudo generator.
@@ -216,7 +216,7 @@ RTDECL(int) RTRandAdvSaveState(RTRAND hRand, char *pszState, size_t *pcbState) R
 /**
  * Restores the state of a pseudo generator.
  *
- * The state must've been obtained using RTRandAdvGetState.
+ * The state must have been obtained using RTRandAdvGetState.
  *
  * @returns IPRT status code.
  * @retval  VERR_PARSE_ERROR if the state string is malformed.

@@ -1179,7 +1179,7 @@ DECLINLINE(bool) vusbUrbIsRequestSafe(PCVUSBSETUP pSetup, PVUSBURB pUrb)
 
 /**
  * Queues an URB for asynchronous transfer.
- * A list of asynchornous URBs is kept by the roothub.
+ * A list of asynchronous URBs is kept by the roothub.
  *
  * @returns VBox status code (from pfnUrbQueue).
  * @param   pUrb    The URB.
@@ -1281,7 +1281,7 @@ void vusbMsgResetExtraData(PVUSBCTRLEXTRA pExtra)
 /**
  * Callback to free a cancelled message URB.
  *
- * This is yet another place we're we have to performce acrobatics to
+ * This is yet another place we're we have to performance acrobatics to
  * deal with cancelled URBs. sigh.
  *
  * The deal here is that we never free message URBs since they are integrated

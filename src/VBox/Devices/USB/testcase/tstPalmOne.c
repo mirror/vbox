@@ -295,7 +295,7 @@ void palm(void)
 //    set_config(1); //skip this
 //    reset_ep(6);
 
-    /* This seems to be some kind of 'indentify device' request. */
+    /* This seems to be some kind of 'identify device' request. */
     uint8_t abVendor[0x14] = {0};
     int cb = doctrl(VUSB_DIR_TO_HOST | VUSB_REQ_VENDOR | VUSB_TO_ENDPOINT,
                     0x04, 0, 0, 0x14, abVendor, "vendor req");

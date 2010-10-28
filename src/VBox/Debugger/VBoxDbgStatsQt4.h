@@ -37,7 +37,7 @@ typedef struct DBGGUISTATSNODE const *PCDBGGUISTATSNODE;
 /**
  * The VM statistics tree view.
  *
- * A tree represenation of the STAM statistics.
+ * A tree representation of the STAM statistics.
  */
 class VBoxDbgStatsView : public QTreeView, public VBoxDbgBase
 {

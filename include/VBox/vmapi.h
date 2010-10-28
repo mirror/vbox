@@ -327,7 +327,7 @@ VMMR3DECL(int)  VMR3Reset(PVM pVM);
  * @returns VINF_SUCCESS.
  * @returns Error code to cancel the operation with.
  * @param   pVM         The VM handle.
- * @param   uPercent    Completetion precentage (0-100).
+ * @param   uPercent    Completion percentage (0-100).
  * @param   pvUser      User specified argument.
  */
 typedef DECLCALLBACK(int) FNVMPROGRESS(PVM pVM, unsigned uPercent, void *pvUser);

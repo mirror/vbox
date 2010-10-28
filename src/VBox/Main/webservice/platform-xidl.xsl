@@ -34,7 +34,7 @@
 
 <!--
     template for "idl" match; this emits the header of the target file
-    and recurses into the librarys with interfaces (which are matched below)
+    and recurses into the libraries with interfaces (which are matched below)
     -->
 <xsl:template match="/idl">
   <xsl:comment>

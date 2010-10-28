@@ -312,7 +312,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
     {
 #ifdef RT_OS_DARWIN
 /** @todo This belongs in rtPathToNative or in the windows shared folder file system driver...
- * The question is simply whether the NFD normalization is actually applied on a (virtaul) file
+ * The question is simply whether the NFD normalization is actually applied on a (virtual) file
  * system level in darwin, or just by the user mode application libs. */
         SHFLSTRING *pPathParameter = pPath;
         size_t cbPathLength;
@@ -604,7 +604,7 @@ static void vbsfFreeFullPath (char *pszFullPath)
  *
  * @returns iprt status code
  * @param  fShflFlags shared folder create flags
- * @param  fMode      file attibutes
+ * @param  fMode      file attributes
  * @retval pfOpen     iprt create flags
  */
 static int vbsfConvertFileOpenFlags(unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint32_t *pfOpen)
@@ -1596,7 +1596,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 
 #ifdef RT_OS_DARWIN
 /** @todo This belongs in rtPathToNative or in the windows shared folder file system driver...
- * The question is simply whether the NFD normalization is actually applied on a (virtaul) file
+ * The question is simply whether the NFD normalization is actually applied on a (virtual) file
  * system level in darwin, or just by the user mode application libs. */
             {
                 // Convert to

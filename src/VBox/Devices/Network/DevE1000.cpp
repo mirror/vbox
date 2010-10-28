@@ -915,8 +915,8 @@ struct E1kState_st
     PPDMINETWORKUPR3        pDrvR3;              /**< Attached network driver - R3. */
     PTMTIMERR3              pRIDTimerR3;   /**< Receive Interrupt Delay Timer - R3. */
     PTMTIMERR3              pRADTimerR3;    /**< Receive Absolute Delay Timer - R3. */
-    PTMTIMERR3              pTIDTimerR3;  /**< Tranmsit Interrupt Delay Timer - R3. */
-    PTMTIMERR3              pTADTimerR3;   /**< Tranmsit Absolute Delay Timer - R3. */
+    PTMTIMERR3              pTIDTimerR3;  /**< Transmit Interrupt Delay Timer - R3. */
+    PTMTIMERR3              pTADTimerR3;   /**< Transmit Absolute Delay Timer - R3. */
     PTMTIMERR3              pIntTimerR3;            /**< Late Interrupt Timer - R3. */
     PTMTIMERR3              pLUTimerR3;               /**< Link Up(/Restore) Timer. */
     /** The scatter / gather buffer used for the current outgoing packet - R3. */
@@ -928,8 +928,8 @@ struct E1kState_st
     PPDMINETWORKUPR0        pDrvR0;              /**< Attached network driver - R0. */
     PTMTIMERR0              pRIDTimerR0;   /**< Receive Interrupt Delay Timer - R0. */
     PTMTIMERR0              pRADTimerR0;    /**< Receive Absolute Delay Timer - R0. */
-    PTMTIMERR0              pTIDTimerR0;  /**< Tranmsit Interrupt Delay Timer - R0. */
-    PTMTIMERR0              pTADTimerR0;   /**< Tranmsit Absolute Delay Timer - R0. */
+    PTMTIMERR0              pTIDTimerR0;  /**< Transmit Interrupt Delay Timer - R0. */
+    PTMTIMERR0              pTADTimerR0;   /**< Transmit Absolute Delay Timer - R0. */
     PTMTIMERR0              pIntTimerR0;            /**< Late Interrupt Timer - R0. */
     PTMTIMERR0              pLUTimerR0;          /**< Link Up(/Restore) Timer - R0. */
     /** The scatter / gather buffer used for the current outgoing packet - R0. */
@@ -941,8 +941,8 @@ struct E1kState_st
     PPDMINETWORKUPRC        pDrvRC;              /**< Attached network driver - RC. */
     PTMTIMERRC              pRIDTimerRC;   /**< Receive Interrupt Delay Timer - RC. */
     PTMTIMERRC              pRADTimerRC;    /**< Receive Absolute Delay Timer - RC. */
-    PTMTIMERRC              pTIDTimerRC;  /**< Tranmsit Interrupt Delay Timer - RC. */
-    PTMTIMERRC              pTADTimerRC;   /**< Tranmsit Absolute Delay Timer - RC. */
+    PTMTIMERRC              pTIDTimerRC;  /**< Transmit Interrupt Delay Timer - RC. */
+    PTMTIMERRC              pTADTimerRC;   /**< Transmit Absolute Delay Timer - RC. */
     PTMTIMERRC              pIntTimerRC;            /**< Late Interrupt Timer - RC. */
     PTMTIMERRC              pLUTimerRC;          /**< Link Up(/Restore) Timer - RC. */
     /** The scatter / gather buffer used for the current outgoing packet - RC. */
@@ -1539,7 +1539,7 @@ PDMBOTHCBDECL(void) e1kHardReset(E1KSTATE *pState)
     Assert(GET_BITS(RCTL, BSIZE) == 0);
     pState->u16RxBSize = 2048;
 
-    /* Reset promiscous mode */
+    /* Reset promiscuous mode */
     if (pState->pDrvR3)
         pState->pDrvR3->pfnSetPromiscuousMode(pState->pDrvR3, false);
 }
@@ -1841,8 +1841,8 @@ DECLINLINE(void) e1kAdvanceRDH(E1KSTATE *pState)
     if (++RDH * sizeof(E1KRXDESC) >= RDLEN)
         RDH = 0;
     /*
-     * Compute current recieve queue length and fire RXDMT0 interrupt
-     * if we are low on recieve buffers
+     * Compute current receive queue length and fire RXDMT0 interrupt
+     * if we are low on receive buffers
      */
     uint32_t uRQueueLen = RDH>RDT ? RDLEN/sizeof(E1KRXDESC)-RDH+RDT : RDT-RDH;
     /*
@@ -2064,7 +2064,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     /* Store the packet to receive buffers */
     while (RDH != RDT)
     {
-        /* Load the desciptor pointed by head */
+        /* Load the descriptor pointed by head */
         E1KRXDESC desc;
         PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH),
                           &desc, sizeof(desc));
@@ -2249,7 +2249,7 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
 static int e1kRegWriteEECD(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
 #ifdef IN_RING3
-    /* So far we are conserned with lower byte only */
+    /* So far we are concerned with lower byte only */
     if ((EECD & EECD_EE_GNT) || pState->eChip == E1K_CHIP_82543GC)
     {
         /* Access to EEPROM granted -- forward 4-wire bits to EEPROM device */
@@ -2573,7 +2573,7 @@ static int e1kRegWriteIMC(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
  */
 static int e1kRegWriteRCTL(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
-    /* Update promiscous mode */
+    /* Update promiscuous mode */
     bool fBecomePromiscous = !!(value & (RCTL_UPE | RCTL_MPE));
     if (fBecomePromiscous != !!( RCTL & (RCTL_UPE | RCTL_MPE)))
     {
@@ -2656,7 +2656,7 @@ static int e1kRegWriteRDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
  *        queuing thousands of items per second here in a normal transmit
  *        scenario.  Expect performance changes when fixing this! */
 #ifdef IN_RING3
-            /* Signal that we have more receive descriptors avalable. */
+            /* Signal that we have more receive descriptors available. */
             e1kWakeupReceive(pState->CTX_SUFF(pDevIns));
 #else
             PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pState->CTX_SUFF(pCanRxQueue));
@@ -2920,7 +2920,7 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
 
     /*
      * Because of internal networking using a 16-bit size field for GSO context
-     * pluss frame, we have to make sure we don't exceed this.
+     * plus frame, we have to make sure we don't exceed this.
      */
     if (RT_UNLIKELY( pCtx->dw3.u8HDRLEN + pCtx->dw2.u20PAYLEN > VBOX_MAX_GSO_SIZE ))
     {
@@ -3283,7 +3283,7 @@ static void e1kInsertChecksum(E1KSTATE* pState, uint8_t *pPkt, uint16_t u16PktLe
 /**
  * Add a part of descriptor's buffer to transmit frame.
  *
- * @remarks data.u64BufAddr is used uncoditionally for both data
+ * @remarks data.u64BufAddr is used unconditionally for both data
  *          and legacy descriptors since it is identical to
  *          legacy.u64BufAddr.
  *
@@ -3516,7 +3516,7 @@ static bool e1kAddToFrame(E1KSTATE *pThis, RTGCPHYS PhysAddr, uint32_t cbFragmen
  * Write the descriptor back to guest memory and notify the guest.
  *
  * @param   pState      The device state structure.
- * @param   pDesc       Pointer to the descriptor have been transmited.
+ * @param   pDesc       Pointer to the descriptor have been transmitted.
  * @param   addr        Physical address of the descriptor in guest memory.
  * @thread  E1000_TX
  */
@@ -3912,7 +3912,7 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
                  INSTANCE(pState), e1kGetTxLen(pState)));
         e1kCsTxLeave(pState);
 
-        /* Transmit pending packets if possible, defere it if we cannot do it
+        /* Transmit pending packets if possible, defer it if we cannot do it
            in the current context. */
 # ifndef IN_RING3
         if (!pState->CTX_SUFF(pDrv))
@@ -5136,7 +5136,7 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutBool(pSSM, pState->fTCPcsum);
     SSMR3PutMem(pSSM, &pState->contextTSE, sizeof(pState->contextTSE));
     SSMR3PutMem(pSSM, &pState->contextNormal, sizeof(pState->contextNormal));
-/**@todo GSO requres some more state here. */
+/**@todo GSO requires some more state here. */
     E1kLog(("%s State has been saved\n", INSTANCE(pState)));
     return VINF_SUCCESS;
 }
@@ -5273,7 +5273,7 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
-    /* Update promiscous mode */
+    /* Update promiscuous mode */
     if (pState->pDrvR3)
         pState->pDrvR3->pfnSetPromiscuousMode(pState->pDrvR3,
                                              !!(RCTL & (RCTL_UPE | RCTL_MPE)));

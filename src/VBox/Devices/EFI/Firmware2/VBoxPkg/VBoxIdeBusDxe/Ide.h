@@ -173,7 +173,7 @@ IDEWritePortWMultiple (
   
   @retval EFI_UNSUPPORTED return this value when the BARs is not IO type
   @retval EFI_SUCCESS     Get the Base address successfully
-  @retval other           read the pci configureation data error
+  @retval other           read the pci configuration data error
 
 **/
 EFI_STATUS
@@ -186,7 +186,7 @@ GetIdeRegistersBaseAddr (
   This function is used to requery IDE resources. The IDE controller will
   probably switch between native and legacy modes during the EFI->CSM->OS
   transfer. We do this everytime before an BlkIo operation to ensure its
-  succeess.
+  success.
 
   @param  IdeDev The BLK_IO private data which specifies the IDE device
 

@@ -40,7 +40,7 @@
 
 
 /**
- * Internal worker that determins the max possible CPU count.
+ * Internal worker that determines the max possible CPU count.
  *
  * @returns Max cpus.
  */

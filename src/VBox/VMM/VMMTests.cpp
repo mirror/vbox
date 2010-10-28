@@ -209,7 +209,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (RT_SUCCESS(rc) && f)
 #endif
         {
-            /* see tripple fault warnings in SELM and VMMGC.cpp. */
+            /* see triple fault warnings in SELM and VMMGC.cpp. */
             vmmR3DoTrapTest(pVM, 0x8, 1, VERR_TRPM_PANIC,       0x00000000, "vmmGCTestTrap8_FaultEIP", "#DF [#PG] WP");
             SELMR3Relocate(pVM); /* this resets the busy flag of the Trap 08 TSS */
         }

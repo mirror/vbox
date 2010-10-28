@@ -360,7 +360,7 @@ static int rtIsoFsFindEntry(PRTISOFSFILE pFile, const char *pszFileName,
                     }
                     else /* File */
                     {
-                        /* Get last occurence of ";" and cut it off. */
+                        /* Get last occurrence of ";" and cut it off. */
                         char *pTerm = strrchr(pszName, ';');
                         if (pTerm)
                             pszName[pTerm - pszName] = 0;

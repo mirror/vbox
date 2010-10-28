@@ -254,7 +254,7 @@ static inline int setError(int iNum, const char *pszFormat, ...)
     } while (0)
 
 /**
- *  Declares an empty construtor and destructor for the given class.
+ *  Declares an empty constructor and destructor for the given class.
  *  This is useful to prevent the compiler from generating the default
  *  ctor and dtor, which in turn allows to use forward class statements
  *  (instead of including their header files) when declaring data members of
@@ -270,7 +270,7 @@ static inline int setError(int iNum, const char *pszFormat, ...)
 #define DECLARE_EMPTY_CTOR_DTOR(cls) cls(); ~cls();
 
 /**
- *  Defines an empty construtor and destructor for the given class.
+ *  Defines an empty constructor and destructor for the given class.
  *  See DECLARE_EMPTY_CTOR_DTOR for more info.
  */
 #define DEFINE_EMPTY_CTOR_DTOR(cls) \
@@ -325,11 +325,11 @@ public:
     }
 
     /**
-     *  Virtual unintialization method. Called during parent object's
+     *  Virtual uninitialization method. Called during parent object's
      *  uninitialization, if the given subclass instance is a dependent child of
-     *  a class dervived from VirtualBoxBaseWithChildren (@sa
+     *  a class derived from VirtualBoxBaseWithChildren (@sa
      *  VirtualBoxBaseWithChildren::addDependentChild). In this case, this
-     *  method's impelemtation must call setReady (false),
+     *  method's implementation must call setReady (false),
      */
     virtual void uninit() {}
 
@@ -354,7 +354,7 @@ public:
      *  Helper class to make safe locking / unlocking.
      *  The constructor, given the VirtualBoxBase pointer, safely acquires the
      *  lock protecting its data. This lock will be released automatically
-     *  when the instance goes out of scope (block, funciton etc.).
+     *  when the instance goes out of scope (block, function etc.).
      *
      *  @note
      *      An instance of this class must be declared as a local variable,
@@ -533,7 +533,7 @@ public:
      *  translation table and current context. The current context is determined
      *  by the context parameter. Additionally, a comment to the source text
      *  string text can be given. This comment (which is NULL by default)
-     *  is helpful in sutuations where it is necessary to distinguish between
+     *  is helpful in situations where it is necessary to distinguish between
      *  two or more semantically different roles of the same source text in the
      *  same context.
      *

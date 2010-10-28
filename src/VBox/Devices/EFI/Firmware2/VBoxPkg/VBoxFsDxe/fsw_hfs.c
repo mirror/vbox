@@ -6,7 +6,7 @@
  *
  * Current limitations:
  *  - Doesn't support permissions
- *  - Complete Unicode case-insenstivness disabled (large tables)
+ *  - Complete Unicode case-insensitiveness disabled (large tables)
  *  - No links
  *  - Only supports pure HFS+ (i.e. no HFS, or HFS+ embedded to HFS)
  */

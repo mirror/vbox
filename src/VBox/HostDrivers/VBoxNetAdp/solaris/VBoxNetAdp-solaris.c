@@ -295,7 +295,7 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     pState->pDip = pDip;
 
                     /*
-                     * Setup GLD MAC layer registeration info.
+                     * Setup GLD MAC layer registration info.
                      */
                     pMacInfo->gldm_reset = vboxNetAdpSolarisStub;
                     pMacInfo->gldm_start = vboxNetAdpSolarisStub;
@@ -333,7 +333,7 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 
                         /*
                          * Now try registering our GLD with the MAC layer.
-                         * Registeration can fail on some S10 versions when the MTU size is more than 1500.
+                         * Registration can fail on some S10 versions when the MTU size is more than 1500.
                          * When we implement jumbo frames we should probably retry with MTU 1500 for S10.
                          */
                         rc = gld_register(pDip, (char *)ddi_driver_name(pDip), pMacInfo);

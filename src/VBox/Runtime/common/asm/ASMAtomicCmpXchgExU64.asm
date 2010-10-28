@@ -39,7 +39,7 @@ BEGINCODE
 ; @param    u64Old   x86:ebp+14  gcc:rcx  msc:r8
 ; @param    u64Old   x86:ebp+1c  gcc:rdx  msc:r9
 ;
-; @returns  bool result: true if succesfully exchanged, false if not.
+; @returns  bool result: true if successfully exchanged, false if not.
 ;           x86:al
 ;
 BEGINPROC_EXPORTED ASMAtomicCmpXchgExU64

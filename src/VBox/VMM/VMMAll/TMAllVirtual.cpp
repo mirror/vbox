@@ -184,7 +184,7 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
     {
         /*
          * We've expired the interval, cap it. If we're here for the 2nd
-         * time without any GIP update inbetween, the checks against
+         * time without any GIP update in-between, the checks against
          * pVM->tm.s.u64VirtualRawPrev below will force 1ns stepping.
          */
         u64Delta = u32UpdateIntervalTSC;
@@ -249,9 +249,9 @@ static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
     /*
      * Attempt updating the previous value, provided we're still ahead of it.
      *
-     * There is no point in recalculating u64NanoTS because we got preemted or if
+     * There is no point in recalculating u64NanoTS because we got preempted or if
      * we raced somebody while the GIP was updated, since these are events
-     * that might occure at any point in the return path as well.
+     * that might occur at any point in the return path as well.
      */
     for (int cTries = 50;;)
     {
@@ -421,7 +421,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVM pVM, uint64_t u64, 
     STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetLocked);
 
     /*
-     * Don't make updates until we've check the timer qeueue.
+     * Don't make updates until we've check the timer queue.
      */
     bool            fUpdatePrev = true;
     bool            fUpdateOff  = true;
@@ -676,7 +676,7 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVM pVM, bool fCheckTimers, uint64_t *pc
      *    debugging the process.
      *  - We might be on a different CPU which TSC isn't quite in sync with the
      *    other CPUs in the system.
-     *  - Another thread is racing us and we might have been preemnted while inside
+     *  - Another thread is racing us and we might have been preempted while inside
      *    this function.
      *
      * Assuming nano second virtual time, we can simply ignore any intervals which has
@@ -906,7 +906,7 @@ VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
 /**
  * Gets the current TMCLOCK_VIRTUAL frequency.
  *
- * @returns The freqency.
+ * @returns The frequency.
  * @param   pVM     VM handle.
  */
 VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
@@ -963,7 +963,7 @@ int tmVirtualResumeLocked(PVM pVM)
  * @returns nanoseconds.
  * @param   pVM             The VM handle.
  * @param   u64VirtualTicks The virtual ticks to convert.
- * @remark  There could be rounding errors here. We just do a simple integere divide
+ * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
 VMM_INT_DECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
@@ -979,7 +979,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
  * @returns microseconds.
  * @param   pVM             The VM handle.
  * @param   u64VirtualTicks The virtual ticks to convert.
- * @remark  There could be rounding errors here. We just do a simple integere divide
+ * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
 VMM_INT_DECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
@@ -995,7 +995,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
  * @returns milliseconds.
  * @param   pVM             The VM handle.
  * @param   u64VirtualTicks The virtual ticks to convert.
- * @remark  There could be rounding errors here. We just do a simple integere divide
+ * @remark  There could be rounding errors here. We just do a simple integer divide
  *          without any adjustments.
  */
 VMM_INT_DECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)

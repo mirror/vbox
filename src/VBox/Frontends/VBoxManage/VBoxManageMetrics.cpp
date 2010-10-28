@@ -235,7 +235,7 @@ static int handleMetricsList(int argc, char *argv[],
 }
 
 /**
- * Metics setup
+ * Metrics setup
  */
 static int handleMetricsSetup(int argc, char *argv[],
                               ComPtr<IVirtualBox> aVirtualBox,

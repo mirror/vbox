@@ -374,7 +374,7 @@ DEBUG_S_CHAR('S');
     jmp     htg_debug_regs_no
 
 
-    ; We're now on an identity mapped pages! in 32-bit compatability mode.
+    ; We're now on an identity mapped pages! in 32-bit compatibility mode.
 BITS 32
 ALIGNCODE(16)
 GLOBALNAME IDEnterTarget
@@ -896,7 +896,7 @@ GLOBALNAME IDExitTarget
     mov     cr0, ebx
     DEBUG_CHAR('5')
 
-    ; Jump from compatability mode to 64-bit mode.
+    ; Jump from compatibility mode to 64-bit mode.
     FIXUP FIX_ID_FAR32_TO_64BIT_MODE, 1, NAME(IDExit64Mode) - NAME(Start)
     jmp     0ffffh:0fffffffeh
 
@@ -961,7 +961,7 @@ GLOBALNAME HCExitTarget
     and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
     add     rax, [rdx + r8 + CPUMCPU.Host.gdtr + 2]         ; eax <- GDTR.address + descriptor offset.
     mov     ecx, [rax + 4]                          ; ecx <- 2nd descriptor dword
-    mov     ebx, ecx                                ; save orginal value
+    mov     ebx, ecx                                ; save original value
     and     ecx, ~0200h                             ; clear busy flag (2nd type2 bit)
     mov     [rax + 4], ccx                          ; not using xchg here is paranoia..
     ltr     word [rdx + r8 + CPUMCPU.Host.tr]
@@ -1016,7 +1016,7 @@ ALIGNCODE(16)
 gth_fpu_no:
 
     ; Control registers.
-    ; Would've liked to have these highere up in case of crashes, but
+    ; Would've liked to have these higher up in case of crashes, but
     ; the fpu stuff must be done before we restore cr0.
     mov     rcx, [rdx + r8 + CPUMCPU.Host.cr4]
     mov     cr4, rcx

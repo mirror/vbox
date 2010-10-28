@@ -423,7 +423,7 @@ static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
     }
     drvNATFreeSgBuf(pThis, pSgBuf);
 
-    /** @todo Implement the VERR_TRY_AGAIN drvNATNetworkUp_AllocBuf sematics. */
+    /** @todo Implement the VERR_TRY_AGAIN drvNATNetworkUp_AllocBuf semantics. */
 }
 
 /**
@@ -684,7 +684,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         /*
-         * To prevent concurent execution of sending/receving threads
+         * To prevent concurrent execution of sending/receiving threads
          */
 #ifndef RT_OS_WINDOWS
         nFDs = slirp_get_nsock(pThis->pNATState);
@@ -693,7 +693,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         if (polls == NULL)
             return VERR_NO_MEMORY;
 
-        /* don't pass the managemant pipe */
+        /* don't pass the management pipe */
         slirp_select_fill(pThis->pNATState, &nFDs, &polls[1]);
 
         polls[0].fd = pThis->PipeRead;

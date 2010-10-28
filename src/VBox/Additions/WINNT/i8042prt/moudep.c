@@ -2068,7 +2068,7 @@ Return Value:
     // this mouse provides no data to allow the driver to determine
     // when the first byte of a packet is received -- if the driver
     // doesn't process all interrupts from the start, there is no
-    // way to keep MouseExtension.InputState in synch with hardware
+    // way to keep MouseExtension.InputState in sync with hardware
     // reality.
     //
 

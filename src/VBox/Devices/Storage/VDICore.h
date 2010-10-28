@@ -139,10 +139,10 @@ typedef struct VDIHEADER1
     uint32_t        fFlags;
     /** Image comment. (UTF-8) */
     char            szComment[VDI_IMAGE_COMMENT_SIZE];
-    /** Offset of Blocks array from the begining of image file.
+    /** Offset of Blocks array from the beginning of image file.
      * Should be sector-aligned for HDD access optimization. */
     uint32_t        offBlocks;
-    /** Offset of image data from the begining of image file.
+    /** Offset of image data from the beginning of image file.
      * Should be sector-aligned for HDD access optimization. */
     uint32_t        offData;
     /** Legacy image geometry (previous code stored PCHS there). */
@@ -188,10 +188,10 @@ typedef struct VDIHEADER1PLUS
     uint32_t        fFlags;
     /** Image comment. (UTF-8) */
     char            szComment[VDI_IMAGE_COMMENT_SIZE];
-    /** Offset of blocks array from the begining of image file.
+    /** Offset of blocks array from the beginning of image file.
      * Should be sector-aligned for HDD access optimization. */
     uint32_t        offBlocks;
-    /** Offset of image data from the begining of image file.
+    /** Offset of image data from the beginning of image file.
      * Should be sector-aligned for HDD access optimization. */
     uint32_t        offData;
     /** Legacy image geometry (previous code stored PCHS there). */

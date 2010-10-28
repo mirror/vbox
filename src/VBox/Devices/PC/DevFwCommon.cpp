@@ -824,7 +824,7 @@ AssertCompile(VBOX_DMI_TABLE_ENTR == 5);
  *
  * Only applicable if IOAPIC is active!
  *
- * See ``MultiProcessor Specificatiton Version 1.4 (May 1997)'':
+ * See ``MultiProcessor Specification Version 1.4 (May 1997)'':
  *   ``1.3 Scope
  *     ...
  *     The hardware required to implement the MP specification is kept to a
@@ -943,7 +943,7 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
         /* IRQ0 mapped to pin 2, other are identity mapped */
         /* If changing, also update PDMIsaSetIrq() and MADT */
         pIrqEntry->u8SrcBusIrq     = (iPin == 2) ? 0 : iPin; /* IRQ on the bus */
-        pIrqEntry->u8DstIOAPICId   = iApicId;        /* destintion IO-APIC */
+        pIrqEntry->u8DstIOAPICId   = iApicId;        /* destination IO-APIC */
         pIrqEntry->u8DstIOAPICInt  = iPin;           /* pin on destination IO-APIC */
     }
     /* Local delivery */

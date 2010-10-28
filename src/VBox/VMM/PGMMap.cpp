@@ -474,7 +474,7 @@ VMMR3DECL(int) PGMR3FinalizeMappings(PVM pVM)
 
 /**
  * Gets the size of the current guest mappings if they were to be
- * put next to oneanother.
+ * put next to one another.
  *
  * @returns VBox status code.
  * @param   pVM     The VM.
@@ -592,7 +592,7 @@ int pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
         unsigned iPdptLast = (GCPtrBase + cb - 1) >> X86_PDPT_SHIFT;
         if (iPdptBase != iPdptLast)
         {
-            LogRel(("PGMR3MappingsFix: Crosses PD boundrary; iPdptBase=%#x iPdptLast=%#x (GCPtrBase=%RGv cb=%#zx). The guest should retry.\n",
+            LogRel(("PGMR3MappingsFix: Crosses PD boundary; iPdptBase=%#x iPdptLast=%#x (GCPtrBase=%RGv cb=%#zx). The guest should retry.\n",
                     iPdptBase, iPdptLast, GCPtrBase, cb));
             return VERR_PGM_MAPPINGS_FIX_CONFLICT;
         }

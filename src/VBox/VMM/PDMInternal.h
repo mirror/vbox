@@ -257,7 +257,7 @@ typedef struct PDMCRITSECTINT
      * This chain is used for relocating pVMRC and device cleanup. */
     R3PTRTYPE(struct PDMCRITSECTINT *) pNext;
     /** Owner identifier.
-     * This is pDevIns if the owner is a device. Similarily for a driver or service.
+     * This is pDevIns if the owner is a device. Similarly for a driver or service.
      * PDMR3CritSectInit() sets this to point to the critsect itself. */
     RTR3PTR                         pvKey;
     /** Pointer to the VM - R3Ptr. */
@@ -660,7 +660,7 @@ typedef enum PDMMODTYPE
  */
 typedef struct PDMMOD
 {
-    /** Module name. This is used for refering to
+    /** Module name. This is used for referring to
      * the module internally, sort of like a handle. */
     char                            szName[PDMMOD_NAME_LEN];
     /** Module type. */
@@ -781,7 +781,7 @@ typedef struct PDMQUEUE
     /** Index to the free tail (where we remove). */
     uint32_t volatile               iFreeTail;
 
-    /** Unqiue queue name. */
+    /** Unique queue name. */
     R3PTRTYPE(const char *)         pszName;
 #if HC_ARCH_BITS == 32
     RTR3PTR                         Alignment1;
@@ -920,7 +920,7 @@ typedef struct PDMASYNCCOMPLETIONEPCLASS *PPDMASYNCCOMPLETIONEPCLASS;
  */
 typedef struct PDMCPU
 {
-    /** The number of entries in the apQueuedCritSectsLeaves table that's currnetly in use. */
+    /** The number of entries in the apQueuedCritSectsLeaves table that's currently in use. */
     uint32_t                        cQueuedCritSectLeaves;
     uint32_t                        uPadding0; /**< Alignment padding.*/
     /** Critical sections queued in RC/R0 because of contention preventing leave to complete. (R3 Ptrs)
@@ -961,9 +961,9 @@ typedef struct PDM
     PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
     /** The register PIC device. */
     PDMPIC                          Pic;
-    /** The registerd APIC device. */
+    /** The registered APIC device. */
     PDMAPIC                         Apic;
-    /** The registerd I/O APIC device. */
+    /** The registered I/O APIC device. */
     PDMIOAPIC                       IoApic;
     /** The registered DMAC device. */
     R3PTRTYPE(PPDMDMAC)             pDmac;
@@ -1004,10 +1004,10 @@ typedef struct PDM
 
     /** The PDM lock.
      * This is used to protect everything that deals with interrupts, i.e.
-     * the PIC, APIC, IOAPIC and PCI devices pluss some PDM functions. */
+     * the PIC, APIC, IOAPIC and PCI devices plus some PDM functions. */
     PDMCRITSECT                     CritSect;
 
-    /** Number of times a critical section leave requesed needed to be queued for ring-3 execution. */
+    /** Number of times a critical section leave request needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;
 } PDM;
 AssertCompileMemberAlignment(PDM, GCPhysVMMDevHeap, sizeof(RTGCPHYS));

@@ -536,7 +536,7 @@ static fsw_status_t fsw_iso9660_dir_read(struct fsw_iso9660_volume *vol, struct 
     // Preconditions: The caller has checked that dno is a directory node. The caller
     //  has opened a storage handle to the directory's storage and keeps it around between
     //  calls.
-    /* (vasily) direcory nodes are 4096 bytes that is two logical blocks so read dir operation
+    /* (vasily) directory nodes are 4096 bytes that is two logical blocks so read dir operation
      * should read both blocks.
      */
 

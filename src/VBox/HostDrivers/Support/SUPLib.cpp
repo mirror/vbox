@@ -36,7 +36,7 @@
  * the IPRT loader.
  *
  * The Ring-0 calling is done thru a generic SUP interface which will
- * tranfer an argument set and call a predefined entry point in the Host
+ * transfer an argument set and call a predefined entry point in the Host
  * VMM Ring-0 code.
  *
  * See @ref grp_sup "SUP - Support APIs" for API details.
@@ -93,7 +93,7 @@ static uint32_t                 g_cInits = 0;
 /** Whether we've been preinitied. */
 static bool                     g_fPreInited = false;
 /** The SUPLib instance data.
- * Well, at least parts of it, specificly the parts that are being handed over
+ * Well, at least parts of it, specifically the parts that are being handed over
  * via the pre-init mechanism from the hardened executable stub.  */
 SUPLIBDATA                      g_supLibData =
 {
@@ -108,7 +108,7 @@ SUPLIBDATA                      g_supLibData =
 /** Pointer to the Global Information Page.
  *
  * This pointer is valid as long as SUPLib has a open session. Anyone using
- * the page must treat this pointer as higly volatile and not trust it beyond
+ * the page must treat this pointer as highly volatile and not trust it beyond
  * one transaction.
  *
  * @todo This will probably deserve it's own session or some other good solution...
@@ -761,7 +761,7 @@ SUPR3DECL(int) SUPR3CallR0Service(const char *pszService, size_t cchService, uin
  * @param   fWhat       What to do with the logger.
  * @param   pszFlags    The flags settings.
  * @param   pszGroups   The groups settings.
- * @param   pszDest     The destionation specificier.
+ * @param   pszDest     The destination specificier.
  */
 static int supR3LoggerSettings(SUPLOGGER enmWhich, uint32_t fWhat, const char *pszFlags, const char *pszGroups, const char *pszDest)
 {

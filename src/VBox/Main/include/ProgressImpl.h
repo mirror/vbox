@@ -105,7 +105,7 @@ protected:
     void (*m_pfnCancelCallback)(void *);
     void *m_pvCancelUserArg;
 
-    /* The fields below are to be properly initalized by subclasses */
+    /* The fields below are to be properly initialized by subclasses */
 
     BOOL mCompleted;
     BOOL mCancelable;

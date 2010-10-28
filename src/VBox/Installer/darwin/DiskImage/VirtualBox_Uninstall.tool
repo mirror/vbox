@@ -174,7 +174,7 @@ if test -n "$my_files"  -o  -n "$my_directories"; then
     /usr/bin/sudo -p "Please enter %u's password:" /bin/rm -Rf $my_files $my_directories
     my_rc=$?
     if test "$my_rc" -ne 0; then
-        echo "An error occured durning 'sudo rm', there should be a message above. (rc=$my_rc)"
+        echo "An error occurred durning 'sudo rm', there should be a message above. (rc=$my_rc)"
         test -x /usr/bin/sudo || echo "warning: Cannot find /usr/bin/sudo or it's not an executable."
         test -x /bin/rm       || echo "warning: Cannot find /bin/rm or it's not an executable"
         echo ""
@@ -189,7 +189,7 @@ for kext in $my_kexts; do
     /usr/bin/sudo -p "Please enter %u's password (unloading $kext):" /sbin/kextunload -m $kext
     my_rc2=$?
     if test "$my_rc2" -ne 0; then
-        echo "An error occured durning 'sudo /sbin/kextunload -m $kext', there should be a message above. (rc=$my_rc2)"
+        echo "An error occurred durning 'sudo /sbin/kextunload -m $kext', there should be a message above. (rc=$my_rc2)"
         test -x /usr/bin/sudo    || echo "warning: Cannot find /usr/bin/sudo or it's not an executable."
         test -x /sbin/kextunload || echo "warning: Cannot find /sbin/kextunload or it's not an executable"
         my_rc=$my_rc2

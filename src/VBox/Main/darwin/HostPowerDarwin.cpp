@@ -84,7 +84,7 @@ DECLCALLBACK(int) HostPowerServiceDarwin::powerChangeNotificationThread (RTTHREA
                         kCFRunLoopCommonModes);
 
     /* Register for all battery change events. The handler will check for low
-     * power events themself. */
+     * power events itself. */
     CFRunLoopSourceRef runLoopSource = IOPSNotificationCreateRunLoopSource(HostPowerServiceDarwin::lowPowerHandler,
                                                                            pPowerObj);
     CFRunLoopAddSource(pPowerObj->mRunLoop,

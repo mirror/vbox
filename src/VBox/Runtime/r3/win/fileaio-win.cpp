@@ -99,7 +99,7 @@ typedef struct RTFILEAIOREQINTERNAL
     void                 *pvUser;
     /** Flag whether the request completed. */
     bool                  fCompleted;
-    /** Number of bytes transfered successfully. */
+    /** Number of bytes transferred successfully. */
     size_t                cbTransfered;
     /** Error code of the completed request. */
     int                   Rc;

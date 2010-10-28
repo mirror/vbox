@@ -1807,7 +1807,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     HRESULT rc;
 
     // Get the instance of IGuestOSType which matches our string guest OS type so we
-    // can use recommended defaults for the new machine where OVF doesen't provice any
+    // can use recommended defaults for the new machine where OVF doesn't provide any
     ComPtr<IGuestOSType> osType;
     rc = mVirtualBox->GetGuestOSType(Bstr(stack.strOsTypeVBox).raw(), osType.asOutParam());
     if (FAILED(rc)) throw rc;

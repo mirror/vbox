@@ -178,7 +178,7 @@
 
 
 /** @name Context values for the per-session handle tables.
- * The context value is used to distiguish between the different kinds of
+ * The context value is used to distinguish between the different kinds of
  * handles, making the handle table API do all the work.
  * @{ */
 /** Handle context value for single release event handles.  */
@@ -215,7 +215,7 @@ typedef enum
     MEMREF_TYPE_UNUSED = 0,
     /** Locked memory (r3 mapping only). */
     MEMREF_TYPE_LOCKED,
-    /** Continous memory block (r3 and r0 mapping). */
+    /** Continuous memory block (r3 and r0 mapping). */
     MEMREF_TYPE_CONT,
     /** Low memory block (r3 and r0 mapping). */
     MEMREF_TYPE_LOW,
@@ -289,7 +289,7 @@ typedef struct SUPDRVLDRIMAGE
     PFNR0MODULETERM                 pfnModuleTerm;
     /** Service request handler. This is NULL for non-service modules. */
     PFNSUPR0SERVICEREQHANDLER       pfnServiceReqHandler;
-    /** The ldr image state. (IOCtl code of last opration.) */
+    /** The ldr image state. (IOCtl code of last operation.) */
     uint32_t                        uState;
     /** Usage count. */
     uint32_t volatile               cUsage;
@@ -547,7 +547,7 @@ int  VBOXCALL   supdrvOSEnableVTx(bool fEnabled);
  * @param   pImage              The image handle.  pvImage should be set on
  *                              success, pvImageAlloc can also be set if
  *                              appropriate.
- * @param   pszFilename         The file name - UTF-8, may containg UNIX
+ * @param   pszFilename         The file name - UTF-8, may containing UNIX
  *                              slashes on non-UNIX systems.
  */
 int  VBOXCALL   supdrvOSLdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage, const char *pszFilename);

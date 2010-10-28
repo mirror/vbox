@@ -58,7 +58,7 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSOPS
     DECLR3CALLBACKMEMBER(int, pfnInitialize, (PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNODE pCfgNode));
 
     /**
-     * Frees all allocated ressources which were allocated during init.
+     * Frees all allocated resources which were allocated during init.
      *
      * @returns VBox status code.
      * @param   pClassGlobals    Pointer to the globals data.

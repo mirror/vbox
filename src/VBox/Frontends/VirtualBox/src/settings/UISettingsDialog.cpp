@@ -442,7 +442,7 @@ bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
             break;
     }
 
-    /* Base-class proessing: */
+    /* Base-class processing: */
     return QIMainDialog::eventFilter(pObject, pEvent);
 }
 

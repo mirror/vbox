@@ -112,7 +112,7 @@ typedef struct RTRANDINT
     /**
      * Restores the state of a pseudo generator.
      *
-     * The state must've been obtained using pfnGetState.
+     * The state must have been obtained using pfnGetState.
      *
      * @returns IPRT status code.
      * @retval  VERR_PARSE_ERROR if the state string is malformed.

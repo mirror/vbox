@@ -161,7 +161,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     }
 
     /*
-     * Before we do anything with COM, we have to initalize it.
+     * Before we do anything with COM, we have to initialize it.
      */
     HRESULT hrc = rtSystemDmiWinInitialize();
     if (FAILED(hrc))

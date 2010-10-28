@@ -57,7 +57,7 @@ RT_C_DECLS_BEGIN
  * @param   iInstance   Instance number. Use this to figure out which registers
  *                      and such to use. The instance number is also found in
  *                      pDevIns->iInstance, but since it's likely to be
- *                      freqently used PDM passes it as parameter.
+ *                      frequently used PDM passes it as parameter.
  * @param   pCfg        Configuration node handle for the driver.  This is
  *                      expected to be in high demand in the constructor and is
  *                      therefore passed as an argument.  When using it at other
@@ -2236,9 +2236,9 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device owning the MMIO2 memory.
      * @param   iRegion             The region.
      * @param   off                 The offset into the region. Will be rounded down
-     *                              to closest page boundrary.
+     *                              to closest page boundary.
      * @param   cb                  The number of bytes to map. Will be rounded up
-     *                              to the closest page boundrary.
+     *                              to the closest page boundary.
      * @param   pszDesc             Mapping description.
      * @param   pRCPtr              Where to store the RC address.
      */
@@ -2483,7 +2483,7 @@ typedef struct PDMDEVHLPR3
      * @param   pGCPhys             Where to store the GC physical address
      *                              corresponding to GCPtr.
      * @thread  The emulation thread.
-     * @remark  Careful with page boundraries.
+     * @remark  Careful with page boundaries.
      */
     DECLR3CALLBACKMEMBER(int, pfnPhysGCPtr2GCPhys, (PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys));
 
@@ -2803,7 +2803,7 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      * @param   pCritSect           Pointer to the critical section.
      * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
-     * @param   pszNameFmt          Format string for namging the critical section.
+     * @param   pszNameFmt          Format string for naming the critical section.
      *                              For statistics and lock validation.
      * @param   va                  Arguments for the format string.
      */
@@ -4281,7 +4281,7 @@ DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT c
  * @param   pDevIns             The device instance.
  * @param   pCritSect           Pointer to the critical section.
  * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
- * @param   pszNameFmt          Format string for namging the critical section.
+ * @param   pszNameFmt          Format string for naming the critical section.
  *                              For statistics and lock validation.
  * @param   ...                 Arguments for the format string.
  */

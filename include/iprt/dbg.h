@@ -431,7 +431,7 @@ RTDECL(int) RTDbgAsModuleByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTDBGMOD phMod,
  * @param   pszName         The module name.
  * @param   iName           There can be more than one module by the same name
  *                          in an address space. This argument indicates which
- *                          is ment. (0 based)
+ *                          is meant. (0 based)
  * @param   phMod           Where to the return the retained module handle.
  */
 RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iName, PRTDBGMOD phMod);
@@ -689,7 +689,7 @@ RTDECL(const char *) RTDbgModName(RTDBGMOD hDbgMod);
 RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUINTPTR poffSeg);
 
 /**
- * Image size when mapped if segments are mapped adjecently.
+ * Image size when mapped if segments are mapped adjacently.
  *
  * For ELF, PE, and Mach-O images this is (usually) a natural query, for LX and
  * NE and such it's a bit odder and the answer may not make much sense for them.
@@ -761,7 +761,7 @@ RTDECL(int)         RTDbgModSegmentAdd(RTDBGMOD hDbgMod, RTUINTPTR uRva, RTUINTP
 /**
  * Gets the number of segments in the module.
  *
- * This is can be used to determin the range which can be passed to
+ * This is can be used to determine the range which can be passed to
  * RTDbgModSegmentByIndex and derivates.
  *
  * @returns The segment relative address.
@@ -827,7 +827,7 @@ RTDECL(RTUINTPTR)   RTDbgModSegmentRva(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg);
  *
  * @returns IPRT status code.
  * @retval  VERR_NOT_SUPPORTED if the module interpret doesn't support adding
- *          custom symbols. This is a common place occurance.
+ *          custom symbols. This is a common place occurrence.
  * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
  * @retval  VERR_DBG_SYMBOL_NAME_OUT_OF_RANGE if the symbol name is too long or
  *          short.
@@ -904,7 +904,7 @@ RTDECL(int)         RTDbgModSymbolByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal
 /**
  * Queries symbol information by address.
  *
- * The returned symbol is what the debug info interpreter consideres the symbol
+ * The returned symbol is what the debug info interpreter considers the symbol
  * most applicable to the specified address. This usually means a symbol with an
  * address equal or lower than the requested.
  *
@@ -931,7 +931,7 @@ RTDECL(int)         RTDbgModSymbolByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTU
 /**
  * Queries symbol information by address.
  *
- * The returned symbol is what the debug info interpreter consideres the symbol
+ * The returned symbol is what the debug info interpreter considers the symbol
  * most applicable to the specified address. This usually means a symbol with an
  * address equal or lower than the requested.
  *
@@ -1075,7 +1075,7 @@ RTDECL(int)         RTDbgModLineByOrdinalA(RTDBGMOD hDbgMod, uint32_t iOrdinal, 
 /**
  * Queries line number information by address.
  *
- * The returned line number is what the debug info interpreter consideres the
+ * The returned line number is what the debug info interpreter considers the
  * one most applicable to the specified address. This usually means a line
  * number with an address equal or lower than the requested.
  *
@@ -1102,7 +1102,7 @@ RTDECL(int)         RTDbgModLineByAddr(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUIN
 /**
  * Queries line number information by address.
  *
- * The returned line number is what the debug info interpreter consideres the
+ * The returned line number is what the debug info interpreter considers the
  * one most applicable to the specified address. This usually means a line
  * number with an address equal or lower than the requested.
  *

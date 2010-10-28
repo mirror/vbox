@@ -211,7 +211,7 @@ if test ! -z "$xorgbin"; then
                 cp "$vboxadditions32_path/$vboxmouse_src" "$vboxmouse_dest"
                 cp "$vboxadditions32_path/$vboxvideo_src" "$vboxvideo_dest"
 
-                # Removing redundent names from pkg and files from disk
+                # Removing redundant names from pkg and files from disk
                 /usr/sbin/removef $PKGINST $vboxadditions32_path/vboxmouse_drv_* 1>/dev/null
                 /usr/sbin/removef $PKGINST $vboxadditions32_path/vboxvideo_drv_* 1>/dev/null
                 rm -f $vboxadditions32_path/vboxmouse_drv_*
@@ -227,7 +227,7 @@ if test ! -z "$xorgbin"; then
                 cp "$vboxadditions64_path/$vboxmouse_src" "$vboxmouse_dest"
                 cp "$vboxadditions64_path/$vboxvideo_src" "$vboxvideo_dest"
 
-                # Removing redundent names from pkg and files from disk
+                # Removing redundant names from pkg and files from disk
                 /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxmouse_drv_* 1>/dev/null
                 /usr/sbin/removef $PKGINST $vboxadditions64_path/vboxvideo_drv_* 1>/dev/null
                 rm -f $vboxadditions64_path/vboxmouse_drv_*

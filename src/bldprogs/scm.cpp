@@ -224,20 +224,20 @@ typedef struct SCMSETTINGSBASE
     bool            fOnlySvnDirs;
     /** Set svn:eol-style if missing or incorrect. */
     bool            fSetSvnEol;
-    /** Set svn:executable according to type (unually this means deleting it). */
+    /** Set svn:executable according to type (unusually this means deleting it). */
     bool            fSetSvnExecutable;
     /** Set svn:keyword if completely or partially missing. */
     bool            fSetSvnKeywords;
     /**  */
     unsigned        cchTab;
-    /** Only consider files matcihng these patterns.  This is only applied to the
+    /** Only consider files matching these patterns.  This is only applied to the
      *  base names. */
     char           *pszFilterFiles;
     /** Filter out files matching the following patterns.  This is applied to base
-     *  names as well as the aboslute paths.  */
+     *  names as well as the absolute paths.  */
     char           *pszFilterOutFiles;
     /** Filter out directories matching the following patterns.  This is applied
-     *  to base names as well as the aboslute paths.  All absolute paths ends with a
+     *  to base names as well as the absolute paths.  All absolute paths ends with a
      *  slash and dot ("/.").  */
     char           *pszFilterOutDirs;
 } SCMSETTINGSBASE;
@@ -314,13 +314,13 @@ typedef struct SCMSETTINGS *PSCMSETTINGS;
  * Settings set.
  *
  * This structure is constructed from the command line arguments or any
- * .scm-settings file found in a directory we recurse into.  When recusing in
+ * .scm-settings file found in a directory we recurse into.  When recursing in
  * and out of a directory, we push and pop a settings set for it.
  *
  * The .scm-settings file has two kinds of setttings, first there are the
  * unqualified base settings and then there are the settings which applies to a
  * set of files or directories.  The former are lines with command line options.
- * For the latter, the options are preceeded by a string pattern and a colon.
+ * For the latter, the options are preceded by a string pattern and a colon.
  * The pattern specifies which files (and/or directories) the options applies
  * to.
  *
@@ -862,7 +862,7 @@ static const char *scmStreamGetLineInternal(PSCMSTREAM pStream, size_t *pcchLine
 }
 
 /**
- * Internal worker that lineates a stream.
+ * Internal worker that delineates a stream.
  *
  * @returns IPRT status code.
  * @param   pStream             The stream.  Caller must check that it is in
@@ -952,7 +952,7 @@ int ScmStreamSeekAbsolute(PSCMSTREAM pStream, size_t offAbsolute)
     if (RT_FAILURE(pStream->rc))
         return pStream->rc;
 
-    /* Must be fully lineated. (lazy bird) */
+    /* Must be fully delineated. (lazy bird) */
     if (RT_UNLIKELY(!pStream->fFullyLineated))
     {
         int rc = scmStreamLineate(pStream);
@@ -997,7 +997,7 @@ int ScmStreamSeekAbsolute(PSCMSTREAM pStream, size_t offAbsolute)
  * @param   pStream             The stream.  Must be in read mode.
  * @param   offRelative         The offset to seek to.  A negative offset
  *                              rewinds and positive one fast forwards the
- *                              stream.  Will quietly stop at the begining and
+ *                              stream.  Will quietly stop at the beginning and
  *                              end of the stream.
  */
 int ScmStreamSeekRelative(PSCMSTREAM pStream, ssize_t offRelative)
@@ -1027,7 +1027,7 @@ int ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine)
     if (RT_FAILURE(pStream->rc))
         return pStream->rc;
 
-    /* Must be fully lineated. (lazy bird) */
+    /* Must be fully delineated. (lazy bird) */
     if (RT_UNLIKELY(!pStream->fFullyLineated))
     {
         int rc = scmStreamLineate(pStream);
@@ -1058,7 +1058,7 @@ int ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine)
  *
  * @returns Pointer to the first character in the line, not NULL terminated.
  *          NULL if the end of the stream has been reached or some problem
- *          occured.
+ *          occurred.
  *
  * @param   pStream             The stream.  Must be in read mode.
  * @param   iLine               The line to get (0-based).
@@ -1071,7 +1071,7 @@ static const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t
     if (RT_FAILURE(pStream->rc))
         return NULL;
 
-    /* Make sure it's fully lineated so we can use the index. */
+    /* Make sure it's fully delineated so we can use the index. */
     if (RT_UNLIKELY(!pStream->fFullyLineated))
     {
         int rc = scmStreamLineate(pStream);
@@ -1108,7 +1108,7 @@ static const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t
  *
  * @returns Pointer to the first character in the line, not NULL terminated.
  *          NULL if the end of the stream has been reached or some problem
- *          occured.
+ *          occurred.
  *
  * @param   pStream             The stream.  Must be in read mode.
  * @param   pcchLine            The length.
@@ -1439,7 +1439,7 @@ int ScmStreamPutCh(PSCMSTREAM pStream, char ch)
 
     /*
      * Only deal with the simple cases here, use ScmStreamWrite for the
-     * annyoing stuff.
+     * annoying stuff.
      */
     size_t off = pStream->off;
     if (   ch == '\n'
@@ -1462,7 +1462,7 @@ int ScmStreamPutCh(PSCMSTREAM pStream, char ch)
  * The stream positions will be used and changed in both streams.
  *
  * @returns IPRT status code.
- * @param   pDst                The destionation stream.  Must be in write mode.
+ * @param   pDst                The destination stream.  Must be in write mode.
  * @param   cLines              The number of lines.  (0 is accepted.)
  * @param   pSrc                The source stream.  Must be in read mode.
  */
@@ -1564,7 +1564,7 @@ static void scmDiffPrintLines(PSCMDIFFSTATE pState, char chPrefix, PSCMSTREAM pS
 
 
 /**
- * Reports a difference and propells the streams to the lines following the
+ * Reports a difference and propels the streams to the lines following the
  * resync.
  *
  *
@@ -2228,7 +2228,7 @@ static int scmSettingsCreate(PSCMSETTINGS *ppSettings, PCSCMSETTINGSBASE pSettin
 /**
  * Destroys a settings structure.
  *
- * @param   pSettings           The settgins structure to destroy.  NULL is OK.
+ * @param   pSettings           The settings structure to destroy.  NULL is OK.
  */
 static void scmSettingsDestroy(PSCMSETTINGS pSettings)
 {
@@ -3481,7 +3481,7 @@ static bool rewrite_Makefile_kup(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM 
  *
  * Ideas for Makefile.kmk and Config.kmk:
  *      - sort if1of/ifn1of sets.
- *      - line continuation slashes should only be preceeded by one space.
+ *      - line continuation slashes should only be preceded by one space.
  */
 static bool rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
@@ -3769,7 +3769,7 @@ static RTDIRENTRYTYPE scmFigureUnknownType(const char *pszPath)
  * @returns IPRT status code.
  * @param   pszBuf              Path buffer containing the directory path on
  *                              entry.  This ends with a dot.  This is passed
- *                              along when recusing in order to save stack space
+ *                              along when recursing in order to save stack space
  *                              and avoid needless copying.
  * @param   cchDir              Length of our path in pszbuf.
  * @param   pEntry              Directory entry buffer.  This is also passed
@@ -3923,7 +3923,7 @@ static int scmProcessDirTree(char *pszDir, PSCMSETTINGS pSettingsStack)
  * Processes a file or directory specified as an command line argument.
  *
  * @returns IPRT status code
- * @param   pszSomething        What we found in the commad line arguments.
+ * @param   pszSomething        What we found in the command line arguments.
  * @param   pSettingsStack      The settings stack (pointer to the top element).
  */
 static int scmProcessSomething(const char *pszSomething, PSCMSETTINGS pSettingsStack)

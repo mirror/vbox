@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Support Driver - Inter-Driver Communciation (IDC) definitions.
+ * VirtualBox Support Driver - Inter-Driver Communication (IDC) definitions.
  */
 
 /*
@@ -34,7 +34,7 @@
  *
  * @param Function      The function number to encode, 1..255.
  *
- * @remarks We can take a sligtly more relaxed attitude wrt to size encoding
+ * @remarks We can take a slightly more relaxed attitude wrt to size encoding
  *          here since only windows will use standard I/O control function code.
  */
 #ifdef RT_OS_WINDOWS
@@ -193,7 +193,7 @@ typedef SUPDRVIDCREQCOMPREGFACTORY *PSUPDRVIDCREQCOMPREGFACTORY;
 
 
 /**
- * SUPDRV IDC: Dergister a component factory.
+ * SUPDRV IDC: Deregister a component factory.
  * This request takes a SUPDRVIDCREQCOMPDEREGFACTORY packet.
  */
 #define SUPDRV_IDC_REQ_COMPONENT_DEREGISTER_FACTORY     SUP_IDC_CODE(11)

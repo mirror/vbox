@@ -216,7 +216,7 @@ DECLINLINE(void) ASMCompilerBarrier(void)
  * Spinloop hint for platforms that have these, empty function on the other
  * platforms.
  *
- * x86 & AMD64: The PAUSE variant of NOP for helping hyperthreaded CPUs detecing
+ * x86 & AMD64: The PAUSE variant of NOP for helping hyperthreaded CPUs detecting
  * spin locks.
  */
 #if RT_INLINE_ASM_EXTERNAL && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
@@ -3170,7 +3170,7 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
  * @returns true / false.
  *
  * @param   pvPage      Pointer to the page.  Must be aligned on 16 byte
- *                      boundrary
+ *                      boundary
  */
 DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
 {

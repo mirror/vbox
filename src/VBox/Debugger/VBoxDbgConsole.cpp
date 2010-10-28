@@ -256,7 +256,7 @@ VBoxDbgConsole::VBoxDbgConsole(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent/* = NUL
     setLayout(pVLayout);
 
     /*
-     * The tab order is from input to output, not the otherway around as it is by default.
+     * The tab order is from input to output, not the other way around as it is by default.
      */
     setTabOrder(m_pInput, m_pOutput);
 

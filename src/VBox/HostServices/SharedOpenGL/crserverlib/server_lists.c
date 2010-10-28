@@ -22,7 +22,7 @@
  *
  * By zeroing the 'shared_display_lists' configuration option, we can tell
  * the server to make list K be unique for all N clients.  We do this by
- * translating K into a new, unique ID dependant on which client we're
+ * translating K into a new, unique ID dependent on which client we're
  * talking to (curClient->number).
  *
  * Same story for texture objects, vertex programs, etc.

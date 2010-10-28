@@ -352,7 +352,7 @@ typedef struct drm_buf {
 		DRM_LIST_RECLAIM = 5
 	}		list;		/* Which list we're on */
 
-	int		dev_priv_size;	/* Size of buffer private stoarge */
+	int		dev_priv_size;	/* Size of buffer private storage */
 	void		*dev_private;	/* Per-buffer private storage */
 } drm_buf_t;
 

@@ -278,7 +278,7 @@ void Phy::writeRegister(PPHY pPhy, uint32_t u32Address, uint16_t u16Value)
 }
 
 /**
- * PHY contructor.
+ * PHY constructor.
  *
  * Stores E1000 instance internally. Triggers PHY hard reset.
  *
@@ -309,7 +309,7 @@ void Phy::hardReset(PPHY pPhy)
     PhyLog(("PHY#%d Hard reset\n", pPhy->iInstance));
     REG(PCTRL) = PCTRL_SPDSELM | PCTRL_DUPMOD | PCTRL_ANEG;
     /*
-     * 100 and 10 FD/HD, MF Preamble Suppresion, Auto-Negotiation Complete,
+     * 100 and 10 FD/HD, MF Preamble Suppression, Auto-Negotiation Complete,
      * AUTO NEG AB, EXT CAP
      */
     REG(PSTATUS)  = (REG(PSTATUS) & ~PSTATUS_LNKSTAT) | 0x7969;
@@ -376,7 +376,7 @@ void Phy::setLinkStatus(PPHY pPhy, bool fLinkIsUp)
 /**
  * Save PHY state.
  *
- * @remarks Since PHY is agregated into E1K it does not currently supports
+ * @remarks Since PHY is aggregated into E1K it does not currently supports
  *          versioning of its own.
  *
  * @returns VBox status code.
@@ -392,7 +392,7 @@ int Phy::saveState(PSSMHANDLE pSSMHandle, PPHY pPhy)
 /**
  * Restore previously saved PHY state.
  *
- * @remarks Since PHY is agregated into E1K it does not currently supports
+ * @remarks Since PHY is aggregated into E1K it does not currently supports
  *          versioning of its own.
  *
  * @returns VBox status code.

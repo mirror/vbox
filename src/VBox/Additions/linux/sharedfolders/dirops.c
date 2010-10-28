@@ -224,7 +224,7 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX])
  *
  * [dir] contains:
  * f_pos : cursor into the directory listing
- * private_data : mean of communcation with the host side
+ * private_data : mean of communication with the host side
  *
  * Extract elements from the directory listing (incrementing f_pos
  * along the way) and feed them to [filldir] until:
@@ -304,7 +304,7 @@ struct file_operations sf_dir_fops =
  * Failure to locate the name is not a "hard" error, in this case NULL
  * inode is added to [dentry] and vfs should proceed trying to create
  * the entry via other means. NULL(or "positive" pointer) ought to be
- * returned in case of succes and "negative" pointer on error
+ * returned in case of success and "negative" pointer on error
  */
 static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)

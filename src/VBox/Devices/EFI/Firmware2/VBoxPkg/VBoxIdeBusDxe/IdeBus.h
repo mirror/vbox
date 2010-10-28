@@ -444,8 +444,8 @@ IDEBlkIoWriteBlocks (
 /**
   Flushes all modified data to a physical block devices
 
-  @param  This  Indicates a pointer to the calling context which to sepcify a 
-                sepcific block device
+  @param  This  Indicates a pointer to the calling context which to specify a 
+                specific block device
 
   @retval EFI_SUCCESS   Always return success.
 **/
@@ -465,7 +465,7 @@ IDEBlkIoFlushBlocks (
   @retval EFI_SUCCESS           The command was accepted without any errors.
   @retval EFI_NOT_FOUND         Device does not support this data class 
   @retval EFI_DEVICE_ERROR      Error reading InquiryData from device 
-  @retval EFI_BUFFER_TOO_SMALL  IntquiryDataSize not big enough 
+  @retval EFI_BUFFER_TOO_SMALL  InquiryDataSize not big enough 
 
 **/
 EFI_STATUS
@@ -545,7 +545,7 @@ IDEDiskInfoWhichIde (
   Clear pending IDE interrupt before OS loader/kernel take control of the IDE device.
 
   @param  Event   Pointer to this event
-  @param  Context Event hanlder private data
+  @param  Context Event handler private data
 
 **/
 VOID

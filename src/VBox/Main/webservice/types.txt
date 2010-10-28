@@ -25,6 +25,6 @@
 (1) my definition
 (2) Java "Short" is signed 16-bit integer; since Java has no support for unsigned types, we need to use the
     next bigger class, which is Integer, for IPRT uint16_t. Similarly for the other integer types.
-(3) PHP does not support unsigned integers; Size of integer is platform-dependant, usual value of at least 32-bits signed. Use float for numbers greeted that signed 32-bit int
+(3) PHP does not support unsigned integers; Size of integer is platform-dependent, usual value of at least 32-bits signed. Use float for numbers greeted that signed 32-bit int
 
 

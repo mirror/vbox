@@ -203,7 +203,7 @@ typedef struct RTFILEAIOREQINTERNAL
     LNXKAIOCONTEXT        AioContext;
     /** Return code the request completed with. */
     int                   Rc;
-    /** Number of bytes actually trasnfered. */
+    /** Number of bytes actually transferred. */
     size_t                cbTransfered;
     /** Completion context we are assigned to. */
     PRTFILEAIOCTXINTERNAL pCtxInt;
@@ -561,7 +561,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
     PRTFILEAIOREQINTERNAL pReqInt = NULL;
 
     /*
-     * Vaildate requests and associate with the context.
+     * Validate requests and associate with the context.
      */
     while (i-- > 0)
     {
@@ -604,7 +604,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
              * (invalid buffer alignment or bad file descriptor).
              * Revert every request into the prepared state except
              * the first one which will switch to completed.
-             * Another reason could be insuffidient ressources.
+             * Another reason could be insufficient resources.
              */
             i = cReqs;
             while (i-- > 0)

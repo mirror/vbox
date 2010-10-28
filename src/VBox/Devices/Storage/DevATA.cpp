@@ -226,7 +226,7 @@ typedef struct ATADevState
     /** Pointer to the I/O buffer. */
     RCPTRTYPE(uint8_t *) pbIOBufferRC;
 
-    RTRCPTR Aligmnent1; /**< Align the statistics at an 8-byte boundrary. */
+    RTRCPTR Aligmnent1; /**< Align the statistics at an 8-byte boundary. */
 
     /*
      * No data that is part of the saved state after this point!!!!!
@@ -2072,7 +2072,7 @@ static bool atapiPassthroughSS(ATADevState *s)
             uint8_t u8Cmd = s->aATAPICmd[0];
             do
             {
-                /* don't log superflous errors */
+                /* don't log superfluous errors */
                 if (    rc == VERR_DEV_IO_ERROR
                     && (   u8Cmd == SCSI_TEST_UNIT_READY
                         || u8Cmd == SCSI_READ_CAPACITY
@@ -2386,7 +2386,7 @@ static bool atapiGetEventStatusNotificationSS(ATADevState *s)
                 /* mount */
                 ataH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
-                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x02; /* new medium */
                 pbBuf[5] = 0x02; /* medium present / door closed */
                 pbBuf[6] = 0x00;
@@ -2398,7 +2398,7 @@ static bool atapiGetEventStatusNotificationSS(ATADevState *s)
                 /* umount */
                 ataH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x04; /* media */
-                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x03; /* media removal */
                 pbBuf[5] = 0x00; /* medium absent / door closed */
                 pbBuf[6] = 0x00;
@@ -2421,7 +2421,7 @@ static bool atapiGetEventStatusNotificationSS(ATADevState *s)
             default:
                 ataH2BE_U16(pbBuf + 0, 6);
                 pbBuf[2] = 0x01; /* operational change request / notification */
-                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
                 pbBuf[4] = 0x00;
                 pbBuf[5] = 0x00;
                 pbBuf[6] = 0x00;
@@ -4602,7 +4602,7 @@ static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
     rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex); AssertRC(rc);
 }
 
-/** Asynch I/O thread for an interface. Once upon a time this was readable
+/** Async I/O thread for an interface. Once upon a time this was readable
  * code with several loops and a different semaphore for each purpose. But
  * then came the "how can one save the state in the middle of a PIO transfer"
  * question. The solution was to use an ASM, which is what's there now. */
@@ -6156,7 +6156,7 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
     if (!fConstruct)
     {
         /*
-         * Setup asynchronous notification compmletion if the requests haven't
+         * Setup asynchronous notification completion if the requests haven't
          * completed yet.
          */
         if (!ataR3IsAsyncResetDone(pDevIns))
@@ -7042,7 +7042,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 switch (rc)
                 {
                     case VERR_ACCESS_DENIED:
-                        /* Error already catched by DrvHostBase */
+                        /* Error already cached by DrvHostBase */
                         return rc;
                     default:
                         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,

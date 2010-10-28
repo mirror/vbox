@@ -860,7 +860,7 @@ while(0);
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT,GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_FBODepthStencilPackedId);
     glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_FBODepthStencilPackedId);
 
-    /* Make sure the FBO was created succesfully. */
+    /* Make sure the FBO was created successfully. */
     if (GL_FRAMEBUFFER_COMPLETE_EXT != glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT))
         DEBUG_MSG(("Framebuffer Object creation or update failed!\n"));
 
@@ -893,7 +893,7 @@ while(0);
         /* Now attach texture to the FBO as its color destination */
         glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, m_FBOThumbTexId, 0);
 
-        /* Make sure the FBO was created succesfully. */
+        /* Make sure the FBO was created successfully. */
         if (GL_FRAMEBUFFER_COMPLETE_EXT != glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT))
             DEBUG_MSG(("Framebuffer Thumb Object creation or update failed!\n"));
 

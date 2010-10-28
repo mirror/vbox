@@ -1398,7 +1398,7 @@ void SDLConsole::setPointerShape (const PointerShapeChangeData *data)
         bi.bV5Planes = 1;
         bi.bV5BitCount = 32;
         bi.bV5Compression = BI_BITFIELDS;
-        // specifiy a supported 32 BPP alpha format for Windows XP
+        // specify a supported 32 BPP alpha format for Windows XP
         bi.bV5RedMask   = 0x00FF0000;
         bi.bV5GreenMask = 0x0000FF00;
         bi.bV5BlueMask  = 0x000000FF;

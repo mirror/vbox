@@ -698,7 +698,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
 
     /*
      * Not a known option argument. If it starts with a switch char (-) we'll
-     * fail with unkown option, and if it doesn't we'll return it as a non-option.
+     * fail with unknown option, and if it doesn't we'll return it as a non-option.
      */
     if (*pszArgThis == '-')
     {

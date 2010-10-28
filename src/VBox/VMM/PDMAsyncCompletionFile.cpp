@@ -457,7 +457,7 @@ static void pdmacFileAioMgrDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile, 
     rc = RTCritSectLeave(&pEpClassFile->CritSect);
     AssertRC(rc);
 
-    /* Free the ressources. */
+    /* Free the resources. */
     RTCritSectDelete(&pAioMgr->CritSectBlockingEvent);
     RTSemEventDestroy(pAioMgr->EventSem);
     if (pAioMgr->enmMgrType != PDMACEPFILEMGRTYPE_SIMPLE)

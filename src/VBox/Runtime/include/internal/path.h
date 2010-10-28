@@ -63,7 +63,7 @@ DECLHIDDEN(int)     rtPathWin32MoveRename(const char *pszSrc, const char *pszDst
  *                          directory.
  *
  * @remark  This function is not available on hosts using something else than
- *          byte seqences as names (eg win32).
+ *          byte sequences as names (eg win32).
  */
 int rtPathToNative(char const **ppszNativePath, const char *pszPath, const char *pszBasePath);
 
@@ -75,7 +75,7 @@ int rtPathToNative(char const **ppszNativePath, const char *pszPath, const char 
  *                          rtPathToNative returned the pointer to the original.
  *
  * @remark  This function is not available on hosts using something else than
- *          byte seqences as names (eg win32).
+ *          byte sequences as names (eg win32).
  */
 void rtPathFreeNative(char const *pszNativePath, const char *pszPath);
 
@@ -90,7 +90,7 @@ void rtPathFreeNative(char const *pszNativePath, const char *pszPath);
  *                          representation.  NULL if current directory.
  *
  * @remark  This function is not available on hosts using something else than
- *          byte seqences as names (eg win32).
+ *          byte sequences as names (eg win32).
  */
 int rtPathFromNative(const char **ppszPath, const char *pszNativePath, const char *pszBasePath);
 

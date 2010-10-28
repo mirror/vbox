@@ -175,7 +175,7 @@ static int DarwinSmcKey(char *pabKey, uint32_t cbKey)
 
 #endif /* RT_OS_DARWIN */
 
-/* Darwin compile cludge */
+/* Darwin compile kludge */
 #undef PVM
 
 /* Comment out the following line to remove VMWare compatibility hack. */
@@ -401,7 +401,7 @@ static void InsertConfigBytes(PCFGMNODE pNode,
 }
 
 /**
- * Helper that calls CFGMR3InsertInteger and thows an iprt::Error if that
+ * Helper that calls CFGMR3InsertInteger and throws an iprt::Error if that
  * fails.
  *
  * @param   pNode           See CFGMR3InsertInteger.
@@ -788,7 +788,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
 
         /*
-         * I/O settings (cach, max bandwidth, ...).
+         * I/O settings (cache, max bandwidth, ...).
          */
         PCFGMNODE pPDMAc;
         PCFGMNODE pPDMAcFile;
@@ -2063,7 +2063,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     */
                     InsertConfigNode(pUsbDevices, "USBProxy", &pCfg);
                     InsertConfigNode(pCfg, "GlobalConfig", &pCfg);
-                    // This globally enables the 2.0 -> 1.1 device morphing of proxied devies to keep windows quiet.
+                    // This globally enables the 2.0 -> 1.1 device morphing of proxied devices to keep windows quiet.
                     //InsertConfigInteger(pCfg, "Force11Device", true);
                     // The following breaks stuff, but it makes MSDs work in vista. (I include it here so
                     // that it's documented somewhere.) Users needing it can use:
@@ -2660,7 +2660,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                 int rc2 = RTFsQueryType(utfFile.c_str(), &enmFsTypeFile);
                 AssertMsgRCReturn(rc2, ("Querying the file type of '%s' failed!\n", utfFile.c_str()), rc2);
                 /* Ignore the error code. On error, the file system type is still 'unknown' so
-                 * none of the following pathes is taken. This can happen for new VMs which
+                 * none of the following paths are taken. This can happen for new VMs which
                  * still don't have a snapshot folder. */
                 (void)RTFsQueryType(utfSnap.c_str(), &enmFsTypeSnap);
                 LogRel(("File system of '%s' is %s\n", utfFile.c_str(), RTFsTypeName(enmFsTypeFile)));
@@ -3075,7 +3075,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                     }
                 }
 
-                /* Create an inversed list of parents. */
+                /* Create an inverted list of parents. */
                 uImage--;
                 IMedium *pParentMedium = pMedium;
                 for (PCFGMNODE pParent = pCfg;; uImage--)
@@ -3837,7 +3837,7 @@ int Console::configNetwork(const char *pszDevice,
 
 # if defined(RT_OS_SOLARIS)
 #  if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */
-            /* Zone access restriction, don't allow snopping the global zone. */
+            /* Zone access restriction, don't allow snooping the global zone. */
             zoneid_t ZoneId = getzoneid();
             if (ZoneId != GLOBAL_ZONEID)
             {

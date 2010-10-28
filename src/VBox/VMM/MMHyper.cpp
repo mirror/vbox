@@ -72,7 +72,7 @@ DECLINLINE(uint32_t) mmR3ComputeHyperHeapSize(PVM pVM, bool fCanUseLargerHeap)
 
 
 /**
- * Initializes the hypvervisor related MM stuff without
+ * Initializes the hypervisor related MM stuff without
  * calling down to PGM.
  *
  * PGM is not initialized at this  point, PGM relies on
@@ -503,8 +503,8 @@ VMMR3DECL(int) MMR3HyperMapGCPhys(PVM pVM, RTGCPHYS GCPhys, size_t cb, const cha
  * @param   pVM         Pointer to the shared VM structure.
  * @param   pDevIns     The device owning the MMIO2 memory.
  * @param   iRegion     The region.
- * @param   off         The offset into the region. Will be rounded down to closest page boundrary.
- * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundrary.
+ * @param   off         The offset into the region. Will be rounded down to closest page boundary.
+ * @param   cb          The number of bytes to map. Will be rounded up to the closest page boundary.
  * @param   pszDesc     Mapping description.
  * @param   pRCPtr      Where to store the RC address.
  */
@@ -702,7 +702,7 @@ VMMR3DECL(int) MMR3HyperReserve(PVM pVM, unsigned cb, const char *pszDesc, PRTGC
  *
  * @return VBox status code.
  * @param   pVM         The VM handle.
- * @param   cb          Size of the memory. Will be rounded up to neares page.
+ * @param   cb          Size of the memory. Will be rounded up to nearest page.
  * @param   pszDesc     The description of the memory.
  * @param   pGCPtr      Where to store the GC address.
  * @param   ppLookup    Where to store the pointer to the lookup record.
@@ -1096,7 +1096,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmR3HyperLookupR3(PVM pVM, void *pvR3)
  * @param   pvStart             The hyper heap page address. Must be page
  *                              aligned.
  * @param   cb                  The number of bytes. Must be page aligned.
- * @param   fSet                Wheter to set or unset guard page status.
+ * @param   fSet                Whether to set or unset guard page status.
  */
 VMMR3DECL(int) MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet)
 {

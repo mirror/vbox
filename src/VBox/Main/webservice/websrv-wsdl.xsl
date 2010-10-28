@@ -42,7 +42,7 @@
     "inout" arguments. An optional second message for the response contains
     the return value, if one is present in the IDL (called "_return" to
     avoid name clashes), together with all the "out" and "inout" arguments.
-    Each of these messages, however, need to be independently declarared
+    Each of these messages, however, need to be independently declared
     using the "message" element outside of the "port type" declaration.
 
     As an example: To create this XPCOM IDL:
@@ -881,7 +881,7 @@
 
 <!--
     template for "idl" match; this emits the header of the target file
-    and recurses into the librarys with interfaces (which are matched below)
+    and recurses into the libraries with interfaces (which are matched below)
     -->
 <xsl:template match="/idl">
   <xsl:comment>

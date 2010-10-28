@@ -54,7 +54,7 @@
 #pragma warning ( disable : 4057 )
 
 //
-// ASSERT(FALSE) or while (TRUE) are legal constructes so supress this warning
+// ASSERT(FALSE) or while (TRUE) are legal constructs so suppress this warning
 //
 #pragma warning ( disable : 4127 )
 
@@ -70,7 +70,7 @@
   #if _MSC_EXTENSIONS 
     
     //
-    // use Microsoft* C complier dependent interger width types 
+    // use Microsoft* C compiler dependent integer width types 
     //
     typedef unsigned __int64    UINT64;
     typedef __int64             INT64;
@@ -141,7 +141,7 @@ typedef INT32   INTN;
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
 // use the correct C calling convention. All protocol member functions and
-// EFI intrinsics are required to modify thier member functions with EFIAPI.
+// EFI intrinsics are required to modify their member functions with EFIAPI.
 //
 #if _MSC_EXTENSIONS
   //

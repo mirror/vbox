@@ -341,7 +341,7 @@ static int clipRequestDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
  * Send a request to VBox to transfer the contents of its clipboard to X11.
  *
  * @param  pCtx      Pointer to the host clipboard structure
- * @param  u32Format The format in which the data should be transfered
+ * @param  u32Format The format in which the data should be transferred
  * @param  ppv       On success and if pcb > 0, this will point to a buffer
  *                   to be freed with RTMemFree containing the data read.
  * @param  pcb       On success, this contains the number of bytes of data

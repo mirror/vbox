@@ -304,7 +304,7 @@ void crDLLClose( CRDLL *dll )
 	/*
 	 * Unloading Nvidia's libGL will crash VirtualBox later during shutdown.
 	 * Therefore we will skip unloading it. It will be unloaded later anway
-	 * because we are already freeing all ressources and VirtualBox will terminate
+	 * because we are already freeing all resources and VirtualBox will terminate
 	 * soon.
 	 */
 #ifndef IN_GUEST

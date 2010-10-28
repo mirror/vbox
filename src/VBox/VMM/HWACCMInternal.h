@@ -124,7 +124,7 @@ RT_C_DECLS_BEGIN
 #define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #define HWACCM_SVM_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #endif
-/* All exceptions have to be intercept in emulated real-mode (minues NM & PF as they are always intercepted. */
+/* All exceptions have to be intercept in emulated real-mode (minus NM & PF as they are always intercepted. */
 #define HWACCM_VMX_TRAP_MASK_REALMODE       RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NMI) | RT_BIT(X86_XCPT_BP) | RT_BIT(X86_XCPT_OF) | RT_BIT(X86_XCPT_BR) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_DF) | RT_BIT(X86_XCPT_CO_SEG_OVERRUN) | RT_BIT(X86_XCPT_TS) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF) | RT_BIT(X86_XCPT_AC) | RT_BIT(X86_XCPT_MC) | RT_BIT(X86_XCPT_XF)
 /** @} */
 
@@ -744,7 +744,7 @@ typedef struct HWACCMCPU
         } s;
     } PendingIO;
 
-    /** Currenty shadow paging mode. */
+    /** Currently shadow paging mode. */
     PGMMODE                 enmShadowMode;
 
     /** The CPU ID of the CPU currently owning the VMCS. Set in

@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - String To Number Convertion.
+ * IPRT - String To Number Conversion.
  */
 
 /*
@@ -92,7 +92,7 @@ int main()
  * Converts a string representation of a number to a 64-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VWRN_TRAILING_CHARS
@@ -216,7 +216,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt64Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VINF_SUCCESS
@@ -272,7 +272,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt64);
  * Converts a string representation of a number to a 32-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VWRN_TRAILING_CHARS
@@ -307,7 +307,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt32Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VINF_SUCCESS
@@ -359,7 +359,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt32);
  * Converts a string representation of a number to a 16-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VWRN_TRAILING_CHARS
@@ -394,7 +394,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt16Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VINF_SUCCESS
@@ -446,7 +446,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt16);
  * Converts a string representation of a number to a 8-bit unsigned number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VWRN_TRAILING_CHARS
@@ -481,7 +481,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt8Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_NEGATIVE_UNSIGNED
  * @retval  VINF_SUCCESS
@@ -538,7 +538,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt8);
  * Converts a string representation of a number to a 64-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_TRAILING_CHARS
  * @retval  VWRN_TRAILING_SPACES
@@ -657,7 +657,7 @@ RT_EXPORT_SYMBOL(RTStrToInt64Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VINF_SUCCESS
  * @retval  VERR_TRAILING_CHARS
@@ -712,7 +712,7 @@ RT_EXPORT_SYMBOL(RTStrToInt64);
  * Converts a string representation of a number to a 32-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_TRAILING_CHARS
  * @retval  VWRN_TRAILING_SPACES
@@ -747,7 +747,7 @@ RT_EXPORT_SYMBOL(RTStrToInt32Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VINF_SUCCESS
  * @retval  VERR_TRAILING_CHARS
@@ -799,7 +799,7 @@ RT_EXPORT_SYMBOL(RTStrToInt32);
  * Converts a string representation of a number to a 16-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_TRAILING_CHARS
  * @retval  VWRN_TRAILING_SPACES
@@ -834,7 +834,7 @@ RT_EXPORT_SYMBOL(RTStrToInt16Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VINF_SUCCESS
  * @retval  VERR_TRAILING_CHARS
@@ -886,7 +886,7 @@ RT_EXPORT_SYMBOL(RTStrToInt16);
  * Converts a string representation of a number to a 8-bit signed number.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VWRN_TRAILING_CHARS
  * @retval  VWRN_TRAILING_SPACES
@@ -921,7 +921,7 @@ RT_EXPORT_SYMBOL(RTStrToInt8Ex);
  * making sure the full string is converted.
  *
  * @returns iprt status code.
- *          Warnings are used to indicate convertion problems.
+ *          Warnings are used to indicate conversion problems.
  * @retval  VWRN_NUMBER_TOO_BIG
  * @retval  VINF_SUCCESS
  * @retval  VERR_TRAILING_CHARS

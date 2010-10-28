@@ -65,7 +65,7 @@ typedef enum REMHANDLERNOTIFICATIONKIND
 
 
 /**
- * A recorded handler notificiation.
+ * A recorded handler notification.
  */
 typedef struct REMHANDLERNOTIFICATION
 {
@@ -168,7 +168,7 @@ typedef struct REM
      * These instructions are replayed when entering REM. */
     RTGCPTR                 aGCPtrInvalidatedPages[48];
 
-    /** Array of recorded handler noticications.
+    /** Array of recorded handler notifications.
      * These are replayed when entering REM. */
     REMHANDLERNOTIFICATION  aHandlerNotifications[64];
     volatile uint32_t       idxPendingList;

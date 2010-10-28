@@ -55,7 +55,7 @@ BEGINPROC_EXPORTED ASMMultU64ByU32DivByU32
 
 %else ; X86
     ;
-    ; This implementation is convered from the GCC inline
+    ; This implementation is converted from the GCC inline
     ; version of the code. Nothing additional has been done
     ; performance wise.
     ;

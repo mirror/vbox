@@ -26,7 +26,7 @@
 /* Local forward declarations */
 class UIMenuHelper;
 
-/* Global forwad declarations */
+/* Global forward declarations */
 class QMenu;
 
 class UIWindowMenuManager: public QObject

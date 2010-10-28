@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
             if (memcmp(pbBuf1, pbBuf2, cbRead))
             {
                 RTPrintf("tstVDCopy: Images differ uOffCurr=%llu\n", uOffCurr);
-                /* Do byte by byte comaprison. */
+                /* Do byte by byte comparison. */
                 for (size_t i = 0; i < cbRead; i++)
                 {
                     if (pbBuf1[i] != pbBuf2[i])

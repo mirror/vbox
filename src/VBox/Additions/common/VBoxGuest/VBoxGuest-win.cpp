@@ -911,7 +911,7 @@ BOOLEAN vboxguestwinIsrHandler(PKINTERRUPT pInterrupt, PVOID pServiceContext)
 
 
 /*
- * Overriden routine for mouse polling events.  Not
+ * Overridden routine for mouse polling events.  Not
  * used at the moment on Windows.
  *
  * @param pDevExt     Device extension structure.
@@ -1056,7 +1056,7 @@ NTSTATUS vboxguestwinScanPCIResourceList(PCM_RESOURCE_LIST pResList, PVBOXGUESTD
 
 
 /**
- * Maps the I/O space from VMMDev to virtual kernel adress space.
+ * Maps the I/O space from VMMDev to virtual kernel address space.
  *
  * @return NTSTATUS
  *

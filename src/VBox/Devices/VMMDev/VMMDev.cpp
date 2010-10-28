@@ -2549,7 +2549,7 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, pThis->u32NewGuestFilterMask);
     SSMR3PutU32(pSSM, pThis->u32GuestFilterMask);
     SSMR3PutU32(pSSM, pThis->u32HostEventFlags);
-    /* The following is not strictly necessary as PGM restors MMIO2, keeping it for historical reasons. */
+    /* The following is not strictly necessary as PGM restores MMIO2, keeping it for historical reasons. */
     SSMR3PutMem(pSSM, &pThis->pVMMDevRAMR3->V, sizeof(pThis->pVMMDevRAMR3->V));
 
     SSMR3PutMem(pSSM, &pThis->guestInfo, sizeof (pThis->guestInfo));

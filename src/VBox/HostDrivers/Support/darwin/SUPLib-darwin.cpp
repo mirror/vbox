@@ -234,7 +234,7 @@ int suplibOsTerm(PSUPLIBDATA pThis)
     }
 
     /*
-     * Check if we're initited at all.
+     * Check if we're inited at all.
      */
     if (pThis->hDevice != NIL_RTFILE)
     {

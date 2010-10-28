@@ -62,7 +62,7 @@ typedef RTLOCALIPCSESSION              *PRTLOCALIPCSESSION;
  * Create a local IPC server.
  *
  * @returns IPRT status code.
- * @retval  VINF_SUCCESS on success and *phServer containg the instance handle.
+ * @retval  VINF_SUCCESS on success and *phServer containing the instance handle.
  *
  * @param   phServer    Where to put the server instance handle.
  * @param   pszName     The servier name. This must be unique and not
@@ -163,7 +163,7 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
  *
  * This may or may not block until the data is received by the other party,
  * this is an implementation detail. If you want to make sure that the data
- * has been received you should allways call RTLocalIpcSessionFlush().
+ * has been received you should always call RTLocalIpcSessionFlush().
  *
  * @returns IPRT status code.
  * @retval  VERR_CANCELLED if the operation was cancelled by RTLocalIpcSessionCancel.

@@ -144,7 +144,7 @@ typedef struct _HGSMIINSTANCE
     RTCRITSECT    hostHeapCritSect;    /* Heap serialization lock. */
 
     HGSMILIST hostFIFO;                /* Pending host buffers. */
-    HGSMILIST hostFIFORead;            /* Host buffers readed by the guest. */
+    HGSMILIST hostFIFORead;            /* Host buffers read by the guest. */
     HGSMILIST hostFIFOProcessed;       /* Processed by the guest. */
     HGSMILIST hostFIFOFree;            /* Buffers for reuse. */
 #ifdef VBOX_WITH_WDDM
@@ -1024,7 +1024,7 @@ int HGSMIHostCommandAlloc (HGSMIINSTANCE *pIns,
 /**
  * Convenience function that allows posting the host command asynchronously
  * and make it freed on completion.
- * The caller does not get notified in any way on command complation,
+ * The caller does not get notified in any way on command completion,
  * on success return the pvMem buffer can not be used after being passed to this function
  *
  * @param pIns  Pointer to HGSMI instance,

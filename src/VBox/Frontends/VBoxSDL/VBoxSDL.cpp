@@ -97,7 +97,7 @@ using namespace com;
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/** Pointer shape change event data strucure */
+/** Pointer shape change event data structure */
 struct PointerShapeChangeData
 {
     PointerShapeChangeData(BOOL aVisible, BOOL aAlpha, ULONG aXHot, ULONG aYHot,
@@ -711,7 +711,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOXSDL_WITH_X11
     /*
      * Lock keys on SDL behave different from normal keys: A KeyPress event is generated
-     * if the lock mode gets active and a keyRelease event is genereated if the lock mode
+     * if the lock mode gets active and a keyRelease event is generated if the lock mode
      * gets inactive, that is KeyPress and KeyRelease are sent when pressing the lock key
      * to change the mode. The current lock mode is reflected in SDL_GetModState().
      *
@@ -3341,7 +3341,7 @@ static uint16_t Keyevent2Keycode(const SDL_KeyboardEvent *ev)
             case SDLK_RSUPER:           keycode = 0x5c | 0x100; break;
             case SDLK_LMETA:
             case SDLK_LSUPER:           keycode = 0x5b | 0x100; break;
-            /* Sssumes normal key. */
+            /* Assumes normal key. */
             default:                    keycode = s_aMacToSet1[keycode]; break;
         }
     }
@@ -4254,7 +4254,7 @@ static void SetPointerShape(const PointerShapeChangeData *data)
         bi.bV5Planes = 1;
         bi.bV5BitCount = 32;
         bi.bV5Compression = BI_BITFIELDS;
-        // specifiy a supported 32 BPP alpha format for Windows XP
+        // specify a supported 32 BPP alpha format for Windows XP
         bi.bV5RedMask   = 0x00FF0000;
         bi.bV5GreenMask = 0x0000FF00;
         bi.bV5BlueMask  = 0x000000FF;

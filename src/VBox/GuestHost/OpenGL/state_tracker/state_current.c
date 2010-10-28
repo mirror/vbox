@@ -193,7 +193,7 @@ void crStateCurrentSwitch( CRCurrentBits *c, CRbitvalue *bitID,
     /* Vertex Current State Switch Code */
 
     /* Its important that we don't do a value check here because
-    ** current may not actaully have the correct values, I think...
+    ** current may not actually have the correct values, I think...
     ** We also need to restore the current state tracking pointer
     ** since the packing functions will set it.
     */

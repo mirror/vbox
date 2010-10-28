@@ -31,10 +31,10 @@ static VOID winNetCfgLogger (LPCWSTR szString)
     wprintf(L"%s", szString);
 }
 
-/** Wrapper aroung GetfullPathNameW that will try an alternative INF location.
+/** Wrapper around GetfullPathNameW that will try an alternative INF location.
  *
  * The default location is the current directory.  If not found there, the
- * alternative locatoin is the executable directory.  If not found there either,
+ * alternative location is the executable directory.  If not found there either,
  * the first alternative is present to the caller.
  */
 static DWORD MyGetfullPathNameW(LPCWSTR pwszName, size_t cchFull, LPWSTR pwszFull)

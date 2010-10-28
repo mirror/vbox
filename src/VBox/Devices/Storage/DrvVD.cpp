@@ -150,7 +150,7 @@ typedef struct VBOXDISK
     /** Callback table for I/O interface. */
     VDINTERFACEIO      VDIIOCallbacks;
 
-    /** Flag whether opened disk suppports async I/O operations. */
+    /** Flag whether opened disk supports async I/O operations. */
     bool               fAsyncIOSupported;
     /** The async media interface. */
     PDMIMEDIAASYNC           IMediaAsync;
@@ -1755,7 +1755,7 @@ static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface, const char
  * Load done callback for re-opening the image writable during teleportation.
  *
  * This is called both for successful and failed load runs, we only care about
- * successfull ones.
+ * successful ones.
  *
  * @returns VBox status code.
  * @param   pDrvIns         The driver instance.

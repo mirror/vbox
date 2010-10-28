@@ -1046,7 +1046,7 @@ l_tryagain:
         }
 
 # else /* !IN_RC */
-        /* Reading too much. Could be cheaper than two seperate calls though. */
+        /* Reading too much. Could be cheaper than two separate calls though. */
         rc = PGMPhysSimpleReadGCPtr(pVCpu, &tss, GCPtrTss, sizeof(VBOXTSS));
         if (RT_FAILURE(rc))
         {

@@ -171,7 +171,7 @@
 #define VINF_EM_LAST                        1120
 
 /** Reason for leaving GC: Guest trap which couldn't be handled in GC.
- * The trap is generally forwared to the REM and executed there. */
+ * The trap is generally forwarded to the REM and executed there. */
 #define VINF_EM_RAW_GUEST_TRAP              1121
 /** Reason for leaving GC: Interrupted by external interrupt.
  * The interrupt needed to be handled by the host OS. */
@@ -376,7 +376,7 @@
 /** Invalid GC physical address. */
 #define VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS (-1605)
 /** Invalid GC physical range. Usually used when a specified range crosses
- * a RAM region boundrary. */
+ * a RAM region boundary. */
 #define VERR_PGM_INVALID_GC_PHYSICAL_RANGE  (-1606)
 /** Specified access handler was not found. */
 #define VERR_PGM_HANDLER_NOT_FOUND          (-1607)
@@ -584,10 +584,10 @@
  * (There are certain PCI reconfiguration which the OS could potentially
  * do which can cause this problem. Check this out when it happens.) */
 #define VERR_SSM_LOAD_CONFIG_MISMATCH           (-1844)
-/** The virtual clock freqency differs too much.
+/** The virtual clock frequency differs too much.
  * The clock source for the virtual time isn't reliable or the code have changed. */
 #define VERR_SSM_VIRTUAL_CLOCK_HZ               (-1845)
-/** A timeout occured while waiting for async IDE operations to finish. */
+/** A timeout occurred while waiting for async IDE operations to finish. */
 #define VERR_SSM_IDE_ASYNC_TIMEOUT              (-1846)
 /** One of the structure magics was wrong. */
 #define VERR_SSM_STRUCTURE_MAGIC                (-1847)
@@ -657,7 +657,7 @@
 #define VERR_VM_ATRESET_NOT_FOUND               (-1900)
 /** Invalid VM request type.
  * For the VMR3ReqAlloc() case, the caller just specified an illegal enmType. For
- * all the other occurences it means indicates corruption, broken logic, or stupid
+ * all the other occurrences it means indicates corruption, broken logic, or stupid
  * interface user. */
 #define VERR_VM_REQUEST_INVALID_TYPE            (-1901)
 /** Invalid VM request state.
@@ -801,7 +801,7 @@
 /** Recompiler execution was interrupted by forced action. */
 #define VINF_REM_INTERRUPED_FF              2302
 /** Too many similar traps. This is a very useful debug only
- * check (we don't do double/tripple faults in REM). */
+ * check (we don't do double/triple faults in REM). */
 #define VERR_REM_TOO_MANY_TRAPS             (-2304)
 /** The REM is out of breakpoint slots. */
 #define VERR_REM_NO_MORE_BP_SLOTS           (-2305)
@@ -1258,7 +1258,7 @@
 #define VERR_VD_NOT_ENOUGH_METADATA                 (-3272)
 /** Halt the current I/O context until further notification from the backend. */
 #define VERR_VD_IOCTX_HALT                          (-3273)
-/** The disk has a cache attached alreay. */
+/** The disk has a cache attached already. */
 #define VERR_VD_CACHE_ALREADY_EXISTS                (-3274)
 /** There is no cache attached to the disk. */
 #define VERR_VD_CACHE_NOT_FOUND                     (-3275)

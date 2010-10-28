@@ -426,7 +426,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
     /* If that object is of QWidget type: */
     if (QWidget *pWatchedWidget = qobject_cast<QWidget*>(pWatched))
     {
-        /* If thats machine-view-viewport: */
+        /* If it's a machine-view-viewport: */
         if (m_viewports.values().contains(pWatchedWidget))
         {
             /* Get current watched widget screen id: */
@@ -549,7 +549,7 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
         /* If no => check if that widget is of UIMachineView type: */
         else if (UIMachineView *pWatchedMachineView = qobject_cast<UIMachineView*>(pWatchedWidget))
         {
-            /* If thats machine-view itself => handle machine-view events: */
+            /* If it's a machine-view itself => handle machine-view events: */
             if (m_views.values().contains(pWatchedMachineView))
             {
                 switch (pEvent->type())
@@ -799,7 +799,7 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                     bool ok = vboxProblem().confirmInputCapture(&autoConfirmed);
                     if (autoConfirmed)
                         uisession()->setAutoCaptureDisabled(false);
-                    /* Otherwise, the disable flag will be reset in the next console view's foucs in event (since
+                    /* Otherwise, the disable flag will be reset in the next console view's focus in event (since
                      * may happen asynchronously on some platforms, after we return from this code): */
                     if (ok)
                     {

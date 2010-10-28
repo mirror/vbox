@@ -35,7 +35,7 @@
  * any previous calls in the same thread.
  *
  * @remark  The way the ever increasing time guarantee is currently implemented means
- *          that if you call this function at a freqency higher than 1GHz you're in for
+ *          that if you call this function at a frequency higher than 1GHz you're in for
  *          trouble. We currently assume that no idiot will do that for real life purposes.
  *
  * @returns Nanosecond timestamp.
@@ -104,7 +104,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
     {
         /*
          * We've expired the interval, cap it. If we're here for the 2nd
-         * time without any GIP update inbetween, the checks against
+         * time without any GIP update in-between, the checks against
          * *pu64Prev below will force 1ns stepping.
          */
         pData->cExpired++;
@@ -154,9 +154,9 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
         /*
          * Attempt updating the previous value, provided we're still ahead of it.
          *
-         * There is no point in recalculating u64NanoTS because we got preemted or if
+         * There is no point in recalculating u64NanoTS because we got preempted or if
          * we raced somebody while the GIP was updated, since these are events
-         * that might occure at any point in the return path as well.
+         * that might occur at any point in the return path as well.
          */
         pData->cUpdateRaces++;
         for (int cTries = 25; cTries > 0; cTries--)

@@ -2456,7 +2456,7 @@ typedef PGMR0DYNMAPTEST *PPGMR0DYNMAPTEST;
 
 /**
  * Checks that the content of the page is the same on all CPUs, i.e. that there
- * are no CPU specfic PTs or similar nasty stuff involved.
+ * are no CPU specific PTs or similar nasty stuff involved.
  *
  * @param   idCpu           The current CPU.
  * @param   pvUser1         Pointer a PGMR0DYNMAPTEST structure.

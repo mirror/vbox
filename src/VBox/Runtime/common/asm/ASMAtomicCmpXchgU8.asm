@@ -38,7 +38,7 @@ BEGINCODE
 ; @param    u8New   x86:esp+8  msc:dl   gcc:sil
 ; @param    u8Old   x86:esp+c  msc:r8l  gcc:dl
 ;
-; @returns  bool result: true if succesfully exchanged, false if not.
+; @returns  bool result: true if successfully exchanged, false if not.
 ;           x86:al
 ;
 BEGINPROC_EXPORTED ASMAtomicCmpXchgU8

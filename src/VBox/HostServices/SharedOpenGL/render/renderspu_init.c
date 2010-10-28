@@ -218,7 +218,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
     render_spu.hRootVisibleRegion = 0;
     render_spu.currentBufferName = 1;
     render_spu.uiDockUpdateTS = 0;
-    /* Create a mutex for syncronizing events from the main Qt thread & this
+    /* Create a mutex for synchronizing events from the main Qt thread & this
        thread */
     RTSemFastMutexCreate(&render_spu.syncMutex);
     /* Create our window groups */
@@ -284,7 +284,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
      * extensions too, we can't simply tag them into the spu_loader.
      * So we do them here for now.
      * Grrr, NVIDIA driver uses EXT for GetExtensionsStringEXT,
-     * but ARB for others. Need furthur testing here....
+     * but ARB for others. Need further testing here....
      */
     render_spu.ws.wglGetExtensionsStringEXT =
         (wglGetExtensionsStringEXTFunc_t)

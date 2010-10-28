@@ -62,6 +62,7 @@ typedef struct VHDFooter
 } VHDFooter;
 #pragma pack()
 
+/* this really is spelled with only one n */
 #define VHD_FOOTER_COOKIE "conectix"
 #define VHD_FOOTER_COOKIE_SIZE 8
 
@@ -1037,7 +1038,7 @@ DECLINLINE(bool) vhdBlockBitmapSectorContainsData(PVHDIMAGE pImage, uint32_t cBl
 
     /*
      * The index of the bit in the byte of the data block bitmap.
-     * The most signifcant bit stands for a lower sector number.
+     * The most significant bit stands for a lower sector number.
      */
     uint8_t  iBitInByte = (8-1) - (cBlockBitmapEntry % 8);
     uint8_t *puBitmap = pImage->pu8Bitmap + iBitmap;
@@ -1329,7 +1330,7 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
         Footer.DiskType   = (uImageFlags & VD_IMAGE_FLAGS_DIFF)
                               ? RT_H2BE_U32(VHD_FOOTER_DISK_TYPE_DIFFERENCING)
                               : RT_H2BE_U32(VHD_FOOTER_DISK_TYPE_DYNAMIC);
-        /* We are half way thourgh with creation of image, let the caller know. */
+        /* We are half way thorough with creation of image, let the caller know. */
         if (pfnProgress)
             pfnProgress(pvUser, (uPercentStart + uPercentSpan) / 2);
 
@@ -2867,7 +2868,7 @@ static int vhdResize(void *pBackendData, uint64_t cbSize,
         uint64_t offStartDataNew = RT_ALIGN_32(pImage->uBlockAllocationTableOffset + cbBlockspaceNew, VHD_SECTOR_SIZE); /** < New start offset for block data after the resize */
         uint64_t offStartDataOld = ~0ULL;
 
-        /* Go through the BAT and finde the data start offset. */
+        /* Go through the BAT and find the data start offset. */
         for (unsigned idxBlock = 0; idxBlock < pImage->cBlockAllocationTableEntries; idxBlock++)
         {
             if (pImage->pBlockAllocationTable[idxBlock] != ~0U)
@@ -2909,7 +2910,7 @@ static int vhdResize(void *pBackendData, uint64_t cbSize,
                     break;
                 }
 
-                /* Allocate buffer for overwrting with zeroes. */
+                /* Allocate buffer for overwriting with zeroes. */
                 pvZero = RTMemAllocZ(cbBlock);
                 if (!pvZero)
                 {

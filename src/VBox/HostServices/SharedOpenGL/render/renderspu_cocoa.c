@@ -118,7 +118,7 @@ void renderspu_SystemWindowPosition(WindowInfo *pWinInfo, GLint x, GLint y)
     NativeNSViewRef pParentWin = (NativeNSViewRef)(uint32_t)render_spu_parent_window_id;
 #endif /* __LP64__ */
 
-    /*pParentWin is unused in the call, overwise it might hold incorrect value if for ex. last reparent call was for
+    /*pParentWin is unused in the call, otherwise it might hold incorrect value if for ex. last reparent call was for
       a different screen*/
     cocoaViewSetPosition(pWinInfo->window, pParentWin, x, y);
 }

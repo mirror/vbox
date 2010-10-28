@@ -198,7 +198,7 @@ htg_debug_regs_no:
     ;
     and     eax, X86_CR4_MCE | X86_CR4_PSE | X86_CR4_PAE | X86_CR4_VMXE
     mov     ecx, [edx + CPUMCPU.Guest.cr4]
-    ;; @todo Switcher cleanup: Determin base CR4 during CPUMR0Init / VMMR3SelectSwitcher putting it
+    ;; @todo Switcher cleanup: Determine base CR4 during CPUMR0Init / VMMR3SelectSwitcher putting it
     ;                          in CPUMCPU.Hyper.cr4 (which isn't currently being used). That should
     ;                          simplify this operation a bit (and improve locality of the data).
 
@@ -837,7 +837,7 @@ GLOBALNAME HCExitTarget
     and     al, 0F8h                                ; mask away TI and RPL bits, get descriptor offset.
     add     eax, [edx + CPUMCPU.Host.gdtr + 2]         ; eax <- GDTR.address + descriptor offset.
     mov     ecx, [eax + 4]                          ; ecx <- 2nd descriptor dword
-    mov     ebx, ecx                                ; save orginal value
+    mov     ebx, ecx                                ; save original value
     and     ecx, ~0200h                             ; clear busy flag (2nd type2 bit)
     mov     [eax + 4], ecx                          ; not using xchg here is paranoia..
     ltr     word [edx + CPUMCPU.Host.tr]
@@ -918,7 +918,7 @@ ALIGNCODE(16)
 gth_fpu_no:
 
     ; Control registers.
-    ; Would've liked to have these highere up in case of crashes, but
+    ; Would've liked to have these higher up in case of crashes, but
     ; the fpu stuff must be done before we restore cr0.
     mov     ecx, [edx + CPUMCPU.Host.cr4]
     mov     cr4, ecx

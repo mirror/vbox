@@ -169,7 +169,7 @@ if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
 #
 # VBoxDrv.sys - The Windows driver.
 #
-## @todo consoliate all the targets into a single mess.
+## @todo consolidate all the targets into a single mess.
 ifeq ($(KBUILD_TARGET),win)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE

@@ -36,7 +36,7 @@
 RTDECL(int) RTErrConvertFromDarwinCOM(int32_t iNativeCode)
 {
     /*
-     * 'optimzied' success case.
+     * 'optimized' success case.
      */
     if (iNativeCode == S_OK)
         return VINF_SUCCESS;

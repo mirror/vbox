@@ -391,7 +391,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
         kauth_cred_unref(&pCred);
 #else  /* 10.4 */
-        /* The 10.4u SDK headers and 10.4.11 kernel source have inconsisten defintions
+        /* The 10.4u SDK headers and 10.4.11 kernel source have inconsistent definitions
            of kauth_cred_unref(), so use the other (now deprecated) API for releasing it. */
         kauth_cred_rele(pCred);
 #endif /* 10.4 */
@@ -719,7 +719,7 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
    of the cpus in the system. If anyone else tries to mess around in the
    kernel map on another CPU while this is going on, there is a fair chance
    that it might cause the host_vmxon thread to block and hence panic since
-   preemption is disabled. Arrrg! */
+   preemption is disabled. Argh! */
 #if 0 /*def VBOX_WITH_HOST_VMX*/
     int rc;
     if (fEnable)

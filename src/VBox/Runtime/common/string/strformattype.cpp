@@ -400,7 +400,7 @@ RT_EXPORT_SYMBOL(RTStrFormatTypeSetUser);
 
 
 /**
- * Formats a type using a registerd callback handler.
+ * Formats a type using a registered callback handler.
  *
  * This will handle %R[type].
  *

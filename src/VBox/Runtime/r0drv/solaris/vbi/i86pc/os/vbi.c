@@ -71,7 +71,7 @@ static void (*p_contig_free)(void *, size_t) = contig_free;
 
 /*
  * Workarounds for running on old versions of solaris with different cross call
- * interfaces. If we find xc_init_cpu() in the kenel, then just use the defined
+ * interfaces. If we find xc_init_cpu() in the kernel, then just use the defined
  * interfaces for xc_call() from the include file where the xc_call()
  * interfaces just takes a pointer to a ulong_t array. The array must be long
  * enough to hold "ncpus" bits at runtime.
@@ -214,7 +214,7 @@ vbi_init(void)
 	if (kobj_getsymvalue("xc_init_cpu", 1) != NULL) {
 		/*
 		 * Our bit vector storage needs to be large enough for the
-		 * actual number of CPUs running in the sytem.
+		 * actual number of CPUs running in the system.
 		 */
 		if (ncpus > VBI_NCPU) {
 			cmn_err(CE_NOTE, "cpu count mismatch.\n");
@@ -1301,7 +1301,7 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 			if (pp_pages)
 			{
 				/*
-				 * get pages from kseg, the 'virtAddr' here is only for colouring but unforuntately
+				 * get pages from kseg, the 'virtAddr' here is only for colouring but unfortunately
 				 * we don't have the 'virtAddr' to which this memory may be mapped.
 				 */
 				seg_t kernseg;

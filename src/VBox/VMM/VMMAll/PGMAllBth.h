@@ -1058,7 +1058,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
                 /*
                  * Compare page flags.
-                 * Note: we have AVL, A, D bits desynched.
+                 * Note: we have AVL, A, D bits desynced.
                  */
                 AssertMsg(   (fPageShw & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK))
                           == (fPageGst & ~(X86_PTE_A | X86_PTE_D | X86_PTE_AVL_MASK)),
@@ -2522,7 +2522,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
  * This is called by VerifyAccessSyncPage, PrefetchPage, InvalidatePage (on
  * conflict), and Trap0eHandler.
  *
- * A precodition for this method is that the shadow PDE is not present.  The
+ * A precondition for this method is that the shadow PDE is not present.  The
  * caller must take the PGM lock before checking this and continue to hold it
  * when calling this method.
  *

@@ -183,7 +183,7 @@ typedef struct VSCSILUNDESC
 #define VSCSI_DEVICE_LUN_MAX 128
 
 /**
- * Completesa SCSI request and calls the completion handler.
+ * Completes a SCSI request and calls the completion handler.
  *
  * @returns nothing.
  * @param   pVScsiDevice    The virtual SCSI device.
@@ -260,7 +260,7 @@ int vscsiReqSenseErrorSet(PVSCSIREQINT pVScsiReq, uint8_t uSCSISenseKey, uint8_t
 /**
  * Enqueues a new flush request
  *
- * @retruns VBox status code.
+ * @returns VBox status code.
  * @param   pVScsiLun    The LUN instance which issued the request.
  * @param   pVScsiReq    The virtual SCSI request associated with the flush.
  */

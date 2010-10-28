@@ -223,7 +223,7 @@ VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
  * @param   uOperation  The testcase.
  * @param   uArg        The variation. See function description for odd / even details.
  *
- * @remark  Careful with the trap 08 testcase and WP, it will tripple
+ * @remark  Careful with the trap 08 testcase and WP, it will triple
  *          fault the box if the TSS, the Trap8 TSS and the fault TSS
  *          GDTE are in pages which are read-only.
  *          See bottom of SELMR3Init().
@@ -271,7 +271,7 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
 
         case VMMGC_DO_TESTCASE_TRAP_8:
         {
-#ifndef DEBUG_bird /** @todo dynamic check that this won't tripple fault... */
+#ifndef DEBUG_bird /** @todo dynamic check that this won't triple fault... */
             if (uArg & 1)
                 break;
 #endif

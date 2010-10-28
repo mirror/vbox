@@ -71,7 +71,7 @@
 #include <machine/cpu.h>
 
 /**
- * Wrappers arount the sleepq_ KPI.
+ * Wrappers around the sleepq_ KPI.
  */
 #if __FreeBSD_version >= 800026
 # define SLEEPQ_TIMEDWAIT(EventInt) sleepq_timedwait(EventInt, 0)

@@ -45,7 +45,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** For lazily initializating of the random generator. */
+/** For lazily initializing of the random generator. */
 static RTONCE g_rtRandOnce = RTONCE_INITIALIZER;
 /** The default random generator. */
 static RTRAND g_hRand = NIL_RTRAND;

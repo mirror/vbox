@@ -40,7 +40,7 @@
  * Load virtualized flags.
  *
  * This function is called from CPUMRawEnter(). It doesn't have to update the
- * IF and IOPL eflags bits, the caller will enforce those to set and 0 repectively.
+ * IF and IOPL eflags bits, the caller will enforce those to set and 0 respectively.
  *
  * @param   pVM         VM handle.
  * @param   pCtxCore    The cpu context core.
@@ -288,7 +288,7 @@ VMMDECL(int) PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData)
  * Checks if the interrupt flag is enabled or not.
  *
  * @returns true if it's enabled.
- * @returns false if it's diabled.
+ * @returns false if it's disabled.
  *
  * @param   pVM         The VM handle.
  */
@@ -303,7 +303,7 @@ VMMDECL(bool) PATMAreInterruptsEnabled(PVM pVM)
  * Checks if the interrupt flag is enabled or not.
  *
  * @returns true if it's enabled.
- * @returns false if it's diabled.
+ * @returns false if it's disabled.
  *
  * @param   pVM         The VM handle.
  * @param   pCtxCore    CPU context

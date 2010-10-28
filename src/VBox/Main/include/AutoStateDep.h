@@ -44,7 +44,7 @@
      *  same as above except that there is no need to specify the template
      *  argument because it is already done by the shortcut class.
      *
-     *  @param taDepType    Dependecy type to manage.
+     *  @param taDepType    Dependency type to manage.
      */
     template <Machine::StateDependency taDepType = Machine::AnyStateDep>
     class AutoStateDependency

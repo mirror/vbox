@@ -25,7 +25,7 @@
  * When running in raw-mode (RC) there is a special hyper context for the VMM
  * part that floats around inside the guest address space. When running in
  * raw-mode, CPUM also maintains a host context for saving and restoring
- * registers accross world switches. This latter is done in cooperation with the
+ * registers across world switches. This latter is done in cooperation with the
  * world switcher (@see pg_vmm).
  *
  * @see grp_cpum
@@ -73,7 +73,7 @@
 #define CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR   9
 /** The saved state version of 2.0, used for backwards compatibility. */
 #define CPUM_SAVED_STATE_VERSION_VER2_0         8
-/** The saved state version of 1.6, used for backwards compatability. */
+/** The saved state version of 1.6, used for backwards compatibility. */
 #define CPUM_SAVED_STATE_VERSION_VER1_6         6
 
 
@@ -195,7 +195,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         Log(("The CPU doesn't support SYSENTER/SYSEXIT!\n"));
 
     /*
-     * Detech the host CPU vendor.
+     * Detect the host CPU vendor.
      * (The guest CPU vendor is re-detected later on.)
      */
     uint32_t uEAX, uEBX, uECX, uEDX;
@@ -861,7 +861,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     /** @cfgm{/CPUM/NT4LeafLimit, boolean, false}
      * Limit the number of standard CPUID leaves to 0..3 to prevent NT4 from
      * bugchecking with MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED (0x3e).
-     * This option corrsponds somewhat to IA32_MISC_ENABLES.BOOT_NT4[bit 22].
+     * This option corresponds somewhat to IA32_MISC_ENABLES.BOOT_NT4[bit 22].
      */
     bool fNt4LeafLimit;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "NT4LeafLimit", &fNt4LeafLimit, false); AssertRCReturn(rc, rc);
@@ -1003,7 +1003,7 @@ VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
      * of processors from (cpuid(4).eax >> 26) + 1.
      *
      * Note: this code is obsolete, but let's keep it here for reference.
-     *       Purpose is valid when we artifically cap the max std id to less than 4.
+     *       Purpose is valid when we artificially cap the max std id to less than 4.
      */
     if (!fHWVirtExEnabled)
     {
@@ -1173,7 +1173,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
 {
     /*
-     * Save all the CPU ID leaves here so we can check them for compatability
+     * Save all the CPU ID leaves here so we can check them for compatibility
      * upon loading.
      */
     SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
@@ -1225,7 +1225,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     do { \
         if (!(expr)) \
         { \
-            char *pszMsg = RTStrAPrintf2 fmt; /* lack of variadict macros sucks */ \
+            char *pszMsg = RTStrAPrintf2 fmt; /* lack of variadic macros sucks */ \
             if (fStrictCpuIdChecks) \
             { \
                 int rcCpuid = SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, "%s", pszMsg); \
@@ -2813,7 +2813,7 @@ static const char *getCacheAss(unsigned u, char *pszBuf)
 
 
 /**
- * Get L2 cache soociativity.
+ * Get L2 cache associativity.
  */
 const char *getL2CacheAss(unsigned u)
 {
@@ -3472,7 +3472,7 @@ typedef struct CPUMDISASSTATE
     PVM             pVM;
     /** The VMCPU handle. */
     PVMCPU          pVCpu;
-    /** Pointer to the first byte in the segemnt. */
+    /** Pointer to the first byte in the segment. */
     RTGCUINTPTR     GCPtrSegBase;
     /** Pointer to the byte after the end of the segment. (might have wrapped!) */
     RTGCUINTPTR     GCPtrSegEnd;
@@ -3541,7 +3541,7 @@ static DECLCALLBACK(int) cpumR3DisasInstrRead(RTUINTPTR PtrSrc, uint8_t *pu8Dst,
             }
         }
 
-        /* check the segemnt limit */
+        /* check the segment limit */
         if (!pState->f64Bits && PtrSrc > pState->cbSegLimit)
             return VERR_OUT_OF_SELECTOR_BOUNDS;
 

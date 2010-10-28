@@ -110,7 +110,7 @@ static SC_HANDLE supSvcWinOpenSCManager(const char *pszAction, DWORD dwAccess)
  * @returns Valid service handle on success.
  *          NULL on failure, will display an error message unless it's ignored.
  *
- * @param   pszAction           The action which is requestion access to the service.
+ * @param   pszAction           The action which is requesting access to the service.
  * @param   dwSCMAccess         The service control manager access.
  * @param   dwSVCAccess         The desired service access.
  * @param   cIgnoredErrors      The number of ignored errors.
@@ -445,7 +445,7 @@ static bool supSvcWinSetServiceStatus(DWORD dwStatus, int iWaitHint, DWORD dwExi
  *
  * @param   dwControl       The control code.
  * @param   dwEventType     Event type. (specific to the control?)
- * @param   pvEventData     Event data, specfic to the event.
+ * @param   pvEventData     Event data, specific to the event.
  * @param   pvContext       The context pointer registered with the handler.
  *                          Currently not used.
  */
@@ -572,7 +572,7 @@ static VOID WINAPI supSvcWinServiceMain(DWORD cArgs, LPSTR *papszArgs)
                          * Update the status and enter the work loop.
                          *
                          * The work loop is just a dummy wait here as the services run
-                         * in independant threads.
+                         * in independent threads.
                          */
                         if (supSvcWinSetServiceStatus(SERVICE_RUNNING, 0, 0))
                         {
@@ -782,7 +782,7 @@ int main(int argc, char **argv)
     }
 
     /*
-     * Parse the initial arguments to determin the desired action.
+     * Parse the initial arguments to determine the desired action.
      */
     enum
     {

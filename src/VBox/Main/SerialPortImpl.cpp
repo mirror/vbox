@@ -553,7 +553,7 @@ HRESULT SerialPort::loadSettings(const settings::SerialPort &data)
 /**
  *  Saves the port settings to the given port node.
  *
- *  Note that the given Port node is comletely empty on input.
+ *  Note that the given Port node is completely empty on input.
  *
  *  @param aPortNode <Port> node.
  *

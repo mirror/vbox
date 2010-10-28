@@ -69,7 +69,7 @@
 #define VBGL_PH_BLOCKSIGNATURE (0xADDBBBBB)
 
 
-/* Heap chunk signarure */
+/* Heap chunk signature */
 #define VBGL_PH_CHUNKSIGNATURE (0xADDCCCCC)
 /* Heap chunk allocation unit */
 #define VBGL_PH_CHUNKSIZE (0x10000)

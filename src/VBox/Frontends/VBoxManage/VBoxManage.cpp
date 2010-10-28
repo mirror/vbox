@@ -361,11 +361,11 @@ int main(int argc, char *argv[])
         { "registervm",       USAGE_REGISTERVM,        handleRegisterVM },
         { "unregistervm",     USAGE_UNREGISTERVM,      handleUnregisterVM },
         { "createhd",         USAGE_CREATEHD,          handleCreateHardDisk },
-        { "createvdi",        USAGE_CREATEHD,          handleCreateHardDisk }, /* backward compatiblity */
+        { "createvdi",        USAGE_CREATEHD,          handleCreateHardDisk }, /* backward compatibility */
         { "modifyhd",         USAGE_MODIFYHD,          handleModifyHardDisk },
-        { "modifyvdi",        USAGE_MODIFYHD,          handleModifyHardDisk }, /* backward compatiblity */
+        { "modifyvdi",        USAGE_MODIFYHD,          handleModifyHardDisk }, /* backward compatibility */
         { "clonehd",          USAGE_CLONEHD,           handleCloneHardDisk },
-        { "clonevdi",         USAGE_CLONEHD,           handleCloneHardDisk }, /* backward compatiblity */
+        { "clonevdi",         USAGE_CLONEHD,           handleCloneHardDisk }, /* backward compatibility */
         { "addiscsidisk",     USAGE_ADDISCSIDISK,      handleAddiSCSIDisk },
         { "createvm",         USAGE_CREATEVM,          handleCreateVM },
         { "modifyvm",         USAGE_MODIFYVM,          handleModifyVM },
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
         { "storageattach",    USAGE_STORAGEATTACH,     handleStorageAttach },
         { "storagectl",       USAGE_STORAGECONTROLLER, handleStorageController },
         { "showhdinfo",       USAGE_SHOWHDINFO,        handleShowHardDiskInfo },
-        { "showvdiinfo",      USAGE_SHOWHDINFO,        handleShowHardDiskInfo }, /* backward compatiblity */
+        { "showvdiinfo",      USAGE_SHOWHDINFO,        handleShowHardDiskInfo }, /* backward compatibility */
         { "getextradata",     USAGE_GETEXTRADATA,      handleGetExtraData },
         { "setextradata",     USAGE_SETEXTRADATA,      handleSetExtraData },
         { "setproperty",      USAGE_SETPROPERTY,       handleSetProperty },

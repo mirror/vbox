@@ -124,7 +124,7 @@ static const struct pci_id_match vbox_device_match[] = {
 /*
  * This contains the functions needed by the server after loading the
  * driver module.  It must be supplied, and gets added the driver list by
- * the Module Setup funtion in the dynamic case.  In the static case a
+ * the Module Setup function in the dynamic case.  In the static case a
  * reference to this is compiled in, and this requires that the name of
  * this DriverRec be an upper-case version of the driver name.
  */
@@ -888,7 +888,7 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
     VBOXPtr pVBox;
     Bool rc = TRUE;
 
-    pScrn = xf86Screens[scrnIndex];  /* Why does X have three ways of refering to the screen? */
+    pScrn = xf86Screens[scrnIndex];  /* Why does X have three ways of referring to the screen? */
     pVBox = VBOXGetRec(pScrn);
     if (pVBox->useVbva)
         if (!vboxDisableVbva(pScrn))  /* This would be bad. */

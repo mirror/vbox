@@ -278,7 +278,7 @@ static long VBoxNetAdpLinuxIOCtlUnlocked(struct file *pFilp,
     int rc;
 
     Log(("VBoxNetAdpLinuxIOCtl: param len %#x; uCmd=%#x; add=%#x\n", _IOC_SIZE(uCmd), uCmd, VBOXNETADP_CTL_ADD));
-    if (RT_UNLIKELY(_IOC_SIZE(uCmd) != sizeof(Req))) /* paraonia */
+    if (RT_UNLIKELY(_IOC_SIZE(uCmd) != sizeof(Req))) /* paranoia */
     {
         Log(("VBoxNetAdpLinuxIOCtl: bad ioctl sizeof(Req)=%#x _IOC_SIZE=%#x; uCmd=%#x.\n", sizeof(Req), _IOC_SIZE(uCmd), uCmd));
         return -EINVAL;

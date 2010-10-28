@@ -593,7 +593,7 @@ static int rtTcpServerListenCleanup(PRTTCPSERVER pServer)
 
 
 /**
- * Listen and accept one incomming connection.
+ * Listen and accept one incoming connection.
  *
  * This is an alternative to RTTcpServerListen for the use the callbacks are not
  * possible.

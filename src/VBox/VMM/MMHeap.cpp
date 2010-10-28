@@ -460,7 +460,7 @@ VMMR3DECL(void *) MMR3HeapRealloc(void *pv, size_t cbNewSize)
 #endif
 
     /*
-     * Rellocate the block.
+     * Reallocate the block.
      */
     cbNewSize = RT_ALIGN_Z(cbNewSize, MMR3HEAP_SIZE_ALIGNMENT) + sizeof(MMHEAPHDR);
     PMMHEAPHDR pHdrNew = (PMMHEAPHDR)RTMemRealloc(pHdr, cbNewSize);

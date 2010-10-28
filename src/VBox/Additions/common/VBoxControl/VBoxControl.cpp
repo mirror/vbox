@@ -269,7 +269,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
             continue;
         }
 
-        /* Check whether there is an X intesection between these adjacent rects in the new rectangles
+        /* Check whether there is an X intersection between these adjacent rects in the new rectangles
          * and fix the intersection if delta is "good".
          */
         int delta = paNewRects[iRect].right - paNewRects[iNextRect].left;
@@ -297,7 +297,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
             continue;
         }
 
-        /* Check whether there is an X intesection between these adjacent rects in the new rectangles
+        /* Check whether there is an X intersection between these adjacent rects in the new rectangles
          * and fix the intersection if delta is "good".
          */
         int delta = paNewRects[iRect].left - paNewRects[iNextRect].right;
@@ -313,7 +313,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
         }
     }
 
-    /* Y positive (in the computer sence, top->down). */
+    /* Y positive (in the computer sense, top->down). */
     for (iRect = 0; iRect < nRects; iRect++)
     {
         /* Find the next adjacent original rect in y positive direction. */
@@ -325,7 +325,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
             continue;
         }
 
-        /* Check whether there is an Y intesection between these adjacent rects in the new rectangles
+        /* Check whether there is an Y intersection between these adjacent rects in the new rectangles
          * and fix the intersection if delta is "good".
          */
         int delta = paNewRects[iRect].bottom - paNewRects[iNextRect].top;
@@ -341,7 +341,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
         }
     }
 
-    /* Y negative (in the computer sence, down->top). */
+    /* Y negative (in the computer sense, down->top). */
     for (iRect = 0; iRect < nRects; iRect++)
     {
         /* Find the next adjacent original rect in x negative direction. */
@@ -353,7 +353,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
             continue;
         }
 
-        /* Check whether there is an Y intesection between these adjacent rects in the new rectangles
+        /* Check whether there is an Y intersection between these adjacent rects in the new rectangles
          * and fix the intersection if delta is "good".
          */
         int delta = paNewRects[iRect].top - paNewRects[iNextRect].bottom;

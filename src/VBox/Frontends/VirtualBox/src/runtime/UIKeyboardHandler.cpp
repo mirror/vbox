@@ -170,7 +170,7 @@ void UIKeyboardHandler::captureKeyboard(ulong uScreenId)
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
          * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
-         * using the mouse if it is currently actively grabing the keyboard;
+         * using the mouse if it is currently actively grabbing the keyboard;
          * For static modes we are using usual (active) keyboard grabbing. */
         switch (machineLogic()->visualStateType())
         {
@@ -228,7 +228,7 @@ void UIKeyboardHandler::releaseKeyboard()
         /* On X11, we are using passive XGrabKey for normal (windowed) mode
          * instead of XGrabKeyboard (called by QWidget::grabKeyboard())
          * because XGrabKeyboard causes a problem under metacity - a window cannot be moved
-         * using the mouse if it is currently actively grabing the keyboard;
+         * using the mouse if it is currently actively grabbing the keyboard;
          * For static modes we are using usual (active) keyboard grabbing. */
         switch (machineLogic()->visualStateType())
         {
@@ -360,7 +360,7 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
                 /* keyEvent() returned that it didn't process the message, but since the
                  * keyboard is captured, we don't want to pass it to Windows. We just want
                  * to let Qt process the message (to handle non-alphanumeric <HOST>+key
-                 * shortcuts for example). So send it direcltly to the window with the
+                 * shortcuts for example). So send it directly to the window with the
                  * special flag in the reserved area of lParam (to avoid recursion). */
                 ::SendMessage(pMsg->hwnd, pMsg->message,
                               pMsg->wParam, pMsg->lParam | (0x1 << 25));
@@ -1073,7 +1073,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
                  * keyboard and mouse back to the host when the user forgets
                  * the Host Key. Note that it's always possible to send C-A-D
                  * to the guest using the Host+Del combination. BTW, it would
-                 * be preferrable to completely ignore C-A-D in guests, but
+                 * be preferable to completely ignore C-A-D in guests, but
                  * that's not possible because we cannot predict what other
                  * keys will be pressed next when one of C, A, D is held. */
                 if (uisession()->isRunning() && m_fIsKeyboardCaptured)
@@ -1177,7 +1177,7 @@ bool UIKeyboardHandler::keyEvent(int iKey, uint8_t uScan, int fFlags, ulong uScr
                             if (autoConfirmed)
                                 uisession()->setAutoCaptureDisabled(false);
                             /* Otherwise, the disable flag will be reset in
-                             * the next console view's foucs in event (since
+                             * the next console view's focus in event (since
                              * may happen asynchronously on some platforms,
                              * after we return from this code) */
                         }

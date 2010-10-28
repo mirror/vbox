@@ -58,7 +58,7 @@
  *      first one plus the percent value of the next (not yet complete)
  *      progress, normalized to 100%.
  *
- * @note It's the respoisibility of the combined progress object creator to
+ * @note It's the responsibility of the combined progress object creator to
  *       complete individual progresses in the right order: if, let's say, the
  *       last progress is completed before all previous ones,
  *       #WaitForCompletion(-1) will most likely give 100% CPU load because it

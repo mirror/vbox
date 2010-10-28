@@ -56,7 +56,7 @@
  *  ...
  * @endcode
  *
- * where long_param_list is a paramter list for declaring the function of the
+ * where long_param_list is a parameter list for declaring the function of the
  * form (type1 arg1, type2 arg2, ...) and short_param_list for calling it, of
  * the form (arg1, arg2, ...).
  *

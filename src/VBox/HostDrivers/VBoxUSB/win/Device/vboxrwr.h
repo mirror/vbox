@@ -26,7 +26,7 @@ typedef struct _VBOXUSB_RW_CONTEXT {
     PURB              Urb;
     PMDL              Mdl;
     ULONG             Length;         // remaining to xfer
-    ULONG             Numxfer;        // cumulate xfer
+    ULONG             Numxfer;        // acumulated xfer
     ULONG_PTR         VirtualAddress; // va for next segment of xfer.
     PDEVICE_EXTENSION DeviceExtension;
 

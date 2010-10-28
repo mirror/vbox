@@ -116,7 +116,7 @@ typedef struct VMCPU
     /** Align the next bit on a 64-byte boundary and make sure it starts at the same
      *  offset in both 64-bit and 32-bit builds.
      *
-     * @remarks The aligments of the members that are larger than 48 bytes should be
+     * @remarks The alignments of the members that are larger than 48 bytes should be
      *          64-byte for cache line reasons. structs containing small amounts of
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
@@ -206,7 +206,7 @@ typedef struct VMCPU
     } dbgf;
 
 #if 0
-    /** Align the following members on page boundrary. */
+    /** Align the following members on page boundary. */
     uint8_t                 abAlignment2[32];
 #endif
 
@@ -315,7 +315,7 @@ typedef struct VMCPU
 /** This action forces the VM to check any pending interrups on the PIC. */
 #define VMCPU_FF_INTERRUPT_PIC              RT_BIT_32(1)
 /** This action forces the VM to schedule and run pending timer (TM).
- * @remarks Don't move - PATM compatability.  */
+ * @remarks Don't move - PATM compatibility.  */
 #define VMCPU_FF_TIMER                      RT_BIT_32(2)
 /** This action forces the VM to check any pending NMIs. */
 #define VMCPU_FF_INTERRUPT_NMI_BIT          3
@@ -340,7 +340,7 @@ typedef struct VMCPU
 #define VMCPU_FF_TLB_FLUSH                  RT_BIT_32(VMCPU_FF_TLB_FLUSH_BIT)
 /** The bit number for VMCPU_FF_TLB_FLUSH. */
 #define VMCPU_FF_TLB_FLUSH_BIT              19
-/** Check the interupt and trap gates */
+/** Check the interrupt and trap gates */
 #define VMCPU_FF_TRPM_SYNC_IDT              RT_BIT_32(20)
 /** Check Guest's TSS ring 0 stack */
 #define VMCPU_FF_SELM_SYNC_TSS              RT_BIT_32(21)
@@ -830,7 +830,7 @@ typedef struct VM
     STAMPROFILEADV              StatSwitcherLldt;
     STAMPROFILEADV              StatSwitcherTSS;
 
-    /** Padding - the unions must be aligned on a 64 bytes boundrary and the unions
+    /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
     uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 48 : 24];
 
@@ -1007,13 +1007,13 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
-    /** Padding for aligning the cpu array on a page boundrary. */
+    /** Padding for aligning the cpu array on a page boundary. */
     uint8_t         abAlignment2[1502];
 
     /* ---- end small stuff ---- */
 
     /** VMCPU array for the configured number of virtual CPUs.
-     * Must be aligned on a page boundrary for TLB hit reasons as well as
+     * Must be aligned on a page boundary for TLB hit reasons as well as
      * alignment of VMCPU members. */
     VMCPU           aCpus[1];
 } VM;

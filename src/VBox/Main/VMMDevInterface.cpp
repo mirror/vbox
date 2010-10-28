@@ -302,7 +302,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface
         return;
 
     /*
-     * Report our current capabilites (and assume none is active yet).
+     * Report our current capabilities (and assume none is active yet).
      */
     guest->setSupportedFeatures(newCapabilities, 0 /* Active capabilities, not used here. */);
 

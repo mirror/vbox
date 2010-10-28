@@ -64,7 +64,7 @@ void PACKSPU_APIENTRY packspu_SwapBuffers( GLint window, GLint flags )
          * the network stream under normal conditions.
          *
          * This is complicated because writeback in the pack spu is
-         * overriden to always set the value to zero when the
+         * overridden to always set the value to zero when the
          * reply is received, rather than decrementing it: 
          */
         switch( thread->writeback ) {
@@ -92,7 +92,7 @@ void PACKSPU_APIENTRY packspu_SwapBuffers( GLint window, GLint flags )
         }
     }
 
-    /* want to emit a parameteri here */
+    /* want to emit a parameter here */
     if (pack_spu.emit_GATHER_POST_SWAPBUFFERS)
     {
         if (pack_spu.swap)

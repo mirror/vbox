@@ -74,7 +74,7 @@ static int getDefaultIfaceName(char *pszName)
 static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
 {
     // Zeroing out pInfo is a bad idea as it should contain both short and long names at
-    // this point. So make sure the strucure is cleared by the caller if necessary!
+    // this point. So make sure the structure is cleared by the caller if necessary!
     // memset(pInfo, 0, sizeof(*pInfo));
     struct ifreq Req;
     memset(&Req, 0, sizeof(Req));

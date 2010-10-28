@@ -74,7 +74,7 @@ typedef struct VMERROR
     /** The size of the chunk. */
     uint32_t                        cbAllocated;
     /** The current offset into the chunk.
-     * We start by putting the filename and function immediatly
+     * We start by putting the filename and function immediately
      * after the end of the buffer. */
     uint32_t                        off;
     /** Offset from the start of this structure to the file name. */
@@ -115,7 +115,7 @@ typedef struct VMRUNTIMEERROR
     /** The size of the chunk. */
     uint32_t                        cbAllocated;
     /** The current offset into the chunk.
-     * We start by putting the error ID immediatly
+     * We start by putting the error ID immediately
      * after the end of the buffer. */
     uint32_t                        off;
     /** Offset from the start of this structure to the error ID. */
@@ -250,8 +250,8 @@ typedef struct VMINTUSERPERVM
     uint32_t volatile               iHaltMethod;
     /** @} */
 
-    /** @todo Do NOT add new members here or resue the current, we need to store the config for
-     *  each halt method seperately because we're racing on SMP guest rigs. */
+    /** @todo Do NOT add new members here or reuse the current, we need to store the config for
+     *  each halt method separately because we're racing on SMP guest rigs. */
     union
     {
        /**
