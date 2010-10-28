@@ -114,7 +114,8 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 	HostDrivers \
 	VMM \
 	Devices \
-	Disassembler
+	Disassembler \
+	Storage
 
  ifdef VBOX_WITH_CROGL
   SUBDIRS += GuestHost
