@@ -62,8 +62,8 @@ ifdef VBOX_WITH_TESTCASES
  tstVDShareable_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDSetUuid_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  vbox-img_LIBS = \
-	$(VBOX_LIB_RUNTIME_STATIC) \
-	$(PATH_LIB)/StorageLibNoDB$(VBOX_SUFF_LIB)
+	$(PATH_LIB)/StorageLibNoDB$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)
   vbox-img_LIBS += \
 	$(PATH_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
