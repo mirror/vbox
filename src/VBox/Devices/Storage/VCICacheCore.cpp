@@ -716,6 +716,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                         while (   RT_SUCCESS(rc)
                                && cBlocksLeft)
                         {
+#if 0
                             while (cBlocksRead)
                             {
                                 if (pRangeCur->fFree)
@@ -738,6 +739,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                                     /* Create a new range descriptor. */
                                 }
                             }
+#endif
                             cBlocksLeft -= cBlocksRead;
                             offBlkMap   += cBlocksRead;
 
