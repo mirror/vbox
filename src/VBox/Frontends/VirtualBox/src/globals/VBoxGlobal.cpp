@@ -18,7 +18,7 @@
  */
 
 #include "VBoxGlobal.h"
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <VBox/version.h>
 
 #include "VBoxDefs.h"

@@ -19,7 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
-#include <VBox/VBoxHDD-Plugin.h>
+#include <VBox/vd-plugin.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>

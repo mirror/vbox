@@ -26,7 +26,7 @@
 #ifndef __VBoxHDD_CachePlugin_h__
 #define __VBoxHDD_CachePlugin_h__
 
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 
 /**
  * Cache format backend interface used by VBox HDD Container implementation.

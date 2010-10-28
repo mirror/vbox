@@ -20,7 +20,7 @@
 #ifndef ____H_MEDIUMIMPL
 #define ____H_MEDIUMIMPL
 
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 
 #include "VirtualBoxBase.h"
 #include "MediumLock.h"

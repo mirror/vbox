@@ -20,7 +20,7 @@
 *   Header files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_VD
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <VBox/pdmdrv.h>
 #include <VBox/pdmasynccompletion.h>
 #include <iprt/asm.h>

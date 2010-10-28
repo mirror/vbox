@@ -18,7 +18,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/asm-amd64-x86.h>

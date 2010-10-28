@@ -54,6 +54,7 @@ else
  endif
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
  include $(PATH_SUB_CURRENT)/Disassembler/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Storage/Makefile.kmk
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   include $(PATH_SUB_CURRENT)/VMM/Makefile.kmk
   include $(PATH_SUB_CURRENT)/Devices/Makefile.kmk

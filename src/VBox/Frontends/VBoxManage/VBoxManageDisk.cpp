@@ -35,7 +35,7 @@
 #include <iprt/ctype.h>
 #include <iprt/getopt.h>
 #include <VBox/log.h>
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 
 #include "VBoxManage.h"
 using namespace com;

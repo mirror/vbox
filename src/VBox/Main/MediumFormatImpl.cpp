@@ -20,7 +20,7 @@
 #include "AutoCaller.h"
 #include "Logging.h"
 
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 
 #include <iprt/cpp/utils.h>
 

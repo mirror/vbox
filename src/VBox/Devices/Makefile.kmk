@@ -25,10 +25,6 @@ VBOX_PATH_DEVICES_SRC := $(PATH_SUB_CURRENT)
 include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-include $(PATH_SUB_CURRENT)/Storage/testcase/Makefile.kmk
-ifndef VBOX_OSE
- include $(PATH_SUB_CURRENT)/Storage/VBoxHDDFormats/Makefile.kmk
-endif
 ifdef VBOX_WITH_EFI
  include $(PATH_SUB_CURRENT)/EFI/Thunk/Makefile.kmk
 endif
@@ -76,14 +72,6 @@ else
  VBoxDDU_SDKS.win        = WINPSDK
 endif
 VBoxDDU_SOURCES          = \
-	Storage/VBoxHDD.cpp \
-	Storage/VDIHDDCore.cpp \
-	Storage/VHDHDDCore.cpp \
-	Storage/VmdkHDDCore.cpp \
-	Storage/RawHDDCore.cpp \
-	Storage/ParallelsHDDCore.cpp \
-	Storage/DMGHDDCore.cpp \
-	Storage/VCICacheCore.cpp \
 	Storage/VSCSI/VSCSIDevice.cpp \
 	Storage/VSCSI/VSCSILun.cpp \
 	Storage/VSCSI/VSCSILunSbc.cpp \
@@ -96,7 +84,8 @@ ifdef VBOX_WITH_USB
 	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
 endif
 VBoxDDU_LIBS             = \
-	$(LIB_RUNTIME)
+	$(LIB_RUNTIME) \
+	$(PATH_LIB)/StorageLib$(VBOX_SUFF_LIB)
 ifdef VBOX_WITH_USB
  VBoxDDU_LIBS           += \
 	$(PATH_LIB)/USBLib$(VBOX_SUFF_LIB)
@@ -1056,9 +1045,6 @@ endif
 # -- features --
 
 ifdef VBOX_WITH_ISCSI
- VBoxDDU_SOURCES      += \
-    Storage/ISCSIHDDCore.cpp
- VBoxDDU_DEFS         += VBOX_WITH_ISCSI
  Storage/DrvVD.cpp_INCS = \
 	Network/lwip/src/include \
 	Network/lwip/src/include/ipv4 \

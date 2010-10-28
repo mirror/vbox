@@ -25,7 +25,7 @@
 #include <iprt/tar.h>
 #include <iprt/stream.h>
 
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <VBox/com/array.h>
 
 #include "ApplianceImpl.h"

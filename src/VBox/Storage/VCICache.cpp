@@ -19,7 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_RAW /** @todo logging group */
-#include <VBox/VBoxHDD-CachePlugin.h>
+#include <VBox/vd-cache-plugin.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
