@@ -25,6 +25,7 @@
 #include "HGSMI/SHGSMIHost.h"
 #include "HGSMI/HGSMIHostHlp.h"
 
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
 typedef enum
 {
     VBOXVDMAPIPE_STATE_CLOSED    = 0,
@@ -75,16 +76,19 @@ typedef struct VBOXVDMAPIPE_CMD_POOL
     uint32_t cCmds;
     VBOXVDMAPIPE_CMD aCmds[1];
 } VBOXVDMAPIPE_CMD_POOL, *PVBOXVDMAPIPE_CMD_POOL;
+#endif
 
 typedef struct VBOXVDMAHOST
 {
-    VBOXVDMAPIPE Pipe;
-    HGSMILIST PendingList;
-    RTTHREAD hWorkerThread;
     PHGSMIINSTANCE pHgsmi;
     PVGASTATE pVGAState;
     bool bEnabled;
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
+    VBOXVDMAPIPE Pipe;
+    HGSMILIST PendingList;
+    RTTHREAD hWorkerThread;
     VBOXVDMAPIPE_CMD_POOL CmdPool;
+#endif
 } VBOXVDMAHOST, *PVBOXVDMAHOST;
 
 
@@ -681,6 +685,8 @@ static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_
     return VERR_INVALID_STATE;
 }
 
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
+
 int vboxVDMAPipeConstruct(PVBOXVDMAPIPE pPipe)
 {
     int rc = RTSemEventCreate(&pPipe->hEvent);
@@ -908,6 +914,7 @@ int vboxVDMAPipeDestruct(PVBOXVDMAPIPE pPipe)
 
     return VINF_SUCCESS;
 }
+#endif
 
 static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd)
 {
@@ -976,6 +983,7 @@ static void vboxVDMAControlProcess(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd)
     AssertRC(rc);
 }
 
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
 typedef struct
 {
     struct VBOXVDMAHOST *pVdma;
@@ -1054,17 +1062,23 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD ThreadSelf, void *pvUser)
     AssertRC(tmpRc);
     return rc;
 }
+#endif
 
 int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_t cPipeElements)
 {
     int rc;
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
     PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ (RT_OFFSETOF(VBOXVDMAHOST, CmdPool.aCmds[cPipeElements]));
+#else
+    PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)RTMemAllocZ (sizeof (*pVdma));
+#endif
     Assert(pVdma);
     if (pVdma)
     {
-        hgsmiListInit(&pVdma->PendingList);
         pVdma->pHgsmi = pVGAState->pHGSMI;
         pVdma->pVGAState = pVGAState;
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
+        hgsmiListInit(&pVdma->PendingList);
         rc = vboxVDMAPipeConstruct(&pVdma->Pipe);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
@@ -1079,14 +1093,16 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_
                 {
                     hgsmiListAppend(&pVdma->CmdPool.List, &pVdma->CmdPool.aCmds[i].Entry);
                 }
-#if 0 //def VBOX_WITH_CRHGSMI
+# if 0 //def VBOX_WITH_CRHGSMI
                 int tmpRc = vboxVDMACrCtlHgsmiSetup(pVdma);
-# ifdef DEBUG_misha
+#  ifdef DEBUG_misha
                 AssertRC(tmpRc);
+#  endif
 # endif
 #endif
                 *ppVdma = pVdma;
                 return VINF_SUCCESS;
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
             }
 
             int tmpRc = vboxVDMAPipeDestruct(&pVdma->Pipe);
@@ -1094,6 +1110,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_
         }
 
         RTMemFree(pVdma);
+#endif
     }
     else
         rc = VERR_OUT_OF_RESOURCES;
@@ -1101,12 +1118,17 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_
     return rc;
 }
 
-int vboxVDMADestruct(struct VBOXVDMAHOST **pVdma)
+int vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
 {
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
+    /* @todo: implement*/
     AssertBreakpoint();
+#endif
+    RTMemFree(pVdma);
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
 typedef struct
 {
     struct VBOXVDMAHOST *pVdma;
@@ -1134,6 +1156,7 @@ DECLCALLBACK(bool) vboxVDMACommandSubmitCb(PVBOXVDMAPIPE pPipe, void *pvCallback
     pContext->bQueued = false;
     return false;
 }
+#endif
 
 void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd)
 {
@@ -1204,6 +1227,10 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
         return;
 #endif
 
+    int rc = VERR_NOT_IMPLEMENTED;
+
+#ifdef VBOX_VDMA_WITH_WORKERTHREAD
+
 #ifdef DEBUG_misha
     Assert(0);
 #endif
@@ -1213,7 +1240,7 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
     Context.Cmd.enmType = VBOXVDMAPIPE_CMD_TYPE_DMACMD;
     Context.Cmd.u.pDr = pCmd;
 
-    int rc = vboxVDMAPipeModifyClient(&pVdma->Pipe, vboxVDMACommandSubmitCb, &Context);
+    rc = vboxVDMAPipeModifyClient(&pVdma->Pipe, vboxVDMACommandSubmitCb, &Context);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
@@ -1225,7 +1252,7 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
         }
         rc = VERR_OUT_OF_RESOURCES;
     }
-
+#endif
     /* failure */
     Assert(RT_FAILURE(rc));
     PHGSMIINSTANCE pIns = pVdma->pHgsmi;
