@@ -96,13 +96,6 @@ extern int crVBoxHGCMRecv( void );
 extern CRConnection** crVBoxHGCMDump( int *num );
 extern void crVBoxHGCMTearDown(void);
 #endif
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-extern bool crVBoxHGSMIInit( CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl, unsigned int mtu );
-extern void crVBoxHGSMIConnection( CRConnection *conn );
-extern int crVBoxHGSMIRecv( void );
-extern CRConnection** crVBoxHGSMIDump( int *num );
-extern void crVBoxHGSMITearDown(void);
-#endif /* #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST) */
 
 /*
  * TEAC network interface

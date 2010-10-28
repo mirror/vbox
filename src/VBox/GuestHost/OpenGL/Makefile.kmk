@@ -76,7 +76,6 @@ VBoxOGLcrutil_SOURCES       = \
 	util/url.c \
 	util/warp.c \
 	util/vboxhgcm.c \
-	$(if $(VBOX_WITH_CRHGSMI),util/vboxhgsmi.c,) \
 	$(VBOX_PATH_CROGL_GENFILES)/debug_opcodes.c
 VBoxOGLcrutil_SOURCES.win.x86 = \
 	util/util.def \

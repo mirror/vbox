@@ -55,9 +55,6 @@ static struct {
     int                  use_teac;
     int                  use_tcscomm;
     int                  use_hgcm;
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    int                  use_hgsmi;
-#endif
 
     int                  num_clients; /* total number of clients (unused?) */
 
@@ -111,21 +108,9 @@ InitConnection(CRConnection *conn, const char *protocol, unsigned int mtu)
 #ifdef VBOX_WITH_HGCM
     else if (!crStrcmp(protocol, "vboxhgcm"))
     {
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-        /* for now just use hgcm protocol name
-         * since we still partially use HGCM and have HGCM backend on the host side */
-        if(crVBoxHGSMIInit(cr_net.recv_list, cr_net.close_list, mtu))
-        {
-            cr_net.use_hgsmi++;
-            crVBoxHGSMIConnection(conn);
-        }
-        else
-# endif /* # #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST) */
-        {
-            cr_net.use_hgcm++;
-            crVBoxHGCMInit(cr_net.recv_list, cr_net.close_list, mtu);
-            crVBoxHGCMConnection(conn);
-        }
+        cr_net.use_hgcm++;
+        crVBoxHGCMInit(cr_net.recv_list, cr_net.close_list, mtu);
+        crVBoxHGCMConnection(conn);
     }
 #endif
 #ifdef GM_SUPPORT
@@ -447,9 +432,6 @@ void crNetInit( CRNetReceiveFunc recvFunc, CRNetCloseFunc closeFunc )
         cr_net.use_file    = 0;
         cr_net.use_hgcm    = 0;
         cr_net.num_clients = 0;
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-        cr_net.use_hgsmi = 0;
-#endif
 #ifdef CHROMIUM_THREADSAFE
         crInitMutex(&cr_net.mutex);
 #endif
@@ -515,10 +497,6 @@ void crNetTearDown()
     crLockMutex(&cr_net.mutex);
 #endif
 
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    if (cr_net.use_hgsmi)
-        crVBoxHGSMITearDown();
-#endif
     /* Note, other protocols used by chromium should free up stuff too,
      * but VBox doesn't use them, so no other checks.
      */  
@@ -558,10 +536,6 @@ CRConnection** crNetDump( int* num )
     c = crFileDump( num );
     if ( c ) return c;
 
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    c = crVBoxHGSMIDump( num );
-    if ( c ) return c;
-#endif
 #ifdef VBOX_WITH_HGCM
     c = crVBoxHGCMDump( num );
     if ( c ) return c;
@@ -1264,10 +1238,6 @@ int crNetRecv( void )
 
     if ( cr_net.use_tcpip )
         found_work += crTCPIPRecv();
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-    if (cr_net.use_hgsmi)
-        found_work += crVBoxHGSMIRecv();
-#endif
 #ifdef VBOX_WITH_HGCM
     if ( cr_net.use_hgcm )
         found_work += crVBoxHGCMRecv();
