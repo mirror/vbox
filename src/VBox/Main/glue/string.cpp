@@ -114,7 +114,7 @@ void Utf8Str::copyFrom(CBSTR s)
                                   RTSTR_MAX,        // size_t cwcString: translate entire string
                                   &m_psz,           // char **ppsz: output buffer
                                   0,                // size_t cch: if 0, func allocates buffer in *ppsz
-                                  &m_cbLength);     // size_t *pcch: receives the size of the output string, excluding the terminator.
+                                  &m_cch);          // size_t *pcch: receives the size of the output string, excluding the terminator.
         if (RT_FAILURE(vrc))
         {
             if (    vrc == VERR_NO_STR_MEMORY
@@ -123,16 +123,16 @@ void Utf8Str::copyFrom(CBSTR s)
                 throw std::bad_alloc();
 
             // @todo what do we do with bad input strings? throw also? for now just keep an empty string
-            m_cbLength = 0;
+            m_cch = 0;
             m_cbAllocated = 0;
             m_psz = NULL;
         }
         else
-            m_cbAllocated = m_cbLength + 1;
+            m_cbAllocated = m_cch + 1;
     }
     else
     {
-        m_cbLength = 0;
+        m_cch = 0;
         m_cbAllocated = 0;
         m_psz = NULL;
     }
@@ -142,14 +142,14 @@ void Utf8StrFmt::init(const char *format, va_list args)
 {
     if (!format || !*format)
     {
-        m_cbLength = 0;
+        m_cch = 0;
         m_cbAllocated = 0;
         m_psz = NULL;
     }
     else
     {
-        m_cbLength = RTStrAPrintfV(&m_psz, format, args);
-        m_cbAllocated = m_cbLength + 1;
+        m_cch = RTStrAPrintfV(&m_psz, format, args);
+        m_cbAllocated = m_cch + 1;
     }
 }
 

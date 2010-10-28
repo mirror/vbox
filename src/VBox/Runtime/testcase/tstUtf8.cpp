@@ -28,18 +28,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/string.h>
+
 #include <iprt/uni.h>
-#include <iprt/initterm.h>
 #include <iprt/uuid.h>
 #include <iprt/time.h>
 #include <iprt/stream.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/rand.h>
 #include <iprt/test.h>
-#include <iprt/cpp/ministring.h>
-
-#include <stdlib.h> /** @todo use our random. */
 
 
 
@@ -51,8 +49,8 @@ static RTUTF16 GetRandUtf16(void)
     RTUTF16 wc;
     do
     {
-        wc = (RTUTF16)((long long)rand() * 0xffff / RAND_MAX);
-    } while ((wc >= 0xd800 && wc <= 0xdfff) || wc == 0);
+        wc = (RTUTF16)RTRandU32Ex(1, 0xffff);
+    } while (wc >= 0xd800 && wc <= 0xdfff);
     return wc;
 }
 
@@ -86,7 +84,6 @@ static void test1(RTTEST hTest)
      */
     RTTestSub(hTest, "Rand UTF-16 -> UTF-8 -> CP -> UTF-8");
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
-    srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
         pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
@@ -119,7 +116,6 @@ static void test1(RTTEST hTest)
      */
     RTTestSub(hTest, "Random UTF-16 -> UTF-8 -> UTF-16");
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
-    srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
         pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
@@ -153,7 +149,6 @@ static void test1(RTTEST hTest)
      */
     RTTestSub(hTest, "Random RTUtf16ToUtf8Ex + RTStrToUtf16");
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
-    srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
         pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
@@ -188,7 +183,6 @@ static void test1(RTTEST hTest)
      */
     RTTestSub(hTest, "Random RTUtf16ToUtf8 + RTStrToUtf16Ex");
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
-    srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
         pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
@@ -219,7 +213,6 @@ static void test1(RTTEST hTest)
         RTTestFailed(hTest, "%d: The first part of random UTF-16 -> UTF-8 -> fixed length UTF-16 failed with return value %Rrc.\n",
                      __LINE__, rc);
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
-    srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
         pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
@@ -236,7 +229,6 @@ static void test1(RTTEST hTest)
      */
     RTTestSub(hTest, "Random RTUtf16ToUtf8 + RTStrToUtf16Ex");
     pwszRand = (PRTUTF16)RTMemAlloc(31 * sizeof(*pwsz));
-    srand((unsigned)RTTimeNanoTS());
     for (int i = 0; i < 30; i++)
         pwszRand[i] = GetRandUtf16();
     pwszRand[30] = 0;
@@ -997,102 +989,6 @@ static void testStrStr(RTTEST hTest)
 }
 
 
-void testMinistring(RTTEST hTest)
-{
-    RTTestSub(hTest, "class iprt::MiniString");
-
-#define CHECK(expr) \
-    do { \
-        if (!(expr)) \
-            RTTestFailed(hTest, "%d: FAILED %s", __LINE__, #expr); \
-    } while (0)
-
-#define CHECK_DUMP(expr, value) \
-    do { \
-        if (!(expr)) \
-            RTTestFailed(hTest, "%d: FAILED %s, got \"%s\"", __LINE__, #expr, value); \
-    } while (0)
-
-#define CHECK_DUMP_I(expr) \
-    do { \
-        if (!(expr)) \
-            RTTestFailed(hTest, "%d: FAILED %s, got \"%d\"", __LINE__, #expr, expr); \
-    } while (0)
-
-    iprt::MiniString empty;
-    CHECK(empty.length() == 0);
-    CHECK(empty.capacity() == 0);
-
-    iprt::MiniString sixbytes("12345");
-    CHECK(sixbytes.length() == 5);
-    CHECK(sixbytes.capacity() == 6);
-
-    sixbytes.append(iprt::MiniString("678"));
-    CHECK(sixbytes.length() == 8);
-    CHECK(sixbytes.capacity() == 9);
-
-    sixbytes.append("9a");
-    CHECK(sixbytes.length() == 10);
-    CHECK(sixbytes.capacity() == 11);
-
-    char *psz = sixbytes.mutableRaw();
-        // 123456789a
-        //       ^
-        // 0123456
-    psz[6] = '\0';
-    sixbytes.jolt();
-    CHECK(sixbytes.length() == 6);
-    CHECK(sixbytes.capacity() == 7);
-
-    iprt::MiniString morebytes("tobereplaced");
-    morebytes = "newstring ";
-    morebytes.append(sixbytes);
-
-    CHECK_DUMP(morebytes == "newstring 123456", morebytes.c_str());
-
-    iprt::MiniString third(morebytes);
-    third.reserve(100 * 1024);      // 100 KB
-    CHECK_DUMP(third == "newstring 123456", morebytes.c_str() );
-    CHECK(third.capacity() == 100 * 1024);
-    CHECK(third.length() == morebytes.length());          // must not have changed
-
-    iprt::MiniString copy1(morebytes);
-    iprt::MiniString copy2 = morebytes;
-    CHECK(copy1 == copy2);
-
-    copy1 = NULL;
-    CHECK(copy1.length() == 0);
-
-    copy1 = "";
-    CHECK(copy1.length() == 0);
-
-    CHECK(iprt::MiniString("abc") <  iprt::MiniString("def"));
-    CHECK(iprt::MiniString("abc") != iprt::MiniString("def"));
-    CHECK_DUMP_I(iprt::MiniString("def") > iprt::MiniString("abc"));
-    CHECK(iprt::MiniString("abc") == iprt::MiniString("abc"));
-
-    copy2.setNull();
-    for (int i = 0; i < 100; ++i)
-    {
-        copy2.reserve(50);      // should be ignored after 50 loops
-        copy2.append("1");
-    }
-    CHECK(copy2.length() == 100);
-
-    copy2.setNull();
-    for (int i = 0; i < 100; ++i)
-    {
-        copy2.reserve(50);      // should be ignored after 50 loops
-        copy2.append('1');
-    }
-    CHECK(copy2.length() == 100);
-
-#undef CHECK
-#undef CHECK_DUMP
-#undef CHECK_DUMP_I
-}
-
-
 void testUtf8Latin1(RTTEST hTest)
 {
     RTTestSub(hTest, "Latin-1 <-> Utf-8 conversion functions");
@@ -1375,7 +1271,6 @@ void testUtf16Latin1(RTTEST hTest)
 
 static void testNoTransation(RTTEST hTest)
 {
-
     /*
      * Try trigger a VERR_NO_TRANSLATION error in convert to
      * current CP to latin-1.
@@ -1408,6 +1303,84 @@ static void testNoTransation(RTTEST hTest)
     RTTestSubDone(hTest);
 }
 
+static void testGetPut(RTTEST hTest)
+{
+    /*
+     * Test RTStrPutCp, RTStrGetCp and RTStrGetCpEx.
+     */
+    RTTestSub(hTest, "RTStrPutCp, RTStrGetCp and RTStrGetCpEx");
+
+    RTUNICP uc = 0;
+    while (uc <= 0x10fffd)
+    {
+        /* Figure the range - skip illegal ranges. */
+        RTUNICP ucFirst = uc;
+        if (ucFirst - UINT32_C(0xd800) <= 0x7ff)
+            ucFirst = 0xe000;
+        else if (ucFirst == UINT32_C(0xfffe) || ucFirst == UINT32_C(0xffff))
+            ucFirst = 0x10000;
+
+        RTUNICP ucLast  = ucFirst + 1023;
+        if (ucLast - UINT32_C(0xd800) <= 0x7ff)
+            ucLast = 0xd7ff;
+        else if (ucLast == UINT32_C(0xfffe) || ucLast == UINT32_C(0xffff))
+            ucLast = 0xfffd;
+
+        /* Encode the range into a string, decode each code point as we go along. */
+        char sz1[8192];
+        char *pszDst = sz1;
+        for (uc = ucFirst; uc <= ucLast; uc++)
+        {
+            char *pszBefore = pszDst;
+            pszDst = RTStrPutCp(pszDst, uc);
+            RTTESTI_CHECK(pszBefore - pszDst < 6);
+
+            RTUNICP uc2 = RTStrGetCp(pszBefore);
+            RTTESTI_CHECK_MSG(uc2 == uc, ("uc2=%#x uc=%#x\n", uc2, uc));
+
+            const char *pszSrc = pszBefore;
+            RTUNICP uc3 = 42;
+            RTTESTI_CHECK_RC(RTStrGetCpEx(&pszSrc, &uc3), VINF_SUCCESS);
+            RTTESTI_CHECK_MSG(uc3 == uc, ("uc3=%#x uc=%#x\n", uc3, uc));
+            RTTESTI_CHECK_MSG(pszSrc == pszDst, ("pszSrc=%p pszDst=%p\n", pszSrc, pszDst));
+        }
+
+        /* Decode and re-encode it. */
+        const char *pszSrc = pszDst = sz1;
+        for (uc = ucFirst; uc <= ucLast; uc++)
+        {
+            RTUNICP uc2 = RTStrGetCp(pszSrc);
+            RTTESTI_CHECK_MSG(uc2 == uc, ("uc2=%#x uc=%#x\n", uc2, uc));
+
+            RTUNICP uc3 = 42;
+            RTTESTI_CHECK_RC(RTStrGetCpEx(&pszSrc, &uc3), VINF_SUCCESS);
+            RTTESTI_CHECK_MSG(uc3 == uc, ("uc3=%#x uc=%#x\n", uc3, uc));
+
+            pszDst = RTStrPutCp(pszDst, uc);
+            RTTESTI_CHECK_MSG(pszSrc == pszDst, ("pszSrc=%p pszDst=%p\n", pszSrc, pszDst));
+            pszSrc = pszDst;
+        }
+
+        /* Decode and wipe it (checking compiler optimizations). */
+        pszSrc = pszDst = sz1;
+        for (uc = ucFirst; uc <= ucLast; uc++)
+        {
+            RTUNICP uc2 = RTStrGetCp(pszSrc);
+            RTTESTI_CHECK_MSG(uc2 == uc, ("uc2=%#x uc=%#x\n", uc2, uc));
+
+            RTUNICP uc3 = 42;
+            RTTESTI_CHECK_RC(RTStrGetCpEx(&pszSrc, &uc3), VINF_SUCCESS);
+            RTTESTI_CHECK_MSG(uc3 == uc, ("uc3=%#x uc=%#x\n", uc3, uc));
+
+            pszDst = RTStrPutCp(pszDst, 0);
+        }
+
+        /* advance */
+        uc = ucLast + 1;
+    }
+
+}
+
 
 int main()
 {
@@ -1415,13 +1388,13 @@ int main()
      * Init the runtime, test and say hello.
      */
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstUtf8", &hTest);
-    if (rc)
-        return rc;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstUtf8", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
     RTTestBanner(hTest);
 
     /*
-     * Run the test.
+     * Run the tests.
      */
     InitStrings();
     test1(hTest);
@@ -1431,10 +1404,10 @@ int main()
     TstRTStrPurgeEncoding(hTest);
     testStrEnd(hTest);
     testStrStr(hTest);
-    testMinistring(hTest);
     testUtf8Latin1(hTest);
     testUtf16Latin1(hTest);
     testNoTransation(hTest);
+    testGetPut(hTest);
 
     Benchmarks(hTest);
 

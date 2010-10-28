@@ -64,7 +64,7 @@ public:
      */
     MiniString()
         : m_psz(NULL),
-          m_cbLength(0),
+          m_cch(0),
           m_cbAllocated(0)
     {
     }
@@ -117,7 +117,7 @@ public:
      */
     size_t length() const
     {
-        return m_cbLength;
+        return m_cch;
     }
 
     /**
@@ -148,7 +148,7 @@ public:
     void reserve(size_t cb)
     {
         if (    cb != m_cbAllocated
-             && cb > m_cbLength + 1
+             && cb > m_cch + 1
            )
         {
             int vrc = RTStrRealloc(&m_psz, cb);
@@ -234,13 +234,24 @@ public:
     /**
      * Appends the given character to "this".
      *
-     * @param   c               The character to append.
+     * @param   ch              The character to append.
      *
      * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
      *
      * @returns Reference to the object.
      */
-    MiniString &append(char c);
+    MiniString &append(char ch);
+
+    /**
+     * Appends the given unicode code point to "this".
+     *
+     * @param   uc              The unicode code point to append.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @returns Reference to the object.
+     */
+    MiniString &appendCodePoint(RTUNICP uc);
 
     /**
      * Shortcut to append(), MiniString variant.
@@ -286,7 +297,14 @@ public:
     MiniString &toUpper()
     {
         if (length())
+        {
+            /* Folding an UTF-8 string may result in a shorter encoding (see
+               testcase), so recalculate the length afterwars. */
             ::RTStrToUpper(m_psz);
+            size_t cchNew = strlen(m_psz);
+            Assert(cchNew <= m_cch);
+            m_cch = cchNew;
+        }
         return *this;
     }
 
@@ -298,7 +316,14 @@ public:
     MiniString &toLower()
     {
         if (length())
+        {
+            /* Folding an UTF-8 string may result in a shorter encoding (see
+               testcase), so recalculate the length afterwars. */
             ::RTStrToLower(m_psz);
+            size_t cchNew = strlen(m_psz);
+            Assert(cchNew <= m_cch);
+            m_cch = cchNew;
+        }
         return *this;
     }
 
@@ -360,12 +385,12 @@ public:
     {
         if (m_psz)
         {
-            m_cbLength = strlen(m_psz);
-            m_cbAllocated = m_cbLength + 1; /* (Required for the Utf8Str::asOutParam case) */
+            m_cch = strlen(m_psz);
+            m_cbAllocated = m_cch + 1; /* (Required for the Utf8Str::asOutParam case) */
         }
         else
         {
-            m_cbLength = 0;
+            m_cch = 0;
             m_cbAllocated = 0;
         }
     }
@@ -433,17 +458,64 @@ public:
         return compare(that.m_psz, cs);
     }
 
+    /**
+     * Compares the two strings.
+     *
+     * @returns true if equal, false if not.
+     * @param   that    The string to compare with.
+     */
+    bool equals(const MiniString &that) const
+    {
+        return that.length() == length()
+            && memcmp(that.m_psz, m_psz, length()) == 0;
+    }
+
+    /**
+     * Compares the two strings.
+     *
+     * @returns true if equal, false if not.
+     * @param   pszThat The string to compare with.
+     */
+    bool equals(const char *pszThat) const
+    {
+        return RTStrCmp(pszThat, m_psz) == 0;
+    }
+
+    /**
+     * Compares the two strings ignoring differences in case.
+     *
+     * @returns true if equal, false if not.
+     * @param   that    The string to compare with.
+     */
+    bool equalsIgnoreCase(const MiniString &that) const
+    {
+        /* Unfolded upper and lower case characters may require different
+           amount of encoding space, so the length optimization doesn't work. */
+        return RTStrICmp(that.m_psz, m_psz) == 0;
+    }
+
+    /**
+     * Compares the two strings ignoring differences in case.
+     *
+     * @returns true if equal, false if not.
+     * @param   pszThat The string to compare with.
+     */
+    bool equalsIgnoreCase(const char *pszThat) const
+    {
+        return RTStrICmp(pszThat, m_psz) == 0;
+    }
+
     /** @name Comparison operators.
      * @{  */
-    bool operator==(const MiniString &that) const { return !compare(that); }
-    bool operator!=(const MiniString &that) const { return !!compare(that); }
+    bool operator==(const MiniString &that) const { return equals(that); }
+    bool operator!=(const MiniString &that) const { return !equals(that); }
     bool operator<( const MiniString &that) const { return compare(that) < 0; }
     bool operator>( const MiniString &that) const { return compare(that) > 0; }
 
-    bool operator==(const char *that) const       { return !compare(that); }
-    bool operator!=(const char *that) const       { return !!compare(that); }
-    bool operator<( const char *that) const       { return compare(that) < 0; }
-    bool operator>( const char *that) const       { return compare(that) > 0; }
+    bool operator==(const char *pszThat) const    { return equals(pszThat); }
+    bool operator!=(const char *pszThat) const    { return !equals(pszThat); }
+    bool operator<( const char *pszThat) const    { return compare(pszThat) < 0; }
+    bool operator>( const char *pszThat) const    { return compare(pszThat) > 0; }
     /** @} */
 
     /** Max string offset value.
@@ -566,7 +638,7 @@ protected:
         {
             RTStrFree(m_psz);
             m_psz = NULL;
-            m_cbLength = 0;
+            m_cch = 0;
             m_cbAllocated = 0;
         }
     }
@@ -590,15 +662,15 @@ protected:
      */
     void copyFrom(const MiniString &s)
     {
-        if ((m_cbLength = s.m_cbLength))
+        if ((m_cch = s.m_cch))
         {
-            m_cbAllocated = m_cbLength + 1;
+            m_cbAllocated = m_cch + 1;
             m_psz = (char *)RTStrAlloc(m_cbAllocated);
             if (RT_LIKELY(m_psz))
                 memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
             else
             {
-                m_cbLength = 0;
+                m_cch = 0;
                 m_cbAllocated = 0;
 #ifdef RT_EXCEPTIONS_ENABLED
                 throw std::bad_alloc();
@@ -630,14 +702,14 @@ protected:
     {
         if (pcsz && *pcsz)
         {
-            m_cbLength = strlen(pcsz);
-            m_cbAllocated = m_cbLength + 1;
+            m_cch = strlen(pcsz);
+            m_cbAllocated = m_cch + 1;
             m_psz = (char *)RTStrAlloc(m_cbAllocated);
             if (RT_LIKELY(m_psz))
                 memcpy(m_psz, pcsz, m_cbAllocated);     // include 0 terminator
             else
             {
-                m_cbLength = 0;
+                m_cch = 0;
                 m_cbAllocated = 0;
 #ifdef RT_EXCEPTIONS_ENABLED
                 throw std::bad_alloc();
@@ -646,14 +718,14 @@ protected:
         }
         else
         {
-            m_cbLength = 0;
+            m_cch = 0;
             m_cbAllocated = 0;
             m_psz = NULL;
         }
     }
 
     char    *m_psz;                     /**< The string buffer. */
-    size_t  m_cbLength;                 /**< strlen(m_psz) - i.e. no terminator included. */
+    size_t  m_cch;                      /**< strlen(m_psz) - i.e. no terminator included. */
     size_t  m_cbAllocated;              /**< Size of buffer that m_psz points to; at least m_cbLength + 1. */
 };
 
