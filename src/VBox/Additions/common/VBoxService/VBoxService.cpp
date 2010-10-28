@@ -135,7 +135,7 @@ static int VBoxServiceUsage(void)
     RTPrintf("\n"
              "Options:\n"
              "    -i | --interval         The default interval.\n"
-             "    -f | --foreground       Don't daemonzie the program. For debugging.\n"
+             "    -f | --foreground       Don't daemonize the program. For debugging.\n"
              "    -v | --verbose          Increment the verbosity level. For debugging.\n"
              "    -h | -? | --help        Show this message and exit with status 1.\n"
              );

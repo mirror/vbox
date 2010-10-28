@@ -7,10 +7,10 @@
         <key>Loading VBoxUSB.kext</key>                                         <string>Loading VBoxUSB.kext</string>
         <key>Loading VBoxNetFlt.kext</key>                                      <string>Loading VBoxNetFlt.kext</string>
         <key>Loading VBoxNetAdp.kext</key>                                      <string>Loading VBoxNetAdp.kext</string>
-        <key>Unloading VBoxDrv.kext</key>                                       <string>Unoading VBoxDrv.kext</string>
-        <key>Unloading VBoxUSB.kext</key>                                       <string>Unoading VBoxUSB.kext</string>
-        <key>Unloading VBoxNetFlt.kext</key>                                    <string>Unoading VBoxNetFlt.kext</string>
-        <key>Unloading VBoxNetAdp.kext</key>                                    <string>Unoading VBoxNetAdp.kext</string>
+        <key>Unloading VBoxDrv.kext</key>                                       <string>Unloading VBoxDrv.kext</string>
+        <key>Unloading VBoxUSB.kext</key>                                       <string>Unloading VBoxUSB.kext</string>
+        <key>Unloading VBoxNetFlt.kext</key>                                    <string>Unloading VBoxNetFlt.kext</string>
+        <key>Unloading VBoxNetAdp.kext</key>                                    <string>Unloading VBoxNetAdp.kext</string>
         <key>Error: /Library/Extensions/VBoxDrv.kext is missing</key>           <string>Error: /Library/Extensions/VBoxDrv.kext is missing</string>
         <key>Error: /Library/Extensions/VBoxUSB.kext is missing</key>           <string>Error: /Library/Extensions/VBoxUSB.kext is missing</string>
         <key>Error: /Library/Extensions/VBoxNetFlt.kext is missing</key>        <string>Error: /Library/Extensions/VBoxNetFlt.kext is missing</string>
