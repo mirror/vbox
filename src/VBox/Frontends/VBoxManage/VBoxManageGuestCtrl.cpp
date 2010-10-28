@@ -94,6 +94,9 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            <source on host> <destination on guest>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--dryrun] [--recursive] [--verbose] [--flags <flags>]\n"
+                 "\n"
+                 "                            updateadditions <vmname>|<uuid>\n"
+                 "                            [--source <guest additions .ISO file to use>] [--verbose]\n"
                  "\n");
 }
 
@@ -1059,9 +1062,9 @@ static int handleCtrlCopyTo(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
 
-    /* lookup VM. */
+    /* Lookup VM. */
     ComPtr<IMachine> machine;
-    /* assume it's an UUID */
+    /* Assume it's an UUID. */
     HRESULT rc;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
@@ -1069,11 +1072,11 @@ static int handleCtrlCopyTo(HandlerArg *a)
     {
         do
         {
-            /* open an existing session for VM */
+            /* Open an existing session for VM. */
             CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Shared));
             // @todo r=dj assert that it's an existing session
 
-            /* get the mutable session machine */
+            /* Get the mutable session machine. */
             a->session->COMGETTER(Machine)(machine.asOutParam());
 
             /* get the associated console */
@@ -1171,6 +1174,129 @@ static int handleCtrlCopyTo(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static int handleCtrlUpdateAdditions(HandlerArg *a)
+{
+    /*
+     * Check the syntax.  We can deduce the correct syntax from the number of
+     * arguments.
+     */
+    if (a->argc < 1) /* At least the VM name should be present :-). */
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    Utf8Str Utf8Source;
+    bool fVerbose = false;
+
+    /* Iterate through all possible commands (if available). */
+    bool usageOK = true;
+    for (int i = 1; usageOK && i < a->argc; i++)
+    {
+        if (!strcmp(a->argv[i], "--source"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8Source = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (!strcmp(a->argv[i], "--verbose"))
+            fVerbose = true;
+        else
+            return errorSyntax(USAGE_GUESTCONTROL,
+                               "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
+    }
+
+    if (!usageOK)
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    /* Lookup VM. */
+    ComPtr<IMachine> machine;
+    /* Assume it's an UUID. */
+    HRESULT rc;
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
+    if (machine)
+    {
+        do
+        {
+            /* Open an existing session for VM. */
+            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Shared));
+            // @todo r=dj assert that it's an existing session
+
+            /* Get the mutable session machine. */
+            a->session->COMGETTER(Machine)(machine.asOutParam());
+
+            /* Get the associated console. */
+            ComPtr<IConsole> console;
+            CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+
+            ComPtr<IGuest> guest;
+            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
+
+            if (fVerbose)
+                RTPrintf("Updating Guest Additions on \"%s\" ...\n", a->argv[0]);
+
+#ifdef DEBUG_andy
+            if (Utf8Source.isEmpty())
+                Utf8Source = "c:\\Downloads\\VBoxGuestAdditions-r67158.iso";
+#endif
+            /* Determine source if not set yet. */
+            if (Utf8Source.isEmpty())
+            {
+                char strTemp[RTPATH_MAX];
+                int rc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
+                AssertRC(rc);
+                Utf8Str Utf8Src1 = Utf8Str(strTemp).append("/VBoxGuestAdditions.iso");
+
+                rc = RTPathExecDir(strTemp, sizeof(strTemp));
+                AssertRC(rc);
+                Utf8Str Utf8Src2 = Utf8Str(strTemp).append("/additions/VBoxGuestAdditions.iso");
+
+                /* Check the standard image locations */
+                if (RTFileExists(Utf8Src1.c_str()))
+                    Utf8Source = Utf8Src1;
+                else if (RTFileExists(Utf8Src2.c_str()))
+                    Utf8Source = Utf8Src2;
+                else
+                {
+                    RTMsgError("Source could not be determined! Please use --source to specify a valid source.\n");
+                    break;
+                }
+            }
+            else if (!RTFileExists(Utf8Source.c_str()))
+            {
+                RTMsgError("Source \"%s\" does not exist!\n", Utf8Source.c_str());
+                break;
+            }
+            if (fVerbose)
+                RTPrintf("Using source: %s\n", Utf8Source.c_str());
+
+            ComPtr<IProgress> progress;
+            rc = guest->UpdateGuestAdditions(Bstr(Utf8Source).raw(), progress.asOutParam());
+            if (SUCCEEDED(rc) && progress)
+            {
+                rc = showProgress(progress);
+                if (FAILED(rc))
+                {
+                    com::ProgressErrorInfo info(progress);
+                    if (info.isBasicAvailable())
+                        RTMsgError("Failed to start Guest Additions update. Error message: %lS", info.getText().raw());
+                    else
+                        RTMsgError("Failed to start Guest Additions update. No error message available!");
+                }
+                else
+                {
+                    if (fVerbose)
+                        RTPrintf("Guest Additions installer successfully copied and started.\n");
+                }
+            }
+            a->session->UnlockMachine();
+        } while (0);
+    }
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
 /**
  * Access the guest control store.
  *
@@ -1187,15 +1313,19 @@ int handleGuestControl(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     /* switch (cmd) */
-    if (   strcmp(a->argv[0], "exec") == 0
-        || strcmp(a->argv[0], "execute") == 0)
+    if (   !strcmp(a->argv[0], "exec")
+        || !strcmp(a->argv[0], "execute"))
     {
         return handleCtrlExecProgram(&arg);
     }
-    else if (   strcmp(a->argv[0], "copyto")  == 0
-             || strcmp(a->argv[0], "copy_to") == 0)
+    else if (!strcmp(a->argv[0], "copyto"))
     {
         return handleCtrlCopyTo(&arg);
+    }
+    else if (   !strcmp(a->argv[0], "updateadditions")
+             || !strcmp(a->argv[0], "updateadds"))
+    {
+        return handleCtrlUpdateAdditions(&arg);
     }
 
     /* default: */
