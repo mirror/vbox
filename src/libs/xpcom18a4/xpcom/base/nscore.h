@@ -457,7 +457,7 @@ typedef PRUint32 nsresult;
  *
  */
 
-#if defined(__GNUC__) && (__GNUC__ > 2)
+#if defined(__GNUC__) && (__GNUC__ > 2) && !defined(FORTIFY_RUNNING)
 #define NS_LIKELY(x)    (__builtin_expect(!!(x), 1))
 #define NS_UNLIKELY(x)  (__builtin_expect(!!(x), 0))
 #else

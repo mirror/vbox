@@ -954,7 +954,7 @@
  * @see RT_LIKELY
  */
 #if defined(__GNUC__)
-# if __GNUC__ >= 3
+# if __GNUC__ >= 3 && !defined(FORTIFY_RUNNING)
 #  define RT_LIKELY(expr)       __builtin_expect(!!(expr), 1)
 #  define RT_UNLIKELY(expr)     __builtin_expect(!!(expr), 0)
 # else
