@@ -18,6 +18,8 @@
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
+VBOX_PATH_STORAGE_SRC := $(PATH_SUB_CURRENT)
+
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 ifndef VBOX_OSE
@@ -27,7 +29,7 @@ endif
 #
 # StorageLib - The storage Library.
 #
-LIBRARIES += StorageLib StorageLibNoDB
+LIBRARIES += StorageLib #StorageLibNoDB
 
 StorageLib_TEMPLATE = VBOXR3
 StorageLib_DEFS     = IN_VBOXDDU
@@ -42,10 +44,10 @@ StorageLib_SOURCES  = \
 	RAW.cpp \
 	VCICache.cpp
 
-StorageLibNoDB_TEMPLATE = VBOXR3
-StorageLibNoDB_DEFS     = IN_VBOXDDU VBOX_HDD_NO_DYNAMIC_BACKENDS
-StorageLibNoDB_SOURCES  = \
-	$(StorageLib_SOURCES)
+#StorageLibNoDB_TEMPLATE = VBOXR3
+#StorageLibNoDB_DEFS     = IN_VBOXDDU VBOX_HDD_NO_DYNAMIC_BACKENDS
+#StorageLibNoDB_SOURCES  = \
+#	$(StorageLib_SOURCES)
 
 # generate rules
 include $(KBUILD_PATH)/subfooter.kmk
