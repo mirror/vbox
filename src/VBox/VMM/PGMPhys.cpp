@@ -3845,20 +3845,14 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
 VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef PGM_WITH_LARGE_PAGES
-    uint64_t cbAvailableMem;
-
-    if (    RTSystemQueryAvailableRam(&cbAvailableMem) == VINF_SUCCESS
-        &&  cbAvailableMem < (UINT64_C(2) * _1G))
-    {
-        /** Too little free RAM left; don't bother as the host might try to move memory around, which is very expensive. */
-        LogRel(("PGMR3PhysAllocateLargeHandyPage: refuse to allocate large page; available memory on the host: %RX64\n", cbAvailableMem));
-        return VINF_EM_NO_MEMORY;
-    }
+    uint64_t u64TimeStamp1, u64TimeStamp2;
 
     pgmLock(pVM);
 
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatAllocLargePage, a);
+    u64TimeStamp1 = RTTimeMilliTS();
     int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE, 0, NULL);
+    u64TimeStamp2 = RTTimeMilliTS();
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatAllocLargePage, a);
     if (RT_SUCCESS(rc))
     {
@@ -3925,6 +3919,26 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
             PGMPhysInvalidatePageMapTLB(pVM);
         }
         pVM->pgm.s.cLargeHandyPages = 0;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        static uint32_t cTimeOut = 0;
+
+        if (u64TimeStamp2 - u64TimeStamp1 > 100)
+        {
+            if (++cTimeOut > 5)
+            {
+                /* If repeated attempts to allocate a large page takes more than 100 ms, then we fall back to normal 4k pages.
+                 * E.g. Vista 64 tries to move memory around, which takes a huge amount of time.
+                 */
+                LogRel(("PGMR3PhysAllocateLargePage: allocating large pages takes too long (last attempt %d ms); DISABLE\n", u64TimeStamp2 - u64TimeStamp1));
+                PGMSetLargePageUsage(pVM, false);
+            }
+        }
+        else
+        if (cTimeOut > 0)
+            cTimeOut--;
     }
 
     pgmUnlock(pVM);
