@@ -552,6 +552,7 @@ static int vboxserviceVMInfoWriteNetwork(void)
     ifcfg.ifc_buf = buffer;
     if (ioctl(sd, SIOCGIFCONF, &ifcfg) < 0)
     {
+        close(sd);
         rc = RTErrConvertFromErrno(errno);
         VBoxServiceError("VMInfo/Network: Failed to ioctl(SIOCGIFCONF) on socket: Error %Rrc\n", rc);
         return rc;
