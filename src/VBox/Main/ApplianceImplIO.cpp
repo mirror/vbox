@@ -28,7 +28,6 @@
 #include <iprt/sha.h>
 #include <iprt/path.h>
 #include <iprt/asm.h>
-#include <iprt/semaphore.h>
 #include <iprt/stream.h>
 #include <iprt/circbuf.h>
 #include <VBox/VBoxHDD.h>
@@ -57,37 +56,33 @@ typedef struct SHA1STORAGEINTERNAL
 {
     /** Completion callback. */
     PFNVDCOMPLETED pfnCompleted;
-    /** Our own storage handle. */
-    PSHA1STORAGE pSha1Storage;
     /** Storage handle for the next callback in chain. */
     void *pvStorage;
-    /** Memory buffer used for caching and SHA1 calculation. */
-    char *pcBuf;
-    /** Size of the memory buffer. */
-    size_t cbBuf;
-    /** Memory buffer for writing zeros. */
-    void *pvZeroBuf;
-    /** Size of the zero memory buffer. */
-    size_t cbZeroBuf;
-    /** Current position in the caching memory buffer. */
-    size_t cbCurBuf;
-    /** Current absolute position. */
+    /** Current file open mode. */
+    uint32_t fOpenMode;
+    /** Our own storage handle. */
+    PSHA1STORAGE pSha1Storage;
+    /** Circular buffer used for transferring data from/to the worker thread. */
+    PRTCIRCBUF pCircBuf;
+    /** Current absolute position (regardless of the real read/written data). */
     uint64_t cbCurAll;
     /** Current real position in the file. */
     uint64_t cbCurFile;
-    /** Handle of the SHA1 worker thread. */
-    RTTHREAD pMfThread;
+    /** Handle of the worker thread. */
+    RTTHREAD pWorkerThread;
     /** Status of the worker thread. */
     volatile uint32_t u32Status;
     /** Event for signaling a new status. */
     RTSEMEVENT newStatusEvent;
-    /** Event for signaling a finished SHA1 calculation. */
-    RTSEMEVENT calcFinishedEvent;
+    /** Event for signaling a finished task of the worker thread. */
+    RTSEMEVENT workFinishedEvent;
     /** SHA1 calculation context. */
     RTSHA1CONTEXT ctx;
-    /* Circular buffer in read mode. */
-    PRTCIRCBUF pCircBuf;
-    /* Are we reached end of file. */
+    /** Write mode only: Memory buffer for writing zeros. */
+    void *pvZeroBuf;
+    /** Write mode only: Size of the zero memory buffer. */
+    size_t cbZeroBuf;
+    /** Read mode only: Indicate if we reached end of file. */
     volatile bool fEOF;
 //    uint64_t calls;
 //    uint64_t waits;
@@ -97,10 +92,10 @@ typedef struct SHA1STORAGEINTERNAL
  *   Defined Constants And Macros                                             *
  ******************************************************************************/
 
-#define STATUS_WAIT UINT32_C(0)
-#define STATUS_CALC UINT32_C(1)
-#define STATUS_END  UINT32_C(3)
-#define STATUS_READ UINT32_C(4)
+#define STATUS_WAIT  UINT32_C(0)
+#define STATUS_WRITE UINT32_C(1)
+#define STATUS_READ  UINT32_C(2)
+#define STATUS_END   UINT32_C(3)
 
 /* Enable for getting some flow history. */
 #if 0
@@ -470,6 +465,11 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvUser;
 
+    PVDINTERFACE pIO = VDInterfaceGet(pInt->pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
+    AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
+    PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
+    AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
+
     int rc = VINF_SUCCESS;
     bool fLoop = true;
     while(fLoop)
@@ -488,38 +488,75 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                     fLoop = false;
                 break;
             }
-            case STATUS_CALC:
+            case STATUS_WRITE:
             {
-                /* Update the SHA1 context with the next data block. */
-                RTSha1Update(&pInt->ctx, pInt->pcBuf, pInt->cbCurBuf);
+                size_t cbAvail = RTCircBufUsed(pInt->pCircBuf);
+                size_t cbMemAllRead = 0;
+                bool fStop = false;
+                bool fEOF = false;
+                /* First loop over all the free memory in the circular
+                 * memory buffer (could be turn around at the end). */
+                for(;;)
+                {
+                    if (   cbMemAllRead == cbAvail
+                        || fStop == true)
+                        break;
+                    char *pcBuf;
+                    size_t cbMemToRead = cbAvail - cbMemAllRead;
+                    size_t cbMemRead = 0;
+                    /* Try to acquire all the used space of the circular buffer. */
+                    RTCircBufAcquireReadBlock(pInt->pCircBuf, cbMemToRead, (void**)&pcBuf, &cbMemRead);
+                    size_t cbAllWritten = 0;
+                    /* Second, write as long as used memory is there. The write
+                     * method could also split the writes up into to smaller
+                     * parts. */
+                    for(;;)
+                    {
+                        if (cbAllWritten == cbMemRead)
+                            break;
+                        size_t cbToWrite = cbMemRead - cbAllWritten;
+                        size_t cbWritten = 0;
+                        rc = pCallbacks->pfnWriteSync(pIO->pvUser, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllWritten], cbToWrite, &cbWritten);
+//                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
+                        if (RT_FAILURE(rc))
+                        {
+                            fStop = true;
+                            fLoop = false;
+                            break;
+                        }
+                        if (cbWritten == 0)
+                        {
+                            fStop = true;
+                            fLoop = false;
+                            fEOF = true;
+//                            RTPrintf("EOF\n");
+                            break;
+                        }
+                        cbAllWritten += cbWritten;
+                        pInt->cbCurFile += cbWritten;
+                    }
+                    /* Update the SHA1 context with the next data block. */
+                    if (pInt->pSha1Storage->fCreateDigest)
+                        RTSha1Update(&pInt->ctx, pcBuf, cbAllWritten);
+                    /* Mark the block as empty. */
+                    RTCircBufReleaseReadBlock(pInt->pCircBuf, cbAllWritten);
+                    cbMemAllRead += cbAllWritten;
+                }
                 /* Reset the thread status and signal the main thread that we
-                   are finished. */
-                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_CALC);
-                rc = RTSemEventSignal(pInt->calcFinishedEvent);
-                break;
-            }
-            case STATUS_END:
-            {
-                /* End signaled */
-                fLoop = false;
+                 * are finished. Use CmpXchg, so we not overwrite other states
+                 * which could be signaled in the meantime. */
+                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_WRITE);
+                rc = RTSemEventSignal(pInt->workFinishedEvent);
                 break;
             }
             case STATUS_READ:
             {
-                PVDINTERFACE pIO = VDInterfaceGet(pInt->pSha1Storage->pVDImageIfaces, VDINTERFACETYPE_IO);
-                AssertPtrReturn(pIO, VERR_INVALID_PARAMETER);
-                PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
-                AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
-
                 size_t cbAvail = RTCircBufFree(pInt->pCircBuf);
-//                RTPrintf("############################################################################### th: avail %ld\n", cbAvail);
-
-                /* ************ CHECK for 0 */
-                /* First loop over all the available memory in the circular
-                 * memory buffer (could be turn around at the end). */
                 size_t cbMemAllWrite = 0;
                 bool fStop = false;
                 bool fEOF = false;
+                /* First loop over all the available memory in the circular
+                 * memory buffer (could be turn around at the end). */
                 for(;;)
                 {
                     if (   cbMemAllWrite == cbAvail
@@ -544,8 +581,8 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
 //                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
                         if (RT_FAILURE(rc))
                         {
-                            fLoop = false;
                             fStop = true;
+                            fLoop = false;
                             break;
                         }
                         if (cbRead == 0)
@@ -560,7 +597,8 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                         pInt->cbCurFile += cbRead;
                     }
                     /* Update the SHA1 context with the next data block. */
-                    RTSha1Update(&pInt->ctx, pcBuf, cbAllRead);
+                    if (pInt->pSha1Storage->fCreateDigest)
+                        RTSha1Update(&pInt->ctx, pcBuf, cbAllRead);
                     /* Mark the block as full. */
                     RTCircBufReleaseWriteBlock(pInt->pCircBuf, cbAllRead);
                     cbMemAllWrite += cbAllRead;
@@ -568,9 +606,16 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                 if (fEOF)
                     ASMAtomicWriteBool(&pInt->fEOF, true);
                 /* Reset the thread status and signal the main thread that we
-                   are finished. */
+                 * are finished. Use CmpXchg, so we not overwrite other states
+                 * which could be signaled in the meantime. */
                 ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_READ);
-                rc = RTSemEventSignal(pInt->calcFinishedEvent);
+                rc = RTSemEventSignal(pInt->workFinishedEvent);
+                break;
+            }
+            case STATUS_END:
+            {
+                /* End signaled */
+                fLoop = false;
                 break;
             }
         }
@@ -591,48 +636,29 @@ DECLINLINE(int) sha1WaitForManifestThreadFinished(PSHA1STORAGEINTERNAL pInt)
     for(;;)
     {
 //        RTPrintf(" wait\n");
-        if (!(   ASMAtomicReadU32(&pInt->u32Status) == STATUS_CALC
+        if (!(   ASMAtomicReadU32(&pInt->u32Status) == STATUS_WRITE
               || ASMAtomicReadU32(&pInt->u32Status) == STATUS_READ))
             break;
-        rc = RTSemEventWait(pInt->calcFinishedEvent, 100);
+        rc = RTSemEventWait(pInt->workFinishedEvent, 100);
     }
     if (rc == VERR_TIMEOUT)
         rc = VINF_SUCCESS;
     return rc;
 }
 
-DECLINLINE(int) sha1FlushCurBuf(PVDINTERFACE pIO, PVDINTERFACEIO pCallbacks, PSHA1STORAGEINTERNAL pInt, bool fCreateDigest)
+DECLINLINE(int) sha1FlushCurBuf(PSHA1STORAGEINTERNAL pInt)
 {
     int rc = VINF_SUCCESS;
-    if (fCreateDigest)
+    if (pInt->fOpenMode & RTFILE_O_WRITE)
     {
-        /* Let the sha1 worker thread start immediately. */
-        rc = sha1SignalManifestThread(pInt, STATUS_CALC);
+        /* Let the write worker thread start immediately. */
+        rc = sha1SignalManifestThread(pInt, STATUS_WRITE);
         if (RT_FAILURE(rc))
             return rc;
-    }
-    /* Write the buffer content to disk. */
-    size_t cbAllWritten = 0;
-    for(;;)
-    {
-        /* Finished? */
-        if (cbAllWritten == pInt->cbCurBuf)
-            break;
-        size_t cbToWrite = pInt->cbCurBuf - cbAllWritten;
-        size_t cbWritten = 0;
-        rc = pCallbacks->pfnWriteSync(pIO->pvUser, pInt->pvStorage, pInt->cbCurFile, &pInt->pcBuf[cbAllWritten], cbToWrite, &cbWritten);
-        if (RT_FAILURE(rc))
-            return rc;
-        pInt->cbCurFile += cbWritten;
-        cbAllWritten += cbWritten;
-    }
-    if (fCreateDigest)
-    {
-        /* Wait until the sha1 worker thread has finished. */
+
+        /* Wait until the write worker thread has finished. */
         rc = sha1WaitForManifestThreadFinished(pInt);
     }
-    if (RT_SUCCESS(rc))
-        pInt->cbCurBuf = 0;
 
     return rc;
 }
@@ -665,26 +691,15 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
         pInt->pfnCompleted = pfnCompleted;
         pInt->pSha1Storage = pSha1Storage;
         pInt->fEOF         = false;
+        pInt->fOpenMode    = fOpen;
 
+        /* Circular buffer in the read case. */
+        rc = RTCircBufCreate(&pInt->pCircBuf, _1M * 2);
+        if (RT_FAILURE(rc))
+            break;
 
-        if (fOpen & RTFILE_O_READ)
+        if (fOpen & RTFILE_O_WRITE)
         {
-            /* Circular buffer in the read case. */
-            rc = RTCircBufCreate(&pInt->pCircBuf, _1M * 2);
-            if (RT_FAILURE(rc))
-                break;
-        }
-        else if (fOpen & RTFILE_O_WRITE)
-        {
-            /* For caching reasons and to be able to calculate the sha1 sum of the
-               data we need a memory buffer. */
-            pInt->cbBuf = _1M;
-            pInt->pcBuf = (char*)RTMemAlloc(pInt->cbBuf);
-            if (!pInt->pcBuf)
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
             /* The zero buffer is used for appending empty parts at the end of the
              * file (or our buffer) in setSize or when uOffset in writeSync is
              * increased in steps bigger than a byte. */
@@ -697,53 +712,55 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
             }
         }
 
-        if (   fOpen & RTFILE_O_READ
-            || pSha1Storage->fCreateDigest)
-        {
-            /* Create an event semaphore to indicate a state change for the sha1
-               worker thread. */
-            rc = RTSemEventCreate(&pInt->newStatusEvent);
-            if (RT_FAILURE(rc))
-                break;
-            /* Create an event semaphore to indicate a finished calculation of the
-               sha1 worker thread. */
-            rc = RTSemEventCreate(&pInt->calcFinishedEvent);
-            if (RT_FAILURE(rc))
-                break;
-            /* Create the sha1 worker thread. */
-            rc = RTThreadCreate(&pInt->pMfThread, sha1CalcWorkerThread, pInt, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER, RTTHREADFLAGS_WAITABLE, "SHA1-Worker");
-            if (RT_FAILURE(rc))
-                break;
-        }
+        /* Create an event semaphore to indicate a state change for the worker
+         * thread. */
+        rc = RTSemEventCreate(&pInt->newStatusEvent);
+        if (RT_FAILURE(rc))
+            break;
+        /* Create an event semaphore to indicate a finished calculation of the
+           worker thread. */
+        rc = RTSemEventCreate(&pInt->workFinishedEvent);
+        if (RT_FAILURE(rc))
+            break;
+        /* Create the worker thread. */
+        rc = RTThreadCreate(&pInt->pWorkerThread, sha1CalcWorkerThread, pInt, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER, RTTHREADFLAGS_WAITABLE, "SHA1-Worker");
+        if (RT_FAILURE(rc))
+            break;
 
         if (pSha1Storage->fCreateDigest)
-            /* Create a sha1 context the sha1 worker thread will work with. */
+            /* Create a sha1 context the worker thread will work with. */
             RTSha1Init(&pInt->ctx);
 
         /* Open the file. */
         rc = pCallbacks->pfnOpen(pIO->pvUser, pszLocation,
                                  fOpen, pInt->pfnCompleted,
                                  &pInt->pvStorage);
+        if (RT_FAILURE(rc))
+            break;
+
+        if (fOpen & RTFILE_O_READ)
+        {
+            /* Immediately let the worker thread start the reading. */
+            rc = sha1SignalManifestThread(pInt, STATUS_READ);
+        }
     }
     while(0);
 
     if (RT_FAILURE(rc))
     {
-        if (pInt->pMfThread)
+        if (pInt->pWorkerThread)
         {
             sha1SignalManifestThread(pInt, STATUS_END);
-            RTThreadWait(pInt->pMfThread, RT_INDEFINITE_WAIT, 0);
+            RTThreadWait(pInt->pWorkerThread, RT_INDEFINITE_WAIT, 0);
         }
-        if (pInt->calcFinishedEvent)
-            RTSemEventDestroy(pInt->calcFinishedEvent);
+        if (pInt->workFinishedEvent)
+            RTSemEventDestroy(pInt->workFinishedEvent);
         if (pInt->newStatusEvent)
             RTSemEventDestroy(pInt->newStatusEvent);
         if (pInt->pCircBuf)
             RTCircBufDestroy(pInt->pCircBuf);
         if (pInt->pvZeroBuf)
             RTMemFree(pInt->pvZeroBuf);
-        if (pInt->pcBuf)
-            RTMemFree(pInt->pcBuf);
         RTMemFree(pInt);
     }
     else
@@ -771,14 +788,18 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
     int rc = VINF_SUCCESS;
 
     /* Make sure all pending writes are flushed */
-    if (pInt->cbCurBuf > 0)
-        rc = sha1FlushCurBuf(pIO, pCallbacks, pInt, pSha1Storage->fCreateDigest);
+    rc = sha1FlushCurBuf(pInt);
 
-    if (pInt->pMfThread)
+    if (pInt->pWorkerThread)
+    {
         /* Signal the worker thread to end himself */
         rc = sha1SignalManifestThread(pInt, STATUS_END);
+        /* Worker thread stopped? */
+        rc = RTThreadWait(pInt->pWorkerThread, RT_INDEFINITE_WAIT, 0);
+    }
 
-    if (pSha1Storage->fCreateDigest)
+    if (   RT_SUCCESS(rc)
+        && pSha1Storage->fCreateDigest)
     {
         /* Finally calculate & format the SHA1 sum */
         unsigned char auchDig[RTSHA1_HASH_SIZE];
@@ -794,26 +815,20 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
         }
     }
 
-    if (pInt->pMfThread)
-        /* Worker thread stopped? */
-        rc = RTThreadWait(pInt->pMfThread, RT_INDEFINITE_WAIT, 0);
-
     /* Close the file */
     rc = pCallbacks->pfnClose(pIO->pvUser, pInt->pvStorage);
 
 //    RTPrintf("%lu %lu\n", pInt->calls, pInt->waits);
 
     /* Cleanup */
-    if (pInt->calcFinishedEvent)
-        RTSemEventDestroy(pInt->calcFinishedEvent);
+    if (pInt->workFinishedEvent)
+        RTSemEventDestroy(pInt->workFinishedEvent);
     if (pInt->newStatusEvent)
         RTSemEventDestroy(pInt->newStatusEvent);
     if (pInt->pCircBuf)
         RTCircBufDestroy(pInt->pCircBuf);
     if (pInt->pvZeroBuf)
         RTMemFree(pInt->pvZeroBuf);
-    if (pInt->pcBuf)
-        RTMemFree(pInt->pcBuf);
     RTMemFree(pInt);
 
     return rc;
@@ -981,21 +996,47 @@ static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
         /* Finished? */
         if (cbAllWritten == cbWrite)
             break;
-        size_t cbToWrite = RT_MIN(pInt->cbBuf - pInt->cbCurBuf, cbWrite - cbAllWritten);
-        memcpy(&pInt->pcBuf[pInt->cbCurBuf], &((char*)pvBuf)[cbAllWritten], cbToWrite);
-        pInt->cbCurBuf += cbToWrite;
-        pInt->cbCurAll += cbToWrite;
-        cbAllWritten += cbToWrite;
-        /* Need to start a real write? */
-        if (pInt->cbCurBuf == pInt->cbBuf)
+        size_t cbAvail = RTCircBufFree(pInt->pCircBuf);
+        if (   cbAvail == 0
+            && pInt->fEOF)
+            return VERR_EOF;
+        /* If there isn't enough free space make sure the worker thread is
+         * writing some data. */
+        if ((cbWrite - cbAllWritten) > cbAvail)
         {
-            rc = sha1FlushCurBuf(pIO, pCallbacks, pInt, pSha1Storage->fCreateDigest);
-            if (RT_FAILURE(rc))
+            rc = sha1SignalManifestThread(pInt, STATUS_WRITE);
+            if(RT_FAILURE(rc))
                 break;
+            /* If there is _no_ free space available, we have to wait until it is. */
+            if (cbAvail == 0)
+            {
+                rc = sha1WaitForManifestThreadFinished(pInt);
+                if (RT_FAILURE(rc))
+                    break;
+                cbAvail = RTCircBufFree(pInt->pCircBuf);
+//                RTPrintf("############## wait %lu %lu %lu \n", cbRead, cbAllRead, cbAvail);
+//                pInt->waits++;
+            }
         }
+        size_t cbToWrite = RT_MIN(cbWrite - cbAllWritten, cbAvail);
+        char *pcBuf;
+        size_t cbMemWritten = 0;
+        /* Acquire a block for writing from our circular buffer. */
+        RTCircBufAcquireWriteBlock(pInt->pCircBuf, cbToWrite, (void**)&pcBuf, &cbMemWritten);
+        memcpy(pcBuf, &((char*)pvBuf)[cbAllWritten], cbMemWritten);
+        /* Mark the block full. */
+        RTCircBufReleaseWriteBlock(pInt->pCircBuf, cbMemWritten);
+        cbAllWritten += cbMemWritten;
+        pInt->cbCurAll += cbMemWritten;
     }
+
     if (pcbWritten)
         *pcbWritten = cbAllWritten;
+
+    /* Signal the thread to write more data in the mean time. */
+    if (   RT_SUCCESS(rc)
+           && RTCircBufUsed(pInt->pCircBuf) >= (RTCircBufSize(pInt->pCircBuf) / 2))
+        rc = sha1SignalManifestThread(pInt, STATUS_WRITE);
 
     return rc;
 }
@@ -1102,15 +1143,10 @@ static int sha1FlushSyncCallback(void *pvUser, void *pvStorage)
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
-    int rc = VINF_SUCCESS;
-
     /* Check if there is still something in the buffer. If yes, flush it. */
-    if (pInt->cbCurBuf > 0)
-    {
-        rc = sha1FlushCurBuf(pIO, pCallbacks, pInt, pSha1Storage->fCreateDigest);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
+    int rc = sha1FlushCurBuf(pInt);
+    if (RT_FAILURE(rc))
+        return rc;
 
     return pCallbacks->pfnFlushSync(pIO->pvUser, pInt->pvStorage);
 }
