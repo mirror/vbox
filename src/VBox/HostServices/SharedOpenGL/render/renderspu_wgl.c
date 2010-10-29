@@ -364,7 +364,7 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
 
     if ( !desktop )
     {
-        crError( "Render SPU: Couldn't aquire input desktop" );
+        crError( "Render SPU: Couldn't acquire input desktop" );
         return GL_FALSE;
     }
     crDebug( "Render SPU: Got the desktop: 0x%x", desktop );
@@ -555,7 +555,7 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
 
     if ( !desktop )
     {
-        crError( "Render SPU: Couldn't aquire input desktop" );
+        crError( "Render SPU: Couldn't acquire input desktop" );
         return GL_FALSE;
     }
     crDebug( "Render SPU: Got the desktop: 0x%x", desktop );

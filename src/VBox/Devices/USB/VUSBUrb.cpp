@@ -809,10 +809,10 @@ void vusbUrbTrace(PVUSBURB pUrb, const char *pszMsg, bool fComplete)
                      pszReg, pSetup->wValue));
         }
         else if (cbData)
-            Log(("URB: %*s: QUICKCAM: Unknow request: bRequest=%#x bmRequestType=%#x wValue=%#x wIndex=%#x: %.*Rhxs\n", s_cchMaxMsg, pszMsg,
+            Log(("URB: %*s: QUICKCAM: Unknown request: bRequest=%#x bmRequestType=%#x wValue=%#x wIndex=%#x: %.*Rhxs\n", s_cchMaxMsg, pszMsg,
                  pSetup->bRequest, pSetup->bmRequestType, pSetup->wValue, pSetup->wIndex, cbData, pbData));
         else
-            Log(("URB: %*s: QUICKCAM: Unknow request: bRequest=%#x bmRequestType=%#x wValue=%#x wIndex=%#x: (no data)\n", s_cchMaxMsg, pszMsg,
+            Log(("URB: %*s: QUICKCAM: Unknown request: bRequest=%#x bmRequestType=%#x wValue=%#x wIndex=%#x: (no data)\n", s_cchMaxMsg, pszMsg,
                  pSetup->bRequest, pSetup->bmRequestType, pSetup->wValue, pSetup->wIndex));
     }
 
@@ -1431,7 +1431,7 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
             return false;
         }
         pExtra->Urb.VUsb.pvFreeCtx = NULL;
-        LogFlow(("vusbMsgSetup: Replacing cancled pExtra=%p with %p.\n", pExtra, pvNew));
+        LogFlow(("vusbMsgSetup: Replacing canceled pExtra=%p with %p.\n", pExtra, pvNew));
         pPipe->pCtrl = pExtra = (PVUSBCTRLEXTRA)pvNew;
         pExtra->pMsg = (PVUSBSETUP)pExtra->Urb.abData;
         pExtra->Urb.enmState = VUSBURBSTATE_ALLOCATED;

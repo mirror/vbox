@@ -1260,7 +1260,7 @@ VOID VBoxMRxUnload (IN PDRIVER_OBJECT DriverObject)
 #ifdef VBOX_SF_STATIC_LIB
     RxUnload(DriverObject);
 #endif
-    Log(("VBOXSF: VBoxMRxUnload: VBoxSF.sys driver object 0x%08lx unoaded\n", DriverObject));
+    Log(("VBOXSF: VBoxMRxUnload: VBoxSF.sys driver object 0x%08lx unloaded\n", DriverObject));
 }
 
 NTSTATUS VBoxMRxInitializeTables (void)

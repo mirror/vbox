@@ -502,7 +502,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
                 uint32_t len = (uint32_t)strlen(pszFullPath);
                 char    *src = pszFullPath + len - 1;
 
-                Log(("Handle case insenstive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
+                Log(("Handle case insensitive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
 
                 /* Find partial path that's valid */
                 while(src > pszFullPath)
@@ -906,7 +906,7 @@ static int vbsfOpenFile (SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREAT
                 LogRel(("SharedFolders host service: Cannot open '%s' -- too many open files.\n", pszPath));
 #if defined RT_OS_LINUX || RT_OS_SOLARIS
                 if (cErrors < 1)
-                    LogRel(("SharedFolders host service: Try to increase the limit for open files (ulimt -n)\n"));
+                    LogRel(("SharedFolders host service: Try to increase the limit for open files (ulimit -n)\n"));
 #endif
                 cErrors++;
             }

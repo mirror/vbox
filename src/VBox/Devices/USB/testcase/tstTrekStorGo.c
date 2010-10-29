@@ -277,12 +277,12 @@ static void msd()
         memset(abBuf, 0, sizeof(abBuf));
     //printf("recv..\n");
         int cb = recv_bulk(InEndPt, abBuf, 36);
-        hex(abBuf, cb, "inquery result");
+        hex(abBuf, cb, "inquiry result");
 
         /* sense? */
         memset(abBuf, 0, sizeof(abBuf));
         cb = recv_bulk(InEndPt, abBuf, 36);
-        hex(abBuf, cb, "inquery sense?");
+        hex(abBuf, cb, "inquiry sense?");
         usleep(150000);
     }
 }

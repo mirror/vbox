@@ -3395,7 +3395,7 @@ ResumeExecution:
 
         default:
             rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE;
-            AssertMsgFailed(("Unexpected interuption code %x\n", intInfo));
+            AssertMsgFailed(("Unexpected interruption code %x\n", intInfo));
             break;
         }
 

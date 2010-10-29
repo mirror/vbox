@@ -4204,7 +4204,7 @@ static int HcFmInterval_w(POHCI pOhci, uint32_t iReg, uint32_t val)
     if ( pOhci->fi != (val & OHCI_FMI_FI) )
     {
         Log(("ohci: FrameInterval: %#010x -> %#010x\n", pOhci->fi, val & OHCI_FMI_FI));
-        AssertMsg(pOhci->fit != ((val >> OHCI_FMI_FIT_SHIFT) & 1), ("HCD did't toggle the FIT bit!!!\n"));
+        AssertMsg(pOhci->fit != ((val >> OHCI_FMI_FIT_SHIFT) & 1), ("HCD didn't toggle the FIT bit!!!\n"));
     }
 
     /* update */
@@ -4397,7 +4397,7 @@ static int HcRhDescriptorB_w(POHCI pOhci, uint32_t iReg, uint32_t val)
           chg >> 16    ? "!!!" : "", val >> 16));
 
     if ( pOhci->RootHub.desc_b != val )
-        Log(("ohci: %s: unsupported write to root decriptor B!!! 0x%.8x -> 0x%.8x\n",
+        Log(("ohci: %s: unsupported write to root descriptor B!!! 0x%.8x -> 0x%.8x\n",
                 pOhci->PciDev.name,
                 pOhci->RootHub.desc_b, val));
     pOhci->RootHub.desc_b = val;

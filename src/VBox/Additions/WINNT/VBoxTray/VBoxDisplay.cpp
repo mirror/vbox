@@ -457,14 +457,14 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
     maskInfo.u32NotMask = 0;
     if (!DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
-        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - or) failed, thead exiting\n"));
+        Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl(CtlMask - or) failed, thread exiting\n"));
         return 0;
     }
 
     int rc = VbglR3SetGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0);
     if (RT_FAILURE(rc))
     {
-        LogRel(("VBoxTray: VBoxDisplayThread: Failed to set the graphics capability with rc=%Rrc, thead exiting\n", rc));
+        LogRel(("VBoxTray: VBoxDisplayThread: Failed to set the graphics capability with rc=%Rrc, thread exiting\n", rc));
         return 0;
     }
 
@@ -476,7 +476,7 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            /*Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl succeded\n"));*/
+            /*Log(("VBoxTray: VBoxDisplayThread: DeviceIOControl succeeded\n"));*/
 
             if (NULL == pCtx) {
                 Log(("VBoxTray: VBoxDisplayThread: Invalid context detected!\n"));

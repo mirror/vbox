@@ -421,7 +421,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 }
 
                 if (pszErrorMsg)
-                    RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("failed to create sempahore"));
+                    RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("failed to create semaphore"));
             }
 #ifdef IN_RING3
             RTFileClose(pLogger->File);

@@ -4174,7 +4174,7 @@ VMMR3DECL(int) PATMR3InstallPatch(PVM pVM, RTRCPTR pInstrGC, uint64_t flags)
         {
             if (pPatchNear->patch.uState == PATCH_UNUSABLE && pInstrGC < pPatchNear->patch.pPrivInstrGC && pInstrGC + SIZEOF_NEARJUMP32 > pPatchNear->patch.pPrivInstrGC)
             {
-                Log(("Dangerous patch; would overwrite the ususable patch at %RRv\n", pPatchNear->patch.pPrivInstrGC));
+                Log(("Dangerous patch; would overwrite the unusable patch at %RRv\n", pPatchNear->patch.pPrivInstrGC));
 
                 pPatchRec->patch.uState = PATCH_UNUSABLE;
                 /*

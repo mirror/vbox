@@ -391,7 +391,7 @@ HRESULT USBProxyService::runAllFiltersOnDevice(ComObjPtr<HostUSBDevice> &aDevice
                                                SessionMachinesList &llOpenedMachines,
                                                SessionMachine *aIgnoreMachine)
 {
-    LogFlowThisFunc(("{%s} ignorning=%p\n", aDevice->getName().c_str(), aIgnoreMachine));
+    LogFlowThisFunc(("{%s} ignoring=%p\n", aDevice->getName().c_str(), aIgnoreMachine));
 
     /*
      * Verify preconditions.

@@ -213,7 +213,7 @@ static void map_interface(PVUSBDEV pDev, PCVUSBDESCINTERFACEEX pIfDesc)
     for (unsigned i = 0; i < pIfDesc->Core.bNumEndpoints; i++)
     {
         if ((pIfDesc->paEndpoints[i].Core.bEndpointAddress & 0xF) == VUSB_PIPE_DEFAULT)
-            Log(("vusb: Endpoint 0x%x on interface %u.%u tried to overrride the default message pipe!!!\n",
+            Log(("vusb: Endpoint 0x%x on interface %u.%u tried to override the default message pipe!!!\n",
                 pIfDesc->paEndpoints[i].Core.bEndpointAddress, pIfDesc->Core.bInterfaceNumber, pIfDesc->Core.bAlternateSetting));
         else
             vusbDevMapEndpoint(pDev, &pIfDesc->paEndpoints[i]);

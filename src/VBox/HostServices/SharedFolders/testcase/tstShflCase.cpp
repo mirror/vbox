@@ -311,7 +311,7 @@ int testCase(char *pszFullPath, bool fWildCard = false)
         size_t   len = strlen(pszFullPath);
         char    *src = pszFullPath + len - 1;
 
-        Log(("Handle case insenstive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
+        Log(("Handle case insensitive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
 
         /* Find partial path that's valid */
         while(src > pszFullPath)

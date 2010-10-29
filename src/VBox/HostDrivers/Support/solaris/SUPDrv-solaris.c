@@ -319,7 +319,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             rc = ddi_prop_create(DDI_DEV_T_NONE, pDip, DDI_PROP_CANSLEEP /* kmem alloc can sleep */,
                                 "pm-hardware-state", "needs-suspend-resume", sizeof("needs-suspend-resume"));
             if (rc != DDI_PROP_SUCCESS)
-                LogRel((DEVICE_NAME ":Suspend/Resume notification registeration failed.\n"));
+                LogRel((DEVICE_NAME ":Suspend/Resume notification registration failed.\n"));
 
             /*
              * Register ourselves as a character device, pseudo-driver

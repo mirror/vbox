@@ -49,7 +49,7 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF g_aOptions[] =
     {
-        { "--interations",      'i', RTGETOPT_REQ_INT32 },
+        { "--iterations",       'i', RTGETOPT_REQ_INT32 },
         { "--hex",              'h', RTGETOPT_REQ_NOTHING },
         { "--decimal",          'd', RTGETOPT_REQ_NOTHING },
         { "--spin",             's', RTGETOPT_REQ_NOTHING }

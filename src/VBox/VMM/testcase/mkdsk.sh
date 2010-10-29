@@ -64,7 +64,7 @@ do
     shift
 done
 
-echo "* Unmouning    tmpmnt..."
+echo "* Unmounting    tmpmnt..."
 sudo umount tmpmnt
 rmdir tmpmnt
 echo "* Done! (Perhaps even successfully so...)"

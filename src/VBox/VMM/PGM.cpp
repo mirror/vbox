@@ -1392,7 +1392,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
          */
         DBGFR3InfoRegisterInternal(pVM, "mode",
                                    "Shows the current paging mode. "
-                                   "Recognizes 'all', 'guest', 'shadow' and 'host' as arguments, defaulting to 'all' if nothing's given.",
+                                   "Recognizes 'all', 'guest', 'shadow' and 'host' as arguments, defaulting to 'all' if nothing is given.",
                                    pgmR3InfoMode);
         DBGFR3InfoRegisterInternal(pVM, "pgmcr3",
                                    "Dumps all the entries in the top level paging table. No arguments.",
@@ -1800,7 +1800,7 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2HndUnhandled,     "/PGM/CPU%u/RZ/Trap0e/Time2/HandlerUnhandled",  "Profiling of the Trap0eHandler body when the cause is access outside the monitored areas of a monitored page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2InvalidPhys,      "/PGM/CPU%u/RZ/Trap0e/Time2/InvalidPhys",       "Profiling of the Trap0eHandler body when the cause is access to an invalid physical guest address.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2MakeWritable,     "/PGM/CPU%u/RZ/Trap0e/Time2/MakeWritable",      "Profiling of the Trap0eHandler body when the cause is that a page needed to be made writeable.");
-        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Mapping,          "/PGM/CPU%u/RZ/Trap0e/Time2/Mapping",           "Profiling of the Trap0eHandler body when the cause is releated to the guest mappings.");
+        PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Mapping,          "/PGM/CPU%u/RZ/Trap0e/Time2/Mapping",           "Profiling of the Trap0eHandler body when the cause is related to the guest mappings.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2Misc,             "/PGM/CPU%u/RZ/Trap0e/Time2/Misc",              "Profiling of the Trap0eHandler body when the cause is not known.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSync,        "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSync",         "Profiling of the Trap0eHandler body when the cause is an out-of-sync page.");
         PGM_REG_PROFILE(&pCpuStats->StatRZTrap0eTime2OutOfSyncHndPhys, "/PGM/CPU%u/RZ/Trap0e/Time2/OutOfSyncHndPhys",  "Profiling of the Trap0eHandler body when the cause is an out-of-sync physical handler page.");
@@ -1856,7 +1856,7 @@ static int pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pCpuStats->StatRZDynMapHCPageInlMisses,       "/PGM/CPU%u/RZ/DynMap/PageHCPageInl/Misses",     "Misses that falls back to the code common.");
         PGM_REG_COUNTER(&pCpuStats->StatRZDynMapPage,                  "/PGM/CPU%u/RZ/DynMap/Page",                     "Calls to pgmR0DynMapPage");
         PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetOptimize,           "/PGM/CPU%u/RZ/DynMap/Page/SetOptimize",         "Calls to pgmRZDynMapOptimizeAutoSet.");
-        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetSearchFlushes,      "/PGM/CPU%u/RZ/DynMap/Page/SetSearchFlushes",    "Set search restorting to subset flushes.");
+        PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetSearchFlushes,      "/PGM/CPU%u/RZ/DynMap/Page/SetSearchFlushes",    "Set search restoring to subset flushes.");
         PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetSearchHits,         "/PGM/CPU%u/RZ/DynMap/Page/SetSearchHits",       "Set search hits.");
         PGM_REG_COUNTER(&pCpuStats->StatRZDynMapSetSearchMisses,       "/PGM/CPU%u/RZ/DynMap/Page/SetSearchMisses",     "Set search misses.");
         PGM_REG_PROFILE(&pCpuStats->StatRZDynMapHCPage,                "/PGM/CPU%u/RZ/DynMap/Page/HCPage",              "Calls to pgmRZDynMapHCPageCommon (ring-0).");

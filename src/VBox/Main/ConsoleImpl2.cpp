@@ -3536,7 +3536,7 @@ int Console::configNetwork(const char *pszDevice,
                 {
                     AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)", hrc, hrc));
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                      N_("Inexistent host networking interface, name '%ls'"),
+                                      N_("Nonexistent host networking interface, name '%ls'"),
                                       HifName.raw());
                 }
 
@@ -3904,7 +3904,7 @@ int Console::configNetwork(const char *pszDevice,
                 {
                     LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)\n", rc));
                     return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                      N_("Inexistent host networking interface, name '%ls'"),
+                                      N_("Nonexistent host networking interface, name '%ls'"),
                                       HifName.raw());
                 }
 

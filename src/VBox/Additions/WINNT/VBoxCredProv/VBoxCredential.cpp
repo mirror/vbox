@@ -501,7 +501,7 @@ BOOL VBoxCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccout
         }
     }
     else
-        Log(("VBoxCredential::ExtractAccoutData/Principal: No valid prinicipal account name found!\n"));
+        Log(("VBoxCredential::ExtractAccoutData/Principal: No valid principal account name found!\n"));
 
     return (hr == S_OK);
 }

@@ -82,7 +82,7 @@ ULONG SendToMiniRdr (IN ULONG IoctlCode, IN PVOID InputDataBuf, IN ULONG InputDa
         }
         else
         {
-            Log(("VBOXNP: SendToMiniRdr: The DeviceIoctl call succeded\n"));
+            Log(("VBOXNP: SendToMiniRdr: The DeviceIoctl call succeeded\n"));
         }
         CloseHandle(DeviceHandle);
     }

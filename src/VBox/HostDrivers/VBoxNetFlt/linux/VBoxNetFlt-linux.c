@@ -759,7 +759,7 @@ static int __init VBoxNetFltLinuxInit(void)
             rc = register_qdisc(&g_VBoxNetFltQDiscOps);
             if (rc)
             {
-                LogRel(("VBoxNetFlt: Failed to registed qdisc: %d\n", rc));
+                LogRel(("VBoxNetFlt: Failed to registered qdisc: %d\n", rc));
                 return rc;
             }
 #endif /* VBOXNETFLT_WITH_QDISC */

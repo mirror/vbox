@@ -80,7 +80,7 @@ DECLVBGL(int) VBoxGuestIDCClose(void *pvSession)
 DECLVBGL(int) VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pvSession;
-    LogFlow(("VBoxGuestIDCCall: %pvSesssion=%p Cmd=%u pvData=%p cbData=%d\n", pvSession, iCmd, pvData, cbData));
+    LogFlow(("VBoxGuestIDCCall: %pvSession=%p Cmd=%u pvData=%p cbData=%d\n", pvSession, iCmd, pvData, cbData));
 
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertMsgReturn(pSession->pDevExt == &g_DevExt,

@@ -1429,7 +1429,7 @@ NTSTATUS VBoxMRxQueryFileInformation (IN PRX_CONTEXT RxContext)
         if (*pLengthRemaining < CopySize)
         {
             /* This situation must be already taken into account by the above code. */
-            AssertMsgFailed(("VBOXSF: VBoxMRxQueryFileInformation: Length remaing is below 0! (%d - %d)!\n", *pLengthRemaining, CopySize));
+            AssertMsgFailed(("VBOXSF: VBoxMRxQueryFileInformation: Length remaining is below 0! (%d - %d)!\n", *pLengthRemaining, CopySize));
             Status = STATUS_BUFFER_TOO_SMALL;
         }
         else

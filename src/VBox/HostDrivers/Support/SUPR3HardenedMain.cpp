@@ -663,7 +663,7 @@ static void supR3HardenedMainGrabCapabilites(void)
             {
                 rc = setppriv(PRIV_SET, PRIV_EFFECTIVE, pPrivSet);
                 if (rc)
-                    supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set effectives privilege set.\n");
+                    supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set effective privilege set.\n");
             }
             else
                 supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set permitted privilege set.\n");

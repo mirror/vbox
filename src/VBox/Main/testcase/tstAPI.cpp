@@ -1034,7 +1034,7 @@ int main(int argc, char *argv[])
         CHECK_RC_BREAK(virtualBox->OpenSession(session, guid));
 #if 1
         ComPtr<IMachine> sessionMachine;
-        RTPrintf("Getting sessioned machine object...\n");
+        RTPrintf("Getting machine session object...\n");
         CHECK_RC_BREAK(session->COMGETTER(Machine)(sessionMachine.asOutParam()));
         RTPrintf("Accessing the machine within the session:\n");
         readAndChangeMachineSettings(sessionMachine, machine);
@@ -1103,7 +1103,7 @@ int main(int argc, char *argv[])
         RTPrintf("Waiting for the session to open...\n");
         CHECK_RC_BREAK(progress->WaitForCompletion(-1));
         ComPtr<IMachine> sessionMachine;
-        RTPrintf("Getting sessioned machine object...\n");
+        RTPrintf("Getting machine session object...\n");
         CHECK_RC_BREAK(session->COMGETTER(Machine)(sessionMachine.asOutParam()));
         ComPtr<IConsole> console;
         RTPrintf("Getting console object...\n");
@@ -1133,7 +1133,7 @@ int main(int argc, char *argv[])
         RTPrintf("Opening an existing remote session for this machine...\n");
         CHECK_RC_BREAK(virtualBox->OpenExistingSession(session, guid));
         ComPtr<IMachine> sessionMachine;
-        RTPrintf("Getting sessioned machine object...\n");
+        RTPrintf("Getting machine session object...\n");
         CHECK_RC_BREAK(session->COMGETTER(Machine)(sessionMachine.asOutParam()));
 
 #if 0
@@ -1246,7 +1246,7 @@ int main(int argc, char *argv[])
         RTPrintf("Waiting for the session to open...\n");
         CHECK_RC_BREAK(progress->WaitForCompletion(-1));
         ComPtr<IMachine> sessionMachine;
-        RTPrintf("Getting sessioned machine object...\n");
+        RTPrintf("Getting machine session object...\n");
         CHECK_RC_BREAK(session->COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         // Setup base metrics

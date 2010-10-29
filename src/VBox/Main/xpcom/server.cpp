@@ -565,7 +565,7 @@ public:
 
             if (count == 2)
             {
-                LogFlowFunc(("Another client has requested a reference to VirtualBox, canceling detruction...\n"));
+                LogFlowFunc(("Another client has requested a reference to VirtualBox, canceling destruction...\n"));
 
                 /* make sure the previous timer is stopped */
                 gAllowSigUsrQuit = PR_FALSE;

@@ -291,7 +291,7 @@ public:
         if (RT_SUCCESS(rc))
             rc = vboxClipboardMain();
         if (RT_FAILURE(rc))
-            LogRelFunc(("guest clipboard service terminated annormally: return code %Rrc\n", rc));
+            LogRelFunc(("guest clipboard service terminated abnormally: return code %Rrc\n", rc));
         return rc;
     }
     virtual void cleanup()

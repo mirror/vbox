@@ -4789,7 +4789,7 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
         int rc = pIfPort->pfnWaitForIdle(pIfPort, 10*1000);
         if (RT_FAILURE(rc))
         {
-            LogRel(("intnet: '%s' did't become idle in %RU64 ns (%Rrc).\n",
+            LogRel(("intnet: '%s' didn't become idle in %RU64 ns (%Rrc).\n",
                     pNetwork->szName, RTTimeSystemNanoTS() - StartTS, rc));
             Assert(rc == VERR_TIMEOUT);
             while (     RT_FAILURE(rc)
@@ -4797,14 +4797,14 @@ static void intnetR0TrunkIfDestroy(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork
                 rc = pIfPort->pfnWaitForIdle(pIfPort, 10*1000);
             if (rc == VERR_TIMEOUT)
             {
-                LogRel(("intnet: '%s' did't become idle in %RU64 ns (%Rrc).\n",
+                LogRel(("intnet: '%s' didn't become idle in %RU64 ns (%Rrc).\n",
                         pNetwork->szName, RTTimeSystemNanoTS() - StartTS, rc));
                 while (     rc == VERR_TIMEOUT
                        &&   RTTimeSystemNanoTS() - StartTS < UINT64_C(360000000000)) /* 360 sec */
                     rc = pIfPort->pfnWaitForIdle(pIfPort, 30*1000);
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("intnet: '%s' did't become idle in %RU64 ns (%Rrc), giving up.\n",
+                    LogRel(("intnet: '%s' didn't become idle in %RU64 ns (%Rrc), giving up.\n",
                             pNetwork->szName, RTTimeSystemNanoTS() - StartTS, rc));
                     AssertRC(rc);
                 }
