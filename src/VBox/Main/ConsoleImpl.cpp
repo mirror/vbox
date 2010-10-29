@@ -3012,7 +3012,7 @@ HRESULT Console::setErrorStatic(HRESULT aResultCode, const char *pcsz, ...)
     HRESULT rc = setErrorInternal(aResultCode,
                                   getStaticClassIID(),
                                   getStaticComponentName(),
-                                  Utf8StrFmtVA(pcsz, args),
+                                  Utf8Str(pcsz, args),
                                   false /* aWarning */,
                                   true /* aLogIt */);
     va_end(args);
@@ -7038,7 +7038,7 @@ Console::setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFlags,
     Console *that = static_cast<Console *>(pvUser);
     AssertReturnVoid(that);
 
-    Utf8Str message = Utf8StrFmtVA(pszFormat, va);
+    Utf8Str message(pszFormat, va);
 
     LogRel(("Console: VM runtime error: fatal=%RTbool, errorID=%s message=\"%s\"\n",
              fFatal, pszErrorId, message.c_str()));

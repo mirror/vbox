@@ -138,19 +138,4 @@ void Utf8Str::copyFrom(CBSTR s)
     }
 }
 
-void Utf8StrFmt::init(const char *format, va_list args)
-{
-    if (!format || !*format)
-    {
-        m_cch = 0;
-        m_cbAllocated = 0;
-        m_psz = NULL;
-    }
-    else
-    {
-        m_cch = RTStrAPrintfV(&m_psz, format, args);
-        m_cbAllocated = m_cch + 1;
-    }
-}
-
 } /* namespace com */

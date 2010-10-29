@@ -818,7 +818,7 @@ void Appliance::addWarning(const char* aWarning, ...)
 {
     va_list args;
     va_start(args, aWarning);
-    Utf8StrFmtVA str(aWarning, args);
+    Utf8Str str(aWarning, args);
     va_end(args);
     m->llWarnings.push_back(str);
 }
