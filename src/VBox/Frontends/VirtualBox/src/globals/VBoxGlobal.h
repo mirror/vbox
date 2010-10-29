@@ -656,6 +656,10 @@ public:
     static quint64 required2DOffscreenVideoMemory();
 #endif
 
+#ifdef VBOX_WITH_CRHGSMI
+    static quint64 required3DWddmOffscreenVideoMemory(CMachine *aMachine = 0, int cMonitors = 1);
+#endif
+
 #ifdef Q_WS_MAC
     bool isSheetWindowsAllowed(QWidget *pParent) const;
 #endif /* Q_WS_MAC */

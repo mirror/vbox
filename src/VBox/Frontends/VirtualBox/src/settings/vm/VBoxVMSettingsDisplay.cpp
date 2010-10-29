@@ -129,21 +129,6 @@ bool VBoxVMSettingsDisplay::isAcceleration2DVideoSelected() const
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
-bool VBoxVMSettingsDisplay::isAcceleration3DSelected() const
-{
-    return mCb3D->isChecked();
-}
-
-int VBoxVMSettingsDisplay::getMinVramSizeMBForWddm3D() const
-{
-    return 128;
-}
-
-int VBoxVMSettingsDisplay::getVramSizeMB() const
-{
-    return mSlMemory->value();
-}
-
 void VBoxVMSettingsDisplay::setWddmMode(bool bWddm)
 {
     if (bWddm == m_bWddmMode)
@@ -256,25 +241,37 @@ bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle *
             "the minimum amount required to switch the virtual machine to "
             "fullscreen or seamless mode.")
             .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
-        return true;
     }
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    if (mCb2DVideo->isChecked())
+    else if (mCb2DVideo->isChecked())
     {
-        quint64 needBytesWith2D = needBytes + VBoxGlobal::required2DOffscreenVideoMemory();
-        if ((quint64) mSlMemory->value() * _1M < needBytesWith2D)
+        needBytes += VBoxGlobal::required2DOffscreenVideoMemory();
+        if ((quint64) mSlMemory->value() * _1M < needBytes)
         {
             aWarning = tr (
                 "you have assigned less than <b>%1</b> of video memory which is "
                 "the minimum amount required for HD Video to be played efficiently.")
-                .arg (vboxGlobal().formatSize (needBytesWith2D, 0, VBoxDefs::FormatSize_RoundUp));
-            return true;
+                .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
         }
     }
 #endif
 #ifdef VBOX_WITH_CRHGSMI
-    checkVRAMRequirements();
+    else if (m_bWddmMode && mCb3D->isChecked())
+    {
+        int cVal = mSlMonitors->value();
+        needBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(&mMachine, cVal);
+        needBytes = RT_MAX(needBytes, 128 * _1M);
+        needBytes = RT_MIN(needBytes, 256 * _1M);
+        if ((quint64) mSlMemory->value() * _1M < needBytes)
+        {
+            aWarning = tr(
+                "You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. "
+                "For maximal performance set the guest VRAM to at least <b>%1</b>."
+                ).arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
+        }
+    }
 #endif
+    checkVRAMRequirements();
 
     /* 3D Acceleration support test */
     // TODO : W8 for NaN //
@@ -351,9 +348,18 @@ void VBoxVMSettingsDisplay::checkVRAMRequirements()
     /* The memory requirements have changed too. */
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine, cVal) / _1M;
     /* Limit the maximum memory to save careless users from setting useless big values */
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    if (mCb2DVideo->isChecked())
+    {
+        needMBytes += VBoxGlobal::required2DOffscreenVideoMemory() / _1M;
+    }
+#endif
 #ifdef VBOX_WITH_CRHGSMI
     if (m_bWddmMode && mCb3D->isChecked())
     {
+        needMBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(&mMachine, cVal) / _1M;
+        needMBytes = RT_MAX(needMBytes, 128);
+        needMBytes = RT_MIN(needMBytes, 256);
         m_maxVRAMVisible = 256;
     }
     else
