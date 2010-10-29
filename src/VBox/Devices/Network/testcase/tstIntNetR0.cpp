@@ -508,7 +508,7 @@ static void tstBidirectionalTransfer(PTSTSTATE pThis, uint32_t cbFrame)
         uint64_t u64Elapsed = RT_MAX(Args0.u64End, Args1.u64End) - RT_MIN(Args0.u64Start, Args1.u64Start);
         uint64_t u64Speed = (uint64_t)((2 * g_cbTransfer / 1024) / (u64Elapsed / 1000000000.0));
         RTTestPrintf(g_hTest, RTTESTLVL_ALWAYS,
-                     "transfered %u bytes in %'RU64 ns (%'RU64 KB/s)\n",
+                     "transferred %u bytes in %'RU64 ns (%'RU64 KB/s)\n",
                      2 * g_cbTransfer, u64Elapsed, u64Speed);
 
         /*

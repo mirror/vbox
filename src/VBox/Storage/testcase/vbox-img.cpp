@@ -1038,7 +1038,7 @@ int main(int argc, char *argv[])
     rc = VDInit();
     if (RT_FAILURE(rc))
     {
-        errorSyntax("Initalizing backends failed! rc=%Rrc\n", rc);
+        errorSyntax("Initializing backends failed! rc=%Rrc\n", rc);
         return 1;
     }
 

@@ -556,7 +556,7 @@ void STATE_APIENTRY crStateReadBuffer (GLenum mode)
         case GL_AUX3:
             if (g->framebufferobject.readFB)
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalud mode while fbo is active");
+                crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalid mode while fbo is active");
                 return;
             }
             break;
@@ -565,7 +565,7 @@ void STATE_APIENTRY crStateReadBuffer (GLenum mode)
             {
                 if (!g->framebufferobject.readFB)
                 {
-                    crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalud mode while fbo is inactive");
+                    crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalid mode while fbo is inactive");
                     return;
                 }
                 else

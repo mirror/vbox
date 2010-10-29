@@ -2058,7 +2058,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
 
     if (RDH == RDT)
     {
-        E1kLog(("%s Out of recieve buffers, dropping the packet",
+        E1kLog(("%s Out of receive buffers, dropping the packet",
                 INSTANCE(pState)));
     }
     /* Store the packet to receive buffers */
@@ -2114,7 +2114,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     }
 
     if (cb > 0)
-        E1kLog(("%s Out of recieve buffers, dropping %u bytes", INSTANCE(pState), cb));
+        E1kLog(("%s Out of receive buffers, dropping %u bytes", INSTANCE(pState), cb));
 
     pState->led.Actual.s.fReading = 0;
 

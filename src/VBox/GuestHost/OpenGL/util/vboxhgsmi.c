@@ -289,7 +289,7 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
                 rc = ioctl(g_crvboxhgsmi.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), pvData);
                 if (rc==0)
                 {
-                    crWarning("vboxCall retry(%i) succeded", i+1);
+                    crWarning("vboxCall retry(%i) succeeded", i+1);
                     return VINF_SUCCESS;
                 }
                 else if (rc==VINF_INTERRUPTED)

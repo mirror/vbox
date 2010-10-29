@@ -1061,7 +1061,7 @@ void vrdpBitBlt (
                        )
                    )
                 {
-                    DISPDBG((1, "MEMBLT: non cachable bitmap.\n"));
+                    DISPDBG((1, "MEMBLT: non cacheable bitmap.\n"));
                     cacheResult = VRDPBMP_RC_NOT_CACHED;
                 }
                 else

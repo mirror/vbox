@@ -1333,7 +1333,7 @@ BdsLibSaveMemoryTypeInformation (
            &ReadyToBootEvent
            );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR,"Bds Set Memory Type Informationa Variable Fails\n"));
+    DEBUG ((DEBUG_ERROR,"Bds Set Memory Type Information Variable Fails\n"));
   }
 
 }

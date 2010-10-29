@@ -1060,7 +1060,7 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
     else
         uHdrLen = sizeof(VNETHDR);
 
-    Log3(("%s vnetTransmitPendingPackets: About to trasmit %d pending packets\n", INSTANCE(pState),
+    Log3(("%s vnetTransmitPendingPackets: About to transmit %d pending packets\n", INSTANCE(pState),
           vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
 
     vpciSetWriteLed(&pState->VPCI, true);

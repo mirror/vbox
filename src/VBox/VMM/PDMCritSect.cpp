@@ -52,7 +52,7 @@ static int pdmR3CritSectDeleteOne(PVM pVM, PUVM pUVM, PPDMCRITSECTINT pCritSect,
 int pdmR3CritSectInitStats(PVM pVM)
 {
     STAM_REG(pVM, &pVM->pdm.s.StatQueuedCritSectLeaves, STAMTYPE_COUNTER, "/PDM/QueuedCritSectLeaves", STAMUNIT_OCCURENCES,
-             "Number of times a critical section leave requesed needed to be queued for ring-3 execution.");
+             "Number of times a critical section leave request needed to be queued for ring-3 execution.");
     return VINF_SUCCESS;
 }
 

@@ -116,7 +116,7 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_RESTORED;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl succeded\n"));
+            Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl succeeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)

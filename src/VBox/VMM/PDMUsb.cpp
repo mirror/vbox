@@ -231,7 +231,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
     AssertMsgReturn(pReg->cbInstance <= _1M,
                     ("Instance size %d bytes! (USB Device %s)\n", pReg->cbInstance, pReg->szName),
                     VERR_PDM_INVALID_USB_REGISTRATION);
-    AssertMsgReturn(pReg->pfnConstruct, ("No constructore! (USB Device %s)\n", pReg->szName),
+    AssertMsgReturn(pReg->pfnConstruct, ("No constructor! (USB Device %s)\n", pReg->szName),
                     VERR_PDM_INVALID_USB_REGISTRATION);
 
     /*

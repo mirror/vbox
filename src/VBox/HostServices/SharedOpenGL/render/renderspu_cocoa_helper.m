@@ -69,7 +69,7 @@
                 case GL_STACK_UNDERFLOW: errStr = RTStrDup("GL_STACK_UNDERFLOW"); break;
                 case GL_OUT_OF_MEMORY: errStr = RTStrDup("GL_OUT_OF_MEMORY"); break;
                 case GL_TABLE_TOO_LARGE: errStr = RTStrDup("GL_TABLE_TOO_LARGE"); break;
-                default: errStr = RTStrDup("UNKOWN"); break;
+                default: errStr = RTStrDup("UNKNOWN"); break;
             }
             DEBUG_MSG(("%s:%d: glError %d (%s)\n", file, line, g, errStr));
             RTMemFree(errStr);
@@ -1110,7 +1110,7 @@ while(0);
         {
             if ([m_pSharedGLCtx view] != self)
             {
-                DEBUG_MSG(("renderFBOToView: not currect view of shared ctx!"));
+                DEBUG_MSG(("renderFBOToView: not current view of shared ctx!"));
                 [m_pSharedGLCtx setView: self];
                 [self updateViewport];
             }
@@ -1252,7 +1252,7 @@ while(0);
 
 - (void)setVisibleRegions:(GLint)cRects paRects:(GLint*)paRects
 {
-    DEBUG_MSG_1(("New region recieved\n"));
+    DEBUG_MSG_1(("New region received\n"));
 
     [self clearVisibleRegions];
 

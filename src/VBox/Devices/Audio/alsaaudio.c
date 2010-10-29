@@ -469,7 +469,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
 #ifndef VBOX
                     alsa_logerr (
                         err,
-                        "Could not get minmal period size for %s\n",
+                        "Could not get minimal period size for %s\n",
                         typ
                         );
 #else
@@ -482,7 +482,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                         if ((in && conf.period_size_in_overriden)
                             || (!in && conf.period_size_out_overriden)) {
                             dolog ("%s period size(%d) is less "
-                                   "than minmal period size(%ld)\n",
+                                   "than minimal period size(%ld)\n",
                                    typ,
                                    period_size_f,
                                    minval);
@@ -532,7 +532,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
                 );
             if (err < 0) {
 #ifndef VBOX
-                alsa_logerr (err, "Could not get minmal buffer size for %s\n",
+                alsa_logerr (err, "Could not get minimal buffer size for %s\n",
                              typ);
 #else
                 LogRel(("ALSA: Could not get minimal buffer size for %s\n", typ));
@@ -637,7 +637,7 @@ static int alsa_open (int in, struct alsa_params_req *req,
     if (obt->fmt != req->fmt ||
         obt->nchannels != req->nchannels ||
         obt->freq != req->freq) {
-        dolog ("Audio paramters mismatch for %s\n", typ);
+        dolog ("Audio parameters mismatch for %s\n", typ);
         alsa_dump_info (req, obt);
     }
 #endif

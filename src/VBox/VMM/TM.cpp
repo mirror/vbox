@@ -554,7 +554,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         AssertMsgFailed(("Failed to create timer, u32Millies=%d rc=%Rrc.\n", u32Millies, rc));
         return rc;
     }
-    Log(("TM: Created timer %p firing every %d millieseconds\n", pVM->tm.s.pTimer, u32Millies));
+    Log(("TM: Created timer %p firing every %d milliseconds\n", pVM->tm.s.pTimer, u32Millies));
     pVM->tm.s.u32TimerMillies = u32Millies;
 
     /*
@@ -577,7 +577,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.c1nsSteps,STAMTYPE_U32, "/TM/RC/1nsSteps",                     STAMUNIT_OCCURENCES, "Virtual time 1ns steps (due to TSC / GIP variations).");
     STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.VirtualGetRawDataRC.cBadPrev, STAMTYPE_U32, "/TM/RC/cBadPrev",                     STAMUNIT_OCCURENCES, "Times the previous virtual time was considered erratic (shouldn't ever happen).");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.offVirtualSync,               STAMTYPE_U64, "/TM/VirtualSync/CurrentOffset",               STAMUNIT_NS, "The current offset. (subtract GivenUp to get the lag)");
-    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attemted caught up with.");
+    STAM_REL_REG_USED(pVM,(void*)&pVM->tm.s.offVirtualSyncGivenUp,        STAMTYPE_U64, "/TM/VirtualSync/GivenUp",                     STAMUNIT_NS, "Nanoseconds of the 'CurrentOffset' that's been given up and won't ever be attempted caught up with.");
     STAM_REL_REG(     pVM,(void*)&pVM->tm.s.uMaxHzHint,                   STAMTYPE_U32, "/TM/MaxHzHint",                               STAMUNIT_HZ, "Max guest timer frequency hint.");
 
 #ifdef VBOX_WITH_STATISTICS
@@ -671,7 +671,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsTotal,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NS,               "Resettable: Total CPU run time.",   "/TM/CPU/%02u", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecuting,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code.",    "/TM/CPU/%02u/PrfExecuting", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecLong,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - long hauls.",    "/TM/CPU/%02u/PrfExecLong", i);
-        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecShort,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - short streches.",    "/TM/CPU/%02u/PrfExecShort", i);
+        STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecShort,   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - short stretches.",    "/TM/CPU/%02u/PrfExecShort", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsExecTiny,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent executing guest code - tiny bits.",    "/TM/CPU/%02u/PrfExecTiny", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsHalted,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent halted.",                  "/TM/CPU/%02u/PrfHalted", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.StatNsOther,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_OCCURENCE, "Resettable: Time spent in the VMM or preempted.", "/TM/CPU/%02u/PrfOther", i);

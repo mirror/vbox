@@ -508,7 +508,7 @@ static int vdiValidateHeader(PVDIHEADER pHeader)
 
     if (RTUuidIsNull(getImageModificationUUID(pHeader)))
     {
-        LogRel(("VDI: uuid of modificator is 0\n"));
+        LogRel(("VDI: uuid of modifier is 0\n"));
         fFailed = true;
     }
 

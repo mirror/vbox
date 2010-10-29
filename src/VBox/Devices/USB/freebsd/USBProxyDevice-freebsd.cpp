@@ -486,7 +486,7 @@ static void usbProxyFreeBSDClose(PUSBPROXYDEV pProxyDev)
     UsbFsUninit.dummy = 0;
 
     int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel ressources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
 
     if (pDevFBSD->paXferEndpoints)
         RTMemFree(pDevFBSD->paXferEndpoints);
@@ -525,7 +525,7 @@ static int usbProxyFreeBSDReset(PUSBPROXYDEV pProxyDev, bool fResetOnFreeBSD)
     UsbFsUninit.dummy = 0;
 
     int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel ressources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
 
     /* Resetting is not possible from a normal user account */
 #if 0
@@ -591,7 +591,7 @@ static int usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
     UsbFsUninit.dummy = 0;
 
     int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel ressources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
 
     int iCfgIndex = 0;
 
@@ -685,7 +685,7 @@ static int usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt
     UsbFsUninit.dummy = 0;
 
     int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel ressources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
 
     struct usb_alt_interface UsbIntAlt;
     UsbIntAlt.uai_interface_index = iIf;

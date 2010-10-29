@@ -529,7 +529,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     //STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x08],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/08",          STAMUNIT_TICKS_PER_CALL, "#DF - Double fault.");
     STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x09],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/09",          STAMUNIT_TICKS_PER_CALL, "#?? - Coprocessor segment overrun (obsolete).");
     STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0a],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0a",          STAMUNIT_TICKS_PER_CALL, "#TS - Task switch fault.");
-    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0b],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0b",          STAMUNIT_TICKS_PER_CALL, "#NP - Segemnt not present.");
+    STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0b],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0b",          STAMUNIT_TICKS_PER_CALL, "#NP - Segment not present.");
     STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0c],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0c",          STAMUNIT_TICKS_PER_CALL, "#SS - Stack segment fault.");
     STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0d],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0d",          STAMUNIT_TICKS_PER_CALL, "#GP - General protection fault.");
     STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x0e],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/0e",          STAMUNIT_TICKS_PER_CALL, "#PF - Page fault.");

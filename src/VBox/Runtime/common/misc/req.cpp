@@ -459,7 +459,7 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
     if (    enmType < RTREQTYPE_INVALID
         ||  enmType > RTREQTYPE_MAX)
     {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusivly.\n",
+        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusively.\n",
                          enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1));
         return VERR_RT_REQUEST_INVALID_TYPE;
     }
@@ -672,7 +672,7 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies)
     if (    pReq->enmType < RTREQTYPE_INVALID
         || pReq->enmType > RTREQTYPE_MAX)
     {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc too...\n",
+        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
                          pReq->enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1));
         return VERR_RT_REQUEST_INVALID_TYPE;
     }
@@ -742,7 +742,7 @@ RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies)
     if (    pReq->enmType < RTREQTYPE_INVALID
         ||  pReq->enmType > RTREQTYPE_MAX)
     {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc and queue too...\n",
+        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc and queue too...\n",
                          pReq->enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1));
         return VERR_RT_REQUEST_INVALID_TYPE;
     }

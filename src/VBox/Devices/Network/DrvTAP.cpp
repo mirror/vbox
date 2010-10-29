@@ -668,11 +668,11 @@ static int SolarisOpenVNIC(PDRVTAP pThis)
                         }
                         else
                             rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                     N_("Failed to set appropriate promiscous mode"));
+                                                     N_("Failed to set appropriate promiscuous mode"));
                     }
                     else
                         rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                 N_("Failed to activate promiscous mode for VNIC"));
+                                                 N_("Failed to activate promiscuous mode for VNIC"));
                 }
                 else
                     rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,

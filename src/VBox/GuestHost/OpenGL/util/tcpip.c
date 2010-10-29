@@ -722,7 +722,7 @@ __crSelect( int n, fd_set *readfds, int sec, int usec )
         err = crTCPIPErrno( );
         if ( err == EINTR )
         {
-            crWarning( "select interruped by an unblocked signal, trying again" );
+            crWarning( "select interrupted by an unblocked signal, trying again" );
         }
         else
         {
@@ -1313,7 +1313,7 @@ crTCPIPDoConnect( CRConnection *conn )
         else if ( err == EINTR )
         {
             crWarning( "connection to %s:%d "
-                    "interruped, trying again", conn->hostname, conn->port );
+                    "interrupted, trying again", conn->hostname, conn->port );
             continue;
         }
         else

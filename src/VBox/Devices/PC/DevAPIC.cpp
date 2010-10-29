@@ -443,7 +443,7 @@ DECLINLINE(uint32_t) getApicEnableBits(APICDeviceInfo* dev)
         case PDMAPICVERSION_X2APIC:
             return MSR_IA32_APICBASE_ENABLE | MSR_IA32_APICBASE_X2ENABLE ;
         default:
-            AssertMsgFailed(("Unsuported APIC version %d\n", dev->enmVersion));
+            AssertMsgFailed(("Unsupported APIC version %d\n", dev->enmVersion));
             return 0;
     }
 }

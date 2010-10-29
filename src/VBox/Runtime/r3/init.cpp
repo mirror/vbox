@@ -281,7 +281,7 @@ static int rtR3InitBody(bool fInitSUPLib, const char *pszProgramPath)
          * (The more time for updates before real use, the better.)
          */
         rc = SUPR3Init(NULL);
-        AssertMsgRCReturn(rc, ("Failed to initializeble the support library, rc=%Rrc!\n", rc), rc);
+        AssertMsgRCReturn(rc, ("Failed to initializable the support library, rc=%Rrc!\n", rc), rc);
     }
 #endif
 

@@ -333,7 +333,7 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
         waitEvent.u32EventMaskIn = VMMDEV_EVENT_VRDP;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
-            Log(("VBoxTray: VBoxVRDPThread: DeviceIOControl succeded\n"));
+            Log(("VBoxTray: VBoxVRDPThread: DeviceIOControl succeeded\n"));
 
             /* are we supposed to stop? */
             if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)

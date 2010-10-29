@@ -284,7 +284,7 @@ void createVM(IVirtualBox *virtualBox)
         rc = session->GetMachine(getter_AddRefs(machine));
         if (NS_FAILED(rc))
         {
-            printf("Error, could not get sessioned machine! rc=0x%x\n", rc);
+            printf("Error, could not get machine session! rc=0x%x\n", rc);
             return;
         }
     }

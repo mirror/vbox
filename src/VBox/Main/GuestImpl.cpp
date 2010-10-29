@@ -1041,7 +1041,7 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
                         hr = it->second.pProgress->notifyComplete(S_OK);
                         AssertComRC(hr);
 
-                        LogFlowFunc(("Proccess (CID=%u, status=%u) terminated successfully\n",
+                        LogFlowFunc(("Process (CID=%u, status=%u) terminated successfully\n",
                                      pData->hdr.u32ContextID, pData->u32Status));
                     }
                     break;

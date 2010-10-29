@@ -9814,7 +9814,7 @@ HRESULT SessionMachine::init(Machine *aMachine)
         setError(E_FAIL,
                  tr("Cannot create IPC semaphore because the system limit for the "
                     "maximum number of semaphore sets (SEMMNI), or the system wide "
-                    "maximum number of sempahores (SEMMNS) would be exceeded. The "
+                    "maximum number of semaphores (SEMMNS) would be exceeded. The "
                     "current set of SysV IPC semaphores can be determined from "
                     "the file /proc/sysvipc/sem"));
 #else

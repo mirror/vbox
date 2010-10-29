@@ -73,7 +73,7 @@ int VBoxGuestThread::start(void)
     LogRelFlowFunc(("returning\n"));
     if (NIL_RTTHREAD != mSelf)  /* Assertion */
     {
-        LogRelThisFunc(("Attempted to start thead %s twice!\n", mName));
+        LogRelThisFunc(("Attempted to start thread %s twice!\n", mName));
         return VERR_INTERNAL_ERROR;
     }
     mExit = false;

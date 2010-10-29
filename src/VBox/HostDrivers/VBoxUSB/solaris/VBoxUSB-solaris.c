@@ -3708,7 +3708,7 @@ LOCAL void vboxUSBSolarisIsocInXferError(usb_pipe_handle_t pPipe, usb_isoc_req_t
              */
             mutex_exit(&pState->Mtx);
             usb_pipe_isoc_xfer(pPipe, pReq, USB_FLAGS_NOSLEEP);
-            LogFlow((DEVICE_NAME ":vboxUSBSolarisIsocInXferError resubmmited Isoc. IN request due to immediately unavailable resources.\n"));
+            LogFlow((DEVICE_NAME ":vboxUSBSolarisIsocInXferError resubmitted Isoc. IN request due to immediately unavailable resources.\n"));
 
             return;
         }

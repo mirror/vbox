@@ -1450,7 +1450,7 @@ static void pdmacFileAioMgrNormalReqCompleteRc(PPDMACEPFILEMGR pAioMgr, RTFILEAI
                 size_t cbToTransfer;
                 uint8_t *pbBuf = NULL;
 
-                LogFlow(("Restarting incomplete transfer %#p (%zu bytes transfered)\n",
+                LogFlow(("Restarting incomplete transfer %#p (%zu bytes transferred)\n",
                          pTask, cbTransfered));
                 Assert(cbTransfered % 512 == 0);
 

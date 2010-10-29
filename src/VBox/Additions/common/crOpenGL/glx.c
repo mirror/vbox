@@ -825,7 +825,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
           -- jw
         */
         case GLX_X_VISUAL_TYPE:
-          crWarning ("Ignoring Unsuported GLX Call: glxGetConfig with attrib 0x%x", attrib);
+          crWarning ("Ignoring Unsupported GLX Call: glxGetConfig with attrib 0x%x", attrib);
           break;
 #endif 
 
@@ -957,7 +957,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
           -- jw
         */
         case GLX_X_VISUAL_TYPE:
-          crWarning ("Ignoring Unsuported GLX Call: glxGetConfig with attrib 0x%x", attrib);
+          crWarning ("Ignoring Unsupported GLX Call: glxGetConfig with attrib 0x%x", attrib);
           break;
 #endif 
 

@@ -569,7 +569,7 @@ VMMR3DECL(int) VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUI
      * Validate input.
      */
     AssertMsgReturn(enmType > VMREQTYPE_INVALID && enmType < VMREQTYPE_MAX,
-                    ("Invalid package type %d valid range %d-%d inclusivly.\n",
+                    ("Invalid package type %d valid range %d-%d inclusively.\n",
                      enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
     AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
@@ -796,7 +796,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
                     VERR_VM_REQUEST_INVALID_PACKAGE);
     AssertMsgReturn(    pReq->enmType > VMREQTYPE_INVALID
                     &&  pReq->enmType < VMREQTYPE_MAX,
-                    ("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc too...\n",
+                    ("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
                      pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
     Assert(!(pReq->fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE)));
@@ -952,7 +952,7 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies)
                     VERR_VM_REQUEST_INVALID_PACKAGE);
     AssertMsgReturn(    pReq->enmType > VMREQTYPE_INVALID
                     &&  pReq->enmType < VMREQTYPE_MAX,
-                    ("Invalid package type %d valid range %d-%d inclusivly. This was verified on alloc too...\n",
+                    ("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
                      pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
 

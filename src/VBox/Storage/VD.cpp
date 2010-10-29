@@ -2469,7 +2469,7 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
             {
                 PVDIOCTX pIoCtxParent = pIoCtx->pIoCtxParent;
 
-                LogFlowFunc(("I/O context transfered %u bytes for the parent pIoCtxParent=%p\n",
+                LogFlowFunc(("I/O context transferred %u bytes for the parent pIoCtxParent=%p\n",
                              pIoCtx->Type.Child.cbTransferParent, pIoCtxParent));
 
                 /* Update the parent state. */
@@ -4971,7 +4971,7 @@ VBOXDDU_DECL(int) VDCreateCache(PVBOXHDD pDisk, const char *pszBackend,
     PVDCACHE pCache = NULL;
     RTUUID uuid;
 
-    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" cbSIze=%llu uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
+    LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" Uuid=%RTuuid uOpenFlags=%#x pVDIfsImage=%#p pVDIfsOperation=%#p\n",
                  pDisk, pszBackend, pszFilename, cbSize, uImageFlags, pszComment, pUuid, uOpenFlags, pVDIfsCache, pVDIfsOperation));
 
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,

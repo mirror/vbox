@@ -817,7 +817,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                  * The rest is unexpected, and will keep us here.
                  */
                 default:
-                    AssertMsgFailed(("Unxpected rc %Rrc!\n", rc));
+                    AssertMsgFailed(("Unexpected rc %Rrc!\n", rc));
                     break;
             }
         } while (false);

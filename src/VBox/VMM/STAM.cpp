@@ -1986,7 +1986,7 @@ static DECLCALLBACK(int) stamR3CmdStatsReset(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
     if (RT_SUCCESS(rc))
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "info: Statistics reset.\n");
 
-    return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Restting statistics.\n");
+    return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "Resetting statistics.\n");
 }
 
 #endif /* VBOX_WITH_DEBUGGER */
