@@ -348,11 +348,6 @@ void VBoxVMSettingsDisplay::textChangedMonitors (const QString &aText)
 void VBoxVMSettingsDisplay::checkVRAMRequirements()
 {
     int cVal = mSlMonitors->value();
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    mCb2DVideo->setEnabled(VBoxGlobal::isAcceleration2DVideoAvailable());
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-    mCb3D->setEnabled(vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
-
     /* The memory requirements have changed too. */
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine, cVal) / _1M;
     /* Limit the maximum memory to save careless users from setting useless big values */
