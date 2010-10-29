@@ -99,6 +99,24 @@ public:
     }
 
     /**
+     * Create a new string given the format string and its arguments.
+     *
+     * @param   a_pszFormat     Pointer to the format string (UTF-8),
+     *                          @see pg_rt_str_format.
+     * @param   a_va            Argument vector containing the arguments
+     *                          specified by the format string.
+     * @sa      printfV
+     */
+    MiniString(const char *a_pszFormat, va_list a_va)
+        : m_psz(NULL),
+          m_cch(0),
+          m_cbAllocated(0)
+
+    {
+        printfV(a_pszFormat, a_va);
+    }
+
+    /**
      * Destructor.
      */
     virtual ~MiniString()
@@ -213,7 +231,8 @@ public:
     /**
      * Assigns the output of the string format operation (RTStrPrintf).
      *
-     * @param   pszFormat       The format string.
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
      * @param   ...             Ellipsis containing the arguments specified by
      *                          the format string.
      *
@@ -226,7 +245,8 @@ public:
     /**
      * Assigns the output of the string format operation (RTStrPrintfV).
      *
-     * @param   pszFormat       The format string.
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
      * @param   va              Argument vector containing the arguments
      *                          specified by the format string.
      *
@@ -460,29 +480,38 @@ public:
     };
 
     /**
-     * Compares the member string to pcsz.
-     * @param pcsz
-     * @param cs Whether comparison should be case-sensitive.
-     * @return
+     * Compares the member string to a C-string.
+     *
+     * @param   pcszThat    The string to compare with.
+     * @param   cs          Whether comparison should be case-sensitive.
+     * @returns 0 if equal, negative if this is smaller than @a pcsz, positive
+     *          if larger.
      */
-    int compare(const char *pcsz, CaseSensitivity cs = CaseSensitive) const
+    int compare(const char *pcszThat, CaseSensitivity cs = CaseSensitive) const
     {
-        if (m_psz == pcsz)
-            return 0;
-        if (m_psz == NULL)
-            return -1;
-        if (pcsz == NULL)
-            return 1;
+        /* This klugde is for m_cch=0 and m_psz=NULL.  pcsz=NULL and psz=""
+           are treated the same way so that str.compare(str2.c_str()) works. */
+        if (length() == 0)
+            return pcszThat == NULL || *pcszThat != '\0';
 
         if (cs == CaseSensitive)
-            return ::RTStrCmp(m_psz, pcsz);
-        else
-            return ::RTStrICmp(m_psz, pcsz);
+            return ::RTStrCmp(m_psz, pcszThat);
+        return ::RTStrICmp(m_psz, pcszThat);
     }
 
+    /**
+     * Compares the member string to another MiniString.
+     *
+     * @param   pcszThat    The string to compare with.
+     * @param   cs          Whether comparison should be case-sensitive.
+     * @returns 0 if equal, negative if this is smaller than @a pcsz, positive
+     *          if larger.
+     */
     int compare(const MiniString &that, CaseSensitivity cs = CaseSensitive) const
     {
-        return compare(that.m_psz, cs);
+        if (cs == CaseSensitive)
+            return ::RTStrCmp(m_psz, that.m_psz);
+        return ::RTStrICmp(m_psz, that.m_psz);
     }
 
     /**
@@ -505,6 +534,10 @@ public:
      */
     bool equals(const char *pszThat) const
     {
+        /* This klugde is for m_cch=0 and m_psz=NULL.  pcsz=NULL and psz=""
+           are treated the same way so that str.equals(str2.c_str()) works. */
+        if (length() == 0)
+            return pszThat == NULL || *pszThat == '\0';
         return RTStrCmp(pszThat, m_psz) == 0;
     }
 
@@ -529,6 +562,10 @@ public:
      */
     bool equalsIgnoreCase(const char *pszThat) const
     {
+        /* This klugde is for m_cch=0 and m_psz=NULL.  pcsz=NULL and psz=""
+           are treated the same way so that str.equalsIgnoreCase(str2.c_str()) works. */
+        if (length() == 0)
+            return pszThat == NULL || *pszThat == '\0';
         return RTStrICmp(pszThat, m_psz) == 0;
     }
 
