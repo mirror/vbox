@@ -2,7 +2,7 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter>
-  <title id="guestadditions">Guest Additions</title>
+  <title id="guestadditions">Suppléments invité</title>
 
   <para>The previous chapter covered getting started with VirtualBox and
   installing operating systems in a virtual machine. For any serious and
