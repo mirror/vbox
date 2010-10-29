@@ -20,7 +20,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "ExtPackManagerImpl.h"
+#include "ExtPackUtil.h"
 
+#include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
@@ -31,11 +33,12 @@
 #include <iprt/pipe.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
-#include <iprt/cpp/xml.h>
 
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/log.h>
+#include <VBox/sup.h>
+#include <VBox/version.h>
 #include "AutoCaller.h"
 
 
@@ -43,18 +46,15 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** @name VBOX_EXTPACK_HELPER_NAME
- * The name of the utility program we employ to install and uninstall the
+ * The name of the utility application we employ to install and uninstall the
  * extension packs.  This is a set-uid-to-root binary on unixy platforms, which
- * is why it has to be a separate program.
+ * is why it has to be a separate application.
  */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 # define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelper.exe"
 #else
 # define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelper"
 #endif
-/** @name VBOX_EXTPACK_DESCRIPTION_NAME
- * The name of the description file in an extension pack.  */
-#define VBOX_EXTPACK_DESCRIPTION_NAME   "ExtPack.xml"
 
 
 /*******************************************************************************
@@ -65,24 +65,33 @@
  */
 struct ExtPack::Data
 {
-    /** @name IExtPack Attributes.
-     * @{ */
-    /** The name. */
-    Utf8Str     strName;
-    /** The version string. */
-    Utf8Str     strVersion;
-    /** The revision. */
-    uint32_t    uRevision;
+    /** The extension pack description (loaded from the XML, mostly). */
+    VBOXEXTPACKDESC     Desc;
+    /** The file system object info of the XML file.
+     * This is for detecting changes and save time in refresh().  */
+    RTFSOBJINFO         ObjInfoDesc;
     /** Whether it's usable or not. */
-    bool        fUsable;
+    bool                fUsable;
     /** Why it is unusable. */
-    Utf8Str     strWhyUnusable;
-    /** @}  */
+    Utf8Str             strWhyUnusable;
 
     /** Where the extension pack is located. */
-    Utf8Str     strPath;
+    Utf8Str             strExtPackPath;
+    /** The file system object info of the extension pack directory.
+     * This is for detecting changes and save time in refresh().  */
+    RTFSOBJINFO         ObjInfoExtPack;
+    /** The full path to the main module. */
+    Utf8Str             strMainModPath;
+    /** The file system object info of the main module.
+     * This is used to determin whether to bother try reload it. */
+    RTFSOBJINFO         ObjInfoMainMod;
     /** The module handle of the main extension pack module. */
-    RTLDRMOD    hMainMod;
+    RTLDRMOD            hMainMod;
+
+    /** The helper callbacks for the extension pack. */
+    VBOXEXTPACKHLP      Hlp;
+    /** The extension pack registration structure. */
+    PCVBOXEXTPACKREG    pReg;
 };
 
 /** List of extension packs. */
@@ -126,43 +135,43 @@ HRESULT ExtPack::FinalConstruct()
  */
 HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
 {
+    static const VBOXEXTPACKHLP s_HlpTmpl =
+    {
+        /* u32Version           = */ VBOXEXTPACKHLP_VERSION,
+        /* uVBoxFullVersion     = */ VBOX_FULL_VERSION,
+        /* uVBoxVersionRevision = */ 0,
+        /* u32Padding           = */ 0,
+        /* pszVBoxVersion       = */ "",
+        /* pfnFindModule        = */ ExtPack::hlpFindModule,
+        /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
+    };
+
     /*
-     * Figure out where we live and allocate+initialize our private data.
+     * Figure out where we live and allocate + initialize our private data.
      */
     char szDir[RTPATH_MAX];
     int vrc = RTPathJoin(szDir, sizeof(szDir), a_pszParentDir, a_pszName);
     AssertLogRelRCReturn(vrc, E_FAIL);
 
     m = new Data;
-    m->strName          = a_pszName;
-    m->strVersion       = "";
-    m->uRevision        = 0;
-    m->fUsable          = false;
-    m->strWhyUnusable   = tr("ExtPack::init failed");
-
-    m->strPath          = szDir;
-    m->hMainMod         = NIL_RTLDRMOD;
+    m->Desc.strName                 = a_pszName;
+    RT_ZERO(m->ObjInfoDesc);
+    m->fUsable                      = false;
+    m->strWhyUnusable               = tr("ExtPack::init failed");
+    m->strExtPackPath               = szDir;
+    RT_ZERO(m->ObjInfoExtPack);
+    m->strMainModPath.setNull();
+    RT_ZERO(m->ObjInfoMainMod);
+    m->hMainMod                     = NIL_RTLDRMOD;
+    m->Hlp                          = s_HlpTmpl;
+    m->Hlp.pszVBoxVersion           = RTBldCfgVersion();
+    m->Hlp.uVBoxInternalRevision    = RTBldCfgRevision();
+    m->pReg                         = NULL;
 
     /*
-     * Read the description file.
+     * Probe the extension pack (this code is shared with refresh()).
      */
-    char szFile[RTPATH_MAX];
-    vrc = RTPathJoin(szFile, sizeof(szFile), szDir, VBOX_EXTPACK_DESCRIPTION_NAME);
-    AssertLogRelRCReturn(vrc, E_FAIL);
-
-    xml::Document       Doc;
-    xml::XmlFileParser  Parser;
-    try
-    {
-        Parser.read(szFile, Doc);
-        xml::ElementNode *pRoot = Doc.getRootElement();
-        NOREF(pRoot);
-    }
-    catch (xml::XmlError Err)
-    {
-        m->fUsable          = true;
-        m->strWhyUnusable   = tr("");
-    }
+    probeAndLoad();
 
     return S_OK;
 }
@@ -195,6 +204,304 @@ void ExtPack::uninit()
     }
 }
 
+void *ExtPack::getCallbackTable()
+{
+    return NULL;
+}
+
+/**
+ * Refreshes the extension pack state.
+ *
+ * This is called by the manager so that the on disk changes are picked up.
+ *
+ * @returns S_OK or COM error status with error information.
+ * @param   pfCanDelete     Optional can-delete-this-object output indicator.
+ */
+HRESULT ExtPack::refresh(bool *pfCanDelete)
+{
+    if (pfCanDelete)
+        *pfCanDelete = false;
+
+    AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    /*
+     * Has the module been deleted?
+     */
+    RTFSOBJINFO ObjInfoExtPack;
+    int vrc = RTPathQueryInfoEx(m->strExtPackPath.c_str(), &ObjInfoExtPack, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+    if (   RT_FAILURE(vrc)
+        || !RTFS_IS_DIRECTORY(ObjInfoExtPack.Attr.fMode))
+    {
+        if (*pfCanDelete)
+            *pfCanDelete = true;
+        return S_OK;
+    }
+
+    /*
+     * We've got a directory, so try query file system object info for the
+     * files we are interested in as well.
+     */
+    RTFSOBJINFO ObjInfoDesc;
+    char        szDescFilePath[RTPATH_MAX];
+    vrc = RTPathJoin(szDescFilePath, sizeof(szDescFilePath), m->strExtPackPath.c_str(), VBOX_EXTPACK_DESCRIPTION_NAME);
+    if (RT_SUCCESS(vrc))
+        vrc = RTPathQueryInfoEx(szDescFilePath, &ObjInfoDesc, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+    if (RT_FAILURE(vrc))
+        RT_ZERO(ObjInfoDesc);
+
+    RTFSOBJINFO ObjInfoMainMod;
+    if (m->strMainModPath.isNotEmpty())
+        vrc = RTPathQueryInfoEx(m->strMainModPath.c_str(), &ObjInfoMainMod, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+    if (m->strMainModPath.isEmpty() || RT_FAILURE(vrc))
+        RT_ZERO(ObjInfoMainMod);
+
+    /*
+     * If we have a usable module already, just verify that things haven't
+     * changed since we loaded it.
+     */
+    if (m->fUsable)
+    {
+        /** @todo not important, so it can wait. */
+    }
+    /*
+     * Ok, it is currently not usable.  If anything has changed since last time
+     * reprobe the extension pack.
+     */
+    else if (   !objinfoIsEqual(&ObjInfoDesc,    &m->ObjInfoDesc)
+             || !objinfoIsEqual(&ObjInfoMainMod, &m->ObjInfoMainMod)
+             || !objinfoIsEqual(&ObjInfoExtPack, &m->ObjInfoExtPack) )
+        probeAndLoad();
+
+    return S_OK;
+}
+
+/**
+ * Probes the extension pack, loading the main dll and calling its registration
+ * entry point.
+ *
+ * This updates the state accordingly, the strWhyUnusable and fUnusable members
+ * being the most important ones.
+ */
+void ExtPack::probeAndLoad(void)
+{
+    m->fUsable = true;
+
+    /*
+     * Query the file system info for the extension pack directory.  This and
+     * all other file system info we save is for the benefit of refresh().
+     */
+    int vrc = RTPathQueryInfoEx(m->strExtPackPath.c_str(), &m->ObjInfoExtPack, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
+    if (RT_FAILURE(vrc))
+    {
+        m->strWhyUnusable.printf(tr("RTPathQueryInfoEx on '%s' failed: %Rrc"), m->strExtPackPath.c_str(), vrc);
+        return;
+    }
+    if (RTFS_IS_DIRECTORY(m->ObjInfoExtPack.Attr.fMode))
+    {
+        if (RTFS_IS_SYMLINK(m->ObjInfoExtPack.Attr.fMode))
+            m->strWhyUnusable.printf(tr("'%s' is a symbolic link, this is not allowed"), m->strExtPackPath.c_str(), vrc);
+        else if (RTFS_IS_FILE(m->ObjInfoExtPack.Attr.fMode))
+            m->strWhyUnusable.printf(tr("'%s' is a symbolic file, not a directory"), m->strExtPackPath.c_str(), vrc);
+        else
+            m->strWhyUnusable.printf(tr("'%s' is not a directory (fMode=%#x)"), m->strExtPackPath.c_str(), m->ObjInfoExtPack.Attr.fMode);
+        return;
+    }
+
+    char szErr[2048];
+    RT_ZERO(szErr);
+    vrc = SUPR3HardenedVerifyDir(m->strExtPackPath.c_str(), true /*fRecursive*/, true /*fCheckFiles*/, szErr, sizeof(szErr));
+    if (RT_FAILURE(vrc))
+    {
+        m->strWhyUnusable.printf(tr("%s"), szErr);
+        return;
+    }
+
+    /*
+     * Read the description file.
+     */
+    iprt::MiniString strSavedName(m->Desc.strName);
+    iprt::MiniString *pStrLoadErr = VBoxExtPackLoadDesc(m->strExtPackPath.c_str(), &m->Desc, &m->ObjInfoDesc);
+    if (pStrLoadErr != NULL)
+    {
+        m->strWhyUnusable.printf(tr("Failed to load '%s/%s': %s"),
+                                 m->strExtPackPath.c_str(), VBOX_EXTPACK_DESCRIPTION_NAME, pStrLoadErr->c_str());
+        m->Desc.strName = strSavedName;
+        delete pStrLoadErr;
+        return;
+    }
+
+    /*
+     * Make sure the XML name and directory matches.
+     */
+    if (!m->Desc.strName.equalsIgnoreCase(strSavedName))
+    {
+        m->strWhyUnusable.printf(tr("The description name ('%s') and directory name ('%s) does not match"),
+                                 m->Desc.strName.c_str(), strSavedName.c_str());
+        m->Desc.strName = strSavedName;
+        return;
+    }
+
+    /*
+     * Load the main DLL and call the predefined entry point.
+     */
+    bool fIsNative;
+    if (!findModule(m->Desc.strMainModule.c_str(), NULL /* default extension */,
+                    &m->strMainModPath, &fIsNative, &m->ObjInfoMainMod))
+    {
+        m->strWhyUnusable.printf(tr("Failed to locate the main module ('%'s)"), m->Desc.strMainModule.c_str());
+        return;
+    }
+
+    vrc = SUPR3HardenedVerifyPlugIn(m->strMainModPath.c_str(), szErr, sizeof(szErr));
+    if (RT_FAILURE(vrc))
+    {
+        m->strWhyUnusable.printf(tr("%s"), szErr);
+        return;
+    }
+
+    if (fIsNative)
+    {
+        vrc = RTLdrLoad(m->strMainModPath.c_str(), &m->hMainMod);
+        if (RT_FAILURE(vrc))
+        {
+            m->hMainMod = NIL_RTLDRMOD;
+            m->strWhyUnusable.printf(tr("Failed to locate load the main module ('%'s): %Rrc"),
+                                           m->strMainModPath.c_str(), vrc);
+            return;
+        }
+    }
+    else
+    {
+        m->strWhyUnusable.printf(tr("Only native main modules are currently supported"));
+        return;
+    }
+
+    /*
+     * Resolve the predefined entry point.
+     */
+    PFNVBOXEXTPACKREGISTER pfnRegistration;
+    vrc = RTLdrGetSymbol(m->hMainMod, VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT, (void **)&pfnRegistration);
+    if (RT_SUCCESS(vrc))
+    {
+        RT_ZERO(szErr);
+        vrc = pfnRegistration(&m->Hlp, &m->pReg, szErr, sizeof(szErr) - 16);
+        if (   RT_SUCCESS(vrc)
+            && szErr[0] == '\0'
+            && VALID_PTR(m->pReg))
+        {
+            if (   m->pReg->u32Version   == VBOXEXTPACKREG_VERSION
+                && m->pReg->u32EndMarker == VBOXEXTPACKREG_VERSION)
+            {
+                if (   (!m->pReg->pfnInstalled      || RT_VALID_PTR(m->pReg->pfnInstalled))
+                    && (!m->pReg->pfnUninstall      || RT_VALID_PTR(m->pReg->pfnUninstall))
+                    && (!m->pReg->pfnVMCreated      || RT_VALID_PTR(m->pReg->pfnVMCreated))
+                    && (!m->pReg->pfnVMConfigureVMM || RT_VALID_PTR(m->pReg->pfnVMConfigureVMM))
+                    && (!m->pReg->pfnVMPowerOn      || RT_VALID_PTR(m->pReg->pfnVMPowerOn))
+                    && (!m->pReg->pfnVMPowerOff     || RT_VALID_PTR(m->pReg->pfnVMPowerOff))
+                    )
+                {
+                    /*
+                     * We're good!
+                     */
+                    m->fUsable = true;
+                    m->strWhyUnusable.setNull();
+                    return;
+                }
+
+                m->strWhyUnusable = tr("The registration structure contains on or more invalid function pointers");
+            }
+            else
+                m->strWhyUnusable.printf(tr("Unsupported registration structure version %u.%u"),
+                                         RT_HIWORD(m->pReg->u32Version), RT_LOWORD(m->pReg->u32Version));
+        }
+        else
+        {
+            szErr[sizeof(szErr) - 1] = '\0';
+            m->strWhyUnusable.printf(tr("%s returned %Rrc, pReg=%p szErr='%s'"),
+                                     VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT, vrc, m->pReg, szErr);
+        }
+        m->pReg = NULL;
+    }
+
+    RTLdrClose(m->hMainMod);
+    m->hMainMod = NIL_RTLDRMOD;
+}
+
+/**
+ * Finds a module.
+ *
+ * @returns true if found, false if not.
+ * @param   a_pszName           The module base name (no extension).
+ * @param   a_pszExt            The extension. If NULL we use default
+ *                              extensions.
+ * @param   a_pStrFound         Where to return the path to the module we've
+ *                              found.
+ * @param   a_pfNative          Where to return whether this is a native module
+ *                              or an agnostic one. Optional.
+ * @param   a_pObjInfo          Where to return the file system object info for
+ *                              the module. Optional.
+ */
+bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
+                         Utf8Str *a_pStrFound, bool *a_pfNative, PRTFSOBJINFO a_pObjInfo) const
+{
+    return false;
+}
+
+/**
+ * Compares two file system object info structures.
+ *
+ * @returns true if equal, false if not.
+ * @param   pObjInfo1           The first.
+ * @param   pObjInfo2           The second.
+ * @todo    IPRT should do this, really.
+ */
+/* static */ bool ExtPack::objinfoIsEqual(PCRTFSOBJINFO pObjInfo1, PCRTFSOBJINFO pObjInfo2)
+{
+    if (!RTTimeSpecIsEqual(&pObjInfo1->ModificationTime,   &pObjInfo2->ModificationTime))
+        return false;
+    if (!RTTimeSpecIsEqual(&pObjInfo1->ChangeTime,         &pObjInfo2->ChangeTime))
+        return false;
+    if (!RTTimeSpecIsEqual(&pObjInfo1->BirthTime,          &pObjInfo2->BirthTime))
+        return false;
+    if (pObjInfo1->cbObject                              != pObjInfo2->cbObject)
+        return false;
+    if (pObjInfo1->Attr.fMode                            != pObjInfo2->Attr.fMode)
+        return false;
+    if (pObjInfo1->Attr.enmAdditional                    == pObjInfo2->Attr.enmAdditional)
+    {
+        switch (pObjInfo1->Attr.enmAdditional)
+        {
+            case RTFSOBJATTRADD_UNIX:
+                if (pObjInfo1->Attr.u.Unix.uid           != pObjInfo2->Attr.u.Unix.uid)
+                    return false;
+                if (pObjInfo1->Attr.u.Unix.gid           != pObjInfo2->Attr.u.Unix.gid)
+                    return false;
+                if (pObjInfo1->Attr.u.Unix.INodeIdDevice != pObjInfo2->Attr.u.Unix.INodeIdDevice)
+                    return false;
+                if (pObjInfo1->Attr.u.Unix.INodeId       != pObjInfo2->Attr.u.Unix.INodeId)
+                    return false;
+                if (pObjInfo1->Attr.u.Unix.GenerationId  != pObjInfo2->Attr.u.Unix.GenerationId)
+                    return false;
+                break;
+            default:
+                break;
+        }
+    }
+    return true;
+}
+
+
+/**
+ * @interface_method_impl{VBOXEXTPACKHLP,pfnFindModule}
+ */
+/*static*/ DECLCALLBACK(int)
+ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
+                       char *pszFound, size_t cbFound, bool *pfNative)
+{
+    return VERR_FILE_NOT_FOUND;
+}
+
+
 
 
 
@@ -205,7 +512,10 @@ STDMETHODIMP ExtPack::COMGETTER(Name)(BSTR *a_pbstrName)
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
-        m->strName.cloneTo(a_pbstrName);
+    {
+        Bstr str(m->Desc.strName);
+        str.cloneTo(a_pbstrName);
+    }
     return hrc;
 }
 
@@ -216,7 +526,10 @@ STDMETHODIMP ExtPack::COMGETTER(Version)(BSTR *a_pbstrVersion)
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
-        m->strVersion.cloneTo(a_pbstrVersion);
+    {
+        Bstr str(m->Desc.strVersion);
+        str.cloneTo(a_pbstrVersion);
+    }
     return hrc;
 }
 
@@ -227,7 +540,7 @@ STDMETHODIMP ExtPack::COMGETTER(Revision)(ULONG *a_puRevision)
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
-        *a_puRevision = m->uRevision;
+        *a_puRevision = m->Desc.uRevision;
     return hrc;
 }
 
@@ -251,28 +564,6 @@ STDMETHODIMP ExtPack::COMGETTER(WhyUnusable)(BSTR *a_pbstrWhy)
     if (SUCCEEDED(hrc))
         m->strWhyUnusable.cloneTo(a_pbstrWhy);
     return hrc;
-}
-
-
-
-void *ExtPack::getCallbackTable()
-{
-    return NULL;
-}
-
-/**
- * Refreshes the extension pack state.
- *
- * This is called by the manager so that the on disk changes are picked up.
- *
- * @returns S_OK or COM error status with error information.
- * @param   pfCanDelete     Optional can-delete-this-object output indicator.
- */
-HRESULT ExtPack::refresh(bool *pfCanDelete)
-{
-    if (pfCanDelete)
-        *pfCanDelete = false;
-    return S_OK;
 }
 
 
@@ -601,7 +892,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
 
 
 /**
- * Runs the helper program that does the privileged operations.
+ * Runs the helper application that does the privileged operations.
  *
  * @returns S_OK or a failure status with error information set.
  * @param   a_pszCommand        The command to execute.
@@ -612,7 +903,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
 HRESULT ExtPackManager::runSetUidToRootHelper(const char *a_pszCommand, ...)
 {
     /*
-     * Calculate the path to the helper program.
+     * Calculate the path to the helper application.
      */
     char szExecName[RTPATH_MAX];
     int vrc = RTPathAppPrivateArch(szExecName, sizeof(szExecName));
@@ -794,8 +1085,8 @@ ExtPack *ExtPackManager::findExtPack(const char *a_pszName)
     {
         ExtPack::Data *pExtPackData = (*it)->m;
         if (   pExtPackData
-            && pExtPackData->strName.length() == cchName
-            && pExtPackData->strName.compare(a_pszName, iprt::MiniString::CaseInsensitive) == 0)
+            && pExtPackData->Desc.strName.length() == cchName
+            && pExtPackData->Desc.strName.compare(a_pszName, iprt::MiniString::CaseInsensitive) == 0)
             return (*it);
     }
     return NULL;
@@ -818,8 +1109,8 @@ void ExtPackManager::removeExtPack(const char *a_pszName)
     {
         ExtPack::Data *pExtPackData = (*it)->m;
         if (   pExtPackData
-            && pExtPackData->strName.length() == cchName
-            && pExtPackData->strName.compare(a_pszName, iprt::MiniString::CaseInsensitive) == 0)
+            && pExtPackData->Desc.strName.length() == cchName
+            && pExtPackData->Desc.strName.compare(a_pszName, iprt::MiniString::CaseInsensitive) == 0)
         {
             m->llInstalledExtPacks.erase(it);
             return;

@@ -1437,6 +1437,48 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszM
 }
 
 
+SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr)
+{
+    /*
+     * Quick input validation
+     */
+    AssertPtr(pszDirPath);
+    AssertPtr(pszErr);
+    Assert(cbErr > 32);
+
+    /*
+     * Only do the actual check in hardened builds.
+     */
+#ifdef VBOX_WITH_HARDENING
+/** @todo implement me! */
+    return VINF_SUCCESS;
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
+
+SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, size_t cbErr)
+{
+    /*
+     * Quick input validation
+     */
+    AssertPtr(pszFilename);
+    AssertPtr(pszErr);
+    Assert(cbErr > 32);
+
+    /*
+     * Only do the actual check in hardened builds.
+     */
+#ifdef VBOX_WITH_HARDENING
+/** @todo implement me! */
+    return VINF_SUCCESS;
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
+
 SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase)
 {
     int rc = VINF_SUCCESS;
