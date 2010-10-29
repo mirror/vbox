@@ -203,6 +203,10 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
     if (    fContiguous
         ||  cb <= PAGE_SIZE * 2)
     {
+# ifdef __GFP_NOMEMALLOC
+        /* Introduced with Linux 2.6.12: Don't use emergency reserves */
+        fFlagsLnx |= __GFP_NOMEMALLOC;
+# endif
 # ifdef VBOX_USE_INSERT_PAGE
         paPages = alloc_pages(fFlagsLnx |  __GFP_COMP, rtR0MemObjLinuxOrder(cPages));
 # else
