@@ -3250,6 +3250,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         throw ConfigFileError(this, &elmMachine, N_("Required Machine/@uuid or @name attributes is missing"));
 }
 
+#include <stdio.h>
 /**
  * Creates a <Hardware> node under elmParent and then writes out the XML
  * keys under that. Called for both the <Machine> node and for snapshots.
@@ -3449,9 +3450,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             strPort = "3389";
         pelmVRDE->setAttribute("port", strPort);
 
-        Utf8Str strAddress; 
+        Utf8Str strAddress;
         it = hw.vrdeSettings.mapProperties.find("TCP/Address");
-        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+        if (it != hw.vrdeSettings.mapProperties.end())
             strAddress = it->second;
         if (strAddress.length())
             pelmVRDE->setAttribute("netAddress", strAddress);
