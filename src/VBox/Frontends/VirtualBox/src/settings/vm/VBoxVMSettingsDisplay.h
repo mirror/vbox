@@ -64,7 +64,7 @@ private slots:
 
 private:
 
-    void checkMultiMonitorReqs();
+    void checkVRAMRequirements();
 
     CMachine mMachine;
     QIWidgetValidator *mValidator;

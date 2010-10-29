@@ -60,11 +60,9 @@ bool VBoxVMSettingsGeneral::isWindowsOSTypeSelected() const
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
-#include <stdio.h>
 bool VBoxVMSettingsGeneral::isWddmSupportedForOSType() const
 {
     const QString & id = mOSTypeSelector->type().GetId();
-    printf("%S\n", id.utf16());
     bool bWddm = id == "WindowsVista" || id == "Windows7";
     return bWddm;
 }

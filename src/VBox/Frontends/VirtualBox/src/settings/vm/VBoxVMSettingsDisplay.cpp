@@ -150,7 +150,7 @@ void VBoxVMSettingsDisplay::setWddmMode(bool bWddm)
         return;
 
     m_bWddmMode = bWddm;
-    checkMultiMonitorReqs();
+    checkVRAMRequirements();
 }
 #endif
 
@@ -160,9 +160,6 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
 
     int currentSize = mMachine.GetVRAMSize();
     m_initialVRAM = RT_MIN(currentSize, m_maxVRAM);
-
-    /* must come _before_ setting the initial memory value */
-    checkMultiMonitorReqs();
 
     /* Memory Size */
     mSlMemory->setValue (currentSize);
@@ -175,6 +172,9 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
                                    .GetAcceleration3DAvailable();
     mCb3D->setEnabled (isAccelerationSupported);
     mCb3D->setChecked (mMachine.GetAccelerate3DEnabled());
+
+    /* must come _before_ setting the initial memory value */
+    checkVRAMRequirements();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     mCb2DVideo->setEnabled (VBoxGlobal::isAcceleration2DVideoAvailable());
@@ -272,6 +272,9 @@ bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle *
         }
     }
 #endif
+#ifdef VBOX_WITH_CRHGSMI
+    checkVRAMRequirements();
+#endif
 
     /* 3D Acceleration support test */
     // TODO : W8 for NaN //
@@ -334,7 +337,7 @@ void VBoxVMSettingsDisplay::textChangedVRAM (const QString &aText)
 void VBoxVMSettingsDisplay::valueChangedMonitors (int aVal)
 {
     mLeMonitors->setText (QString().setNum (aVal));
-    checkMultiMonitorReqs();
+    checkVRAMRequirements();
 }
 
 void VBoxVMSettingsDisplay::textChangedMonitors (const QString &aText)
@@ -342,7 +345,7 @@ void VBoxVMSettingsDisplay::textChangedMonitors (const QString &aText)
     mSlMonitors->setValue (aText.toInt());
 }
 
-void VBoxVMSettingsDisplay::checkMultiMonitorReqs()
+void VBoxVMSettingsDisplay::checkVRAMRequirements()
 {
     int cVal = mSlMonitors->value();
 #ifdef VBOX_WITH_VIDEOHWACCEL
