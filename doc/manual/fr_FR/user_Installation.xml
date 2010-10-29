@@ -2,112 +2,120 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="installation">
-  <title>Installation details</title>
+  <title>Détails d'installation</title>
 
-  <para>As installation of VirtualBox varies depending on your host operating
-  system, we provide installation instructions in four separate chapters for
-  Windows, Mac OS X, Linux and Solaris, respectively.</para>
+  <para>Étant donné que l'installation de VirtualBox varie selon votre système 
+  d'exploitation hôte, nous fournissons des instructions d'installation dans 
+  quatre chapitres distincts, respectivement pour Windows, Mac OS X, Linux et 
+  Solaris.</para>
 
   <sect1>
-    <title>Installing on Windows hosts</title>
+    <title>Installation sur des hôtes Windows</title>
 
     <sect2>
-      <title>Prerequisites</title>
+      <title>Prérequis</title>
 
-      <para>For the various versions of Windows that we support as host
-      operating systems, please refer to <xref
+      <para>Pour les différentes versions de Windows que nous supportons comme 
+      systèmes d'exploitation hôtes, merci de vous référer au <xref
       linkend="hostossupport" />.</para>
 
-      <para>In addition, Windows Installer 1.1 or higher must be present on
-      your system. This should be the case if you have all recent Windows
-      updates installed.</para>
+      <para>En outre, l'installateur de Windows 1.1 ou supérieur doit être 
+      présent sur votre système. Cela devrait être le cas si vous avez installé
+      toutes les dernières mises à jour.</para>
     </sect2>
 
     <sect2>
-      <title>Performing the installation</title>
+      <title>Effectuer l'installation</title>
 
-      <para>The VirtualBox installation can be started <itemizedlist>
+      <para>Vous pouvez démarrer l'installation de VirtualBox <itemizedlist>
           <listitem>
-            <para>either by double-clicking on its executable file (contains
-            both 32- and 64-bit architectures)</para>
+            <para>soit en double-cliquant sur son fichier exécutable (contenant
+            les architectures 32 bits et 64 bits)</para>
           </listitem>
 
           <listitem>
-            <para>or by entering <screen>VirtualBox.exe -extract</screen></para>
+sur la ligne de commande. Ceci va extraire les deux installateurs dans un répertoire temporaire dans lequel vous trouverez ensuite les fichiers .MSI habituels. Puis, vous pouvez faire un 
+            <para>ou en entrant <screen>VirtualBox.exe -extract</screen></para>
 
-            <para>on the command line. This will extract both installers into
-            a temporary directory in which you'll then find the usual .MSI
-            files. Then you can do a <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi</screen>
-            to perform the installation.</para>
+            <para>sur la ligne de commande. Ceci va extraire les deux 
+            installateurs dans un répertoire temporaire dans lequel vous trouverez
+            ensuite les fichiers .MSI habituels. Puis, vous pouvez faire un 
+            <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi</screen>
+            pour effectuer l'installation.</para>
           </listitem>
         </itemizedlist></para>
 
-      <para>In either case, this will display the installation welcome dialog
-      and allow you to choose where to install VirtualBox to and which
-      components to install. In addition to the VirtualBox application, the
-      following components are available:<glosslist>
+      <para>Dans tous les cas, ceci affichera la boîte de dialogue de bienvenue
+      de l'installation et vous permettra de choisir où installer VirtualBox et
+      quels composants installer. Outre l'application VirtualBox, les composants
+      suivants sont disponibles&nbsp;:<glosslist>
           <glossentry>
-            <glossterm>USB support</glossterm>
+            <glossterm>Support USB</glossterm>
 
             <glossdef>
-              <para>This package contains special drivers for your Windows
-              host that VirtualBox requires to fully support USB devices
-              inside your virtual machines.</para>
+              <para>Ce paquet contient des pilotes spéciaux pour votre hôte 
+              Windows dont VirtualBox a besoin pour supporter complètement les 
+              périphériques USB à l'intérieur de vos machines virtuelles.</para>
             </glossdef>
           </glossentry>
 
           <glossentry>
-            <glossterm>Networking</glossterm>
+            <glossterm>Réseau</glossterm>
 
             <glossdef>
-              <para>This package contains extra networking drivers for your
-              Windows host that VirtualBox needs to support Host Interface
-              Networking (to make your VM's virtual network cards accessible
-              from other machines on your physical network).</para>
+              <para>Ce paquet contient des pilotes supplémentaires de réseau pour
+              votre hôte Windows dont VirtualBox a besoin pour supporter Host 
+              Interface Networking  (réseau interface hôte) (pour rendre les 
+              cartes réseau virtuelles accessibles depuis les autres machines 
+              de votre réseau physique).</para>
             </glossdef>
           </glossentry>
 
           <glossentry>
-            <glossterm>Python Support</glossterm>
+            <glossterm>Support Python</glossterm>
 
             <glossdef>
-              <para>This package contains Python scripting support for the
-              VirtualBox API (see <xref linkend="VirtualBoxAPI" />). To get this
-              feature installed an already working Python installation on the
-              system is required.</para>
+              <para>Ce paquet contient le support de scripts Python pour l'API 
+              de VirtualBox (voir le chapitre <xref linkend="VirtualBoxAPI" />).
+              Pour que cette fonctionnalité soit installée, une installation de
+              Python opérationnelle sur le système est nécessaire.</para>
             </glossdef>
           </glossentry>
         </glosslist></para>
 
-      <para>Depending on your Windows configuration, you may see warnings
-      about "unsigned drivers" or similar. Please select "Continue" on these
-      warnings as otherwise VirtualBox might not function correctly after
-      installation.</para>
+      <para>En fonction de votre configuration de Windows, il se peut que vous 
+      voyez des avertissements sur des <quote>pilotes non signés</quote> ou 
+      quelque chose de ce genre. Merci de sélectionner <quote>Continuer</quote>
+      sur ces avertissements car sans cela, VirtualBox pourrait ne pas fonctionner
+      correctement après l'installation.</para>
 
-      <para>The installer will create a "VirtualBox" group in the programs
-      startup folder which allows you to launch the application and access its
-      documentation.</para>
+      <para>L'installateur va créer le groupe <quote>VirtualBox</quote> dans le
+      répertoire Démarrer Les programmes qui vous permet de lancer l'application
+      et d'accéder à sa documentation.</para>
 
-      <para>With standard settings, VirtualBox will be installed for all users
-      on the local system. In case this is not wanted, you have to invoke the
-      installer by first extracting it by using <screen>VirtualBox.exe -extract</screen>
-      and then do as follows: <screen>VirtualBox.exe -msiparams ALLUSERS=2</screen>
-      or <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ALLUSERS=2</screen>
-      on the extracted .MSI files. This will install VirtualBox only for the
-      current user.</para>
+      <para>Avec des paramètres standards, VirtualBox sera installé pour tous
+      les utilisateurs du système local. Au cas où vous ne le voulez pas, vous 
+      devez invoquer l'installateur en l'extrayant d'abord en utilisant
+      <screen>VirtualBox.exe -extract</screen> puis faites comme suit&nbsp;:
+      <screen>VirtualBox.exe -msiparams ALLUSERS=2</screen>
+      ou <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ALLUSERS=2</screen>
+      sur les fichiers .MSI extraits. Ceci ne va installer VirtualBox que pour 
+      l'utilisateur actuel.</para>
 
-      <para>To not install certain features of VirtualBox there is an <computeroutput>ADDLOCAL</computeroutput>
-      parameter that can be specified additionally to explicitly name the features
-      to be installed. The following features are available:
+      <para>Pour ne pas installer certaines fonctionnalités de VirtualBox, vous
+      pouvez spécifier aussi un paramètre <computeroutput>ADDLOCAL</computeroutput>
+      pour nommer explicitement les fonctionnalités à installer. Les 
+      fonctionnalités suivantes sont disponibles&nbsp;:
 
         <glosslist>
           <glossentry>
             <glossterm>VBoxApplication</glossterm>
 
             <glossdef>
-              <para>Main binaries of VirtualBox.
-                <note>This feature never can be absent,
-                since it contains the minimum set of files to have working VirtualBox installation!</note>
+              <para>Binaires principaux de VirtualBox.
+                <note>Cette fonctionnalité ne peut jamais être absente puisqu'elle
+                contient l'ensemble de fichiers minimum pour que l'installation
+                de VirtualBox fonctionne&nbsp;!</note>
               </para>
             </glossdef>
           </glossentry>
@@ -116,7 +124,7 @@
             <glossterm>VBoxUSB</glossterm>
 
             <glossdef>
-              <para>USB support.</para>
+              <para>Support USB.</para>
             </glossdef>
           </glossentry>
 
@@ -124,7 +132,8 @@
             <glossterm>VBoxNetwork</glossterm>
 
             <glossdef>
-              <para>All networking support; includes the VBoxNetworkFlt and VBoxNetworkAdp features (see below).</para>
+              <para>Tout le support réseau&nbsp;; inclut les fonctionnalités 
+              VBoxNetworkFlt et VBoxNetworkAdp (voir ci-dessous).</para>
             </glossdef>
           </glossentry>
 
@@ -132,7 +141,7 @@
             <glossterm>VBoxNetworkFlt</glossterm>
 
             <glossdef>
-              <para>Bridged networking support.</para>
+              <para>Support réseau bridgé.</para>
             </glossdef>
           </glossentry>
 
@@ -140,7 +149,7 @@
             <glossterm>VBoxNetworkAdp</glossterm>
 
             <glossdef>
-              <para>Host-only networking support.</para>
+              <para>Support réseau Host-only.</para>
             </glossdef>
           </glossentry>
 
@@ -148,77 +157,78 @@
             <glossterm>VBoxPython</glossterm>
 
             <glossdef>
-              <para>Python support.</para>
+              <para>Support Python.</para>
             </glossdef>
           </glossentry>
         </glosslist>
 
-      To only install USB support along with the main binaries, do a:
-      <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
-      or <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ADDLOCAL=VBoxApplication,VBoxUSB</screen></para>
+      Pour n'installer que le support USB avec les binaires principaux, faites 
+      un&nbsp;: <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
+      ou un <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ADDLOCAL=VBoxApplication,VBoxUSB</screen></para>
 
     </sect2>
 
     <sect2>
-      <title>Uninstallation</title>
+      <title>Désinstallation</title>
 
-      <para>As we use the Microsoft Installer, VirtualBox can be safely
-      uninstalled at any time by choosing the program entry in the "Add/Remove
-      Programs" applet in the Windows Control Panel.</para>
+      <para>Comme nous utilisons l'installateur Windows, vous pouvez désinstaller
+      VirtualBox en sécurité n'importe quand en choisissant l'entrée du programme
+      dans la fonction <quote>Ajout/suppression de programmes</quote> dans le 
+      panneau de configuration Windows.</para>
     </sect2>
 
     <sect2>
-      <title>Unattended installation</title>
+      <title>Installation sans efforts</title>
 
-      <para>Unattended installations can be performed using the standard MSI
-      support.</para>
+      <para>Vous pouvez faire des installations sans effort en utilisant le 
+      support MSI standard.</para>
     </sect2>
   </sect1>
 
   <sect1>
-    <title>Installing on Mac OS X hosts</title>
+    <title>Installation sur des hôtes Mac OS X</title>
 
     <sect2>
-      <title>Performing the installation</title>
+      <title>Effectuer l'installation</title>
 
-      <para>For Mac OS X hosts, VirtualBox ships in a disk image (dmg) file.
-      Perform the following steps: <orderedlist>
+      <para>Pour les hôtes Mac OS X, VirtualBox est emballé dans une fichier 
+      image de disque (dmg). Effectuez les étapes suivantes&nbsp;: <orderedlist>
           <listitem>
-            <para>Double-click on that file to have its contents
-            mounted.</para>
+            <para>Double-cliquez sur ce fichier pour monter son contenu.</para>
           </listitem>
 
           <listitem>
-            <para>A window will open telling you to double click on the
-            <computeroutput>VirtualBox.mpkg</computeroutput> installer file
-            displayed in that window.</para>
+            <para>Une fenêtre va s'ouvrir vous disant de double-cliquer sur le 
+            fichier installateur <computeroutput>VirtualBox.mpkg</computeroutput>
+            affiché dans la fenêtre.</para>
           </listitem>
 
           <listitem>
-            <para>This will start the installer, which will allow you to
-            select where to install VirtualBox to.</para>
+            <para>Ceci démarrera l'installateur, ce qui vous permettra de 
+            sélectionner où installer VirtualBox.</para>
           </listitem>
         </orderedlist></para>
 
-      <para>After installation, you can find a VirtualBox icon in the
-      "Applications" folder in the Finder.</para>
+      <para>Après l'installation, vous pouvez trouver une icône VirtualBox dans
+      le menu <quote>Applications</quote> dans le <quote>Finder</quote>.</para>
     </sect2>
 
     <sect2>
-      <title>Uninstallation</title>
+      <title>Désinstallation</title>
 
-      <para>To uninstall VirtualBox, open the disk image (dmg) file again and
-      double-click on the uninstall icon contained therein.</para>
+      <para>Pour désinstaller VirtualBox, ouvrez à nouveau le fichier image (dmg)
+      et double-cliquez sur l'icône Désinstaller contenue dedans.</para>
     </sect2>
 
     <sect2>
-      <title>Unattended installation</title>
+      <title>Installation sans efforts</title>
 
-      <para>To perform a non-interactive installation of VirtualBox you can
-      use the command line version of the installer application.</para>
+      <para>Pour effectuer une installation non interactive de VirtualBox, vous
+      pouvez utiliser la version en ligne de commande de l'application 
+      installateur.</para>
 
-      <para>Mount the disk image (dmg) file as described in the normal
-      installation. Then open a terminal session and execute:</para>
+      <para>Montez le fichier image de disque (dmg) comme décrit dans 
+      l'installation normale. Puis, ouvrez une session de terminal et exécutez&nbsp;:</para>
 
       <screen>sudo installer -pkg /Volumes/VirtualBox/VirtualBox.mpkg \
       -target /Volumes/Macintosh\ HD</screen>
@@ -226,143 +236,143 @@
   </sect1>
 
   <sect1>
-    <title id="install-linux-host">Installing on Linux hosts</title>
+    <title id="install-linux-host">Installation sur des hôtes Linux</title>
 
     <sect2>
-      <title>Prerequisites</title>
+      <title>Prérequis</title>
 
-      <para>For the various versions of Linux that we support as host
-      operating systems, please refer to <xref
+      <para>Pour les diverses versions de Linux que nous supportons en tant que
+      systèmes d'exploitation hôtes, merci de vous référer au <xref
       linkend="hostossupport" />.</para>
 
-      <para>You will need to install the following packages on your Linux
-      system before starting the installation (some systems will do this for
-      you automatically when you install VirtualBox):</para>
+      <para>Vous aurez besoin d'installer les paquets suivants sur votre système
+      Linux avant de commencer l'installation (certains systèmes feront cela 
+      pour vous automatiquement quand vous installerez VirtualBox)&nbsp;:</para>
 
       <itemizedlist>
         <listitem>
-          <para>Qt 4.4.0 or higher;</para>
+          <para>Qt 4.4.0 ou supérieur&nbsp;;</para>
         </listitem>
 
         <listitem>
-          <para>SDL 1.2.7 or higher (this graphics library is typically called
-          <computeroutput>libsdl</computeroutput> or similar).</para>
+          <para>SDL 1.2.7 ou supérieur (cette bibliothèque graphique est en 
+          général appelée <computeroutput>libsdl</computeroutput>
+          ou quelque chose du genre).</para>
         </listitem>
       </itemizedlist>
 
+Pour être précis, ces paquets ne sont nécessaires que si vous voulez lancer les interfaces graphiques de VirtualBox. En particulier, VirtualBox, notre interface graphique principale, exige à la fois Qt et SDL ; VboxSDL, notre interface graphique simplifiée, n'exige que SDL. À l'inverse, si vous ne voulez qu'exécuter le serveur VRDP headless fourni avec VirtualBox, ni Qt ni SDL ne sont nécessaires.
       <note>
-        <para>To be precise, these packages are only required if you want to
-        run the VirtualBox graphical user interfaces. In particular,
-        <computeroutput>VirtualBox</computeroutput>, our main graphical user
-        interface, requires both Qt and SDL;
-        <computeroutput>VBoxSDL</computeroutput>, our simplified GUI, requires
-        only SDL. By contrast, if you only want to run the headless VRDP
-        server that comes with VirtualBox, neither Qt nor SDL are
-        required.</para>
+        <para>Pour être précis, ces paquets ne sont nécessaires que si vous 
+        voulez lancer les interfaces graphiques de VirtualBox. En particulier, 
+        <computeroutput>VirtualBox</computeroutput>, notre interface graphique 
+        principale, exige à la fois Qt et SDL&nbsp;; <computeroutput>VBoxSDL</computeroutput>, 
+        notre interface graphique simplifiée, n'exige que SDL. À l'inverse, si 
+        vous ne voulez qu'exécuter le serveur VRDP headless fourni avec VirtualBox,
+        ni Qt ni SDL ne sont nécessaires.</para>
       </note>
     </sect2>
 
     <sect2 id="externalkernelmodules">
-      <title>The VirtualBox kernel module</title>
+      <title>Le module noyau de VirtualBox</title>
 
-      <para>VirtualBox uses a special kernel module to perform physical memory
-      allocation and to gain control of the processor for guest system
-      execution. Without this kernel module, you will still be able to work
-      with virtual machines in the configuration interface, but you will not
-      be able to start any virtual machines.</para>
+      <para>VirtualBox utilise un module noyau spécial pour effectuer 
+      l'allocation de la mémoire physique et pour obtenir le contrôle du 
+      processeur pour l'exécution du système invité. Sans ce module noyau, vous
+      pourrez travailler avec des machines virtuelles dans l'interface de 
+      configuration mais vous ne pourrez lancer aucune machine virtuelle.</para>
 
-      <para>The VirtualBox kernel module is automatically installed on your
-      system when you install VirtualBox. To maintain it with future kernel
-      updates, for recent Linux distributions -- for example Fedora Core 5 and
-      later, Ubuntu 7.10 (Gutsy) and later and Mandriva 2007.1 and later --,
-      generally we recommend installing Dynamic Kernel Module Support
-      (DKMS)<footnote>
-          <para>See <ulink
+Le module noyau de VirtualBox est automatiquement installé sur votre système quand vous installez VirtualBox. Pour le maintenir avec les futures mises à jour du noyau, pour les distributions Linux récentes, - par exemple,  Fedora Core 5 et supérieur, Ubuntu 7.10 (Gutsy) et supérieur et Mandriva 2007.1 et supérieur -, nous recommandons en général d'installer le Dynamic Kernel Module Support (DKMS) (support de module noyau dynamique 1).  Cet environnement aide à construire des modules de noyau et à gérer  les mises à jour du noyau.
+
+      <para>Le module noyau de VirtualBox est automatiquement installé sur votre
+      système quand vous installez VirtualBox. Pour le maintenir avec les futures
+      mises à jour du noyau, pour les distributions Linux récentes, -- par 
+      exemple,  Fedora Core 5 et supérieur, Ubuntu 7.10 (Gutsy) et supérieur et
+      Mandriva 2007.1 et supérieur --, nous recommandons en général d'installer
+      le Dynamic Kernel Module Support (DKMS) (support de module noyau dynamique)<footnote>
+          <para>Voir <ulink
           url="http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support">http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support</ulink>
-          for an introduction.</para>
-        </footnote>. This framework helps to build kernel modules and to deal
-      with kernel upgrades.</para>
+          pour une introduction.</para>
+        </footnote>. Cet environnement aide à construire des modules de noyau et 
+        à gérer  les mises à jour du noyau.</para>
 
-      <para>If DKMS is not already installed, execute one of the following:
+      <para>Si DKMS n'est pas déjà installé, exécutez une des étapes suivantes&nbsp;:
       <itemizedlist>
           <listitem>
-            <para>On an Ubuntu system:</para>
+            <para>Sur un système Ubuntu&nbsp;:</para>
 
             <screen>sudo apt-get install dkms</screen>
           </listitem>
 
           <listitem>
-            <para>On a Fedora system:<screen>yum install dkms</screen></para>
+            <para>Sur un système Fedora&nbsp;:<screen>yum install dkms</screen></para>
           </listitem>
 
           <listitem>
-            <para>On a Mandriva system:<screen>urpmi dkms</screen></para>
+            <para>Sur un système Mandriva&nbsp;:<screen>urpmi dkms</screen></para>
           </listitem>
         </itemizedlist></para>
 
-      <para>If DKMS is available and installed, the VirtualBox kernel module
-      should always work automatically, and it will be automatically rebuilt
-      if your host kernel is updated.</para>
+      <para>Si DKMS est disponible et installé, le module noyau de VirtualBox 
+      devrait toujours fonctionner automatiquement et il sera automatiquement 
+      reconstruit si votre noyau hôte est mis à jour.</para>
 
-      <para>Otherwise, there are only two situations in which you will need to
-      worry about the kernel module:<orderedlist>
+      <para>Sinon, il n'y a que deux situations où vous devrez vous inquiéter du
+      module noyau&nbsp;:<orderedlist>
           <listitem>
-            <para>The original installation fails. This probably means that
-            your Linux system is not prepared for building external kernel
-            modules.</para>
+            <para>L'installation échoue dès le départ. Cela signifie probablement
+            que votre système Linux n'est pas préparé à construire des modules 
+            noyau externes.</para>
 
-            <para>Most Linux distributions can be set up simply by installing
-            the right packages - normally, these will be the GNU compiler
-            (GCC), GNU Make (make) and packages containing header files for
-            your kernel - and making sure that all system updates are
-            installed and that the system is running the most up-to-date
-            kernel included in the distribution. <emphasis>The version numbers
-            of the header file packages must be the same as that of the kernel
-            you are using.</emphasis></para>
+            <para>La plupart des distributions Linux peuvent être paramétrées 
+            simplement en installant les bons paquets -- normalement il s'agira
+            du compilateur GNU (GCC), GNU Make (make) et des paquets contenant 
+            les fichiers d'en-tête de votre noyau - et en vous assurant que toutes 
+            les mises à jour du système sont installées et que le système 
+            exécute le noyau le plus récent inclus dans la distribution.
+            <emphasis>Les numéros de version des paquets de fichiers d'en-tête 
+            doivent  être les mêmes que ceux du noyau que vous utilisez.</emphasis></para>
 
             <itemizedlist>
               <listitem>
-                <para>With Debian and Ubuntu releases, you must install the
-                right version of the
-                <computeroutput>linux-headers</computeroutput> and if it
-                exists the <computeroutput>linux-kbuild</computeroutput>
-                package. Current Ubuntu releases should have the right
-                packages installed by default.</para>
+                <para>Avec les versions de Debian et d'Ubuntu, vous devez 
+                installer la bonne version de <computeroutput>linux-headers</computeroutput> 
+                et, s'il existe, du paquet <computeroutput>linux-kbuild</computeroutput>.
+                Les versions actuelles d'Ubuntu devraient avoir les bons paquets
+                installés par défaut.</para>
               </listitem>
 
               <listitem>
-                <para>In even older Debian and Ubuntu releases, you must
-                install the right version of the
-                <computeroutput>kernel-headers</computeroutput>
-                package.</para>
+                <para>Dans des versions de Debian et d'Ubuntu encore plus 
+                anciennes, vous devez installer la bonne version du paquet 
+                <computeroutput>kernel-headers</computeroutput>.</para>
               </listitem>
 
               <listitem>
-                <para>On Fedora and Redhat systems, the package is
+                <para>Sur les systèmes Fedora et Redhat, le paquet s'appelle 
                 <computeroutput>kernel-devel</computeroutput>.</para>
               </listitem>
 
               <listitem>
-                <para>On SUSE and openSUSE Linux, you must install the right
-                versions of the <computeroutput>kernel-source</computeroutput>
-                and <computeroutput>kernel-syms</computeroutput>
-                packages.</para>
+                <para>Sur SUSE et openSUSE Linux, vous devez installer la bonne
+                version des paquets <computeroutput>kernel-source</computeroutput>
+                et <computeroutput>kernel-syms</computeroutput>.</para>
               </listitem>
 
               <listitem>
-                <para>Alternatively, if you have built your own kernel,
-                <computeroutput>/usr/src/linux</computeroutput> should point
-                to your kernel sources. If you have not removed the files
-                created during the build process, then your system will
-                already be set up correctly.</para>
+                <para>Sinon, si vous avez construit votre propre noyau, 
+                <computeroutput>/usr/src/linux</computeroutput> devrait pointer
+                vers les sources de votre noyau. Si vous n'avez pas supprimé les
+                fichiers créés pendant le processus de construction, alors votre
+                système sera déjà paramétré correctement.</para>
               </listitem>
             </itemizedlist>
           </listitem>
 
           <listitem>
-            <para>The kernel of your Linux host got updated. In that case, the
-            kernel module will need to be reinstalled by executing (as
-            root):</para>
+            <para>Le noyau de votre hôte Linux a été mis à jour. Dans ce cas le
+            module noyau aura besoin d'être réinstallé en exécutant (en tant 
+            qu'administrateur)&nbsp;:</para>
 
             <screen>/etc/init.d/vboxdrv setup</screen>
           </listitem>
@@ -370,16 +380,16 @@
     </sect2>
 
     <sect2>
-      <title>USB and advanced networking support</title>
+      <title>Support de l'USB et du réseau avancé</title>
 
-      <para>In order to use VirtualBox's USB support, the user account under
-      which you intend to run VirtualBox must have read and write access to
-      the USB filesystem (<computeroutput>usbfs</computeroutput>).</para>
+      <para>Afin d'utiliser le support USB de VirtualBox, le compte utilisateur
+      sous lequel vous entendez lancer VirtualBox doit avoir l'accès en lecture
+      et en écriture au système de fichiers USB (<computeroutput>usbfs</computeroutput>).</para>
 
-      <para>In addition, access to
-      <computeroutput>/dev/net/tun</computeroutput> will be required if you
-      want to use Host Interface Networking, which is described in detail in
-      <xref linkend="network_bridged" />.</para>
+      <para>En outre, l'accès à
+      <computeroutput>/dev/net/tun</computeroutput> sera requis si vous voulez 
+      utiliser le Host Interface Networking (réseau d'interface hôte), ce qui 
+      est décrit en détail au <xref linkend="network_bridged" />.</para>
 
       <!--TODO Write a couple of notes about hardened kernels. If PaX is installed, VBox presently doesn't start. I tried with a
 gentoo hardened kernel that had PaX enabled, and VBoxHeadless failed with really funny VERR_NO_MEMORY messages. Discussing
@@ -390,228 +400,235 @@ Then paxctl -pemrxs VBoxHeadless to disable all protections. TODO: Figure out wh
     </sect2>
 
     <sect2>
-      <title>Performing the installation</title>
+      <title>Effectuer l'installation</title>
 
-      <para>VirtualBox is available in a number of package formats native to
-      various common Linux distributions (see <xref linkend="hostossupport" />
-      for details). In addition, there is an alternative generic installer
-      (.run) which should work on most Linux distributions.</para>
+      <para>VirtualBox est disponible dans un grand nombre de formats de paquets
+      de base pour de nombreuses distributions Linux (voir le 
+      <xref linkend="hostossupport" /> pour les détails). En outre, il y a un 
+      installateur générique alternatif (.run)  qui devrait fonctionner sur la 
+      plupart des distributions Linux.</para>
 
       <sect3>
-        <title>Installing VirtualBox from a Debian/Ubuntu package</title>
+        <title>Installer VirtualBox à partir d'un paquet Debian/Ubuntu</title>
 
-        <para>First, download the appropriate package for your distribution.
-        The following examples assume that you are installing to a 32-bit Ubuntu
-        Karmic system. Use <computeroutput>dpkg</computeroutput> to install the
-        Debian package:</para>
+        <para>Tout d'abord, téléchargez le paquet adapté à votre distribution. 
+        Les exemples suivants supposent que vous installez sur un système 32 
+        bits Ubuntu Karmic. Utilisez <computeroutput>dpkg</computeroutput> pour
+        installer le paquet Debian&nbsp;:</para>
 
         <screen>sudo dpkg -i VirtualBox-3.2_$VBOX_VERSION_STRING_Ubuntu_karmic_i386.deb</screen>
 
-        <para>You will be asked to accept the VirtualBox Personal Use and
-        Evaluation License. Unless you answer "yes" here, the installation
-        will be aborted.</para>
+        <para>On vous demandera d'accepter la licence VirtualBox Personal Use
+        and Evaluation License (licence d'évaluation et d'utilisation 
+        personnelle de VirtualBox). Sauf si vous répondez <quote>Yes</quote> ici, 
+        l'installation sera arrêtée.</para>
 
-        <para>The group <computeroutput>vboxusers</computeroutput> will be
-        created during installation. Note that a user who is going to run
-        VirtualBox must be member of that group. A user can be made member of
-        the group <computeroutput>vboxusers</computeroutput> through the GUI
-        user/group management or at the command line with</para>
+        <para>Le groupe <computeroutput>vboxusers</computeroutput> sera créé 
+        pendant l'installation. Notez qu'un utilisateur qui va exécuter 
+        VirtualBox doit être membre de ce groupe. Un utilisateur peut devenir 
+        membre du groupe <computeroutput>vboxusers</computeroutput> à travers la 
+        gestion des utilisateurs/groupes en graphique ou en ligne de commande 
+        avec</para>
 
-        <screen>sudo usermod -a -G vboxusers username</screen>
+        <screen>sudo usermod -a -G vboxusers nom_utilisateur</screen>
 
-        <para>Also note that adding an active user to that group will require
-        that user to log out and back in again. This should be done manually
-        after successful installation of the package.</para>
+        <para>Remarquez aussi qu'ajouter un utilisateur actif à ce groupe 
+        exigera que l'utilisateur se déconnecte puis revienne. Cela devrait se 
+        faire à la main après une installation réussie du paquet.</para>
 
-        <para>The installer will also search for a VirtualBox kernel module
-        suitable for your kernel. The package includes pre-compiled modules
-        for the most common kernel configurations. If no suitable kernel
-        module is found, the installation script tries to build a module
-        itself. If the build process is not successful you will be shown a
-        warning and the package will be left unconfigured. Please have a look
-        at <computeroutput>/var/log/vbox-install.log</computeroutput> to find
-        out why the compilation failed. You may have to install the
-        appropriate Linux kernel headers (see <xref
-        linkend="externalkernelmodules" />). After correcting any problems, do
-        <screen>sudo /etc/init.d/vboxdrv setup</screen>This will start a
-        second attempt to build the module.</para>
+        <para>L'installateur cherchera aussi un module noyau VirtualBox qui 
+        convient à votre noyau. Le paquet comprend des modules précompilés pour
+        la plupart des configurations du noyau. Si aucun module noyau convenable 
+        n'est trouvé, le script d'installation essaie de construire un module 
+        lui-même. Si le processus de construction ne réussit pas, on vous montrera 
+        un avertissement et le paquet sera laissé non configuré. Merci de jeter
+        un &oelig;il sur <computeroutput>/var/log/vbox-install.log</computeroutput> 
+        pour trouver pourquoi la compilation a échoué. Il se peut que vous deviez
+        installer les en-têtes du noyau Linux adéquat (voir le <xref
+                linkend="externalkernelmodules" />). Après avoir corrigé les 
+                problèmes, faites
 
-        <para>If a suitable kernel module was found in the package or the
-        module was successfully built, the installation script will attempt to
-        load that module. If this fails, please see <xref
-        linkend="linuxkernelmodulefailstoload" /> for further
-        information.</para>
+        <screen>sudo /etc/init.d/vboxdrv setup</screen>Ceci démarrera une 
+        nouvelle tentative de construire le module.</para>
 
-        <para>Once VirtualBox has been successfully installed and configured,
-        you can start it by selecting "VirtualBox" in your start menu or from
-        the command line (see <xref linkend="startingvboxonlinux" />).</para>
+        <para>Si un module noyau convenable est trouvé dans le paquet ou si le 
+        module a été construit avec succès, le script d'installation va tenter 
+        de charger le module. Si ceci échoue, merci de voir le chapitre <xref 
+        linkend="linuxkernelmodulefailstoload" /> pour de plus amples informations.</para>
+
+        <para>Une fois que VirtualBox a été installé avec succès et configuré, 
+        vous pouvez le démarrer en sélectionnant <quote>VirtualBox</quote> dans
+        votre menu de démarrage ou depuis la ligne de commande (voir le 
+        <xref linkend="startingvboxonlinux" />).</para>
       </sect3>
 
       <sect3>
-        <title>Using the alternative installer (VirtualBox.run)</title>
+        <title>Utiliser l'installateur alternatif (VirtualBox.run)</title>
 
-        <para>The alternative installer performs the following steps:</para>
+        <para>L'installateur alternatif effectue les étapes suivantes&nbsp;:</para>
 
         <itemizedlist>
           <listitem>
-            <para>It unpacks the application files to a target directory of
-            choice. By default, <screen>/opt/VirtualBox/</screen> will be
-            used.</para>
+            <para>Il déballe les fichiers de l'application vers un répertoire 
+            cible de votre choix. Par défaut, <screen>/opt/VirtualBox/</screen>
+            sera utilisé.</para>
           </listitem>
 
           <listitem>
-            <para>It builds the VirtualBox kernel module
-            (<computeroutput>vboxdrv</computeroutput>) and installs it.</para>
+            <para>Il construit le module noyau VirtualBox
+            (<computeroutput>vboxdrv</computeroutput>) et l'installe.</para>
           </listitem>
 
           <listitem>
-            <para>It creates
-            <computeroutput>/etc/init.d/vboxdrv</computeroutput>, an init
-            script to start the VirtualBox kernel module.</para>
+            <para>Il crée
+            <computeroutput>/etc/init.d/vboxdrv</computeroutput>, un script de 
+            démarrage pour démarrer le module noyau de VirtualBox.</para>
           </listitem>
 
           <listitem>
-            <para>It creates a new system group called
+            <para>Il crée un nouveau groupe système appelé
             <computeroutput>vboxusers</computeroutput>.</para>
           </listitem>
 
           <listitem>
-            <para>It creates symbolic links to
+            <para>Il crée des liens symboliques vers
             <computeroutput>VirtualBox</computeroutput>,
             <computeroutput>VBoxSDL</computeroutput>,
             <computeroutput>VBoxVRDP</computeroutput>,
-            <computeroutput>VBoxHeadless</computeroutput> and
-            <computeroutput>VBoxManage</computeroutput> in
+            <computeroutput>VBoxHeadless</computeroutput> et
+            <computeroutput>VBoxManage</computeroutput> dans
             <computeroutput>/usr/bin</computeroutput>.</para>
           </listitem>
 
           <listitem>
-            <para>It creates
-            <computeroutput>/etc/udev/60-vboxdrv.rules</computeroutput>, a
-            description file for udev, if that is present, which makes the
-            module accessible to anyone in the group
+            <para>Il crée
+            <computeroutput>/etc/udev/60-vboxdrv.rules</computeroutput>, un 
+            fichier de description pour udev, s'il est présent ce qui rend le 
+            module accessible à n'importe qui dans le groupe
             <computeroutput>vboxusers</computeroutput>.</para>
           </listitem>
 
           <listitem>
-            <para>It writes the installation directory to
+            <para>Il écrit le répertoire d'installation dans 
             <computeroutput>/etc/vbox/vbox.cfg</computeroutput>.</para>
           </listitem>
         </itemizedlist>
 
-        <para>The installer must be executed as root with either
-        <computeroutput>install</computeroutput> or
-        <computeroutput>uninstall</computeroutput> as the first parameter. If
-        you do not want the installer to ask you whether you wish to accept
-        the license agreement (for example, for performing unattended
-        installations), you can add the parameter
-        <computeroutput>license_accepted_unconditionally</computeroutput>.
-        Finally, if you want to use a directory other than the default
-        installation directory, add the desired path as an extra
-        parameter.</para>
+        <para>L'installateur doit être exécuté en tant qu'administrateur avec 
+        <computeroutput>install</computeroutput> ou <computeroutput>uninstall</computeroutput> 
+        en premier paramètre. Si vous ne voulez pas que l'installateur vous 
+        demande si vous acceptez ou non l'accord de licence (par exemple pour 
+        effectuer une installation sans efforts), vous pouvez ajouter le 
+        paramètre <computeroutput>license_accepted_unconditionally</computeroutput>.
+        Enfin, si vous voulez utiliser un autre répertoire que celui 
+        d'installation par défaut, ajoutez le chemin désiré en paramètre 
+        supplémentaire.</para>
 
         <screen>sudo ./VirtualBox.run install /opt/VirtualBox</screen>
 
-        <para>Or if you do not have the "sudo" command available, run the
-        following as root instead:<screen>./VirtualBox.run install /opt/VirtualBox</screen></para>
+        <para>Ou si vous n'avez pas de commande <quote>sudo</quote> disponible, 
+        lancez plutôt ce qui suit en tant
+        qu'administrateur&nbsp;:<screen>./VirtualBox.run install /opt/VirtualBox</screen></para>
 
-        <para>After that you need to put every user which should be able to
-        use VirtualBox in the group
-        <computeroutput>vboxusers</computeroutput>, either through the GUI
-        user management tools or by running the following command as
-        root:</para>
+        <para>Après quoi vous devez mettre tout utilisateur qui devrait pouvoir
+        utiliser  VirtualBox dans le groupe <computeroutput>vboxusers</computeroutput>,
+        soit avec les outils graphiques de gestion d'utilisateur soit en 
+        lançant la commande suivante en tant qu'administrateur&nbsp;:</para>
 
         <screen>sudo usermod -a -G vboxusers username</screen>
 
         <para><note>
-            <para>The <computeroutput>usermod</computeroutput> command of some
-            older Linux distributions does not support the
-            <computeroutput>-a</computeroutput> option (which adds the user to
-            the given group without affecting membership of other groups). In
-            this case, find out the current group memberships with the
-            <computeroutput>groups</computeroutput> command and add all these
-            groups in a comma-separated list to the command line after the
-            <computeroutput>-G</computeroutput> option, e.g. like this:
+            <para>La commande <computeroutput>usermod</computeroutput> de
+            certaines distributions Linux anciennes ne supporte pas l'option 
+            <computeroutput>-a</computeroutput> (qui ajoute l'utilisateur au 
+            groupe donné sans modifier sa qualité de membre d'autres groupes). 
+            Dans ce cas, cherchez les appartenances de groupe avec la commande 
+            <computeroutput>groups</computeroutput> et ajoutez tous ces groupes
+            dans une liste séparée par des virgules à la ligne de commande après
+            l'option <computeroutput>-G</computeroutput>, comme ceci par 
+            exemple&nbsp;:
             <computeroutput>usermod -G group1,group2,vboxusers
-            username</computeroutput>.</para>
-          </note>If any users on your system should be able to access host USB
-        devices from within VirtualBox guests, you should also add them to the
-        appropriate user group that your distribution uses for USB access,
-        e.g. <computeroutput>usb</computeroutput> or
-        <computeroutput>usbusers</computeroutput>.</para>
+            nom_utilisateur</computeroutput>.</para>
+          </note>Si un utilisateur sur votre système devrait pouvoir accéder 
+          aux périphériques USB de l'hôte, depuis vos invités VirtualBox, vous 
+          devriez aussi les ajouter au groupe utilisateur utilisé par votre 
+          distribution pour l'accès USB (comme <computeroutput>usb</computeroutput> 
+          ou <computeroutput>usbusers</computeroutput>.</para>
       </sect3>
 
       <sect3>
-        <title>Performing a manual installation</title>
+        <title>Effectuer une installation manuelle</title>
 
-        <para>If, for any reason, you cannot use the shell script installer
-        described previously, you can also perform a manual installation.
-        Invoke the installer like this:</para>
+        <para>Si pour une raison quelconque vous ne pouvez pas utiliser le 
+        script shell d'installation décrit précédemment, vous pouvez aussi 
+        effectuer une installation manuelle. Invoquez l'installateur comme ceci&nbsp;:</para>
 
         <screen>./VirtualBox.run --keep --noexec</screen>
 
-        <para>This will unpack all the files needed for installation in the
-        directory <computeroutput>install</computeroutput> under the current
-        directory. The VirtualBox application files are contained in
-        <computeroutput>VirtualBox.tar.bz2</computeroutput> which you can
-        unpack to any directory on your system. For example:</para>
+        <para>Cela va déballer tous les fichiers nécessaires à l'installation 
+        dans le répertoire <computeroutput>install</computeroutput> sous le 
+        répertoire cohérent. Les fichiers de l'application  VirtualBox sont 
+        contenus dans <computeroutput>VirtualBox.tar.bz2</computeroutput> que 
+        vous pouvez déballer dans n'importe quel répertoire sur votre système. 
+        Par exemple&nbsp;:</para>
 
         <screen>sudo mkdir /opt/VirtualBox
 sudo tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
 
-        <para>or as root:<screen>mkdir /opt/VirtualBox
+        <para>ou en tant qu'administrateur&nbsp;:<screen>mkdir /opt/VirtualBox
 tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen></para>
 
-        <para>The sources for VirtualBox's kernel module are provided in the
-        <computeroutput>src</computeroutput> directory. To build the module,
-        change to the directory and issue</para>
+        <para>Les sources du module noyau de VirtualBox sont fournies dans le 
+        répertoire <computeroutput>src</computeroutput>. Pour construire le 
+        module, allez dans ce répertoire et exécutez</para>
 
         <screen>make</screen>
 
-        <para>If everything builds correctly, issue the following command to
-        install the module to the appropriate module directory:</para>
+        <para>Si tout se construit correctement, exécutez la commande suivante 
+        pour installer le module dans le répertoire de modules aqéquats&nbsp;:</para>
 
         <screen>sudo make install</screen>
 
-        <para>In case you do not have sudo, switch the user account to root
-        and perform<screen>make install</screen></para>
+        <para>Au cas où vous n'avez pas sudo, allez du compte utilisateur vers 
+        celui administrateur  et effectuez<screen>make install</screen></para>
 
-        <para>The VirtualBox kernel module needs a device node to operate. The
-        above make command will tell you how to create the device node,
-        depending on your Linux system. The procedure is slightly different
-        for a classical Linux setup with a
-        <computeroutput>/dev</computeroutput> directory, a system with the now
-        deprecated <computeroutput>devfs</computeroutput> and a modern Linux
-        system with <computeroutput>udev</computeroutput>.</para>
+        <para>Le module noyau de VirtualBox a besoin d'un n&oelig;ud de 
+        périphérique pour fonctionner. La commande make ci-dessus vous dira 
+        comment créer le n&oelig;ud de périphérique en fonction de votre système
+        Linux. La procédure est légèrement différente pour une installation 
+        Linux classique avec un répertoire <computeroutput>/dev</computeroutput>, 
+        un système avec un répertoire <computeroutput>devfs</computeroutput>, 
+        maintenant obsolète, et un système Linux moderne avec
+        <computeroutput>udev</computeroutput>.</para>
 
-        <para>On certain Linux distributions, you might experience
-        difficulties building the module. You will have to analyze the error
-        messages from the build system to diagnose the cause of the problems.
-        In general, make sure that the correct Linux kernel sources are used
-        for the build process.</para>
+        <para>Sur certaines distributions Linux, vous pourriez rencontrer des 
+        difficultés pour construire le module. Vous devrez analyser les messages 
+        d'erreur du système de construction pour diagnostiquer la cause des 
+        problèmes. De façon générale, assurez-vous d'utiliser les bonnes sources
+        du noyau Linux pour le  processus de construction.</para>
 
-        <para>Note that the user who is going to run VirtualBox needs read and
-        write permission on the VirtualBox kernel module device node
-        <computeroutput>/dev/vboxdrv</computeroutput>. You can either define a
-        <computeroutput>vboxusers</computeroutput> group by entering<screen>groupadd vboxusers
+        <para>Remarquez que l'utilisateur qui va lancer VirtualBox a besoin des
+        droits de lecture et d'écriture sur le n&oelig;ud de périphérique du 
+        module noyau <computeroutput>/dev/vboxdrv</computeroutput>. Vous pouvez
+        soit définir un groupe <computeroutput>vboxusers</computeroutput> en 
+        entrant <screen>groupadd vboxusers
 chgrp vboxusers /dev/vboxdrv
-chmod 660 /dev/vboxdrv</screen>or, alternatively, simply give all users access
-        (insecure, not recommended!)<screen>chmod 666 /dev/vboxdrv</screen>You
-        should also add any users who will be allowed to use host USB devices
-        in VirtualBox guests to the appropriate USB users group for your
-        distribution. This group is often called
-        <computeroutput>usb</computeroutput> or
+chmod 660 /dev/vboxdrv</screen>soit, alternativement, simplement donner à tous 
+les utilisateurs l'accès (non sécurisé, non recommandé&nbsp;!)<screen>chmod 666 /dev/vboxdrv</screen>Vous
+        devriez aussi ajouter les utilisateurs qui seront autorisés à utiliser 
+        les périphériques USB de l'hôte des invités de VirtualBox au groupe 
+        d'utilisateurs USB adéquat pour votre distribution. Ce groupe  s'appelle
+        souvent <computeroutput>usb</computeroutput> ou
         <computeroutput>usbusers</computeroutput>.</para>
 
-        <para>Next, you will have to install the system initialization script
-        for the kernel module:<screen>cp /opt/VirtualBox/vboxdrv.sh /etc/init.d/vboxdrv</screen>(assuming
-        you installed VirtualBox to the
-        <computeroutput>/opt/VirtualBox</computeroutput> directory) and
-        activate the initialization script using the right method for your
-        distribution. You should create VirtualBox's configuration
-        file:<screen>mkdir /etc/vbox
-echo INSTALL_DIR=/opt/VirtualBox &gt; /etc/vbox/vbox.cfg</screen>and, for
-        convenience, create the following symbolic links:</para>
+        <para>Ensuite, vous devrez installer le script de démarrage système du 
+        module noyau&nbsp;:<screen>cp /opt/VirtualBox/vboxdrv.sh /etc/init.d/vboxdrv</screen>(en
+        supposant que vous avez installé VirtualBox dans le répertoire 
+        <computeroutput>/opt/VirtualBox</computeroutput>) et activer le script 
+        de démarrage en utilisant la méthode adaptée à votre distribution. Vous
+        devriez créer le fichier de configuration de VirtualBox&nbsp;:<screen>mkdir /etc/vbox
+echo INSTALL_DIR=/opt/VirtualBox &gt; /etc/vbox/vbox.cfg</screen>et, par souci 
+de pratique, créer les liens symboliques suivants&nbsp;:</para>
 
         <screen>ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VirtualBox
 ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxSVC
@@ -621,233 +638,242 @@ ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxSDL</screen>
       </sect3>
 
       <sect3>
-        <title>Updating and uninstalling VirtualBox</title>
+        <title>Mettre à jour et désinstaller VirtualBox</title>
 
-        <para>Before updating or uninstalling VirtualBox, you must terminate
-        any virtual machines which are currently running and exit the
-        VirtualBox or VBoxSVC applications. To update VirtualBox, simply run
-        the installer of the updated version. To uninstall VirtualBox, invoke
-        the installer like this: <screen>sudo ./VirtualBox.run uninstall</screen>
-        or as root<screen>./VirtualBox.run uninstall</screen>. Starting with
-        version 2.2.2, you can uninstall the .run package by invoking <screen>/opt/VirtualBox/uninstall.sh</screen>To
-        manually uninstall VirtualBox, simply undo the steps in the manual
-        installation in reverse order.</para>
+        <para>Avant de mettre à jour ou de désinstaller VirtualBox, vous devez 
+        arrêter toutes les machines virtuelles qui sont actuellement en fonction
+        et quitter les applications VirtualBox ou VboxSVC. Pour mettre à jour 
+        VirtualBox, lancez simplement l'installateur de la version de mise à 
+        jour. Pour désinstaller VirtualBox, appelez l'installateur comme 
+        ceci&nbsp;: <screen>sudo ./VirtualBox.run uninstall</screen>
+        ou en tant qu'administrateur<screen>./VirtualBox.run uninstall</screen>. 
+        À partir de la version 2.2.2, vous pouvez désinstaller le paquet .run 
+        en appelant <screen>/opt/VirtualBox/uninstall.sh</screen>Pour
+        désinstaller VirtualBox à la main, effectuez simplement les étapes 
+        d'installation manuelle dans l'ordre inverse.</para>
       </sect3>
 
       <sect3>
-        <title>Automatic installation of Debian packages</title>
+        <title>Installation automatique des paquets Debian</title>
 
-        <para>The Debian packages will request some user feedback when
-        installed for the first time. The debconf system is used to perform
-        this task. To prevent any user interaction during installation,
-        default values can be defined. A file
-        <computeroutput>vboxconf</computeroutput> can contain the following
-        debconf settings: <screen>virtualbox virtualbox/module-compilation-allowed boolean true
-virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
-        allows compilation of the vboxdrv kernel module if no module was found
-        for the current kernel. The second line allows the package to delete
-        any old vboxdrv kernel modules compiled by previous
-        installations.</para>
+        <para>Les paquets Debian exigeront quelques retours d'utilisateurs 
+        lorsqu'ils seront installés pour la première fois.  Le système debconf 
+        est utilisé pour effectuer cette tâche. Pour éviter toute action de 
+        l'utilisateur pendant l'installation, vous pouvez définir des valeurs 
+        par défaut. Un fichier <computeroutput>vboxconf</computeroutput> peut 
+        contenir les réglages debconf suivants&nbsp;: <screen>virtualbox virtualbox/module-compilation-allowed boolean true
+virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
+        permet de compiler le module noyau  vboxdrv si aucun module n'a été 
+        trouvé pour le noyau actuel. La deuxième ligne permet au paquet 
+        d'effacer n'importe quel ancien module noyau  vboxdrv compilé par les 
+        installations précédentes.</para>
 
-        <para>These default settings can be applied with <screen>debconf-set-selections vboxconf</screen>
-        prior to the installation of the VirtualBox Debian package.</para>
+        <para>Ces réglages par défaut peuvent être appliqués avec <screen>debconf-set-selections vboxconf</screen>
+        avant l'installation du paquet Debian VirtualBox.</para>
 
-        <para>In addition there are some common configuration options that can be set prior to
-        the installation, described in <xref linkend="linux_install_opts" />.</para>
+        <para>Il y a au surplus des options de configuration courantes que vous
+        pouvez régler avant l'installation, décrites au <xref linkend="linux_install_opts" />.</para>
       </sect3>
 
       <sect3>
-        <title>Automatic installation of .rpm packages</title>
+        <title>Installation automatique de paquets .rpm</title>
 
-        <para>The .rpm format does not provide a configuration system
-        comparable to the debconf system. See <xref linkend="linux_install_opts" />
-        for how to set some common installation options provided by VirtualBox.</para>
+        <para>Le format .rpm n'offre pas de système de configuration comparable
+        au système debconf. Voir le <xref linkend="linux_install_opts" /> pour 
+        savoir comment régler des options d'installation courantes fournies par
+        VirtualBox.</para>
       </sect3>
 
       <sect3>
-        <title id="linux_install_opts">Automatic installation options</title>
-        <para>To configure the installation process of our .deb and .rpm packages, a file
-        <computeroutput>/etc/default/virtualbox</computeroutput> is interpreted.
-        The automatic generation of the udev rule can be prevented by the following setting:
-        <screen>INSTALL_NO_UDEV=1</screen> The creation of the group vboxusers can be prevented
-        by <screen>INSTALL_NO_GROUP=1</screen> If the line <screen>INSTALL_NO_VBOXDRV=1</screen>
-        is specified, the package installer will not try to build the
-        <computeroutput>vboxdrv</computeroutput> kernel module if no module according to the
-        current kernel was found.</para>
+        <title id="linux_install_opts">Options d'installation automatique</title>
+        <para>Pour configurer le processus d'installation de nos paquets .rpm et
+        .deb, un fichier <computeroutput>/etc/default/virtualbox</computeroutput> 
+        est interprété. La génération automatique de la règle udev peut être 
+        empêcher avec le paramétrage suivant&nbsp;:
+        <screen>INSTALL_NO_UDEV=1</screen> La création du groupe vboxusers peut
+        être empêchée par <screen>INSTALL_NO_GROUP=1</screen> Si la ligne 
+
+        <screen>INSTALL_NO_VBOXDRV=1</screen> est spécifiée, l'installateur du 
+        paquet n'essaiera pas de construire le module noyau
+        <computeroutput>vboxdrv</computeroutput> si aucun module correspond au 
+        noyau actuel n'a été trouvé.</para>
       </sect3>
 
     </sect2>
 
     <sect2 id="startingvboxonlinux">
-      <title>Starting VirtualBox on Linux</title>
+      <title>Démarrer VirtualBox sur Linux</title>
 
-      <para>The easiest way to start a VirtualBox program is by running the
-      program of your choice (<computeroutput>VirtualBox</computeroutput>,
+      <para>La manière la plus facile de démarrer un programme VirtualBox est de 
+      lancer le programme de votre choix (<computeroutput>VirtualBox</computeroutput>, 
       <computeroutput>VBoxManage</computeroutput>,
-      <computeroutput>VBoxSDL</computeroutput> or
-      <computeroutput>VBoxHeadless</computeroutput>) from a terminal. These
-      are symbolic links to <computeroutput>VBox.sh</computeroutput> that
-      start the required program for you.</para>
+      <computeroutput>VBoxSDL</computeroutput> ou <computeroutput>VBoxHeadless</computeroutput>),
+      à partir d'un terminal. Ce sont des liens symboliques vers
+      <computeroutput>VBox.sh</computeroutput> qui démarrent le programme requis
+      pour vous.</para>
 
-      <para>The following detailed instructions should only be of interest if
-      you wish to execute VirtualBox without installing it first. You should
-      start by compiling the <computeroutput>vboxdrv</computeroutput> kernel
-      module (see above) and inserting it into the Linux kernel. VirtualBox
-      consists of a service daemon (<computeroutput>VBoxSVC</computeroutput>)
-      and several application programs. The daemon is automatically started if
-      necessary. All VirtualBox applications will communicate with the daemon
-      through Unix local domain sockets. There can be multiple daemon
-      instances under different user accounts and applications can only
-      communicate with the daemon running under the user account as the
-      application. The local domain socket resides in a subdirectory of your
-      system's directory for temporary files called
-      <computeroutput>.vbox-&lt;username&gt;-ipc</computeroutput>. In case of
-      communication problems or server startup problems, you may try to remove
-      this directory.</para>
+      <para>Les instructions détaillées suivantes ne devraient vous intéresser 
+      que si vous souhaitez lancer VirtualBox sans l'installer au préalable. Vous
+      devriez commencer par compiler le module noyau <computeroutput>vboxdrv</computeroutput>
+      (voir ci-dessus) et l'insérer dans le noyau Linux. VirtualBox consiste en
+      un service démon (<computeroutput>VBoxSVC</computeroutput>) et plusieurs 
+      programmes d'application. Le démon est automatiquement démarré si 
+      nécessaire. Toutes les applications VirtualBox vont communiquer avec le 
+      démon par les sockets du domaine local Unix. Il peut y avoir plusieurs 
+      instances de démon sous différents comptes utilisateur et les applications
+      ne peuvent communiquer qu'avec le démon qui fonctionne sous le compte de 
+      l'utilisateur en tant qu'application. Le socket du domaine local réside 
+      dans un sous-répertoire de  votre répertoire système pour les fichiers 
+      temporaires appelé <computeroutput>.vbox-&lt;nom_utilisateur&gt;-ipc</computeroutput>.
+      En cas de problème de communication ou de démarrage du serveur, vous pouvez 
+      essayer de supprimer ce répertoire.</para>
 
-      <para>All VirtualBox applications
+      <para>Toutes les applications de  VirtualBox
       (<computeroutput>VirtualBox</computeroutput>,
       <computeroutput>VBoxSDL</computeroutput>,
-      <computeroutput>VBoxManage</computeroutput> and
-      <computeroutput>VBoxHeadless</computeroutput>) require the VirtualBox
-      directory to be in the library path:</para>
+      <computeroutput>VBoxManage</computeroutput> et
+      <computeroutput>VBoxHeadless</computeroutput>) exigent que le répertoire 
+      VirtualBox soit dans le chemin de la bibliothèque&nbsp;:</para>
 
       <screen>LD_LIBRARY_PATH=. ./VBoxManage showvminfo "Windows XP"</screen>
     </sect2>
   </sect1>
 
   <sect1>
-    <title id="install-solaris-host">Installing on Solaris hosts</title>
+    <title id="install-solaris-host">Installation sur des hôtes Solaris</title>
 
-    <para>For the various versions of Solaris that we support as host
-    operating systems, please refer to <xref
+    <para>Pour les diverses solutions de Solaris que nous supportons comme 
+    systèmes d'exploitation hôtes, merci de vous référer au <xref
     linkend="hostossupport" />.</para>
 
-    <para>If you have a previously installed instance of VirtualBox on your
-    Solaris host, please uninstall it first before installing a new instance.
-    Refer to <xref linkend="uninstallsolhost" /> for uninstall
-    instructions.</para>
+    <para>Si vous avez une session de VirtualBox préalablement installée sur 
+    votre hôte Solaris, merci de la désinstaller avant d'installer une nouvelle
+    session. Reportez-vous au     <xref linkend="uninstallsolhost" /> pour les 
+    instructions de désinstallation.</para>
 
     <sect2>
-      <title>Performing the installation</title>
+      <title>Effectuer l'installation</title>
 
-      <para>VirtualBox is available as a standard Solaris package. Download
-      the VirtualBox SunOS package which includes both the 32-bit and 64-bit
-      versions of VirtualBox. <emphasis>The installation must be performed as
-      root and from the global zone</emphasis> as the VirtualBox installer
-      loads kernel drivers which cannot be done from non-global zones. To
-      verify which zone you are currently in, execute the
-      <computeroutput>zonename</computeroutput> command. Execute the following
-      commands:</para>
+      <para>VirtualBox est disponible comme paquet Solaris standard. Téléchargez
+      le paquet VirtualBox SunOS qui comprend à la fois les versions 32 bits et
+      64 bits de VirtualBox. <emphasis>Vous devez effectuer l'installation en tant 
+      qu'administrateur et depuis la zone globale</emphasis> car l'installateur
+      de VirtualBox charge des pilotes du noyau, ce qui ne peut pas se faire 
+      depuis des zones non globales. Pour vérifier dans quelle zone vous vous 
+      trouvez, exécutez la commande <computeroutput>zonename</computeroutput>. 
+      Exécutez les commandes suivantes&nbsp;:</para>
 
       <screen>gunzip -cd VirtualBox-$VBOX_VERSION_STRING-SunOS.tar.gz | tar xvf -</screen>
 
-      <para>Starting with VirtualBox 3.1 the VirtualBox kernel package is no
-      longer a separate package and has been integrated into the main package.
-      Install the VirtualBox package using:</para>
+      <para>À partir de VirtualBox 3.1, le paquet du noyau VirtualBox n'est plus
+      séparé et a été intégré au paquet principal. Installez le paquet  VirtualBox
+      en utilisant&nbsp;:</para>
 
       <screen>pkgadd -d VirtualBox-$VBOX_VERSION_STRING-SunOS.pkg</screen>
 
       <note>
-        <para>If you are using Solaris Zones, to install VirtualBox only into
-        the current zone and not into any other zone, use
-        <computeroutput>pkgadd -G</computeroutput>. For more information refer
-        to the <computeroutput>pkgadd</computeroutput> manual; see also <xref
-        linkend="solariszones" />.</para>
+        <para>Si vous utilisez les Zones Solaris, pour n'installer que dans la 
+        zone actuelle et dans aucune autre zone, utilisez
+        <computeroutput>pkgadd -G</computeroutput>. Pour plus 
+        d'informations reportez-vous au manuel de
+        <computeroutput>pkgadd</computeroutput>&nbsp;; voir aussi le 
+        <xref linkend="solariszones" />.</para>
       </note>
 
-      <para>The installer will then prompt you to enter the package you wish
-      to install. Choose "1" or "all" and proceed. Next the installer will ask
-      you if you want to allow the postinstall script to be executed. Choose
-      "y" and proceed as it is essential to execute this script which installs
-      the VirtualBox kernel module. Following this confirmation the installer
-      will install VirtualBox and execute the postinstall setup script.</para>
+      <para>L'installateur vous demandera alors d'entrer le paquet que vous 
+      souhaitez installer. Choisissez <quote>1</quote> ou <quote>tout</quote>
+      et poursuivez. Ensuite, l'installateur vous demandera si vous voulez 
+      autoriser le script post installation à se lancer. Choisissez 
+      <quote>y</quote> et poursuivez, vu qu'il est essentiel d'exécuter  ce 
+      script qui installe le module noyau VirtualBox. Suite à cette confirmation, 
+      l'installateur va installer VirtualBox et exécuter le script 
+      d'initialisation postinstall.</para>
 
-      <para>Once the postinstall script has been executed your installation is
-      now complete. You may now safely delete the uncompressed package and
-      <computeroutput>autoresponse</computeroutput> files from your system.
-      VirtualBox would be installed in
-      <computeroutput>/opt/VirtualBox</computeroutput>.</para>
+      <para>Une fois que le script postinstall a été exécuté, votre installation
+      est à présent terminée. Vous pouvez maintenant effacer en toute sécurité 
+      de votre système le paquet décompressé et les fichiers
+      d'<computeroutput>auto-réponse</computeroutput>. VirtualBox devrait être 
+      installé dans <computeroutput>/opt/VirtualBox</computeroutput>.</para>
     </sect2>
 
     <sect2>
-      <title>Starting VirtualBox on Solaris</title>
+      <title>Démarrer VirtualBox sur Solaris</title>
 
-      <para>The easiest way to start a VirtualBox program is by running the
-      program of your choice (<computeroutput>VirtualBox</computeroutput>,
-      <computeroutput>VBoxManage</computeroutput>,
-      <computeroutput>VBoxSDL</computeroutput> or
-      <computeroutput>VBoxHeadless</computeroutput>) from a terminal. These
-      are symbolic links to <computeroutput>VBox.sh</computeroutput> that
-      start the required program for you.</para>
+      <para>La façon la plus facile de démarrer un programme VirtualBox  est de
+      lancer le programme de votre  choix (<computeroutput>VirtualBox</computeroutput>,
+      <computeroutput>VBoxManage</computeroutput>, <computeroutput>VBoxSDL</computeroutput> 
+      ou <computeroutput>VBoxHeadless</computeroutput>) à partir du terminal. 
+      Ce sont des liens symboliques vers <computeroutput>VBox.sh</computeroutput> 
+      qui démarre le programme requis pour vous.</para>
 
-      <para>Alternatively, you can directly invoke the required programs from
-      <computeroutput>/opt/VirtualBox</computeroutput>. Using the links
-      provided is easier as you do not have to type the full path.</para>
+      <para>Vous pouvez alternativement invoquer les programmes requis à partir
+      de <computeroutput>/opt/VirtualBox</computeroutput>. L'utilisation des 
+      liens fournis est plus facile puisque vous n'êtes pas obligé de taper le 
+      chemin complet.</para>
 
-      <para>You can configure some elements of the
-      <computeroutput>VirtualBox</computeroutput> Qt GUI such as fonts and
-      colours by executing <computeroutput>VBoxQtconfig</computeroutput> from
-      the terminal.</para>
+      <para>Vous pouvez configurer certains éléments du GUI Qt de
+      <computeroutput>VirtualBox</computeroutput> tels que les polices et les 
+      couleurs en exécutant <computeroutput>VBoxQtconfig</computeroutput> depuis
+      le terminal.</para>
     </sect2>
 
     <sect2>
-      <title id="uninstallsolhost">Uninstallation</title>
+      <title id="uninstallsolhost">Désinstallation</title>
 
-      <para>Uninstallation of VirtualBox on Solaris requires root permissions.
-      To perform the uninstallation, start a root terminal session and
-      execute:</para>
+      <para>La désinstallation de VirtualBox sur Solaris exige les droits 
+      administrateur. Pour effectuer la désinstallation, démarrez une session 
+      de terminal administrateur et exécutez&nbsp;:</para>
 
       <screen>pkgrm SUNWvbox</screen>
 
-      <para>After confirmation, this will remove VirtualBox from your
-      system.</para>
+      <para>Après confirmation, ceci supprimera VirtualBox de votre système.</para>
 
-      <para>If you are uninstalling VirtualBox version 3.0 or lower, you need
-      to remove the VirtualBox kernel interface package, execute:</para>
+      <para>Si vous désinstallez la version 3.0 de VirtualBox ou inférieure, 
+      vous devez supprimer le paquet d'interface noyau de VirtualBox, exécutez 
+      donc&nbsp;:</para>
 
       <para><screen>pkgrm SUNWvboxkern</screen></para>
     </sect2>
 
     <sect2>
-      <title>Unattended installation</title>
+      <title>Installation sans efforts</title>
 
-      <para>To perform a non-interactive installation of VirtualBox we have
-      provided a response file named
-      <computeroutput>autoresponse</computeroutput> that the installer will
-      use for responses to inputs rather than ask them from you.</para>
+      <para>Pour effectuer une installation non interactive de VirtualBox, nous
+      avons fourni un fichier de réponse nommé <computeroutput>autoresponse</computeroutput> 
+      que l'installateur utilisera pour entrer les réponses aux questions plutôt
+      que de vous les demander.</para>
 
-      <para>Extract the tar.gz package as described in the normal
-      installation. Then open a root terminal session and execute:</para>
+      <para>Extrayez le paquet .tar.gz comme décrit dans l'installation normale. 
+      Puis ouvrez une session de terminal administrateur et exécutez&nbsp;:</para>
 
       <screen>pkgadd -d VirtualBox-$VBOX_VERSION_STRING-SunOS-x86 -n -a autoresponse SUNWvbox</screen>
 
-      <para>To perform a non-interactive uninstallation, open a root terminal
-      session and execute:</para>
+      <para>Pour effectuer une désinstallation non interactive, ouvrez une 
+      session de terminal administrateur et exécutez&nbsp;:</para>
 
       <screen>pkgrm -n -a /opt/VirtualBox/autoresponse SUNWvbox</screen>
     </sect2>
 
     <sect2>
-      <title id="solariszones">Configuring a zone for running
+      <title id="solariszones">Configurer une zone pour faire fonctionner
       VirtualBox</title>
 
-      <para>Starting with VirtualBox 1.6 it is possible to run VirtualBox from
-      within Solaris zones. For an introduction of Solaris zones, please refer
-      to <ulink
+      <para>À partir de VirtualBox 1.6, il est possible de lancer VirtualBox 
+      depuis des zones Solaris. Pour une introduction aux zones Solaris, merci 
+      de vous référer à <ulink 
       url="http://www.sun.com/bigadmin/features/articles/solaris_zones.jsp">http://www.sun.com/bigadmin/features/articles/solaris_zones.jsp</ulink>.</para>
 
-      <para>Assuming that VirtualBox has already been installed into your
-      zone, you need to give the zone access to VirtualBox's device node. This
-      is done by performing the following steps. Start a root terminal and
-      execute:</para>
+      <para>En supposant que VirtualBox a déjà été installé dans votre zone, 
+      vous devez donner à la zone l'accès au noeud de périphérique de VirtualBox. 
+      Ceci se fait en effectuant les étapes suivantes. Démarrez un terminal 
+      administrateur et exécutez&nbsp;:</para>
 
       <screen>zonecfg -z vboxzone</screen>
 
-      <para>Inside the <computeroutput>zonecfg</computeroutput> prompt add the
-      <computeroutput>device</computeroutput> resource and
-      <computeroutput>match</computeroutput> properties to the zone. Here's
-      how it can be done:</para>
+      <para>À l'intérieur de l'invite <computeroutput>zonecfg</computeroutput>,
+      ajoutez la ressource de <computeroutput>périphérique</computeroutput> et 
+      les propriétés correspondantes à la zone. Voici comment vous pouvez faire 
+      cela&nbsp;:</para>
 
       <screen>zonecfg:vboxzone&gt;add device
 zonecfg:vboxzone:device&gt;set match=/dev/vboxdrv
@@ -855,16 +881,17 @@ zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;verify
 zonecfg:vboxzone&gt;exit</screen>
 
-      <para>If you are running VirtualBox 2.2.0 or above on OpenSolaris or
-      Nevada hosts, you should add a device for
-      <computeroutput>/dev/vboxusbmon</computeroutput> too, similar to what
-      was shown above. This does not apply to Solaris 10 hosts due to lack of
-      USB support.</para>
+      <para>Si vous exécutez VirtualBox 2.2.0 ou supérieur sur des hôtes 
+      OpenSolaris ou  Nevada, vous devriez ajouter aussi un périphérique pour 
+      <computeroutput>/dev/vboxusbmon</computeroutput>,  comme montré ci-dessus. 
+      Cela ne s'applique pas aux hôtes Solaris 10 du fait de l'absence du support 
+      USB.</para>
 
-      <para>Replace "vboxzone" with the name of the zone in which you intend
-      to run VirtualBox. Next reboot the zone using
-      <computeroutput>zoneadm</computeroutput> and you should be able to run
-      VirtualBox from within the configured zone.</para>
+      <para>Remplacez <quote>vboxzone</quote> par le nom de la zone 4ans
+      la quelle vous souhaitez faire fonctionner VirtualBox. Ensuite, redémarrez
+      la zone en utilisant <computeroutput>zoneadm</computeroutput> et vous
+      devriez pouvoir lancer VirtualBox depuis l'intérieur de la zone
+      configurée.</para>
     </sect2>
   </sect1>
 </chapter>
