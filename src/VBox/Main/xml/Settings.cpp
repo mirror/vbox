@@ -188,7 +188,7 @@ public:
     {
         va_list args;
         va_start(args, pcszFormat);
-        Utf8StrFmtVA strWhat(pcszFormat, args);
+        Utf8Str strWhat(pcszFormat, args);
         va_end(args);
 
         Utf8Str strLine;

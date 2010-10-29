@@ -1160,7 +1160,7 @@ HRESULT Progress::notifyCompleteV(HRESULT aResultCode,
                                   const char *aText,
                                   va_list va)
 {
-    Utf8Str text = Utf8StrFmtVA(aText, va);
+    Utf8Str text(aText, va);
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());

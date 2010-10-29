@@ -461,7 +461,7 @@ HRESULT VirtualBoxBase::setError(HRESULT aResultCode, const char *pcsz, ...)
     HRESULT rc = setErrorInternal(aResultCode,
                                   this->getClassIID(),
                                   this->getComponentName(),
-                                  Utf8StrFmtVA(pcsz, args),
+                                  Utf8Str(pcsz, args),
                                   false /* aWarning */,
                                   true /* aLogIt */);
     va_end(args);
@@ -481,7 +481,7 @@ HRESULT VirtualBoxBase::setWarning(HRESULT aResultCode, const char *pcsz, ...)
     HRESULT rc = setErrorInternal(aResultCode,
                                   this->getClassIID(),
                                   this->getComponentName(),
-                                  Utf8StrFmtVA(pcsz, args),
+                                  Utf8Str(pcsz, args),
                                   true /* aWarning */,
                                   true /* aLogIt */);
     va_end(args);
@@ -501,7 +501,7 @@ HRESULT VirtualBoxBase::setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...
     HRESULT rc = setErrorInternal(aResultCode,
                                   this->getClassIID(),
                                   this->getComponentName(),
-                                  Utf8StrFmtVA(pcsz, args),
+                                  Utf8Str(pcsz, args),
                                   false /* aWarning */,
                                   false /* aLogIt */);
     va_end(args);

@@ -430,6 +430,21 @@ public:
         copyFrom(that);
     }
 
+    /**
+     * Constructs a new string given the format string and the list of the
+     * arguments for the format string.
+     *
+     * @param   a_pszFormat     Pointer to the format string (UTF-8),
+     *                          @see pg_rt_str_format.
+     * @param   a_va            Argument vector containing the arguments
+     *                          specified by the format string.
+     * @sa      iprt::MiniString::printfV
+     */
+    Utf8Str(const char *a_pszFormat, va_list a_va)
+        : MiniString(a_pszFormat, a_va)
+    {
+    }
+
     Utf8Str& operator=(const MiniString &that)
     {
         MiniString::operator=(that);
@@ -543,69 +558,43 @@ protected:
 };
 
 /**
- *  This class is a printf-like formatter for Utf8Str strings. Its purpose is
- *  to construct Utf8Str objects from a format string and a list of arguments
- *  for the format string.
+ * Class with iprt::MiniString::printf as constructor for your convenience.
  *
- *  The usage of this class is like the following:
- *  <code>
- *      Utf8StrFmt string("program name = %s", argv[0]);
- *  </code>
+ * Constructing a Utf8Str string object from a format string and a variable
+ * number of arguments can easily be confused with the other Utf8Str
+ * constructures, thus this child class.
+ *
+ * The usage of this class is like the following:
+ * @code
+    Utf8StrFmt strName("program name = %s", argv[0]);
+   @endcode
  */
 class Utf8StrFmt : public Utf8Str
 {
 public:
 
     /**
-     *  Constructs a new string given the format string and the list
-     *  of the arguments for the format string.
+     * Constructs a new string given the format string and the list of the
+     * arguments for the format string.
      *
-     *  @param format   printf-like format string (in UTF-8 encoding)
-     *  @param ...      list of the arguments for the format string
+     * @param   a_pszFormat     Pointer to the format string (UTF-8),
+     *                          @see pg_rt_str_format.
+     * @param   ...             Ellipsis containing the arguments specified by
+     *                          the format string.
      */
-    explicit Utf8StrFmt(const char *format, ...)
+    explicit Utf8StrFmt(const char *a_pszFormat, ...)
     {
-        va_list args;
-        va_start(args, format);
-        init(format, args);
-        va_end(args);
+        va_list va;
+        va_start(va, a_pszFormat);
+        printfV(a_pszFormat, va);
+        va_end(va);
     }
 
 protected:
     Utf8StrFmt()
     { }
 
-    void init(const char *format, va_list args);
-
 private:
-};
-
-/**
- *  This class is a vprintf-like formatter for Utf8Str strings. It is
- *  identical to Utf8StrFmt except that its constructor takes a va_list
- *  argument instead of ellipsis.
- *
- *  Note that a separate class is necessary because va_list is defined as
- *  |char *| on most platforms. For this reason, if we had two overloaded
- *  constructors in Utf8StrFmt (one taking ellipsis and another one taking
- *  va_list) then composing a constructor call using exactly two |char *|
- *  arguments would cause the compiler to use the va_list overload instead of
- *  the ellipsis one which is obviously wrong. The compiler would choose
- *  va_list because ellipsis has the lowest rank when it comes to resolving
- *  overloads, as opposed to va_list which is an exact match for |char *|.
- */
-class Utf8StrFmtVA : public Utf8StrFmt
-{
-public:
-
-    /**
-     *  Constructs a new string given the format string and the list
-     *  of the arguments for the format string.
-     *
-     *  @param format   printf-like format string (in UTF-8 encoding)
-     *  @param args     list of arguments for the format string
-     */
-    Utf8StrFmtVA(const char *format, va_list args) { init(format, args); }
 };
 
 /**
@@ -626,13 +615,13 @@ public:
     {
         va_list args;
         va_start(args, aFormat);
-        copyFrom(Utf8StrFmtVA(aFormat, args).c_str());
+        copyFrom(Utf8Str(aFormat, args).c_str());
         va_end(args);
     }
 };
 
 /**
- * The BstrFmtVA class is a shortcut to <tt>Bstr(Utf8StrFmtVA(...))</tt>.
+ * The BstrFmtVA class is a shortcut to <tt>Bstr(Utf8Str(format,va))</tt>.
  */
 class BstrFmtVA : public Bstr
 {
@@ -647,7 +636,7 @@ public:
      */
     BstrFmtVA(const char *aFormat, va_list aArgs)
     {
-        copyFrom(Utf8StrFmtVA(aFormat, aArgs).c_str());
+        copyFrom(Utf8Str(aFormat, aArgs).c_str());
     }
 };
 
