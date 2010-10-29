@@ -67,7 +67,10 @@ BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
 ifdef VBOX_WITH_DOCS
  # Default language
  VBOX_MANUAL_LANGUAGES = en_US
- VBOX_MANUAL_ADD_LANGUAGES = fr_FR
+
+ ifdef VBOX_WITH_DOCS_TRANSLATIONS
+  VBOX_MANUAL_ADD_LANGUAGES = fr_FR
+ endif
 
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
   ## @todo make this an install target, drop the BLDDIRS.
