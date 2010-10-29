@@ -546,7 +546,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder)(BSTR *aDefaultMac
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m_strDefaultMachineFolderFull.cloneTo(aDefaultMachineFolder);
+    m->strDefaultMachineFolder.cloneTo(aDefaultMachineFolder);
 
     return S_OK;
 }
@@ -948,23 +948,41 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormatFromExtension(const Utf8St
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &aPath)
+/**
+ * Internal implementation to set the default machine folder. Gets called
+ * from the public attribute setter as well as loadSettings(). With 4.0,
+ * the "default default" machine folder has changed, and we now require
+ * a full path always.
+ * @param aPath
+ * @return
+ */
+HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &strPath)
 {
-    Utf8Str path(aPath);
-    if (path.isEmpty())
-        path = "Machines";
+    Utf8Str path(strPath);      // make modifiable
+    if (    path.isEmpty()          // used by API calls to reset the default
+         || path == "Machines"      // this value (exactly like this, without path) is stored
+                                    // in VirtualBox.xml if user upgrades from before 4.0 and
+                                    // has not changed the default machine folder
+       )
+    {
+        // new default with VirtualBox 4.0: "$HOME/VirtualBox VMs"
+        char szHome[200]; // RTPATH_MAX is ridiculously large
+        int vrc = RTPathUserHome(szHome, sizeof(szHome));
+        if (RT_FAILURE(vrc))
+            return setError(E_FAIL,
+                            tr("Cannot determine user home directory (%Rrc)"),
+                            vrc);
 
-    /* get the full file name */
-    Utf8Str folder;
-    int vrc = mParent->calculateFullPath(path, folder);
-    if (RT_FAILURE(vrc))
-        return setError(E_FAIL,
-                        tr("Invalid default machine folder '%s' (%Rrc)"),
-                        path.c_str(),
-                        vrc);
+        path = szHome;
+        path += RTPATH_SLASH_STR "VirtualBox VMs";
+    }
+
+    if (!RTPathStartsWithRoot(path.c_str()))
+        return setError(E_INVALIDARG,
+                        tr("Given default machine folder '%s' is not fully qualified"),
+                        path.c_str());
 
     m->strDefaultMachineFolder = path;
-    m_strDefaultMachineFolderFull = folder;
 
     return S_OK;
 }

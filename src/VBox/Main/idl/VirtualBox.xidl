@@ -7243,29 +7243,20 @@
     <attribute name="defaultMachineFolder" type="wstring">
       <desc>
         Full path to the default directory used to create new or open
-        existing machines when a settings file name contains no
+        existing machines when a machine settings file name contains no
         path.
 
-        The initial value of this property is
-        <tt>&lt;</tt><link to="IVirtualBox::homeFolder">
-          VirtualBox_home</link><tt>&gt;/Machines</tt>.
+        Starting with VirtualBox 4.0, by default, this attribute contains
+        the full path of folder named "VirtualBox VMs" in the user's
+        home directory, which depends on the host platform.
 
-        <note>
-          Setting this property to @c null or an empty string will restore the
-          initial value.
-        </note>
-        <note>
-          When settings this property, the specified path can be
-          absolute (full path) or relative
-          to the <link to="IVirtualBox::homeFolder">
-            VirtualBox home directory</link>.
-          When reading this property, a full path is
-          always returned.
-        </note>
-        <note>
-          The specified path may not exist, it will be created
-          when necessary.
-        </note>
+        When setting this attribute, a full path must be specified.
+        Setting this property to @c null or an empty string or the
+        special value "Machines" (for compatibility reasons) will restore
+        that default value.
+
+        If the folder specified herein does not exist, it will be created
+        automatically as needed.
 
         <see>
           <link to="IVirtualBox::createMachine"/>,
