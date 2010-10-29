@@ -389,9 +389,7 @@ static void show_usage()
 #ifdef RT_OS_LINUX
              "  -tapfd<1-N> <fd>   Use existing TAP device, don't allocate\n"
 #endif
-#ifdef VBOX_WITH_VRDP
              "  -vrdp [port]       Listen for VRDP connections on port (default if not specified)\n"
-#endif
 #ifdef VBOX_SECURELABEL
              "  -securelabel       Display a secure VM label at the top of the screen\n"
              "  -seclabelfnt       TrueType (.ttf) font file for secure session label\n"
@@ -415,9 +413,7 @@ static void show_usage()
 extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
 {
     bool fFullscreen = false;
-#ifdef VBOX_WITH_VRDP
     int32_t portVRDP = -1;
-#endif
 #ifdef VBOX_SECURELABEL
     bool fSecureLabel = false;
     uint32_t secureLabelPointSize = 12;
@@ -710,7 +706,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
             g_aNetDevs[i].fHaveFd = true;
         }
 #endif /* RT_OS_LINUX */
-#ifdef VBOX_WITH_VRDP
         else if (strcmp(pszArg, "-vrdp") == 0)
         {
             // -vrdp might take a port number (positive).
@@ -724,7 +719,6 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
                     return SyntaxError("vrdp port number is out of range: %RI32\n", portVRDP);
             }
         }
-#endif /* VBOX_WITH_VRDP */
 #ifdef VBOX_SECURELABEL
         else if (strcmp(pszArg, "-securelabel") == 0)
         {

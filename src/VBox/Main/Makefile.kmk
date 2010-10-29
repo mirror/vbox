@@ -206,7 +206,6 @@ VBoxSVC_DEFS = \
 	IN_VMM_STATIC \
 	$(VBOX_MAIN_DEFS) \
 	$(if $(VBOX_WITH_VBOXSDL),VBOX_WITH_VBOXSDL,) \
-	$(if $(VBOX_WITH_VRDP),VBOX_WITH_VRDP,) \
 	$(if $(VBOX_WITH_HEADLESS),VBOX_WITH_HEADLESS,) \
 	$(if $(VBOX_WITH_QTGUI),VBOX_WITH_QTGUI,) \
 	$(if $(VBOX_WITH_COCOA_QT),VBOX_WITH_COCOA_QT,) \
@@ -318,7 +317,7 @@ VBoxSVC_SOURCES = \
 	DisplayPNGUtil.cpp \
 	DisplayResampleImage.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
-	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
+	VRDPServerImpl.cpp \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
 	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp,)
@@ -551,7 +550,6 @@ VBoxC_DEFS = \
 	IN_RING3 \
 	$(VBOX_MAIN_DEFS) \
 	VBOX_COM_INPROC \
-	$(if $(VBOX_WITH_VRDP),VBOX_WITH_VRDP,) \
 	$(if $(VBOX_WITH_VRDP_VIDEO_CHANNEL),VBOX_WITH_VRDP_VIDEO_CHANNEL,) \
 	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
 	$(if $(VBOX_MAIN_RELEASE_LOG),VBOX_MAIN_RELEASE_LOG LOG_ENABLED,) \
@@ -776,9 +774,6 @@ VBOX_MAIN_IDL ?= $(EXEC_X86_WIN32) $(call VBOX_FN_MAKE_WIN_PATH,$(firstword $(wi
 	$(PATH_DEVTOOLS)/win.x86/bin/midl.exe\
 	) Sorry_Cannot_Find_The_Midl_Compiler_In_The_PSDK))
 IDL_DEFS = /nologo
-ifdef VBOX_WITH_VRDP
- IDL_DEFS += /D VBOX_WITH_VRDP
-endif
 
 $(VBOX_IDL_FILE.MSCOM): $(VBOX_PATH_MAIN_SRC)/idl/midl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,VBoxSVC,$<,$@)

@@ -69,8 +69,7 @@ VBoxManage_DEFS      += \
  	$(if $(VBOX_WITH_VBOXSDL), VBOX_WITH_VBOXSDL) \
  	$(if $(VBOX_WITH_VDE), VBOX_WITH_VDE) \
 	$(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL) \
- 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
- 	$(if $(VBOX_WITH_VRDP), VBOX_WITH_VRDP)
+ 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO)
 
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see

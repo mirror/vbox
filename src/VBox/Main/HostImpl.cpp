@@ -127,9 +127,7 @@ extern bool is3DAccelerationSupported();
 #include <iprt/time.h>
 #include <iprt/param.h>
 #include <iprt/env.h>
-#ifndef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
 #include <iprt/mem.h>
-#endif /* !VBOX_WITH_VRDP_MEMLEAK_DETECTOR */
 #include <iprt/system.h>
 #ifdef RT_OS_SOLARIS
 # include <iprt/path.h>

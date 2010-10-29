@@ -28,9 +28,7 @@
 #include <iprt/asm.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
-#ifndef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
 #include <iprt/mem.h>
-#endif /* !VBOX_WITH_VRDP_MEMLEAK_DETECTOR */
 #include <iprt/string.h>
 
 

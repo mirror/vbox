@@ -27,9 +27,7 @@
 
 #include "VirtualBoxImpl.h"
 
-#ifndef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
 #include <iprt/mem.h>
-#endif /* !VBOX_WITH_VRDP_MEMLEAK_DETECTOR */
 
 HostPowerService::HostPowerService (VirtualBox *aVirtualBox)
 {

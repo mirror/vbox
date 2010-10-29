@@ -32,9 +32,7 @@
 #include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
-#ifdef VBOX_WITH_VRDP
 #include <VBox/RemoteDesktop/VRDEOrders.h>
-#endif /* VBOX_WITH_VRDP */
 
 class VRDPConsoleListener :
     VBOX_SCRIPTABLE_IMPL(IEventListener)
@@ -547,7 +545,6 @@ STDMETHODIMP VRDPConsoleListener::OnMousePointerShapeChange(BOOL visible,
 // ConsoleVRDPServer
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef VBOX_WITH_VRDP
 RTLDRMOD ConsoleVRDPServer::mVRDPLibrary;
 
 PFNVRDECREATESERVER ConsoleVRDPServer::mpfnVRDECreateServer = NULL;
@@ -1180,7 +1177,6 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackVideoModeHint(void *pvCallback
 
     server->mConsole->getDisplay()->SetVideoModeHint(cWidth, cHeight, cBitsPerPixel, uScreenId);
 }
-#endif /* VBOX_WITH_VRDP */
 
 ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
 {
@@ -1201,7 +1197,6 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     mUSBBackends.event = 0;
 #endif
 
-#ifdef VBOX_WITH_VRDP
     mhServer = 0;
 
     m_fGuestWantsAbsolute = false;
@@ -1234,7 +1229,6 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     }
 
     mVRDPBindPort = -1;
-#endif /* VBOX_WITH_VRDP */
 
     mAuthLibrary = 0;
 }
@@ -1243,7 +1237,6 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
 {
     Stop();
 
-#ifdef VBOX_WITH_VRDP
     if (mConsoleListener)
     {
         ComPtr<IEventSource> es;
@@ -1262,7 +1255,6 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
             maFramebuffers[i] = NULL;
         }
     }
-#endif /* VBOX_WITH_VRDP */
 
     if (RTCritSectIsInitialized(&mCritSect))
     {
@@ -1274,7 +1266,7 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
 int ConsoleVRDPServer::Launch(void)
 {
     LogFlowThisFunc(("\n"));
-#ifdef VBOX_WITH_VRDP
+
     int rc = VINF_SUCCESS;
 
     /* 
@@ -1325,58 +1317,46 @@ int ConsoleVRDPServer::Launch(void)
             }
         }
     }
-#else
-    int rc = VERR_NOT_SUPPORTED;
-    LogRel(("VRDP: this version does not include the VRDP server.\n"));
-#endif /* VBOX_WITH_VRDP */
+
     return rc;
 }
 
 void ConsoleVRDPServer::EnableConnections(void)
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEEnableConnections(mhServer, true);
     }
-#endif /* VBOX_WITH_VRDP */
 }
 
 void ConsoleVRDPServer::DisconnectClient(uint32_t u32ClientId, bool fReconnect)
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEDisconnect(mhServer, u32ClientId, fReconnect);
     }
-#endif /* VBOX_WITH_VRDP */
 }
 
 void ConsoleVRDPServer::MousePointerUpdate(const VRDECOLORPOINTER *pPointer)
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEColorPointer(mhServer, pPointer);
     }
-#endif /* VBOX_WITH_VRDP */
 }
 
 void ConsoleVRDPServer::MousePointerHide(void)
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEHidePointer(mhServer);
     }
-#endif /* VBOX_WITH_VRDP */
 }
 
 void ConsoleVRDPServer::Stop(void)
 {
     Assert(VALID_PTR(this)); /** @todo r=bird: there are(/was) some odd cases where this buster was invalid on
                               * linux. Just remove this when it's 100% sure that problem has been fixed. */
-#ifdef VBOX_WITH_VRDP
     if (mhServer)
     {
         HVRDESERVER hServer = mhServer;
@@ -1389,7 +1369,6 @@ void ConsoleVRDPServer::Stop(void)
             mpEntryPoints->VRDEDestroy(hServer);
         }
     }
-#endif /* VBOX_WITH_VRDP */
 
 #ifdef VBOX_WITH_USB
     remoteUSBThreadStop();
@@ -1729,7 +1708,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension
 
     int rc = VINF_SUCCESS;
 
-#ifdef VBOX_WITH_VRDP
     ConsoleVRDPServer *pServer = static_cast <ConsoleVRDPServer *>(pvExtension);
 
     VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
@@ -1788,7 +1766,6 @@ DECLCALLBACK(int) ConsoleVRDPServer::ClipboardServiceExtension(void *pvExtension
         default:
             rc = VERR_NOT_SUPPORTED;
     }
-#endif /* VBOX_WITH_VRDP */
 
     return rc;
 }
@@ -2088,27 +2065,22 @@ void ConsoleVRDPServer::usbBackendRemoveFromList(RemoteUSBBackend *pRemoteUSBBac
 
 void ConsoleVRDPServer::SendUpdate(unsigned uScreenId, void *pvUpdate, uint32_t cbUpdate) const
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEUpdate(mhServer, uScreenId, pvUpdate, cbUpdate);
     }
-#endif
 }
 
 void ConsoleVRDPServer::SendResize(void) const
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEResize(mhServer);
     }
-#endif
 }
 
 void ConsoleVRDPServer::SendUpdateBitmap(unsigned uScreenId, uint32_t x, uint32_t y, uint32_t w, uint32_t h) const
 {
-#ifdef VBOX_WITH_VRDP
     VRDEORDERHDR update;
     update.x = x;
     update.y = y;
@@ -2118,42 +2090,34 @@ void ConsoleVRDPServer::SendUpdateBitmap(unsigned uScreenId, uint32_t x, uint32_
     {
         mpEntryPoints->VRDEUpdate(mhServer, uScreenId, &update, sizeof(update));
     }
-#endif
 }
 
 void ConsoleVRDPServer::SendAudioSamples(void *pvSamples, uint32_t cSamples, VRDEAUDIOFORMAT format) const
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEAudioSamples(mhServer, pvSamples, cSamples, format);
     }
-#endif
 }
 
 void ConsoleVRDPServer::SendAudioVolume(uint16_t left, uint16_t right) const
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEAudioVolume(mhServer, left, right);
     }
-#endif
 }
 
 void ConsoleVRDPServer::SendUSBRequest(uint32_t u32ClientId, void *pvParms, uint32_t cbParms) const
 {
-#ifdef VBOX_WITH_VRDP
     if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDEUSBRequest(mhServer, u32ClientId, pvParms, cbParms);
     }
-#endif
 }
 
 void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const
 {
-#ifdef VBOX_WITH_VRDP
     if (index == VRDE_QI_PORT)
     {
         uint32_t cbOut = sizeof(int32_t);
@@ -2168,10 +2132,8 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
     {
         mpEntryPoints->VRDEQueryInfo(mhServer, index, pvBuffer, cbBuffer, pcbOut);
     }
-#endif
 }
 
-#ifdef VBOX_WITH_VRDP
 /* static */ int ConsoleVRDPServer::loadVRDPLibrary(const char *pszLibraryName)
 {
     int rc = VINF_SUCCESS;
@@ -2230,7 +2192,6 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
 
     return rc;
 }
-#endif /* VBOX_WITH_VRDP */
 
 /*
  * IVRDEServerInfo implementation.

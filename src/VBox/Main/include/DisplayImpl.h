@@ -147,9 +147,7 @@ public:
 
     bool VideoAccelAllowed (void);
 
-#ifdef VBOX_WITH_VRDP
     void VideoAccelVRDP (bool fEnable);
-#endif /* VBOX_WITH_VRDP */
 
     // IEventListener methods
     STDMETHOD(HandleEvent)(IEvent * aEvent);

@@ -131,7 +131,6 @@ enum
     MODIFYVM_AUDIOCONTROLLER,
     MODIFYVM_AUDIO,
     MODIFYVM_CLIPBOARD,
-#ifdef VBOX_WITH_VRDP
     MODIFYVM_VRDPPORT,                /* VRDE: deprecated */
     MODIFYVM_VRDPADDRESS,             /* VRDE: deprecated */
     MODIFYVM_VRDPAUTHTYPE,            /* VRDE: deprecated */
@@ -140,7 +139,7 @@ enum
     MODIFYVM_VRDPVIDEOCHANNEL,        /* VRDE: deprecated */
     MODIFYVM_VRDPVIDEOCHANNELQUALITY, /* VRDE: deprecated */
     MODIFYVM_VRDP,                    /* VRDE: deprecated */
-    MODIFYVM_VRDESETPROPERTY,
+    MODIFYVM_VRDEPROPERTY,
     MODIFYVM_VRDEAUTHTYPE,
     MODIFYVM_VRDEMULTICON,
     MODIFYVM_VRDEREUSECON,
@@ -148,7 +147,6 @@ enum
     MODIFYVM_VRDEVIDEOCHANNELQUALITY,
     MODIFYVM_VRDELIBRARY,
     MODIFYVM_VRDE,
-#endif
     MODIFYVM_RTCUSEUTC,
     MODIFYVM_USBEHCI,
     MODIFYVM_USB,
@@ -256,7 +254,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
     { "--clipboard",                MODIFYVM_CLIPBOARD,                 RTGETOPT_REQ_STRING },
-#ifdef VBOX_WITH_VRDP
     { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },     /* deprecated */
     { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },     /* deprecated */
     { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },     /* deprecated */
@@ -265,7 +262,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdpvideochannel",         MODIFYVM_VRDPVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--vrdpvideochannelquality",  MODIFYVM_VRDPVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },     /* deprecated */
     { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
-    { "--vrdesetproperty",          MODIFYVM_VRDESETPROPERTY,           RTGETOPT_REQ_STRING },
+    { "--vrdeproperty",             MODIFYVM_VRDEPROPERTY,              RTGETOPT_REQ_STRING },
     { "--vrdeauthtype",             MODIFYVM_VRDEAUTHTYPE,              RTGETOPT_REQ_STRING },
     { "--vrdemulticon",             MODIFYVM_VRDEMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdereusecon",             MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
@@ -273,7 +270,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },
     { "--vrdelibrary",              MODIFYVM_VRDELIBRARY,               RTGETOPT_REQ_STRING },
     { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
-#endif
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
     { "--snapshotfolder",           MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING },
@@ -301,7 +297,7 @@ static void vrdeWarningDeprecatedOption(const char *pszOption)
 
 static void vrdeWarningDeprecatedProperty(const char *pszOption, const char *pszProperty, const char *pszArg)
 {
-    RTStrmPrintf(g_pStdErr, "Warning: '--%s' is deprecated. Use '--vrdesetproperty \"%s=%s\"'.\n",
+    RTStrmPrintf(g_pStdErr, "Warning: '--%s' is deprecated. Use '--vrdeproperty \"%s=%s\"'.\n",
                  pszOption, pszProperty, pszArg);
 }
 
@@ -1824,7 +1820,6 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-#ifdef VBOX_WITH_VRDP
             case MODIFYVM_VRDELIBRARY:
             {
                 ComPtr<IVRDEServer> vrdeServer;
@@ -1844,7 +1839,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_VRDESETPROPERTY:
+            case MODIFYVM_VRDEPROPERTY:
             {
                 ComPtr<IVRDEServer> vrdeServer;
                 machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
@@ -1869,7 +1864,7 @@ int handleModifyVM(HandlerArg *a)
                         {
                             RTStrFree(pszProperty);
 
-                            errorArgument("Invalid --vrdesetproperty argument '%s'", ValueUnion.psz);
+                            errorArgument("Invalid --vrdeproperty argument '%s'", ValueUnion.psz);
                             rc = E_FAIL;
                             break;
                         }
@@ -1998,7 +1993,6 @@ int handleModifyVM(HandlerArg *a)
                 CHECK_ERROR(vrdeServer, COMSETTER(Enabled)(ValueUnion.f));
                 break;
             }
-#endif /* VBOX_WITH_VRDP */
 
             case MODIFYVM_USBEHCI:
             {

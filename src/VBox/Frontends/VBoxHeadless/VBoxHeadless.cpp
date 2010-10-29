@@ -56,9 +56,7 @@ using namespace com;
 #include <signal.h>
 #endif
 
-#ifdef VBOX_WITH_VRDP
-# include "Framebuffer.h"
-#endif
+#include "Framebuffer.h"
 #ifdef VBOX_WITH_VNC
 # include "FramebufferVNC.h"
 #endif
@@ -314,7 +312,6 @@ public:
                 ComPtr<IVRDEServerInfoChangedEvent> rdicev = aEvent;
                 Assert(rdicev);
 
-#ifdef VBOX_WITH_VRDP
                 if (gConsole)
                 {
                     ComPtr<IVRDEServerInfo> info;
@@ -336,7 +333,6 @@ public:
                         }
                     }
                 }
-#endif
                 break;
             }
             case VBoxEventType_OnCanShowWindow:
@@ -444,7 +440,6 @@ static void show_usage()
              "   -m, --vncport <port>                  TCP port number to use for the VNC server\n"
              "   -o, --vncpass <pw>                    Set the VNC server password\n"
 #endif
-#ifdef VBOX_WITH_VRDP
              "   -v, -vrde, --vrde on|off|config       Enable (default) or disable the VRDE\n"
              "                                         server or don't change the setting\n"
              "   -e, -vrdeproperty, --vrdeproperty <name=[value]> Set a VRDE property:\n"
@@ -453,7 +448,6 @@ static void show_usage()
              "                                         two port numbers to specify a range\n"
              "                                         \"TCP/Address\" - interface IP the VRDE server\n"
              "                                         will bind to\n"
-#endif
 #ifdef VBOX_FFMPEG
              "   -c, -capture, --capture               Record the VM screen output to a file\n"
              "   -w, --width                           Frame width when recording\n"
@@ -517,13 +511,11 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
  */
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
-#ifdef VBOX_WITH_VRDP
     const char *vrdePort = NULL;
     const char *vrdeAddress = NULL;
     const char *vrdeEnabled = NULL;
     int cVRDEProperties = 0;
     const char *aVRDEProperties[16];
-#endif
 #ifdef VBOX_WITH_VNC
     bool        fVNCEnable      = false;
     unsigned    uVNCPort        = 0;          /* default port */
@@ -574,7 +566,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     {
         { "-startvm", 's', RTGETOPT_REQ_STRING },
         { "--startvm", 's', RTGETOPT_REQ_STRING },
-#ifdef VBOX_WITH_VRDP
         { "-vrdpport", 'p', RTGETOPT_REQ_STRING },     /* VRDE: deprecated. */
         { "--vrdpport", 'p', RTGETOPT_REQ_STRING },    /* VRDE: deprecated. */
         { "-vrdpaddress", 'a', RTGETOPT_REQ_STRING },  /* VRDE: deprecated. */
@@ -585,7 +576,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--vrde", 'v', RTGETOPT_REQ_STRING },
         { "-vrdeproperty", 'e', RTGETOPT_REQ_STRING },
         { "--vrdeproperty", 'e', RTGETOPT_REQ_STRING },
-#endif /* VBOX_WITH_VRDP defined */
 #ifdef VBOX_WITH_VNC
         { "--vncport", 'm', RTGETOPT_REQ_INT32 },
         { "--vncpass", 'o', RTGETOPT_REQ_STRING },
@@ -633,7 +623,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case 's':
                 pcszNameOrUUID = ValueUnion.psz;
                 break;
-#ifdef VBOX_WITH_VRDP
             case 'p':
                 RTPrintf("Warning: '-p' or '-vrdpport' are deprecated. Use '-e \"TCP/Ports=%s\"'\n", ValueUnion.psz);
                 vrdePort = ValueUnion.psz;
@@ -651,7 +640,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 else
                      RTPrintf("Warning: too many VRDE properties. Ignored: '%s'\n", ValueUnion.psz);
                 break;
-#endif /* VBOX_WITH_VRDP defined */
 #ifdef VBOX_WITH_VNC
             case 'n':
                 fVNCEnable = true;
@@ -903,7 +891,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         machine->COMGETTER(MonitorCount)(&cMonitors);
 
         unsigned uScreenId;
-#ifdef VBOX_WITH_VRDP
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
 # ifdef VBOX_FFMPEG
@@ -933,7 +920,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             break;
         }
-#endif
+
         // fill in remaining slots with null framebuffers
         for (uScreenId = 0; uScreenId < cMonitors; uScreenId++)
         {
@@ -1016,7 +1003,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 
-#ifdef VBOX_WITH_VRDP
         /* default is to enable the remote desktop server (backward compatibility) */
         BOOL fVRDEEnable = true;
         BOOL fVRDEEnabled;
@@ -1110,7 +1096,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(FALSE));
             }
         }
-#endif
+
         Log(("VBoxHeadless: Powering up the machine...\n"));
 
         ComPtr <IProgress> progress;

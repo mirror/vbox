@@ -1390,7 +1390,6 @@ int Display::VideoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     return rc;
 }
 
-#ifdef VBOX_WITH_VRDP
 /* Called always by one VRDP server thread. Can be thread-unsafe.
  */
 void Display::VideoAccelVRDP (bool fEnable)
@@ -1455,7 +1454,6 @@ void Display::VideoAccelVRDP (bool fEnable)
     vbvaUnlock();
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
 }
-#endif /* VBOX_WITH_VRDP */
 
 static bool vbvaVerifyRingBuffer (VBVAMEMORY *pVbvaMemory)
 {

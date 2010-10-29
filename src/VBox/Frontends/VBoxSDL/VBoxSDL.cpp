@@ -600,9 +600,7 @@ static void show_usage()
              "  --detecthostkey          Get the hostkey identifier and modifier state\n"
              "  --hostkey <key> {<key2>} <mod> Set the host key to the values obtained using --detecthostkey\n"
              "  --termacpi               Send an ACPI power button event when closing the window\n"
-#ifdef VBOX_WITH_VRDP
              "  --vrdp <ports>           Listen for VRDP connections on one of specified ports (default if not specified)\n"
-#endif
              "  --discardstate           Discard saved state (if present) and revert to last snapshot (if present)\n"
 #ifdef VBOX_SECURELABEL
              "  --securelabel            Display a secure VM label at the top of the screen\n"
@@ -798,9 +796,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     char *hdaFile   = NULL;
     char *cdromFile = NULL;
     char *fdaFile   = NULL;
-#ifdef VBOX_WITH_VRDP
     const char *portVRDP = NULL;
-#endif
     bool fDiscardState = false;
 #ifdef VBOX_SECURELABEL
     BOOL fSecureLabel = false;
@@ -1134,7 +1130,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 return 1;
             }
         }
-#ifdef VBOX_WITH_VRDP
         else if (   !strcmp(argv[curArg], "--vrdp")
                  || !strcmp(argv[curArg], "-vrdp"))
         {
@@ -1149,7 +1144,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 LogFlow(("Using non standard VRDP port %s\n", portVRDP));
             }
         }
-#endif /* VBOX_WITH_VRDP */
         else if (   !strcmp(argv[curArg], "--discardstate")
                  || !strcmp(argv[curArg], "-discardstate"))
         {
@@ -1874,7 +1868,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         consoleListener->ignorePowerOffEvents(true);
     }
 
-#ifdef VBOX_WITH_VRDP
     if (portVRDP)
     {
         rc = gMachine->COMGETTER(VRDEServer)(gVRDEServer.asOutParam());
@@ -1901,7 +1894,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
         }
     }
-#endif
 
     rc = E_FAIL;
 #ifdef VBOXSDL_ADVANCED_OPTIONS
@@ -2685,10 +2677,8 @@ leave:
     terminateXPCOMQueueThread();
 #endif /* VBOX_WITH_XPCOM */
 
-#ifdef VBOX_WITH_VRDP
     if (gVRDEServer)
         rc = gVRDEServer->COMSETTER(Enabled)(FALSE);
-#endif
 
     /*
      * Get the machine state.

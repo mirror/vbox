@@ -2141,7 +2141,6 @@ STDMETHODIMP Machine::COMGETTER(MediumAttachments)(ComSafeArrayOut(IMediumAttach
 
 STDMETHODIMP Machine::COMGETTER(VRDEServer)(IVRDEServer **vrdeServer)
 {
-#ifdef VBOX_WITH_VRDP
     if (!vrdeServer)
         return E_POINTER;
 
@@ -2154,10 +2153,6 @@ STDMETHODIMP Machine::COMGETTER(VRDEServer)(IVRDEServer **vrdeServer)
     mVRDEServer.queryInterfaceTo(vrdeServer);
 
     return S_OK;
-#else
-    NOREF(vrdeServer);
-    ReturnComNotImplemented();
-#endif
 }
 
 STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
@@ -5979,9 +5974,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 #ifdef VBOX_WITH_HEADLESS
     if (   strType == "headless"
         || strType == "capture"
-#ifdef VBOX_WITH_VRDP
         || strType == "vrdp" /* Deprecated. Same as headless. */
-#endif
        )
     {
         /* On pre-4.0 the "headless" type was used for passing "--vrdp off" to VBoxHeadless to let it work in OSE,
@@ -6531,11 +6524,9 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this);
 
-#ifdef VBOX_WITH_VRDP
     /* create an associated VRDE object (default is disabled) */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this);
-#endif
 
     /* create associated serial port objects */
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
@@ -6630,13 +6621,11 @@ void Machine::uninitDataAndChildObjects()
         }
     }
 
-#ifdef VBOX_WITH_VRDP
     if (mVRDEServer)
     {
         mVRDEServer->uninit();
         unconst(mVRDEServer).setNull();
     }
-#endif
 
     if (mBIOSSettings)
     {
@@ -7140,11 +7129,9 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mChipsetType = data.chipsetType;
         mHWData->mHpetEnabled = data.fHpetEnabled;
 
-#ifdef VBOX_WITH_VRDP
         /* VRDEServer */
         rc = mVRDEServer->loadSettings(data.vrdeSettings);
         if (FAILED(rc)) return rc;
-#endif
 
         /* BIOS */
         rc = mBIOSSettings->loadSettings(data.biosSettings);
@@ -8173,11 +8160,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.fAccelerate3D = !!mHWData->mAccelerate3DEnabled;
         data.fAccelerate2DVideo = !!mHWData->mAccelerate2DVideoEnabled;
 
-#ifdef VBOX_WITH_VRDP
         /* VRDEServer settings (optional) */
         rc = mVRDEServer->saveSettings(data.vrdeSettings);
         if (FAILED(rc)) throw rc;
-#endif
 
         /* BIOS (required) */
         rc = mBIOSSettings->saveSettings(data.biosSettings);
@@ -9319,10 +9304,8 @@ void Machine::rollback(bool aNotify)
     if (mBIOSSettings)
         mBIOSSettings->rollback();
 
-#ifdef VBOX_WITH_VRDP
     if (mVRDEServer && (mData->flModifications & IsModified_VRDEServer))
         mVRDEServer->rollback();
-#endif
 
     if (mAudioAdapter)
         mAudioAdapter->rollback();
@@ -9421,9 +9404,7 @@ void Machine::commit()
         commitMedia();
 
     mBIOSSettings->commit();
-#ifdef VBOX_WITH_VRDP
     mVRDEServer->commit();
-#endif
     mAudioAdapter->commit();
     mUSBController->commit();
 
@@ -9553,9 +9534,7 @@ void Machine::copyFrom(Machine *aThat)
     }
 
     mBIOSSettings->copyFrom(aThat->mBIOSSettings);
-#ifdef VBOX_WITH_VRDP
     mVRDEServer->copyFrom(aThat->mVRDEServer);
-#endif
     mAudioAdapter->copyFrom(aThat->mAudioAdapter);
     mUSBController->copyFrom(aThat->mUSBController);
 
@@ -9882,11 +9861,9 @@ HRESULT SessionMachine::init(Machine *aMachine)
 
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
-#ifdef VBOX_WITH_VRDP
     /* create another VRDEServer object that will be mutable */
     unconst(mVRDEServer).createObject();
     mVRDEServer->init(this, aMachine->mVRDEServer);
-#endif
     /* create another audio adapter object that will be mutable */
     unconst(mAudioAdapter).createObject();
     mAudioAdapter->init(this, aMachine->mAudioAdapter);
