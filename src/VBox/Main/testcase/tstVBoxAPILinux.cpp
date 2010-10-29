@@ -265,14 +265,14 @@ void createVM(IVirtualBox *virtualBox)
                                                   getter_AddRefs(session));
         if (NS_FAILED(rc))
         {
-            printf("Error, could not instantiate Session object! rc=0x%x\n", rc);
+            printf("Error, could not instantiate session object! rc=0x%x\n", rc);
             return;
         }
 
-        machine->LockMachine(session, LockType_Write);
+        rc = machine->LockMachine(session, LockType_Write);
         if (NS_FAILED(rc))
         {
-            printf("Error, could not open session! rc=0x%x\n", rc);
+            printf("Error, could not lock the machine for the session! rc=0x%x\n", rc);
             return;
         }
 
