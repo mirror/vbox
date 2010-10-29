@@ -320,7 +320,7 @@ VBoxSVC_SOURCES = \
 	VRDEServerImpl.cpp \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
-	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp,)
+	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp ExtPackUtil.cpp,)
 
 $(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
@@ -637,7 +637,7 @@ VBoxC_SOURCES = \
 	EventImpl.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
-	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp,)
+	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp ExtPackUtil.cpp,)
 VBoxC_SOURCES.win = \
 	win/dllmain.cpp \
 	win/VBoxC.def \
@@ -716,6 +716,17 @@ endif # !win
 
 endif # !VBOX_ONLY_SDK (the ifndef is far above)
 
+
+#
+# The VBoxExtPackHelperApp.
+#
+ifdef VBOX_WITH_EXTPACK
+ PROGRAMS += VBoxExtPackHelperApp
+ VBoxExtPackHelperApp_TEMPLATE = VBoxR3Static
+ VBoxExtPackHelperApp_SOURCES = VBoxExtPackHelperApp.cpp
+ VBoxExtPackHelperApp_LIBS = \
+	$(VBOX_LIB_RUNTIME_STATIC)
+endif # VBOX_WITH_EXTPACK
 
 #
 # Installs com related thing(s) to bin.

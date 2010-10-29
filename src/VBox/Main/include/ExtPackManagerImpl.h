@@ -20,6 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include <VBox/ExtPack/ExtPack.h>
+#include <iprt/fs.h>
 
 
 /**
@@ -63,6 +64,21 @@ public:
      * @{ */
     void *getCallbackTable();
     HRESULT refresh(bool *pfCanDelete);
+    /** @}  */
+
+protected:
+    /** @name Internal helper methods.
+     * @{ */
+    void        probeAndLoad(void);
+    bool        findModule(const char *a_pszName, const char *a_pszExt,
+                           Utf8Str *a_pStrFound, bool *a_pfNative, PRTFSOBJINFO a_pObjInfo) const;
+    static bool objinfoIsEqual(PCRTFSOBJINFO pObjInfo1, PCRTFSOBJINFO pObjInfo2);
+    /** @}  */
+
+    /** @name Extension Pack Helpers
+     * @{ */
+    static DECLCALLBACK(int)    hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
+                                              char *pszFound, size_t cbFound, bool *pfNative);
     /** @}  */
 
 private:

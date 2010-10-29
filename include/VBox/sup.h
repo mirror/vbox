@@ -974,6 +974,41 @@ SUPR3DECL(int) SUPR3GipGetPhys(PRTHCPHYS pHCPhys);
 SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszWhat, PRTFILE phFile);
 
 /**
+ * Verifies the integrity of an installation directory.
+ *
+ * The integrity check verifies that the directory cannot be tampered with by
+ * normal users on the system.  On Unix this translates to root ownership and
+ * no symbolic linking.
+ *
+ * @returns VBox status code. On failure a message will be stored in @a pszErr.
+ *
+ * @param   pszDirPath      The directory path.
+ * @param   fRecursive      Whether the check should be recursive or
+ *                          not.  When set, all sub-directores will be
+ *                          checked.
+ * @param   fCheckFiles     Whether to apply the same basic integrity check to
+ *                          the files in the directory as the directory itself.
+ * @param   pszErr          Where to return error message on failure.
+ * @param   cbErr           The size of the error buffer.
+ */
+SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr);
+
+/**
+ * Verifies the integrity of a plug-in module.
+ *
+ * This is similar to SUPR3HardenedLdrLoad, except it does not load the module
+ * and that the module does not have to be shipped with VirtualBox.
+ *
+ * @returns VBox status code. On failure a message will be stored in @a pszErr.
+ *
+ * @param   pszFilename     The filename of the plug-in module (nothing can be
+ *                          omitted here).
+ * @param   pszErr          Where to return error message on failure.
+ * @param   cbErr           The size of the error buffer.
+ */
+SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, size_t cbErr);
+
+/**
  * Same as RTLdrLoad() but will verify the files it loads (hardened builds).
  *
  * Will add dll suffix if missing and try load the file.
