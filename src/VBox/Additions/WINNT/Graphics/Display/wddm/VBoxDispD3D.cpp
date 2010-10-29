@@ -7957,7 +7957,7 @@ VOID vboxVDbgDoPrint(LPCSTR szString, ...)
     _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
     va_end(pArgList);
 
-    //OutputDebugStringA(szBuffer);
+    OutputDebugStringA(szBuffer);
 }
 #endif
 
