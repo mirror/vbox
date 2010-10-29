@@ -492,7 +492,7 @@ public:
         /* This klugde is for m_cch=0 and m_psz=NULL.  pcsz=NULL and psz=""
            are treated the same way so that str.compare(str2.c_str()) works. */
         if (length() == 0)
-            return pcszThat == NULL || *pcszThat != '\0';
+            return pcszThat == NULL || *pcszThat != '\0' ? 0 : 1;
 
         if (cs == CaseSensitive)
             return ::RTStrCmp(m_psz, pcszThat);
