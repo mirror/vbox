@@ -1115,7 +1115,7 @@ int vboxVdmaCreate(PDEVICE_EXTENSION pDevExt, VBOXVDMAINFO *pInfo
         else
             drprintf((__FUNCTION__": HGSMIHeapSetup failed rc = 0x%x\n", rc));
 
-        VBoxUnmapAdapterMemory(pDevExt, &pvBuffer, cbBuffer);
+        VBoxUnmapAdapterMemory(pDevExt, &pvBuffer);
     }
     else
         drprintf((__FUNCTION__": VBoxMapAdapterMemory failed rc = 0x%x\n", rc));
@@ -1188,7 +1188,7 @@ int vboxVdmaDestroy (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
         if (pInfo->fEnabled)
             rc = vboxVdmaDisable (pDevExt, pInfo);
 #ifdef VBOX_WITH_VDMA
-        VBoxUnmapAdapterMemory (pDevExt, (void**)&pInfo->CmdHeap.area.pu8Base, pInfo->CmdHeap.area.cbArea);
+        VBoxUnmapAdapterMemory (pDevExt, (void**)&pInfo->CmdHeap.area.pu8Base);
 #endif
     }
     else

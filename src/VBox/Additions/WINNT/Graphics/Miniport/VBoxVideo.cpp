@@ -1513,7 +1513,7 @@ void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
     }
 }
 
-void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG ulSize)
+void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv)
 {
     dprintf(("VBoxVideo::VBoxUnmapAdapterMemory\n"));
 
@@ -1637,6 +1637,126 @@ void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt)
 }
 
 #ifndef VBOX_WITH_WDDM
+static int vbvaInitInfoDisplay (void *pvData, VBVAINFOVIEW *p)
+{
+    PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION) pvData;
+
+    int i;
+    PDEVICE_EXTENSION Extension;
+
+    for (i = 0, Extension = PrimaryExtension;
+         i < commonFromDeviceExt(PrimaryExtension)->cDisplays && Extension;
+         i++, Extension = Extension->pNext)
+    {
+        p[i].u32ViewIndex     = Extension->iDevice;
+        p[i].u32ViewOffset    = Extension->ulFrameBufferOffset;
+        p[i].u32ViewSize      = PrimaryExtension->u.primary.ulMaxFrameBufferSize;
+
+        /* How much VRAM should be reserved for the guest drivers to use VBVA. */
+        const uint32_t cbReservedVRAM = VBVA_DISPLAY_INFORMATION_SIZE + VBVA_MIN_BUFFER_SIZE;
+
+        p[i].u32MaxScreenSize = p[i].u32ViewSize > cbReservedVRAM?
+                                    p[i].u32ViewSize - cbReservedVRAM:
+                                    0;
+    }
+
+    if (i == commonFromDeviceExt(PrimaryExtension)->cDisplays && Extension == NULL)
+    {
+        return VINF_SUCCESS;
+    }
+
+    AssertFailed ();
+    return VERR_INTERNAL_ERROR;
+}
+
+
+static VOID VBoxCreateDisplaysXPDM(PDEVICE_EXTENSION PrimaryExtension,
+                                   PVIDEO_PORT_CONFIG_INFO pConfigInfo)
+{
+    VP_STATUS rc;
+
+    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    {
+        typedef VP_STATUS (*PFNCREATESECONDARYDISPLAY)(PVOID, PVOID *, ULONG);
+        PFNCREATESECONDARYDISPLAY pfnCreateSecondaryDisplay = NULL;
+
+        /* Dynamically query the VideoPort import to be binary compatible across Windows versions */
+        if (vboxQueryWinVersion() > WINNT4)
+        {
+            /* This bluescreens on NT4, hence the above version check */
+            pfnCreateSecondaryDisplay = (PFNCREATESECONDARYDISPLAY)(pConfigInfo->VideoPortGetProcAddress)
+                                                                       (PrimaryExtension,
+                                                                        (PUCHAR)"VideoPortCreateSecondaryDisplay");
+        }
+
+        if (!pfnCreateSecondaryDisplay)
+            commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
+        else
+        {
+            PDEVICE_EXTENSION pPrev = PrimaryExtension;
+
+            ULONG iDisplay;
+            ULONG cDisplays = commonFromDeviceExt(PrimaryExtension)->cDisplays;
+            commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
+            for (iDisplay = 1; iDisplay < cDisplays; iDisplay++)
+            {
+               PDEVICE_EXTENSION SecondaryExtension = NULL;
+               rc = pfnCreateSecondaryDisplay (PrimaryExtension, (PVOID*)&SecondaryExtension, VIDEO_DUALVIEW_REMOVABLE);
+
+               dprintf(("VBoxVideo::VBoxSetupDisplays: VideoPortCreateSecondaryDisplay returned %#x, SecondaryExtension = %p\n",
+                        rc, SecondaryExtension));
+
+               if (rc != NO_ERROR)
+               {
+                   break;
+               }
+
+               SecondaryExtension->pNext                = NULL;
+               SecondaryExtension->pPrimary             = PrimaryExtension;
+               SecondaryExtension->iDevice              = iDisplay;
+               SecondaryExtension->ulFrameBufferOffset  = 0;
+               SecondaryExtension->ulFrameBufferSize    = 0;
+               SecondaryExtension->u.secondary.bEnabled = FALSE;
+
+               /* Update the list pointers. */
+               pPrev->pNext = SecondaryExtension;
+               pPrev = SecondaryExtension;
+
+               /* Take the successfully created display into account. */
+               commonFromDeviceExt(PrimaryExtension)->cDisplays++;
+            }
+        }
+
+        /* Failure to create secondary displays is not fatal */
+        rc = NO_ERROR;
+    }
+
+    /* Now when the number of monitors is known and extensions are created,
+     * calculate the layout of framebuffers.
+     */
+    VBoxComputeFrameBufferSizes (PrimaryExtension);
+    /* in case of WDDM we do not control the framebuffer location,
+     * i.e. it is assigned by Video Memory Manager,
+     * The FB information should be passed to guest from our
+     * DxgkDdiSetVidPnSourceAddress callback */
+
+    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    {
+        if (RT_SUCCESS(rc))
+        {
+            rc = VBoxHGSMISendViewInfo (commonFromDeviceExt(PrimaryExtension),
+                                   commonFromDeviceExt(PrimaryExtension)->cDisplays,
+                                   vbvaInitInfoDisplay,
+                                   (void *) PrimaryExtension);
+            AssertRC(rc);
+        }
+
+        if (RT_FAILURE (rc))
+        {
+            commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
+        }
+    }
+}
 
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
                                IN PVOID HwContext, IN PWSTR ArgumentString,
@@ -1753,11 +1873,12 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
        * The host will however support both old and new interface to keep compatibility
        * with old guest additions.
        */
-      VBoxSetupDisplaysHGSMI((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize, 0);
+      VBoxSetupDisplaysHGSMI((PDEVICE_EXTENSION)HwDeviceExtension, AdapterMemorySize, 0);
 
       if (commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension)->bHGSMI)
       {
           LogRel(("VBoxVideo: using HGSMI\n"));
+          VBoxCreateDisplaysXPDM((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo);
       }
 
       // pretend success to make the driver work.
@@ -2569,8 +2690,10 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 
     VbglTerminate ();
 
-    VBoxUnmapAdapterMemory (pDevExt, &commonFromDeviceExt(pDevExt)->pvMiniportHeap, commonFromDeviceExt(pDevExt)->cbMiniportHeap);
-    VBoxUnmapAdapterInformation (pDevExt);
+    VBoxFreeDisplaysHGSMI(pDevExt);
+    /** @note using this callback instead of doing things manually adds an
+     *        additional call to HGSMIHeapDestroy().  I assume that call was
+     *        merely forgotton in the first place. */
 
     return TRUE;
 }
