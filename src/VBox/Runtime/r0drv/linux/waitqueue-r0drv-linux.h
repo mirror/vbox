@@ -150,7 +150,7 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
         else
 #endif
         {
-            uint64_t cJiffies = ASMMultU64ByU32DivByU32(uTimeout, HZ, UINT32_C(1000000000));
+            uint64_t cJiffies = ASMMultU64ByU32DivByU32(pWait->cNsRelTimeout, HZ, UINT32_C(1000000000));
             if (cJiffies >= MAX_JIFFY_OFFSET)
                 fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
             else
