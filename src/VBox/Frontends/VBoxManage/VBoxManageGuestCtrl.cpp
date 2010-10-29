@@ -1068,109 +1068,114 @@ static int handleCtrlCopyTo(HandlerArg *a)
     HRESULT rc;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
-    if (machine)
+    if (FAILED(rc))
+        return 1;
+
+    /* Machine is running? */
+    MachineState_T machineState;
+    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
+    if (machineState != MachineState_Running)
     {
-        do
-        {
-            /* Open an existing session for VM. */
-            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Shared));
-            // @todo r=dj assert that it's an existing session
-
-            /* Get the mutable session machine. */
-            a->session->COMGETTER(Machine)(machine.asOutParam());
-
-            /* get the associated console */
-            ComPtr<IConsole> console;
-            CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-
-            ComPtr<IGuest> guest;
-            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-
-            ComPtr<IProgress> progress;
-            ULONG uPID = 0;
-
-            if (fVerbose)
-            {
-                if (fDryRun)
-                    RTPrintf("Dry run - no files copied!\n");
-                RTPrintf("Gathering file information ...\n");
-            }
-
-            RTLISTNODE listToCopy;
-            uint32_t cObjects = 0;
-            int vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), uFlags,
-                                   &cObjects, &listToCopy);
-            if (RT_FAILURE(vrc))
-            {
-                switch (vrc)
-                {
-                    case VERR_NOT_FOUND:
-                        RTMsgError("No files to copy found!\n");
-                        break;
-
-                    case VERR_PATH_NOT_FOUND:
-                        RTMsgError("Source path \"%s\" not found!\n", Utf8Source.c_str());
-                        break;
-
-                    default:
-                        RTMsgError("Failed to initialize, rc=%Rrc\n", vrc);
-                        break;
-                }
-            }
-            else
-            {
-                if (RT_SUCCESS(vrc) && fVerbose)
-                {
-                    if (fCopyRecursive)
-                        RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
-                                 Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
-                    else
-                        RTPrintf("Copying \"%s\" to \"%s\" (%u file(s)) ...\n",
-                                 Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
-                }
-
-                if (RT_SUCCESS(vrc))
-                {
-                    PDIRECTORYENTRY pNode;
-                    uint32_t uCurObject = 1;
-                    char szDest[RTPATH_MAX];
-                    RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
-                    {
-                        /*
-                         * Build final destination path: Append the relative path
-                         * stored in the directory node to the destination directory
-                         * specified on the command line.
-                         */
-                        szDest[0] = '\0'; /* Terminate string, needed for RTPathAppend(). */
-                        vrc = RTPathAppend(szDest, sizeof(szDest), Utf8Dest.c_str());
-                        if (RT_SUCCESS(vrc))
-                            vrc = RTPathAppend(szDest, sizeof(szDest), pNode->pszDestPath);
-
-                        if (RT_SUCCESS(vrc))
-                        {
-                            if (fVerbose)
-                                RTPrintf("Copying \"%s\" (%u/%u) ...\n",
-                                         pNode->pszSourcePath, uCurObject, cObjects);
-
-                            /* Finally copy the desired file (if no dry run selected). */
-                            if (!fDryRun)
-                                vrc = ctrlCopyFile(guest, pNode->pszSourcePath, szDest,
-                                                   Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
-                        }
-                        else
-                            RTMsgError("Error building destination file name, rc=%Rrc\n", vrc);
-                        if (RT_FAILURE(vrc))
-                            break;
-                        uCurObject++;
-                    }
-                    if (RT_SUCCESS(vrc) && fVerbose)
-                        RTPrintf("Copy operation successful!\n");
-                }
-                ctrlCopyDestroy(&listToCopy);
-            }
-            a->session->UnlockMachine();
-        } while (0);
+        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
+        return 1;
     }
+
+    /* Open a session for the VM. */
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+
+    do
+    {
+        /* Get the associated console. */
+        ComPtr<IConsole> console;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+        /* ... and session machine */
+        ComPtr<IMachine> sessionMachine;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+
+        ComPtr<IGuest> guest;
+        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
+
+        if (fVerbose)
+        {
+            if (fDryRun)
+                RTPrintf("Dry run - no files copied!\n");
+            RTPrintf("Gathering file information ...\n");
+        }
+
+        RTLISTNODE listToCopy;
+        uint32_t cObjects = 0;
+        int vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), uFlags,
+                               &cObjects, &listToCopy);
+        if (RT_FAILURE(vrc))
+        {
+            switch (vrc)
+            {
+                case VERR_NOT_FOUND:
+                    RTMsgError("No files to copy found!\n");
+                    break;
+
+                case VERR_PATH_NOT_FOUND:
+                    RTMsgError("Source path \"%s\" not found!\n", Utf8Source.c_str());
+                    break;
+
+                default:
+                    RTMsgError("Failed to initialize, rc=%Rrc\n", vrc);
+                    break;
+            }
+        }
+        else
+        {
+            if (RT_SUCCESS(vrc) && fVerbose)
+            {
+                if (fCopyRecursive)
+                    RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
+                             Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
+                else
+                    RTPrintf("Copying \"%s\" to \"%s\" (%u file(s)) ...\n",
+                             Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
+            }
+
+            if (RT_SUCCESS(vrc))
+            {
+                PDIRECTORYENTRY pNode;
+                uint32_t uCurObject = 1;
+                char szDest[RTPATH_MAX];
+                RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
+                {
+                    /*
+                     * Build final destination path: Append the relative path
+                     * stored in the directory node to the destination directory
+                     * specified on the command line.
+                     */
+                    szDest[0] = '\0'; /* Terminate string, needed for RTPathAppend(). */
+                    vrc = RTPathAppend(szDest, sizeof(szDest), Utf8Dest.c_str());
+                    if (RT_SUCCESS(vrc))
+                        vrc = RTPathAppend(szDest, sizeof(szDest), pNode->pszDestPath);
+
+                    if (RT_SUCCESS(vrc))
+                    {
+                        if (fVerbose)
+                            RTPrintf("Copying \"%s\" (%u/%u) ...\n",
+                                     pNode->pszSourcePath, uCurObject, cObjects);
+
+                        /* Finally copy the desired file (if no dry run selected). */
+                        if (!fDryRun)
+                            vrc = ctrlCopyFile(guest, pNode->pszSourcePath, szDest,
+                                               Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
+                    }
+                    else
+                        RTMsgError("Error building destination file name, rc=%Rrc\n", vrc);
+                    if (RT_FAILURE(vrc))
+                        break;
+                    uCurObject++;
+                }
+                if (RT_SUCCESS(vrc) && fVerbose)
+                    RTPrintf("Copy operation successful!\n");
+            }
+            ctrlCopyDestroy(&listToCopy);
+        }
+        a->session->UnlockMachine();
+    } while (0);
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
@@ -1216,84 +1221,90 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
     HRESULT rc;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
-    if (machine)
+    if (FAILED(rc))
+        return 1;
+
+    /* Machine is running? */
+    MachineState_T machineState;
+    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
+    if (machineState != MachineState_Running)
     {
-        do
-        {
-            /* Open an existing session for VM. */
-            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Shared));
-            // @todo r=dj assert that it's an existing session
+        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
+        return 1;
+    }
 
-            /* Get the mutable session machine. */
-            a->session->COMGETTER(Machine)(machine.asOutParam());
+    /* Open a session for the VM. */
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
 
-            /* Get the associated console. */
-            ComPtr<IConsole> console;
-            CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+    do
+    {
+        /* Get the associated console. */
+        ComPtr<IConsole> console;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+        /* ... and session machine */
+        ComPtr<IMachine> sessionMachine;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
-            ComPtr<IGuest> guest;
-            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
+        ComPtr<IGuest> guest;
+        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
 
-            if (fVerbose)
-                RTPrintf("Updating Guest Additions on \"%s\" ...\n", a->argv[0]);
+        if (fVerbose)
+            RTPrintf("Updating Guest Additions of machine \"%s\" ...\n", a->argv[0]);
 
 #ifdef DEBUG_andy
-            if (Utf8Source.isEmpty())
-                Utf8Source = "c:\\Downloads\\VBoxGuestAdditions-r67158.iso";
+        if (Utf8Source.isEmpty())
+            Utf8Source = "c:\\Downloads\\VBoxGuestAdditions-r67158.iso";
 #endif
-            /* Determine source if not set yet. */
-            if (Utf8Source.isEmpty())
-            {
-                char strTemp[RTPATH_MAX];
-                int vrc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
-                AssertRC(vrc);
-                Utf8Str Utf8Src1 = Utf8Str(strTemp).append("/VBoxGuestAdditions.iso");
+        /* Determine source if not set yet. */
+        if (Utf8Source.isEmpty())
+        {
+            char strTemp[RTPATH_MAX];
+            int vrc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
+            AssertRC(vrc);
+            Utf8Str Utf8Src1 = Utf8Str(strTemp).append("/VBoxGuestAdditions.iso");
 
-                vrc = RTPathExecDir(strTemp, sizeof(strTemp));
-                AssertRC(vrc);
-                Utf8Str Utf8Src2 = Utf8Str(strTemp).append("/additions/VBoxGuestAdditions.iso");
+            vrc = RTPathExecDir(strTemp, sizeof(strTemp));
+            AssertRC(vrc);
+            Utf8Str Utf8Src2 = Utf8Str(strTemp).append("/additions/VBoxGuestAdditions.iso");
 
-                /* Check the standard image locations */
-                if (RTFileExists(Utf8Src1.c_str()))
-                    Utf8Source = Utf8Src1;
-                else if (RTFileExists(Utf8Src2.c_str()))
-                    Utf8Source = Utf8Src2;
-                else
-                {
-                    RTMsgError("Source could not be determined! Please use --source to specify a valid source.\n");
-                    break;
-                }
-            }
-            else if (!RTFileExists(Utf8Source.c_str()))
+            /* Check the standard image locations */
+            if (RTFileExists(Utf8Src1.c_str()))
+                Utf8Source = Utf8Src1;
+            else if (RTFileExists(Utf8Src2.c_str()))
+                Utf8Source = Utf8Src2;
+            else
             {
-                RTMsgError("Source \"%s\" does not exist!\n", Utf8Source.c_str());
+                RTMsgError("Source could not be determined! Please use --source to specify a valid source.\n");
                 break;
             }
-            if (fVerbose)
-                RTPrintf("Using source: %s\n", Utf8Source.c_str());
+        }
+        else if (!RTFileExists(Utf8Source.c_str()))
+        {
+            RTMsgError("Source \"%s\" does not exist!\n", Utf8Source.c_str());
+            break;
+        }
+        if (fVerbose)
+            RTPrintf("Using source: %s\n", Utf8Source.c_str());
 
-            ComPtr<IProgress> progress;
-            rc = guest->UpdateGuestAdditions(Bstr(Utf8Source).raw(), progress.asOutParam());
-            if (SUCCEEDED(rc) && progress)
-            {
-                rc = showProgress(progress);
-                if (FAILED(rc))
-                {
-                    com::ProgressErrorInfo info(progress);
-                    if (info.isBasicAvailable())
-                        RTMsgError("Failed to start Guest Additions update. Error message: %lS\n", info.getText().raw());
-                    else
-                        RTMsgError("Failed to start Guest Additions update. No error message available!\n");
-                }
-                else
-                {
-                    if (fVerbose)
-                        RTPrintf("Guest Additions installer successfully copied and started.\n");
-                }
-            }
-            a->session->UnlockMachine();
-        } while (0);
-    }
+        ComPtr<IProgress> progress;
+        CHECK_ERROR_BREAK(guest, UpdateGuestAdditions(Bstr(Utf8Source).raw(),
+                                                      progress.asOutParam()));
+        rc = showProgress(progress);
+        if (FAILED(rc))
+        {
+            com::ProgressErrorInfo info(progress);
+            if (info.isBasicAvailable())
+                RTMsgError("Failed to start Guest Additions update. Error message: %lS\n", info.getText().raw());
+            else
+                RTMsgError("Failed to start Guest Additions update. No error message available!\n");
+        }
+        else
+        {
+            if (fVerbose)
+                RTPrintf("Guest Additions installer successfully copied and started.\n");
+        }
+        a->session->UnlockMachine();
+    } while (0);
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
