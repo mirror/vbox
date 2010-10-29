@@ -3462,26 +3462,23 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSourceUm(HANDLE hDevice, CONST D3DD
     Assert(pDevice);
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     HRESULT hr = S_OK;
-//    IDirect3DVertexBuffer9 *pStreamData;
-//    UINT cbOffset;
-//    UINT cbStride;
-//    hr = pDevice->pDevice9If->GetStreamSource(pData->Stream, &pStreamData, &cbOffset, &cbStride);
-//    Assert(hr == S_OK);
-//    if (hr == S_OK)
-//    {
-//        if (pStreamData)
-//        {
-//            Assert(0);
-//            /* @todo: impl! */
-//        }
-//        else
-//        {
-            Assert(pData->Stream < RT_ELEMENTS(pDevice->aStreamSourceUm));
-            PVBOXWDDMDISP_STREAMSOURCEUM pStrSrcUm = &pDevice->aStreamSourceUm[pData->Stream];
-            pStrSrcUm->pvBuffer = pUMBuffer;
-            pStrSrcUm->cbStride = pData->Stride;
-//        }
-//    }
+    IDirect3DVertexBuffer9 *pStreamData;
+    UINT cbOffset;
+    UINT cbStride;
+
+    Assert(pData->Stream < RT_ELEMENTS(pDevice->aStreamSourceUm));
+    PVBOXWDDMDISP_STREAMSOURCEUM pStrSrcUm = &pDevice->aStreamSourceUm[pData->Stream];
+    pStrSrcUm->pvBuffer = pUMBuffer;
+    pStrSrcUm->cbStride = pData->Stride;
+
+    hr = pDevice->pDevice9If->GetStreamSource(pData->Stream, &pStreamData, &cbOffset, &cbStride);
+    Assert(hr == S_OK);
+    if (hr==S_OK && pStreamData)
+    {
+        hr = pDevice->pDevice9If->SetStreamSource(pData->Stream, NULL, 0, 0);
+        pStreamData->Release();
+    }
+    
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -6229,6 +6226,10 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSource(HANDLE hDevice, CONST D3DDDI
         pDevice->aStreamSource[pData->Stream] = pAlloc;
         pDevice->StreamSourceInfo[pData->Stream].uiOffset = pData->Offset;
         pDevice->StreamSourceInfo[pData->Stream].uiStride = pData->Stride;
+
+        PVBOXWDDMDISP_STREAMSOURCEUM pStrSrcUm = &pDevice->aStreamSourceUm[pData->Stream];
+        pStrSrcUm->pvBuffer = NULL;
+        pStrSrcUm->cbStride = 0;
     }
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -7956,7 +7957,7 @@ VOID vboxVDbgDoPrint(LPCSTR szString, ...)
     _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
     va_end(pArgList);
 
-    OutputDebugStringA(szBuffer);
+    //OutputDebugStringA(szBuffer);
 }
 #endif
 
