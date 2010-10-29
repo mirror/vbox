@@ -807,7 +807,7 @@ int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon,
                           ULONG ulSize);
 
 void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
-                             void **ppv, ULONG ulSize);
+                             void **ppv);
 void VBoxUnmapAdapterInformation (PDEVICE_EXTENSION PrimaryExtension);
 
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
@@ -844,17 +844,13 @@ typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
 int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData);
 
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
-#ifndef VBOX_WITH_WDDM
-                             PVIDEO_PORT_CONFIG_INFO pConfigInfo,
-#endif
                              ULONG AdapterMemorySize, uint32_t fCaps);
 BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
 
-#ifdef VBOX_WITH_WDDM
-int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension);
-#else
+void VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension);
+#ifndef VBOX_WITH_WDDM
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
 DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd);
 #endif

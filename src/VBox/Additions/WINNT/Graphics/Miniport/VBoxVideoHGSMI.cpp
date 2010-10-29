@@ -287,39 +287,7 @@ int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMI
     return rc;
 }
 
-#ifndef VBOX_WITH_WDDM
-static int vbvaInitInfoDisplay (void *pvData, VBVAINFOVIEW *p)
-{
-    PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION) pvData;
 
-    int i;
-    PDEVICE_EXTENSION Extension;
-
-    for (i = 0, Extension = PrimaryExtension;
-         i < commonFromDeviceExt(PrimaryExtension)->cDisplays && Extension;
-         i++, Extension = Extension->pNext)
-    {
-        p[i].u32ViewIndex     = Extension->iDevice;
-        p[i].u32ViewOffset    = Extension->ulFrameBufferOffset;
-        p[i].u32ViewSize      = PrimaryExtension->u.primary.ulMaxFrameBufferSize;
-
-        /* How much VRAM should be reserved for the guest drivers to use VBVA. */
-        const uint32_t cbReservedVRAM = VBVA_DISPLAY_INFORMATION_SIZE + VBVA_MIN_BUFFER_SIZE;
-
-        p[i].u32MaxScreenSize = p[i].u32ViewSize > cbReservedVRAM?
-                                    p[i].u32ViewSize - cbReservedVRAM:
-                                    0;
-    }
-
-    if (i == commonFromDeviceExt(PrimaryExtension)->cDisplays && Extension == NULL)
-    {
-        return VINF_SUCCESS;
-    }
-
-    AssertFailed ();
-    return VERR_INTERNAL_ERROR;
-}
-#endif
 int vbvaInitInfoCaps (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
 {
     VBVACAPS *pCaps = (VBVACAPS*)pvData;
@@ -413,10 +381,7 @@ static int vboxSetupAdapterInfoHGSMI (PVBOXVIDEO_COMMON pCommon)
  * to talk to the host.
  */
 VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
-#ifndef VBOX_WITH_WDDM
-        PVIDEO_PORT_CONFIG_INFO pConfigInfo,
-#endif
-        ULONG AdapterMemorySize, uint32_t fCaps)
+                            ULONG AdapterMemorySize, uint32_t fCaps)
 {
     VP_STATUS rc = NO_ERROR;
 
@@ -573,93 +538,9 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         }
     }
 
-#ifndef VBOX_WITH_WDDM
+#ifdef VBOX_WITH_WDDM
     /* For WDDM, we simply store the number of monitors as we will deal with
      * VidPN stuff later */
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
-    {
-        typedef VP_STATUS (*PFNCREATESECONDARYDISPLAY)(PVOID, PVOID *, ULONG);
-        PFNCREATESECONDARYDISPLAY pfnCreateSecondaryDisplay = NULL;
-
-        /* Dynamically query the VideoPort import to be binary compatible across Windows versions */
-        if (vboxQueryWinVersion() > WINNT4)
-        {
-            /* This bluescreens on NT4, hence the above version check */
-            pfnCreateSecondaryDisplay = (PFNCREATESECONDARYDISPLAY)(pConfigInfo->VideoPortGetProcAddress)
-                                                                       (PrimaryExtension,
-                                                                        (PUCHAR)"VideoPortCreateSecondaryDisplay");
-        }
-
-        if (!pfnCreateSecondaryDisplay)
-            commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
-        else
-        {
-            PDEVICE_EXTENSION pPrev = PrimaryExtension;
-
-            ULONG iDisplay;
-            ULONG cDisplays = commonFromDeviceExt(PrimaryExtension)->cDisplays;
-            commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
-            for (iDisplay = 1; iDisplay < cDisplays; iDisplay++)
-            {
-               PDEVICE_EXTENSION SecondaryExtension = NULL;
-               rc = pfnCreateSecondaryDisplay (PrimaryExtension, (PVOID*)&SecondaryExtension, VIDEO_DUALVIEW_REMOVABLE);
-
-               dprintf(("VBoxVideo::VBoxSetupDisplays: VideoPortCreateSecondaryDisplay returned %#x, SecondaryExtension = %p\n",
-                        rc, SecondaryExtension));
-
-               if (rc != NO_ERROR)
-               {
-                   break;
-               }
-
-               SecondaryExtension->pNext                = NULL;
-               SecondaryExtension->pPrimary             = PrimaryExtension;
-               SecondaryExtension->iDevice              = iDisplay;
-               SecondaryExtension->ulFrameBufferOffset  = 0;
-               SecondaryExtension->ulFrameBufferSize    = 0;
-               SecondaryExtension->u.secondary.bEnabled = FALSE;
-
-               /* Update the list pointers. */
-               pPrev->pNext = SecondaryExtension;
-               pPrev = SecondaryExtension;
-
-               /* Take the successfully created display into account. */
-               commonFromDeviceExt(PrimaryExtension)->cDisplays++;
-            }
-        }
-
-        /* Failure to create secondary displays is not fatal */
-        rc = NO_ERROR;
-    }
-
-    /* Now when the number of monitors is known and extensions are created,
-     * calculate the layout of framebuffers.
-     */
-    VBoxComputeFrameBufferSizes (PrimaryExtension);
-    /* in case of WDDM we do not control the framebuffer location,
-     * i.e. it is assigned by Video Memory Manager,
-     * The FB information should be passed to guest from our
-     * DxgkDdiSetVidPnSourceAddress callback */
-
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
-    {
-        if (RT_SUCCESS(rc))
-        {
-            rc = VBoxHGSMISendViewInfo (commonFromDeviceExt(PrimaryExtension),
-                                   commonFromDeviceExt(PrimaryExtension)->cDisplays,
-                                   vbvaInitInfoDisplay,
-                                   (void *) PrimaryExtension);
-            AssertRC(rc);
-        }
-
-        if (RT_FAILURE (rc))
-        {
-            commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
-        }
-    }
-#endif
-
-#ifdef VBOX_WITH_WDDM
     if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
     {
         ULONG ulAvailable = commonFromDeviceExt(PrimaryExtension)->cbVRAM
@@ -765,74 +646,19 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
 #endif
 
     if (!commonFromDeviceExt(PrimaryExtension)->bHGSMI)
-    {
-        /* Unmap the memory if VBoxVideo is not supported. */
-        VBoxUnmapAdapterMemory (PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap, commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap);
-        VBoxUnmapAdapterInformation (PrimaryExtension);
-
-        HGSMIHeapDestroy (&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap);
-    }
+        VBoxFreeDisplaysHGSMI(PrimaryExtension);
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
 
-#ifdef VBOX_WITH_WDDM
-int VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
+void VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
 {
-    int rc = VINF_SUCCESS;
+    VBoxUnmapAdapterMemory(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap);
+    HGSMIHeapDestroy(&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap);
 
-    Assert(PrimaryExtension->pvVisibleVram);
-    if (PrimaryExtension->pvVisibleVram)
-        VBoxUnmapAdapterMemory(PrimaryExtension, (void**)&PrimaryExtension->pvVisibleVram, vboxWddmVramCpuVisibleSize(PrimaryExtension));
-
-    for (int i = commonFromDeviceExt(PrimaryExtension)->cDisplays-1; i >= 0; --i)
-    {
-        rc = vboxVbvaDisable(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
-            rc = vboxVbvaDestroy(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);
-            AssertRC(rc);
-            if (RT_FAILURE(rc))
-            {
-                /* @todo: */
-            }
-        }
-    }
-
-    vboxVideoAMgrDestroy(PrimaryExtension, &PrimaryExtension->AllocMgr);
-
-    rc = vboxVdmaDisable(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        rc = vboxVdmaDestroy(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
-            /*rc = */VBoxUnmapAdapterMemory(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap, commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap);
-/*
-            AssertRC(rc);
-            if (RT_SUCCESS(rc))
-*/
-            {
-                HGSMIHeapDestroy(&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap);
-
-                /* Map the adapter information. It will be needed for HGSMI IO. */
-                /*rc = */VBoxUnmapAdapterInformation(PrimaryExtension);
-/*
-                AssertRC(rc);
-                if (RT_FAILURE(rc))
-                    drprintf((__FUNCTION__"VBoxUnmapAdapterMemory PrimaryExtension->u.primary.pvAdapterInformation failed, rc(%d)\n", rc));
-*/
-
-            }
-        }
-    }
-
-    return rc;
+    /* Unmap the adapter information needed for HGSMI IO. */
+    VBoxUnmapAdapterInformation(PrimaryExtension);
 }
-#endif
 
 /*
  * Send the pointer shape to the host.

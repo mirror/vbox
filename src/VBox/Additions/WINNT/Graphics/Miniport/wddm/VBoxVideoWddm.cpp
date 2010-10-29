@@ -492,6 +492,151 @@ static void vboxWddmDevExtZeroinit(PDEVICE_EXTENSION pDevExt, CONST PDEVICE_OBJE
 #endif
 }
 
+static void vboxWddmSetupDisplays(PDEVICE_EXTENSION pDevExt)
+{
+    /* For WDDM, we simply store the number of monitors as we will deal with
+     * VidPN stuff later */
+    int rc = STATUS_SUCCESS;
+
+    if (commonFromDeviceExt(pDevExt)->bHGSMI)
+    {
+        ULONG ulAvailable = commonFromDeviceExt(pDevExt)->cbVRAM
+                            - commonFromDeviceExt(pDevExt)->cbMiniportHeap
+                            - VBVA_ADAPTER_INFORMATION_SIZE;
+
+        ULONG ulSize;
+        ULONG offset;
+#ifdef VBOX_WITH_VDMA
+        ulSize = ulAvailable / 2;
+        if (ulSize > VBOXWDDM_C_VDMA_BUFFER_SIZE)
+            ulSize = VBOXWDDM_C_VDMA_BUFFER_SIZE;
+
+        /* Align down to 4096 bytes. */
+        ulSize &= ~0xFFF;
+        offset = ulAvailable - ulSize;
+
+        Assert(!(offset & 0xFFF));
+#else
+        offset = ulAvailable;
+#endif
+        rc = vboxVdmaCreate (pDevExt, &pDevExt->u.primary.Vdma
+#ifdef VBOX_WITH_VDMA
+                , offset, ulSize
+#endif
+                );
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            /* can enable it right away since the host does not need any screen/FB info
+             * for basic DMA functionality */
+            rc = vboxVdmaEnable(pDevExt, &pDevExt->u.primary.Vdma);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                vboxVdmaDestroy(pDevExt, &pDevExt->u.primary.Vdma);
+        }
+
+        ulAvailable = offset;
+        ulSize = ulAvailable/2;
+        offset = ulAvailable - ulSize;
+
+        NTSTATUS Status = vboxVideoAMgrCreate(pDevExt, &pDevExt->AllocMgr, offset, ulSize);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status != STATUS_SUCCESS)
+        {
+            offset = ulAvailable;
+        }
+
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+        if (RT_SUCCESS(rc))
+        {
+            ulAvailable = offset;
+            ulSize = ulAvailable / 2;
+            ulSize /= commonFromDeviceExt(pDevExt)->cDisplays;
+            Assert(ulSize > VBVA_MIN_BUFFER_SIZE);
+            if (ulSize > VBVA_MIN_BUFFER_SIZE)
+            {
+                ULONG ulRatio = ulSize/VBVA_MIN_BUFFER_SIZE;
+                ulRatio >>= 4; /* /= 16; */
+                if (ulRatio)
+                    ulSize = VBVA_MIN_BUFFER_SIZE * ulRatio;
+                else
+                    ulSize = VBVA_MIN_BUFFER_SIZE;
+            }
+            else
+            {
+                /* todo: ?? */
+            }
+
+            ulSize &= ~0xFFF;
+            Assert(ulSize);
+
+            Assert(ulSize * commonFromDeviceExt(pDevExt)->cDisplays < ulAvailable);
+
+            for (int i = commonFromDeviceExt(pDevExt)->cDisplays-1; i >= 0; --i)
+            {
+                offset -= ulSize;
+                rc = vboxVbvaCreate(pDevExt, &pDevExt->aSources[i].Vbva, offset, ulSize, i);
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = vboxVbvaEnable(pDevExt, &pDevExt->aSources[i].Vbva);
+                    AssertRC(rc);
+                    if (RT_FAILURE(rc))
+                    {
+                        /* @todo: de-initialize */
+                    }
+                }
+            }
+        }
+#endif
+
+        rc = VBoxMapAdapterMemory(commonFromDeviceExt(pDevExt), (void**)&pDevExt->pvVisibleVram,
+                                       0,
+                                       vboxWddmVramCpuVisibleSize(pDevExt));
+        Assert(rc == VINF_SUCCESS);
+        if (rc != VINF_SUCCESS)
+            pDevExt->pvVisibleVram = NULL;
+
+        if (RT_FAILURE(rc))
+            commonFromDeviceExt(pDevExt)->bHGSMI = FALSE;
+    }
+}
+
+static int vboxWddmFreeDisplays(PDEVICE_EXTENSION pDevExt)
+{
+    int rc = VINF_SUCCESS;
+
+    Assert(pDevExt->pvVisibleVram);
+    if (pDevExt->pvVisibleVram)
+        VBoxUnmapAdapterMemory(pDevExt, (void**)&pDevExt->pvVisibleVram);
+
+    for (int i = commonFromDeviceExt(pDevExt)->cDisplays-1; i >= 0; --i)
+    {
+        rc = vboxVbvaDisable(pDevExt, &pDevExt->aSources[i].Vbva);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vboxVbvaDestroy(pDevExt, &pDevExt->aSources[i].Vbva);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+            {
+                /* @todo: */
+            }
+        }
+    }
+
+    vboxVideoAMgrDestroy(pDevExt, &pDevExt->AllocMgr);
+
+    rc = vboxVdmaDisable(pDevExt, &pDevExt->u.primary.Vdma);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = vboxVdmaDestroy(pDevExt, &pDevExt->u.primary.Vdma);
+        AssertRC(rc);
+    }
+    return rc;
+}
+
 /* driver callbacks */
 NTSTATUS DxgkDdiAddDevice(
     IN CONST PDEVICE_OBJECT PhysicalDeviceObject,
@@ -583,13 +728,18 @@ NTSTATUS DxgkDdiStartDevice(
                 /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
                 VbglInit ();
 
-                /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old
-                 * code will be ifdef'ed and later removed.
+                /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported.
                  * The host will however support both old and new interface to keep compatibility
                  * with old guest additions.
                  */
                 VBoxSetupDisplaysHGSMI(pContext, AdapterMemorySize,
                                        VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ);
+                if (commonFromDeviceExt(pContext)->bHGSMI)
+                {
+                    vboxWddmSetupDisplays(pContext);
+                    if (!commonFromDeviceExt(pContext)->bHGSMI)
+                        VBoxFreeDisplaysHGSMI(pContext);
+                }
                 if (commonFromDeviceExt(pContext)->bHGSMI)
                 {
                     drprintf(("VBoxVideoWddm: using HGSMI\n"));
@@ -660,7 +810,9 @@ NTSTATUS DxgkDdiStopDevice(
     vboxVhwaFree(pDevExt);
 #endif
 
-    int rc = VBoxFreeDisplaysHGSMI(pDevExt);
+    int rc = vboxWddmFreeDisplays(pDevExt);
+    if (RT_SUCCESS(rc))
+        VBoxFreeDisplaysHGSMI(pDevExt);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {

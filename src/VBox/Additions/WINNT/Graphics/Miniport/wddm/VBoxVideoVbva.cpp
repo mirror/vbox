@@ -124,16 +124,8 @@ int vboxVbvaCreate(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuff
 int vboxVbvaDestroy(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva)
 {
     int rc = VINF_SUCCESS;
-    /*rc = */VBoxUnmapAdapterMemory(pDevExt, (void**)&pVbva->pVBVA, pVbva->cbVBVA);
-/*
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-*/
-        memset(pVbva, 0, sizeof(VBOXVBVAINFO));
-/*
-    else
-        drprintf((__FUNCTION__": VBoxUnmapAdapterMemory failed, rc (%d)\n", rc));
-*/
+    VBoxUnmapAdapterMemory(pDevExt, (void**)&pVbva->pVBVA);
+    memset(pVbva, 0, sizeof(VBOXVBVAINFO));
     return rc;
 }
 
