@@ -341,7 +341,7 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
      * Calc when it should start firing.
      */
     uint64_t u64NextTS = u64Now + u64First;
-    if (fHighRes)
+    if (!fHighRes)
         pSubTimer->u.Std.u64NextTS = u64NextTS;
     RTTIMERLNX_LOG(("startsubtimer %p\n", pSubTimer->pParent));
 
