@@ -71,7 +71,7 @@
 #include <MediumFormatImpl.h>
 #include <ProgressCombinedImpl.h>
 #include <ProgressProxyImpl.h>
-#include <VRDPServerImpl.h>
+#include <VRDEServerImpl.h>
 #include <SharedFolderImpl.h>
 #include <HostImpl.h>
 #include <HostNetworkInterfaceImpl.h>
