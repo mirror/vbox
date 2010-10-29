@@ -20,7 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include "SnapshotImpl.h"
-#include "VRDPServerImpl.h"
+#include "VRDEServerImpl.h"
 #include "MediumAttachmentImpl.h"
 #include "MediumLock.h"
 #include "NetworkAdapterImpl.h"

@@ -317,7 +317,7 @@ VBoxSVC_SOURCES = \
 	DisplayPNGUtil.cpp \
 	DisplayResampleImage.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
-	VRDPServerImpl.cpp \
+	VRDEServerImpl.cpp \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
 	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp,)
