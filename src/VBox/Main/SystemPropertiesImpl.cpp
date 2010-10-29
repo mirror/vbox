@@ -949,6 +949,23 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormatFromExtension(const Utf8St
 /////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Returns the user's home directory. Wrapper around RTPathUserHome().
+ * @param strPath
+ * @return
+ */
+HRESULT SystemProperties::getUserHomeDirectory(Utf8Str &strPath)
+{
+    char szHome[RTPATH_MAX];
+    int vrc = RTPathUserHome(szHome, sizeof(szHome));
+    if (RT_FAILURE(vrc))
+        return setError(E_FAIL,
+                        tr("Cannot determine user home directory (%Rrc)"),
+                        vrc);
+    strPath = szHome;
+    return S_OK;
+}
+
+/**
  * Internal implementation to set the default machine folder. Gets called
  * from the public attribute setter as well as loadSettings(). With 4.0,
  * the "default default" machine folder has changed, and we now require
@@ -966,14 +983,8 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &strPath)
        )
     {
         // new default with VirtualBox 4.0: "$HOME/VirtualBox VMs"
-        char szHome[200]; // RTPATH_MAX is ridiculously large
-        int vrc = RTPathUserHome(szHome, sizeof(szHome));
-        if (RT_FAILURE(vrc))
-            return setError(E_FAIL,
-                            tr("Cannot determine user home directory (%Rrc)"),
-                            vrc);
-
-        path = szHome;
+        HRESULT rc = getUserHomeDirectory(path);
+        if (FAILED(rc)) return rc;
         path += RTPATH_SLASH_STR "VirtualBox VMs";
     }
 

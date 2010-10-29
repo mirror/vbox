@@ -117,6 +117,7 @@ private:
 
     typedef std::list<ComObjPtr<MediumFormat> > MediumFormatList;
 
+    HRESULT getUserHomeDirectory(Utf8Str &strPath);
     HRESULT setDefaultMachineFolder(const Utf8Str &aPath);
     HRESULT setDefaultHardDiskFormat(const Utf8Str &aFormat);
 
