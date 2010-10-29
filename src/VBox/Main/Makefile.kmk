@@ -720,7 +720,7 @@ endif # !VBOX_ONLY_SDK (the ifndef is far above)
 #
 # The VBoxExtPackHelperApp.
 #
-ifdef VBOX_WITH_EXTPACK
+if 0 # def VBOX_WITH_EXTPACK
  PROGRAMS += VBoxExtPackHelperApp
  VBoxExtPackHelperApp_TEMPLATE = VBoxR3Static
  VBoxExtPackHelperApp_SOURCES = VBoxExtPackHelperApp.cpp
