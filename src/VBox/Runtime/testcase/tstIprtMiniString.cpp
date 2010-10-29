@@ -134,6 +134,10 @@ static void test1(RTTEST hTest)
     }
     CHECK(copy2.length() == 100);
 
+    /* printf */
+    iprt::MiniString StrFmt;
+    CHECK(StrFmt.printf("%s-%s-%d", "abc", "def", 42).equals("abc-def-42"));
+
 #undef CHECK
 #undef CHECK_DUMP
 #undef CHECK_DUMP_I

@@ -28,6 +28,7 @@
 
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/stdarg.h>
 
 #include <new>
 
@@ -208,6 +209,32 @@ public:
         }
         return *this;
     }
+
+    /**
+     * Assigns the output of the string format operation (RTStrPrintf).
+     *
+     * @param   pszFormat       The format string.
+     * @param   ...             Ellipsis containing the arguments specified by
+     *                          the format string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @returns Reference to the object.
+     */
+    MiniString &printf(const char *pszFormat, ...);
+
+    /**
+     * Assigns the output of the string format operation (RTStrPrintfV).
+     *
+     * @param   pszFormat       The format string.
+     * @param   va              Argument vector containing the arguments
+     *                          specified by the format string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     *
+     * @returns Reference to the object.
+     */
+    MiniString &printfV(const char *pszFormat, va_list va);
 
     /**
      * Appends the string "that" to "this".
@@ -724,7 +751,9 @@ protected:
         }
     }
 
-    char    *m_psz;                     /**< The string buffer. */
+    static DECLCALLBACK(size_t) printfOutputCallback(void *pvArg, const char *pachChars, size_t cbChars);
+
+    char   *m_psz;                      /**< The string buffer. */
     size_t  m_cch;                      /**< strlen(m_psz) - i.e. no terminator included. */
     size_t  m_cbAllocated;              /**< Size of buffer that m_psz points to; at least m_cbLength + 1. */
 };
