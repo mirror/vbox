@@ -1245,12 +1245,12 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
             if (Utf8Source.isEmpty())
             {
                 char strTemp[RTPATH_MAX];
-                int rc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
-                AssertRC(rc);
+                int vrc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
+                AssertRC(vrc);
                 Utf8Str Utf8Src1 = Utf8Str(strTemp).append("/VBoxGuestAdditions.iso");
 
-                rc = RTPathExecDir(strTemp, sizeof(strTemp));
-                AssertRC(rc);
+                vrc = RTPathExecDir(strTemp, sizeof(strTemp));
+                AssertRC(vrc);
                 Utf8Str Utf8Src2 = Utf8Str(strTemp).append("/additions/VBoxGuestAdditions.iso");
 
                 /* Check the standard image locations */
