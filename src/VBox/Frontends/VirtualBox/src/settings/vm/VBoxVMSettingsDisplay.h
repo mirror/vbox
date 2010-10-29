@@ -37,9 +37,6 @@ public:
 #endif
 
 #ifdef VBOX_WITH_CRHGSMI
-    bool isAcceleration3DSelected() const;
-    int getMinVramSizeMBForWddm3D() const;
-    int getVramSizeMB() const;
     void setWddmMode(bool bWddm);
 #endif
 

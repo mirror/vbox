@@ -63,8 +63,7 @@ bool VBoxVMSettingsGeneral::isWindowsOSTypeSelected() const
 bool VBoxVMSettingsGeneral::isWddmSupportedForOSType() const
 {
     const QString & id = mOSTypeSelector->type().GetId();
-    bool bWddm = id == "WindowsVista" || id == "Windows7";
-    return bWddm;
+    return id == "WindowsVista" || id == "Windows7";
 }
 #endif
 

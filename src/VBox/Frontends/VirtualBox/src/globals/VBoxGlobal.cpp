@@ -3614,7 +3614,17 @@ quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine /* = 0 */, int cMoni
        if (typeId.startsWith("Windows"))
        {
            /* Windows guests need offscreen VRAM too for graphics acceleration features. */
-           needMBytes *= 2;
+#ifdef VBOX_WITH_CRHGSMI
+           if (typeId == "WindowsVista" || typeId == "Windows7")
+           {
+               /* wddm mode, there are two surfaces for each screen: shadow & primary */
+               needMBytes *= 3;
+           }
+           else
+#endif
+           {
+               needMBytes *= 2;
+           }
        }
     }
 
@@ -4161,6 +4171,17 @@ quint64 VBoxGlobal::required2DOffscreenVideoMemory()
     return VBoxQGLOverlay::required2DOffscreenVideoMemory();
 }
 
+#endif
+
+#ifdef VBOX_WITH_CRHGSMI
+/* static */
+quint64 VBoxGlobal::required3DWddmOffscreenVideoMemory(CMachine *aMachine /* = 0 */, int cMonitors /* = 1 */)
+{
+    cMonitors = RT_MAX(cMonitors, 1);
+    quint64 cbSize = VBoxGlobal::requiredVideoMemory(aMachine, 1);
+    cbSize += 64 * _1M;
+    return cbSize;
+}
 #endif
 
 #ifdef Q_WS_MAC
