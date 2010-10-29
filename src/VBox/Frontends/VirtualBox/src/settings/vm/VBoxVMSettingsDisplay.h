@@ -40,6 +40,7 @@ public:
     bool isAcceleration3DSelected() const;
     int getMinVramSizeMBForWddm3D() const;
     int getVramSizeMB() const;
+    void setWddmMode(bool bWddm);
 #endif
 
 protected:
@@ -77,6 +78,10 @@ private:
     int m_maxVRAMVisible;
     /* Initial VRAM value when the dialog is opened. */
     int m_initialVRAM;
+#ifdef VBOX_WITH_CRHGSMI
+    /* specifies whether the guest os is wddm-capable */
+    bool m_bWddmMode;
+#endif
 };
 
 #endif // __VBoxVMSettingsDisplay_h__

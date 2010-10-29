@@ -582,18 +582,22 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
         VBoxVMSettingsDisplay *pDisplayPage =
             qobject_cast<VBoxVMSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
 #ifdef VBOX_WITH_CRHGSMI
-        if (pGeneralPage && pDisplayPage &&
-            pDisplayPage->isAcceleration3DSelected() && !pGeneralPage->isWddmSupportedForOSType())
+        if (pGeneralPage && pDisplayPage)
         {
-            int vramMb = pDisplayPage->getVramSizeMB();
-            int requiredVramMb = pDisplayPage->getMinVramSizeMBForWddm3D();
-            if (vramMb < requiredVramMb)
+            bool bWddmSupported = pGeneralPage->isWddmSupportedForOSType();
+            pDisplayPage->setWddmMode(bWddmSupported);
+            if (pDisplayPage->isAcceleration3DSelected() && bWddmSupported)
             {
-                strWarning = tr(
-                    "you have 3D Acceleration enabled for OS type using the WDDM Video Driver. "
-                    "To make 3D work OK please set guest VRAM size to <b>%1</b>."
-                    ).arg (vboxGlobal().formatSize (requiredVramMb * _1M, 0, VBoxDefs::FormatSize_RoundUp));
-                return true;
+                int vramMb = pDisplayPage->getVramSizeMB();
+                int requiredVramMb = pDisplayPage->getMinVramSizeMBForWddm3D();
+                if (vramMb < requiredVramMb)
+                {
+                    strWarning = tr(
+                        "You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. "
+                        "For maximal performance set the guest VRAM to at least <b>%1</b>."
+                        ).arg (vboxGlobal().formatSize (requiredVramMb * _1M, 0, VBoxDefs::FormatSize_RoundUp));
+                    return true;
+                }
             }
         }
 #endif

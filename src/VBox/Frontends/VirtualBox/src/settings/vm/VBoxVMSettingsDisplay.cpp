@@ -113,6 +113,10 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     mCb2DVideo->setVisible (false);
 #endif
 
+#ifdef VBOX_WITH_CRHGSMI
+    m_bWddmMode = false;
+#endif
+
     /* Applying language settings */
     retranslateUi();
 }
@@ -138,6 +142,15 @@ int VBoxVMSettingsDisplay::getMinVramSizeMBForWddm3D() const
 int VBoxVMSettingsDisplay::getVramSizeMB() const
 {
     return mSlMemory->value();
+}
+
+void VBoxVMSettingsDisplay::setWddmMode(bool bWddm)
+{
+    if (bWddm == m_bWddmMode)
+        return;
+
+    m_bWddmMode = bWddm;
+    checkMultiMonitorReqs();
 }
 #endif
 
@@ -222,10 +235,6 @@ void VBoxVMSettingsDisplay::setValidator (QIWidgetValidator *aVal)
              mValidator, SLOT (revalidate()));
 #ifdef VBOX_WITH_VIDEOHWACCEL
     connect (mCb2DVideo, SIGNAL (stateChanged (int)),
-             mValidator, SLOT (revalidate()));
-#endif
-#ifdef VBOX_WITH_CRHGSMI
-    connect (mCb3D, SIGNAL (stateChanged (int)),
              mValidator, SLOT (revalidate()));
 #endif
     connect (mCbVRDE, SIGNAL (toggled (bool)),
@@ -344,11 +353,20 @@ void VBoxVMSettingsDisplay::checkMultiMonitorReqs()
     /* The memory requirements have changed too. */
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine, cVal) / _1M;
     /* Limit the maximum memory to save careless users from setting useless big values */
-    m_maxVRAMVisible = cVal * 32;
-    if (m_maxVRAMVisible < 128)
-        m_maxVRAMVisible = 128;
-    if (m_maxVRAMVisible < m_initialVRAM)
-        m_maxVRAMVisible = m_initialVRAM;
+#ifdef VBOX_WITH_CRHGSMI
+    if (m_bWddmMode && mCb3D->isChecked())
+    {
+        m_maxVRAMVisible = 256;
+    }
+    else
+#endif
+    {
+        m_maxVRAMVisible = cVal * 32;
+        if (m_maxVRAMVisible < 128)
+            m_maxVRAMVisible = 128;
+        if (m_maxVRAMVisible < m_initialVRAM)
+            m_maxVRAMVisible = m_initialVRAM;
+    }
     mSlMemory->setWarningHint (1, needMBytes);
     mSlMemory->setPageStep (calcPageStep (m_maxVRAMVisible));
     mSlMemory->setMaximum (m_maxVRAMVisible);
