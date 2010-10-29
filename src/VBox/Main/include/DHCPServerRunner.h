@@ -17,9 +17,7 @@
 #include <iprt/err.h>
 #include <iprt/types.h>
 #include <iprt/string.h>
-#ifndef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
 #include <iprt/mem.h>
-#endif /* !VBOX_WITH_VRDP_MEMLEAK_DETECTOR */
 #include <VBox/com/string.h>
 
 typedef enum

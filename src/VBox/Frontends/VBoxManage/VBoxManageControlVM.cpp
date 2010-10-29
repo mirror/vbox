@@ -485,7 +485,6 @@ int handleControlVM(HandlerArg *a)
                     RTMsgError("The NIC %d is currently disabled and thus can't change its attachment type", n);
             }
         }
-#ifdef VBOX_WITH_VRDP
         else if (   !strcmp(a->argv[1], "vrde")
                  || !strcmp(a->argv[1], "vrdp"))
         {
@@ -566,7 +565,7 @@ int handleControlVM(HandlerArg *a)
                 CHECK_ERROR(vrdeServer, COMSETTER(VideoChannelQuality)(n));
             }
         }
-        else if (!strcmp(a->argv[1], "vrdesetproperty"))
+        else if (!strcmp(a->argv[1], "vrdeproperty"))
         {
             if (a->argc <= 1 + 1)
             {
@@ -594,7 +593,7 @@ int handleControlVM(HandlerArg *a)
                     }
                     else
                     {
-                        errorArgument("Invalid --vrdesetproperty argument '%s'", a->argv[2]);
+                        errorArgument("Invalid --vrdeproperty argument '%s'", a->argv[2]);
                         rc = E_FAIL;
                         break;
                     }
@@ -611,7 +610,6 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
         }
-#endif /* VBOX_WITH_VRDP */
         else if (   !strcmp(a->argv[1], "usbattach")
                  || !strcmp(a->argv[1], "usbdetach"))
         {

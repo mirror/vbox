@@ -48,14 +48,13 @@ ifdef IPRT_WITH_KSTUFF
  include $(PATH_SUB_CURRENT)/kStuff/Makefile.kmk
 endif
 
-# OpenSSL for VRDP.
-#if defined(VBOX_WITH_VRDP) && !defined(VBOX_ONLY_SDK) - this isn't right, thus:
+# OpenSSL.
 if !defined(VBOX_ONLY_SDK) \
  && "$(SDK_VBOX_OPENSSL_INCS)" == "$(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)"
  include $(PATH_SUB_CURRENT)/openssl-0.9.8o/Makefile.kmk
 endif
 
-# libjpeg for VRDP video acceleration
+# libjpeg for VRDP video redirection
 if defined(VBOX_WITH_VRDP) && defined(VBOX_WITH_VRDP_VIDEO_CHANNEL)
  include $(PATH_SUB_CURRENT)/jpeg-8a/Makefile.kmk
 endif

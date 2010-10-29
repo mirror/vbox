@@ -1082,11 +1082,8 @@ endif # VBOX_WITH_VUSB
 ifdef VBOX_WITH_USB
  Drivers_DEFS         += VBOX_WITH_USB
 
- ifdef VBOX_WITH_VRDP
-  Drivers_DEFS        += VBOX_WITH_VRDP
-  Drivers_SOURCES     += \
-	USB/vrdp/USBProxyDevice-vrdp.cpp
- endif
+ Drivers_SOURCES     += \
+       USB/vrdp/USBProxyDevice-vrdp.cpp
 
  Drivers_DEFS.darwin  += VUSB_HAVE_USBPROXY_DEVICE
  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN

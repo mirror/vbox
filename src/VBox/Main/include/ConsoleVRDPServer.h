@@ -32,7 +32,6 @@
 // ConsoleVRDPServer
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef VBOX_WITH_VRDP
 typedef struct _VRDPInputSynch
 {
     int cGuestNumLockAdaptions;
@@ -46,7 +45,6 @@ typedef struct _VRDPInputSynch
     bool fClientCapsLock;
     bool fClientScrollLock;
 } VRDPInputSynch;
-#endif /* VBOX_WITH_VRDP */
 
 /* Member of Console. Helper class for VRDP server management. Not a COM class. */
 class ConsoleVRDPServer
@@ -59,16 +57,11 @@ public:
 
     void NotifyAbsoluteMouse (bool fGuestWantsAbsolute)
     {
-#ifdef VBOX_WITH_VRDP
         m_fGuestWantsAbsolute = fGuestWantsAbsolute;
-#else
-        NOREF(fGuestWantsAbsolute);
-#endif /* VBOX_WITH_VRDP */
     }
 
     void NotifyKeyboardLedsChange (BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
     {
-#ifdef VBOX_WITH_VRDP
         bool fGuestNumLock    = (fNumLock != FALSE);
         bool fGuestCapsLock   = (fCapsLock != FALSE);
         bool fGuestScrollLock = (fScrollLock != FALSE);
@@ -87,11 +80,6 @@ public:
         m_InputSynch.fGuestNumLock    = fGuestNumLock;
         m_InputSynch.fGuestCapsLock   = fGuestCapsLock;
         m_InputSynch.fGuestScrollLock = fGuestScrollLock;
-#else
-        NOREF(fNumLock);
-        NOREF(fCapsLock);
-        NOREF(fScrollLock);
-#endif /* VBOX_WITH_VRDP */
     }
 
     void EnableConnections (void);
@@ -145,7 +133,6 @@ private:
      */
     Console *mConsole;
 
-#ifdef VBOX_WITH_VRDP
     HVRDESERVER mhServer;
 
     static int loadVRDPLibrary (const char *pszLibraryName);
@@ -182,7 +169,6 @@ private:
     VRDPInputSynch m_InputSynch;
 
     int32_t mVRDPBindPort;
-#endif /* VBOX_WITH_VRDP */
 
     RTCRITSECT mCritSect;
 

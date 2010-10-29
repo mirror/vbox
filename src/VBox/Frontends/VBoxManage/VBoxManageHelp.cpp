@@ -73,11 +73,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #else
     bool fDarwin = false;
 #endif
-#ifdef VBOX_WITH_VRDP
-    bool fVRDE = true;
-#else
-    bool fVRDE = false;
-#endif
 #ifdef VBOX_WITH_VBOXSDL
     bool fVBoxSDL = true;
 #else
@@ -92,7 +87,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         fSolaris = true;
         fFreeBSD = true;
         fDarwin = true;
-        fVRDE = true;
         fVBoxSDL = true;
         u64Cmd = USAGE_ALL;
     }
@@ -309,18 +303,15 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--audiocontroller ac97|hda|sb16]\n"
                      "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
                      "                                         bidirectional]\n");
-        if (fVRDE)
-        {
-            RTStrmPrintf(pStrm,
+        RTStrmPrintf(pStrm,
                      "                            [--vrde on|off]\n"
                      "                            [--vrdelibrary default|<name>\n"
-                     "                            [--vrdesetproperty <name=[value]>]\n"
+                     "                            [--vrdeproperty <name=[value]>]\n"
                      "                            [--vrdeauthtype null|external|guest]\n"
                      "                            [--vrdemulticon on|off]\n"
                      "                            [--vrdereusecon on|off]\n"
                      "                            [--vrdevideochannel on|off]\n"
                      "                            [--vrdevideochannelquality <percent>]\n");
-        }
         RTStrmPrintf(pStrm,
                      "                            [--usb on|off]\n"
                      "                            [--usbehci on|off]\n"
@@ -403,14 +394,11 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            gueststatisticsinterval <seconds>]\n"
                      "                            usbattach <uuid>|<address> |\n"
                      "                            usbdetach <uuid>|<address> |\n");
-        if (fVRDE)
-        {
-            RTStrmPrintf(pStrm,
+        RTStrmPrintf(pStrm,
                      "                            vrde on|off |\n");
-            RTStrmPrintf(pStrm,
-                     "                            vrdesetproperty <name=[value]> |\n"
+        RTStrmPrintf(pStrm,
+                     "                            vrdeproperty <name=[value]> |\n"
                      "                            vrdevideochannelquality <percent>\n");
-        }
         RTStrmPrintf(pStrm,
                      "                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
                      "                            setcredentials <username> <password> <domain>\n"

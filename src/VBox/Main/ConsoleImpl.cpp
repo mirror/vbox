@@ -424,10 +424,8 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     rc = mMachine->COMGETTER(State)(&mMachineState);
     AssertComRCReturnRC(rc);
 
-#ifdef VBOX_WITH_VRDP
     rc = mMachine->COMGETTER(VRDEServer)(unconst(mVRDEServer).asOutParam());
     AssertComRCReturnRC(rc);
-#endif
 
     /* Create associated child COM objects */
 
@@ -596,9 +594,7 @@ void Console::uninit()
         unconst(mConsoleVRDPServer) = NULL;
     }
 
-#ifdef VBOX_WITH_VRDP
     unconst(mVRDEServer).setNull();
-#endif
 
     unconst(mControl).setNull();
     unconst(mMachine).setNull();
@@ -935,7 +931,6 @@ void Console::VRDPClientConnect(uint32_t u32ClientId)
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-#ifdef VBOX_WITH_VRDP
     uint32_t u32Clients = ASMAtomicIncU32(&mcVRDPClients);
     VMMDev *pDev;
     PPDMIVMMDEVPORT pPort;
@@ -951,7 +946,6 @@ void Console::VRDPClientConnect(uint32_t u32ClientId)
 
     NOREF(u32ClientId);
     mDisplay->VideoAccelVRDP(true);
-#endif /* VBOX_WITH_VRDP */
 
     LogFlowFuncLeave();
     return;
@@ -967,7 +961,6 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
 
     AssertReturnVoid(mConsoleVRDPServer);
 
-#ifdef VBOX_WITH_VRDP
     uint32_t u32Clients = ASMAtomicDecU32(&mcVRDPClients);
     VMMDev *pDev;
     PPDMIVMMDEVPORT pPort;
@@ -983,14 +976,12 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
     }
 
     mDisplay->VideoAccelVRDP(false);
-#endif /* VBOX_WITH_VRDP */
 
     if (fu32Intercepted & VRDE_CLIENT_INTERCEPT_USB)
     {
         mConsoleVRDPServer->USBBackendDelete(u32ClientId);
     }
 
-#ifdef VBOX_WITH_VRDP
     if (fu32Intercepted & VRDE_CLIENT_INTERCEPT_CLIPBOARD)
     {
         mConsoleVRDPServer->ClipboardDelete(u32ClientId);
@@ -1012,7 +1003,6 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
             }
         }
     }
-#endif /* VBOX_WITH_VRDP */
 
     Bstr uuid;
     HRESULT hrc = mMachine->COMGETTER(Id)(uuid.asOutParam());
@@ -1029,10 +1019,6 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
     updateGuestPropertiesVRDPDisconnect(u32ClientId);
 #endif /* VBOX_WITH_GUEST_PROPS */
 
-#ifdef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
-    MLDMemDump();
-#endif /* !VBOX_WITH_VRDP_MEMLEAK_DETECTOR */
-
     LogFlowFuncLeave();
     return;
 }
@@ -1048,7 +1034,6 @@ void Console::VRDPInterceptAudio(uint32_t u32ClientId)
                  mAudioSniffer, u32ClientId));
     NOREF(u32ClientId);
 
-#ifdef VBOX_WITH_VRDP
     ++mcAudioRefs;
 
     if (mcAudioRefs == 1)
@@ -1062,7 +1047,6 @@ void Console::VRDPInterceptAudio(uint32_t u32ClientId)
             }
         }
     }
-#endif
 
     LogFlowFuncLeave();
     return;
@@ -1092,9 +1076,7 @@ void Console::VRDPInterceptClipboard(uint32_t u32ClientId)
 
     AssertReturnVoid(mConsoleVRDPServer);
 
-#ifdef VBOX_WITH_VRDP
     mConsoleVRDPServer->ClipboardCreate(u32ClientId);
-#endif /* VBOX_WITH_VRDP */
 
     LogFlowFuncLeave();
     return;
@@ -7390,7 +7372,6 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             if (FAILED(rc)) throw rc;
         }
 
-#ifdef VBOX_WITH_VRDP
         /* Create the VRDP server. In case of headless operation, this will
          * also create the framebuffer, required at VM creation.
          */
@@ -7441,8 +7422,6 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             throw setErrorStatic(E_FAIL, errMsg.c_str());
         }
 
-#endif /* VBOX_WITH_VRDP */
-
         ComPtr<IMachine> pMachine = console->machine();
         ULONG cCpus = 1;
         pMachine->COMGETTER(CPUCount)(&cCpus);
@@ -7467,10 +7446,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
         alock.enter();
 
-#ifdef VBOX_WITH_VRDP
         /* Enable client connections to the server. */
         console->consoleVRDPServer()->EnableConnections();
-#endif /* VBOX_WITH_VRDP */
 
         if (RT_SUCCESS(vrc))
         {

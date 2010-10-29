@@ -89,44 +89,5 @@
  */
 #define MyLog(a)            MyLogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, a)
 
-#ifdef VBOX_WITH_VRDP_MEMLEAK_DETECTOR
-#include <iprt/err.h>
-#include <iprt/log.h>
-#include <iprt/critsect.h>
-#include <iprt/mem.h>
-
-void *MLDMemAllocDbg (size_t cb, bool fTmp, bool fZero, const char *pszCaller, int iLine);
-void *MLDMemReallocDbg (void *pv, size_t cb, const char *pszCaller, int iLine);
-void MLDMemFreeDbg (void *pv, bool fTmp);
-
-void MLDMemInit (const char *pszPrefix);
-void MLDMemUninit (void);
-
-void MLDMemDump (void);
-
-#define MLDMemAlloc(__cb)          MLDMemAllocDbg   (__cb, false /* fTmp */, false /* fZero */, __FILE__,  __LINE__)
-#define MLDMemAllocZ(__cb)         MLDMemAllocDbg   (__cb, false /* fTmp */, true /* fZero */,  __FILE__,  __LINE__)
-#define MLDMemTmpAlloc(__cb)       MLDMemAllocDbg   (__cb, true /* fTmp */,  false /* fZero */, __FILE__,  __LINE__)
-#define MLDMemTmpAllocZ(__cb)      MLDMemAllocDbg   (__cb, true /* fTmp */,  true /* fZero */,  __FILE__,  __LINE__)
-#define MLDMemRealloc(__pv, __cb)  MLDMemReallocDbg (__pv, __cb, __FILE__,  __LINE__)
-#define MLDMemFree(__pv)           MLDMemFreeDbg    (__pv, false /* fTmp */)
-#define MLDMemTmpFree(__pv)        MLDMemFreeDbg    (__pv, true /* fTmp */)
-
-#undef RTMemAlloc
-#define RTMemAlloc     MLDMemAlloc
-#undef RTMemAllocZ
-#define RTMemAllocZ    MLDMemAllocZ
-#undef RTMemTmpAlloc
-#define RTMemTmpAlloc  MLDMemTmpAlloc
-#undef RTMemTmpAllocZ
-#define RTMemTmpAllocZ MLDMemTmpAllocZ
-#undef RTMemRealloc
-#define RTMemRealloc   MLDMemRealloc
-#undef RTMemFree
-#define RTMemFree      MLDMemFree
-#undef RTMemTmpFree
-#define RTMemTmpFree   MLDMemTmpFree
-#endif /* VBOX_WITH_MLD_MEMLEAK_DETECTOR */
-
 #endif // ____H_LOGGING
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

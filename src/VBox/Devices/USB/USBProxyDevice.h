@@ -139,10 +139,8 @@ typedef const USBPROXYBACK *PCUSBPROXYBACK;
 
 /** The Host backend. */
 extern const USBPROXYBACK g_USBProxyDeviceHost;
-#ifdef VBOX_WITH_VRDP
-/** The VRDP backend. */
+/** The remote desktop backend. */
 extern const USBPROXYBACK g_USBProxyDeviceVRDP;
-#endif /* VBOX_WITH_VRDP */
 
 #ifdef RDESKTOP
 typedef struct VUSBDEV
@@ -210,13 +208,11 @@ typedef struct USBPROXYDEV
         void *pv;
         RTFILE File;
         int fd;
-#ifdef VBOX_WITH_VRDP
         struct vrdp_priv
         {
             void *pCallback;
             void *pDevice;
         } vrdp;
-#endif /* VBOX_WITH_VRDP */
     } Backend;
 } USBPROXYDEV;
 

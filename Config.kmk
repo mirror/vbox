@@ -439,7 +439,7 @@ VBOX_WITH_SECURELABEL = 1
 endif
 # The headless frontend.
 VBOX_WITH_HEADLESS = 1
-# Enable the VRDP server.
+# Enable the build of VRDP server.
 VBOX_WITH_VRDP = 1
 # Enable support for video redirection VRDP channel.
 VBOX_WITH_VRDP_VIDEO_CHANNEL = 1
@@ -962,7 +962,6 @@ endif
 # Undefined VBOX_WITH_MAIN implies exclusion of a few more items.
 #
 ifndef VBOX_WITH_MAIN
- VBOX_WITH_VRDP=
  VBOX_WITH_VBOXSDL=
  VBOX_WITH_QTGUI=
  VBOX_WITH_DEBUGGER_GUI=

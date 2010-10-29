@@ -780,11 +780,7 @@ static DECLCALLBACK(int) usbProxyConstruct(PPDMUSBINS pUsbIns, int iInstance, PC
     if (!fRemote)
         pThis->pOps = &g_USBProxyDeviceHost;
     else
-#ifdef VBOX_WITH_VRDP
         pThis->pOps = &g_USBProxyDeviceVRDP;
-#else
-        return VERR_NOT_SUPPORTED;
-#endif
     rc = pThis->pOps->pfnOpen(pThis, szAddress, pvBackend);
     if (RT_FAILURE(rc))
         return rc;

@@ -145,10 +145,8 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
  #endif
 #endif
 
-//#ifdef VBOX_WITH_VRDP
     {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VRDPAuth" SUPLIB_DLL_SUFF },
     {   kSupIFT_Dll,  kSupID_SharedLib,          true, "VBoxVRDP" SUPLIB_DLL_SUFF },
-//#endif
 
 //#ifdef VBOX_WITH_HEADLESS
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxHeadless" SUPLIB_EXE_SUFF },
