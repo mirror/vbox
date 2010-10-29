@@ -38,6 +38,10 @@ public:
     bool isWindowsOSTypeSelected() const;
 #endif
 
+#ifdef VBOX_WITH_CRHGSMI
+    bool isWddmSupportedForOSType() const;
+#endif
+
 protected:
 
     void getFrom (const CMachine &aMachine);

@@ -59,6 +59,14 @@ bool VBoxVMSettingsGeneral::isWindowsOSTypeSelected() const
 }
 #endif
 
+#ifdef VBOX_WITH_CRHGSMI
+bool VBoxVMSettingsGeneral::isWddmSupportedForOSType() const
+{
+    return mOSTypeSelector->type().GetId() == "Windows Vista"
+            || mOSTypeSelector->type().GetId() == "Windows 7";
+}
+#endif
+
 void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;

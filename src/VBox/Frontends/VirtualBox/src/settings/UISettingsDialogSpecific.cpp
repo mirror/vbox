@@ -572,7 +572,7 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
         }
     }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI)
     /* 2D Video Acceleration is available for Windows guests only: */
     if (pPage == m_pSelector->idToPage(VMSettingsPage_Display))
     {
@@ -581,6 +581,23 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
             qobject_cast<VBoxVMSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
         VBoxVMSettingsDisplay *pDisplayPage =
             qobject_cast<VBoxVMSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
+#ifdef VBOX_WITH_CRHGSMI
+        if (pGeneralPage && pDisplayPage &&
+            pDisplayPage->isAcceleration3DSelected() && !pGeneralPage->isWddmSupportedForOSType())
+        {
+            int vramMb = pDisplayPage->getVramSizeMB();
+            int requiredVramMb = pDisplayPage->getMinVramSizeMBForWddm3D();
+            if (vramMb < requiredVramMb)
+            {
+                strWarning = tr(
+                    "you have 3D Acceleration enabled for OS type using the WDDM Video Driver. "
+                    "To make 3D work OK please set guest VRAM size to <b>%1</b>."
+                    ).arg (vboxGlobal().formatSize (requiredVramMb * _1M, 0, VBoxDefs::FormatSize_RoundUp));
+                return true;
+            }
+        }
+#endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
         if (pGeneralPage && pDisplayPage &&
             pDisplayPage->isAcceleration2DVideoSelected() && !pGeneralPage->isWindowsOSTypeSelected())
         {
@@ -589,6 +606,7 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
                 "is supported for Windows guests only, this feature will be disabled.");
             return true;
         }
+#endif
     }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
