@@ -5574,11 +5574,11 @@ DECLCALLBACK(void) Medium::vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
 
     if (that->m->vdError.isEmpty())
         that->m->vdError =
-            Utf8StrFmt("%s (%Rrc)", Utf8StrFmtVA(pszFormat, va).c_str(), rc);
+            Utf8StrFmt("%s (%Rrc)", Utf8Str(pszFormat, va).c_str(), rc);
     else
         that->m->vdError =
             Utf8StrFmt("%s.\n%s (%Rrc)", that->m->vdError.c_str(),
-                       Utf8StrFmtVA(pszFormat, va).c_str(), rc);
+                       Utf8Str(pszFormat, va).c_str(), rc);
 }
 
 /* static */
