@@ -244,7 +244,7 @@ void Machine::FinalRelease()
 
 /**
  *  Initializes a new machine instance; this init() variant creates a new, empty machine.
- *  This gets called from VirtualBox::CreateMachine() or VirtualBox::CreateLegacyMachine().
+ *  This gets called from VirtualBox::CreateMachine().
  *
  *  @param aParent      Associated parent object
  *  @param strConfigFile  Local file system path to the VM settings file (can
@@ -770,7 +770,9 @@ void Machine::uninit()
     }
 
     // uninit media from this machine's media registry, if they're still there
-    mParent->unregisterMachineMedia(getId());
+    Guid uuidMachine(getId());
+    if (!uuidMachine.isEmpty())     // can be empty if we're called from a failure of Machine::init
+        mParent->unregisterMachineMedia(uuidMachine);
 
     /* the lock is no more necessary (SessionMachine is uninitialized) */
     alock.leave();

@@ -128,8 +128,6 @@ private:
 
     settings::SystemProperties *m;
 
-    Utf8Str             m_strDefaultMachineFolderFull;
-
     MediumFormatList    m_llMediumFormats;
 
     friend class VirtualBox;

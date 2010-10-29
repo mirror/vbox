@@ -1169,7 +1169,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
        )
     {
         strFull = strMachineFolder;
-        strFull += RTPATH_DELIMITER;
+        strFull += RTPATH_SLASH;
         strFull += data.strLocation;
     }
     else
