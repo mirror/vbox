@@ -869,8 +869,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigInteger(pCfg, "IOAPIC", fIOAPIC);
         if (chipsetType == ChipsetType_ICH9)
         {
+            /* Provide MCFG info */
             InsertConfigInteger(pCfg,  "McfgBase",   u64McfgBase);
             InsertConfigInteger(pCfg,  "McfgLength", u64McfgLength);
+
+
+            /* And register 2 bridges */
+            InsertConfigNode(pDevices, "ich9pcibridge", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+
+            InsertConfigNode(pDev,     "1", &pInst);
+            InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
         }
 
 #if 0 /* enable this to test PCI bridging */
@@ -1308,6 +1318,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 case StorageControllerType_LsiLogic:
                 {
+                    // InsertConfigInteger(pCtlInst, "PCIBusNo",             1);
                     InsertConfigInteger(pCtlInst, "PCIDeviceNo",          20);
                     Assert(!afPciDeviceNo[20]);
                     afPciDeviceNo[20] = true;

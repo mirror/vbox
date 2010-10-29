@@ -2019,8 +2019,16 @@ static bool assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName
     if (iDevFn >=0 && iDevFn < (int)RT_ELEMENTS(pBus->apDevices))
         return true;
 
+    int iStartPos = 0;
+
+    /* We add bridges starting slot 22 */
+    if (!strcmp(pszName, "ich9pcibridge"))
+    {
+        iStartPos = 22 * 8;
+    }
+
     /* Otherwise when assigning a slot, we need to make sure all its functions are available */
-    for (int iPos = 0; iPos < (int)RT_ELEMENTS(pBus->apDevices); iPos += 8)
+    for (int iPos = iStartPos; iPos < (int)RT_ELEMENTS(pBus->apDevices); iPos += 8)
     {
         if (        !pBus->apDevices[iPos]
                 &&  !pBus->apDevices[iPos + 1]
@@ -2138,6 +2146,43 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
     return VINF_SUCCESS;
 }
 
+static void printIndent(PCDBGFINFOHLP pHlp, int iIndent)
+{
+    for (int i = 0; i < iIndent; i++)
+    {
+        pHlp->pfnPrintf(pHlp, "    ");
+    }
+}
+
+static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent)
+{
+    for (uint32_t iDev = 0; iDev < RT_ELEMENTS(pBus->apDevices); iDev++)
+    {
+        PPCIDEVICE pPciDev = pBus->apDevices[iDev];
+        if (pPciDev != NULL)
+        {
+            printIndent(pHlp, iIndent);
+            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %04x-%04x%s%s\n",
+                            pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
+                            pPciDev->name,
+                            PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev),
+                            PCIIsMsiCapable(pPciDev)  ? " MSI" : "",
+                            PCIIsMsixCapable(pPciDev) ? " MSI-X" : ""
+                            );
+        }
+    }
+
+    if (pBus->cBridges > 0)
+    {
+        printIndent(pHlp, iIndent);
+        pHlp->pfnPrintf(pHlp, "Registered %d bridges, subordinate buses info follows\n", pBus->cBridges);
+        for (uint32_t iBridge = 0; iBridge < pBus->cBridges; iBridge++)
+        {
+            PPCIBUS pBusSub = PDMINS_2_DATA(pBus->papBridgesR3[iBridge]->pDevIns, PPCIBUS);
+            ich9pciBusInfo(pBusSub, pHlp, iIndent + 1);
+        }
+    }
+}
 
 /**
  * Info handler, device version.
@@ -2149,19 +2194,8 @@ static int ich9pciRegisterInternal(PPCIBUS pBus, int iDev, PPCIDEVICE pPciDev, c
 static DECLCALLBACK(void) ich9pciInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PPCIBUS pBus = DEVINS_2_PCIBUS(pDevIns);
-    uint32_t iBus = 0, iDev;
 
-
-    for (iDev = 0; iDev < RT_ELEMENTS(pBus->apDevices); iDev++)
-    {
-        PPCIDEVICE pPciDev = pBus->apDevices[iDev];
-        if (pPciDev != NULL)
-            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %x-%x\n",
-                            iBus, (iDev >> 3) & 0xff, iDev & 0x7,
-                            pPciDev->name,
-                            PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev)
-                            );
-    }
+    ich9pciBusInfo(pBus, pHlp, 0);
 }
 
 
