@@ -36,6 +36,12 @@ public:
     bool isAcceleration2DVideoSelected() const;
 #endif
 
+#ifdef VBOX_WITH_CRHGSMI
+    bool isAcceleration3DSelected() const;
+    int getMinVramSizeMBForWddm3D() const;
+    int getVramSizeMB() const;
+#endif
+
 protected:
 
     void getFrom (const CMachine &aMachine);
