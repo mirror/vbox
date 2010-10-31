@@ -253,8 +253,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[9] = (4 << 20)|RT_BIT(7)|RT_BIT(0);
             pNode->port.u32F08_param = 0;
             pNode->node.au32F00_param[0xC] = 0x34;
-            pNode->port.u32F09_param = 0;
             pNode->port.u32F07_param = RT_BIT(5);
+            pNode->port.u32F09_param = RT_BIT(31)|0x7fffffff;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
             break;
