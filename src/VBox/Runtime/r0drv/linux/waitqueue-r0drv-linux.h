@@ -100,8 +100,8 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
     {
 /** @todo optimize: millisecs -> nanosecs -> millisec -> jiffies */
         if (fFlags & RTSEMWAIT_FLAGS_MILLISECS)
-            uTimeout = uTimeout < UINT64_MAX / UINT32_C(1000000) * UINT32_C(1000000)
-                     ? uTimeout * UINT32_C(1000000)
+            uTimeout = uTimeout < UINT64_MAX / RT_US_1SEC * RT_US_1SEC
+                     ? uTimeout * RT_US_1SEC
                      : UINT64_MAX;
         if (uTimeout == UINT64_MAX)
             fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
@@ -136,12 +136,12 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
         pWait->fIndefinite      = false;
 #ifdef IPRT_LINUX_HAS_HRTIMER
         if (   (fFlags & (RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE))
-            || pWait->cNsRelTimeout < UINT32_C(1000000000) / HZ * 4)
+            || pWait->cNsRelTimeout < RT_NS_1SEC / HZ * 4)
         {
             pWait->fHighRes     = true;
 # if BITS_PER_LONG < 64
             if (   KTIME_SEC_MAX <= LONG_MAX
-                && pWait->uNsAbsTimeout >= KTIME_SEC_MAX * UINT64_C(1000000000) + UINT64_C(999999999))
+                && pWait->uNsAbsTimeout >= KTIME_SEC_MAX * RT_NS_1SEC_64 + (RT_NS_1SEC - 1))
                 fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
             else
 # endif
@@ -150,7 +150,7 @@ DECLINLINE(int) rtR0SemLnxWaitInit(PRTR0SEMLNXWAIT pWait, uint32_t fFlags, uint6
         else
 #endif
         {
-            uint64_t cJiffies = ASMMultU64ByU32DivByU32(pWait->cNsRelTimeout, HZ, UINT32_C(1000000000));
+            uint64_t cJiffies = ASMMultU64ByU32DivByU32(pWait->cNsRelTimeout, HZ, RT_NS_1SEC);
             if (cJiffies >= MAX_JIFFY_OFFSET)
                 fFlags |= RTSEMWAIT_FLAGS_INDEFINITE;
             else
@@ -278,7 +278,7 @@ DECLINLINE(uint32_t) rtR0SemLnxWaitGetResolution(void)
 #ifdef IPRT_LINUX_HAS_HRTIMER
     return RTR0SEMLNXWAIT_RESOLUTION;
 #else
-    return 1000000000 / HZ; /* ns */
+    return RT_NS_1SEC / HZ; /* ns */
 #endif
 }
 
