@@ -598,23 +598,6 @@ ifdef VBOX_WITH_RAW_MODE
   endif
  endif
 
- ifdef VBOX_WITH_HGSMI
-  VBoxDDGC_DEFS        += VBOX_WITH_HGSMI
- endif
- ifdef VBOX_WITH_WDDM
-  VBoxDDGC_DEFS        += VBOX_WITH_WDDM
- endif
- ifdef VBOX_WITH_VDMA
-  VBoxDDGC_DEFS        += VBOX_WITH_VDMA
- endif
- ifdef VBOX_WITH_CRHGSMI
-  VBoxDDGC_DEFS        += VBOX_WITH_CRHGSMI
- endif
-
- ifdef VBOXWDDM_WITH_VBVA
-  VBoxDDGC_DEFS         += VBOXWDDM_WITH_VBVA
- endif
-
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxDDGC_DEFS        += VBOX_WITH_VIDEOHWACCEL
  endif
