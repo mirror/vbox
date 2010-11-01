@@ -16,10 +16,10 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
- 
+
 /*
- * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
- * other than GPL or LGPL is available it will apply instead, Sun elects to use only
+ * Oracle LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
  * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
  * a choice of LGPL license versions is made available with the language indicating
  * that LGPLv2 or any later version may be used, or where a choice of which version
@@ -65,7 +65,7 @@ typedef DWORD FOURCC;
 
 #define DMUS_INSTRUMENT_GM_INSTRUMENT 0x1
 
-#define DMUS_MIN_DATA_SIZE 0x4       
+#define DMUS_MIN_DATA_SIZE 0x4
 
 /*****************************************************************************
  * Structures
@@ -104,11 +104,11 @@ struct _DMUS_OFFSETTABLE {
 
 struct _DMUS_INSTRUMENT {
 	ULONG ulPatch;
-	ULONG ulFirstRegionIdx;             
+	ULONG ulFirstRegionIdx;
 	ULONG ulGlobalArtIdx;
 	ULONG ulFirstExtCkIdx;
 	ULONG ulCopyrightIdx;
-	ULONG ulFlags;                        
+	ULONG ulFlags;
 };
 
 struct _DMUS_REGION {
@@ -177,7 +177,7 @@ struct _DMUS_ARTICULATION2 {
 struct _DMUS_EXTENSIONCHUNK {
 	ULONG  cbSize;
 	ULONG  ulNextExtCkIdx;
-	FOURCC ExtCkID;                                      
+	FOURCC ExtCkID;
 	BYTE   byExtCk[DMUS_MIN_DATA_SIZE];
 };
 
@@ -188,7 +188,7 @@ struct _DMUS_COPYRIGHT {
 
 struct _DMUS_WAVEDATA {
 	ULONG cbSize;
-	BYTE  byData[DMUS_MIN_DATA_SIZE]; 
+	BYTE  byData[DMUS_MIN_DATA_SIZE];
 };
 
 struct _DMUS_WAVE {
