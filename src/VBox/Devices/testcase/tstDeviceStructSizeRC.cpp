@@ -256,10 +256,13 @@ int main()
     GEN_CHECK_OFF(VGASTATE, fHasDirtyBits);
     GEN_CHECK_OFF(VGASTATE, fRemappedVGA);
     GEN_CHECK_OFF(VGASTATE, fRenderVRAM);
-    GEN_CHECK_OFF(VGASTATE, cMonitors);
 #ifdef VBOX_WITH_HGSMI
     GEN_CHECK_OFF(VGASTATE, pHGSMI);
 #endif
+#ifdef VBOX_WITH_VDMA
+    GEN_CHECK_OFF(VGASTATE, pVdma);
+#endif
+    GEN_CHECK_OFF(VGASTATE, cMonitors);
     GEN_CHECK_OFF(VGASTATE, cMilliesRefreshInterval);
     GEN_CHECK_OFF(VGASTATE, RefreshTimer);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap);
@@ -300,6 +303,9 @@ int main()
 #endif
 #ifdef VBOX_WITH_HGSMI
     GEN_CHECK_OFF(VGASTATE, IOPortBase);
+#endif
+#ifdef VBOX_WITH_WDDM
+    GEN_CHECK_OFF(VGASTATE, fGuestCaps);
 #endif
 
     /* Input/pckbd.c */
