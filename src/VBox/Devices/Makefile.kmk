@@ -192,11 +192,11 @@ ifdef VBOX_WITH_HGSMI
 endif
 
 ifdef VBOX_WITH_NETFLT
- VBoxDD_LIBS.win      += $(PATH_LIB)/WinNetConfig.lib
+ VBoxDD_LIBS.win       += $(PATH_LIB)/WinNetConfig.lib
 endif
 
 ifdef VBOX_WITH_EFI
- VBoxDD_LIBS          += $(PATH_LIB)/EfiThunkBin$(VBOX_SUFF_LIB)
+ VBoxDD_LIBS           += $(PATH_LIB)/EfiThunkBin$(VBOX_SUFF_LIB)
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
@@ -327,25 +327,23 @@ ifdef VBOX_WITH_HGSMI
 endif
 ifdef VBOX_WITH_WDDM
  DevicesR3_DEFS        += VBOX_WITH_WDDM
- DevicesR3_SOURCES      += \
+ DevicesR3_SOURCES     += \
 	Graphics/HGSMI/SHGSMIHost.cpp
 endif
 ifdef VBOX_WITH_VDMA
  DevicesR3_DEFS        += VBOX_WITH_VDMA
- DevicesR3_SOURCES      += \
+ DevicesR3_SOURCES     += \
 	Graphics/DevVGA_VDMA.cpp
 endif
 ifdef VBOX_WITH_CRHGSMI
  DevicesR3_DEFS        += VBOX_WITH_CRHGSMI
 endif
-
 ifdef VBOXWDDM_TEST_UHGSMI
- DevicesR3_DEFS   += VBOXWDDM_TEST_UHGSMI
+ DevicesR3_DEFS        += VBOXWDDM_TEST_UHGSMI
 endif
 ifdef VBOXWDDM_WITH_VBVA
  DevicesR3_DEFS        += VBOXWDDM_WITH_VBVA
 endif
-
 ifdef VBOX_WITH_VIDEOHWACCEL
  DevicesR3_DEFS        += VBOX_WITH_VIDEOHWACCEL
 endif
@@ -684,7 +682,6 @@ endif
 ifdef VBOX_WITH_CRHGSMI
  VBoxDDR0_DEFS         += VBOX_WITH_CRHGSMI
 endif
-
 ifdef VBOXWDDM_WITH_VBVA
  VBoxDDR0_DEFS         += VBOXWDDM_WITH_VBVA
 endif

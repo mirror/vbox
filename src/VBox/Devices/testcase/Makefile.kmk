@@ -40,6 +40,21 @@ endif
 TESTING += \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
 
+tstDeviceStructSize_FEATURES = \
+	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,) \
+	$(if $(VBOX_WITH_USB),VBOX_WITH_USB,) \
+	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
+	$(if $(VBOX_WITH_AHCI),VBOX_WITH_AHCI,) \
+	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000,) \
+	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO,) \
+	$(if $(VBOX_WITH_SCSI),VBOX_WITH_SCSI,) \
+	$(if $(VBOX_WITH_BUSLOGIC),VBOX_WITH_BUSLOGIC,) \
+	$(if $(VBOX_WITH_LSILOGIC),VBOX_WITH_LSILOGIC,) \
+	$(if $(VBOX_WITH_HGSMI),VBOX_WITH_HGSMI,) \
+	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI,) \
+	$(if $(VBOX_WITH_VDMA),VBOX_WITH_VDMA,) \
+	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM,) \
+	$(if $(VBOX_WITH_VIDEOHWACCEL),VBOX_WITH_VIDEOHWACCEL,)
 
 ifdef VBOX_WITH_RAW_MODE
  #
@@ -47,46 +62,7 @@ ifdef VBOX_WITH_RAW_MODE
  #
  PROGRAMS += tstDeviceStructSizeRC
  tstDeviceStructSizeRC_TEMPLATE  = VBoxRcExe
- tstDeviceStructSizeRC_DEFS      = VBOX_WITH_RAW_MODE
- ifdef VBOX_WITH_USB
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_USB
- endif
- ifdef VBOX_WITH_EHCI
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_EHCI
- endif
- ifdef VBOX_WITH_AHCI
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_AHCI
- endif
- ifdef VBOX_WITH_E1000
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_E1000
- endif
- ifdef VBOX_WITH_VIRTIO
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_VIRTIO
- endif
- ifdef VBOX_WITH_BUSLOGIC
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_BUSLOGIC
- endif
- ifdef VBOX_WITH_SCSI
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_SCSI
- endif
- ifdef VBOX_WITH_LSILOGIC
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_LSILOGIC
- endif
- ifdef VBOX_WITH_HGSMI
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_HGSMI
- endif
- ifdef VBOX_WITH_CRHGSMI
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_CRHGSMI
- endif
- ifdef VBOX_WITH_VDMA
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_VDMA
- endif
- ifdef VBOX_WITH_WDDM
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_WDDM
- endif
- ifdef VBOX_WITH_VIDEOHWACCEL
-  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_VIDEOHWACCEL
- endif
+ tstDeviceStructSizeRC_DEFS      = $(tstDeviceStructSize_FEATURES)
  tstDeviceStructSizeRC_SOURCES   = tstDeviceStructSizeRC.cpp
  tstDeviceStructSizeRC_INCS      = \
  	$(VBOX_PATH_DEVICES_SRC) \
@@ -99,46 +75,7 @@ endif # VBOX_WITH_RAW_MODE
 #
 PROGRAMS += tstDeviceStructSize
 tstDeviceStructSize_TEMPLATE = VBOXR3AUTOTST
-tstDeviceStructSize_DEFS     =
-ifdef VBOX_WITH_USB
- tstDeviceStructSize_DEFS   += VBOX_WITH_USB
-endif
-ifdef VBOX_WITH_EHCI
- tstDeviceStructSize_DEFS   += VBOX_WITH_EHCI
-endif
-ifdef VBOX_WITH_AHCI
- tstDeviceStructSize_DEFS   += VBOX_WITH_AHCI
-endif
-ifdef VBOX_WITH_E1000
- tstDeviceStructSize_DEFS   += VBOX_WITH_E1000
-endif
-ifdef VBOX_WITH_VIRTIO
- tstDeviceStructSize_DEFS   += VBOX_WITH_VIRTIO
-endif
-ifdef VBOX_WITH_BUSLOGIC
- tstDeviceStructSize_DEFS   += VBOX_WITH_BUSLOGIC
-endif
-ifdef VBOX_WITH_LSILOGIC
- tstDeviceStructSize_DEFS   += VBOX_WITH_LSILOGIC
-endif
-ifdef VBOX_WITH_HGSMI
- tstDeviceStructSize_DEFS   += VBOX_WITH_HGSMI
-endif
-ifdef VBOX_WITH_CRHGSMI
- tstDeviceStructSize_DEFS    += VBOX_WITH_CRHGSMI
-endif
-ifdef VBOX_WITH_VDMA
- tstDeviceStructSize_DEFS    += VBOX_WITH_VDMA
-endif
-ifdef VBOX_WITH_WDDM
- tstDeviceStructSize_DEFS    += VBOX_WITH_WDDM
-endif
-ifdef VBOX_WITH_VIDEOHWACCEL
- tstDeviceStructSize_DEFS   += VBOX_WITH_VIDEOHWACCEL
-endif
-ifdef VBOX_WITH_RAW_MODE
- tstDeviceStructSize_DEFS   += VBOX_WITH_RAW_MODE
-endif
+tstDeviceStructSize_DEFS     = $(tstDeviceStructSize_FEATURES)
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
