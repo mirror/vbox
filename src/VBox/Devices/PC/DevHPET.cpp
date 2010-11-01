@@ -716,7 +716,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
         case 1:
         case 2:
             Log(("Narrow read: %d\n", cb));
-            rc = VERR_INTERNAL_ERROR;
+            rc = VINF_SUCCESS;
             break;
         case 4:
         {
@@ -765,7 +765,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
 
         default:
             AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
-            rc = VERR_INTERNAL_ERROR;
+            rc = VINF_SUCCESS;
     }
 
     hpetUnlock(pThis);
