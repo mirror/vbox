@@ -193,7 +193,7 @@ VBoxGLSettingsNetwork::VBoxGLSettingsNetwork()
         new QSpacerItem (0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
     QGridLayout *mainLayout = static_cast <QGridLayout*> (layout());
     mainLayout->addItem (shiftSpacer, 1, 4);
-    static_cast <QHBoxLayout*> (mWtActions->layout())->addStretch();
+    //static_cast <QHBoxLayout*> (mWtActions->layout())->addStretch();
 #endif
 
     /* Setup tree-widget */
@@ -340,8 +340,8 @@ void VBoxGLSettingsNetwork::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save from cache: */
-    CVirtualBox &vbox = vboxGlobal().virtualBox();
-    CHost &host = vbox.GetHost();
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CHost host = vbox.GetHost();
     const CHostNetworkInterfaceVector &interfaces = host.GetNetworkInterfaces();
     /* Remove all the old interfaces first: */
     for (int iNetworkIndex = 0; iNetworkIndex < interfaces.size(); ++iNetworkIndex)
@@ -351,7 +351,7 @@ void VBoxGLSettingsNetwork::saveFromCacheTo(QVariant &data)
         if (iface.GetInterfaceType() == KHostNetworkInterfaceType_HostOnly)
         {
             /* Search for this interface's dhcp sserver: */
-            CDHCPServer &dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
+            CDHCPServer dhcp = vboxGlobal().virtualBox().FindDHCPServerByNetworkName(iface.GetNetworkName());
             /* Delete it if its present: */
             if (!dhcp.isNull())
                 vbox.RemoveDHCPServer(dhcp);
