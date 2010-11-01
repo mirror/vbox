@@ -438,7 +438,7 @@ static int rtTarReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
 
     PRTTARSTORAGEINTERNAL pInt = (PRTTARSTORAGEINTERNAL)pvStorage;
 
-    DEBUG_PRINT_FLOW();
+//    DEBUG_PRINT_FLOW();
 
     return RTTarFileReadAt(pInt->file, uOffset, pvBuf, cbRead, pcbRead);
 }
@@ -1054,7 +1054,7 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     PVDINTERFACEIO pCallbacks = VDGetInterfaceIO(pIO);
     AssertPtrReturn(pCallbacks, VERR_INVALID_PARAMETER);
 
-    DEBUG_PRINT_FLOW();
+//    DEBUG_PRINT_FLOW();
 
     PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
 
@@ -1081,7 +1081,9 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
         size_t cbAvail = RTCircBufUsed(pInt->pCircBuf);
         if (   cbAvail == 0
             && pInt->fEOF)
-            return VERR_EOF;
+        {
+            break;
+        }
         /* If there isn't enough data make sure the worker thread is fetching
          * more. */
         if ((cbRead - cbAllRead) > cbAvail)
@@ -1110,6 +1112,7 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
         /* Mark the block as empty again. */
         RTCircBufReleaseReadBlock(pInt->pCircBuf, cbMemRead);
         cbAllRead += cbMemRead;
+
         pInt->cbCurAll += cbMemRead;
     }
 
@@ -1238,41 +1241,49 @@ int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINT
     if (RT_FAILURE(rc))
         return rc;
 
+    void *pvTmpBuf = 0;
     void *pvBuf = 0;
-    uint64_t cbSize = 0;
+    uint64_t cbTmpSize = _1M;
+    size_t cbAllRead = 0;
     do
     {
-        rc = pCallbacks->pfnGetSize(pvUser, pvStorage, &cbSize);
-        if (RT_FAILURE(rc))
-            break;
-
-        pvBuf = RTMemAlloc(cbSize);
-        if (!pvBuf)
+        pvTmpBuf = RTMemAlloc(cbTmpSize);
+        if (!pvTmpBuf)
         {
             rc = VERR_NO_MEMORY;
             break;
         }
 
-        size_t cbAllRead = 0;
         for(;;)
         {
-            if (cbAllRead == cbSize)
-                break;
-            size_t cbToRead = cbSize - cbAllRead;
             size_t cbRead = 0;
-            rc = pCallbacks->pfnReadSync(pvUser, pvStorage, cbAllRead, &((char*)pvBuf)[cbAllRead], cbToRead, &cbRead);
-            if (RT_FAILURE(rc))
+            rc = pCallbacks->pfnReadSync(pvUser, pvStorage, cbAllRead, pvTmpBuf, cbTmpSize, &cbRead);
+            if (   RT_FAILURE(rc)
+                || cbRead == 0)
                 break;
+            pvBuf = RTMemRealloc(pvBuf, cbAllRead + cbRead);
+            if (!pvBuf)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+            memcpy(&((char*)pvBuf)[cbAllRead], pvTmpBuf, cbRead);
             cbAllRead += cbRead;
         }
     }while(0);
 
     pCallbacks->pfnClose(pvUser, pvStorage);
 
+    if (rc == VERR_EOF)
+        rc = VINF_SUCCESS;
+
+    if (pvTmpBuf)
+        RTMemFree(pvTmpBuf);
+
     if (RT_SUCCESS(rc))
     {
         *ppvBuf = pvBuf;
-        *pcbSize = cbSize;
+        *pcbSize = cbAllRead;
     }else
     {
         if (pvBuf)
