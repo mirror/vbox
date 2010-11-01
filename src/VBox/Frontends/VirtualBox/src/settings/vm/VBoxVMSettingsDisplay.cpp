@@ -153,7 +153,7 @@ void VBoxVMSettingsDisplay::loadToCacheFrom(QVariant &data)
     m_cache.m_f2dAccelerationSupported = VBoxGlobal::isAcceleration2DVideoAvailable();
     m_cache.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
 #endif
-    CVRDEServer &vrdeServer = m_machine.GetVRDEServer();
+    CVRDEServer vrdeServer = m_machine.GetVRDEServer();
     m_cache.m_fVRDEServerSupported = !vrdeServer.isNull();
     m_cache.m_fVRDEServerEnabled = m_cache.m_fVRDEServerSupported && vrdeServer.GetEnabled();
     m_cache.m_strVRDEPort = vrdeServer.GetVRDEProperty("TCP/Ports");
@@ -232,7 +232,7 @@ void VBoxVMSettingsDisplay::saveFromCacheTo(QVariant &data)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     m_machine.SetAccelerate2DVideoEnabled(m_cache.m_f2dAccelerationEnabled);
 #endif
-    CVRDEServer &vrdeServer = m_machine.GetVRDEServer();
+    CVRDEServer vrdeServer = m_machine.GetVRDEServer();
     if (!vrdeServer.isNull())
     {
         vrdeServer.SetEnabled(m_cache.m_fVRDEServerEnabled);
