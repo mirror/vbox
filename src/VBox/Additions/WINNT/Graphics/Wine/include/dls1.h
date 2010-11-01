@@ -26,10 +26,6 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
- 
-/*
- */
-
 #ifndef __WINE_INCLUDE_DLS1_H
 #define __WINE_INCLUDE_DLS1_H
 
@@ -187,7 +183,7 @@ struct _WAVELINK {
 	ULONG  ulTableIndex;
 };
 
-struct _POOLCUE { 
+struct _POOLCUE {
 	ULONG ulOffset;
 };
 
