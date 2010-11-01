@@ -23,7 +23,25 @@
 #include "UISettingsPage.h"
 #include "VBoxVMSettingsDisplay.gen.h"
 
-class VBoxVMSettingsDisplay : public UISettingsPage,
+/* Machine settings / Display page / Cache: */
+struct UISettingsCacheMachineDisplay
+{
+    int m_iCurrentVRAM;
+    int m_cMonitorCount;
+    bool m_f3dAccelerationSupported;
+    bool m_f3dAccelerationEnabled;
+    bool m_f2dAccelerationSupported;
+    bool m_f2dAccelerationEnabled;
+    bool m_fVRDEServerSupported;
+    bool m_fVRDEServerEnabled;
+    QString m_strVRDEPort;
+    KAuthType m_iVRDEAuthType;
+    ulong m_uVRDETimeout;
+    bool m_fMultipleConnectionsAllowed;
+};
+
+/* Machine settings / Display page: */
+class VBoxVMSettingsDisplay : public UISettingsPageMachine,
                               public Ui::VBoxVMSettingsDisplay
 {
     Q_OBJECT;
@@ -42,8 +60,19 @@ public:
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
     bool revalidate (QString &aWarning, QString &aTitle);
@@ -63,7 +92,6 @@ private:
 
     void checkVRAMRequirements();
 
-    CMachine mMachine;
     QIWidgetValidator *mValidator;
 
     /* System minimum lower limit of VRAM (MiB). */
@@ -76,9 +104,12 @@ private:
     /* Initial VRAM value when the dialog is opened. */
     int m_initialVRAM;
 #ifdef VBOX_WITH_CRHGSMI
-    /* specifies whether the guest os is wddm-capable */
+    /* Specifies whether the guest os is wddm-capable: */
     bool m_bWddmMode;
 #endif
+
+    /* Cache: */
+    UISettingsCacheMachineDisplay m_cache;
 };
 
 #endif // __VBoxVMSettingsDisplay_h__

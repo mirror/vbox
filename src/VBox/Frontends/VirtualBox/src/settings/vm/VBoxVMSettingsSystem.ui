@@ -53,7 +53,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1" rowspan="2">
+       <item row="0" column="1" rowspan="2" colspan="2">
         <layout class="QVBoxLayout" name="mLtMemorySlider">
          <property name="spacing">
           <number>0</number>
@@ -116,7 +116,7 @@
          </item>
         </layout>
        </item>
-       <item row="0" column="2">
+       <item row="0" column="3">
         <layout class="QHBoxLayout" name="mLtMemoryUnits">
          <item>
           <widget class="QILineEdit" name="mLeMemory">
@@ -291,6 +291,38 @@
         </layout>
        </item>
        <item row="4" column="0">
+        <widget class="QLabel" name="mLbChipset">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>&amp;Chipset:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="buddy">
+          <cstring>mCbChipset</cstring>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QComboBox" name="mCbChipset">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="whatsThis">
+          <string>Defines chipset type used in this VM.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
         <widget class="QLabel" name="mLbMotherboardExtended">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -306,7 +338,7 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1" colspan="2">
+       <item row="5" column="1" colspan="3">
         <widget class="QCheckBox" name="mCbApic">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -322,7 +354,7 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="1" colspan="2">
+       <item row="6" column="1" colspan="3">
         <widget class="QCheckBox" name="mCbEFI">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -338,7 +370,7 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1" >
+       <item row="7" column="1" colspan="3">
         <widget class="QCheckBox" name="mCbTCUseUTC" >
          <property name="sizePolicy" >
           <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -354,7 +386,7 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="1" >
+       <item row="8" column="1" colspan="3">
         <widget class="QCheckBox" name="mCbUseAbsHID" >
          <property name="sizePolicy" >
           <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -370,7 +402,7 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="0" colspan="3">
+       <item row="9" column="0" colspan="4">
         <spacer name="mSpVer1">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

@@ -35,10 +35,41 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
     Ui::VBoxVMSettingsSystem::setupUi (this);
 
     /* Setup constants */
-    CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
+    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
     uint hostCPUs = vboxGlobal().virtualBox().GetHost().GetProcessorCount();
-    mMinGuestCPU = sys.GetMinGuestCPUCount();
-    mMaxGuestCPU = RT_MIN (2 * hostCPUs, sys.GetMaxGuestCPUCount());
+    mMinGuestCPU = properties.GetMinGuestCPUCount();
+    mMaxGuestCPU = RT_MIN (2 * hostCPUs, properties.GetMaxGuestCPUCount());
+
+    /* Populate possible boot items list.
+     * Currently, it seems, we are supporting only 4 possible boot device types:
+     * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
+     * But maximum boot devices count supported by machine
+     * should be retreived through the ISystemProperties getter.
+     * Moreover, possible boot device types are not listed in some separate Main vector,
+     * so we should get them (randomely?) from the list of all device types.
+     * Until there will be separate Main getter for list of supported boot device types,
+     * this list will be hard-coded here... */
+    int iPossibleBootListSize = qMin((ulong)4, properties.GetMaxBootPosition());
+    for (int iBootPosition = 1; iBootPosition <= iPossibleBootListSize; ++iBootPosition)
+    {
+        switch (iBootPosition)
+        {
+            case 1:
+                m_possibleBootItems << KDeviceType_Floppy;
+                break;
+            case 2:
+                m_possibleBootItems << KDeviceType_DVD;
+                break;
+            case 3:
+                m_possibleBootItems << KDeviceType_HardDisk;
+                break;
+            case 4:
+                m_possibleBootItems << KDeviceType_Network;
+                break;
+            default:
+                break;
+        }
+    }
 
     /* Setup validators */
     mLeMemory->setValidator (new QIntValidator (mSlMemory->minRAM(), mSlMemory->maxRAM(), this));
@@ -100,6 +131,9 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
     mLeCPU->setFixedWidthByText (QString().fill ('8', 3));
     /* Ensure mLeMemory value and validation is updated */
     valueChangedCPU (mSlCPU->value());
+    /* Populate chipset combo: */
+    mCbChipset->insertItem(0, vboxGlobal().toString(KChipsetType_PIIX3), QVariant(KChipsetType_PIIX3));
+    mCbChipset->insertItem(1, vboxGlobal().toString(KChipsetType_ICH9), QVariant(KChipsetType_ICH9));
 
     /* Install global event filter */
     qApp->installEventFilter (this);
@@ -123,149 +157,155 @@ bool VBoxVMSettingsSystem::isHIDEnabled() const
     return mCbUseAbsHID->isChecked();
 }
 
-void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsSystem::loadToCacheFrom(QVariant &data)
 {
-    mMachine = aMachine;
-    CBIOSSettings biosSettings = mMachine.GetBIOSSettings();
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* RAM size */
-    mSlMemory->setValue (aMachine.GetMemorySize());
-
-    /* Boot-order */
+    /* Fill internal variables with corresponding values: */
+    /* Load boot-items of current VM: */
+    QList<KDeviceType> usedBootItems;
+    for (int i = 1; i <= m_possibleBootItems.size(); ++i)
     {
-        mTwBootOrder->clear();
-        /* Load boot-items of current VM */
-        QStringList uniqueList;
-        for (int i = 1; i <= 4; ++ i)
+        KDeviceType type = m_machine.GetBootOrder(i);
+        if (type != KDeviceType_Null)
         {
-            KDeviceType type = mMachine.GetBootOrder (i);
-            if (type != KDeviceType_Null)
-            {
-                QString name = vboxGlobal().toString (type);
-                QTreeWidgetItem *item =
-                    new QTreeWidgetItem (mTwBootOrder, QStringList (name));
-                QVariant vtype (type);
-                item->setData (0, ITEM_TYPE_ROLE, vtype);
-                item->setCheckState (0, Qt::Checked);
-                uniqueList << name;
-            }
+            usedBootItems << type;
+            UIBootItemData data;
+            data.m_type = type;
+            data.m_fEnabled = true;
+            m_cache.m_bootItems << data;
         }
-        /* Load other unique boot-items */
-        for (int i = KDeviceType_Floppy; i < KDeviceType_USB; ++ i)
-        {
-            QString name = vboxGlobal().toString ((KDeviceType) i);
-            if (!uniqueList.contains (name))
-            {
-                QTreeWidgetItem *item =
-                    new QTreeWidgetItem (mTwBootOrder, QStringList (name));
-                item->setData (0, ITEM_TYPE_ROLE, i);
-                item->setCheckState (0, Qt::Unchecked);
-                uniqueList << name;
-            }
-        }
-        adjustBootOrderTWSize();
     }
+    /* Load other unique boot-items: */
+    for (int i = 0; i < m_possibleBootItems.size(); ++i)
+    {
+        KDeviceType type = m_possibleBootItems[i];
+        if (!usedBootItems.contains(type))
+        {
+            UIBootItemData data;
+            data.m_type = type;
+            data.m_fEnabled = false;
+            m_cache.m_bootItems << data;
+        }
+    }
+    m_cache.m_fPFHwVirtExSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    m_cache.m_fPFPAESupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_PAE);
+    m_cache.m_fIoApicEnabled = m_machine.GetBIOSSettings().GetIOAPICEnabled();
+    m_cache.m_fEFIEnabled = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
+    m_cache.m_fUTCEnabled = m_machine.GetRTCUseUTC();
+    m_cache.m_fUseAbsHID = m_machine.GetPointingHidType() == KPointingHidType_USBTablet;
+    m_cache.m_fPAEEnabled = m_machine.GetCPUProperty(KCPUPropertyType_PAE);
+    m_cache.m_fHwVirtExEnabled = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled);
+    m_cache.m_fNestedPagingEnabled = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging);
+    m_cache.m_iRAMSize = m_machine.GetMemorySize();
+    m_cache.m_cCPUCount = m_cache.m_fPFHwVirtExSupported ? m_machine.GetCPUCount() : 1;
+    m_cache.m_chipsetType = m_machine.GetChipsetType();
 
-    /* IO APIC */
-    mCbApic->setChecked (biosSettings.GetIOAPICEnabled());
-
-    /* EFI */
-    mCbEFI->setChecked (mMachine.GetFirmwareType() >= KFirmwareType_EFI && mMachine.GetFirmwareType() <= KFirmwareType_EFIDUAL);
-
-    /* RTC */
-    bool rtcUseUTC = mMachine.GetRTCUseUTC ();
-    mCbTCUseUTC->setChecked (rtcUseUTC);
-
-    /* USB tablet */
-    KPointingHidType pointingHid = mMachine.GetPointingHidType ();
-    mCbUseAbsHID->setChecked (pointingHid == KPointingHidType_USBTablet);
-
-    /* CPU count */
-    bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
-                             .GetProcessorFeature (KProcessorFeature_HWVirtEx);
-    mSlCPU->setEnabled (fVTxAMDVSupported);
-    mLeCPU->setEnabled (fVTxAMDVSupported);
-    mSlCPU->setValue (fVTxAMDVSupported ? aMachine.GetCPUCount() : 1);
-
-    /* PAE/NX */
-    bool fPAESupported = vboxGlobal().virtualBox().GetHost()
-                         .GetProcessorFeature (KProcessorFeature_PAE);
-    mCbPae->setEnabled (fPAESupported);
-    mCbPae->setChecked (aMachine.GetCPUProperty(KCPUPropertyType_PAE));
-
-    /* VT-x/AMD-V page */
-    if (!fVTxAMDVSupported)
-        mTwSystem->removeTab(2);
-
-    /* VT-x/AMD-V */
-    mCbVirt->setEnabled (fVTxAMDVSupported);
-    mCbVirt->setChecked (aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled));
-
-    /* Nested Paging */
-    mCbNestedPaging->setEnabled (fVTxAMDVSupported &&
-                                 aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled));
-    mCbNestedPaging->setChecked (aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging));
-
-    if (mValidator)
-        mValidator->revalidate();
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
-void VBoxVMSettingsSystem::putBackTo()
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsSystem::getFromCache()
 {
-    CBIOSSettings biosSettings = mMachine.GetBIOSSettings();
-
-    /* RAM size */
-    mMachine.SetMemorySize (mSlMemory->value());
-
-    /* Boot order */
+    /* Apply internal variables data to QWidget(s): */
+    for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
     {
-        /* Search for checked items */
-        int index = 1;
-
-        for (int i = 0; i < mTwBootOrder->topLevelItemCount(); ++ i)
-        {
-            QTreeWidgetItem *item = mTwBootOrder->topLevelItem (i);
-            if (item->checkState (0) == Qt::Checked)
-            {
-                KDeviceType type = vboxGlobal().toDeviceType (item->text (0));
-                mMachine.SetBootOrder (index ++, type);
-            }
-        }
-
-        /* Search for non-checked items */
-        for (int i = 0; i < mTwBootOrder->topLevelItemCount(); ++ i)
-        {
-            QTreeWidgetItem *item = mTwBootOrder->topLevelItem (i);
-            if (item->checkState (0) != Qt::Checked)
-                mMachine.SetBootOrder (index ++, KDeviceType_Null);
-        }
+        UIBootItemData data = m_cache.m_bootItems[i];
+        QString name = vboxGlobal().toString(data.m_type);
+        QTreeWidgetItem *pItem = new QTreeWidgetItem(QStringList(name));
+        pItem->setData(0, ITEM_TYPE_ROLE, QVariant(data.m_type));
+        pItem->setCheckState(0, data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
+        mTwBootOrder->addTopLevelItem(pItem);
     }
+    mCbApic->setChecked(m_cache.m_fIoApicEnabled);
+    mCbEFI->setChecked(m_cache.m_fEFIEnabled);
+    mCbTCUseUTC->setChecked(m_cache.m_fUTCEnabled);
+    mCbUseAbsHID->setChecked(m_cache.m_fUseAbsHID);
+    mSlCPU->setEnabled(m_cache.m_fPFHwVirtExSupported);
+    mLeCPU->setEnabled(m_cache.m_fPFHwVirtExSupported);
+    mCbPae->setEnabled(m_cache.m_fPFPAESupported);
+    mCbPae->setChecked(m_cache.m_fPAEEnabled);
+    mCbVirt->setEnabled(m_cache.m_fPFHwVirtExSupported);
+    mCbVirt->setChecked(m_cache.m_fHwVirtExEnabled);
+    mCbNestedPaging->setEnabled(m_cache.m_fPFHwVirtExSupported && m_cache.m_fHwVirtExEnabled);
+    mCbNestedPaging->setChecked(m_cache.m_fNestedPagingEnabled);
+    mSlMemory->setValue(m_cache.m_iRAMSize);
+    mSlCPU->setValue(m_cache.m_cCPUCount);
+    int iChipsetPositionPos = mCbChipset->findData(m_cache.m_chipsetType);
+    mCbChipset->setCurrentIndex(iChipsetPositionPos == -1 ? 0 : iChipsetPositionPos);
+    adjustBootOrderTWSize();
+    if (!m_cache.m_fPFHwVirtExSupported)
+        mTwSystem->removeTab(2);
 
-    /* IO APIC */
-    biosSettings.SetIOAPICEnabled (mCbApic->isChecked() ||
-                                   mSlCPU->value() > 1);
+    /* Revalidate if possible: */
+    if (mValidator) mValidator->revalidate();
+}
 
-    /* EFI */
-    mMachine.SetFirmwareType (mCbEFI->isChecked() ? KFirmwareType_EFI : KFirmwareType_BIOS);
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsSystem::putToCache()
+{
+    /* Gather internal variables data from QWidget(s): */
+    m_cache.m_bootItems.clear();
+    for (int i = 0; i < mTwBootOrder->topLevelItemCount(); ++i)
+    {
+        QTreeWidgetItem *pItem = mTwBootOrder->topLevelItem(i);
+        UIBootItemData data;
+        data.m_type = (KDeviceType)pItem->data(0, ITEM_TYPE_ROLE).toInt();
+        data.m_fEnabled = pItem->checkState(0) == Qt::Checked;
+        m_cache.m_bootItems << data;
+    }
+    m_cache.m_fIoApicEnabled = mCbApic->isChecked() || mSlCPU->value() > 1;
+    m_cache.m_fEFIEnabled = mCbEFI->isChecked();
+    m_cache.m_fUTCEnabled = mCbTCUseUTC->isChecked();
+    m_cache.m_fUseAbsHID = mCbUseAbsHID->isChecked();
+    m_cache.m_fPAEEnabled = mCbPae->isChecked();
+    m_cache.m_fHwVirtExEnabled = mCbVirt->checkState() == Qt::Checked || mSlCPU->value() > 1;
+    m_cache.m_fNestedPagingEnabled = mCbNestedPaging->isChecked();
+    m_cache.m_iRAMSize = mSlMemory->value();
+    m_cache.m_cCPUCount = mSlCPU->value();
+    m_cache.m_chipsetType = (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt();
+}
 
-    /* RTC */
-    mMachine.SetRTCUseUTC (mCbTCUseUTC->isChecked());
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsSystem::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* USB tablet */
-    mMachine.SetPointingHidType (mCbUseAbsHID->isChecked() ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse );
+    /* Gather corresponding values from internal variables: */
+    int iBootIndex = 0;
+    /* Save boot-items of current VM: */
+    for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
+    {
+        if (m_cache.m_bootItems[i].m_fEnabled)
+            m_machine.SetBootOrder(++iBootIndex, m_cache.m_bootItems[i].m_type);
+    }
+    /* Save other unique boot-items: */
+    for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
+    {
+        if (!m_cache.m_bootItems[i].m_fEnabled)
+            m_machine.SetBootOrder(++iBootIndex, KDeviceType_Null);
+    }
+    m_machine.GetBIOSSettings().SetIOAPICEnabled(m_cache.m_fIoApicEnabled);
+    m_machine.SetFirmwareType(m_cache.m_fEFIEnabled ? KFirmwareType_EFI : KFirmwareType_BIOS);
+    m_machine.SetRTCUseUTC(m_cache.m_fUTCEnabled);
+    m_machine.SetPointingHidType(m_cache.m_fUseAbsHID ? KPointingHidType_USBTablet : KPointingHidType_PS2Mouse);
+    m_machine.SetCPUProperty(KCPUPropertyType_PAE, m_cache.m_fPAEEnabled);
+    m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, m_cache.m_fHwVirtExEnabled);
+    m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, m_cache.m_fNestedPagingEnabled);
+    m_machine.SetMemorySize(m_cache.m_iRAMSize);
+    m_machine.SetCPUCount(m_cache.m_cCPUCount);
+    m_machine.SetChipsetType(m_cache.m_chipsetType);
 
-    /* RAM size */
-    mMachine.SetCPUCount (mSlCPU->value());
-
-    /* PAE/NX */
-    mMachine.SetCPUProperty(KCPUPropertyType_PAE, mCbPae->isChecked());
-
-    /* VT-x/AMD-V */
-    mMachine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled,
-                                 mCbVirt->checkState() == Qt::Checked || mSlCPU->value() > 1);
-
-    /* Nested Paging */
-    mMachine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, mCbNestedPaging->isChecked());
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
 void VBoxVMSettingsSystem::setValidator (QIWidgetValidator *aVal)

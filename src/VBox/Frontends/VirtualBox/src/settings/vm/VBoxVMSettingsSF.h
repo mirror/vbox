@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,38 +26,64 @@
 /* Local forwards */
 class SFTreeViewItem;
 
-enum SFDialogType
+enum UISharedFolderType
 {
     WrongType   = 0x00,
-    GlobalType  = 0x01,
-    MachineType = 0x02,
-    ConsoleType = 0x04
+    MachineType = 0x01,
+    ConsoleType = 0x02
 };
-typedef QPair <QString, SFDialogType> SFolderName;
+typedef QPair <QString, UISharedFolderType> SFolderName;
 typedef QList <SFolderName> SFoldersNameList;
 
-class VBoxVMSettingsSF : public UISettingsPage, public Ui::VBoxVMSettingsSF
+/* Machine settings / Shared Folders page / Folder data: */
+struct UISharedFolderData
+{
+    UISharedFolderType m_type;
+    QString m_strName;
+    QString m_strHostPath;
+    bool m_fAutoMount;
+    bool m_fWritable;
+    bool m_fEdited;
+};
+
+/* Machine settings / Shared Folders page / Cache: */
+struct UISettingsCacheMachineSFolders
+{
+    QList<UISharedFolderData> m_items;
+};
+
+class VBoxVMSettingsSF : public UISettingsPageMachine,
+                         public Ui::VBoxVMSettingsSF
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMSettingsSF (int aType = WrongType, QWidget *aParent = 0);
+    VBoxVMSettingsSF();
 
-    void getFromGlobal();
-    void getFromMachine (const CMachine &aMachine);
-    void getFromConsole (const CConsole &aConsole);
-
-    void putBackToGlobal();
-    void putBackToMachine();
-    void putBackToConsole();
-
-    int dialogType() const;
+    void loadDirectlyFrom(const CConsole &console);
+    void saveDirectlyTo(CConsole &console);
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    void loadToCacheFromMachine(const CMachine &machine);
+    void loadToCacheFromConsole(const CConsole &console);
+    void loadToCacheFromVector(const CSharedFolderVector &vector, UISharedFolderType type);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
+    void saveFromCacheToMachine(CMachine &machine);
+    void saveFromCacheToConsole(CConsole &console);
 
     void setOrderAfter (QWidget *aWidget);
 
@@ -82,26 +108,21 @@ private:
 
     void showEvent (QShowEvent *aEvent);
 
-    void createSharedFolder (const QString &aName, const QString &aPath, bool aWritable, bool aAutoMount, SFDialogType aType);
-    void removeSharedFolder (const QString &aName, const QString &aPath, SFDialogType aType);
-
-    void getFrom (const CSharedFolderVector &aVec, SFTreeViewItem *aItem);
-    void putBackTo (CSharedFolderVector &aVec, SFTreeViewItem *aItem);
-
-    SFTreeViewItem* searchRoot (bool aIsPermanent, SFDialogType aType = WrongType);
-    bool isEditable (const QString &aKey);
+    SFTreeViewItem* root(UISharedFolderType type);
     SFoldersNameList usedList (bool aIncludeSelected);
 
-    int       mDialogType;
+    UISharedFolderType m_type;
+
     QAction  *mNewAction;
     QAction  *mEdtAction;
     QAction  *mDelAction;
     bool      mIsListViewChanged;
-    CMachine  mMachine;
-    CConsole  mConsole;
     QString   mTrFull;
     QString   mTrReadOnly;
     QString   mTrYes;
+
+    /* Cache: */
+    UISettingsCacheMachineSFolders m_cache;
 };
 
 #endif // __VBoxVMSettingsSF_h__

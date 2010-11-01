@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,33 @@
 #include "UISettingsPage.h"
 #include "VBoxVMSettingsSystem.gen.h"
 
-class VBoxVMSettingsSystem : public UISettingsPage,
+/* Machine settings / System page / Boot item: */
+struct UIBootItemData
+{
+    KDeviceType m_type;
+    bool m_fEnabled;
+};
+
+/* Machine settings / System page / Cache: */
+struct UISettingsCacheMachineSystem
+{
+    QList<UIBootItemData> m_bootItems;
+    KChipsetType m_chipsetType;
+    bool m_fPFHwVirtExSupported;
+    bool m_fPFPAESupported;
+    bool m_fIoApicEnabled;
+    bool m_fEFIEnabled;
+    bool m_fUTCEnabled;
+    bool m_fUseAbsHID;
+    bool m_fPAEEnabled;
+    bool m_fHwVirtExEnabled;
+    bool m_fNestedPagingEnabled;
+    int m_iRAMSize;
+    int m_cCPUCount;
+};
+
+/* Machine settings / System page: */
+class VBoxVMSettingsSystem : public UISettingsPageMachine,
                              public Ui::VBoxVMSettingsSystem
 {
     Q_OBJECT;
@@ -42,8 +68,19 @@ signals:
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
     bool revalidate (QString &aWarning, QString &aTitle);
@@ -71,11 +108,15 @@ private:
 
     void adjustBootOrderTWSize();
 
-    CMachine mMachine;
     QIWidgetValidator *mValidator;
 
     uint mMinGuestCPU;
     uint mMaxGuestCPU;
+
+    QList<KDeviceType> m_possibleBootItems;
+
+    /* Cache: */
+    UISettingsCacheMachineSystem m_cache;
 };
 
 #endif // __VBoxVMSettingsSystem_h__

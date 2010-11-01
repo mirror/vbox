@@ -62,85 +62,91 @@ bool VBoxVMSettingsGeneral::isWindowsOSTypeSelected() const
 #ifdef VBOX_WITH_CRHGSMI
 bool VBoxVMSettingsGeneral::isWddmSupportedForOSType() const
 {
-    const QString & id = mOSTypeSelector->type().GetId();
-    return id == "WindowsVista" || id == "Windows7";
+    const QString &strOsId = mOSTypeSelector->type().GetId();
+    return strOsId == "WindowsVista" || strOsId == "Windows7";
 }
 #endif
 
-void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
-    mMachine = aMachine;
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* Name */
-    mLeName->setText (aMachine.GetName());
+    /* Fill internal variables with corresponding values: */
+    m_cache.m_strName = m_machine.GetName();
+    m_cache.m_strGuestOsTypeId = m_machine.GetOSTypeId();
+    QString strSaveMountedAtRuntime = m_machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
+    m_cache.m_fSaveMountedAtRuntime = strSaveMountedAtRuntime != "no";
+    QString strShowMiniToolBar = m_machine.GetExtraData(VBoxDefs::GUI_ShowMiniToolBar);
+    m_cache.m_fShowMiniToolBar = strShowMiniToolBar != "no";
+    QString strMiniToolBarAlignment = m_machine.GetExtraData(VBoxDefs::GUI_MiniToolBarAlignment);
+    m_cache.m_fMiniToolBarAtTop = strMiniToolBarAlignment == "top";
+    m_cache.m_strSnapshotsFolder = m_machine.GetSnapshotFolder();
+    m_cache.m_strSnapshotsHomeDir = QFileInfo(m_machine.GetSettingsFilePath()).absolutePath();
+    m_cache.m_clipboardMode = m_machine.GetClipboardMode();
+    m_cache.m_strDescription = m_machine.GetDescription();
 
-    /* OS type */
-    mOSTypeSelector->setType (vboxGlobal().vmGuestOSType (aMachine.GetOSTypeId()));
-
-    /* Remember mediums mounted at runtime */
-    QString saveRtimeImages = mMachine.GetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime);
-    mCbSaveMounted->setChecked (saveRtimeImages != "no");
-
-    /* Show Mini ToolBar in fullscreen/seamless */
-    QString showMiniToolBar = mMachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar);
-    mCbShowToolBar->setChecked (showMiniToolBar != "no");
-
-    /* Show Mini ToolBar at top */
-    QString miniToolBarAlignment = mMachine.GetExtraData (VBoxDefs::GUI_MiniToolBarAlignment);
-    mCbToolBarAlignment->setChecked (miniToolBarAlignment == "top");
-    mCbToolBarAlignment->setEnabled (mCbShowToolBar->isChecked());
-
-    /* Snapshot folder */
-    mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
-    mPsSnapshot->setHomeDir (QFileInfo (mMachine.GetSettingsFilePath()).absolutePath());
-
-    /* Shared clipboard mode */
-    mCbClipboard->setCurrentIndex (aMachine.GetClipboardMode());
-
-    /* Description */
-    mTeDescription->setPlainText (aMachine.GetDescription());
-
-    if (mValidator)
-        mValidator->revalidate();
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
-void VBoxVMSettingsGeneral::putBackTo()
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsGeneral::getFromCache()
 {
-    /* Name */
-    mMachine.SetName (mLeName->text());
+    /* Apply internal variables data to QWidget(s): */
+    mLeName->setText(m_cache.m_strName);
+    mOSTypeSelector->setType(vboxGlobal().vmGuestOSType(m_cache.m_strGuestOsTypeId));
+    mCbSaveMounted->setChecked(m_cache.m_fSaveMountedAtRuntime);
+    mCbShowToolBar->setChecked(m_cache.m_fShowMiniToolBar);
+    mCbToolBarAlignment->setChecked(m_cache.m_fMiniToolBarAtTop);
+    mCbToolBarAlignment->setEnabled(mCbShowToolBar->isChecked());
+    mPsSnapshot->setPath(m_cache.m_strSnapshotsFolder);
+    mPsSnapshot->setHomeDir(m_cache.m_strSnapshotsHomeDir);
+    mCbClipboard->setCurrentIndex(m_cache.m_clipboardMode);
+    mTeDescription->setPlainText(m_cache.m_strDescription);
 
-    /* OS type */
-    AssertMsg (!mOSTypeSelector->type().isNull(), ("mOSTypeSelector must return non-null type"));
-    mMachine.SetOSTypeId (mOSTypeSelector->type().GetId());
+    /* Revalidate if possible: */
+    if (mValidator) mValidator->revalidate();
+}
 
-    /* Remember mediums mounted at runtime */
-    mMachine.SetExtraData (VBoxDefs::GUI_SaveMountedAtRuntime,
-                           mCbSaveMounted->isChecked() ? "yes" : "no");
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsGeneral::putToCache()
+{
+    /* Gather internal variables data from QWidget(s): */
+    m_cache.m_strName = mLeName->text();
+    m_cache.m_strGuestOsTypeId = mOSTypeSelector->type().GetId();
+    m_cache.m_fSaveMountedAtRuntime = mCbSaveMounted->isChecked();
+    m_cache.m_fShowMiniToolBar = mCbShowToolBar->isChecked();
+    m_cache.m_fMiniToolBarAtTop = mCbToolBarAlignment->isChecked();
+    m_cache.m_strSnapshotsFolder = mPsSnapshot->path();
+    m_cache.m_clipboardMode = (KClipboardMode)mCbClipboard->currentIndex();
+    m_cache.m_strDescription = mTeDescription->toPlainText().isEmpty() ?
+                               QString::null : mTeDescription->toPlainText();
+}
 
-    /* Show Mini ToolBar in fullscreen/seamless */
-    mMachine.SetExtraData (VBoxDefs::GUI_ShowMiniToolBar,
-                           mCbShowToolBar->isChecked() ? "yes" : "no");
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsGeneral::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* Show Mini ToolBar at top */
-    mMachine.SetExtraData (VBoxDefs::GUI_MiniToolBarAlignment,
-                           mCbToolBarAlignment->isChecked() ? "top" : "bottom");
+    /* Gather corresponding values from internal variables: */
+    m_machine.SetName(m_cache.m_strName);
+    m_machine.SetOSTypeId(m_cache.m_strGuestOsTypeId);
+    m_machine.SetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime, m_cache.m_fSaveMountedAtRuntime ? "yes" : "no");
+    m_machine.SetExtraData(VBoxDefs::GUI_ShowMiniToolBar, m_cache.m_fShowMiniToolBar ? "yes" : "no");
+    m_machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAlignment, m_cache.m_fMiniToolBarAtTop ? "top" : "bottom");
+    m_machine.SetSnapshotFolder(m_cache.m_strSnapshotsFolder);
+    m_machine.SetClipboardMode(m_cache.m_clipboardMode);
+    m_machine.SetDescription(m_cache.m_strDescription);
 
-    /* Saved state folder */
-    if (mPsSnapshot->isModified())
-    {
-        mMachine.SetSnapshotFolder (mPsSnapshot->path());
-        if (!mMachine.isOk())
-            vboxProblem().cannotSetSnapshotFolder (mMachine,
-                    QDir::toNativeSeparators (mPsSnapshot->path()));
-    }
-
-    /* Shared clipboard mode */
-    mMachine.SetClipboardMode ((KClipboardMode) mCbClipboard->currentIndex());
-
-    /* Description (set empty to null to avoid an empty <Description> node
-     * in the settings file) */
-    mMachine.SetDescription (mTeDescription->toPlainText().isEmpty() ?
-                             QString::null : mTeDescription->toPlainText());
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
 void VBoxVMSettingsGeneral::setValidator (QIWidgetValidator *aVal)

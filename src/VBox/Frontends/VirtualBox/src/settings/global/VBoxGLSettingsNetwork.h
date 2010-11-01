@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,78 +22,93 @@
 #include "UISettingsPage.h"
 #include "VBoxGLSettingsNetwork.gen.h"
 
+/* Host interface data: */
+struct UIHostInterfaceData
+{
+    /* Host-only Interface: */
+    QString m_strName;
+    bool m_fDhcpClientEnabled;
+    QString m_strInterfaceAddress;
+    QString m_strInterfaceMask;
+    bool m_fIpv6Supported;
+    QString m_strInterfaceAddress6;
+    QString m_strInterfaceMaskLength6;
+};
+
+/* DHCP server data: */
+struct UIDHCPServerData
+{
+    /* DHCP Server */
+    bool m_fDhcpServerEnabled;
+    QString m_strDhcpServerAddress;
+    QString m_strDhcpServerMask;
+    QString m_strDhcpLowerAddress;
+    QString m_strDhcpUpperAddress;
+};
+
+/* Global network data: */
+struct UIHostNetworkData
+{
+    UIHostInterfaceData m_interface;
+    UIDHCPServerData m_dhcpserver;
+};
+
+/* Global settings / Network page / Cache: */
+struct UISettingsCacheGlobalNetwork
+{
+    QList<UIHostNetworkData> m_items;
+};
+
 class NetworkItem : public QTreeWidgetItem
 {
 public:
 
     NetworkItem();
 
-    void getFromInterface (const CHostNetworkInterface &aInterface);
-    void putBackToInterface();
+    void fetchNetworkData(const UIHostNetworkData &data);
+    void uploadNetworkData(UIHostNetworkData &data);
 
     bool revalidate (QString &aWarning, QString &aTitle);
 
     QString updateInfo();
 
-    /* Common getters */
-    bool isChanged() const { return mChanged; }
-
-    /* Common setters */
-    void setChanged (bool aChanged) { mChanged = aChanged; }
-
     /* Page getters */
-    QString name() const { return mName; }
-    bool isDhcpClientEnabled() const { return mDhcpClientEnabled; }
-    QString interfaceAddress() const { return mInterfaceAddress; }
-    QString interfaceMask() const { return mInterfaceMask; }
-    bool isIpv6Supported() const { return mIpv6Supported; }
-    QString interfaceAddress6() const { return mInterfaceAddress6; }
-    QString interfaceMaskLength6() const { return mInterfaceMaskLength6; }
+    QString name() const { return m_data.m_interface.m_strName; }
+    bool isDhcpClientEnabled() const { return m_data.m_interface.m_fDhcpClientEnabled; }
+    QString interfaceAddress() const { return m_data.m_interface.m_strInterfaceAddress; }
+    QString interfaceMask() const { return m_data.m_interface.m_strInterfaceMask; }
+    bool isIpv6Supported() const { return m_data.m_interface.m_fIpv6Supported; }
+    QString interfaceAddress6() const { return m_data.m_interface.m_strInterfaceAddress6; }
+    QString interfaceMaskLength6() const { return m_data.m_interface.m_strInterfaceMaskLength6; }
 
-    bool isDhcpServerEnabled() const { return mDhcpServerEnabled; }
-    QString dhcpServerAddress() const { return mDhcpServerAddress; }
-    QString dhcpServerMask() const { return mDhcpServerMask; }
-    QString dhcpLowerAddress() const { return mDhcpLowerAddress; }
-    QString dhcpUpperAddress() const { return mDhcpUpperAddress; }
+    bool isDhcpServerEnabled() const { return m_data.m_dhcpserver.m_fDhcpServerEnabled; }
+    QString dhcpServerAddress() const { return m_data.m_dhcpserver.m_strDhcpServerAddress; }
+    QString dhcpServerMask() const { return m_data.m_dhcpserver.m_strDhcpServerMask; }
+    QString dhcpLowerAddress() const { return m_data.m_dhcpserver.m_strDhcpLowerAddress; }
+    QString dhcpUpperAddress() const { return m_data.m_dhcpserver.m_strDhcpUpperAddress; }
 
     /* Page setters */
-    void setDhcpClientEnabled (bool aEnabled) { mDhcpClientEnabled = aEnabled; }
-    void setInterfaceAddress (const QString &aValue) { mInterfaceAddress = aValue; }
-    void setInterfaceMask (const QString &aValue) { mInterfaceMask = aValue; }
-    void setIp6Supported (bool aSupported) { mIpv6Supported = aSupported; }
-    void setInterfaceAddress6 (const QString &aValue) { mInterfaceAddress6 = aValue; }
-    void setInterfaceMaskLength6 (const QString &aValue) { mInterfaceMaskLength6 = aValue; }
+    void setDhcpClientEnabled (bool aEnabled) { m_data.m_interface.m_fDhcpClientEnabled = aEnabled; }
+    void setInterfaceAddress (const QString &aValue) { m_data.m_interface.m_strInterfaceAddress = aValue; }
+    void setInterfaceMask (const QString &aValue) { m_data.m_interface.m_strInterfaceMask = aValue; }
+    void setIp6Supported (bool aSupported) { m_data.m_interface.m_fIpv6Supported = aSupported; }
+    void setInterfaceAddress6 (const QString &aValue) { m_data.m_interface.m_strInterfaceAddress6 = aValue; }
+    void setInterfaceMaskLength6 (const QString &aValue) { m_data.m_interface.m_strInterfaceMaskLength6 = aValue; }
 
-    void setDhcpServerEnabled (bool aEnabled) { mDhcpServerEnabled = aEnabled; }
-    void setDhcpServerAddress (const QString &aValue) { mDhcpServerAddress = aValue; }
-    void setDhcpServerMask (const QString &aValue) { mDhcpServerMask = aValue; }
-    void setDhcpLowerAddress (const QString &aValue) { mDhcpLowerAddress = aValue; }
-    void setDhcpUpperAddress (const QString &aValue) { mDhcpUpperAddress = aValue; }
+    void setDhcpServerEnabled (bool aEnabled) { m_data.m_dhcpserver.m_fDhcpServerEnabled = aEnabled; }
+    void setDhcpServerAddress (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpServerAddress = aValue; }
+    void setDhcpServerMask (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpServerMask = aValue; }
+    void setDhcpLowerAddress (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpLowerAddress = aValue; }
+    void setDhcpUpperAddress (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpUpperAddress = aValue; }
 
 private:
 
-    /* Common */
-    CHostNetworkInterface mInterface;
-    bool mChanged;
-
-    /* Host-only Interface */
-    QString mName;
-    bool mDhcpClientEnabled;
-    QString mInterfaceAddress;
-    QString mInterfaceMask;
-    bool mIpv6Supported;
-    QString mInterfaceAddress6;
-    QString mInterfaceMaskLength6;
-
-    /* DHCP Server */
-    bool mDhcpServerEnabled;
-    QString mDhcpServerAddress;
-    QString mDhcpServerMask;
-    QString mDhcpLowerAddress;
-    QString mDhcpUpperAddress;
+    /* Network data: */
+    UIHostNetworkData m_data;
 };
 
-class VBoxGLSettingsNetwork : public UISettingsPage,
+/* Global settings / Network page: */
+class VBoxGLSettingsNetwork : public UISettingsPageGlobal,
                               public Ui::VBoxGLSettingsNetwork
 {
     Q_OBJECT;
@@ -104,10 +119,19 @@ public:
 
 protected:
 
-    void getFrom (const CSystemProperties &aProps,
-                  const VBoxGlobalSettings &aGs);
-    void putBackTo (CSystemProperties &aProps,
-                    VBoxGlobalSettings &aGs);
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
     bool revalidate (QString &aWarning, QString &aTitle);
@@ -131,6 +155,11 @@ private:
     QAction *mEditInterface;
 
     QIWidgetValidator *mValidator;
+
+    bool m_fChanged;
+
+    /* Cache: */
+    UISettingsCacheGlobalNetwork m_cache;
 };
 
 #endif // __VBoxGLSettingsNetwork_h__

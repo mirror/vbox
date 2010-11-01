@@ -28,6 +28,7 @@
 VBoxVMSettingsSerial::VBoxVMSettingsSerial()
     : QIWithRetranslateUI<QWidget> (0)
     , mValidator (0)
+    , m_iSlot(-1)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsSerial::setupUi (this);
@@ -63,37 +64,33 @@ VBoxVMSettingsSerial::VBoxVMSettingsSerial()
     retranslateUi();
 }
 
-void VBoxVMSettingsSerial::getFromPort (const CSerialPort &aPort)
+void VBoxVMSettingsSerial::fetchPortData(const UISerialPortData &data)
 {
-    mPort = aPort;
+    /* Load port slot number: */
+    m_iSlot = data.m_iSlot;
 
-    mGbSerial->setChecked (mPort.GetEnabled());
-    ulong IRQ = mPort.GetIRQ();
-    ulong IOBase = mPort.GetIOBase();
-    mCbNumber->setCurrentIndex (mCbNumber->
-        findText (vboxGlobal().toCOMPortName (IRQ, IOBase)));
-    mLeIRQ->setText (QString::number (IRQ));
-    mLeIOPort->setText ("0x" + QString::number (IOBase, 16).toUpper());
-    mCbMode->setCurrentIndex (mCbMode->
-        findText (vboxGlobal().toString (mPort.GetHostMode())));
-    mCbPipe->setChecked (mPort.GetServer());
-    mLePath->setText (mPort.GetPath());
+    /* Fetch port data: */
+    mGbSerial->setChecked(data.m_fPortEnabled);
+    mCbNumber->setCurrentIndex(mCbNumber->findText(vboxGlobal().toCOMPortName(data.m_uIRQ, data.m_uIOBase)));
+    mLeIRQ->setText(QString::number(data.m_uIRQ));
+    mLeIOPort->setText("0x" + QString::number(data.m_uIOBase, 16).toUpper());
+    mCbMode->setCurrentIndex(mCbMode->findText(vboxGlobal().toString(data.m_hostMode)));
+    mCbPipe->setChecked(data.m_fServer);
+    mLePath->setText(data.m_strPath);
 
     /* Ensure everything is up-to-date */
-    mGbSerialToggled (mGbSerial->isChecked());
+    mGbSerialToggled(mGbSerial->isChecked());
 }
 
-void VBoxVMSettingsSerial::putBackToPort()
+void VBoxVMSettingsSerial::uploadPortData(UISerialPortData &data)
 {
-    mPort.SetEnabled (mGbSerial->isChecked());
-    mPort.SetIRQ (mLeIRQ->text().toULong (NULL, 0));
-    mPort.SetIOBase (mLeIOPort->text().toULong (NULL, 0));
-    mPort.SetServer (mCbPipe->isChecked());
-    mPort.SetPath (QDir::toNativeSeparators (mLePath->text()));
-    /* This *must* be last. The host mode will be changed to disconnected if
-     * some of the necessary settings above will not meet the requirements for
-     * the selected mode. */
-    mPort.SetHostMode (vboxGlobal().toPortMode (mCbMode->currentText()));
+    /* Upload port data: */
+    data.m_fPortEnabled = mGbSerial->isChecked();
+    data.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
+    data.m_uIOBase = mLeIOPort->text().toULong (NULL, 0);
+    data.m_fServer = mCbPipe->isChecked();
+    data.m_hostMode = vboxGlobal().toPortMode(mCbMode->currentText());
+    data.m_strPath = QDir::toNativeSeparators(mLePath->text());
 }
 
 void VBoxVMSettingsSerial::setValidator (QIWidgetValidator *aVal)
@@ -123,13 +120,7 @@ QWidget* VBoxVMSettingsSerial::setOrderAfter (QWidget *aAfter)
 
 QString VBoxVMSettingsSerial::pageTitle() const
 {
-    QString pageTitle;
-    if (!mPort.isNull())
-    {
-        pageTitle = QString (tr ("Port %1", "serial ports"))
-            .arg (QString ("&%1").arg (mPort.GetSlot() + 1));
-    }
-    return pageTitle;
+    return QString(tr("Port %1", "serial ports")).arg(QString("&%1").arg(m_iSlot + 1));
 }
 
 bool VBoxVMSettingsSerial::isUserDefined()
@@ -201,36 +192,119 @@ VBoxVMSettingsSerialPage::VBoxVMSettingsSerialPage()
     retranslateUi();
 }
 
-void VBoxVMSettingsSerialPage::getFrom (const CMachine &aMachine)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsSerialPage::loadToCacheFrom(QVariant &data)
 {
-    Assert (m_pFirstWidget);
-    setTabOrder (m_pFirstWidget, mTabWidget->focusProxy());
-    QWidget *lastFocusWidget = mTabWidget->focusProxy();
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* Tab pages loading */
-    ulong count = vboxGlobal().virtualBox().
-                  GetSystemProperties().GetSerialPortCount();
-    for (ulong slot = 0; slot < count; ++ slot)
+    /* Load port data: */
+    ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
+    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
-        CSerialPort port = aMachine.GetSerialPort (slot);
-        VBoxVMSettingsSerial *page = new VBoxVMSettingsSerial();
-        page->getFromPort (port);
-        mTabWidget->addTab (page, page->pageTitle());
-        Assert (mValidator);
-        page->setValidator (mValidator);
-        lastFocusWidget = page->setOrderAfter (lastFocusWidget);
+        /* Get port: */
+        const CSerialPort &port = m_machine.GetSerialPort(uSlot);
+
+        /* Prepare port's data container: */
+        UISerialPortData data;
+
+        /* Load options: */
+        data.m_iSlot = uSlot;
+        data.m_fPortEnabled = port.GetEnabled();
+        data.m_uIRQ = port.GetIRQ();
+        data.m_uIOBase = port.GetIOBase();
+        data.m_hostMode = port.GetHostMode();
+        data.m_fServer = port.GetServer();
+        data.m_strPath = port.GetPath();
+
+        /* Append adapter's data container: */
+        m_cache.m_items << data;
+    }
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
+}
+
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsSerialPage::getFromCache()
+{
+    Assert(m_pFirstWidget);
+    setTabOrder(m_pFirstWidget, mTabWidget->focusProxy());
+    QWidget *pLastFocusWidget = mTabWidget->focusProxy();
+
+    /* Apply internal variables data to QWidget(s): */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    {
+        /* Creating port's page: */
+        VBoxVMSettingsSerial *pPage = new VBoxVMSettingsSerial;
+
+        /* Loading port's data into page: */
+        pPage->fetchPortData(m_cache.m_items[iSlot]);
+
+        /* Attach port's page to Tab Widget: */
+        mTabWidget->addTab(pPage, pPage->pageTitle());
+
+        /* Setup page validation: */
+        pPage->setValidator(mValidator);
+
+        /* Setup tab order: */
+        pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
+    }
+
+    /* Applying language settings: */
+    retranslateUi();
+
+    /* Revalidate if possible: */
+    if (mValidator) mValidator->revalidate();
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsSerialPage::putToCache()
+{
+    /* Gather internal variables data from QWidget(s): */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    {
+        /* Getting adapter's page: */
+        VBoxVMSettingsSerial *pPage = qobject_cast<VBoxVMSettingsSerial*>(mTabWidget->widget(iSlot));
+
+        /* Loading Adapter's data from page: */
+        pPage->uploadPortData(m_cache.m_items[iSlot]);
     }
 }
 
-void VBoxVMSettingsSerialPage::putBackTo()
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsSerialPage::saveFromCacheTo(QVariant &data)
 {
-    for (int index = 0; index < mTabWidget->count(); ++ index)
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
+
+    /* Gather corresponding values from internal variables: */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
     {
-        VBoxVMSettingsSerial *page =
-            (VBoxVMSettingsSerial*) mTabWidget->widget (index);
-        Assert (page);
-        page->putBackToPort();
+        /* Get adapter: */
+        CSerialPort &port = m_machine.GetSerialPort(iSlot);
+
+        /* Get cached data for this slot: */
+        const UISerialPortData &data = m_cache.m_items[iSlot];
+
+        /* Save options: */
+        port.SetEnabled(data.m_fPortEnabled);
+        port.SetIRQ(data.m_uIRQ);
+        port.SetIOBase(data.m_uIOBase);
+        port.SetServer(data.m_fServer);
+        port.SetPath(data.m_strPath);
+        /* This *must* be last. The host mode will be changed to disconnected if
+         * some of the necessary settings above will not meet the requirements for
+         * the selected mode. */
+        port.SetHostMode(data.m_hostMode);
     }
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
 void VBoxVMSettingsSerialPage::setValidator (QIWidgetValidator * aVal)

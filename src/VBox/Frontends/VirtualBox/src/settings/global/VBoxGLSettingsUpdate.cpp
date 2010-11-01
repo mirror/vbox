@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,33 +38,72 @@ VBoxGLSettingsUpdate::VBoxGLSettingsUpdate()
     retranslateUi();
 }
 
-void VBoxGLSettingsUpdate::getFrom (const CSystemProperties &, const VBoxGlobalSettings &)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsUpdate::loadToCacheFrom(QVariant &data)
 {
-    VBoxUpdateData data (vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_UpdateDate));
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
 
-    mCbCheck->setChecked (!data.isNoNeedToCheck());
+    /* Fill internal variables with corresponding values: */
+    VBoxUpdateData updateData(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateDate));
+    m_cache.m_fCheckEnabled = !updateData.isNoNeedToCheck();
+    m_cache.m_periodIndex = updateData.periodIndex();
+    m_cache.m_branchIndex = updateData.branchIndex();
+    m_cache.m_strDate = updateData.date();
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
+}
+
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsUpdate::getFromCache()
+{
+    /* Apply internal variables data to QWidget(s): */
+    mCbCheck->setChecked(m_cache.m_fCheckEnabled);
     if (mCbCheck->isChecked())
     {
-        mCbOncePer->setCurrentIndex (data.periodIndex());
-        if (data.branchIndex() == VBoxUpdateData::BranchWithBetas)
-            mRbWithBetas->setChecked (true);
-        else if (data.branchIndex() == VBoxUpdateData::BranchAllRelease)
-            mRbAllRelease->setChecked (true);
+        mCbOncePer->setCurrentIndex(m_cache.m_periodIndex);
+        if (m_cache.m_branchIndex == VBoxUpdateData::BranchWithBetas)
+            mRbWithBetas->setChecked(true);
+        else if (m_cache.m_branchIndex == VBoxUpdateData::BranchAllRelease)
+            mRbAllRelease->setChecked(true);
         else
-            mRbStable->setChecked (true);
+            mRbStable->setChecked(true);
     }
-    mTxDate->setText (data.date());
+    mTxDate->setText(m_cache.m_strDate);
 
+    /* Reset settings altering flag: */
     mSettingsChanged = false;
 }
 
-void VBoxGLSettingsUpdate::putBackTo (CSystemProperties &, VBoxGlobalSettings &)
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsUpdate::putToCache()
 {
+    /* Gather internal variables data from QWidget(s): */
+    m_cache.m_periodIndex = periodType();
+    m_cache.m_branchIndex = branchType();
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsUpdate::saveFromCacheTo(QVariant &data)
+{
+    /* Test settings altering flag: */
     if (!mSettingsChanged)
         return;
 
-    VBoxUpdateData newData (periodType(), branchType());
-    vboxGlobal().virtualBox().SetExtraData (VBoxDefs::GUI_UpdateDate, newData.data());
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
+
+    /* Gather corresponding values from internal variables: */
+    VBoxUpdateData newData(m_cache.m_periodIndex, m_cache.m_branchIndex);
+    vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_UpdateDate, newData.data());
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
 }
 
 void VBoxGLSettingsUpdate::setOrderAfter (QWidget *aWidget)

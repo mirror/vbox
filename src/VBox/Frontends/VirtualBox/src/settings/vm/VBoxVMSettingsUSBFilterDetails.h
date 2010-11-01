@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,7 +31,7 @@ class VBoxVMSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>,
 
 public:
 
-    VBoxVMSettingsUSBFilterDetails (VBoxVMSettingsUSB::FilterType aType, QWidget *aParent = NULL);
+    VBoxVMSettingsUSBFilterDetails(UISettingsPageType type, QWidget *pParent = 0);
 
 protected:
 
@@ -40,7 +40,7 @@ protected:
 private:
 
     /* Private member vars */
-    VBoxVMSettingsUSB::FilterType mType;
+    UISettingsPageType m_type;
 };
 
 #endif /* __VBoxVMSettingsUSBFilterDetails_h__ */

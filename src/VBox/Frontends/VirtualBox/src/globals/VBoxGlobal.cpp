@@ -2813,6 +2813,11 @@ void VBoxGlobal::retranslateUi()
     mUSBDeviceStates [KUSBDeviceState_Captured] =
         tr ("Captured", "USBDeviceState");
 
+    mChipsetTypes [KChipsetType_PIIX3] =
+        tr ("PIIX3", "ChipsetType");
+    mChipsetTypes [KChipsetType_ICH9] =
+        tr ("ICH9", "ChipsetType");
+
     mUserDefinedPortName = tr ("User-defined", "serial port");
 
     mWarningIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon).pixmap (16, 16);

@@ -114,7 +114,7 @@ public:
         m_pSettings = new VBoxVMSettingsNetworkPage(true);
         m_pSettings->setOrderAfter(this);
         VBoxGlobal::setLayoutMargin(m_pSettings->layout(), 0);
-        m_pSettings->getFrom(m_session.GetMachine());
+        m_pSettings->loadDirectlyFrom(m_session.GetMachine());
         pMainLayout->addWidget(m_pSettings);
 
         /* Setup button's layout */
@@ -139,7 +139,7 @@ protected slots:
 
     virtual void accept()
     {
-        m_pSettings->putBackTo();
+        m_pSettings->saveDirectlyTo(m_session.GetMachine());
         CMachine machine = m_session.GetMachine();
         machine.SaveSettings();
         if (!machine.isOk())
@@ -159,7 +159,7 @@ protected:
 
 private:
 
-    UISettingsPage *m_pSettings;
+    VBoxVMSettingsNetworkPage *m_pSettings;
     CSession &m_session;
 };
 
@@ -185,10 +185,9 @@ public:
         pMainLayout->setSpacing(10);
 
         /* Setup settings layout */
-        m_pSettings = new VBoxVMSettingsSF(MachineType | ConsoleType, this);
+        m_pSettings = new VBoxVMSettingsSF;
         VBoxGlobal::setLayoutMargin(m_pSettings->layout(), 0);
-        m_pSettings->getFromConsole(m_session.GetConsole());
-        m_pSettings->getFromMachine(m_session.GetMachine());
+        m_pSettings->loadDirectlyFrom(m_session.GetConsole());
         pMainLayout->addWidget(m_pSettings);
 
         /* Setup button's layout */
@@ -213,8 +212,7 @@ protected slots:
 
     virtual void accept()
     {
-        m_pSettings->putBackToConsole();
-        m_pSettings->putBackToMachine();
+        m_pSettings->saveDirectlyTo(m_session.GetConsole());
         CMachine machine = m_session.GetMachine();
         machine.SaveSettings();
         if (!machine.isOk())

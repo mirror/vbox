@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,18 +29,52 @@ VBoxGLSettingsInput::VBoxGLSettingsInput()
     retranslateUi();
 }
 
-void VBoxGLSettingsInput::getFrom (const CSystemProperties &,
-                                   const VBoxGlobalSettings &aGs)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsInput::loadToCacheFrom(QVariant &data)
 {
-    mHeHostKey->setKey (aGs.hostKey());
-    mCbAutoGrab->setChecked (aGs.autoCapture());
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
+
+    /* Load to cache: */
+    m_cache.m_iHostKey = m_settings.hostKey();
+    m_cache.m_fAutoCapture = m_settings.autoCapture();
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
 }
 
-void VBoxGLSettingsInput::putBackTo (CSystemProperties &,
-                                     VBoxGlobalSettings &aGs)
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsInput::getFromCache()
 {
-    aGs.setHostKey (mHeHostKey->key());
-    aGs.setAutoCapture (mCbAutoGrab->isChecked());
+    /* Fetch from cache: */
+    mHeHostKey->setKey(m_cache.m_iHostKey);
+    mCbAutoGrab->setChecked(m_cache.m_fAutoCapture);
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsInput::putToCache()
+{
+    /* Upload to cache: */
+    m_cache.m_iHostKey = mHeHostKey->key();
+    m_cache.m_fAutoCapture = mCbAutoGrab->isChecked();
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsInput::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
+
+    /* Save from cache: */
+    m_settings.setHostKey(m_cache.m_iHostKey);
+    m_settings.setAutoCapture(m_cache.m_fAutoCapture);
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
 }
 
 void VBoxGLSettingsInput::setOrderAfter (QWidget *aWidget)

@@ -41,6 +41,7 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     : QIWithRetranslateUI <QWidget> (0)
     , mParent (aParent)
     , mValidator (0)
+    , m_iSlot(-1)
     , mPolished (false)
     , mDisableStaticControls (false)
 {
@@ -77,40 +78,42 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     mDisableStaticControls = aDisableStaticControls;
 }
 
-void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
+void VBoxVMSettingsNetwork::fetchAdapterData(const UINetworkAdapterData &data)
 {
-    mAdapter = aAdapter;
+    /* Load adapter & slot number: */
+    m_iSlot = data.m_iSlot;
+    m_adapter = data.m_adapter;
 
-    /* Load adapter activity state */
-    mCbEnableAdapter->setChecked (aAdapter.GetEnabled());
+    /* Load adapter activity state: */
+    mCbEnableAdapter->setChecked(data.m_fAdapterEnabled);
 
-    /* Load adapter type */
-    int adapterPos = mCbAdapterType->findData (aAdapter.GetAdapterType());
-    mCbAdapterType->setCurrentIndex (adapterPos == -1 ? 0 : adapterPos);
+    /* Load adapter type: */
+    int adapterPos = mCbAdapterType->findData(data.m_adapterType);
+    mCbAdapterType->setCurrentIndex(adapterPos == -1 ? 0 : adapterPos);
 
-    /* Load attachment type */
-    int attachmentPos = mCbAttachmentType->findData (aAdapter.GetAttachmentType());
-    mCbAttachmentType->setCurrentIndex (attachmentPos == -1 ? 0 : attachmentPos);
+    /* Load attachment type: */
+    int attachmentPos = mCbAttachmentType->findData(data.m_attachmentType);
+    mCbAttachmentType->setCurrentIndex(attachmentPos == -1 ? 0 : attachmentPos);
 
-    /* Load alternative name */
+    /* Load alternative name: */
     switch (attachmentType())
     {
         case KNetworkAttachmentType_Bridged:
-            mBrgName = mAdapter.GetHostInterface();
-            if (mBrgName.isEmpty()) mBrgName = QString::null;
+            mBrgName = data.m_strBridgedAdapterName;
+            if (mBrgName.isEmpty()) mBrgName = QString();
             break;
         case KNetworkAttachmentType_Internal:
-            mIntName = mAdapter.GetInternalNetwork();
-            if (mIntName.isEmpty()) mIntName = QString::null;
+            mIntName = data.m_strInternalNetworkName;
+            if (mIntName.isEmpty()) mIntName = QString();
             break;
         case KNetworkAttachmentType_HostOnly:
-            mHoiName = mAdapter.GetHostInterface();
-            if (mHoiName.isEmpty()) mHoiName = QString::null;
+            mHoiName = data.m_strHostInterfaceName;
+            if (mHoiName.isEmpty()) mHoiName = QString();
             break;
 #ifdef VBOX_WITH_VDE
         case KNetworkAttachmentType_VDE:
-            mVDEName = mAdapter.GetVDENetwork();
-            if (mVDEName.isEmpty()) mVDEName = QString::null;
+            mVDEName = data.m_strVDENetworkName;
+            if (mVDEName.isEmpty()) mVDEName = QString();
             break;
 #endif
         default:
@@ -118,79 +121,54 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
     }
     updateAttachmentAlternative();
 
-    mLeMAC->setText (mAdapter.GetMACAddress());
-    mCbCableConnected->setChecked (mAdapter.GetCableConnected());
+    /* Other options: */
+    mLeMAC->setText(data.m_strMACAddress);
+    mCbCableConnected->setChecked(data.m_fCableConnected);
 
     /* Load port forwarding rules: */
-    QVector<QString> redirects = mAdapter.GetNatDriver().GetRedirects();
-    for (int i = 0; i < redirects.size(); ++i)
-    {
-        QStringList redirectData = redirects[i].split(',');
-        AssertMsg(redirectData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
-        mPortForwardingRules << UIPortForwardingData(redirectData[0],
-                                                     (KNATProtocol)redirectData[1].toUInt(),
-                                                     redirectData[2],
-                                                     redirectData[3].toUInt(),
-                                                     redirectData[4],
-                                                     redirectData[5].toUInt());
-    }
+    mPortForwardingRules = data.m_redirects;
 }
 
-void VBoxVMSettingsNetwork::putBackToAdapter()
+void VBoxVMSettingsNetwork::uploadAdapterData(UINetworkAdapterData &data)
 {
-    /* Save adapter activity state */
-    mAdapter.SetEnabled (mCbEnableAdapter->isChecked());
+    /* Save adapter activity state: */
+    data.m_fAdapterEnabled = mCbEnableAdapter->isChecked();
 
-    /* Save adapter type */
-    KNetworkAdapterType type = (KNetworkAdapterType)
-        mCbAdapterType->itemData (mCbAdapterType->currentIndex()).toInt();
-    mAdapter.SetAdapterType (type);
+    /* Save adapter type: */
+    data.m_adapterType = (KNetworkAdapterType)mCbAdapterType->itemData(mCbAdapterType->currentIndex()).toInt();
 
-    /* Save attachment type & alternative name */
-    switch (attachmentType())
+    /* Save attachment type & alternative name: */
+    data.m_attachmentType = attachmentType();
+    switch (data.m_attachmentType)
     {
         case KNetworkAttachmentType_Null:
-            mAdapter.Detach();
             break;
         case KNetworkAttachmentType_NAT:
-            mAdapter.AttachToNAT();
             break;
         case KNetworkAttachmentType_Bridged:
-            mAdapter.SetHostInterface (alternativeName());
-            mAdapter.AttachToBridgedInterface();
+            data.m_strBridgedAdapterName = alternativeName();
             break;
         case KNetworkAttachmentType_Internal:
-            mAdapter.SetInternalNetwork (alternativeName());
-            mAdapter.AttachToInternalNetwork();
+            data.m_strInternalNetworkName = alternativeName();
             break;
         case KNetworkAttachmentType_HostOnly:
-            mAdapter.SetHostInterface (alternativeName());
-            mAdapter.AttachToHostOnlyInterface();
+            data.m_strHostInterfaceName = alternativeName();
             break;
 #ifdef VBOX_WITH_VDE
         case KNetworkAttachmentType_VDE:
-            mAdapter.SetVDENetwork (alternativeName());
-            mAdapter.AttachToVDE();
+            data.m_strVDENetworkName = alternativeName();
             break;
 #endif
         default:
             break;
     }
 
-    mAdapter.SetMACAddress (mLeMAC->text().isEmpty() ? QString::null : mLeMAC->text());
-    mAdapter.SetCableConnected (mCbCableConnected->isChecked());
+    /* Other options: */
+    data.m_strMACAddress = mLeMAC->text().isEmpty() ? QString() : mLeMAC->text();
+    data.m_fCableConnected = mCbCableConnected->isChecked();
 
     /* Save port forwarding rules: */
-    QVector<QString> redirects = mAdapter.GetNatDriver().GetRedirects();
-    for (int i = 0; i < redirects.size(); ++i)
-        mAdapter.GetNatDriver().RemoveRedirect(redirects[i].section(',', 0, 0));
-    for (int i = 0; i < mPortForwardingRules.size(); ++i)
-    {
-        UIPortForwardingData redirectData = mPortForwardingRules[i];
-        mAdapter.GetNatDriver().AddRedirect(redirectData.name, redirectData.protocol,
-                                            redirectData.hostIp, redirectData.hostPort.value(),
-                                            redirectData.guestIp, redirectData.guestPort.value());
-    }
+    data.m_redirects = mPortForwardingRules;
 }
 
 void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
@@ -268,13 +246,7 @@ QWidget* VBoxVMSettingsNetwork::setOrderAfter (QWidget *aAfter)
 
 QString VBoxVMSettingsNetwork::pageTitle() const
 {
-    QString title;
-    if (!mAdapter.isNull())
-    {
-        title = VBoxGlobal::tr ("Adapter %1", "network")
-            .arg (QString ("&%1").arg (mAdapter.GetSlot() + 1));
-    }
-    return title;
+    return VBoxGlobal::tr("Adapter %1", "network").arg(QString("&%1").arg(m_iSlot + 1));;
 }
 
 KNetworkAttachmentType VBoxVMSettingsNetwork::attachmentType() const
@@ -523,8 +495,8 @@ void VBoxVMSettingsNetwork::toggleAdvanced()
 
 void VBoxVMSettingsNetwork::generateMac()
 {
-    mAdapter.SetMACAddress (QString::null);
-    mLeMAC->setText (mAdapter.GetMACAddress());
+    m_adapter.SetMACAddress(QString::null);
+    mLeMAC->setText(m_adapter.GetMACAddress());
 }
 
 void VBoxVMSettingsNetwork::sltOpenPortForwardingDlg()
@@ -662,6 +634,22 @@ VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage(bool aDisableStaticControls
     mDisableStaticControls = aDisableStaticControls;
 }
 
+void VBoxVMSettingsNetworkPage::loadDirectlyFrom(const CMachine &machine)
+{
+    qRegisterMetaType<UISettingsDataMachine>();
+    UISettingsDataMachine data(machine);
+    loadToCacheFrom(QVariant::fromValue(data));
+    getFromCache();
+}
+
+void VBoxVMSettingsNetworkPage::saveDirectlyTo(CMachine &machine)
+{
+    qRegisterMetaType<UISettingsDataMachine>();
+    UISettingsDataMachine data(machine);
+    putToCache();
+    saveFromCacheTo(QVariant::fromValue(data));
+}
+
 QStringList VBoxVMSettingsNetworkPage::brgList (bool aRefresh)
 {
     if (aRefresh)
@@ -740,59 +728,207 @@ QStringList VBoxVMSettingsNetworkPage::hoiList (bool aRefresh)
     return mHoiList;
 }
 
-void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsNetworkPage::loadToCacheFrom(QVariant &data)
 {
-    /* Setup tab order */
-    Assert (m_pFirstWidget);
-    setTabOrder (m_pFirstWidget, mTwAdapters->focusProxy());
-    QWidget *lastFocusWidget = mTwAdapters->focusProxy();
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* Cache data */
-    brgList (true);
-    intList (true);
-    hoiList (true);
+    /* Cache names lists: */
+    brgList(true);
+    intList(true);
+    hoiList(true);
 
-    /* Creating Tab Pages */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    ulong count = qMin ((ULONG) 4, vbox.GetSystemProperties().GetNetworkAdapterCount());
-    for (ulong slot = 0; slot < count; ++ slot)
+    /* Load adapters data: */
+    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount());
+    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
-        /* Get Adapter */
-        CNetworkAdapter adapter = aMachine.GetNetworkAdapter (slot);
+        /* Get adapter: */
+        const CNetworkAdapter &adapter = m_machine.GetNetworkAdapter(uSlot);
 
-        /* Creating Adapter's page */
-        VBoxVMSettingsNetwork *page = new VBoxVMSettingsNetwork (this, mDisableStaticControls);
+        /* Prepare adapter's data container: */
+        UINetworkAdapterData data;
 
-        /* Loading Adapter's data into page */
-        page->getFromAdapter (adapter);
+        /* Load main options: */
+        data.m_iSlot = uSlot;
+        data.m_adapter = adapter;
+        data.m_fAdapterEnabled = adapter.GetEnabled();
+        data.m_adapterType = adapter.GetAdapterType();
+        data.m_attachmentType = adapter.GetAttachmentType();
+        switch (data.m_attachmentType)
+        {
+            case KNetworkAttachmentType_Bridged:
+                data.m_strBridgedAdapterName = adapter.GetHostInterface();
+                if (data.m_strBridgedAdapterName.isEmpty()) data.m_strBridgedAdapterName = QString();
+                break;
+            case KNetworkAttachmentType_Internal:
+                data.m_strInternalNetworkName = adapter.GetInternalNetwork();
+                if (data.m_strInternalNetworkName.isEmpty()) data.m_strInternalNetworkName = QString();
+                break;
+            case KNetworkAttachmentType_HostOnly:
+                data.m_strHostInterfaceName = adapter.GetHostInterface();
+                if (data.m_strHostInterfaceName.isEmpty()) data.m_strHostInterfaceName = QString();
+                break;
+#ifdef VBOX_WITH_VDE
+            case KNetworkAttachmentType_VDE:
+                data.m_strVDENetworkName = adapter.GetVDENetwork();
+                if (data.m_strVDENetworkName.isEmpty()) data.m_strVDENetworkName = QString();
+                break;
+#endif
+            default:
+                break;
+        }
 
-        /* Attach Adapter's page to Tab Widget */
-        mTwAdapters->addTab (page, page->pageTitle());
+        /* Load advanced options: */
+        data.m_strMACAddress = adapter.GetMACAddress();
+        data.m_fCableConnected = adapter.GetCableConnected();
 
-        /* Disable tab page if adapter is being configured dynamically */
-        if (mDisableStaticControls && !adapter.GetEnabled())
-            mTwAdapters->setTabEnabled(slot, false);
+        /* Load redirect options: */
+        QVector<QString> redirects = adapter.GetNatDriver().GetRedirects();
+        for (int i = 0; i < redirects.size(); ++i)
+        {
+            QStringList redirectData = redirects[i].split(',');
+            AssertMsg(redirectData.size() == 6, ("Redirect rule should be composed of 6 parts!\n"));
+            data.m_redirects << UIPortForwardingData(redirectData[0],
+                                                     (KNATProtocol)redirectData[1].toUInt(),
+                                                     redirectData[2],
+                                                     redirectData[3].toUInt(),
+                                                     redirectData[4],
+                                                     redirectData[5].toUInt());
+        }
 
-        /* Setup validation */
-        page->setValidator (mValidator);
-
-        /* Setup tab order */
-        lastFocusWidget = page->setOrderAfter (lastFocusWidget);
+        /* Append adapter's data container: */
+        m_cache.m_items << data;
     }
 
-    /* Applying language settings */
-    retranslateUi();
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
-void VBoxVMSettingsNetworkPage::putBackTo()
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsNetworkPage::getFromCache()
 {
-    for (int i = 0; i < mTwAdapters->count(); ++ i)
+    /* Setup tab order: */
+    Assert(m_pFirstWidget);
+    setTabOrder(m_pFirstWidget, mTwAdapters->focusProxy());
+    QWidget *pLastFocusWidget = mTwAdapters->focusProxy();
+
+    /* Apply internal variables data to QWidget(s): */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
     {
-        VBoxVMSettingsNetwork *page =
-            qobject_cast <VBoxVMSettingsNetwork*> (mTwAdapters->widget (i));
-        Assert (page);
-        page->putBackToAdapter();
+        /* Creating adapter's page: */
+        VBoxVMSettingsNetwork *pPage = new VBoxVMSettingsNetwork(this, mDisableStaticControls);
+
+        /* Loading adapter's data into page: */
+        pPage->fetchAdapterData(m_cache.m_items[iSlot]);
+
+        /* Attach adapter's page to Tab Widget: */
+        mTwAdapters->addTab(pPage, pPage->pageTitle());
+
+        /* Disable tab page of disabled adapter if it is being configured dynamically: */
+        if (mDisableStaticControls && !m_cache.m_items[iSlot].m_fAdapterEnabled)
+            mTwAdapters->setTabEnabled(iSlot, false);
+
+        /* Setup page validation: */
+        pPage->setValidator(mValidator);
+
+        /* Setup tab order: */
+        pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
     }
+
+    /* Applying language settings: */
+    retranslateUi();
+
+    /* Revalidate if possible: */
+    if (mValidator) mValidator->revalidate();
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsNetworkPage::putToCache()
+{
+    /* Gather internal variables data from QWidget(s): */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    {
+        /* Getting adapter's page: */
+        VBoxVMSettingsNetwork *pPage = qobject_cast<VBoxVMSettingsNetwork*>(mTwAdapters->widget(iSlot));
+
+        /* Loading Adapter's data from page: */
+        pPage->uploadAdapterData(m_cache.m_items[iSlot]);
+    }
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsNetworkPage::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
+
+    /* Gather corresponding values from internal variables: */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    {
+        /* Get adapter: */
+        CNetworkAdapter &adapter = m_machine.GetNetworkAdapter(iSlot);
+
+        /* Get cached data for this adapter: */
+        const UINetworkAdapterData &data = m_cache.m_items[iSlot];
+
+        /* Save main options: */
+        adapter.SetEnabled(data.m_fAdapterEnabled);
+        adapter.SetAdapterType(data.m_adapterType);
+        switch (data.m_attachmentType)
+        {
+            case KNetworkAttachmentType_Null:
+                adapter.Detach();
+                break;
+            case KNetworkAttachmentType_NAT:
+                adapter.AttachToNAT();
+                break;
+            case KNetworkAttachmentType_Bridged:
+                adapter.SetHostInterface(data.m_strBridgedAdapterName);
+                adapter.AttachToBridgedInterface();
+                break;
+            case KNetworkAttachmentType_Internal:
+                adapter.SetInternalNetwork(data.m_strInternalNetworkName);
+                adapter.AttachToInternalNetwork();
+                break;
+            case KNetworkAttachmentType_HostOnly:
+                adapter.SetHostInterface(data.m_strHostInterfaceName);
+                adapter.AttachToHostOnlyInterface();
+                break;
+    #ifdef VBOX_WITH_VDE
+            case KNetworkAttachmentType_VDE:
+                adapter.SetVDENetwork(data.m_strVDENetworkName);
+                adapter.AttachToVDE();
+                break;
+    #endif
+            default:
+                break;
+        }
+
+        /* Save advanced options: */
+        adapter.SetMACAddress(data.m_strMACAddress);
+        adapter.SetCableConnected(data.m_fCableConnected);
+
+        /* Save redirect options: */
+        QVector<QString> oldRedirects = adapter.GetNatDriver().GetRedirects();
+        for (int i = 0; i < oldRedirects.size(); ++i)
+            adapter.GetNatDriver().RemoveRedirect(oldRedirects[i].section(',', 0, 0));
+        UIPortForwardingDataList newRedirects = data.m_redirects;
+        for (int i = 0; i < newRedirects.size(); ++i)
+        {
+            UIPortForwardingData newRedirect = newRedirects[i];
+            adapter.GetNatDriver().AddRedirect(newRedirect.name, newRedirect.protocol,
+                                               newRedirect.hostIp, newRedirect.hostPort.value(),
+                                               newRedirect.guestIp, newRedirect.guestPort.value());
+        }
+    }
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
 void VBoxVMSettingsNetworkPage::setValidator (QIWidgetValidator *aVal)

@@ -19,6 +19,8 @@
 
 /* Global includes */
 #include <QStackedWidget>
+#include <QThread>
+#include <QTimer>
 
 /* Local includes */
 #include "UISettingsDialogSpecific.h"
@@ -48,6 +50,232 @@
 # define ENABLE_GLOBAL_USB
 #endif /* Global USB filters are DISABLED now: */
 
+/* Settings page list: */
+typedef QList<UISettingsPage*> UISettingsPageList;
+typedef QMap<int, UISettingsPage*> UISettingsPageMap;
+
+/* Serializer direction: */
+enum UISettingsSerializeDirection
+{
+    UISettingsSerializeDirection_Load,
+    UISettingsSerializeDirection_Save
+};
+
+/* QThread reimplementation for loading/saving settings in async mode: */
+class UISettingsSerializer : public QThread
+{
+    Q_OBJECT;
+
+public:
+
+    /* Settings serializer instance: */
+    static UISettingsSerializer* instance() { return m_pInstance; }
+
+    /* Settings serializer constructor: */
+    UISettingsSerializer(QObject *pParent, const QVariant &data, UISettingsSerializeDirection direction)
+        : QThread(pParent)
+        , m_direction(direction)
+        , m_data(data)
+        , m_iPageIdWeAreWaitingFor(-1)
+        , m_iIdOfHighPriorityPage(-1)
+    {
+        /* Connecting thread signals: */
+        connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
+        connect(this, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltHandleProcessedPages()), Qt::QueuedConnection);
+        connect(this, SIGNAL(finished()), this, SLOT(sltDestroySerializer()), Qt::QueuedConnection);
+
+        /* Set instance: */
+        m_pInstance = this;
+    }
+
+    /* Settings serializer destructor: */
+    ~UISettingsSerializer()
+    {
+        /* Reset instance: */
+        m_pInstance = 0;
+
+        /* If serializer is being destructed by it's parent,
+         * thread could still be running, we have to wait
+         * for it to be finished! */
+        if (isRunning())
+            wait();
+
+        /* If serializer still having event loop running,
+         * we should quit it now: */
+        if (m_eventLoop.isRunning())
+        {
+            m_eventLoop.processEvents();
+            m_eventLoop.quit();
+        }
+    }
+
+    /* Set pages list: */
+    void setPageList(const UISettingsPageList &pageList)
+    {
+        for (int iPageIndex = 0; iPageIndex < pageList.size(); ++iPageIndex)
+        {
+            UISettingsPage *pPage = pageList[iPageIndex];
+            m_pages.insert(pPage->id(), pPage);
+        }
+    }
+
+    /* Blocks calling thread until requested page will be processed: */
+    void waitForPageToBeProcessed(int iPageId)
+    {
+        if (!isRunning())
+            return;
+        m_iPageIdWeAreWaitingFor = iPageId;
+        m_eventLoop.exec();
+    }
+
+    /* Blocks calling thread until all pages will be processed: */
+    void waitForPagesToBeProcessed()
+    {
+        if (!isRunning())
+            return;
+        m_iPageIdWeAreWaitingFor = -1;
+        m_eventLoop.exec();
+    }
+
+    /* Raise priority of page: */
+    void raisePriorityOfPage(int iPageId)
+    {
+        /* If that page is not present or was processed already: */
+        if (!m_pages.contains(iPageId) || m_pages[iPageId]->processed())
+        {
+            /* We just ignoring that request: */
+            return;
+        }
+        else
+        {
+            /* Else remember which page we should be processed next: */
+            m_iIdOfHighPriorityPage = iPageId;
+        }
+    }
+
+    /* Return current m_data content: */
+    QVariant& data() { return m_data; }
+
+signals:
+
+    /* Signal to notify main GUI thread about some page was processed: */
+    void sigNotifyAboutPageProcessed(int iPageId);
+
+    /* Signal to notify main GUI thread about all pages were processed: */
+    void sigNotifyAboutPagesProcessed();
+
+public slots:
+
+    void start(Priority priority = InheritPriority)
+    {
+        /* If serializer saves settings: */
+        if (m_direction == UISettingsSerializeDirection_Save)
+        {
+            /* We should update internal page cache first: */
+            for (int iPageIndex = 0; iPageIndex < m_pages.values().size(); ++iPageIndex)
+                m_pages.values()[iPageIndex]->putToCache();
+        }
+        /* Start async thread: */
+        QThread::start(priority);
+    }
+
+protected slots:
+
+    /* Slot to handle the fact of some page was processed: */
+    void sltHandleProcessedPage(int iPageId)
+    {
+        /* If serializer loads settings: */
+        if (m_direction == UISettingsSerializeDirection_Load)
+        {
+            /* If such page present we should fetch internal page cache: */
+            if (m_pages.contains(iPageId))
+                m_pages[iPageId]->getFromCache();
+        }
+        /* If thats the page we are waiting for, unlock the loop,
+         * after all the events of the page which is currently fetching
+         * from cache will be processed: */
+        if (iPageId == m_iPageIdWeAreWaitingFor && m_eventLoop.isRunning())
+            QTimer::singleShot(0, this, SLOT(sltStopEventLoop()));
+    }
+
+    /* Slot to handle the fact of some page was processed: */
+    void sltHandleProcessedPages()
+    {
+        /* If all the pages were processed, unlock the loop,
+         * after all the events of the last page will be processed: */
+        if (m_eventLoop.isRunning())
+            QTimer::singleShot(0, this, SLOT(sltStopEventLoop()));
+    }
+
+    /* Slot to destroy serializer: */
+    void sltDestroySerializer()
+    {
+        /* If event loop is still running,
+         * we should try to destroy serializer only on next iteration: */
+        if (m_eventLoop.isRunning())
+            QTimer::singleShot(0, this, SLOT(sltDestroySerializer()));
+        /* Else really make a request to destroy serializer: */
+        else
+            deleteLater();
+    }
+
+    /* Slot to stop event loop: */
+    void sltStopEventLoop()
+    {
+        /* If event loop is still running, we should stop it: */
+        if (m_eventLoop.isRunning())
+        {
+            m_eventLoop.processEvents();
+            m_eventLoop.quit();
+        }
+    }
+
+protected:
+
+    /* Settings processor: */
+    void run()
+    {
+        /* Iterate over the all left settings pages: */
+        UISettingsPageMap pages(m_pages);
+        while (!pages.empty())
+        {
+            /* Get required page pointer, protect map by mutex while getting pointer: */
+            UISettingsPage *pPage = m_iIdOfHighPriorityPage != -1 && pages.contains(m_iIdOfHighPriorityPage) ?
+                                    pages[m_iIdOfHighPriorityPage] : *pages.begin();
+            /* Reset request of high priority: */
+            if (m_iIdOfHighPriorityPage != -1)
+                m_iIdOfHighPriorityPage = -1;
+            /* Process this page if its enabled: */
+            if (pPage->isEnabled())
+            {
+                if (m_direction == UISettingsSerializeDirection_Load)
+                    pPage->loadToCacheFrom(m_data);
+                if (m_direction == UISettingsSerializeDirection_Save)
+                    pPage->saveFromCacheTo(m_data);
+            }
+            /* Remember what page was processed: */
+            pPage->setProcessed(true);
+            /* Notify listeners about page was processed: */
+            emit sigNotifyAboutPageProcessed(pPage->id());
+            /* Remove processed page from our map: */
+            pages.remove(pPage->id());
+        }
+        /* Notify listeners about all pages were processed: */
+        emit sigNotifyAboutPagesProcessed();
+    }
+
+    /* Variables: */
+    UISettingsSerializeDirection m_direction;
+    QVariant m_data;
+    QEventLoop m_eventLoop;
+    UISettingsPageMap m_pages;
+    int m_iPageIdWeAreWaitingFor;
+    int m_iIdOfHighPriorityPage;
+    static UISettingsSerializer *m_pInstance;
+};
+
+UISettingsSerializer* UISettingsSerializer::m_pInstance = 0;
+
 UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
     : UISettingsDialog(pParent)
 {
@@ -67,6 +295,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 case GLSettingsPage_General:
                 {
                     UISettingsPage *pSettingsPage = new VBoxGLSettingsGeneral;
+                    pSettingsPage->setId(i);
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
                             i, "#general", pSettingsPage);
@@ -76,6 +305,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 case GLSettingsPage_Input:
                 {
                     UISettingsPage *pSettingsPage = new VBoxGLSettingsInput;
+                    pSettingsPage->setId(i);
                     addItem(":/hostkey_32px.png", ":/hostkey_disabled_32px.png",
                             ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
                             i, "#input", pSettingsPage);
@@ -85,6 +315,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 case GLSettingsPage_Update:
                 {
                     UISettingsPage *pSettingsPage = new VBoxGLSettingsUpdate;
+                    pSettingsPage->setId(i);
                     addItem(":/refresh_32px.png", ":/refresh_disabled_32px.png",
                             ":/refresh_16px.png", ":/refresh_disabled_16px.png",
                             i, "#update", pSettingsPage);
@@ -94,6 +325,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 case GLSettingsPage_Language:
                 {
                     UISettingsPage *pSettingsPage = new VBoxGLSettingsLanguage;
+                    pSettingsPage->setId(i);
                     addItem(":/site_32px.png", ":/site_disabled_32px.png",
                             ":/site_16px.png", ":/site_disabled_16px.png",
                             i, "#language", pSettingsPage);
@@ -102,7 +334,8 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* USB page: */
                 case GLSettingsPage_USB:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(VBoxVMSettingsUSB::HostType);
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(UISettingsPageType_Global);
+                    pSettingsPage->setId(i);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
                             i, "#usb", pSettingsPage);
@@ -112,6 +345,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 case GLSettingsPage_Network:
                 {
                     UISettingsPage *pSettingsPage = new VBoxGLSettingsNetwork;
+                    pSettingsPage->setId(i);
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
                             i, "#language", pSettingsPage);
@@ -132,40 +366,46 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
 
 void UIGLSettingsDlg::getFrom()
 {
-    /* Get properties and settings: */
-    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    VBoxGlobalSettings settings = vboxGlobal().settings();
-    /* Iterate over the settings pages: */
-    QList<UISettingsPage*> pages = m_pSelector->settingPages();
-    for (int i = 0; i < pages.size(); ++i)
-    {
-        /* For every page => load the settings: */
-        UISettingsPage *pPage = pages[i];
-        if (pPage->isEnabled())
-            pPage->getFrom(properties, settings);
-    }
+    /* Prepare global data: */
+    qRegisterMetaType<UISettingsDataGlobal>();
+    UISettingsDataGlobal data(vboxGlobal().virtualBox().GetSystemProperties(), vboxGlobal().settings());
+    /* Create global settings loader,
+     * it will load global settings & delete itself in the appropriate time: */
+    UISettingsSerializer *pGlobalSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
+    /* Set pages to be loaded: */
+    pGlobalSettingsLoader->setPageList(m_pSelector->settingPages());
+    /* Start loader: */
+    pGlobalSettingsLoader->start();
+    /* Wait for just one (first) page to be loaded: */
+    pGlobalSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
 void UIGLSettingsDlg::putBackTo()
 {
     /* Get properties and settings: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    VBoxGlobalSettings oldSettings = vboxGlobal().settings();
-    VBoxGlobalSettings newSettings = oldSettings;
-    /* Iterate over the settings pages: */
-    QList<UISettingsPage*> pages = m_pSelector->settingPages();
-    for (int i = 0; i < pages.size(); ++i)
-    {
-        /* For every page => save the settings: */
-        UISettingsPage *pPage = pages[i];
-        if (pPage->isEnabled())
-            pPage->putBackTo(properties, newSettings);
-    }
+    VBoxGlobalSettings settings = vboxGlobal().settings();
+    /* Prepare global data: */
+    qRegisterMetaType<UISettingsDataGlobal>();
+    UISettingsDataGlobal data(properties, settings);
+    /* Create global settings saver,
+     * it will save global settings & delete itself in the appropriate time: */
+    UISettingsSerializer *pGlobalSettingsSaver = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Save);
+    /* Set pages to be saved: */
+    pGlobalSettingsSaver->setPageList(m_pSelector->settingPages());
+    /* Start saver: */
+    pGlobalSettingsSaver->start();
+    /* Wait for all pages to be saved: */
+    pGlobalSettingsSaver->waitForPagesToBeProcessed();
+
+    /* Get updated properties & settings: */
+    CSystemProperties newProperties = pGlobalSettingsSaver->data().value<UISettingsDataGlobal>().m_properties;
+    VBoxGlobalSettings newSettings = pGlobalSettingsSaver->data().value<UISettingsDataGlobal>().m_settings;
     /* If properties are not OK => show the error: */
-    if (!properties.isOk())
-        vboxProblem().cannotSetSystemProperties(properties);
+    if (!newProperties.isOk())
+        vboxProblem().cannotSetSystemProperties(newProperties);
     /* Else save the new settings if they were changed: */
-    else if (!(newSettings == oldSettings))
+    else if (!(newSettings == settings))
         vboxGlobal().setSettings(newSettings);
 }
 
@@ -270,6 +510,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_General:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsGeneral;
+                    pSettingsPage->setId(i);
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
                             i, "#general", pSettingsPage);
@@ -279,6 +520,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_System:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsSystem;
+                    pSettingsPage->setId(i);
                     connect(pSettingsPage, SIGNAL(tableChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/chipset_32px.png", ":/chipset_disabled_32px.png",
                             ":/chipset_16px.png", ":/chipset_disabled_16px.png",
@@ -289,6 +531,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_Display:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsDisplay;
+                    pSettingsPage->setId(i);
                     addItem(":/vrdp_32px.png", ":/vrdp_disabled_32px.png",
                             ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
                             i, "#display", pSettingsPage);
@@ -298,6 +541,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_Storage:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsHD;
+                    pSettingsPage->setId(i);
                     connect(pSettingsPage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/hd_32px.png", ":/hd_disabled_32px.png",
                             ":/attachment_16px.png", ":/attachment_disabled_16px.png",
@@ -308,6 +552,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_Audio:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsAudio;
+                    pSettingsPage->setId(i);
                     addItem(":/sound_32px.png", ":/sound_disabled_32px.png",
                             ":/sound_16px.png", ":/sound_disabled_16px.png",
                             i, "#audio", pSettingsPage);
@@ -317,6 +562,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_Network:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsNetworkPage;
+                    pSettingsPage->setId(i);
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
                             i, "#network", pSettingsPage);
@@ -334,6 +580,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_Serial:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsSerialPage;
+                    pSettingsPage->setId(i);
                     addItem(":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
                             ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
                             i, "#serialPorts", pSettingsPage, VMSettingsPage_Ports);
@@ -343,6 +590,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 case VMSettingsPage_Parallel:
                 {
                     UISettingsPage *pSettingsPage = new VBoxVMSettingsParallelPage;
+                    pSettingsPage->setId(i);
                     addItem(":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png",
                             ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
                             i, "#parallelPorts", pSettingsPage, VMSettingsPage_Ports);
@@ -351,7 +599,8 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* USB page: */
                 case VMSettingsPage_USB:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(VBoxVMSettingsUSB::MachineType);
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(UISettingsPageType_Machine);
+                    pSettingsPage->setId(i);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
                             i, "#usb", pSettingsPage, VMSettingsPage_Ports);
@@ -360,12 +609,15 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Shared Folders page: */
                 case VMSettingsPage_SF:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSF(MachineType);
+                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSF;
+                    pSettingsPage->setId(i);
                     addItem(":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png",
                             ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
                             i, "#sfolders", pSettingsPage);
                     break;
                 }
+                default:
+                    break;
             }
         }
     }
@@ -409,32 +661,43 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
 
 void UIVMSettingsDlg::getFrom()
 {
-    /* Iterate over the settings pages: */
-    QList<UISettingsPage*> pages = m_pSelector->settingPages();
-    for (int i = 0; i < pages.size(); ++i)
-    {
-        /* For every page => load the settings: */
-        UISettingsPage *pPage = pages[i];
-        if (pPage->isEnabled())
-            pPage->getFrom(m_machine);
-    }
-    /* Finally set the reset First Run Wizard flag to "false" to make sure
-     * user will see this dialog if he hasn't change the boot-order
-     * and/or mounted images configuration: */
-    m_fResetFirstRunFlag = false;
+    /* Prepare machine data: */
+    qRegisterMetaType<UISettingsDataMachine>();
+    UISettingsDataMachine data(m_machine);
+    /* Create machine settings loader,
+     * it will load machine settings & delete itself in the appropriate time: */
+    UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
+    connect(pMachineSettingsLoader, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltSetFirstRunFlag()));
+    /* Set pages to be loaded: */
+    pMachineSettingsLoader->setPageList(m_pSelector->settingPages());
+    /* Ask to raise required page priority: */
+    pMachineSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
+    /* Start page loader: */
+    pMachineSettingsLoader->start();
+    /* Wait for just one (required) page to be loaded: */
+    pMachineSettingsLoader->waitForPageToBeProcessed(m_pSelector->currentId());
 }
 
 void UIVMSettingsDlg::putBackTo()
 {
-    /* Iterate over the settings pages: */
-    QList<UISettingsPage*> pages = m_pSelector->settingPages();
-    for (int i = 0; i < pages.size(); ++i)
-    {
-        /* For every page => save the settings: */
-        UISettingsPage *pPage = pages[i];
-        if (pPage->isEnabled())
-            pPage->putBackTo();
-    }
+    /* Prepare machine data: */
+    qRegisterMetaType<UISettingsDataMachine>();
+    UISettingsDataMachine data(m_machine);
+    /* Create machine settings saver,
+     * it will save machine settings & delete itself in the appropriate time: */
+    UISettingsSerializer *pMachineSettingsSaver = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Save);
+    /* Set pages to be saved: */
+    pMachineSettingsSaver->setPageList(m_pSelector->settingPages());
+    /* Start saver: */
+    pMachineSettingsSaver->start();
+    /* Wait for all pages to be saved: */
+    pMachineSettingsSaver->waitForPagesToBeProcessed();
+
+    /* Get updated machine: */
+    m_machine = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_machine;
+    /* If machine is not OK => show the error: */
+    if (!m_machine.isOk())
+        vboxProblem().cannotSaveMachineSettings(m_machine);
 
     /* Guest OS type & VT-x/AMD-V option correlation auto-fix: */
     VBoxVMSettingsGeneral *pGeneralPage =
@@ -481,7 +744,6 @@ void UIVMSettingsDlg::retranslateUi()
      * before they are revalidated. Cause: They do string comparing within
      * vboxGlobal which is retranslated at that point already. */
     QEvent event(QEvent::LanguageChange);
-    QWidget *pPage = 0;
 
     /* General page: */
     m_pSelector->setItemText(VMSettingsPage_General, tr("General"));
@@ -500,7 +762,7 @@ void UIVMSettingsDlg::retranslateUi()
 
     /* Network page: */
     m_pSelector->setItemText(VMSettingsPage_Network, tr("Network"));
-    if ((pPage = m_pSelector->idToPage(VMSettingsPage_Network)))
+    if (QWidget *pPage = m_pSelector->idToPage(VMSettingsPage_Network))
         qApp->sendEvent(pPage, &event);
 
     /* Ports page: */
@@ -508,12 +770,12 @@ void UIVMSettingsDlg::retranslateUi()
 
     /* Serial page: */
     m_pSelector->setItemText(VMSettingsPage_Serial, tr("Serial Ports"));
-    if ((pPage = m_pSelector->idToPage(VMSettingsPage_Serial)))
+    if (QWidget *pPage = m_pSelector->idToPage(VMSettingsPage_Serial))
         qApp->sendEvent(pPage, &event);
 
     /* Parallel page: */
     m_pSelector->setItemText(VMSettingsPage_Parallel, tr("Parallel Ports"));
-    if ((pPage = m_pSelector->idToPage(VMSettingsPage_Parallel)))
+    if (QWidget *pPage = m_pSelector->idToPage(VMSettingsPage_Parallel))
         qApp->sendEvent(pPage, &event);
 
     /* USB page: */
@@ -551,8 +813,7 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
     /* This method performs correlation option check
      * between different pages of VM Settings dialog: */
 
-    if (pPage == m_pSelector->idToPage(VMSettingsPage_General) ||
-        pPage == m_pSelector->idToPage(VMSettingsPage_System))
+    if (pPage == m_pSelector->idToPage(VMSettingsPage_General))
     {
         /* Get General & System pages: */
         VBoxVMSettingsGeneral *pGeneralPage =
@@ -602,8 +863,7 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #ifndef VBOX_OSE
-    if (pPage == m_pSelector->idToPage(VMSettingsPage_System) ||
-        pPage == m_pSelector->idToPage(VMSettingsPage_USB))
+    if (pPage == m_pSelector->idToPage(VMSettingsPage_System))
     {
         /* Get System & USB pages: */
         VBoxVMSettingsSystem *pSystemPage =
@@ -626,9 +886,22 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
     return true;
 }
 
+void UIVMSettingsDlg::sltCategoryChanged(int cId)
+{
+    if (UISettingsSerializer::instance())
+        UISettingsSerializer::instance()->raisePriorityOfPage(cId);
+
+    UISettingsDialog::sltCategoryChanged(cId);
+}
+
 void UIVMSettingsDlg::sltAllowResetFirstRunFlag()
 {
     m_fAllowResetFirstRunFlag = true;
+}
+
+void UIVMSettingsDlg::sltSetFirstRunFlag()
+{
+    m_fResetFirstRunFlag = false;
 }
 
 void UIVMSettingsDlg::sltResetFirstRunFlag()
@@ -682,4 +955,6 @@ bool UIVMSettingsDlg::isAvailable(int id)
     }
     return true;
 }
+
+# include "UISettingsDialogSpecific.moc"
 

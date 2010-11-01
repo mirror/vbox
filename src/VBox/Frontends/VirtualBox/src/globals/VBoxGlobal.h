@@ -489,6 +489,21 @@ public:
         return mUSBDeviceStates.value (aState);
     }
 
+    QString toString (KChipsetType t) const
+    {
+        AssertMsg (!mChipsetTypes.value (t).isNull(), ("No text for %d", t));
+        return mChipsetTypes.value (t);
+    }
+
+    KChipsetType toChipsetType (const QString &s) const
+    {
+        QULongStringHash::const_iterator it =
+            qFind (mChipsetTypes.begin(), mChipsetTypes.end(), s);
+        AssertMsg (it != mChipsetTypes.end(), ("No value for {%s}",
+                                               s.toLatin1().constData()));
+        return KChipsetType (it.key());
+    }
+
     QStringList COMPortNames() const;
     QString toCOMPortName (ulong aIRQ, ulong aIOBase) const;
     bool toCOMPortNumbers (const QString &aName, ulong &aIRQ, ulong &aIOBase) const;
@@ -814,6 +829,7 @@ private:
     QULongStringHash mClipboardTypes;
     QULongStringHash mStorageControllerTypes;
     QULongStringHash mUSBDeviceStates;
+    QULongStringHash mChipsetTypes;
 
     QString mUserDefinedPortName;
 

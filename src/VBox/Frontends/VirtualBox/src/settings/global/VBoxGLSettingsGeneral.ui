@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
-     Copyright (C) 2008 Oracle Corporation
+     Copyright (C) 2008-2010 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -28,29 +28,6 @@
     <number>0</number>
    </property>
    <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="mLbHardDisk">
-     <property name="text">
-      <string>Default &amp;Hard Disk Folder:</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-     </property>
-     <property name="buddy">
-      <cstring>mPsHardDisk</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="2">
-    <widget class="VBoxFilePathSelectorWidget" name="mPsHardDisk">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
     <widget class="QLabel" name="mLbMach">
      <property name="text">
       <string>Default &amp;Machine Folder:</string>
@@ -63,7 +40,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="2">
+   <item row="0" column="2">
     <widget class="VBoxFilePathSelectorWidget" name="mPsMach">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -73,14 +50,14 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="3">
+   <item row="1" column="0" colspan="3">
     <widget class="Line" name="mLnSeparator">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
+   <item row="2" column="0" colspan="2">
     <widget class="QLabel" name="mLbVRDP">
      <property name="text">
       <string>V&amp;RDP Authentication Library:</string>
@@ -93,7 +70,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="2">
+   <item row="2" column="2">
     <widget class="VBoxFilePathSelectorWidget" name="mPsVRDP">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -103,14 +80,14 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="3">
+   <item row="3" column="0" colspan="3">
     <widget class="Line" name="mLnSeparator2">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
     </widget>
    </item>
-   <item row="5" column="0">
+   <item row="4" column="0">
     <widget class="QWidget" name="mWtSpacer1">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -123,7 +100,7 @@
      </property>
     </widget>
    </item>
-   <item row="5" column="1" colspan="2">
+   <item row="4" column="1" colspan="2">
     <widget class="QCheckBox" name="mCbCheckTrayIcon">
      <property name="whatsThis">
       <string>When checked, the application will provide an icon with the context menu in the system tray.</string>
@@ -136,7 +113,7 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
+   <item row="5" column="0">
     <widget class="QWidget" name="mWtSpacer2">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -149,14 +126,14 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="1" colspan="2">
+   <item row="5" column="1" colspan="2">
     <widget class="QCheckBox" name="mCbCheckPresentationMode">
      <property name="text">
       <string>&amp;Auto show Dock and Menubar in fullscreen</string>
      </property>
     </widget>
    </item>
-   <item row="7" column="0">
+   <item row="6" column="0">
     <widget class="QWidget" name="mWtSpacer3">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
@@ -169,7 +146,7 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="1" colspan="2">
+   <item row="6" column="1" colspan="2">
     <widget class="QCheckBox" name="mCbDisableHostScreenSaver">
      <property name="whatsThis">
       <string>When checked, the host screen saver will be disabled whenever a virtual machine is running.</string>
@@ -179,7 +156,7 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="0" colspan="3">
+   <item row="7" column="0" colspan="3">
     <spacer>
      <property name="orientation">
       <enum>Qt::Vertical</enum>

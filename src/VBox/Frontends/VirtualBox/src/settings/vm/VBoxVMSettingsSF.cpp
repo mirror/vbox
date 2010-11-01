@@ -164,9 +164,8 @@ private:
     QStringList mTextList;
 };
 
-VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
-    : UISettingsPage (aParent)
-    , mDialogType (aType)
+VBoxVMSettingsSF::VBoxVMSettingsSF()
+    : m_type(WrongType)
     , mIsListViewChanged (false)
 {
     /* Apply UI decorations */
@@ -208,30 +207,21 @@ VBoxVMSettingsSF::VBoxVMSettingsSF (int aType, QWidget *aParent)
     connect (mTwFolders, SIGNAL (customContextMenuRequested (const QPoint &)),
              this, SLOT (showContextMenu (const QPoint &)));
 
-    /* Create mTwFolders root items */
-#if 0
-    if (aType == GlobalType)
-    {
-        QStringList fields;
-        fields << tr (" Global Folders") /* name */ << QString::number (GlobalType) /* key */;
-        new SFTreeViewItem (mTwFolders, fields, SFTreeViewItem::EllipsisEnd);
-    }
-#endif
-    if (aType & MachineType)
-    {
-        QStringList fields;
-        fields << tr (" Machine Folders") /* name */ << QString::number (MachineType) /* key */;
-        new SFTreeViewItem (mTwFolders, fields, SFTreeViewItem::EllipsisEnd);
-    }
-    if (aType & ConsoleType)
-    {
-        QStringList fields;
-        fields << tr (" Transient Folders") /* name */ << QString::number (ConsoleType) /* key */;
-        new SFTreeViewItem (mTwFolders, fields, SFTreeViewItem::EllipsisEnd);
-    }
-    mTwFolders->sortItems (0, Qt::AscendingOrder);
-
     retranslateUi();
+}
+
+void VBoxVMSettingsSF::loadDirectlyFrom(const CConsole &console)
+{
+    loadToCacheFromMachine(console.GetMachine());
+    loadToCacheFromConsole(console);
+    getFromCache();
+}
+
+void VBoxVMSettingsSF::saveDirectlyTo(CConsole &console)
+{
+    putToCache();
+    saveFromCacheToConsole(console);
+    saveFromCacheToMachine(console.GetMachine());
 }
 
 void VBoxVMSettingsSF::resizeEvent (QResizeEvent *aEvent)
@@ -240,87 +230,201 @@ void VBoxVMSettingsSF::resizeEvent (QResizeEvent *aEvent)
     adjustList();
 }
 
-void VBoxVMSettingsSF::getFromGlobal()
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsSF::loadToCacheFrom(QVariant &data)
 {
-    AssertMsgFailed (("Global shared folders are not supported now!\n"));
-#if 0
-    SFTreeViewItem *root = searchRoot (true, GlobalType);
-    root->setHidden (false);
-    getFrom (vboxGlobal().virtualBox().GetSharedFolders(), root);
-#endif
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
+
+    /* Fill internal variables with corresponding values: */
+    loadToCacheFromMachine(m_machine);
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
-void VBoxVMSettingsSF::getFromMachine (const CMachine &aMachine)
+void VBoxVMSettingsSF::loadToCacheFromMachine(const CMachine &machine)
 {
-    mMachine = aMachine;
-    SFTreeViewItem *root = searchRoot (true, MachineType);
-    root->setHidden (false);
-    getFrom (mMachine.GetSharedFolders(), root);
+    /* Update dialog type: */
+    if (m_type == WrongType)
+        m_type = MachineType;
+    /* Load machine items into internal cache: */
+    loadToCacheFromVector(machine.GetSharedFolders(), MachineType);
 }
 
-void VBoxVMSettingsSF::getFromConsole (const CConsole &aConsole)
+void VBoxVMSettingsSF::loadToCacheFromConsole(const CConsole &console)
 {
-    mConsole = aConsole;
-    SFTreeViewItem *root = searchRoot (true, ConsoleType);
-    root->setHidden (false);
-    getFrom (mConsole.GetSharedFolders(), root);
+    /* Update dialog type: */
+    if (m_type == WrongType || m_type == MachineType)
+        m_type = ConsoleType;
+    /* Load console items into internal cache: */
+    loadToCacheFromVector(console.GetSharedFolders(), ConsoleType);
 }
 
-void VBoxVMSettingsSF::putBackToGlobal()
+void VBoxVMSettingsSF::loadToCacheFromVector(const CSharedFolderVector &vector, UISharedFolderType type)
 {
-    AssertMsgFailed (("Global shared folders are not supported now!\n"));
-#if 0
+    /* Cache shared folders in internal variables: */
+    for (int iFolderIndex = 0; iFolderIndex < vector.size(); ++iFolderIndex)
+    {
+        const CSharedFolder &folder = vector[iFolderIndex];
+        UISharedFolderData data;
+        data.m_type = type;
+        data.m_strName = folder.GetName();
+        data.m_strHostPath = folder.GetHostPath();
+        data.m_fAutoMount = folder.GetAutoMount();
+        data.m_fWritable = folder.GetWritable();
+        m_cache.m_items << data;
+    }
+}
+
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsSF::getFromCache()
+{
+    /* Apply internal variables data to QWidget(s): */
+    if (m_type == MachineType || m_type == ConsoleType)
+        root(MachineType);
+    if (m_type == ConsoleType)
+        root(ConsoleType);
+    for (int iFolderIndex = 0; iFolderIndex < m_cache.m_items.size(); ++iFolderIndex)
+    {
+        /* Get iterated folder's data: */
+        const UISharedFolderData &data = m_cache.m_items[iFolderIndex];
+        /* Prepare list item's fields: */
+        QStringList fields;
+        fields << data.m_strName << data.m_strHostPath
+               << (data.m_fAutoMount ? mTrYes : "")
+               << (data.m_fWritable ? mTrFull : mTrReadOnly);
+        /* Searching for item's root: */
+        SFTreeViewItem *pItemsRoot = root(data.m_type);
+        /* Create new folder list item: */
+        new SFTreeViewItem(pItemsRoot, fields, SFTreeViewItem::EllipsisFile);
+    }
+    /* Sort populated item's list: */
+    mTwFolders->sortItems(0, Qt::AscendingOrder);
+    /* Ensure current item fetched: */
+    mTwFolders->setCurrentItem(mTwFolders->topLevelItem(0));
+    processCurrentChanged(mTwFolders->currentItem());
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsSF::putToCache()
+{
+    /* Reset cache: */
+    m_cache.m_items.clear();
+    /* Gather internal variables data from QWidget(s): */
+    QTreeWidgetItem *pMainRootItem = mTwFolders->invisibleRootItem();
+    /* Iterate other all the list top-level items: */
+    for (int iFodlersTypeIndex = 0; iFodlersTypeIndex < pMainRootItem->childCount(); ++iFodlersTypeIndex)
+    {
+        SFTreeViewItem *pFolderTypeRoot = static_cast<SFTreeViewItem*>(pMainRootItem->child(iFodlersTypeIndex));
+        UISharedFolderType type = (UISharedFolderType)pFolderTypeRoot->text(1).toInt();
+        AssertMsg(type != WrongType, ("Incorrent folders type!"));
+        /* Iterate other all the folder items: */
+        for (int iFoldersIndex = 0; iFoldersIndex < pFolderTypeRoot->childCount(); ++iFoldersIndex)
+        {
+            SFTreeViewItem *pFolderItem = static_cast<SFTreeViewItem*>(pFolderTypeRoot->child(iFoldersIndex));
+            UISharedFolderData data;
+            data.m_type = type;
+            data.m_strName = pFolderItem->getText(0);
+            data.m_strHostPath = pFolderItem->getText(1);
+            data.m_fAutoMount = pFolderItem->getText(2) == mTrYes ? true : false;
+            data.m_fWritable = pFolderItem->getText(3) == mTrFull ? true : false;
+            m_cache.m_items << data;
+        }
+    }
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsSF::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
+
+    /* Gather corresponding values from internal variables: */
+    saveFromCacheToMachine(m_machine);
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
+}
+
+void VBoxVMSettingsSF::saveFromCacheToMachine(CMachine &machine)
+{
+    /* Save machine items from internal cache: */
+    /* Check if items were changed: */
     if (!mIsListViewChanged)
         return;
-    /* This function is only available for GlobalType dialog */
-    Assert (mDialogType == GlobalType);
-    /* Searching for GlobalType item's root */
-    SFTreeViewItem *root = searchRoot (true, GlobalType);
-    Assert (root);
-    CSharedFolderVector vec = vboxGlobal().virtualBox().GetSharedFolders();
-    putBackTo (vec, root);
-#endif
+
+    /* Delete all machine folders first: */
+    const CSharedFolderVector &folders = machine.GetSharedFolders();
+    for (int iFolderIndex = 0; iFolderIndex < folders.size(); ++iFolderIndex)
+    {
+        const CSharedFolder &folder = folders[iFolderIndex];
+        QString strFolderName = folder.GetName();
+        QString strFolderPath = folder.GetHostPath();
+        machine.RemoveSharedFolder(strFolderName);
+        if (!machine.isOk())
+        {
+            // TODO: Fix problem reporter!
+            //vboxProblem().cannotRemoveSharedFolder(this, machine, strFolderName, strFolderPath);
+        }
+    }
+
+    /* Save all new machine folders: */
+    for (int iFolderIndex = 0; iFolderIndex < m_cache.m_items.size(); ++iFolderIndex)
+    {
+        const UISharedFolderData &data = m_cache.m_items[iFolderIndex];
+        if (data.m_type == MachineType)
+        {
+            machine.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
+            if (!machine.isOk())
+            {
+                // TODO: Fix problem reporter!
+                //vboxProblem().cannotCreateSharedFolder(this, machine, data.m_strName, data.m_strHostPath);
+            }
+        }
+    }
 }
 
-void VBoxVMSettingsSF::putBackToMachine()
+void VBoxVMSettingsSF::saveFromCacheToConsole(CConsole &console)
 {
+    /* Save console items from internal cache: */
+    /* Check if items were changed: */
     if (!mIsListViewChanged)
         return;
-    /* This function is only available for MachineType dialog */
-    Assert (mDialogType & MachineType);
-    /* Searching for MachineType item's root */
-    SFTreeViewItem *root = searchRoot (true,  MachineType);
-    Assert (root);
-    CSharedFolderVector sfvec = mMachine.GetSharedFolders();
-    putBackTo (sfvec, root);
-}
 
-void VBoxVMSettingsSF::putBackToConsole()
-{
-    if (!mIsListViewChanged)
-        return;
-    /* This function is only available for ConsoleType dialog */
-    Assert (mDialogType & ConsoleType);
-    /* Searching for ConsoleType item's root */
-    SFTreeViewItem *root = searchRoot (true, ConsoleType);
-    Assert (root);
-    CSharedFolderVector sfvec = mConsole.GetSharedFolders();
-    putBackTo (sfvec, root);
-}
+    /* Delete all console folders first: */
+    const CSharedFolderVector &folders = console.GetSharedFolders();
+    for (int iFolderIndex = 0; iFolderIndex < folders.size(); ++iFolderIndex)
+    {
+        const CSharedFolder &folder = folders[iFolderIndex];
+        QString strFolderName = folder.GetName();
+        QString strFolderPath = folder.GetHostPath();
+        console.RemoveSharedFolder(strFolderName);
+        if (!console.isOk())
+        {
+            // TODO: Fix problem reporter!
+            //vboxProblem().cannotRemoveSharedFolder(this, console, strFolderName, strFolderPath);
+        }
+    }
 
-int VBoxVMSettingsSF::dialogType() const
-{
-     return mDialogType;
-}
-
-void VBoxVMSettingsSF::getFrom (const CMachine &aMachine)
-{
-    getFromMachine (aMachine);
-}
-
-void VBoxVMSettingsSF::putBackTo()
-{
-    putBackToMachine();
+    /* Save all new console folders: */
+    for (int iFolderIndex = 0; iFolderIndex < m_cache.m_items.size(); ++iFolderIndex)
+    {
+        const UISharedFolderData &data = m_cache.m_items[iFolderIndex];
+        if (data.m_type == ConsoleType)
+        {
+            console.CreateSharedFolder(data.m_strName, data.m_strHostPath, data.m_fWritable, data.m_fAutoMount);
+            if (!console.isOk())
+            {
+                // TODO: Fix problem reporter!
+                //vboxProblem().cannotCreateSharedFolder(this, console, data.m_strName, data.m_strHostPath);
+            }
+        }
+    }
 }
 
 void VBoxVMSettingsSF::setOrderAfter (QWidget *aWidget)
@@ -356,7 +460,7 @@ void VBoxVMSettingsSF::retranslateUi()
 void VBoxVMSettingsSF::addTriggered()
 {
     /* Invoke Add-Box Dialog */
-    VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::AddType, mDialogType & ConsoleType, usedList (true), this);
+    VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::AddType, m_type == ConsoleType, usedList (true), this);
     if (dlg.exec() == QDialog::Accepted)
     {
         QString name = dlg.name();
@@ -365,15 +469,14 @@ void VBoxVMSettingsSF::addTriggered()
         /* Shared folder's name & path could not be empty */
         Assert (!name.isEmpty() && !path.isEmpty());
         /* Searching root for the new listview item */
-        SFTreeViewItem *root = searchRoot (isPermanent);
-        Assert (root);
+        SFTreeViewItem *pRoot = root(isPermanent ? MachineType : ConsoleType);
+        Assert (pRoot);
         /* Appending a new listview item to the root */
         QStringList fields;
         fields << name /* name */ << path /* path */
                << (dlg.isAutoMounted() ? mTrYes : "" /* auto mount? */)
-               << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */)
-               << "edited" /* mark item as edited */;
-        SFTreeViewItem *item = new SFTreeViewItem (root, fields, SFTreeViewItem::EllipsisFile);
+               << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */);
+        SFTreeViewItem *item = new SFTreeViewItem (pRoot, fields, SFTreeViewItem::EllipsisFile);
         mTwFolders->sortItems (0, Qt::AscendingOrder);
         mTwFolders->scrollToItem (item);
         mTwFolders->setCurrentItem (item);
@@ -395,10 +498,10 @@ void VBoxVMSettingsSF::edtTriggered()
     Assert (item->parent());
 
     /* Invoke Edit-Box Dialog */
-    VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::EditType, mDialogType & ConsoleType, usedList (false), this);
+    VBoxVMSettingsSFDetails dlg (VBoxVMSettingsSFDetails::EditType, m_type == ConsoleType, usedList (false), this);
     dlg.setPath (item->getText (1));
     dlg.setName (item->getText (0));
-    dlg.setPermanent ((SFDialogType)item->parent()->text (1).toInt() != ConsoleType);
+    dlg.setPermanent ((UISharedFolderType)item->parent()->text (1).toInt() != ConsoleType);
     dlg.setAutoMount (item->getText (2) == mTrYes);
     dlg.setWriteable (item->getText (3) == mTrFull);
     if (dlg.exec() == QDialog::Accepted)
@@ -409,21 +512,20 @@ void VBoxVMSettingsSF::edtTriggered()
         /* Shared folder's name & path could not be empty */
         Assert (!name.isEmpty() && !path.isEmpty());
         /* Searching new root for the selected listview item */
-        SFTreeViewItem *root = searchRoot (isPermanent);
-        Assert (root);
+        SFTreeViewItem *pRoot = root(isPermanent ? MachineType : ConsoleType);
+        Assert (pRoot);
         /* Updating an edited listview item */
         QStringList fields;
         fields << name /* name */ << path /* path */
                << (dlg.isAutoMounted() ? mTrYes : "" /* auto mount? */)
-               << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */)
-               << "edited" /* mark item as edited */;
+               << (dlg.isWriteable() ? mTrFull : mTrReadOnly /* writable? */);
         item->updateText (fields);
         mTwFolders->sortItems (0, Qt::AscendingOrder);
-        if (item->parent() != root)
+        if (item->parent() != pRoot)
         {
             /* Move the selected item into new location */
             item->parent()->takeChild (item->parent()->indexOfChild (item));
-            root->insertChild (root->childCount(), item);
+            pRoot->insertChild (pRoot->childCount(), item);
             mTwFolders->scrollToItem (item);
             mTwFolders->setCurrentItem (item);
             processCurrentChanged (item);
@@ -450,7 +552,7 @@ void VBoxVMSettingsSF::processCurrentChanged (QTreeWidgetItem *aCurrentItem)
         aCurrentItem->setSelected (true);
     QString key = !aCurrentItem ? QString::null : aCurrentItem->parent() ?
                   aCurrentItem->parent()->text (1) : aCurrentItem->text (1);
-    bool addEnabled = aCurrentItem && isEditable (key);
+    bool addEnabled = aCurrentItem;
     bool removeEnabled = addEnabled && aCurrentItem->parent();
     mNewAction->setEnabled (addEnabled);
     mEdtAction->setEnabled (removeEnabled);
@@ -459,7 +561,7 @@ void VBoxVMSettingsSF::processCurrentChanged (QTreeWidgetItem *aCurrentItem)
 
 void VBoxVMSettingsSF::processDoubleClick (QTreeWidgetItem *aItem)
 {
-    bool editEnabled = aItem && aItem->parent() && isEditable (aItem->parent()->text (1));
+    bool editEnabled = aItem && aItem->parent();
     if (editEnabled)
         edtTriggered();
 }
@@ -539,154 +641,52 @@ void VBoxVMSettingsSF::showEvent (QShowEvent *aEvent)
     QTimer::singleShot (0, this, SLOT (adjustList()));
 }
 
-void VBoxVMSettingsSF::createSharedFolder (const QString &aName, const QString &aPath,
-                                           bool aWritable, bool aAutoMount, SFDialogType aType)
+SFTreeViewItem* VBoxVMSettingsSF::root(UISharedFolderType type)
 {
-    switch (aType)
+    /* Prepare empty item: */
+    SFTreeViewItem *pRootItem = 0;
+    /* Get top-level root item: */
+    QTreeWidgetItem *pMainRootItem = mTwFolders->invisibleRootItem();
+    /* Iterate other the all root items: */
+    for (int iFolderTypeIndex = 0; iFolderTypeIndex < pMainRootItem->childCount(); ++iFolderTypeIndex)
     {
-        case GlobalType:
+        /* Get iterated item: */
+        QTreeWidgetItem *pIteratedItem = pMainRootItem->child(iFolderTypeIndex);
+        /* If iterated item's type is what we are looking for: */
+        if (pIteratedItem->text(1).toInt() == type)
         {
-            /* This feature is not supported now */
-            AssertMsgFailed (("Global shared folders are not supported now!\n"));
+            /* Remember the item: */
+            pRootItem = static_cast<SFTreeViewItem*>(pIteratedItem);
+            /* And break further search: */
             break;
-        }
-        case MachineType:
-        {
-            Assert (!mMachine.isNull());
-            mMachine.CreateSharedFolder (aName, aPath, aWritable, aAutoMount);
-            if (!mMachine.isOk())
-                vboxProblem().cannotCreateSharedFolder (this, mMachine, aName, aPath);
-            break;
-        }
-        case ConsoleType:
-        {
-            Assert (!mConsole.isNull());
-            mConsole.CreateSharedFolder (aName, aPath, aWritable, aAutoMount);
-            if (!mConsole.isOk())
-                vboxProblem().cannotCreateSharedFolder (this, mConsole, aName, aPath);
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Incorrect shared folder type\n"));
         }
     }
-}
-
-void VBoxVMSettingsSF::removeSharedFolder (const QString &aName, const QString &aPath, SFDialogType aType)
-{
-    switch (aType)
+    /* If root item we are looking for still not found: */
+    if (!pRootItem)
     {
-        case GlobalType:
-        {
-            /* This feature is not supported now */
-            AssertMsgFailed (("Global shared folders are not supported now!\n"));
-            break;
-        }
-        case MachineType:
-        {
-            Assert (!mMachine.isNull());
-            mMachine.RemoveSharedFolder (aName);
-            if (!mMachine.isOk())
-                vboxProblem().cannotRemoveSharedFolder (this, mMachine, aName, aPath);
-            break;
-        }
-        case ConsoleType:
-        {
-            Assert (!mConsole.isNull());
-            mConsole.RemoveSharedFolder (aName);
-            if (!mConsole.isOk())
-                vboxProblem().cannotRemoveSharedFolder (this, mConsole, aName, aPath);
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Incorrect shared folder type\n"));
-        }
-    }
-}
-
-void VBoxVMSettingsSF::getFrom (const CSharedFolderVector &aVec, SFTreeViewItem *aRoot)
-{
-    for (int i = 0; i < aVec.size(); ++ i)
-    {
-        CSharedFolder sf = aVec [i];
+        /* Preparing fields: */
         QStringList fields;
-        fields << sf.GetName() /* name */ << sf.GetHostPath() /* path */
-               << (sf.GetAutoMount() ? mTrYes : "") /* auto mount? */
-               << (sf.GetWritable() ? mTrFull : mTrReadOnly) /* writable? */
-               << "not edited" /* initially not edited */;
-        new SFTreeViewItem (aRoot, fields, SFTreeViewItem::EllipsisFile);
-    }
-    aRoot->setExpanded (true);
-    mTwFolders->sortItems (0, Qt::AscendingOrder);
-    mTwFolders->setCurrentItem (aRoot->childCount() ? aRoot->child (0) : aRoot);
-    processCurrentChanged (aRoot->childCount() ? aRoot->child (0) : aRoot);
-}
-
-void VBoxVMSettingsSF::putBackTo (CSharedFolderVector &aVec, SFTreeViewItem *aRoot)
-{
-    Assert (!aRoot->text (1).isNull());
-    SFDialogType type = (SFDialogType) aRoot->text (1).toInt();
-
-    /** @todo Use enums rather than numbers for the text fields (like  item->getText (4)). */
-
-    /* Delete all changed folders from vm */
-    for (int idx = 0; idx < aVec.size(); ++ idx)
-    {
-        CSharedFolder sf = aVec [idx];
-
-        /* Iterate through this root's children */
-        int i = 0;
-        for (; i < aRoot->childCount(); ++ i)
+        /* Depending on folder type: */
+        switch (type)
         {
-            SFTreeViewItem *item = aRoot->child (i);
-            if (item->getText (0) == sf.GetName() && item->getText (4) == "not edited")
+            case MachineType:
+                fields << tr(" Machine Folders") << QString::number(MachineType);
+                break;
+            case ConsoleType:
+                fields << tr(" Transient Folders") << QString::number(ConsoleType);
+                break;
+            default:
                 break;
         }
-
-        if (i == aRoot->childCount())
-            removeSharedFolder (sf.GetName(), sf.GetHostPath(), type);
+        /* Creating root: */
+        pRootItem = new SFTreeViewItem(mTwFolders, fields, SFTreeViewItem::EllipsisEnd);
+        /* We should show it (its not?): */
+        pRootItem->setHidden(false);
+        /* Expand it: */
+        pRootItem->setExpanded(true);
     }
-
-    /* Save all edited tree widget items as folders */
-    for (int i = 0; i < aRoot->childCount(); ++ i)
-    {
-        SFTreeViewItem *item = aRoot->child (i);
-
-        if (!item->getText (0).isNull() && !item->getText (1).isNull() && item->getText (4) == "edited")
-            createSharedFolder (item->getText (0), item->getText (1),
-                                item->getText (3) == mTrFull ? true : false, item->getText (2) == mTrYes ? true : false,
-                                type);
-    }
-}
-
-SFTreeViewItem* VBoxVMSettingsSF::searchRoot (bool aIsPermanent, SFDialogType aType)
-{
-    QString type = aType != WrongType ? QString::number (aType) : !aIsPermanent ? QString::number (ConsoleType) :
-                   mDialogType & MachineType ? QString::number (MachineType) : QString::number (GlobalType);
-    QTreeWidgetItem *mainRoot = mTwFolders->invisibleRootItem();
-
-    int i = 0;
-    for (; i < mainRoot->childCount(); ++ i)
-    {
-        if (mainRoot->child (i)->text (1) == type)
-            break;
-    }
-
-    Assert (i < mainRoot->childCount());
-    return i < mainRoot->childCount() && mainRoot->child (i)->type() == SFTreeViewItem::SFTreeViewItemType ?
-           static_cast <SFTreeViewItem*> (mainRoot->child (i)) : 0;
-}
-
-bool VBoxVMSettingsSF::isEditable (const QString &aKey)
-{
-    /* mDialogType should be correct */
-    Assert (mDialogType);
-
-    SFDialogType type = (SFDialogType) aKey.toInt();
-    if (!type) return false;
-    return mDialogType & type;
+    /* Return root item: */
+    return pRootItem;
 }
 
 SFoldersNameList VBoxVMSettingsSF::usedList (bool aIncludeSelected)
@@ -700,7 +700,7 @@ SFoldersNameList VBoxVMSettingsSF::usedList (bool aIncludeSelected)
             (*it)->type() == SFTreeViewItem::SFTreeViewItemType)
         {
             SFTreeViewItem *item = static_cast <SFTreeViewItem*> (*it);
-            SFDialogType type = (SFDialogType) item->parent()->text (1).toInt();
+            UISharedFolderType type = (UISharedFolderType) item->parent()->text (1).toInt();
             list << qMakePair (item->getText (0), type);
         }
         ++ it;

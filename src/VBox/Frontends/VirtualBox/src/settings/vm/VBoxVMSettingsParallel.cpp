@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,6 +28,7 @@
 VBoxVMSettingsParallel::VBoxVMSettingsParallel()
     : QIWithRetranslateUI<QWidget> (0)
     , mValidator (0)
+    , m_iSlot(-1)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsParallel::setupUi (this);
@@ -56,29 +57,29 @@ VBoxVMSettingsParallel::VBoxVMSettingsParallel()
     retranslateUi();
 }
 
-void VBoxVMSettingsParallel::getFromPort (const CParallelPort &aPort)
+void VBoxVMSettingsParallel::fetchPortData(const UIParallelPortData &data)
 {
-    mPort = aPort;
+    /* Load port slot number: */
+    m_iSlot = data.m_iSlot;
 
-    mGbParallel->setChecked (mPort.GetEnabled());
-    ulong IRQ = mPort.GetIRQ();
-    ulong IOBase = mPort.GetIOBase();
-    mCbNumber->setCurrentIndex (mCbNumber->
-        findText (vboxGlobal().toCOMPortName (IRQ, IOBase)));
-    mLeIRQ->setText (QString::number (IRQ));
-    mLeIOPort->setText ("0x" + QString::number (IOBase, 16).toUpper());
-    mLePath->setText (mPort.GetPath());
+    /* Fetch port data: */
+    mGbParallel->setChecked(data.m_fPortEnabled);
+    mCbNumber->setCurrentIndex(mCbNumber->findText(vboxGlobal().toCOMPortName(data.m_uIRQ, data.m_uIOBase)));
+    mLeIRQ->setText(QString::number(data.m_uIRQ));
+    mLeIOPort->setText("0x" + QString::number(data.m_uIOBase, 16).toUpper());
+    mLePath->setText(data.m_strPath);
 
     /* Ensure everything is up-to-date */
-    mGbParallelToggled (mGbParallel->isChecked());
+    mGbParallelToggled(mGbParallel->isChecked());
 }
 
-void VBoxVMSettingsParallel::putBackToPort()
+void VBoxVMSettingsParallel::uploadPortData(UIParallelPortData &data)
 {
-    mPort.SetEnabled (mGbParallel->isChecked());
-    mPort.SetIRQ (mLeIRQ->text().toULong (NULL, 0));
-    mPort.SetIOBase (mLeIOPort->text().toULong (NULL, 0));
-    mPort.SetPath (QDir::toNativeSeparators (mLePath->text()));
+    /* Upload port data: */
+    data.m_fPortEnabled = mGbParallel->isChecked();
+    data.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
+    data.m_uIOBase = mLeIOPort->text().toULong(NULL, 0);
+    data.m_strPath = QDir::toNativeSeparators(mLePath->text());
 }
 
 void VBoxVMSettingsParallel::setValidator (QIWidgetValidator *aVal)
@@ -106,11 +107,7 @@ QWidget* VBoxVMSettingsParallel::setOrderAfter (QWidget *aAfter)
 
 QString VBoxVMSettingsParallel::pageTitle() const
 {
-    QString pageTitle;
-    if (!mPort.isNull())
-        pageTitle = QString (tr ("Port %1", "parallel ports"))
-            .arg (QString ("&%1").arg (mPort.GetSlot() + 1));
-    return pageTitle;
+    return QString(tr("Port %1", "parallel ports")).arg(QString("&%1").arg(m_iSlot + 1));
 }
 
 bool VBoxVMSettingsParallel::isUserDefined()
@@ -161,36 +158,112 @@ VBoxVMSettingsParallelPage::VBoxVMSettingsParallelPage()
     layout->addWidget (mTabWidget);
 }
 
-void VBoxVMSettingsParallelPage::getFrom (const CMachine &aMachine)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsParallelPage::loadToCacheFrom(QVariant &data)
 {
-    Assert (m_pFirstWidget);
-    setTabOrder (m_pFirstWidget, mTabWidget->focusProxy());
-    QWidget *lastFocusWidget = mTabWidget->focusProxy();
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* Tab pages loading */
-    ulong count = vboxGlobal().virtualBox().
-                  GetSystemProperties().GetParallelPortCount();
-    for (ulong slot = 0; slot < count; ++ slot)
+    /* Load port data: */
+    ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetParallelPortCount();
+    for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
     {
-        CParallelPort port = aMachine.GetParallelPort (slot);
-        VBoxVMSettingsParallel *page = new VBoxVMSettingsParallel();
-        page->getFromPort (port);
-        mTabWidget->addTab (page, page->pageTitle());
-        Assert (mValidator);
-        page->setValidator (mValidator);
-        lastFocusWidget = page->setOrderAfter (lastFocusWidget);
+        /* Get port: */
+        const CParallelPort &port = m_machine.GetParallelPort(uSlot);
+
+        /* Prepare port's data container: */
+        UIParallelPortData data;
+
+        /* Load options: */
+        data.m_iSlot = uSlot;
+        data.m_fPortEnabled = port.GetEnabled();
+        data.m_uIRQ = port.GetIRQ();
+        data.m_uIOBase = port.GetIOBase();
+        data.m_strPath = port.GetPath();
+
+        /* Append adapter's data container: */
+        m_cache.m_items << data;
+    }
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
+}
+
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsParallelPage::getFromCache()
+{
+    Assert(m_pFirstWidget);
+    setTabOrder(m_pFirstWidget, mTabWidget->focusProxy());
+    QWidget *pLastFocusWidget = mTabWidget->focusProxy();
+
+    /* Apply internal variables data to QWidget(s): */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    {
+        /* Creating port's page: */
+        VBoxVMSettingsParallel *pPage = new VBoxVMSettingsParallel;
+
+        /* Loading port's data into page: */
+        pPage->fetchPortData(m_cache.m_items[iSlot]);
+
+        /* Attach port's page to Tab Widget: */
+        mTabWidget->addTab(pPage, pPage->pageTitle());
+
+        /* Setup page validation: */
+        pPage->setValidator(mValidator);
+
+        /* Setup tab order: */
+        pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
+    }
+
+    /* Applying language settings: */
+    retranslateUi();
+
+    /* Revalidate if possible: */
+    if (mValidator) mValidator->revalidate();
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsParallelPage::putToCache()
+{
+    /* Gather internal variables data from QWidget(s): */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    {
+        /* Getting adapter's page: */
+        VBoxVMSettingsParallel *pPage = qobject_cast<VBoxVMSettingsParallel*>(mTabWidget->widget(iSlot));
+
+        /* Loading Adapter's data from page: */
+        pPage->uploadPortData(m_cache.m_items[iSlot]);
     }
 }
 
-void VBoxVMSettingsParallelPage::putBackTo()
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsParallelPage::saveFromCacheTo(QVariant &data)
 {
-    for (int index = 0; index < mTabWidget->count(); ++ index)
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
+
+    /* Gather corresponding values from internal variables: */
+    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
     {
-        VBoxVMSettingsParallel *page =
-            (VBoxVMSettingsParallel*) mTabWidget->widget (index);
-        Assert (page);
-        page->putBackToPort();
+        /* Get adapter: */
+        CParallelPort &port = m_machine.GetParallelPort(iSlot);
+
+        /* Get cached data for this slot: */
+        const UIParallelPortData &data = m_cache.m_items[iSlot];
+
+        /* Save options: */
+        port.SetIRQ(data.m_uIRQ);
+        port.SetIOBase(data.m_uIOBase);
+        port.SetPath(data.m_strPath);
+        port.SetEnabled(data.m_fPortEnabled);
     }
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
 void VBoxVMSettingsParallelPage::setValidator (QIWidgetValidator *aVal)

@@ -96,7 +96,9 @@ protected:
 
 private slots:
 
+    void sltCategoryChanged(int cId);
     void sltAllowResetFirstRunFlag();
+    void sltSetFirstRunFlag();
     void sltResetFirstRunFlag();
 
 private:

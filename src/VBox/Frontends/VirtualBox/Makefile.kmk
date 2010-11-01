@@ -378,6 +378,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIExtraDataEventHandler.cpp \
 	src/extensions/QISplitter.cpp \
 	src/selector/UIVMDesktop.cpp \
+	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/vm/VBoxVMSettingsPortForwardingDlg.cpp \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -450,6 +451,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QIWizard.cpp \
 	src/settings/UISettingsDialog.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
+	src/settings/UISettingsPage.cpp \
 	src/settings/VBoxSettingsSelector.cpp \
 	src/settings/global/VBoxGLSettingsGeneral.cpp \
 	src/settings/global/VBoxGLSettingsInput.cpp \
