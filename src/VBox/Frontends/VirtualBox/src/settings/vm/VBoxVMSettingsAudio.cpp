@@ -73,7 +73,7 @@ void VBoxVMSettingsAudio::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::fetchData(data);
 
     /* Gather corresponding values from internal variables: */
-    CAudioAdapter &audio = m_machine.GetAudioAdapter();
+    CAudioAdapter audio = m_machine.GetAudioAdapter();
     audio.SetEnabled(m_cache.m_fAudioEnabled);
     audio.SetAudioDriver(m_cache.m_audioDriverType);
     audio.SetAudioController(m_cache.m_audioControllerType);
