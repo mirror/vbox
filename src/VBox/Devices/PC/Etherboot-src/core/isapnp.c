@@ -26,9 +26,11 @@
 *    ================
 *    Version 0.1 April 26, 2002 	TJL
 *    Version 0.2 01/08/2003		TJL Moved outside the 3c515.c driver file
-
-/*
- */
+*    Version 0.3 Sept 23, 2003	timlegge Change delay to currticks
+*
+*
+*    Indent Options: indent -kr -i8
+***************************************************************************/
 
 /*
  * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
@@ -38,12 +40,6 @@
  * that GPLv2 or any later version may be used, or where a choice of which version
  * of the GPL is applied is otherwise unspecified.
  */
-
-*    Version 0.3 Sept 23, 2003	timlegge Change delay to currticks
-*		
-*
-*    Indent Options: indent -kr -i8
-***************************************************************************/
 
 /* to get some global routines like printf */
 #include "etherboot.h"
