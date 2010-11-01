@@ -6426,8 +6426,8 @@
           <li>Child media of all normal media of the deleted snapshot
             must be accessible (see <link to="IMedium::state"/>) for this
             operation to succeed.  In particular, this means that all virtual
-            machines, whose media are directly or indirectly based on the
-            media of deleted snapshot, must be powered off.</li>
+            machines whose media are directly or indirectly based on the
+            media of deleted snapshot must be powered off.</li>
 
           <li>You cannot delete the snapshot if a medium attached to it has
           more than once child medium (differencing images) because otherwise
