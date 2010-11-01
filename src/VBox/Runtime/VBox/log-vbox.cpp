@@ -346,7 +346,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
         {
             /* braindead */
             unsigned iArg = 0;
-            char ch;
+            int ch;
             bool fNew = true;
             while (!feof(pFile) && (ch = fgetc(pFile)) != EOF)
             {
