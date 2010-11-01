@@ -147,10 +147,8 @@ void VBoxVMSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Fill internal variables with corresponding values: */
     m_cache.m_iCurrentVRAM = m_machine.GetVRAMSize();
     m_cache.m_cMonitorCount = m_machine.GetMonitorCount();
-    m_cache.m_f3dAccelerationSupported = vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable();
     m_cache.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    m_cache.m_f2dAccelerationSupported = VBoxGlobal::isAcceleration2DVideoAvailable();
     m_cache.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
 #endif
     CVRDEServer vrdeServer = m_machine.GetVRDEServer();
@@ -174,10 +172,10 @@ void VBoxVMSettingsDisplay::getFromCache()
 {
     /* Apply internal variables data to QWidget(s): */
     mSlMonitors->setValue(m_cache.m_cMonitorCount);
-    mCb3D->setEnabled(m_cache.m_f3dAccelerationSupported);
+    mCb3D->setEnabled(vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
     mCb3D->setChecked(m_cache.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    mCb2DVideo->setEnabled(m_cache.m_f2dAccelerationSupported);
+    mCb2DVideo->setEnabled(VBoxGlobal::isAcceleration2DVideoAvailable());
     mCb2DVideo->setChecked(m_cache.m_f2dAccelerationEnabled);
 #endif
     checkVRAMRequirements();
