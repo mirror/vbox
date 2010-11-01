@@ -76,7 +76,7 @@ typedef struct RTSHA1STORAGEINTERNAL
     RTSEMEVENT newStatusEvent;
     /** Event for signaling a finished task of the worker thread. */
     RTSEMEVENT workFinishedEvent;
-    /** rtSha1 calculation context. */
+    /** SHA1 calculation context. */
     RTSHA1CONTEXT ctx;
     /** Write mode only: Memory buffer for writing zeros. */
     void *pvZeroBuf;
