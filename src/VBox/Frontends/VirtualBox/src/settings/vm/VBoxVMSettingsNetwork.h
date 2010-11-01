@@ -29,6 +29,32 @@
 class VBoxVMSettingsNetworkPage;
 class QITabWidget;
 
+/* Machine settings / Network page / Adapter data: */
+struct UINetworkAdapterData
+{
+    int m_iSlot;
+    /* CNetworkAdapter used only for Generate MAC ability! */
+    CNetworkAdapter m_adapter;
+    bool m_fAdapterEnabled;
+    KNetworkAdapterType m_adapterType;
+    KNetworkAttachmentType m_attachmentType;
+    QString m_strBridgedAdapterName;
+    QString m_strInternalNetworkName;
+    QString m_strHostInterfaceName;
+#ifdef VBOX_WITH_VDE
+    QString m_strVDENetworkName;
+#endif /* VBOX_WITH_VDE */
+    QString m_strMACAddress;
+    bool m_fCableConnected;
+    UIPortForwardingDataList m_redirects;
+};
+
+/* Machine settings / Network page / Cache: */
+struct UISettingsCacheMachineNetwork
+{
+    QList<UINetworkAdapterData> m_items;
+};
+
 class VBoxVMSettingsNetwork : public QIWithRetranslateUI <QWidget>,
                               public Ui::VBoxVMSettingsNetwork
 {
@@ -38,8 +64,8 @@ public:
 
     VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent, bool aDisableStaticControls = false);
 
-    void getFromAdapter (const CNetworkAdapter &aAdapter);
-    void putBackToAdapter();
+    void fetchAdapterData(const UINetworkAdapterData &data);
+    void uploadAdapterData(UINetworkAdapterData &data);
 
     void setValidator (QIWidgetValidator *aValidator);
     bool revalidate (QString &aWarning, QString &aTitle);
@@ -69,8 +95,9 @@ private:
     void populateComboboxes();
 
     VBoxVMSettingsNetworkPage *mParent;
-    CNetworkAdapter mAdapter;
     QIWidgetValidator *mValidator;
+    int m_iSlot;
+    CNetworkAdapter m_adapter;
 
     QString mBrgName;
     QString mIntName;
@@ -84,13 +111,17 @@ private:
     UIPortForwardingDataList mPortForwardingRules;
 };
 
-class VBoxVMSettingsNetworkPage : public UISettingsPage
+/* Machine settings / Network page: */
+class VBoxVMSettingsNetworkPage : public UISettingsPageMachine
 {
     Q_OBJECT;
 
 public:
 
     VBoxVMSettingsNetworkPage (bool aDisableStaticControls = false);
+
+    void loadDirectlyFrom(const CMachine &machine);
+    void saveDirectlyTo(CMachine &machine);
 
     QStringList brgList (bool aRefresh = false);
     QStringList intList (bool aRefresh = false);
@@ -101,8 +132,19 @@ public:
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aValidator);
     bool revalidate (QString &aWarning, QString &aTitle);
@@ -123,6 +165,9 @@ private:
     QStringList mHoiList;
 
     bool mDisableStaticControls;
+
+    /* Cache: */
+    UISettingsCacheMachineNetwork m_cache;
 };
 
 #endif // __VBoxVMSettingsNetwork_h__

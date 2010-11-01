@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,16 @@
 #include "VBoxVMSettingsAudio.gen.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsAudio : public UISettingsPage,
+/* Machine settings / Audio page / Cache: */
+struct UISettingsCacheMachineAudio
+{
+    bool m_fAudioEnabled;
+    KAudioDriverType m_audioDriverType;
+    KAudioControllerType m_audioControllerType;
+};
+
+/* Machine settings / Audio page: */
+class VBoxVMSettingsAudio : public UISettingsPageMachine,
                             public Ui::VBoxVMSettingsAudio
 {
     Q_OBJECT;
@@ -34,8 +43,19 @@ public:
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setOrderAfter (QWidget *aWidget);
 
@@ -45,7 +65,8 @@ private:
 
     void prepareComboboxes();
 
-    CMachine mMachine;
+    /* Cache: */
+    UISettingsCacheMachineAudio m_cache;
 };
 
 #endif // __VBoxVMSettingsAudio_h__

@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,24 @@
 
 class QITabWidget;
 
+/* Machine settings / Network page / Port data: */
+struct UISerialPortData
+{
+    int m_iSlot;
+    bool m_fPortEnabled;
+    ulong m_uIRQ;
+    ulong m_uIOBase;
+    KPortMode m_hostMode;
+    bool m_fServer;
+    QString m_strPath;
+};
+
+/* Machine settings / Serial page / Cache: */
+struct UISettingsCacheMachineSerial
+{
+    QList<UISerialPortData> m_items;
+};
+
 class VBoxVMSettingsSerial : public QIWithRetranslateUI<QWidget>,
                              public Ui::VBoxVMSettingsSerial
 {
@@ -34,8 +52,8 @@ public:
 
     VBoxVMSettingsSerial();
 
-    void getFromPort (const CSerialPort &aPort);
-    void putBackToPort();
+    void fetchPortData(const UISerialPortData &data);
+    void uploadPortData(UISerialPortData &data);
 
     void setValidator (QIWidgetValidator *aVal);
 
@@ -57,10 +75,11 @@ private slots:
 private:
 
     QIWidgetValidator *mValidator;
-    CSerialPort mPort;
+    int m_iSlot;
 };
 
-class VBoxVMSettingsSerialPage : public UISettingsPage
+/* Machine settings / Serial page: */
+class VBoxVMSettingsSerialPage : public UISettingsPageMachine
 {
     Q_OBJECT;
 
@@ -70,8 +89,19 @@ public:
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
     bool revalidate (QString &aWarning, QString &aTitle);
@@ -82,6 +112,9 @@ private:
 
     QIWidgetValidator *mValidator;
     QITabWidget *mTabWidget;
+
+    /* Cache: */
+    UISettingsCacheMachineSerial m_cache;
 };
 
 #endif // __VBoxVMSettingsSerial_h__

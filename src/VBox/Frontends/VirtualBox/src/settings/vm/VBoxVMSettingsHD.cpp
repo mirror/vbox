@@ -1781,100 +1781,182 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     mSplitter->setSizes (QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
 }
 
-void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsHD::loadToCacheFrom(QVariant &data)
 {
-    mMachine = aMachine;
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    /* Set the machine id for the media-combo */
-    mCbVdi->setMachineId (mMachine.GetId());
-    mStorageModel->setMachineId (mMachine.GetId());
-
-    /* Load currently present controllers & attachments */
-    CStorageControllerVector controllers = mMachine.GetStorageControllers();
-    foreach (const CStorageController &controller, controllers)
+    /* Fill internal variables with corresponding values: */
+    m_cache.m_strMachineId = m_machine.GetId();
+    /* Load controllers list: */
+    const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
+    for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
     {
-        QString controllerName = controller.GetName();
-        QModelIndex ctrIndex = mStorageModel->addController (controllerName, controller.GetBus(), controller.GetControllerType());
-        QUuid ctrId = QUuid (mStorageModel->data (ctrIndex, StorageModel::R_ItemId).toString());
-
-        bool useIoCache = controller.GetUseHostIOCache();
-
-        mStorageModel->setData (ctrIndex, useIoCache, StorageModel::R_CtrIoCache);
-
-        CMediumAttachmentVector attachments = mMachine.GetMediumAttachmentsOfController (controllerName);
-        foreach (const CMediumAttachment &attachment, attachments)
+        /* Prepare controller item: */
+        const CStorageController &controller = controllers[iControllerIndex];
+        UIStorageControllerData controllerData;
+        controllerData.m_strControllerName = controller.GetName();
+        controllerData.m_controllerBus = controller.GetBus();
+        controllerData.m_controllerType = controller.GetControllerType();
+        controllerData.m_fUseHostIOCache = controller.GetUseHostIOCache();
+        /* Load attachments list: */
+        const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(controllerData.m_strControllerName);
+        for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
         {
-            QModelIndex attIndex = mStorageModel->addAttachment (ctrId, attachment.GetType());
-            mStorageModel->setData (attIndex, QVariant::fromValue (StorageSlot (controller.GetBus(), attachment.GetPort(), attachment.GetDevice())), StorageModel::R_AttSlot);
-            CMedium medium (attachment.GetMedium());
+            /* Prepare attachment item: */
+            const CMediumAttachment &attachment = attachments[iAttachmentIndex];
+            UIStorageAttachmentData attachmentData;
+            attachmentData.m_attachmentType = attachment.GetType();
+            attachmentData.m_iAttachmentPort = attachment.GetPort();
+            attachmentData.m_iAttachmentDevice = attachment.GetDevice();
+            attachmentData.m_fAttachmentPassthrough = attachment.GetPassthrough();
+            CMedium comMedium(attachment.GetMedium());
             VBoxMedium vboxMedium;
-            vboxGlobal().findMedium (medium, vboxMedium);
-            mStorageModel->setData (attIndex, vboxMedium.id(), StorageModel::R_AttMediumId);
-            mStorageModel->setData (attIndex, attachment.GetPassthrough(), StorageModel::R_AttIsPassthrough);
+            vboxGlobal().findMedium(comMedium, vboxMedium);
+            attachmentData.m_strAttachmentMediumId = vboxMedium.id();
+            controllerData.m_items << attachmentData;
         }
+        m_cache.m_items << controllerData;
     }
 
-    /* Set the first controller as current if present */
-    if (mStorageModel->rowCount (mStorageModel->root()) > 0)
-        mTwStorageTree->setCurrentIndex (mStorageModel->index (0, 0, mStorageModel->root()));
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
-void VBoxVMSettingsHD::putBackTo()
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsHD::getFromCache()
 {
-    /* Remove currently present controllers & attachments */
-    CStorageControllerVector controllers = mMachine.GetStorageControllers();
-    foreach (const CStorageController &controller, controllers)
+    /* Apply internal variables data to QWidget(s): */
+    mCbVdi->setMachineId(m_cache.m_strMachineId);
+    mStorageModel->setMachineId(m_cache.m_strMachineId);
+    for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size(); ++iControllerIndex)
     {
-        QString controllerName (controller.GetName());
-        CMediumAttachmentVector attachments = mMachine.GetMediumAttachmentsOfController (controllerName);
-        foreach (const CMediumAttachment &attachment, attachments)
-            mMachine.DetachDevice (controllerName, attachment.GetPort(), attachment.GetDevice());
-        mMachine.RemoveStorageController (controllerName);
-    }
-
-    /* Save created controllers & attachments */
-    QModelIndex rootIndex = mStorageModel->root();
-    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
-    {
-        QModelIndex ctrIndex = rootIndex.child (i, 0);
-        QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
-        KStorageBus ctrBusType = mStorageModel->data (ctrIndex, StorageModel::R_CtrBusType).value <KStorageBus>();
-        KStorageControllerType ctrType = mStorageModel->data (ctrIndex, StorageModel::R_CtrType).value <KStorageControllerType>();
-        bool useIoCache = mStorageModel->data (ctrIndex, StorageModel::R_CtrIoCache).toBool();
-        CStorageController ctr = mMachine.AddStorageController (ctrName, ctrBusType);
-        ctr.SetControllerType (ctrType);
-        ctr.SetUseHostIOCache(useIoCache);
-        int maxUsedPort = -1;
-        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        /* Get iterated controller: */
+        const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
+        QModelIndex controllerIndex = mStorageModel->addController(controllerData.m_strControllerName,
+                                                                   controllerData.m_controllerBus,
+                                                                   controllerData.m_controllerType);
+        QUuid controllerId = QUuid(mStorageModel->data(controllerIndex, StorageModel::R_ItemId).toString());
+        mStorageModel->setData(controllerIndex, controllerData.m_fUseHostIOCache, StorageModel::R_CtrIoCache);
+        for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size(); ++iAttachmentIndex)
         {
-            QModelIndex attIndex = ctrIndex.child (j, 0);
-            StorageSlot attStorageSlot = mStorageModel->data (attIndex, StorageModel::R_AttSlot).value <StorageSlot>();
-            KDeviceType attDeviceType = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
-            QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
-            QString attMediumLocation = mStorageModel->data (attIndex, StorageModel::R_AttLocation).toString();
+            /* Get iterated attachment: */
+            const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
+            QModelIndex attachmentIndex = mStorageModel->addAttachment(controllerId, attachmentData.m_attachmentType);
+            StorageSlot attachmentStorageSlot(controllerData.m_controllerBus,
+                                              attachmentData.m_iAttachmentPort,
+                                              attachmentData.m_iAttachmentDevice);
+            mStorageModel->setData(attachmentIndex, QVariant::fromValue(attachmentStorageSlot), StorageModel::R_AttSlot);
+            mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentPassthrough, StorageModel::R_AttIsPassthrough);
+            mStorageModel->setData(attachmentIndex, attachmentData.m_strAttachmentMediumId, StorageModel::R_AttMediumId);
+        }
+    }
+    /* Set the first controller as current if present */
+    if (mStorageModel->rowCount(mStorageModel->root()) > 0)
+        mTwStorageTree->setCurrentIndex(mStorageModel->index(0, 0, mStorageModel->root()));
 
-            VBoxMedium vmedium = vboxGlobal().findMedium(attMediumId);
-            CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
-            mMachine.AttachDevice(ctrName, attStorageSlot.port, attStorageSlot.device, attDeviceType, medium);
-            if (mMachine.isOk())
+    /* Revalidate if possible: */
+    if (mValidator) mValidator->revalidate();
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsHD::putToCache()
+{
+    /* Gather internal variables data from QWidget(s): */
+    m_cache.m_items.clear();
+    QModelIndex rootIndex = mStorageModel->root();
+    for (int iControllerIndex = 0; iControllerIndex < mStorageModel->rowCount(rootIndex); ++iControllerIndex)
+    {
+        QModelIndex controllerIndex = mStorageModel->index(iControllerIndex, 0, rootIndex);
+        UIStorageControllerData controllerData;
+        controllerData.m_strControllerName = mStorageModel->data(controllerIndex, StorageModel::R_CtrName).toString();
+        controllerData.m_controllerBus = mStorageModel->data(controllerIndex, StorageModel::R_CtrBusType).value<KStorageBus>();
+        controllerData.m_controllerType = mStorageModel->data(controllerIndex, StorageModel::R_CtrType).value<KStorageControllerType>();
+        controllerData.m_fUseHostIOCache = mStorageModel->data(controllerIndex, StorageModel::R_CtrIoCache).toBool();
+        for (int iAttachmentIndex = 0; iAttachmentIndex < mStorageModel->rowCount(controllerIndex); ++iAttachmentIndex)
+        {
+            QModelIndex attachmentIndex = mStorageModel->index(iAttachmentIndex, 0, controllerIndex);
+            UIStorageAttachmentData attachmentData;
+            attachmentData.m_attachmentType = mStorageModel->data(attachmentIndex, StorageModel::R_AttDevice).value<KDeviceType>();
+            StorageSlot attachmentSlot = mStorageModel->data(attachmentIndex, StorageModel::R_AttSlot).value<StorageSlot>();
+            attachmentData.m_iAttachmentPort = attachmentSlot.port;
+            attachmentData.m_iAttachmentDevice = attachmentSlot.device;
+            attachmentData.m_fAttachmentPassthrough = mStorageModel->data(attachmentIndex, StorageModel::R_AttIsPassthrough).toBool();
+            attachmentData.m_strAttachmentMediumId = mStorageModel->data(attachmentIndex, StorageModel::R_AttMediumId).toString();
+            controllerData.m_items << attachmentData;
+        }
+        m_cache.m_items << controllerData;
+    }
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsHD::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
+
+    /* Remove currently present controllers & attachments */
+    const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
+    for (int iControllerIndex = 0; iControllerIndex < controllers.size(); ++iControllerIndex)
+    {
+        const CStorageController &controller = controllers[iControllerIndex];
+        QString strControllerName(controller.GetName());
+        const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(strControllerName);
+        for (int iAttachmentIndex = 0; iAttachmentIndex < attachments.size(); ++iAttachmentIndex)
+        {
+            const CMediumAttachment &attachment = attachments[iAttachmentIndex];
+            m_machine.DetachDevice(strControllerName, attachment.GetPort(), attachment.GetDevice());
+        }
+        m_machine.RemoveStorageController(strControllerName);
+    }
+    /* Save created controllers: */
+    for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size(); ++iControllerIndex)
+    {
+        const UIStorageControllerData &controllerData = m_cache.m_items[iControllerIndex];
+        CStorageController &controller = m_machine.AddStorageController(controllerData.m_strControllerName, controllerData.m_controllerBus);
+        controller.SetControllerType(controllerData.m_controllerType);
+        controller.SetUseHostIOCache(controllerData.m_fUseHostIOCache);
+        int cMaxUsedPort = -1;
+        /* Save created attachments: */
+        for (int iAttachmentIndex = 0; iAttachmentIndex < controllerData.m_items.size(); ++iAttachmentIndex)
+        {
+            const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
+            VBoxMedium vboxMedium = vboxGlobal().findMedium(attachmentData.m_strAttachmentMediumId);
+            CMedium comMedium = vboxMedium.medium();
+            m_machine.AttachDevice(controllerData.m_strControllerName,
+                                   attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
+                                   attachmentData.m_attachmentType, comMedium);
+            if (m_machine.isOk())
             {
-                if (attDeviceType == KDeviceType_DVD)
-                    mMachine.PassthroughDevice (ctrName, attStorageSlot.port, attStorageSlot.device,
-                                                mStorageModel->data (attIndex, StorageModel::R_AttIsPassthrough).toBool());
-                maxUsedPort = attStorageSlot.port > maxUsedPort ? attStorageSlot.port : maxUsedPort;
+                if (attachmentData.m_attachmentType == KDeviceType_DVD)
+                    m_machine.PassthroughDevice(controllerData.m_strControllerName,
+                                                attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice,
+                                                attachmentData.m_fAttachmentPassthrough);
+                cMaxUsedPort = attachmentData.m_iAttachmentPort > cMaxUsedPort ? attachmentData.m_iAttachmentPort : cMaxUsedPort;
             }
             else
-                vboxProblem().cannotAttachDevice(this, mMachine, VBoxDefs::MediumType_HardDisk, attMediumLocation,
-                                                 attStorageSlot.bus, attStorageSlot.port, attStorageSlot.device);
+            {
+                // TODO: Fix problem reporter!
+                //vboxProblem().cannotAttachDevice(this, m_machine, VBoxDefs::MediumType_HardDisk, vboxMedium.location(),
+                //                                 controllerData.m_controllerBus, attachmentData.m_iAttachmentPort, attachmentData.m_iAttachmentDevice);
+            }
         }
-        if (ctrBusType == KStorageBus_SATA)
+        if (controllerData.m_controllerBus == KStorageBus_SATA)
         {
-            ULONG sataPortsCount = maxUsedPort + 1;
-            sataPortsCount = qMax (sataPortsCount, ctr.GetMinPortCount());
-            sataPortsCount = qMin (sataPortsCount, ctr.GetMaxPortCount());
-            ctr.SetPortCount (sataPortsCount);
+            ULONG uSataPortsCount = cMaxUsedPort + 1;
+            uSataPortsCount = qMax(uSataPortsCount, controller.GetMinPortCount());
+            uSataPortsCount = qMin(uSataPortsCount, controller.GetMaxPortCount());
+            controller.SetPortCount(uSataPortsCount);
         }
     }
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
 void VBoxVMSettingsHD::setValidator (QIWidgetValidator *aVal)
@@ -2665,7 +2747,7 @@ QString VBoxVMSettingsHD::getWithMediaManager (VBoxDefs::MediumType aMediumType)
     dlg.setup (aMediumType,
                true /* do select? */,
                false /* do refresh? */,
-               mMachine,
+               m_machine,
                mCbVdi->id(),
                mCbShowDiffs->isChecked());
 

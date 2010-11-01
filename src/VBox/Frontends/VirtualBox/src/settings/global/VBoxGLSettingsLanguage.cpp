@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -188,21 +188,56 @@ VBoxGLSettingsLanguage::VBoxGLSettingsLanguage()
     retranslateUi();
 }
 
-void VBoxGLSettingsLanguage::getFrom (const CSystemProperties & /* aProps */, const VBoxGlobalSettings &aGs)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsLanguage::loadToCacheFrom(QVariant &data)
 {
-    reload (aGs.languageId());
-    mTxName->setFixedHeight (fontMetrics().height() * 4);
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
+
+    /* Load to cache: */
+    m_cache.m_strLanguageId = m_settings.languageId();
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
 }
 
-void VBoxGLSettingsLanguage::putBackTo (CSystemProperties & /* aProps */, VBoxGlobalSettings &aGs)
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsLanguage::getFromCache()
 {
-    QTreeWidgetItem *curItem = mTwLanguage->currentItem();
-    Assert (curItem);
-    if (mLanguageChanged && curItem)
+    /* Fetch from cache: */
+    reload(m_cache.m_strLanguageId);
+    mTxName->setFixedHeight(fontMetrics().height() * 4);
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsLanguage::putToCache()
+{
+    /* Upload to cache: */
+    QTreeWidgetItem *pCurrentItem = mTwLanguage->currentItem();
+    Assert(pCurrentItem);
+    if (pCurrentItem)
+        m_cache.m_strLanguageId = pCurrentItem->text(1);
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsLanguage::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
+
+    /* Save from cache: */
+    if (mLanguageChanged)
     {
-        aGs.setLanguageId (curItem->text (1));
-        VBoxGlobal::loadLanguage (curItem->text (1));
+        m_settings.setLanguageId(m_cache.m_strLanguageId);
+        VBoxGlobal::loadLanguage(m_cache.m_strLanguageId);
     }
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
 }
 
 void VBoxGLSettingsLanguage::setOrderAfter (QWidget *aWidget)

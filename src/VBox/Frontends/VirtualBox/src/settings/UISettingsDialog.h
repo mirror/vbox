@@ -52,6 +52,9 @@ protected slots:
     /* Validation handler: */
     virtual void sltRevalidate(QIWidgetValidator *pValidator);
 
+    /* Category-change slot: */
+    virtual void sltCategoryChanged(int cId);
+
 protected:
 
     /* UI translator: */
@@ -86,9 +89,6 @@ private slots:
 
     /* Slot to update whats-this: */
     void sltUpdateWhatsThis(bool fGotFocus = false);
-
-    /* Category-change slot: */
-    void sltCategoryChanged(int cId);
 
 private:
 

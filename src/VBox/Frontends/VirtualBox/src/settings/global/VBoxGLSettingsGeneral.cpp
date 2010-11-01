@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,6 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
         mCbDisableHostScreenSaver->isHidden())
         mLnSeparator2->hide();
 
-    mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsVRDP->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsVRDP->setMode (VBoxFilePathSelectorWidget::Mode_File_Open);
@@ -56,30 +55,83 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
     retranslateUi();
 }
 
-void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
-                                     const VBoxGlobalSettings &aGs)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
-    mPsMach->setPath (aProps.GetDefaultMachineFolder());
-    mPsVRDP->setPath (aProps.GetVRDEAuthLibrary());
-    mCbCheckTrayIcon->setChecked (aGs.trayIconEnabled());
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
+
+    /* Load to cache: */
+    m_cache.m_strDefaultMachineFolder = m_properties.GetDefaultMachineFolder();
+    m_cache.m_strVRDEAuthLibrary = m_properties.GetVRDEAuthLibrary();
+    m_cache.m_fTrayIconEnabled = m_settings.trayIconEnabled();
 #ifdef Q_WS_MAC
-    mCbCheckPresentationMode->setChecked (aGs.presentationModeEnabled());
+    m_cache.m_fPresentationModeEnabled = m_settings.presentationModeEnabled();
 #endif /* Q_WS_MAC */
-    mCbDisableHostScreenSaver->setChecked (aGs.hostScreenSaverDisabled());
+    m_cache.m_fHostScreenSaverDisables = m_settings.hostScreenSaverDisabled();
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
 }
 
-void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
-                                       VBoxGlobalSettings &aGs)
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsGeneral::getFromCache()
 {
-    if (aProps.isOk() && mPsMach->isModified())
-        aProps.SetDefaultMachineFolder (mPsMach->path());
-    if (aProps.isOk() && mPsVRDP->isModified())
-        aProps.SetVRDEAuthLibrary (mPsVRDP->path());
-    aGs.setTrayIconEnabled (mCbCheckTrayIcon->isChecked());
+    /* Fetch from cache: */
+    mPsMach->setPath(m_cache.m_strDefaultMachineFolder);
+    mPsVRDP->setPath(m_cache.m_strVRDEAuthLibrary);
+    mCbCheckTrayIcon->setChecked(m_cache.m_fTrayIconEnabled);
 #ifdef Q_WS_MAC
-    aGs.setPresentationModeEnabled (mCbCheckPresentationMode->isChecked());
+    mCbCheckPresentationMode->setChecked(m_cache.m_fPresentationModeEnabled);
 #endif /* Q_WS_MAC */
-    aGs.setHostScreenSaverDisabled (mCbDisableHostScreenSaver->isChecked());
+    mCbDisableHostScreenSaver->setChecked(m_cache.m_fHostScreenSaverDisables);
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxGLSettingsGeneral::putToCache()
+{
+    /* Upload to cache: */
+    m_cache.m_strDefaultMachineFolder = mPsMach->path();
+    m_cache.m_strVRDEAuthLibrary = mPsVRDP->path();
+    m_cache.m_fTrayIconEnabled = mCbCheckTrayIcon->isChecked();
+#ifdef Q_WS_MAC
+    m_cache.m_fPresentationModeEnabled = mCbCheckPresentationMode->isChecked();
+#endif /* Q_WS_MAC */
+    m_cache.m_fHostScreenSaverDisables = mCbDisableHostScreenSaver->isChecked();
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxGLSettingsGeneral::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to properties & settings: */
+    UISettingsPageGlobal::fetchData(data);
+
+    /* Save from cache: */
+    if (m_properties.isOk() && mPsMach->isModified())
+        m_properties.SetDefaultMachineFolder(m_cache.m_strDefaultMachineFolder);
+    if (m_properties.isOk() && mPsVRDP->isModified())
+        m_properties.SetVRDEAuthLibrary(m_cache.m_strVRDEAuthLibrary);
+    m_settings.setTrayIconEnabled(m_cache.m_fTrayIconEnabled);
+#ifdef Q_WS_MAC
+    m_settings.setPresentationModeEnabled(m_cache.m_fPresentationModeEnabled);
+#endif /* Q_WS_MAC */
+    m_settings.setHostScreenSaverDisabled(m_cache.m_fHostScreenSaverDisables);
+
+    /* Upload properties & settings to data: */
+    UISettingsPageGlobal::uploadData(data);
+}
+
+void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
+{
+    setTabOrder (aWidget, mPsMach);
+    setTabOrder (mPsMach, mPsVRDP);
+    setTabOrder (mPsVRDP, mCbCheckTrayIcon);
+    setTabOrder (mCbCheckTrayIcon, mCbCheckPresentationMode);
+    setTabOrder (mCbCheckPresentationMode, mCbDisableHostScreenSaver);
 }
 
 void VBoxGLSettingsGeneral::retranslateUi()
@@ -87,10 +139,6 @@ void VBoxGLSettingsGeneral::retranslateUi()
     /* Translate uic generated strings */
     Ui::VBoxGLSettingsGeneral::retranslateUi (this);
 
-    mPsHardDisk->setWhatsThis (tr ("Displays the path to the default hard disk "
-                                   "folder. This folder is used, if not explicitly "
-                                   "specified otherwise, when adding existing or "
-                                   "creating new virtual hard disks."));
     mPsMach->setWhatsThis (tr ("Displays the path to the default virtual "
                                "machine folder. This folder is used, if not "
                                "explicitly specified otherwise, when creating "

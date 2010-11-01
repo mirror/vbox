@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,7 +23,22 @@
 #include "VBoxVMSettingsGeneral.gen.h"
 #include "COMDefs.h"
 
-class VBoxVMSettingsGeneral : public UISettingsPage,
+/* Machine settings / General page / Cache: */
+struct UISettingsCacheMachineGeneral
+{
+    QString m_strName;
+    QString m_strGuestOsTypeId;
+    bool m_fSaveMountedAtRuntime;
+    bool m_fShowMiniToolBar;
+    bool m_fMiniToolBarAtTop;
+    QString m_strSnapshotsFolder;
+    QString m_strSnapshotsHomeDir;
+    KClipboardMode m_clipboardMode;
+    QString m_strDescription;
+};
+
+/* Machine settings / General page: */
+class VBoxVMSettingsGeneral : public UISettingsPageMachine,
                               public Ui::VBoxVMSettingsGeneral
 {
     Q_OBJECT;
@@ -44,8 +59,19 @@ public:
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
 
@@ -57,8 +83,10 @@ private:
 
     void showEvent (QShowEvent *aEvent);
 
-    CMachine mMachine;
     QIWidgetValidator *mValidator;
+
+    /* Cache: */
+    UISettingsCacheMachineGeneral m_cache;
 };
 
 #endif // __VBoxVMSettingsGeneral_h__

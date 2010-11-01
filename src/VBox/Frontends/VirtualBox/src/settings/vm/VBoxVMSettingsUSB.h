@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,19 +25,42 @@
 
 class VBoxUSBMenu;
 
+/* Common settings / USB page / Filter data: */
+struct UIUSBFilterData
+{
+    /* Common: */
+    bool m_fActive;
+    QString m_strName;
+    QString m_strVendorId;
+    QString m_strProductId;
+    QString m_strRevision;
+    QString m_strManufacturer;
+    QString m_strProduct;
+    QString m_strSerialNumber;
+    QString m_strPort;
+    QString m_strRemote;
+
+    /* Host only: */
+    KUSBDeviceFilterAction m_action;
+    bool m_fHostUSBDevice;
+    KUSBDeviceState m_hostUSBDeviceState;
+};
+
+/* Common settings / USB page / Cache: */
+struct UISettingsCacheCommonUSB
+{
+    bool m_fUSBEnabled;
+    bool m_fEHCIEnabled;
+    QList<UIUSBFilterData> m_items;
+};
+
+/* Common settings / USB page: */
 class VBoxVMSettingsUSB : public UISettingsPage,
                           public Ui::VBoxVMSettingsUSB
 {
     Q_OBJECT;
 
 public:
-
-    enum FilterType
-    {
-        WrongType = 0,
-        HostType = 1,
-        MachineType = 2
-    };
 
     enum RemoteMode
     {
@@ -46,19 +69,25 @@ public:
         ModeOff
     };
 
-    VBoxVMSettingsUSB (FilterType aType);
+    VBoxVMSettingsUSB(UISettingsPageType type);
 
     bool isOHCIEnabled() const;
 
 protected:
 
-    void getFrom (const CSystemProperties &aProps,
-                  const VBoxGlobalSettings &aGs);
-    void putBackTo (CSystemProperties &aProps,
-                    VBoxGlobalSettings &aGs);
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
 
@@ -80,15 +109,31 @@ private slots:
     void mupClicked();
     void mdnClicked();
     void showContextMenu (const QPoint &aPos);
+    void sltUpdateActivityState(QTreeWidgetItem *pChangedItem);
     void markSettingsChanged();
 
 private:
 
-    void addUSBFilter (const CUSBDeviceFilter &aFilter, bool isNew);
+    void addUSBFilter(const UIUSBFilterData &data, bool fIsNew);
 
-    CMachine mMachine;
+    /* Fetch data to m_properties, m_settings or m_machine: */
+    void fetchData(const QVariant &data);
+
+    /* Upload m_properties, m_settings or m_machine to data: */
+    void uploadData(QVariant &data) const;
+
+    /* Returns the multi-line description of the given USB filter: */
+    static QString toolTipFor(const UIUSBFilterData &data);
+
+    /* Global data source: */
+    CSystemProperties m_properties;
+    VBoxGlobalSettings m_settings;
+
+    /* Machine data source: */
+    CMachine m_machine;
+
+    /* Other variables: */
     QIWidgetValidator *mValidator;
-    FilterType mType;
     QAction *mNewAction;
     QAction *mAddAction;
     QAction *mEdtAction;
@@ -98,9 +143,10 @@ private:
     QMenu *mMenu;
     VBoxUSBMenu *mUSBDevicesMenu;
     bool mUSBFilterListModified;
-    QList<CUSBDeviceFilter> mFilters;
-
     QString mUSBFilterName;
+
+    /* Cache: */
+    UISettingsCacheCommonUSB m_cache;
 };
 
 #endif // __VBoxVMSettingsUSB_h__

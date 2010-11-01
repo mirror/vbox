@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,25 +28,58 @@ VBoxVMSettingsAudio::VBoxVMSettingsAudio()
     retranslateUi();
 }
 
-void VBoxVMSettingsAudio::getFrom (const CMachine &aMachine)
+/* Load data to cashe from corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsAudio::loadToCacheFrom(QVariant &data)
 {
-    mMachine = aMachine;
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
 
-    CAudioAdapter audio = aMachine.GetAudioAdapter();
-    mGbAudio->setChecked (audio.GetEnabled());
-    mCbAudioDriver->setCurrentIndex (mCbAudioDriver->
-        findText (vboxGlobal().toString (audio.GetAudioDriver())));
-    mCbAudioController->setCurrentIndex (mCbAudioController->
-        findText (vboxGlobal().toString (audio.GetAudioController())));
+    /* Fill internal variables with corresponding values: */
+    const CAudioAdapter &audio = m_machine.GetAudioAdapter();
+    m_cache.m_fAudioEnabled = audio.GetEnabled();
+    m_cache.m_audioDriverType = audio.GetAudioDriver();
+    m_cache.m_audioControllerType = audio.GetAudioController();
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
-void VBoxVMSettingsAudio::putBackTo()
+/* Load data to corresponding widgets from cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsAudio::getFromCache()
 {
-    CAudioAdapter audio = mMachine.GetAudioAdapter();
-    audio.SetAudioDriver (vboxGlobal().toAudioDriverType (mCbAudioDriver->currentText()));
-    audio.SetAudioController (vboxGlobal().toAudioControllerType (mCbAudioController->currentText()));
-    audio.SetEnabled (mGbAudio->isChecked());
-    AssertWrapperOk (audio);
+    /* Apply internal variables data to QWidget(s): */
+    mGbAudio->setChecked(m_cache.m_fAudioEnabled);
+    mCbAudioDriver->setCurrentIndex(mCbAudioDriver->findText(vboxGlobal().toString(m_cache.m_audioDriverType)));
+    mCbAudioController->setCurrentIndex(mCbAudioController->findText(vboxGlobal().toString(m_cache.m_audioControllerType)));
+}
+
+/* Save data from corresponding widgets to cache,
+ * this task SHOULD be performed in GUI thread only: */
+void VBoxVMSettingsAudio::putToCache()
+{
+    /* Gather internal variables data from QWidget(s): */
+    m_cache.m_fAudioEnabled = mGbAudio->isChecked();
+    m_cache.m_audioDriverType = vboxGlobal().toAudioDriverType(mCbAudioDriver->currentText());
+    m_cache.m_audioControllerType = vboxGlobal().toAudioControllerType(mCbAudioController->currentText());
+}
+
+/* Save data from cache to corresponding external object(s),
+ * this task COULD be performed in other than GUI thread: */
+void VBoxVMSettingsAudio::saveFromCacheTo(QVariant &data)
+{
+    /* Fetch data to machine: */
+    UISettingsPageMachine::fetchData(data);
+
+    /* Gather corresponding values from internal variables: */
+    CAudioAdapter &audio = m_machine.GetAudioAdapter();
+    audio.SetEnabled(m_cache.m_fAudioEnabled);
+    audio.SetAudioDriver(m_cache.m_audioDriverType);
+    audio.SetAudioController(m_cache.m_audioControllerType);
+
+    /* Upload machine to data: */
+    UISettingsPageMachine::uploadData(data);
 }
 
 void VBoxVMSettingsAudio::setOrderAfter (QWidget *aWidget)

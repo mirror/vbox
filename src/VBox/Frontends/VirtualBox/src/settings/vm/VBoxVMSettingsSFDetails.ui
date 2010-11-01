@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2008 Oracle Corporation
+     Copyright (C) 2008-2010 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -78,12 +78,15 @@
    </item>
    <item row="4" column="1" >
     <widget class="QCheckBox" name="mCbPermanent" >
+     <property name="toolTip" >
+      <string>If checked, this shared folder will be permanent.</string>
+     </property>
      <property name="text" >
       <string>&amp;Make Permanent</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="1" >
+   <item row="5" column="1" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
@@ -96,7 +99,7 @@
      </property>
     </spacer>
    </item>
-   <item row="5" column="0" colspan="2" >
+   <item row="6" column="0" colspan="2" >
     <widget class="QIDialogButtonBox" name="mButtonBox" >
      <property name="standardButtons" >
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::NoButton|QDialogButtonBox::Ok</set>

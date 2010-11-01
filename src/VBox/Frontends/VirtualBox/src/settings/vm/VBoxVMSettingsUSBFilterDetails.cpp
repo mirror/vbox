@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Oracle Corporation
+ * Copyright (C) 2008-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,9 +20,9 @@
 #include "VBoxVMSettingsUSBFilterDetails.h"
 #include "VBoxGlobal.h"
 
-VBoxVMSettingsUSBFilterDetails::VBoxVMSettingsUSBFilterDetails (VBoxVMSettingsUSB::FilterType aType, QWidget *aParent /* = NULL */)
-    : QIWithRetranslateUI2<QIDialog> (aParent, Qt::Sheet)
-    , mType (aType)
+VBoxVMSettingsUSBFilterDetails::VBoxVMSettingsUSBFilterDetails(UISettingsPageType type, QWidget *pParent /* = 0 */)
+    : QIWithRetranslateUI2<QIDialog>(pParent, Qt::Sheet)
+    , m_type(type)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsUSBFilterDetails::setupUi (this);
@@ -30,13 +30,13 @@ VBoxVMSettingsUSBFilterDetails::VBoxVMSettingsUSBFilterDetails (VBoxVMSettingsUS
     mCbRemote->insertItem (VBoxVMSettingsUSB::ModeAny, ""); /* Any */
     mCbRemote->insertItem (VBoxVMSettingsUSB::ModeOn,  ""); /* Yes */
     mCbRemote->insertItem (VBoxVMSettingsUSB::ModeOff, ""); /* No */
-    mLbRemote->setHidden (mType != VBoxVMSettingsUSB::MachineType);
-    mCbRemote->setHidden (mType != VBoxVMSettingsUSB::MachineType);
+    mLbRemote->setHidden (m_type != UISettingsPageType_Machine);
+    mCbRemote->setHidden (m_type != UISettingsPageType_Machine);
 
     mCbAction->insertItem (0, ""); /* KUSBDeviceFilterAction_Ignore */
     mCbAction->insertItem (1, ""); /* KUSBDeviceFilterAction_Hold */
-    mLbAction->setHidden (mType != VBoxVMSettingsUSB::HostType);
-    mCbAction->setHidden (mType != VBoxVMSettingsUSB::HostType);
+    mLbAction->setHidden (m_type != UISettingsPageType_Global);
+    mCbAction->setHidden (m_type != UISettingsPageType_Global);
 
     mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
     mLeVendorID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));

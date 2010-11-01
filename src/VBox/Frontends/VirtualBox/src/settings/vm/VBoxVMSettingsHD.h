@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -529,11 +529,35 @@ private:
     bool mDisableStaticControls;
 };
 
-/**
- * QWidget class reimplementation.
- * Used as HD Settings widget.
- */
-class VBoxVMSettingsHD : public UISettingsPage,
+/* Machine settings / Storage page / Attachment data: */
+struct UIStorageAttachmentData
+{
+    KDeviceType m_attachmentType;
+    LONG m_iAttachmentPort;
+    LONG m_iAttachmentDevice;
+    QString m_strAttachmentMediumId;
+    bool m_fAttachmentPassthrough;
+};
+
+/* Machine settings / Storage page / Controller data: */
+struct UIStorageControllerData
+{
+    QString m_strControllerName;
+    KStorageBus m_controllerBus;
+    KStorageControllerType m_controllerType;
+    bool m_fUseHostIOCache;
+    QList<UIStorageAttachmentData> m_items;
+};
+
+/* Machine settings / Storage page / Cache: */
+struct UISettingsCacheMachineStorage
+{
+    QString m_strMachineId;
+    QList<UIStorageControllerData> m_items;
+};
+
+/* Machine settings / Storage page: */
+class VBoxVMSettingsHD : public UISettingsPageMachine,
                          public Ui::VBoxVMSettingsHD
 {
     Q_OBJECT;
@@ -548,8 +572,19 @@ signals:
 
 protected:
 
-    void getFrom (const CMachine &aMachine);
-    void putBackTo();
+    /* Load data to cashe from corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void loadToCacheFrom(QVariant &data);
+    /* Load data to corresponding widgets from cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void getFromCache();
+
+    /* Save data from corresponding widgets to cache,
+     * this task SHOULD be performed in GUI thread only: */
+    void putToCache();
+    /* Save data from cache to corresponding external object(s),
+     * this task COULD be performed in other than GUI thread: */
+    void saveFromCacheTo(QVariant &data);
 
     void setValidator (QIWidgetValidator *aVal);
     bool revalidate (QString &aWarning, QString &aTitle);
@@ -610,7 +645,6 @@ private:
 
     uint32_t deviceCount (KDeviceType aType) const;
 
-    CMachine mMachine;
     QIWidgetValidator *mValidator;
 
     StorageModel *mStorageModel;
@@ -631,6 +665,9 @@ private:
     bool mIsLoadingInProgress;
     bool mIsPolished;
     bool mDisableStaticControls;
+
+    /* Cache: */
+    UISettingsCacheMachineStorage m_cache;
 };
 
 #endif // __VBoxVMSettingsHD_h__
