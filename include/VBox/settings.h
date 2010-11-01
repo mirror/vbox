@@ -954,7 +954,8 @@ public:
         BuildMachineXML_IncludeSnapshots = 0x01,
         BuildMachineXML_WriteVboxVersionAttribute = 0x02,
         BuildMachineXML_SkipRemovableMedia = 0x04,
-        BuildMachineXML_MediaRegistry = 0x08
+        BuildMachineXML_MediaRegistry = 0x08,
+        BuildMachineXML_SuppressSavedState = 0x10
     };
     void buildMachineXML(xml::ElementNode &elmMachine,
                          uint32_t fl,
