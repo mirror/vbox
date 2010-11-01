@@ -492,14 +492,12 @@ DECLCALLBACK(int) rtSha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
             {
                 size_t cbAvail = RTCircBufUsed(pInt->pCircBuf);
                 size_t cbMemAllRead = 0;
-                bool fStop = false;
-                bool fEOF = false;
                 /* First loop over all the free memory in the circular
                  * memory buffer (could be turn around at the end). */
                 for(;;)
                 {
                     if (   cbMemAllRead == cbAvail
-                        || fStop == true)
+                        || fLoop == false)
                         break;
                     char *pcBuf;
                     size_t cbMemToRead = cbAvail - cbMemAllRead;
@@ -520,23 +518,15 @@ DECLCALLBACK(int) rtSha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
 //                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
                         if (RT_FAILURE(rc))
                         {
-                            fStop = true;
                             fLoop = false;
-                            break;
-                        }
-                        if (cbWritten == 0)
-                        {
-                            fStop = true;
-                            fLoop = false;
-                            fEOF = true;
-//                            RTPrintf("EOF\n");
                             break;
                         }
                         cbAllWritten += cbWritten;
                         pInt->cbCurFile += cbWritten;
                     }
                     /* Update the SHA1 context with the next data block. */
-                    if (pInt->pSha1Storage->fCreateDigest)
+                    if (   RT_SUCCESS(rc)
+                        && pInt->pSha1Storage->fCreateDigest)
                         RTSha1Update(&pInt->ctx, pcBuf, cbAllWritten);
                     /* Mark the block as empty. */
                     RTCircBufReleaseReadBlock(pInt->pCircBuf, cbAllWritten);
@@ -553,14 +543,12 @@ DECLCALLBACK(int) rtSha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
             {
                 size_t cbAvail = RTCircBufFree(pInt->pCircBuf);
                 size_t cbMemAllWrite = 0;
-                bool fStop = false;
-                bool fEOF = false;
                 /* First loop over all the available memory in the circular
                  * memory buffer (could be turn around at the end). */
                 for(;;)
                 {
                     if (   cbMemAllWrite == cbAvail
-                        || fStop == true)
+                        || fLoop == false)
                         break;
                     char *pcBuf;
                     size_t cbMemToWrite = cbAvail - cbMemAllWrite;
@@ -581,30 +569,27 @@ DECLCALLBACK(int) rtSha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
 //                        RTPrintf ("%lu %lu %lu %Rrc\n", pInt->cbCurFile, cbToRead, cbRead, rc);
                         if (RT_FAILURE(rc))
                         {
-                            fStop = true;
                             fLoop = false;
                             break;
                         }
+                        /* This indicates end of file. Stop reading. */
                         if (cbRead == 0)
                         {
-                            fStop = true;
                             fLoop = false;
-                            fEOF = true;
-//                            RTPrintf("EOF\n");
+                            ASMAtomicWriteBool(&pInt->fEOF, true);
                             break;
                         }
                         cbAllRead += cbRead;
                         pInt->cbCurFile += cbRead;
                     }
                     /* Update the SHA1 context with the next data block. */
-                    if (pInt->pSha1Storage->fCreateDigest)
+                    if (   RT_SUCCESS(rc)
+                        && pInt->pSha1Storage->fCreateDigest)
                         RTSha1Update(&pInt->ctx, pcBuf, cbAllRead);
                     /* Mark the block as full. */
                     RTCircBufReleaseWriteBlock(pInt->pCircBuf, cbAllRead);
                     cbMemAllWrite += cbAllRead;
                 }
-                if (fEOF)
-                    ASMAtomicWriteBool(&pInt->fEOF, true);
                 /* Reset the thread status and signal the main thread that we
                  * are finished. Use CmpXchg, so we not overwrite other states
                  * which could be signaled in the meantime. */
