@@ -296,7 +296,9 @@ typedef struct VGAState {
     bool                        fRenderVRAM;
     bool                        Padding1[2];
 
+#if HC_ARCH_BITS == 64
     uint32_t                    Padding2;
+#endif
 
 #ifdef VBOX_WITH_HGSMI
     R3PTRTYPE(PHGSMIINSTANCE)   pHGSMI;
