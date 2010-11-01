@@ -75,6 +75,15 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_HGSMI
   tstDeviceStructSizeRC_DEFS    += VBOX_WITH_HGSMI
  endif
+ ifdef VBOX_WITH_CRHGSMI
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_CRHGSMI
+ endif
+ ifdef VBOX_WITH_VDMA
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_VDMA
+ endif
+ ifdef VBOX_WITH_WDDM
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_WDDM
+ endif
  ifdef VBOX_WITH_VIDEOHWACCEL
   tstDeviceStructSizeRC_DEFS    += VBOX_WITH_VIDEOHWACCEL
  endif
@@ -114,6 +123,15 @@ ifdef VBOX_WITH_LSILOGIC
 endif
 ifdef VBOX_WITH_HGSMI
  tstDeviceStructSize_DEFS   += VBOX_WITH_HGSMI
+endif
+ifdef VBOX_WITH_CRHGSMI
+ tstDeviceStructSize_DEFS    += VBOX_WITH_CRHGSMI
+endif
+ifdef VBOX_WITH_VDMA
+ tstDeviceStructSize_DEFS    += VBOX_WITH_VDMA
+endif
+ifdef VBOX_WITH_WDDM
+ tstDeviceStructSize_DEFS    += VBOX_WITH_WDDM
 endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  tstDeviceStructSize_DEFS   += VBOX_WITH_VIDEOHWACCEL

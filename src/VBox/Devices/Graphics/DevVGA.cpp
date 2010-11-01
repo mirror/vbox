@@ -44,6 +44,10 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
+/* WARNING!!! All defines that affetc VGAState should be placed to DevVGA.h !!!
+ *            NEVER place them here as this would lead to VGAState inconsistency
+ *            across different .cpp files !!!
+ */
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
  * The initial value was 256KB but NTAllInOne.iso appears to access more
@@ -58,14 +62,6 @@
 #endif /* VBOX_WITH_HGSMI */
 /** Converts a vga adaptor state pointer to a device instance pointer. */
 #define VGASTATE2DEVINS(pVgaState)    ((pVgaState)->CTX_SUFF(pDevIns))
-
-/** Use VBE bytewise I/O. Only needed for Windows Longhorn/Vista betas and backwards compatibility. */
-#define VBE_BYTEWISE_IO
-
-/** Use VBE new dynamic mode list.
- * If this is not defined, no checks are carried out to see if the modes all
- * fit into the framebuffer! See the VRAM_SIZE_FIX define. */
-#define VBE_NEW_DYN_LIST
 
 /** Check that the video modes fit into virtual video memory.
  * Only works when VBE_NEW_DYN_LIST is defined! */
@@ -129,13 +125,15 @@
 #include <VBox/VBoxVideo.h>
 #include <VBox/bioslogo.h>
 
+/* should go BEFORE any other DevVGA include to make all DevVGA.h config defines be visible */
+#include "DevVGA.h"
+
 #if defined(VBE_NEW_DYN_LIST) && defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
 # include "DevVGAModes.h"
 # include <stdio.h> /* sscan */
 #endif
 
 #include "vl_vbox.h"
-#include "DevVGA.h"
 #include "Builtins.h"
 #include "Builtins2.h"
 
@@ -2750,7 +2748,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
         {
             case 0x3b0: /* Host */
             {
-#if defined(VBOX_WITH_VIDEOHWACCEL)
+#if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM)
                 if(u32 == HGSMIOFFSET_VOID)
                 {
                     PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
@@ -5558,7 +5556,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PCIDevSetClassSub(  &pThis->Dev,   0x00);   /* VGA controller */
     PCIDevSetClassBase( &pThis->Dev,   0x03);
     PCIDevSetHeaderType(&pThis->Dev,   0x00);
-#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+#if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM))
     PCIDevSetInterruptPin(&pThis->Dev, 1);
 #endif
 

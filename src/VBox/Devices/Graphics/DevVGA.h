@@ -39,6 +39,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+/** Use VBE bytewise I/O. Only needed for Windows Longhorn/Vista betas and backwards compatibility. */
+#define VBE_BYTEWISE_IO
+
+/** Use VBE new dynamic mode list.
+ * If this is not defined, no checks are carried out to see if the modes all
+ * fit into the framebuffer! See the VRAM_SIZE_FIX define. */
+#define VBE_NEW_DYN_LIST
+
 #ifdef VBOX
 /** The default amount of VRAM. */
 # define VGA_VRAM_DEFAULT    (_4M)
@@ -287,8 +296,6 @@ typedef struct VGAState {
     bool                        fRenderVRAM;
     bool                        Padding1[2];
 
-    uint32_t                    cMonitors;
-
 #ifdef VBOX_WITH_HGSMI
     R3PTRTYPE(PHGSMIINSTANCE)   pHGSMI;
 #endif /* VBOX_WITH_HGSMI */
@@ -296,8 +303,8 @@ typedef struct VGAState {
     R3PTRTYPE(PVBOXVDMAHOST)    pVdma;
 #endif
 
+    uint32_t                    cMonitors;
     /** Current refresh timer interval. */
-    uint32_t                    Padding2;
     uint32_t                    cMilliesRefreshInterval;
     /** Refresh timer handle - HC. */
     PTMTIMERR3                  RefreshTimer;
