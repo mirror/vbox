@@ -28,9 +28,7 @@ struct UISettingsCacheMachineDisplay
 {
     int m_iCurrentVRAM;
     int m_cMonitorCount;
-    bool m_f3dAccelerationSupported;
     bool m_f3dAccelerationEnabled;
-    bool m_f2dAccelerationSupported;
     bool m_f2dAccelerationEnabled;
     bool m_fVRDEServerSupported;
     bool m_fVRDEServerEnabled;
