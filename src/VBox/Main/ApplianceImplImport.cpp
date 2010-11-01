@@ -163,9 +163,13 @@ STDMETHODIMP Appliance::Interpret()
                 pNewDesc->importVboxMachineXML(*vsysThis.pelmVboxMachine);
 
             /* Guest OS type */
-            Utf8Str strOsTypeVBox,
-                    strCIMOSType = Utf8StrFmt("%RI32", (uint32_t)vsysThis.cimos);
+            Utf8Str strOsTypeVBox;
+            Utf8Str strCIMOSType = Utf8StrFmt("%RI32", (uint32_t)vsysThis.cimos);
             convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos, vsysThis.strCimosDesc);
+            /* If there is a vbox.xml, we always prefer the ostype settings
+             * from there, cause OVF doesn't know all types VBox know. */
+            if (vsysThis.pelmVboxMachine)
+                strOsTypeVBox = pNewDesc->m->pConfig->machineUserData.strOsType;
             pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                                "",
                                strCIMOSType,
@@ -2369,6 +2373,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
      *
      */
 
+    config.machineUserData.strOsType = stack.strOsTypeVBox;
     config.machineUserData.strDescription = stack.strDescription;
 
     config.hardwareMachine.cCPUs = stack.cCPUs;
