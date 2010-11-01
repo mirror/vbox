@@ -227,6 +227,7 @@ protected slots:
         {
             m_eventLoop.processEvents();
             m_eventLoop.quit();
+            m_eventLoop.processEvents();
         }
     }
 
