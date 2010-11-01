@@ -20,7 +20,8 @@
 /* Global includes */
 #include <QStackedWidget>
 #include <QThread>
-#include <QTimer>
+#include <QMutex>
+#include <QWaitCondition>
 
 /* Local includes */
 #include "UISettingsDialogSpecific.h"
@@ -76,13 +77,14 @@ public:
         : QThread(pParent)
         , m_direction(direction)
         , m_data(data)
+        , m_fConditionDone(false)
         , m_iPageIdWeAreWaitingFor(-1)
         , m_iIdOfHighPriorityPage(-1)
     {
         /* Connecting thread signals: */
         connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
         connect(this, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltHandleProcessedPages()), Qt::QueuedConnection);
-        connect(this, SIGNAL(finished()), this, SLOT(sltDestroySerializer()), Qt::QueuedConnection);
+        connect(this, SIGNAL(finished()), this, SLOT(deleteLater()), Qt::QueuedConnection);
 
         /* Set instance: */
         m_pInstance = this;
@@ -99,14 +101,6 @@ public:
          * for it to be finished! */
         if (isRunning())
             wait();
-
-        /* If serializer still having event loop running,
-         * we should quit it now: */
-        if (m_eventLoop.isRunning())
-        {
-            m_eventLoop.processEvents();
-            m_eventLoop.quit();
-        }
     }
 
     /* Set pages list: */
@@ -122,19 +116,15 @@ public:
     /* Blocks calling thread until requested page will be processed: */
     void waitForPageToBeProcessed(int iPageId)
     {
-        if (!isRunning())
-            return;
         m_iPageIdWeAreWaitingFor = iPageId;
-        m_eventLoop.exec();
+        blockGUIthread();
     }
 
     /* Blocks calling thread until all pages will be processed: */
     void waitForPagesToBeProcessed()
     {
-        if (!isRunning())
-            return;
         m_iPageIdWeAreWaitingFor = -1;
-        m_eventLoop.exec();
+        blockGUIthread();
     }
 
     /* Raise priority of page: */
@@ -191,47 +181,39 @@ protected slots:
             if (m_pages.contains(iPageId))
                 m_pages[iPageId]->getFromCache();
         }
-        /* If thats the page we are waiting for, unlock the loop,
-         * after all the events of the page which is currently fetching
-         * from cache will be processed: */
-        if (iPageId == m_iPageIdWeAreWaitingFor && m_eventLoop.isRunning())
-            QTimer::singleShot(0, this, SLOT(sltStopEventLoop()));
+        /* If thats the page we are waiting for,
+         * we should flag GUI thread to unlock itself: */
+        if (iPageId == m_iPageIdWeAreWaitingFor && !m_fConditionDone)
+            m_fConditionDone = true;
     }
 
     /* Slot to handle the fact of some page was processed: */
     void sltHandleProcessedPages()
     {
-        /* If all the pages were processed, unlock the loop,
-         * after all the events of the last page will be processed: */
-        if (m_eventLoop.isRunning())
-            QTimer::singleShot(0, this, SLOT(sltStopEventLoop()));
-    }
-
-    /* Slot to destroy serializer: */
-    void sltDestroySerializer()
-    {
-        /* If event loop is still running,
-         * we should try to destroy serializer only on next iteration: */
-        if (m_eventLoop.isRunning())
-            QTimer::singleShot(0, this, SLOT(sltDestroySerializer()));
-        /* Else really make a request to destroy serializer: */
-        else
-            deleteLater();
-    }
-
-    /* Slot to stop event loop: */
-    void sltStopEventLoop()
-    {
-        /* If event loop is still running, we should stop it: */
-        if (m_eventLoop.isRunning())
-        {
-            m_eventLoop.processEvents();
-            m_eventLoop.quit();
-            m_eventLoop.processEvents();
-        }
+        /* We should flag GUI thread to unlock itself: */
+        if (!m_fConditionDone)
+            m_fConditionDone = true;
     }
 
 protected:
+
+    /* GUI thread locker: */
+    void blockGUIthread()
+    {
+        m_fConditionDone = false;
+        while (!m_fConditionDone)
+        {
+            /* Lock mutex initially: */
+            m_mutex.lock();
+            /* Perform idle-processing every 100ms,
+             * and waiting for direct wake up signal: */
+            m_condition.wait(&m_mutex, 100);
+            /* Process queued signals posted to GUI thread: */
+            qApp->processEvents();
+            /* Unlock mutex finally: */
+            m_mutex.unlock();
+        }
+    }
 
     /* Settings processor: */
     void run()
@@ -256,22 +238,32 @@ protected:
             }
             /* Remember what page was processed: */
             pPage->setProcessed(true);
-            /* Notify listeners about page was processed: */
-            emit sigNotifyAboutPageProcessed(pPage->id());
             /* Remove processed page from our map: */
             pages.remove(pPage->id());
+            /* Notify listeners about page was processed: */
+            emit sigNotifyAboutPageProcessed(pPage->id());
+            /* Try to wake up GUI thread, but
+             * it can be busy idle-processing for loaded pages: */
+            if (!m_fConditionDone)
+                m_condition.wakeAll();
         }
         /* Notify listeners about all pages were processed: */
         emit sigNotifyAboutPagesProcessed();
+        /* Try to wake up GUI thread, but
+         * it can be busy idle-processing loaded pages: */
+        if (!m_fConditionDone)
+            m_condition.wakeAll();
     }
 
     /* Variables: */
     UISettingsSerializeDirection m_direction;
     QVariant m_data;
-    QEventLoop m_eventLoop;
     UISettingsPageMap m_pages;
+    bool m_fConditionDone;
     int m_iPageIdWeAreWaitingFor;
     int m_iIdOfHighPriorityPage;
+    QMutex m_mutex;
+    QWaitCondition m_condition;
     static UISettingsSerializer *m_pInstance;
 };
 
