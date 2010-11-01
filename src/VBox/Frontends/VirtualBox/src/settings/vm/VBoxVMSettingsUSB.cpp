@@ -295,7 +295,7 @@ void VBoxVMSettingsUSB::saveFromCacheTo(QVariant &data)
             if (mUSBFilterListModified)
             {
                 /* Get host: */
-                CHost &host = vboxGlobal().virtualBox().GetHost();
+                CHost host = vboxGlobal().virtualBox().GetHost();
                 /* First, remove all old filters: */
                 for (ulong count = host.GetUSBDeviceFilters().size(); count; --count)
                     host.RemoveUSBDeviceFilter(0);
@@ -303,7 +303,7 @@ void VBoxVMSettingsUSB::saveFromCacheTo(QVariant &data)
                 for (int iFilterIndex = 0; iFilterIndex < m_cache.m_items.size(); ++iFilterIndex)
                 {
                     UIUSBFilterData data = m_cache.m_items[iFilterIndex];
-                    CHostUSBDeviceFilter &hostFilter = host.CreateUSBDeviceFilter(data.m_strName);
+                    CHostUSBDeviceFilter hostFilter = host.CreateUSBDeviceFilter(data.m_strName);
                     hostFilter.SetActive(data.m_fActive);
                     hostFilter.SetVendorId(data.m_strVendorId);
                     hostFilter.SetProductId(data.m_strProductId);
@@ -324,7 +324,7 @@ void VBoxVMSettingsUSB::saveFromCacheTo(QVariant &data)
             /* Initialize machine COM storage: */
             m_machine = data.value<UISettingsDataMachine>().m_machine;
             /* Get machine USB controller: */
-            CUSBController &ctl = m_machine.GetUSBController();
+            CUSBController ctl = m_machine.GetUSBController();
             /* Gather corresponding values from internal variables: */
             if (!ctl.isNull())
             {
@@ -339,7 +339,7 @@ void VBoxVMSettingsUSB::saveFromCacheTo(QVariant &data)
                     for (int iFilterIndex = 0; iFilterIndex < m_cache.m_items.size(); ++iFilterIndex)
                     {
                         const UIUSBFilterData &data = m_cache.m_items[iFilterIndex];
-                        CUSBDeviceFilter &filter = ctl.CreateDeviceFilter(data.m_strName);
+                        CUSBDeviceFilter filter = ctl.CreateDeviceFilter(data.m_strName);
                         filter.SetActive(data.m_fActive);
                         filter.SetVendorId(data.m_strVendorId);
                         filter.SetProductId(data.m_strProductId);

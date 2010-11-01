@@ -286,7 +286,7 @@ void VBoxVMSettingsSerialPage::saveFromCacheTo(QVariant &data)
     for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
     {
         /* Get adapter: */
-        CSerialPort &port = m_machine.GetSerialPort(iSlot);
+        CSerialPort port = m_machine.GetSerialPort(iSlot);
 
         /* Get cached data for this slot: */
         const UISerialPortData &data = m_cache.m_items[iSlot];

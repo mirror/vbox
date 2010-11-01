@@ -221,7 +221,8 @@ void VBoxVMSettingsSF::saveDirectlyTo(CConsole &console)
 {
     putToCache();
     saveFromCacheToConsole(console);
-    saveFromCacheToMachine(console.GetMachine());
+    CMachine machine = console.GetMachine();
+    saveFromCacheToMachine(machine);
 }
 
 void VBoxVMSettingsSF::resizeEvent (QResizeEvent *aEvent)

@@ -250,7 +250,7 @@ void VBoxVMSettingsParallelPage::saveFromCacheTo(QVariant &data)
     for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
     {
         /* Get adapter: */
-        CParallelPort &port = m_machine.GetParallelPort(iSlot);
+        CParallelPort port = m_machine.GetParallelPort(iSlot);
 
         /* Get cached data for this slot: */
         const UIParallelPortData &data = m_cache.m_items[iSlot];
