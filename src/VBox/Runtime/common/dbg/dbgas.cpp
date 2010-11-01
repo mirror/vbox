@@ -984,7 +984,7 @@ RTDECL(int) RTDbgAsModuleByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTDBGMOD phMod,
 
     RTDBGAS_LOCK_READ(pDbgAs);
     PRTDBGASMAP pMap = (PRTDBGASMAP)RTAvlrUIntPtrRangeGet(&pDbgAs->MapTree, Addr);
-    if (pMap)
+    if (!pMap)
     {
         RTDBGAS_UNLOCK_READ(pDbgAs);
         return VERR_NOT_FOUND;
