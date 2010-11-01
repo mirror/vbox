@@ -638,7 +638,8 @@ void VBoxVMSettingsNetworkPage::loadDirectlyFrom(const CMachine &machine)
 {
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(machine);
-    loadToCacheFrom(QVariant::fromValue(data));
+    QVariant wrapper = QVariant::fromValue(data);
+    loadToCacheFrom(wrapper);
     getFromCache();
 }
 
@@ -646,8 +647,9 @@ void VBoxVMSettingsNetworkPage::saveDirectlyTo(CMachine &machine)
 {
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(machine);
+    QVariant wrapper = QVariant::fromValue(data);
     putToCache();
-    saveFromCacheTo(QVariant::fromValue(data));
+    saveFromCacheTo(wrapper);
 }
 
 QStringList VBoxVMSettingsNetworkPage::brgList (bool aRefresh)
@@ -871,7 +873,7 @@ void VBoxVMSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
     {
         /* Get adapter: */
-        CNetworkAdapter &adapter = m_machine.GetNetworkAdapter(iSlot);
+        CNetworkAdapter adapter = m_machine.GetNetworkAdapter(iSlot);
 
         /* Get cached data for this adapter: */
         const UINetworkAdapterData &data = m_cache.m_items[iSlot];
