@@ -139,8 +139,8 @@ protected slots:
 
     virtual void accept()
     {
-        m_pSettings->saveDirectlyTo(m_session.GetMachine());
         CMachine machine = m_session.GetMachine();
+        m_pSettings->saveDirectlyTo(machine);
         machine.SaveSettings();
         if (!machine.isOk())
             vboxProblem().cannotSaveMachineSettings(machine);
@@ -212,8 +212,9 @@ protected slots:
 
     virtual void accept()
     {
-        m_pSettings->saveDirectlyTo(m_session.GetConsole());
         CMachine machine = m_session.GetMachine();
+        CConsole console = m_session.GetConsole();
+        m_pSettings->saveDirectlyTo(console);
         machine.SaveSettings();
         if (!machine.isOk())
             vboxProblem().cannotSaveMachineSettings(machine);
