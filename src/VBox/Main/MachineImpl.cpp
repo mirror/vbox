@@ -6578,10 +6578,6 @@ void Machine::uninitDataAndChildObjects()
     AssertComRCReturnVoid(    autoCaller.state() == InUninit
                            || autoCaller.state() == Limited);
 
-    /* uninit all children using addDependentChild()/removeDependentChild()
-     * in their init()/uninit() methods */
-    uninitDependentChildren();
-
     /* tell all our other child objects we've been uninitialized */
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)

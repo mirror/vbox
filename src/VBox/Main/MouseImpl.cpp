@@ -576,7 +576,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
         setVMMDevMouseCaps(mfHostCaps);
 
     rc = reportAbsEvent(mouseXAbs, mouseYAbs, dz, dw, fButtons,
-                        mouseCaps & VMMDEV_MOUSE_GUEST_USES_EVENT);
+                        !!(mouseCaps & VMMDEV_MOUSE_GUEST_USES_EVENT));
 
 #ifndef VBOXBFE_WITHOUT_COM
     mMouseEvent.reinit(VBoxEventType_OnGuestMouseEvent, true, x, y, dz, dw, fButtons);

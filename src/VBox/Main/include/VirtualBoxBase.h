@@ -629,11 +629,6 @@ public:
      * Must be called by all final implementations (component classes) when the
      * last reference to the object is released, before calling the destructor.
      *
-     * This method is also automatically called by the uninit() method of this
-     * object's parent if this object is a dependent child of a class derived
-     * from VirtualBoxBaseWithChildren (see
-     * VirtualBoxBaseWithChildren::addDependentChild).
-     *
      * @note Never call this method the AutoCaller scope or after the
      *       #addCaller() call not paired by #releaseCaller() because it is a
      *       guaranteed deadlock. See AutoUninitSpan for details.
@@ -747,182 +742,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Base class to track VirtualBoxBaseNEXT chlidren of the component.
- *
- * This class is a preferable VirtualBoxBase replacement for components that
- * operate with collections of child components. It gives two useful
- * possibilities:
- *
- * <ol><li>
- *      Given an IUnknown instance, it's possible to quickly determine
- *      whether this instance represents a child object that belongs to the
- *      given component, and if so, get a valid VirtualBoxBase pointer to the
- *      child object. The returned pointer can be then safely casted to the
- *      actual class of the child object (to get access to its "internal"
- *      non-interface methods) provided that no other child components implement
- *      the same original COM interface IUnknown is queried from.
- * </li><li>
- *      When the parent object uninitializes itself, it can easily uninitialize
- *      all its VirtualBoxBase derived children (using their
- *      VirtualBoxBase::uninit() implementations). This is done simply by
- *      calling the #uninitDependentChildren() method.
- * </li></ol>
- *
- * In order to let the above work, the following must be done:
- * <ol><li>
- *      When a child object is initialized, it calls #addDependentChild() of
- *      its parent to register itself within the list of dependent children.
- * </li><li>
- *      When the child object it is uninitialized, it calls
- *      #removeDependentChild() to unregister itself.
- * </li></ol>
- *
- * Note that if the parent object does not call #uninitDependentChildren() when
- * it gets uninitialized, it must call uninit() methods of individual children
- * manually to disconnect them; a failure to do so will cause crashes in these
- * methods when children get destroyed. The same applies to children not calling
- * #removeDependentChild() when getting destroyed.
- *
- * Note that children added by #addDependentChild() are <b>weakly</b> referenced
- * (i.e. AddRef() is not called), so when a child object is deleted externally
- * (because it's reference count goes to zero), it will automatically remove
- * itself from the map of dependent children provided that it follows the rules
- * described here.
- *
- * Access to the child list is serialized using the #childrenLock() lock handle
- * (which defaults to the general object lock handle (see
- * VirtualBoxBase::lockHandle()). This lock is used by all add/remove methods of
- * this class so be aware of the need to preserve the {parent, child} lock order
- * when calling these methods.
- *
- * Read individual method descriptions to get further information.
- *
- * @todo This is a VirtualBoxBaseWithChildren equivalent that uses the
- *       VirtualBoxBaseNEXT implementation. Will completely supersede
- *       VirtualBoxBaseWithChildren after the old VirtualBoxBase implementation
- *       has gone.
- */
-class VirtualBoxBaseWithChildrenNEXT : public VirtualBoxBase
-{
-public:
-
-    VirtualBoxBaseWithChildrenNEXT()
-    {}
-
-    virtual ~VirtualBoxBaseWithChildrenNEXT()
-    {}
-
-    /**
-     * Lock handle to use when adding/removing child objects from the list of
-     * children. It is guaranteed that no any other lock is requested in methods
-     * of this class while holding this lock.
-     *
-     * @warning By default, this simply returns the general object's lock handle
-     *          (see VirtualBoxBase::lockHandle()) which is sufficient for most
-     *          cases.
-     */
-    virtual RWLockHandle *childrenLock() { return lockHandle(); }
-
-    /**
-     * Adds the given child to the list of dependent children.
-     *
-     * Usually gets called from the child's init() method.
-     *
-     * @note @a aChild (unless it is in InInit state) must be protected by
-     *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
-     *       another thread during this method's call.
-     *
-     * @note When #childrenLock() is not overloaded (returns the general object
-     *       lock) and this method is called from under the child's read or
-     *       write lock, make sure the {parent, child} locking order is
-     *       preserved by locking the callee (this object) for writing before
-     *       the child's lock.
-     *
-     * @param aChild    Child object to add (must inherit VirtualBoxBase AND
-     *                  implement some interface).
-     *
-     * @note Locks #childrenLock() for writing.
-     */
-    template<class C>
-    void addDependentChild(C *aChild)
-    {
-        AssertReturnVoid(aChild != NULL);
-        doAddDependentChild(ComPtr<IUnknown>(aChild), aChild);
-    }
-
-    /**
-     * Equivalent to template <class C> void addDependentChild (C *aChild)
-     * but takes a ComObjPtr<C> argument.
-     */
-    template<class C>
-    void addDependentChild(const ComObjPtr<C> &aChild)
-    {
-        AssertReturnVoid(!aChild.isNull());
-        doAddDependentChild(ComPtr<IUnknown>(static_cast<C *>(aChild)), aChild);
-    }
-
-    /**
-     * Removes the given child from the list of dependent children.
-     *
-     * Usually gets called from the child's uninit() method.
-     *
-     * Keep in mind that the called (parent) object may be no longer available
-     * (i.e. may be deleted deleted) after this method returns, so you must not
-     * call any other parent's methods after that!
-     *
-     * @note Locks #childrenLock() for writing.
-     *
-     * @note @a aChild (unless it is in InUninit state) must be protected by
-     *       VirtualBoxBase::AutoCaller to make sure it is not uninitialized on
-     *       another thread during this method's call.
-     *
-     * @note When #childrenLock() is not overloaded (returns the general object
-     *       lock) and this method is called from under the child's read or
-     *       write lock, make sure the {parent, child} locking order is
-     *       preserved by locking the callee (this object) for writing before
-     *       the child's lock. This is irrelevant when the method is called from
-     *       under this object's VirtualBoxBaseProto::AutoUninitSpan (i.e. in
-     *       InUninit state) since in this case no locking is done.
-     *
-     * @param aChild    Child object to remove.
-     *
-     * @note Locks #childrenLock() for writing.
-     */
-    template<class C>
-    void removeDependentChild(C *aChild)
-    {
-        AssertReturnVoid(aChild != NULL);
-        doRemoveDependentChild(ComPtr<IUnknown>(aChild));
-    }
-
-    /**
-     * Equivalent to template <class C> void removeDependentChild (C *aChild)
-     * but takes a ComObjPtr<C> argument.
-     */
-    template<class C>
-    void removeDependentChild(const ComObjPtr<C> &aChild)
-    {
-        AssertReturnVoid(!aChild.isNull());
-        doRemoveDependentChild(ComPtr<IUnknown>(static_cast<C *>(aChild)));
-    }
-
-protected:
-
-    void uninitDependentChildren();
-
-    VirtualBoxBase *getDependentChild(const ComPtr<IUnknown> &aUnk);
-
-private:
-    void doAddDependentChild(IUnknown *aUnk, VirtualBoxBase *aChild);
-    void doRemoveDependentChild(IUnknown *aUnk);
-
-    typedef std::map<IUnknown*, VirtualBoxBase*> DependentChildren;
-    DependentChildren mDependentChildren;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1021,7 +840,6 @@ protected:
     bool mIsShared;
 };
 
-/// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
 /**
  *  Simple template that enhances Shareable<> and supports data
  *  backup/rollback/commit (using the copy constructor of the managed data

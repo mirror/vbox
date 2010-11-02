@@ -507,12 +507,6 @@ void Console::uninit()
 
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
 
-    /*
-     * Uninit all children that use addDependentChild()/removeDependentChild()
-     * in their init()/uninit() methods.
-     */
-    uninitDependentChildren();
-
     /* power down the VM if necessary */
     if (mpVM)
     {
