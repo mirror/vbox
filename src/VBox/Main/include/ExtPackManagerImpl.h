@@ -54,6 +54,7 @@ public:
     /** @name IExtPack interfaces
      * @{ */
     STDMETHOD(COMGETTER(Name))(BSTR *a_pbstrName);
+    STDMETHOD(COMGETTER(Description))(BSTR *a_pbstrDescription);
     STDMETHOD(COMGETTER(Version))(BSTR *a_pbstrVersion);
     STDMETHOD(COMGETTER(Revision))(ULONG *a_puRevision);
     STDMETHOD(COMGETTER(Usable))(BOOL *a_pfUsable);
@@ -62,8 +63,13 @@ public:
 
     /** @name Internal interfaces used by ExtPackManager.
      * @{ */
-    void *getCallbackTable();
-    HRESULT refresh(bool *pfCanDelete);
+    void        callInstalledHook(void);
+    HRESULT     callUninstallHookAndClose(bool a_fForcedRemoval);
+    void        callVmCreatedHook(IMachine *a_pMachine);
+    int         callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM);
+    int         callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM);
+    void        callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM);
+    HRESULT     refresh(bool *pfCanDelete);
     /** @}  */
 
 protected:
@@ -111,7 +117,7 @@ class ATL_NO_VTABLE ExtPackManager :
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     init();
+    HRESULT     init(const char *a_pszDropZonePath, bool a_fCheckDropZone);
     void        uninit();
     /** @}  */
 
@@ -125,8 +131,11 @@ class ATL_NO_VTABLE ExtPackManager :
 
     /** @name Internal interfaces used by other Main classes.
      * @{ */
-    int         callAllConfigHooks(IConsole *a_pConsole, PVM a_pVM);
-    int         callAllNewMachineHooks(IMachine *a_pMachine);
+    void        processDropZone(void);
+    void        callAllVmCreatedHooks(IMachine *a_pMachine);
+    int         callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM);
+    int         callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM);
+    void        callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM);
     /** @}  */
 
 private:

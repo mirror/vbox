@@ -100,10 +100,9 @@ typedef struct VBOXEXTPACKREG
      *
      * This is called in the context of the per-user service (VBoxSVC).
      *
-     * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
      */
-    DECLCALLBACKMEMBER(int, pfnInstalled)(PCVBOXEXTPACKREG pThis);
+    DECLCALLBACKMEMBER(void, pfnInstalled)(PCVBOXEXTPACKREG pThis);
 
     /**
      * Hook for cleaning up before the extension pack is uninstalled.
@@ -114,6 +113,20 @@ typedef struct VBOXEXTPACKREG
      * @param   pThis       Pointer to this structure.
      */
     DECLCALLBACKMEMBER(int, pfnUninstall)(PCVBOXEXTPACKREG pThis);
+
+    /**
+     * Hook for doing work before unloading.
+     *
+     * This is called both in the context of the per-user service (VBoxSVC) and
+     * in context of the VM process (VBoxC).
+     *
+     * @param   pThis       Pointer to this structure.
+     *
+     * @remarks The helpers are not available at this point in time.
+     * @remarks This is not called on uninstall, then pfnUninstall will be the
+     *          last callback.
+     */
+    DECLCALLBACKMEMBER(void, pfnUnload)(PCVBOXEXTPACKREG pThis);
 
     /**
      * Hook for changing the default VM configuration upon creation.
@@ -133,10 +146,10 @@ typedef struct VBOXEXTPACKREG
      *
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
-     * @param   pVM         The VM handle.
      * @param   pConsole    The console interface.
+     * @param   pVM         The VM handle.
      */
-    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKREG pThis, PVM pVM, IConsole *pConsole);
+    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
 
     /**
      * Hook for doing work right before powering on the VM.
@@ -145,22 +158,21 @@ typedef struct VBOXEXTPACKREG
      *
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
-     * @param   pVM         The VM handle.
      * @param   pConsole    The console interface.
+     * @param   pVM         The VM handle.
      */
-    DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKREG pThis, PVM pVM, IConsole *pConsole);
+    DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
 
     /**
      * Hook for doing work after powering on the VM.
      *
      * This is called in the context of the VM process (VBoxC).
      *
-     * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
-     * @param   pVM         The VM handle.  Can be NULL.
      * @param   pConsole    The console interface.
+     * @param   pVM         The VM handle.  Can be NULL.
      */
-    DECLCALLBACKMEMBER(int, pfnVMPowerOff)(PCVBOXEXTPACKREG pThis, PVM pVM, IConsole *pConsole);
+    DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
 
     /** End of structure marker (VBOXEXTPACKREG_VERSION). */
     uint32_t                    u32EndMarker;

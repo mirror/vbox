@@ -191,7 +191,6 @@ VBOX_XML_SCHEMADEFS_CPP = $(PATH_TARGET)/Main/SchemaDefs.cpp
 VBOX_XML_SCHEMADEFS_XSL = $(VBOX_PATH_MAIN_SRC)/xml/SchemaDefs.xsl
 
 VBOX_AUTOGEN_EVENT_CPP  = $(PATH_TARGET)/Main/VBoxEvents.cpp
-OTHER_CLEAN    += $(VBOX_AUTOGEN_EVENT_CPP)
 
 testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
@@ -322,10 +321,6 @@ VBoxSVC_SOURCES = \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
 	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp ExtPackUtil.cpp,)
 
-$(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
-	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
-	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o $@ $< $(VBOX_XIDL_FILE)
-
 VBoxSVC_SOURCES.darwin = \
 	darwin/iokit.cpp \
 	darwin/HostPowerDarwin.cpp
@@ -434,6 +429,7 @@ $$(PATH_VBoxSVC)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) 
 $$(PATH_VBoxSVC)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
 
+
 #
 # Embed XML Schema files to VBoxSVC
 #
@@ -470,14 +466,24 @@ $(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUIL
 OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
+#
+# Generate some event stuff for VBoxSVC and VBoxC.
+#
+$(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o $@ $< $(VBOX_XIDL_FILE)
+
+OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_CPP)
+
+
+#
+# VBoxTestOGL - OpenGL support test app.
+# Note! Doesn't link with VBOX_WITH_DEBUG_VCC_CRT defined because it uses Qt.
+#
 if (   defined(VBOX_WITH_QTGUI) \
     && (defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)) \
     && !defined(VBOX_WITH_DEBUG_VCC_CRT))
  ifneq ($(KBUILD_TARGET),darwin)
-  #
-  # VBoxTestOGL - OpenGL support test app.
-  # Note! Doesn't link with VBOX_WITH_DEBUG_VCC_CRT defined because it uses Qt.
-  #
   ifdef VBOX_WITH_VIDEOHWACCEL
    USES += qt4
   endif
@@ -537,8 +543,8 @@ $$(PATH_VBoxSVCM)/VBoxSVCM.def:
 	$(APPEND) $@ _NSGetModule
  endif
 VBoxSVCM_INTERMEDIATES += $(VBOX_IDL_HEADER.XPCOM)
-
 endif # VBOX_WITH_XPCOM
+
 
 #
 # VBoxC module
