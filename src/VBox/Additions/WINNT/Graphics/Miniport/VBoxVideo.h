@@ -806,9 +806,11 @@ int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon,
                           ULONG ulOffset,
                           ULONG ulSize);
 
-void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
-                             void **ppv);
-void VBoxUnmapAdapterInformation (PDEVICE_EXTENSION PrimaryExtension);
+void VBoxUnmapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv);
+
+typedef bool(*PFNVIDEOIRQSYNC)(void *);
+bool VBoxSyncToVideoIRQ(PVBOXVIDEO_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync,
+                        void *pvUser);
 
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
 
@@ -849,7 +851,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
 
-void VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension);
+void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon);
 #ifndef VBOX_WITH_WDDM
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
 DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd);

@@ -1474,48 +1474,31 @@ int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv, ULONG ulOffset,
     return Status;
 }
 
-BOOLEAN VBoxUnmapAdpInfoCallback(PVOID ext)
+bool VBoxSyncToVideoIRQ(PVBOXVIDEO_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync,
+                        void *pvUser)
 {
-    PDEVICE_EXTENSION   PrimaryExtension = (PDEVICE_EXTENSION)ext;
-    Assert(PrimaryExtension);
-
-    commonFromDeviceExt(PrimaryExtension)->pHostFlags = NULL;
-    return TRUE;
-}
-
-void VBoxUnmapAdapterInformation(PDEVICE_EXTENSION PrimaryExtension)
-{
-    void                *ppv;
-
-    dprintf(("VBoxVideo::VBoxUnmapAdapterInformation\n"));
-
-    ppv = commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation;
-    if (ppv)
-    {
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
+    PMINIPORT_SYNCHRONIZE_ROUTINE pfnSyncMiniport;
+    pfnSyncMiniport = (PMINIPORT_SYNCHRONIZE_ROUTINE) pfnSync;
 #ifndef VBOX_WITH_WDDM
-        /* The pHostFlags field is mapped through pvAdapterInformation. It must be cleared first,
-         * and it must be done in a way which avoids races with the interrupt handler.
-         */
-        VideoPortSynchronizeExecution(PrimaryExtension, VpMediumPriority,
-                                      VBoxUnmapAdpInfoCallback, PrimaryExtension);
-        VideoPortUnmapMemory(PrimaryExtension, ppv, NULL);
+    return !!VideoPortSynchronizeExecution(PrimaryExtension, VpMediumPriority,
+                                           pfnSyncMiniport, pvUser);
 #else
-        BOOLEAN bRet;
-        NTSTATUS ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
-                VBoxUnmapAdpInfoCallback, PrimaryExtension,
-                0, &bRet);
-        Assert(ntStatus == STATUS_SUCCESS);
-        ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbUnmapMemory(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
-                ppv);
-        Assert(ntStatus == STATUS_SUCCESS);
+    BOOLEAN fRet;
+    DXGKCB_SYNCHRONIZE_EXECUTION pfnDxgkCbSync =
+        PrimaryExtension->u.primary.DxgkInterface.DxgkCbSynchronizeExecution;
+    HANDLE hDev = PrimaryExtension->u.primary.DxgkInterface.DeviceHandle;
+    NTSTATUS ntStatus = pfnDxgkCbSync(hDev, pfnSyncMiniport, pvUser, 0, &fRet);
+    AssertReturn(ntStatus == STATUS_SUCCESS, false);
+    return !!fRet;
 #endif
-        commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation = NULL;
-    }
 }
 
-void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv)
+void VBoxUnmapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv)
 {
     dprintf(("VBoxVideo::VBoxUnmapAdapterMemory\n"));
+
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
 
     if (*ppv)
     {
@@ -2690,7 +2673,7 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 
     VbglTerminate ();
 
-    VBoxFreeDisplaysHGSMI(pDevExt);
+    VBoxFreeDisplaysHGSMI(commonFromDeviceExt(pDevExt));
     /** @note using this callback instead of doing things manually adds an
      *        additional call to HGSMIHeapDestroy().  I assume that call was
      *        merely forgotton in the first place. */

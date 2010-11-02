@@ -608,7 +608,7 @@ static int vboxWddmFreeDisplays(PDEVICE_EXTENSION pDevExt)
 
     Assert(pDevExt->pvVisibleVram);
     if (pDevExt->pvVisibleVram)
-        VBoxUnmapAdapterMemory(pDevExt, (void**)&pDevExt->pvVisibleVram);
+        VBoxUnmapAdapterMemory(commonFromDeviceExt(pDevExt), (void**)&pDevExt->pvVisibleVram);
 
     for (int i = commonFromDeviceExt(pDevExt)->cDisplays-1; i >= 0; --i)
     {
@@ -738,7 +738,7 @@ NTSTATUS DxgkDdiStartDevice(
                 {
                     vboxWddmSetupDisplays(pContext);
                     if (!commonFromDeviceExt(pContext)->bHGSMI)
-                        VBoxFreeDisplaysHGSMI(pContext);
+                        VBoxFreeDisplaysHGSMI(commonFromDeviceExt(pContext));
                 }
                 if (commonFromDeviceExt(pContext)->bHGSMI)
                 {
@@ -812,7 +812,7 @@ NTSTATUS DxgkDdiStopDevice(
 
     int rc = vboxWddmFreeDisplays(pDevExt);
     if (RT_SUCCESS(rc))
-        VBoxFreeDisplaysHGSMI(pDevExt);
+        VBoxFreeDisplaysHGSMI(commonFromDeviceExt(pDevExt));
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {

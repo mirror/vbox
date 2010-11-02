@@ -538,126 +538,28 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         }
     }
 
-#ifdef VBOX_WITH_WDDM
-    /* For WDDM, we simply store the number of monitors as we will deal with
-     * VidPN stuff later */
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
-    {
-        ULONG ulAvailable = commonFromDeviceExt(PrimaryExtension)->cbVRAM
-                            - commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap
-                            - VBVA_ADAPTER_INFORMATION_SIZE;
-
-        ULONG ulSize;
-        ULONG offset;
-#ifdef VBOX_WITH_VDMA
-        ulSize = ulAvailable / 2;
-        if (ulSize > VBOXWDDM_C_VDMA_BUFFER_SIZE)
-            ulSize = VBOXWDDM_C_VDMA_BUFFER_SIZE;
-
-        /* Align down to 4096 bytes. */
-        ulSize &= ~0xFFF;
-        offset = ulAvailable - ulSize;
-
-        Assert(!(offset & 0xFFF));
-#else
-        offset = ulAvailable;
-#endif
-        rc = vboxVdmaCreate (PrimaryExtension, &PrimaryExtension->u.primary.Vdma
-#ifdef VBOX_WITH_VDMA
-                , offset, ulSize
-#endif
-                );
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
-            /* can enable it right away since the host does not need any screen/FB info
-             * for basic DMA functionality */
-            rc = vboxVdmaEnable(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
-            AssertRC(rc);
-            if (RT_FAILURE(rc))
-                vboxVdmaDestroy(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
-        }
-
-        ulAvailable = offset;
-        ulSize = ulAvailable/2;
-        offset = ulAvailable - ulSize;
-
-        NTSTATUS Status = vboxVideoAMgrCreate(PrimaryExtension, &PrimaryExtension->AllocMgr, offset, ulSize);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status != STATUS_SUCCESS)
-        {
-            offset = ulAvailable;
-        }
-
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-        if (RT_SUCCESS(rc))
-        {
-            ulAvailable = offset;
-            ulSize = ulAvailable / 2;
-            ulSize /= commonFromDeviceExt(PrimaryExtension)->cDisplays;
-            Assert(ulSize > VBVA_MIN_BUFFER_SIZE);
-            if (ulSize > VBVA_MIN_BUFFER_SIZE)
-            {
-                ULONG ulRatio = ulSize/VBVA_MIN_BUFFER_SIZE;
-                ulRatio >>= 4; /* /= 16; */
-                if (ulRatio)
-                    ulSize = VBVA_MIN_BUFFER_SIZE * ulRatio;
-                else
-                    ulSize = VBVA_MIN_BUFFER_SIZE;
-            }
-            else
-            {
-                /* todo: ?? */
-            }
-
-            ulSize &= ~0xFFF;
-            Assert(ulSize);
-
-            Assert(ulSize * commonFromDeviceExt(PrimaryExtension)->cDisplays < ulAvailable);
-
-            for (int i = commonFromDeviceExt(PrimaryExtension)->cDisplays-1; i >= 0; --i)
-            {
-                offset -= ulSize;
-                rc = vboxVbvaCreate(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva, offset, ulSize, i);
-                AssertRC(rc);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = vboxVbvaEnable(PrimaryExtension, &PrimaryExtension->aSources[i].Vbva);
-                    AssertRC(rc);
-                    if (RT_FAILURE(rc))
-                    {
-                        /* @todo: de-initialize */
-                    }
-                }
-            }
-        }
-#endif
-
-        rc = VBoxMapAdapterMemory(commonFromDeviceExt(PrimaryExtension), (void**)&PrimaryExtension->pvVisibleVram,
-                                       0,
-                                       vboxWddmVramCpuVisibleSize(PrimaryExtension));
-        Assert(rc == VINF_SUCCESS);
-        if (rc != VINF_SUCCESS)
-            PrimaryExtension->pvVisibleVram = NULL;
-
-        if (RT_FAILURE(rc))
-            commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
-    }
-#endif
-
     if (!commonFromDeviceExt(PrimaryExtension)->bHGSMI)
-        VBoxFreeDisplaysHGSMI(PrimaryExtension);
+        VBoxFreeDisplaysHGSMI(commonFromDeviceExt(PrimaryExtension));
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
 
-void VBoxFreeDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension)
+static bool VBoxUnmapAdpInfoCallback(PVOID pvCommon)
 {
-    VBoxUnmapAdapterMemory(PrimaryExtension, &commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap);
-    HGSMIHeapDestroy(&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap);
+    PVBOXVIDEO_COMMON pCommon = (PVBOXVIDEO_COMMON)pvCommon;
+
+    pCommon->pHostFlags = NULL;
+    return TRUE;
+}
+
+void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon)
+{
+    VBoxUnmapAdapterMemory(pCommon, &pCommon->pvMiniportHeap);
+    HGSMIHeapDestroy(&pCommon->hgsmiAdapterHeap);
 
     /* Unmap the adapter information needed for HGSMI IO. */
-    VBoxUnmapAdapterInformation(PrimaryExtension);
+    VBoxSyncToVideoIRQ(pCommon, VBoxUnmapAdpInfoCallback, pCommon);
+    VBoxUnmapAdapterMemory(pCommon, &pCommon->pvAdapterInformation);
 }
 
 /*
@@ -745,7 +647,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
 
     uint32_t cbData = 0;
 
-    if (pointerAttr->Enable & VBOX_MOUSE_POINTER_SHAPE)
+    if (!pointerAttr->Enable & VBOX_MOUSE_POINTER_SHAPE)
     {
         /* Size of the pointer data: sizeof (AND mask) + sizeof (XOR_MASK) */
         cbData = ((((pointerAttr->Width + 7) / 8) * pointerAttr->Height + 3) & ~3)
