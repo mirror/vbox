@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * Runtime VBox - Logger.
+ * Runtime VBox - Release Logger.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
