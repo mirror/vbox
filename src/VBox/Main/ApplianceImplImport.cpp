@@ -164,21 +164,29 @@ STDMETHODIMP Appliance::Interpret()
 
             /* Guest OS type */
             Utf8Str strOsTypeVBox;
-            Utf8Str strCIMOSType = Utf8StrFmt("%RI32", (uint32_t)vsysThis.cimos);
-            convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos, vsysThis.strCimosDesc);
+            Utf8Str strCIMOSType = Utf8StrFmt("%RU32", (uint32_t)vsysThis.cimos);
             /* If there is a vbox.xml, we always prefer the ostype settings
              * from there, cause OVF doesn't know all types VBox know. */
-            if (vsysThis.pelmVboxMachine)
+            if (   vsysThis.pelmVboxMachine
+                && pNewDesc->m->pConfig->machineUserData.strOsType.isNotEmpty())
                 strOsTypeVBox = pNewDesc->m->pConfig->machineUserData.strOsType;
+            else
+                convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos, vsysThis.strCimosDesc);
             pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                                "",
                                strCIMOSType,
                                strOsTypeVBox);
 
             /* VM name */
-            /* If the there isn't any name specified create a default one out of
-             * the OS type */
-            Utf8Str nameVBox = vsysThis.strName;
+            Utf8Str nameVBox;
+            /* If there is a vbox.xml, we always prefer the setting from there. */
+            if (   vsysThis.pelmVboxMachine
+                && pNewDesc->m->pConfig->machineUserData.strName.isNotEmpty())
+                nameVBox = pNewDesc->m->pConfig->machineUserData.strName;
+            else
+                nameVBox = vsysThis.strName;
+            /* If the there isn't any name specified create a default one out
+             * of the OS type */
             if (nameVBox.isEmpty())
                 nameVBox = strOsTypeVBox;
             searchUniqueVMName(nameVBox);
@@ -251,7 +259,13 @@ STDMETHODIMP Appliance::Interpret()
             if (FAILED(rc)) throw rc;
 
             /* CPU count */
-            ULONG cpuCountVBox = vsysThis.cCPUs;
+            ULONG cpuCountVBox;
+            /* If there is a vbox.xml, we always prefer the setting from there. */
+            if (   vsysThis.pelmVboxMachine
+                && pNewDesc->m->pConfig->hardwareMachine.cCPUs)
+                cpuCountVBox = pNewDesc->m->pConfig->hardwareMachine.cCPUs;
+            else
+                cpuCountVBox = vsysThis.cCPUs;
             /* Check for the constraints */
             if (cpuCountVBox > SchemaDefs::MaxCPUCount)
             {
@@ -263,11 +277,17 @@ STDMETHODIMP Appliance::Interpret()
                 cpuCountVBox = 1;
             pNewDesc->addEntry(VirtualSystemDescriptionType_CPU,
                                "",
-                               Utf8StrFmt("%RI32", (uint32_t)vsysThis.cCPUs),
-                               Utf8StrFmt("%RI32", (uint32_t)cpuCountVBox));
+                               Utf8StrFmt("%RU32", (uint32_t)vsysThis.cCPUs),
+                               Utf8StrFmt("%RU32", (uint32_t)cpuCountVBox));
 
             /* RAM */
-            uint64_t ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
+            uint64_t ullMemSizeVBox;
+            /* If there is a vbox.xml, we always prefer the setting from there. */
+            if (   vsysThis.pelmVboxMachine
+                && pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB)
+                ullMemSizeVBox = pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB;
+            else
+                ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
             /* Check for the constraints */
             if (    ullMemSizeVBox != 0
                  && (    ullMemSizeVBox < MM_RAM_MIN_IN_MB
@@ -290,27 +310,68 @@ STDMETHODIMP Appliance::Interpret()
             }
             pNewDesc->addEntry(VirtualSystemDescriptionType_Memory,
                                "",
-                               Utf8StrFmt("%RI64", (uint64_t)vsysThis.ullMemorySize),
-                               Utf8StrFmt("%RI64", (uint64_t)ullMemSizeVBox));
+                               Utf8StrFmt("%RU64", (uint64_t)vsysThis.ullMemorySize),
+                               Utf8StrFmt("%RU64", (uint64_t)ullMemSizeVBox));
 
             /* Audio */
-            if (!vsysThis.strSoundCardType.isEmpty())
-                /* Currently we set the AC97 always.
-                   @todo: figure out the hardware which could be possible */
+            Utf8Str strSoundCard;
+            Utf8Str strSoundCardOrig;
+            /* If there is a vbox.xml, we always prefer the setting from there. */
+            if (   vsysThis.pelmVboxMachine
+                && pNewDesc->m->pConfig->hardwareMachine.audioAdapter.fEnabled)
+                strSoundCard = Utf8StrFmt("%RU32", (uint32_t)pNewDesc->m->pConfig->hardwareMachine.audioAdapter.controllerType);
+            else if (vsysThis.strSoundCardType.isNotEmpty())
+            {
+                /* Set the AC97 always for the simple OVF case.
+                 * @todo: figure out the hardware which could be possible */
+                strSoundCard = Utf8StrFmt("%RU32", (uint32_t)AudioControllerType_AC97);
+                strSoundCardOrig = vsysThis.strSoundCardType;
+            }
+            if (strSoundCard.isNotEmpty())
                 pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,
                                    "",
-                                   vsysThis.strSoundCardType,
-                                   Utf8StrFmt("%RI32", (uint32_t)AudioControllerType_AC97));
+                                   strSoundCardOrig,
+                                   strSoundCard);
 
 #ifdef VBOX_WITH_USB
             /* USB Controller */
-            if (vsysThis.fHasUsbController)
+            /* If there is a vbox.xml, we always prefer the setting from there. */
+            if (   (   vsysThis.pelmVboxMachine
+                    && pNewDesc->m->pConfig->hardwareMachine.usbController.fEnabled)
+                || vsysThis.fHasUsbController)
                 pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
 #endif /* VBOX_WITH_USB */
 
             /* Network Controller */
-            size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size();
-            if (cEthernetAdapters > 0)
+            /* If there is a vbox.xml, we always prefer the setting from there. */
+            if (vsysThis.pelmVboxMachine)
+            {
+                const settings::NetworkAdaptersList &llNetworkAdapters = pNewDesc->m->pConfig->hardwareMachine.llNetworkAdapters;
+                /* Check for the constrains */
+                if (llNetworkAdapters.size() > SchemaDefs::NetworkAdapterCount)
+                    addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox has support for max %u network adapter only."),
+                                  vsysThis.strName.c_str(), llNetworkAdapters.size(), SchemaDefs::NetworkAdapterCount);
+                /* Iterate through all network adapters. */
+                settings::NetworkAdaptersList::const_iterator it1;
+                size_t a = 0;
+                for (it1 = llNetworkAdapters.begin();
+                     it1 != llNetworkAdapters.end() && a < SchemaDefs::NetworkAdapterCount;
+                     ++it1, ++a)
+                {
+                    if (it1->fEnabled)
+                    {
+                        Utf8Str strMode = convertNetworkAttachmentTypeToString(it1->mode);
+                        pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
+                                           "", // ref
+                                           strMode, // orig
+                                           Utf8StrFmt("%RU32", (uint32_t)it1->type), // conf
+                                           0,
+                                           Utf8StrFmt("slot=%RU32;type=%s", it1->ulSlot, strMode.c_str())); // extra conf
+                    }
+                }
+            }
+            /* else we use the ovf configuration. */
+            else if (size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size() >  0)
             {
                 /* Check for the constrains */
                 if (cEthernetAdapters > SchemaDefs::NetworkAdapterCount)
@@ -338,6 +399,7 @@ STDMETHODIMP Appliance::Interpret()
                          && (strNetwork.compare("Bridged", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("Internal", Utf8Str::CaseInsensitive))
                          && (strNetwork.compare("HostOnly", Utf8Str::CaseInsensitive))
+                         && (strNetwork.compare("VDE", Utf8Str::CaseInsensitive))
                        )
                         strNetwork = "Bridged";     // VMware assumes this is the default apparently
 
@@ -379,18 +441,48 @@ STDMETHODIMP Appliance::Interpret()
                     pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                        "",      // ref
                                        ea.strNetworkName,      // orig
-                                       Utf8StrFmt("%RI32", (uint32_t)nwAdapterVBox),   // conf
+                                       Utf8StrFmt("%RU32", (uint32_t)nwAdapterVBox),   // conf
                                        0,
                                        Utf8StrFmt("type=%s", strNetwork.c_str()));       // extra conf
                 }
             }
 
+            /* If there is a vbox.xml, we always prefer the setting from there. */
+            bool fFloppy = false;
+            bool fDVD = false;
+            if (vsysThis.pelmVboxMachine)
+            {
+                settings::StorageControllersList &llControllers = pNewDesc->m->pConfig->storageMachine.llStorageControllers;
+                settings::StorageControllersList::iterator it3;
+                for (it3 = llControllers.begin();
+                     it3 != llControllers.end();
+                     ++it3)
+                {
+                    settings::AttachedDevicesList &llAttachments = it3->llAttachedDevices;
+                    settings::AttachedDevicesList::iterator it4;
+                    for (it4 = llAttachments.begin();
+                         it4 != llAttachments.end();
+                         ++it4)
+                    {
+                        fDVD |= it4->deviceType == DeviceType_DVD;
+                        fFloppy |= it4->deviceType == DeviceType_Floppy;
+                        if (fFloppy && fDVD)
+                            break;
+                    }
+                    if (fFloppy && fDVD)
+                        break;
+                }
+            }
+            else
+            {
+                fFloppy = vsysThis.fHasFloppyDrive;
+                fDVD = vsysThis.fHasCdromDrive;
+            }
             /* Floppy Drive */
-            if (vsysThis.fHasFloppyDrive)
+            if (fFloppy)
                 pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
-
             /* CD Drive */
-            if (vsysThis.fHasCdromDrive)
+            if (fDVD)
                 pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
             /* Hard disk Controller */
@@ -514,7 +606,7 @@ STDMETHODIMP Appliance::Interpret()
 
                         Utf8Str strTargetPath = Utf8Str(strMachineFolder)
                             .append(RTPATH_DELIMITER)
-                            .append(di.strHref);;
+                            .append(di.strHref);
                         searchUniqueDiskImageFilePath(strTargetPath);
 
                         /* find the description for the hard disk controller
@@ -1938,7 +2030,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (FAILED(rc)) throw rc;
 
             // default is NAT; change to "bridged" if extra conf says so
-            if (!pvsys->strExtraConfigCurrent.compare("type=Bridged", Utf8Str::CaseInsensitive))
+            if (pvsys->strExtraConfigCurrent.endsWith("type=Bridged", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
                 rc = pNetworkAdapter->AttachToBridgedInterface();
@@ -1971,7 +2063,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 }
             }
             /* Next test for host only interfaces */
-            else if (!pvsys->strExtraConfigCurrent.compare("type=HostOnly", Utf8Str::CaseInsensitive))
+            else if (pvsys->strExtraConfigCurrent.endsWith("type=HostOnly", Utf8Str::CaseInsensitive))
             {
                 /* Attach to the right interface */
                 rc = pNetworkAdapter->AttachToHostOnlyInterface();
@@ -2002,6 +2094,20 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         break;
                     }
                 }
+            }
+            /* Next test for internal interfaces */
+            else if (pvsys->strExtraConfigCurrent.endsWith("type=Internal", Utf8Str::CaseInsensitive))
+            {
+                /* Attach to the right interface */
+                rc = pNetworkAdapter->AttachToInternalNetwork();
+                if (FAILED(rc)) throw rc;
+            }
+            /* Next test for VDE interfaces */
+            else if (pvsys->strExtraConfigCurrent.endsWith("type=VDE", Utf8Str::CaseInsensitive))
+            {
+                /* Attach to the right interface */
+                rc = pNetworkAdapter->AttachToVDE();
+                if (FAILED(rc)) throw rc;
             }
         }
     }
@@ -2373,35 +2479,105 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
      *
      */
 
+    /* OS Type */
     config.machineUserData.strOsType = stack.strOsTypeVBox;
+    /* Description */
     config.machineUserData.strDescription = stack.strDescription;
-
+    /* CPU count & extented attributes */
     config.hardwareMachine.cCPUs = stack.cCPUs;
-    config.hardwareMachine.ulMemorySizeMB = stack.ulMemorySizeMB;
     if (stack.fForceIOAPIC)
         config.hardwareMachine.fHardwareVirt = true;
     if (stack.fForceIOAPIC)
         config.hardwareMachine.biosSettings.fIOAPICEnabled = true;
+    /* RAM size */
+    config.hardwareMachine.ulMemorySizeMB = stack.ulMemorySizeMB;
 
 /*
     <const name="HardDiskControllerIDE" value="14" />
     <const name="HardDiskControllerSATA" value="15" />
     <const name="HardDiskControllerSCSI" value="16" />
     <const name="HardDiskControllerSAS" value="17" />
-    <const name="HardDiskImage" value="18" />
-    <const name="Floppy" value="19" />
-    <const name="CDROM" value="20" />
-    <const name="NetworkAdapter" value="21" />
 */
 
 #ifdef VBOX_WITH_USB
-    // disable USB if user disabled USB
+    /* USB controller */
     config.hardwareMachine.usbController.fEnabled = stack.fUSBEnabled;
 #endif
-
-    // audio adapter: only config is turning it off presently
-    if (stack.strAudioAdapter.isEmpty())
+    /* Audio adapter */
+    if (stack.strAudioAdapter.isNotEmpty())
+    {
+        config.hardwareMachine.audioAdapter.fEnabled = true;
+        config.hardwareMachine.audioAdapter.controllerType = stack.strAudioAdapter.toUInt32();
+    }
+    else
         config.hardwareMachine.audioAdapter.fEnabled = false;
+    /* Network adapter */
+    settings::NetworkAdaptersList &llNetworkAdapters = config.hardwareMachine.llNetworkAdapters;
+    /* First disable all network cards, they will be enabled below again. */
+    settings::NetworkAdaptersList::iterator it1;
+    for (it1 = llNetworkAdapters.begin(); it1 != llNetworkAdapters.end(); ++it1)
+        it1->fEnabled = false;
+    /* Now iterate over all network entries. */
+    std::list<VirtualSystemDescriptionEntry*> avsdeNWs = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
+    if (avsdeNWs.size() > 0)
+    {
+        /* Iterate through all network adapter entries and search for the
+         * corrosponding one in the machine config. If one is found, configure
+         * it based on the user settings. */
+        list<VirtualSystemDescriptionEntry*>::const_iterator itNW;
+        for (itNW = avsdeNWs.begin();
+             itNW != avsdeNWs.end();
+             ++itNW)
+        {
+            VirtualSystemDescriptionEntry *vsdeNW = *itNW;
+            if (   vsdeNW->strExtraConfigCurrent.startsWith("slot=", Utf8Str::CaseInsensitive)
+                && vsdeNW->strExtraConfigCurrent.length() > 6)
+            {
+                uint32_t iSlot = vsdeNW->strExtraConfigCurrent.substr(5, 1).toUInt32();
+                /* Iterate through all network adapters in the machine config. */
+                for (it1 = llNetworkAdapters.begin();
+                     it1 != llNetworkAdapters.end();
+                     ++it1)
+                {
+                    /* Compare the slots. */
+                    if (it1->ulSlot == iSlot)
+                    {
+                        it1->fEnabled = true;
+                        it1->type = vsdeNW->strVboxCurrent.toUInt32();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Floppy controller */
+    bool fFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy).size() > 0;
+    /* DVD controller */
+    bool fDVD = vsdescThis->findByType(VirtualSystemDescriptionType_CDROM).size() > 0;
+    /* Iterate over all storage controller check the attachments and remove
+     * them when necessary. */
+    settings::StorageControllersList &llControllers = config.storageMachine.llStorageControllers;
+    settings::StorageControllersList::iterator it3;
+    for (it3 = llControllers.begin();
+         it3 != llControllers.end();
+         ++it3)
+    {
+        settings::AttachedDevicesList &llAttachments = it3->llAttachedDevices;
+        settings::AttachedDevicesList::iterator it4;
+        for (it4 = llAttachments.begin();
+             it4 != llAttachments.end();
+             ++it4)
+        {
+            if (  (   !fDVD
+                   && it4->deviceType == DeviceType_DVD)
+                ||
+                  (   !fFloppy
+                   && it4->deviceType == DeviceType_Floppy))
+                llAttachments.erase(it4++);
+        }
+    }
+
 
     /*
      *
@@ -2420,16 +2596,13 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
         switch (sc.storageBus)
         {
             case StorageBus_SATA:
-            break;
-
+                break;
             case StorageBus_SCSI:
-            break;
-
+                break;
             case StorageBus_IDE:
-            break;
-
+                break;
             case StorageBus_SAS:
-            break;
+                break;
         }
 
         /* Get all hard disk descriptions. */
@@ -2615,8 +2788,7 @@ void Appliance::importMachines(ImportStack &stack,
         if (vsdeCPU.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("CPU count missing"));
 
-        const Utf8Str &cpuVBox = vsdeCPU.front()->strVboxCurrent;
-        stack.cCPUs = (uint32_t)RTStrToUInt64(cpuVBox.c_str());
+        stack.cCPUs = vsdeCPU.front()->strVboxCurrent.toUInt32();
         // We need HWVirt & IO-APIC if more than one CPU is requested
         if (stack.cCPUs > 1)
         {
@@ -2628,8 +2800,7 @@ void Appliance::importMachines(ImportStack &stack,
         std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
         if (vsdeRAM.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
-        const Utf8Str &memoryVBox = vsdeRAM.front()->strVboxCurrent;
-        stack.ulMemorySizeMB = (uint32_t)RTStrToUInt64(memoryVBox.c_str());
+        stack.ulMemorySizeMB = vsdeRAM.front()->strVboxCurrent.toUInt64();
 
 #ifdef VBOX_WITH_USB
         // USB controller

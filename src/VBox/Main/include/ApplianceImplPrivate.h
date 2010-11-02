@@ -220,6 +220,8 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
 
 ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
 
+Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
+
 typedef struct RTSHA1STORAGE
 {
     PVDINTERFACE pVDImageIfaces;
