@@ -143,7 +143,7 @@ private slots:
 
     void ensureNewHardDiskDeleted();
     void hardDiskSourceChanged();
-    void getWithMediaManager();
+    void getWithFileOpenDialog();
 
 private:
 
