@@ -17,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QDir>
+
 /* Local includes */
 #include "UIIconPool.h"
 #include "UINewHDWzd.h"
@@ -197,6 +200,7 @@ UINewVMWzdPage2::UINewVMWzdPage2()
     /* Register 'name' & 'type' fields */
     registerField("name*", m_pNameEditor);
     registerField("type*", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
+    registerField("machineFolder", this, "machineFolder");
 
     connect(m_pNameEditor, SIGNAL(textChanged(const QString&)),
             this, SLOT(sltNameChanged(const QString&)));
@@ -205,24 +209,6 @@ UINewVMWzdPage2::UINewVMWzdPage2()
 
     /* Setup contents */
     m_pTypeSelector->activateLayout();
-}
-
-void UINewVMWzdPage2::retranslateUi()
-{
-    /* Translate uic generated strings */
-    Ui::UINewVMWzdPage2::retranslateUi(this);
-
-    /* Wizard page 2 title */
-    setTitle(tr("VM Name and OS Type"));
-}
-
-void UINewVMWzdPage2::initializePage()
-{
-    /* Fill and translate */
-    retranslateUi();
-
-    /* 'Name' field should have focus initially */
-    m_pNameEditor->setFocus();
 }
 
 void UINewVMWzdPage2::sltNameChanged(const QString &strNewText)
@@ -245,6 +231,80 @@ void UINewVMWzdPage2::sltOsTypeChanged()
      * type guessing anymore. So simply disconnect the text edit signal. */
     disconnect(m_pNameEditor, SIGNAL(textChanged(const QString&)),
                this, SLOT(sltNameChanged(const QString&)));
+}
+
+void UINewVMWzdPage2::retranslateUi()
+{
+    /* Translate uic generated strings */
+    Ui::UINewVMWzdPage2::retranslateUi(this);
+
+    /* Wizard page 2 title */
+    setTitle(tr("VM Name and OS Type"));
+}
+
+void UINewVMWzdPage2::initializePage()
+{
+    /* Fill and translate */
+    retranslateUi();
+
+    /* 'Name' field should have focus initially */
+    m_pNameEditor->setFocus();
+}
+
+void UINewVMWzdPage2::cleanupPage()
+{
+    cleanupMachineFolder();
+}
+
+bool UINewVMWzdPage2::validatePage()
+{
+    return createMachineFolder();
+}
+
+bool UINewVMWzdPage2::createMachineFolder()
+{
+    /* Cleanup old folder if present: */
+    cleanupMachineFolder();
+    /* Get VBox: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    /* Get default machines directory: */
+    QString strDefaultMachinesFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    /* Compose machine filename name: */
+    QString strMachineFilename = vbox.ComposeMachineFilename(field("name").toString(), strDefaultMachinesFolder);
+    QFileInfo fileInfo(strMachineFilename);
+    /* Get machine directory: */
+    QString strMachineFolder = fileInfo.absolutePath();
+    /* Try to create this machine directory (and it's predecessors): */
+    bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
+    /* Initialize machine dir value: */
+    if (fMachineFolderCreated)
+        m_strMachineFolder = strMachineFolder;
+    /* Return creation result: */
+    return fMachineFolderCreated;
+}
+
+bool UINewVMWzdPage2::cleanupMachineFolder()
+{
+    /* Return if machine folder was NOT set: */
+    if (m_strMachineFolder.isEmpty())
+        return false;
+    /* Try to cleanup this machine directory (and it's predecessors): */
+    bool fMachineFolderRemoved = QDir().rmpath(m_strMachineFolder);
+    /* Reset machine dir value: */
+    if (fMachineFolderRemoved)
+        m_strMachineFolder = QString();
+    /* Return cleanup result: */
+    return fMachineFolderRemoved;
+}
+
+QString UINewVMWzdPage2::machineFolder() const
+{
+    return m_strMachineFolder;
+}
+
+void UINewVMWzdPage2::setMachineFolder(const QString &strMachineFolder)
+{
+    m_strMachineFolder = strMachineFolder;
 }
 
 UINewVMWzdPage3::UINewVMWzdPage3()
@@ -493,6 +553,7 @@ bool UINewVMWzdPage4::getWithNewHardDiskWizard()
     UINewHDWzd dlg(this);
     dlg.setRecommendedName(field("name").toString());
     dlg.setRecommendedSize(field("type").value<CGuestOSType>().GetRecommendedHDD());
+    dlg.setDefaultPath(field("machineFolder").toString());
 
     if (dlg.exec() == QDialog::Accepted)
     {
