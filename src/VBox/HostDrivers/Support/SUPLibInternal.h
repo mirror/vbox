@@ -89,8 +89,10 @@
 # define supR3HardenedErrorV               supR3HardenedStaticErrorV
 # define supR3HardenedError                supR3HardenedStaticError
 # define supR3HardenedVerifyAll            supR3HardenedStaticVerifyAll
+# define supR3HardenedVerifyFixedDir       supR3HardenedStaticVerifyFixedDir
+# define supR3HardenedVerifyFixedFile      supR3HardenedStaticVerifyFixedFile
 # define supR3HardenedVerifyDir            supR3HardenedStaticVerifyDir
-# define supR3HardenedVerifyFile           supR3HardenedStaticVerifyFile
+# define supR3HardenedVerifyPlugIn         supR3HardenedStaticVerifyPlugIn
 # define supR3HardenedGetPreInitData       supR3HardenedStaticGetPreInitData
 # define supR3HardenedRecvPreInitData      supR3HardenedStaticRecvPreInitData
 /** @} */
@@ -315,8 +317,10 @@ DECLHIDDEN(int)    supR3HardenedErrorV(int rc, bool fFatal, const char *pszForma
  */
 DECLHIDDEN(int)    supR3HardenedError(int rc, bool fFatal, const char *pszFormat, ...);
 DECLHIDDEN(int)    supR3HardenedVerifyAll(bool fFatal, bool fLeaveFilesOpen, const char *pszProgName);
-DECLHIDDEN(int)    supR3HardenedVerifyDir(SUPINSTDIR enmDir, bool fFatal);
-DECLHIDDEN(int)    supR3HardenedVerifyFile(const char *pszFilename, bool fFatal);
+DECLHIDDEN(int)    supR3HardenedVerifyFixedDir(SUPINSTDIR enmDir, bool fFatal);
+DECLHIDDEN(int)    supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFatal);
+DECLHIDDEN(int)    supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr);
+DECLHIDDEN(int)    supR3HardenedVerifyFile(const char *pszFilename, char *pszErr, size_t cbErr);
 DECLHIDDEN(void)   supR3HardenedGetPreInitData(PSUPPREINITDATA pPreInitData);
 DECLHIDDEN(int)    supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData);
 

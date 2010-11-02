@@ -1427,7 +1427,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszM
      * Only do the actual check in hardened builds.
      */
 #ifdef VBOX_WITH_HARDENING
-    int rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+    int rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
     if (RT_FAILURE(rc))
         LogRel(("SUPR3HardenedVerifyFile: %s: Verification of \"%s\" failed, rc=%Rrc\n", pszMsg, pszFilename, rc));
     return rc;
@@ -1450,8 +1450,10 @@ SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, b
      * Only do the actual check in hardened builds.
      */
 #ifdef VBOX_WITH_HARDENING
-/** @todo implement me! */
-    return VINF_SUCCESS;
+    int rc = supR3HardenedVerifyDir(pszDirPath, fRecursive, fCheckFiles, pszErr, cbErr);
+    if (RT_FAILURE(rc) && (!pszErr || !cbErr))
+        LogRel(("supR3HardenedVerifyDir: Verification of \"%s\" failed, rc=%Rrc\n", pszDirPath, rc));
+    return rc;
 #else
     return VINF_SUCCESS;
 #endif
@@ -1471,8 +1473,10 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, 
      * Only do the actual check in hardened builds.
      */
 #ifdef VBOX_WITH_HARDENING
-/** @todo implement me! */
-    return VINF_SUCCESS;
+    int rc = supR3HardenedVerifyFile(pszFilename, pszErr, cbErr);
+    if (RT_FAILURE(rc) && (!pszErr || !cbErr))
+        LogRel(("supR3HardenedVerifyFile: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
+    return rc;
 #else
     return VINF_SUCCESS;
 #endif
@@ -1486,7 +1490,7 @@ SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, v
     /*
      * Check that the module can be trusted.
      */
-    rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+    rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
 #endif
     if (RT_SUCCESS(rc))
         rc = supLoadModule(pszFilename, pszModule, NULL, ppvImageBase);
@@ -1506,7 +1510,7 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
     /*
      * Check that the module can be trusted.
      */
-    rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+    rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
 #endif
     if (RT_SUCCESS(rc))
         rc = supLoadModule(pszFilename, pszModule, pszSrvReqHandler, ppvImageBase);
@@ -2015,7 +2019,7 @@ static int supR3HardenedLdrLoadIt(const char *pszFilename, PRTLDRMOD phLdrMod)
     /*
      * Verify the image file.
      */
-    int rc = supR3HardenedVerifyFile(pszFilename, false /* fFatal */);
+    int rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
     if (RT_FAILURE(rc))
     {
         LogRel(("supR3HardenedLdrLoadIt: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
