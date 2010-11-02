@@ -955,7 +955,7 @@ static int rtSha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffs
      * real write. */
     if (pInt->cbCurAll < uOffset)
     {
-        size_t cbSize = uOffset - pInt->cbCurAll;
+        size_t cbSize = (size_t)(uOffset - pInt->cbCurAll);
         size_t cbAllWritten = 0;
         for(;;)
         {
@@ -1052,7 +1052,8 @@ static int rtSha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffse
      * remaining stuff in the gap anyway (SHA1; streaming). */
     if (pInt->cbCurAll < uOffset)
     {
-        rc = rtSha1ReadSyncCallback(pvUser, pvStorage, pInt->cbCurAll, 0, uOffset - pInt->cbCurAll, 0);
+        rc = rtSha1ReadSyncCallback(pvUser, pvStorage, pInt->cbCurAll, 0,
+                                    (size_t)(uOffset - pInt->cbCurAll), 0);
         if (RT_FAILURE(rc))
             return rc;
     }
