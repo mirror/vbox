@@ -252,10 +252,12 @@ PDMBOTHCBDECL(int)  ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, 
     if (cb == 4)
     {
         PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
+
         PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
         pThis->uConfigReg = u32 & ~3; /* Bits 0-1 are reserved and we silently clear them */
         PCI_UNLOCK(pDevIns);
     }
+
     return VINF_SUCCESS;
 }
 
@@ -310,6 +312,10 @@ static int ich9pciDataWriteAddr(PPCIGLOBALS pGlobals, PciAddress* pAddr,
                 AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
                 pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, pAddr->iBus, pAddr->iDeviceFunc, pAddr->iRegister, val, cb);
             }
+            else
+            {
+                // do nothing, bridge not found
+            }
 #else
             rc = rcReschedule;
             goto out;
@@ -359,7 +365,8 @@ static int ich9pciDataWrite(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, i
 
 static void ich9pciNoMem(void* ptr, int cb)
 {
-    memset(ptr, 0xff, cb);
+    for (int i = 0; i < cb; i++)
+        ((uint8_t*)ptr)[i] = 0xff;
 }
 
 /**
@@ -447,11 +454,13 @@ static int ich9pciDataReadAddr(PPCIGLOBALS pGlobals, PciAddress* pPciAddr, int c
     return rc;
 }
 
-static int ich9pciDataRead(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t *pu32)
+static int ich9pciDataRead(PPCIGLOBALS pGlobals, uint32_t addr, int cb, uint32_t *pu32)
 {
     PciAddress aPciAddr;
 
-    LogFlow(("ich9pciDataRead: config=%x len=%d\n",  pGlobals->uConfigReg, len));
+    LogFlow(("ich9pciDataRead: config=%x cb=%d\n",  pGlobals->uConfigReg, cb));
+
+    *pu32 = 0xffffffff;
 
     if (!(pGlobals->uConfigReg & (1 << 31)))
         return VINF_SUCCESS;
@@ -462,7 +471,7 @@ static int ich9pciDataRead(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_
     /* Compute destination device */
     ich9pciStateToPciAddr(pGlobals, addr, &aPciAddr);
 
-    return ich9pciDataReadAddr(pGlobals, &aPciAddr, len, pu32, VINF_IOM_HC_IOPORT_READ);
+    return ich9pciDataReadAddr(pGlobals, &aPciAddr, cb, pu32, VINF_IOM_HC_IOPORT_READ);
 }
 
 /**
@@ -1037,7 +1046,7 @@ static uint32_t ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint
             u32Value = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, u32Address, cb);
         }
         else
-            ich9pciNoMem(&u32Value, cb);
+            ich9pciNoMem(&u32Value, 4);
     }
     else
     {
@@ -1049,7 +1058,7 @@ static uint32_t ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint
             Log(("%s: %s: u32Address=%02x u32Value=%08x cb=%d\n", __FUNCTION__, pPciDev->name, u32Address, u32Value, cb));
         }
         else
-            ich9pciNoMem(&u32Value, cb);
+            ich9pciNoMem(&u32Value, 4);
     }
 
     return u32Value;
@@ -1978,11 +1987,9 @@ static const struct {
         "piix3ide", 31, 1 /* IDE controller */
     },
     /* Disable, if we may wish to have multiple AHCI controllers */
-#if 1
     {
         "ahci",     31, 2 /* SATA controller */
     },
-#endif
     {
         "smbus",    31, 3 /* System Management Bus */
     },
@@ -2020,12 +2027,6 @@ static bool assignPosition(PPCIBUS pBus, PPCIDEVICE pPciDev, const char *pszName
         return true;
 
     int iStartPos = 0;
-
-    /* We add bridges starting slot 22 */
-    if (!strcmp(pszName, "ich9pcibridge"))
-    {
-        iStartPos = 22 * 8;
-    }
 
     /* Otherwise when assigning a slot, we need to make sure all its functions are available */
     for (int iPos = iStartPos; iPos < (int)RT_ELEMENTS(pBus->apDevices); iPos += 8)

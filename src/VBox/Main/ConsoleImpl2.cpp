@@ -107,6 +107,7 @@
 #endif /* VBOX_WITH_NETFLT */
 
 #include "DHCPServerRunner.h"
+#include "BusAssignmentManager.h"
 
 #if defined(RT_OS_DARWIN)
 
@@ -466,8 +467,7 @@ static void RemoveConfigValue(PCFGMNODE pNode,
 DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 {
     LogFlowFuncEnter();
-    /* Note: hardcoded assumption about number of slots; see rom bios */
-    bool afPciDeviceNo[32] = {false};
+    PciBusAddress         PciAddr;
     bool fFdcEnabled = false;
     BOOL fIs64BitGuest = false;
 
@@ -546,6 +546,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         cbRamHole += u64McfgLength;
         u64McfgBase = _4G - cbRamHole;
     }
+
+    ComPtr<BusAssignmentManager> BusMgr =
+            BusAssignmentManager::getInstance(chipsetType);
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                        H();
@@ -878,9 +881,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDevices, "ich9pcibridge", &pDev);
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+            PciAddr = PciBusAddress(0, 24, 0);
+            hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst, PciAddr);                               H();
 
             InsertConfigNode(pDev,     "1", &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+            PciAddr = PciBusAddress(0, 25, 0);
+            hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst, PciAddr);                               H();
         }
 
 #if 0 /* enable this to test PCI bridging */
@@ -1048,10 +1055,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pDevices, "vga", &pDev);
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        InsertConfigInteger(pInst, "PCIDeviceNo",          2);
-        Assert(!afPciDeviceNo[2]);
-        afPciDeviceNo[2] = true;
-        InsertConfigInteger(pInst, "PCIFunctionNo",        0);
+
+        PciAddr = PciBusAddress(0, 2, 0);
+        hrc = BusMgr->assignPciDevice("vga", pInst, PciAddr);                               H();
         InsertConfigNode(pInst,    "Config", &pCfg);
         ULONG cVRamMBs;
         hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                     H();
@@ -1318,11 +1324,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 case StorageControllerType_LsiLogic:
                 {
-                    // InsertConfigInteger(pCtlInst, "PCIBusNo",             1);
-                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",          20);
-                    Assert(!afPciDeviceNo[20]);
-                    afPciDeviceNo[20] = true;
-                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",        0);
+                    PciAddr = PciBusAddress(1, 20, 0);
+                    hrc = BusMgr->assignPciDevice("lsilogic", pCtlInst, PciAddr);                               H();
+
 
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
@@ -1338,10 +1342,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                 case StorageControllerType_BusLogic:
                 {
-                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",          21);
-                    Assert(!afPciDeviceNo[21]);
-                    afPciDeviceNo[21] = true;
-                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",        0);
+                    PciAddr = PciBusAddress(0, 21, 0);
+                    hrc = BusMgr->assignPciDevice("buslogic", pCtlInst, PciAddr);                               H();
 
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
@@ -1357,10 +1359,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                 case StorageControllerType_IntelAhci:
                 {
-                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",          13);
-                    Assert(!afPciDeviceNo[13]);
-                    afPciDeviceNo[13] = true;
-                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",        0);
+                    PciAddr = PciBusAddress(0, 13, 0);
+                    hrc = BusMgr->assignPciDevice("ahci", pCtlInst, PciAddr);                               H();
 
                     ULONG cPorts = 0;
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
@@ -1405,10 +1405,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     /*
                      * IDE (update this when the main interface changes)
                      */
-                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",          1);
-                    Assert(!afPciDeviceNo[1]);
-                    afPciDeviceNo[1] = true;
-                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",        1);
+                    PciAddr = PciBusAddress(0, 1, 1);
+                    hrc = BusMgr->assignPciDevice("ide", pCtlInst, PciAddr);                               H();
                     InsertConfigString(pCfg,   "Type", controllerString(enmCtrlType));
 
                     /* Attach the status driver */
@@ -1453,10 +1451,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                 case StorageControllerType_LsiLogicSas:
                 {
-                    InsertConfigInteger(pCtlInst, "PCIDeviceNo",          22);
-                    Assert(!afPciDeviceNo[22]);
-                    afPciDeviceNo[22] = true;
-                    InsertConfigInteger(pCtlInst, "PCIFunctionNo",        0);
+                    PciAddr = PciBusAddress(0, 22, 0);
+                    hrc = BusMgr->assignPciDevice("lsilogicsas", pCtlInst, PciAddr);                               H();
 
                     InsertConfigString(pCfg,  "ControllerType", "SAS1068");
 
@@ -1590,10 +1586,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             else if (iPciDeviceNo == 0x11 && fSwapSlots3and11)
                 iPciDeviceNo = 3;
 #endif
-            InsertConfigInteger(pInst, "PCIDeviceNo", iPciDeviceNo);
-            Assert(!afPciDeviceNo[iPciDeviceNo]);
-            afPciDeviceNo[iPciDeviceNo] = true;
-            InsertConfigInteger(pInst, "PCIFunctionNo",        0);
+            PciAddr = PciBusAddress(0, iPciDeviceNo, 0);
+            hrc = BusMgr->assignPciDevice(pszAdapterName, pInst, PciAddr);                               H();
+
             InsertConfigNode(pInst, "Config", &pCfg);
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE   /* not safe here yet. */
             if (pDev == pDevPCNet)
@@ -1818,10 +1813,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigNode(pInst,    "Config", &pCfg);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        InsertConfigInteger(pInst, "PCIDeviceNo",          4);
-        Assert(!afPciDeviceNo[4]);
-        afPciDeviceNo[4] = true;
-        InsertConfigInteger(pInst, "PCIFunctionNo",        0);
+        PciAddr = PciBusAddress(0, 4, 0);
+        hrc = BusMgr->assignPciDevice("VMMDev", pInst, PciAddr);                               H();
+
         Bstr hwVersion;
         hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());                 H();
         InsertConfigInteger(pCfg, "RamSize",              cbRam);
@@ -1882,10 +1876,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pDevices, "ichac97", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
-                    InsertConfigInteger(pInst, "PCIDeviceNo",      5);
-                    Assert(!afPciDeviceNo[5]);
-                    afPciDeviceNo[5] = true;
-                    InsertConfigInteger(pInst, "PCIFunctionNo",    0);
+                    PciAddr = PciBusAddress(0, 5, 0);
+                    hrc = BusMgr->assignPciDevice("ichac97", pInst, PciAddr);                               H();
                     InsertConfigNode(pInst,    "Config", &pCfg);
                     break;
                 }
@@ -1909,10 +1901,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pDevices, "hda", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
-                    InsertConfigInteger(pInst, "PCIDeviceNo",      5);
-                    Assert(!afPciDeviceNo[5]);
-                    afPciDeviceNo[5] = true;
-                    InsertConfigInteger(pInst, "PCIFunctionNo",    0);
+                    PciAddr = PciBusAddress(0, 5, 0);
+                    hrc = BusMgr->assignPciDevice("hda", pInst, PciAddr);                               H();
                     InsertConfigNode(pInst,    "Config", &pCfg);
                 }
             }
@@ -2011,11 +2001,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 InsertConfigNode(pDev,     "0", &pInst);
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-                InsertConfigInteger(pInst, "PCIDeviceNo",          6);
-                Assert(!afPciDeviceNo[6]);
-                afPciDeviceNo[6] = true;
-                InsertConfigInteger(pInst, "PCIFunctionNo",        0);
-
+                PciAddr = PciBusAddress(0, 6, 0);
+                hrc = BusMgr->assignPciDevice("usb-ohci", pInst, PciAddr);                               H();
                 InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                 InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
@@ -2039,10 +2026,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigNode(pInst,    "Config", &pCfg);
                     InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-                    InsertConfigInteger(pInst, "PCIDeviceNo",          11);
-                    Assert(!afPciDeviceNo[11]);
-                    afPciDeviceNo[11] = true;
-                    InsertConfigInteger(pInst, "PCIFunctionNo",        0);
+                    PciAddr = PciBusAddress(0, 11, 0);
+                    hrc = BusMgr->assignPciDevice("usb-ohci", pInst, PciAddr);                               H();
 
                     InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
@@ -2301,6 +2286,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
+            PciAddr = PciBusAddress(0, 7, 0);
+            hrc = BusMgr->assignPciDevice("acpi", pInst, PciAddr);                               H();
+
             InsertConfigInteger(pCfg,  "RamSize",          cbRam);
             InsertConfigInteger(pCfg,  "RamHoleSize",      cbRamHole);
             InsertConfigInteger(pCfg,  "NumCPUs",          cCpus);
@@ -2331,10 +2319,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pCfg,  "HostBusPciAddress", u32HbcPciAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
             InsertConfigInteger(pCfg,  "CpuHotPlug", fCpuHotPlug);
-            InsertConfigInteger(pInst, "PCIDeviceNo",          7);
-            Assert(!afPciDeviceNo[7]);
-            afPciDeviceNo[7] = true;
-            InsertConfigInteger(pInst, "PCIFunctionNo",        0);
 
             InsertConfigNode(pInst,    "LUN#0", &pLunL0);
             InsertConfigString(pLunL0, "Driver",               "ACPIHost");
