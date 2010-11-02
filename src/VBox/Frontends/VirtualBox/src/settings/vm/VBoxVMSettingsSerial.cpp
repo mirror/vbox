@@ -27,7 +27,7 @@
 /* VBoxVMSettingsSerial stuff */
 VBoxVMSettingsSerial::VBoxVMSettingsSerial()
     : QIWithRetranslateUI<QWidget> (0)
-    , mValidator (0)
+    , mValidator(0)
     , m_iSlot(-1)
 {
     /* Apply UI decorations */
@@ -180,7 +180,8 @@ void VBoxVMSettingsSerial::mCbModeActivated (const QString &aText)
 
 /* VBoxVMSettingsSerialPage stuff */
 VBoxVMSettingsSerialPage::VBoxVMSettingsSerialPage()
-    : mValidator (0)
+    : mValidator(0)
+    , mTabWidget(0)
 {
     /* TabWidget creation */
     mTabWidget = new QITabWidget (this);

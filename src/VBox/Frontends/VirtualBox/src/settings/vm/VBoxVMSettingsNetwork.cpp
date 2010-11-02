@@ -617,8 +617,9 @@ void VBoxVMSettingsNetwork::populateComboboxes()
 
 /* VBoxVMSettingsNetworkPage Stuff */
 VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage(bool aDisableStaticControls)
-    : mValidator (0)
-    , mDisableStaticControls (false)
+    : mValidator(0)
+    , mTwAdapters(0)
+    , mDisableStaticControls(false)
 {
     /* Setup Main Layout */
     QVBoxLayout *mainLayout = new QVBoxLayout (this);

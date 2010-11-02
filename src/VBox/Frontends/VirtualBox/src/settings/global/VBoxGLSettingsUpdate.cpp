@@ -21,8 +21,8 @@
 #include "VBoxGlobal.h"
 
 VBoxGLSettingsUpdate::VBoxGLSettingsUpdate()
-    : mSettingsChanged (false)
-    , mLastChosen (0)
+    : mSettingsChanged(false)
+    , mLastChosen(0)
 {
     /* Apply UI decorations */
     Ui::VBoxGLSettingsUpdate::setupUi (this);

@@ -166,7 +166,8 @@ private:
 
 VBoxVMSettingsSF::VBoxVMSettingsSF()
     : m_type(WrongType)
-    , mIsListViewChanged (false)
+    , mNewAction(0), mEdtAction(0), mDelAction(0)
+    , mIsListViewChanged(false)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsSF::setupUi (this);

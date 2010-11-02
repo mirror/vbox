@@ -25,7 +25,7 @@
 #include <QDir>
 
 VBoxVMSettingsGeneral::VBoxVMSettingsGeneral()
-    : mValidator (0)
+    : mValidator(0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsGeneral::setupUi (this);

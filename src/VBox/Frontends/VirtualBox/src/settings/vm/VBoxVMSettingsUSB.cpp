@@ -30,8 +30,11 @@
 
 VBoxVMSettingsUSB::VBoxVMSettingsUSB(UISettingsPageType type)
     : UISettingsPage(type)
-    , mValidator (0)
-    , mUSBFilterListModified (false)
+    , mValidator(0)
+    , mNewAction(0), mAddAction(0), mEdtAction(0), mDelAction(0)
+    , mMupAction(0), mMdnAction(0)
+    , mMenu(0), mUSBDevicesMenu(0)
+    , mUSBFilterListModified(false)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsUSB::setupUi (this);

@@ -182,7 +182,9 @@ QString NetworkItem::updateInfo()
 }
 
 VBoxGLSettingsNetwork::VBoxGLSettingsNetwork()
-    : m_fChanged(false)
+    : mValidator(0)
+    , mAddInterface(0), mRemInterface(0), mEditInterface(0)
+    , m_fChanged(false)
 {
     /* Apply UI decorations */
     Ui::VBoxGLSettingsNetwork::setupUi (this);

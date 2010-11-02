@@ -168,6 +168,7 @@ private:
 
 
 VBoxGLSettingsLanguage::VBoxGLSettingsLanguage()
+    : mLanguageChanged(false)
 {
     /* Apply UI decorations */
     Ui::VBoxGLSettingsLanguage::setupUi (this);
