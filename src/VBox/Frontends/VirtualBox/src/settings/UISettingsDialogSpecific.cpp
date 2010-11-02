@@ -22,6 +22,7 @@
 #include <QThread>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QTimer>
 
 /* Local includes */
 #include "UISettingsDialogSpecific.h"
@@ -78,13 +79,14 @@ public:
         , m_direction(direction)
         , m_data(data)
         , m_fConditionDone(false)
+        , m_fAllowToDestroySerializer(false)
         , m_iPageIdWeAreWaitingFor(-1)
         , m_iIdOfHighPriorityPage(-1)
     {
         /* Connecting thread signals: */
         connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
         connect(this, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltHandleProcessedPages()), Qt::QueuedConnection);
-        connect(this, SIGNAL(finished()), this, SLOT(deleteLater()), Qt::QueuedConnection);
+        connect(this, SIGNAL(finished()), this, SLOT(sltDestroySerializer()), Qt::QueuedConnection);
 
         /* Set instance: */
         m_pInstance = this;
@@ -195,6 +197,17 @@ protected slots:
             m_fConditionDone = true;
     }
 
+    /* Slot to destroy serializer: */
+    void sltDestroySerializer()
+    {
+        /* If not yet all events were processed,
+         * we should postpone destruction for now: */
+        if (!m_fAllowToDestroySerializer)
+            QTimer::singleShot(0, this, SLOT(sltDestroySerializer()));
+        else
+            deleteLater();
+    }
+
 protected:
 
     /* GUI thread locker: */
@@ -213,6 +226,7 @@ protected:
             /* Unlock mutex finally: */
             m_mutex.unlock();
         }
+        m_fAllowToDestroySerializer = true;
     }
 
     /* Settings processor: */
@@ -260,6 +274,7 @@ protected:
     QVariant m_data;
     UISettingsPageMap m_pages;
     bool m_fConditionDone;
+    bool m_fAllowToDestroySerializer;
     int m_iPageIdWeAreWaitingFor;
     int m_iIdOfHighPriorityPage;
     QMutex m_mutex;
