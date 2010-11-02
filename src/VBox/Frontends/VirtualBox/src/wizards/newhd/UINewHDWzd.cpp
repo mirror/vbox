@@ -73,24 +73,22 @@ void UINewHDWzd::setRecommendedSize(qulonglong uSize)
     setField("initialSize", uSize);
 }
 
-QString UINewHDWzd::composeFullFileName(const QString &strFileName)
+void UINewHDWzd::setDefaultPath(const QString &strDefaultPath)
 {
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strHomeFolder = vbox.GetHomeFolder();
-    QString strDefaultFolder = vbox.GetHomeFolder();
+    m_strDefaultPath = strDefaultPath;
+}
 
+QString UINewHDWzd::absoluteFilePath(const QString &strFileName)
+{
+    /* Wrap file-info around received file name: */
     QFileInfo fi(strFileName);
-    if (fi.fileName() == strFileName)
+    /* If there is no path info at all or its relative: */
+    if (fi.fileName() == strFileName || fi.isRelative())
     {
-        /* No path info at all, use strDefaultFolder */
-        fi = QFileInfo(strDefaultFolder, strFileName);
+        /* Resolve path on the basis of m_strDefaultPath: */
+        fi = QFileInfo(m_strDefaultPath, strFileName);
     }
-    else if (fi.isRelative())
-    {
-        /* Resolve relatively to strHomeFolder */
-        fi = QFileInfo(strHomeFolder, strFileName);
-    }
-
+    /* Return full absolute hard disk file path: */
     return QDir::toNativeSeparators(fi.absoluteFilePath());
 }
 
@@ -286,7 +284,7 @@ bool UINewHDWzdPage3::isComplete() const
 
 bool UINewHDWzdPage3::validatePage()
 {
-    QString location = UINewHDWzd::composeFullFileName(m_strLocation);
+    QString location = qobject_cast<UINewHDWzd*>(wizard())->absoluteFilePath(m_strLocation);
     if (QFileInfo(location).exists())
     {
         vboxProblem().sayCannotOverwriteHardDiskStorage(this, location);
@@ -309,24 +307,28 @@ void UINewHDWzdPage3::onLocationEditorTextChanged(const QString &strText)
 
 void UINewHDWzdPage3::onSelectLocationButtonClicked()
 {
-    /* Set the first parent directory that exists as the current */
-    QFileInfo fullFilePath(UINewHDWzd::composeFullFileName(m_strLocation));
-    QDir folder = fullFilePath.path();
-    QString fileName = fullFilePath.fileName();
+    /* Get parent wizard: */
+    UINewHDWzd *pWizard = qobject_cast<UINewHDWzd*>(wizard());
 
+    /* Get current folder and filename: */
+    QFileInfo fullFilePath(pWizard->absoluteFilePath(m_strLocation));
+    QDir folder = fullFilePath.path();
+    QString strFileName = fullFilePath.fileName();
+
+    /* Set the first parent foler that exists as the current: */
     while (!folder.exists() && !folder.isRoot())
         folder = QFileInfo(folder.absolutePath()).dir();
 
+    /* But if it doesn't exists at all: */
     if (!folder.exists() || folder.isRoot())
     {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        folder = vbox.GetHomeFolder();          // @todo machine folder?
-        if (!folder.exists())
-            folder = vbox.GetHomeFolder();
+        /* Use recommended one folder: */
+        QFileInfo defaultFilePath(pWizard->absoluteFilePath(strFileName));
+        folder = defaultFilePath.path();
     }
 
     QString selected = QFileDialog::getSaveFileName(this, tr("Select a file for the new hard disk image file"),
-                                                    folder.absoluteFilePath(fileName), tr("Hard disk images (*.vdi)"));
+                                                    folder.absoluteFilePath(strFileName), tr("Hard disk images (*.vdi)"));
 
     if (!selected.isEmpty())
     {
@@ -444,7 +446,7 @@ void UINewHDWzdPage4::retranslateUi()
     QString summary;
 
     QString type = field("type").toString();
-    QString location = UINewHDWzd::composeFullFileName(field("location").toString());
+    QString location = qobject_cast<UINewHDWzd*>(wizard())->absoluteFilePath(field("location").toString());
     QString sizeFormatted = VBoxGlobal::formatSize(field("currentSize").toULongLong());
     QString sizeUnformatted = tr("%1 B").arg(field("currentSize").toULongLong());
 
@@ -486,22 +488,22 @@ bool UINewHDWzdPage4::validatePage()
 bool UINewHDWzdPage4::createHardDisk()
 {
     KMediumVariant variant = KMediumVariant_Standard;
-    QString loc = field("location").toString();
+    QString location = qobject_cast<UINewHDWzd*>(wizard())->absoluteFilePath(field("location").toString());
     qulonglong size = field("currentSize").toULongLong();
     bool isFixed = field("fixed").toBool();
 
-    AssertReturn(!loc.isNull(), false);
+    AssertReturn(!location.isNull(), false);
     AssertReturn(size > 0, false);
 
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     CProgress progress;
 
-    CMedium hardDisk = vbox.CreateHardDisk(QString("VDI"), loc);
+    CMedium hardDisk = vbox.CreateHardDisk(QString("VDI"), location);
 
     if (!vbox.isOk())
     {
-        vboxProblem().cannotCreateHardDiskStorage(this, vbox, loc, hardDisk, progress);
+        vboxProblem().cannotCreateHardDiskStorage(this, vbox, location, hardDisk, progress);
         return false;
     }
 
@@ -512,7 +514,7 @@ bool UINewHDWzdPage4::createHardDisk()
 
     if (!hardDisk.isOk())
     {
-        vboxProblem().cannotCreateHardDiskStorage(this, vbox, loc, hardDisk, progress);
+        vboxProblem().cannotCreateHardDiskStorage(this, vbox, location, hardDisk, progress);
         return false;
     }
 
@@ -523,7 +525,7 @@ bool UINewHDWzdPage4::createHardDisk()
 
     if (!progress.isOk() || progress.GetResultCode() != 0)
     {
-        vboxProblem().cannotCreateHardDiskStorage(this, vbox, loc, hardDisk, progress);
+        vboxProblem().cannotCreateHardDiskStorage(this, vbox, location, hardDisk, progress);
         return false;
     }
 

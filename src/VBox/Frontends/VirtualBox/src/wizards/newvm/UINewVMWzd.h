@@ -65,6 +65,7 @@ protected:
 class UINewVMWzdPage2 : public QIWizardPage, public Ui::UINewVMWzdPage2
 {
     Q_OBJECT;
+    Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
 
 public:
 
@@ -80,6 +81,18 @@ protected:
     void retranslateUi();
 
     void initializePage();
+    void cleanupPage();
+
+    bool validatePage();
+
+private:
+
+    bool createMachineFolder();
+    bool cleanupMachineFolder();
+
+    QString machineFolder() const;
+    void setMachineFolder(const QString &strMachineFolder);
+    QString m_strMachineFolder;
 };
 
 class UINewVMWzdPage3 : public QIWizardPage, public Ui::UINewVMWzdPage3
