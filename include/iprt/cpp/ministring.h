@@ -648,6 +648,28 @@ public:
     bool contains(const iprt::MiniString &that, CaseSensitivity cs = CaseSensitive) const;
 
     /**
+     * Attempts to convert the member string into a 32-bit integer.
+     *
+     * @returns 32-bit unsigned number on success.
+     * @returns 0 on failure.
+     */
+    int toInt32() const
+    {
+        return RTStrToInt32(m_psz);
+    }
+
+    /**
+     * Attempts to convert the member string into an unsigned 32-bit integer.
+     *
+     * @returns 32-bit unsigned number on success.
+     * @returns 0 on failure.
+     */
+    int toUInt32() const
+    {
+        return RTStrToUInt32(m_psz);
+    }
+
+    /**
      * Attempts to convert the member string into an 64-bit integer.
      *
      * @returns 64-bit unsigned number on success.
