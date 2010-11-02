@@ -311,6 +311,12 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                     {
                                         break;
                                     }
+                                    if (aTask->progress)
+                                    {
+                                        if (SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
+                                            && fCanceled)
+                                            break;
+                                    }
                                 }
                             }
                         }
