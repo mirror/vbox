@@ -1027,9 +1027,58 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
 }
 
 
+/** @todo Maybe we want to have an own IPRT function for that! */
+int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpanded, size_t cbExpanded)
+{
+    int rc = VINF_SUCCESS;
+#ifdef RT_OS_WINDOWS
+    if (!ExpandEnvironmentStrings(pszPath, pszExpanded, cbExpanded))
+        rc = RTErrConvertFromWin32(GetLastError());
+#else
+    /* No expansion for non-Windows yet. */
+    rc = RTStrCopy(pszExpanded, cbExpanded, pszPath);
+#endif
+    return rc;
+}
+
+
+int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszResolved, size_t cbResolved)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Search the path of our executable. */
+    char szVBoxService[RTPATH_MAX];
+    if (RTProcGetExecutableName(szVBoxService, sizeof(szVBoxService)))
+    {
+        char *pszExecResolved = NULL;
+        if (   (g_pszProgName && RTStrICmp(pszFileName, g_pszProgName) == 0)
+            || !RTStrICmp(pszFileName, VBOXSERVICE_NAME))
+        {
+            /* We just want to execute VBoxService (no toolbox). */
+            pszExecResolved = RTStrDup(szVBoxService);
+        }
+#ifdef VBOXSERVICE_TOOLBOX
+        else if (RTStrStr(pszFileName, "vbox_") == pszFileName)
+        {
+            /* We want to use the internal toolbox (all internal
+             * tools are starting with "vbox_" (e.g. "vbox_cat"). */
+            pszExecResolved = RTStrDup(szVBoxService);
+        }
+#endif
+        else /* Nothing to resolve, copy original. */
+            pszExecResolved = RTStrDup(pszFileName);
+        AssertPtr(pszExecResolved);
+
+        rc = VBoxServiceControlExecMakeFullPath(pszExecResolved, pszResolved, cbResolved);
+        RTStrFree(pszExecResolved);
+    }
+    return rc;
+}
+
+
 #ifdef VBOXSERVICE_TOOLBOX
 /**
- * Constructs the argv command line of a VBoxService toolbox program
+ * Constructs the argv command line of a VBoxService program
  * by first appending the full path of VBoxService along  with the given
  * tool name (e.g. "vbox_cat") + the tool's actual command line parameters.
  *
@@ -1039,8 +1088,8 @@ void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pDat
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
-int VBoxServiceControlExecPrepareToolboxArgv(const char *pszFileName,
-                                             const char * const *papszArgs, char ***ppapszArgv)
+int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
+                                      const char * const *papszArgs, char ***ppapszArgv)
 {
     AssertPtrReturn(pszFileName, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
@@ -1051,17 +1100,22 @@ int VBoxServiceControlExecPrepareToolboxArgv(const char *pszFileName,
                                   RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
     if (RT_SUCCESS(rc))
     {
-        char *pszNewArgs;
         /*
          * Construct the new command line by appending the actual
          * tool name to new process' command line.
          */
-        if (RTStrAPrintf(&pszNewArgs, "%s %s", pszFileName, pszArgs))
+        char szArgsExp[RTPATH_MAX];
+        rc = VBoxServiceControlExecMakeFullPath(pszArgs, szArgsExp, sizeof(szArgsExp));
+        if (RT_SUCCESS(rc))
         {
-            int iNumArgsIgnored;
-            rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
-                                        pszNewArgs, NULL /* Use standard separators. */);
-            RTStrFree(pszNewArgs);
+            char *pszNewArgs;
+            if (RTStrAPrintf(&pszNewArgs, "%s %s", pszFileName, szArgsExp))
+            {
+                int iNumArgsIgnored;
+                rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
+                                            pszNewArgs, NULL /* Use standard separators. */);
+                RTStrFree(pszNewArgs);
+            }
         }
         RTStrFree(pszArgs);
     }
@@ -1117,58 +1171,32 @@ int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const 
         return rc;
     }
 #endif /* RT_OS_WINDOWS */
-#ifdef VBOXSERVICE_TOOLBOX
-    /* Search the path of our executable. */
-    char szVBoxService[RTPATH_MAX];
-    if (RTProcGetExecutableName(szVBoxService, sizeof(szVBoxService)))
+
+    /*
+     * Do the environment variables expansion on executable and arguments.
+     */
+    char szExecExp[RTPATH_MAX];
+    rc = VBoxServiceControlExecResolveExecutable(pszExec, szExecExp, sizeof(szExecExp));
+    if (RT_SUCCESS(rc))
     {
-        char *pszCmdTool = NULL;
-        char **papszArgsTool = NULL;
-        if (   (g_pszProgName && RTStrICmp(pszExec, g_pszProgName) == 0)
-            || !RTStrICmp(pszExec, VBOXSERVICE_NAME))
+        char **papszArgsExp;
+        rc = VBoxServiceControlExecPrepareArgv(szExecExp, papszArgs, &papszArgsExp);
+        if (RT_SUCCESS(rc))
         {
-            /* We just want to execute VBoxService (no toolbox). */
-            pszCmdTool = RTStrDup(szVBoxService);
-        }
-        else if (RTStrStr(pszExec, "vbox_") == pszExec)
-        {
-            /* We want to use the internal toolbox (all internal
-             * tools are starting with "vbox_" (e.g. "vbox_cat"). */
-            pszCmdTool = RTStrDup(szVBoxService);
-            rc = VBoxServiceControlExecPrepareToolboxArgv(pszCmdTool, papszArgs, &papszArgsTool);
-        }
+            /* If no user name specified run with current credentials.
+             * This is prohibited via official Main API! */
+            if (!strlen(pszAsUser))
+                fFlags &= ~RTPROC_FLAGS_SERVICE;
 
-        if (RT_SUCCESS(rc) && pszCmdTool)
-        {
-            /* Disable service flag bit, because we're executing the internal
-             * tool with the profile which was used to start VBoxService. */
-            fFlags &= ~RTPROC_FLAGS_SERVICE;
-
-            rc = RTProcCreateEx(pszCmdTool, papszArgsTool ? papszArgsTool : papszArgs,
-                                hEnv, fFlags,
+            /* Do normal execution. */
+            rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, fFlags,
                                 phStdIn, phStdOut, phStdErr,
                                 strlen(pszAsUser) ? pszAsUser : NULL,
                                 strlen(pszPassword) ? pszPassword : NULL,
                                 phProcess);
-            if (papszArgsTool)
-                RTGetOptArgvFree(papszArgsTool);
-            RTStrFree(pszCmdTool);
-            return rc;
         }
+        RTGetOptArgvFree(papszArgsExp);
     }
-#endif
-
-    /* If no user name specified run with current credentials.
-     * This is prohibited via official Main API! */
-    if (!strlen(pszAsUser))
-        fFlags &= ~RTPROC_FLAGS_SERVICE;
-
-    /* Do normal execution. */
-    rc = RTProcCreateEx(pszExec, papszArgs, hEnv, fFlags,
-                        phStdIn, phStdOut, phStdErr,
-                        strlen(pszAsUser) ? pszAsUser : NULL,
-                        strlen(pszPassword) ? pszPassword : NULL,
-                        phProcess);
     return rc;
 }
 

@@ -360,47 +360,31 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
      * First try updating the Guest Additions directly without mounting the .ISO.
      */
     bool fDoMount = false;
-    /*
-     * If the already installed Guest Additions indicate a
-     * high enough run level (at the moment this is level "Desktop",
-     * which means that a user has to be logged in to acknowledge
-     * WHQL popups), try an automatic Guest Additions update.
-     */
+
     CGuest guest = session().GetConsole().GetGuest();
-    QString osType = guest.GetOSTypeId();
-    ULONG ulGuestAdditionsRunLevel = guest.GetAdditionsRunLevel();
-    if (   ulGuestAdditionsRunLevel >= AdditionsRunLevelType_System // Desktop
-#if 1  /* Only Windows is supported at the moment! */
-        && (   osType.contains("Microsoft", Qt::CaseInsensitive)
-            || osType.contains("Windows", Qt::CaseInsensitive)
-           )
-#endif
-       )
-    {
 #ifdef DEBUG_andy
-        CProgress progressInstall = guest.UpdateGuestAdditions("c:\\Downloads\\VBoxGuestAdditions-r67158.iso");
+    CProgress progressInstall = guest.UpdateGuestAdditions("c:\\Downloads\\VBoxGuestAdditions-r67158.iso");
 #else
-        CProgress progressInstall = guest.UpdateGuestAdditions(strSource);
+    CProgress progressInstall = guest.UpdateGuestAdditions(strSource);
 #endif
-        bool fResult = guest.isOk();
-        if (fResult)
-        {
-            vboxProblem().showModalProgressDialog(progressInstall, tr("Install"),
-                                                  mainMachineWindow(), 0 /* No delay */);
-            if (progressInstall.GetCanceled())
-                return;
-            if (!progressInstall.isOk() || progressInstall.GetResultCode() != 0)
-            {
-                vboxProblem().cannotUpdateGuestAdditions(progressInstall, mainMachineWindow());
-                fDoMount = true; /* Since automatic updating failed, fall back to .ISO mounting. */
-            }
-        }
-    }
-    else
+    bool fResult = guest.isOk();
+    if (fResult)
     {
-        /* Running guest OS not suitable (yet) for automatic updating,
-         * fall back to .ISO mounting. */
-        fDoMount = true;
+        vboxProblem().showModalProgressDialog(progressInstall, tr("Install"),
+                                              mainMachineWindow(), 0 /* No delay */);
+        if (progressInstall.GetCanceled())
+            return;
+
+        HRESULT rc = progressInstall.GetResultCode();
+        if (!progressInstall.isOk() || rc != S_OK)
+        {
+            /* If we got back a VBOX_E_NOT_SUPPORTED we don't complain (guest OS
+             * simply isn't supported yet), so silently fall back to "old" .ISO
+             * mounting method. */
+            if (rc != VBOX_E_NOT_SUPPORTED)
+                vboxProblem().cannotUpdateGuestAdditions(progressInstall, mainMachineWindow());
+            fDoMount = true; /* Since automatic updating failed, fall back to .ISO mounting. */
+        }
     }
 
     if (fDoMount) /* Fallback to only mounting the .ISO file. */
