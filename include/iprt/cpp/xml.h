@@ -635,7 +635,7 @@ public:
     XmlMemParser();
     ~XmlMemParser();
 
-    void read(const void* pvBuf, int cbSize, const iprt::MiniString &strFilename, Document &doc);
+    void read(const void* pvBuf, size_t cbSize, const iprt::MiniString &strFilename, Document &doc);
 };
 
 /*

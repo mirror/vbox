@@ -1434,7 +1434,7 @@ XmlMemParser::~XmlMemParser()
  * @param strFilename in: name fo file to parse.
  * @param doc out: document to be reset and filled with data according to file contents.
  */
-void XmlMemParser::read(const void* pvBuf, int cbSize,
+void XmlMemParser::read(const void* pvBuf, size_t cbSize,
                         const iprt::MiniString &strFilename,
                         Document &doc)
 {
@@ -1446,7 +1446,7 @@ void XmlMemParser::read(const void* pvBuf, int cbSize,
     doc.m->reset();
     if (!(doc.m->plibDocument = xmlCtxtReadMemory(m_ctxt,
                                                   (const char*)pvBuf,
-                                                  cbSize,
+                                                  (int)cbSize,
                                                   pcszFilename,
                                                   NULL,       // encoding = auto
                                                   XML_PARSE_NOBLANKS)))

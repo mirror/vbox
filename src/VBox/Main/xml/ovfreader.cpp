@@ -36,7 +36,7 @@ using namespace ovf;
  * @param cbSize the size of the memory buffer
  * @param path   path to a filename for error messages.
  */
-OVFReader::OVFReader(const void *pvBuf, int cbSize, const MiniString &path)
+OVFReader::OVFReader(const void *pvBuf, size_t cbSize, const MiniString &path)
     : m_strPath(path)
 {
     xml::XmlMemParser parser;

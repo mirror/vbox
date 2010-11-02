@@ -402,7 +402,7 @@ struct VirtualSystem
 class OVFReader
 {
 public:
-    OVFReader(const void *pvBuf, int cbSize, const iprt::MiniString &path);
+    OVFReader(const void *pvBuf, size_t cbSize, const iprt::MiniString &path);
     OVFReader(const iprt::MiniString &path);
 
     // Data fields
