@@ -255,7 +255,7 @@ public:
 
     int confirmDetachAddControllerSlots (QWidget *aParent) const;
     int confirmChangeAddControllerSlots (QWidget *aParent) const;
-    int confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType);
+    int confirmRunNewHDWzdOrOFD (KDeviceType aDeviceType);
 
     int confirmRemovingOfLastDVDDevice() const;
 

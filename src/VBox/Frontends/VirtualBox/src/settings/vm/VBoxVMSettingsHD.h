@@ -615,7 +615,8 @@ private slots:
     void getInformation();
     void setInformation();
 
-    void onVmmInvoked();
+    void sltOpenMedium();
+    void sltNewMedium();
 
     void updateActionsState();
 
@@ -636,8 +637,8 @@ private:
     void addControllerWrapper (const QString &aName, KStorageBus aBus, KStorageControllerType aType);
     void addAttachmentWrapper (KDeviceType aDevice);
 
+    QString getWithOpenFileDialog (VBoxDefs::MediumType aMediumType);
     QString getWithNewHDWizard();
-    QString getWithMediaManager (VBoxDefs::MediumType aMediumType);
 
     void updateAdditionalObjects (KDeviceType aType);
 
