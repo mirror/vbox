@@ -247,7 +247,7 @@
         <property name="bottomMargin" >
          <number>0</number>
         </property>
-        <item row="0" column="0" colspan="4" >
+        <item row="0" column="0" colspan="3" >
          <widget class="QILabelSeparator" native="1" name="mLsAttributes" >
           <property name="text" >
            <string>Attributes</string>
@@ -267,7 +267,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="2" colspan="2" >
+        <item row="1" column="2" >
          <widget class="QComboBox" name="mCbSlot" >
           <property name="whatsThis" >
            <string>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</string>
@@ -291,35 +291,66 @@
          </widget>
         </item>
         <item row="2" column="2" >
-         <widget class="VBoxMediaComboBox" native="1" name="mCbVdi" >
-          <property name="whatsThis" >
-           <string>Selects the virtual disk image or the host drive used by this attachment.</string>
-          </property>
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
+         <widget class="QWidget" name="mWtContainer" >
+          <layout class="QHBoxLayout" name="mLtContainer" >
+           <property name="leftMargin" >
+            <number>0</number>
+           </property>
+           <property name="topMargin" >
+            <number>0</number>
+            </property>
+           <property name="rightMargin" >
+            <number>0</number>
+           </property>
+           <property name="bottomMargin" >
+            <number>0</number>
+           </property>
+           <property name="spacing" >
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="VBoxMediaComboBox" native="1" name="mCbVdi" >
+             <property name="whatsThis" >
+              <string>Selects the virtual disk image or the host drive used by this attachment.</string>
+             </property>
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QIToolButton" name="mTbOpen" >
+             <property name="text" >
+              <string/>
+             </property>
+             <property name="autoRaise" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QIToolButton" name="mTbNew" >
+             <property name="whatsThis" >
+              <string>Create hard disk image file using New Hard Disk wizard.</string>
+             </property>
+             <property name="toolTip" >
+              <string>Create hard disk image file</string>
+             </property>
+             <property name="text" >
+              <string/>
+             </property>
+             <property name="autoRaise" >
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </item>
-        <item row="2" column="3" >
-         <widget class="QIToolButton" name="mTbVmm" >
-          <property name="whatsThis" >
-           <string>Opens the Virtual Media Manager to select a virtual image for this attachment.</string>
-          </property>
-          <property name="toolTip" >
-           <string>Open Virtual Media Manager</string>
-          </property>
-          <property name="text" >
-           <string/>
-          </property>
-          <property name="autoRaise" >
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2" colspan="2" >
+        <item row="3" column="2" >
          <widget class="QCheckBox" name="mCbShowDiffs">
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -335,7 +366,7 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="2" colspan="2" >
+        <item row="4" column="2" >
          <widget class="QCheckBox" name="mCbPassthrough" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -351,7 +382,7 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="0" colspan="4" >
+        <item row="5" column="0" colspan="3" >
          <widget class="QILabelSeparator" native="1" name="mLsInformation" >
           <property name="text" >
            <string>Information</string>
@@ -368,7 +399,7 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="2" colspan="2" >
+        <item row="6" column="2" >
          <widget class="QILabel" name="mLbHDVirtualSizeValue" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
@@ -388,7 +419,7 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="2" colspan="2" >
+        <item row="7" column="2" >
          <widget class="QILabel" name="mLbHDActualSizeValue" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
@@ -408,7 +439,7 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="2" colspan="2" >
+        <item row="8" column="2" >
          <widget class="QILabel" name="mLbSizeValue" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
@@ -428,7 +459,7 @@
           </property>
          </widget>
         </item>
-        <item row="9" column="2" colspan="2" >
+        <item row="9" column="2" >
          <widget class="QILabel" name="mLbLocationValue" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
@@ -448,7 +479,7 @@
           </property>
          </widget>
         </item>
-        <item row="10" column="2" colspan="2" >
+        <item row="10" column="2" >
          <widget class="QILabel" name="mLbHDFormatValue" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
@@ -468,7 +499,7 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="2" colspan="2" >
+        <item row="11" column="2" >
          <widget class="QILabel" name="mLbUsageValue" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
@@ -478,7 +509,7 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="0" colspan="4" >
+        <item row="12" column="0" colspan="3" >
          <spacer name="mSp6" >
           <property name="orientation" >
            <enum>Qt::Vertical</enum>

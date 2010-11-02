@@ -565,27 +565,32 @@ void UINewVMWzdPage4::getWithFileOpenDialog()
         /* Get location: */
         QString strLocation = files[0];
 
-        /* Prepare GUI medium wrapper: */
-        VBoxMedium vboxMedium;
-
         /* Open corresponding medium: */
         CMedium comMedium = vbox.OpenMedium(strLocation, KDeviceType_HardDisk, KAccessMode_ReadWrite);
-        if (vbox.isOk())
-            vboxMedium = VBoxMedium(CMedium(comMedium), VBoxDefs::MediumType_HardDisk, KMediumState_Created);
 
-        /* Add medium to GUI list: */
         if (vbox.isOk())
-            vboxGlobal().addMedium(vboxMedium);
+        {
+            /* Prepare vbox medium wrapper: */
+            VBoxMedium vboxMedium;
+
+            /* First of all we should test if that medium already opened: */
+            if (!vboxGlobal().findMedium(comMedium, vboxMedium))
+            {
+                /* And create new otherwise: */
+                vboxMedium = VBoxMedium(CMedium(comMedium), VBoxDefs::MediumType_HardDisk, KMediumState_Created);
+                vboxGlobal().addMedium(vboxMedium);
+            }
+
+            /* Ask medium combobox to select newly added medium: */
+            m_pDiskSelector->setCurrentItem(vboxMedium.id());
+
+            /* Update hard disk source: */
+            hardDiskSourceChanged();
+
+            m_pDiskSelector->setFocus();
+        }
         else
             vboxProblem().cannotOpenMedium(this, vbox, VBoxDefs::MediumType_HardDisk, strLocation);
-
-        /* Ask medium combobox to select newly added medium: */
-        m_pDiskSelector->setCurrentItem(vboxMedium.id());
-
-        /* Update hard disk source: */
-        hardDiskSourceChanged();
-
-        m_pDiskSelector->setFocus();
     }
 }
 

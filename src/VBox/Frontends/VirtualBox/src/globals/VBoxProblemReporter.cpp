@@ -1296,18 +1296,18 @@ int VBoxProblemReporter::confirmChangeAddControllerSlots (QWidget *aParent) cons
         tr ("Change", "hard disk"));
 }
 
-int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
+int VBoxProblemReporter::confirmRunNewHDWzdOrOFD (KDeviceType aDeviceType)
 {
     switch (aDeviceType)
     {
         case KDeviceType_HardDisk:
             return message (QApplication::activeWindow(), Info,
-                            tr ("<p>There are no unused media available for the newly "
+                            tr ("<p>There are no unused medium available for the newly "
                                 "created attachment.</p>"
                                 "<p>Press the <b>Create</b> button to start the <i>New "
                                 "Virtual Disk</i> wizard and create a new medium, "
-                                "or press the <b>Select</b> if you wish to open the <i>Virtual "
-                                "Media Manager</i>.</p>"),
+                                "or press the <b>Select</b> if you wish to open existing "
+                                "medium using file-open dialog.</p>"),
                             0, /* aAutoConfirmId */
                             QIMessageBox::Yes,
                             QIMessageBox::No | QIMessageBox::Default,
@@ -1316,10 +1316,10 @@ int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
                             tr ("&Select", "medium"));
         default:
             return message (QApplication::activeWindow(), Info,
-                            tr ("<p>There are no unused media available for the newly "
+                            tr ("<p>There are no unused medium available for the newly "
                                 "created attachment.</p>"
-                                "<p>Press the <b>Select</b> if you wish to open the <i>Virtual "
-                                "Media Manager</i>.</p>"),
+                                "<p>Press the <b>Select</b> if you wish to open existing "
+                                "medium using file-open dialog.</p>"),
                             0, /* aAutoConfirmId */
                             QIMessageBox::No | QIMessageBox::Default,
                             QIMessageBox::Cancel | QIMessageBox::Escape,
