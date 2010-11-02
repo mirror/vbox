@@ -2899,10 +2899,7 @@ void Display::setupCrHgsmiData(void)
     Assert(pVMMDev);
     int rc = VERR_GENERAL_FAILURE;
     if (pVMMDev)
-    {
         rc = pVMMDev->hgcmHostSvcHandleCreate("VBoxSharedCrOpenGL", &mhCrOglSvc);
-        AssertRC(rc);
-    }
 
     if (RT_FAILURE(rc))
     {
