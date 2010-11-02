@@ -124,7 +124,7 @@ int vboxVbvaCreate(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuff
 int vboxVbvaDestroy(PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO *pVbva)
 {
     int rc = VINF_SUCCESS;
-    VBoxUnmapAdapterMemory(pDevExt, (void**)&pVbva->pVBVA);
+    VBoxUnmapAdapterMemory(commonFromDeviceExt(pDevExt), (void**)&pVbva->pVBVA);
     memset(pVbva, 0, sizeof(VBOXVBVAINFO));
     return rc;
 }
