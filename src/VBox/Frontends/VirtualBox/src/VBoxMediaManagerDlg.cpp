@@ -1559,13 +1559,15 @@ MediaItem* VBoxMediaManagerDlg::createHardDiskItem (QTreeWidget *aTree, const VB
     CMedium parent = aMedium.medium().GetParent();
     if (parent.isNull())
     {
-        item = new MediaItem (aTree, aMedium, this);
+        item = new MediaItem(aTree, aMedium, this);
     }
     else
     {
         MediaItem *root = searchItem (aTree, parent.GetId());
-        AssertReturn (root, 0);
-        item = new MediaItem (root, aMedium, this);
+        if (root)
+            item = new MediaItem(root, aMedium, this);
+        else
+            item = new MediaItem(aTree, aMedium, this);
     }
 
     return item;
