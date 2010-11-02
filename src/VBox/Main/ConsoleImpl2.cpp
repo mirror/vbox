@@ -534,7 +534,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     uint64_t const cbRam = cRamMBs * (uint64_t)_1M;
     uint32_t cbRamHole = MM_RAM_HOLE_SIZE_DEFAULT;
     uint64_t u64McfgBase   = 0;
-    uint64_t u64McfgLength = 0;
+    uint32_t u32McfgLength = 0;
 
     ChipsetType_T chipsetType;
     hrc = pMachine->COMGETTER(ChipsetType)(&chipsetType);                               H();
@@ -542,8 +542,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     {
         /* We'd better have 0x10000000 region, to cover 256 buses
            but this put too much load on hypervisor heap */
-        u64McfgLength = 0x4000000; //0x10000000;
-        cbRamHole += u64McfgLength;
+        u32McfgLength = 0x4000000; //0x10000000;
+        cbRamHole += u32McfgLength;
         u64McfgBase = _4G - cbRamHole;
     }
 
@@ -874,7 +874,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         {
             /* Provide MCFG info */
             InsertConfigInteger(pCfg,  "McfgBase",   u64McfgBase);
-            InsertConfigInteger(pCfg,  "McfgLength", u64McfgLength);
+            InsertConfigInteger(pCfg,  "McfgLength", u32McfgLength);
 
 
             /* And register 2 bridges */
@@ -2321,7 +2321,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             if (chipsetType == ChipsetType_ICH9)
             {
                 InsertConfigInteger(pCfg,  "McfgBase",   u64McfgBase);
-                InsertConfigInteger(pCfg,  "McfgLength", u64McfgLength);
+                InsertConfigInteger(pCfg,  "McfgLength", u32McfgLength);
             }
             InsertConfigInteger(pCfg,  "HostBusPciAddress", u32HbcPciAddress);
             InsertConfigInteger(pCfg,  "ShowCpu", fShowCpu);
