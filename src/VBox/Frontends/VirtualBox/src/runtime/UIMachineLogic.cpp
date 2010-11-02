@@ -33,7 +33,7 @@
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
 #include "UISession.h"
-#include "VBoxMediaManagerDlg.h"
+#include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMInformationDlg.h"
@@ -1292,10 +1292,9 @@ void UIMachineLogic::sltMountStorageMedium()
                 usedImages << medium.GetId();
         }
         /* Open VMM Dialog: */
-        VBoxMediaManagerDlg dlg(defaultMachineWindow()->machineWindow());
-        dlg.setup(target.type, true /* select? */, true /* refresh? */, machine, currentId, true, usedImages);
-        if (dlg.exec() == QDialog::Accepted)
-            newId = dlg.selectedId();
+        QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, defaultMachineWindow()->machineWindow());
+        if (!strMediumId.isNull())
+            newId = strMediumId;
         else return;
     }
     /* Use medium which was sent: */

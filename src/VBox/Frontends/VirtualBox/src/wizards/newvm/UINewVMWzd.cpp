@@ -533,64 +533,16 @@ void UINewVMWzdPage4::hardDiskSourceChanged()
 
 void UINewVMWzdPage4::getWithFileOpenDialog()
 {
-    /* Initialize variables: */
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strHomeFolder = vbox.GetHomeFolder();
-    QString title = m_pVMMButton->toolTip();
-    QList < QPair <QString, QString> > filters = vboxGlobal().HDDBackends();
-    QString allType = tr("hard disk");
-    QString strFilter;
-    QStringList backends;
-    QStringList prefixes;
-
-    /* Prepare filters and backends: */
-    for (int i = 0; i < filters.count(); ++i)
+    /* Get opened vboxMedium id: */
+    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_HardDisk, this);
+    if (!strMediumId.isNull())
     {
-        /* Get iterated filter: */
-        QPair <QString, QString> item = filters.at(i);
-        /* Create one backend filter string: */
-        backends << QString("%1 (%2)").arg(item.first).arg(item.second);
-        /* Save the suffix's for the "All" entry: */
-        prefixes << item.second;
-    }
-    if (!prefixes.isEmpty())
-        backends.insert(0, tr("All %1 images (%2)").arg(allType).arg(prefixes.join(" ").trimmed()));
-    backends << tr("All files (*)");
-    strFilter = backends.join(";;").trimmed();
-
-    /* Create open file dialog: */
-    QStringList files = QIFileDialog::getOpenFileNames(strHomeFolder, strFilter, this, title, 0, true, true);
-    if (!files.empty() && !files[0].isEmpty())
-    {
-        /* Get location: */
-        QString strLocation = files[0];
-
-        /* Open corresponding medium: */
-        CMedium comMedium = vbox.OpenMedium(strLocation, KDeviceType_HardDisk, KAccessMode_ReadWrite);
-
-        if (vbox.isOk())
-        {
-            /* Prepare vbox medium wrapper: */
-            VBoxMedium vboxMedium;
-
-            /* First of all we should test if that medium already opened: */
-            if (!vboxGlobal().findMedium(comMedium, vboxMedium))
-            {
-                /* And create new otherwise: */
-                vboxMedium = VBoxMedium(CMedium(comMedium), VBoxDefs::MediumType_HardDisk, KMediumState_Created);
-                vboxGlobal().addMedium(vboxMedium);
-            }
-
-            /* Ask medium combobox to select newly added medium: */
-            m_pDiskSelector->setCurrentItem(vboxMedium.id());
-
-            /* Update hard disk source: */
-            hardDiskSourceChanged();
-
-            m_pDiskSelector->setFocus();
-        }
-        else
-            vboxProblem().cannotOpenMedium(this, vbox, VBoxDefs::MediumType_HardDisk, strLocation);
+        /* Update medium-combo if necessary: */
+        m_pDiskSelector->setCurrentItem(strMediumId);
+        /* Update hard disk source: */
+        hardDiskSourceChanged();
+        /* Focus on hard disk combo: */
+        m_pDiskSelector->setFocus();
     }
 }
 
