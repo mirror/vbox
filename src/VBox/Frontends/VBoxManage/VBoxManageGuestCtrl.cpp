@@ -301,246 +301,255 @@ static int handleCtrlExecProgram(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
 
-    /* lookup VM. */
+    /* Lookup VM. */
     ComPtr<IMachine> machine;
+    /* Assume it's an UUID. */
     HRESULT rc;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
-    if (machine)
+    if (FAILED(rc))
+        return 1;
+
+    /* Machine is running? */
+    MachineState_T machineState;
+    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
+    if (machineState != MachineState_Running)
     {
-        do
+        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
+        return 1;
+    }
+
+    /* Open a session for the VM. */
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+
+    do
+    {
+        /* Get the associated console. */
+        ComPtr<IConsole> console;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+        /* ... and session machine */
+        ComPtr<IMachine> sessionMachine;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+
+        ComPtr<IGuest> guest;
+        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
+
+        ComPtr<IProgress> progress;
+        ULONG uPID = 0;
+
+        if (fVerbose)
         {
-            /* open an existing session for VM */
-            CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Shared));
-            // @todo r=dj assert that it's an existing session
+            if (u32TimeoutMS == 0)
+                RTPrintf("Waiting for guest to start process ...\n");
+            else
+                RTPrintf("Waiting for guest to start process (within %ums)\n", u32TimeoutMS);
+        }
 
-            /* get the mutable session machine */
-            a->session->COMGETTER(Machine)(machine.asOutParam());
+        /* Get current time stamp to later calculate rest of timeout left. */
+        uint64_t u64StartMS = RTTimeMilliTS();
 
-            /* get the associated console */
-            ComPtr<IConsole> console;
-            CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-
-            ComPtr<IGuest> guest;
-            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-
-            ComPtr<IProgress> progress;
-            ULONG uPID = 0;
-
-            if (fVerbose)
+        /* Execute the process. */
+        rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(), uFlags,
+                                   ComSafeArrayAsInParam(args),
+                                   ComSafeArrayAsInParam(env),
+                                   Bstr(Utf8UserName).raw(),
+                                   Bstr(Utf8Password).raw(), u32TimeoutMS,
+                                   &uPID, progress.asOutParam());
+        if (FAILED(rc))
+        {
+            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+             * because it contains more accurate info about what went wrong. */
+            ErrorInfo info(guest, COM_IIDOF(IGuest));
+            if (info.isFullAvailable())
             {
-                if (u32TimeoutMS == 0)
-                    RTPrintf("Waiting for guest to start process ...\n");
+                if (rc == VBOX_E_IPRT_ERROR)
+                    RTMsgError("%ls.", info.getText().raw());
                 else
-                    RTPrintf("Waiting for guest to start process (within %ums)\n", u32TimeoutMS);
+                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+            }
+            break;
+        }
+        if (fVerbose)
+            RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
+        if (fWaitForExit)
+        {
+            if (fTimeout)
+            {
+                /* Calculate timeout value left after process has been started.  */
+                uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
+                /* Is timeout still bigger than current difference? */
+                if (u32TimeoutMS > u64Elapsed)
+                {
+                    u32TimeoutMS -= (uint32_t)u64Elapsed;
+                    if (fVerbose)
+                        RTPrintf("Waiting for process to exit (%ums left) ...\n", u32TimeoutMS);
+                }
+                else
+                {
+                    if (fVerbose)
+                        RTPrintf("No time left to wait for process!\n");
+                }
+            }
+            else if (fVerbose)
+                RTPrintf("Waiting for process to exit ...\n");
+
+            /* Setup signal handling if cancelable. */
+            ASSERT(progress);
+            bool fCanceledAlready = false;
+            BOOL fCancelable;
+            HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+            if (FAILED(hrc))
+                fCancelable = FALSE;
+            if (fCancelable)
+            {
+                signal(SIGINT,   ctrlExecProcessSignalHandler);
+        #ifdef SIGBREAK
+                signal(SIGBREAK, ctrlExecProcessSignalHandler);
+        #endif
             }
 
-            /* Get current time stamp to later calculate rest of timeout left. */
-            uint64_t u64StartMS = RTTimeMilliTS();
-
-            /* Execute the process. */
-            rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(), uFlags,
-                                       ComSafeArrayAsInParam(args),
-                                       ComSafeArrayAsInParam(env),
-                                       Bstr(Utf8UserName).raw(),
-                                       Bstr(Utf8Password).raw(), u32TimeoutMS,
-                                       &uPID, progress.asOutParam());
-            if (FAILED(rc))
+            /* Wait for process to exit ... */
+            BOOL fCompleted = FALSE;
+            BOOL fCanceled = FALSE;
+            while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
             {
-                /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                 * because it contains more accurate info about what went wrong. */
-                ErrorInfo info(guest, COM_IIDOF(IGuest));
-                if (info.isFullAvailable())
-                {
-                    if (rc == VBOX_E_IPRT_ERROR)
-                        RTMsgError("%ls.", info.getText().raw());
-                    else
-                        RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
-                }
-                break;
-            }
-            if (fVerbose)
-                RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
-            if (fWaitForExit)
-            {
-                if (fTimeout)
-                {
-                    /* Calculate timeout value left after process has been started.  */
-                    uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
-                    /* Is timeout still bigger than current difference? */
-                    if (u32TimeoutMS > u64Elapsed)
-                    {
-                        u32TimeoutMS -= (uint32_t)u64Elapsed;
-                        if (fVerbose)
-                            RTPrintf("Waiting for process to exit (%ums left) ...\n", u32TimeoutMS);
-                    }
-                    else
-                    {
-                        if (fVerbose)
-                            RTPrintf("No time left to wait for process!\n");
-                    }
-                }
-                else if (fVerbose)
-                    RTPrintf("Waiting for process to exit ...\n");
+                SafeArray<BYTE> aOutputData;
+                ULONG cbOutputData = 0;
 
-                /* Setup signal handling if cancelable. */
-                ASSERT(progress);
-                bool fCanceledAlready = false;
-                BOOL fCancelable;
-                HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
-                if (FAILED(hrc))
-                    fCancelable = FALSE;
-                if (fCancelable)
+                /*
+                 * Some data left to output?
+                 */
+                if (   fWaitForStdOut
+                    || fWaitForStdErr)
                 {
-                    signal(SIGINT,   ctrlExecProcessSignalHandler);
-            #ifdef SIGBREAK
-                    signal(SIGBREAK, ctrlExecProcessSignalHandler);
-            #endif
-                }
-
-                /* Wait for process to exit ... */
-                BOOL fCompleted = FALSE;
-                BOOL fCanceled = FALSE;
-                while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
-                {
-                    SafeArray<BYTE> aOutputData;
-                    ULONG cbOutputData = 0;
-
-                    /*
-                     * Some data left to output?
-                     */
-                    if (   fWaitForStdOut
-                        || fWaitForStdErr)
+                    rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
+                                                 u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
+                    if (FAILED(rc))
                     {
-                        rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
-                                                     u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
-                        if (FAILED(rc))
+                        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                         * because it contains more accurate info about what went wrong. */
+                        ErrorInfo info(guest, COM_IIDOF(IGuest));
+                        if (info.isFullAvailable())
                         {
-                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                             * because it contains more accurate info about what went wrong. */
-                            ErrorInfo info(guest, COM_IIDOF(IGuest));
-                            if (info.isFullAvailable())
-                            {
-                                if (rc == VBOX_E_IPRT_ERROR)
-                                    RTMsgError("%ls.", info.getText().raw());
-                                else
-                                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
-                            }
-                            cbOutputData = 0;
-                            fCompleted = true; /* rc contains a failure, so we'll go into aborted state down below. */
+                            if (rc == VBOX_E_IPRT_ERROR)
+                                RTMsgError("%ls.", info.getText().raw());
+                            else
+                                RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
                         }
-                        else
+                        cbOutputData = 0;
+                        fCompleted = true; /* rc contains a failure, so we'll go into aborted state down below. */
+                    }
+                    else
+                    {
+                        cbOutputData = aOutputData.size();
+                        if (cbOutputData > 0)
                         {
-                            cbOutputData = aOutputData.size();
-                            if (cbOutputData > 0)
+                            /* aOutputData has a platform dependent line ending, standardize on
+                             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+                             * Windows. Otherwise we end up with CR/CR/LF on Windows. */
+                            ULONG cbOutputDataPrint = cbOutputData;
+                            for (BYTE *s = aOutputData.raw(), *d = s;
+                                 s - aOutputData.raw() < (ssize_t)cbOutputData;
+                                 s++, d++)
                             {
-                                /* aOutputData has a platform dependent line ending, standardize on
-                                 * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
-                                 * Windows. Otherwise we end up with CR/CR/LF on Windows. */
-                                ULONG cbOutputDataPrint = cbOutputData;
-                                for (BYTE *s = aOutputData.raw(), *d = s;
-                                     s - aOutputData.raw() < (ssize_t)cbOutputData;
-                                     s++, d++)
+                                if (*s == '\r')
                                 {
-                                    if (*s == '\r')
-                                    {
-                                        /* skip over CR, adjust destination */
-                                        d--;
-                                        cbOutputDataPrint--;
-                                    }
-                                    else if (s != d)
-                                        *d = *s;
+                                    /* skip over CR, adjust destination */
+                                    d--;
+                                    cbOutputDataPrint--;
                                 }
-                                RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                                else if (s != d)
+                                    *d = *s;
                             }
+                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
                         }
                     }
-                    if (cbOutputData <= 0) /* No more output data left? */
-                    {
-                        if (fCompleted)
-                            break;
+                }
+                if (cbOutputData <= 0) /* No more output data left? */
+                {
+                    if (fCompleted)
+                        break;
 
-                        if (   fTimeout
-                            && RTTimeMilliTS() - u64StartMS > u32TimeoutMS + 5000)
-                        {
-                            progress->Cancel();
-                            break;
-                        }
-                    }
-
-                    /* Process async cancelation */
-                    if (g_fExecCanceled && !fCanceledAlready)
+                    if (   fTimeout
+                        && RTTimeMilliTS() - u64StartMS > u32TimeoutMS + 5000)
                     {
-                        hrc = progress->Cancel();
-                        if (SUCCEEDED(hrc))
-                            fCanceledAlready = TRUE;
-                        else
-                            g_fExecCanceled = false;
-                    }
-
-                    /* Progress canceled by Main API? */
-                    if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
-                        && fCanceled)
-                    {
+                        progress->Cancel();
                         break;
                     }
                 }
 
-                /* Undo signal handling */
-                if (fCancelable)
+                /* Process async cancelation */
+                if (g_fExecCanceled && !fCanceledAlready)
                 {
-                    signal(SIGINT,   SIG_DFL);
-            #ifdef SIGBREAK
-                    signal(SIGBREAK, SIG_DFL);
-            #endif
+                    hrc = progress->Cancel();
+                    if (SUCCEEDED(hrc))
+                        fCanceledAlready = TRUE;
+                    else
+                        g_fExecCanceled = false;
                 }
 
-                if (fCanceled)
+                /* Progress canceled by Main API? */
+                if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
+                    && fCanceled)
                 {
-                    if (fVerbose)
-                        RTPrintf("Process execution canceled!\n");
-                }
-                else if (   fCompleted
-                         && SUCCEEDED(rc))
-                {
-                    LONG iRc = false;
-                    CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-                    if (FAILED(iRc))
-                    {
-                        com::ProgressErrorInfo info(progress);
-                        if (   info.isFullAvailable()
-                            || info.isBasicAvailable())
-                        {
-                            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                             * because it contains more accurate info about what went wrong. */
-                            if (info.getResultCode() == VBOX_E_IPRT_ERROR)
-                                RTMsgError("%ls.", info.getText().raw());
-                            else
-                            {
-                                RTMsgError("Process error details:");
-                                GluePrintErrorInfo(info);
-                            }
-                        }
-                        else
-                            com::GluePrintRCMessage(iRc);
-                    }
-                    else if (fVerbose)
-                    {
-                        ULONG uRetStatus, uRetExitCode, uRetFlags;
-                        rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
-                        if (SUCCEEDED(rc))
-                            RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecGetStatus(uRetStatus), uRetFlags);
-                    }
-                }
-                else
-                {
-                    if (fVerbose)
-                        RTPrintf("Process execution aborted!\n");
+                    break;
                 }
             }
-            a->session->UnlockMachine();
-        } while (0);
-    }
+
+            /* Undo signal handling */
+            if (fCancelable)
+            {
+                signal(SIGINT,   SIG_DFL);
+        #ifdef SIGBREAK
+                signal(SIGBREAK, SIG_DFL);
+        #endif
+            }
+
+            if (fCanceled)
+            {
+                if (fVerbose)
+                    RTPrintf("Process execution canceled!\n");
+            }
+            else if (   fCompleted
+                     && SUCCEEDED(rc))
+            {
+                LONG iRc = false;
+                CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+                if (FAILED(iRc))
+                {
+                    com::ProgressErrorInfo info(progress);
+                    if (   info.isFullAvailable()
+                        || info.isBasicAvailable())
+                    {
+                        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                         * because it contains more accurate info about what went wrong. */
+                        if (info.getResultCode() == VBOX_E_IPRT_ERROR)
+                            RTMsgError("%ls.", info.getText().raw());
+                        else
+                        {
+                            RTMsgError("Process error details:");
+                            GluePrintErrorInfo(info);
+                        }
+                    }
+                    else
+                        com::GluePrintRCMessage(iRc);
+                }
+                else if (fVerbose)
+                {
+                    ULONG uRetStatus, uRetExitCode, uRetFlags;
+                    rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                    if (SUCCEEDED(rc))
+                        RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecGetStatus(uRetStatus), uRetFlags);
+                }
+            }
+            else
+            {
+                if (fVerbose)
+                    RTPrintf("Process execution aborted!\n");
+            }
+        }
+        a->session->UnlockMachine();
+    } while (0);
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
