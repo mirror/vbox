@@ -40,7 +40,7 @@
 # if defined(RT_MAX) && RT_MAX != 22
 #  undef RT_MAX
 #  define REDEFINE_RT_MAX
-# endif   
+# endif
 # undef RT_MAX
 
 /* Make sure OS/2 Toolkit headers are pulled in to have BOOL/ULONG/etc. typedefs
@@ -54,7 +54,7 @@
 # undef TRUE
 
 /* */
-# undef RT_MAX 
+# undef RT_MAX
 # ifdef REDEFINE_RT_MAX
 #  define RT_MAX(Value1, Value2)                  ( (Value1) >= (Value2) ? (Value1) : (Value2) )
 # endif

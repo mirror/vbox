@@ -114,7 +114,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIActionsPool *pActionsPool, UIM
     /* Debug submenu: */
     if (fOptions & UIMainMenuType_Debug)
     {
-        CMachine machine; /** @todo we should try get the machine here. But we'll 
+        CMachine machine; /** @todo we should try get the machine here. But we'll
                            *        probably be fine with the cached values. */
         if (vboxGlobal().isDebuggerEnabled(machine))
         {

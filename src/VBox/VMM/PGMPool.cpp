@@ -174,7 +174,7 @@ int pgmR3PoolInit(PVM pVM)
                           ("cMaxPages=%u (%#x)\n", cMaxPages, cMaxPages), VERR_INVALID_PARAMETER);
     cMaxPages = RT_ALIGN(cMaxPages, 16);
 
-    /** todo: 
+    /** todo:
      * We need to be much more careful with our allocation strategy here.
      * For nested paging we don't need pool user info nor extents at all, but we can't check for nested paging here (too early during init to get a confirmation it can be used)
      * The default for large memory configs is a bit large for shadow paging, so I've restricted the extent maximum to 2k (2k * 16 = 32k of hyper heap)

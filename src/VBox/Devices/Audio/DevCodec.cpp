@@ -431,11 +431,11 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.au32F00_param[2] = RT_BIT(20); /* Realtek 889 (8.1.9)*/
             pNode->node.au32F00_param[4] = (1 << 16)|0x1; /* start node 1, total 1*/
             pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
-            
+
             break;
         case 0x1: /* AFG */
             pNode->node.au32F00_param[4] = (2 << 16)|0x25; /* start node 1, total 1*/
-            pNode->node.au32F00_param[5] = RT_BIT(8) | 0x1; /* UnSol: enabled, function group type: AFG */ 
+            pNode->node.au32F00_param[5] = RT_BIT(8) | 0x1; /* UnSol: enabled, function group type: AFG */
             pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->node.au32F00_param[0xB] = 0x1;
             pNode->node.au32F00_param[0x11] = RT_BIT(30)|0x2;
@@ -600,7 +600,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             pNode->node.name = "PORT-E";
             pNode->port.u32F1c_param = 0x400000f0;
             pNode->node.au32F00_param[0xC] = RT_BIT(13)|RT_BIT(12)|RT_BIT(11)|RT_BIT(10)|RT_BIT(9)|RT_BIT(8)|RT_BIT(5)|RT_BIT(4)|RT_BIT(3)|RT_BIT(2);
-        port_init:    
+        port_init:
             pNode->node.au32F00_param[0x9] = 0x40018f;
             pNode->node.au32F00_param[0xD] = 0x270300;
             pNode->node.au32F00_param[0xE] = 0x5;
@@ -1909,7 +1909,7 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     AUD_register_card ("ICH0", &pState->card);
 
     /* 44.1 kHz */
-    as.freq = 44100; 
+    as.freq = 44100;
     as.nchannels = 2;
     as.fmt = AUD_FMT_S16;
     as.endianness = 0;
@@ -1926,7 +1926,7 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     } while(0)
     #define IS_FORMAT_SUPPORTED_BY_HOST(pState, base, mult, div) (AUDIO_FORMAT_SELECTOR((pState), Out, (base), (mult), (div)) \
         && AUDIO_FORMAT_SELECTOR((pState), In, (base), (mult), (div)))
-    
+
     pState->pNodes[1].node.au32F00_param[0xA] = RT_BIT(17); /* 16-bit samples */
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_DIV_X1, "hda44_1", as, pi_callback, po_callback);
     pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X1, AFMT_DIV_X1) ? RT_BIT(5) : 0;
@@ -1940,7 +1940,7 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_DIV_X1, "hda44_1_4x", as, pi_callback, po_callback);
     pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_44_1K, AFMT_MULT_X4, AFMT_DIV_X1) ? RT_BIT(9) : 0;
 
-    as.freq = 48000; 
+    as.freq = 48000;
     SETUP_AUDIO_FORMAT(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_DIV_X1, "hda48", as, pi_callback, po_callback);
     pState->pNodes[1].node.au32F00_param[0xA] |= IS_FORMAT_SUPPORTED_BY_HOST(pState, AFMT_HZ_48K, AFMT_MULT_X1, AFMT_DIV_X1) ? RT_BIT(6) : 0;
 
