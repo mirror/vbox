@@ -3475,7 +3475,7 @@ static HRESULT APIENTRY vboxWddmDDevSetStreamSourceUm(HANDLE hDevice, CONST D3DD
         Assert(pDevice->cStreamSources < UINT32_MAX/2);
         pDevice->aStreamSource[pData->Stream] = NULL;
     }
-    
+
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }

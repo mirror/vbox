@@ -346,7 +346,7 @@ AssertCompileSize(VMMDevReqMousePointer, 24+24);
  * Get the size that a VMMDevReqMousePointer request should have for a given
  * size of cursor, including the trailing cursor image and mask data.
  * @note an "empty" request still has the four preallocated bytes of data
- * 
+ *
  * @returns the size
  * @param  width   the cursor width
  * @param  height  the cursor height

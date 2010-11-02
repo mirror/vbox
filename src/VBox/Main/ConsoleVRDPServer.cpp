@@ -1269,7 +1269,7 @@ int ConsoleVRDPServer::Launch(void)
 
     int rc = VINF_SUCCESS;
 
-    /* 
+    /*
      * Check that a VRDE library name is set.
      */
     Bstr library;

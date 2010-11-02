@@ -62,8 +62,10 @@
 --filter-out-dirs  "*/src/VBox/GuestHost/OpenGL/*/."
 --filter-out-dirs  "*/src/VBox/Devices/PC/Etherboot-src/*/."
 --filter-out-dirs  "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/Include/*/."
+--filter-out-dirs  "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxIdeBusDxe/."
+--filter-out-dirs  "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxIdeControllerDxe/."
 --filter-out-dirs  "*/src/VBox/Devices/Network/lwip/."
---filter-out-dirs  "*/src/VBox/Devices/Storage/VBoxHDDFormats/StorageCraft/*/."
+--filter-out-dirs  "*/src/VBox/Storage/VDFormats/StorageCraft/*/."
 --filter-out-dirs  "*/src/VBox/RDP/client/."
 --filter-out-dirs  "*/src/recompiler/tests/."
 

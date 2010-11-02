@@ -88,7 +88,7 @@ VBoxOGLcrutil_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED)
 ifdef VBOX_WITH_CRHGSMI
-VBoxOGLcrutil_DEFS.win.x86    += VBOX_WITH_CRHGSMI 
+VBoxOGLcrutil_DEFS.win.x86    += VBOX_WITH_CRHGSMI
 VBoxOGLcrutil_LIBS.win.x86    += $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB)
 endif
 VBoxOGLcrutil_CLEAN = \
@@ -116,7 +116,7 @@ VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 VBoxOGLhostcrutil_LIBS.win = $(VBoxOGLcrutil_LIBS.win)
 VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
 ifdef VBOX_WITH_CRHGSMI
-VBoxOGLhostcrutil_DEFS.win.x86 = $(subst VBOX_WITH_CRHGSMI,,$(VBoxOGLcrutil_DEFS.win.x86)) 
+VBoxOGLhostcrutil_DEFS.win.x86 = $(subst VBOX_WITH_CRHGSMI,,$(VBoxOGLcrutil_DEFS.win.x86))
 VBoxOGLhostcrutil_LIBS.win.x86 = $(subst $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB),,$(VBoxOGLcrutil_LIBS.win.x86))
 endif
 

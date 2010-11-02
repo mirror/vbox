@@ -51,4 +51,3 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies)
 }
 RT_EXPORT_SYMBOL(RTSemEventWait);
 
-

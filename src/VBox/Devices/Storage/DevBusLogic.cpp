@@ -2341,7 +2341,7 @@ static void buslogicKick(PBUSLOGIC pThis)
         pThis->fRedo = false;
         if (pThis->VBoxSCSI.fBusy)
         {
-            
+
             /* The BIOS had a request active when we got suspended. Resume it. */
             int rc = buslogicPrepareBIOSSCSIRequest(pThis);
             AssertRC(rc);

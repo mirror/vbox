@@ -1415,7 +1415,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
         PPGMPAGE pPhysPage = pgmPhysGetPage(&pVM->pgm.s, GCPhysPage);
         AssertRelease(pPhysPage);
         pgmTrackDerefGCPhys(pPool, pShwPage, pPhysPage, iPte);
-        return;    
+        return;
     }
 # endif
 
@@ -2234,7 +2234,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
 
                 PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
                 Log2(("SyncPage: 4K+ %RGv PteSrc:{P=1 RW=1 U=1} PteDst=%08llx%s\n",
-                      GCPtrCurPage, 
+                      GCPtrCurPage,
                       SHW_PTE_LOG64(pPTDst->a[iPTDst]),
                       SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
 
@@ -2254,7 +2254,7 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
         PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], GCPtrCurPage, pShwPage, iPTDst);
 
         Log2(("SyncPage: 4K  %RGv PteSrc:{P=1 RW=1 U=1}PteDst=%08llx%s\n",
-              GCPtrPage, 
+              GCPtrPage,
               SHW_PTE_LOG64(pPTDst->a[iPTDst]),
               SHW_PTE_IS_TRACK_DIRTY(pPTDst->a[iPTDst]) ? " Track-Dirty" : ""));
     }

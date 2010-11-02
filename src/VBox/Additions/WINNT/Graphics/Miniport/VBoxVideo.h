@@ -236,7 +236,7 @@ typedef struct VBOXVIDEO_COMMON
     RTIOPORT IOPortHost;
 
     /* The IO Port Number for guest commands. */
-    RTIOPORT IOPortGuest;    
+    RTIOPORT IOPortGuest;
 } VBOXVIDEO_COMMON, *PVBOXVIDEO_COMMON;
 
 typedef struct _DEVICE_EXTENSION

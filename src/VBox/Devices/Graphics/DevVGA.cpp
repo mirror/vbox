@@ -3985,7 +3985,7 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     val = (s->cr[0xc] << 8) + s->cr[0xd];
     pHlp->pfnPrintf(pHlp, "start : %#x\n", val);
     if (!is_graph)
-    {   
+    {
         val = (s->cr[9] & 0x1f) + 1;
         char_height = val;
         pHlp->pfnPrintf(pHlp, "char height %d\n", val);
@@ -4212,7 +4212,7 @@ static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
         pHlp->pfnPrintf(pHlp, "VBE disabled\n");
         return;
     }
-    
+
     pHlp->pfnPrintf(pHlp, "VBE state (chip ID 0x%04x):\n", s->vbe_regs[VBE_DISPI_INDEX_ID]);
     pHlp->pfnPrintf(pHlp, " Display resolution: %d x %d @ %dbpp\n",
                     s->vbe_regs[VBE_DISPI_INDEX_XRES], s->vbe_regs[VBE_DISPI_INDEX_YRES],
@@ -5439,7 +5439,7 @@ static void vgaAdjustModeInfo(PVGASTATE pThis, ModeInfoListItem *pMode)
 {
     int         maxPage;
     int         bpl;
-    
+
 
     /* For 4bpp modes, the planes are "stacked" on top of each other. */
     bpl = pMode->info.BytesPerScanLine * pMode->info.NumberOfPlanes;

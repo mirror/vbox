@@ -1916,7 +1916,7 @@ BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
         pDevExt->fAnyX = TRUE;
     else
         pDevExt->fAnyX = FALSE;
-    
+
     vboxVideoInitCustomVideoModes(pDevExt);
 
    return TRUE;

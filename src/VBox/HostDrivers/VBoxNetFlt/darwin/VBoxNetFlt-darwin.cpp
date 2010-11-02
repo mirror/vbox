@@ -351,9 +351,9 @@ static mbuf_t vboxNetFltDarwinMBufFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG)
      * So, in the end it's better to just do it the simple way that will work
      * 100%, even if it involves some extra work (alloc + copy) we really wished
      * to avoid.
-     * 
-     * Note. We can't make use of the physical addresses on darwin because the 
-     *       way the mbuf / cluster stuff works (see mbuf_data_to_physical and 
+     *
+     * Note. We can't make use of the physical addresses on darwin because the
+     *       way the mbuf / cluster stuff works (see mbuf_data_to_physical and
      *       mcl_to_paddr).
      */
     mbuf_t pPkt = NULL;

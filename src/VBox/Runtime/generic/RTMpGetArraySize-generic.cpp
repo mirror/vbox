@@ -40,4 +40,3 @@ RTDECL(uint32_t) RTMpGetArraySize(void)
 }
 RT_EXPORT_SYMBOL(RTMpGetArraySize);
 
-

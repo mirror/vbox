@@ -77,16 +77,16 @@ ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_DEFS      += VBOXWDDM_WITH_VBVA
   VBoxVideoWddm_DEFS      += VBOXWDDM_RENDER_FROM_SHADOW
   ifdef VBOXVDMA_WITH_VBVA
-   VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VBVA 
+   VBoxVideoWddm_DEFS     += VBOXVDMA_WITH_VBVA
   endif
  endif
  ifdef VBOX_WITH_VDMA
-  VBoxVideoWddm_DEFS     += VBOX_WITH_VDMA 
+  VBoxVideoWddm_DEFS     += VBOX_WITH_VDMA
  endif
  ifdef VBOX_WITH_CRHGSMI
   VBoxVideoWddm_DEFS     += VBOX_WITH_CRHGSMI
  endif
- 
+
  ifdef DEBUG_misha
   VBoxVideoWddm_DEFS       += LOG_ENABLED
  endif

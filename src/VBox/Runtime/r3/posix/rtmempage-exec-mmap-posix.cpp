@@ -143,4 +143,3 @@ RTDECL(void) RTMemExecFree(void *pv, size_t cb) RT_NO_THROW
     return rtMemPagePosixFree(pv, cb);
 }
 
-

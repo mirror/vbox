@@ -340,4 +340,3 @@ RTDECL(uint32_t) RTSemEventGetResolution(void)
     return rtR0SemSolWaitGetResolution();
 }
 
-

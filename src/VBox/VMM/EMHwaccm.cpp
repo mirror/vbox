@@ -559,7 +559,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatCapped, u);
             rc = VINF_SUCCESS;
         }
-        
+
 
         /*
          * Deal with high priority post execution FFs before doing anything else.

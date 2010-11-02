@@ -246,7 +246,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     q += 7; /* !cookie rfc 2132 + TYPE*/
 
     /*DHCP Offer specific*/
-    /* 
+    /*
      * we're care in built-in tftp server about existence/validness of the boot file.
      */
     if (bootp_filename)
