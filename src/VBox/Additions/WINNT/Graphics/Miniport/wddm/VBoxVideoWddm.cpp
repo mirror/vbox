@@ -4310,15 +4310,6 @@ DxgkDdiCreateOverlay(
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            vboxVhwaHlpOverlayListAdd(pDevExt, pOverlay);
-#ifdef VBOXWDDM_RENDER_FROM_SHADOW
-            RECT DstRect;
-            vboxVhwaHlpOverlayDstRectGet(pDevExt, pOverlay, &DstRect);
-            Status = vboxVdmaHlpUpdatePrimary(pDevExt, pCreateOverlay->VidPnSourceId, &DstRect);
-            Assert(Status == STATUS_SUCCESS);
-            /* ignore primary update failure */
-            Status = STATUS_SUCCESS;
-#endif
             pCreateOverlay->hOverlay = pOverlay;
         }
         else
@@ -5146,7 +5137,6 @@ DxgkDdiDestroyOverlay(
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)hOverlay;
     Assert(pOverlay);
-    vboxVhwaHlpOverlayListRemove(pOverlay->pDevExt, pOverlay);
     int rc = vboxVhwaHlpOverlayDestroy(pOverlay);
     AssertRC(rc);
     if (RT_SUCCESS(rc))

@@ -63,8 +63,8 @@ int vboxVhwaHlpColorFill(PVBOXWDDM_OVERLAY pOverlay, PVBOXWDDM_DMA_PRIVATEDATA_C
 int vboxVhwaHlpGetSurfInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pSurf);
 
 BOOLEAN vboxVhwaHlpOverlayListIsEmpty(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId);
-void vboxVhwaHlpOverlayListAdd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay);
-void vboxVhwaHlpOverlayListRemove(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay);
+//void vboxVhwaHlpOverlayListAdd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay);
+//void vboxVhwaHlpOverlayListRemove(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay);
 void vboxVhwaHlpOverlayDstRectUnion(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId, RECT *pRect);
 void vboxVhwaHlpOverlayDstRectGet(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay, RECT *pRect);
 

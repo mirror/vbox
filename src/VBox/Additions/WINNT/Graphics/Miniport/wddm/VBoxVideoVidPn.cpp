@@ -532,6 +532,10 @@ NTSTATUS vboxVidPnPopulateSourceModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
     for (uint32_t i = 0; i < cModes; ++i)
     {
         D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo;
+        /* disable 24 bpp for now */
+        if (pModes[i].BitsPerPlane == 24)
+            continue;
+
         Status = pNewVidPnSourceModeSetInterface->pfnCreateNewModeInfo(hNewVidPnSourceModeSet, &pNewVidPnSourceModeInfo);
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)

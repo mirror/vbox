@@ -919,6 +919,26 @@ static void vboxVhwaHlpOverlayDstRectSet(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OV
     KeReleaseSpinLock(&pSource->OverlayListLock, OldIrql);
 }
 
+static void vboxVhwaHlpOverlayListAdd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay)
+{
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pOverlay->VidPnSourceId];
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSource->OverlayListLock, &OldIrql);
+    ASMAtomicIncU32(&pSource->cOverlays);
+    InsertHeadList(&pSource->OverlayList, &pOverlay->ListEntry);
+    KeReleaseSpinLock(&pSource->OverlayListLock, OldIrql);
+}
+
+static void vboxVhwaHlpOverlayListRemove(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay)
+{
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pOverlay->VidPnSourceId];
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSource->OverlayListLock, &OldIrql);
+    ASMAtomicDecU32(&pSource->cOverlays);
+    RemoveEntryList(&pOverlay->ListEntry);
+    KeReleaseSpinLock(&pSource->OverlayListLock, OldIrql);
+}
+
 AssertCompile(sizeof (RECT) == sizeof (VBOXVHWA_RECTL));
 AssertCompile(RT_SIZEOFMEMB(RECT, left) == RT_SIZEOFMEMB(VBOXVHWA_RECTL, left));
 AssertCompile(RT_SIZEOFMEMB(RECT, right) == RT_SIZEOFMEMB(VBOXVHWA_RECTL, right));
@@ -929,7 +949,7 @@ AssertCompile(RT_OFFSETOF(RECT, right) == RT_OFFSETOF(VBOXVHWA_RECTL, right));
 AssertCompile(RT_OFFSETOF(RECT, top) == RT_OFFSETOF(VBOXVHWA_RECTL, top));
 AssertCompile(RT_OFFSETOF(RECT, bottom) == RT_OFFSETOF(VBOXVHWA_RECTL, bottom));
 
-int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO *pOverlayInfo)
+int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO *pOverlayInfo, RECT * pDstUpdateRect)
 {
     PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pOverlayInfo->hAllocation;
     Assert(pAlloc->hHostHandle);
@@ -981,7 +1001,6 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
 
             if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
             {
-                pBody->u.in.xUpdatedSrcMemValid = 1;
                 if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID)
                     pBody->u.in.xUpdatedSrcMemRect = *(VBOXVHWA_RECTL*)((void*)&pOurInfo->DirtyRegion.Rect);
                 else
@@ -990,6 +1009,11 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
                     pBody->u.in.xUpdatedSrcMemRect.bottom = pAlloc->SurfDesc.height;
                     /* top & left are zero-inited with the above memset */
                 }
+            }
+
+            if (pDstUpdateRect)
+            {
+                pBody->u.in.xUpdatedDstMemRect = *(VBOXVHWA_RECTL*)((void*)pDstUpdateRect);
             }
 
             /* we're not interested in completion, just send the command */
@@ -1010,9 +1034,17 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
     return rc;
 }
 
+int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO *pOverlayInfo)
+{
+    return vboxVhwaHlpOverlayUpdate(pOverlay, pOverlayInfo, NULL);
+}
+
 int vboxVhwaHlpOverlayDestroy(PVBOXWDDM_OVERLAY pOverlay)
 {
     int rc = VINF_SUCCESS;
+
+    vboxVhwaHlpOverlayListRemove(pOverlay->pDevExt, pOverlay);
+
     for (uint32_t i = 0; i < pOverlay->pResource->cAllocations; ++i)
     {
         PVBOXWDDM_ALLOCATION pCurAlloc = &pOverlay->pResource->aAllocations[i];
@@ -1065,7 +1097,17 @@ int vboxVhwaHlpOverlayCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOU
             pOverlay->pDevExt = pDevExt;
             pOverlay->pResource = pRc;
             pOverlay->VidPnSourceId = VidPnSourceId;
-            rc = vboxVhwaHlpOverlayUpdate(pOverlay, pOverlayInfo);
+
+            vboxVhwaHlpOverlayListAdd(pDevExt, pOverlay);
+#ifdef VBOXWDDM_RENDER_FROM_SHADOW
+            RECT DstRect;
+            vboxVhwaHlpOverlayDstRectGet(pDevExt, pOverlay, &DstRect);
+            NTSTATUS Status = vboxVdmaHlpUpdatePrimary(pDevExt, VidPnSourceId, &DstRect);
+            Assert(Status == STATUS_SUCCESS);
+            /* ignore primary update failure */
+            Status = STATUS_SUCCESS;
+#endif
+            rc = vboxVhwaHlpOverlayUpdate(pOverlay, pOverlayInfo, &DstRect);
             if (!RT_SUCCESS(rc))
             {
                 int tmpRc = vboxVhwaHlpOverlayDestroy(pOverlay);
@@ -1088,26 +1130,6 @@ BOOLEAN vboxVhwaHlpOverlayListIsEmpty(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PR
 {
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[VidPnSourceId];
     return !ASMAtomicReadU32(&pSource->cOverlays);
-}
-
-void vboxVhwaHlpOverlayListAdd(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay)
-{
-    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pOverlay->VidPnSourceId];
-    KIRQL OldIrql;
-    KeAcquireSpinLock(&pSource->OverlayListLock, &OldIrql);
-    ASMAtomicIncU32(&pSource->cOverlays);
-    InsertHeadList(&pSource->OverlayList, &pOverlay->ListEntry);
-    KeReleaseSpinLock(&pSource->OverlayListLock, OldIrql);
-}
-
-void vboxVhwaHlpOverlayListRemove(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_OVERLAY pOverlay)
-{
-    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pOverlay->VidPnSourceId];
-    KIRQL OldIrql;
-    KeAcquireSpinLock(&pSource->OverlayListLock, &OldIrql);
-    ASMAtomicDecU32(&pSource->cOverlays);
-    RemoveEntryList(&pOverlay->ListEntry);
-    KeReleaseSpinLock(&pSource->OverlayListLock, OldIrql);
 }
 
 #define VBOXWDDM_OVERLAY_FROM_ENTRY(_pEntry) ((PVBOXWDDM_OVERLAY)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXWDDM_OVERLAY, ListEntry)))

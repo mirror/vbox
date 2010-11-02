@@ -436,7 +436,9 @@ HRESULT vboxUhgsmiKmtCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
 {
     pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtBufferCreate;
     pHgsmi->BasePrivate.Base.pfnBufferSubmitAsynch = vboxUhgsmiKmtBufferSubmitAsynch;
+#ifdef VBOX_CRHGSMI_WITH_D3DDEV
     pHgsmi->BasePrivate.hClient = NULL;
+#endif
     return vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
 }
 
@@ -444,7 +446,9 @@ HRESULT vboxUhgsmiKmtEscCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
 {
     pHgsmi->BasePrivate.Base.pfnBufferCreate = vboxUhgsmiKmtEscBufferCreate;
     pHgsmi->BasePrivate.Base.pfnBufferSubmitAsynch = vboxUhgsmiKmtEscBufferSubmitAsynch;
+#ifdef VBOX_CRHGSMI_WITH_D3DDEV
     pHgsmi->BasePrivate.hClient = NULL;
+#endif
     return vboxUhgsmiKmtEngineCreate(pHgsmi, bD3D);
 }
 

@@ -15,7 +15,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
 #ifdef RT_OS_WINDOWS
     #include <windows.h>
     #include <ddraw.h>
@@ -225,13 +224,6 @@ typedef struct CRVBOXHGCMBUFFER {
 
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-typedef struct CRVBOXHGSMI_CLIENT {
-    PVBOXUHGSMI pHgsmi;
-    PVBOXUHGSMI_BUFFER pCmdBuffer;
-    PVBOXUHGSMI_BUFFER pHGBuffer;
-    void *pvHGBuffer;
-    CRBufferPool *bufpool;
-} CRVBOXHGSMI_CLIENT, *PCRVBOXHGSMI_CLIENT;
 
 /* add sizeof header + page align */
 #define CRVBOXHGSMI_PAGE_ALIGN(_s) (((_s)  + 0xfff) & ~0xfff)
@@ -242,11 +234,121 @@ typedef struct CRVBOXHGSMI_CLIENT {
 #define CRVBOXHGSMI_BUF_HDR(_p) (((CRVBOXHGCMBUFFER*)(_p)) - 1)
 #define CRVBOXHGSMI_BUF_OFFSET(_st2, _st1) ((uint32_t)(((uint8_t*)(_st2)) - ((uint8_t*)(_st1))))
 
+static int _crVBoxHGSMIClientInit(PCRVBOXHGSMI_CLIENT pClient, PVBOXUHGSMI pHgsmi)
+{
+    int rc;
+    pClient->pHgsmi = pHgsmi;
+    rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1),
+                            VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
+                            NULL,
+                            &pClient->pCmdBuffer);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1),
+                                        VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
+                                        NULL,
+                                        &pClient->pHGBuffer);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            pClient->pvHGBuffer = NULL;
+            pClient->bufpool = crBufferPoolInit(16);
+            return VINF_SUCCESS;
+        }
+        pClient->pCmdBuffer->pfnDestroy(pClient->pCmdBuffer);
+    }
+    pClient->pHgsmi = NULL;
+    return rc;
+}
+
+void _crVBoxHGSMIBufferFree(void *data)
+{
+    PVBOXUHGSMI_BUFFER pBuffer = (PVBOXUHGSMI_BUFFER)data;
+    pBuffer->pfnDestroy(pBuffer);
+}
+
+static int _crVBoxHGSMIClientTerm(PCRVBOXHGSMI_CLIENT pClient, PVBOXUHGSMI *ppHgsmi)
+{
+    if (pClient->bufpool)
+        crBufferPoolCallbackFree(pClient->bufpool, _crVBoxHGSMIBufferFree);
+    pClient->bufpool = NULL;
+
+    if (pClient->pHGBuffer)
+    {
+        pClient->pHGBuffer->pfnDestroy(pClient->pHGBuffer);
+        pClient->pHGBuffer = NULL;
+    }
+
+    if (pClient->pCmdBuffer)
+    {
+        pClient->pCmdBuffer->pfnDestroy(pClient->pCmdBuffer);
+        pClient->pCmdBuffer = NULL;
+    }
+
+    if (ppHgsmi)
+    {
+        *ppHgsmi = pClient->pHgsmi;
+    }
+    pClient->pHgsmi = NULL;
+
+    return VINF_SUCCESS;
+}
+
+
+#ifdef VBOX_CRHGSMI_WITH_D3DDEV
+
+DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
+{
+    PCRVBOXHGSMI_CLIENT pClient = crAlloc(sizeof (CRVBOXHGSMI_CLIENT));
+
+    if (pClient)
+    {
+        int rc = _crVBoxHGSMIClientInit(pClient, pHgsmi);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            return (HVBOXCRHGSMI_CLIENT)pClient;
+
+        crFree(pCLient);
+    }
+
+    return NULL;
+}
+
+DECLCALLBACK(void) _crVBoxHGSMIClientDestroy(HVBOXCRHGSMI_CLIENT hClient)
+{
+    PCRVBOXHGSMI_CLIENT pClient = (PCRVBOXHGSMI_CLIENT)hClient;
+    _crVBoxHGSMIClientTerm(pClient, NULL);
+    crFree(pClient);
+}
+#endif
+
 DECLINLINE(PCRVBOXHGSMI_CLIENT) _crVBoxHGSMIClientGet(CRConnection *conn)
 {
+#ifdef VBOX_CRHGSMI_WITH_D3DDEV
     PCRVBOXHGSMI_CLIENT pClient = (PCRVBOXHGSMI_CLIENT)VBoxCrHgsmiQueryClient();
     Assert(pClient);
     return pClient;
+#else
+    if (conn->HgsmiClient.pHgsmi)
+        return &conn->HgsmiClient;
+    {
+        PVBOXUHGSMI pHgsmi = VBoxCrHgsmiCreate();
+        Assert(pHgsmi);
+        if (pHgsmi)
+        {
+            int rc = _crVBoxHGSMIClientInit(&conn->HgsmiClient, pHgsmi);
+            AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(conn->HgsmiClient.pHgsmi);
+                return &conn->HgsmiClient;
+            }
+            VBoxCrHgsmiDestroy(pHgsmi);
+        }
+    }
+    return NULL;
+#endif
 }
 
 static PVBOXUHGSMI_BUFFER _crVBoxHGSMIBufAlloc(PCRVBOXHGSMI_CLIENT pClient, uint32_t cbSize)
@@ -1368,57 +1470,25 @@ static void crVBoxHGCMHandleNewMessage( CRConnection *conn, CRMessage *msg, unsi
 }
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-DECLCALLBACK(HVBOXCRHGSMI_CLIENT) _crVBoxHGSMIClientCreate(PVBOXUHGSMI pHgsmi)
-{
-    PCRVBOXHGSMI_CLIENT pClient = crAlloc(sizeof (CRVBOXHGSMI_CLIENT));
-
-    if (pClient)
-    {
-        int rc;
-        pClient->pHgsmi = pHgsmi;
-        rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1),
-                                VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
-                                NULL,
-                                &pClient->pCmdBuffer);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
-            rc = pHgsmi->pfnBufferCreate(pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(1),
-                                            VBOXUHGSMI_SYNCHOBJECT_TYPE_EVENT,
-                                            NULL,
-                                            &pClient->pHGBuffer);
-            AssertRC(rc);
-            if (RT_SUCCESS(rc))
-            {
-                pClient->pvHGBuffer = NULL;
-                pClient->bufpool = crBufferPoolInit(16);
-                return (HVBOXCRHGSMI_CLIENT) pClient;
-            }
-            pClient->pCmdBuffer->pfnDestroy(pClient->pCmdBuffer);
-        }
-    }
-
-    return NULL;
-}
-
-DECLCALLBACK(void) _crVBoxHGSMIClientDestroy(HVBOXCRHGSMI_CLIENT hClient)
-{
-    Assert(0);
-
-    /* @todo */
-}
 
 bool _crVBoxHGSMIInit()
 {
+#ifndef VBOX_CRHGSMI_WITH_D3DDEV
+    static
+#endif
     int bHasHGSMI = -1;
 
     if (bHasHGSMI < 0)
     {
         int rc;
+#ifndef VBOX_CRHGSMI_WITH_D3DDEV
+        rc = VBoxCrHgsmiInit();
+#else
         VBOXCRHGSMI_CALLBACKS Callbacks;
         Callbacks.pfnClientCreate = _crVBoxHGSMIClientCreate;
         Callbacks.pfnClientDestroy = _crVBoxHGSMIClientDestroy;
         rc = VBoxCrHgsmiInit(&Callbacks);
+#endif
         AssertRC(rc);
         if (RT_SUCCESS(rc))
             bHasHGSMI = 1;
@@ -2003,6 +2073,16 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
 
 static void crVBoxHGSMIDoDisconnect( CRConnection *conn )
 {
+#ifndef VBOX_CRHGSMI_WITH_D3DDEV
+    if (conn->HgsmiClient.pHgsmi)
+    {
+        PVBOXUHGSMI pHgsmi;
+        _crVBoxHGSMIClientTerm(&conn->HgsmiClient, &pHgsmi);
+        Assert(pHgsmi);
+        VBoxCrHgsmiDestroy(pHgsmi);
+    }
+
+#endif
     crVBoxHGCMDoDisconnect(conn);
 }
 

@@ -3,11 +3,14 @@
 
 #include "VBoxUhgsmiKmt.h"
 
+static VBOXDISPKMT_CALLBACKS g_VBoxCrHgsmiKmtCallbacks;
+static int g_bVBoxKmtCallbacksInited = 0;
+
+#ifdef VBOX_CRHGSMI_WITH_D3DDEV
 static VBOXCRHGSMI_CALLBACKS g_VBoxCrHgsmiCallbacks;
 static HMODULE g_hVBoxCrHgsmiProvider = NULL;
 static uint32_t g_cVBoxCrHgsmiProvider = 0;
 
-static VBOXDISPKMT_CALLBACKS g_VBoxCrHgsmiKmtCallbacks;
 
 typedef VBOXWDDMDISP_DECL(int) FNVBOXDISPCRHGSMI_INIT(PVBOXCRHGSMI_CALLBACKS pCallbacks);
 typedef FNVBOXDISPCRHGSMI_INIT *PFNVBOXDISPCRHGSMI_INIT;
@@ -24,19 +27,18 @@ static PFNVBOXDISPCRHGSMI_QUERY_CLIENT g_pfnVBoxDispCrHgsmiQueryClient = NULL;
 
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
 {
-    static int bKmtCallbacksInited = 0;
-    if (!bKmtCallbacksInited)
+    if (!g_bVBoxKmtCallbacksInited)
     {
         HRESULT hr = vboxDispKmtCallbacksInit(&g_VBoxCrHgsmiKmtCallbacks);
         Assert(hr == S_OK);
         if (hr == S_OK)
-            bKmtCallbacksInited = 1;
+            g_bVBoxKmtCallbacksInited = 1;
         else
-            bKmtCallbacksInited = -1;
+            g_bVBoxKmtCallbacksInited = -1;
     }
 
-    Assert(bKmtCallbacksInited);
-    if (bKmtCallbacksInited < 0)
+    Assert(g_bVBoxKmtCallbacksInited);
+    if (g_bVBoxKmtCallbacksInited < 0)
     {
         Assert(0);
         return VERR_NOT_SUPPORTED;
@@ -134,10 +136,64 @@ VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient()
 
     return NULL;
 }
+#else
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit()
+{
+    if (!g_bVBoxKmtCallbacksInited)
+    {
+        HRESULT hr = vboxDispKmtCallbacksInit(&g_VBoxCrHgsmiKmtCallbacks);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+            g_bVBoxKmtCallbacksInited = 1;
+        else
+            g_bVBoxKmtCallbacksInited = -1;
+    }
+
+    Assert(g_bVBoxKmtCallbacksInited);
+    if (g_bVBoxKmtCallbacksInited < 0)
+    {
+        Assert(0);
+        return VERR_NOT_SUPPORTED;
+    }
+
+    return VINF_SUCCESS;
+}
+
+VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate()
+{
+    PVBOXUHGSMI_PRIVATE_KMT pHgsmiGL = (PVBOXUHGSMI_PRIVATE_KMT)RTMemAllocZ(sizeof (*pHgsmiGL));
+    if (pHgsmiGL)
+    {
+#if 0
+        HRESULT hr = vboxUhgsmiKmtCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
+#else
+        HRESULT hr = vboxUhgsmiKmtEscCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
+#endif
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            return &pHgsmiGL->BasePrivate.Base;
+        }
+        RTMemFree(pHgsmiGL);
+    }
+
+    return NULL;
+}
+
+VBOXCRHGSMI_DECL(void) VBoxCrHgsmiDestroy(PVBOXUHGSMI pHgsmi)
+{
+    PVBOXUHGSMI_PRIVATE_KMT pHgsmiGL = VBOXUHGSMIKMT_GET(pHgsmi);
+    HRESULT hr = vboxUhgsmiKmtDestroy(pHgsmiGL);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        RTMemFree(pHgsmiGL);
+    }
+}
+#endif
 
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()
 {
-    Assert(0);
 #if 0
     PVBOXUHGSMI_PRIVATE_KMT pHgsmiGL = gt_pHgsmiGL;
     if (pHgsmiGL)
@@ -150,6 +206,10 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()
     if (g_pfnVBoxDispCrHgsmiTerm)
         g_pfnVBoxDispCrHgsmiTerm();
 #endif
+    if (g_bVBoxKmtCallbacksInited > 0)
+    {
+        vboxDispKmtCallbacksTerm(&g_VBoxCrHgsmiKmtCallbacks);
+    }
     return VINF_SUCCESS;
 }
 
