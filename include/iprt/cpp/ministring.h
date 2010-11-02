@@ -653,7 +653,7 @@ public:
      * @returns 32-bit unsigned number on success.
      * @returns 0 on failure.
      */
-    int toInt32() const
+    int32_t toInt32() const
     {
         return RTStrToInt32(m_psz);
     }
@@ -664,7 +664,7 @@ public:
      * @returns 32-bit unsigned number on success.
      * @returns 0 on failure.
      */
-    int toUInt32() const
+    uint32_t toUInt32() const
     {
         return RTStrToUInt32(m_psz);
     }
