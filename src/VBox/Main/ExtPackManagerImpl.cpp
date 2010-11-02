@@ -232,7 +232,7 @@ HRESULT ExtPack::refresh(bool *pfCanDelete)
     if (   RT_FAILURE(vrc)
         || !RTFS_IS_DIRECTORY(ObjInfoExtPack.Attr.fMode))
     {
-        if (*pfCanDelete)
+        if (pfCanDelete)
             *pfCanDelete = true;
         return S_OK;
     }
