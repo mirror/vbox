@@ -40,6 +40,7 @@
 #include <VBox/sup.h>
 #include <VBox/version.h>
 #include "AutoCaller.h"
+#include "Global.h"
 
 
 /*******************************************************************************
@@ -65,6 +66,7 @@
  */
 struct ExtPack::Data
 {
+public:
     /** The extension pack description (loaded from the XML, mostly). */
     VBOXEXTPACKDESC     Desc;
     /** The file system object info of the XML file.
@@ -90,6 +92,8 @@ struct ExtPack::Data
 
     /** The helper callbacks for the extension pack. */
     VBOXEXTPACKHLP      Hlp;
+    /** Pointer back to the extension pack object (for Hlp methods). */
+    ExtPack            *pThis;
     /** The extension pack registration structure. */
     PCVBOXEXTPACKREG    pReg;
 };
@@ -102,8 +106,14 @@ typedef std::list< ComObjPtr<ExtPack> > ExtPackList;
  */
 struct ExtPackManager::Data
 {
-    /** Where the directory where the extension packs are installed. */
-    Utf8Str     strBasePath;
+    /** The directory where the extension packs are installed. */
+    Utf8Str     strBaseDir;
+    /** The directory where the extension packs can be dropped for automatic
+     * installation. */
+    Utf8Str     strDropZoneDir;
+    /** The directory where the certificates this installation recognizes are
+     * stored. */
+    Utf8Str     strCertificatDirPath;
     /** The list of installed extension packs. */
     ExtPackList llInstalledExtPacks;
 };
@@ -166,6 +176,7 @@ HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
     m->Hlp                          = s_HlpTmpl;
     m->Hlp.pszVBoxVersion           = RTBldCfgVersion();
     m->Hlp.uVBoxInternalRevision    = RTBldCfgRevision();
+    m->pThis                        = this;
     m->pReg                         = NULL;
 
     /*
@@ -195,8 +206,13 @@ void ExtPack::uninit()
     {
         if (m->hMainMod != NIL_RTLDRMOD)
         {
+            AssertPtr(m->pReg);
+            if (m->pReg->pfnUnload != NULL)
+                m->pReg->pfnUnload(m->pReg);
+
             RTLdrClose(m->hMainMod);
             m->hMainMod = NIL_RTLDRMOD;
+            m->pReg = NULL;
         }
 
         delete m;
@@ -204,9 +220,124 @@ void ExtPack::uninit()
     }
 }
 
-void *ExtPack::getCallbackTable()
+
+/**
+ * Calls the installed hook.
+ * @remarks Caller holds the extension manager lock.
+ */
+void    ExtPack::callInstalledHook(void)
 {
-    return NULL;
+    if (   m->hMainMod != NIL_RTLDRMOD
+        && m->pReg->pfnInstalled)
+        m->pReg->pfnInstalled(m->pReg);
+}
+
+/**
+ * Calls the uninstall hook and closes the module.
+ *
+ * @returns S_OK or COM error status with error information.
+ * @param   a_fForcedRemoval    When set, we'll ignore complaints from the
+ *                              uninstall hook.
+ * @remarks The caller holds the manager's write lock.
+ */
+HRESULT ExtPack::callUninstallHookAndClose(bool a_fForcedRemoval)
+{
+    HRESULT hrc = S_OK;
+
+    if (m->hMainMod != NIL_RTLDRMOD)
+    {
+        if (m->pReg->pfnUninstall)
+        {
+            int vrc = m->pReg->pfnUninstall(m->pReg);
+            if (RT_FAILURE(vrc))
+            {
+                LogRel(("ExtPack pfnUninstall returned %Rrc for %s\n", vrc, m->Desc.strName.c_str()));
+                if (!a_fForcedRemoval)
+                    hrc = setError(E_FAIL, tr("pfnUninstall returned %Rrc"), vrc);
+            }
+        }
+        if (SUCCEEDED(hrc))
+        {
+            RTLdrClose(m->hMainMod);
+            m->hMainMod = NIL_RTLDRMOD;
+            m->pReg = NULL;
+        }
+    }
+
+    return hrc;
+}
+
+/**
+ * Calls the pfnVMCreate hook.
+ *
+ * @param   a_pMachine          The machine interface of the new VM.
+ * @remarks Caller holds the extension manager lock.
+ */
+void ExtPack::callVmCreatedHook(IMachine *a_pMachine)
+{
+    if (   m->hMainMod != NIL_RTLDRMOD
+        && m->pReg->pfnVMCreated)
+        m->pReg->pfnVMCreated(m->pReg, a_pMachine);
+}
+
+/**
+ * Calls the pfnVMConfigureVMM hook.
+ *
+ * @returns VBox status code, LogRel called on failure.
+ * @param   a_pConsole          The console interface.
+ * @param   a_pVM               The VM handle.
+ * @remarks Caller holds the extension manager lock.
+ */
+int ExtPack::callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM)
+{
+    if (   m->hMainMod != NIL_RTLDRMOD
+        && m->pReg->pfnVMConfigureVMM)
+    {
+        int vrc = m->pReg->pfnVMConfigureVMM(m->pReg, a_pConsole, a_pVM);
+        if (RT_FAILURE(vrc))
+        {
+            LogRel(("ExtPack pfnVMConfigureVMM returned %Rrc for %s\n", vrc, m->Desc.strName.c_str()));
+            return vrc;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Calls the pfnVMPowerOn hook.
+ *
+ * @returns VBox status code, LogRel called on failure.
+ * @param   a_pConsole          The console interface.
+ * @param   a_pVM               The VM handle.
+ * @remarks Caller holds the extension manager lock.
+ */
+int ExtPack::callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM)
+{
+    if (   m->hMainMod != NIL_RTLDRMOD
+        && m->pReg->pfnVMPowerOn)
+    {
+        int vrc = m->pReg->pfnVMPowerOn(m->pReg, a_pConsole, a_pVM);
+        if (RT_FAILURE(vrc))
+        {
+            LogRel(("ExtPack pfnVMPowerOn returned %Rrc for %s\n", vrc, m->Desc.strName.c_str()));
+            return vrc;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * Calls the pfnVMPowerOff hook.
+ *
+ * @param   a_pConsole          The console interface.
+ * @param   a_pVM               The VM handle.
+ * @remarks Caller holds the extension manager lock.
+ */
+void ExtPack::callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM)
+{
+    if (   m->hMainMod != NIL_RTLDRMOD
+        && m->pReg->pfnVMPowerOff)
+        m->pReg->pfnVMPowerOff(m->pReg, a_pConsole, a_pVM);
 }
 
 /**
@@ -216,13 +347,14 @@ void *ExtPack::getCallbackTable()
  *
  * @returns S_OK or COM error status with error information.
  * @param   pfCanDelete     Optional can-delete-this-object output indicator.
+ * @remarks Caller holds the extension manager lock for writing.
  */
 HRESULT ExtPack::refresh(bool *pfCanDelete)
 {
     if (pfCanDelete)
         *pfCanDelete = false;
 
-    AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS); /* for the COMGETTERs */
 
     /*
      * Has the module been deleted?
@@ -394,6 +526,7 @@ void ExtPack::probeAndLoad(void)
             {
                 if (   (!m->pReg->pfnInstalled      || RT_VALID_PTR(m->pReg->pfnInstalled))
                     && (!m->pReg->pfnUninstall      || RT_VALID_PTR(m->pReg->pfnUninstall))
+                    && (!m->pReg->pfnUnload         || RT_VALID_PTR(m->pReg->pfnUnload))
                     && (!m->pReg->pfnVMCreated      || RT_VALID_PTR(m->pReg->pfnVMCreated))
                     && (!m->pReg->pfnVMConfigureVMM || RT_VALID_PTR(m->pReg->pfnVMConfigureVMM))
                     && (!m->pReg->pfnVMPowerOn      || RT_VALID_PTR(m->pReg->pfnVMPowerOn))
@@ -444,6 +577,75 @@ void ExtPack::probeAndLoad(void)
 bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
                          Utf8Str *a_pStrFound, bool *a_pfNative, PRTFSOBJINFO a_pObjInfo) const
 {
+    /*
+     * Try the native path first.
+     */
+    char szPath[RTPATH_MAX];
+    int vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), RTBldCfgTargetDotArch());
+    AssertLogRelRCReturn(vrc, false);
+    vrc = RTPathAppend(szPath, sizeof(szPath), a_pszName);
+    AssertLogRelRCReturn(vrc, false);
+    if (!a_pszExt)
+    {
+        vrc = RTStrCat(szPath, sizeof(szPath), RTLdrGetSuff());
+        AssertLogRelRCReturn(vrc, false);
+    }
+
+    RTFSOBJINFO ObjInfo;
+    if (!a_pObjInfo)
+        a_pObjInfo = &ObjInfo;
+    vrc = RTPathQueryInfo(szPath, a_pObjInfo, RTFSOBJATTRADD_UNIX);
+    if (RT_SUCCESS(vrc) && RTFS_IS_FIFO(a_pObjInfo->Attr.fMode))
+    {
+        if (a_pfNative)
+            *a_pfNative = true;
+        a_pStrFound = new Utf8Str(szPath);
+        return true;
+    }
+
+    /*
+     * Try the platform agnostic modules.
+     */
+    /* gcc.x86/module.rel */
+    char szSubDir[32];
+    RTStrPrintf(szSubDir, sizeof(szSubDir), "%s.%s", RTBldCfgCompiler(), RTBldCfgTargetArch());
+    vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), szSubDir);
+    AssertLogRelRCReturn(vrc, false);
+    vrc = RTPathAppend(szPath, sizeof(szPath), a_pszName);
+    AssertLogRelRCReturn(vrc, false);
+    if (!a_pszExt)
+    {
+        vrc = RTStrCat(szPath, sizeof(szPath), ".rel");
+        AssertLogRelRCReturn(vrc, false);
+    }
+    vrc = RTPathQueryInfo(szPath, a_pObjInfo, RTFSOBJATTRADD_UNIX);
+    if (RT_SUCCESS(vrc) && RTFS_IS_FIFO(a_pObjInfo->Attr.fMode))
+    {
+        if (a_pfNative)
+            *a_pfNative = false;
+        a_pStrFound = new Utf8Str(szPath);
+        return true;
+    }
+
+    /* x86/module.rel */
+    vrc = RTPathJoin(szPath, sizeof(szPath), m->strExtPackPath.c_str(), RTBldCfgTargetArch());
+    AssertLogRelRCReturn(vrc, false);
+    vrc = RTPathAppend(szPath, sizeof(szPath), a_pszName);
+    AssertLogRelRCReturn(vrc, false);
+    if (!a_pszExt)
+    {
+        vrc = RTStrCat(szPath, sizeof(szPath), ".rel");
+        AssertLogRelRCReturn(vrc, false);
+    }
+    vrc = RTPathQueryInfo(szPath, a_pObjInfo, RTFSOBJATTRADD_UNIX);
+    if (RT_SUCCESS(vrc) && RTFS_IS_FIFO(a_pObjInfo->Attr.fMode))
+    {
+        if (a_pfNative)
+            *a_pfNative = false;
+        a_pStrFound = new Utf8Str(szPath);
+        return true;
+    }
+
     return false;
 }
 
@@ -498,6 +700,27 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
 ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
                        char *pszFound, size_t cbFound, bool *pfNative)
 {
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pszExt, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszFound, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfNative, VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(m, VERR_INVALID_POINTER);
+    ExtPack *pThis = m->pThis;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    /*
+     * This is just a wrapper around findModule.
+     */
+    Utf8Str strFound;
+    if (pThis->findModule(pszName, pszExt, &strFound, pfNative, NULL))
+        return RTStrCopy(pszFound, cbFound, strFound.c_str());
     return VERR_FILE_NOT_FOUND;
 }
 
@@ -515,6 +738,20 @@ STDMETHODIMP ExtPack::COMGETTER(Name)(BSTR *a_pbstrName)
     {
         Bstr str(m->Desc.strName);
         str.cloneTo(a_pbstrName);
+    }
+    return hrc;
+}
+
+STDMETHODIMP ExtPack::COMGETTER(Description)(BSTR *a_pbstrDescription)
+{
+    CheckComArgOutPointerValid(a_pbstrDescription);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        Bstr str(m->Desc.strDescription);
+        str.cloneTo(a_pbstrDescription);
     }
     return hrc;
 }
@@ -588,23 +825,35 @@ HRESULT ExtPackManager::FinalConstruct()
  * Initializes the extension pack manager.
  *
  * @returns COM status code.
+ * @param   a_pszDropZoneDir        The path to the drop zone directory.
+ * @param   a_fCheckDropZone        Whether to check the drop zone for new
+ *                                  extensions or not.  Only VBoxSVC does this
+ *                                  and then only when wanted.
  */
-HRESULT ExtPackManager::init()
+HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone)
 {
     /*
      * Figure some stuff out before creating the instance data.
      */
-    char szBasePath[RTPATH_MAX];
-    int rc = RTPathAppPrivateArch(szBasePath, sizeof(szBasePath));
+    char szBaseDir[RTPATH_MAX];
+    int rc = RTPathAppPrivateArch(szBaseDir, sizeof(szBaseDir));
     AssertLogRelRCReturn(rc, E_FAIL);
-    rc = RTPathAppend(szBasePath, sizeof(szBasePath), "ExtensionPacks");
+    rc = RTPathAppend(szBaseDir, sizeof(szBaseDir), "ExtensionPacks");
+    AssertLogRelRCReturn(rc, E_FAIL);
+
+    char szCertificatDir[RTPATH_MAX];
+    rc = RTPathAppPrivateArch(szCertificatDir, sizeof(szCertificatDir));
+    AssertLogRelRCReturn(rc, E_FAIL);
+    rc = RTPathAppend(szBaseDir, sizeof(szCertificatDir), "Certificates");
     AssertLogRelRCReturn(rc, E_FAIL);
 
     /*
      * Allocate and initialize the instance data.
      */
     m = new Data;
-    m->strBasePath = szBasePath;
+    m->strBaseDir           = szBaseDir;
+    m->strCertificatDirPath = szCertificatDir;
+    m->strDropZoneDir       = a_pszDropZoneDir;
 
     /*
      * Go looking for extensions.  The RTDirOpen may fail if nothing has been
@@ -614,7 +863,7 @@ HRESULT ExtPackManager::init()
      * that exceed the max name length in RTDIRENTRYEX.
      */
     PRTDIR pDir;
-    int vrc = RTDirOpen(&pDir, szBasePath);
+    int vrc = RTDirOpen(&pDir, szBaseDir);
     if (RT_FAILURE(vrc))
         return S_OK;
     HRESULT hrc = S_OK;
@@ -638,7 +887,7 @@ HRESULT ExtPackManager::init()
             ComObjPtr<ExtPack> NewExtPack;
             HRESULT hrc2 = NewExtPack.createObject();
             if (SUCCEEDED(hrc2))
-                hrc2 = NewExtPack->init(Entry.szName, szBasePath);
+                hrc2 = NewExtPack->init(Entry.szName, szBaseDir);
             if (SUCCEEDED(hrc2))
                 m->llInstalledExtPacks.push_back(NewExtPack);
             else if (SUCCEEDED(rc))
@@ -646,6 +895,12 @@ HRESULT ExtPackManager::init()
         }
     }
     RTDirClose(pDir);
+
+    /*
+     * Look for things in the drop zone.
+     */
+    if (SUCCEEDED(hrc) && a_fCheckDropZone)
+        processDropZone();
 
     return hrc;
 }
@@ -667,8 +922,6 @@ void ExtPackManager::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (!autoUninitSpan.uninitDone() && m != NULL)
     {
-        /** @todo do unload notifications */
-
         delete m;
         m = NULL;
     }
@@ -778,16 +1031,20 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                                             (uint64_t)RTFileToNative(hFile));
 
                                 hrc = runSetUidToRootHelper("install",
-                                                            "--basepath",   m->strBasePath.c_str(),
-                                                            "--name",       pszName,
-                                                            "--tarball",    strTarball.c_str(),
-                                                            "--tarball-fd", &szTarballFd[0],
+                                                            "--base-dir",        m->strBaseDir.c_str(),
+                                                            "--name",            pszName,
+                                                            "--certificate-dir", m->strCertificatDirPath.c_str(),
+                                                            "--tarball",         strTarball.c_str(),
+                                                            "--tarball-fd",      &szTarballFd[0],
                                                             NULL);
                                 if (SUCCEEDED(hrc))
                                 {
                                     hrc = refreshExtPack(pszName, true /*a_fUnsuableIsError*/, &pExtPack);
                                     if (SUCCEEDED(hrc))
+                                    {
                                         LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pszName));
+                                        pExtPack->callInstalledHook();
+                                    }
                                 }
                                 else
                                 {
@@ -852,37 +1109,43 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
             else
             {
                 /*
-                 * Run the set-uid-to-root binary that performs the
-                 * uninstallation.  Then refresh the object.
-                 *
-                 * This refresh is theorically subject to races, but it's of
-                 * the don't-do-that variety.
+                 * Call the uninstall hook and unload the main dll.
                  */
-                const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
-                hrc = runSetUidToRootHelper("uninstall",
-                                            "--basepath", m->strBasePath.c_str(),
-                                            "--name",     strName.c_str(),
-                                            pszForcedOpt, /* Last as it may be NULL. */
-                                            NULL);
+                hrc = pExtPack->callUninstallHookAndClose(a_fForcedRemoval != FALSE);
                 if (SUCCEEDED(hrc))
                 {
-                    hrc = refreshExtPack(strName.c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
+                    /*
+                     * Run the set-uid-to-root binary that performs the
+                     * uninstallation.  Then refresh the object.
+                     *
+                     * This refresh is theorically subject to races, but it's of
+                     * the don't-do-that variety.
+                     */
+                    const char *pszForcedOpt = a_fForcedRemoval ? "--forced" : NULL;
+                    hrc = runSetUidToRootHelper("uninstall",
+                                                "--base-dir", m->strBaseDir.c_str(),
+                                                "--name",     strName.c_str(),
+                                                pszForcedOpt, /* Last as it may be NULL. */
+                                                NULL);
                     if (SUCCEEDED(hrc))
                     {
-                        if (!pExtPack)
-                            LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", strName.c_str()));
-                        else
-                            hrc = setError(E_UNEXPECTED,
-                                           tr("Uninstall extension pack '%s' failed under mysterious circumstances"),
-                                           strName.c_str());
+                        hrc = refreshExtPack(strName.c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
+                        if (SUCCEEDED(hrc))
+                        {
+                            if (!pExtPack)
+                                LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", strName.c_str()));
+                            else
+                                hrc = setError(E_UNEXPECTED,
+                                               tr("Uninstall extension pack '%s' failed under mysterious circumstances"),
+                                               strName.c_str());
+                        }
+                    }
+                    else
+                    {
+                        ErrorInfoKeeper Eik;
+                        refreshExtPack(strName.c_str(), false /*a_fUnsuableIsError*/, NULL);
                     }
                 }
-                else
-                {
-                    ErrorInfoKeeper Eik;
-                    refreshExtPack(strName.c_str(), false /*a_fUnsuableIsError*/, NULL);
-                }
-
             }
         }
     }
@@ -980,7 +1243,7 @@ HRESULT ExtPackManager::runSetUidToRootHelper(const char *a_pszCommand, ...)
              */
             if (hPipeR != NIL_RTPIPE)
             {
-                char    achBuf[16]; //1024
+                char    achBuf[16]; ///@todo 1024
                 size_t  cbRead;
                 vrc = RTPipeReadBlocking(hPipeR, achBuf, sizeof(achBuf), &cbRead);
                 if (RT_SUCCESS(vrc))
@@ -1133,6 +1396,7 @@ void ExtPackManager::removeExtPack(const char *a_pszName)
  * @param   a_ppExtPack         Where to store the pointer to the extension
  *                              pack of it is still around after the refresh.
  *                              This is optional.
+ * @remarks Caller holds the extension manager lock.
  */
 HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIsError, ExtPack **a_ppExtPack)
 {
@@ -1161,7 +1425,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
          * sensitivie file systems (a_pszName is case insensitive).
          */
         char szDir[RTPATH_MAX];
-        int vrc = RTPathJoin(szDir, sizeof(szDir), m->strBasePath.c_str(), a_pszName);
+        int vrc = RTPathJoin(szDir, sizeof(szDir), m->strBaseDir.c_str(), a_pszName);
         AssertLogRelRCReturn(vrc, E_FAIL);
 
         RTDIRENTRYEX    Entry;
@@ -1171,7 +1435,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
         if (!fExists)
         {
             PRTDIR pDir;
-            vrc = RTDirOpen(&pDir, m->strBasePath.c_str());
+            vrc = RTDirOpen(&pDir, m->strBaseDir.c_str());
             if (RT_SUCCESS(vrc))
             {
                 for (;;)
@@ -1189,7 +1453,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
                          * The installed extension pack has a uses different case.
                          * Update the name and directory variables.
                          */
-                        vrc = RTPathJoin(szDir, sizeof(szDir), m->strBasePath.c_str(), Entry.szName); /* not really necessary */
+                        vrc = RTPathJoin(szDir, sizeof(szDir), m->strBaseDir.c_str(), Entry.szName); /* not really necessary */
                         AssertLogRelRCReturnStmt(vrc, E_UNEXPECTED, RTDirClose(pDir));
                         a_pszName = Entry.szName;
                         fExists   = true;
@@ -1207,7 +1471,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
             ComObjPtr<ExtPack> NewExtPack;
             hrc = NewExtPack.createObject();
             if (SUCCEEDED(hrc))
-                hrc = NewExtPack->init(a_pszName, m->strBasePath.c_str());
+                hrc = NewExtPack->init(a_pszName, m->strBaseDir.c_str());
             if (SUCCEEDED(hrc))
             {
                 m->llInstalledExtPacks.push_back(NewExtPack);
@@ -1238,17 +1502,184 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
 }
 
 
-
-int ExtPackManager::callAllConfigHooks(IConsole *a_pConsole, PVM a_pVM)
+/**
+ * Processes anything new in the drop zone.
+ */
+void ExtPackManager::processDropZone(void)
 {
-    NOREF(a_pConsole); NOREF(a_pVM);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return;
+    AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->strDropZoneDir.isEmpty())
+        return;
+
+    PRTDIR pDir;
+    int vrc = RTDirOpen(&pDir, m->strDropZoneDir.c_str());
+    if (RT_FAILURE(vrc))
+        return;
+    for (;;)
+    {
+        RTDIRENTRYEX Entry;
+        vrc = RTDirReadEx(pDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+        if (RT_FAILURE(vrc))
+        {
+            AssertMsg(vrc == VERR_NO_MORE_FILES, ("%Rrc\n", vrc));
+            break;
+        }
+
+        /*
+         * We're looking for files with the right extension.  Symbolic links
+         * will be ignored.
+         */
+        if (   RTFS_IS_FILE(Entry.Info.Attr.fMode)
+            && RTStrICmp(RTPathExt(Entry.szName), VBOX_EXTPACK_SUFFIX) == 0)
+        {
+            /* We create (and check for) a blocker file to prevent this
+               extension pack from being installed more than once. */
+            char szPath[RTPATH_MAX];
+            vrc = RTPathJoin(szPath, sizeof(szPath), m->strDropZoneDir.c_str(), Entry.szName);
+            if (RT_SUCCESS(vrc))
+                vrc = RTPathAppend(szPath, sizeof(szPath), "-done");
+            AssertRC(vrc);
+            if (RT_SUCCESS(vrc))
+            {
+                RTFILE hFile;
+                vrc = RTFileOpen(&hFile, szPath,  RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE);
+                if (RT_SUCCESS(vrc))
+                {
+                    /* Construct the full path to the extension pack and invoke
+                       the Install method to install it.  Write errors to the
+                       done file. */
+                    vrc = RTPathJoin(szPath, sizeof(szPath), m->strDropZoneDir.c_str(), Entry.szName); AssertRC(vrc);
+                    Bstr strName;
+                    hrc = Install(Bstr(szPath).raw(), strName.asOutParam());
+                    if (SUCCEEDED(hrc))
+                        RTFileWrite(hFile, "succeeded\n", sizeof("succeeded\n"), NULL);
+                    else
+                    {
+                        Utf8Str strErr;
+                        com::ErrorInfo Info(this, COM_IIDOF(IExtPackManager));
+                        if (Info.isFullAvailable())
+                            strErr.printf("failed\n"
+                                          "%ls\n"
+                                          "Details: code %Rhrc (%#RX32), component %ls, interface %ls, callee %ls\n"
+                                          ,
+                                          Info.getText().raw(),
+                                          Info.getResultCode(),
+                                          Info.getResultCode(),
+                                          Info.getComponent().raw(),
+                                          Info.getInterfaceName().raw(),
+                                          Info.getCalleeName().raw());
+                        else
+                            strErr.printf("failed\n"
+                                          "hrc=%Rhrc (%#RX32)\n", hrc, hrc);
+                        RTFileWrite(hFile, strErr.c_str(), strErr.length(), NULL);
+                    }
+                    RTFileClose(hFile);
+                }
+            }
+        }
+    } /* foreach dir entry */
+    RTDirClose(pDir);
+}
+
+
+/**
+ * Calls the pfnVMCreated hook for all working extension packs.
+ *
+ * @param   a_pMachine          The machine interface of the new VM.
+ */
+void ExtPackManager::callAllVmCreatedHooks(IMachine *a_pMachine)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return;
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+         it != m->llInstalledExtPacks.end();
+         it++)
+        (*it)->callVmCreatedHook(a_pMachine);
+}
+
+/**
+ * Calls the pfnVMConfigureVMM hook for all working extension packs.
+ *
+ * @returns VBox status code.  Stops on the first failure, expecting the caller
+ *          to signal this to the caller of the CFGM constructor.
+ * @param   a_pConsole          The console interface for the VM.
+ * @param   a_pVM               The VM handle.
+ */
+int ExtPackManager::callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return Global::vboxStatusCodeFromCOM(hrc);
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+         it != m->llInstalledExtPacks.end();
+         it++)
+    {
+        int vrc = (*it)->callVmConfigureVmmHook(a_pConsole, a_pVM);
+        if (RT_FAILURE(vrc))
+            return vrc;
+    }
+
     return VINF_SUCCESS;
 }
 
-int ExtPackManager::callAllNewMachineHooks(IMachine *a_pMachine)
+/**
+ * Calls the pfnVMPowerOn hook for all working extension packs.
+ *
+ * @returns VBox status code.  Stops on the first failure, expecting the caller
+ *          to not power on the VM.
+ * @param   a_pConsole          The console interface for the VM.
+ * @param   a_pVM               The VM handle.
+ */
+int ExtPackManager::callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
 {
-    NOREF(a_pMachine);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return Global::vboxStatusCodeFromCOM(hrc);
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+         it != m->llInstalledExtPacks.end();
+         it++)
+    {
+        int vrc = (*it)->callVmPowerOnHook(a_pConsole, a_pVM);
+        if (RT_FAILURE(vrc))
+            return vrc;
+    }
+
     return VINF_SUCCESS;
+}
+
+/**
+ * Calls the pfnVMPowerOff hook for all working extension packs.
+ *
+ * @param   a_pConsole          The console interface for the VM.
+ * @param   a_pVM               The VM handle. Can be NULL.
+ */
+void ExtPackManager::callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return;
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+         it != m->llInstalledExtPacks.end();
+         it++)
+        (*it)->callVmPowerOnHook(a_pConsole, a_pVM);
 }
 
 
