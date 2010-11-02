@@ -76,6 +76,7 @@ protected:
     void cleanupPage();
 
     bool isComplete() const;
+    bool validatePage();
 
     int nextId() const;
 

@@ -4,7 +4,7 @@
 <context>
     <name>VBoxGlobal</name>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="377"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="201"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n year</numerusform>
@@ -12,7 +12,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="382"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="206"/>
         <source>%n month(s)</source>
         <translation>
             <numerusform>%n month</numerusform>
@@ -20,7 +20,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="387"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="211"/>
         <source>%n day(s)</source>
         <translation>
             <numerusform>%n day</numerusform>
@@ -28,7 +28,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="392"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="216"/>
         <source>%n hour(s)</source>
         <translation>
             <numerusform>%n hour</numerusform>
@@ -36,7 +36,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="402"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="226"/>
         <source>%n second(s)</source>
         <translation>
             <numerusform>%n second</numerusform>
@@ -44,7 +44,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="397"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="221"/>
         <source>%n minute(s)</source>
         <translation>
             <numerusform>%n minute</numerusform>
@@ -53,9 +53,20 @@
     </message>
 </context>
 <context>
+    <name>VBoxProblemReporter</name>
+    <message numerus="yes">
+        <location filename="../src/globals/VBoxProblemReporter.cpp" line="2340"/>
+        <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
+        <translation>
+            <numerusform>&lt;p&gt;The virtual machine &lt;b&gt;%1&lt;/b&gt; is currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine will be discarded. Note that the existing machine is not changed.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;The virtual machines &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machines will be discarded. Note that the existing machines are not changed.&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>VBoxTakeSnapshotDlg</name>
     <message numerus="yes">
-        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="87"/>
+        <location filename="../src/VBoxTakeSnapshotDlg.cpp" line="74"/>
         <source>Warning: You are taking a snapshot of a running machine which has %n immutable image(s) attached to it. As long as you are working from this snapshot the immutable image(s) will not be reset to avoid loss of data.</source>
         <translation>
             <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable image attached to it. As long as you are working from this snapshot the immutable image will not be reset to avoid loss of data.</numerusform>
