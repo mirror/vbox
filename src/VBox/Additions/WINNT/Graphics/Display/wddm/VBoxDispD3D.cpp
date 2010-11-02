@@ -739,7 +739,6 @@ static VBOXUHGSMIKMT_VAR(uint32_t) g_cVBoxUhgsmiKmtRefs = 0;
 
 #ifdef VBOX_WITH_CRHGSMI
 static __declspec(thread) PVBOXUHGSMI_PRIVATE_BASE gt_pHgsmi = NULL;
-#endif
 
 VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks)
 {
@@ -785,7 +784,6 @@ VBOXWDDMDISP_DECL(HVBOXCRHGSMI_CLIENT) VBoxDispCrHgsmiQueryClient()
     return NULL;
 }
 
-#ifdef VBOX_WITH_CRHGSMI
 static HRESULT vboxUhgsmiGlobalRetain()
 {
     HRESULT hr = S_OK;
@@ -875,6 +873,21 @@ private:
 #else
 #define VBOXDISPCRHGSMI_SCOPE_SET_DEV(_pDev) do {} while(0)
 #define VBOXDISPCRHGSMI_SCOPE_SET_GLOBAL() do {} while(0)
+
+VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiInit(void*)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+VBOXWDDMDISP_DECL(int) VBoxDispCrHgsmiTerm()
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+VBOXWDDMDISP_DECL(void*) VBoxDispCrHgsmiQueryClient()
+{
+    return NULL;
+}
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

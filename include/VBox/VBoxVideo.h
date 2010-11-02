@@ -739,6 +739,7 @@ typedef struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE
             uint32_t xUpdatedSrcMemValid;
             VBOXVHWA_OVERLAYFX desc;
             VBOXVHWA_RECTL xUpdatedSrcMemRect;
+            VBOXVHWA_RECTL xUpdatedDstMemRect;
         } in;
     } u;
 }VBOXVHWACMD_SURF_OVERLAY_UPDATE;

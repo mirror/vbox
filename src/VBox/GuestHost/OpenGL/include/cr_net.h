@@ -105,6 +105,15 @@ typedef struct CRMultiBuffer {
     void         *buf;  /* data buffer */
 } CRMultiBuffer;
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+typedef struct CRVBOXHGSMI_CLIENT {
+    struct VBOXUHGSMI *pHgsmi;
+    struct VBOXUHGSMI_BUFFER *pCmdBuffer;
+    struct VBOXUHGSMI_BUFFER *pHGBuffer;
+    void *pvHGBuffer;
+    struct CRBufferPool_t *bufpool;
+} CRVBOXHGSMI_CLIENT, *PCRVBOXHGSMI_CLIENT;
+#endif
 /**
  * Chromium network connection (bidirectional).
  */
@@ -223,6 +232,11 @@ struct CRConnection {
     uint32_t cbHostBuffer;
 #ifdef IN_GUEST
     uint32_t u32InjectClientID;
+# ifdef VBOX_WITH_CRHGSMI
+#  ifndef VBOX_CRHGSMI_WITH_D3DDEV
+    CRVBOXHGSMI_CLIENT HgsmiClient;
+#  endif
+# endif
 #endif
     /* Used on host side to indicate that we are not allowed to store above pointers for later use
      * in crVBoxHGCMReceiveMessage. As those messages are going to be processed after the corresponding 
