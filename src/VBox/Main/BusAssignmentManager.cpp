@@ -23,6 +23,7 @@
 #include <VBox/cfgm.h>
 
 #include <map>
+#include <vector>
 
 struct BusAssignmentManager::State
 {
@@ -34,13 +35,26 @@ struct BusAssignmentManager::State
         {
             ::strncpy(szDevName, pszName, sizeof(szDevName));
         }
+
+        bool operator<(const PciDeviceRecord &a) const
+        {
+            return ::strcmp(szDevName, a.szDevName) < 0;
+        }
+
+        bool operator==(const PciDeviceRecord &a) const
+        {
+            return ::strcmp(szDevName, a.szDevName) == 0;
+        }
     };
 
-    typedef std::map <PciBusAddress, PciDeviceRecord > PciMap;
+    typedef std::map <PciBusAddress,PciDeviceRecord > PciMap;
+    typedef std::vector<PciBusAddress>                PciAddrList;
+    typedef std::map <PciDeviceRecord,PciAddrList >   ReversePciMap;
 
     volatile int32_t cRefCnt;
     ChipsetType_T    mChipsetType;
     PciMap           mPciMap;
+    ReversePciMap    mReversePciMap;
 
     State()
         : cRefCnt(1), mChipsetType(ChipsetType_Null)
@@ -53,6 +67,7 @@ struct BusAssignmentManager::State
     HRESULT record(const char* pszName, PciBusAddress& Address);
     HRESULT autoAssign(const char* pszName, PciBusAddress& Address);
     bool    checkAvailable(PciBusAddress& Address);
+    bool    findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address);
 };
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
@@ -64,8 +79,37 @@ HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
 
 HRESULT BusAssignmentManager::State::record(const char* pszName, PciBusAddress& Address)
 {
-    mPciMap.insert(PciMap::value_type(Address, PciDeviceRecord(pszName)));
+    PciDeviceRecord devRec(pszName);
+
+    /* Remember address -> device mapping */
+    mPciMap.insert(PciMap::value_type(Address, devRec));
+
+    ReversePciMap::iterator it = mReversePciMap.find(devRec);
+    if (it == mReversePciMap.end())
+    {
+        mReversePciMap.insert(ReversePciMap::value_type(devRec, PciAddrList()));
+        it = mReversePciMap.find(devRec);
+    }
+
+    /* Remember device name -> addresses mapping */
+    it->second.push_back(Address);
+
     return S_OK;
+}
+
+bool    BusAssignmentManager::State::findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address)
+{
+    PciDeviceRecord devRec(pszDevName);
+
+    ReversePciMap::iterator it = mReversePciMap.find(devRec);
+    if (it == mReversePciMap.end())
+        return false;
+
+    if (iInstance >= (int)it->second.size())
+        return false;
+
+    Address = it->second[iInstance];
+    return true;
 }
 
 HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PciBusAddress& Address)
@@ -174,4 +218,10 @@ HRESULT BusAssignmentManager::assignPciDevice(const char* pszDevName, PCFGMNODE 
         return rc;
 
     return S_OK;
+}
+
+
+bool BusAssignmentManager::findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address)
+{
+    return pState->findPciAddress(pszDevName, iInstance, Address);
 }

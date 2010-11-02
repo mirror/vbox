@@ -965,6 +965,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         {
             InsertConfigNode(pDevices, "lpc", &pDev);
             InsertConfigNode(pDev,     "0", &pInst);
+#if 0
+            PciAddr = PciBusAddress(0, 31, 0);
+            hrc = BusMgr->assignPciDevice("lpc", pInst);                               H();
+#endif
             InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
         }
 
@@ -2306,9 +2310,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
             if (fOsXGuest && fAudioEnabled)
             {
-                /** @todo: don't hardcode */
-                uint32_t u32AudioPciAddr = (5 << 16) | 0;
-                InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPciAddr);
+                PciBusAddress Address;
+                if (BusMgr->findPciAddress("hda", 0, Address))
+                {
+                    uint32_t u32AudioPciAddr = (Address.iDevice << 16) | Address.iFn;
+                    InsertConfigInteger(pCfg, "AudioPciAddress",    u32AudioPciAddr);
+                }
             }
             InsertConfigInteger(pCfg,  "IocPciAddress", u32IocPciAddress);
             if (chipsetType == ChipsetType_ICH9)

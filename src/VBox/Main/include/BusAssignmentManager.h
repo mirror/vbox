@@ -48,19 +48,19 @@ struct PciBusAddress
     {
         if (iBus < a.iBus)
             return true;
-        
+
         if (iBus > a.iBus)
             return false;
 
         if (iDevice < a.iDevice)
             return true;
-        
+
         if (iDevice > a.iDevice)
             return false;
 
         if (iFn < a.iFn)
             return true;
-        
+
         if (iFn > a.iFn)
             return false;
 
@@ -109,6 +109,7 @@ public:
         PciBusAddress Address;
         return assignPciDevice(pszDevName, pCfg, Address, false);
     }
+    virtual bool findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address);
 };
 
 #endif //  __BusAssignmentManager_h
