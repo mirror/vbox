@@ -24,7 +24,7 @@
 class Console;
 
 class ATL_NO_VTABLE SharedFolder :
-    public VirtualBoxBaseWithChildrenNEXT,
+    public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(ISharedFolder)
 {
 public:

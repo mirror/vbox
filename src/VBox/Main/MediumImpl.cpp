@@ -1323,9 +1323,8 @@ void Medium::uninit()
 
     if (m->state == MediumState_Deleting)
     {
-        /* we are being reinitialized after we've been deleted by merge.
-         * Reparenting has already been done so don't touch it here (we are
-         * now orphans and removeDependentChild() will assert) */
+        /* This medium has been already deleted (directly or as part of a
+         * merge).  Reparenting has already been done. */
         Assert(m->pParent.isNull());
     }
     else

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -506,7 +506,6 @@ STDMETHODIMP USBController::InsertDeviceFilter(ULONG aPosition,
 
     ComObjPtr<USBDeviceFilter> filter = static_cast<USBDeviceFilter*>(aFilter);
     // @todo r=dj make sure the input object is actually from us
-//     ComObjPtr<USBDeviceFilter> filter = getDependentChild(aFilter);
 //     if (!filter)
 //         return setError (E_INVALIDARG,
 //             tr ("The given USB device filter is not created within "

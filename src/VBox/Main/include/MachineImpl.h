@@ -80,7 +80,7 @@ namespace settings
 ////////////////////////////////////////////////////////////////////////////////
 
 class ATL_NO_VTABLE Machine :
-    public VirtualBoxBaseWithChildrenNEXT,
+    public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IMachine)
 {
     Q_OBJECT
