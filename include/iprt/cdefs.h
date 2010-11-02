@@ -1140,12 +1140,31 @@
 
 /** @def RT_FROM_MEMBER
  * Convert a pointer to a structure member into a pointer to the structure.
+ *
  * @returns pointer to the structure.
  * @param   pMem    Pointer to the member.
  * @param   Type    Structure type.
  * @param   Member  Member name.
  */
 #define RT_FROM_MEMBER(pMem, Type, Member)      ( (Type *) ((uint8_t *)(void *)(pMem) - RT_UOFFSETOF(Type, Member)) )
+
+/** @def RT_FROM_CPP_MEMBER
+ * Same as RT_FROM_MEMBER except it avoids the annoying g++ warnings about
+ * invalid access to non-static data member of NULL object.
+ *
+ * @returns pointer to the structure.
+ * @param   pMem    Pointer to the member.
+ * @param   Type    Structure type.
+ * @param   Member  Member name.
+ *
+ * @remarks Using the __builtin_offsetof does not shut up the compiler.
+ */
+#if defined(__GNUC__) && defined(__cplusplus)
+# define RT_FROM_CPP_MEMBER(pMem, Type, Member) \
+        ( (Type *) ((uintptr_t)(pMem) - (uintptr_t)&((Type *)0x1000)->Member + 0x1000U) )
+#else
+# define RT_FROM_CPP_MEMBER(pMem, Type, Member) RT_FROM_MEMBER(pMem, Type, Member)
+#endif
 
 /** @def RT_ELEMENTS
  * Calculates the number of elements in a statically sized array.
