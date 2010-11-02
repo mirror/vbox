@@ -169,6 +169,10 @@ DECLCALLBACK(int) vboxUhgsmiKmtBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBuf,
 
             return VINF_SUCCESS;
         }
+        else
+        {
+            rc = VERR_OUT_OF_RESOURCES;
+        }
 
         RTMemFree(pBuf);
     }
@@ -324,6 +328,10 @@ DECLCALLBACK(int) vboxUhgsmiKmtEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbBu
             *ppBuf = &pBuf->Base;
 
             return VINF_SUCCESS;
+        }
+        else
+        {
+            rc = VERR_OUT_OF_RESOURCES;
         }
 
         RTMemFree(pBuf);

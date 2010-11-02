@@ -1065,7 +1065,6 @@ BOOLEAN DxgkDdiInterruptRoutine(
         if (bNeedDpc)
         {
             BOOLEAN bDpcQueued = pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-            Assert(bDpcQueued);
         }
     }
 
@@ -2870,9 +2869,6 @@ DxgkDdiBuildPagingBuffer(
 
                     if (pBuildPagingBuffer->Transfer.Source.SegmentId)
                     {
-#ifdef DEBUG_misha
-                        Assert(pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart);
-#endif
                         uint64_t off = pBuildPagingBuffer->Transfer.Source.SegmentAddress.QuadPart;
                         off += pBuildPagingBuffer->Transfer.TransferOffset + cbTransfered;
                         pBody->Src.offVramBuf = off;
@@ -2897,9 +2893,6 @@ DxgkDdiBuildPagingBuffer(
 
                     if (pBuildPagingBuffer->Transfer.Destination.SegmentId)
                     {
-#ifdef DEBUG_misha
-                        Assert(pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart);
-#endif
                         uint64_t off = pBuildPagingBuffer->Transfer.Destination.SegmentAddress.QuadPart;
                         off += pBuildPagingBuffer->Transfer.TransferOffset;
                         pBody->Dst.offVramBuf = off + cbTransfered;
