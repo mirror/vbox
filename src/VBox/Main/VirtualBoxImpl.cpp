@@ -1424,53 +1424,71 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
 
     /* we don't access non-const data members so no need to lock */
 
+    // check if the device type is correct, and see if a medium for the
+    // given path has already initialized; if so, return that
     switch (deviceType)
     {
         case DeviceType_HardDisk:
-        case DeviceType_Floppy:
+            findHardDiskByLocation(aLocation,
+                                   false, /* aSetError */
+                                   &pMedium);
         break;
 
+        case DeviceType_Floppy:
         case DeviceType_DVD:
-            accessMode = AccessMode_ReadOnly;
+            findDVDOrFloppyImage(deviceType,
+                                 NULL, /* guid */
+                                 aLocation,
+                                 false, /* aSetError */
+                                 &pMedium);
+
+            // enforce read-only for DVDs even if caller specified ReadWrite
+            if (deviceType == DeviceType_DVD)
+                accessMode = AccessMode_ReadOnly;
         break;
 
         default:
             return setError(E_INVALIDARG, "Device type must be HardDisk, DVD or Floppy");
     }
 
-    pMedium.createObject();
-    HRESULT rc = pMedium->init(this,
-                               aLocation,
-                               (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
-                               deviceType);
+    HRESULT rc = S_OK;
 
-    if (SUCCEEDED(rc))
+    if (pMedium.isNull())
     {
-        AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        pMedium.createObject();
+        rc = pMedium->init(this,
+                           aLocation,
+                           (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
+                           deviceType);
 
-        switch (deviceType)
+        if (SUCCEEDED(rc))
         {
-            case DeviceType_HardDisk:
-                rc = registerHardDisk(pMedium,
-                                      &fNeedsGlobalSaveSettings);
-            break;
+            AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-            case DeviceType_DVD:
-            case DeviceType_Floppy:
-                rc = registerImage(pMedium,
-                                   deviceType,
-                                   &fNeedsGlobalSaveSettings);
-            break;
+            switch (deviceType)
+            {
+                case DeviceType_HardDisk:
+                    rc = registerHardDisk(pMedium,
+                                          &fNeedsGlobalSaveSettings);
+                break;
+
+                case DeviceType_DVD:
+                case DeviceType_Floppy:
+                    rc = registerImage(pMedium,
+                                       deviceType,
+                                       &fNeedsGlobalSaveSettings);
+                break;
+            }
+
+            treeLock.release();
+
+            /* Note that it's important to call uninit() on failure to register
+             * because the differencing hard disk would have been already associated
+             * with the parent and this association needs to be broken. */
+
+            if (FAILED(rc))
+                pMedium->uninit();
         }
-
-        treeLock.release();
-
-        /* Note that it's important to call uninit() on failure to register
-         * because the differencing hard disk would have been already associated
-         * with the parent and this association needs to be broken. */
-
-        if (FAILED(rc))
-            pMedium->uninit();
     }
 
     if (SUCCEEDED(rc))
