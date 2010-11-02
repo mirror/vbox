@@ -1882,7 +1882,6 @@ DECLINLINE(VOID) vboxWddmSwapchainRtRemove(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, P
         }
         else if (pSwapchain->iBB == iRt)
         {
-            Assert(0);
             pSwapchain->iBB = 0;
         }
     }
@@ -1996,9 +1995,6 @@ static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE 
     }
     if (!pSwapchain)
     {
-#ifdef DEBUG_misha
-        Assert(0);
-#endif
         /* first search for the swapchain the alloc might be added to */
         PVBOXWDDMDISP_SWAPCHAIN pCur = RTListNodeGetFirst(&pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
         while (pCur)
@@ -5390,6 +5386,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 //                PVBOXWDDMDISP_SCREEN pScreen = &pDevice->aScreens[pDevice->iPrimaryScreen];
 //                Assert(pScreen->hWnd);
 //                Assert(pScreen->pDevice9If);
+                hr = E_FAIL;
                 Assert(0);
             }
         }
@@ -6721,7 +6718,6 @@ static HRESULT APIENTRY vboxWddmDDevGetQueryData(HANDLE hDevice, CONST D3DDDIARG
     switch (pQuery->enmType)
     {
         case D3DDDIQUERYTYPE_EVENT:
-            Assert(0);
             pQuery->data.bData = TRUE;
             Assert(pData->pData);
             *((BOOL*)pData->pData) = TRUE;
@@ -8179,6 +8175,7 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
     {
         case 0x40010006: /* <- OutputDebugString exception, ignore */
         case 0xe06d7363: /* <- ms compiler - generated exception related to C++ exception */
+        case 0x000006d9: /* <- RPC exception, ignore */
             break;
         default:
             AssertRelease(0);

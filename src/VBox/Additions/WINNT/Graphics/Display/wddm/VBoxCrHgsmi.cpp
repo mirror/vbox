@@ -121,13 +121,18 @@ VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient()
         {
             hClient = g_VBoxCrHgsmiCallbacks.pfnClientCreate(&pHgsmiGL->BasePrivate.Base);
             Assert(hClient);
-            pHgsmiGL->BasePrivate.hClient = hClient;
-            gt_pHgsmiGL = pHgsmiGL;
+            if (hClient)
+            {
+                pHgsmiGL->BasePrivate.hClient = hClient;
+                gt_pHgsmiGL = pHgsmiGL;
+                return hClient;
+            }
+            vboxUhgsmiKmtDestroy(pHgsmiGL);
         }
+        RTMemFree(pHgsmiGL);
     }
-    else
-        hClient = NULL;
-    return hClient;
+
+    return NULL;
 }
 
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()

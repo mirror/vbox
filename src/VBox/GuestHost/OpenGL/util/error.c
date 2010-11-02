@@ -240,7 +240,7 @@ DECLEXPORT(void) crWarning(const char *format, ... )
 #endif
         va_end( args );
 
-#if defined(WINDOWS) && defined(DEBUG) && !defined(IN_GUEST)
+#if defined(WINDOWS) && defined(DEBUG) && !defined(IN_GUEST) && !defined(DEBUG_misha)
         DebugBreak();
 #endif
     }
@@ -321,7 +321,7 @@ DECLEXPORT(void) crDebug(const char *format, ... )
 #endif
             output = stderr;
         }
-#ifndef DEBUG
+#if !defined(DEBUG) || defined(DEBUG_misha)
         /* Release mode: only emit crDebug messages if CR_DEBUG
          * or CR_DEBUG_FILE is set.
          */

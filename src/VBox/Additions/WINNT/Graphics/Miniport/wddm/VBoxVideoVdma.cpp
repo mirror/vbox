@@ -1574,7 +1574,6 @@ static BOOLEAN vboxVdmaDdiCmdFenceCompleteCb(PVOID Context)
 
     pDevExt->bNotifyDxDpc = TRUE;
     BOOLEAN bDpcQueued = pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-    Assert(bDpcQueued);
 
     return bDpcQueued;
 }

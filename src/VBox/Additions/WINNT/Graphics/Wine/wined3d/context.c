@@ -756,9 +756,6 @@ static void context_update_window(struct wined3d_context *context
         )
 {
 #ifdef VBOX_WITH_WDDM
-# ifdef DEBUG_misha
-    Assert(0);
-# endif
     TRACE("Updating context %p window from %p to %p.\n",
             context, context->win_handle, swapchain->win_handle);
 #else
@@ -1292,10 +1289,6 @@ struct wined3d_context *context_create(IWineD3DSwapChainImpl *swapchain, IWineD3
     HGLRC ctx;
     HDC hdc;
 
-#if defined(VBOX_WITH_WDDM) && defined(DEBUG_misha)
-    Assert(0);
-#endif
-
     TRACE("swapchain %p, target %p, window %p.\n", swapchain, target, swapchain->win_handle);
 
     ret = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*ret));
@@ -1617,7 +1610,7 @@ BOOL context_acquire_context(struct wined3d_context * context, IWineD3DSurface *
     }
     context_setup_target(device, context, target);
     context_enter(context);
-    Assert(context->valid);
+//    Assert(context->valid);
     if (!context->valid) return FALSE;
 
     if (context != current_context)
