@@ -2338,10 +2338,10 @@ bool VBoxProblemReporter::confirmExportMachinesInSaveState(const QStringList &ma
 {
     return messageOkCancel(mainWindowShown(), Warning,
         tr("<p>The virtual machine(s) <b>%1</b> are currently in a saved state.</p>"
-           "<p>If you "
-           "continue the runtime state of the exported machine(s) will be "
-           "discarded. Note that the existing machine(s) are not "
-           "changed.</p>", "", machineNames.size()).arg(VBoxGlobal::toHumanReadableList(machineNames)),
+           "<p>If you continue the runtime state of the exported machine(s) "
+           "will be discarded. Note that the existing machine(s) are not "
+           "changed.</p>", "",
+           machineNames.size()).arg(VBoxGlobal::toHumanReadableList(machineNames)),
         0 /* aAutoConfirmId */,
         tr("Continue"), tr("Cancel"));
 }

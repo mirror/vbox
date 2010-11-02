@@ -162,7 +162,7 @@ bool UIExportApplianceWzdPage1::isComplete() const
 
 bool UIExportApplianceWzdPage1::validatePage()
 {
-    /* Ask user about disk-less machine */
+    /* Ask user machines which are in save state currently. */
     QStringList savedMachines;
     QList<QListWidgetItem*> pItems = m_pVMSelector->selectedItems();
     for (int i=0; i < pItems.size(); ++i)
