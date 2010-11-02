@@ -637,7 +637,6 @@ private:
     void addControllerWrapper (const QString &aName, KStorageBus aBus, KStorageControllerType aType);
     void addAttachmentWrapper (KDeviceType aDevice);
 
-    QString getWithOpenFileDialog (VBoxDefs::MediumType aMediumType);
     QString getWithNewHDWizard();
 
     void updateAdditionalObjects (KDeviceType aType);

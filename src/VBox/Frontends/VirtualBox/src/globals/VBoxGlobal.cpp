@@ -29,6 +29,7 @@
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
 #include "UIExtraDataEventHandler.h"
+#include "QIFileDialog.h"
 
 #include "UIMachine.h"
 #include "UISession.h"
@@ -2559,6 +2560,98 @@ VBoxMedium VBoxGlobal::findMedium (const QString &aMediumId) const
     return VBoxMedium();
 }
 
+/* Open some external medium using file open dialog
+ * and temporary cache (enumerate) it in GUI inner mediums cache: */
+QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent) const
+{
+    /* Initialize variables: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QString strHomeFolder = vbox.GetHomeFolder();
+    QList < QPair <QString, QString> > filters;
+    QStringList backends;
+    QStringList prefixes;
+    QString strFilter;
+    QString strTitle;
+    QString allType;
+    KDeviceType type;
+    switch (mediumType)
+    {
+        case VBoxDefs::MediumType_HardDisk:
+        {
+            filters = vboxGlobal().HDDBackends();
+            strTitle = tr ("Select a hard disk image file");
+            allType = tr ("hard disk");
+            type = KDeviceType_HardDisk;
+            break;
+        }
+        case VBoxDefs::MediumType_DVD:
+        {
+            filters = vboxGlobal().DVDBackends();
+            strTitle = tr ("Select a CD/DVD-ROM disk image file");
+            allType = tr ("CD/DVD-ROM disk");
+            type = KDeviceType_DVD;
+            break;
+        }
+        case VBoxDefs::MediumType_Floppy:
+        {
+            filters = vboxGlobal().FloppyBackends();
+            strTitle = tr ("Select a floppy disk image file");
+            allType = tr ("floppy disk");
+            type = KDeviceType_Floppy;
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Prepare filters and backends: */
+    for (int i = 0; i < filters.count(); ++i)
+    {
+        /* Get iterated filter: */
+        QPair <QString, QString> item = filters.at(i);
+        /* Create one backend filter string: */
+        backends << QString("%1 (%2)").arg(item.first).arg(item.second);
+        /* Save the suffix's for the "All" entry: */
+        prefixes << item.second;
+    }
+    if (!prefixes.isEmpty())
+        backends.insert(0, tr("All %1 images (%2)").arg(allType).arg(prefixes.join(" ").trimmed()));
+    backends << tr("All files (*)");
+    strFilter = backends.join(";;").trimmed();
+
+    /* Create open file dialog: */
+    QStringList files = QIFileDialog::getOpenFileNames(strHomeFolder, strFilter, pParent, strTitle, 0, true, true);
+    if (!files.empty() && !files[0].isEmpty())
+    {
+        /* Get location: */
+        QString strLocation = files[0];
+
+        /* Open corresponding medium: */
+        CMedium comMedium = vbox.OpenMedium(strLocation, type, KAccessMode_ReadWrite);
+
+        if (vbox.isOk())
+        {
+            /* Prepare vbox medium wrapper: */
+            VBoxMedium vboxMedium;
+
+            /* First of all we should test if that medium already opened: */
+            if (!vboxGlobal().findMedium(comMedium, vboxMedium))
+            {
+                /* And create new otherwise: */
+                vboxMedium = VBoxMedium(CMedium(comMedium), mediumType, KMediumState_Created);
+                vboxGlobal().addMedium(vboxMedium);
+            }
+
+            /* Return vboxMedium id: */
+            return vboxMedium.id();
+        }
+        else
+            vboxProblem().cannotOpenMedium(pParent, vbox, mediumType, strLocation);
+    }
+
+    return QString();
+}
+
 #ifdef VBOX_GUI_WITH_SYSTRAY
 /**
  *  Returns the number of current running Fe/Qt4 main windows.
@@ -3415,7 +3508,7 @@ QString VBoxGlobal::toHumanReadableList(const QStringList &list)
                 strList += + ", ";
         }
         strList += " " + tr("and") + " " + list.at(list.size() - 1);
-    }else
+    }
     return strList;
 }
 

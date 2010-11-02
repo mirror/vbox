@@ -578,6 +578,8 @@ public:
         return medium;
     }
 
+    QString openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType, QWidget *pParent = 0) const;
+
     /* Returns the number of current running Fe/Qt4 main windows. */
     int mainWindowCount();
 
