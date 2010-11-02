@@ -970,14 +970,14 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
 {
     if(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST))
     {
-        LogRel(("hda: guest has initiated hw stream reset\n"));
+        Log(("hda: guest has initiated hw stream reset\n"));
         pState->u8StreamsInReset |= HDA_STREAM_BITMASK(offset);
         hdaStreamReset(pState, offset);
         HDA_REG_IND(pState, index) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
     }
     else if (HDA_IS_STREAM_IN_RESET(pState, offset))
     {
-        LogRel(("hda: guest has initiated exit of stream reset\n"));
+        Log(("hda: guest has initiated exit of stream reset\n"));
         pState->u8StreamsInReset &= ~HDA_STREAM_BITMASK(offset);
         HDA_REG_IND(pState, index) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
     }
@@ -1571,9 +1571,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     CORBRP(&pThis->hda) = 0x0;
     RIRBWP(&pThis->hda) = 0x0;
 
-    LogRel(("hda: inter HDA reset.\n"));
-    //** @todo r=michaln: There should be LogRel statements when the guest initializes
-    // or resets the HDA chip, and possibly also when opening the PCM streams.
+    Log(("hda: inter HDA reset.\n"));
     pThis->hda.cbCorbBuf = 256 * sizeof(uint32_t);
 
     if (pThis->hda.pu32CorbBuf)
