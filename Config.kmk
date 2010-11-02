@@ -145,21 +145,21 @@ endif
 #
 
 # Major version.
-VBOX_VERSION_MAJOR = 3
+VBOX_VERSION_MAJOR = 4
 # Minor version.
-VBOX_VERSION_MINOR = 2
+VBOX_VERSION_MINOR = 0
 # This is the current build number. It should be increased every time we publish a
 # new build. The define is available in every source file. Only even build numbers
 # will be published, odd numbers are set during development.
-VBOX_VERSION_BUILD = 51
+VBOX_VERSION_BUILD = 0
 # Full version string (may include more than just x.y.z, but no spaces or other problematic chars).
-VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)_ALPHA
 # Force the additions.sh script to get an exact additions build when we're doing the release.
 
 ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
- export VBOX_ADDITIONS_SH_MODE = release
- export VBOX_DOCUMENTATION_SH_MODE = release
- export VBOX_EFI_SH_MODE = release
+# export VBOX_ADDITIONS_SH_MODE = release
+# export VBOX_DOCUMENTATION_SH_MODE = release
+# export VBOX_EFI_SH_MODE = release
 endif
 
 # Some info on the vendor
@@ -343,16 +343,16 @@ VBOX_WITH_WINMM =
 # Enabled internal networking.
 VBOX_WITH_INTERNAL_NETWORKING = 1
 # Enable Host Guest Shared Memory Interface
-VBOX_WITH_HGSMI=1
+VBOX_WITH_HGSMI = 1
 # Enable Video 2D Acceleration
 if1of ($(KBUILD_TARGET), darwin linux win freebsd)
  VBOX_WITH_VIDEOHWACCEL = 1
 endif
 # Enable Wddm Video driver for Vista+ guests
 VBOX_WITH_WDDM = 1
-VBOXWDDM_WITH_VBVA=1
-VBOX_WITH_VDMA=1
-VBOX_WITH_CRHGSMI=1
+VBOXWDDM_WITH_VBVA = 1
+VBOX_WITH_VDMA = 1
+VBOX_WITH_CRHGSMI = 1
 # Enable VBVA lock
 VBOX_WITH_OLD_VBVA_LOCK = 1
 # Enable the Intel PXE ROM (replaces Etherboot).
@@ -376,16 +376,16 @@ VBOX_WITH_AHCI = 1
 # Enable the new async completion manager
 VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 # Temporary switch for enabling / disabling the new USB code on Darwin.
-VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
+VBOX_WITH_NEW_USB_CODE_ON_DARWIN = 1
 ifdef VBOX_WITH_USB
  VBOX_WITH_VUSB = 1
 endif
 # Enable the hal/sysfs USB code on Linux.
 ifeq ($(KBUILD_TARGET),linux)
- VBOX_USB_WITH_SYSFS=1
+ VBOX_USB_WITH_SYSFS = 1
  # Disabled for now
- # VBOX_USB_WITH_DBUS=1
- VBOX_USB_WITH_INOTIFY=1
+ # VBOX_USB_WITH_DBUS = 1
+ VBOX_USB_WITH_INOTIFY = 1
 endif
 # Use the new VBI module on Solaris.
 #VBOX_WITH_SOLARIS_VBI = 1
@@ -619,7 +619,7 @@ endif
 # Enable use of the $ORIGIN DT_RPATH/DT_RUNPATH feature (ELF).
 # Because of the setuid usage on all ELF platforms when hardening the build
 # things gets a bit complicated since the $ORIGIN+setuid policy differs.
-#VBOX_WITH_ORIGIN=1
+#VBOX_WITH_ORIGIN = 1
 ifndef VBOX_WITH_HARDENING
  if1of ($(KBUILD_TARGET), linux solaris)
   VBOX_WITH_ORIGIN = 1
@@ -999,7 +999,7 @@ VBOX_JAVA_PACKAGE             = org.virtualbox$(VBOX_API_SUFFIX)
 # Use the OpenGL module in qt when the video hardware acceleartion feature
 # is enabled.
 if defined(VBOX_WITH_VIDEOHWACCEL) && defined(VBOX_WITH_QTGUI)
- VBOX_GUI_USE_QGL=1
+ VBOX_GUI_USE_QGL = 1
 else
  VBOX_GUI_USE_QGL=
 endif
@@ -2170,7 +2170,7 @@ SDK_VBOX_OPENSSL_ORDERDEPS ?= $(crypto-headers_1_TARGET)
 SDK_VBOX_OPENSSL_LIBS ?= $(PATH_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
 # Build entire openssl library, not just the minimal subset.
 if1of ($(KBUILD_TARGET), linux solaris)
- VBOX_OPENSSL_ALL=1
+ VBOX_OPENSSL_ALL = 1
 endif
 
 VBOX_WITH_LIBCURL = 1
