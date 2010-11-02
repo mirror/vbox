@@ -1350,6 +1350,30 @@
 /** @} */
 
 
+/** @name Support Library Status Codes
+ * @{
+ */
+/** The specified path was not absolute (hardening). */
+#define VERR_SUPLIB_PATH_NOT_ABSOLUTE               (-3750)
+/** The specified path was not clean (hardening). */
+#define VERR_SUPLIB_PATH_NOT_CLEAN                  (-3751)
+/** The specified path is too long (hardening). */
+#define VERR_SUPLIB_PATH_TOO_LONG                   (-3752)
+/** The specified path is a root path (hardening). */
+#define VERR_SUPLIB_PATH_IS_ROOT                    (-3753)
+/** Failed to enumerate directory (hardening). */
+#define VERR_SUPLIB_DIR_ENUM_FAILED                 (-3754)
+/** Failed to stat a file/dir during enumeration (hardening). */
+#define VERR_SUPLIB_STAT_ENUM_FAILED                (-3755)
+/** Failed to stat a file/dir (hardening). */
+#define VERR_SUPLIB_STAT_FAILED                     (-3756)
+/** Found an illegal symbolic link (hardening). */
+#define VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED      (-3757)
+/** Found something which isn't a file nor a directory (hardening). */
+#define VERR_SUPLIB_NOT_DIR_NOT_FILE                (-3758)
+/** @} */
+
+
 /** @name VBox GMM Status Codes
  * @{
  */
