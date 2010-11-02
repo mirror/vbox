@@ -257,6 +257,21 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
     return ovf::CIMOSType_CIMOS_Other;
 }
 
+Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
+{
+    Utf8Str strType;
+    switch (type)
+    {
+        case NetworkAttachmentType_NAT: strType = "NAT"; break;
+        case NetworkAttachmentType_Bridged: strType = "Bridged"; break;
+        case NetworkAttachmentType_Internal: strType = "Internal"; break;
+        case NetworkAttachmentType_HostOnly: strType = "HostOnly"; break;
+        case NetworkAttachmentType_VDE: strType = "VDE"; break;
+        case NetworkAttachmentType_Null: strType = "Null"; break;
+    }
+    return strType;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualBox public methods

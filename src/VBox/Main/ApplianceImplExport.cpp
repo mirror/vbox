@@ -471,37 +471,13 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IN_BSTR location, IVirtualS
 
             if (fEnabled)
             {
-                Utf8Str strAttachmentType;
-
                 rc = pNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
                 if (FAILED(rc)) throw rc;
 
                 rc = pNetworkAdapter->COMGETTER(AttachmentType)(&attachmentType);
                 if (FAILED(rc)) throw rc;
 
-                switch (attachmentType)
-                {
-                    case NetworkAttachmentType_Null:
-                        strAttachmentType = "Null";
-                    break;
-
-                    case NetworkAttachmentType_NAT:
-                        strAttachmentType = "NAT";
-                    break;
-
-                    case NetworkAttachmentType_Bridged:
-                        strAttachmentType = "Bridged";
-                    break;
-
-                    case NetworkAttachmentType_Internal:
-                        strAttachmentType = "Internal";
-                    break;
-
-                    case NetworkAttachmentType_HostOnly:
-                        strAttachmentType = "HostOnly";
-                    break;
-                }
-
+                Utf8Str strAttachmentType = convertNetworkAttachmentTypeToString(attachmentType);
                 pNewDesc->addEntry(VirtualSystemDescriptionType_NetworkAdapter,
                                    "",      // ref
                                    strAttachmentType,      // orig
