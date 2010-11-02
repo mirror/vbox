@@ -422,7 +422,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x19, 0);
             pNode->digout.u32F07_param = 0;
             if (!pState->fInReset)
-                pNode->digout.u32F1c_param = RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
+                pNode->digout.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
+                                                                         CODEC_DEFAULT_CONF_LOCATION_REAR,
+                                                                         CODEC_DEFAULT_CONF_DEVICE_SPDIF_OUT,
+                                                                         CODEC_DEFAULT_CONF_CONNECTION_TYPE_DIN,
+                                                                         CODEC_DEFAULT_CONF_COLOR_BLACK,
+                                                                         0x0, 0x3, 0x0);//RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
         break;
         case 0x11:
             pNode->node.name = "DigIn_0";
@@ -434,7 +439,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->digin.u32F09_param = 0;
             pNode->digin.u32F0c_param = 0;
             if (!pState->fInReset)
-                pNode->digin.u32F1c_param = (0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
+                pNode->digin.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
+                                                                        CODEC_DEFAULT_CONF_LOCATION_REAR,
+                                                                        CODEC_DEFAULT_CONF_DEVICE_SPDIF_IN,
+                                                                        CODEC_DEFAULT_CONF_CONNECTION_TYPE_OTHER_DIGITAL,
+                                                                        CODEC_DEFAULT_CONF_COLOR_BLACK, 
+                                                                        0x0, 0x6, 0x0);//(0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
         break;
         case 0x12:
             pNode->node.name = "ADCMux_0";
@@ -465,7 +475,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xc] = RT_BIT(5);
             pNode->cdnode.u32F07_param = 0;
             if (!pState->fInReset)
-                pNode->cdnode.u32F1c_param = RT_MAKE_U32_FROM_U8(0x70, 0x0, 0x33, 0x90);
+                pNode->cdnode.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_FIXED,
+                                                                         CODEC_DEFAULT_CONF_LOCATION_INTERNAL,
+                                                                         CODEC_DEFAULT_CONF_DEVICE_CD,
+                                                                         CODEC_DEFAULT_CONF_CONNECTION_TYPE_ATAPI,
+                                                                         CODEC_DEFAULT_CONF_COLOR_UNKNOWN,
+                                                                         0x0, 0x7, 0x0);//RT_MAKE_U32_FROM_U8(0x70, 0x0, 0x33, 0x90);
         break;
         case 0x16:
             pNode->node.name = "VolumeKnob";
@@ -507,7 +522,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xC] = 0x10;
             pNode->node.au32F02_param[0] = 0x1a;
             pNode->reserved.u32F07_param = 0;
-            pNode->reserved.u32F1c_param = 0x4000000f;
+            pNode->reserved.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_NO_PHYS,
+                                                                       CODEC_DEFAULT_CONF_LOCATION_NA,
+                                                                       CODEC_DEFAULT_CONF_DEVICE_LINE_OUT,
+                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_UNKNOWN,
+                                                                       CODEC_DEFAULT_CONF_COLOR_UNKNOWN,
+                                                                       0x0, 0x0, 0xf);//0x4000000f;
             break;
         default:
         break;
