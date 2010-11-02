@@ -2116,7 +2116,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
     // In OVF (at least VMware's version of it), an IDE controller has two ports, so VirtualBox's single IDE controller
     // with two channels and two ports each counts as two OVF IDE controllers -- so we accept one or two such IDE controllers
-    uint32_t cIDEControllers = vsdeHDCIDE.size();
+    size_t cIDEControllers = vsdeHDCIDE.size();
     if (cIDEControllers > 2)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many IDE controllers in OVF; import facility only supports two"));
@@ -2507,7 +2507,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     if (stack.strAudioAdapter.isNotEmpty())
     {
         config.hardwareMachine.audioAdapter.fEnabled = true;
-        config.hardwareMachine.audioAdapter.controllerType = stack.strAudioAdapter.toUInt32();
+        config.hardwareMachine.audioAdapter.controllerType = (AudioControllerType_T)stack.strAudioAdapter.toUInt32();
     }
     else
         config.hardwareMachine.audioAdapter.fEnabled = false;
@@ -2543,7 +2543,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                     if (it1->ulSlot == iSlot)
                     {
                         it1->fEnabled = true;
-                        it1->type = vsdeNW->strVboxCurrent.toUInt32();
+                        it1->type = (NetworkAdapterType_T)vsdeNW->strVboxCurrent.toUInt32();
                         break;
                     }
                 }
@@ -2800,7 +2800,7 @@ void Appliance::importMachines(ImportStack &stack,
         std::list<VirtualSystemDescriptionEntry*> vsdeRAM = vsdescThis->findByType(VirtualSystemDescriptionType_Memory);
         if (vsdeRAM.size() != 1)
             throw setError(VBOX_E_FILE_ERROR, tr("RAM size missing"));
-        stack.ulMemorySizeMB = vsdeRAM.front()->strVboxCurrent.toUInt64();
+        stack.ulMemorySizeMB = (ULONG)vsdeRAM.front()->strVboxCurrent.toUInt64();
 
 #ifdef VBOX_WITH_USB
         // USB controller
