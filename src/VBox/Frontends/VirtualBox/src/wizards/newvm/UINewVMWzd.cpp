@@ -24,7 +24,7 @@
 #include "UIIconPool.h"
 #include "UINewHDWzd.h"
 #include "UINewVMWzd.h"
-#include "VBoxMediaManagerDlg.h"
+#include "QIFileDialog.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxVMSettingsHD.h"
 
@@ -416,7 +416,7 @@ UINewVMWzdPage4::UINewVMWzdPage4()
     connect(m_pDiskCreate, SIGNAL(toggled(bool)), this, SLOT(hardDiskSourceChanged()));
     connect(m_pDiskPresent, SIGNAL(toggled(bool)), this, SLOT(hardDiskSourceChanged()));
     connect(m_pDiskSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(hardDiskSourceChanged()));
-    connect(m_pVMMButton, SIGNAL(clicked()), this, SLOT(getWithMediaManager()));
+    connect(m_pVMMButton, SIGNAL(clicked()), this, SLOT(getWithFileOpenDialog()));
 
     /* Initialise page connections */
     hardDiskSourceChanged();
@@ -531,21 +531,62 @@ void UINewVMWzdPage4::hardDiskSourceChanged()
     emit completeChanged();
 }
 
-void UINewVMWzdPage4::getWithMediaManager()
+void UINewVMWzdPage4::getWithFileOpenDialog()
 {
-    VBoxMediaManagerDlg dlg(this);
-    dlg.setup(VBoxDefs::MediumType_HardDisk, true);
+    /* Initialize variables: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QString strHomeFolder = vbox.GetHomeFolder();
+    QString title = m_pVMMButton->toolTip();
+    QList < QPair <QString, QString> > filters = vboxGlobal().HDDBackends();
+    QString allType = tr("hard disk");
+    QString strFilter;
+    QStringList backends;
+    QStringList prefixes;
 
-    if (dlg.exec() == QDialog::Accepted)
+    /* Prepare filters and backends: */
+    for (int i = 0; i < filters.count(); ++i)
     {
-        QString newId = dlg.selectedId();
-        if (m_pDiskSelector->id() != newId)
-            m_pDiskSelector->setCurrentItem(newId);
+        /* Get iterated filter: */
+        QPair <QString, QString> item = filters.at(i);
+        /* Create one backend filter string: */
+        backends << QString("%1 (%2)").arg(item.first).arg(item.second);
+        /* Save the suffix's for the "All" entry: */
+        prefixes << item.second;
     }
+    if (!prefixes.isEmpty())
+        backends.insert(0, tr("All %1 images (%2)").arg(allType).arg(prefixes.join(" ").trimmed()));
+    backends << tr("All files (*)");
+    strFilter = backends.join(";;").trimmed();
 
-    hardDiskSourceChanged();
+    /* Create open file dialog: */
+    QStringList files = QIFileDialog::getOpenFileNames(strHomeFolder, strFilter, this, title, 0, true, true);
+    if (!files.empty() && !files[0].isEmpty())
+    {
+        /* Get location: */
+        QString strLocation = files[0];
 
-    m_pDiskSelector->setFocus();
+        /* Prepare GUI medium wrapper: */
+        VBoxMedium vboxMedium;
+
+        /* Open corresponding medium: */
+        CMedium comMedium = vbox.OpenMedium(strLocation, KDeviceType_HardDisk, KAccessMode_ReadWrite);
+        if (vbox.isOk())
+            vboxMedium = VBoxMedium(CMedium(comMedium), VBoxDefs::MediumType_HardDisk, KMediumState_Created);
+
+        /* Add medium to GUI list: */
+        if (vbox.isOk())
+            vboxGlobal().addMedium(vboxMedium);
+        else
+            vboxProblem().cannotOpenMedium(this, vbox, VBoxDefs::MediumType_HardDisk, strLocation);
+
+        /* Ask medium combobox to select newly added medium: */
+        m_pDiskSelector->setCurrentItem(vboxMedium.id());
+
+        /* Update hard disk source: */
+        hardDiskSourceChanged();
+
+        m_pDiskSelector->setFocus();
+    }
 }
 
 bool UINewVMWzdPage4::getWithNewHardDiskWizard()
