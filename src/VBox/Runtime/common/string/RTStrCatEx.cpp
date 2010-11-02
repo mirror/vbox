@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTStrCopyEx.
+ * IPRT - RTStrCatEx
  */
 
 /*
@@ -32,23 +32,27 @@
 #include "internal/iprt.h"
 
 
-RTDECL(int) RTStrCopyEx(char *pszDst, size_t cbDst, const char *pszSrc, size_t cchMaxSrc)
+RTDECL(int) RTStrCatEx(char *pszDst, size_t cbDst, const char *pszSrc, size_t cchMaxSrc)
 {
+    char *pszDst2 = RTStrEnd(pszDst, cbDst);
+    AssertReturn(pszDst2, VERR_INVALID_PARAMETER);
+    cbDst -= pszDst2 - pszDst;
+
     const char *pszSrcEol = RTStrEnd(pszSrc, cchMaxSrc);
     size_t      cchSrc    = pszSrcEol ? (size_t)(pszSrcEol - pszSrc) : cchMaxSrc;
     if (RT_LIKELY(cchSrc < cbDst))
     {
-        memcpy(pszDst, pszSrc, cchSrc);
-        pszDst[cchSrc] = '\0';
+        memcpy(pszDst2, pszSrc, cchSrc);
+        pszDst2[cchSrc] = '\0';
         return VINF_SUCCESS;
     }
 
     if (cbDst != 0)
     {
-        memcpy(pszDst, pszSrc, cbDst - 1);
-        pszDst[cbDst - 1] = '\0';
+        memcpy(pszDst2, pszSrc, cbDst - 1);
+        pszDst2[cbDst - 1] = '\0';
     }
     return VERR_BUFFER_OVERFLOW;
 }
-RT_EXPORT_SYMBOL(RTStrCopyEx);
+RT_EXPORT_SYMBOL(RTStrCatEx);
 
