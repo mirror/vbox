@@ -1625,8 +1625,15 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
  * Used as HD Settings widget.
  */
 VBoxVMSettingsHD::VBoxVMSettingsHD()
-    : mValidator (0)
-    , mIsPolished (false)
+    : mValidator(0)
+    , mStorageModel(0)
+    , mAddCtrAction(0), mDelCtrAction(0)
+    , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0)
+    , mAddAttAction(0), mDelAttAction(0)
+    , mAddHDAttAction(0), mAddCDAttAction(0), mAddFDAttAction(0)
+    , mIsLoadingInProgress(0)
+    , mIsPolished(false)
+    , mDisableStaticControls(0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsHD::setupUi (this);

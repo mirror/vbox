@@ -31,6 +31,7 @@ VBoxGLSettingsNetworkDetails::VBoxGLSettingsNetworkDetails (QWidget *aParent)
     ,Qt::Sheet
 #endif /* Q_WS_MAC */
     )
+    , mItem(0)
 {
     /* Apply UI decorations */
     Ui::VBoxGLSettingsNetworkDetails::setupUi (this);

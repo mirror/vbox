@@ -27,7 +27,7 @@
 /* VBoxVMSettingsParallel stuff */
 VBoxVMSettingsParallel::VBoxVMSettingsParallel()
     : QIWithRetranslateUI<QWidget> (0)
-    , mValidator (0)
+    , mValidator(0)
     , m_iSlot(-1)
 {
     /* Apply UI decorations */
@@ -149,7 +149,8 @@ void VBoxVMSettingsParallel::mCbNumberActivated (const QString &aText)
 
 /* VBoxVMSettingsParallelPage stuff */
 VBoxVMSettingsParallelPage::VBoxVMSettingsParallelPage()
-    : mValidator (0)
+    : mValidator(0)
+    , mTabWidget(0)
 {
     /* TabWidget creation */
     mTabWidget = new QITabWidget (this);

@@ -651,17 +651,17 @@ private:
     StorageModel *mStorageModel;
 
     QAction *mAddCtrAction;
+    QAction *mDelCtrAction;
     QAction *mAddIDECtrAction;
     QAction *mAddSATACtrAction;
     QAction *mAddSCSICtrAction;
     QAction *mAddSASCtrAction;
     QAction *mAddFloppyCtrAction;
-    QAction *mDelCtrAction;
     QAction *mAddAttAction;
+    QAction *mDelAttAction;
     QAction *mAddHDAttAction;
     QAction *mAddCDAttAction;
     QAction *mAddFDAttAction;
-    QAction *mDelAttAction;
 
     bool mIsLoadingInProgress;
     bool mIsPolished;

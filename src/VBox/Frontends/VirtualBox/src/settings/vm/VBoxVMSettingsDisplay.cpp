@@ -45,6 +45,14 @@ static int calcPageStep (int aMax)
 }
 
 VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
+    : mValidator(0)
+    , m_minVRAM(0)
+    , m_maxVRAM(0)
+    , m_maxVRAMVisible(0)
+    , m_initialVRAM(0)
+#ifdef VBOX_WITH_CRHGSMI
+    , m_bWddmMode(false)
+#endif
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsDisplay::setupUi (this);

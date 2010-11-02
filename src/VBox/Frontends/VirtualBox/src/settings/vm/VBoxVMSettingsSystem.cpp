@@ -30,6 +30,8 @@
 #define ITEM_TYPE_ROLE Qt::UserRole + 1
 
 VBoxVMSettingsSystem::VBoxVMSettingsSystem()
+    : mValidator(0)
+    , mMinGuestCPU(0), mMaxGuestCPU(0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsSystem::setupUi (this);

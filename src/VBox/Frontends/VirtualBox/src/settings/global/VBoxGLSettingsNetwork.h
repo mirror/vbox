@@ -150,11 +150,11 @@ private slots:
 
 private:
 
+    QIWidgetValidator *mValidator;
+
     QAction *mAddInterface;
     QAction *mRemInterface;
     QAction *mEditInterface;
-
-    QIWidgetValidator *mValidator;
 
     bool m_fChanged;
 
