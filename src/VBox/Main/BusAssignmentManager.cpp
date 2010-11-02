@@ -29,6 +29,11 @@ struct BusAssignmentManager::State
     struct PciDeviceRecord
     {
         char szDevName[16];
+
+        PciDeviceRecord(const char* pszName)
+        {
+            ::strncpy(szDevName, pszName, sizeof(szDevName));
+        }
     };
 
     typedef std::map <PciBusAddress, PciDeviceRecord > PciMap;
@@ -45,13 +50,21 @@ struct BusAssignmentManager::State
 
     HRESULT init(ChipsetType_T chipsetType);
 
+    HRESULT record(const char* pszName, PciBusAddress& Address);
     HRESULT autoAssign(const char* pszName, PciBusAddress& Address);
-    bool checkAvailable(PciBusAddress& Address);    
+    bool    checkAvailable(PciBusAddress& Address);
 };
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
 {
     mChipsetType = chipsetType;
+    return S_OK;
+}
+
+
+HRESULT BusAssignmentManager::State::record(const char* pszName, PciBusAddress& Address)
+{
+    mPciMap.insert(PciMap::value_type(Address, PciDeviceRecord(pszName)));
     return S_OK;
 }
 
@@ -65,7 +78,7 @@ HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PciBusAddre
 bool BusAssignmentManager::State::checkAvailable(PciBusAddress& Address)
 {
     PciMap::const_iterator it = mPciMap.find(Address);
-    
+
     return (it == mPciMap.end());
 }
 
@@ -122,7 +135,7 @@ DECLINLINE(HRESULT) InsertConfigInteger(PCFGMNODE pCfg,  const char* pszName, ui
 }
 
 HRESULT BusAssignmentManager::assignPciDevice(const char* pszDevName, PCFGMNODE pCfg,
-                                           PciBusAddress& Address,    bool fAddressRequired)
+                                              PciBusAddress& Address,    bool fAddressRequired)
 {
     HRESULT rc = S_OK;
 
@@ -145,6 +158,10 @@ HRESULT BusAssignmentManager::assignPciDevice(const char* pszDevName, PCFGMNODE 
         return rc;
 
     Assert(Address.valid());
+
+    rc = pState->record(pszDevName, Address);
+    if (FAILED(rc))
+        return rc;
 
     rc = InsertConfigInteger(pCfg, "PCIBusNo",             Address.iBus);
     if (FAILED(rc))
