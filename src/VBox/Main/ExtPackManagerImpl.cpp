@@ -1561,7 +1561,7 @@ void ExtPackManager::processDropZone(void)
                     else
                     {
                         Utf8Str strErr;
-                        com::ErrorInfo Info(this, COM_IIDOF(IExtPackManager));
+                        com::ErrorInfo Info;
                         if (Info.isFullAvailable())
                             strErr.printf("failed\n"
                                           "%ls\n"
