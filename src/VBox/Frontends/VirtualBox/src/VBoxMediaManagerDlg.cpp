@@ -343,22 +343,22 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */, Qt::Window
     VBoxGlobal::setLayoutMargin (mainLayout, 5);
 #endif /* MAC_LEOPARD_STYLE */
 
-    mToolBar->addAction (mNewAction);
-    mToolBar->addAction (mAddAction);
-    mToolBar->addSeparator();
+//    mToolBar->addAction (mNewAction);
+//    mToolBar->addAction (mAddAction);
+//    mToolBar->addSeparator();
     mToolBar->addAction (mRemoveAction);
     mToolBar->addAction (mReleaseAction);
-    mToolBar->addSeparator();
+//    mToolBar->addSeparator();
     mToolBar->addAction (mRefreshAction);
 
     /* Menu bar */
     mActionsMenu = menuBar()->addMenu (QString::null);
-    mActionsMenu->addAction (mNewAction);
-    mActionsMenu->addAction (mAddAction);
-    mActionsMenu->addSeparator();
+//    mActionsMenu->addAction (mNewAction);
+//    mActionsMenu->addAction (mAddAction);
+//    mActionsMenu->addSeparator();
     mActionsMenu->addAction (mRemoveAction);
     mActionsMenu->addAction (mReleaseAction);
-    mActionsMenu->addSeparator();
+//    mActionsMenu->addSeparator();
     mActionsMenu->addAction (mRefreshAction);
 
     /* Setup information pane */
