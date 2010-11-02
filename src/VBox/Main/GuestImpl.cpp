@@ -162,22 +162,26 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
     {
         Guest *pGuest = aTask->pGuest;
         AssertPtr(pGuest);
-        /*Console *pConsole = pGuest->mParent;
-        AssertPtr(pConsole);
-        Console *pMachine = pConsole->machine();
-        AssertPtr(pMachine);*/
 
         if (aTask->progress)
             aTask->progress->SetCurrentOperationProgress(10);
+
+        bool fIsWindows = false;
+        Utf8Str osType = pGuest->mData.mOSTypeId;
+        if (   osType.contains("Microsoft", Utf8Str::CaseInsensitive)
+            || osType.contains("Windows", Utf8Str::CaseInsensitive))
+        {
+            fIsWindows = true; /* We have a Windows guest. */
+        }
+        else /* Everything else is not supported (yet). */
+            throw setError(VBOX_E_NOT_SUPPORTED, tr("Guest OS not supported for automatic Guest Additions updating"));
 
         /*
          * Determine guest type to know which installer stuff
          * we need. At the moment only Windows guests are supported.
          */
         Utf8Str installerImage;
-        Utf8Str osType = pGuest->mData.mOSTypeId;
-        if (   osType.contains("Microsoft", Utf8Str::CaseInsensitive)
-            || osType.contains("Windows", Utf8Str::CaseInsensitive))
+        if (fIsWindows)
         {
             if (osType.contains("64", Utf8Str::CaseInsensitive))
                 installerImage = "VBOXWINDOWSADDITIONS_AMD64.EXE";
@@ -186,17 +190,18 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
             /* Since the installers are located in the root directory,
              * no further path processing needs to be done (yet). */
         }
-
-        /* No (suited) installer found? Bail out. */
-        if (installerImage.isEmpty())
-            throw setError(VBOX_E_FILE_ERROR, tr("Guest OS not supported for automatic Guest Additions updating yet"));
+        Assert(!installerImage.isEmpty());
 
         /*
          * Try to open the .ISO file and locate the specified installer.
          */
         RTISOFSFILE iso;
         int vrc = RTIsoFsOpen(&iso, aTask->strSource.c_str());
-        if (RT_SUCCESS(vrc))
+        if (RT_FAILURE(vrc))
+        {
+            rc = setError(VBOX_E_FILE_ERROR, tr("Invalid installation medium detected"));
+        }
+        else
         {
             uint32_t cbOffset;
             size_t cbLength;
@@ -208,17 +213,15 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 vrc = RTFileSeek(iso.file, cbOffset, RTFILE_SEEK_BEGIN, NULL);
             }
 
-            /** @todo Only Windows! Don't use percent (like %TEMP%) env vars -- Windows
-             *        will quote it like "%TEMP%" which results in a *not* working command
-             *        line! */
-            Utf8Str strInstallerPath = "C:\\Windows\\VBoxWindowsAdditions.exe";
+            /* Specify the ouput path on the guest side. */
+            Utf8Str strInstallerPath = "%TEMP%\\VBoxWindowsAdditions.exe";
 
             if (RT_FAILURE(vrc))
             {
                 switch (vrc)
                 {
                     case VERR_FILE_NOT_FOUND:
-                        rc = setError(VBOX_E_IPRT_ERROR, tr("Installer file was not found on medium"));
+                        rc = setError(VBOX_E_IPRT_ERROR, tr("Setup file was not found on installation medium"));
                         break;
 
                     default:
@@ -236,14 +239,9 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 com::SafeArray<IN_BSTR> args;
                 com::SafeArray<IN_BSTR> env;
 
-                char szOutput[RTPATH_MAX];
-                if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", strInstallerPath.c_str()))
-                {
-                    args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw()); /* The actual (internal) tool to use (as argv[0]). */
-                    args.push_back(Bstr(szOutput).raw());             /* We want to write a file ... */
-                }
-                else
-                    rc = setError(VBOX_E_IPRT_ERROR, tr("Error preparing command line fopr copy operation"));
+                args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw());     /* The actual (internal) tool to use (as argv[0]). */
+                args.push_back(Bstr("--output").raw());               /* We want to write a file ... */
+                args.push_back(Bstr(strInstallerPath.c_str()).raw()); /* ... with this path. */
 
                 if (SUCCEEDED(rc))
                 {
