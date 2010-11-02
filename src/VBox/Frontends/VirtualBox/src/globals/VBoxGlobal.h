@@ -616,6 +616,8 @@ public:
     static QChar decimalSep();
     static QString sizeRegexp();
 
+    static QString toHumanReadableList(const QStringList &list);
+
     static quint64 parseSize (const QString &);
     static QString formatSize (quint64 aSize, uint aDecimal = 2,
                                VBoxDefs::FormatSize aMode = VBoxDefs::FormatSize_Round);

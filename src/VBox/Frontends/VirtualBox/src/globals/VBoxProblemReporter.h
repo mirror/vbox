@@ -367,6 +367,7 @@ public:
     void cannotCheckFiles (const CProgress &aProgress, QWidget *aParent = NULL) const;
     void cannotRemoveFiles (const CProgress &aProgress, QWidget *aParent = NULL) const;
 
+    bool confirmExportMachinesInSaveState(const QStringList &machineNames, QWidget *aParent = NULL) const;
     void cannotExportAppliance (CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotExportAppliance (const CMachine &aMachine, CAppliance *aAppliance, QWidget *aParent = NULL) const;
     void cannotExportAppliance (const CProgress &aProgress, CAppliance *aAppliance, QWidget *aParent = NULL) const;

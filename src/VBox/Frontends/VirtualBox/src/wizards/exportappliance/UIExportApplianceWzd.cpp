@@ -29,8 +29,10 @@ class VMListWidgetItems : public QListWidgetItem
 {
 public:
 
-    VMListWidgetItems(QPixmap &pixIcon, QString &strText, QListWidget *pParent)
+    VMListWidgetItems(QPixmap &pixIcon, QString &strText, QString strUuid, bool fInSaveState, QListWidget *pParent)
         : QListWidgetItem(pixIcon, strText, pParent)
+        , m_strUuid(strUuid)
+        , m_fInSaveState(fInSaveState)
     {
     }
 
@@ -39,6 +41,13 @@ public:
     {
         return text().toLower() < other.text().toLower();
     }
+
+    QString uuid() { return m_strUuid; }
+    bool isInSaveState() { return m_fInSaveState; }
+
+private:
+    QString m_strUuid;
+    bool m_fInSaveState;
 };
 
 UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QString &strSelectName) : QIWizard(pParent)
@@ -151,6 +160,23 @@ bool UIExportApplianceWzdPage1::isComplete() const
     return m_pVMSelector->selectedItems().size() > 0;
 }
 
+bool UIExportApplianceWzdPage1::validatePage()
+{
+    /* Ask user about disk-less machine */
+    QStringList savedMachines;
+    QList<QListWidgetItem*> pItems = m_pVMSelector->selectedItems();
+    for (int i=0; i < pItems.size(); ++i)
+    {
+        if (static_cast<VMListWidgetItems*>(pItems.at(i))->isInSaveState())
+            savedMachines << pItems.at(i)->text();
+    }
+
+    if (!savedMachines.isEmpty())
+        return vboxProblem().confirmExportMachinesInSaveState(savedMachines, this);
+
+    return true;
+}
+
 int UIExportApplianceWzdPage1::nextId() const
 {
     /* Skip next (3rd, storage-type) page for now! */
@@ -166,7 +192,7 @@ void UIExportApplianceWzdPage1::sltSelectedVMChanged()
     foreach (QListWidgetItem *item, m_pVMSelector->selectedItems())
     {
         m_MachineNames << item->text();
-        m_MachineIDs << item->data(Qt::UserRole).toString();
+        m_MachineIDs << static_cast<VMListWidgetItems*>(item)->uuid();
     }
     /* Revalidate page */
     emit completeChanged();
@@ -180,25 +206,25 @@ void UIExportApplianceWzdPage1::populateVMSelectorItems()
         QPixmap pixIcon;
         QString strName;
         QString strUuid;
-        bool bEnabled;
+        bool fInSaveState = false;
+        bool fEnabled = false;
         if (m.GetAccessible())
         {
             pixIcon = vboxGlobal().vmGuestOSTypeIcon(m.GetOSTypeId()).scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             strName = m.GetName();
             strUuid = m.GetId();
-            bEnabled = m.GetSessionState() == KSessionState_Unlocked;
+            fEnabled = m.GetSessionState() == KSessionState_Unlocked;
+            fInSaveState = m.GetState() == KMachineState_Saved;
         }
         else
         {
             QString settingsFile = m.GetSettingsFilePath();
             QFileInfo fi(settingsFile);
-            strName = fi.completeSuffix().toLower() == "xml" ? fi.completeBaseName() : fi.fileName();
+            strName = (fi.completeSuffix().toLower() == "xml" || fi.completeSuffix().toLower() == "vbox") ? fi.completeBaseName() : fi.fileName();
             pixIcon = QPixmap(":/os_other.png").scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-            bEnabled = false;
         }
-        QListWidgetItem *item = new VMListWidgetItems(pixIcon, strName, m_pVMSelector);
-        item->setData(Qt::UserRole, strUuid);
-        if (!bEnabled)
+        QListWidgetItem *item = new VMListWidgetItems(pixIcon, strName, strUuid, fInSaveState, m_pVMSelector);
+        if (!fEnabled)
             item->setFlags(0);
         m_pVMSelector->addItem(item);
     }
