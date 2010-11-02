@@ -110,6 +110,12 @@ RTDECL(const char *) RTBldCfgTargetDotArch(void);
  */
 RTDECL(const char *) RTBldCfgType(void);
 
+/**
+ * Gets the name of the compiler used for building IPRT.
+ *
+ * @returns Read only compiler name.
+ */
+RTDECL(const char *) RTBldCfgCompiler(void);
 
 /** @} */
 
