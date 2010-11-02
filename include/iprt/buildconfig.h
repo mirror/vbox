@@ -82,6 +82,34 @@ RTDECL(uint32_t)     RTBldCfgVersionMinor(void);
  */
 RTDECL(uint32_t)     RTBldCfgVersionBuild(void);
 
+/**
+ * Gets the build target name.
+ *
+ * @returns Read only build target string.
+ */
+RTDECL(const char *) RTBldCfgTarget(void);
+
+/**
+ * Gets the build target architecture name.
+ *
+ * @returns Read only build target architecture string.
+ */
+RTDECL(const char *) RTBldCfgTargetArch(void);
+
+/**
+ * Gets the build target-dot-architecture name.
+ *
+ * @returns Read only build target-dot-architecture string.
+ */
+RTDECL(const char *) RTBldCfgTargetDotArch(void);
+
+/**
+ * Gets the build type name.
+ *
+ * @returns Read only build type string.
+ */
+RTDECL(const char *) RTBldCfgType(void);
+
 
 /** @} */
 

@@ -78,3 +78,35 @@ RTDECL(uint32_t) RTBldCfgVersionBuild(void)
 }
 #endif
 
+
+#ifdef IPRT_BLDCFG_TARGET
+RTDECL(const char *) RTBldCfgTarget(void)
+{
+    return IPRT_BLDCFG_TARGET;
+}
+#endif
+
+
+#ifdef IPRT_BLDCFG_TARGET_ARCH
+RTDECL(const char *) RTBldCfgTargetArch(void)
+{
+    return IPRT_BLDCFG_TARGET_ARCH;
+}
+#endif
+
+
+#if defined(IPRT_BLDCFG_TARGET) && defined(IPRT_BLDCFG_TARGET_ARCH)
+RTDECL(const char *) RTBldCfgTargetDotArch(void)
+{
+    return IPRT_BLDCFG_TARGET "." IPRT_BLDCFG_TARGET_ARCH;
+}
+#endif
+
+
+#ifdef IPRT_BLDCFG_TYPE
+RTDECL(const char *) RTBldCfgType(void)
+{
+    return IPRT_BLDCFG_TYPE;
+}
+#endif
+
