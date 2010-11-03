@@ -152,7 +152,7 @@ Machine::HWData::HWData()
     mMonitorCount = 1;
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64 && !defined(RT_OS_LINUX)
     mHWVirtExLargePagesEnabled = true;
 #else
     /* Not supported on 32 bits hosts. */

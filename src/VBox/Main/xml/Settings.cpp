@@ -1619,10 +1619,10 @@ Hardware::Hardware()
 #endif
 
     /* The default value of large page supports depends on the host:
-     * - 64 bits host -> true
+     * - 64 bits host -> true, unless it's Linux (pending further prediction work due to excessively expensive large page allocations)
      * - 32 bits host -> false
      */
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 64 && !defined(RT_OS_LINUX)
     fLargePages = true;
 #else
     /* Not supported on 32 bits hosts. */
