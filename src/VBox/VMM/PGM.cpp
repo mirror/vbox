@@ -1669,6 +1669,7 @@ static int pgmR3InitStats(PVM pVM)
 
     PGM_REG_PROFILE(&pStats->StatAllocLargePage,                "/PGM/LargePage/Prof/Alloc",          "Time spent by the host OS for large page allocation.");
     PGM_REG_PROFILE(&pStats->StatClearLargePage,                "/PGM/LargePage/Prof/Clear",          "Time spent clearing the newly allocated large pages.");
+    PGM_REG_COUNTER(&pStats->StatLargePageOverflow,             "/PGM/LargePage/Overflow",            "The number of times allocating a large page took too long.");
     PGM_REG_PROFILE(&pStats->StatR3IsValidLargePage,            "/PGM/LargePage/Prof/R3/IsValid",     "pgmPhysIsValidLargePage profiling - R3.");
     PGM_REG_PROFILE(&pStats->StatRZIsValidLargePage,            "/PGM/LargePage/Prof/RZ/IsValid",     "pgmPhysIsValidLargePage profiling - RZ.");
 
