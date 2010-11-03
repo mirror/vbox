@@ -69,8 +69,10 @@ typedef struct RTR0SEMSOLWAIT
     bool            fInterruptible;
     /** The thread to wake up. */
     kthread_t      *pThread;
+#if 0 /* @bugref{5342} */
     /** Cylic timer ID (used by the timeout callback). */
     cyclic_id_t     idCy;
+#endif
     /** The mutex associated with the condition variable wait. */
     void volatile  *pvMtx;
 } RTR0SEMSOLWAIT;
@@ -132,8 +134,9 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
     if (!(fFlags & RTSEMWAIT_FLAGS_INDEFINITE))
     {
         pWait->fIndefinite      = false;
-        if (   (fFlags & (RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE))
-            || pWait->cNsRelTimeout < UINT32_C(1000000000) / 100 /*Hz*/ * 4)
+        if (  (   (fFlags & (RTSEMWAIT_FLAGS_NANOSECS | RTSEMWAIT_FLAGS_ABSOLUTE))
+               || pWait->cNsRelTimeout < UINT32_C(1000000000) / 100 /*Hz*/ * 4)
+            && g_pfnrtR0Sol_timeout_generic != NULL /* See @bugref{5342} */)
             pWait->fHighRes     = true;
         else
         {
@@ -162,12 +165,15 @@ DECLINLINE(int) rtR0SemSolWaitInit(PRTR0SEMSOLWAIT pWait, uint32_t fFlags, uint6
     pWait->fInterruptible   = !!(fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE);
     pWait->pThread          = curthread;
     pWait->pvMtx            = NULL;
+#if 0 /* @bugref{5342} */
     pWait->idCy             = CYCLIC_NONE;
+#endif
 
     return VINF_SUCCESS;
 }
 
 
+#if 0 /* @bugref{5342} */
 /**
  * Cyclic timeout callback that sets the timeout indicator and wakes up the
  * waiting thread.
@@ -184,6 +190,9 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
         /* Enter the mutex here to make sure the thread has gone to sleep
            before we wake it up.
            Note: Trying to take the cpu_lock here doesn't work. */
+        /** @todo LOCK ORDER INVERSION (pMtx & cpu_lock when arming the timer, here it's inverted).
+         *  Possible fix: Use the thread lock for sleep/wakeup race prevention
+         *  instead of the mutex associated with the cv/event. */
         mutex_enter(pMtx);
         if (mutex_owner(&cpu_lock) == curthread)
         {
@@ -195,6 +204,7 @@ static void rtR0SemSolWaitHighResTimeout(void *pvUser)
         setrun(pThread);
     }
 }
+#endif
 
 
 /**
@@ -246,7 +256,9 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
 
         if (pWait->fHighRes)
         {
+#if 0 /* @bugref{5342} */
             if (g_pfnrtR0Sol_timeout_generic != NULL)
+#endif
             {
                 /*
                  * High resolution timeout - arm a high resolution timeout callback
@@ -256,6 +268,7 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
                                                       pWait->uNsAbsTimeout, RTR0SEMSOLWAIT_RESOLUTION,
                                                       CALLOUT_FLAG_ABSOLUTE);
             }
+#if 0 /* @bugref{5342} */
             else
             {
                 /*
@@ -275,6 +288,7 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
                 pWait->idCy = cyclic_add(&Cyh, &Cyt);
                 mutex_exit(&cpu_lock);
             }
+#endif
         }
         else
         {
@@ -317,8 +331,11 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
 
         if (pWait->fHighRes)
         {
+#if 0 /* @bugref{5342} */
             if (g_pfnrtR0Sol_timeout_generic != NULL)
+#endif
                 g_pfnrtR0Sol_untimeout_generic(u.idCo, 0 /*nowait*/);
+#if 0 /* @bugref{5342} */
             else
             {
                 mutex_enter(&cpu_lock);
@@ -329,6 +346,7 @@ DECLINLINE(void) rtR0SemSolWaitDoIt(PRTR0SEMSOLWAIT pWait, kcondvar_t *pCnd, kmu
                 }
                 mutex_exit(&cpu_lock);
             }
+#endif
         }
         else
             untimeout(u.idTom);
