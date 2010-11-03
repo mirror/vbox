@@ -47,6 +47,12 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
 {
     HRESULT hr;
 
+    if (levels > MAX_MIP_LEVELS)
+    {
+        WARN("Too many texture levels %d", levels);
+        return WINED3DERR_INVALIDCALL;
+    }
+
     hr = resource_init((IWineD3DResource *)texture, resource_type, device,
             size, usage, format_desc, pool, parent, parent_ops
 #ifdef VBOX_WITH_WDDM
