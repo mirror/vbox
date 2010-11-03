@@ -29,21 +29,6 @@ ifdef VBOX_WITH_TESTCASES
   vditool_SOURCES  = vditool.cpp
 endif
 
-
-#
-# Basic testcase for the VDI code.
-#
-#ifdef VBOX_WITH_TESTCASES
-# PROGRAMS += tstVDI
-# ifeq ($(KBUILD_TARGET),l4)
-#  tstVDI_TEMPLATE = VBOXLNXHOSTR3EXE
-# else
-#  tstVDI_TEMPLATE = VBOXR3TSTEXE
-# endif
-# tstVDI_LIBS     = $(vditool_LIBS)
-# tstVDI_SOURCES  = tstVDI.cpp
-#endif
-
 #
 # Basic testcases for the VD code.
 #
