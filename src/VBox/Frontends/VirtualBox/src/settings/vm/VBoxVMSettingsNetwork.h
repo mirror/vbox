@@ -125,10 +125,8 @@ public:
 
     QStringList brgList (bool aRefresh = false);
     QStringList intList (bool aRefresh = false);
+    QStringList fullIntList (bool aRefresh = false);
     QStringList hoiList (bool aRefresh = false);
-#ifdef VBOX_WITH_VDE
-    QStringList vdeList (bool aRefresh = false);
-#endif
 
 protected:
 
