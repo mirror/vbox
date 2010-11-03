@@ -257,11 +257,32 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                         ExecuteProcessFlag_WaitForProcessStartOnly,
                                                         ComSafeArrayAsInParam(args),
                                                         ComSafeArrayAsInParam(env),
-                                                        Bstr("").raw() /* Username */,
+                                                        Bstr("").raw() /* Username. */,
                                                         Bstr("").raw() /* Password */,
-                                                        10 * 1000 /* Wait 10s for getting the process started */,
-                                                        &uPID, progressCopy.asOutParam());
-                    if (SUCCEEDED(rc))
+                                                        5 * 1000 /* Wait 10s for getting the process started. */,
+                                                        &uPID, progressCopy.asOutParam(), &vrc);
+                    if (RT_FAILURE(vrc))
+                    {
+                        switch (vrc)
+                        {
+                            /* If we got back VERR_INVALID_PARAMETER we're running an old(er) Guest Additions version
+                             * (< 4.0) which does not support automatic updating and/or has not the internal tool "vbox_cat". */
+                            case VERR_INVALID_PARAMETER:
+                                rc = setError(VBOX_E_NOT_SUPPORTED,
+                                              tr("Currently installed Guest Additions don't support automatic updating, please update them manually"));
+                                break;
+                            /* Getting back a VERR_TIMEOUT basically means that either VBoxService on the guest does not run (anymore) or that
+                             * no Guest Additions (on a supported automatic updating OS) are installed at all. */
+                            case VERR_TIMEOUT:
+                                rc = setError(VBOX_E_NOT_SUPPORTED,
+                                              tr("Guest Additions seem not to be installed on the guest or are not responding, please update them manually"));
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
+                    else
                     {
                         if (aTask->progress)
                             aTask->progress->SetCurrentOperationProgress(20);
@@ -361,8 +382,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                     ComSafeArrayAsInParam(installerEnv),
                                                     Bstr("").raw() /* Username */,
                                                     Bstr("").raw() /* Password */,
-                                                    10 * 1000 /* Wait 10s for getting the process started */,
-                                                    &uPID, progressInstaller.asOutParam());
+                                                    5 * 1000 /* Wait 5s for getting the process started */,
+                                                    &uPID, progressInstaller.asOutParam(), &vrc);
                 if (SUCCEEDED(rc))
                 {
                     /* Nothing yet. */
@@ -1455,14 +1476,14 @@ STDMETHODIMP Guest::ExecuteProcess(IN_BSTR aCommand, ULONG aFlags,
 
     return executeProcessInternal(aCommand, aFlags, ComSafeArrayInArg(aArguments),
                                   ComSafeArrayInArg(aEnvironment),
-                                  aUserName, aPassword, aTimeoutMS, aPID, aProgress);
+                                  aUserName, aPassword, aTimeoutMS, aPID, aProgress, NULL /* rc */);
 #endif
 }
 
 HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                       ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                       IN_BSTR aUserName, IN_BSTR aPassword,
-                                      ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress)
+                                      ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC)
 {
 /** @todo r=bird: Eventually we should clean up all the timeout parameters
  *        in the API and have the same way of specifying infinite waits!  */
@@ -1480,6 +1501,8 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
         if (   !(aFlags & ExecuteProcessFlag_IgnoreOrphanedProcesses)
             && !(aFlags & ExecuteProcessFlag_WaitForProcessStartOnly))
         {
+            if (pRC)
+                *pRC = VERR_INVALID_PARAMETER;
             return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
         }
     }
@@ -1507,7 +1530,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                 2,                                          /* Number of operations. */
                                 Bstr(tr("Starting process ...")).raw());    /* Description of first stage. */
         }
-        if (FAILED(rc)) return rc;
+        ComAssertRC(rc);
 
         /*
          * Prepare process execution.
@@ -1764,10 +1787,13 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
 
         if (RT_FAILURE(vrc))
         {
-            if (!Utf8UserName.isEmpty()) /* Skip logging internal calls. */
+            if (!pRC) /* Skip logging internal calls. */
                 LogRel(("Executing guest process \"%s\" as user \"%s\" failed with %Rrc\n",
                         Utf8Command.c_str(), Utf8UserName.c_str(), vrc));
         }
+
+        if (pRC)
+            *pRC = vrc;
     }
     catch (std::bad_alloc &)
     {
@@ -2307,7 +2333,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                                             ComSafeArrayAsInParam(env),
                                             Bstr(Utf8UserName).raw(),
                                             Bstr(Utf8Password).raw(),
-                                            10 * 1000 /* Wait 10s for getting the process started */,
+                                            5 * 1000 /* Wait 5s for getting the process started. */,
                                             &uPID, execProgress.asOutParam());
                     }
 

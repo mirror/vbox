@@ -110,7 +110,7 @@ public:
     HRESULT executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aUserName, IN_BSTR aPassword,
-                                   ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress);
+                                   ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
