@@ -81,7 +81,7 @@ typedef struct VciHdr
 AssertCompileSize(VciHdr, 2 * VCI_BLOCK_SIZE);
 
 /** VCI signature to identify a valid image. */
-#define VCI_HDR_SIGNATURE          UINT32_C(0x56434900) /* VCI\0 */
+#define VCI_HDR_SIGNATURE          UINT32_C(0x00494356) /* \0ICV */
 /** Current version we support. */
 #define VCI_HDR_VERSION            UINT32_C(0x00000001)
 
@@ -192,7 +192,7 @@ typedef struct VciBlkMap
 AssertCompileSize(VciBlkMap, VCI_BLOCK_SIZE);
 
 /** The magic which identifies a block map. */
-#define VCI_BLKMAP_MAGIC   UINT32_C(0x56424c4b) /* VBLK */
+#define VCI_BLKMAP_MAGIC   UINT32_C(0x4b4c4256) /* KLBV */
 /** Current version. */
 #define VCI_BLKMAP_VERSION UINT32_C(0x00000001)
 
@@ -465,16 +465,16 @@ DECLINLINE(int) vciFileWriteSync(PVCICACHE pCache, uint64_t uOffset,
                                  const void *pvBuffer, size_t cbBuffer)
 {
     return pCache->pInterfaceIOCallbacks->pfnWriteSync(pCache->pInterfaceIO->pvUser,
-                                                       pCache->pStorage, uOffset,
-                                                       pvBuffer, cbBuffer, NULL);
+                                                       pCache->pStorage, VCI_BLOCK2BYTE(uOffset),
+                                                       pvBuffer, VCI_BLOCK2BYTE(cbBuffer), NULL);
 }
 
 DECLINLINE(int) vciFileReadSync(PVCICACHE pCache, uint64_t uOffset,
                                 void *pvBuffer, size_t cbBuffer)
 {
     return pCache->pInterfaceIOCallbacks->pfnReadSync(pCache->pInterfaceIO->pvUser,
-                                                      pCache->pStorage, uOffset,
-                                                      pvBuffer, cbBuffer, NULL);
+                                                      pCache->pStorage, VCI_BLOCK2BYTE(uOffset),
+                                                      pvBuffer, VCI_BLOCK2BYTE(cbBuffer), NULL);
 }
 
 DECLINLINE(int) vciFileFlushSync(PVCICACHE pCache)
@@ -595,9 +595,9 @@ static int vciBlkMapCreate(uint64_t cBlocks, PVCIBLKMAP *ppBlkMap, uint32_t *pcB
         pBlkMap->pRangesHead = pFree;
         pBlkMap->pRangesTail = pFree;
 
-        Assert(!((cbBlkMap + sizeof(VciBlkMap) % VCI_BLOCK_SIZE)));
+        Assert(!((cbBlkMap + sizeof(VciBlkMap)) % VCI_BLOCK_SIZE));
         *ppBlkMap = pBlkMap;
-        *pcBlkMap = (cbBlkMap + sizeof(VciBlkMap)) / VCI_BLOCK_SIZE;
+        *pcBlkMap = VCI_BYTE2BLOCK(cbBlkMap + sizeof(VciBlkMap));
     }
     else
     {
@@ -661,7 +661,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
     {
         cBlkMap -= VCI_BYTE2BLOCK(sizeof(VciBlkMap));
 
-        rc = vciFileReadSync(pStorage, VCI_BLOCK2BYTE(offBlkMap), &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)));
+        rc = vciFileReadSync(pStorage, offBlkMap, &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)));
         if (RT_SUCCESS(rc))
         {
             offBlkMap += VCI_BYTE2BLOCK(sizeof(VciBlkMap));
@@ -676,7 +676,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
             if (   BlkMap.u32Magic == VCI_BLKMAP_MAGIC
                 && BlkMap.u32Version == VCI_BLKMAP_VERSION
                 && BlkMap.cBlocks == BlkMap.cBlocksFree + BlkMap.cBlocksAllocMeta + BlkMap.cBlocksAllocData
-                && BlkMap.cBlocks / 8 == cBlkMap)
+                && VCI_BYTE2BLOCK(BlkMap.cBlocks / 8) == cBlkMap)
             {
                 PVCIBLKMAP pBlkMap = (PVCIBLKMAP)RTMemAllocZ(sizeof(VCIBLKMAP));
                 if (pBlkMap)
@@ -695,12 +695,11 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                     {
                         uint8_t abBitmapBuffer[16 * _1K];
                         uint32_t cBlocksRead = 0;
-                        int iBit = 0;
-                        uint64_t cBlocksLeft = pBlkMap->cBlocks;
+                        uint64_t cBlocksLeft = VCI_BYTE2BLOCK(pBlkMap->cBlocks / 8);
 
                         cBlocksRead = RT_MIN(VCI_BYTE2BLOCK(sizeof(abBitmapBuffer)), cBlocksLeft);
-                        rc = vciFileReadSync(pStorage, VCI_BLOCK2BYTE(offBlkMap), abBitmapBuffer,
-                                             VCI_BLOCK2BYTE(cBlocksRead));
+                        rc = vciFileReadSync(pStorage, offBlkMap, abBitmapBuffer,
+                                             cBlocksRead);
 
                         if (RT_SUCCESS(rc))
                         {
@@ -716,36 +715,63 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
                         while (   RT_SUCCESS(rc)
                                && cBlocksLeft)
                         {
-#if 0
-                            while (cBlocksRead)
+                            int iBit = 0;
+                            uint32_t cBits = VCI_BLOCK2BYTE(cBlocksRead) * 8;
+                            uint32_t iBitPrev = 0xffffffff;
+
+                            while (cBits)
                             {
                                 if (pRangeCur->fFree)
                                 {
                                     /* Check for the first set bit. */
+                                    iBit = ASMBitNextSet(abBitmapBuffer, cBits, iBitPrev);
                                 }
                                 else
                                 {
                                     /* Check for the first free bit. */
+                                    iBit = ASMBitNextClear(abBitmapBuffer, cBits, iBitPrev);
                                 }
 
                                 if (iBit == -1)
                                 {
                                     /* No change. */
-                                    pRangeCur->cBlocks += cBlocksRead;
-                                    cBlocksRead = 0;
+                                    pRangeCur->cBlocks += cBits;
+                                    cBits = 0;
                                 }
                                 else
                                 {
+                                    Assert((uint32_t)iBit < cBits);
+                                    pRangeCur->cBlocks += iBit;
+
                                     /* Create a new range descriptor. */
+                                    PVCIBLKRANGEDESC pRangeNew = (PVCIBLKRANGEDESC)RTMemAllocZ(sizeof(VCIBLKRANGEDESC));
+                                    if (!pRangeNew)
+                                    {
+                                        rc = VERR_NO_MEMORY;
+                                        break;
+                                    }
+
+                                    pRangeNew->fFree = !pRangeCur->fFree;
+                                    pRangeNew->offAddrStart = pRangeCur->offAddrStart + pRangeCur->cBlocks;
+                                    pRangeNew->cBlocks = 0;
+                                    pRangeNew->pPrev = pRangeCur;
+                                    pRangeCur->pNext = pRangeNew;
+                                    pBlkMap->pRangesTail = pRangeNew;
+                                    pRangeCur = pRangeNew;
+                                    cBits -= iBit;
+                                    iBitPrev = iBit;
                                 }
                             }
-#endif
+
                             cBlocksLeft -= cBlocksRead;
                             offBlkMap   += cBlocksRead;
 
-                            if (cBlocksLeft)
+                            if (   RT_SUCCESS(rc)
+                                && cBlocksLeft)
                             {
                                 /* Read next chunk. */
+                                cBlocksRead = RT_MIN(VCI_BYTE2BLOCK(sizeof(abBitmapBuffer)), cBlocksLeft);
+                                rc = vciFileReadSync(pStorage, offBlkMap, abBitmapBuffer, cBlocksRead);
                             }
                         }
                     }
@@ -796,7 +822,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
                  pBlkMap, pStorage, offBlkMap, cBlkMap));
 
     /* Make sure the number of blocks allocated for us match our expectations. */
-    if ((pBlkMap->cBlocks / 8) + VCI_BYTE2BLOCK(sizeof(VciBlkMap)) == cBlkMap)
+    if (VCI_BYTE2BLOCK(pBlkMap->cBlocks / 8) + VCI_BYTE2BLOCK(sizeof(VciBlkMap)) == cBlkMap)
     {
         /* Setup the header */
         memset(&BlkMap, 0, sizeof(VciBlkMap));
@@ -808,7 +834,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
         BlkMap.cBlocksAllocMeta = RT_H2LE_U32(pBlkMap->cBlocksAllocMeta);
         BlkMap.cBlocksAllocData = RT_H2LE_U32(pBlkMap->cBlocksAllocData);
 
-        rc = vciFileWriteSync(pStorage, VCI_BLOCK2BYTE(offBlkMap), &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)));
+        rc = vciFileWriteSync(pStorage, offBlkMap, &BlkMap, VCI_BYTE2BLOCK(sizeof(VciBlkMap)));
         if (RT_SUCCESS(rc))
         {
             uint8_t abBitmapBuffer[16*_1K];
@@ -837,7 +863,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
                     if (iBit == sizeof(abBitmapBuffer) * 8)
                     {
                         /* Buffer is full, write to file and reset. */
-                        rc = vciFileWriteSync(pStorage, offBlkMap, abBitmapBuffer, sizeof(abBitmapBuffer));
+                        rc = vciFileWriteSync(pStorage, offBlkMap, abBitmapBuffer, VCI_BYTE2BLOCK(sizeof(abBitmapBuffer)));
                         if (RT_FAILURE(rc))
                             break;
 
@@ -852,7 +878,7 @@ static int vciBlkMapSave(PVCIBLKMAP pBlkMap, PVCICACHE pStorage, uint64_t offBlk
             Assert(iBit % 8 == 0);
 
             if (RT_SUCCESS(rc) && iBit)
-                rc = vciFileWriteSync(pStorage, offBlkMap, abBitmapBuffer, iBit / 8);
+                rc = vciFileWriteSync(pStorage, offBlkMap, abBitmapBuffer, VCI_BYTE2BLOCK(iBit / 8));
         }
     }
     else
@@ -931,6 +957,7 @@ static int vciBlkMapAllocate(PVCIBLKMAP pBlkMap, uint32_t cBlocks, uint64_t *pof
             {
                 pFree->fFree = true;
                 pFree->cBlocks = pBestFit->cBlocks - cBlocks;
+                pBestFit->cBlocks -= pFree->cBlocks;
                 pFree->offAddrStart = pBestFit->offAddrStart + cBlocks;
 
                 /* Link into the list. */
@@ -1279,7 +1306,7 @@ static int vciOpenImage(PVCICACHE pCache, unsigned uOpenFlags)
         goto out;
     }
 
-    rc = vciFileReadSync(pCache, 0, &Hdr, sizeof(Hdr));
+    rc = vciFileReadSync(pCache, 0, &Hdr, VCI_BYTE2BLOCK(sizeof(Hdr)));
     if (RT_FAILURE(rc))
     {
         rc = VERR_VD_GEN_INVALID_HEADER;
@@ -1301,13 +1328,13 @@ static int vciOpenImage(PVCICACHE pCache, unsigned uOpenFlags)
         pCache->offBlksBitmap = Hdr.offBlkMap;
 
         /* Load the block map. */
-        rc = vciBlkMapLoad(pCache, VCI_BLOCK2BYTE(pCache->offBlksBitmap), Hdr.cBlkMap, &pCache->pBlkMap);
+        rc = vciBlkMapLoad(pCache, pCache->offBlksBitmap, Hdr.cBlkMap, &pCache->pBlkMap);
         if (RT_SUCCESS(rc))
         {
             /* Load the first tree node. */
             VciTreeNode RootNode;
 
-            rc = vciFileReadSync(pCache, VCI_BLOCK2BYTE(pCache->offTreeRoot), &RootNode, sizeof(VciTreeNode));
+            rc = vciFileReadSync(pCache, pCache->offTreeRoot, &RootNode, VCI_BYTE2BLOCK(sizeof(VciTreeNode)));
             if (RT_SUCCESS(rc))
             {
                 pCache->pRoot = vciTreeNodeImage2Host(pCache->offTreeRoot, &RootNode);
@@ -1741,6 +1768,7 @@ static int vciWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     Assert(uOffset % 512 == 0);
     Assert(cbToWrite % 512 == 0);
 
+    *pcbWriteProcess = cbToWrite; /** @todo: Implement. */
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;

@@ -51,7 +51,9 @@ static void printUsage(PRTSTREAM pStrm)
                  "\n"
                  "   info         --filename <filename>\n"
                  "\n"
-                 "   compact      --filename <filename>\n",
+                 "   compact      --filename <filename>\n"
+                 "   createcache  --filename <filename>\n"
+                 "                --size <cache size>\n",
                  g_pszProgName);
 }
 
@@ -968,6 +970,65 @@ int handleCompact(HandlerArg *a)
 }
 
 
+int handleCreateCache(HandlerArg *a)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = NULL;
+    const char *pszFilename = NULL;
+    uint64_t cbSize = 0;
+
+    /* Parse the command line. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--filename", 'f', RTGETOPT_REQ_STRING },
+        { "--size",     's', RTGETOPT_REQ_UINT64 }
+    };
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'f':   // --filename
+                pszFilename = ValueUnion.psz;
+                break;
+
+            case 's':   // --size
+                cbSize = ValueUnion.u64;
+                break;
+
+            default:
+                ch = RTGetOptPrintError(ch, &ValueUnion);
+                printUsage(g_pStdErr);
+                return ch;
+        }
+    }
+
+    /* Check for mandatory parameters. */
+    if (!pszFilename)
+        return errorSyntax("Mandatory --filename option missing\n");
+
+    if (!cbSize)
+        return errorSyntax("Mandatory --size option missing\n");
+
+    /* just try it */
+    rc = VDCreate(pVDIfs, VDTYPE_HDD, &pDisk);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while creating the virtual disk container: %Rrc\n", rc);
+
+    rc = VDCreateCache(pDisk, "VCI", pszFilename, cbSize, VD_IMAGE_FLAGS_DEFAULT,
+                       NULL, NULL, VD_OPEN_FLAGS_NORMAL, NULL, NULL);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while creating the virtual disk cache: %Rrc\n", rc);
+
+    VDCloseAll(pDisk);
+
+    return rc;
+}
+
+
 int main(int argc, char *argv[])
 {
     RTR3Init();
@@ -1051,11 +1112,12 @@ int main(int argc, char *argv[])
         int (*handler)(HandlerArg *a);
     } s_commandHandlers[] =
     {
-        { "setuuid", handleSetUUID },
-        { "convert", handleConvert },
-        { "info",    handleInfo    },
-        { "compact", handleCompact },
-        { NULL,               NULL }
+        { "setuuid",     handleSetUUID     },
+        { "convert",     handleConvert     },
+        { "info",        handleInfo        },
+        { "compact",     handleCompact     },
+        { "createcache", handleCreateCache },
+        { NULL,                       NULL }
     };
 
     HandlerArg handlerArg = { 0, NULL };

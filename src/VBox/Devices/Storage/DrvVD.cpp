@@ -187,6 +187,11 @@ typedef struct VBOXDISK
     uint8_t            *pbData;
     /** Bandwidth group the disk is assigned to. */
     char               *pszBwGroup;
+
+    /** I/O interface for a cache image. */
+    VDINTERFACE         VDIIOCache;
+    /** Interface list for the cache image. */
+    PVDINTERFACE        pVDIfsCache;
 } VBOXDISK, *PVBOXDISK;
 
 
@@ -1930,11 +1935,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     int rc = VINF_SUCCESS;
-    char *pszName = NULL;   /**< The path of the disk image file. */
-    char *pszFormat = NULL; /**< The format backed to use for this image. */
-    bool fReadOnly;         /**< True if the media is read-only. */
-    bool fMaybeReadOnly;    /**< True if the media may or may not be read-only. */
-    bool fHonorZeroWrites;  /**< True if zero blocks should be written. */
+    char *pszName = NULL;        /**< The path of the disk image file. */
+    char *pszFormat = NULL;      /**< The format backed to use for this image. */
+    char *pszCachePath = NULL;   /**< The path to the cache image. */
+    char *pszCacheFormat = NULL; /**< The format backend to use for the cache image. */
+    bool fReadOnly;              /**< True if the media is read-only. */
+    bool fMaybeReadOnly;         /**< True if the media may or may not be read-only. */
+    bool fHonorZeroWrites;       /**< True if zero blocks should be written. */
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
@@ -2017,7 +2024,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "Format\0Path\0"
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
-                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0");
+                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0"
+                                          "CachePath\0CacheFormat\0");
         }
         else
         {
@@ -2154,6 +2162,27 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                 break;
             }
             MMR3HeapFree(psz); psz = NULL;
+
+            rc = CFGMR3QueryStringAlloc(pCurNode, "CachePath", &pszCachePath);
+            if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"CachePath\" as string failed"));
+                break;
+            }
+            else
+                rc = VINF_SUCCESS;
+
+            if (pszCachePath)
+            {
+                rc = CFGMR3QueryStringAlloc(pCurNode, "CacheFormat", &pszCacheFormat);
+                if (RT_FAILURE(rc))
+                {
+                    rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                          N_("DrvVD: Configuration error: Querying \"CacheFormat\" as string failed"));
+                    break;
+                }
+            }
         }
 
         PCFGMNODE pParent = CFGMR3GetChild(pCurNode, "Parent");
@@ -2455,6 +2484,31 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         iImageIdx++;
         pCurNode = CFGMR3GetParent(pCurNode);
     }
+
+    /* Open the cache image if set. */
+    if (   RT_SUCCESS(rc)
+        && VALID_PTR(pszCachePath))
+    {
+        /* Insert the custom I/O interface only if we're told to use new IO.
+         * Since the I/O interface is per image we could make this more
+         * flexible in the future if we want to. */
+        if (fUseNewIo)
+        {
+            rc = VDInterfaceAdd(&pThis->VDIIOCache, "DrvVD_IO", VDINTERFACETYPE_IO,
+                                &pThis->VDIIOCallbacks, pThis,
+                                &pThis->pVDIfsCache);
+            AssertRC(rc);
+        }
+
+        rc = VDCacheOpen(pThis->pDisk, pszCacheFormat, pszCachePath, VD_OPEN_FLAGS_NORMAL, pThis->pVDIfsCache);
+        if (RT_FAILURE(rc))
+            rc = PDMDRV_SET_ERROR(pDrvIns, rc, N_("DrvVD: Could not open cache image"));
+    }
+
+    if (VALID_PTR(pszCachePath))
+        MMR3HeapFree(pszCachePath);
+    if (VALID_PTR(pszCacheFormat))
+        MMR3HeapFree(pszCacheFormat);
 
     if (   RT_SUCCESS(rc)
         && pThis->fMergePending
