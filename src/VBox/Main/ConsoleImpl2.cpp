@@ -2639,7 +2639,8 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
          *    taking an online snapshot!
          */
         if (   lType == DeviceType_HardDisk
-            && aMachineState == MachineState_Starting)
+            && (   aMachineState == MachineState_Starting
+                || aMachineState == MachineState_Restoring))
         {
             /*
              * Some sanity checks.
