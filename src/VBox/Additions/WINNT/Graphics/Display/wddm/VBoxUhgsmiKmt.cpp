@@ -454,7 +454,6 @@ HRESULT vboxUhgsmiKmtEscCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD3D)
 
 HRESULT vboxUhgsmiKmtDestroy(PVBOXUHGSMI_PRIVATE_KMT pHgsmi)
 {
-    Assert(0);
     HRESULT hr = vboxDispKmtDestroyContext(&pHgsmi->Context);
     Assert(hr == S_OK);
     if (hr == S_OK)

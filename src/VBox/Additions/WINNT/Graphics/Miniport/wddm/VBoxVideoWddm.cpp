@@ -2844,6 +2844,18 @@ DxgkDdiBuildPagingBuffer(
             }
 
 #else
+            PVBOXWDDM_ALLOCATION pAlloc = (PVBOXWDDM_ALLOCATION)pBuildPagingBuffer->Transfer.hAllocation;
+            Assert(pAlloc);
+            if (pAlloc
+                    && !pAlloc->fRcFlags.Overlay /* overlay surfaces actually contain a valid data */
+                    && pAlloc->enmType != VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE  /* shadow primary - also */
+                    && pAlloc->enmType != VBOXWDDM_ALLOC_TYPE_UMD_HGSMI_BUFFER /* hgsmi buffer - also */
+                    )
+            {
+                /* we do now care about the others for now */
+                Status = STATUS_SUCCESS;
+                break;
+            }
             UINT cbCmd = VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
             PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, cbCmd);
             Assert(pDr);
