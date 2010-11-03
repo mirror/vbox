@@ -402,7 +402,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0xA:
             pNode->node.name = "PortA";
             pNode->node.au32F00_param[0xC] =   CODEC_MAKE_F00_0C(0x17)
-                                             | CODEC_F00_0C_CAP_BALANCED_IO
                                              | CODEC_F00_0C_CAP_INPUT
                                              | CODEC_F00_0C_CAP_OUTPUT
                                              | CODEC_F00_0C_CAP_HP
