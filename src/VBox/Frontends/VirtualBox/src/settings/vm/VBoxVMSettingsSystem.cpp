@@ -262,7 +262,8 @@ void VBoxVMSettingsSystem::putToCache()
         data.m_fEnabled = pItem->checkState(0) == Qt::Checked;
         m_cache.m_bootItems << data;
     }
-    m_cache.m_fIoApicEnabled = mCbApic->isChecked() || mSlCPU->value() > 1;
+    m_cache.m_fIoApicEnabled = mCbApic->isChecked() || mSlCPU->value() > 1 ||
+                               (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt() == KChipsetType_ICH9;
     m_cache.m_fEFIEnabled = mCbEFI->isChecked();
     m_cache.m_fUTCEnabled = mCbTCUseUTC->isChecked();
     m_cache.m_fUseAbsHID = mCbUseAbsHID->isChecked();
@@ -316,6 +317,7 @@ void VBoxVMSettingsSystem::setValidator (QIWidgetValidator *aVal)
     connect (mCbApic, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
     connect (mCbVirt, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
     connect (mCbUseAbsHID, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
+    connect(mCbChipset, SIGNAL(currentIndexChanged(int)), mValidator, SLOT(revalidate()));
 }
 
 bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */)
@@ -381,6 +383,17 @@ bool VBoxVMSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */
         aWarning = tr (
             "you have assigned more than one virtual CPU to this VM. "
             "This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. "
+            "This will be done automatically when you accept the VM Settings "
+            "by pressing the OK button.");
+        return true;
+    }
+
+    /* Chipset type & IO-APIC test */
+    if ((KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt() == KChipsetType_ICH9 && !mCbApic->isChecked())
+    {
+        aWarning = tr (
+            "you have assigned ICH9 chipset type to this VM. "
+            "It will not work properly unless the IO-APIC feature is also enabled. "
             "This will be done automatically when you accept the VM Settings "
             "by pressing the OK button.");
         return true;
