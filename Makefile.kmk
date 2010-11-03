@@ -482,8 +482,6 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Devices/Parallel \
 	src/VBox/Devices/Serial \
 	src/VBox/Devices/Storage \
-	src/VBox/Devices/VBoxHDDFormats \
-	src/VBox/Devices/VBoxHDDFormats/StorageCraft \
 	src/VBox/Devices/USB \
 	src/VBox/Devices/USB/darwin \
 	src/VBox/Devices/USB/linux \
@@ -547,6 +545,7 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/HostDrivers/VBoxUSB/win/Monitor/win32 \
 	src/VBox/HostDrivers/VBoxUSB/win/Monitor/win64 \
 	src/VBox/HostDrivers/VBoxUSB/win/usbd \
+	src/VBox/Storage
 
 # These must come first in order to make things look nice.
 VBOX_CORE_DOXYFILE_INPUT_FIRST =\
