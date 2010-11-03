@@ -367,7 +367,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->adc.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3 Set: D3 */
             pNode->adc.u32F06_param = 0;
             pNode->adc.node.au32F00_param[9] =   CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 0xD, 0)
-                                               | CODEC_F00_09_CAP_L_R_SWAP
+                                               | CODEC_F00_09_CAP_POWER_CTRL
                                                | CODEC_F00_09_CAP_CONNECTION_LIST
                                                | CODEC_F00_09_CAP_PROC_WIDGET
                                                | CODEC_F00_09_CAP_LSB;//RT_BIT(20)| (0xd << 16) |  RT_BIT(10) | RT_BIT(8) | RT_BIT(6)| RT_BIT(0);
