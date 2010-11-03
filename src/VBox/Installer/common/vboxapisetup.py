@@ -15,9 +15,11 @@ from distutils.core import setup
 def cleanupComCache():
     import shutil
     from distutils.sysconfig import get_python_lib
-    comCache = os.path.join(get_python_lib(),'win32com', 'gen_py')
-    print "Cleaning COM cache at",comCache
-    shutil.rmtree(comCache, True)
+    comCache1 = os.path.join(get_python_lib(),'win32com', 'gen_py')
+    comCache2 = os.path.join(os.environ.get("TEMP", "c:\\tmp", 'gen_py'))
+    print "Cleaning COM cache at",comCache1,"and",comCache2
+    shutil.rmtree(comCache1, True)
+    shutil.rmtree(comCache2, True)
 
 def patchWith(file,install,sdk):
     newFile=file+".new"
