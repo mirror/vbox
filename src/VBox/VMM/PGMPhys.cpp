@@ -3924,16 +3924,18 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
     if (RT_SUCCESS(rc))
     {
         static uint32_t cTimeOut = 0;
+        uint64_t u64TimeStampDelta = u64TimeStamp2 - u64TimeStamp1;
 
-        if (u64TimeStamp2 - u64TimeStamp1 > 100)
+        if (u64TimeStampDelta > 100)
         {
             STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatLargePageOverflow);
-            if (++cTimeOut > 10)
+            if (    ++cTimeOut > 10
+                ||  u64TimeStampDelta > 1000 /* more than one second forces an early retirement from allocating large pages. */)
             {
                 /* If repeated attempts to allocate a large page takes more than 100 ms, then we fall back to normal 4k pages.
                  * E.g. Vista 64 tries to move memory around, which takes a huge amount of time.
                  */
-                LogRel(("PGMR3PhysAllocateLargePage: allocating large pages takes too long (last attempt %d ms); DISABLE\n", u64TimeStamp2 - u64TimeStamp1));
+                LogRel(("PGMR3PhysAllocateLargePage: allocating large pages takes too long (last attempt %d ms; nr of timeouts %d); DISABLE\n", u64TimeStampDelta, cTimeOut));
                 PGMSetLargePageUsage(pVM, false);
             }
         }
