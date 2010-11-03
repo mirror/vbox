@@ -74,14 +74,14 @@ extern "C" {
 #define CODEC_SET_AMP_INDEX(cmd)             (((cmd) & CODEC_VERB_SET_AMP_INDEX) >> 7)
 
 /* HDA spec 7.3.3.1 defines layout of configuration registers/verbs (0xF00) */
-/* VendorID */
+/* VendorID (7.3.4.1) */
 #define CODEC_MAKE_F00_00(vendorID, deviceID) (((vendorID) << 16) | (deviceID))
-/* RevisionID */
+/* RevisionID (7.3.4.2)*/
 #define CODEC_MAKE_F00_02(MajRev, MinRev, RevisionID, SteppingID) (((MajRev) << 20)|((MinRev) << 16)|((RevisionID) << 8)|(SteppingID))
-/* Subordinate node count */
-#define CODEC_MAKE_F00_04(startNodeNumber, totalNodeNumber) ((((startNodeNumber) & 0xFF) << 16)|(((totalNodeNumber) & 0xFF) << 8))
+/* Subordinate node count (7.3.4.3)*/
+#define CODEC_MAKE_F00_04(startNodeNumber, totalNodeNumber) ((((startNodeNumber) & 0xFF) << 16)|((totalNodeNumber) & 0xFF))
 /* 
- * Function Group Type
+ * Function Group Type  (7.3.4.4)
  * 0 & [0x3-0x7f] are reserved types
  * [0x80 - 0xff] are vendor defined function groups
  */
@@ -89,6 +89,9 @@ extern "C" {
 #define CODEC_F00_05_UNSOL  RT_BIT(8)
 #define CODEC_F00_05_AFG    (0x1)
 #define CODEC_F00_05_MFG    (0x2)
+/*  Audio Function Group capabilities (7.3.4.5) */
+#define CODEC_MAKE_F00_08(BeepGen, InputDelay, OutputDelay) ((BeepGen)| (((InputDelay) & 0xF) << 8) | ((OutputDelay) & 0xF))
+#define CODEC_F00_08_BEEP_GEN RT_BIT(16)
 
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
@@ -259,11 +262,11 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         /* Root Node*/
         case 0:
             pNode->root.node.name = "Root";
-            pNode->node.au32F00_param[2] = CODEC_MAKE_F00_02(0x1, 0x0, 0x31, 0x1); /* rev id */
+            pNode->node.au32F00_param[2] = CODEC_MAKE_F00_02(0x1, 0x0, 0x34, 0x1); /* rev id */
             break;
         case 1:
             pNode->afg.node.name = "AFG";
-            pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
+            pNode->node.au32F00_param[8] = CODEC_MAKE_F00_08(CODEC_F00_08_BEEP_GEN, 0xd, 0xd);
             pNode->node.au32F00_param[0xC] = (17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
             pNode->node.au32F00_param[0xB] = RT_BIT(0);
             pNode->node.au32F00_param[0xD] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
