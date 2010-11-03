@@ -1963,44 +1963,10 @@ static const struct {
     int32_t     iSlot;
     int32_t     iFunction;
 } PciSlotAssignments[] = {
-    /* Due to somewhat inflexible PCI bus configuration, ConsoleImpl hardcodes 0:5:0 as HDA address, so we shalln't put elsewhere */
-#if 0
-    {
-        "lan",      25, 0 /* LAN controller */
-    },
-    {
-        "hda",      27, 0 /* High Definition Audio */
-    },
-#endif
+    /* The only override that have to be here, as host controller is added in the way invisible to bus slot assignment management, 
+       maybe to be changed in the future. */
     {
         "i82801",   30, 0 /* Host Controller */
-    },
-    /**
-     *  Please note, that for devices being functions, like we do here, device 0
-     *  must be multifunction, i.e. have header type 0x80. Our LPC device is.
-     *  Alternative approach is to assign separate slot to each device.
-     */
-    {
-        "lpc",      31, 0 /* Low Pin Count bus */
-    },
-    {
-        "piix3ide", 31, 1 /* IDE controller */
-    },
-    /* Disable, if we may wish to have multiple AHCI controllers */
-    {
-        "ahci",     31, 2 /* SATA controller */
-    },
-    {
-        "smbus",    31, 3 /* System Management Bus */
-    },
-    {
-        "usb-ohci", 31, 4 /* OHCI USB controller */
-    },
-    {
-        "usb-ehci", 31, 5 /* EHCI USB controller */
-    },
-    {
-        "thermal",  31, 6 /* Thermal controller */
     },
 };
 

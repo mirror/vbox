@@ -24,6 +24,120 @@
 
 #include <map>
 #include <vector>
+#include <algorithm>
+
+struct DeviceAssignmentRule
+{
+    const char* pszName;
+    int         iBus;
+    int         iDevice;
+    int         iFn;
+    int         iPriority;
+};
+
+struct DeviceAliasRule
+{
+    const char* pszDevName;
+    const char* pszDevAlias;
+};
+
+/* Those rules define PCI slots assignment */
+
+/* Generic rules */
+static const DeviceAssignmentRule aGenericRules[] =
+{
+    /* VGA controller */
+    {"vga",           0,  2, 0,  0},
+
+    /* VMM device */
+    {"VMMDev",        0,  4, 0,  0},
+
+    /* Audio controllers */
+    {"ichac97",       0,  5, 0,  0},
+    {"hda",           0,  5, 0,  0},
+
+    /* Storage controllers */
+    {"ahci",          0, 13, 0,  0},
+    {"lsilogic",      0, 20, 0,  0},
+    {"buslogic",      0, 21, 0,  0},
+    {"lsilogicsas",   0, 22, 0,  0},
+
+    /* USB controllers */
+    {"usb-ohci",      0,  6,  0, 0},
+    {"usb-ehci",      0, 11,  0, 0},
+
+    /* ACPI controller */
+    {"acpi",          0,  7,  0, 0},
+
+
+    /* Network controllers */
+    /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
+     * next 4 get 16..19. */
+    {"nic",           0,  3,  0, 0},
+    {"nic",           0,  8,  0, 0},
+    {"nic",           0,  9,  0, 0},
+    {"nic",           0, 10,  0, 0},
+    {"nic",           0, 16,  0, 0},
+    {"nic",           0, 17,  0, 0},
+    {"nic",           0, 18,  0, 0},
+    {"nic",           0, 19,  0, 0},
+    /* VMWare assigns first NIC to slot 11 */
+    {"nic-vmware",    0, 11,  0, 0},
+
+    /* ISA/LPC controller */
+    {"lpc",           0, 31,  0, 0},
+
+    { NULL,          -1, -1, -1,  0}
+};
+
+/* PIIX3 chipset rules */
+static const DeviceAssignmentRule aPiix3Rules[] =
+{
+    {"piix3ide",      0,  1,  1, 0},
+    {"pcibridge",     0, 24,  0, 0},
+    {"pcibridge",     0, 25,  0, 0},
+    { NULL,          -1, -1, -1, 0}
+};
+
+
+/* ICH9 chipset rules */
+static const DeviceAssignmentRule aIch9Rules[] =
+{
+    /* Host Controller */
+    {"i82801",        0, 30, 0,  0},
+
+    /* Those are functions of LPC at 00:1e:00 */
+    /**
+     *  Please note, that for devices being functions, like we do here, device 0
+     *  must be multifunction, i.e. have header type 0x80. Our LPC device is.
+     *  Alternative approach is to assign separate slot to each device.
+     */
+    {"piix3ide",      0, 31, 1,  1},
+    {"ahci",          0, 31, 2,  1},
+    {"smbus",         0, 31, 3,  1},
+    {"usb-ohci",      0, 31, 4,  1},
+    {"usb-ehci",      0, 31, 5,  1},
+    {"thermal",       0, 31, 6,  1},
+
+    /* ths rule has lower priority than generic one */
+    {"lsilogic",      1, 20, 0,  -1},
+    {"lsilogic",      1, 20, 0,  -1},
+
+    /* to make sure rule never used before rules assigning devices on it */
+    {"ich9pcibridge", 0, 24, 0,  10},
+    {"ich9pcibridge", 0, 25, 0,  10},
+    {"ich9pcibridge", 1, 24, 0,   5},
+    {"ich9pcibridge", 1, 25, 0,   5},
+    { NULL,          -1, -1, -1,  0}
+};
+
+/* Aliasing rules */
+static const DeviceAliasRule aDeviceAliases[] =
+{
+    {"e1000",      "nic"},
+    {"pcnet",      "nic"},
+    {"virtio-net", "nic"}
+};
 
 struct BusAssignmentManager::State
 {
@@ -49,6 +163,8 @@ struct BusAssignmentManager::State
 
     typedef std::map <PciBusAddress,PciDeviceRecord > PciMap;
     typedef std::vector<PciBusAddress>                PciAddrList;
+    typedef std::vector<const DeviceAssignmentRule*>  PciRulesList;
+
     typedef std::map <PciDeviceRecord,PciAddrList >   ReversePciMap;
 
     volatile int32_t cRefCnt;
@@ -68,6 +184,9 @@ struct BusAssignmentManager::State
     HRESULT autoAssign(const char* pszName, PciBusAddress& Address);
     bool    checkAvailable(PciBusAddress& Address);
     bool    findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address);
+
+    const char* findAlias(const char* pszName);
+    void addMatchingRules(const char* pszName, PciRulesList& aList);
 };
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
@@ -75,7 +194,6 @@ HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
     mChipsetType = chipsetType;
     return S_OK;
 }
-
 
 HRESULT BusAssignmentManager::State::record(const char* pszName, PciBusAddress& Address)
 {
@@ -112,11 +230,79 @@ bool    BusAssignmentManager::State::findPciAddress(const char* pszDevName, int 
     return true;
 }
 
+void BusAssignmentManager::State::addMatchingRules(const char* pszName, PciRulesList& aList)
+{
+    size_t iRuleset, iRule;
+    const DeviceAssignmentRule* aArrays[2] = {aGenericRules, NULL};
+
+    switch (mChipsetType)
+    {
+        case ChipsetType_PIIX3:
+            aArrays[1] = aPiix3Rules;
+            break;
+        case ChipsetType_ICH9:
+            aArrays[1] = aIch9Rules;
+            break;
+        default:
+            Assert(false);
+            break;
+    }
+
+    for (iRuleset = 0; iRuleset < RT_ELEMENTS(aArrays); iRuleset++)
+    {
+        if (aArrays[iRuleset] == NULL)
+            continue;
+
+        for (iRule = 0; aArrays[iRuleset][iRule].pszName != NULL; iRule++)
+        {
+            if (strcmp(pszName, aArrays[iRuleset][iRule].pszName) == 0)
+                aList.push_back(&aArrays[iRuleset][iRule]);
+        }
+    }
+}
+
+const char* BusAssignmentManager::State::findAlias(const char* pszDev)
+{
+    for (size_t iAlias = 0; iAlias < RT_ELEMENTS(aDeviceAliases); iAlias++)
+    {
+        if (strcmp(pszDev, aDeviceAliases[iAlias].pszDevName) == 0)
+            return aDeviceAliases[iAlias].pszDevAlias;
+    }
+    return NULL;
+}
+
+static bool  RuleComparator(const DeviceAssignmentRule* r1, const DeviceAssignmentRule* r2)
+{
+    return (r1->iPriority > r2->iPriority);
+}
+
 HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PciBusAddress& Address)
 {
-    // unimplemented yet
-    Assert(false);
-    return S_OK;
+    PciRulesList matchingRules;
+
+    addMatchingRules(pszName,  matchingRules);
+    const char* pszAlias = findAlias(pszName);
+    if (pszAlias)
+        addMatchingRules(pszAlias, matchingRules);
+
+    AssertMsg(matchingRules.size() > 0, ("No rule for %s(%s)\n", pszName, pszAlias));
+
+    sort(matchingRules.begin(), matchingRules.end(), RuleComparator);
+
+    for (size_t iRule = 0; iRule < matchingRules.size(); iRule++)
+    {
+        const DeviceAssignmentRule* rule = matchingRules[iRule];
+
+        Address.iBus = rule->iBus;
+        Address.iDevice = rule->iDevice;
+        Address.iFn = rule->iFn;
+
+        if (checkAvailable(Address))
+            return S_OK;
+    }
+    AssertMsg(false, ("All possible candidate positions for %s exhausted\n", pszName));
+
+    return E_INVALIDARG;
 }
 
 bool BusAssignmentManager::State::checkAvailable(PciBusAddress& Address)
@@ -201,7 +387,7 @@ HRESULT BusAssignmentManager::assignPciDevice(const char* pszDevName, PCFGMNODE 
     if (FAILED(rc))
         return rc;
 
-    Assert(Address.valid());
+    Assert(Address.valid() && pState->checkAvailable(Address));
 
     rc = pState->record(pszDevName, Address);
     if (FAILED(rc))

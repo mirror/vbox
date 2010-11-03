@@ -881,13 +881,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDevices, "ich9pcibridge", &pDev);
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-            PciAddr = PciBusAddress(0, 24, 0);
-            hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst, PciAddr);                               H();
+            hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst);                               H();
 
             InsertConfigNode(pDev,     "1", &pInst);
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-            PciAddr = PciBusAddress(0, 25, 0);
-            hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst, PciAddr);                               H();
+            hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst);                               H();
         }
 
 #if 0 /* enable this to test PCI bridging */
@@ -965,10 +963,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         {
             InsertConfigNode(pDevices, "lpc", &pDev);
             InsertConfigNode(pDev,     "0", &pInst);
-#if 0
-            PciAddr = PciBusAddress(0, 31, 0);
             hrc = BusMgr->assignPciDevice("lpc", pInst);                               H();
-#endif
             InsertConfigInteger(pInst, "Trusted",   1); /* boolean */
         }
 
@@ -1060,8 +1055,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
 
-        PciAddr = PciBusAddress(0, 2, 0);
-        hrc = BusMgr->assignPciDevice("vga", pInst, PciAddr);                               H();
+        hrc = BusMgr->assignPciDevice("vga", pInst);                               H();
         InsertConfigNode(pInst,    "Config", &pCfg);
         ULONG cVRamMBs;
         hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                     H();
@@ -1328,8 +1322,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 case StorageControllerType_LsiLogic:
                 {
-                    PciAddr = PciBusAddress(1, 20, 0);
-                    hrc = BusMgr->assignPciDevice("lsilogic", pCtlInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("lsilogic", pCtlInst);                               H();
 
 
                     /* Attach the status driver */
@@ -1346,8 +1339,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                 case StorageControllerType_BusLogic:
                 {
-                    PciAddr = PciBusAddress(0, 21, 0);
-                    hrc = BusMgr->assignPciDevice("buslogic", pCtlInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("buslogic", pCtlInst);                               H();
 
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
@@ -1363,8 +1355,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                 case StorageControllerType_IntelAhci:
                 {
-                    PciAddr = PciBusAddress(0, 13, 0);
-                    hrc = BusMgr->assignPciDevice("ahci", pCtlInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("ahci", pCtlInst);                               H();
 
                     ULONG cPorts = 0;
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
@@ -1409,8 +1400,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     /*
                      * IDE (update this when the main interface changes)
                      */
-                    PciAddr = PciBusAddress(0, 1, 1);
-                    hrc = BusMgr->assignPciDevice("ide", pCtlInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("piix3ide", pCtlInst);                               H();
                     InsertConfigString(pCfg,   "Type", controllerString(enmCtrlType));
 
                     /* Attach the status driver */
@@ -1455,8 +1445,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
                 case StorageControllerType_LsiLogicSas:
                 {
-                    PciAddr = PciBusAddress(0, 22, 0);
-                    hrc = BusMgr->assignPciDevice("lsilogicsas", pCtlInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("lsilogicsas", pCtlInst);                               H();
 
                     InsertConfigString(pCfg,  "ControllerType", "SAS1068");
 
@@ -1817,8 +1806,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigNode(pDev,     "0", &pInst);
         InsertConfigNode(pInst,    "Config", &pCfg);
         InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        PciAddr = PciBusAddress(0, 4, 0);
-        hrc = BusMgr->assignPciDevice("VMMDev", pInst, PciAddr);                               H();
+        hrc = BusMgr->assignPciDevice("VMMDev", pInst);                               H();
 
         Bstr hwVersion;
         hrc = pMachine->COMGETTER(HardwareVersion)(hwVersion.asOutParam());                 H();
@@ -1880,8 +1868,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pDevices, "ichac97", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
-                    PciAddr = PciBusAddress(0, 5, 0);
-                    hrc = BusMgr->assignPciDevice("ichac97", pInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("ichac97", pInst);                               H();
                     InsertConfigNode(pInst,    "Config", &pCfg);
                     break;
                 }
@@ -1905,8 +1892,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pDevices, "hda", &pDev);
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
-                    PciAddr = PciBusAddress(0, 5, 0);
-                    hrc = BusMgr->assignPciDevice("hda", pInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("hda", pInst);                               H();
                     InsertConfigNode(pInst,    "Config", &pCfg);
                 }
             }
@@ -2005,8 +1991,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 InsertConfigNode(pDev,     "0", &pInst);
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-                PciAddr = PciBusAddress(0, 6, 0);
-                hrc = BusMgr->assignPciDevice("usb-ohci", pInst, PciAddr);                               H();
+                hrc = BusMgr->assignPciDevice("usb-ohci", pInst);                           H();
                 InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                 InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
@@ -2030,8 +2015,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     InsertConfigNode(pDev,     "0", &pInst);
                     InsertConfigNode(pInst,    "Config", &pCfg);
                     InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-                    PciAddr = PciBusAddress(0, 11, 0);
-                    hrc = BusMgr->assignPciDevice("usb-ohci", pInst, PciAddr);                               H();
+                    hrc = BusMgr->assignPciDevice("usb-ehci", pInst);                               H();
 
                     InsertConfigNode(pInst,    "LUN#0", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
@@ -2290,8 +2274,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
-            PciAddr = PciBusAddress(0, 7, 0);
-            hrc = BusMgr->assignPciDevice("acpi", pInst, PciAddr);                               H();
+            hrc = BusMgr->assignPciDevice("acpi", pInst);                               H();
 
             InsertConfigInteger(pCfg,  "RamSize",          cbRam);
             InsertConfigInteger(pCfg,  "RamHoleSize",      cbRamHole);
