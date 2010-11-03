@@ -66,9 +66,10 @@
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>
-#include <iprt/string.h>
+#include <iprt/ctype.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/string.h>
 
 #include "SUPLibInternal.h"
 

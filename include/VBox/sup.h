@@ -984,8 +984,8 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszW
  *
  * @param   pszDirPath      The directory path.
  * @param   fRecursive      Whether the check should be recursive or
- *                          not.  When set, all sub-directores will be
- *                          checked.
+ *                          not.  When set, all sub-directores will be checked,
+ *                          including files (@a fCheckFiles is ignored).
  * @param   fCheckFiles     Whether to apply the same basic integrity check to
  *                          the files in the directory as the directory itself.
  * @param   pszErr          Where to return error message on failure.

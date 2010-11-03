@@ -1359,18 +1359,36 @@
 #define VERR_SUPLIB_PATH_NOT_CLEAN                  (-3751)
 /** The specified path is too long (hardening). */
 #define VERR_SUPLIB_PATH_TOO_LONG                   (-3752)
+/** The specified path is too short (hardening). */
+#define VERR_SUPLIB_PATH_TOO_SHORT                  (-3753)
+/** The specified path has too many components (hardening). */
+#define VERR_SUPLIB_PATH_TOO_MANY_COMPONENTS        (-3754)
 /** The specified path is a root path (hardening). */
-#define VERR_SUPLIB_PATH_IS_ROOT                    (-3753)
+#define VERR_SUPLIB_PATH_IS_ROOT                    (-3755)
 /** Failed to enumerate directory (hardening). */
-#define VERR_SUPLIB_DIR_ENUM_FAILED                 (-3754)
+#define VERR_SUPLIB_DIR_ENUM_FAILED                 (-3756)
 /** Failed to stat a file/dir during enumeration (hardening). */
-#define VERR_SUPLIB_STAT_ENUM_FAILED                (-3755)
+#define VERR_SUPLIB_STAT_ENUM_FAILED                (-3757)
 /** Failed to stat a file/dir (hardening). */
-#define VERR_SUPLIB_STAT_FAILED                     (-3756)
+#define VERR_SUPLIB_STAT_FAILED                     (-3758)
+/** Failed to fstat a native handle (hardening). */
+#define VERR_SUPLIB_FSTAT_FAILED                    (-3759)
 /** Found an illegal symbolic link (hardening). */
-#define VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED      (-3757)
+#define VERR_SUPLIB_SYMLINKS_ARE_NOT_PERMITTED      (-3760)
 /** Found something which isn't a file nor a directory (hardening). */
-#define VERR_SUPLIB_NOT_DIR_NOT_FILE                (-3758)
+#define VERR_SUPLIB_NOT_DIR_NOT_FILE                (-3761)
+/** The specified path is a directory and not a file (hardening). */
+#define VERR_SUPLIB_IS_DIRECTORY                    (-3762)
+/** The specified path is a file and not a directory (hardening). */
+#define VERR_SUPLIB_IS_FILE                         (-3763)
+/** The path is not the same object as the native handle (hardening). */
+#define VERR_SUPLIB_NOT_SAME_OBJECT                 (-3764)
+/** The owner is not root (hardening). */
+#define VERR_SUPLIB_OWNER_NOT_ROOT                  (-3765)
+/** The group is a non-system group and it has write access (hardening). */
+#define VERR_SUPLIB_WRITE_NON_SYS_GROUP             (-3766)
+/** The file or directory is world writable (hardening). */
+#define VERR_SUPLIB_WORLD_WRITABLE                  (-3767)
 /** @} */
 
 
