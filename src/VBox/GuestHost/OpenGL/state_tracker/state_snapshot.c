@@ -1940,7 +1940,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
         if (pProgram->cUniforms)
         {
             pProgram->pUniforms = crAlloc(pProgram->cUniforms*sizeof(CRGLSLUniform));
-            if (!pProgram) return VERR_NO_MEMORY;
+            if (!pProgram->pUniforms) return VERR_NO_MEMORY;
 
             for (k=0; k<pProgram->cUniforms; ++k)
             {
