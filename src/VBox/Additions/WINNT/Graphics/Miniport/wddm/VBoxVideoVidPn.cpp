@@ -1650,11 +1650,15 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, co
                     Status = vboxVidPnEnumTargetsForSource(pDevExt, hVidPnTopology, pVidPnTopologyInterface,
                             srcId,
                             vboxVidPnCommitTargetModeEnum, &TgtModeInfo);
-                    Assert(Status == STATUS_SUCCESS);
+                    Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY);
                     if (Status == STATUS_SUCCESS)
                     {
                         Status = TgtModeInfo.Status;
                         Assert(Status == STATUS_SUCCESS);
+                    }
+                    else if (Status == STATUS_GRAPHICS_SOURCE_NOT_IN_TOPOLOGY)
+                    {
+                        Status = STATUS_SUCCESS;
                     }
                     else
                         drprintf((__FUNCTION__": vboxVidPnEnumTargetsForSource failed Status(0x%x)\n", Status));
@@ -1669,7 +1673,7 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, co
         }
         else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
         {
-            Status = vboxVidPnCommitSourceMode(pDevExt, srcId, pPinnedVidPnSourceModeInfo, pAllocation);
+            Status = vboxVidPnCommitSourceMode(pDevExt, srcId, NULL, pAllocation);
             Assert(Status == STATUS_SUCCESS);
         }
         else
