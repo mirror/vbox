@@ -73,6 +73,23 @@ extern "C" {
 #define CODEC_SET_AMP_IS_RIGHT_SIDE(cmd)     (((cmd) & CODEC_VERB_SET_AMP_RIGHT_SIDE) != 0)
 #define CODEC_SET_AMP_INDEX(cmd)             (((cmd) & CODEC_VERB_SET_AMP_INDEX) >> 7)
 
+/* HDA spec 7.3.3.1 defines layout of configuration registers/verbs (0xF00) */
+/* VendorID */
+#define CODEC_MAKE_F00_00(vendorID, deviceID) (((vendorID) << 16) | (deviceID))
+/* RevisionID */
+#define CODEC_MAKE_F00_02(MajRev, MinRev, RevisionID, SteppingID) (((MajRev) << 20)|((MinRev) << 16)|((RevisionID) << 8)|(SteppingID))
+/* Subordinate node count */
+#define CODEC_MAKE_F00_04(startNodeNumber, totalNodeNumber) ((((startNodeNumber) & 0xFF) << 16)|(((totalNodeNumber) & 0xFF) << 8))
+/* 
+ * Function Group Type
+ * 0 & [0x3-0x7f] are reserved types
+ * [0x80 - 0xff] are vendor defined function groups
+ */
+#define CODEC_MAKE_F00_05(UnSol, NodeType) ((UnSol)|(NodeType))
+#define CODEC_F00_05_UNSOL  RT_BIT(8)
+#define CODEC_F00_05_AFG    (0x1)
+#define CODEC_F00_05_MFG    (0x2)
+
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
 #define CODEC_DEFAULT_CONF_PORT_MASK    (0x3) 
@@ -242,16 +259,10 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         /* Root Node*/
         case 0:
             pNode->root.node.name = "Root";
-            //** @todo r=michaln: I fear the use of RT_MAKE_U32_FROM_U8() here makes the
-            // code much harder to read, not easier.
-            pNode->node.au32F00_param[0] = RT_MAKE_U32_FROM_U8(0x80, 0x76, 0x84, 0x83); /* VendorID = STAC9220/ DevId = 0x7680 */
-            pNode->node.au32F00_param[2] = RT_MAKE_U32_FROM_U8(0x1, 0x34, 0x10, 0x00); /* rev id */
-            pNode->node.au32F00_param[4] = RT_MAKE_U32_FROM_U8(0x1, 0x00, 0x01, 0x00); /* node info (start node: 1, start id = 1) */
+            pNode->node.au32F00_param[2] = CODEC_MAKE_F00_02(0x1, 0x0, 0x31, 0x1); /* rev id */
             break;
         case 1:
             pNode->afg.node.name = "AFG";
-            pNode->node.au32F00_param[4] = 2 << 16 | 0x1A; /* starting node - 2; total numbers of nodes  0x1A */
-            pNode->node.au32F00_param[5] = RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[8] = RT_MAKE_U32_FROM_U8(0x0d, 0x0d, 0x01, 0x0); /* Capabilities */
             pNode->node.au32F00_param[0xC] = (17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
             pNode->node.au32F00_param[0xB] = RT_BIT(0);
@@ -589,15 +600,11 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
     switch (nodenum)
     {
         case 0: /* Root */
-            pNode->node.au32F00_param[0] = (0x10EC /* Realtek */ << 16) | 0x885 /* device */;
-            pNode->node.au32F00_param[2] = RT_BIT(20); /* Realtek 889 (8.1.9)*/
-            pNode->node.au32F00_param[4] = (1 << 16)|0x1; /* start node 1, total 1*/
+            pNode->node.au32F00_param[2] = CODEC_MAKE_F00_02(0x1, 0x0, 0x0, 0x0); /* Realtek 889 (8.1.9)*/
             pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
 
             break;
         case 0x1: /* AFG */
-            pNode->node.au32F00_param[4] = (2 << 16)|0x25; /* start node 1, total 1*/
-            pNode->node.au32F00_param[5] = RT_BIT(8) | 0x1; /* UnSol: enabled, function group type: AFG */
             pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->node.au32F00_param[0xB] = 0x1;
             pNode->node.au32F00_param[0x11] = RT_BIT(30)|0x2;
@@ -2067,6 +2074,13 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     {
         pState->pfnCodecNodeReset(pState, i, &pState->pNodes[i]);
     }
+    /* common root node initializers */
+    pState->pNodes[0].node.au32F00_param[0] = CODEC_MAKE_F00_00(pState->u16VendorId, pState->u16DeviceId);
+    pState->pNodes[0].node.au32F00_param[4] = CODEC_MAKE_F00_04(0x1, 0x1);
+    /* common AFG node initializers */
+    pState->pNodes[1].node.au32F00_param[4] = CODEC_MAKE_F00_04(0x2, pState->cTotalNodes - 2);
+    pState->pNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(CODEC_F00_05_UNSOL, CODEC_F00_05_AFG);
+
     //** @todo r=michaln: Was this meant to be 'HDA' or something like that? (AC'97 was on ICH0)
     AUD_register_card ("ICH0", &pState->card);
 
