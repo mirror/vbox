@@ -1530,7 +1530,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                 2,                                          /* Number of operations. */
                                 Bstr(tr("Starting process ...")).raw());    /* Description of first stage. */
         }
-        ComAssertRC(rc);
+        ComAssertComRC(rc);
 
         /*
          * Prepare process execution.
