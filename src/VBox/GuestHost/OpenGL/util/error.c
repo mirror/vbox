@@ -196,7 +196,7 @@ DECLEXPORT(void) crError(const char *format, ... )
         va_end( args );
 #ifdef WINDOWS
     }
-#if !defined(DEBUG_leo) && !defined(DEBUG_ll158262)
+#if !defined(DEBUG_leo) && !defined(DEBUG_ll158262) && !(defined(DEBUG_misha) && defined(IN_GUEST))
     if (crGetenv( "CR_DEBUG_ON_ERROR" ) != NULL)
 #endif
     {

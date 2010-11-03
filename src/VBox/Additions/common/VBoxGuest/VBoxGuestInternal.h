@@ -207,7 +207,7 @@ typedef struct VBOXGUESTSESSION
 #ifdef VBOX_WITH_HGCM
     /** Array containing HGCM client IDs associated with this session.
      * This will be automatically disconnected when the session is closed. */
-    uint32_t volatile           aHGCMClientIds[8];
+    uint32_t volatile           aHGCMClientIds[64];
 #endif
     /** The last consumed VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
      * Used to implement polling.  */

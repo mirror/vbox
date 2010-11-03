@@ -1598,13 +1598,13 @@ BOOL context_acquire_context(struct wined3d_context * context, IWineD3DSurface *
     {
         IWineD3DSwapChain *swapchain = NULL;
         if (target && SUCCEEDED(IWineD3DSurface_GetContainer(target, &IID_IWineD3DSwapChain, (void **)&swapchain))) {
-            context_validate(current_context, (IWineD3DSwapChainImpl*)swapchain);
+            context_validate(context, (IWineD3DSwapChainImpl*)swapchain);
             IWineD3DSwapChain_Release(swapchain);
         }
         else {
                                                                                                     /* tmp work-around */
-            context_validate(current_context,
-                    NULL //(IWineD3DSwapChainImpl*)current_context->device->swapchains[current_context->device->NumberOfSwapChains-1]
+            context_validate(context,
+                    NULL //(IWineD3DSwapChainImpl*)context->device->swapchains[context->device->NumberOfSwapChains-1]
                                                                                 );
         }
     }
