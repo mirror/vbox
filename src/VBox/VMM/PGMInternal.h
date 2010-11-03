@@ -2849,6 +2849,8 @@ typedef struct PGMSTATS
     STAMPROFILE                 StatAllocLargePage;
     /** Time spent clearing the newly allocated large pages. */
     STAMPROFILE                 StatClearLargePage;
+    /** The number of times allocating a large pages takes more than the allowed period. */
+    STAMCOUNTER                 StatLargePageOverflow;
     /** pgmPhysIsValidLargePage profiling - R3 */
     STAMPROFILE                 StatR3IsValidLargePage;
     /** pgmPhysIsValidLargePage profiling - RZ*/

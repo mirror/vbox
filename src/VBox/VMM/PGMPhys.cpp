@@ -3927,6 +3927,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
 
         if (u64TimeStamp2 - u64TimeStamp1 > 100)
         {
+            STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->StatLargePageOverflow);
             if (++cTimeOut > 10)
             {
                 /* If repeated attempts to allocate a large page takes more than 100 ms, then we fall back to normal 4k pages.
