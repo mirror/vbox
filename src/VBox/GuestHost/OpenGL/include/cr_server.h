@@ -28,7 +28,7 @@ extern "C" {
 #define SHCROGL_SSM_VERSION 21
 
 #define CR_MAX_WINDOWS 100
-#define CR_MAX_CLIENTS 20
+#define CR_MAX_CLIENTS 64
 
 /*@todo must match MaxGuestMonitors from SchemaDefs.h*/
 #define CR_MAX_GUEST_MONITORS 8
