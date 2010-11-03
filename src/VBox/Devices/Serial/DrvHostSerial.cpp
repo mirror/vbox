@@ -500,7 +500,6 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
         /*
          * Write the character to the host device.
          */
-#ifdef RT_OS_DARWIN
         while (pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
             /* copy the send queue so we get a linear buffer with the maximal size. */
@@ -592,60 +591,6 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 return rc;
             }
         } /* write loop */
-
-#else /* old code */
-        uint32_t iTail;
-        while (   pThread->enmState == PDMTHREADSTATE_RUNNING
-               && (iTail = ASMAtomicUoReadU32(&pThis->iSendQueueTail)) != ASMAtomicUoReadU32(&pThis->iSendQueueHead))
-        {
-            /** @todo process more than one byte? */
-            unsigned cbProcessed = 1;
-            uint8_t abBuf[1];
-            abBuf[0] = pThis->aSendQueue[iTail];
-
-# if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-
-            rc = RTFileWrite(pThis->DeviceFile, abBuf, cbProcessed, NULL);
-
-# elif defined(RT_OS_WINDOWS)
-
-            DWORD cbBytesWritten;
-            memset(&pThis->overlappedSend, 0, sizeof(pThis->overlappedSend));
-            pThis->overlappedSend.hEvent = pThis->hEventSend;
-
-            if (!WriteFile(pThis->hDeviceFile, abBuf, cbProcessed, &cbBytesWritten, &pThis->overlappedSend))
-            {
-                dwRet = GetLastError();
-                if (dwRet == ERROR_IO_PENDING)
-                {
-                    /*
-                     * write blocked, wait ...
-                     */
-                    dwRet = WaitForMultipleObjects(2, haWait, FALSE, INFINITE);
-                    if (dwRet != WAIT_OBJECT_0)
-                    {
-                        AssertMsg(pThread->enmState != PDMTHREADSTATE_RUNNING, ("The halt event semaphore is set but the thread is still in running state\n"));
-                        break;
-                    }
-                }
-                else
-                    rc = RTErrConvertFromWin32(dwRet);
-            }
-
-# endif
-
-            if (RT_SUCCESS(rc))
-            {
-                Assert(cbProcessed == 1);
-                ASMAtomicWriteU32(&pThis->iSendQueueTail, (iTail + 1) & CHAR_MAX_SEND_QUEUE_MASK);
-            }
-            else if (RT_FAILURE(rc))
-            {
-                LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
-                return rc;
-            }
-        }
-#endif /* old code */
     }
 
     return VINF_SUCCESS;
@@ -1363,13 +1308,12 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 
     uint32_t fOpen = RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE;
 # ifdef RT_OS_LINUX
-    /* This seems to be necessary on some Linux hosts, otherwise we hang here forever.
-     * Surprisingly, I've never seen VERR_TRY_AGAIN as result even if RTFileOpen()
-     * would block without that flag. */
+    /* This seems to be necessary on some Linux hosts, otherwise we hang here forever. */
     fOpen |= RTFILE_O_NON_BLOCK;
 # endif
     rc = RTFileOpen(&pThis->DeviceFile, pThis->pszDevicePath, fOpen);
 # ifdef RT_OS_LINUX
+    /* RTFILE_O_NON_BLOCK not supported? */
     if (rc == VERR_INVALID_PARAMETER)
         rc = RTFileOpen(&pThis->DeviceFile, pThis->pszDevicePath, fOpen & ~RTFILE_O_NON_BLOCK);
 # endif
