@@ -200,9 +200,11 @@ unsigned dev_get_flags(const struct net_device *dev)
 #  define QDISC_CREATE(dev, queue, ops, parent) qdisc_create_dflt(dev, ops)
 # elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
 #  define QDISC_CREATE(dev, queue, ops, parent) qdisc_create_dflt(dev, ops, parent)
-# else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+# elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37)
 #  define QDISC_CREATE(dev, queue, ops, parent) qdisc_create_dflt(dev, queue, ops, parent)
-# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+# else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37) */
+#  define QDISC_CREATE(dev, queue, ops, parent) qdisc_create_dflt(queue, ops, parent)
+# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37) */
 
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
 #  define qdisc_dev(qdisc) (qdisc->dev)
