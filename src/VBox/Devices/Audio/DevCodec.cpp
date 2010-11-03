@@ -123,6 +123,20 @@ extern "C" {
 #define CODEC_F00_09_CAP_IN_AMP_PRESENT     RT_BIT(1)
 #define CODEC_F00_09_CAP_LSB                RT_BIT(0)
 
+/* Pin Capabilities (7.3.4.9)*/
+#define CODEC_MAKE_F00_0C(vref_ctrl) (((vref_ctrl) & 0xFF) << 8)
+#define CODEC_F00_0C_CAP_HBR                    RT_BIT(27)
+#define CODEC_F00_0C_CAP_DP                     RT_BIT(24)
+#define CODEC_F00_0C_CAP_EAPD                   RT_BIT(16)
+#define CODEC_F00_0C_CAP_HDMI                   RT_BIT(7)
+#define CODEC_F00_0C_CAP_BALANCED_IO            RT_BIT(6)
+#define CODEC_F00_0C_CAP_INPUT                  RT_BIT(5)
+#define CODEC_F00_0C_CAP_OUTPUT                 RT_BIT(4)
+#define CODEC_F00_0C_CAP_HP                     RT_BIT(3)
+#define CODEC_F00_0C_CAP_PRESENSE_DETECT        RT_BIT(2)
+#define CODEC_F00_0C_CAP_TRIGGER_REQUIRED       RT_BIT(1)
+#define CODEC_F00_0C_CAP_IMPENDANCE_SENSE       RT_BIT(0)
+
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
 #define CODEC_DEFAULT_CONF_PORT_MASK    (0x3) 
@@ -297,7 +311,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 1:
             pNode->afg.node.name = "AFG";
             pNode->node.au32F00_param[8] = CODEC_MAKE_F00_08(CODEC_F00_08_BEEP_GEN, 0xd, 0xd);
-            pNode->node.au32F00_param[0xC] = (17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
+            pNode->node.au32F00_param[0xC] =   CODEC_MAKE_F00_0C(0x17)
+                                             | CODEC_F00_0C_CAP_BALANCED_IO
+                                             | CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                             | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//(17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
             pNode->node.au32F00_param[0xB] = RT_BIT(0);
             pNode->node.au32F00_param[0xD] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
@@ -382,7 +401,14 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         break;
         case 0xA:
             pNode->node.name = "PortA";
-            pNode->node.au32F00_param[0xC] = 0x173f;
+            pNode->node.au32F00_param[0xC] =   CODEC_MAKE_F00_0C(0x17)
+                                             | CODEC_F00_0C_CAP_BALANCED_IO
+                                             | CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_OUTPUT
+                                             | CODEC_F00_0C_CAP_HP
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                             | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x173f;
             pNode->node.au32F02_param[0] = 0x2;
             pNode->port.u32F07_param = 0xc0;//RT_BIT(6);
             pNode->port.u32F08_param = 0;
@@ -397,7 +423,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             goto port_init;
         case 0xB:
             pNode->node.name = "PortB";
-            pNode->node.au32F00_param[0xC] = 0x1737;
+            pNode->node.au32F00_param[0xC] =   CODEC_MAKE_F00_0C(0x17)
+                                             | CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_OUTPUT
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                             | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
             pNode->node.au32F02_param[0] = 0x4;
             pNode->port.u32F07_param = RT_BIT(5);
             if (!pState->fInReset)
@@ -412,7 +443,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0xC:
             pNode->node.name = "PortC";
             pNode->node.au32F02_param[0] = 0x3;
-            pNode->node.au32F00_param[0xC] = 0x1737;
+            pNode->node.au32F00_param[0xC] =   CODEC_MAKE_F00_0C(0x17)
+                                             | CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_OUTPUT
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                             | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
             pNode->port.u32F07_param = RT_BIT(5);
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
@@ -424,7 +460,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             goto port_init;
         case 0xD:
             pNode->node.name = "PortD";
-            pNode->node.au32F00_param[0xC] = 0x1737;
+            pNode->node.au32F00_param[0xC] =   CODEC_MAKE_F00_0C(0x17)
+                                             | CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_OUTPUT
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                             | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->node.au32F02_param[0] = 0x2;
             if (!pState->fInReset)
@@ -449,7 +490,9 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                            | CODEC_F00_09_CAP_UNSOL
                                            | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(7)|RT_BIT(0);
             pNode->port.u32F08_param = 0;
-            pNode->node.au32F00_param[0xC] = 0x34;
+            pNode->node.au32F00_param[0xC] =   CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_OUTPUT
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT;//0x34;
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->port.u32F09_param = 0x7fffffff;
             if (!pState->fInReset)
@@ -467,7 +510,11 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                            | CODEC_F00_09_CAP_UNSOL
                                            | CODEC_F00_09_CAP_OUT_AMP_PRESENT
                                            | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(2)|RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = 0x37;
+            pNode->node.au32F00_param[0xC] =   CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_OUTPUT
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT
+                                             | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x37;
             pNode->node.au32F00_param[0xE] = 0x1;
             pNode->port.u32F08_param = 0;
             pNode->port.u32F07_param = 0x40;
@@ -487,7 +534,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                            | CODEC_F00_09_CAP_DIGITAL
                                            | CODEC_F00_09_CAP_CONNECTION_LIST
                                            | CODEC_F00_09_CAP_LSB;//(4<<20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = RT_BIT(4);
+            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//RT_BIT(4);
             pNode->node.au32F00_param[0xE] = 0x3;
             pNode->digout.u32F01_param = 0;
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x19, 0);
@@ -503,7 +550,9 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 0x11:
             pNode->node.name = "DigIn_0";
             pNode->node.au32F00_param[9] = (4 << 20)|(3<<16)|RT_BIT(10)|RT_BIT(9)|RT_BIT(7)|RT_BIT(0);
-            pNode->node.au32F00_param[0xC] = RT_BIT(16)| RT_BIT(5)|RT_BIT(2);
+            pNode->node.au32F00_param[0xC] =   CODEC_F00_0C_CAP_EAPD
+                                             | CODEC_F00_0C_CAP_INPUT
+                                             | CODEC_F00_0C_CAP_PRESENSE_DETECT;//RT_BIT(16)| RT_BIT(5)|RT_BIT(2);
             pNode->digin.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3 -> D3 */
             pNode->digin.u32F07_param = 0;
             pNode->digin.u32F08_param = 0;
@@ -550,7 +599,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "CD";
             pNode->node.au32F00_param[0x9] =   CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
                                              | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(0);
-            pNode->node.au32F00_param[0xc] = RT_BIT(5);
+            pNode->node.au32F00_param[0xc] = CODEC_F00_0C_CAP_INPUT;//RT_BIT(5);
             pNode->cdnode.u32F07_param = 0;
             if (!pState->fInReset)
                 pNode->cdnode.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_FIXED,
@@ -608,7 +657,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_09_CAP_CONNECTION_LIST
                                              | CODEC_F00_09_CAP_LSB;//(0x4 << 20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[0xE] = 0x1;
-            pNode->node.au32F00_param[0xC] = 0x10;
+            pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//0x10;
             pNode->node.au32F02_param[0] = 0x1a;
             pNode->reserved.u32F07_param = 0;
             pNode->reserved.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_NO_PHYS,
