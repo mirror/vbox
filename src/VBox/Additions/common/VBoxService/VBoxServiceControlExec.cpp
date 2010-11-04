@@ -1095,10 +1095,18 @@ int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppapszArgv, VERR_INVALID_PARAMETER);
 
+    bool fUseToolbox = false;
+    if (RTStrStr(papszArgs[0], "vbox_") == papszArgs[0])
+        fUseToolbox = true;
+
+    /* Skip argv[0] (= file name) if we don't run an internal
+     * VBoxService toolbox command - we already have a resolved one in pszFileName. */
     char *pszArgs;
-    int rc = RTGetOptArgvToString(&pszArgs, papszArgs,
+    int rc = RTGetOptArgvToString(&pszArgs,
+                                  fUseToolbox ? papszArgs : &papszArgs[1],
                                   RTGETOPTARGV_CNV_QUOTE_MS_CRT); /* RTGETOPTARGV_CNV_QUOTE_BOURNE_SH */
-    if (RT_SUCCESS(rc))
+    if (   RT_SUCCESS(rc)
+        && pszArgs)
     {
         /*
          * Construct the new command line by appending the actual
@@ -1118,6 +1126,12 @@ int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
             }
         }
         RTStrFree(pszArgs);
+    }
+    else /* No arguments given, just use the resolved file name as argv[0]. */
+    {
+        int iNumArgsIgnored;
+        rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
+                                    pszFileName, NULL /* Use standard separators. */);
     }
     return rc;
 }
