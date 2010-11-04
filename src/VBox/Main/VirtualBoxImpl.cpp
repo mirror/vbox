@@ -1281,6 +1281,11 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
                        !!forceOverwrite);
     if (SUCCEEDED(rc))
     {
+#ifdef VBOX_WITH_EXTPACK
+        /* call the extension pack hooks */
+        m->ptrExtPackManager->callAllVmCreatedHooks(machine);
+#endif
+
         /* set the return value */
         rc = machine.queryInterfaceTo(aMachine);
         AssertComRC(rc);

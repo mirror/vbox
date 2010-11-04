@@ -108,8 +108,8 @@ int main(int argc, char **argv)
                                       "\n"
                                       "Usage: %s <command> [options]\n"
                                       "Commands:\n"
-                                      "    install --basepath <dir> --name <name> --tarball <tarball> --tarball-fd <fd>\n"
-                                      "    uninstall --basepath <dir> --name <name>\n"
+                                      "    install --base-dir <dir> --name <name> --tarball <tarball> --tarball-fd <fd>\n"
+                                      "    uninstall --base-dir <dir> --name <name>\n"
                                       , RTPathFilename(argv[0]));
                             rcExit = RTEXITCODE_SUCCESS;
                             break;

@@ -60,6 +60,9 @@
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
 #include "package-generated.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
+#endif
 
 // generated header
 #include "SchemaDefs.h"
@@ -453,6 +456,12 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     unconst(mVRDEServerInfo).createObject();
     rc = mVRDEServerInfo->init(this);
     AssertComRCReturnRC(rc);
+
+#ifdef VBOX_WITH_EXTPACK
+    unconst(mptrExtPackManager).createObject();
+    rc = mptrExtPackManager->init(NULL, false); /* Drop zone handling is VBoxSVC only. */
+    AssertComRCReturnRC(rc);
+#endif
 
     /* Grab global and machine shared folder lists */
 
@@ -2074,11 +2083,18 @@ STDMETHODIMP Console::Resume()
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
-    int vrc;
-    if (VMR3GetState(mpVM) == VMSTATE_CREATED)
-        vrc = VMR3PowerOn(mpVM); /* (PowerUpPaused) */
-    else
-        vrc = VMR3Resume(mpVM);
+#ifdef VBOX_WITH_EXTPACK
+    int vrc = mptrExtPackManager->callAllVmPowerOnHooks(this, mpVM); /** @todo called a few times too many... */
+#else
+    int vrc = VINF_SUCCESS;
+#endif
+    if (RT_SUCCESS(vrc))
+    {
+        if (VMR3GetState(mpVM) == VMSTATE_CREATED)
+            vrc = VMR3PowerOn(mpVM); /* (PowerUpPaused) */
+        else
+            vrc = VMR3Resume(mpVM);
+    }
 
     HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
         setError(VBOX_E_VM_ERROR,
@@ -4504,10 +4520,10 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         mVMStateChangeCallbackDisabled = true;
         int vrc2 = VMR3Resume(pVM);
         mVMStateChangeCallbackDisabled = false;
-        AssertRC(vrc2);
         if (RT_FAILURE(vrc2))
         {
             /* too bad, we failed. try to sync the console state with the VMM state */
+            AssertLogRelRC(vrc2);
             vmstateChangeCallback(pVM, VMSTATE_SUSPENDED, enmVMState, this);
         }
     }
@@ -5627,6 +5643,9 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
         LogFlowThisFunc(("Powering off the VM...\n"));
         alock.leave();
         vrc = VMR3PowerOff(mpVM);
+#ifdef VBOX_WITH_EXTPACK
+        mptrExtPackManager->callAllVmPowerOffHooks(this, mpVM);
+#endif
         alock.enter();
     }
     else
@@ -7520,16 +7539,22 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         else
                         {
                             /* Start/Resume the VM execution */
-                            vrc = VMR3Resume(pVM);
-                            AssertRC(vrc);
+#ifdef VBOX_WITH_EXTPACK
+                            vrc = console->mptrExtPackManager->callAllVmPowerOnHooks(console, pVM);
+#endif
+                            if (RT_SUCCESS(vrc))
+                                vrc = VMR3Resume(pVM);
+                            AssertLogRelRC(vrc);
                         }
                     }
 
                     /* Power off in case we failed loading or resuming the VM */
                     if (RT_FAILURE(vrc))
                     {
-                        int vrc2 = VMR3PowerOff(pVM);
-                        AssertRC(vrc2);
+                        int vrc2 = VMR3PowerOff(pVM); AssertLogRelRC(vrc2);
+#ifdef VBOX_WITH_EXTPACK
+                        console->mptrExtPackManager->callAllVmPowerOffHooks(console, pVM);
+#endif
                     }
                 }
                 else if (task->mTeleporterEnabled)
@@ -7541,8 +7566,10 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     if (FAILED(rc) && fPowerOffOnFailure)
                     {
                         ErrorInfoKeeper eik;
-                        int vrc2 = VMR3PowerOff(pVM);
-                        AssertRC(vrc2);
+                        int vrc2 = VMR3PowerOff(pVM); AssertLogRelRC(vrc2);
+#ifdef VBOX_WITH_EXTPACK
+                        console->mptrExtPackManager->callAllVmPowerOffHooks(console, pVM);
+#endif
                     }
                 }
                 else if (task->mEnmFaultToleranceState != FaultToleranceState_Inactive)
@@ -7573,8 +7600,17 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                             const char *pszPassword = strPassword.isEmpty() ? NULL : strPassword.c_str();
 
                             /* Power on the FT enabled VM. */
-                            vrc = FTMR3PowerOn(pVM, (task->mEnmFaultToleranceState == FaultToleranceState_Master) /* fMaster */, uInterval, pszAddress, uPort, pszPassword);
-                            AssertRC(vrc);
+#ifdef VBOX_WITH_EXTPACK
+                            vrc = console->mptrExtPackManager->callAllVmPowerOnHooks(console, pVM);
+#endif
+                            if (RT_SUCCESS(vrc))
+                                vrc = FTMR3PowerOn(pVM,
+                                                   task->mEnmFaultToleranceState == FaultToleranceState_Master /* fMaster */,
+                                                   uInterval,
+                                                   pszAddress,
+                                                   uPort,
+                                                   pszPassword);
+                            AssertLogRelRC(vrc);
                         }
                         task->mProgress->setCancelCallback(NULL, NULL);
                     }
@@ -7587,8 +7623,12 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 else
                 {
                     /* Power on the VM (i.e. start executing) */
-                    vrc = VMR3PowerOn(pVM);
-                    AssertRC(vrc);
+#ifdef VBOX_WITH_EXTPACK
+                    vrc = console->mptrExtPackManager->callAllVmPowerOnHooks(console, pVM);
+#endif
+                    if (RT_SUCCESS(vrc))
+                        vrc = VMR3PowerOn(pVM);
+                    AssertLogRelRC(vrc);
                 }
 
                 /* enter the lock again */
@@ -8077,9 +8117,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                         Assert(pTask->lastMachineState == MachineState_Running);
                         LogFlowFunc(("VMR3Resume (on failure)...\n"));
                         alock.leave();
-                        int vrc = VMR3Resume(that->mpVM);
+                        int vrc = VMR3Resume(that->mpVM); AssertLogRelRC(vrc);
                         alock.enter();
-                        AssertLogRelRC(vrc);
                         if (RT_FAILURE(vrc))
                             that->setMachineState(MachineState_Paused);
                     }
