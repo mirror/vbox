@@ -380,33 +380,30 @@ static int vboxSetupAdapterInfoHGSMI (PVBOXVIDEO_COMMON pCommon)
  * HGSMI variant is a bit different because it uses only HGSMI interface (VBVA channel)
  * to talk to the host.
  */
-VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
+VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
                             ULONG AdapterMemorySize, uint32_t fCaps)
 {
     VP_STATUS rc = NO_ERROR;
 
-    dprintf(("VBoxVideo::VBoxSetupDisplays: PrimaryExtension = %p\n",
-             PrimaryExtension));
+    dprintf(("VBoxVideo::VBoxSetupDisplays: pCommon = %p\n", pCommon));
 
-    memset(commonFromDeviceExt(PrimaryExtension), 0,
-           sizeof(*commonFromDeviceExt(PrimaryExtension)));
-    commonFromDeviceExt(PrimaryExtension)->cbVRAM    = AdapterMemorySize;
-    commonFromDeviceExt(PrimaryExtension)->fCaps     = fCaps;
-    commonFromDeviceExt(PrimaryExtension)->cDisplays = 1;
-    commonFromDeviceExt(PrimaryExtension)->bHGSMI    = VBoxHGSMIIsSupported ();
+    memset(pCommon, 0, sizeof(*pCommon));
+    pCommon->cbVRAM    = AdapterMemorySize;
+    pCommon->fCaps     = fCaps;
+    pCommon->cDisplays = 1;
+    pCommon->bHGSMI    = VBoxHGSMIIsSupported ();
     /* Why does this use VBoxVideoCmnMemZero?  The MSDN docs say that it should
      * only be used on mapped display adapter memory.  Done with memset above. */
-    // VBoxVideoCmnMemZero(&commonFromDeviceExt(PrimaryExtension)->areaHostHeap, sizeof(HGSMIAREA));
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    // VBoxVideoCmnMemZero(&pCommon->areaHostHeap, sizeof(HGSMIAREA));
+    if (pCommon->bHGSMI)
     {
         /** @note (michael) moved this here as it is done unconditionally in both
          * driver branches.  Feel free to fix if that is ever changed. */
-        commonFromDeviceExt(PrimaryExtension)->IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-        commonFromDeviceExt(PrimaryExtension)->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+        pCommon->IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+        pCommon->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 
         /* Map the adapter information. It will be needed for HGSMI IO. */
-        rc = VBoxMapAdapterMemory (commonFromDeviceExt(PrimaryExtension),
-                                   &commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation,
+        rc = VBoxMapAdapterMemory (pCommon, &pCommon->pvAdapterInformation,
                                    AdapterMemorySize - VBVA_ADAPTER_INFORMATION_SIZE,
                                    VBVA_ADAPTER_INFORMATION_SIZE
                                   );
@@ -415,15 +412,15 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             dprintf(("VBoxVideo::VBoxSetupDisplays: VBoxMapAdapterMemory pvAdapterInfoirrmation failed rc = %d\n",
                      rc));
 
-            commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
+            pCommon->bHGSMI = FALSE;
         }
         else
         {
             /* Setup a HGSMI heap within the adapter information area. */
-            rc = HGSMIHeapSetup (&commonFromDeviceExt(PrimaryExtension)->hgsmiAdapterHeap,
-                                 commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation,
+            rc = HGSMIHeapSetup (&pCommon->hgsmiAdapterHeap,
+                                 pCommon->pvAdapterInformation,
                                  VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS),
-                                 commonFromDeviceExt(PrimaryExtension)->cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
+                                 pCommon->cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
                                  false /*fOffsetBased*/);
 
             if (RT_FAILURE (rc))
@@ -431,22 +428,22 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
                 dprintf(("VBoxVideo::VBoxSetupDisplays: HGSMIHeapSetup failed rc = %d\n",
                          rc));
 
-                commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
+                pCommon->bHGSMI = FALSE;
             }
             else
             {
-                    commonFromDeviceExt(PrimaryExtension)->pHostFlags = (HGSMIHOSTFLAGS*)(((uint8_t*)commonFromDeviceExt(PrimaryExtension)->pvAdapterInformation)
+                pCommon->pHostFlags = (HGSMIHOSTFLAGS*)(((uint8_t*)pCommon->pvAdapterInformation)
                                                             + VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS));
             }
         }
     }
 
     /* Setup the host heap and the adapter memory. */
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    if (pCommon->bHGSMI)
     {
         /* The miniport heap is used for the host buffers. */
         ULONG cbMiniportHeap = 0;
-        vboxQueryConfHGSMI (commonFromDeviceExt(PrimaryExtension), VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbMiniportHeap);
+        vboxQueryConfHGSMI (pCommon, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbMiniportHeap);
 
         if (cbMiniportHeap != 0)
         {
@@ -464,10 +461,10 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             }
 
             /* Round up to 4096 bytes. */
-            commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap = (cbMiniportHeap + 0xFFF) & ~0xFFF;
+            pCommon->cbMiniportHeap = (cbMiniportHeap + 0xFFF) & ~0xFFF;
 
-            dprintf(("VBoxVideo::VBoxSetupDisplays: cbMiniportHeap = 0x%08X, PrimaryExtension->u.primary.cbMiniportHeap = 0x%08X, cbMiniportHeapMaxSize = 0x%08X\n",
-                     cbMiniportHeap, commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap, cbMiniportHeapMaxSize));
+            dprintf(("VBoxVideo::VBoxSetupDisplays: cbMiniportHeap = 0x%08X, pCommon->cbMiniportHeap = 0x%08X, cbMiniportHeapMaxSize = 0x%08X\n",
+                     cbMiniportHeap, pCommon->cbMiniportHeap, cbMiniportHeapMaxSize));
 
             /* Map the heap region.
              *
@@ -475,46 +472,45 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
              *       The miniport driver is responsible for reading FIFO and notifying
              *       display drivers.
              */
-            rc = VBoxMapAdapterMemory (commonFromDeviceExt(PrimaryExtension),
-                                       &commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap,
-                                       commonFromDeviceExt(PrimaryExtension)->cbVRAM
+            rc = VBoxMapAdapterMemory (pCommon, &pCommon->pvMiniportHeap,
+                                       pCommon->cbVRAM
                                        - VBVA_ADAPTER_INFORMATION_SIZE
-                                       - commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap,
-                                       commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap
+                                       - pCommon->cbMiniportHeap,
+                                       pCommon->cbMiniportHeap
                                       );
             if (rc != NO_ERROR)
             {
-                commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap = NULL;
-                commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap = 0;
-                commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
+                pCommon->pvMiniportHeap = NULL;
+                pCommon->cbMiniportHeap = 0;
+                pCommon->bHGSMI = FALSE;
             }
             else
             {
-                HGSMIOFFSET offBase = commonFromDeviceExt(PrimaryExtension)->cbVRAM
+                HGSMIOFFSET offBase = pCommon->cbVRAM
                                       - VBVA_ADAPTER_INFORMATION_SIZE
-                                      - commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap;
+                                      - pCommon->cbMiniportHeap;
 
                 /* Init the host hap area. Buffers from the host will be placed there. */
-                HGSMIAreaInitialize (&commonFromDeviceExt(PrimaryExtension)->areaHostHeap,
-                                     commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap,
-                                     commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap,
+                HGSMIAreaInitialize (&pCommon->areaHostHeap,
+                                     pCommon->pvMiniportHeap,
+                                     pCommon->cbMiniportHeap,
                                      offBase);
             }
         }
         else
         {
             /* Host has not requested a heap. */
-            commonFromDeviceExt(PrimaryExtension)->pvMiniportHeap = NULL;
-            commonFromDeviceExt(PrimaryExtension)->cbMiniportHeap = 0;
+            pCommon->pvMiniportHeap = NULL;
+            pCommon->cbMiniportHeap = 0;
         }
     }
 
     /* Check whether the guest supports multimonitors. */
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    if (pCommon->bHGSMI)
     {
         /* Query the configured number of displays. */
         ULONG cDisplays = 0;
-        vboxQueryConfHGSMI (commonFromDeviceExt(PrimaryExtension), VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
+        vboxQueryConfHGSMI (pCommon, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
 
         dprintf(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
                  cDisplays));
@@ -524,22 +520,22 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             /* Host reported some bad value. Continue in the 1 screen mode. */
             cDisplays = 1;
         }
-        commonFromDeviceExt(PrimaryExtension)->cDisplays = cDisplays;
+        pCommon->cDisplays = cDisplays;
     }
 
-    if (commonFromDeviceExt(PrimaryExtension)->bHGSMI)
+    if (pCommon->bHGSMI)
     {
         /* Setup the information for the host. */
-        rc = vboxSetupAdapterInfoHGSMI (commonFromDeviceExt(PrimaryExtension));
+        rc = vboxSetupAdapterInfoHGSMI (pCommon);
 
         if (RT_FAILURE (rc))
         {
-            commonFromDeviceExt(PrimaryExtension)->bHGSMI = FALSE;
+            pCommon->bHGSMI = FALSE;
         }
     }
 
-    if (!commonFromDeviceExt(PrimaryExtension)->bHGSMI)
-        VBoxFreeDisplaysHGSMI(commonFromDeviceExt(PrimaryExtension));
+    if (!pCommon->bHGSMI)
+        VBoxFreeDisplaysHGSMI(pCommon);
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
@@ -612,39 +608,10 @@ static int vbvaFinalizeMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, vo
     return VINF_SUCCESS;
 }
 
-BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
+BOOLEAN vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength)
 {
-#ifndef VBOX_WITH_WDDM
-    PDEVICE_EXTENSION PrimaryExtension = DeviceExtension->pPrimary;
-
-    /* In multimonitor case the HW mouse pointer is the same on all screens,
-     * and Windows calls each display driver with the same pointer data: visible for
-     * the screen where the pointer is and invisible for other screens.
-     *
-     * This driver passes the shape to the host only from primary screen and makes
-     * the pointer always visible (in vbvaInitMousePointerShape).
-     *
-     * The simple solution makes it impossible to create the shape and keep the mouse
-     * pointer invisible. New shapes will be created visible.
-     * But:
-     * 1) VBox frontends actually ignore the visibility flag if VBOX_MOUSE_POINTER_SHAPE
-     *    is set and always create new pointers visible.
-     * 2) Windows uses DrvMovePointer to hide the pointer, which will still work.
-     */
-
-    if (DeviceExtension->iDevice != PrimaryExtension->iDevice)
-    {
-        dprintf(("vboxUpdatePointerShape: ignore non primary device %d(%d)\n",
-                 DeviceExtension->iDevice, PrimaryExtension->iDevice));
-        /* Success. */
-        return TRUE;
-    }
-#else
-    PDEVICE_EXTENSION PrimaryExtension = DeviceExtension;
-#endif
-
     uint32_t cbData = 0;
 
     if (pointerAttr->Enable & VBOX_MOUSE_POINTER_SHAPE)
@@ -672,8 +639,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
     ctx.cbData = cbData;
     ctx.i32Result = VERR_NOT_SUPPORTED;
 
-    int rc = vboxCallVBVA (commonFromDeviceExt(PrimaryExtension),
-                           VBVA_MOUSE_POINTER_SHAPE,
+    int rc = vboxCallVBVA (pCommon, VBVA_MOUSE_POINTER_SHAPE,
                            sizeof (VBVAMOUSEPOINTERSHAPE) + cbData,
                            vbvaInitMousePointerShape,
                            vbvaFinalizeMousePointerShape,

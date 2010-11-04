@@ -845,9 +845,9 @@ typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
 
 int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData);
 
-VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
+VOID VBoxSetupDisplaysHGSMI (PVBOXVIDEO_COMMON pCommon,
                              ULONG AdapterMemorySize, uint32_t fCaps);
-BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
+BOOLEAN vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
 

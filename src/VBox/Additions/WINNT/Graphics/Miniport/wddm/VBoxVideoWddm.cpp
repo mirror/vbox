@@ -732,7 +732,8 @@ NTSTATUS DxgkDdiStartDevice(
                  * The host will however support both old and new interface to keep compatibility
                  * with old guest additions.
                  */
-                VBoxSetupDisplaysHGSMI(pContext, AdapterMemorySize,
+                VBoxSetupDisplaysHGSMI(commonFromDeviceExt(pContext),
+                                       AdapterMemorySize,
                                        VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ);
                 if (commonFromDeviceExt(pContext)->bHGSMI)
                 {
@@ -3280,7 +3281,7 @@ DxgkDdiSetPointerPosition(
          */
         PointerAttributes.Enable = pSetPointerPosition->Flags.Visible ? VBOX_MOUSE_POINTER_VISIBLE : 0;
 
-        BOOLEAN bResult = vboxUpdatePointerShape(pDevExt, &PointerAttributes, sizeof (PointerAttributes));
+        BOOLEAN bResult = vboxUpdatePointerShape(commonFromDeviceExt(pDevExt), &PointerAttributes, sizeof (PointerAttributes));
         Assert(bResult);
     }
 
@@ -3310,7 +3311,7 @@ DxgkDdiSetPointerShape(
          *  need to maintain the pre-allocated HGSMI buffer and convert the data directly to it */
         if (vboxVddmPointerShapeToAttributes(pSetPointerShape, pPointerInfo))
         {
-            if (vboxUpdatePointerShape (pDevExt, &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
+            if (vboxUpdatePointerShape (commonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
                 Status = STATUS_SUCCESS;
             else
             {

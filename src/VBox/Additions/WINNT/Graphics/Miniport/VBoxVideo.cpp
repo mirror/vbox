@@ -1856,7 +1856,8 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
        * The host will however support both old and new interface to keep compatibility
        * with old guest additions.
        */
-      VBoxSetupDisplaysHGSMI((PDEVICE_EXTENSION)HwDeviceExtension, AdapterMemorySize, 0);
+      VBoxSetupDisplaysHGSMI(commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension),
+                             AdapterMemorySize, 0);
 
       if (commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension)->bHGSMI)
       {
@@ -1969,7 +1970,7 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
          */
         PointerAttributes.Enable = VBOX_MOUSE_POINTER_VISIBLE;
 
-        Result = vboxUpdatePointerShape(PrimaryExtension, &PointerAttributes, sizeof (PointerAttributes));
+        Result = vboxUpdatePointerShape(commonFromDeviceExt(PrimaryExtension), &PointerAttributes, sizeof (PointerAttributes));
 
         if (Result)
             DEV_SET_MOUSE_SHOWN(PrimaryExtension);
@@ -2217,7 +2218,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                  */
                 PointerAttributes.Enable = 0;
 
-                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
+                Result = vboxUpdatePointerShape(commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension), &PointerAttributes, sizeof (PointerAttributes));
 
                 if (Result)
                     DEV_SET_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension);
@@ -2262,7 +2263,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                          pPointerAttributes->Row));
                 dprintf(("\tBytes attached: %d\n", RequestPacket->InputBufferLength - sizeof(VIDEO_POINTER_ATTRIBUTES)));
 #endif
-                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, pPointerAttributes, RequestPacket->InputBufferLength);
+                Result = vboxUpdatePointerShape(commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension), pPointerAttributes, RequestPacket->InputBufferLength);
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not set hardware pointer -> fallback\n"));
             } else
