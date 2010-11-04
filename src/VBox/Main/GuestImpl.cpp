@@ -2399,13 +2399,16 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, IProgress **aProgress)
+STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else /* VBOX_WITH_GUEST_CONTROL */
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgOutPointerValid(aProgress);
+
+    if (aFlags != 0) /* Flags are not supported at the moment. */
+        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2444,9 +2447,10 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, IProgress **aProgress)
     }
 
     if (SUCCEEDED(rc))
+    {
         /* Return progress to the caller. */
         progress.queryInterfaceTo(aProgress);
-
+    }
     return rc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
