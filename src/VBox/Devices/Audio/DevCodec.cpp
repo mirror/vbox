@@ -147,6 +147,11 @@ extern "C" {
 /* 1/6 * 48kHz */
 #define CODEC_F00_0A_48KHZ_1_6X         RT_BIT(0)
 
+/* Supported streams formats (7.3.4.8) */
+#define CODEC_F00_0B_AC3                RT_BIT(2)
+#define CODEC_F00_0B_FLOAT32            RT_BIT(1)
+#define CODEC_F00_0B_PCM                RT_BIT(0)
+
 /* Pin Capabilities (7.3.4.9)*/
 #define CODEC_MAKE_F00_0C(vref_ctrl) (((vref_ctrl) & 0xFF) << 8)
 #define CODEC_F00_0C_CAP_HBR                    RT_BIT(27)
@@ -160,6 +165,13 @@ extern "C" {
 #define CODEC_F00_0C_CAP_PRESENSE_DETECT        RT_BIT(2)
 #define CODEC_F00_0C_CAP_TRIGGER_REQUIRED       RT_BIT(1)
 #define CODEC_F00_0C_CAP_IMPENDANCE_SENSE       RT_BIT(0)
+
+/* Amplifier capabilities (7.3.4.10) */
+#define MAKE_F00_0D(mute_cap, step_size, num_steps, offset) \
+           (((mute_cap) & 0x1) << 31)                       \
+        | (((step_size) & 0xFF) << 16)                      \
+        | (((num_steps) & 0xFF) << 8)                       \
+        | ((offset) & 0xFF)
 
 
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
@@ -342,8 +354,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_PRESENSE_DETECT
                                              | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//(17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
-            pNode->node.au32F00_param[0xB] = RT_BIT(0);
-            pNode->node.au32F00_param[0xD] = RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
+            pNode->node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
+            pNode->node.au32F00_param[0xD] = MAKE_F00_0D(1, 0x5, 0xE, 0);//RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
             pNode->node.au32F00_param[0x11] = 0xc0000004;
             pNode->node.au32F00_param[0xF] = 0xF;
@@ -405,7 +417,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                                     | CODEC_F00_09_CAP_FMT_OVERRIDE
                                                     | CODEC_F00_09_CAP_LSB;//(4 << 16) | RT_BIT(9)|RT_BIT(4)|0x1;
             pNode->node.au32F00_param[0xa] = pState->pNodes[1].node.au32F00_param[0xA];
-            pNode->spdifout.node.au32F00_param[0xB] = RT_BIT(2)|RT_BIT(0);
+            pNode->spdifout.node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
             pNode->spdifout.u32F06_param = 0;
             pNode->spdifout.u32F0d_param = 0;
         break;
@@ -420,7 +432,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->node.au32F00_param[0xE] = RT_BIT(0);
             pNode->node.au32F02_param[0] = 0x11;
-            pNode->spdifin.node.au32F00_param[0xB] = RT_BIT(2)|RT_BIT(0);
+            pNode->spdifin.node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
             pNode->spdifin.u32F06_param = 0;
             pNode->spdifin.u32F0d_param = 0;
         break;
@@ -757,7 +769,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
             break;
         case 0x1: /* AFG */
             pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
-            pNode->node.au32F00_param[0xB] = 0x1;
+            pNode->node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
             pNode->node.au32F00_param[0x11] = RT_BIT(30)|0x2;
             break;
         /* DACs */
@@ -778,7 +790,7 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
         dac_init:
             pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
             pNode->node.au32F00_param[0x9] = 0x11;
-            pNode->node.au32F00_param[0xB] = 0x1;
+            pNode->node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
             pNode->dac.u32A_param = (1<<14)|(0x1<<4) | 0x1;
             break;
         /* SPDIFs */
