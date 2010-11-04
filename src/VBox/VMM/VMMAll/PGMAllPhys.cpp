@@ -385,9 +385,19 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     if (    PGMIsUsingLargePages(pVM)
         &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
     {
-        int rc = pgmPhysAllocLargePage(pVM, GCPhys);
-        if (rc == VINF_SUCCESS)
-            return rc;
+        RTGCPHYS GCPhysBase = GCPhys & X86_PDE2M_PAE_PG_MASK;
+        PPGMPAGE pBasePage;
+
+        int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pBasePage);
+        AssertRCReturn(rc, rc);     /* paranoia; can't happen. */
+        if (PGM_PAGE_GET_PDE_TYPE(pBasePage) == PGM_PAGE_PDE_TYPE_DONTCARE)
+        {
+            rc = pgmPhysAllocLargePage(pVM, GCPhys);
+            if (rc == VINF_SUCCESS)
+                return rc;
+        }
+        /* Mark the base as type page table, so we don't check over and over again. */
+        PGM_PAGE_SET_PDE_TYPE(pBasePage, PGM_PAGE_PDE_TYPE_PT);
 
         /* fall back to 4KB pages. */
     }
