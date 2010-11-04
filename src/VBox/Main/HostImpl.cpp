@@ -2076,6 +2076,10 @@ static int solarisWalkDeviceNodeForDVD(di_node_t Node, void *pvArg)
                                         if (*ppDrives)
                                             pDrive->pNext = *ppDrives;
                                         *ppDrives = pDrive;
+
+                                        /* We're not interested in any of the other slices, stop minor nodes traversal. */
+                                        free(pszDevLinkPath);
+                                        break;
                                     }
                                 }
                                 free(pszDevLinkPath);
