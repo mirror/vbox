@@ -56,6 +56,35 @@ void GlueHandleComError(ComPtr<IUnknown> iface, const char *pcszContext, HRESULT
     } while (0)
 
 /**
+ * Same as CHECK_ERROR except that it also executes the statement |stmt| on
+ * failure.
+ */
+#define CHECK_ERROR_STMT(iface, method, stmt) \
+    do { \
+        rc = iface->method; \
+        if (FAILED(rc)) \
+        { \
+            com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
+            stmt; \
+        } \
+    } while (0)
+
+/**
+ * Same as CHECK_ERROR_STMT except that it uses an internal variable |hrcCheck|
+ * for holding the result.
+ */
+#define CHECK_ERROR2_STMT(iface, method, stmt) \
+    do { \
+        HRESULT hrcCheck = iface->method; \
+        if (FAILED(hrcCheck)) \
+        { \
+            com::GlueHandleComError(iface, #method, hrcCheck, __FILE__, __LINE__); \
+            stmt; \
+        } \
+    } while (0)
+
+
+/**
  *  Does the same as CHECK_ERROR(), but executes the |break| statement on
  *  failure.
  */
@@ -95,6 +124,29 @@ void GlueHandleComError(ComPtr<IUnknown> iface, const char *pcszContext, HRESULT
         { \
             com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
             return (ret); \
+        } \
+    } while (0)
+
+/**
+ * Does the same as CHECK_ERROR(), but returns @a ret on failure.
+ *
+ * Unlike CHECK_ERROR and CHECK_ERROR_RET, this macro does not presuppose a
+ * |rc| variable but instead employs a local variable |hrcCheck| in its own
+ * scope.  This |hrcCheck| variable can be referenced by the @a rcRet
+ * parameter.
+ *
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @param   rcRet       What to return on failure.  Use |hrcCheck| to return
+ *                      the status code of the method call.
+ */
+#define CHECK_ERROR2_RET(iface, method, rcRet) \
+    do { \
+        HRESULT hrcCheck = iface->method; \
+        if (FAILED(hrcCheck)) \
+        { \
+            com::GlueHandleComError(iface, #method, hrcCheck, __FILE__, __LINE__); \
+            return (rcRet); \
         } \
     } while (0)
 

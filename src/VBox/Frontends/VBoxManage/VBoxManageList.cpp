@@ -185,6 +185,59 @@ static void listMedia(const ComPtr<IVirtualBox> aVirtualBox,
     }
 }
 
+
+/**
+ * List extension packs.
+ *
+ * @returns See produceList.
+ * @param   rptrVirtualBox      Reference to the IVirtualBox smart pointer.
+ */
+static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &rptrVirtualBox)
+{
+    ComObjPtr<IExtPackManager> ptrExtPackMgr;
+    CHECK_ERROR2_RET(rptrVirtualBox, COMGETTER(ExtensionPackManager)(ptrExtPackMgr.asOutParam()), hrcCheck);
+
+    SafeIfaceArray<IExtPack> extPacks;
+    CHECK_ERROR2_RET(ptrExtPackMgr, COMGETTER(InstalledExtPacks)(ComSafeArrayAsOutParam(extPacks)), hrcCheck);
+    RTPrintf("Extension Packs: %u\n", extPacks.size());
+
+    HRESULT hrc = S_OK;
+    for (size_t i = 0; i < extPacks.size(); i++)
+    {
+        /* Read all the properties. */
+        Bstr    bstrName;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Name)(bstrName.asOutParam()),          hrc = hrcCheck; bstrName.setNull());
+        Bstr    bstrDesc;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Description)(bstrDesc.asOutParam()),   hrc = hrcCheck; bstrDesc.setNull());
+        Bstr    bstrVersion;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Version)(bstrVersion.asOutParam()),    hrc = hrcCheck; bstrVersion.setNull());
+        ULONG   uRevision;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Revision)(&uRevision),                 hrc = hrcCheck; uRevision = 0);
+        BOOL    fUsable;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Usable)(&fUsable),                     hrc = hrcCheck; fUsable = FALSE);
+        Bstr    bstrWhy;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(WhyUnusable)(bstrWhy.asOutParam()),    hrc = hrcCheck; bstrWhy.setNull());
+
+        /* Display them. */
+        if (i)
+            RTPrintf("\n");
+        RTPrintf("Pack no.%2zu:   %lS\n"
+                 "Version:      %lS\n"
+                 "Revision:     %u\n"
+                 "Description:  %lS\n"
+                 "Usable:       %RTbool\n"
+                 "Why unusable: %lS\n",
+                 i, bstrName.raw(),
+                 bstrVersion.raw(),
+                 uRevision,
+                 bstrDesc.raw(),
+                 fUsable != FALSE,
+                 bstrWhy.raw());
+    }
+    return hrc;
+}
+
+
 /**
  * The type of lists we can produce.
  */
@@ -210,7 +263,8 @@ enum enmListType
     kListUsbFilters,
     kListSystemProperties,
     kListDhcpServers,
-    kListVrdeLibraries
+    kListVrdeLibraries,
+    kListExtPacks
 };
 
 
@@ -612,7 +666,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             ComPtr<IHost> Host;
             CHECK_ERROR_RET(rptrVirtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
 
-            SafeIfaceArray <IHostUSBDevice> CollPtr;
+            SafeIfaceArray<IHostUSBDevice> CollPtr;
             CHECK_ERROR_RET(Host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(CollPtr)), 1);
 
             RTPrintf("Host USB Devices:\n\n");
@@ -869,13 +923,20 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
         {
             SafeArray<BSTR> libs;
             CHECK_ERROR(rptrVirtualBox, VRDEListLibraries(ComSafeArrayAsOutParam(libs)));
-            for (size_t i = 0; i < libs.size(); ++i)
+            if (SUCCEEDED(rc))
             {
-                Bstr bstrName(libs[i]);
-                RTPrintf("%lS\n", bstrName.raw());
+                for (size_t i = 0; i < libs.size(); ++i)
+                {
+                    Bstr bstrName(libs[i]);
+                    RTPrintf("%lS\n", bstrName.raw());
+                }
             }
             break;
         }
+
+        case kListExtPacks:
+            rc = listExtensionPacks(rptrVirtualBox);
+            break;
 
         /* No default here, want gcc warnings. */
 
@@ -921,6 +982,7 @@ int handleList(HandlerArg *a)
         { "systemproperties",   kListSystemProperties,   RTGETOPT_REQ_NOTHING },
         { "dhcpservers",        kListDhcpServers,        RTGETOPT_REQ_NOTHING },
         { "vrdelibraries",      kListVrdeLibraries,      RTGETOPT_REQ_NOTHING },
+        { "extpacks",           kListExtPacks,           RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -963,6 +1025,7 @@ int handleList(HandlerArg *a)
             case kListSystemProperties:
             case kListDhcpServers:
             case kListVrdeLibraries:
+            case kListExtPacks:
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)
                 {

@@ -910,3 +910,70 @@ int handleVRDE(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+int handleExtPack(HandlerArg *a)
+{
+    if (a->argc < 2)
+        return errorSyntax(USAGE_EXTPACK, "Incorrect number of parameters");
+
+    ComObjPtr<IExtPackManager> ptrExtPackMgr;
+    CHECK_ERROR2_RET(a->virtualBox, COMGETTER(ExtensionPackManager)(ptrExtPackMgr.asOutParam()), RTEXITCODE_FAILURE);
+
+    RTGETOPTSTATE   GetState;
+    RTGETOPTUNION   ValueUnion;
+    int             ch;
+    HRESULT         hrc = S_OK;
+
+    if (!strcmp(a->argv[0], "install"))
+    {
+        if (a->argc > 2)
+            return errorSyntax(USAGE_EXTPACK, "Too many parameters given to \"extpack install\"");
+
+        Bstr bstrTarball(a->argv[1]);
+        Bstr bstrName;
+        CHECK_ERROR2_RET(ptrExtPackMgr, Install(bstrTarball.raw(), bstrName.asOutParam()), RTEXITCODE_FAILURE);
+        RTPrintf("Successfully installed \"%lS\".\n", bstrName.raw());
+    }
+    else if (!strcmp(a->argv[0], "uninstall"))
+    {
+        const char *pszName = NULL;
+        bool        fForced = false;
+
+        static const RTGETOPTDEF s_aUninstallOptions[] =
+        {
+            { "--forced",  'f', RTGETOPT_REQ_NOTHING },
+        };
+
+        RTGetOptInit(&GetState, a->argc, a->argv, s_aUninstallOptions, RT_ELEMENTS(s_aUninstallOptions),
+                     1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+        while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+        {
+            switch (ch)
+            {
+                case 'f':
+                    fForced = true;
+                    break;
+
+                case VINF_GETOPT_NOT_OPTION:
+                    if (pszName)
+                        return errorSyntax(USAGE_EXTPACK, "Too many extension pack names given to \"extpack uninstall\"");
+                    pszName = ValueUnion.psz;
+                    break;
+
+                default:
+                    return errorGetOpt(USAGE_EXTPACK, ch, &ValueUnion);
+            }
+        }
+        if (!pszName)
+            return errorSyntax(USAGE_EXTPACK, "Not extension pack name was given to \"extpack uninstall\"");
+
+        Bstr bstrName(pszName);
+        CHECK_ERROR2_RET(ptrExtPackMgr, Uninstall(bstrName.raw(), fForced), RTEXITCODE_FAILURE);
+        RTPrintf("Successfully uninstalled \"%s\".\n", pszName);
+    }
+    else
+        return errorSyntax(USAGE_EXTPACK, "Unknown command \"%s\"", a->argv[0]);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+

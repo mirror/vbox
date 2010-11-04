@@ -114,7 +114,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                      "                            usbhost|usbfilters|systemproperties|\n"
-                     "                            vrdelibraries\n"
+                     "                            vrdelibraries|extpacks\n"
                      "\n");
     }
 
@@ -724,6 +724,13 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                      "VBoxManage vrde             register <name>\n"
                      "VBoxManage vrde             unregister <name>\n"
+                     "\n");
+    }
+    if (u64Cmd & USAGE_EXTPACK)
+    {
+        RTStrmPrintf(pStrm,
+                     "VBoxManage extpack          install <tarball>\n"
+                     "VBoxManage extpack          uninstall [--force] <name>\n"
                      "\n");
     }
 }

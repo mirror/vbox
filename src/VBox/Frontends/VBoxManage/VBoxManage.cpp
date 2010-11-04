@@ -400,6 +400,7 @@ int main(int argc, char *argv[])
 #endif
             { "dhcpserver",       USAGE_DHCPSERVER,        handleDHCPServer},
             { "vrde",             USAGE_VRDE,              handleVRDE},
+            { "extpack",          USAGE_EXTPACK,           handleExtPack},
             { NULL,               0,                       NULL }
         };
 
