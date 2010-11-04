@@ -338,11 +338,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      * Check for execute access to the file.
      */
     if (access(pszExec, X_OK))
-    {
-        rc = RTErrConvertFromErrno(errno);
-        AssertMsgFailed(("'%s' %Rrc!\n", pszExec, rc));
-        return rc;
-    }
+        return RTErrConvertFromErrno(errno);
 
     pid_t pid = -1;
 
