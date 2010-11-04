@@ -87,8 +87,10 @@ typedef struct RAWIMAGE
 static const VDFILEEXTENSION s_aRawFileExtensions[] =
 {
     {"iso", VDTYPE_DVD},
+    {"cdr", VDTYPE_DVD},
     {"img", VDTYPE_FLOPPY},
     {"ima", VDTYPE_FLOPPY},
+    {"dsk", VDTYPE_FLOPPY},
     {NULL, VDTYPE_INVALID}
 };
 
@@ -524,7 +526,8 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     if (   RT_SUCCESS(rc)
         && pszExtension)
     {
-        if (!RTStrICmp(pszExtension, ".iso")) /* DVD images. */
+        if (   !RTStrICmp(pszExtension, ".iso")
+            || !RTStrICmp(pszExtension, ".cdr")) /* DVD images. */
         {
             /* Note that there are ISO images smaller than 1 MB; it is impossible to distinguish
              * between raw floppy and CD images based on their size (and cannot be reliably done
@@ -538,7 +541,9 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
             else
                 rc = VERR_VD_RAW_INVALID_HEADER;
         }
-        else if (!RTStrICmp(pszExtension, ".img") || !RTStrICmp(pszExtension, ".ima")) /* Floppy images */
+        else if (   !RTStrICmp(pszExtension, ".img")
+                 || !RTStrICmp(pszExtension, ".ima")
+                 || !RTStrICmp(pszExtension, ".dsk")) /* Floppy images */
         {
             if (!(cbFile % 512) && cbFile <= RAW_MAX_FLOPPY_IMG_SIZE)
             {
