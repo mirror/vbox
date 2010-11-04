@@ -928,7 +928,12 @@ int handleExtPack(HandlerArg *a)
         if (a->argc > 2)
             return errorSyntax(USAGE_EXTPACK, "Too many parameters given to \"extpack install\"");
 
-        Bstr bstrTarball(a->argv[1]);
+        char szPath[RTPATH_MAX];
+        int vrc = RTPathAbs(a->argv[1], szPath, sizeof(szPath));
+        if (RT_FAILURE(vrc))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs(%s,,) failed with rc=%Rrc", a->argv[1], vrc);
+
+        Bstr bstrTarball(szPath);
         Bstr bstrName;
         CHECK_ERROR2_RET(ptrExtPackMgr, Install(bstrTarball.raw(), bstrName.asOutParam()), RTEXITCODE_FAILURE);
         RTPrintf("Successfully installed \"%lS\".\n", bstrName.raw());
