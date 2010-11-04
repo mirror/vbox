@@ -119,6 +119,7 @@ public:
     STDMETHOD(COMGETTER(PerformanceCollector))  (IPerformanceCollector **aPerformanceCollector);
     STDMETHOD(COMGETTER(DHCPServers))           (ComSafeArrayOut(IDHCPServer *, aDHCPServers));
     STDMETHOD(COMGETTER(EventSource))           (IEventSource ** aEventSource);
+    STDMETHOD(COMGETTER(ExtensionPackManager))  (IExtPackManager **aExtPackManager);
 
     /* IVirtualBox methods */
     STDMETHOD(ComposeMachineFilename) (IN_BSTR aName, IN_BSTR aBaseFolder, BSTR *aFilename);

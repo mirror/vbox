@@ -63,9 +63,12 @@
 #include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-#include "PerformanceImpl.h"
+# include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 #include "EventImpl.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
+#endif
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -319,6 +322,11 @@ struct VirtualBox::Data
     const RTTHREAD                      threadAsyncEvent;
     EventQueue * const                  pAsyncEventQ;
     const ComObjPtr<EventSource>        pEventSource;
+
+#ifdef VBOX_WITH_EXTPACK
+    /** The extension pack manager object lives here. */
+    const ComObjPtr<ExtPackManager>     ptrExtPackManager;
+#endif
 };
 
 // constructor / destructor
@@ -489,6 +497,16 @@ HRESULT VirtualBox::init()
         if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
             rc = m->pEventSource->init(static_cast<IVirtualBox*>(this));
         if (FAILED(rc)) throw rc;
+
+#ifdef VBOX_WITH_EXTPACK
+        /* extension manager */
+        rc = unconst(m->ptrExtPackManager).createObject();
+        if (SUCCEEDED(rc))
+            /** @todo Define drop zone location. */
+            rc = m->ptrExtPackManager->init(NULL /*a_pszDropZoneDir*/, false /*a_fCheckDropZone*/);
+        if (FAILED(rc))
+            throw rc;
+#endif
     }
     catch (HRESULT err)
     {
@@ -1054,6 +1072,26 @@ VirtualBox::COMGETTER(EventSource)(IEventSource ** aEventSource)
     m->pEventSource.queryInterfaceTo(aEventSource);
 
     return S_OK;
+}
+
+STDMETHODIMP
+VirtualBox::COMGETTER(ExtensionPackManager)(IExtPackManager **aExtPackManager)
+{
+    CheckComArgOutPointerValid(aExtPackManager);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+#ifdef VBOX_WITH_EXTPACK
+        /* The extension pack manager is const, no need to lock. */
+        hrc = m->ptrExtPackManager.queryInterfaceTo(aExtPackManager);
+#else
+        hrc = E_NOTIMPL;
+#endif
+    }
+
+    return hrc;
 }
 
 STDMETHODIMP

@@ -1374,7 +1374,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="b59d8e0a-9aeb-4196-a5e9-398970ddbae5"
+    uuid="e03d6527-9b72-43b5-b87f-88f1033d3866"
     wsmap="managed"
   >
     <desc>
@@ -1504,7 +1504,7 @@
 
     <attribute name="DHCPServers" type="IDHCPServer" safearray="yes" readonly="yes">
       <desc>
-        dhcp server settings.
+        DHCP servers.
       </desc>
     </attribute>
 
@@ -1513,6 +1513,13 @@
         Event source for VirtualBox events.
       </desc>
     </attribute>
+
+    <attribute name="extensionPackManager" type="IExtPackManager" readonly="yes">
+      <desc>
+        The extension pack manager.
+      </desc>
+    </attribute>
+
 
     <method name="composeMachineFilename">
       <desc>
@@ -14000,7 +14007,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPack" extends="$unknown"
-    uuid="1b69431b-b22f-454a-977d-7d50986defcb"
+    uuid="ab26b24e-d46c-4d09-aa44-e5092d2fe9ae"
     wsmap="suppress"
     >
     <desc>
@@ -14010,6 +14017,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
     <attribute name="name" type="wstring" readonly="yes">
       <desc>The extension pack name.  This is unique.</desc>
+    </attribute>
+    <attribute name="description" type="wstring" readonly="yes">
+      <desc>The extension pack description.</desc>
     </attribute>
     <attribute name="version" type="wstring" readonly="yes">
       <desc>

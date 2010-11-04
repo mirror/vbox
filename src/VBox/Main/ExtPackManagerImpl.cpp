@@ -832,6 +832,9 @@ HRESULT ExtPackManager::FinalConstruct()
  */
 HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone)
 {
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
     /*
      * Figure some stuff out before creating the instance data.
      */
@@ -862,39 +865,41 @@ HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone
      * We ASSUME that there are no files, directories or stuff in the directory
      * that exceed the max name length in RTDIRENTRYEX.
      */
+    HRESULT hrc = S_OK;
     PRTDIR pDir;
     int vrc = RTDirOpen(&pDir, szBaseDir);
-    if (RT_FAILURE(vrc))
-        return S_OK;
-    HRESULT hrc = S_OK;
-    for (;;)
+    if (RT_SUCCESS(vrc))
     {
-        RTDIRENTRYEX Entry;
-        vrc = RTDirReadEx(pDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
-        if (RT_FAILURE(vrc))
+        for (;;)
         {
-            AssertLogRelMsg(vrc == VERR_NO_MORE_FILES, ("%Rrc\n", vrc));
-            break;
+            RTDIRENTRYEX Entry;
+            vrc = RTDirReadEx(pDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+            if (RT_FAILURE(vrc))
+            {
+                AssertLogRelMsg(vrc == VERR_NO_MORE_FILES, ("%Rrc\n", vrc));
+                break;
+            }
+            if (   RTFS_IS_DIRECTORY(Entry.Info.Attr.fMode)
+                && strcmp(Entry.szName, ".")  != 0
+                && strcmp(Entry.szName, "..") != 0 )
+            {
+                /*
+                 * All directories are extensions, the shall be nothing but
+                 * extensions in this subdirectory.
+                 */
+                ComObjPtr<ExtPack> NewExtPack;
+                HRESULT hrc2 = NewExtPack.createObject();
+                if (SUCCEEDED(hrc2))
+                    hrc2 = NewExtPack->init(Entry.szName, szBaseDir);
+                if (SUCCEEDED(hrc2))
+                    m->llInstalledExtPacks.push_back(NewExtPack);
+                else if (SUCCEEDED(rc))
+                    hrc = hrc2;
+            }
         }
-        if (   RTFS_IS_DIRECTORY(Entry.Info.Attr.fMode)
-            && strcmp(Entry.szName, ".")  != 0
-            && strcmp(Entry.szName, "..") != 0 )
-        {
-            /*
-             * All directories are extensions, the shall be nothing but
-             * extensions in this subdirectory.
-             */
-            ComObjPtr<ExtPack> NewExtPack;
-            HRESULT hrc2 = NewExtPack.createObject();
-            if (SUCCEEDED(hrc2))
-                hrc2 = NewExtPack->init(Entry.szName, szBaseDir);
-            if (SUCCEEDED(hrc2))
-                m->llInstalledExtPacks.push_back(NewExtPack);
-            else if (SUCCEEDED(rc))
-                hrc = hrc2;
-        }
+        RTDirClose(pDir);
     }
-    RTDirClose(pDir);
+    /* else: ignore, the directory probably does not exist or something. */
 
     /*
      * Look for things in the drop zone.
@@ -902,6 +907,8 @@ HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone
     if (SUCCEEDED(hrc) && a_fCheckDropZone)
         processDropZone();
 
+    if (SUCCEEDED(hrc))
+        autoInitSpan.setSucceeded();
     return hrc;
 }
 
