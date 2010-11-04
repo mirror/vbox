@@ -750,7 +750,7 @@ static void dmgSwapEndianUdifCkSum(PDMGUDIFCKSUM pCkSum, uint32_t u32Kind, uint3
             break;
 
         default:
-            AssertMsgFailed(("%x\n", u32Kind));
+//            AssertMsgFailed(("%x\n", u32Kind));
             break;
     }
     NOREF(cBits);

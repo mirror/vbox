@@ -30,31 +30,6 @@
 /*******************************************************************************
 *   Constants And Macros, Structures and Typedefs                              *
 *******************************************************************************/
-/**
- * ISO volume descriptor.
- */
-#pragma pack(1)
-typedef struct ISOVOLDESC
-{
-    union
-    {
-        /** Byte view. */
-        uint8_t au8[2048];
-        /** Field view. */
-        struct
-        {
-            /** Descriptor type. */
-            uint8_t u8Type;
-            /** Standard identifier */
-            uint8_t au8Id[5];
-            /** Descriptor version. */
-            uint8_t u8Version;
-            /** Rest depends on the descriptor type. */
-        } fields;
-    };
-} ISOVOLDESC, *PISOVOLDESC;
-#pragma pack()
-AssertCompileSize(ISOVOLDESC, 2048);
 
 /**
  * Raw image data structure.
@@ -100,6 +75,9 @@ typedef struct RAWIMAGE
 
 /** Size of write operations when filling an image with zeroes. */
 #define RAW_FILL_SIZE (128 * _1K)
+
+/** The maximum reasonable size of a floppy image. */
+#define RAW_MAX_FLOPPY_IMG_SIZE (512 * 82 * 24 * 2)
 
 /*******************************************************************************
 *   Static Variables                                                           *
@@ -514,7 +492,6 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile;
     int rc = VINF_SUCCESS;
-    ISOVOLDESC IsoVolDesc;
     char *pszExtension = NULL;
 
     /* Get I/O interface. */
@@ -549,37 +526,21 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     {
         if (!RTStrICmp(pszExtension, ".iso")) /* DVD images. */
         {
-            if (cbFile >= (32768 + sizeof(ISOVOLDESC)))
+            /* Note that there are ISO images smaller than 1 MB; it is impossible to distinguish
+             * between raw floppy and CD images based on their size (and cannot be reliably done
+             * based on contents, either).
+             */
+            if (cbFile > 32768 && !(cbFile % 2048))
             {
-                rc = pInterfaceIOCallbacks->pfnReadSync(pInterfaceIO->pvUser, pStorage,
-                                                        32768, &IsoVolDesc, sizeof(IsoVolDesc), NULL);
+                *penmType = VDTYPE_DVD;
+                rc = VINF_SUCCESS;
             }
             else
                 rc = VERR_VD_RAW_INVALID_HEADER;
-
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Do we recognize this stuff?
-                 */
-                if (   !memcmp(IsoVolDesc.fields.au8Id, "BEA01", 5)
-                    || !memcmp(IsoVolDesc.fields.au8Id, "BOOT2", 5)
-                    || !memcmp(IsoVolDesc.fields.au8Id, "CD001", 5)
-                    || !memcmp(IsoVolDesc.fields.au8Id, "CDW02", 5)
-                    || !memcmp(IsoVolDesc.fields.au8Id, "NSR02", 5)
-                    || !memcmp(IsoVolDesc.fields.au8Id, "NSR03", 5)
-                    || !memcmp(IsoVolDesc.fields.au8Id, "TEA01", 5))
-                {
-                    *penmType = VDTYPE_DVD;
-                    rc = VINF_SUCCESS;
-                }
-                else
-                    rc = VERR_VD_RAW_INVALID_HEADER;
-            }
         }
         else if (!RTStrICmp(pszExtension, ".img") || !RTStrICmp(pszExtension, ".ima")) /* Floppy images */
         {
-            if (!(cbFile % 512))
+            if (!(cbFile % 512) && cbFile <= RAW_MAX_FLOPPY_IMG_SIZE)
             {
                 *penmType = VDTYPE_FLOPPY;
                 rc = VINF_SUCCESS;
@@ -1145,7 +1106,6 @@ static int rawSetComment(void *pBackendData, const char *pszComment)
     else
         rc = VERR_VD_NOT_OPENED;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
