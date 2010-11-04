@@ -78,8 +78,11 @@ static struct drm_driver driver = {
 	/* .driver_features = DRIVER_USE_MTRR, */
 	.load = vboxvideo_driver_load,
 	.reclaim_buffers = drm_core_reclaim_buffers,
+        /* As of Linux 2.65.37, always the internal functions are used. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 37)
 	.get_map_ofs = drm_core_get_map_ofs,
 	.get_reg_ofs = drm_core_get_reg_ofs,
+#endif
 	.fops = {
 		 .owner = THIS_MODULE,
 		 .open = drm_open,
