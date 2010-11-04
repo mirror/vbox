@@ -60,7 +60,7 @@ static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
     }
     return "Unknown";
 }
-#endif
+#endif /* VBOX_WITH_HOSTNETIF_API */
 
 static const char*getDeviceTypeText(DeviceType_T enmType)
 {
@@ -185,137 +185,59 @@ static void listMedia(const ComPtr<IVirtualBox> aVirtualBox,
     }
 }
 
-enum enOptionCodes
+/**
+ * The type of lists we can produce.
+ */
+enum enmListType
 {
-    LISTVMS = 1000,
-    LISTRUNNINGVMS,
-    LISTOSTYPES,
-    LISTHOSTDVDS,
-    LISTHOSTFLOPPIES,
-    LISTBRIDGEDIFS,
+    kListNotSpecified = 1000,
+    kListVMs,
+    kListRunningVMs,
+    kListOsTypes,
+    kListHostDvds,
+    kListHostFloppies,
+    kListBridgedInterfaces,
 #if defined(VBOX_WITH_NETFLT)
-    LISTHOSTONLYIFS,
+    kListHostOnlyInterfaces,
 #endif
-    LISTHOSTCPUIDS,
-    LISTHOSTINFO,
-    LISTHDDBACKENDS,
-    LISTHDDS,
-    LISTDVDS,
-    LISTFLOPPIES,
-    LISTUSBHOST,
-    LISTUSBFILTERS,
-    LISTSYSTEMPROPERTIES,
-    LISTDHCPSERVERS,
-    LISTVRDELIBRARIES
+    kListHostCpuIDs,
+    kListHostInfo,
+    kListHddBackends,
+    kListHdds,
+    kListDvds,
+    kListFloppies,
+    kListUsbHost,
+    kListUsbFilters,
+    kListSystemProperties,
+    kListDhcpServers,
+    kListVrdeLibraries
 };
 
-static const RTGETOPTDEF g_aListOptions[]
-    = {
-        { "--long",             'l',                    RTGETOPT_REQ_NOTHING },
-        { "vms",                LISTVMS,                RTGETOPT_REQ_NOTHING },
-        { "runningvms",         LISTRUNNINGVMS,         RTGETOPT_REQ_NOTHING },
-        { "ostypes",            LISTOSTYPES,            RTGETOPT_REQ_NOTHING },
-        { "hostdvds",           LISTHOSTDVDS,           RTGETOPT_REQ_NOTHING },
-        { "hostfloppies",       LISTHOSTFLOPPIES,       RTGETOPT_REQ_NOTHING },
-        { "hostifs",            LISTBRIDGEDIFS,         RTGETOPT_REQ_NOTHING }, /* backward compatibility */
-        { "bridgedifs",         LISTBRIDGEDIFS,         RTGETOPT_REQ_NOTHING },
-#if defined(VBOX_WITH_NETFLT)
-        { "hostonlyifs",        LISTHOSTONLYIFS,        RTGETOPT_REQ_NOTHING },
-#endif
-        { "hostinfo",           LISTHOSTINFO,           RTGETOPT_REQ_NOTHING },
-        { "hostcpuids",         LISTHOSTCPUIDS,         RTGETOPT_REQ_NOTHING },
-        { "hddbackends",        LISTHDDBACKENDS,        RTGETOPT_REQ_NOTHING },
-        { "hdds",               LISTHDDS,               RTGETOPT_REQ_NOTHING },
-        { "dvds",               LISTDVDS,               RTGETOPT_REQ_NOTHING },
-        { "floppies",           LISTFLOPPIES,           RTGETOPT_REQ_NOTHING },
-        { "usbhost",            LISTUSBHOST,            RTGETOPT_REQ_NOTHING },
-        { "usbfilters",         LISTUSBFILTERS,         RTGETOPT_REQ_NOTHING },
-        { "systemproperties",   LISTSYSTEMPROPERTIES,   RTGETOPT_REQ_NOTHING },
-        { "dhcpservers",        LISTDHCPSERVERS,        RTGETOPT_REQ_NOTHING },
-        { "vrdelibraries",      LISTVRDELIBRARIES,      RTGETOPT_REQ_NOTHING },
-      };
 
-int handleList(HandlerArg *a)
+/**
+ * Produces the specified listing.
+ *
+ * @returns S_OK or some COM error code that has been reported in full.
+ * @param   enmList             The list to produce.
+ * @param   fOptLong            Long (@c true) or short list format.
+ * @param   rptrVirtualBox      Reference to the IVirtualBox smart pointer.
+ */
+static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const ComPtr<IVirtualBox> &rptrVirtualBox)
 {
     HRESULT rc = S_OK;
-
-    bool fOptLong = false;
-
-    int command = 0;
-    int c;
-
-    RTGETOPTUNION ValueUnion;
-    RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, a->argc, a->argv, g_aListOptions, RT_ELEMENTS(g_aListOptions),
-                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    switch (enmCommand)
     {
-        switch (c)
-        {
-            case 'l':  // --long
-                fOptLong = true;
-            break;
+        case kListNotSpecified:
+            AssertFailed();
+            return E_FAIL;
 
-            case LISTVMS:
-            case LISTRUNNINGVMS:
-            case LISTOSTYPES:
-            case LISTHOSTDVDS:
-            case LISTHOSTFLOPPIES:
-            case LISTBRIDGEDIFS:
-#if defined(VBOX_WITH_NETFLT)
-            case LISTHOSTONLYIFS:
-#endif
-            case LISTHOSTINFO:
-            case LISTHOSTCPUIDS:
-            case LISTHDDBACKENDS:
-            case LISTHDDS:
-            case LISTDVDS:
-            case LISTFLOPPIES:
-            case LISTUSBHOST:
-            case LISTUSBFILTERS:
-            case LISTSYSTEMPROPERTIES:
-            case LISTDHCPSERVERS:
-            case LISTVRDELIBRARIES:
-                if (command)
-                    return errorSyntax(USAGE_LIST, "Too many subcommands for \"list\" command.\n");
-
-                command = c;
-            break;
-
-            case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_LIST, "Unknown subcommand \"%s\".", ValueUnion.psz);
-            break;
-
-            default:
-                if (c > 0)
-                {
-                    if (RT_C_IS_GRAPH(c))
-                        return errorSyntax(USAGE_LIST, "unhandled option: -%c", c);
-                    else
-                        return errorSyntax(USAGE_LIST, "unhandled option: %i", c);
-                }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_LIST, "unknown option: %s", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_LIST, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_LIST, "%Rrs", c);
-        }
-    }
-
-    if (!command)
-        return errorSyntax(USAGE_LIST, "Missing subcommand for \"list\" command.\n");
-
-    /* which object? */
-    switch (command)
-    {
-        case LISTVMS:
+        case kListVMs:
         {
             /*
              * Get the list of all registered VMs
              */
-            com::SafeIfaceArray <IMachine> machines;
-            rc = a->virtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
+            com::SafeIfaceArray<IMachine> machines;
+            rc = rptrVirtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
             if (SUCCEEDED(rc))
             {
                 /*
@@ -324,21 +246,19 @@ int handleList(HandlerArg *a)
                 for (size_t i = 0; i < machines.size(); ++i)
                 {
                     if (machines[i])
-                        rc = showVMInfo(a->virtualBox,
-                                        machines[i],
-                                        (fOptLong) ? VMINFO_STANDARD : VMINFO_COMPACT);
+                        rc = showVMInfo(rptrVirtualBox, machines[i], fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
                 }
             }
+            break;
         }
-        break;
 
-        case LISTRUNNINGVMS:
+        case kListRunningVMs:
         {
             /*
              * Get the list of all _running_ VMs
              */
-            com::SafeIfaceArray <IMachine> machines;
-            rc = a->virtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
+            com::SafeIfaceArray<IMachine> machines;
+            rc = rptrVirtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
             if (SUCCEEDED(rc))
             {
                 /*
@@ -359,21 +279,20 @@ int handleList(HandlerArg *a)
                                 case MachineState_LiveSnapshotting:
                                 case MachineState_Paused:
                                 case MachineState_TeleportingPausedVM:
-                                    rc = showVMInfo(a->virtualBox,
-                                                    machines[i],
-                                                    (fOptLong) ? VMINFO_STANDARD : VMINFO_COMPACT);
+                                    rc = showVMInfo(rptrVirtualBox, machines[i], fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
+                                    break;
                             }
                         }
                     }
                 }
             }
+            break;
         }
-        break;
 
-        case LISTOSTYPES:
+        case kListOsTypes:
         {
-            com::SafeIfaceArray <IGuestOSType> coll;
-            rc = a->virtualBox->COMGETTER(GuestOSTypes)(ComSafeArrayAsOutParam(coll));
+            com::SafeIfaceArray<IGuestOSType> coll;
+            rc = rptrVirtualBox->COMGETTER(GuestOSTypes)(ComSafeArrayAsOutParam(coll));
             if (SUCCEEDED(rc))
             {
                 /*
@@ -391,14 +310,14 @@ int handleList(HandlerArg *a)
                     RTPrintf("Description: %lS\n\n", guestDescription.raw());
                 }
             }
+            break;
         }
-        break;
 
-        case LISTHOSTDVDS:
+        case kListHostDvds:
         {
             ComPtr<IHost> host;
-            CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-            com::SafeIfaceArray <IMedium> coll;
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(Host)(host.asOutParam()));
+            com::SafeIfaceArray<IMedium> coll;
             CHECK_ERROR(host, COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(coll)));
             if (SUCCEEDED(rc))
             {
@@ -413,14 +332,14 @@ int handleList(HandlerArg *a)
                     RTPrintf("Name:         %lS\n\n", name.raw());
                 }
             }
+            break;
         }
-        break;
 
-        case LISTHOSTFLOPPIES:
+        case kListHostFloppies:
         {
             ComPtr<IHost> host;
-            CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-            com::SafeIfaceArray <IMedium> coll;
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(Host)(host.asOutParam()));
+            com::SafeIfaceArray<IMedium> coll;
             CHECK_ERROR(host, COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(coll)));
             if (SUCCEEDED(rc))
             {
@@ -435,19 +354,20 @@ int handleList(HandlerArg *a)
                     RTPrintf("Name:         %lS\n\n", name.raw());
                 }
             }
+            break;
         }
-        break;
 
-        case LISTBRIDGEDIFS:
+        /** @todo function. */
+        case kListBridgedInterfaces:
 #if defined(VBOX_WITH_NETFLT)
-        case LISTHOSTONLYIFS:
+        case kListHostOnlyInterfaces:
 #endif
         {
             ComPtr<IHost> host;
-            CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-            com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(Host)(host.asOutParam()));
+            com::SafeIfaceArray<IHostNetworkInterface> hostNetworkInterfaces;
 #if defined(VBOX_WITH_NETFLT)
-            if (command == LISTBRIDGEDIFS)
+            if (enmCommand == kListBridgedInterfaces)
                 CHECK_ERROR(host, FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_Bridged,
                                                                   ComSafeArrayAsOutParam(hostNetworkInterfaces)));
             else
@@ -501,26 +421,24 @@ int handleList(HandlerArg *a)
                 Bstr netName;
                 networkInterface->COMGETTER(NetworkName)(netName.asOutParam());
                 RTPrintf("VBoxNetworkName: %lS\n\n", netName.raw());
-
 #endif
             }
+            break;
         }
-        break;
 
-        case LISTHOSTINFO:
+        /** @todo function. */
+        case kListHostInfo:
         {
             ComPtr<IHost> Host;
-            CHECK_ERROR(a->virtualBox, COMGETTER(Host)(Host.asOutParam()));
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(Host)(Host.asOutParam()));
 
             RTPrintf("Host Information:\n\n");
 
-            LONG64 uTCTime = 0;
-            CHECK_ERROR(Host, COMGETTER(UTCTime)(&uTCTime));
-            RTTIMESPEC timeSpec;
-            RTTimeSpecSetMilli(&timeSpec, uTCTime);
-            char szTime[32] = {0};
-            RTTimeSpecToString(&timeSpec, szTime, sizeof(szTime));
-            RTPrintf("Host time: %s\n", szTime);
+            LONG64      u64UtcTime = 0;
+            CHECK_ERROR(Host, COMGETTER(UTCTime)(&u64UtcTime));
+            RTTIMESPEC  timeSpec;
+            char        szTime[32];
+            RTPrintf("Host time: %s\n", RTTimeSpecToString(RTTimeSpecSetMilli(&timeSpec, u64UtcTime), szTime, sizeof(szTime)));
 
             ULONG processorOnlineCount = 0;
             CHECK_ERROR(Host, COMGETTER(ProcessorOnlineCount)(&processorOnlineCount));
@@ -556,13 +474,13 @@ int handleList(HandlerArg *a)
             Bstr oSVersion;
             CHECK_ERROR(Host, COMGETTER(OSVersion)(oSVersion.asOutParam()));
             RTPrintf("Operating system version: %lS\n", oSVersion.raw());
+            break;
         }
-        break;
 
-        case LISTHOSTCPUIDS:
+        case kListHostCpuIDs:
         {
             ComPtr<IHost> Host;
-            CHECK_ERROR(a->virtualBox, COMGETTER(Host)(Host.asOutParam()));
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(Host)(Host.asOutParam()));
 
             RTPrintf("Host CPUIDs:\n\nLeaf no.  EAX      EBX      ECX      EDX\n");
             ULONG uCpuNo = 0; /* ASSUMES that CPU#0 is online. */
@@ -585,17 +503,16 @@ int handleList(HandlerArg *a)
                     RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
                 }
             }
+            break;
         }
-        break;
 
-        case LISTHDDBACKENDS:
+        /** @todo function. */
+        case kListHddBackends:
         {
-            ComPtr<ISystemProperties> systemProperties;
-            CHECK_ERROR(a->virtualBox,
-                        COMGETTER(SystemProperties)(systemProperties.asOutParam()));
-            com::SafeIfaceArray <IMediumFormat> mediumFormats;
-            CHECK_ERROR(systemProperties,
-                        COMGETTER(MediumFormats)(ComSafeArrayAsOutParam(mediumFormats)));
+            ComPtr<ISystemProperties>           systemProperties;
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()));
+            com::SafeIfaceArray<IMediumFormat>  mediumFormats;
+            CHECK_ERROR(systemProperties, COMGETTER(MediumFormats)(ComSafeArrayAsOutParam(mediumFormats)));
 
             RTPrintf("Supported hard disk backends:\n\n");
             for (size_t i = 0; i < mediumFormats.size(); ++i)
@@ -662,37 +579,38 @@ int handleList(HandlerArg *a)
                 }
                 RTPrintf(")\n");
             }
+            break;
         }
-        break;
 
-        case LISTHDDS:
+        case kListHdds:
         {
             com::SafeIfaceArray<IMedium> hdds;
-            CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam(hdds)));
-            listMedia(a->virtualBox, hdds, "base");
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam(hdds)));
+            listMedia(rptrVirtualBox, hdds, "base");
+            break;
         }
-        break;
 
-        case LISTDVDS:
+        case kListDvds:
         {
             com::SafeIfaceArray<IMedium> dvds;
-            CHECK_ERROR(a->virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
-            listMedia(a->virtualBox, dvds, NULL);
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
+            listMedia(rptrVirtualBox, dvds, NULL);
+            break;
         }
-        break;
 
-        case LISTFLOPPIES:
+        case kListFloppies:
         {
             com::SafeIfaceArray<IMedium> floppies;
-            CHECK_ERROR(a->virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
-            listMedia(a->virtualBox, floppies, NULL);
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
+            listMedia(rptrVirtualBox, floppies, NULL);
+            break;
         }
-        break;
 
-        case LISTUSBHOST:
+        /** @todo function. */
+        case kListUsbHost:
         {
             ComPtr<IHost> Host;
-            CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
+            CHECK_ERROR_RET(rptrVirtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
 
             SafeIfaceArray <IHostUSBDevice> CollPtr;
             CHECK_ERROR_RET(Host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(CollPtr)), 1);
@@ -750,17 +668,23 @@ int handleList(HandlerArg *a)
                     switch (state)
                     {
                         case USBDeviceState_NotSupported:
-                            pszState = "Not supported"; break;
+                            pszState = "Not supported";
+                            break;
                         case USBDeviceState_Unavailable:
-                            pszState = "Unavailable"; break;
+                            pszState = "Unavailable";
+                            break;
                         case USBDeviceState_Busy:
-                            pszState = "Busy"; break;
+                            pszState = "Busy";
+                            break;
                         case USBDeviceState_Available:
-                            pszState = "Available"; break;
+                            pszState = "Available";
+                            break;
                         case USBDeviceState_Held:
-                            pszState = "Held"; break;
+                            pszState = "Held";
+                            break;
                         case USBDeviceState_Captured:
-                            pszState = "Captured"; break;
+                            pszState = "Captured";
+                            break;
                         default:
                             ASSERT(false);
                             break;
@@ -768,17 +692,18 @@ int handleList(HandlerArg *a)
                     RTPrintf("Current State:      %s\n\n", pszState);
                 }
             }
+            break;
         }
-        break;
 
-        case LISTUSBFILTERS:
+        /** @todo function. */
+        case kListUsbFilters:
         {
             RTPrintf("Global USB Device Filters:\n\n");
 
-            ComPtr <IHost> host;
-            CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), 1);
+            ComPtr<IHost> host;
+            CHECK_ERROR_RET(rptrVirtualBox, COMGETTER(Host)(host.asOutParam()), 1);
 
-            SafeIfaceArray <IHostUSBDeviceFilter> coll;
+            SafeIfaceArray<IHostUSBDeviceFilter> coll;
             CHECK_ERROR_RET(host, COMGETTER(USBDeviceFilters)(ComSafeArrayAsOutParam(coll)), 1);
 
             if (coll.size() == 0)
@@ -832,13 +757,14 @@ int handleList(HandlerArg *a)
                     RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
                 }
             }
+            break;
         }
-        break;
 
-        case LISTSYSTEMPROPERTIES:
+        /** @todo function. */
+        case kListSystemProperties:
         {
             ComPtr<ISystemProperties> systemProperties;
-            a->virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+            rptrVirtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
 
             Bstr str;
             ULONG ulValue;
@@ -906,13 +832,13 @@ int handleList(HandlerArg *a)
             RTPrintf("Remote desktop library:          %lS\n", str.raw());
             systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
             RTPrintf("Log history count:               %u\n", ulValue);
-
+            break;
         }
-        break;
-        case LISTDHCPSERVERS:
+
+        case kListDhcpServers:
         {
             com::SafeIfaceArray<IDHCPServer> svrs;
-            CHECK_ERROR(a->virtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)));
+            CHECK_ERROR(rptrVirtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)));
             for (size_t i = 0; i < svrs.size(); ++i)
             {
                 ComPtr<IDHCPServer> svr = svrs[i];
@@ -931,27 +857,142 @@ int handleList(HandlerArg *a)
                 Bstr upperIp;
                 svr->COMGETTER(UpperIP)(upperIp.asOutParam());
                 RTPrintf("upperIPAddress: %lS\n", upperIp.raw());
-                BOOL bEnabled;
-                svr->COMGETTER(Enabled)(&bEnabled);
-                RTPrintf("Enabled:        %s\n", bEnabled ? "Yes" : "No");
+                BOOL fEnabled;
+                svr->COMGETTER(Enabled)(&fEnabled);
+                RTPrintf("Enabled:        %s\n", fEnabled ? "Yes" : "No");
                 RTPrintf("\n");
             }
+            break;
         }
-        break;
-        case LISTVRDELIBRARIES:
+
+        case kListVrdeLibraries:
         {
             SafeArray<BSTR> libs;
-            CHECK_ERROR(a->virtualBox, VRDEListLibraries(ComSafeArrayAsOutParam(libs)));
+            CHECK_ERROR(rptrVirtualBox, VRDEListLibraries(ComSafeArrayAsOutParam(libs)));
             for (size_t i = 0; i < libs.size(); ++i)
             {
                 Bstr bstrName(libs[i]);
                 RTPrintf("%lS\n", bstrName.raw());
             }
+            break;
         }
-        break;
-    } // end switch
 
-    return SUCCEEDED(rc) ? 0 : 1;
+        /* No default here, want gcc warnings. */
+
+    } /* end switch */
+
+    return rc;
+}
+
+/**
+ * Handles the 'list' command.
+ *
+ * @returns Appropriate exit code.
+ * @param   a                   Handler argument.
+ */
+int handleList(HandlerArg *a)
+{
+    bool                fOptLong      = false;
+    bool                fOptMultiple  = false;
+    enum enmListType    enmOptCommand = kListNotSpecified;
+
+    static const RTGETOPTDEF s_aListOptions[] =
+    {
+        { "--long",             'l',                     RTGETOPT_REQ_NOTHING },
+        { "--multiple",         'm',                     RTGETOPT_REQ_NOTHING }, /* not offical yet */
+        { "vms",                kListVMs,                RTGETOPT_REQ_NOTHING },
+        { "runningvms",         kListRunningVMs,         RTGETOPT_REQ_NOTHING },
+        { "ostypes",            kListOsTypes,            RTGETOPT_REQ_NOTHING },
+        { "hostdvds",           kListHostDvds,           RTGETOPT_REQ_NOTHING },
+        { "hostfloppies",       kListHostFloppies,       RTGETOPT_REQ_NOTHING },
+        { "hostifs",            kListBridgedInterfaces,  RTGETOPT_REQ_NOTHING }, /* backward compatibility */
+        { "bridgedifs",         kListBridgedInterfaces,  RTGETOPT_REQ_NOTHING },
+#if defined(VBOX_WITH_NETFLT)
+        { "hostonlyifs",        kListHostOnlyInterfaces, RTGETOPT_REQ_NOTHING },
+#endif
+        { "hostinfo",           kListHostInfo,           RTGETOPT_REQ_NOTHING },
+        { "hostcpuids",         kListHostCpuIDs,         RTGETOPT_REQ_NOTHING },
+        { "hddbackends",        kListHddBackends,        RTGETOPT_REQ_NOTHING },
+        { "hdds",               kListHdds,               RTGETOPT_REQ_NOTHING },
+        { "dvds",               kListDvds,               RTGETOPT_REQ_NOTHING },
+        { "floppies",           kListFloppies,           RTGETOPT_REQ_NOTHING },
+        { "usbhost",            kListUsbHost,            RTGETOPT_REQ_NOTHING },
+        { "usbfilters",         kListUsbFilters,         RTGETOPT_REQ_NOTHING },
+        { "systemproperties",   kListSystemProperties,   RTGETOPT_REQ_NOTHING },
+        { "dhcpservers",        kListDhcpServers,        RTGETOPT_REQ_NOTHING },
+        { "vrdelibraries",      kListVrdeLibraries,      RTGETOPT_REQ_NOTHING },
+    };
+
+    int                 ch;
+    RTGETOPTUNION       ValueUnion;
+    RTGETOPTSTATE       GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aListOptions, RT_ELEMENTS(s_aListOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'l':  /* --long */
+                fOptLong = true;
+                break;
+
+            case 'm':
+                fOptMultiple = true;
+                if (enmOptCommand == kListNotSpecified)
+                    break;
+                ch = enmOptCommand;
+                /* fall thru */
+
+            case kListVMs:
+            case kListRunningVMs:
+            case kListOsTypes:
+            case kListHostDvds:
+            case kListHostFloppies:
+            case kListBridgedInterfaces:
+#if defined(VBOX_WITH_NETFLT)
+            case kListHostOnlyInterfaces:
+#endif
+            case kListHostInfo:
+            case kListHostCpuIDs:
+            case kListHddBackends:
+            case kListHdds:
+            case kListDvds:
+            case kListFloppies:
+            case kListUsbHost:
+            case kListUsbFilters:
+            case kListSystemProperties:
+            case kListDhcpServers:
+            case kListVrdeLibraries:
+                enmOptCommand = (enum enmListType)ch;
+                if (fOptMultiple)
+                {
+                    HRESULT hrc = produceList((enum enmListType)ch, fOptLong, a->virtualBox);
+                    if (FAILED(hrc))
+                        return 1;
+                }
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                return errorSyntax(USAGE_LIST, "Unknown subcommand \"%s\".", ValueUnion.psz);
+
+            default:
+                return errorGetOpt(USAGE_LIST, ch, &ValueUnion);
+        }
+    }
+
+    /*
+     * If not in multiple list mode, we have to produce the list now.
+     */
+    if (enmOptCommand == kListNotSpecified)
+        return errorSyntax(USAGE_LIST, "Missing subcommand for \"list\" command.\n");
+    if (!fOptMultiple)
+    {
+        HRESULT hrc = produceList(enmOptCommand, fOptLong, a->virtualBox);
+        if (FAILED(hrc))
+            return 1;
+    }
+
+    return 0;
 }
 
 #endif /* !VBOX_ONLY_DOCS */
