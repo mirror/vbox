@@ -224,6 +224,7 @@ struct VirtualBox::Data
 {
     Data()
         : pMainConfigFile(NULL),
+          uuidMediaRegistry("48024e5c-fdd9-470f-93af-ec29f7ea518c"),
           lockMachines(LOCKCLASS_LISTOFMACHINES),
           allMachines(lockMachines),
           lockGuestOSTypes(LOCKCLASS_LISTOFOTHEROBJECTS),
@@ -242,7 +243,6 @@ struct VirtualBox::Data
           threadAsyncEvent(NIL_RTTHREAD),
           pAsyncEventQ(NULL)
     {
-        unconst(uuidMediaRegistry).create();
     }
 
     ~Data()
