@@ -3692,7 +3692,8 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
                     AssertComRCReturnRC(rc);
                 }
             }
-            else if (m->devType != convertToDeviceType(enmType))
+            else if (   enmType == VDTYPE_INVALID
+                     || m->devType != convertToDeviceType(enmType))
             {
                 /*
                  * The user tried to use a image as a device which is not supported

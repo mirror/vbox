@@ -547,7 +547,7 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     if (   RT_SUCCESS(rc)
         && pszExtension)
     {
-        if (!strcmp(pszExtension, ".iso")) /* DVD images. */
+        if (!RTStrICmp(pszExtension, ".iso")) /* DVD images. */
         {
             if (cbFile >= (32768 + sizeof(ISOVOLDESC)))
             {
@@ -577,7 +577,7 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                     rc = VERR_VD_RAW_INVALID_HEADER;
             }
         }
-        else if (!strcmp(pszExtension, ".img") || !strcmp(pszExtension, ".ima")) /* Floppy images */
+        else if (!RTStrICmp(pszExtension, ".img") || !RTStrICmp(pszExtension, ".ima")) /* Floppy images */
         {
             if (!(cbFile % 512))
             {
