@@ -1541,27 +1541,15 @@
             machine directory.</li>
         </ul>
 
-        See the <link to="IMachine::name"/> attribute description for more details about
-        the machine name.
-
-        Every machine has a <i>settings file</i> that is used to store
-        the machine configuration. This file is stored in a directory called the
-        <i>machine settings subfolder</i>. Both the settings subfolder and file
-        will have a name that corresponds to the name of the virtual machine.
-        You can specify where to create the machine setting subfolder using the
-        @a baseFolder argument.
+        See <link to="IMachine::name"/> and <link to="#createMachine"/> for more
+        details about the machine name.
 
         If @a baseFolder is a @c null or empty string (which is recommended), the
         default machine settings folder
         (see <link to="ISystemProperties::defaultMachineFolder" />) will be used as
-        a base folder for the created machine. Otherwise the given base folder
+        a base folder for the created machine, resulting in a file name like
+        "/home/user/VirtualBox VMs/name/name.vbox". Otherwise the given base folder
         will be used.
-
-        In either case, the full path to the resulting settings file has the
-        following structure:
-        <pre>
-          &lt;base_folder&gt;/&lt;machine_name&gt;/&lt;machine_name&gt;.xml
-        </pre>
 
         This method does not access the host disks. In particular, it does not check
         for whether a machine of this name already exists.
@@ -1584,15 +1572,17 @@
 
         VirtualBox machine settings files use a custom XML dialect. Starting
         with VirtualBox 4.0, a ".vbox" extension is recommended, but not enforced,
-        and machine files can be created at arbitrary locations. However, it is
-        is recommended that machines are created in the "VirtualBox VMs" folder
-        created in the user's home directory
-        (e.g. "/home/user/VirtualBox VMs/name/name.vbox").
+        and machine files can be created at arbitrary locations.
 
-        If you specify NULL for the @a settingsFile argument,
-        <link to="#composeMachineFilename" /> is called automatically to have
-        such a recommended name composed based on the machine name given in
-        the @a name argument.
+        However, it is is recommended that machines be created in the default
+        machine folder (e.g. "/home/user/VirtualBox VMs/name/name.vbox"; see
+        <link to="ISystemProperties::defaultMachineFolder" />). If you specify
+        NULL for the @a settingsFile argument, <link to="#composeMachineFilename" />
+        is called automatically to have such a recommended name composed based
+        on the machine name given in the @a name argument.
+
+        If the resulting settings file already exists, this method will fail,
+        unless @a forceOverwrite is set.
 
         The new machine is created unregistered, with the initial configuration
         set according to the specified guest OS type. A typical sequence of
@@ -1624,9 +1614,6 @@
         The specified guest OS type identifier must match an ID of one of known
         guest OS types listed in the <link to="IVirtualBox::guestOSTypes"/>
         array.
-
-        If the resulting settings file already exists, this method will fail
-        with <link to="VBOX_E_FILE_ERROR"/>.
 
         Optionally, you may specify an UUID of to assign to the created machine.
         However, this is not recommended and you should normally pass an empty
@@ -3561,6 +3548,10 @@
         If any of the above limitations are hit, <link to="#saveSettings"/>
         will return an appropriate error message explaining the exact
         reason and the changes you made to this machine will not be saved.
+
+        Starting with VirtualBox 4.0, a “.vbox” extension of the settings
+        file is recommended, but not enforced. (Previous versions always
+        used a generic ".xml" extension.)
       </desc>
     </attribute>
 
