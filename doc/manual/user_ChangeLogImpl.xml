@@ -23,6 +23,15 @@
         <para>VMM: Support more than 1.5/2 GB guest RAM on 32-bit hosts</para>
       </listitem>
 
+      <listitem>
+        <para>Windows Additions: Support for automatic updating Guest Additions
+        (only already installed Windows Guest Additions 4.0 and later)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: Support for copying files from host to the guest</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
