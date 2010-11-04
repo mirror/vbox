@@ -71,6 +71,9 @@ private:
 
     int mLayoutPosition;
     bool mLayoutActivated;
+
+    bool m_fSupportsHWVirtEx;
+    bool m_fSupportsLongMode;
 };
 
 #endif /* __VBoxOSTypeSelectorWidget_h__ */

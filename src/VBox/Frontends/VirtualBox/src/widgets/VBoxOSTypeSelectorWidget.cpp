@@ -52,6 +52,11 @@ VBoxOSTypeSelectorWidget::VBoxOSTypeSelectorWidget (QWidget *aParent)
     mCbType->setSizePolicy (QSizePolicy::Expanding, QSizePolicy::Fixed);
     mPxTypeIcon->setFixedSize (32, 32);
 
+    /* Check if host supports (AMD-V or VT-x) and long mode */
+    CHost host = vboxGlobal().virtualBox().GetHost();
+    m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
+
     /* Fill OS family selector */
     int maximumSize = 0;
     QFontMetrics fm (mCbFamily->font());
@@ -167,17 +172,12 @@ void VBoxOSTypeSelectorWidget::onFamilyChanged (int aIndex)
     mCbType->blockSignals (true);
     mCbType->clear();
 
-    /* Check if host supports (AMD-V or VT-x) and long mode */
-    CHost host = vboxGlobal().virtualBox().GetHost();
-    bool mSupportsHWVirtEx = host.GetProcessorFeature (KProcessorFeature_HWVirtEx);
-    bool mSupportsLongMode = host.GetProcessorFeature (KProcessorFeature_LongMode);
-
     /* Populate combo-box with OS Types related to currently selected Family ID */
     QString familyId (mCbFamily->itemData (aIndex, RoleTypeID).toString());
     QList <CGuestOSType> types (vboxGlobal().vmGuestOSTypeList (familyId));
     for (int i = 0; i < types.size(); ++ i)
     {
-        if (types [i].GetIs64Bit() && (!mSupportsHWVirtEx || !mSupportsLongMode))
+        if (types [i].GetIs64Bit() && (!m_fSupportsHWVirtEx || !m_fSupportsLongMode))
             continue;
         int index = mCbType->count();
         mCbType->insertItem (index, types [i].GetDescription());
