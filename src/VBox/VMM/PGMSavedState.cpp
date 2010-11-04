@@ -2643,9 +2643,14 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                             ||  PGM_PAGE_IS_BALLOONED(pPage))
                             break;
                         AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
-                        /* Allocated before (prealloc), so free it now. */
-                        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
-                        AssertRC(rc);
+
+                        /* Free it only if it's not part of a previously allocated large page. */
+                        if (PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE)
+                        {
+                            /* Allocated before (prealloc), so free it now. */
+                            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
+                            AssertRC(rc);
+                        }
                         break;
                     }
 
