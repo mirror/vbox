@@ -1638,9 +1638,6 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     /* Apply UI decorations */
     Ui::VBoxVMSettingsHD::setupUi (this);
 
-    /* Enumerate Mediums */
-    vboxGlobal().startEnumeratingMedia();
-
     /* Initialize pixmap pool */
     PixmapPool::pool (this);
 
@@ -2055,6 +2052,9 @@ void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
 {
     if (!mIsPolished)
     {
+        /* Enumerate Mediums */
+        vboxGlobal().startEnumeratingMedia();
+
         mIsPolished = true;
 
         /* First column indent */
