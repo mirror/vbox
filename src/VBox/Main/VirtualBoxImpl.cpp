@@ -261,7 +261,7 @@ struct VirtualBox::Data
     const Utf8Str                       strSettingsFilePath;
     settings::MainConfigFile            *pMainConfigFile;
 
-    // pseudo machine ID for global media registry (recreated on every startup)
+    // constant pseudo-machine ID for global media registry
     const Guid                          uuidMediaRegistry;
 
     // const objects not requiring locking
@@ -2870,16 +2870,15 @@ HRESULT VirtualBox::findGuestOSType(const Bstr &bstrOSType,
 }
 
 /**
- * Returns the pseudo-machine UUID that is created on each VirtualBox startup
- * and that is used to identify the global media registry.
+ * Returns the constant pseudo-machine UUID that is used to identify the
+ * global media registry.
  *
  * Starting with VirtualBox 4.0 each medium remembers in its instance data
  * in which media registry it is saved (if any): this can either be a machine
  * UUID, if it's in a per-machine media registry, or this global ID.
  *
  * This UUID is only used to identify the VirtualBox object while VirtualBox
- * is running. It is not saved anywhere and thus gets recreated with every
- * VirtualBox startup.
+ * is running. It is a compile-time constant and not saved anywhere.
  *
  * @return
  */
