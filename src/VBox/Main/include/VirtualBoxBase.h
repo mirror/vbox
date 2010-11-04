@@ -264,6 +264,9 @@ public:
 /** Special version of ComAssertComRC that returns rc if rc does not succeed */
 #define ComAssertComRCRetRC(rc)             \
     do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) return (rc); } while (0)
+/** Special version of ComAssert that returns ret */
+#define ComAssertFailedRet(ret)                \
+    if (1) { ComAssertFailed(); { return (ret); } } else do {} while (0)
 
 
 /** Special version of ComAssert that evaluates eval and breaks if expr fails */
