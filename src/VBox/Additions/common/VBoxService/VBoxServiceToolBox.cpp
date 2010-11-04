@@ -139,7 +139,6 @@ int VBoxServiceToolboxCat(int argc, char **argv)
      RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
 
      int rc = VINF_SUCCESS;
-     //bool fSeenInput = false;
      RTFILE hInput = NIL_RTFILE;
      RTFILE hOutput = NIL_RTFILE;
 
@@ -151,7 +150,10 @@ int VBoxServiceToolboxCat(int argc, char **argv)
          {
              case 'o':
                  rc = RTFileOpen(&hOutput, ValueUnion.psz,
-                                 RTFILE_O_CREATE_REPLACE | RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE);
+                                 RTFILE_O_CREATE_REPLACE |
+                                 RTFILE_O_NOT_CONTENT_INDEXED | /* We don't need indexing here. */
+                                 RTFILE_O_WRITE |
+                                 RTFILE_O_DENY_WRITE);
                  if (RT_FAILURE(rc))
                      VBoxServiceError("Cat: Could not create output file \"%s\"! rc=%Rrc\n",
                                       ValueUnion.psz, rc);
@@ -160,10 +162,6 @@ int VBoxServiceToolboxCat(int argc, char **argv)
              case 'i':
              case VINF_GETOPT_NOT_OPTION:
              {
-                 /*rc = VBoxServiceToolboxCatInput(ValueUnion.psz, hOutput);
-                 if (RT_SUCCESS(rc))
-                     fSeenInput = true;*/
-
                  rc = RTFileOpen(&hInput, ValueUnion.psz,
                                  RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                  if (RT_FAILURE(rc))
@@ -177,7 +175,7 @@ int VBoxServiceToolboxCat(int argc, char **argv)
          }
      }
 
-     if (RT_SUCCESS(rc) /*&& !fSeenInput*/)
+     if (RT_SUCCESS(rc))
          rc  = VBoxServiceToolboxCatOutput(hInput, hOutput);
 
      if (hInput != NIL_RTFILE)
