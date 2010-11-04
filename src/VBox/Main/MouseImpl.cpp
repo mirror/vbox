@@ -77,6 +77,7 @@ HRESULT Mouse::FinalConstruct()
     mcLastAbsX = 0x8000;
     mcLastAbsY = 0x8000;
     mfLastButtons = 0;
+    mfVMMDevGuestCaps = 0;
     return S_OK;
 }
 
