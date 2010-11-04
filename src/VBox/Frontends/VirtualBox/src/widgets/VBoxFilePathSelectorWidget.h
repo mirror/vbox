@@ -31,7 +31,6 @@ class QILineEdit;
 
 /* Qt forward declarations */
 class QHBoxLayout;
-class QFileIconProvider;
 class QAction;
 class QPushButton;
 
@@ -110,7 +109,6 @@ private:
     QString shrinkText (int aWidth) const;
 
     /* Private member vars */
-    QFileIconProvider *mIconProvider;
     QAction *mCopyAction;
     Mode mMode;
     QString mPath;

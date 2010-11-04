@@ -27,7 +27,6 @@
 #include <QProcess>
 #include <QEventLoop>
 #include <QApplication>
-#include <QFileIconProvider>
 #include <QDir>
 #include <QUrl>
 #include <QMenu>
@@ -185,7 +184,6 @@ bool QIMainDialog::event (QEvent *aEvent)
                       action->setIcon (windowIcon());
                       /* Create some nice looking menu out of the other
                        * directory parts. */
-                      QFileIconProvider fip;
                       QDir dir (fi.absolutePath());
                       do
                       {
@@ -193,7 +191,7 @@ bool QIMainDialog::event (QEvent *aEvent)
                               action = menu.addAction ("/");
                           else
                               action = menu.addAction (dir.dirName());
-                          action->setIcon (fip.icon (QFileInfo (dir, "")));
+                          action->setIcon (vboxGlobal().icon(QFileInfo (dir, "")));
                       }
                       while (dir.cdUp());
                       /* Show the menu */
