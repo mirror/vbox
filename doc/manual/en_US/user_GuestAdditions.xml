@@ -205,11 +205,15 @@
         <title>Installation</title>
 
         <para>In the "Devices" menu in the virtual machine's menu bar,
-        VirtualBox has a handy menu item named "Install guest additions",
-        which mounts the Guest Additions ISO file inside your virtual machine.
-        A Windows guest should then automatically start the Guest Additions
-        installer, which installs the Guest Additions into your Windows
-        guest.</para>
+        VirtualBox has a handy menu item named "Install Guest Additions",
+        which either allows to upgrade already installed Guest Additions
+        (only Windows Guest Additions 4.0 and later) automatically or
+        mounts the Guest Additions ISO file inside your virtual machine
+        to perform a manual update.</para>
+
+        <para>In case of a manual update, a Windows guest should then
+        automatically start the Guest Additions installer, which allows to
+        install the Guest Additions into your Windows guest.</para>
 
         <note>
           <para>For Direct 3D acceleration to work in a Windows Guest, you
@@ -1412,8 +1416,13 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     <para>This feature can be used to automate deployment of software within
     the guest.</para>
 
-    <para>To use this feature, use the VirtualBox command line. See <xref
-    linkend="vboxmanage-guestcontrol" /> for details.</para>
+    <para>Starting with version 4.0, the Guest Additions for Windows
+    allow for automatic updating (only already installed Guest Additions 4.0
+    or later).</para>
+
+    <para>To use these feature, use the VirtualBox command line or the GUI. See
+    <xref linkend="mountingadditionsiso" /> or <xref linkend="vboxmanage-guestcontrol" />
+    for details.</para>
   </sect1>
 
   <sect1 id="guestadd-balloon">
