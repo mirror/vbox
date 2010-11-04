@@ -124,10 +124,10 @@ extern "C" {
 #define CODEC_F00_09_CAP_LSB                RT_BIT(0)
 
 /* Supported PCM size, rates (7.3.4.7) */
-#define CODEC_F00_0A_32_BIT             RT_BIT(20)
-#define CODEC_F00_0A_24_BIT             RT_BIT(19)
-#define CODEC_F00_0A_16_BIT             RT_BIT(18)
-#define CODEC_F00_0A_8_BIT              RT_BIT(17)
+#define CODEC_F00_0A_32_BIT             RT_BIT(19)
+#define CODEC_F00_0A_24_BIT             RT_BIT(18)
+#define CODEC_F00_0A_16_BIT             RT_BIT(17)
+#define CODEC_F00_0A_8_BIT              RT_BIT(16)
 
 #define CODEC_F00_0A_48KHZ_MULT_8X      RT_BIT(11)
 #define CODEC_F00_0A_48KHZ_MULT_4X      RT_BIT(10)
@@ -2167,16 +2167,6 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
     *pfn = codecUnimplemented;
     LogRel(("HDAcodec: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
     return rc;
-}
-
-static int codec_dac_to_aud(CODECState *pState, audsettings_t *paud)
-{
-    paud->freq = 44100;
-    paud->nchannels = 2;
-    paud->fmt = AUD_FMT_S16;
-
-    paud->endianness = 0;
-    return VINF_SUCCESS;
 }
 
 static void pi_callback (void *opaque, int avail)
