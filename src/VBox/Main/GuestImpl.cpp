@@ -235,6 +235,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 if (aTask->progress)
                     aTask->progress->SetCurrentOperationProgress(15);
 
+                LogRel(("Automatic update of Guest Additions started\n"));
+
                 /* Prepare command line args. */
                 com::SafeArray<IN_BSTR> args;
                 com::SafeArray<IN_BSTR> env;
@@ -284,6 +286,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                     }
                     else
                     {
+                        LogRel(("Copying Guest Additions installer to guest ...\n"));
+
                         if (aTask->progress)
                             aTask->progress->SetCurrentOperationProgress(20);
 
@@ -386,7 +390,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                     &uPID, progressInstaller.asOutParam(), &vrc);
                 if (SUCCEEDED(rc))
                 {
-                    /* Nothing yet. */
+                    LogRel(("Executing Guest Additions update ...\n"));
                 }
             }
         }
