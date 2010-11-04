@@ -2234,20 +2234,20 @@ static DECLCALLBACK(int) vmmdevQueryMouseCapabilities(PPDMIVMMDEVPORT pInterface
  * @returns VBox status code
  * @param   capabilities  Capability mask
  */
-static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCaps)
+static DECLCALLBACK(int) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAdded, uint32_t fCapsRemoved)
 {
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
-    bool fNotify = (   (fCaps & VMMDEV_MOUSE_NOTIFY_GUEST_MASK)
-                    != (pThis->mouseCapabilities & VMMDEV_MOUSE_NOTIFY_GUEST_MASK));
-
-    LogRelFlowFunc(("fCaps=0x%x, fNotify %s\n", fCaps,
-                    fNotify ? "TRUE" : "FALSE"));
-
-    pThis->mouseCapabilities &=   ~VMMDEV_MOUSE_HOST_MASK
+    uint32_t fOldCaps = pThis->mouseCapabilities;
+    pThis->mouseCapabilities &= ~(fCapsRemoved & VMMDEV_MOUSE_HOST_MASK);
+    pThis->mouseCapabilities |=   (fCapsAdded & VMMDEV_MOUSE_HOST_MASK)
                                 | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
-    pThis->mouseCapabilities |= (fCaps & VMMDEV_MOUSE_HOST_MASK);
+    bool fNotify = fOldCaps != pThis->mouseCapabilities;
+
+    LogRelFlowFunc(("fCapsAdded=0x%x, fCapsRemoved=0x%x, fNotify %s\n",
+                    fCapsAdded, fCapsRemoved, fNotify ? "TRUE" : "FALSE"));
+
     if (fNotify)
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
 
@@ -2894,30 +2894,30 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Interfaces
      */
     /* IBase */
-    pThis->IBase.pfnQueryInterface         = vmmdevPortQueryInterface;
+    pThis->IBase.pfnQueryInterface          = vmmdevPortQueryInterface;
 
     /* VMMDev port */
-    pThis->IPort.pfnQueryAbsoluteMouse     = vmmdevQueryAbsoluteMouse;
-    pThis->IPort.pfnSetAbsoluteMouse       = vmmdevSetAbsoluteMouse;
-    pThis->IPort.pfnQueryMouseCapabilities = vmmdevQueryMouseCapabilities;
-    pThis->IPort.pfnSetMouseCapabilities   = vmmdevSetMouseCapabilities;
-    pThis->IPort.pfnRequestDisplayChange   = vmmdevRequestDisplayChange;
-    pThis->IPort.pfnSetCredentials         = vmmdevSetCredentials;
-    pThis->IPort.pfnVBVAChange             = vmmdevVBVAChange;
-    pThis->IPort.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
-    pThis->IPort.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
-    pThis->IPort.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
-    pThis->IPort.pfnVRDPChange             = vmmdevVRDPChange;
-    pThis->IPort.pfnCpuHotUnplug           = vmmdevCpuHotUnplug;
-    pThis->IPort.pfnCpuHotPlug             = vmmdevCpuHotPlug;
+    pThis->IPort.pfnQueryAbsoluteMouse      = vmmdevQueryAbsoluteMouse;
+    pThis->IPort.pfnSetAbsoluteMouse        = vmmdevSetAbsoluteMouse;
+    pThis->IPort.pfnQueryMouseCapabilities  = vmmdevQueryMouseCapabilities;
+    pThis->IPort.pfnUpdateMouseCapabilities = vmmdevUpdateMouseCapabilities;
+    pThis->IPort.pfnRequestDisplayChange    = vmmdevRequestDisplayChange;
+    pThis->IPort.pfnSetCredentials          = vmmdevSetCredentials;
+    pThis->IPort.pfnVBVAChange              = vmmdevVBVAChange;
+    pThis->IPort.pfnRequestSeamlessChange   = vmmdevRequestSeamlessChange;
+    pThis->IPort.pfnSetMemoryBalloon        = vmmdevSetMemoryBalloon;
+    pThis->IPort.pfnSetStatisticsInterval   = vmmdevSetStatisticsInterval;
+    pThis->IPort.pfnVRDPChange              = vmmdevVRDPChange;
+    pThis->IPort.pfnCpuHotUnplug            = vmmdevCpuHotUnplug;
+    pThis->IPort.pfnCpuHotPlug              = vmmdevCpuHotPlug;
 
     /* Shared folder LED */
-    pThis->SharedFolders.Led.u32Magic      = PDMLED_MAGIC;
+    pThis->SharedFolders.Led.u32Magic       = PDMLED_MAGIC;
     pThis->SharedFolders.ILeds.pfnQueryStatusLed = vmmdevQueryStatusLed;
 
 #ifdef VBOX_WITH_HGCM
     /* HGCM port */
-    pThis->IHGCMPort.pfnCompleted          = hgcmCompleted;
+    pThis->IHGCMPort.pfnCompleted           = hgcmCompleted;
 #endif
 
     pThis->pCredentials = (VMMDEVCREDS *)RTMemAllocZ(sizeof(*pThis->pCredentials));

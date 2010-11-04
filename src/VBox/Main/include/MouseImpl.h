@@ -81,17 +81,10 @@ public:
         return mParent;
     }
 
-    /** notify the front-end that the guest now supports absolute reporting */
-    void onVMMDevCanAbsChange(bool)
+    /** notify the front-end of guest capability changes */
+    void onVMMDevGuestCapsChange(uint32_t fCaps)
     {
-        sendMouseCapsNotifications();
-    }
-
-    /** notify the front-end as to whether the guest can start drawing its own
-     * cursor on demand */
-    void onVMMDevNeedsHostChange(bool needsHost)
-    {
-        mfVMMDevNeedsHostCursor = needsHost;
+        mfVMMDevGuestCaps = fCaps;
         sendMouseCapsNotifications();
     }
 
@@ -102,8 +95,7 @@ private:
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
-    HRESULT getVMMDevMouseCaps(uint32_t *pfCaps);
-    HRESULT setVMMDevMouseCaps(uint32_t fCaps);
+    HRESULT updateVMMDevMouseCaps(uint32_t fCapsAdded, uint32_t fCapsRemoved);
     HRESULT reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                                  int32_t dw, uint32_t fButtons);
     HRESULT reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
@@ -114,7 +106,13 @@ private:
                            bool fUsesVMMDevEvent);
     HRESULT convertDisplayRes(LONG x, LONG y, uint32_t *pcX, uint32_t *pcY);
 
+    void getDeviceCaps(bool *pfAbs, bool *pfRel);
     void sendMouseCapsNotifications(void);
+    bool guestNeedsHostCursor(void);
+    bool vmmdevCanAbs(void);
+    bool deviceCanAbs(void);
+    bool supportsAbs(void);
+    bool supportsRel(void);
 
 #ifdef VBOXBFE_WITHOUT_COM
     Console *mParent;
@@ -124,12 +122,10 @@ private:
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];
 
-    LONG mfHostCaps;
-    bool mfVMMDevCanAbs;
-    bool mfVMMDevNeedsHostCursor;
-    uint32_t mLastAbsX;
-    uint32_t mLastAbsY;
-    uint32_t mLastButtons;
+    uint32_t mfVMMDevGuestCaps;  /** We cache this to avoid access races */
+    uint32_t mcLastAbsX;
+    uint32_t mcLastAbsY;
+    uint32_t mfLastButtons;
 
 #ifndef VBOXBFE_WITHOUT_COM
     const ComObjPtr<EventSource> mEventSource;

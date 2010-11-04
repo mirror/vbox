@@ -1953,9 +1953,10 @@ typedef struct PDMIVMMDEVPORT
      * Set the current mouse capability flag (host side)
      *
      * @returns VBox status code
-     * @param   capabilities  Capability mask
+     * @param   fCapsAdded    Mask of capabilities to add to the flag
+     * @param   fCapsRemoved  Mask of capabilities to remove from the flag
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetMouseCapabilities,(PPDMIVMMDEVPORT pInterface, uint32_t capabilities));
+    DECLR3CALLBACKMEMBER(int, pfnUpdateMouseCapabilities,(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAdded, uint32_t fCapsremoved));
 
     /**
      * Issue a display resolution change request.
