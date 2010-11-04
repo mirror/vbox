@@ -143,9 +143,9 @@ extern bool g_fDetailedProgress;        // in VBoxManage.cpp
 
 /* VBoxManageHelp.cpp */
 void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm);
-int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...);
-int errorGetOpt(USAGECATEGORY u64Cmd, int rc, union RTGETOPTUNION const *pValueUnion);
-int errorArgument(const char *pszFormat, ...);
+RTEXITCODE errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...);
+RTEXITCODE errorGetOpt(USAGECATEGORY u64Cmd, int rc, union RTGETOPTUNION const *pValueUnion);
+RTEXITCODE errorArgument(const char *pszFormat, ...);
 
 void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm);
 
@@ -210,12 +210,13 @@ int handleSetProperty(HandlerArg *a);
 int handleSharedFolder(HandlerArg *a);
 int handleVMStatistics(HandlerArg *a);
 int handleVRDE(HandlerArg *a);
+int handleExtPack(HandlerArg *a);
 
 /* VBoxManageDisk.cpp */
 int handleCreateHardDisk(HandlerArg *a);
 int handleModifyHardDisk(HandlerArg *a);
 int handleCloneHardDisk(HandlerArg *a);
-int handleConvertFromRaw(int argc, char *argv[]);
+RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
 int handleAddiSCSIDisk(HandlerArg *a);
 int handleShowHardDiskInfo(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);

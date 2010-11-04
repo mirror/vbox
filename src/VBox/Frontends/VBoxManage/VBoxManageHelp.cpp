@@ -730,8 +730,9 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 
 /**
  * Print a usage synopsis and the syntax error message.
+ * @returns RTEXITCODE_SYNTAX.
  */
-int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
+RTEXITCODE errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
 {
     va_list args;
     showLogo(g_pStdErr); // show logo even if suppressed
@@ -744,19 +745,19 @@ int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
     va_start(args, pszFormat);
     RTStrmPrintf(g_pStdErr, "\nSyntax error: %N\n", pszFormat, &args);
     va_end(args);
-    return 1;
+    return RTEXITCODE_SYNTAX;
 }
 
 /**
  * errorSyntax for RTGetOpt users.
  *
- * @returns 1.
+ * @returns RTEXITCODE_SYNTAX.
  *
  * @param   fUsageCategory  The usage category of the command.
  * @param   rc              The RTGetOpt return code.
  * @param   pValueUnion     The value union.
  */
-int errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const *pValueUnion)
+RTEXITCODE errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const *pValueUnion)
 {
     showLogo(g_pStdErr); // show logo even if suppressed
 #ifndef VBOX_ONLY_DOCS
@@ -767,28 +768,30 @@ int errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const 
 #endif /* !VBOX_ONLY_DOCS */
 
     if (rc == VINF_GETOPT_NOT_OPTION)
-        return RTMsgError("Invalid parameter '%s'", pValueUnion->psz);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid parameter '%s'", pValueUnion->psz);
     if (rc > 0)
     {
         if (RT_C_IS_PRINT(rc))
-            return RTMsgError("Invalid option -%c", rc);
-        return RTMsgError("Invalid option case %i", rc);
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid option -%c", rc);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Invalid option case %i", rc);
     }
     if (rc == VERR_GETOPT_UNKNOWN_OPTION)
-        return RTMsgError("Unknown option: %s", pValueUnion->psz);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown option: %s", pValueUnion->psz);
     if (pValueUnion->pDef)
-        return RTMsgError("%s: %Rrs", pValueUnion->pDef->pszLong, rc);
-    return RTMsgError("%Rrs", rc);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%s: %Rrs", pValueUnion->pDef->pszLong, rc);
+    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "%Rrs", rc);
 }
 
 /**
  * Print an error message without the syntax stuff.
+ *
+ * @returns RTEXITCODE_SYNTAX.
  */
-int errorArgument(const char *pszFormat, ...)
+RTEXITCODE errorArgument(const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
     RTMsgErrorV(pszFormat, args);
     va_end(args);
-    return 1;
+    return RTEXITCODE_SYNTAX;
 }
