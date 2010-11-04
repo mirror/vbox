@@ -190,9 +190,7 @@ void ErrorInfo::init(IUnknown *aI,
                      const GUID &aIID,
                      bool aKeepObj /* = false */)
 {
-    Assert(aI);
-    if (!aI)
-        return;
+    AssertReturnVoid(aI);
 
 #if !defined(VBOX_WITH_XPCOM)
 
