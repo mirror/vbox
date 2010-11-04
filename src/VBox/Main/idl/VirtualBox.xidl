@@ -7694,7 +7694,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="5a4f265c-0c0e-495a-8ff6-7d68682e276b"
+     uuid="ded6983f-5c81-4bf9-90af-73f65fd9b728"
      wsmap="managed"
      >
     <desc>
@@ -7973,7 +7973,8 @@
       </param>
       <param name="flags" type="unsigned long" dir="out">
         <desc>
-          Additional flags of process status (not used at the moment).
+          Additional flags of process status. Not used at the moment and
+          must be set to 0.
         </desc>
       </param>
       <param name="reason" type="unsigned long" dir="return">
@@ -8068,6 +8069,12 @@
       <param name="source" type="wstring" dir="in">
         <desc>
           Path to the Guest Additions .ISO file to use for the upate.
+        </desc>
+      </param>
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>
+          Additional flags for update process. Not used at the moment and
+          must be set to 0.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">

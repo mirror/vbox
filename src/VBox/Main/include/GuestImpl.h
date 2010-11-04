@@ -104,7 +104,7 @@ public:
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
-    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, IProgress **aProgress);
+    STDMETHOD(UpdateGuestAdditions)(IN_BSTR aSource, ULONG aFlags, IProgress **aProgress);
 
     // Public methods that are not in IDL (only called internally).
     HRESULT executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,

@@ -1297,6 +1297,7 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
 
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(guest, UpdateGuestAdditions(Bstr(Utf8Source).raw(),
+                                                      0 /* Flags, not used. */,
                                                       progress.asOutParam()));
         rc = showProgress(progress);
         if (FAILED(rc))
