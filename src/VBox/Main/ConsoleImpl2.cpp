@@ -108,6 +108,9 @@
 
 #include "DHCPServerRunner.h"
 #include "BusAssignmentManager.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
+#endif
 
 #if defined(RT_OS_DARWIN)
 
@@ -2474,13 +2477,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
 #undef H
 
-    /* Register VM state change handler */
+#ifdef VBOX_WITH_EXTPACK
+    /*
+     * Call the extension pack hooks if everything went well thus far.
+     */
+    if (RT_SUCCESS(rc))
+        rc = pConsole->mptrExtPackManager->callAllVmConfigureVmmHooks(pConsole, pVM);
+#endif
+
+    /*
+     * Register VM state change handler.
+     */
     int rc2 = VMR3AtStateRegister(pVM, Console::vmstateChangeCallback, pConsole);
     AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-    /* Register VM runtime error handler */
+    /*
+     * Register VM runtime error handler.
+     */
     rc2 = VMR3AtRuntimeErrorRegister(pVM, Console::setVMRuntimeErrorCallback, pConsole);
     AssertRC(rc2);
     if (RT_SUCCESS(rc))
@@ -3792,7 +3807,7 @@ int Console::configNetwork(const char *pszDevice,
                     else
                     {
                         int winEr = GetLastError();
-                        LogRel(("Console::configConstructor: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
+                        LogRel(("Console::configNetwork: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
                         Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
                     }
                     CloseHandle(hDevice);
@@ -3809,7 +3824,7 @@ int Console::configNetwork(const char *pszDevice,
                 else
                 {
                     int winEr = GetLastError();
-                    AssertLogRelMsgFailed(("Console::configConstructor: CreateFile failed, err (0x%x), ignoring\n", winEr));
+                    AssertLogRelMsgFailed(("Console::configNetwork: CreateFile failed, err (0x%x), ignoring\n", winEr));
                 }
 
                 CoTaskMemFree(pswzBindName);

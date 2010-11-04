@@ -727,7 +727,7 @@ endif # !VBOX_ONLY_SDK (the ifndef is far above)
 #
 # The VBoxExtPackHelperApp.
 #
-if 0 # def VBOX_WITH_EXTPACK
+ifeq ($(LOGNAME),bird) # def VBOX_WITH_EXTPACK
  PROGRAMS += VBoxExtPackHelperApp
  VBoxExtPackHelperApp_TEMPLATE = VBoxR3Static
  VBoxExtPackHelperApp_SOURCES = VBoxExtPackHelperApp.cpp
