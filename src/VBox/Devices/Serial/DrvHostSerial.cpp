@@ -248,7 +248,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
     /* Enable receiver */
     termiosSetup->c_cflag |= (CLOCAL | CREAD);
 
-    switch (Bps) {
+    switch (Bps)
+    {
         case 50:
             baud_rate = B50;
             break;
@@ -323,7 +324,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
     cfsetispeed(termiosSetup, baud_rate);
     cfsetospeed(termiosSetup, baud_rate);
 
-    switch (chParity) {
+    switch (chParity)
+    {
         case 'E':
             termiosSetup->c_cflag |= PARENB;
             break;
@@ -336,7 +338,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
             break;
     }
 
-    switch (cDataBits) {
+    switch (cDataBits)
+    {
         case 5:
             termiosSetup->c_cflag |= CS5;
             break;
@@ -353,7 +356,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
             break;
     }
 
-    switch (cStopBits) {
+    switch (cStopBits)
+    {
         case 2:
             termiosSetup->c_cflag |= CSTOPB;
         default:
@@ -370,7 +374,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
 
     comSetup->DCBlength = sizeof(DCB);
 
-    switch (Bps) {
+    switch (Bps)
+    {
         case 110:
             comSetup->BaudRate = CBR_110;
             break;
@@ -428,7 +433,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
     comSetup->XoffLim = 5;
     comSetup->ByteSize = cDataBits;
 
-    switch (chParity) {
+    switch (chParity)
+    {
         case 'E':
             comSetup->Parity = EVENPARITY;
             break;
@@ -442,7 +448,8 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
             break;
     }
 
-    switch (cStopBits) {
+    switch (cStopBits)
+    {
         case 1:
             comSetup->StopBits = ONESTOPBIT;
             break;
@@ -518,10 +525,10 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
             ASMAtomicWriteU32(&pThis->iSendQueueTail, iTail);
 
             /* write it. */
-# ifdef DEBUG
+#ifdef DEBUG
             uint64_t volatile u64Now = RTTimeNanoTS(); NOREF(u64Now);
-# endif
-# if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+#endif
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
             size_t cbWritten;
             rc = RTFileWrite(pThis->DeviceFile, abBuf, cb, &cbWritten);
@@ -560,7 +567,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 } /* wait/write loop */
             }
 
-# elif defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_WINDOWS)
             /* perform an overlapped write operation. */
             DWORD cbWritten;
             memset(&pThis->overlappedSend, 0, sizeof(pThis->overlappedSend));
@@ -584,7 +591,7 @@ static DECLCALLBACK(int) drvHostSerialSendThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                     rc = RTErrConvertFromWin32(dwRet);
             }
 
-# endif /* RT_OS_WINDOWS */
+#endif /* RT_OS_WINDOWS */
             if (RT_FAILURE(rc))
             {
                 LogRel(("HostSerial#%d: Serial Write failed with %Rrc; terminating send thread\n", pDrvIns->iInstance, rc));
@@ -1113,6 +1120,7 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHARCONNECTOR pInterfac
 
     if (modemStateClear)
         ioctl(pThis->DeviceFile, TIOCMBIC, &modemStateClear);
+
 #elif defined(RT_OS_WINDOWS)
     if (RequestToSend)
         EscapeCommFunction(pThis->hDeviceFile, SETRTS);
@@ -1123,6 +1131,7 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHARCONNECTOR pInterfac
         EscapeCommFunction(pThis->hDeviceFile, SETDTR);
     else
         EscapeCommFunction(pThis->hDeviceFile, CLRDTR);
+
 #endif
 
     return VINF_SUCCESS;
