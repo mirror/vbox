@@ -629,29 +629,21 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const c
 
     int rc = VINF_SUCCESS;
     char szCurDir[RTPATH_MAX];
+    /* Construct current path. */
     if (RTStrPrintf(szCurDir, sizeof(szCurDir), pszRootDir))
     {
         if (pszSubDir != NULL)
             rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
-        if (RT_SUCCESS(rc) && pszFilter != NULL)
-            rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszFilter);
     }
     else
         rc = VERR_NO_MEMORY;
 
-    if (pszFilter)
-        rc = RTDirOpenFiltered(&pDir, szCurDir,
-#ifdef RT_OS_WINDOWS
-                               RTDIRFILTER_WINNT);
-#else
-                               RTDIRFILTER_UNIX);
-#endif
-    else
-        rc = RTDirOpen(&pDir, szCurDir);
-
     if (RT_SUCCESS(rc))
     {
-        for (;;)
+        /* Open directory without a filter - RTDirOpenFiltered unfortunately
+         * cannot handle sub directories so we have to do the filtering ourselves. */
+        rc = RTDirOpen(&pDir, szCurDir);
+        for (;RT_SUCCESS(rc);)
         {
             RTDIRENTRY DirEntry;
             rc = RTDirRead(pDir, &DirEntry, NULL);
@@ -691,35 +683,44 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const c
 
                 case RTDIRENTRYTYPE_FILE:
                 {
-                    char *pszFileSource = NULL;
-                    char *pszFileDest = NULL;
-                    if (RTStrAPrintf(&pszFileSource, "%s%s%s",
-                                     pszRootDir, pszSubDir ? pszSubDir : "",
-                                     DirEntry.szName) >= 0)
+                    bool fProcess = false;
+                    if (pszFilter && RTStrSimplePatternMatch(pszFilter, DirEntry.szName))
+                        fProcess = true;
+                    else if (!pszFilter)
+                        fProcess = true;
+
+                    if (fProcess)
                     {
-                        if (RTStrAPrintf(&pszFileDest, "%s%s",
-                                         pszSubDir ? pszSubDir : "",
-                                         DirEntry.szName) <= 0)
+                        char *pszFileSource = NULL;
+                        char *pszFileDest = NULL;
+                        if (RTStrAPrintf(&pszFileSource, "%s%s%s",
+                                         pszRootDir, pszSubDir ? pszSubDir : "",
+                                         DirEntry.szName) >= 0)
                         {
-                            rc = VERR_NO_MEMORY;
+                            if (RTStrAPrintf(&pszFileDest, "%s%s",
+                                             pszSubDir ? pszSubDir : "",
+                                             DirEntry.szName) <= 0)
+                            {
+                                rc = VERR_NO_MEMORY;
+                            }
                         }
-                    }
-                    else
-                        rc = VERR_NO_MEMORY;
+                        else
+                            rc = VERR_NO_MEMORY;
 
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = ctrlCopyDirectoryEntryAppend(pszFileSource, pszFileDest, pList);
                         if (RT_SUCCESS(rc))
-                            *pcObjects = *pcObjects + 1;
-                    }
+                        {
+                            rc = ctrlCopyDirectoryEntryAppend(pszFileSource, pszFileDest, pList);
+                            if (RT_SUCCESS(rc))
+                                *pcObjects = *pcObjects + 1;
+                        }
 
-                    if (pszFileSource)
-                        RTStrFree(pszFileSource);
-                    if (pszFileDest)
-                        RTStrFree(pszFileDest);
-                    break;
+                        if (pszFileSource)
+                            RTStrFree(pszFileSource);
+                        if (pszFileDest)
+                            RTStrFree(pszFileDest);
+                    }
                 }
+                break;
 
                 case RTDIRENTRYTYPE_SYMLINK:
                     if (   (uFlags & CopyFileFlag_Recursive)
