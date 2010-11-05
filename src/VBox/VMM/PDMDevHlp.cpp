@@ -597,6 +597,49 @@ static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_TMUtcNow(PPDMDEVINS pDevIns, PRTTIM
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnTMTimeVirtGet} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGet(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGet: caller='%s'\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint64_t u64Time = TMVirtualSyncGet(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGet: caller='%s'/%d: returns %RU64\n", pDevIns->pReg->szName, pDevIns->iInstance, u64Time));
+    return u64Time;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTMTimeVirtGetFreq} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetFreq(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGetFreq: caller='%s'\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint64_t u64Freq = TMVirtualGetFreq(pDevIns->Internal.s.pVMR3);
+
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGetFreq: caller='%s'/%d: returns %RU64\n", pDevIns->pReg->szName, pDevIns->iInstance, u64Freq));
+    return u64Freq;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTMTimeVirtGetNano} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGetNano: caller='%s'\n",
+             pDevIns->pReg->szName, pDevIns->iInstance));
+
+    uint64_t u64Time = TMVirtualSyncGet(pDevIns->Internal.s.pVMR3);
+    uint64_t u64Nano = TMVirtualToNano(pDevIns->Internal.s.pVMR3, u64Time);
+
+    LogFlow(("pdmR3DevHlp_TMTimeVirtGetNano: caller='%s'/%d: returns %RU64\n", pDevIns->pReg->szName, pDevIns->iInstance, u64Nano));
+    return u64Nano;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
@@ -3146,6 +3189,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_A20IsEnabled,
     pdmR3DevHlp_A20Set,
     pdmR3DevHlp_GetCpuId,
+    pdmR3DevHlp_TMTimeVirtGet,
+    pdmR3DevHlp_TMTimeVirtGetFreq,
+    pdmR3DevHlp_TMTimeVirtGetNano,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
@@ -3353,6 +3399,9 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_A20IsEnabled,
     pdmR3DevHlp_Untrusted_A20Set,
     pdmR3DevHlp_Untrusted_GetCpuId,
+    pdmR3DevHlp_TMTimeVirtGet,
+    pdmR3DevHlp_TMTimeVirtGetFreq,
+    pdmR3DevHlp_TMTimeVirtGetNano,
     PDM_DEVHLPR3_VERSION /* the end */
 };
 
