@@ -27,7 +27,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP RTLOGGROUP_DEFAULT
+#define LOG_GROUP RTLOGGROUP_SYSTEM
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
@@ -43,10 +43,121 @@
 #include <iprt/critsect.h>
 
 
+/**
+ * Internal worker that determines the max possible CPU count.
+ *
+ * @returns Max cpus.
+ */
+static RTCPUID rtMpFreeBsdMaxCpus(void)
+{
+    int aiMib[2];
+    aiMib[0] = CTL_HW;
+    aiMib[1] = HW_NCPU;
+    int cCpus = -1;
+    size_t cb = sizeof(cCpus);
+    int rc = sysctl(aiMib, RT_ELEMENTS(aiMib), &cCpus, &cb, NULL, 0);
+    if (rc != -1 && cCpus >= 1)
+        return cCpus;
+    AssertFailed();
+    return 1;
+}
+
+
+RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
+{
+    return idCpu < rtMpFreeBsdMaxCpus() ? idCpu : -1;
+}
+
+
+RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
+{
+    return (unsigned)iCpu < rtMpFreeBsdMaxCpus() ? iCpu : NIL_RTCPUID;
+}
+
+
+RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
+{
+    return rtMpFreeBsdMaxCpus() - 1;
+}
+
+
+RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
+{
+    int rc = VINF_SUCCESS;
+    char szName[32];
+    char szDriver[10];
+    size_t cbDriver = sizeof(szDriver);
+
+    /*
+     * FreeBSD doesn't support CPU hotplugging
+     * so every CPU which appears in the tree is also online.
+     */
+    memset(szDriver, 0, sizeof(szDriver));
+    memset(szName, 0, sizeof(szName));
+
+    rc = RTStrPrintf(szName, sizeof(szName), "dev.cpu.%d.%%driver", (int)idCpu);
+    if (RT_SUCCESS(rc))
+    {
+        int rcBsd = sysctlbyname(szName, szDriver, &cbDriver, NULL, NULL);
+        if (rcBsd == 0)
+            return true;
+    }
+
+    return false;
+}
+
+
+RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
+{
+    return idCpu != NIL_RTCPUID
+        && idCpu < rtMpFreeBsdMaxCpus();
+}
+
+
+RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
+{
+    RTCpuSetEmpty(pSet);
+    RTCPUID cMax = rtMpFreeBsdMaxCpus();
+    for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
+        if (RTMpIsCpuPossible(idCpu))
+            RTCpuSetAdd(pSet, idCpu);
+    return pSet;
+}
+
+
+RTDECL(RTCPUID) RTMpGetCount(void)
+{
+    return rtMpFreeBsdMaxCpus();
+}
+
+
+RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
+{
+    RTCpuSetEmpty(pSet);
+    RTCPUID cMax = rtMpFreeBsdMaxCpus();
+    for (RTCPUID idCpu = 0; idCpu < cMax; idCpu++)
+        if (RTMpIsCpuOnline(idCpu))
+            RTCpuSetAdd(pSet, idCpu);
+    return pSet;
+}
+
+
+RTDECL(RTCPUID) RTMpGetOnlineCount(void)
+{
+    /*
+     * FreeBSD has sysconf.
+     */
+    return sysconf(_SC_NPROCESSORS_ONLN);
+}
+
+
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 {
     int uFreqCurr = 0;
     size_t cbParameter = sizeof(uFreqCurr);
+
+    if (!RTMpIsCpuOnline(idCpu))
+        return 0;
 
     /* CPU's have a common frequency. */
     int rc = sysctlbyname("dev.cpu.0.freq", &uFreqCurr, &cbParameter, NULL, NULL);
@@ -61,6 +172,9 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 {
     char szFreqLevels[20]; /* Should be enough to get the highest level which is always the first. */
     size_t cbFreqLevels = sizeof(szFreqLevels);
+
+    if (!RTMpIsCpuOnline(idCpu))
+        return 0;
 
     memset(szFreqLevels, 0, sizeof(szFreqLevels));
 
@@ -88,13 +202,5 @@ RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu)
 
     /* Returns 0 on failure. */
     return RTStrToUInt32(szFreqLevels);
-}
-
-RTDECL(RTCPUID) RTMpGetOnlineCount(void)
-{
-    /*
-     * FreeBSD has sysconf.
-     */
-    return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
