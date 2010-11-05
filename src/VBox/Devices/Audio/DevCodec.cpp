@@ -317,6 +317,13 @@ extern "C" {
 #define CODEC_DEFAULT_CONF_SEQ_MASK                  (0xF)
 #define CODEC_DEFAULT_CONF_SEQ_SHIFT                 (0)
 
+/* Implementation identification (7.3.3.30) */
+#define CODEC_MAKE_F20(bmid, bsku, aid)     \
+    (  (((bmid) & 0xFFFF) << 16)            \
+     | (((bsku) & 0xFF) << 8)               \
+     | (((aid) & 0xFF))                     \
+    )
+
 /* macro definition helping in filling the configuration registers. */
 #define CODEC_MAKE_U32_DEFAULT_CONF(port_connectivity, location, device, connection_type, color, misc, association, sequence)    \
     (  ((port_connectivity) << CODEC_DEFAULT_CONF_PORT_SHIFT)          \
@@ -351,6 +358,8 @@ static int stac9220Construct(CODECState *pState)
     pState->pfnCodecNodeReset = stac9220ResetNode;
     pState->u16VendorId = 0x8384;
     pState->u16DeviceId = 0x7680;
+    pState->u8BSKU = 0x76;
+    pState->u8AssemblyId = 0x80;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pState->cTotalNodes);
     pState->fInReset = false;
 #define STAC9220WIDGET(type) pState->au8##type##s = au8Stac9220##type##s
@@ -400,7 +409,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0x11] = CODEC_MAKE_F00_11(1, 1, 0, 0, 4);//0xc0000004;
             pNode->node.au32F00_param[0xF] = CODEC_F00_0F_D3|CODEC_F00_0F_D2|CODEC_F00_0F_D1|CODEC_F00_0F_D0;
             pNode->afg.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D2, CODEC_F05_D2);//0x2 << 4| 0x2; /* PS-Act: D3, PS->Set D3  */
-            pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->afg.u32F08_param = 0;
             pNode->afg.u32F17_param = 0;
             break;
@@ -772,6 +780,8 @@ static int alc885Construct(CODECState *pState)
     unconst(pState->cTotalNodes) = 0x27;
     pState->u16VendorId = 0x10ec;
     pState->u16DeviceId =  0x0885;
+    pState->u8BSKU = 0x08;
+    pState->u8AssemblyId = 0x85;
     pState->pfnCodecNodeReset = alc885ResetNode;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pState->cTotalNodes);
     pState->fInReset = false;
@@ -808,7 +818,6 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
 
             break;
         case 0x1: /* AFG */
-            pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
             pNode->node.au32F00_param[0x11] = RT_BIT(30)|0x2;
             break;
@@ -2273,6 +2282,7 @@ int codecConstruct(CODECState *pState, ENMCODEC enmCodec)
     /* common AFG node initializers */
     pState->pNodes[1].node.au32F00_param[4] = CODEC_MAKE_F00_04(0x2, pState->cTotalNodes - 2);
     pState->pNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(CODEC_F00_05_UNSOL, CODEC_F00_05_AFG);
+    pState->pNodes[1].afg.u32F20_param = CODEC_MAKE_F20(pState->u16VendorId, pState->u8BSKU, pState->u8AssemblyId);
 
     //** @todo r=michaln: Was this meant to be 'HDA' or something like that? (AC'97 was on ICH0)
     AUD_register_card ("ICH0", &pState->card);
