@@ -1500,7 +1500,7 @@ SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, cha
     /*
      * Verify that the image file and parent directories are sane.
      */
-    rc = supR3HardenedVerifyFile(szPath, NULL, pszErr, cbErr);
+    rc = supR3HardenedVerifyFile(szExecPath, RTHCUINTPTR_MAX, pszErr, cbErr);
     if (RT_FAILURE(rc))
         return rc;
 #endif
