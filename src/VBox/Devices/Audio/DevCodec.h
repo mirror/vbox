@@ -268,6 +268,8 @@ typedef struct CODECState
     uint16_t                id;
     uint16_t                u16VendorId;
     uint16_t                u16DeviceId;
+    uint8_t                 u8BSKU;
+    uint8_t                 u8AssemblyId;
     CODECVERB               *pVerbs;
     int                     cVerbs;
     PCODECNODE               pNodes;
@@ -309,7 +311,6 @@ typedef struct CODECState
     DECLR3CALLBACKMEMBER(int, pfnCodecNodeReset, (struct CODECState *pState, uint8_t, PCODECNODE));
 
 } CODECState;
-
 
 int codecConstruct(CODECState *pCodecState, ENMCODEC enmCodec);
 int codecDestruct(CODECState *pCodecState);
