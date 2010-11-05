@@ -687,9 +687,9 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const c
                                      pszRootDir, pszSubDir ? pszSubDir : "",
                                      DirEntry.szName) >= 0)
                     {
-                        if (!RTStrAPrintf(&pszFileDest, "%s%s",
-                                          pszSubDir ? pszSubDir : "",
-                                          DirEntry.szName) >= 0)
+                        if (RTStrAPrintf(&pszFileDest, "%s%s",
+                                         pszSubDir ? pszSubDir : "",
+                                         DirEntry.szName) <= 0)
                         {
                             rc = VERR_NO_MEMORY;
                         }
@@ -800,7 +800,7 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
                     rc = ctrlCopyDirectoryRead(pszSourceAbsRoot, NULL /* Sub directory */,
                                                pszFilter,
                                                uFlags, pcObjects, pList);
-                    if (*pcObjects == 0)
+                    if (RT_SUCCESS(rc) && *pcObjects == 0)
                         rc = VERR_NOT_FOUND;
                 }
 
