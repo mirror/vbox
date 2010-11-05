@@ -14,7 +14,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "ExtPackUtil.h"
+#include "include/ExtPackUtil.h"
 
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
@@ -149,19 +149,74 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
 
 
 /**
+ * Extract the extension pack name from the tarball path.
+ *
+ * @returns String containing the name on success, the caller must delete it.
+ *          NULL if no valid name was found or if we ran out of memory.
+ * @param   pszTarball          The path to the tarball.
+ */
+iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball)
+{
+    /*
+     * Skip ahead to the filename part and count the number of characters
+     * that matches the criteria for a extension pack name.
+     */
+    const char *pszSrc = RTPathFilename(pszTarball);
+    if (!pszSrc)
+        return NULL;
+
+    size_t off = 0;
+    while (RT_C_IS_ALNUM(pszSrc[off]) || pszSrc[off] == ' ')
+        off++;
+
+    /*
+     * Check min and max name limits.
+     */
+    if (   off > VBOX_EXTPACK_NAME_MIN_LEN
+        || off < VBOX_EXTPACK_NAME_MIN_LEN)
+        return NULL;
+
+    /*
+     * Make a duplicate of the name and return it.
+     */
+    iprt::MiniString *pStrRet = new iprt::MiniString(off, pszSrc);
+    Assert(VBoxExtPackIsValidName(pStrRet->c_str()));
+    return pStrRet;
+}
+
+
+/**
  * Validates the extension pack name.
  *
  * @returns true if valid, false if not.
  * @param   pszName             The name to validate.
+ * @sa      VBoxExtPackExtractNameFromTarballPath
  */
 bool VBoxExtPackIsValidName(const char *pszName)
 {
-    /* This must match the code in the extension manager. */
-    if (!pszName || *pszName == '\0')
+    if (!pszName)
         return false;
-    while (RT_C_IS_ALNUM(*pszName) || *pszName == ' ')
-        pszName++;
-    return *pszName == '\0';
+
+    /*
+     * Check the characters making up the name, only english alphabet
+     * characters, decimal digits and spaces are allowed.
+     */
+    size_t off = 0;
+    while (pszName[off])
+    {
+        if (!RT_C_IS_ALNUM(pszName[off]) && !pszName[off] == ' ')
+            return false;
+        off++;
+    }
+
+    /*
+     * Check min and max name limits.
+     */
+    if (   off > VBOX_EXTPACK_NAME_MIN_LEN
+        || off < VBOX_EXTPACK_NAME_MIN_LEN)
+        return false;
+
+    return true;
 }
 
 /**

@@ -115,7 +115,7 @@ RTDECL(bool) RTAssertShouldPanic(void)
         if (cch < sizeof(szCmd))
         {
             char *pszExecName = &szCmd[cch];
-            if (!RTProcGetExecutableName(pszExecName, sizeof(szCmd) - cch))
+            if (!RTProcGetExecutablePath(pszExecName, sizeof(szCmd) - cch))
                 *pszExecName = '\0';
         }
         const char *apszArgs[] =

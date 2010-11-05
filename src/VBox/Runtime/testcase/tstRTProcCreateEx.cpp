@@ -435,7 +435,7 @@ int main(int argc, char **argv)
         return rc;
     RTTestBanner(hTest);
 
-    if (!RTProcGetExecutableName(g_szExecName, sizeof(g_szExecName)))
+    if (!RTProcGetExecutablePath(g_szExecName, sizeof(g_szExecName)))
         RTStrCopy(g_szExecName, sizeof(g_szExecName), argv[0]);
 
     /*

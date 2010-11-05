@@ -2061,7 +2061,7 @@ VirtualBox::SVCHelperClientThread(RTTHREAD aThread, void *aUser)
 
         /* get the path to the executable */
         char exePathBuf[RTPATH_MAX];
-        char *exePath = RTProcGetExecutableName(exePathBuf, RTPATH_MAX);
+        char *exePath = RTProcGetExecutablePath(exePathBuf, RTPATH_MAX);
         if (!exePath)
         {
             rc = d->that->setError(E_FAIL, tr("Cannot get executable name"));

@@ -24,6 +24,18 @@
  * The suffix of a extension pack tarball. */
 #define VBOX_EXTPACK_SUFFIX             ".vbox-extpack"
 
+/** The minimum length (strlen) of a extension pack name. */
+#define VBOX_EXTPACK_NAME_MIN_LEN       6
+/** The max length (strlen) of a extension pack name. */
+#define VBOX_EXTPACK_NAME_MAX_LEN       64
+
+/** The architecture-dependent application data subdirectory where the
+ * extension packs are installed.  Relative to RTPathAppPrivateArch. */
+#define VBOX_EXTPACK_INSTALL_DIR        "ExtensionPacks"
+/** The architecture-independent application data subdirectory where the
+ * certificates are installed.  Relative to RTPathAppPrivateNoArch. */
+#define VBOX_EXTPACK_CERT_DIR           "Certificates"
+
 
 /**
  * Description of an extension pack.
@@ -51,6 +63,7 @@ typedef VBOXEXTPACKDESC const *PCVBOXEXTPACKDESC;
 
 
 iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
+iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
 bool    VBoxExtPackIsValidName(const char *pszName);
 bool    VBoxExtPackIsValidVersionString(const char *pszName);
 bool    VBoxExtPackIsValidMainModuleString(const char *pszMainModule);

@@ -1955,7 +1955,7 @@ static int rtCoreDumperCreateCore(PVBOXCORE pVBoxCore, ucontext_t *pContext, con
     pVBoxProc->pCurThreadCtx  = pContext;
     pVBoxProc->CoreContent    = CC_CONTENT_DEFAULT;
 
-    RTProcGetExecutableName(pVBoxProc->szExecPath, sizeof(pVBoxProc->szExecPath));  /* this gets full path not just name */
+    RTProcGetExecutablePath(pVBoxProc->szExecPath, sizeof(pVBoxProc->szExecPath));  /* this gets full path not just name */
     pVBoxProc->pszExecName = RTPathFilename(pVBoxProc->szExecPath);
 
     /*

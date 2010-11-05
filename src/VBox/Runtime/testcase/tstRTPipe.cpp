@@ -93,7 +93,7 @@ static void tstRTPipe5(void)
     RTTestISub("Inherit non-standard pipe handle, read end");
 
     char    szPathSelf[RTPATH_MAX];
-    RTTESTI_CHECK_RETV(RTProcGetExecutableName(szPathSelf, sizeof(szPathSelf)) == szPathSelf);
+    RTTESTI_CHECK_RETV(RTProcGetExecutablePath(szPathSelf, sizeof(szPathSelf)) == szPathSelf);
 
     RTPIPE  hPipeR;
     RTPIPE  hPipeW;
@@ -156,7 +156,7 @@ static void tstRTPipe4(void)
     RTTestISub("Inherit non-standard pipe handle, write end");
 
     char    szPathSelf[RTPATH_MAX];
-    RTTESTI_CHECK_RETV(RTProcGetExecutableName(szPathSelf, sizeof(szPathSelf)) == szPathSelf);
+    RTTESTI_CHECK_RETV(RTProcGetExecutablePath(szPathSelf, sizeof(szPathSelf)) == szPathSelf);
 
     RTPIPE  hPipeR;
     RTPIPE  hPipeW;

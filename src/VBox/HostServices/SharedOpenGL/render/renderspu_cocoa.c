@@ -67,7 +67,7 @@ GLboolean renderspu_SystemVBoxCreateWindow(VisualInfo *pVisInfo, GLboolean fShow
 
     /* VirtualBox is the only frontend which support 3D right now. */
     char pszName[256];
-    if (RTProcGetExecutableName(pszName, sizeof(pszName)))
+    if (RTProcGetExecutablePath(pszName, sizeof(pszName)))
         /* Check for VirtualBox and VirtualBoxVM */
         if (RTStrNICmp(RTPathFilename(pszName), "VirtualBox", 10) != 0)
             return GL_FALSE;

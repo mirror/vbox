@@ -1437,6 +1437,78 @@ SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszM
 }
 
 
+SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, char *pszErr, size_t cbErr)
+{
+    /*
+     * Quick input validation.
+     */
+    AssertPtr(pszArgv0);
+    AssertPtr(pszErr);
+    Assert(cbErr > 32);
+
+    /*
+     * Get the executable image path as we need it for all the tests here.
+     */
+    char szExecPath[RTPATH_MAX];
+    if (!RTProcGetExecutablePath(szExecPath, sizeof(szExecPath)))
+    {
+        RTStrPrintf(pszErr, cbErr, "RTProcGetExecutablePath failed");
+        return VERR_INTERNAL_ERROR_2;
+    }
+
+    int rc;
+    if (fInternal)
+    {
+        /*
+         * Internal applications must be launched directly without any PATH
+         * searching involved.
+         */
+        if (RTPathCompare(pszArgv0, szExecPath) != 0)
+        {
+            RTStrPrintf(pszErr, cbErr, "argv[0] does not match the executable image path: '%s' != '%s'", pszArgv0, szExecPath);
+            return VERR_SUPLIB_INVALID_ARGV0_INTERNAL;
+        }
+
+        /*
+         * Internal applications must reside in or under the
+         * RTPathAppPrivateArch directory.
+         */
+        char szAppPrivateArch[RTPATH_MAX];
+        rc = RTPathAppPrivateArch(szAppPrivateArch, sizeof(szAppPrivateArch));
+        if (RT_FAILURE(rc))
+        {
+            RTStrPrintf(pszErr, cbErr, "RTPathAppPrivateArch failed with rc=%Rrc", rc);
+            return VERR_SUPLIB_INVALID_ARGV0_INTERNAL;
+        }
+        size_t cchAppPrivateArch = strlen(szAppPrivateArch);
+        if (   cchAppPrivateArch >= strlen(szExecPath)
+            || !RTPATH_IS_SLASH(szExecPath[cchAppPrivateArch]))
+        {
+            RTStrPrintf(pszErr, cbErr, "Internal executable does reside under RTPathAppPrivateArch");
+            return VERR_SUPLIB_INVALID_INTERNAL_APP_DIR;
+        }
+        szExecPath[cchAppPrivateArch] = '\0';
+        if (RTPathCompare(szExecPath, szAppPrivateArch) != 0)
+        {
+            RTStrPrintf(pszErr, cbErr, "Internal executable does reside under RTPathAppPrivateArch");
+            return VERR_SUPLIB_INVALID_INTERNAL_APP_DIR;
+        }
+        szExecPath[cchAppPrivateArch] = RTPATH_SLASH;
+    }
+
+#ifdef VBOX_WITH_HARDENING
+    /*
+     * Verify that the image file and parent directories are sane.
+     */
+    rc = supR3HardenedVerifyFile(szPath, NULL, pszErr, cbErr);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+
+    return VINF_SUCCESS;
+}
+
+
 SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, bool fCheckFiles, char *pszErr, size_t cbErr)
 {
     /*
