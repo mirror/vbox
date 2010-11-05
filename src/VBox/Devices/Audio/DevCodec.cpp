@@ -167,12 +167,52 @@ extern "C" {
 #define CODEC_F00_0C_CAP_IMPENDANCE_SENSE       RT_BIT(0)
 
 /* Amplifier capabilities (7.3.4.10) */
-#define MAKE_F00_0D(mute_cap, step_size, num_steps, offset) \
-           (((mute_cap) & 0x1) << 31)                       \
-        | (((step_size) & 0xFF) << 16)                      \
-        | (((num_steps) & 0xFF) << 8)                       \
-        | ((offset) & 0xFF)
+#define CODEC_MAKE_F00_0D(mute_cap, step_size, num_steps, offset) \
+        (  (((mute_cap) & 0x1) << 31)                             \
+         | (((step_size) & 0xFF) << 16)                           \
+         | (((num_steps) & 0xFF) << 8)                            \
+         | ((offset) & 0xFF))
 
+/* Connection list lenght (7.3.4.11) */
+#define CODEC_MAKE_F00_0E(long_form, length)    \
+    (  (((long_form) & 0x1) << 7)               \
+     | ((length) & 0x7F))
+/* Supported Power States (7.3.4.12) */
+#define CODEC_F00_0F_EPSS       RT_BIT(31)
+#define CODEC_F00_0F_CLKSTOP    RT_BIT(30)
+#define CODEC_F00_0F_S3D3       RT_BIT(29)
+#define CODEC_F00_0F_D3COLD     RT_BIT(4)
+#define CODEC_F00_0F_D3         RT_BIT(3)
+#define CODEC_F00_0F_D2         RT_BIT(2)
+#define CODEC_F00_0F_D1         RT_BIT(1)
+#define CODEC_F00_0F_D0         RT_BIT(0)
+
+/* CP/IO Count (7.3.4.14) */
+#define CODEC_MAKE_F00_11(wake, unsol, numgpi, numgpo, numgpio) \
+    (  (((wake) & 0x1) << 31)                                   \
+     | (((unsol) & 0x1) << 30)                                  \
+     | (((numgpi) & 0xFF) << 16)                                \
+     | (((numgpo) & 0xFF) << 8)                                 \
+     | ((numgpio) & 0xFF))
+
+/* Power States (7.3.3.10) */
+#define CODEC_MAKE_F05(reset, stopok, error, act, set)          \
+    (   (((reset) & 0x1) << 10)                                 \
+      | (((stopok) & 0x1) << 9)                                 \
+      | (((error) & 0x1) << 8)                                  \
+      | (((act) & 0x7) << 4)                                    \
+      | ((set) & 0x7))
+#define CODEC_F05_D3COLD    (4)
+#define CODEC_F05_D3        (3)
+#define CODEC_F05_D2        (2)
+#define CODEC_F05_D1        (1)
+#define CODEC_F05_D0        (0)
+
+#define CODEC_F05_IS_RESET(value)   (((value) & RT_BIT(10)) != 0)
+#define CODEC_F05_IS_STOPOK(value)  (((value) & RT_BIT(9)) != 0)
+#define CODEC_F05_IS_ERROR(value)   (((value) & RT_BIT(8)) != 0)
+#define CODEC_F05_ACT(value)        (((value) & 0x7) >> 4)
+#define CODEC_F05_SET(value)        (((value) & 0x7))
 
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
@@ -355,11 +395,11 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//(17 << 8)|RT_BIT(6)|RT_BIT(5)|RT_BIT(2)|RT_BIT(1)|RT_BIT(0);
             pNode->node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
-            pNode->node.au32F00_param[0xD] = MAKE_F00_0D(1, 0x5, 0xE, 0);//RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
+            pNode->node.au32F00_param[0xD] = CODEC_MAKE_F00_0D(1, 0x5, 0xE, 0);//RT_BIT(31)|(0x5 << 16)|(0xE)<<8;
             pNode->node.au32F00_param[0x12] = RT_BIT(31)|(0x2 << 16)|(0x7f << 8)|0x7f;
-            pNode->node.au32F00_param[0x11] = 0xc0000004;
-            pNode->node.au32F00_param[0xF] = 0xF;
-            pNode->afg.u32F05_param = 0x2 << 4| 0x2; /* PS-Act: D3, PS->Set D3  */
+            pNode->node.au32F00_param[0x11] = CODEC_MAKE_F00_11(1, 1, 0, 0, 4);//0xc0000004;
+            pNode->node.au32F00_param[0xF] = CODEC_F00_0F_D3|CODEC_F00_0F_D2|CODEC_F00_0F_D1|CODEC_F00_0F_D0;
+            pNode->afg.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D2, CODEC_F05_D2);//0x2 << 4| 0x2; /* PS-Act: D3, PS->Set D3  */
             pNode->afg.u32F20_param = pState->u16VendorId << 16 | pState->u16DeviceId;
             pNode->afg.u32F08_param = 0;
             pNode->afg.u32F17_param = 0;
@@ -388,7 +428,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                               | CODEC_F00_09_CAP_OUT_AMP_PRESENT
                                               | CODEC_F00_09_CAP_LSB;//(0xD << 16) | RT_BIT(11) |  RT_BIT(10) | RT_BIT(2) | RT_BIT(0);
             pNode->dac.u32F0c_param = 0;
-            pNode->dac.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3, Set: D3  */
+            pNode->dac.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);//0x3 << 4 | 0x3; /* PS-Act: D3, Set: D3  */
         break;
         case 6:
             pNode->adc.node.name = "ADC0";
@@ -399,9 +439,9 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F02_param[0] = 0x18;
         adc_init:
             pNode->adc.u32A_param = RT_BIT(14)|(0x1 << 3)|0x1; /* 441000Hz/16bit/2ch */
-            pNode->adc.node.au32F00_param[0xE] = RT_BIT(0);
+            pNode->adc.node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//RT_BIT(0);
             pNode->adc.u32F03_param = RT_BIT(0);
-            pNode->adc.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3 Set: D3 */
+            pNode->adc.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);//0x3 << 4 | 0x3; /* PS-Act: D3 Set: D3 */
             pNode->adc.u32F06_param = 0;
             pNode->adc.node.au32F00_param[9] =   CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 0xD, 0)
                                                | CODEC_F00_09_CAP_POWER_CTRL
@@ -430,7 +470,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                                    | CODEC_F00_09_CAP_FMT_OVERRIDE
                                                    | CODEC_F00_09_CAP_LSB;//(0x1 << 20)|(4 << 16) | RT_BIT(9)| RT_BIT(8)|RT_BIT(4)|0x1;
             pNode->node.au32F00_param[0xA] = pState->pNodes[1].node.au32F00_param[0xA];
-            pNode->node.au32F00_param[0xE] = RT_BIT(0);
+            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//RT_BIT(0);
             pNode->node.au32F02_param[0] = 0x11;
             pNode->spdifin.node.au32F00_param[0xB] = CODEC_F00_0B_PCM;
             pNode->spdifin.u32F06_param = 0;
@@ -518,7 +558,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                            | CODEC_F00_09_CAP_CONNECTION_LIST
                                            | CODEC_F00_09_CAP_UNSOL
                                            | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(8)|RT_BIT(7)|RT_BIT(0);
-            pNode->node.au32F00_param[0xE] = 0x1;
+            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//0x1;
         break;
         case 0xE:
             pNode->node.name = "PortE";
@@ -551,7 +591,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_PRESENSE_DETECT
                                              | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x37;
-            pNode->node.au32F00_param[0xE] = 0x1;
+            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//0x1;
             pNode->port.u32F08_param = 0;
             pNode->port.u32F07_param = 0x40;
             if (!pState->fInReset)
@@ -571,7 +611,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                            | CODEC_F00_09_CAP_CONNECTION_LIST
                                            | CODEC_F00_09_CAP_LSB;//(4<<20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//RT_BIT(4);
-            pNode->node.au32F00_param[0xE] = 0x3;
+            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 0x3);
             pNode->digout.u32F01_param = 0;
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x19, 0);
             pNode->digout.u32F07_param = 0;
@@ -589,7 +629,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xC] =   CODEC_F00_0C_CAP_EAPD
                                              | CODEC_F00_0C_CAP_INPUT
                                              | CODEC_F00_0C_CAP_PRESENSE_DETECT;//RT_BIT(16)| RT_BIT(5)|RT_BIT(2);
-            pNode->digin.u32F05_param = 0x3 << 4 | 0x3; /* PS-Act: D3 -> D3 */
+            pNode->digin.u32F05_param = CODEC_MAKE_F05(0, 0, 0, CODEC_F05_D3, CODEC_F05_D3);//0x3 << 4 | 0x3; /* PS-Act: D3 -> D3 */
             pNode->digin.u32F07_param = 0;
             pNode->digin.u32F08_param = 0;
             pNode->digin.u32F09_param = 0;
@@ -615,7 +655,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                            | CODEC_F00_09_CAP_AMP_FMT_OVERRIDE
                                            | CODEC_F00_09_CAP_OUT_AMP_PRESENT
                                            | CODEC_F00_09_CAP_LSB;//(3<<20)|RT_BIT(8)|RT_BIT(3)|RT_BIT(2)|RT_BIT(0);
-            pNode->node.au32F00_param[0xe] = 0x7;
+            pNode->node.au32F00_param[0xe] = CODEC_MAKE_F00_0E(0, 0x7);
             pNode->node.au32F00_param[0x12] = (0x27 << 16)|(0x4 << 8);
             /* STAC 9220 v10 6.21-22.{4,5} both(left and right) out amplefiers inited with 0*/
             memset(pNode->adcmux.B_params, 0, AMPLIFIER_SIZE);
@@ -649,7 +689,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.name = "VolumeKnob";
             pNode->node.au32F00_param[0x9] = CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_VOLUME_KNOB, 0x0, 0x0);//(0x6 << 20);
             pNode->node.au32F00_param[0x13] = RT_BIT(7)| 0x7F;
-            pNode->node.au32F00_param[0xe] = 0x4;
+            pNode->node.au32F00_param[0xe] = CODEC_MAKE_F00_0E(0, 0x4);
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x2, 0x3, 0x4, 0x5);
             pNode->volumeKnob.u32F08_param = 0;
             pNode->volumeKnob.u32F0f_param = 0x7f;
@@ -669,7 +709,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_09_CAP_CONNECTION_LIST
                                              | CODEC_F00_09_CAP_IN_AMP_PRESENT
                                              | CODEC_F00_09_CAP_LSB;//(0x3 << 20)|RT_BIT(11)|RT_BIT(8)|RT_BIT(1)|RT_BIT(0);
-            pNode->node.au32F00_param[0xe] = 0x1;
+            pNode->node.au32F00_param[0xe] = CODEC_MAKE_F00_0E(0, 0x1);
             AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_LEFT, 0) = RT_BIT(7);
             AMPLIFIER_REGISTER(pNode->adcvol.B_params, AMPLIFIER_IN, AMPLIFIER_RIGHT, 0) = RT_BIT(7);
             pNode->adcvol.u32F0c_param = 0;
@@ -692,7 +732,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_09_CAP_DIGITAL
                                              | CODEC_F00_09_CAP_CONNECTION_LIST
                                              | CODEC_F00_09_CAP_LSB;//(0x4 << 20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
-            pNode->node.au32F00_param[0xE] = 0x1;
+            pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 0x1);
             pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//0x10;
             pNode->node.au32F02_param[0] = 0x1a;
             pNode->reserved.u32F07_param = 0;
@@ -1098,19 +1138,6 @@ static int alc885ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNOD
 
 
 /* generic */
-
-#define CODEC_POWER_MASK        0x3
-#define CODEC_POWER_ACT_SHIFT   (4)
-#define CODEC_POWER_SET_SHIFT   (0)
-#define CODEC_POWER_D0          (0)
-#define CODEC_POWER_D1          (1)
-#define CODEC_POWER_D2          (2)
-#define CODEC_POWER_D3          (3)
-#define CODEC_POWER_PROPOGATE_STATE(node)                                                           \
-    do {                                                                                            \
-        node.u32F05_param &= (CODEC_POWER_MASK);                                                    \
-        node.u32F05_param |= (node.u32F05_param & CODEC_POWER_MASK) << CODEC_POWER_ACT_SHIFT;     \
-    }while(0)
 
 #define DECLISNODEOFTYPE(type)                                                                  \
     static inline int codecIs##type##Node(struct CODECState *pState, uint8_t cNode)             \
@@ -1737,6 +1764,18 @@ static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
 }
 
 /* 705 */
+
+static inline void codecPropogatePowerState(uint32_t *pu32F05_param)
+{
+    Assert(pu32F05_param);
+    if (pu32F05_param)
+        return;
+    bool fReset = CODEC_F05_IS_RESET(*pu32F05_param);
+    bool fStopOk = CODEC_F05_IS_STOPOK(*pu32F05_param);
+    uint8_t u8SetPowerState = CODEC_F05_SET(*pu32F05_param);
+    *pu32F05_param = CODEC_MAKE_F05(fReset, fStopOk, 0, u8SetPowerState, u8SetPowerState);
+}
+
 static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
 {
     Assert((CODEC_CAD(cmd) == pState->id));
@@ -1765,32 +1804,40 @@ static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
     Assert((pu32Reg));
     if (!pu32Reg)
         return VINF_SUCCESS;
+    
+    bool fReset = CODEC_F05_IS_RESET(*pu32Reg);
+    bool fStopOk = CODEC_F05_IS_STOPOK(*pu32Reg);
 
-    if (!CODEC_NID(cmd) == 1 /* AFG */)
+    if (CODEC_NID(cmd) != 1 /* AFG */)
     {
-        *pu32Reg &= ~CODEC_VERB_8BIT_DATA;
-        *pu32Reg |= (pState->pNodes[1].afg.u32F05_param & (CODEC_VERB_4BIT_DATA << 4));
+        /*
+         * We shouldn't propogate actual power state, which actual for AFG  
+         */
+        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0,
+                                  CODEC_F05_ACT(pState->pNodes[1].afg.u32F05_param), 
+                                  CODEC_F05_SET(cmd));
     }
-    else
-        *pu32Reg &= ~CODEC_VERB_4BIT_DATA;
 
-    *pu32Reg |= cmd & CODEC_VERB_4BIT_DATA;
     /* Propagate next power state only if AFG is on or verb modifies AFG power state */
     if (   CODEC_NID(cmd) == 1 /* AFG */
-        || !pState->pNodes[1].afg.u32F05_param)
+        || !CODEC_F05_ACT(pState->pNodes[1].afg.u32F05_param))
     {
-        *pu32Reg &= ~(CODEC_POWER_MASK << CODEC_POWER_ACT_SHIFT);
-        *pu32Reg |= (cmd & CODEC_VERB_4BIT_DATA) << 4;
+        *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0, CODEC_F05_SET(cmd), CODEC_F05_SET(cmd));
         if (   CODEC_NID(cmd) == 1 /* AFG */
-            && (cmd & CODEC_POWER_MASK) == CODEC_POWER_D0)
+            && (CODEC_F05_SET(cmd)) == CODEC_F05_D0)
         {
-            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[2].dac);
-            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[3].dac);
-            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[4].dac);
-            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[5].dac);
-            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[6].dac);
-            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[7].dac);
-            CODEC_POWER_PROPOGATE_STATE(pState->pNodes[0x11].dac);
+            /* now we're powered on AFG and may propogate power states on nodes */
+            const uint8_t *pu8NodeIndex = &pState->au8Dacs[0];
+            while (*(++pu8NodeIndex))
+                codecPropogatePowerState(&pState->pNodes[*pu8NodeIndex].dac.u32F05_param);
+
+            pu8NodeIndex = &pState->au8Adcs[0];
+            while (*(++pu8NodeIndex))
+                codecPropogatePowerState(&pState->pNodes[*pu8NodeIndex].adc.u32F05_param);
+
+            pu8NodeIndex = &pState->au8DigInPins[0];
+            while (*(++pu8NodeIndex))
+                codecPropogatePowerState(&pState->pNodes[*pu8NodeIndex].digin.u32F05_param);
         }
     }
     return VINF_SUCCESS;
