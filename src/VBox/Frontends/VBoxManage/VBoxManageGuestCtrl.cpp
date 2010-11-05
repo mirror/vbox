@@ -611,17 +611,20 @@ int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileD
  * @param   pszSubDir           Sub directory part relative to the root
  *                              directory; needed for recursion.
  * @param   pszFilter           Search filter (e.g. *.pdf).
+ * @param   pszDest             Destination directory.
  * @param   uFlags              Copy flags.
  * @param   pcObjects           Where to store the overall objects to
  *                              copy found.
  * @param   pList               Pointer to the object list to use.
  */
-int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const char *pszFilter,
+int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
+                          const char *pszFilter, const char *pszDest,
                           uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
 {
     AssertPtrReturn(pszRootDir, VERR_INVALID_POINTER);
     /* Sub directory is optional. */
     /* Filter directory is optional. */
+    AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
     AssertPtrReturn(pcObjects, VERR_INVALID_POINTER);
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
 
@@ -672,7 +675,8 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const c
 
                         if (pszNewSub)
                         {
-                            rc = ctrlCopyDirectoryRead(pszRootDir, pszNewSub, pszFilter,
+                            rc = ctrlCopyDirectoryRead(pszRootDir, pszNewSub,
+                                                       pszFilter, pszDest,
                                                        uFlags, pcObjects, pList);
                             RTStrFree(pszNewSub);
                         }
@@ -706,8 +710,8 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const c
                                          pszRootDir, pszSubDir ? pszSubDir : "",
                                          DirEntry.szName) >= 0)
                         {
-                            if (RTStrAPrintf(&pszFileDest, "%s%s",
-                                             pszSubDir ? pszSubDir : "",
+                            if (RTStrAPrintf(&pszFileDest, "%s%s%s",
+                                             pszDest, pszSubDir ? pszSubDir : "",
                                              DirEntry.szName) <= 0)
                             {
                                 rc = VERR_NO_MEMORY;
@@ -770,9 +774,22 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
         if (   RTPathFilename(pszSourceAbs)
             && RTFileExists(pszSourceAbs)) /* We have a single file ... */
         {
-            RTListInit(pList);
-            rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pszDest, pList);
-            *pcObjects = 1;
+            char *pszDestAbs = RTStrDup(pszDest);
+            if (pszDestAbs)
+            {
+                RTPathStripFilename(pszDestAbs);
+                rc = RTStrAAppend(&pszDestAbs, RTPATH_SLASH_STR);
+                if (RT_SUCCESS(rc))
+                    rc = RTStrAAppend(&pszDestAbs, RTPathFilename(pszSourceAbs));
+
+                RTListInit(pList);
+                rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pszDestAbs, pList);
+                *pcObjects = 1;
+
+                RTStrFree(pszDestAbs);
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
         else /* ... or a directory. */
         {
@@ -783,7 +800,9 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
             /* Extract directory filter (e.g. "*.exe"). */
             char *pszFilter = RTPathFilename(pszSourceAbs);
             char *pszSourceAbsRoot = RTStrDup(pszSourceAbs);
-            if (pszSourceAbsRoot)
+            char *pszDestAbs = RTStrDup(pszDest);
+            if (   pszSourceAbsRoot
+                && pszDestAbs)
             {
                 if (pszFilter)
                 {
@@ -808,15 +827,34 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
 
                 if (RT_SUCCESS(rc))
                 {
+                    /*
+                     * Make sure we have a valid destination path. All we can do
+                     * here is to check whether we have a trailing slash -- the rest
+                     * (i.e. path creation, rights etc.) needs to be done inside the guest.
+                     */
+                    size_t cch = strlen(pszDestAbs);
+                    if (    cch > 1
+                        &&  !RTPATH_IS_SLASH(pszDestAbs[cch - 1])
+                        &&  !RTPATH_IS_SLASH(pszDestAbs[cch - 2]))
+                    {
+                        rc = RTStrAAppend(&pszDestAbs, RTPATH_SLASH_STR);
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                {
                     RTListInit(pList);
                     rc = ctrlCopyDirectoryRead(pszSourceAbsRoot, NULL /* Sub directory */,
-                                               pszFilter,
+                                               pszFilter, pszDestAbs,
                                                uFlags, pcObjects, pList);
                     if (RT_SUCCESS(rc) && *pcObjects == 0)
                         rc = VERR_NOT_FOUND;
                 }
 
-                RTStrFree(pszSourceAbsRoot);
+                if (pszDestAbs)
+                    RTStrFree(pszDestAbs);
+                if (pszSourceAbsRoot)
+                    RTStrFree(pszSourceAbsRoot);
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -1173,9 +1211,13 @@ static int handleCtrlCopyTo(HandlerArg *a)
                     if (RT_SUCCESS(vrc))
                     {
                         if (fVerbose)
+#ifndef DEBUG
                             RTPrintf("Copying \"%s\" (%u/%u) ...\n",
                                      pNode->pszSourcePath, uCurObject, cObjects);
-
+#else
+                            RTPrintf("Copying \"%s\" to \"%s\" (%u/%u) ...\n",
+                                     pNode->pszSourcePath, pNode->pszDestPath, uCurObject, cObjects);
+#endif
                         /* Finally copy the desired file (if no dry run selected). */
                         if (!fDryRun)
                             vrc = ctrlCopyFileToGuest(guest, pNode->pszSourcePath, szDest,
