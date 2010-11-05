@@ -70,7 +70,29 @@ typedef RTTARFILE                               *PRTTARFILE;
  *                         sequential read a tar file. Currently ignored with
  *                         RTFILE_O_WRITE.
  */
-RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char* pszTarname, uint32_t fMode, bool fStream);
+RTR3DECL(int) RTTarOpen(PRTTAR phTar, const char *pszTarname, uint32_t fMode, bool fStream);
+
+#if 0
+/**
+ * Opens a Tar archive by handle.
+ *
+ * Use the mask to specify the access type. In create mode the target file
+ * have not to exists.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   phTar          Where to store the RTTAR handle.
+ * @param   hFile          The file handle of the tar file.  This is expected
+ *                         to be a regular file at the moment.
+ * @param   fStream        Open the file in stream mode. Within this mode no
+ *                         seeking is allowed.  Use this together with
+ *                         RTTarFileCurrent, RTTarFileOpenCurrent,
+ *                         RTTarFileSeekNextFile and the read method to
+ *                         sequential read a tar file.  Currently ignored with
+ *                         RTFILE_O_WRITE.
+ */
+RTR3DECL(int) RTTarOpenByHandle(PRTTAR phTar, RTFILE hFile, uint32_t fMode, bool fStream);
+#endif
 
 /**
  * Close the Tar archive.
@@ -84,13 +106,6 @@ RTR3DECL(int) RTTarClose(RTTAR hTar);
 /**
  * Open a file in the Tar archive.
  *
- * @remark: Write mode means append mode only. It is not possible to make
- * changes to existing files.
- *
- * @remark: Currently it is not possible to open more than one file in write
- * mode. Although open more than one file in read only mode (even when one file
- * is opened in write mode) is always possible.
- *
  * @returns IPRT status code.
  *
  * @param   hTar           The handle of the tar archive.
@@ -99,6 +114,13 @@ RTR3DECL(int) RTTarClose(RTTAR hTar);
  * @param   fOpen          Open flags, i.e a combination of the RTFILE_O_* defines.
  *                         The ACCESS, ACTION flags are mandatory! DENY flags
  *                         are currently not supported.
+ *
+ * @remarks Write mode means append mode only. It is not possible to make
+ *          changes to existing files.
+ *
+ * @remarks Currently it is not possible to open more than one file in write
+ *          mode. Although open more than one file in read only mode (even when
+ *          one file is opened in write mode) is always possible.
  */
 RTR3DECL(int) RTTarFileOpen(RTTAR hTar, PRTTARFILE phFile, const char *pszFilename, uint32_t fOpen);
 
@@ -122,13 +144,13 @@ RTR3DECL(int) RTTarFileClose(RTTARFILE hFile);
  * @param   poffActual     Where to store the new file position.
  *                         NULL is allowed.
  */
-RTR3DECL(int) RTTarFileSeek(RTTARFILE hFile, uint64_t uOffset,  unsigned uMethod, uint64_t *poffActual);
+RTR3DECL(int) RTTarFileSeek(RTTARFILE hFile, uint64_t offSeek, unsigned uMethod, uint64_t *poffActual);
 
 /**
  * Gets the current file position.
  *
  * @returns File offset.
- * @returns ~0ULL on failure.
+ * @returns UINT64_MAX on failure.
  *
  * @param   hFile          Handle to the file.
  */
@@ -154,13 +176,13 @@ RTR3DECL(int) RTTarFileRead(RTTARFILE hFile, void *pvBuf, size_t cbToRead, size_
  * @returns IPRT status code.
  *
  * @param   hFile          Handle to the file.
- * @param   uOffset        Where to read.
+ * @param   off            Where to read.
  * @param   pvBuf          Where to put the bytes we read.
  * @param   cbToRead       How much to read.
  * @param   *pcbRead       How much we actually read .
  *                         If NULL an error will be returned for a partial read.
  */
-RTR3DECL(int) RTTarFileReadAt(RTTARFILE hFile, uint64_t uOffset, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+RTR3DECL(int) RTTarFileReadAt(RTTARFILE hFile, uint64_t off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Write bytes to a file.
@@ -182,13 +204,13 @@ RTR3DECL(int) RTTarFileWrite(RTTARFILE hFile, const void *pvBuf, size_t cbToWrit
  * @returns IPRT status code.
  *
  * @param   hFile          Handle to the file.
- * @param   uOffset        Where to write.
+ * @param   off            Where to write.
  * @param   pvBuf          What to write.
  * @param   cbToWrite      How much to write.
  * @param   *pcbWritten    How much we actually wrote.
  *                         If NULL an error will be returned for a partial write.
  */
-RTR3DECL(int) RTTarFileWriteAt(RTTARFILE hFile, uint64_t uOffset, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+RTR3DECL(int) RTTarFileWriteAt(RTTARFILE hFile, uint64_t off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Query the size of the file.
@@ -289,6 +311,8 @@ RTR3DECL(int) RTTarFileSetOwner(RTTARFILE hFile, uint32_t uid, uint32_t gid);
  *
  * @param   pszTarFile      Tar file to check.
  * @param   pszFile         Filename to check for.
+ *
+ * @todo    This is predicate function which SHALL return bool!
  */
 RTR3DECL(int) RTTarFileExists(const char *pszTarFile, const char *pszFile);
 
@@ -328,7 +352,8 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
  * @param   pvUser               User defined data for the progress
  *                               callback. Optional.
  */
-RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, size_t *pcbSize, const char *pszFile, PFNRTPROGRESS pfnProgressCallback, void *pvUser);
+RTR3DECL(int) RTTarExtractFileToBuf(const char *pszTarFile, void **ppvBuf, size_t *pcbSize, const char *pszFile,
+                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 /**
  * Extract a set of files from a Tar archive.
