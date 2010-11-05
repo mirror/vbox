@@ -566,7 +566,14 @@ static void ctrlCopySignalHandler(int iSignal)
     ASMAtomicWriteBool(&g_fCopyCanceled, true);
 }
 
-
+/**
+ * Appends a new to-copy object to a copy list.
+ *
+ * @return  IPRT status code.
+ * @param   pszFileSource       Full qualified source path of file to copy.
+ * @param   pszFileDest         Full qualified destination path.
+ * @param   pList               Copy list used for insertion.
+ */
 int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
                                  PRTLISTNODE pList)
 {
@@ -595,16 +602,19 @@ int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileD
 }
 
 /**
- * TODO
+ * Reads a specified directory (recursively) based on the copy flags
+ * and appends all matching entries to the supplied list.
  *
  * @return  IPRT status code.
- * @return  int
- * @param   pszRootDir
- * @param   pszSubDir
- * @param   pszFilter
- * @param   uFlags
- * @param   pcObjects
- * @param   pList
+ * @param   pszRootDir          Directory to start with. Must end with
+ *                              a trailing slash and must be absolute.
+ * @param   pszSubDir           Sub directory part relative to the root
+ *                              directory; needed for recursion.
+ * @param   pszFilter           Search filter (e.g. *.pdf).
+ * @param   uFlags              Copy flags.
+ * @param   pcObjects           Where to store the overall objects to
+ *                              copy found.
+ * @param   pList               Pointer to the object list to use.
  */
 int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const char *pszFilter,
                           uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
@@ -733,15 +743,15 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir, const c
 }
 
 /**
- * TODO
+ * Initializes the copy process and builds up an object list
+ * with all required information to start the actual copy process.
  *
  * @return  IPRT status code.
- * @return  int
- * @param   pszSource
- * @param   pszDest
- * @param   uFlags
- * @param   pcObjects
- * @param   pList
+ * @param   pszSource           Source path on host to use.
+ * @param   pszDest             Destination path on guest to use.
+ * @param   uFlags              Copy flags.
+ * @param   pcObjects           Where to store the count of objects to be copied.
+ * @param   pList               Where to store the object list.
  */
 int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
                  uint32_t *pcObjects, PRTLISTNODE pList)
@@ -817,9 +827,7 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
 }
 
 /**
- * TODO
- *
- * @return  IPRT status code.
+ * Destroys a copy list.
  */
 void ctrlCopyDestroy(PRTLISTNODE pList)
 {
@@ -847,20 +855,19 @@ void ctrlCopyDestroy(PRTLISTNODE pList)
 }
 
 /**
- * TODO
+ * Copys a file from host to the guest.
  *
  * @return  IPRT status code.
- * @return  int
- * @param   pGuest
- * @param   pszSource
- * @param   pszDest
- * @param   pszUserName
- * @param   pszPassword
- * @param   uFlags
+ * @param   pGuest          IGuest interface pointer.
+ * @param   pszSource       Source path of existing host file to copy.
+ * @param   pszDest         Destination path on guest to copy the file to.
+ * @param   pszUserName     User name on guest to use for the copy operation.
+ * @param   pszPassword     Password of user account.
+ * @param   uFlags          Copy flags.
  */
-int ctrlCopyFile(IGuest *pGuest, const char *pszSource, const char *pszDest,
-                 const char *pszUserName, const char *pszPassword,
-                 uint32_t uFlags)
+int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDest,
+                        const char *pszUserName, const char *pszPassword,
+                        uint32_t uFlags)
 {
     AssertPtrReturn(pszSource, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDest, VERR_INVALID_PARAMETER);
@@ -1169,8 +1176,8 @@ static int handleCtrlCopyTo(HandlerArg *a)
 
                         /* Finally copy the desired file (if no dry run selected). */
                         if (!fDryRun)
-                            vrc = ctrlCopyFile(guest, pNode->pszSourcePath, szDest,
-                                               Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
+                            vrc = ctrlCopyFileToGuest(guest, pNode->pszSourcePath, szDest,
+                                                      Utf8UserName.c_str(), Utf8Password.c_str(), uFlags);
                     }
                     else
                         RTMsgError("Error building destination file name, rc=%Rrc\n", vrc);
