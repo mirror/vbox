@@ -75,13 +75,13 @@ public:
      *
      * This allocates s.length() + 1 bytes for the new instance, unless s is empty.
      *
-     * @param   s               The source string.
+     * @param   a_rSrc          The source string.
      *
      * @throws  std::bad_alloc
      */
-    MiniString(const MiniString &s)
+    MiniString(const MiniString &a_rSrc)
     {
-        copyFrom(s);
+        copyFromN(a_rSrc.m_psz, a_rSrc.m_cch);
     }
 
     /**
@@ -95,7 +95,34 @@ public:
      */
     MiniString(const char *pcsz)
     {
-        copyFrom(pcsz);
+        copyFromN(pcsz, strlen(pcsz));
+    }
+
+    /**
+     * Create a partial copy of another MiniString.
+     *
+     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
+     *                          to copy from the source string.
+     * @param   a_rSrc          The source string.
+     */
+    MiniString(size_t a_cchSrc, const MiniString &a_rSrc)
+    {
+        Assert(a_cchSrc <= a_rSrc.m_cch);
+        copyFromN(a_rSrc.m_psz, RT_MIN(a_cchSrc, a_rSrc.m_cch));
+    }
+
+    /**
+     * Create a partial copy of a C string.
+     *
+     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
+     *                          to copy from the source string.
+     * @param   a_pszSrc        The source string (UTF-8).
+     */
+    MiniString(size_t a_cchSrc, const char *a_pszSrc)
+    {
+        size_t cchMax = a_pszSrc ? RTStrNLen(a_pszSrc, a_cchSrc) : 0;
+        Assert(a_cchSrc <= cchMax);
+        copyFromN(a_pszSrc, RT_MIN(a_cchSrc, cchMax));
     }
 
     /**
@@ -203,7 +230,7 @@ public:
         if (m_psz != pcsz)
         {
             cleanup();
-            copyFrom(pcsz);
+            copyFromN(pcsz, pcsz ? strlen(pcsz) : 0);
         }
         return *this;
     }
@@ -223,7 +250,7 @@ public:
         if (this != &s)
         {
             cleanup();
-            copyFrom(s);
+            copyFromN(s.m_psz, s.m_cch);
         }
         return *this;
     }
@@ -730,69 +757,33 @@ protected:
     }
 
     /**
-     * Protected internal helper to copy a string. This ignores the previous object
-     * state, so either call this from a constructor or call cleanup() first.
+     * Protected internal helper to copy a string.
      *
-     * copyFrom() unconditionally sets the members to a copy of the given other
-     * strings and makes no assumptions about previous contents. Can therefore be
-     * used both in copy constructors, when member variables have no defined value,
-     * and in assignments after having called cleanup().
+     * This ignores the previous object state, so either call this from a
+     * constructor or call cleanup() first.  copyFromN() unconditionally sets
+     * the members to a copy of the given other strings and makes no
+     * assumptions about previous contents.  Can therefore be used both in copy
+     * constructors, when member variables have no defined value, and in
+     * assignments after having called cleanup().
      *
-     * This variant copies from another MiniString and is fast since
-     * the length of the source string is known.
+     * @param   pcszSrc         The source string.
+     * @param   cchSrc          The number of chars (bytes) to copy from the
+     *                          source strings.
      *
-     * @param   s               The source string.
-     *
-     * @throws  std::bad_alloc  On allocation failure. The object is left describing
-     *             a NULL string.
+     * @throws  std::bad_alloc  On allocation failure.  The object is left
+     *                          describing a NULL string.
      */
-    void copyFrom(const MiniString &s)
+    void copyFromN(const char *pcszSrc, size_t cchSrc)
     {
-        if ((m_cch = s.m_cch))
+        if (cchSrc)
         {
-            m_cbAllocated = m_cch + 1;
-            m_psz = (char *)RTStrAlloc(m_cbAllocated);
+            m_psz = RTStrAlloc(cchSrc + 1);
             if (RT_LIKELY(m_psz))
-                memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
-            else
             {
-                m_cch = 0;
-                m_cbAllocated = 0;
-#ifdef RT_EXCEPTIONS_ENABLED
-                throw std::bad_alloc();
-#endif
+                m_cch = cchSrc;
+                m_cbAllocated = cchSrc + 1;
+                memcpy(m_psz, pcszSrc, cchSrc + 1);
             }
-        }
-        else
-        {
-            m_cbAllocated = 0;
-            m_psz = NULL;
-        }
-    }
-
-    /**
-     * Protected internal helper to copy a string. This ignores the previous object
-     * state, so either call this from a constructor or call cleanup() first.
-     *
-     * See copyFrom() above.
-     *
-     * This variant copies from a C string and needs to call strlen()
-     * on it. It's therefore slower than the one above.
-     *
-     * @param   pcsz            The source string.
-     *
-     * @throws  std::bad_alloc  On allocation failure. The object is left describing
-     *             a NULL string.
-     */
-    void copyFrom(const char *pcsz)
-    {
-        if (pcsz && *pcsz)
-        {
-            m_cch = strlen(pcsz);
-            m_cbAllocated = m_cch + 1;
-            m_psz = (char *)RTStrAlloc(m_cbAllocated);
-            if (RT_LIKELY(m_psz))
-                memcpy(m_psz, pcsz, m_cbAllocated);     // include 0 terminator
             else
             {
                 m_cch = 0;

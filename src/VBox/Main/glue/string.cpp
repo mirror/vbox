@@ -73,10 +73,15 @@ Utf8Str& Utf8Str::stripPath()
 {
     if (length())
     {
-        char *pcszFilename = ::RTStrDup(::RTPathFilename(m_psz));
-        cleanup();
-        MiniString::copyFrom(pcszFilename);
-        RTStrFree(pcszFilename);
+        char *pszName = ::RTPathFilename(m_psz);
+        if (pszName)
+        {
+            size_t cchName = length() - (pszName - m_psz);
+            memmove(m_psz, pszName, cchName + 1);
+            jolt();
+        }
+        else
+            cleanup();
     }
     return *this;
 }
