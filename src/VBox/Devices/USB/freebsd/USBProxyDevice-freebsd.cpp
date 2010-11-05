@@ -5,6 +5,7 @@
 
 /*
  * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2010 Hans Petter Selasky
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,9 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_USBPROXY
+#define    LOG_GROUP LOG_GROUP_DRV_USBPROXY
 #ifdef VBOX
-# include <iprt/stdint.h>
+#include <iprt/stdint.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,10 +54,9 @@
 #include "../USBProxyDevice.h"
 
 /** Maximum endpoints supported. */
-#define USBFBSD_MAXENDPOINTS       32
-#define USBFBSD_EPADDR_NUM_MASK  0x0F
-#define USBFBSD_EPADDR_DIR_MASK  0x80
-#define USBPROXY_FREEBSD_NO_ENTRY_FREE ((unsigned)~0)
+#define USBFBSD_MAXENDPOINTS 127
+#define USBFBSD_MAXFRAMES 56
+
 /** This really needs to be defined in vusb.h! */
 #ifndef VUSB_DIR_TO_DEV
 # define VUSB_DIR_TO_DEV        0x00
@@ -65,24 +65,26 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef struct VUSBURBFBSD
-{
-    /** Pointer to the URB. */
-    PVUSBURB    pUrb;
-    /** Buffer pointers. */
-    void       *apvData[2];
-    /** Buffer lengths. */
-    uint32_t    acbData[2];
-} VUSBURBFBSD, *PVUSBURBFBSD;
-
 typedef struct USBENDPOINTFBSD
 {
     /** Flag whether it is opened. */
-    bool        fOpen;
-    /** Index in the endpoint list. */
-    unsigned    iEndpoint;
-    /** Associated endpoint. */
-    struct usb_fs_endpoint *pXferEndpoint;
+    bool     fOpen;
+    /** Flag whether it is cancelling. */
+    bool     fCancelling;
+    /** Buffer pointers. */
+    void    *apvData[USBFBSD_MAXFRAMES];
+    /** Buffer lengths. */
+    uint32_t acbData[USBFBSD_MAXFRAMES];
+    /** Initial buffer length. */
+    uint32_t cbData0;
+    /** Pointer to the URB. */
+    PVUSBURB pUrb;
+    /** Copy of endpoint number. */
+    unsigned iEpNum;
+    /** Maximum transfer length. */
+    unsigned cMaxIo;
+    /** Maximum frame count. */
+    unsigned cMaxFrames;
 } USBENDPOINTFBSD, *PUSBENDPOINTFBSD;
 
 /**
@@ -91,38 +93,20 @@ typedef struct USBENDPOINTFBSD
 typedef struct USBPROXYDEVFBSD
 {
     /** The open file. */
-    RTFILE                  File;
-    /** Critical section protecting the two lists. */
-    RTCRITSECT              CritSect;
-    /** Pointer to the array of USB endpoints. */
-    struct usb_fs_endpoint *paXferEndpoints;
-    /** Pointer to the array of URB structures.
-     * They entries must be in sync with the above array. */
-    PVUSBURBFBSD            paUrbs;
-    /** Number of entries in both arrays. */
-    unsigned                cXferEndpoints;
-    /** Pointer to the Fifo containing the indexes for free Xfer
-     * endpoints. */
-    unsigned               *paXferFree;
-    /** Index of the next free entry to write to. */
-    unsigned                iXferFreeNextWrite;
-    /** Index of the next entry to read from. */
-    unsigned                iXferFreeNextRead;
-    /** Status of opened endpoints. */
-    USBENDPOINTFBSD         aEpOpened[USBFBSD_MAXENDPOINTS];
-    /** The list of landed FreeBSD URBs. Doubly linked.
-     * Only the split head will appear in this list. */
-    PVUSBURB                pTaxingHead;
-    /** The tail of the landed FreeBSD URBs. */
-    PVUSBURB                pTaxingTail;
+    RTFILE                 File;
+    /** Software endpoint structures */
+    USBENDPOINTFBSD        aSwEndpoint[USBFBSD_MAXENDPOINTS];
+    /** Flag whether an URB is cancelling. */
+    bool                   fCancelling;
+    /** Flag whether initialised or not */
+    bool                   fInit;
+    /** Kernel endpoint structures */
+    struct usb_fs_endpoint aHwEndpoint[USBFBSD_MAXENDPOINTS];
 } USBPROXYDEVFBSD, *PUSBPROXYDEVFBSD;
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int usbProxyFreeBSDDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd, void *pvArg, bool fHandleNoDev, uint32_t cTries);
-static void usbProxFreeBSDUrbUnplugged(PUSBPROXYDEV pProxyDev);
-static PUSBENDPOINTFBSD usbProxyFreeBSDEndpointOpen(PUSBPROXYDEV pProxyDev, int Endpoint);
 static int usbProxyFreeBSDEndpointClose(PUSBPROXYDEV pProxyDev, int Endpoint);
 
 /**
@@ -136,36 +120,96 @@ static int usbProxyFreeBSDEndpointClose(PUSBPROXYDEV pProxyDev, int Endpoint);
  * @param   iCmd            The ioctl command / function.
  * @param   pvArg           The ioctl argument / data.
  * @param   fHandleNoDev    Whether to handle ENXIO.
- * @param   cTries          The number of retries. Use UINT32_MAX for (kind of) indefinite retries.
  * @internal
  */
-static int usbProxyFreeBSDDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd, void *pvArg, bool fHandleNoDev, uint32_t cTries)
+static int usbProxyFreeBSDDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd,
+                                  void *pvArg, bool fHandleNoDev)
 {
     int rc = VINF_SUCCESS;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
 
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
+    LogFlow(("usbProxyFreeBSDDoIoCtl: iCmd=%#x\n", iCmd));
+
     do
     {
-        do
-        {
-            rc = ioctl(pDevFBSD->File, iCmd, pvArg);
-            if (rc >= 0)
-                return rc;
-        } while (errno == EINTR);
+        rc = ioctl(pDevFBSD->File, iCmd, pvArg);
+        if (rc >= 0)
+            return VINF_SUCCESS;
+    } while (errno == EINTR);
 
-        if (errno == ENXIO && fHandleNoDev)
-        {
-            usbProxFreeBSDUrbUnplugged(pProxyDev);
-            Log(("usb-freebsd: ENXIO -> unplugged. pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
-            errno = ENODEV;
-            break;
-        }
-        if (errno != EAGAIN)
-        {
-            LogFlow(("usbProxyFreeBSDDoIoCtl returned %Rrc\n", RTErrConvertFromErrno(errno)));
-            break;
-        }
-    } while (cTries-- > 0);
+    if (errno == ENXIO && fHandleNoDev)
+    {
+        Log(("usbProxyFreeBSDDoIoCtl: ENXIO -> unplugged. pProxyDev=%s\n",
+             pProxyDev->pUsbIns->pszName));
+        errno = ENODEV;
+    }
+    else if (errno != EAGAIN)
+    {
+        LogFlow(("usbProxyFreeBSDDoIoCtl: Returned %d. pProxyDev=%s\n",
+                 errno, pProxyDev->pUsbIns->pszName));
+    }
+    return RTErrConvertFromErrno(errno);
+}
+
+/**
+ * Init USB subsystem.
+ */
+static int usbProxyFreeBSDFsInit(PUSBPROXYDEV pProxyDev)
+{
+    struct usb_fs_init UsbFsInit;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    int rc;
+
+    LogFlow(("usbProxyFreeBSDFsInit: pProxyDev=%p\n", (void *)pProxyDev));
+
+    /* Sanity check */
+    AssertPtrReturn(pDevFBSD, VERR_INVALID_PARAMETER);
+
+    if (pDevFBSD->fInit == true)
+        return VINF_SUCCESS;
+
+    /* Zero default */
+    memset(&UsbFsInit, 0, sizeof(UsbFsInit));
+
+    UsbFsInit.pEndpoints = pDevFBSD->aHwEndpoint;
+    UsbFsInit.ep_index_max = USBFBSD_MAXENDPOINTS;
+
+    /* Init USB subsystem */
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_INIT, &UsbFsInit, false);
+    if (RT_SUCCESS(rc))
+        pDevFBSD->fInit = true;
+
+    return rc;
+}
+
+/**
+ * Uninit USB subsystem.
+ */
+static int usbProxyFreeBSDFsUnInit(PUSBPROXYDEV pProxyDev)
+{
+    struct usb_fs_uninit UsbFsUninit;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    int rc;
+
+    LogFlow(("usbProxyFreeBSDFsUnInit: ProxyDev=%p\n", (void *)pProxyDev));
+
+    /* Sanity check */
+    AssertPtrReturn(pDevFBSD, VERR_INVALID_PARAMETER);
+
+    if (pDevFBSD->fInit != true)
+        return VINF_SUCCESS;
+
+    /* Close any open endpoints. */
+    for (unsigned n = 0; n != USBFBSD_MAXENDPOINTS; n++)
+        usbProxyFreeBSDEndpointClose(pProxyDev, n);
+
+    /* Zero default */
+    memset(&UsbFsUninit, 0, sizeof(UsbFsUninit));
+
+    /* Uninit USB subsystem */
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false);
+    if (RT_SUCCESS(rc))
+        pDevFBSD->fInit = false;
 
     return rc;
 }
@@ -173,175 +217,133 @@ static int usbProxyFreeBSDDoIoCtl(PUSBPROXYDEV pProxyDev, unsigned long iCmd, vo
 /**
  * Setup a USB request packet.
  */
-static void usbProxyFreeBSDSetupReq(struct usb_device_request *pSetupData, uint8_t bmRequestType, uint8_t bRequest,
-                        uint16_t wValue, uint16_t wIndex, uint16_t wLength)
+static void usbProxyFreeBSDSetupReq(struct usb_device_request *pSetupData,
+                                    uint8_t bmRequestType, uint8_t bRequest, uint16_t wValue,
+                                    uint16_t wIndex, uint16_t wLength)
 {
-    LogFlow(("usbProxyFreeBSDSetupReq: pSetupData=%p bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
-                pSetupData, bmRequestType, bRequest, wValue, wIndex, wLength));
+    LogFlow(("usbProxyFreeBSDSetupReq: pSetupData=%p bmRequestType=%x "
+             "bRequest=%x wValue=%x wIndex=%x wLength=%x\n", (void *)pSetupData,
+             bmRequestType, bRequest, wValue, wIndex, wLength));
 
     pSetupData->bmRequestType = bmRequestType;
-    pSetupData->bRequest      = bRequest;
+    pSetupData->bRequest = bRequest;
 
     /* Handle endianess here. Currently no swapping is needed. */
-    pSetupData->wValue[0]  = wValue & 0xff;
-    pSetupData->wValue[1]  = (wValue >> 8) & 0xff;
-    pSetupData->wIndex[0]  = wIndex & 0xff;
-    pSetupData->wIndex[1]  = (wIndex >> 8) & 0xff;
-    pSetupData->wLength[0]  = wLength & 0xff;
-    pSetupData->wLength[1]  = (wLength >> 8) & 0xff;
-//    pSetupData->wIndex  = wIndex;
-//    pSetupData->wLength = wLength;
+    pSetupData->wValue[0] = wValue & 0xff;
+    pSetupData->wValue[1] = (wValue >> 8) & 0xff;
+    pSetupData->wIndex[0] = wIndex & 0xff;
+    pSetupData->wIndex[1] = (wIndex >> 8) & 0xff;
+    pSetupData->wLength[0] = wLength & 0xff;
+    pSetupData->wLength[1] = (wLength >> 8) & 0xff;
+}
+
+static int usbProxyFreeBSDEndpointOpen(PUSBPROXYDEV pProxyDev, int Endpoint, bool fIsoc, int index)
+{
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    PUSBENDPOINTFBSD pEndpointFBSD;
+    struct usb_fs_endpoint *pXferEndpoint;
+    struct usb_fs_open UsbFsOpen;
+    int rc;
+
+    LogFlow(("usbProxyFreeBSDEndpointOpen: pProxyDev=%p Endpoint=%d\n",
+             (void *)pProxyDev, Endpoint));
+
+    for (; index < USBFBSD_MAXENDPOINTS; index++)
+    {
+        pEndpointFBSD = &pDevFBSD->aSwEndpoint[index];
+        if (pEndpointFBSD->fCancelling)
+            continue;
+        if (   pEndpointFBSD->fOpen
+            && !pEndpointFBSD->pUrb
+            && (int)pEndpointFBSD->iEpNum == Endpoint)
+            return index;
+    }
+
+    if (index == USBFBSD_MAXENDPOINTS)
+    {
+        for (index = 0; index != USBFBSD_MAXENDPOINTS; index++)
+        {
+            pEndpointFBSD = &pDevFBSD->aSwEndpoint[index];
+            if (pEndpointFBSD->fCancelling)
+                continue;
+            if (!pEndpointFBSD->fOpen)
+                break;
+        }
+        if (index == USBFBSD_MAXENDPOINTS)
+            return -1;
+    }
+    /* set ppBuffer and pLength */
+
+    pXferEndpoint = &pDevFBSD->aHwEndpoint[index];
+    pXferEndpoint->ppBuffer = &pEndpointFBSD->apvData[0];
+    pXferEndpoint->pLength = &pEndpointFBSD->acbData[0];
+
+    LogFlow(("usbProxyFreeBSDEndpointOpen: ep_index=%d ep_num=%d\n",
+             index, Endpoint));
+
+    memset(&UsbFsOpen, 0, sizeof(UsbFsOpen));
+
+    UsbFsOpen.ep_index = index;
+    UsbFsOpen.ep_no = Endpoint;
+    UsbFsOpen.max_bufsize = 256 * 1024;
+    /* Hardcoded assumption about the URBs we get. */
+
+    UsbFsOpen.max_frames = fIsoc ? USBFBSD_MAXFRAMES : 2;
+
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_OPEN, &UsbFsOpen, true);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_RESOURCE_BUSY)
+            LogFlow(("usbProxyFreeBSDEndpointOpen: EBUSY\n"));
+
+        return -1;
+    }
+    pEndpointFBSD->fOpen = true;
+    pEndpointFBSD->pUrb = NULL;
+    pEndpointFBSD->iEpNum = Endpoint;
+    pEndpointFBSD->cMaxIo = UsbFsOpen.max_bufsize;
+    pEndpointFBSD->cMaxFrames = UsbFsOpen.max_frames;
+
+    return index;
 }
 
 /**
- * The device has been unplugged.
- * Cancel all in-flight URBs and put them up for reaping.
+ * Close an endpoint.
+ *
+ * @returns VBox status code.
  */
-static void usbProxFreeBSDUrbUnplugged(PUSBPROXYDEV pProxyDev)
-{
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
-
-    /*
-     * Shoot down all flying URBs.
-     */
-    RTCritSectEnter(&pDevFBSD->CritSect);
-    pProxyDev->fDetached = true;
-
-#if 0 /** @todo */
-    PUSBPROXYURBFBSD pUrbTaxing = NULL;
-    PUSBPROXYURBFBSD pUrbFBSD = pDevLnx->pInFlightHead;
-    pDevFBSD->pInFlightHead = NULL;
-    while (pUrbFBSD)
-    {
-        PUSBPROXYURBFBSD pCur = pUrbFBSD;
-        pUrbFBSD = pUrbFBSD->pNext;
-
-        ioctl(pDevFBSD->File, USBDEVFS_DISCARDURB, &pCur->KUrb);
-        if (!pCur->KUrb.status)
-            pCur->KUrb.status = -ENODEV;
-
-        /* insert into the taxing list. */
-        pCur->pPrev = NULL;
-        if (    !pCur->pSplitHead
-            ||  pCur == pCur->pSplitHead)
-        {
-            pCur->pNext = pUrbTaxing;
-            if (pUrbTaxing)
-                pUrbTaxing->pPrev = pCur;
-            pUrbTaxing = pCur;
-        }
-        else
-            pCur->pNext = NULL;
-    }
-
-    /* Append the URBs we shot down to the taxing queue. */
-    if (pUrbTaxing)
-    {
-        pUrbTaxing->pPrev = pDevFBSD->pTaxingTail;
-        if (pUrbTaxing->pPrev)
-            pUrbTaxing->pPrev->pNext = pUrbTaxing;
-        else
-            pDevFBSD->pTaxingTail = pDevFBSD->pTaxingHead = pUrbTaxing;
-    }
-#endif
-    RTCritSectLeave(&pDevFBSD->CritSect);
-}
-
-DECLINLINE(void) usbProxyFreeBSDSetEntryFree(PUSBPROXYDEVFBSD pProxyDev, unsigned iEntry)
-{
-    pProxyDev->paXferFree[pProxyDev->iXferFreeNextWrite] = iEntry;
-    pProxyDev->iXferFreeNextWrite++;
-    pProxyDev->iXferFreeNextWrite %= (pProxyDev->cXferEndpoints+1);
-}
-
-DECLINLINE(unsigned) usbProxyFreeBSDGetEntryFree(PUSBPROXYDEVFBSD pProxyDev)
-{
-    unsigned iEntry;
-
-    if (pProxyDev->iXferFreeNextWrite != pProxyDev->iXferFreeNextRead)
-    {
-        iEntry = pProxyDev->paXferFree[pProxyDev->iXferFreeNextRead];
-        pProxyDev->iXferFreeNextRead++;
-        pProxyDev->iXferFreeNextRead %= (pProxyDev->cXferEndpoints+1);
-    }
-    else
-        iEntry = USBPROXY_FREEBSD_NO_ENTRY_FREE;
-
-    return iEntry;
-}
-
-static PUSBENDPOINTFBSD usbProxyFreeBSDEndpointOpen(PUSBPROXYDEV pProxyDev, int Endpoint)
-{
-    LogFlow(("usbProxyFreeBSDEndpointOpen: pProxyDev=%p Endpoint=%d\n", pProxyDev, Endpoint));
-
-    int EndPtIndex = (Endpoint & USBFBSD_EPADDR_NUM_MASK) + ((Endpoint & USBFBSD_EPADDR_DIR_MASK) ? USBFBSD_MAXENDPOINTS / 2 : 0);
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
-    PUSBENDPOINTFBSD pEndpointFBSD = &pDevFBSD->aEpOpened[EndPtIndex];
-    struct usb_fs_endpoint *pXferEndpoint;
-
-    AssertMsg(EndPtIndex < USBFBSD_MAXENDPOINTS, ("Endpoint index exceeds limit %d\n", EndPtIndex));
-
-    if (!pEndpointFBSD->fOpen)
-    {
-        struct usb_fs_open UsbFsOpen;
-
-        pEndpointFBSD->iEndpoint = usbProxyFreeBSDGetEntryFree(pDevFBSD);
-        if (pEndpointFBSD->iEndpoint == USBPROXY_FREEBSD_NO_ENTRY_FREE)
-            return NULL;
-
-        LogFlow(("usbProxyFreeBSDEndpointOpen: ep_index=%d\n", pEndpointFBSD->iEndpoint));
-
-        UsbFsOpen.ep_index    = pEndpointFBSD->iEndpoint;
-        UsbFsOpen.ep_no       = Endpoint;
-        UsbFsOpen.max_bufsize = 256 * _1K; /* Hardcoded assumption about the URBs we get. */
-        UsbFsOpen.max_frames  = 2;
-
-        int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_OPEN, &UsbFsOpen, true, UINT32_MAX);
-        if (rc)
-            return NULL;
-
-        pEndpointFBSD->fOpen = true;
-        pEndpointFBSD->pXferEndpoint = &pDevFBSD->paXferEndpoints[pEndpointFBSD->iEndpoint];
-    }
-    else
-    {
-        AssertMsgReturn(!pDevFBSD->paUrbs[pEndpointFBSD->iEndpoint].pUrb, ("Endpoint is busy"), NULL);
-        pEndpointFBSD->pXferEndpoint = &pDevFBSD->paXferEndpoints[pEndpointFBSD->iEndpoint];
-    }
-
-    return pEndpointFBSD;
-}
-
 static int usbProxyFreeBSDEndpointClose(PUSBPROXYDEV pProxyDev, int Endpoint)
 {
-    LogFlow(("usbProxyFreeBSDEndpointClose: pProxyDev=%p Endpoint=%d\n", pProxyDev, Endpoint));
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    PUSBENDPOINTFBSD pEndpointFBSD = &pDevFBSD->aSwEndpoint[Endpoint];
+    struct usb_fs_close UsbFsClose;
+    int rc = VINF_SUCCESS;
 
-    AssertMsg(Endpoint < USBFBSD_MAXENDPOINTS, ("Endpoint index exceeds limit %d\n", Endpoint));
+    LogFlow(("usbProxyFreeBSDEndpointClose: pProxyDev=%p Endpoint=%d\n",
+             (void *)pProxyDev, Endpoint));
 
-    int EndPtIndex = (Endpoint & USBFBSD_EPADDR_NUM_MASK) + ((Endpoint & USBFBSD_EPADDR_DIR_MASK) ? USBFBSD_MAXENDPOINTS / 2 : 0);
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
-    PUSBENDPOINTFBSD pEndpointFBSD = &pDevFBSD->aEpOpened[EndPtIndex];
-
-    if (pEndpointFBSD->fOpen)
+    /* check for cancelling */
+    if (pEndpointFBSD->pUrb != NULL) 
     {
-        struct usb_fs_close UsbFsClose;
-
-        AssertMsgReturn(!pDevFBSD->paUrbs[pEndpointFBSD->iEndpoint].pUrb, ("Endpoint is busy"), NULL);
-
-        UsbFsClose.ep_index = pEndpointFBSD->iEndpoint;
-
-        int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_CLOSE, &UsbFsClose, true, UINT32_MAX);
-        if (rc)
-        {
-            LogFlow(("usbProxyFreeBSDEndpointClose: failed rc=%d errno=%Rrc\n", rc, RTErrConvertFromErrno(errno)));
-            return RTErrConvertFromErrno(errno);
-        }
-
-        usbProxyFreeBSDSetEntryFree(pDevFBSD, pEndpointFBSD->iEndpoint);
-        pEndpointFBSD->fOpen = false;
+        pEndpointFBSD->fCancelling = true;
+        pDevFBSD->fCancelling = true;
     }
 
-    return VINF_SUCCESS;
+    /* check for opened */
+    if (pEndpointFBSD->fOpen)
+    {
+        pEndpointFBSD->fOpen = false;
+
+        /* Zero default */
+        memset(&UsbFsClose, 0, sizeof(UsbFsClose));
+
+        /* Set endpoint index */
+        UsbFsClose.ep_index = Endpoint;
+
+        /* Close endpoint */
+        rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_CLOSE, &UsbFsClose, true);
+    }
+    return rc;
 }
 
 /**
@@ -356,88 +358,60 @@ static int usbProxyFreeBSDEndpointClose(PUSBPROXYDEV pProxyDev, int Endpoint)
  *                          not to contain the substring "//".
  * @param   pvBackend       Backend specific pointer, unused for the linux backend.
  */
-static int usbProxyFreeBSDOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, void *pvBackend)
+static int usbProxyFreeBSDOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress,
+                               void *pvBackend)
 {
+    int rc;
+
     LogFlow(("usbProxyFreeBSDOpen: pProxyDev=%p pszAddress=%s\n", pProxyDev, pszAddress));
 
     /*
      * Try open the device node.
      */
     RTFILE File;
-    int rc = RTFileOpen(&File, pszAddress, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+
+    rc = RTFileOpen(&File, pszAddress, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Allocate and initialize the linux backend data.
-         */
-        PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)RTMemAllocZ(sizeof(USBPROXYDEVFBSD));
+             * Allocate and initialize the linux backend data.
+             */
+        PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)
+        RTMemAllocZ(sizeof(USBPROXYDEVFBSD));
+
         if (pDevFBSD)
         {
             pDevFBSD->File = File;
-            rc = RTCritSectInit(&pDevFBSD->CritSect);
+            pProxyDev->Backend.pv = pDevFBSD;
+
+            rc = usbProxyFreeBSDFsInit(pProxyDev);
             if (RT_SUCCESS(rc))
             {
-                unsigned cTransfersMax = 127; /* Maximum in the kernel atm. */
+                LogFlow(("usbProxyFreeBSDOpen(%p, %s): returns "
+                         "successfully File=%d iActiveCfg=%d\n",
+                         pProxyDev, pszAddress,
+                         pDevFBSD->File, pProxyDev->iActiveCfg));
 
-                /* Allocate arrays for data transfers. */
-                pDevFBSD->paXferEndpoints = (struct usb_fs_endpoint *)RTMemAllocZ(cTransfersMax * sizeof(struct usb_fs_endpoint));
-                pDevFBSD->paUrbs          = (PVUSBURBFBSD)RTMemAllocZ(cTransfersMax * sizeof(VUSBURBFBSD));
-                pDevFBSD->paXferFree      = (unsigned *)RTMemAllocZ((cTransfersMax + 1) * sizeof(unsigned));
-                pDevFBSD->cXferEndpoints  = cTransfersMax;
-
-                if (pDevFBSD->paXferEndpoints && pDevFBSD->paUrbs && pDevFBSD->paXferFree)
-                {
-                    /* Initialize the kernel side. */
-                    struct usb_fs_init UsbFsInit;
-
-                    UsbFsInit.pEndpoints   = pDevFBSD->paXferEndpoints;
-                    UsbFsInit.ep_index_max = cTransfersMax;
-                    rc = ioctl(File, USB_FS_INIT, &UsbFsInit);
-                    if (!rc)
-                    {
-                        for (unsigned i = 0; i < cTransfersMax; i++)
-                            usbProxyFreeBSDSetEntryFree(pDevFBSD, i);
-
-                        for (unsigned i= 0; i < USBFBSD_MAXENDPOINTS; i++)
-                            pDevFBSD->aEpOpened[i].fOpen = false;
-
-                        pProxyDev->Backend.pv = pDevFBSD;
-
-                        LogFlow(("usbProxyFreeBSDOpen(%p, %s): returns successfully File=%d iActiveCfg=%d\n",
-                                 pProxyDev, pszAddress, pDevFBSD->File, pProxyDev->iActiveCfg));
-
-                        return VINF_SUCCESS;
-                    }
-                    else
-                        rc = RTErrConvertFromErrno(errno);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-
-                if (pDevFBSD->paXferEndpoints)
-                    RTMemFree(pDevFBSD->paXferEndpoints);
-                if (pDevFBSD->paUrbs)
-                    RTMemFree(pDevFBSD->paUrbs);
-                if (pDevFBSD->paXferFree)
-                    RTMemFree(pDevFBSD->paXferFree);
+                return VINF_SUCCESS;
             }
 
             RTMemFree(pDevFBSD);
         }
         else
             rc = VERR_NO_MEMORY;
+
         RTFileClose(File);
     }
     else if (rc == VERR_ACCESS_DENIED)
         rc = VERR_VUSB_USBFS_PERMISSION;
 
-    Log(("usbProxyFreeBSDOpen(%p, %s) failed, rc=%Rrc!\n", pProxyDev, pszAddress, rc));
+    Log(("usbProxyFreeBSDOpen(%p, %s) failed, rc=%d!\n",
+         pProxyDev, pszAddress, rc));
+
     pProxyDev->Backend.pv = NULL;
 
     NOREF(pvBackend);
     return rc;
-
-    return VINF_SUCCESS;
 }
 
 
@@ -450,60 +424,55 @@ static int usbProxyFreeBSDOpen(PUSBPROXYDEV pProxyDev, const char *pszAddress, v
  */
 static int usbProxyFreeBSDInit(PUSBPROXYDEV pProxyDev)
 {
-    LogFlow(("usbProxyFreeBSDInit: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    int rc;
+
+    LogFlow(("usbProxyFreeBSDInit: pProxyDev=%s\n",
+             pProxyDev->pUsbIns->pszName));
 
     /* Retrieve current active configuration. */
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_GET_CONFIG, &pProxyDev->iActiveCfg, true, UINT32_MAX);
-    if (RT_FAILURE(rc))
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_GET_CONFIG,
+                                &pProxyDev->iActiveCfg, true);
+    if (RT_FAILURE(rc) || pProxyDev->iActiveCfg == 255)
     {
+        pProxyDev->cIgnoreSetConfigs = 0;
         pProxyDev->iActiveCfg = -1;
-        return rc;
+    }
+    else
+    {
+        pProxyDev->cIgnoreSetConfigs = 1;
+        pProxyDev->iActiveCfg++;
     }
 
     Log(("usbProxyFreeBSDInit: iActiveCfg=%d\n", pProxyDev->iActiveCfg));
-    pProxyDev->cIgnoreSetConfigs = 1;
-    pProxyDev->iActiveCfg++;
 
-    return VINF_SUCCESS;
+    return rc;
 }
-
 
 /**
  * Closes the proxy device.
  */
 static void usbProxyFreeBSDClose(PUSBPROXYDEV pProxyDev)
 {
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+
     LogFlow(("usbProxyFreeBSDClose: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
-    Assert(pDevFBSD);
-    if (!pDevFBSD)
-        return;
 
-    RTCritSectDelete(&pDevFBSD->CritSect);
+    /* sanity check */
+    AssertPtrReturnVoid(pDevFBSD);
 
-    struct usb_fs_uninit UsbFsUninit;
-    UsbFsUninit.dummy = 0;
-
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
-
-    if (pDevFBSD->paXferEndpoints)
-        RTMemFree(pDevFBSD->paXferEndpoints);
-    if (pDevFBSD->paUrbs)
-        RTMemFree(pDevFBSD->paUrbs);
-    if (pDevFBSD->paXferFree)
-        RTMemFree(pDevFBSD->paXferFree);
+    usbProxyFreeBSDFsUnInit(pProxyDev);
 
     RTFileClose(pDevFBSD->File);
+
     pDevFBSD->File = NIL_RTFILE;
 
     RTMemFree(pDevFBSD);
+
     pProxyDev->Backend.pv = NULL;
 
     LogFlow(("usbProxyFreeBSDClose: returns\n"));
 }
-
 
 /**
  * Reset a device.
@@ -513,57 +482,50 @@ static void usbProxyFreeBSDClose(PUSBPROXYDEV pProxyDev)
  */
 static int usbProxyFreeBSDReset(PUSBPROXYDEV pProxyDev, bool fResetOnFreeBSD)
 {
-    LogFlow(("usbProxyFreeBSDReset: pProxyDev=%s\n", pProxyDev->pUsbIns->pszName));
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    int iParm;
+    int rc = VINF_SUCCESS;
 
-    /* Close any open endpoints. */
-    for (unsigned i = 0; i < USBFBSD_MAXENDPOINTS; i++)
-        usbProxyFreeBSDEndpointClose(pProxyDev, i);
+    LogFlow(("usbProxyFreeBSDReset: pProxyDev=%s\n",
+             pProxyDev->pUsbIns->pszName));
 
-    /* We need to release kernel resources first. */
-    struct usb_fs_uninit UsbFsUninit;
-    UsbFsUninit.dummy = 0;
+    if (!fResetOnFreeBSD)
+        goto done;
 
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+    /* We need to release kernel ressources first. */
+    rc = usbProxyFreeBSDFsUnInit(pProxyDev);
+    if (RT_FAILURE(rc))
+        goto done;
 
-    /* Resetting is not possible from a normal user account */
-#if 0
-    int iUnused = 0;
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_DEVICEENUMERATE, &iUnused, true, UINT32_MAX);
-    if (rc)
-        return RTErrConvertFromErrno(errno);
-#endif
-
-    /* Allocate kernel resources again. */
-    struct usb_fs_init UsbFsInit;
-
-    UsbFsInit.pEndpoints   = pDevFBSD->paXferEndpoints;
-    UsbFsInit.ep_index_max = pDevFBSD->cXferEndpoints;
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_INIT, &UsbFsInit, true, UINT32_MAX);
-    if (!rc)
+    /* Resetting is only possible as super-user, ignore any failures: */
+    iParm = 0;
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_DEVICEENUMERATE, &iParm, true);
+    if (RT_FAILURE(rc))
     {
-        /* Retrieve current active configuration. */
-        rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_GET_CONFIG, &pProxyDev->iActiveCfg, true, UINT32_MAX);
-        if (rc)
+        /* Set the config instead of bus reset */
+        iParm = 255;
+        rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_SET_CONFIG, &iParm, true);
+        if (RT_SUCCESS(rc))
         {
-            pProxyDev->iActiveCfg = -1;
-            rc = RTErrConvertFromErrno(errno);
-        }
-        else
-        {
-            pProxyDev->cIgnoreSetConfigs = 2;
-            pProxyDev->iActiveCfg++;
+            iParm = 0;
+            rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_SET_CONFIG, &iParm, true);
         }
     }
-    else
-        rc = RTErrConvertFromErrno(errno);
+    usleep(10000); /* nice it! */
 
-    Log(("usbProxyFreeBSDReset: iActiveCfg=%d\n", pProxyDev->iActiveCfg));
+    /* Allocate kernel ressources again. */
+    rc = usbProxyFreeBSDFsInit(pProxyDev);
+    if (RT_FAILURE(rc))
+        goto done;
+
+    /* Retrieve current active configuration. */
+    rc = usbProxyFreeBSDInit(pProxyDev);
+
+done:
+    pProxyDev->cIgnoreSetConfigs = 2;
 
     return rc;
 }
-
 
 /**
  * SET_CONFIGURATION.
@@ -577,61 +539,56 @@ static int usbProxyFreeBSDReset(PUSBPROXYDEV pProxyDev, bool fResetOnFreeBSD)
  */
 static int usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
 {
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    int iCfgIndex;
+    int rc;
 
-    LogFlow(("usbProxyFreeBSDSetConfig: pProxyDev=%s cfg=%#x\n",
+    LogFlow(("usbProxyFreeBSDSetConfig: pProxyDev=%s cfg=%x\n",
              pProxyDev->pUsbIns->pszName, iCfg));
 
-    /* Close any open endpoints. */
-    for (unsigned i = 0; i < USBFBSD_MAXENDPOINTS; i++)
-        usbProxyFreeBSDEndpointClose(pProxyDev, i);
-
-    /* We need to release kernel resources first. */
-    struct usb_fs_uninit UsbFsUninit;
-    UsbFsUninit.dummy = 0;
-
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
-
-    int iCfgIndex = 0;
-
-    /* Get the configuration index matching the value. */
-    for (iCfgIndex = 0; iCfgIndex < pProxyDev->DevDesc.bNumConfigurations; iCfgIndex++)
+    /* We need to release kernel ressources first. */
+    rc = usbProxyFreeBSDFsUnInit(pProxyDev);
+    if (RT_FAILURE(rc))
     {
-        if (pProxyDev->paCfgDescs[iCfgIndex].Core.bConfigurationValue == iCfg)
-            break;
+        LogFlow(("usbProxyFreeBSDSetInterface: Freeing kernel resources "
+                 "failed failed rc=%d\n", rc));
+        return false;
     }
 
-    if (RT_UNLIKELY(iCfgIndex == pProxyDev->DevDesc.bNumConfigurations))
+    if (iCfg == 0)
     {
-        LogFlow(("usbProxyFreeBSDSetConfig: configuration %d not found\n", iCfg));
-        return false;
+        /* Unconfigure */
+        iCfgIndex = 255;
+    }
+    else
+    {
+        /* Get the configuration index matching the value. */
+        for (iCfgIndex = 0; iCfgIndex < pProxyDev->DevDesc.bNumConfigurations; iCfgIndex++)
+        {
+            if (pProxyDev->paCfgDescs[iCfgIndex].Core.bConfigurationValue == iCfg)
+                break;
+        }
+
+        if (iCfgIndex == pProxyDev->DevDesc.bNumConfigurations)
+        {
+            LogFlow(("usbProxyFreeBSDSetConfig: configuration "
+                     "%d not found\n", iCfg));
+            return false;
+        }
     }
 
     /* Set the config */
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_SET_CONFIG, &iCfgIndex, true, UINT32_MAX);
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_SET_CONFIG, &iCfgIndex, true);
     if (RT_FAILURE(rc))
-    {
-        LogFlow(("usbProxyFreeBSDSetConfig: setting config index %d failed rc=%d errno=%Rrc\n", iCfgIndex, rc, RTErrConvertFromErrno(errno)));
         return false;
-    }
 
-    /* Allocate kernel resources again. */
-    struct usb_fs_init UsbFsInit;
-
-    UsbFsInit.pEndpoints   = pDevFBSD->paXferEndpoints;
-    UsbFsInit.ep_index_max = pDevFBSD->cXferEndpoints;
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_INIT, &UsbFsInit, true, UINT32_MAX);
-
-
-    LogFlow(("usbProxyFreeBSDSetConfig: rc=%d errno=%Rrc\n", rc, RTErrConvertFromErrno(errno)));
-
-    if (!rc)
-        return true;
-    else
+    /* Allocate kernel ressources again. */
+    rc = usbProxyFreeBSDFsInit(pProxyDev);
+    if (RT_FAILURE(rc))
         return false;
+
+    return true;
 }
-
 
 /**
  * Claims an interface.
@@ -639,15 +596,24 @@ static int usbProxyFreeBSDSetConfig(PUSBPROXYDEV pProxyDev, int iCfg)
  */
 static int usbProxyFreeBSDClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
-    LogFlow(("usbProxyFreeBSDClaimInterface: pProxyDev=%s ifnum=%#x\n", pProxyDev->pUsbIns->pszName, iIf));
+    int rc;
 
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_CLAIM_INTERFACE, &iIf, true, UINT32_MAX);
+    LogFlow(("usbProxyFreeBSDClaimInterface: pProxyDev=%s "
+             "ifnum=%x\n", pProxyDev->pUsbIns->pszName, iIf));
+
+    /*
+     * Try to detach kernel driver on this interface, ignore any
+     * failures
+     */
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_IFACE_DRIVER_DETACH, &iIf, true);
+
+    /* Try to claim interface */
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_CLAIM_INTERFACE, &iIf, true);
     if (RT_FAILURE(rc))
         return false;
 
     return true;
 }
-
 
 /**
  * Releases an interface.
@@ -655,94 +621,93 @@ static int usbProxyFreeBSDClaimInterface(PUSBPROXYDEV pProxyDev, int iIf)
  */
 static int usbProxyFreeBSDReleaseInterface(PUSBPROXYDEV pProxyDev, int iIf)
 {
-    LogFlow(("usbProxyFreeBSDReleaseInterface: pProxyDev=%s ifnum=%#x\n", pProxyDev->pUsbIns->pszName, iIf));
+    int rc;
 
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_RELEASE_INTERFACE, &iIf, true, UINT32_MAX);
+    LogFlow(("usbProxyFreeBSDReleaseInterface: pProxyDev=%s "
+        "ifnum=%x\n", pProxyDev->pUsbIns->pszName, iIf));
+
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_RELEASE_INTERFACE, &iIf, true);
     if (RT_FAILURE(rc))
         return false;
 
     return true;
 }
 
-
 /**
  * SET_INTERFACE.
  *
  * @returns success indicator.
  */
-static int usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
+static int
+usbProxyFreeBSDSetInterface(PUSBPROXYDEV pProxyDev, int iIf, int iAlt)
 {
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
-
-    LogFlow(("usbProxyFreeBSDSetInterface: pProxyDev=%p iIf=%#x iAlt=%#x\n", pProxyDev, iIf, iAlt));
-
-    /* Close any open endpoints. */
-    for (unsigned i = 0; i < USBFBSD_MAXENDPOINTS; i++)
-        usbProxyFreeBSDEndpointClose(pProxyDev, i);
-
-    /* We need to release kernel resources first. */
-    struct usb_fs_uninit UsbFsUninit;
-    UsbFsUninit.dummy = 0;
-
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_UNINIT, &UsbFsUninit, false, 1);
-    AssertMsg(!rc, ("Freeing kernel resources failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
-
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
     struct usb_alt_interface UsbIntAlt;
+    int rc;
+
+    LogFlow(("usbProxyFreeBSDSetInterface: pProxyDev=%p iIf=%x iAlt=%x\n",
+             pProxyDev, iIf, iAlt));
+
+    /* We need to release kernel ressources first. */
+    rc = usbProxyFreeBSDFsUnInit(pProxyDev);
+    if (RT_FAILURE(rc))
+    {
+        LogFlow(("usbProxyFreeBSDSetInterface: Freeing kernel resources "
+                 "failed failed rc=%d\n", rc));
+        return false;
+    }
+    memset(&UsbIntAlt, 0, sizeof(UsbIntAlt));
     UsbIntAlt.uai_interface_index = iIf;
     UsbIntAlt.uai_alt_index = iAlt;
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_SET_ALTINTERFACE, &UsbIntAlt, true, UINT32_MAX);
-    if (rc)
+
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_SET_ALTINTERFACE, &UsbIntAlt, true);
+    if (RT_FAILURE(rc))
     {
-        LogFlow(("usbProxyFreeBSDSetInterface: Setting interface %d %d failed rc=%d errno=%Rrc\n", iIf, iAlt, rc,RTErrConvertFromErrno(errno)));
+        LogFlow(("usbProxyFreeBSDSetInterface: Setting interface %d %d "
+                 "failed rc=%d\n", iIf, iAlt, rc));
         return false;
     }
 
-    /* Allocate kernel resources again. */
-    struct usb_fs_init UsbFsInit;
-
-    UsbFsInit.pEndpoints   = pDevFBSD->paXferEndpoints;
-    UsbFsInit.ep_index_max = pDevFBSD->cXferEndpoints;
-    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_INIT, &UsbFsInit, true, UINT32_MAX);
-
-    LogFlow(("usbProxyFreeBSDSetInterface: rc=%d errno=%Rrc\n", rc, RTErrConvertFromErrno(errno)));
-
-    if (!rc)
-        return true;
-    else
+    rc = usbProxyFreeBSDFsInit(pProxyDev);
+    if (RT_FAILURE(rc))
         return false;
-}
-
-
-/**
- * Clears the halted endpoint 'EndPt'.
- */
-static bool usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int EndPt)
-{
-    LogFlow(("usbProxyFreeBSDClearHaltedEp: pProxyDev=%s EndPt=%u\n", pProxyDev->pUsbIns->pszName, EndPt));
-
-    /*
-     * Clearing the zero control pipe doesn't make sense. Just ignore it.
-     */
-    if (EndPt == 0)
-        return true;
-
-    struct usb_ctl_request Req;
-
-    memset(&Req, 0, sizeof(struct usb_ctl_request));
-    usbProxyFreeBSDSetupReq(&Req.ucr_request, VUSB_DIR_TO_DEV | VUSB_TO_ENDPOINT, VUSB_REQ_CLEAR_FEATURE, 0, EndPt, 0);
-
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_DO_REQUEST, &Req, true, 1);
-    if (rc)
-    {
-        LogFlow(("usbProxyFreeBSDClearHaltedEp: failed rc=%d errno=%Rrc\n", rc, RTErrConvertFromErrno(errno)));
-        return false;
-    }
-
-    LogFlow(("usbProxyFreeBSDClearHaltedEp: succeeded\n"));
 
     return true;
 }
 
+/**
+ * Clears the halted endpoint 'ep_num'.
+ */
+static bool usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int ep_num)
+{
+    struct usb_ctl_request Req;
+    int rc;
+
+    LogFlow(("usbProxyFreeBSDClearHaltedEp: pProxyDev=%s ep_num=%u\n",
+             pProxyDev->pUsbIns->pszName, ep_num));
+
+    /*
+     * Clearing the zero control pipe doesn't make sense.
+     * Just ignore it.
+     */
+    if ((ep_num & 0xF) == 0)
+        return true;
+
+    memset(&Req, 0, sizeof(Req));
+
+    usbProxyFreeBSDSetupReq(&Req.ucr_request,
+                            VUSB_DIR_TO_DEV | VUSB_TO_ENDPOINT,
+                            VUSB_REQ_CLEAR_FEATURE, 0, ep_num, 0);
+
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_DO_REQUEST, &Req, true);
+
+    LogFlow(("usbProxyFreeBSDClearHaltedEp: rc=%Rrc\n", rc));
+
+    if (RT_FAILURE(rc))
+        return false;
+
+    return true;
+}
 
 /**
  * @copydoc USBPROXYBACK::pfnUrbQueue
@@ -750,68 +715,138 @@ static bool usbProxyFreeBSDClearHaltedEp(PUSBPROXYDEV pProxyDev, unsigned int En
 static int usbProxyFreeBSDUrbQueue(PVUSBURB pUrb)
 {
     PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
-
-    LogFlow(("usbProxyFreeBSDUrbQueue: pUrb=%p\n", pUrb));
-
-    uint8_t EndPt = pUrb->EndPt;
-    if (pUrb->EndPt)
-        EndPt = pUrb->EndPt | (pUrb->enmDir == VUSBDIRECTION_IN ? 0x80 : 0);
-
-    PUSBENDPOINTFBSD pEndpointFBSD = usbProxyFreeBSDEndpointOpen(pProxyDev, EndPt);
-    if (!pEndpointFBSD)
-        return false;
-
-    PVUSBURBFBSD pUrbFBSD = &pDevFBSD->paUrbs[pEndpointFBSD->iEndpoint];
-    AssertMsg(!pUrbFBSD->pUrb, ("Assigned entry is busy\n"));
-    pUrbFBSD->pUrb = pUrb;
-
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    PUSBENDPOINTFBSD pEndpointFBSD;
+    struct usb_fs_endpoint *pXferEndpoint;
     struct usb_fs_start UsbFsStart;
     unsigned cFrames;
+    uint8_t *pbData;
+    int index;
+    int ep_num;
+    int rc;
 
-    if (pUrb->enmType == VUSBXFERTYPE_MSG)
+    LogFlow(("usbProxyFreeBSDUrbQueue: pUrb=%p EndPt=%u Dir=%u\n",
+             pUrb, (unsigned)pUrb->EndPt, (unsigned)pUrb->enmDir));
+
+    ep_num = pUrb->EndPt;
+
+    if ((pUrb->enmType != VUSBXFERTYPE_MSG) && (pUrb->enmDir == VUSBDIRECTION_IN))
+        ep_num |= 0x80;
+
+    index = 0;
+
+retry:
+
+    index = usbProxyFreeBSDEndpointOpen(pProxyDev, ep_num,
+                                        (pUrb->enmType == VUSBXFERTYPE_ISOC),
+                                        index);
+
+    if (index < 0)
+        return false;
+
+    pEndpointFBSD = &pDevFBSD->aSwEndpoint[index];
+    pXferEndpoint = &pDevFBSD->aHwEndpoint[index];
+
+    pbData = pUrb->abData;
+
+    switch (pUrb->enmType)
     {
-        PVUSBSETUP pSetup = (PVUSBSETUP)&pUrb->abData[0];
-
-        pUrbFBSD->apvData[0] = pSetup;
-        pUrbFBSD->acbData[0] = sizeof(VUSBSETUP);
-
-        if (pSetup->wLength)
+        case VUSBXFERTYPE_MSG:
         {
-            pUrbFBSD->apvData[1] = &pUrb->abData[sizeof(VUSBSETUP)];
-            pUrbFBSD->acbData[1] = pSetup->wLength;
-            cFrames = 2;
+            pEndpointFBSD->apvData[0] = pbData;
+            pEndpointFBSD->acbData[0] = 8;
+
+            /* check wLength */
+            if (pbData[6] || pbData[7])
+            {
+                pEndpointFBSD->apvData[1] = pbData + 8;
+                pEndpointFBSD->acbData[1] = pbData[6] | (pbData[7] << 8);
+                cFrames = 2;
+            }
+            else
+            {
+                pEndpointFBSD->apvData[1] = NULL;
+                pEndpointFBSD->acbData[1] = 0;
+                cFrames = 1;
+            }
+
+            LogFlow(("usbProxyFreeBSDUrbQueue: pUrb->cbData=%u, 0x%02x, "
+                     "0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
+                     pUrb->cbData, pbData[0], pbData[1], pbData[2], pbData[3],
+                     pbData[4], pbData[5], pbData[6], pbData[7]));
+
+            pXferEndpoint->timeout = USB_FS_TIMEOUT_NONE;
+            pXferEndpoint->flags = USB_FS_FLAG_MULTI_SHORT_OK;
+            break;
         }
-        else
+        case VUSBXFERTYPE_ISOC:
+        {
+            unsigned i;
+
+            for (i = 0; i < pUrb->cIsocPkts; i++)
+            {
+                if (i >= pEndpointFBSD->cMaxFrames)
+                    break;
+                pEndpointFBSD->apvData[i] = pbData + pUrb->aIsocPkts[i].off;
+                pEndpointFBSD->acbData[i] = pUrb->aIsocPkts[i].cb;
+            }
+            /* Timeout handling will be done during reap. */
+            pXferEndpoint->timeout = USB_FS_TIMEOUT_NONE;
+            pXferEndpoint->flags = USB_FS_FLAG_MULTI_SHORT_OK;
+            cFrames = i;
+            break;
+        }
+        default:
+        {
+            pEndpointFBSD->apvData[0] = pbData;
+            pEndpointFBSD->cbData0 = pUrb->cbData;
+
+            /* XXX maybe we have to loop */
+            if (pUrb->cbData > pEndpointFBSD->cMaxIo)
+                pEndpointFBSD->acbData[0] = pEndpointFBSD->cMaxIo;
+            else
+                pEndpointFBSD->acbData[0] = pUrb->cbData;
+
+            /* Timeout handling will be done during reap. */
+            pXferEndpoint->timeout = USB_FS_TIMEOUT_NONE;
+            pXferEndpoint->flags = pUrb->fShortNotOk ? 0 : USB_FS_FLAG_MULTI_SHORT_OK;
             cFrames = 1;
-    }
-    else
-    {
-        pUrbFBSD->apvData[0] = &pUrb->abData[0];
-        pUrbFBSD->acbData[0] = pUrb->cbData;
-        cFrames = 1;
+            break;
+        }
     }
 
-    struct usb_fs_endpoint *pXferEndpoint = pEndpointFBSD->pXferEndpoint;
-    pXferEndpoint->ppBuffer = &pUrbFBSD->apvData[0];
-    pXferEndpoint->pLength  = &pUrbFBSD->acbData[0];
-    pXferEndpoint->nFrames  = cFrames;
-    pXferEndpoint->timeout  = USB_FS_TIMEOUT_NONE; /* Timeout handling will be done during reap. */
-    pXferEndpoint->flags    = pUrb->fShortNotOk ? 0 : USB_FS_FLAG_MULTI_SHORT_OK;
+    /* store number of frames */
+    pXferEndpoint->nFrames = cFrames;
+
+    /* zero-default */
+    memset(&UsbFsStart, 0, sizeof(UsbFsStart));
 
     /* Start the transfer */
-    UsbFsStart.ep_index = pEndpointFBSD->iEndpoint;
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_START, &UsbFsStart, true, UINT32_MAX);
+    UsbFsStart.ep_index = index;
 
-    LogFlow(("usbProxyFreeBSDUrbQueue: USB_FS_START returned rc=%d errno=%Rrc\n", rc, RTErrConvertFromErrno(errno)));
-    if (rc)
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_START, &UsbFsStart, true);
+
+    LogFlow(("usbProxyFreeBSDUrbQueue: USB_FS_START returned rc=%d "
+             "len[0]=%u len[1]=%u cbData=%u index=%u ep_num=%u\n", rc,
+             (unsigned)pEndpointFBSD->acbData[0],
+             (unsigned)pEndpointFBSD->acbData[1],
+             (unsigned)pUrb->cbData,
+             (unsigned)index, (unsigned)ep_num));
+
+    if (RT_FAILURE(rc))
     {
+        if (rc == VERR_RESOURCE_BUSY)
+        {
+            index++;
+            goto retry;
+        }
         return false;
     }
+    pUrb->Dev.pvPrivate = (void *)(long)(index + 1);
+    pEndpointFBSD->pUrb = pUrb;
 
     return true;
 }
-
 
 /**
  * Reap URBs in-flight on a device.
@@ -823,33 +858,82 @@ static int usbProxyFreeBSDUrbQueue(PVUSBURB pUrb)
  */
 static PVUSBURB usbProxyFreeBSDUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMillies)
 {
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
-
-    LogFlow(("usbProxyFreeBSDUrbReap: cMillies=%u\n", cMillies));
-
-    /* We will poll for finished urbs because the ioctl doesn't take a timeout parameter. */
-    struct pollfd PollFd;
-    PVUSBURB pUrb = NULL;
-
-    PollFd.fd      = (int)pDevFBSD->File;
-    PollFd.events  = POLLIN | POLLRDNORM | POLLOUT;
-    PollFd.revents = 0;
-
+    struct usb_fs_endpoint *pXferEndpoint;
+    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD) pProxyDev->Backend.pv;
+    PUSBENDPOINTFBSD pEndpointFBSD;
+    PVUSBURB pUrb;
     struct usb_fs_complete UsbFsComplete;
+    struct pollfd PollFd;
+    int rc;
 
-    UsbFsComplete.ep_index = 0;
+    LogFlow(("usbProxyFreeBSDUrbReap: pProxyDev=%p, cMillies=%u\n",
+             pProxyDev, cMillies));
 
-    int rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_COMPLETE, &UsbFsComplete, true, UINT32_MAX);
-    if (!rc)
+repeat:
+
+    pUrb = NULL;
+
+    /* check for cancelled transfers */
+    if (pDevFBSD->fCancelling)
     {
-        struct usb_fs_endpoint *pXferEndpoint = &pDevFBSD->paXferEndpoints[UsbFsComplete.ep_index];
-        PVUSBURBFBSD pUrbFBSD = &pDevFBSD->paUrbs[UsbFsComplete.ep_index];
+        for (unsigned n = 0; n < USBFBSD_MAXENDPOINTS; n++)
+        {
+            pEndpointFBSD = &pDevFBSD->aSwEndpoint[n];
+            if (pEndpointFBSD->fCancelling)
+            {
+                pEndpointFBSD->fCancelling = false;
+                pUrb = pEndpointFBSD->pUrb;
+                pEndpointFBSD->pUrb = NULL;
 
-        LogFlow(("Reaped URB %#p\n", pUrbFBSD->pUrb));
+                if (pUrb != NULL)
+                    break;
+            }
+        }
 
-        pUrb = pUrbFBSD->pUrb;
-        AssertMsg(pUrb, ("No URB handle for the completed entry\n"));
-        pUrbFBSD->pUrb = NULL;
+        if (pUrb != NULL)
+        {
+            pUrb->enmStatus = VUSBSTATUS_INVALID;
+            pUrb->Dev.pvPrivate = NULL;
+
+            switch (pUrb->enmType)
+            {
+                case VUSBXFERTYPE_MSG:
+                    pUrb->cbData = 0;
+                    break;
+                case VUSBXFERTYPE_ISOC:
+                    pUrb->cbData = 0;
+                    for (int n = 0; n < (int)pUrb->cIsocPkts; n++)
+                        pUrb->aIsocPkts[n].cb = 0;
+                    break;
+                default:
+                    pUrb->cbData = 0;
+                    break;
+            }
+            return pUrb;
+        }
+        pDevFBSD->fCancelling = false;
+    }
+    /* Zero default */
+
+    memset(&UsbFsComplete, 0, sizeof(UsbFsComplete));
+
+    /* Check if any endpoints are complete */
+    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_COMPLETE, &UsbFsComplete, true);
+    if (RT_SUCCESS(rc)) 
+    {
+        pXferEndpoint = &pDevFBSD->aHwEndpoint[UsbFsComplete.ep_index];
+        pEndpointFBSD = &pDevFBSD->aSwEndpoint[UsbFsComplete.ep_index];
+
+        LogFlow(("usbProxyFreeBSDUrbReap: Reaped "
+                 "URB %#p\n", pEndpointFBSD->pUrb));
+
+        if (pXferEndpoint->status == USB_ERR_CANCELLED)
+            goto repeat;
+
+        pUrb = pEndpointFBSD->pUrb;
+        pEndpointFBSD->pUrb = NULL;
+        if (pUrb == NULL)
+            goto repeat;
 
         switch (pXferEndpoint->status)
         {
@@ -860,57 +944,69 @@ static PVUSBURB usbProxyFreeBSDUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMil
                 pUrb->enmStatus = VUSBSTATUS_STALL;
                 break;
             default:
-                AssertMsgFailed(("Unexpected status code %d\n", pXferEndpoint->status));
+                pUrb->enmStatus = VUSBSTATUS_INVALID;
+                break;
         }
-    }
-    else
-    {
 
-        rc = poll(&PollFd, 1, cMillies == RT_INDEFINITE_WAIT ? INFTIM : cMillies);
-        if (rc == 1)
+        pUrb->Dev.pvPrivate = NULL;
+
+        switch (pUrb->enmType)
         {
-    //        do
+            case VUSBXFERTYPE_MSG:
+                pUrb->cbData = pEndpointFBSD->acbData[0] + pEndpointFBSD->acbData[1];
+                break;
+            case VUSBXFERTYPE_ISOC:
             {
-                UsbFsComplete.ep_index = 0;
-                rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_COMPLETE, &UsbFsComplete, true, UINT32_MAX);
-                if (!rc)
+                int n;
+
+                if (pUrb->enmDir == VUSBDIRECTION_OUT)
+                    break;
+                pUrb->cbData = 0;
+                for (n = 0; n < (int)pUrb->cIsocPkts; n++)
                 {
-                    struct usb_fs_endpoint *pXferEndpoint = &pDevFBSD->paXferEndpoints[UsbFsComplete.ep_index];
-                    PVUSBURBFBSD pUrbFBSD = &pDevFBSD->paUrbs[UsbFsComplete.ep_index];
-
-                    LogFlow(("Reaped URB %#p\n", pUrbFBSD->pUrb));
-
-                    pUrb = pUrbFBSD->pUrb;
-                    AssertMsg(pUrb, ("No URB handle for the completed entry\n"));
-                    pUrbFBSD->pUrb = NULL;
-
-                    switch (pXferEndpoint->status)
-                    {
-                        case USB_ERR_NORMAL_COMPLETION:
-                            pUrb->enmStatus = VUSBSTATUS_OK;
-                            break;
-                        case USB_ERR_STALLED:
-                            pUrb->enmStatus = VUSBSTATUS_STALL;
-                            break;
-                        default:
-                            AssertMsgFailed(("Unexpected status code %d\n", pXferEndpoint->status));
-                    }
-
-                    rc = usbProxyFreeBSDDoIoCtl(pProxyDev, USB_FS_COMPLETE, &UsbFsComplete, true, UINT32_MAX);
-                    AssertMsg(((rc == -1) && (errno == EBUSY)), ("Expected return value rc=%d rc=%Rrc\n", rc, RTErrConvertFromErrno(errno)));
+                    if (n >= (int)pEndpointFBSD->cMaxFrames)
+                        break;
+                    pUrb->cbData += pEndpointFBSD->acbData[n];
+                    pUrb->aIsocPkts[n].cb = pEndpointFBSD->acbData[n];
                 }
-                else
-                    LogFlow(("couldn't get completed URB rc=%Rrc\n", RTErrConvertFromErrno(errno)));
+                for (; n < (int)pUrb->cIsocPkts; n++)
+                    pUrb->aIsocPkts[n].cb = 0;
+
+                break;
             }
-    //        while (!rc);
+            default:
+                pUrb->cbData = pEndpointFBSD->acbData[0];
+                break;
+        }
+
+        LogFlow(("usbProxyFreeBSDUrbReap: Status=%d epindex=%u "
+                 "len[0]=%d len[1]=%d\n",
+                 (int)pXferEndpoint->status,
+                 (unsigned)UsbFsComplete.ep_index,
+                 (unsigned)pEndpointFBSD->acbData[0],
+                 (unsigned)pEndpointFBSD->acbData[1]));
+
+    }
+    else if (cMillies && rc == VERR_RESOURCE_BUSY)
+    {
+        /* Poll for finished transfers */
+        PollFd.fd = (int)pDevFBSD->File;
+        PollFd.events = POLLIN | POLLRDNORM;
+        PollFd.revents = 0;
+
+        rc = poll(&PollFd, 1, (cMillies == RT_INDEFINITE_WAIT) ? INFTIM : cMillies);
+        if (rc >= 1)
+        {
+            goto repeat;
         }
         else
-            LogFlow(("poll returned rc=%d rcRT=%Rrc\n", rc, rc < 0 ? RTErrConvertFromErrno(errno) : VERR_TIMEOUT));
+        {
+            LogFlow(("usbProxyFreeBSDUrbReap: "
+                     "poll returned rc=%d\n", rc));
+        }
     }
-
     return pUrb;
 }
-
 
 /**
  * Cancels the URB.
@@ -919,11 +1015,17 @@ static PVUSBURB usbProxyFreeBSDUrbReap(PUSBPROXYDEV pProxyDev, RTMSINTERVAL cMil
 static void usbProxyFreeBSDUrbCancel(PVUSBURB pUrb)
 {
     PUSBPROXYDEV pProxyDev = PDMINS_2_DATA(pUrb->pUsbIns, PUSBPROXYDEV);
-    PUSBPROXYDEVFBSD pDevFBSD = (PUSBPROXYDEVFBSD)pProxyDev->Backend.pv;
+    int index;
 
+    index = (int)(long)pUrb->Dev.pvPrivate - 1;
 
+    if (index < 0 || index >= USBFBSD_MAXENDPOINTS)
+        return;
+
+    LogFlow(("usbProxyFreeBSDUrbCancel: epindex=%u\n", (unsigned)index));
+
+    usbProxyFreeBSDEndpointClose(pProxyDev, index);
 }
-
 
 /**
  * The FreeBSD USB Proxy Backend.
@@ -945,7 +1047,6 @@ extern const USBPROXYBACK g_USBProxyDeviceHost =
     usbProxyFreeBSDUrbReap,
     0
 };
-
 
 /*
  * Local Variables:

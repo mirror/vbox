@@ -222,6 +222,7 @@ PUSBDEVICE USBProxyServiceFreeBSD::getDevices(void)
     int iAddr = 1;
     int rc = VINF_SUCCESS;
     char *pszDevicePath = NULL;
+    uint32_t PlugTime = 0;
 
     for (;;)
     {
@@ -286,7 +287,7 @@ PUSBDEVICE USBProxyServiceFreeBSD::getDevices(void)
                 break;
             }
 
-            pDevice->enmState           = USBDEVICESTATE_UNUSED;;
+            pDevice->enmState           = USBDEVICESTATE_UNUSED;
             pDevice->bBus               = UsbDevInfo.udi_bus;
             pDevice->bDeviceClass       = UsbDevInfo.udi_class;
             pDevice->bDeviceSubClass    = UsbDevInfo.udi_subclass;
@@ -324,6 +325,10 @@ PUSBDEVICE USBProxyServiceFreeBSD::getDevices(void)
                 pDevice->pszSerialNumber = RTStrDupN(UsbDevInfo.udi_serial, sizeof(UsbDevInfo.udi_serial));
                 pDevice->u64SerialHash   = USBLibHashSerial(pDevice->pszSerialNumber);
             }
+	    rc = ioctl(FileUsb, USB_GET_PLUGTIME, &PlugTime);
+	    if (rc == 0)
+                pDevice->u64SerialHash  += PlugTime;
+
             pDevice->pszAddress = RTStrDup(pszDevicePath);
             pDevice->enmState   = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
 
