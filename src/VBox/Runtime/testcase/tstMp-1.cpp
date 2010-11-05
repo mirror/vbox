@@ -108,7 +108,7 @@ int main()
             }
             else if (RTMpGetMaxFrequency(idCpu) != 0)
             {
-                RTPrintf("tstMp-1: FAILURE: RTMpGetCurFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
+                RTPrintf("tstMp-1: FAILURE: RTMpGetMaxFrequency(%d[idx=%d]) didn't return 0 as it should\n", (int)idCpu, iCpu);
                 g_cErrors++;
             }
         }
