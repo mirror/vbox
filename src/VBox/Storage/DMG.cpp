@@ -750,7 +750,7 @@ static void dmgSwapEndianUdifCkSum(PDMGUDIFCKSUM pCkSum, uint32_t u32Kind, uint3
             break;
 
         default:
-//            AssertMsgFailed(("%x\n", u32Kind));
+            AssertMsgFailed(("%x\n", u32Kind));
             break;
     }
     NOREF(cBits);
@@ -1633,15 +1633,14 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     }
     if (RT_SUCCESS(rc))
     {
-        dmgUdifFtrFile2HostEndian(&Ftr);
-
         /*
          * Do we recognize this stuff? Does it look valid?
          */
-        if (    Ftr.u32Magic    == DMGUDIF_MAGIC
-            &&  Ftr.u32Version  == DMGUDIF_VER_CURRENT
-            &&  Ftr.cbFooter    == sizeof(Ftr))
+        if (    Ftr.u32Magic    == RT_H2BE_U32(DMGUDIF_MAGIC)
+            &&  Ftr.u32Version  == RT_H2BE_U32(DMGUDIF_VER_CURRENT)
+            &&  Ftr.cbFooter    == RT_H2BE_U32(sizeof(Ftr)))
         {
+            dmgUdifFtrFile2HostEndian(&Ftr);
             if (dmgUdifFtrIsValid(&Ftr, offFtr))
             {
                 rc = VINF_SUCCESS;
