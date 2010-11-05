@@ -294,7 +294,7 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
                                                     pDevResult->inq_data.product,
                                                     szDesc, sizeof(szDesc));
 
-                            pList->push_back(DriveInfo(szPath, NULL, szDesc));
+                            pList->push_back(DriveInfo(szPath, "", szDesc));
                             if (pfSuccess)
                                 *pfSuccess = true;
                         }
