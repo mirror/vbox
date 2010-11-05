@@ -371,6 +371,17 @@ do { \
 #endif
 extern "C"
 {
+/** Signal an event in a guest-OS-specific way.  pvEvent will be re-cast to
+ * something OS-specific. */
+void VBoxVideoCmnSignalEvent(PVBOXVIDEO_COMMON pCommon, uint64_t pvEvent);
+
+/** Allocate memory to be used in normal driver operation (dispatch level in
+ * Windows) but not necessarily in IRQ context. */
+void *VBoxVideoCmnMemAllocDriver(PVBOXVIDEO_COMMON pCommon, size_t cb);
+
+/** Free memory allocated by @a VBoxVideoCmnMemAllocDriver */
+void VBoxVideoCmnMemFreeDriver(PVBOXVIDEO_COMMON pCommon, void *pv);
+
 #ifndef VBOX_WITH_WDDM
 /* XPDM-WDDM common API */
 
@@ -459,16 +470,6 @@ DECLINLINE(VP_STATUS) VBoxVideoCmnEventCreateNotification(IN PDEVICE_EXTENSION p
 DECLINLINE(VP_STATUS) VBoxVideoCmnEventDelete(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
 {
     return pDeviceExtension->u.primary.VideoPortProcs.pfnDeleteEvent(pDeviceExtension, (VBOXPEVENT)*pEvent); /** @todo slightly bogus cast */
-}
-
-DECLINLINE(PVOID) VBoxVideoCmnMemAllocNonPaged(IN PDEVICE_EXTENSION pDeviceExtension, IN SIZE_T NumberOfBytes, IN ULONG Tag)
-{
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnAllocatePool(pDeviceExtension, (VBOXVP_POOL_TYPE)VpNonPagedPool, NumberOfBytes, Tag);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnMemFree(IN PDEVICE_EXTENSION pDeviceExtension, IN PVOID Ptr)
-{
-    pDeviceExtension->u.primary.VideoPortProcs.pfnFreePool(pDeviceExtension, Ptr);
 }
 
 DECLINLINE(VP_STATUS) VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg)
@@ -575,16 +576,6 @@ DECLINLINE(VP_STATUS) VBoxVideoCmnEventCreateNotification(IN PDEVICE_EXTENSION p
 DECLINLINE(VP_STATUS) VBoxVideoCmnEventDelete(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
 {
     return NO_ERROR;
-}
-
-DECLINLINE(PVOID) VBoxVideoCmnMemAllocNonPaged(IN PDEVICE_EXTENSION pDeviceExtension, IN SIZE_T NumberOfBytes, IN ULONG Tag)
-{
-    return ExAllocatePoolWithTag(NonPagedPool, NumberOfBytes, Tag);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnMemFree(IN PDEVICE_EXTENSION pDeviceExtension, IN PVOID Ptr)
-{
-    ExFreePool(Ptr);
 }
 
 VP_STATUS VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg);
@@ -837,6 +828,7 @@ DECLINLINE(ULONG) VBoxHGSMIGuestRead(PVBOXVIDEO_COMMON pCommon)
 {
     return VBoxVideoCmnPortReadUlong((PULONG)pCommon->IOPortGuest);
 }
+
 
 BOOLEAN VBoxHGSMIIsSupported (void);
 

@@ -205,6 +205,46 @@ VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
     return VideoPortSetRegistryParameters(Reg, pName, &Val, sizeof(Val));
 }
 
+void VBoxVideoCmnSignalEvent(PVBOXVIDEO_COMMON pCommon, uint64_t pvEvent)
+{
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
+#ifndef VBOX_WITH_WDDM
+    PEVENT pEvent = (PEVENT)pvEvent;
+    PrimaryExtension->u.primary.VideoPortProcs.pfnSetEvent(PrimaryExtension,
+                                                           pEvent);
+#else
+    PKEVENT pEvent = (PKEVENT)pvEvent;
+    KeSetEvent(pEvent, 0, FALSE);
+#endif
+}
+
+
+#define MEM_TAG 'HVBV'
+
+void *VBoxVideoCmnMemAllocDriver(PVBOXVIDEO_COMMON pCommon, size_t cb)
+{
+    ULONG Tag = MEM_TAG;
+#ifndef VBOX_WITH_WDDM
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
+    return PrimaryExtension->u.primary.VideoPortProcs.pfnAllocatePool(PrimaryExtension, (VBOXVP_POOL_TYPE)VpNonPagedPool, cb, Tag);
+#else
+    return ExAllocatePoolWithTag(NonPagedPool, cb, Tag);
+#endif
+}
+
+
+void VBoxVideoCmnMemFreeDriver(PVBOXVIDEO_COMMON pCommon, void *pv)
+{
+#ifndef VBOX_WITH_WDDM
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
+    PrimaryExtension->u.primary.VideoPortProcs.pfnFreePool(PrimaryExtension,
+                                                           pv);
+#else
+    ExFreePool(pv);
+#endif
+}
+
+
 static void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension,
                                 VBOXVIDEOPORTPROCS *pCallbacks,
                                 PVIDEO_PORT_CONFIG_INFO pConfigInfo);

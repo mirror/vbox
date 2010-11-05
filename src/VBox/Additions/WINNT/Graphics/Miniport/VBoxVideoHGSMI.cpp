@@ -30,8 +30,6 @@
 
 #include "vboxioctl.h"
 
-#define MEM_TAG 'HVBV'
-
 void HGSMINotifyHostCmdComplete (PVBOXVIDEO_COMMON pCommon, HGSMIOFFSET offt)
 {
     VBoxHGSMIHostWrite(pCommon, offt);
@@ -718,9 +716,10 @@ typedef struct _VBVA_CHANNELCONTEXTS
     VBVADISP_CHANNELCONTEXT aContexts[1];
 }VBVA_CHANNELCONTEXTS;
 
-static int vboxVBVADeleteChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBVA_CHANNELCONTEXTS * pContext)
+static int vboxVBVADeleteChannelContexts(PVBOXVIDEO_COMMON pCommon,
+                                         VBVA_CHANNELCONTEXTS * pContext)
 {
-    VBoxVideoCmnMemFree(PrimaryExtension,pContext);
+    VBoxVideoCmnMemFreeDriver(pCommon, pContext);
     return VINF_SUCCESS;
 }
 
@@ -728,7 +727,7 @@ static int vboxVBVACreateChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBV
 {
     uint32_t cDisplays = (uint32_t)commonFromDeviceExt(PrimaryExtension)->cDisplays;
     const size_t size = RT_OFFSETOF(VBVA_CHANNELCONTEXTS, aContexts[cDisplays]);
-    VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)VBoxVideoCmnMemAllocNonPaged(PrimaryExtension, size, MEM_TAG);
+    VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)VBoxVideoCmnMemAllocDriver(commonFromDeviceExt(PrimaryExtension), size);
     if(pContext)
     {
         memset(pContext, 0, size);
@@ -802,6 +801,7 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
     return VERR_INVALID_PARAMETER;
 }
 
+
 static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
 {
     VBVA_CHANNELCONTEXTS *pCallbacks = (VBVA_CHANNELCONTEXTS*)pvHandler;
@@ -828,20 +828,27 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                     {
                         case VBVAHG_DISPLAY_CUSTOM:
                         {
+#if 0  /* Never taken */
                             if(pLast)
                             {
                                 pLast->u.pNext = pCur;
                                 pLast = pCur;
                             }
                             else
+#endif
                             {
                                 pFirst = pCur;
                                 pLast = pCur;
                             }
                             Assert(!pCur->u.Data);
+#if 0  /* Who is supposed to set pNext? */
                             //TODO: use offset here
                             pCur = pCur->u.pNext;
                             Assert(!pCur);
+#else
+                            Assert(!pCur->u.pNext);
+                            pCur = NULL;
+#endif
                             Assert(pFirst);
                             Assert(pFirst == pLast);
                             break;
@@ -849,31 +856,31 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                         case VBVAHG_EVENT:
                         {
                             VBVAHOSTCMDEVENT *pEventCmd = VBVAHOSTCMD_BODY(pCur, VBVAHOSTCMDEVENT);
-#ifndef VBOX_WITH_WDDM
-                            PEVENT pEvent = (PEVENT)pEventCmd->pEvent;
-                            pCallbacks->PrimaryExtension->u.primary.VideoPortProcs.pfnSetEvent(
-                                    pCallbacks->PrimaryExtension,
-                                    pEvent);
-#else
-                            PKEVENT pEvent = (PKEVENT)pEventCmd->pEvent;
-                            KeSetEvent(pEvent, 0, FALSE);
-#endif
+                            VBoxVideoCmnSignalEvent(commonFromDeviceExt(pCallbacks->PrimaryExtension), pEventCmd->pEvent);
                         }
                         default:
                         {
                             DBG_CHECKLIST(pCallbacks->PrimaryExtension, pHandler, pCur);
                             Assert(u16ChannelInfo==VBVAHG_EVENT);
                             Assert(!pCur->u.Data);
+#if 0  /* pLast has been asserted to be NULL, and who should set pNext? */
                             //TODO: use offset here
                             if(pLast)
                                 pLast->u.pNext = pCur->u.pNext;
                             VBVAHOSTCMD * pNext = pCur->u.pNext;
                             pCur->u.pNext = NULL;
+#else
+                            Assert(!pCur->u.pNext);
+#endif
                             HGSMIHostCmdComplete(commonFromDeviceExt(pCallbacks->PrimaryExtension), pCur);
+#if 0  /* pNext is NULL, and the other things have already been asserted */
                             pCur = pNext;
                             Assert(!pCur);
                             Assert(!pFirst);
                             Assert(pFirst == pLast);
+#else
+                            pCur = NULL;
+#endif
                             break;
                         }
                     }
@@ -1004,7 +1011,7 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
 
     if(!pChannel)
     {
-        vboxVBVADeleteChannelContexts(PrimaryExtension, pContexts);
+        vboxVBVADeleteChannelContexts(commonFromDeviceExt(PrimaryExtension), pContexts);
     }
 
     return VERR_GENERAL_FAILURE;
