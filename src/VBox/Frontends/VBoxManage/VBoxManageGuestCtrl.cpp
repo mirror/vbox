@@ -809,7 +809,7 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
                 if (pszFilter)
                 {
                     RTPathStripFilename(pszSourceAbsRoot);
-                    RTStrAAppend(&pszSourceAbsRoot, RTPATH_SLASH_STR);
+                    rc = RTStrAAppend(&pszSourceAbsRoot, RTPATH_SLASH_STR);
                 }
                 else
                 {
