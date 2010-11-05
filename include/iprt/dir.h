@@ -115,10 +115,12 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags);
 
 /** @name   RTDirRemoveRecursive flags.
  * @{ */
+/** Delete the content of the directory and the directory itself. */
+#define RTDIRRMREC_F_CONTENT_AND_DIR    UINT32_C(0)
 /** Only delete the content of the directory, omit the directory it self. */
-#define RTDIRRMREC_F_CONTENT_ONLY   RT_BIT_32(0)
+#define RTDIRRMREC_F_CONTENT_ONLY       RT_BIT_32(0)
 /** Mask of valid flags. */
-#define RTDIRRMREC_F_VALID_MASK     UINT32_C(0x00000001)
+#define RTDIRRMREC_F_VALID_MASK         UINT32_C(0x00000001)
 /** @} */
 
 /**
