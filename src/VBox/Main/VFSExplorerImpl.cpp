@@ -375,11 +375,12 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
              it != aTask->filenames.end();
              ++it, ++i)
         {
-            memcpy(szPath, m->strPath.c_str(), strlen(m->strPath.c_str()) + 1);
-            RTPathAppend(szPath, sizeof(szPath), (*it).c_str());
-            int vrc = RTFileDelete(szPath);
+            int vrc = RTPathJoin(szPath, sizeof(szPath), m->strPath.c_str(), (*it).c_str());
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), szPath, vrc);
+                throw setError(E_FAIL, tr("Internal Error (%Rrc)"), vrc);
+            vrc = RTFileDelete(szPath);
+            if (RT_FAILURE(vrc))
+                throw setError(VBOX_E_FILE_ERROR, tr("Can't delete file '%s' (%Rrc)"), szPath, vrc);
             if (aTask->progress)
                 aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * i));
         }
