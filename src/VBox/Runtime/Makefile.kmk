@@ -709,13 +709,6 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTMpCpuId-generic.cpp \
-	generic/RTMpCpuIdFromSetIndex-generic.cpp \
-	generic/RTMpCpuIdToSetIndex-generic.cpp \
-	generic/RTMpIsCpuPossible-generic.cpp \
-	generic/RTMpGetMaxCpuId-generic.cpp \
-	generic/RTMpGetOnlineSet-generic.cpp \
-	generic/RTMpGetSet-generic.cpp \
-	generic/RTMpIsCpuOnline-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
@@ -723,10 +716,9 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTMemProtect-posix.cpp \
-	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-        r3/posix/RTSystemQueryTotalRam-posix.cpp \
+	r3/posix/RTSystemQueryTotalRam-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
