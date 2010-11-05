@@ -1110,7 +1110,8 @@ static void ohciDoReset(POHCI pOhci, uint32_t fNewMode, bool fResetOnLinux)
  */
 DECLINLINE(void) ohciPhysRead(POHCI pOhci, uint32_t Addr, void *pvBuf, size_t cbBuf)
 {
-    PDMDevHlpPhysRead(pOhci->CTX_SUFF(pDevIns), Addr, pvBuf, cbBuf);
+    if (cbBuf)
+        PDMDevHlpPhysRead(pOhci->CTX_SUFF(pDevIns), Addr, pvBuf, cbBuf);
 }
 
 /**
@@ -1118,7 +1119,8 @@ DECLINLINE(void) ohciPhysRead(POHCI pOhci, uint32_t Addr, void *pvBuf, size_t cb
  */
 DECLINLINE(void) ohciPhysWrite(POHCI pOhci, uint32_t Addr, const void *pvBuf, size_t cbBuf)
 {
-    PDMDevHlpPhysWrite(pOhci->CTX_SUFF(pDevIns), Addr, pvBuf, cbBuf);
+    if (cbBuf)
+        PDMDevHlpPhysWrite(pOhci->CTX_SUFF(pDevIns), Addr, pvBuf, cbBuf);
 }
 
 /**
