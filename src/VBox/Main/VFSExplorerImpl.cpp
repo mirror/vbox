@@ -376,7 +376,6 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
              ++it, ++i)
         {
             memcpy(szPath, m->strPath.c_str(), strlen(m->strPath.c_str()) + 1);
-            RTPathStripFilename(szPath);
             RTPathAppend(szPath, sizeof(szPath), (*it).c_str());
             int vrc = RTFileDelete(szPath);
             if (RT_FAILURE(vrc))
