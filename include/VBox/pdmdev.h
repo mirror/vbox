@@ -3242,6 +3242,31 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(void, pfnGetCpuId,(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx));
 
+    /**
+     * Get the current virtual clock time in a VM. The clock frequency must be
+     * queried separately.
+     *
+     * @returns Current clock time.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGet,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the frequency of the virtual clock.
+     *
+     * @returns The clock frequency (not variable at run-time).
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetFreq,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the current virtual clock time in a VM, in nanoseconds.
+     *
+     * @returns Current clock time (in ns).
+     * @param   pDevIns             The device instance.
+     */
+    DECLR3CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
+
     /** @} */
 
     /** Just a safety precaution. (PDM_DEVHLP_VERSION) */
@@ -3399,6 +3424,31 @@ typedef struct PDMDEVHLPRC
      * @param   pDevIns             The device instance.
      */
     DECLRCCALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the current virtual clock time in a VM. The clock frequency must be
+     * queried separately.
+     *
+     * @returns Current clock time.
+     * @param   pDevIns             The device instance.
+     */
+    DECLRCCALLBACKMEMBER(uint64_t, pfnTMTimeVirtGet,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the frequency of the virtual clock.
+     *
+     * @returns The clock frequency (not variable at run-time).
+     * @param   pDevIns             The device instance.
+     */
+    DECLRCCALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetFreq,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the current virtual clock time in a VM, in nanoseconds.
+     *
+     * @returns Current clock time (in ns).
+     * @param   pDevIns             The device instance.
+     */
+    DECLRCCALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
@@ -3562,6 +3612,31 @@ typedef struct PDMDEVHLPR0
      * @param   pDevIns             The device instance.
      */
     DECLR0CALLBACKMEMBER(PVMCPU, pfnGetVMCPU,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the current virtual clock time in a VM. The clock frequency must be
+     * queried separately.
+     *
+     * @returns Current clock time.
+     * @param   pDevIns             The device instance.
+     */
+    DECLR0CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGet,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the frequency of the virtual clock.
+     *
+     * @returns The clock frequency (not variable at run-time).
+     * @param   pDevIns             The device instance.
+     */
+    DECLR0CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetFreq,(PPDMDEVINS pDevIns));
+
+    /**
+     * Get the current virtual clock time in a VM, in nanoseconds.
+     *
+     * @returns Current clock time (in ns).
+     * @param   pDevIns             The device instance.
+     */
+    DECLR0CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
 
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
@@ -4472,6 +4547,30 @@ DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
 DECLINLINE(PVMCPU) PDMDevHlpGetVMCPU(PPDMDEVINS pDevIns)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnGetVMCPU(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTMTimeVirtGet
+ */
+DECLINLINE(uint64_t) PDMDevHlpTMTimeVirtGet(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnTMTimeVirtGet(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTMTimeVirtGetFreq
+ */
+DECLINLINE(uint64_t) PDMDevHlpTMTimeVirtGetFreq(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnTMTimeVirtGetFreq(pDevIns);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTMTimeVirtGetFreq
+ */
+DECLINLINE(uint64_t) PDMDevHlpTMTimeVirtGetNano(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnTMTimeVirtGetNano(pDevIns);
 }
 
 #ifdef IN_RING3
