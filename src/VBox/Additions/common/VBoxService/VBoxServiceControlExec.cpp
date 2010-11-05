@@ -1546,17 +1546,18 @@ int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t u
                                            szPassword, sizeof(szPassword),
                                            /* Timelimit */
                                            &uTimeLimitMS);
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("ControlExec: Failed to retrieve exec start command! Error: %Rrc\n", rc);
-    }
-    else
+#ifdef DEBUG
+    VBoxServiceVerbose(3, "ControlExec: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
+                       szCmd, uFlags, szArgs, szEnv, szUser, szPassword, uTimeLimitMS);
+#endif
+    if (RT_SUCCESS(rc))
     {
         rc = VBoxServiceControlExecProcess(uContextID, szCmd, uFlags, szArgs, uNumArgs,
                                            szEnv, cbEnv, uNumEnvVars,
                                            szUser, szPassword, uTimeLimitMS);
     }
-
+    else
+        VBoxServiceError("ControlExec: Failed to retrieve exec start command! Error: %Rrc\n", rc);
     VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecHandleCmdStartProcess returned with %Rrc\n", rc);
     return rc;
 }
