@@ -782,10 +782,12 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
                 if (RT_SUCCESS(rc))
                     rc = RTStrAAppend(&pszDestAbs, RTPathFilename(pszSourceAbs));
 
-                RTListInit(pList);
-                rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pszDestAbs, pList);
-                *pcObjects = 1;
-
+                if (RT_SUCCESS(rc))
+                {
+                    RTListInit(pList);
+                    rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pszDestAbs, pList);
+                    *pcObjects = 1;
+                }
                 RTStrFree(pszDestAbs);
             }
             else
