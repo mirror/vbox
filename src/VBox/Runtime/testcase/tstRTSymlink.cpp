@@ -128,7 +128,7 @@ static void test1(RTTEST hTest, const char *pszBaseDir)
     RTTESTI_CHECK(RTDirExists(szExecDir));
 
     char szExecFile[RTPATH_MAX];
-    RTTESTI_CHECK_RETV(RTProcGetExecutableName(szExecFile, sizeof(szExecFile)) != NULL);
+    RTTESTI_CHECK_RETV(RTProcGetExecutablePath(szExecFile, sizeof(szExecFile)) != NULL);
     size_t cchExecFile = strlen(szExecFile);
     RTTESTI_CHECK(RTFileExists(szExecFile));
 

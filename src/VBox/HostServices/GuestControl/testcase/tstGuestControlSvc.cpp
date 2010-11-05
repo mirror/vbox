@@ -1126,8 +1126,8 @@ int main(int argc, char **argv)
         return RTMsgInitFailure(rc);
 
     /* Save image name for later use. */
-    if (!RTProcGetExecutableName(g_szImageName, sizeof(g_szImageName)))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcGetExecutableName failed\n");
+    if (!RTProcGetExecutablePath(g_szImageName, sizeof(g_szImageName)))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcGetExecutablePath failed\n");
 
     VBOXHGCMSVCFNTABLE svcTable;
     VBOXHGCMSVCHELPERS svcHelpers;

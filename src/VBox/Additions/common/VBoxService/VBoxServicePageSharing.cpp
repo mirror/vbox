@@ -689,7 +689,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorkerProcess(bool volatile *pfShutdown)
             &&  hProcess == NIL_RTPROCESS)
         {
             char szExeName[256];
-            char *pszExeName = RTProcGetExecutableName(szExeName, sizeof(szExeName));
+            char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
             if (pszExeName)
             {
                 char const *papszArgs[3];

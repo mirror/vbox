@@ -444,7 +444,7 @@ void ExtPack::probeAndLoad(void)
     vrc = SUPR3HardenedVerifyDir(m->strExtPackPath.c_str(), true /*fRecursive*/, true /*fCheckFiles*/, szErr, sizeof(szErr));
     if (RT_FAILURE(vrc))
     {
-        m->strWhyUnusable.printf(tr("%s"), szErr);
+        m->strWhyUnusable.printf(tr("%s (rc=%Rrc)"), szErr, vrc);
         return;
     }
 
@@ -841,13 +841,13 @@ HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone
     char szBaseDir[RTPATH_MAX];
     int rc = RTPathAppPrivateArch(szBaseDir, sizeof(szBaseDir));
     AssertLogRelRCReturn(rc, E_FAIL);
-    rc = RTPathAppend(szBaseDir, sizeof(szBaseDir), "ExtensionPacks");
+    rc = RTPathAppend(szBaseDir, sizeof(szBaseDir), VBOX_EXTPACK_INSTALL_DIR);
     AssertLogRelRCReturn(rc, E_FAIL);
 
     char szCertificatDir[RTPATH_MAX];
-    rc = RTPathAppPrivateArch(szCertificatDir, sizeof(szCertificatDir));
+    rc = RTPathAppPrivateNoArch(szCertificatDir, sizeof(szCertificatDir));
     AssertLogRelRCReturn(rc, E_FAIL);
-    rc = RTPathAppend(szBaseDir, sizeof(szCertificatDir), "Certificates");
+    rc = RTPathAppend(szBaseDir, sizeof(szCertificatDir), VBOX_EXTPACK_CERT_DIR);
     AssertLogRelRCReturn(rc, E_FAIL);
 
     /*
@@ -881,7 +881,8 @@ HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone
             }
             if (   RTFS_IS_DIRECTORY(Entry.Info.Attr.fMode)
                 && strcmp(Entry.szName, ".")  != 0
-                && strcmp(Entry.szName, "..") != 0 )
+                && strcmp(Entry.szName, "..") != 0
+                && VBoxExtPackIsValidName(Entry.szName) )
             {
                 /*
                  * All directories are extensions, the shall be nothing but
@@ -1002,74 +1003,60 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                 {
                     /*
                      * Derive the name of the extension pack from the file
-                     * name.
-                     *
-                     * RESTRICTION: The name can only contain english alphabet
-                     *              charactes, decimal digits and space.
-                     *              Impose a max length of 64 chars.
+                     * name.  Certain restrictions are here placed on the
+                     * tarball name.
                      */
-                    char *pszName = RTStrDup(RTPathFilename(strTarball.c_str()));
-                    if (pszName)
+                    iprt::MiniString *pStrName = VBoxExtPackExtractNameFromTarballPath(strTarball.c_str());
+                    if (pStrName)
                     {
-                        char *pszEnd = pszName;
-                        while (RT_C_IS_ALNUM(*pszEnd) || *pszEnd == ' ')
-                            pszEnd++;
-                        if (   pszEnd == pszName
-                            || pszEnd - pszName <= 64)
+                        /*
+                         * Refresh the data we have on the extension pack as it
+                         * may be made stale by direct meddling or some other user.
+                         */
+                        ExtPack *pExtPack;
+                        hrc = refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, &pExtPack);
+                        if (SUCCEEDED(hrc) && !pExtPack)
                         {
-                            *pszEnd = '\0';
-
                             /*
-                             * Refresh the data we have on the extension pack
-                             * as it may be made stale by direct meddling or
-                             * some other user.
+                             * Run the set-uid-to-root binary that performs the actual
+                             * installation.  Then create an object for the packet (we
+                             * do this even on failure, to be on the safe side).
                              */
-                            ExtPack *pExtPack;
-                            hrc = refreshExtPack(pszName, false /*a_fUnsuableIsError*/, &pExtPack);
-                            if (SUCCEEDED(hrc) && !pExtPack)
-                            {
-                                /*
-                                 * Run the set-uid-to-root binary that performs the actual
-                                 * installation.  Then create an object for the packet (we
-                                 * do this even on failure, to be on the safe side).
-                                 */
-                                char szTarballFd[64];
-                                RTStrPrintf(szTarballFd, sizeof(szTarballFd), "0x%RX64",
-                                            (uint64_t)RTFileToNative(hFile));
+                            char szTarballFd[64];
+                            RTStrPrintf(szTarballFd, sizeof(szTarballFd), "0x%RX64",
+                                        (uint64_t)RTFileToNative(hFile));
 
-                                hrc = runSetUidToRootHelper("install",
-                                                            "--base-dir",        m->strBaseDir.c_str(),
-                                                            "--name",            pszName,
-                                                            "--certificate-dir", m->strCertificatDirPath.c_str(),
-                                                            "--tarball",         strTarball.c_str(),
-                                                            "--tarball-fd",      &szTarballFd[0],
-                                                            NULL);
+                            hrc = runSetUidToRootHelper("install",
+                                                        "--base-dir",        m->strBaseDir.c_str(),
+                                                        "--certificate-dir", m->strCertificatDirPath.c_str(),
+                                                        "--name",            pStrName->c_str(),
+                                                        "--tarball",         strTarball.c_str(),
+                                                        "--tarball-fd",      &szTarballFd[0],
+                                                        NULL);
+                            if (SUCCEEDED(hrc))
+                            {
+                                hrc = refreshExtPack(pStrName->c_str(), true /*a_fUnsuableIsError*/, &pExtPack);
                                 if (SUCCEEDED(hrc))
                                 {
-                                    hrc = refreshExtPack(pszName, true /*a_fUnsuableIsError*/, &pExtPack);
-                                    if (SUCCEEDED(hrc))
-                                    {
-                                        LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pszName));
-                                        pExtPack->callInstalledHook();
-                                    }
-                                }
-                                else
-                                {
-                                    ErrorInfoKeeper Eik;
-                                    refreshExtPack(pszName, false /*a_fUnsuableIsError*/, NULL);
+                                    LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
+                                    pExtPack->callInstalledHook();
                                 }
                             }
-                            else if (SUCCEEDED(hrc))
-                                hrc = setError(E_FAIL,
-                                               tr("Extension pack '%s' is already installed."
-                                                  " In case of a reinstallation, please uninstall it first"),
-                                               pszName);
+                            else
+                            {
+                                ErrorInfoKeeper Eik;
+                                refreshExtPack(pStrName->c_str(), false /*a_fUnsuableIsError*/, NULL);
+                            }
                         }
-                        else
-                            hrc = setError(E_FAIL, tr("Malformed '%s' file name"), strTarball.c_str());
+                        else if (SUCCEEDED(hrc))
+                            hrc = setError(E_FAIL,
+                                           tr("Extension pack '%s' is already installed."
+                                              " In case of a reinstallation, please uninstall it first"),
+                                           pStrName->c_str());
+                        delete pStrName;
                     }
                     else
-                        hrc = E_OUTOFMEMORY;
+                        hrc = setError(E_FAIL, tr("Malformed '%s' file name"), strTarball.c_str());
                 }
                 else if (RT_SUCCESS(vrc))
                     hrc = setError(E_FAIL, tr("'%s' is not a regular file"), strTarball.c_str());

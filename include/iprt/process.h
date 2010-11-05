@@ -281,14 +281,21 @@ RTR3DECL(int) RTProcTerminate(RTPROCESS Process);
 RTR3DECL(uint64_t) RTProcGetAffinityMask(void);
 
 /**
- * Gets the executable image name (full path) of the current process.
+ * Gets the short process name.
  *
- * @returns pszExecName on success. NULL on buffer overflow or other errors.
- *
- * @param   pszExecName     Where to store the name.
- * @param   cchExecName     The size of the buffer.
+ * @returns Pointer to read-only name string.
  */
-RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName);
+RTR3DECL(const char *) RTProcShortName(void);
+
+/**
+ * Gets the path to the executable image of the current process.
+ *
+ * @returns pszExecPath on success. NULL on buffer overflow or other errors.
+ *
+ * @param   pszExecPath     Where to store the path.
+ * @param   cbExecPath      The size of the buffer.
+ */
+RTR3DECL(char *) RTProcGetExecutablePath(char *pszExecPath, size_t cbExecPath);
 
 /**
  * Daemonize the current process, making it a background process.

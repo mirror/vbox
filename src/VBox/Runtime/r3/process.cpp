@@ -91,7 +91,7 @@ RTR3DECL(RTPROCPRIORITY) RTProcGetPriority(void)
 }
 
 
-RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
+RTR3DECL(char *) RTProcGetExecutablePath(char *pszExecPath, size_t cbExecPath)
 {
     if (RT_UNLIKELY(g_szrtProcExePath[0] == '\0'))
         return NULL;
@@ -100,14 +100,20 @@ RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
      * Calc the length and check if there is space before copying.
      */
     size_t cch = g_cchrtProcExePath;
-    if (cch < cchExecName)
+    if (cch < cbExecPath)
     {
-        memcpy(pszExecName, g_szrtProcExePath, cch);
-        pszExecName[cch] = '\0';
-        return pszExecName;
+        memcpy(pszExecPath, g_szrtProcExePath, cch);
+        pszExecPath[cch] = '\0';
+        return pszExecPath;
     }
 
-    AssertMsgFailed(("Buffer too small (%zu <= %zu)\n", cchExecName, cch));
+    AssertMsgFailed(("Buffer too small (%zu <= %zu)\n", cbExecPath, cch));
     return NULL;
+}
+
+
+RTR3DECL(const char *) RTProcShortName(void)
+{
+    return &g_szrtProcExePath[g_offrtProcName];
 }
 

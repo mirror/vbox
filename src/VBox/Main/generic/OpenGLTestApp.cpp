@@ -165,7 +165,7 @@ static int vboxInitLogging(const char *pszFilename, bool bGenNameSuffix)
 //                       uHostRamMb, uHostRamAvailMb);
         /* the package type is interesting for Linux distributions */
         char szExecName[RTPATH_MAX];
-        char *pszExecName = RTProcGetExecutableName(szExecName, sizeof(szExecName));
+        char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
         RTLogRelLogger(loggerRelease, 0, ~0U,
                        "Executable: %s\n"
                        "Process ID: %u\n"

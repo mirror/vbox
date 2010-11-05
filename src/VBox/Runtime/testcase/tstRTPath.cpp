@@ -52,18 +52,18 @@ int main()
     RTTestBanner(hTest);
 
     /*
-     * RTPathExecDir, RTPathUserHome and RTProcGetExecutableName.
+     * RTPathExecDir, RTPathUserHome and RTProcGetExecutablePath.
      */
     RTTestSub(hTest, "RTPathExecDir");
     RTTESTI_CHECK_RC(RTPathExecDir(szPath, sizeof(szPath)), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
         RTTestIPrintf(RTTESTLVL_INFO, "ExecDir={%s}\n", szPath);
 
-    RTTestSub(hTest, "RTProcGetExecutableName");
-    if (RTProcGetExecutableName(szPath, sizeof(szPath)) == szPath)
+    RTTestSub(hTest, "RTProcGetExecutablePath");
+    if (RTProcGetExecutablePath(szPath, sizeof(szPath)) == szPath)
         RTTestIPrintf(RTTESTLVL_INFO, "ExecutableName={%s}\n", szPath);
     else
-        RTTestIFailed("RTProcGetExecutableName -> NULL");
+        RTTestIFailed("RTProcGetExecutablePath -> NULL");
 
     RTTestSub(hTest, "RTPathUserHome");
     RTTESTI_CHECK_RC(RTPathUserHome(szPath, sizeof(szPath)), VINF_SUCCESS);

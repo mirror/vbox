@@ -1389,6 +1389,11 @@
 #define VERR_SUPLIB_WRITE_NON_SYS_GROUP             (-3766)
 /** The file or directory is world writable (hardening). */
 #define VERR_SUPLIB_WORLD_WRITABLE                  (-3767)
+/** The argv[0] of an internal application does not match the executable image
+ * path (hardening). */
+#define VERR_SUPLIB_INVALID_ARGV0_INTERNAL          (-3768)
+/** The internal application does not reside in the correct place (hardening). */
+#define VERR_SUPLIB_INVALID_INTERNAL_APP_DIR        (-3769)
 /** @} */
 
 

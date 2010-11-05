@@ -970,8 +970,26 @@ SUPR3DECL(int) SUPR3GipGetPhys(PRTHCPHYS pHCPhys);
  * @param   pszWhat         For the LogRel on failure.
  * @param   phFile          Where to store the handle to the opened file. This is optional, pass NULL
  *                          if the file should not be opened.
+ * @deprecated Write a new one.
  */
 SUPR3DECL(int) SUPR3HardenedVerifyFile(const char *pszFilename, const char *pszWhat, PRTFILE phFile);
+
+/**
+ * Verifies the integrity of a the current process, including the image
+ * location and that the invocation was absolute.
+ *
+ * This must currently be called after initializing the runtime.  The intended
+ * audience is set-uid-to-root applications, root services and similar.
+ *
+ * @returns VBox status code.  On failure
+ *          message.
+ * @param   pszArgv0        The first argument to main().
+ * @param   fInternal       Set this to @c true if this is an internal
+ *                          VirtualBox application.  Otherwise pass @c false.
+ * @param   pszErr          Where to return error message on failure.
+ * @param   cbErr           The size of the error buffer.
+ */
+SUPR3DECL(int) SUPR3HardenedVerifySelf(const char *pszArgv0, bool fInternal, char *pszErr, size_t cbErr);
 
 /**
  * Verifies the integrity of an installation directory.

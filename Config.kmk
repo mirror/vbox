@@ -3007,6 +3007,15 @@ TEMPLATE_VBOXR3HARDENEDLIB_LIBS = $(NO_SUCH_VARIABLE)
 
 
 #
+# Template for building set-uid-to-root helper programs.
+# These shall have not extra runpaths, esp. not origin ones.
+#
+TEMPLATE_VBoxR3SetUidToRoot = Set-uid-to-root helper program.
+TEMPLATE_VBoxR3SetUidToRoot_EXTENDS = VBOXR3HARDENEDEXE
+TEMPLATE_VBoxR3SetUidToRoot_LIBS = $(NO_SUCH_VARIABLE)
+
+
+#
 # Template for building R3 shared objects / DLLs with the 10.5 Mac OS X SDK.
 # Identical to VBOXR3EXE, except for the DYLIB, the classic_linker and SDK bits.
 #

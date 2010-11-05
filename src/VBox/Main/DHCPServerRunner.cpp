@@ -82,7 +82,7 @@ int DHCPServerRunner::start()
 
     /* get the path to the executable */
     char exePathBuf[RTPATH_MAX];
-    const char *exePath = RTProcGetExecutableName(exePathBuf, RTPATH_MAX);
+    const char *exePath = RTProcGetExecutablePath(exePathBuf, RTPATH_MAX);
     char *substrSl = strrchr(exePathBuf, '/');
     char *substrBs = strrchr(exePathBuf, '\\');
     char *suffix = substrSl ? substrSl : substrBs;

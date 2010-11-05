@@ -47,7 +47,7 @@
 static int Error(const char *pszFormat, ...)
 {
     char szName[RTPATH_MAX];
-    if (!RTProcGetExecutableName(szName, sizeof(szName)))
+    if (!RTProcGetExecutablePath(szName, sizeof(szName)))
         strcpy(szName, "tstRTDigest");
 
     RTStrmPrintf(g_pStdErr, "%s: error: ", RTPathFilename(szName));

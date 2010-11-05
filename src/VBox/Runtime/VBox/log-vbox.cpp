@@ -296,7 +296,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 #ifdef IN_RING3
 # ifndef IN_GUEST
     char szExecName[RTPATH_MAX];
-    if (!RTProcGetExecutableName(szExecName, sizeof(szExecName)))
+    if (!RTProcGetExecutablePath(szExecName, sizeof(szExecName)))
         strcpy(szExecName, "VBox");
     RTTIMESPEC TimeSpec;
     RTTIME Time;

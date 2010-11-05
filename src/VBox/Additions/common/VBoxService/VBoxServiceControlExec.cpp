@@ -1048,7 +1048,7 @@ int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszRe
 
     /* Search the path of our executable. */
     char szVBoxService[RTPATH_MAX];
-    if (RTProcGetExecutableName(szVBoxService, sizeof(szVBoxService)))
+    if (RTProcGetExecutablePath(szVBoxService, sizeof(szVBoxService)))
     {
         char *pszExecResolved = NULL;
         if (   (g_pszProgName && RTStrICmp(pszFileName, g_pszProgName) == 0)
