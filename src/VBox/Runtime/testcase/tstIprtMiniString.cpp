@@ -166,6 +166,47 @@ static void test1(RTTEST hTest)
     test1Hlp1("1", "1");
     test1Hlp1("foobar", "%s", "foobar");
 
+    /* special constructor and assignment arguments */
+    iprt::MiniString StrCtor1("");
+    RTTESTI_CHECK(StrCtor1.isEmpty());
+    RTTESTI_CHECK(StrCtor1.length() == 0);
+
+    iprt::MiniString StrCtor2(NULL);
+    RTTESTI_CHECK(StrCtor2.isEmpty());
+    RTTESTI_CHECK(StrCtor2.length() == 0);
+
+    iprt::MiniString StrCtor1d(StrCtor1);
+    RTTESTI_CHECK(StrCtor1d.isEmpty());
+    RTTESTI_CHECK(StrCtor1d.length() == 0);
+
+    iprt::MiniString StrCtor2d(StrCtor2);
+    RTTESTI_CHECK(StrCtor2d.isEmpty());
+    RTTESTI_CHECK(StrCtor2d.length() == 0);
+
+    for (unsigned i = 0; i < 2; i++)
+    {
+        iprt::MiniString StrAssign;
+        if (i) StrAssign = "abcdef";
+        StrAssign = (char *)NULL;
+        RTTESTI_CHECK(StrAssign.isEmpty());
+        RTTESTI_CHECK(StrAssign.length() == 0);
+
+        if (i) StrAssign = "abcdef";
+        StrAssign = "";
+        RTTESTI_CHECK(StrAssign.isEmpty());
+        RTTESTI_CHECK(StrAssign.length() == 0);
+
+        if (i) StrAssign = "abcdef";
+        StrAssign = StrCtor1;
+        RTTESTI_CHECK(StrAssign.isEmpty());
+        RTTESTI_CHECK(StrAssign.length() == 0);
+
+        if (i) StrAssign = "abcdef";
+        StrAssign = StrCtor2;
+        RTTESTI_CHECK(StrAssign.isEmpty());
+        RTTESTI_CHECK(StrAssign.length() == 0);
+    }
+
 #undef CHECK
 #undef CHECK_DUMP
 #undef CHECK_DUMP_I
