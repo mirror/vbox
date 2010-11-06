@@ -95,7 +95,7 @@ public:
      */
     MiniString(const char *pcsz)
     {
-        copyFromN(pcsz, strlen(pcsz));
+        copyFromN(pcsz, pcsz ? strlen(pcsz) : 0);
     }
 
     /**
