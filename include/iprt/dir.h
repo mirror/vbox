@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,9 +28,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-#ifdef IN_RING3
-# include <iprt/fs.h>
-#endif
+#include <iprt/fs.h>
 
 
 RT_C_DECLS_BEGIN
@@ -39,8 +37,6 @@ RT_C_DECLS_BEGIN
  * @ingroup grp_rt
  * @{
  */
-
-#ifdef IN_RING3
 
 /**
  * Check for the existence of a directory.
@@ -411,7 +407,6 @@ RTR3DECL(int) RTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD 
 RTR3DECL(int) RTDirSetTimes(PRTDIR pDir, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
 
-#endif /* IN_RING3 */
 /** @} */
 
 RT_C_DECLS_END
