@@ -368,6 +368,8 @@ RuntimeR3_SOURCES       = \
 	common/time/time.cpp \
 	common/time/timeprog.cpp \
 	common/time/timesup.cpp \
+	common/vfs/vfsbase.cpp \
+	common/vfs/vfsstdfile.cpp \
 	generic/critsect-generic.cpp \
 	generic/env-generic.cpp \
 	generic/RTDirCreateTemp-generic.cpp \
