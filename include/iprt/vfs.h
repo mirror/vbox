@@ -39,6 +39,20 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_fs    RTVfs - Virtual Filesystem
  * @ingroup grp_rt
+ *
+ * The virtual filesystem APIs are intended to make it possible to work on
+ * container files, file system sub-trees, file system overlays and other custom
+ * filesystem configurations.  It also makes it possible to create filters, like
+ * automatically gunzipping a tar.gz file before feeding it to the RTTar API for
+ * unpacking - or wise versa.
+ *
+ * The virtual filesystem APIs are intended to mirror the RTDir, RTFile, RTPath
+ * and RTFs APIs pretty closely so that rewriting a piece of code to work with
+ * it should be easy.  However there are some differences to the way the APIs
+ * works and the user should heed the documentation.  The differences are
+ * usually motivated by simplification and in some case to make the VFS more
+ * flexible.
+ *
  * @{
  */
 
@@ -114,17 +128,140 @@ RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *ph
 /** @defgroup grp_vfs_iostream      VFS I/O Stream
  * @{
  */
+
+/**
+ * Retains a reference to the VFS I/O stream handle.
+ *
+ * @returns New reference count on success, UINT32_MAX on failure.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ */
 RTDECL(uint32_t)    RTVfsIoStrmRetain(RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Releases a reference to the VFS I/O stream handle.
+ *
+ * @returns New reference count on success (0 if closed), UINT32_MAX on failure.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ */
 RTDECL(uint32_t)    RTVfsIoStrmRelease(RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Convert the VFS I/O stream handle to a VFS file handle.
+ *
+ * @returns The VFS file handle on success, this must be released.
+ *          NIL_RTVFSFILE if the I/O stream handle is invalid.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @sa      RTVfsFileToIoStream
+ */
 RTDECL(RTVFSFILE)   RTVfsIoStrmToFile(RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Query information about the I/O stream.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   pObjInfo        Where to return the info.
+ * @param   enmAddAttr      Which additional attributes should be retrieved.
+ * @sa      RTFileQueryInfo
+ */
 RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
+/**
+ * Read bytes from the I/O stream.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   pvBuf           Where to store the read bytes.
+ * @param   cbToRead        The number of bytes to read.
+ * @param   pcbRead         Where to store the number of bytes actually read.
+ *                          If this is NULL, the call will block until @a
+ *                          cbToRead bytes are available.  If this is non-NULL,
+ *                          the call will not block and return what is currently
+ *                          avaiable.
+ * @sa      RTFileRead, RTPipeRead, RTPipeReadBlocking, RTSocketRead
+ */
 RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+
+/**
+ * Write bytes to the I/O stream.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   pvBuf           The bytes to write.
+ * @param   cbToWrite       The number of bytes to write.
+ * @param   pcbWritten      Where to store the number of bytes actually written.
+ *                          If this is NULL, the call will block until @a
+ *                          cbToWrite bytes are available.  If this is non-NULL,
+ *                          the call will not block and return after writing
+ *                          what is possible.
+ * @sa      RTFileWrite, RTPipeWrite, RTPipeWriteBlocking, RTSocketWrite
+ */
 RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
-RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, size_t *pcbRead);
-RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, size_t *pcbWritten);
+
+/**
+ * Reads bytes from the I/O stream into a scatter buffer.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   pSgBuf          Pointer to a scatter buffer descriptor.  The number
+ *                          of bytes described by the segments is what will be
+ *                          attemted read.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbRead parameter must not be NULL.
+ * @param   pcbRead         Where to store the number of bytes actually read.
+ *                          This can be NULL if @a fBlocking is true.
+ * @sa      RTFileSgRead, RTSocketSgRead
+ */
+RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
+
+/**
+ * Write bytes to the I/O stream from a gather buffer.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   pSgBuf          Pointer to a gather buffer descriptor.  The number
+ *                          of bytes described by the segments is what will be
+ *                          attemted written.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbWritten parameter must not be NULL.
+ * @param   pcbRead         Where to store the number of bytes actually written.
+ *                          This can be NULL if @a fBlocking is true.
+ * @sa      RTFileSgWrite, RTSocketSgWrite
+ */
+RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);
+
+/**
+ * Flush any buffered data to the I/O stream.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @sa      RTFileFlush, RTPipeFlush
+ */
 RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Poll for events.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   fEvents         The events to poll for (RTPOLL_EVT_XXX).
+ * @param   cMillies        How long to wait for event to eventuate.
+ * @param   fIntr           Whether the wait is interruptible and can return
+ *                          VERR_INTERRUPTED (@c true) or if this condition
+ *                          should be hidden from the caller (@c false).
+ * @param   pfRetEvents     Where to return the event mask.
+ * @sa      RTPollSetAdd, RTPoll, RTPollNoResume.
+ */
 RTDECL(RTFOFF)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
                                     uint32_t *pfRetEvents);
+/**
+ * Tells the current I/O stream position.
+ *
+ * @returns Zero or higher - where to return the I/O stream offset.  Values
+ *          below zero are IPRT status codes (VERR_XXX).
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @sa      RTFileTell
+ */
 RTDECL(RTFOFF)      RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos);
 /** @} */
 
@@ -154,6 +291,7 @@ RTDECL(RTHCUINTPTR) RTVfsFileToNative(RTFILE hVfsFile);
  * @returns The VFS I/O stream handle on success, this must be released.
  *          NIL_RTVFSIOSTREAM if the file handle is invalid.
  * @param   hVfsFile        The VFS file handle.
+ * @sa      RTVfsIoStrmToFile
  */
 RTDECL(RTVFSIOSTREAM) RTVfsFileToIoStream(RTVFSFILE hVfsFile);
 

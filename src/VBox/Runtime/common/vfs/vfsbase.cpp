@@ -183,6 +183,174 @@ DECLINLINE(uint32_t) rtVfsRelease(uint32_t volatile *pcRefs)
 }
 
 
+RTDECL(uint32_t)    RTVfsIoStrmRetain(RTVFSIOSTREAM hVfsIos)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, UINT32_MAX);
+    return rtVfsRetain(&pThis->cRefs);
+}
+
+
+RTDECL(uint32_t)    RTVfsIoStrmRelease(RTVFSIOSTREAM hVfsIos)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, UINT32_MAX);
+
+    uint32_t cRefs = rtVfsRelease(&pThis->cRefs);
+    if (!cRefs)
+    {
+        /*
+         * That was the last reference, close the stream.
+         *
+         * This is a little bit more complicated than when releasing a file or
+         * directory handle because the I/O stream can be a sub-object and we
+         * need to get to the real one before handing it to RTMemFree.
+         */
+        ASMAtomicWriteU32(&pThis->uMagic, RTVFSIOSTREAM_MAGIC_DEAD);
+        pThis->pOps->Obj.pfnClose(pThis->pvThis);
+
+        switch (pThis->pOps->Obj.enmType)
+        {
+            case RTVFSOBJTYPE_IOSTREAM:
+                RTMemFree(pThis);
+                break;
+
+            case RTVFSOBJTYPE_FILE:
+            {
+                RTVFSFILEINTERNAL *pThisFile = RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream);
+                ASMAtomicWriteU32(&pThisFile->uMagic, RTVFSIOSTREAM_MAGIC_DEAD);
+                RTMemFree(pThisFile);
+                break;
+            }
+
+            /* Add new I/O stream compatible handle types here. */
+
+            default:
+                AssertMsgFailed(("%d\n", pThis->pOps->Obj.enmType));
+                break;
+        }
+    }
+
+    return cRefs;
+
+}
+
+
+RTDECL(RTVFSFILE)   RTVfsIoStrmToFile(RTVFSIOSTREAM hVfsIos)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, NIL_RTVFSFILE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, NIL_RTVFSFILE);
+
+    if (pThis->pOps->Obj.enmType == RTVFSOBJTYPE_FILE)
+    {
+        rtVfsRetainVoid(&pThis->cRefs);
+        return RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream);
+    }
+
+    /* this is no crime, so don't assert. */
+    return NIL_RTVFSFILE;
+}
+
+
+RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    return pThis->pOps->Obj.pfnQueryInfo(pThis->pvThis, pObjInfo, enmAddAttr);
+}
+
+
+RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    RTSGSEG Seg = { pvBuf, cbToRead };
+    RTSGBUF SgBuf;
+    RTSgBufInit(&SgBuf, &Seg, 1);
+    return pThis->pOps->pfnRead(pThis->pvThis, -1 /*off*/, &SgBuf, pcbRead == NULL /*fBlocking*/, pcbRead);
+}
+
+
+RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
+    RTSGBUF SgBuf;
+    RTSgBufInit(&SgBuf, &Seg, 1);
+    return pThis->pOps->pfnWrite(pThis->pvThis, -1 /*off*/, &SgBuf, pcbWritten == NULL /*fBlocking*/, pcbWritten);
+}
+
+
+RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtr(pSgBuf);
+    AssertReturn(fBlocking || VALID_PTR(pcbRead), VERR_INVALID_PARAMETER);
+
+    return pThis->pOps->pfnRead(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
+}
+
+
+RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtr(pSgBuf);
+    AssertReturn(fBlocking || VALID_PTR(pcbWritten), VERR_INVALID_PARAMETER);
+
+    return pThis->pOps->pfnWrite(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
+}
+
+
+RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    return pThis->pOps->pfnFlush(pThis->pvThis);
+}
+
+
+RTDECL(RTFOFF)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                                    uint32_t *pfRetEvents)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    return pThis->pOps->pfnPollOne(pThis->pvThis, fEvents, cMillies, fIntr, pfRetEvents);
+}
+
+
+RTDECL(RTFOFF)      RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, -1);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, -1);
+
+    RTFOFF off;
+    int rc = pThis->pOps->pfnTell(pThis->pvThis, &off);
+    if (RT_FAILURE(rc))
+        off = rc;
+    return off;
+}
+
+
+
 RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs,
                          PRTVFSFILE phVfsFile, void **ppvInstance)
 {
