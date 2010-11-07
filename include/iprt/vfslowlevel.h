@@ -427,7 +427,7 @@ typedef struct RTVFSIOSTREAMOPS
      * @returns IPRT status code.
      * @param   pvThis      The implementation specific file data.
      * @param   poffActual  Where to return the actual offset.
-     * @sa      RTFileSeek
+     * @sa      RTFileTell
      */
     DECLCALLBACKMEMBER(int, pfnTell)(void *pvThis, PRTFOFF poffActual);
 
