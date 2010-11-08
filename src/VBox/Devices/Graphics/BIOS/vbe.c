@@ -156,11 +156,23 @@ illegal_window:
   ret
 vesa_pm_set_display_start:
   cmp  bl, #0x80
-  je   vesa_pm_set_display_start1
+  je   vesa_pm_set_display_start1_wait
   cmp  bl, #0x00
   je   vesa_pm_set_display_start1
   mov  ax, #0x0100
   ret
+vesa_pm_set_display_start1_wait:
+  push edx
+  mov  dx, #0x03da
+wnv_loop_32:
+  in   al, dx
+  test al, #8
+  jnz  wnv_loop_32
+wv_loop_32:
+  in   al, dx
+  test al, #8
+  jz   wv_loop_32
+  pop  edx
 vesa_pm_set_display_start1:
 ; convert offset to (X, Y) coordinate
 ; (would be simpler to change Bochs VBE API...)
@@ -261,6 +273,31 @@ do_in_ax_dx:
   in   al, dx
   ret
 #endif
+
+;; Vertical retrace waiting
+wait_vsync:
+  push ax
+  push dx
+  mov  dx, #0x03da
+wv_loop:
+  in   al, dx
+  test al, #8
+  jz   wv_loop
+  pop  dx
+  pop  ax
+  ret
+
+wait_not_vsync:
+  push ax
+  push dx
+  mov  dx, #0x03da
+wnv_loop:
+  in   al, dx
+  test al, #8
+  jnz  wnv_loop
+  pop  dx
+  pop  ax
+  ret
 
 ; DISPI ioport functions
 
@@ -656,7 +693,12 @@ bit9_clear:
   ; other settings
   mov  dx, # VGAREG_VGA_CRTC_ADDRESS
   mov  ax, #0x0009
-  out  dx, ax
+  out  dx, al
+  mov  dx, # VGAREG_VGA_CRTC_DATA
+  in   al, dx
+  and  al, #0x60    // clear double scan bit and cell height
+  out  dx, al
+  mov  dx, # VGAREG_VGA_CRTC_ADDRESS
   mov  al, #0x17
   out  dx, al
   mov  dx, # VGAREG_VGA_CRTC_DATA
@@ -1607,12 +1649,15 @@ ASM_END
 ASM_START
 vbe_biosfn_set_get_display_start:
   cmp  bl, #0x80
-  je   set_display_start
+  je   set_display_start_wait
   cmp  bl, #0x01
   je   get_display_start
   jb   set_display_start
   mov  ax, #0x0100
   ret
+set_display_start_wait:
+  call wait_not_vsync
+  call wait_vsync
 set_display_start:
   mov  ax, cx
   call dispi_set_x_offset
