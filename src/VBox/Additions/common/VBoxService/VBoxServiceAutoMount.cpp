@@ -32,10 +32,12 @@
 #include <errno.h>
 #include <grp.h>
 #include <sys/mount.h>
-#include <mntent.h>
-#include <paths.h>
 #ifdef RT_OS_SOLARIS
-#include <sys/vfs.h>
+# include <sys/vfs.h>
+# include <sys/mnttab.h>
+#else
+# include <mntent.h>
+# include <paths.h>
 #endif
 #include <unistd.h>
 
@@ -47,6 +49,10 @@ RT_C_DECLS_END
 # define AUTO_MOUNT_POINT       "/mnt/%s%s"
 #else
 # define AUTO_MOUNT_POINT       "/media/%s%s"
+#endif
+
+#ifndef _PATH_MOUNTED
+ #define _PATH_MOUNTED "/etc/mtab"
 #endif
 
 /*******************************************************************************
@@ -86,7 +92,7 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
 }
 
 
-static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare, 
+static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
                                                char *pszMountPoint, size_t cbMountPoint)
 {
     AssertPtrReturn(pszShare, VERR_INVALID_PARAMETER);
@@ -108,11 +114,11 @@ static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
         {
             if (!RTStrICmp(pMntEnt->mnt_fsname, pszShare))
             {
-                fMounted = RTStrPrintf(pszMountPoint, cbMountPoint, "%s", pMntEnt->mnt_dir) 
-                         ? true : false;                
+                fMounted = RTStrPrintf(pszMountPoint, cbMountPoint, "%s", pMntEnt->mnt_dir)
+                         ? true : false;
                 break;
-            }               
-        }        
+            }
+        }
         endmntent(pFh);
     }
     return fMounted;
@@ -130,12 +136,12 @@ static int VBoxServiceAutoMountUnmount(const char *pszMountPoint)
     {
         r = umount(pszMountPoint);
         if (r == 0)
-            break;                
+            break;
         RTThreadSleep(5000); /* Wait a while ... */
     }
     if (r == -1)
         rc = RTErrConvertFromErrno(errno);
-    return rc;       
+    return rc;
 }
 
 
@@ -176,12 +182,12 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
 
     int rc;
     char szAlreadyMountedTo[RTPATH_MAX];
-    /* If a Shared Folder already is mounted but not to our desired mount point, 
+    /* If a Shared Folder already is mounted but not to our desired mount point,
      * do an unmount first! */
     if (   VBoxServiceAutoMountShareIsMounted(pszShareName, szAlreadyMountedTo, sizeof(szAlreadyMountedTo))
         && RTStrICmp(pszMountPoint, szAlreadyMountedTo))
     {
-        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already mounted to \"%s\", unmounting ...\n", 
+        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already mounted to \"%s\", unmounting ...\n",
                            pszShareName, szAlreadyMountedTo);
         rc = VBoxServiceAutoMountUnmount(szAlreadyMountedTo);
         if (RT_FAILURE(rc))
@@ -314,7 +320,7 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                     case EINVAL:
                         VBoxServiceVerbose(0, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already is mounted!\n", pszShareName);
                         /* Ignore this error! */
-                        break;                                         
+                        break;
                     case EBUSY:
                         /* Ignore these errors! */
                         break;
@@ -324,7 +330,7 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                                          pszShareName, pszMountPoint, strerror(errno), errno);
                         rc = RTErrConvertFromErrno(errno);
                         break;
-                }               
+                }
             }
         }
 #endif /* !RT_OS_SOLARIS */
