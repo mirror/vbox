@@ -20,6 +20,7 @@
 
 #include "VirtualBoxBase.h"
 #include "SnapshotImpl.h"
+#include "ProgressImpl.h"
 #include "VRDEServerImpl.h"
 #include "MediumAttachmentImpl.h"
 #include "MediumLock.h"
@@ -917,8 +918,8 @@ public:
     STDMETHOD(AutoCaptureUSBDevices)();
     STDMETHOD(DetachAllUSBDevices)(BOOL aDone);
     STDMETHOD(OnSessionEnd)(ISession *aSession, IProgress **aProgress);
-    STDMETHOD(BeginSavingState)(IProgress *aProgress, BSTR *aStateFilePath);
-    STDMETHOD(EndSavingState)(BOOL aSuccess);
+    STDMETHOD(BeginSavingState)(IProgress **aProgress, BSTR *aStateFilePath);
+    STDMETHOD(EndSavingState)(LONG aResult, IN_BSTR aErrMsg);
     STDMETHOD(AdoptSavedState)(IN_BSTR aSavedStateFile);
     STDMETHOD(BeginTakingSnapshot)(IConsole *aInitiator,
                                    IN_BSTR aName,
@@ -986,8 +987,8 @@ private:
         ComObjPtr<Snapshot> mSnapshot;
 
         // used when saving state
-        Guid mProgressId;
         Utf8Str mStateFilePath;
+        ComObjPtr<Progress> mProgress;
     };
 
     struct Uninit
@@ -1004,7 +1005,7 @@ private:
 
     void uninit(Uninit::Reason aReason);
 
-    HRESULT endSavingState(BOOL aSuccess);
+    HRESULT endSavingState(HRESULT aRC, const Utf8Str &aErrMsg);
 
     void deleteSnapshotHandler(DeleteSnapshotTask &aTask);
     void restoreSnapshotHandler(RestoreSnapshotTask &aTask);

@@ -3215,7 +3215,7 @@ STDMETHODIMP Machine::LaunchVMProcess(ISession *aSession,
 {
     CheckComArgNotNull(aSession);
     CheckComArgStrNotEmptyOrNull(aType);
-    CheckComArgOutSafeArrayPointerValid(aProgress);
+    CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -10034,7 +10034,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     if (!mSnapshotData.mStateFilePath.isEmpty())
     {
         LogWarningThisFunc(("canceling failed save state request!\n"));
-        endSavingState(FALSE /* aSuccess  */);
+        endSavingState(E_FAIL, tr("Machine terminated with pending save state!"));
     }
     else if (!mSnapshotData.mSnapshot.isNull())
     {
@@ -10527,12 +10527,12 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::BeginSavingState(IProgress *aProgress, BSTR *aStateFilePath)
+STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStateFilePath)
 {
     LogFlowThisFuncEnter();
 
-    AssertReturn(aProgress, E_INVALIDARG);
-    AssertReturn(aStateFilePath, E_POINTER);
+    CheckComArgOutPointerValid(aProgress);
+    CheckComArgOutPointerValid(aStateFilePath);
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -10541,16 +10541,16 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress *aProgress, BSTR *aState
 
     AssertReturn(    mData->mMachineState == MachineState_Paused
                   && mSnapshotData.mLastState == MachineState_Null
-                  && mSnapshotData.mProgressId.isEmpty()
                   && mSnapshotData.mStateFilePath.isEmpty(),
                  E_FAIL);
 
-    /* memorize the progress ID and add it to the global collection */
-    Bstr progressId;
-    HRESULT rc = aProgress->COMGETTER(Id)(progressId.asOutParam());
-    AssertComRCReturn(rc, rc);
-    rc = mParent->addProgress(aProgress);
-    AssertComRCReturn(rc, rc);
+    /* create a progress object to track operation completion */
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    pProgress->init(getVirtualBox(),
+                    static_cast<IMachine *>(this) /* aInitiator */,
+                    Bstr(tr("Saving the execution state of the virtual machine")).raw(),
+                    FALSE /* aCancelable */);
 
     Bstr stateFilePath;
     /* stateFilePath is null when the machine is not running */
@@ -10563,13 +10563,14 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress *aProgress, BSTR *aState
 
     /* fill in the snapshot data */
     mSnapshotData.mLastState = mData->mMachineState;
-    mSnapshotData.mProgressId = Guid(progressId);
     mSnapshotData.mStateFilePath = stateFilePath;
+    mSnapshotData.mProgress = pProgress;
 
     /* set the state to Saving (this is expected by Console::SaveState()) */
     setMachineState(MachineState_Saving);
 
     stateFilePath.cloneTo(aStateFilePath);
+    pProgress.queryInterfaceTo(aProgress);
 
     return S_OK;
 }
@@ -10577,7 +10578,7 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress *aProgress, BSTR *aState
 /**
  *  @note Locks mParent + this object for writing.
  */
-STDMETHODIMP SessionMachine::EndSavingState(BOOL aSuccess)
+STDMETHODIMP SessionMachine::EndSavingState(LONG iResult, IN_BSTR aErrMsg)
 {
     LogFlowThisFunc(("\n"));
 
@@ -10587,24 +10588,22 @@ STDMETHODIMP SessionMachine::EndSavingState(BOOL aSuccess)
     /* endSavingState() need mParent lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-    AssertReturn(    mData->mMachineState == MachineState_Saving
+    AssertReturn(    (   (SUCCEEDED(iResult) && mData->mMachineState == MachineState_Saved)
+                      || (FAILED(iResult) && mData->mMachineState == MachineState_Saving))
                   && mSnapshotData.mLastState != MachineState_Null
-                  && !mSnapshotData.mProgressId.isEmpty()
                   && !mSnapshotData.mStateFilePath.isEmpty(),
                  E_FAIL);
 
     /*
-     *  on success, set the state to Saved;
-     *  on failure, set the state to the state we had when BeginSavingState() was
-     *  called (this is expected by Console::SaveState() and
-     *  Console::saveStateThread())
+     * On failure, set the state to the state we had when BeginSavingState()
+     * was called (this is expected by Console::SaveState() and the associated
+     * task). On success the VM process already changed the state to
+     * MachineState_Saved, so no need to do anything.
      */
-    if (aSuccess)
-        setMachineState(MachineState_Saved);
-    else
+    if (FAILED(iResult))
         setMachineState(mSnapshotData.mLastState);
 
-    return endSavingState(aSuccess);
+    return endSavingState(iResult, aErrMsg);
 }
 
 /**
@@ -11258,11 +11257,12 @@ HRESULT SessionMachine::onUSBDeviceDetach(IN_BSTR aId,
  *
  *  @note Must be called from under this object's lock.
  *
- *  @param aSuccess TRUE if the snapshot has been taken successfully
+ *  @param aRc      S_OK if the snapshot has been taken successfully
+ *  @param aErrMsg  human readable error message for failure
  *
  *  @note Locks mParent + this objects for writing.
  */
-HRESULT SessionMachine::endSavingState(BOOL aSuccess)
+HRESULT SessionMachine::endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
 {
     LogFlowThisFuncEnter();
 
@@ -11273,7 +11273,7 @@ HRESULT SessionMachine::endSavingState(BOOL aSuccess)
 
     HRESULT rc = S_OK;
 
-    if (aSuccess)
+    if (SUCCEEDED(aRc))
     {
         mSSData->mStateFilePath = mSnapshotData.mStateFilePath;
 
@@ -11288,13 +11288,25 @@ HRESULT SessionMachine::endSavingState(BOOL aSuccess)
         RTFileDelete(mSnapshotData.mStateFilePath.c_str());
     }
 
-    /* remove the completed progress object */
-    mParent->removeProgress(mSnapshotData.mProgressId.ref());
+    /* notify the progress object about operation completion */
+    Assert(mSnapshotData.mProgress);
+    if (SUCCEEDED(aRc))
+        mSnapshotData.mProgress->notifyComplete(S_OK);
+    else
+    {
+        if (aErrMsg.length())
+            mSnapshotData.mProgress->notifyComplete(aRc,
+                                                    COM_IIDOF(ISession),
+                                                    getComponentName(),
+                                                    aErrMsg.c_str());
+        else
+            mSnapshotData.mProgress->notifyComplete(aRc);
+    }
 
     /* clear out the temporary saved state data */
     mSnapshotData.mLastState = MachineState_Null;
-    mSnapshotData.mProgressId.clear();
     mSnapshotData.mStateFilePath.setNull();
+    mSnapshotData.mProgress.setNull();
 
     LogFlowThisFuncLeave();
     return rc;
