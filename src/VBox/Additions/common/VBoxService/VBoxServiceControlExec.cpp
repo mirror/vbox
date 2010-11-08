@@ -1038,6 +1038,10 @@ int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpanded, s
     /* No expansion for non-Windows yet. */
     rc = RTStrCopy(pszExpanded, cbExpanded, pszPath);
 #endif
+#ifdef DEBUG
+        VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecMakeFullPath: %s -> %s\n",
+                           pszPath, pszExpanded);
+#endif
     return rc;
 }
 
@@ -1070,6 +1074,10 @@ int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszRe
         AssertPtr(pszExecResolved);
 
         rc = VBoxServiceControlExecMakeFullPath(pszExecResolved, pszResolved, cbResolved);
+#ifdef DEBUG
+        VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecResolveExecutable: %s -> %s\n",
+                           pszFileName, pszResolved);
+#endif
         RTStrFree(pszExecResolved);
     }
     return rc;
@@ -1119,6 +1127,10 @@ int VBoxServiceControlExecPrepareArgv(const char *pszFileName,
             char *pszNewArgs;
             if (RTStrAPrintf(&pszNewArgs, "%s %s", pszFileName, szArgsExp))
             {
+#ifdef DEBUG
+                VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecPrepareArgv: %s\n",
+                                   pszNewArgs);
+#endif
                 int iNumArgsIgnored;
                 rc = RTGetOptArgvFromString(ppapszArgv, &iNumArgsIgnored,
                                             pszNewArgs, NULL /* Use standard separators. */);
@@ -1548,7 +1560,7 @@ int VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t u
                                            &uTimeLimitMS);
 #ifdef DEBUG
     VBoxServiceVerbose(3, "ControlExec: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
-                       szCmd, uFlags, szArgs, szEnv, szUser, szPassword, uTimeLimitMS);
+                       szCmd, uFlags, uNumArgs ? szArgs : "<None>", uNumEnvVars ? szEnv : "<None>", szUser, szPassword, uTimeLimitMS);
 #endif
     if (RT_SUCCESS(rc))
     {
