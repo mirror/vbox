@@ -672,6 +672,9 @@ public:
     ~XmlMemWriter();
 
     void write(const Document &doc, void** ppvBuf, size_t *pcbSize);
+
+private:
+    void* m_pBuf;
 };
 
 /*

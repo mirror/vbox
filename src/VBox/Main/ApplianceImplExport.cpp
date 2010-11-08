@@ -1724,7 +1724,6 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                                strOvfFile.c_str());
             /* Write the ovf file to disk. */
             vrc = RTSha1WriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
-            RTMemFree(pvBuf);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create OVF file '%s' (%Rrc)"),
