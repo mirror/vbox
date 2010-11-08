@@ -3886,7 +3886,7 @@ void SaveState(void)
     UpdateTitlebar(TITLEBAR_SAVE);
     gProgress = NULL;
     HRESULT rc = gConsole->SaveState(gProgress.asOutParam());
-    if (FAILED(S_OK))
+    if (FAILED(rc))
     {
         RTPrintf("Error saving state! rc = 0x%x\n", rc);
         return;
