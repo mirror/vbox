@@ -6308,7 +6308,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 std::auto_ptr<VMProgressTask> task(new VMProgressTask(that, NULL /* aProgress */,
                                                                       true /* aUsesVMPtr */));
 
-                 /* If creating a task is falied, this can currently mean one of
+                 /* If creating a task failed, this can currently mean one of
                   * two: either Console::uninit() has been called just a ms
                   * before (so a powerDown() call is already on the way), or
                   * powerDown() itself is being already executed. Just do
