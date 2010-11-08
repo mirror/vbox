@@ -578,7 +578,7 @@ static uint8_t vga_retrace(VGAState *s)
     if (r->frame_ns) {
         uint8_t     val = s->st01 & ~(ST01_V_RETRACE | ST01_DISP_ENABLE);
         unsigned    cur_frame_ns, cur_line_ns;
-        int64_t     time_ns;
+        uint64_t    time_ns;
 
         time_ns = PDMDevHlpTMTimeVirtGetNano(VGASTATE2DEVINS(s));
 
