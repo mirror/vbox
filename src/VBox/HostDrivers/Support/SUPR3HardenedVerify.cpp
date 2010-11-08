@@ -916,7 +916,8 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size
     /*
      * Check each component.  No parent references or double slashes.
      */
-    pInfo->fDirSlash = false;
+    pInfo->cComponents = 0;
+    pInfo->fDirSlash   = false;
     while (pszSrc[0])
     {
         /* Sanity checks. */
