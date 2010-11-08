@@ -508,29 +508,9 @@ int main(int argc, char **argv)
      */
     RTR3Init();
 
-    /*
-     * Connect to the kernel part before daemonizing so we can fail and
-     * complain if there is some kind of problem.  We need to initialize the
-     * guest lib *before* we do the pre-init just in case one of services needs
-     * do to some initial stuff with it.
-     */
-    VBoxServiceVerbose(2, "Calling VbgR3Init()\n");
-    int rc = VbglR3Init();
-    if (RT_FAILURE(rc))
-        return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
-
-#ifdef RT_OS_WINDOWS
-    /*
-     * Check if we're the specially spawned VBoxService.exe process that
-     * handles page fusion.  This saves an extra executable.
-     */
-    if (    argc == 2
-        &&  !strcmp(argv[1], "--pagefusionfork"))
-        return VBoxServicePageSharingInitFork();
-#endif
-
     g_pszProgName = RTPathFilename(argv[0]);
 
+    int rc;
 #ifdef VBOXSERVICE_TOOLBOX
     if (argc > 1)
     {
@@ -542,6 +522,27 @@ int main(int argc, char **argv)
         if (rc != VERR_NOT_FOUND) /* Internal tool found? Then bail out. */
             return rc;
     }
+#endif
+
+    /*
+     * Connect to the kernel part before daemonizing so we can fail and
+     * complain if there is some kind of problem.  We need to initialize the
+     * guest lib *before* we do the pre-init just in case one of services needs
+     * do to some initial stuff with it.
+     */
+    VBoxServiceVerbose(2, "Calling VbgR3Init()\n");
+    rc = VbglR3Init();
+    if (RT_FAILURE(rc))
+        return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Check if we're the specially spawned VBoxService.exe process that
+     * handles page fusion.  This saves an extra executable.
+     */
+    if (    argc == 2
+        &&  !strcmp(argv[1], "--pagefusionfork"))
+        return VBoxServicePageSharingInitFork();
 #endif
 
     /*
