@@ -995,8 +995,8 @@ NTSTATUS vboxVidPnCreatePopulateVidPnFromLegacy(PDEVICE_EXTENSION pDevExt, D3DKM
                                 Status = pVidPnTopologyInterface->pfnCreateNewPathInfo(hVidPnTopology, &pNewVidPnPresentPathInfo);
                                 if (Status == STATUS_SUCCESS)
                                 {
-                                    pNewVidPnPresentPathInfo->VidPnSourceId = 0;
-                                    pNewVidPnPresentPathInfo->VidPnTargetId = 0;
+                                    pNewVidPnPresentPathInfo->VidPnSourceId = srcId;
+                                    pNewVidPnPresentPathInfo->VidPnTargetId = tgtId;
                                     pNewVidPnPresentPathInfo->ImportanceOrdinal = D3DKMDT_VPPI_PRIMARY;
                                     pNewVidPnPresentPathInfo->ContentTransformation.Scaling = D3DKMDT_VPPS_IDENTITY;
                                     memset(&pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport,

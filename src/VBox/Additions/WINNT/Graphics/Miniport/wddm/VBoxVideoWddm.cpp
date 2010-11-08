@@ -755,6 +755,9 @@ NTSTATUS DxgkDdiStartDevice(
                     ExInitializeFastMutex(&pContext->ContextMutex);
                     KeInitializeSpinLock(&pContext->SynchLock);
 
+                    vboxVideoInitCustomVideoModes(pContext);
+                    vboxWddmInvalidateVideoModesInfo(pContext);
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     vboxVhwaInit(pContext);
 #endif
