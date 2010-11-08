@@ -38,11 +38,13 @@
 
 static void test1Hlp1(const char *pszExpect, const char *pszFormat, ...)
 {
+#if 0
     va_list va;
     va_start(va, pszFormat);
     iprt::MiniString strTst(pszFormat, va);
     va_end(va);
     RTTESTI_CHECK_MSG(strTst.equals(pszExpect),  ("strTst='%s' expected='%s'\n",  strTst.c_str(), pszExpect));
+#endif
 }
 
 static void test1(RTTEST hTest)
@@ -60,6 +62,11 @@ static void test1(RTTEST hTest)
     do { \
         if (!(expr)) \
             RTTestFailed(hTest, "%d: FAILED %s, got \"%d\"", __LINE__, #expr, expr); \
+    } while (0)
+#define CHECK_EQUAL(Str, szExpect) \
+    do { \
+        if (!(Str).equals(szExpect)) \
+            RTTestIFailed("line %u: expected \"%s\" got \"%s\"", __LINE__, szExpect, (Str).c_str()); \
     } while (0)
 
     iprt::MiniString empty;
@@ -166,6 +173,44 @@ static void test1(RTTEST hTest)
     test1Hlp1("1", "1");
     test1Hlp1("foobar", "%s", "foobar");
 
+    /* substring constructors */
+    iprt::MiniString SubStr1("", (size_t)0);
+    CHECK_EQUAL(SubStr1, "");
+
+    iprt::MiniString SubStr2("abcdef", 2);
+    CHECK_EQUAL(SubStr2, "ab");
+
+    iprt::MiniString SubStr3("abcdef", 1);
+    CHECK_EQUAL(SubStr3, "a");
+
+    iprt::MiniString SubStr4("abcdef", 6);
+    CHECK_EQUAL(SubStr4, "abcdef");
+
+    iprt::MiniString SubStr5("abcdef", 7);
+    CHECK_EQUAL(SubStr5, "abcdef");
+
+
+    iprt::MiniString SubStrBase("abcdef");
+
+    iprt::MiniString SubStr10(SubStrBase, 0);
+    CHECK_EQUAL(SubStr10, "abcdef");
+
+    iprt::MiniString SubStr11(SubStrBase, 1);
+    CHECK_EQUAL(SubStr11, "bcdef");
+
+    iprt::MiniString SubStr12(SubStrBase, 1, 1);
+    CHECK_EQUAL(SubStr12, "b");
+
+    iprt::MiniString SubStr13(SubStrBase, 2, 3);
+    CHECK_EQUAL(SubStr13, "cde");
+
+    iprt::MiniString SubStr14(SubStrBase, 2, 4);
+    CHECK_EQUAL(SubStr14, "cdef");
+
+    iprt::MiniString SubStr15(SubStrBase, 2, 5);
+    CHECK_EQUAL(SubStr15, "cdef");
+
+
     /* special constructor and assignment arguments */
     iprt::MiniString StrCtor1("");
     RTTESTI_CHECK(StrCtor1.isEmpty());
@@ -210,6 +255,7 @@ static void test1(RTTEST hTest)
 #undef CHECK
 #undef CHECK_DUMP
 #undef CHECK_DUMP_I
+#undef CHECK_EQUAL
 }
 
 

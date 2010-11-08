@@ -179,7 +179,7 @@ iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball)
     /*
      * Make a duplicate of the name and return it.
      */
-    iprt::MiniString *pStrRet = new iprt::MiniString(off, pszSrc);
+    iprt::MiniString *pStrRet = new iprt::MiniString(pszSrc, off);
     Assert(VBoxExtPackIsValidName(pStrRet->c_str()));
     return pStrRet;
 }
