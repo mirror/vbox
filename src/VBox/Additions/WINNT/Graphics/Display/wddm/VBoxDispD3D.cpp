@@ -3470,7 +3470,6 @@ static HRESULT APIENTRY vboxWddmDDevSetPixelShader(HANDLE hDevice, HANDLE hShade
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
     IDirect3DPixelShader9 *pShader = (IDirect3DPixelShader9*)hShaderHandle;
-    Assert(pShader);
     HRESULT hr = pDevice9If->SetPixelShader(pShader);
     Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
@@ -6254,7 +6253,6 @@ static HRESULT APIENTRY vboxWddmDDevSetVertexShaderFunc(HANDLE hDevice, HANDLE h
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
     IDirect3DVertexShader9 *pShader = (IDirect3DVertexShader9*)hShaderHandle;
-    Assert(pShader);
     HRESULT hr = pDevice9If->SetVertexShader(pShader);
     Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));

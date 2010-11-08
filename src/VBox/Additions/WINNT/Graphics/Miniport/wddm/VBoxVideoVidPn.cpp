@@ -1256,28 +1256,31 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
                 case D3DKMDT_EPT_ROTATION:
                     break;
                 case D3DKMDT_EPT_NOPIVOT:
-                    /* just create and populate the new source mode set for now */
-                    Status = vboxVidPnCreatePopulateSourceModeSetFromLegacy(pDevExt, hDesiredVidPn, pVidPnInterface,
-                            pNewVidPnPresentPathInfo->VidPnSourceId,
-                            pModes, cModes, iPreferredMode, NULL);
-                    Assert(Status == STATUS_SUCCESS);
-                    if (Status == STATUS_SUCCESS)
+                    Assert(!!pPinnedVidPnSourceModeInfo == !!pPinnedVidPnTargetModeInfo);
+                    if (!pPinnedVidPnSourceModeInfo && !pPinnedVidPnTargetModeInfo)
                     {
-                        /* just create and populate a new target mode info for now */
-                        Status = vboxVidPnCreatePopulateTargetModeSetFromLegacy(pDevExt, hDesiredVidPn, pVidPnInterface,
-                                pNewVidPnPresentPathInfo->VidPnTargetId,
-                                pResolutions,
-                                cResolutions,
-                                pPreferredMode,
-                                0,
-                                NULL);
+                        /* just create and populate the new source mode set for now */
+                        Status = vboxVidPnCreatePopulateSourceModeSetFromLegacy(pDevExt, hDesiredVidPn, pVidPnInterface,
+                                pNewVidPnPresentPathInfo->VidPnSourceId,
+                                pModes, cModes, iPreferredMode, NULL);
                         Assert(Status == STATUS_SUCCESS);
-                        if (Status != STATUS_SUCCESS)
-                            drprintf((__FUNCTION__": vboxVidPnCreatePopulateTargetModeSetFromLegacy failed Status(0x%x)\n", Status));
+                        if (Status == STATUS_SUCCESS)
+                        {
+                            /* just create and populate a new target mode info for now */
+                            Status = vboxVidPnCreatePopulateTargetModeSetFromLegacy(pDevExt, hDesiredVidPn, pVidPnInterface,
+                                    pNewVidPnPresentPathInfo->VidPnTargetId,
+                                    pResolutions,
+                                    cResolutions,
+                                    pPreferredMode,
+                                    0,
+                                    NULL);
+                            Assert(Status == STATUS_SUCCESS);
+                            if (Status != STATUS_SUCCESS)
+                                drprintf((__FUNCTION__": vboxVidPnCreatePopulateTargetModeSetFromLegacy failed Status(0x%x)\n", Status));
+                        }
+                        else
+                            drprintf((__FUNCTION__": vboxVidPnCreatePopulateSourceModeSetFromLegacy failed Status(0x%x)\n", Status));
                     }
-                    else
-                        drprintf((__FUNCTION__": vboxVidPnCreatePopulateSourceModeSetFromLegacy failed Status(0x%x)\n", Status));
-
                     break;
                 default:
                     drprintf((__FUNCTION__": unknown EnumPivotType (%dx)\n", pCbContext->pEnumCofuncModalityArg->EnumPivotType));
