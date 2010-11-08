@@ -647,7 +647,7 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
     RTReqFree(pReq);
 }
 
-static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis,bool fRemove, 
+static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
                                                 const char *pNatRuleName, bool fUdp, const char *pHostIp,
                                                 uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {

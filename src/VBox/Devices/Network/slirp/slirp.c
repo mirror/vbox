@@ -1664,8 +1664,7 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
 #endif
 
         LogRel(("NAT: set redirect %s host port %d => guest port %d @ %R[IP4]\n",
-               (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
-               rule->host_port, rule->guest_port, &guest_addr));
+               rule->proto == IPPROTO_UDP ? "UDP" : "TCP", rule->host_port, rule->guest_port, &guest_addr));
 
         if (rule->proto == IPPROTO_UDP)
             so = udp_listen(pData, rule->bind_ip.s_addr, RT_H2N_U16(rule->host_port), guest_addr,
@@ -1784,15 +1783,14 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
 #endif
             && rule->activated)
         {
+            LogRel(("NAT: remove redirect %s host port %d => guest port %d @ %R[IP4]\n",
+                   rule->proto == IPPROTO_UDP ? "UDP" : "TCP", rule->host_port, rule->guest_port, &guest_addr));
+
             LibAliasUninit(rule->so->so_la);
             if (is_udp)
-            {
                 udp_detach(pData, rule->so);
-            }
             else
-            {
                 tcp_close(pData, sototcpcb(rule->so));
-            }
             LIST_REMOVE(rule, list);
             RTMemFree(rule);
             pData->cRedirectionsStored--;
