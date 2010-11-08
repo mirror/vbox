@@ -27,7 +27,6 @@
 #define ___VBox_pdmnetifs_h
 
 #include <VBox/types.h>
-#include <iprt/net.h>
 
 RT_C_DECLS_BEGIN
 
