@@ -22,10 +22,12 @@
 #include <stdio.h>
 
 #include <iprt/assert.h>
+#include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 
@@ -80,14 +82,14 @@ int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
     {
         rc = RTFileFromNative(&hInput, RTFILE_NATIVE_STDIN);
         if (RT_FAILURE(rc))
-            VBoxServiceError("Cat: Could not translate input file to native handle, rc=%Rrc\n", rc);
+            VBoxServiceError("cat: Could not translate input file to native handle, rc=%Rrc\n", rc);
     }
 
     if (hOutput == NIL_RTFILE)
     {
         rc = RTFileFromNative(&hOutput, RTFILE_NATIVE_STDOUT);
         if (RT_FAILURE(rc))
-            VBoxServiceError("Cat: Could not translate output file to native handle, rc=%Rrc\n", rc);
+            VBoxServiceError("cat: Could not translate output file to native handle, rc=%Rrc\n", rc);
     }
 
     if (RT_SUCCESS(rc))
@@ -114,6 +116,85 @@ int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
         }
     }
     return rc;
+}
+
+
+/**
+ *
+ *
+ * @return  int
+ *
+ * @param   argc
+ * @param   argv
+ */
+int VBoxServiceToolboxMkDir(int argc, char **argv)
+{
+     static const RTGETOPTDEF s_aOptions[] =
+     {
+         { "--mode",     'm', RTGETOPT_REQ_STRING },
+         { "--parents",  'p', RTGETOPT_REQ_NOTHING },
+         { "--verbose",  'v', RTGETOPT_REQ_NOTHING }
+     };
+
+     int ch;
+     RTGETOPTUNION ValueUnion;
+     RTGETOPTSTATE GetState;
+     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+
+     int rc = VINF_SUCCESS;
+     bool fMakeParentDirs = false;
+     bool fVerbose = false;
+
+     char *pszDir = NULL;
+     RTFMODE fMode = 0; /** @todo Get standard mode from umask? */
+
+     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+            && RT_SUCCESS(rc))
+     {
+         /* For options that require an argument, ValueUnion has received the value. */
+         switch (ch)
+         {
+             case 'p':
+                 fMakeParentDirs = true;
+                 break;
+
+             case 'm':
+                 /* Ignore by now. */
+                 break;
+
+             case 'v':
+                 fVerbose = true;
+                 break;
+
+             case VINF_GETOPT_NOT_OPTION:
+             {
+                 pszDir = RTPathAbsDup(ValueUnion.psz);
+                 if (!pszDir)
+                     rc = VERR_NO_MEMORY;
+                 break;
+             }
+
+             default:
+                 return RTGetOptPrintError(ch, &ValueUnion);
+         }
+     }
+
+     if (RT_SUCCESS(rc))
+     {
+         rc = fMakeParentDirs ?
+                RTDirCreateFullPath(pszDir, fMode)
+              : RTDirCreate(pszDir, fMode);
+
+         if (RT_SUCCESS(rc) && fVerbose)
+             VBoxServiceVerbose(0, "mkdir: Created directory '%s'\n", pszDir);
+         else if (RT_FAILURE(rc)) /** @todo Add a switch with more helpful error texts! */
+            VBoxServiceError("mkdir: Could not create directory, rc=%Rrc\n", rc);
+     }
+     else
+         VBoxServiceError("mkdir: Failed with rc=%Rrc\n", rc);
+     if (pszDir)
+         RTStrFree(pszDir);
+     return rc;
 }
 
 
@@ -155,7 +236,7 @@ int VBoxServiceToolboxCat(int argc, char **argv)
                                  RTFILE_O_WRITE |
                                  RTFILE_O_DENY_WRITE);
                  if (RT_FAILURE(rc))
-                     VBoxServiceError("Cat: Could not create output file \"%s\"! rc=%Rrc\n",
+                     VBoxServiceError("cat: Could not create output file \"%s\"! rc=%Rrc\n",
                                       ValueUnion.psz, rc);
                  break;
 
@@ -165,7 +246,7 @@ int VBoxServiceToolboxCat(int argc, char **argv)
                  rc = RTFileOpen(&hInput, ValueUnion.psz,
                                  RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
                  if (RT_FAILURE(rc))
-                     VBoxServiceError("Cat: Could not open input file \"%s\"! rc=%Rrc\n",
+                     VBoxServiceError("cat: Could not open input file \"%s\"! rc=%Rrc\n",
                                       ValueUnion.psz, rc);
                  break;
              }
@@ -203,6 +284,11 @@ int VBoxServiceToolboxMain(int argc, char **argv)
             || !strcmp(argv[0], "vbox_cat"))
         {
             rc = VBoxServiceToolboxCat(argc, argv);
+        }
+        else if (   !strcmp(argv[0], "mkdir")
+                 || !strcmp(argv[0], "vbox_mkdir"))
+        {
+            rc = VBoxServiceToolboxMkDir(argc, argv);
         }
     }
 
