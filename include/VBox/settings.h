@@ -357,11 +357,11 @@ struct USBController
 
  struct NATRule
  {
-     NATRule(): u32Proto(0),
+     NATRule(): proto(NATProtocol_TCP),
              u16HostPort(0),
              u16GuestPort(0){}
      com::Utf8Str            strName;
-     uint32_t                u32Proto;
+     NATProtocol_T           proto;
      uint16_t                u16HostPort;
      com::Utf8Str            strHostIP;
      uint16_t                u16GuestPort;
@@ -369,7 +369,7 @@ struct USBController
     bool operator==(const NATRule &r) const
     {
         return    strName == r.strName
-               && u32Proto == r.u32Proto
+               && proto == r.proto
                && u16HostPort == r.u16HostPort
                && strHostIP == r.strHostIP
                && u16GuestPort == r.u16GuestPort

@@ -245,7 +245,7 @@ NATEngine::COMGETTER(Redirects)(ComSafeArrayOut(BSTR , aNatRules))
         settings::NATRule r = it->second;
         BstrFmt bstr("%s,%d,%s,%d,%s,%d",
                      r.strName.c_str(),
-                     r.u32Proto,
+                     r.proto,
                      r.strHostIP.c_str(),
                      r.u16HostPort,
                      r.strGuestIP.c_str(),
@@ -282,7 +282,7 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
     if (name.isEmpty())
         name = Utf8StrFmt("%s_%d_%d", proto, aHostPort, aGuestPort);
     r.strName = name.c_str();
-    r.u32Proto = aProto;
+    r.proto = aProto;
     r.strHostIP = aBindIp;
     r.u16HostPort = aHostPort;
     r.strGuestIP = aGuestIP;
@@ -309,7 +309,7 @@ NATEngine::RemoveRedirect(IN_BSTR aName)
     settings::NATRule r = it->second;
     Utf8Str strHostIP = r.strHostIP;
     Utf8Str strGuestIP = r.strGuestIP;
-    NATProtocol_T proto = r.u32Proto;
+    NATProtocol_T proto = r.proto;
     uint16_t u16HostPort = r.u16HostPort;
     uint16_t u16GuestPort = r.u16GuestPort;
                                                     

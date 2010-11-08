@@ -2035,7 +2035,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             NATRule rule;
             uint32_t port = 0;
             (*pf)->getAttributeValue("name", rule.strName);
-            (*pf)->getAttributeValue("proto", rule.u32Proto);
+            (*pf)->getAttributeValue("proto", rule.proto);
             (*pf)->getAttributeValue("hostip", rule.strHostIP);
             (*pf)->getAttributeValue("hostport", port);
             rule.u16HostPort = port;
@@ -3885,7 +3885,7 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                 pelmPF = pelmNAT->createChild("Forwarding");
                 if ((*rule).strName.length())
                     pelmPF->setAttribute("name", (*rule).strName);
-                pelmPF->setAttribute("proto", (*rule).u32Proto);
+                pelmPF->setAttribute("proto", (*rule).proto);
                 if ((*rule).strHostIP.length())
                     pelmPF->setAttribute("hostip", (*rule).strHostIP);
                 if ((*rule).u16HostPort)
