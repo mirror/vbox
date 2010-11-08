@@ -1690,8 +1690,7 @@ static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char
         pFunc++;
     }
 
-    RTAssertMsg2Weak("%s is importing %s which we couldn't find\n", pvUser, pszSymbol);
-    AssertMsgFailed(("%s is importing %s which we couldn't find\n", pvUser, pszSymbol));
+    AssertLogRelMsgFailed(("%s is importing %s which we couldn't find\n", pvUser, pszSymbol));
     if (g_u32FakeMode)
     {
         *pValue = 0xdeadbeef;
