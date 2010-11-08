@@ -676,7 +676,9 @@ DECLCALLBACK(int) drvNATNetworkNatConfig_RedirectRuleCommand(PPDMINETWORKNATCONF
                                                              bool fUdp, const char *pHostIp,
                                                              uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {
-    LogFlow(("drvNATNetworkNatConfig_ApplyNatCommand: \n", (pNatRuleName ? pNatRuleName: "")));
+    LogFlowFunc(("fRemove=%d, fUdp=%d, pHostIp=%s, u16HostPort=%u, pGuestIp=%s, u16GuestPort=%u\n",
+                 RT_BOOL(fRemove), RT_BOOL(fUdp), pHostIp, u16HostPort, pGuestIp,
+                 u16GuestPort));
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkNATCfg);
     PRTREQ pReq;
     int rc = RTReqCallEx(pThis->pSlirpReqQueue, &pReq, 0 /*cMillies*/, RTREQFLAGS_VOID,
