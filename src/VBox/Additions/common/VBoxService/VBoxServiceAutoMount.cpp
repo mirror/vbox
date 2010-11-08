@@ -114,9 +114,9 @@ static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
         mnttab mntTab;
         while ((getmntent(pFh, &mntTab)))
         {
-            if (!RTStrICmp(mntTab->mnt_special, pszShare))
+            if (!RTStrICmp(mntTab.mnt_special, pszShare))
             {
-                fMounted = RTStrPrintf(pszMountPoint, cbMountPoint, "%s", pMntEnt->mnt_mountp)
+                fMounted = RTStrPrintf(pszMountPoint, cbMountPoint, "%s", mntTab.mnt_mountp)
                          ? true : false;
                 break;
             }
