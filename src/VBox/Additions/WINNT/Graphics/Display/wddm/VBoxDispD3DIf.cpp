@@ -38,15 +38,20 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             Assert(pD3D->pfnVBoxWineExD3DDev9CreateTexture);
             if (pD3D->pfnVBoxWineExD3DDev9CreateTexture)
             {
-                pD3D->pfnVBoxWineExD3DDev9Flush = (PFNVBOXWINEEXD3DDEV9_FLUSH)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Flush");
-                Assert(pD3D->pfnVBoxWineExD3DDev9Flush);
-                if (pD3D->pfnVBoxWineExD3DDev9Flush)
+                pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture = (PFNVBOXWINEEXD3DDEV9_CREATECUBETEXTURE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9CreateCubeTexture");
+                Assert(pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture);
+                if (pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture)
                 {
-                    pD3D->pfnVBoxWineExD3DDev9Update = (PFNVBOXWINEEXD3DDEV9_UPDATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Update");
-                    Assert(pD3D->pfnVBoxWineExD3DDev9Update);
-                    if (pD3D->pfnVBoxWineExD3DDev9Update)
+                    pD3D->pfnVBoxWineExD3DDev9Flush = (PFNVBOXWINEEXD3DDEV9_FLUSH)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Flush");
+                    Assert(pD3D->pfnVBoxWineExD3DDev9Flush);
+                    if (pD3D->pfnVBoxWineExD3DDev9Flush)
                     {
-                        return S_OK;
+                        pD3D->pfnVBoxWineExD3DDev9Update = (PFNVBOXWINEEXD3DDEV9_UPDATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Update");
+                        Assert(pD3D->pfnVBoxWineExD3DDev9Update);
+                        if (pD3D->pfnVBoxWineExD3DDev9Update)
+                        {
+                            return S_OK;
+                        }
                     }
                 }
             }

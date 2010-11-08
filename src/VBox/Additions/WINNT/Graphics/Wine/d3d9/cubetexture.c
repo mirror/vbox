@@ -400,7 +400,12 @@ static const struct wined3d_parent_ops d3d9_cubetexture_wined3d_parent_ops =
 };
 
 HRESULT cubetexture_init(IDirect3DCubeTexture9Impl *texture, IDirect3DDevice9Impl *device,
-        UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool)
+        UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        )
 {
     HRESULT hr;
 
@@ -408,9 +413,16 @@ HRESULT cubetexture_init(IDirect3DCubeTexture9Impl *texture, IDirect3DDevice9Imp
     texture->ref = 1;
 
     wined3d_mutex_lock();
+#ifdef VBOX_WITH_WDDM
+    hr = IWineD3DDevice_CreateCubeTexture(device->WineD3DDevice, edge_length, levels, usage,
+            wined3dformat_from_d3dformat(format), pool, &texture->wineD3DCubeTexture,
+            (IUnknown *)texture, &d3d9_cubetexture_wined3d_parent_ops, 
+            shared_handle, pvClientMem);
+#else
     hr = IWineD3DDevice_CreateCubeTexture(device->WineD3DDevice, edge_length, levels, usage,
             wined3dformat_from_d3dformat(format), pool, &texture->wineD3DCubeTexture,
             (IUnknown *)texture, &d3d9_cubetexture_wined3d_parent_ops);
+#endif
     wined3d_mutex_unlock();
     if (FAILED(hr))
     {
