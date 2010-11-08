@@ -254,106 +254,106 @@ extern "C" {
 
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
-#define CODEC_DEFAULT_CONF_PORT_MASK    (0x3) 
-#define CODEC_DEFAULT_CONF_PORT_SHIFT   (30) 
+#define CODEC_F1C_PORT_MASK    (0x3) 
+#define CODEC_F1C_PORT_SHIFT   (30) 
 
-#define CODEC_DEFAULT_CONF_PORT_COMPLEX (0x0) 
-#define CODEC_DEFAULT_CONF_PORT_NO_PHYS (0x1) 
-#define CODEC_DEFAULT_CONF_PORT_FIXED   (0x2) 
-#define CODEC_DEFAULT_CONF_BOTH         (0x3) 
+#define CODEC_F1C_PORT_COMPLEX (0x0) 
+#define CODEC_F1C_PORT_NO_PHYS (0x1) 
+#define CODEC_F1C_PORT_FIXED   (0x2) 
+#define CODEC_F1C_BOTH         (0x3) 
 
 /* Configuration's location */
-#define CODEC_DEFAULT_CONF_LOCATION_MASK  (0x3F)
-#define CODEC_DEFAULT_CONF_LOCATION_SHIFT (24)
+#define CODEC_F1C_LOCATION_MASK  (0x3F)
+#define CODEC_F1C_LOCATION_SHIFT (24)
 /* [4:5] bits of location region means chassis attachment */
-#define CODEC_DEFAULT_CONF_LOCATION_PRIMARY_CHASSIS     (0)
-#define CODEC_DEFAULT_CONF_LOCATION_INTERNAL            RT_BIT(4)
-#define CODEC_DEFAULT_CONF_LOCATION_SECONDRARY_CHASSIS  RT_BIT(5)
-#define CODEC_DEFAULT_CONF_LOCATION_OTHER               (RT_BIT(5))
+#define CODEC_F1C_LOCATION_PRIMARY_CHASSIS     (0)
+#define CODEC_F1C_LOCATION_INTERNAL            RT_BIT(4)
+#define CODEC_F1C_LOCATION_SECONDRARY_CHASSIS  RT_BIT(5)
+#define CODEC_F1C_LOCATION_OTHER               (RT_BIT(5))
 
 /* [0:3] bits of location region means geometry location attachment */
-#define CODEC_DEFAULT_CONF_LOCATION_NA                  (0)
-#define CODEC_DEFAULT_CONF_LOCATION_REAR                (0x1)
-#define CODEC_DEFAULT_CONF_LOCATION_FRONT               (0x2)
-#define CODEC_DEFAULT_CONF_LOCATION_LEFT                (0x3)
-#define CODEC_DEFAULT_CONF_LOCATION_RIGTH               (0x4)
-#define CODEC_DEFAULT_CONF_LOCATION_TOP                 (0x5)
-#define CODEC_DEFAULT_CONF_LOCATION_BOTTOM              (0x6)
-#define CODEC_DEFAULT_CONF_LOCATION_SPECIAL_0           (0x7)
-#define CODEC_DEFAULT_CONF_LOCATION_SPECIAL_1           (0x8)
-#define CODEC_DEFAULT_CONF_LOCATION_SPECIAL_3           (0x9)
+#define CODEC_F1C_LOCATION_NA                  (0)
+#define CODEC_F1C_LOCATION_REAR                (0x1)
+#define CODEC_F1C_LOCATION_FRONT               (0x2)
+#define CODEC_F1C_LOCATION_LEFT                (0x3)
+#define CODEC_F1C_LOCATION_RIGTH               (0x4)
+#define CODEC_F1C_LOCATION_TOP                 (0x5)
+#define CODEC_F1C_LOCATION_BOTTOM              (0x6)
+#define CODEC_F1C_LOCATION_SPECIAL_0           (0x7)
+#define CODEC_F1C_LOCATION_SPECIAL_1           (0x8)
+#define CODEC_F1C_LOCATION_SPECIAL_3           (0x9)
 
 /* Configuration's devices */
-#define CODEC_DEFAULT_CONF_DEVICE_MASK                  (0xF)
-#define CODEC_DEFAULT_CONF_DEVICE_SHIFT                 (20)
-#define CODEC_DEFAULT_CONF_DEVICE_LINE_OUT              (0)
-#define CODEC_DEFAULT_CONF_DEVICE_SPEAKER               (0x1)
-#define CODEC_DEFAULT_CONF_DEVICE_HP                    (0x2)
-#define CODEC_DEFAULT_CONF_DEVICE_CD                    (0x3)
-#define CODEC_DEFAULT_CONF_DEVICE_SPDIF_OUT             (0x4)
-#define CODEC_DEFAULT_CONF_DEVICE_DIGITAL_OTHER_OUT     (0x5)
-#define CODEC_DEFAULT_CONF_DEVICE_MODEM_LINE_SIDE       (0x6)
-#define CODEC_DEFAULT_CONF_DEVICE_MODEM_HANDSET_SIDE    (0x7)
-#define CODEC_DEFAULT_CONF_DEVICE_LINE_IN               (0x8)
-#define CODEC_DEFAULT_CONF_DEVICE_AUX                   (0x9)
-#define CODEC_DEFAULT_CONF_DEVICE_MIC                   (0xA)
-#define CODEC_DEFAULT_CONF_DEVICE_PHONE                 (0xB)
-#define CODEC_DEFAULT_CONF_DEVICE_SPDIF_IN              (0xC)
-#define CODEC_DEFAULT_CONF_DEVICE_RESERVED              (0xE)
-#define CODEC_DEFAULT_CONF_DEVICE_OTHER                 (0xF)
+#define CODEC_F1C_DEVICE_MASK                  (0xF)
+#define CODEC_F1C_DEVICE_SHIFT                 (20)
+#define CODEC_F1C_DEVICE_LINE_OUT              (0)
+#define CODEC_F1C_DEVICE_SPEAKER               (0x1)
+#define CODEC_F1C_DEVICE_HP                    (0x2)
+#define CODEC_F1C_DEVICE_CD                    (0x3)
+#define CODEC_F1C_DEVICE_SPDIF_OUT             (0x4)
+#define CODEC_F1C_DEVICE_DIGITAL_OTHER_OUT     (0x5)
+#define CODEC_F1C_DEVICE_MODEM_LINE_SIDE       (0x6)
+#define CODEC_F1C_DEVICE_MODEM_HANDSET_SIDE    (0x7)
+#define CODEC_F1C_DEVICE_LINE_IN               (0x8)
+#define CODEC_F1C_DEVICE_AUX                   (0x9)
+#define CODEC_F1C_DEVICE_MIC                   (0xA)
+#define CODEC_F1C_DEVICE_PHONE                 (0xB)
+#define CODEC_F1C_DEVICE_SPDIF_IN              (0xC)
+#define CODEC_F1C_DEVICE_RESERVED              (0xE)
+#define CODEC_F1C_DEVICE_OTHER                 (0xF)
 
 /* Configuration's Connection type */
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_MASK         (0xF)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_SHIFT        (16)
+#define CODEC_F1C_CONNECTION_TYPE_MASK         (0xF)
+#define CODEC_F1C_CONNECTION_TYPE_SHIFT        (16)
 
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_UNKNOWN               (0)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_8INCHES             (0x1)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_4INCHES             (0x2)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_ATAPI                 (0x3)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_RCA                   (0x4)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_OPTICAL               (0x5)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_OTHER_DIGITAL         (0x6)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_ANALOG                (0x7)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_DIN                   (0x8)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_XLR                   (0x9)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_RJ_11                 (0xA)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_COMBO                 (0xB)
-#define CODEC_DEFAULT_CONF_CONNECTION_TYPE_OTHER                 (0xF)
+#define CODEC_F1C_CONNECTION_TYPE_UNKNOWN               (0)
+#define CODEC_F1C_CONNECTION_TYPE_1_8INCHES             (0x1)
+#define CODEC_F1C_CONNECTION_TYPE_1_4INCHES             (0x2)
+#define CODEC_F1C_CONNECTION_TYPE_ATAPI                 (0x3)
+#define CODEC_F1C_CONNECTION_TYPE_RCA                   (0x4)
+#define CODEC_F1C_CONNECTION_TYPE_OPTICAL               (0x5)
+#define CODEC_F1C_CONNECTION_TYPE_OTHER_DIGITAL         (0x6)
+#define CODEC_F1C_CONNECTION_TYPE_ANALOG                (0x7)
+#define CODEC_F1C_CONNECTION_TYPE_DIN                   (0x8)
+#define CODEC_F1C_CONNECTION_TYPE_XLR                   (0x9)
+#define CODEC_F1C_CONNECTION_TYPE_RJ_11                 (0xA)
+#define CODEC_F1C_CONNECTION_TYPE_COMBO                 (0xB)
+#define CODEC_F1C_CONNECTION_TYPE_OTHER                 (0xF)
 
 /* Configuration's color */
-#define CODEC_DEFAULT_CONF_COLOR_MASK                  (0xF)
-#define CODEC_DEFAULT_CONF_COLOR_SHIFT                 (12)
-#define CODEC_DEFAULT_CONF_COLOR_UNKNOWN               (0)
-#define CODEC_DEFAULT_CONF_COLOR_BLACK                 (0x1)
-#define CODEC_DEFAULT_CONF_COLOR_GREY                  (0x2)
-#define CODEC_DEFAULT_CONF_COLOR_BLUE                  (0x3)
-#define CODEC_DEFAULT_CONF_COLOR_GREEN                 (0x4)
-#define CODEC_DEFAULT_CONF_COLOR_RED                   (0x5)
-#define CODEC_DEFAULT_CONF_COLOR_ORANGE                (0x6)
-#define CODEC_DEFAULT_CONF_COLOR_YELLOW                (0x7)
-#define CODEC_DEFAULT_CONF_COLOR_PURPLE                (0x8)
-#define CODEC_DEFAULT_CONF_COLOR_PINK                  (0x9)
-#define CODEC_DEFAULT_CONF_COLOR_RESERVED_0            (0xA)
-#define CODEC_DEFAULT_CONF_COLOR_RESERVED_1            (0xB)
-#define CODEC_DEFAULT_CONF_COLOR_RESERVED_2            (0xC)
-#define CODEC_DEFAULT_CONF_COLOR_RESERVED_3            (0xD)
-#define CODEC_DEFAULT_CONF_COLOR_WHITE                 (0xE)
-#define CODEC_DEFAULT_CONF_COLOR_OTHER                 (0xF)
+#define CODEC_F1C_COLOR_MASK                  (0xF)
+#define CODEC_F1C_COLOR_SHIFT                 (12)
+#define CODEC_F1C_COLOR_UNKNOWN               (0)
+#define CODEC_F1C_COLOR_BLACK                 (0x1)
+#define CODEC_F1C_COLOR_GREY                  (0x2)
+#define CODEC_F1C_COLOR_BLUE                  (0x3)
+#define CODEC_F1C_COLOR_GREEN                 (0x4)
+#define CODEC_F1C_COLOR_RED                   (0x5)
+#define CODEC_F1C_COLOR_ORANGE                (0x6)
+#define CODEC_F1C_COLOR_YELLOW                (0x7)
+#define CODEC_F1C_COLOR_PURPLE                (0x8)
+#define CODEC_F1C_COLOR_PINK                  (0x9)
+#define CODEC_F1C_COLOR_RESERVED_0            (0xA)
+#define CODEC_F1C_COLOR_RESERVED_1            (0xB)
+#define CODEC_F1C_COLOR_RESERVED_2            (0xC)
+#define CODEC_F1C_COLOR_RESERVED_3            (0xD)
+#define CODEC_F1C_COLOR_WHITE                 (0xE)
+#define CODEC_F1C_COLOR_OTHER                 (0xF)
 
 /* Configuration's misc */
-#define CODEC_DEFAULT_CONF_MISC_MASK                  (0xF)
-#define CODEC_DEFAULT_CONF_MISC_SHIFT                 (8)
-#define CODEC_DEFAULT_CONF_MISC_JACK_DETECT           RT_BIT(0)
-#define CODEC_DEFAULT_CONF_MISC_RESERVED_0            RT_BIT(1)
-#define CODEC_DEFAULT_CONF_MISC_RESERVED_1            RT_BIT(2)
-#define CODEC_DEFAULT_CONF_MISC_RESERVED_2            RT_BIT(3)
+#define CODEC_F1C_MISC_MASK                  (0xF)
+#define CODEC_F1C_MISC_SHIFT                 (8)
+#define CODEC_F1C_MISC_JACK_DETECT           RT_BIT(0)
+#define CODEC_F1C_MISC_RESERVED_0            RT_BIT(1)
+#define CODEC_F1C_MISC_RESERVED_1            RT_BIT(2)
+#define CODEC_F1C_MISC_RESERVED_2            RT_BIT(3)
 
 /* Configuration's association */
-#define CODEC_DEFAULT_CONF_ASSOCIATION_MASK                  (0xF)
-#define CODEC_DEFAULT_CONF_ASSOCIATION_SHIFT                 (4)
+#define CODEC_F1C_ASSOCIATION_MASK                  (0xF)
+#define CODEC_F1C_ASSOCIATION_SHIFT                 (4)
 /* Connection's sequence */
-#define CODEC_DEFAULT_CONF_SEQ_MASK                  (0xF)
-#define CODEC_DEFAULT_CONF_SEQ_SHIFT                 (0)
+#define CODEC_F1C_SEQ_MASK                  (0xF)
+#define CODEC_F1C_SEQ_SHIFT                 (0)
 
 /* Implementation identification (7.3.3.30) */
 #define CODEC_MAKE_F20(bmid, bsku, aid)     \
@@ -363,14 +363,14 @@ extern "C" {
     )
 
 /* macro definition helping in filling the configuration registers. */
-#define CODEC_MAKE_U32_DEFAULT_CONF(port_connectivity, location, device, connection_type, color, misc, association, sequence)    \
-    (  ((port_connectivity) << CODEC_DEFAULT_CONF_PORT_SHIFT)          \
-     | ((location) << CODEC_DEFAULT_CONF_LOCATION_SHIFT)               \
-     | ((device) << CODEC_DEFAULT_CONF_DEVICE_SHIFT)                   \
-     | ((connection_type) << CODEC_DEFAULT_CONF_CONNECTION_TYPE_SHIFT) \
-     | ((color) << CODEC_DEFAULT_CONF_COLOR_SHIFT)                     \
-     | ((misc) << CODEC_DEFAULT_CONF_MISC_SHIFT)                       \
-     | ((association) << CODEC_DEFAULT_CONF_ASSOCIATION_SHIFT)         \
+#define CODEC_MAKE_F1C(port_connectivity, location, device, connection_type, color, misc, association, sequence)    \
+    (  ((port_connectivity) << CODEC_F1C_PORT_SHIFT)          \
+     | ((location) << CODEC_F1C_LOCATION_SHIFT)               \
+     | ((device) << CODEC_F1C_DEVICE_SHIFT)                   \
+     | ((connection_type) << CODEC_F1C_CONNECTION_TYPE_SHIFT) \
+     | ((color) << CODEC_F1C_COLOR_SHIFT)                     \
+     | ((misc) << CODEC_F1C_MISC_SHIFT)                       \
+     | ((association) << CODEC_F1C_ASSOCIATION_SHIFT)         \
      | ((sequence)))
 
 /* STAC9220 */
@@ -535,13 +535,13 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = 0xc0;//RT_BIT(6);
             pNode->port.u32F08_param = 0;
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX, 
-                                                                       CODEC_DEFAULT_CONF_LOCATION_FRONT, 
-                                                                       CODEC_DEFAULT_CONF_DEVICE_HP,
-                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_8INCHES,
-                                                                       CODEC_DEFAULT_CONF_COLOR_GREEN,
-                                                                       CODEC_DEFAULT_CONF_MISC_JACK_DETECT,
-                                                                       0x2, 0);//RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
+                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX, 
+                                                          CODEC_F1C_LOCATION_FRONT, 
+                                                          CODEC_F1C_DEVICE_HP,
+                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
+                                                          CODEC_F1C_COLOR_GREEN,
+                                                          CODEC_F1C_MISC_JACK_DETECT,
+                                                          0x2, 0);//RT_MAKE_U32_FROM_U8(0x20, 0x40, 0x21, 0x02);
             goto port_init;
         case 0xB:
             pNode->node.name = "PortB";
@@ -554,13 +554,13 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F02_param[0] = 0x4;
             pNode->port.u32F07_param = RT_BIT(5);
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
-                                                                       CODEC_DEFAULT_CONF_LOCATION_INTERNAL|CODEC_DEFAULT_CONF_LOCATION_REAR,
-                                                                       CODEC_DEFAULT_CONF_DEVICE_SPEAKER,
-                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_8INCHES,
-                                                                       CODEC_DEFAULT_CONF_COLOR_BLACK,
-                                                                       CODEC_DEFAULT_CONF_MISC_JACK_DETECT,
-                                                                       0x1, 0x1);//RT_MAKE_U32_FROM_U8(0x11, 0x60, 0x11, 0x01);
+                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                          CODEC_F1C_LOCATION_INTERNAL|CODEC_F1C_LOCATION_REAR,
+                                                          CODEC_F1C_DEVICE_SPEAKER,
+                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
+                                                          CODEC_F1C_COLOR_BLACK,
+                                                          CODEC_F1C_MISC_JACK_DETECT,
+                                                          0x1, 0x1);//RT_MAKE_U32_FROM_U8(0x11, 0x60, 0x11, 0x01);
             goto port_init;
         case 0xC:
             pNode->node.name = "PortC";
@@ -573,12 +573,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
             pNode->port.u32F07_param = RT_BIT(5);
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
-                                                                       CODEC_DEFAULT_CONF_LOCATION_REAR, 
-                                                                       CODEC_DEFAULT_CONF_DEVICE_SPEAKER,
-                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_8INCHES,
-                                                                       CODEC_DEFAULT_CONF_COLOR_GREEN, 
-                                                                       0x0, 0x1, 0x0);//RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
+                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                          CODEC_F1C_LOCATION_REAR, 
+                                                          CODEC_F1C_DEVICE_SPEAKER,
+                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
+                                                          CODEC_F1C_COLOR_GREEN, 
+                                                          0x0, 0x1, 0x0);//RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
             goto port_init;
         case 0xD:
             pNode->node.name = "PortD";
@@ -591,12 +591,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->node.au32F02_param[0] = 0x2;
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
-                                                                       CODEC_DEFAULT_CONF_LOCATION_FRONT,
-                                                                       CODEC_DEFAULT_CONF_DEVICE_MIC, 
-                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_8INCHES,
-                                                                       CODEC_DEFAULT_CONF_COLOR_PINK,
-                                                                       0x0, 0x5, 0x0);//RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
+                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                          CODEC_F1C_LOCATION_FRONT,
+                                                          CODEC_F1C_DEVICE_MIC, 
+                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
+                                                          CODEC_F1C_COLOR_PINK,
+                                                          0x0, 0x5, 0x0);//RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
         port_init:
             pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(1, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
             pNode->port.u32F08_param = 0;
@@ -618,12 +618,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = RT_BIT(5);
             pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//0x7fffffff;
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
-                                                                       CODEC_DEFAULT_CONF_LOCATION_REAR,
-                                                                       CODEC_DEFAULT_CONF_DEVICE_LINE_OUT,
-                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_8INCHES,
-                                                                       CODEC_DEFAULT_CONF_COLOR_BLUE,
-                                                                       0x0, 0x4, 0x0);//0x01013040;  /* Line Out */
+                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                          CODEC_F1C_LOCATION_REAR,
+                                                          CODEC_F1C_DEVICE_LINE_OUT,
+                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
+                                                          CODEC_F1C_COLOR_BLUE,
+                                                          0x0, 0x4, 0x0);//0x01013040;  /* Line Out */
             break;
         case 0xF:
             pNode->node.name = "PortF";
@@ -641,12 +641,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F08_param = 0;
             pNode->port.u32F07_param = 0x40;
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
-                                                                       CODEC_DEFAULT_CONF_LOCATION_REAR,
-                                                                       CODEC_DEFAULT_CONF_DEVICE_SPEAKER,
-                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_1_8INCHES, 
-                                                                       CODEC_DEFAULT_CONF_COLOR_ORANGE,
-                                                                       0x0, 0x1, 0x2);//RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
+                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                          CODEC_F1C_LOCATION_REAR,
+                                                          CODEC_F1C_DEVICE_SPEAKER,
+                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES, 
+                                                          CODEC_F1C_COLOR_ORANGE,
+                                                          0x0, 0x1, 0x2);//RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
             pNode->node.au32F02_param[0] = 0x5;
             pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//0x7fffffff;
         break;
@@ -662,12 +662,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x19, 0);
             pNode->digout.u32F07_param = 0;
             if (!pState->fInReset)
-                pNode->digout.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
-                                                                         CODEC_DEFAULT_CONF_LOCATION_REAR,
-                                                                         CODEC_DEFAULT_CONF_DEVICE_SPDIF_OUT,
-                                                                         CODEC_DEFAULT_CONF_CONNECTION_TYPE_DIN,
-                                                                         CODEC_DEFAULT_CONF_COLOR_BLACK,
-                                                                         0x0, 0x3, 0x0);//RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
+                pNode->digout.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                            CODEC_F1C_LOCATION_REAR,
+                                                            CODEC_F1C_DEVICE_SPDIF_OUT,
+                                                            CODEC_F1C_CONNECTION_TYPE_DIN,
+                                                            CODEC_F1C_COLOR_BLACK,
+                                                            0x0, 0x3, 0x0);//RT_MAKE_U32_FROM_U8(0x30, 0x10, 0x45, 0x01);
         break;
         case 0x11:
             pNode->node.name = "DigIn_0";
@@ -681,12 +681,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->digin.u32F09_param = 0;
             pNode->digin.u32F0c_param = 0;
             if (!pState->fInReset)
-                pNode->digin.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_COMPLEX,
-                                                                        CODEC_DEFAULT_CONF_LOCATION_REAR,
-                                                                        CODEC_DEFAULT_CONF_DEVICE_SPDIF_IN,
-                                                                        CODEC_DEFAULT_CONF_CONNECTION_TYPE_OTHER_DIGITAL,
-                                                                        CODEC_DEFAULT_CONF_COLOR_BLACK, 
-                                                                        0x0, 0x6, 0x0);//(0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
+                pNode->digin.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                           CODEC_F1C_LOCATION_REAR,
+                                                           CODEC_F1C_DEVICE_SPDIF_IN,
+                                                           CODEC_F1C_CONNECTION_TYPE_OTHER_DIGITAL,
+                                                           CODEC_F1C_COLOR_BLACK, 
+                                                           0x0, 0x6, 0x0);//(0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
         break;
         case 0x12:
             pNode->node.name = "ADCMux_0";
@@ -724,12 +724,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xc] = CODEC_F00_0C_CAP_INPUT;//RT_BIT(5);
             pNode->cdnode.u32F07_param = 0;
             if (!pState->fInReset)
-                pNode->cdnode.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_FIXED,
-                                                                         CODEC_DEFAULT_CONF_LOCATION_INTERNAL,
-                                                                         CODEC_DEFAULT_CONF_DEVICE_CD,
-                                                                         CODEC_DEFAULT_CONF_CONNECTION_TYPE_ATAPI,
-                                                                         CODEC_DEFAULT_CONF_COLOR_UNKNOWN,
-                                                                         0x0, 0x7, 0x0);//RT_MAKE_U32_FROM_U8(0x70, 0x0, 0x33, 0x90);
+                pNode->cdnode.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_FIXED,
+                                                            CODEC_F1C_LOCATION_INTERNAL,
+                                                            CODEC_F1C_DEVICE_CD,
+                                                            CODEC_F1C_CONNECTION_TYPE_ATAPI,
+                                                            CODEC_F1C_COLOR_UNKNOWN,
+                                                            0x0, 0x7, 0x0);//RT_MAKE_U32_FROM_U8(0x70, 0x0, 0x33, 0x90);
         break;
         case 0x16:
             pNode->node.name = "VolumeKnob";
@@ -782,12 +782,12 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//0x10;
             pNode->node.au32F02_param[0] = 0x1a;
             pNode->reserved.u32F07_param = 0;
-            pNode->reserved.u32F1c_param = CODEC_MAKE_U32_DEFAULT_CONF(CODEC_DEFAULT_CONF_PORT_NO_PHYS,
-                                                                       CODEC_DEFAULT_CONF_LOCATION_NA,
-                                                                       CODEC_DEFAULT_CONF_DEVICE_LINE_OUT,
-                                                                       CODEC_DEFAULT_CONF_CONNECTION_TYPE_UNKNOWN,
-                                                                       CODEC_DEFAULT_CONF_COLOR_UNKNOWN,
-                                                                       0x0, 0x0, 0xf);//0x4000000f;
+            pNode->reserved.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_NO_PHYS,
+                                                          CODEC_F1C_LOCATION_NA,
+                                                          CODEC_F1C_DEVICE_LINE_OUT,
+                                                          CODEC_F1C_CONNECTION_TYPE_UNKNOWN,
+                                                          CODEC_F1C_COLOR_UNKNOWN,
+                                                          0x0, 0x0, 0xf);//0x4000000f;
             break;
         default:
         break;
