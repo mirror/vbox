@@ -1656,8 +1656,11 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
         }
 
 #if !defined(VBOX_WITH_NAT_SERVICE)
-        if (rule->guest_addr.s_addr != guest_addr)
+        if (   rule->guest_addr.s_addr != guest_addr
+            && rule->guest_addr.s_addr != INADDR_ANY)
             continue;
+        if (rule->guest_addr.s_addr == INADDR_ANY)
+            rule->guest_addr.s_addr = guest_addr;
 #endif
 
         LogRel(("NAT: set redirect %s host port %d => guest port %d @ %R[IP4]\n",
@@ -1702,6 +1705,7 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
 
         so->so_la = lib;
         rule->activated = 1;
+        rule->so = so;
         pData->cRedirectionsActive++;
         continue;
 
@@ -1726,11 +1730,23 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
  * could get it from VM configuration in DrvNAT or Service, the idea is activating
  * corresponding port-forwarding
  */
-int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
+int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
                 struct in_addr guest_addr, int guest_port, const uint8_t *ethaddr)
 {
     struct port_forward_rule *rule = NULL;
-    Assert(memcmp(ethaddr, zerro_ethaddr, ETH_ALEN) == 0);
+    Assert(ethaddr);
+    LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
+    {
+        if (   rule->proto == (is_udp ? IPPROTO_UDP : IPPROTO_TCP)
+            && rule->host_port == host_port
+            && rule->bind_ip.s_addr == host_addr.s_addr
+            && rule->guest_port == guest_port
+#ifndef VBOX_WITH_NAT_SERVICE
+            && rule->guest_addr.s_addr == guest_addr.s_addr
+#endif
+            )
+                return 0; /* rule has been already registered */
+    }
 
     rule = RTMemAllocZ(sizeof(struct port_forward_rule));
     if (rule == NULL)
@@ -1747,6 +1763,43 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     /* @todo add mac address */
     LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
     pData->cRedirectionsStored++;
+    /* activate port-forwarding if guest has already got assigned IP */
+    if (memcmp(ethaddr, zerro_ethaddr, ETH_ALEN))
+        activate_port_forwarding(pData, ethaddr);
+    return 0;
+}
+
+int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
+                struct in_addr guest_addr, int guest_port)
+{
+    struct port_forward_rule *rule = NULL;
+    LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
+    {
+        if (   rule->proto == (is_udp ? IPPROTO_UDP : IPPROTO_TCP)
+            && rule->host_port == host_port
+            && rule->guest_port == guest_port
+            && rule->bind_ip.s_addr == host_addr.s_addr
+#ifndef VBOX_WITH_NAT_SERVICE
+            && rule->guest_addr.s_addr == guest_addr.s_addr
+#endif
+            && rule->activated)
+        {
+            LibAliasUninit(rule->so->so_la);
+            if (is_udp)
+            {
+                udp_detach(pData, rule->so);
+            }
+            else
+            {
+                tcp_close(pData, sototcpcb(rule->so));
+            }
+            LIST_REMOVE(rule, list);
+            RTMemFree(rule);
+            pData->cRedirectionsStored--;
+            break;
+        }
+        
+    }
     return 0;
 }
 
@@ -2018,6 +2071,7 @@ void slirp_set_mtu(PNATState pData, int mtu)
         LogRel(("NAT: mtu(%d) is out of range (20;16000] mtu forcely assigned to 1500\n", mtu));
         mtu = 1500;
     }
+    /* MTU is maximum transition unit on */
     if_mtu =
     if_mru = mtu;
 }

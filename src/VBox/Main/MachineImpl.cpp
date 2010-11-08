@@ -10925,6 +10925,30 @@ HRESULT SessionMachine::onNetworkAdapterChange(INetworkAdapter *networkAdapter, 
 /**
  *  @note Locks this object for reading.
  */
+HRESULT SessionMachine::onNATRedirectRuleChange(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName, 
+                                 NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnNATRedirectRuleChange(networkAdapter, aNatRuleRemove, aRuleName, aProto, aHostIp, aHostPort, aGuestIp, aGuestPort);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
 HRESULT SessionMachine::onSerialPortChange(ISerialPort *serialPort)
 {
     LogFlowThisFunc(("\n"));

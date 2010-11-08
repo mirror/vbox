@@ -393,6 +393,98 @@ int handleControlVM(HandlerArg *a)
                     RTMsgError("The NIC %d is currently disabled and thus can't change its trace flag", n);
             }
         }
+        else if(   a->argc > 2 
+                && !strncmp(a->argv[1], "natpf", 5))
+        {
+            /* Get the number of network adapters */
+            ULONG NetworkAdapterCount = 0;
+            ComPtr <ISystemProperties> info;
+            ComPtr<INATEngine> engine;
+            CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()));
+            CHECK_ERROR_BREAK(info, COMGETTER(NetworkAdapterCount)(&NetworkAdapterCount));
+            unsigned n = parseNum(&a->argv[1][5], NetworkAdapterCount, "NIC");
+            if (!n)
+            {
+                rc = E_FAIL;
+                break;
+            }
+            if (a->argc <= 2)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* get the corresponding network adapter */
+            ComPtr<INetworkAdapter> adapter;
+            CHECK_ERROR_BREAK(sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            if (!adapter)
+            {
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR(adapter, COMGETTER(NatDriver)(engine.asOutParam()));
+            if (!engine)
+            {
+                rc = E_FAIL;
+                break;
+            }
+
+            if (!strcmp(a->argv[2], "delete"))
+            { 
+                if (a->argc >= 3)
+                    CHECK_ERROR(engine, RemoveRedirect(Bstr(a->argv[3]).raw()));
+            }
+            else
+            {
+#define ITERATE_TO_NEXT_TERM(ch)                                           \
+    do {                                                                   \
+        while (*ch != ',')                                                 \
+        {                                                                  \
+            if (*ch == 0)                                                  \
+            {                                                              \
+                return errorSyntax(USAGE_CONTROLVM,                         \
+                                   "Missing or Invalid argument to '%s'",  \
+                                    a->argv[1]);                           \
+            }                                                              \
+            ch++;                                                          \
+        }                                                                  \
+        *ch = '\0';                                                        \
+        ch++;                                                              \
+    } while(0)
+
+                char *strName;
+                char *strProto;
+                char *strHostIp;
+                char *strHostPort;
+                char *strGuestIp;
+                char *strGuestPort;
+                char *strRaw = RTStrDup(a->argv[2]);
+                char *ch = strRaw;
+                strName = RTStrStrip(ch);
+                ITERATE_TO_NEXT_TERM(ch);
+                strProto = RTStrStrip(ch);
+                ITERATE_TO_NEXT_TERM(ch);
+                strHostIp = RTStrStrip(ch);
+                ITERATE_TO_NEXT_TERM(ch);
+                strHostPort = RTStrStrip(ch);
+                ITERATE_TO_NEXT_TERM(ch);
+                strGuestIp = RTStrStrip(ch);
+                ITERATE_TO_NEXT_TERM(ch);
+                strGuestPort = RTStrStrip(ch);
+                NATProtocol_T proto;
+                if (RTStrICmp(strProto, "udp") == 0)
+                    proto = NATProtocol_UDP;
+                else if (RTStrICmp(strProto, "tcp") == 0)
+                    proto = NATProtocol_TCP;
+                CHECK_ERROR(engine, AddRedirect(Bstr(strName).raw(), proto, Bstr(strHostIp).raw(),
+                        RTStrToUInt16(strHostPort), Bstr(strGuestIp).raw(), RTStrToUInt16(strGuestPort)));
+#undef ITERATE_TO_NEXT_TERM
+            }
+            /* commit changes */
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(sessionMachine, SaveSettings());
+        }
         else if (!strncmp(a->argv[1], "nic", 3))
         {
             /* Get the number of network adapters */

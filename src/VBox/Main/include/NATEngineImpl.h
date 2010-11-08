@@ -81,9 +81,9 @@ class ATL_NO_VTABLE NATEngine :
     DECLARE_EMPTY_CTOR_DTOR (NATEngine)
 
     HRESULT FinalConstruct();
-    HRESULT init(Machine *aParent);
-    HRESULT init(Machine *aParent, NATEngine *aThat);
-    HRESULT initCopy(Machine *aParent, NATEngine *aThat);
+    HRESULT init(Machine *aParent, INetworkAdapter *aAdapter);
+    HRESULT init(Machine *aParent, INetworkAdapter *aAdapter, NATEngine *aThat);
+    HRESULT initCopy(Machine *aParent, INetworkAdapter *aAdapter, NATEngine *aThat);
     bool isModified();
     bool isReallyModified();
     bool rollback();
@@ -129,5 +129,6 @@ private:
     const ComObjPtr<NATEngine> mPeer;
     Machine * const mParent;
     NATRuleMap mNATRules;
+    INetworkAdapter * const mAdapter;
 };
 #endif

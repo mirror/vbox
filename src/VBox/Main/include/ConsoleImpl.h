@@ -179,6 +179,9 @@ public:
 
     // events from IInternalSessionControl
     HRESULT onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL changeAdapter);
+    HRESULT onNATRedirectRuleChange(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName, 
+                                 NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort);
+    HRESULT onNATEngineChange(INetworkAdapter *aNetworkAdapter, BOOL aNatReset);
     HRESULT onSerialPortChange(ISerialPort *aSerialPort);
     HRESULT onParallelPortChange(IParallelPort *aParallelPort);
     HRESULT onStorageControllerChange();
