@@ -623,7 +623,7 @@ typedef RTVFSPARSEDPATH *PRTVFSPARSEDPATH;
 /** The max accepted path length.
  * This must be a few chars shorter than RTVFSPARSEDPATH::szPath because we
  * use two terminators and wish be a little bit lazy with checking. */
-#define RTVFSPARSEDPATH_MAX     (RTPATH_MAX - 4U)
+#define RTVFSPARSEDPATH_MAX     (RTPATH_MAX - 4)
 
 /**
  * Appends @a pszPath (relative) to the already parsed path @a pPath.
