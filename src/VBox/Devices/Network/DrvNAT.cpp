@@ -648,7 +648,7 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
 }
 
 static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
-                                                const char *pNatRuleName, bool fUdp, const char *pHostIp,
+                                                bool fUdp, const char *pHostIp,
                                                 uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {
     RTMAC Mac;
@@ -673,15 +673,15 @@ static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
 }
 
 DECLCALLBACK(int) drvNATNetworkNatConfig_RedirectRuleCommand(PPDMINETWORKNATCONFIG pInterface, bool fRemove, 
-                                                   const char *pNatRuleName, bool fUdp, const char *pHostIp,
-                                                   uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
+                                                             bool fUdp, const char *pHostIp,
+                                                             uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {
-    LogFlow(("drvNATNetworkNatConfig_ApplyNatCommand: cRules=%s\n", (pNatRuleName ? pNatRuleName: "")));
+    LogFlow(("drvNATNetworkNatConfig_ApplyNatCommand: \n", (pNatRuleName ? pNatRuleName: "")));
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkNATCfg);
     PRTREQ pReq;
     int rc = RTReqCallEx(pThis->pSlirpReqQueue, &pReq, 0 /*cMillies*/, RTREQFLAGS_VOID,
-                         (PFNRT)drvNATNotifyApplyPortForwardCommand, 8, pThis, fRemove,
-                          pNatRuleName, fUdp, pHostIp, u16HostPort, pGuestIp, u16GuestPort);
+                         (PFNRT)drvNATNotifyApplyPortForwardCommand, 7, pThis, fRemove,
+                         fUdp, pHostIp, u16HostPort, pGuestIp, u16GuestPort);
     if (RT_LIKELY(rc == VERR_TIMEOUT))
     {
         drvNATNotifyNATThread(pThis, "drvNATNetworkNatConfig_RedirectRuleCommand");

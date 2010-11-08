@@ -412,8 +412,8 @@ typedef struct PDMINETWORKNATCONFIG
      * Inform NAT about the adding/removing redirection rule
      */
     DECLR3CALLBACKMEMBER(int, pfnRedirectRuleCommand ,(PDMINETWORKNATCONFIG *pInterface, bool fRemove, 
-                                                   const char *pNatRuleName, bool fUdp, const char *pHostIp,
-                                                   uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort));
+                                                       bool fUdp, const char *pHostIp, uint16_t u16HostPort, 
+                                                       const char *pGuestIp, uint16_t u16GuestPort));
 
 } PDMINETWORKNATCONFIG, *PPDMINETWORKNATCONFIG;
 #define PDMINETWORKNATCONFIG_IID                "0f001d62-4d2f-11df-93b3-2fd0b3a36a6b" 
