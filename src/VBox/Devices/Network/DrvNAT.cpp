@@ -165,10 +165,6 @@ typedef struct DRVNAT
     RTFILE                  PipeWrite;
     /** The read end of the control pipe. */
     RTFILE                  PipeRead;
-# if HC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t                alignment2;
-# endif
 #else
     /** for external notification */
     HANDLE                  hWakeupEvent;
