@@ -33,7 +33,7 @@
 #include <grp.h>
 #include <sys/mount.h>
 #ifdef RT_OS_SOLARIS
-# include <sys/mount.h>
+# include <sys/mntent.h>
 # include <sys/mnttab.h>
 # include <sys/vfs.h>
 #else
