@@ -206,10 +206,6 @@ void UISession::powerUp()
     else
         vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow());
 
-    /* Allow further auto-closing: */
-    if (uimachine()->machineLogic())
-        uimachine()->machineLogic()->setPreventAutoClose(false);
-
     /* Check for a progress failure: */
     if (progress.GetResultCode() != 0)
     {
@@ -218,6 +214,10 @@ void UISession::powerUp()
         QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
         return;
     }
+
+    /* Allow further auto-closing: */
+    if (uimachine()->machineLogic())
+        uimachine()->machineLogic()->setPreventAutoClose(false);
 
     /* Check if we missed a really quick termination after successful startup, and process it if we did: */
     if (isTurnedOff())
