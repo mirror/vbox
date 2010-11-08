@@ -99,15 +99,17 @@
 #  include <linux/types.h>
 #  include <linux/stddef.h>
 #  undef uintptr_t
-#  if (__GNUC__ * 100 + __GNUC_MINOR__) <= 400
-    /*
-     * <linux/compiler-gcc{3,4}.h> does
-     *   #define __inline__  __inline__ __attribute__((always_inline))
-     * in some older Linux kernels. Forcing inlining will fail for some RTStrA*
-     * functions with gcc <= 4.0 due to passing variable argument lists.
-     */
-#   undef __inline__
-#   define __inline__ __inline__
+#  ifdef __GNUC__
+#   if (__GNUC__ * 100 + __GNUC_MINOR__) <= 400
+     /*
+      * <linux/compiler-gcc{3,4}.h> does
+      *   #define __inline__  __inline__ __attribute__((always_inline))
+      * in some older Linux kernels. Forcing inlining will fail for some RTStrA*
+      * functions with gcc <= 4.0 due to passing variable argument lists.
+      */
+#    undef __inline__
+#    define __inline__ __inline__
+#   endif
 #  endif
 #  undef false
 #  undef true
