@@ -2944,7 +2944,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="e2da8b1a-2ad1-490e-b29e-c33a144791b6"
+     uuid="476126af-e223-4490-a8a0-b1f1575be013"
      internal="yes"
      wsmap="suppress"
      >
@@ -3086,9 +3086,9 @@
         Called by the VM process to inform the server it wants to
         save the current state and stop the VM execution.
       </desc>
-      <param name="progress" type="IProgress" dir="in">
+      <param name="progress" type="IProgress" dir="out">
         <desc>
-          Progress object created by the VM process to wait until
+          Progress object created by VBoxSVC to wait until
           the state is saved.
         </desc>
       </param>
@@ -3114,8 +3114,12 @@
 
       </desc>
 
-      <param name="success" type="boolean" dir="in">
-        <desc>@c true to indicate success and @c false otherwise.
+      <param name="result" type="long" dir="in">
+        <desc>@c S_OK to indicate success.
+        </desc>
+      </param>
+      <param name="errMsg" type="wstring" dir="in">
+        <desc>@c human readable error message in case of failure.
         </desc>
       </param>
     </method>

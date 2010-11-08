@@ -239,9 +239,10 @@ struct VMPowerUpTask : public VMProgressTask
 
 struct VMSaveTask : public VMProgressTask
 {
-    VMSaveTask(Console *aConsole, Progress *aProgress)
+    VMSaveTask(Console *aConsole, Progress *aProgress, const ComPtr<IProgress> &aServerProgress)
         : VMProgressTask(aConsole, aProgress, true /* aUsesVMPtr */),
-          mLastMachineState(MachineState_Null)
+          mLastMachineState(MachineState_Null),
+          mServerProgress(aServerProgress)
     {}
 
     Utf8Str mSavedStateFile;
@@ -2317,21 +2318,30 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
     }
 
     HRESULT rc = S_OK;
-
-    /* create a progress object to track operation completion */
-    ComObjPtr<Progress> progress;
-    progress.createObject();
-    progress->init(static_cast<IConsole *>(this),
-                   Bstr(tr("Saving the execution state of the virtual machine")).raw(),
-                   FALSE /* aCancelable */);
-
     bool fBeganSavingState = false;
     bool fTaskCreationFailed = false;
 
     do
     {
+        ComPtr<IProgress> pProgress;
+        Bstr stateFilePath;
+
+        /*
+         * request a saved state file path from the server
+         * (this will set the machine state to Saving on the server to block
+         * others from accessing this machine)
+         */
+        rc = mControl->BeginSavingState(pProgress.asOutParam(),
+                                        stateFilePath.asOutParam());
+        if (FAILED(rc)) break;
+
+        fBeganSavingState = true;
+
+        /* sync the state with the server */
+        setMachineStateLocally(MachineState_Saving);
+
         /* create a task object early to ensure mpVM protection is successful */
-        std::auto_ptr <VMSaveTask> task(new VMSaveTask(this, progress));
+        std::auto_ptr <VMSaveTask> task(new VMSaveTask(this, NULL, pProgress));
         rc = task->rc();
         /*
          * If we fail here it means a PowerDown() call happened on another
@@ -2344,21 +2354,6 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
             fTaskCreationFailed = true;
             break;
         }
-
-        Bstr stateFilePath;
-
-        /*
-         * request a saved state file path from the server
-         * (this will set the machine state to Saving on the server to block
-         * others from accessing this machine)
-         */
-        rc = mControl->BeginSavingState(progress, stateFilePath.asOutParam());
-        if (FAILED(rc)) break;
-
-        fBeganSavingState = true;
-
-        /* sync the state with the server */
-        setMachineStateLocally(MachineState_Saving);
 
         /* ensure the directory for the saved state file exists */
         {
@@ -2395,7 +2390,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
         task.release();
 
         /* return the progress to the caller */
-        progress.queryInterfaceTo(aProgress);
+        pProgress.queryInterfaceTo(aProgress);
     }
     while (0);
 
@@ -2411,7 +2406,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
              * This will reset the machine state to the state it had right
              * before calling mControl->BeginSavingState().
              */
-            mControl->EndSavingState(FALSE);
+            mControl->EndSavingState(eik.getResultCode(), eik.getText().raw());
         }
 
         if (lastMachineState == MachineState_Running)
@@ -3504,7 +3499,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName, 
+HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName,
                                  NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort)
 {
     LogFlowThisFunc(("\n"));
@@ -3553,13 +3548,13 @@ HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL 
         NetworkAttachmentType_T attachmentType;
         vrc = aNetworkAdapter->COMGETTER(AttachmentType)(&attachmentType);
 
-        if (   RT_FAILURE(vrc) 
+        if (   RT_FAILURE(vrc)
             || attachmentType != NetworkAttachmentType_NAT)
         {
             rc = (RT_FAILURE(vrc)) ? E_FAIL: rc;
             goto done;
         }
-        
+
         /* look down for PDMINETWORKNATCONFIG interface */
         while (pBase)
         {
@@ -3571,8 +3566,8 @@ HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL 
         if (!pNetNatCfg)
             goto done;
         bool fUdp = (aProto == NATProtocol_UDP);
-        vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, aNatRuleRemove, Utf8Str(aRuleName).c_str(), fUdp, 
-                                                 Utf8Str(aHostIp).c_str(), aHostPort, Utf8Str(aGuestIp).c_str(), 
+        vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, aNatRuleRemove, Utf8Str(aRuleName).c_str(), fUdp,
+                                                 Utf8Str(aHostIp).c_str(), aHostPort, Utf8Str(aGuestIp).c_str(),
                                                  aGuestPort);
         if (RT_FAILURE(vrc))
             rc = E_FAIL;
@@ -6367,11 +6362,8 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                     that->setMachineState(MachineState_PoweredOff);
                     break;
                 case MachineState_Saving:
-                    /* successfully saved (note that the machine is already in
-                     * the Saved state on the server due to EndSavingState()
-                     * called from saveStateThread(), so only change the local
-                     * state) */
-                    that->setMachineStateLocally(MachineState_Saved);
+                    /* successfully saved */
+                    that->setMachineState(MachineState_Saved);
                     break;
                 case MachineState_Starting:
                     /* failed to start, but be patient: set back to PoweredOff
@@ -7068,18 +7060,17 @@ HRESULT Console::powerDownHostInterfaces()
  *
  * @param   pVM         The VM handle.
  * @param   uPercent    Completion percentage (0-100).
- * @param   pvUser      Pointer to the VMProgressTask structure.
+ * @param   pvUser      Pointer to an IProgress instance.
  * @return  VINF_SUCCESS.
  */
 /*static*/
 DECLCALLBACK(int) Console::stateProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
 {
-    VMProgressTask *task = static_cast<VMProgressTask *>(pvUser);
-    AssertReturn(task, VERR_INVALID_PARAMETER);
+    IProgress *pProgress = static_cast<IProgress *>(pvUser);
 
     /* update the progress object */
-    if (task->mProgress)
-        task->mProgress->SetCurrentOperationProgress(uPercent);
+    if (pProgress)
+        pProgress->SetCurrentOperationProgress(uPercent);
 
     return VINF_SUCCESS;
 }
@@ -7612,7 +7603,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     vrc = VMR3LoadFromFile(pVM,
                                            task->mSavedStateFile.c_str(),
                                            Console::stateProgressCallback,
-                                           static_cast<VMProgressTask*>(task.get()));
+                                           static_cast<IProgress *>(task->mProgress));
 
                     if (RT_SUCCESS(vrc))
                     {
@@ -8004,7 +7995,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                strSavedStateFile.c_str(),
                                true /*fContinueAfterwards*/,
                                Console::stateProgressCallback,
-                               (void*)pTask,
+                               static_cast<IProgress *>(pTask->mProgress),
                                &fSuspenededBySave);
             alock.enter();
             if (RT_FAILURE(vrc))
@@ -8250,7 +8241,8 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
     AssertReturn(task.get(), VERR_INVALID_PARAMETER);
 
     Assert(task->mSavedStateFile.length());
-    Assert(!task->mProgress.isNull());
+    Assert(task->mProgress.isNull());
+    Assert(!task->mServerProgress.isNull());
 
     const ComObjPtr<Console> &that = task->mConsole;
     Utf8Str errMsg;
@@ -8263,7 +8255,7 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
                        task->mSavedStateFile.c_str(),
                        false, /*fContinueAfterwards*/
                        Console::stateProgressCallback,
-                       static_cast<VMProgressTask*>(task.get()),
+                       static_cast<IProgress *>(task->mServerProgress),
                        &fSuspenededBySave);
     if (RT_FAILURE(vrc))
     {
@@ -8276,16 +8268,8 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
     /* lock the console once we're going to access it */
     AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
 
-    /*
-     * finalize the requested save state procedure.
-     * In case of success, the server will set the machine state to Saved;
-     * in case of failure it will reset the it to the state it had right
-     * before calling mControl->BeginSavingState().
-     */
-    that->mControl->EndSavingState(SUCCEEDED(rc));
-
     /* synchronize the state with the server */
-    if (!FAILED(rc))
+    if (SUCCEEDED(rc))
     {
         /*
          * The machine has been successfully saved, so power it down
@@ -8294,23 +8278,17 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
          * deadlock.
          */
         task->releaseVMCaller();
-
         rc = that->powerDown();
     }
 
-    /* notify the progress object about operation completion */
-    if (SUCCEEDED(rc))
-        task->mProgress->notifyComplete(S_OK);
-    else
-    {
-        if (errMsg.length())
-            task->mProgress->notifyComplete(rc,
-                                            COM_IIDOF(IConsole),
-                                            Console::getStaticComponentName(),
-                                            errMsg.c_str());
-        else
-            task->mProgress->notifyComplete(rc);
-    }
+    /*
+     * Finalize the requested save state procedure. In case of failure it will
+     * reset the machine state to the state it had right before calling
+     * mControl->BeginSavingState(). This must be the last thing because it
+     * will set the progress to completed, and that means that the frontend
+     * can immediately uninit the associated console object.
+     */
+    that->mControl->EndSavingState(rc, Bstr(errMsg).raw());
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;
