@@ -111,9 +111,6 @@ RT_C_DECLS_END
 typedef PSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef UCHAR VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
-typedef PEVENT VBOXVCMNEVENT;
-typedef VBOXVCMNEVENT *PVBOXVCMNEVENT;
-
 typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
 #define VBOX_WITH_GENERIC_MULTIMONITOR
@@ -136,9 +133,6 @@ typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 
 typedef KSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef KIRQL VBOXVCMNIRQL, *PVBOXVCMNIRQL;
-
-typedef KEVENT VBOXVCMNEVENT;
-typedef VBOXVCMNEVENT *PVBOXVCMNEVENT;
 
 typedef HANDLE VBOXCMNREG;
 
@@ -383,65 +377,35 @@ void *VBoxVideoCmnMemAllocDriver(PVBOXVIDEO_COMMON pCommon, size_t cb);
 /** Free memory allocated by @a VBoxVideoCmnMemAllocDriver */
 void VBoxVideoCmnMemFreeDriver(PVBOXVIDEO_COMMON pCommon, void *pv);
 
+/** Write an 8-bit value to an I/O port. */
+void VBoxVideoCmnPortWriteUchar(RTIOPORT Port, uint8_t Value);
+
+/** Write a 16-bit value to an I/O port. */
+void VBoxVideoCmnPortWriteUshort(RTIOPORT Port, uint16_t Value);
+
+/** Write a 32-bit value to an I/O port. */
+void VBoxVideoCmnPortWriteUlong(RTIOPORT Port, uint32_t Value);
+
+/** Read an 8-bit value from an I/O port. */
+uint8_t VBoxVideoCmnPortReadUchar(RTIOPORT Port);
+
+/** Read a 16-bit value from an I/O port. */
+uint16_t VBoxVideoCmnPortReadUshort(RTIOPORT Port);
+
+/** Read a 32-bit value from an I/O port. */
+uint32_t VBoxVideoCmnPortReadUlong(RTIOPORT Port);
+
 #ifndef VBOX_WITH_WDDM
 /* XPDM-WDDM common API */
-
-typedef PEVENT VBOXVCMNEVENT;
-typedef VBOXVCMNEVENT *PVBOXVCMNEVENT;
-
-DECLINLINE(VOID) VBoxVideoCmnPortWriteUchar(IN PUCHAR Port, IN UCHAR Value)
-{
-    VideoPortWritePortUchar(Port,Value);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnPortWriteUshort(IN PUSHORT Port, IN USHORT Value)
-{
-    VideoPortWritePortUshort(Port,Value);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnPortWriteUlong(IN PULONG Port, IN ULONG Value)
-{
-    VideoPortWritePortUlong(Port,Value);
-}
-
-DECLINLINE(UCHAR) VBoxVideoCmnPortReadUchar(IN PUCHAR  Port)
-{
-    return VideoPortReadPortUchar(Port);
-}
-
-DECLINLINE(USHORT) VBoxVideoCmnPortReadUshort(IN PUSHORT Port)
-{
-    return VideoPortReadPortUshort(Port);
-}
-
-DECLINLINE(ULONG) VBoxVideoCmnPortReadUlong(IN PULONG Port)
-{
-    return VideoPortReadPortUlong(Port);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnMemZero(PVOID pvMem, ULONG cbMem)
-{
-    VideoPortZeroMemory(pvMem, cbMem);
-}
 
 DECLINLINE(VOID) VBoxVideoCmnSpinLockAcquire(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, OUT PVBOXVCMNIRQL OldIrql)
 {
     pDeviceExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(pDeviceExtension, *SpinLock, OldIrql);
 }
 
-DECLINLINE(VOID) VBoxVideoCmnSpinLockAcquireAtDpcLevel(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    pDeviceExtension->u.primary.VideoPortProcs.pfnAcquireSpinLockAtDpcLevel(pDeviceExtension, *SpinLock);
-}
-
 DECLINLINE(VOID) VBoxVideoCmnSpinLockRelease(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, IN VBOXVCMNIRQL NewIrql)
 {
     pDeviceExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(pDeviceExtension, *SpinLock, NewIrql);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnSpinLockReleaseFromDpcLevel(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    pDeviceExtension->u.primary.VideoPortProcs.pfnReleaseSpinLockFromDpcLevel(pDeviceExtension, *SpinLock);
 }
 
 DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockCreate(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
@@ -454,40 +418,6 @@ DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockDelete(IN PDEVICE_EXTENSION pDeviceExt
     return pDeviceExtension->u.primary.VideoPortProcs.pfnDeleteSpinLock(pDeviceExtension, *SpinLock);
 }
 
-DECLINLINE(LONG) VBoxVideoCmnEventSet(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
-{
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnSetEvent(pDeviceExtension, (VBOXPEVENT)*pEvent); /** @todo slightly bogus cast */
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnEventCreateNotification(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent, IN BOOLEAN bSignaled)
-{
-    ULONG fFlags = NOTIFICATION_EVENT;
-    if(bSignaled)
-        fFlags |= INITIAL_EVENT_SIGNALED;
-
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnCreateEvent(pDeviceExtension, fFlags, NULL, (VBOXPEVENT *)pEvent); /** @todo slightly bogus cast */
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnEventDelete(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
-{
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnDeleteEvent(pDeviceExtension, (VBOXPEVENT)*pEvent); /** @todo slightly bogus cast */
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg)
-{
-    *pReg = pDeviceExtension->pPrimary;
-    return NO_ERROR;
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnRegFini(IN VBOXCMNREG Reg)
-{
-    return NO_ERROR;
-}
-
-VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal);
-
-VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val);
-
 /* */
 
 RT_C_DECLS_BEGIN
@@ -497,59 +427,15 @@ RT_C_DECLS_END
 #else
 
 /* XPDM-WDDM common API */
-DECLINLINE(VOID) VBoxVideoCmnPortWriteUchar(IN PUCHAR Port, IN UCHAR Value)
-{
-    WRITE_PORT_UCHAR(Port,Value);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnPortWriteUshort(IN PUSHORT Port, IN USHORT Value)
-{
-    WRITE_PORT_USHORT(Port,Value);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnPortWriteUlong(IN PULONG Port, IN ULONG Value)
-{
-    WRITE_PORT_ULONG(Port,Value);
-}
-
-DECLINLINE(UCHAR) VBoxVideoCmnPortReadUchar(IN PUCHAR Port)
-{
-    return READ_PORT_UCHAR(Port);
-}
-
-DECLINLINE(USHORT) VBoxVideoCmnPortReadUshort(IN PUSHORT Port)
-{
-    return READ_PORT_USHORT(Port);
-}
-
-DECLINLINE(ULONG) VBoxVideoCmnPortReadUlong(IN PULONG Port)
-{
-    return READ_PORT_ULONG(Port);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnMemZero(PVOID pvMem, ULONG cbMem)
-{
-    memset(pvMem, 0, cbMem);
-}
 
 DECLINLINE(VOID) VBoxVideoCmnSpinLockAcquire(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, OUT PVBOXVCMNIRQL OldIrql)
 {
     KeAcquireSpinLock(SpinLock, OldIrql);
 }
 
-DECLINLINE(VOID) VBoxVideoCmnSpinLockAcquireAtDpcLevel(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    KeAcquireSpinLockAtDpcLevel(SpinLock);
-}
-
 DECLINLINE(VOID) VBoxVideoCmnSpinLockRelease(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, IN VBOXVCMNIRQL NewIrql)
 {
     KeReleaseSpinLock(SpinLock, NewIrql);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnSpinLockReleaseFromDpcLevel(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    KeReleaseSpinLockFromDpcLevel(SpinLock);
 }
 
 DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockCreate(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
@@ -562,37 +448,6 @@ DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockDelete(IN PDEVICE_EXTENSION pDeviceExt
 {
     return NO_ERROR;
 }
-
-DECLINLINE(LONG) VBoxVideoCmnEventSet(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
-{
-    return KeSetEvent(pEvent, 0, FALSE);
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnEventCreateNotification(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent, IN BOOLEAN bSignaled)
-{
-    KeInitializeEvent(pEvent, NotificationEvent, bSignaled);
-    return NO_ERROR;
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnEventDelete(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNEVENT pEvent)
-{
-    return NO_ERROR;
-}
-
-VP_STATUS VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg);
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnRegFini(IN VBOXCMNREG Reg)
-{
-    if(!Reg)
-        return ERROR_INVALID_PARAMETER;
-
-    NTSTATUS Status = ZwClose(Reg);
-    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
-}
-
-VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal);
-
-VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val);
 
 /* */
 
@@ -800,22 +655,22 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
  */
 DECLINLINE(void) VBoxHGSMIHostWrite(PVBOXVIDEO_COMMON pCommon, ULONG data)
 {
-    VBoxVideoCmnPortWriteUlong((PULONG)pCommon->IOPortHost, data);
+    VBoxVideoCmnPortWriteUlong(pCommon->IOPortHost, data);
 }
 
 DECLINLINE(ULONG) VBoxHGSMIHostRead(PVBOXVIDEO_COMMON pCommon)
 {
-    return VBoxVideoCmnPortReadUlong((PULONG)pCommon->IOPortHost);
+    return VBoxVideoCmnPortReadUlong(pCommon->IOPortHost);
 }
 
 DECLINLINE(void) VBoxHGSMIGuestWrite(PVBOXVIDEO_COMMON pCommon, ULONG data)
 {
-    VBoxVideoCmnPortWriteUlong((PULONG)pCommon->IOPortGuest, data);
+    VBoxVideoCmnPortWriteUlong(pCommon->IOPortGuest, data);
 }
 
 DECLINLINE(ULONG) VBoxHGSMIGuestRead(PVBOXVIDEO_COMMON pCommon)
 {
-    return VBoxVideoCmnPortReadUlong((PULONG)pCommon->IOPortGuest);
+    return VBoxVideoCmnPortReadUlong(pCommon->IOPortGuest);
 }
 
 
