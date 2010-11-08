@@ -529,6 +529,7 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
     Assert(pThis->cRefs > 0);
     AssertPtr(pPath);
     AssertPtr(ppVfsParentDir);
+    *ppVfsParentDir = NULL;
     AssertReturn(pPath->cComponents > 0, VERR_INTERNAL_ERROR_3);
 
     /*
@@ -774,6 +775,54 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
  *  I / O   S T R E A M     I / O   S T R E A M     I / O   S T R E A M
  *
  */
+
+RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTSEMRW hSemRW,
+                             PRTVFSIOSTREAM phVfsIos, void **ppvInstance)
+{
+    /*
+     * Validate the input, be extra strict in strict builds.
+     */
+    AssertPtr(pIoStreamOps);
+    AssertReturn(pIoStreamOps->uVersion   == RTVFSIOSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
+    AssertReturn(pIoStreamOps->uEndMarker == RTVFSIOSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
+    Assert(!pIoStreamOps->fReserved);
+    Assert(cbInstance > 0);
+    Assert(fOpen & RTFILE_O_ACCESS_MASK);
+    AssertPtr(ppvInstance);
+    AssertPtr(phVfsIos);
+
+    RTVFSINTERNAL *pVfs = NULL;
+    if (hVfs == NIL_RTVFS)
+    {
+        pVfs = hVfs;
+        AssertPtrReturn(pVfs, VERR_INVALID_HANDLE);
+        AssertReturn(pVfs->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
+    }
+
+    /*
+     * Allocate the handle + instance data.
+     */
+    size_t const cbThis = RT_ALIGN_Z(sizeof(RTVFSIOSTREAMINTERNAL), RTVFS_INST_ALIGNMENT)
+                        + RT_ALIGN_Z(cbInstance, RTVFS_INST_ALIGNMENT);
+    RTVFSIOSTREAMINTERNAL *pThis = (RTVFSIOSTREAMINTERNAL *)RTMemAllocZ(cbThis);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->uMagic   = RTVFSIOSTREAM_MAGIC;
+    pThis->fFlags   = fOpen;
+    pThis->pvThis   = (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT);
+    pThis->pOps     = pIoStreamOps;
+    pThis->hSemRW   = hSemRW != NIL_RTSEMRW ? hSemRW : pVfs ? pVfs->hSemRW : NIL_RTSEMRW;
+    pThis->hVfs     = hVfs;
+    pThis->cRefs    = 1;
+    if (hVfs != NIL_RTVFS)
+        rtVfsRetainVoid(&pVfs->cRefs);
+
+    *phVfsIos    = pThis;
+    *ppvInstance = pThis->pvThis;
+    return VINF_SUCCESS;
+}
+
 
 RTDECL(uint32_t)    RTVfsIoStrmRetain(RTVFSIOSTREAM hVfsIos)
 {
