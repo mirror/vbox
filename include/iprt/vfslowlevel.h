@@ -525,6 +525,27 @@ typedef RTVFSIOSTREAMOPS const *PCRTVFSIOSTREAMOPS;
 
 
 /**
+ * Creates a new VFS I/O stream handle.
+ *
+ * @returns IPRT status code
+ * @param   pIoStreamOps        The I/O stream operations.
+ * @param   cbInstance          The size of the instance data.
+ * @param   fOpen               The open flags.  The minimum is the access mask.
+ * @param   hVfs                The VFS handle to associate this file with.
+ *                              NIL_VFS is ok.
+ * @param   hSemRW              The read-write semaphore to use to protect the
+ *                              handle if this differs from the one the VFS
+ *                              uses.  NIL_RTSEMRW is ok if no locking is
+ *                              desired.
+ * @param   phVfsIos            Where to return the new handle.
+ * @param   ppvInstance         Where to return the pointer to the instance data
+ *                              (size is @a cbInstance).
+ */
+RTDECL(int) RTVfsNewStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTSEMRW hSemRW,
+                           PRTVFSIOSTREAM phVfsIos, void **ppvInstance);
+
+
+/**
  * The file operations.
  *
  * @extends RTVFSIOSTREAMOPS
