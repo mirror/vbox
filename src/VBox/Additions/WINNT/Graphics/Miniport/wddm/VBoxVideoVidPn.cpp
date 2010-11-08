@@ -920,6 +920,8 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
         }
         else
             drprintf((__FUNCTION__": DxgkCbQueryMonitorInterface failed Status(0x%x)\n", Status));
+
+        vboxWddmMemFree(pResolutionsCopy);
     }
     else
     {
@@ -932,7 +934,8 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
 
 NTSTATUS vboxVidPnCreatePopulateVidPnFromLegacy(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         VIDEO_MODE_INFORMATION *pModes, uint32_t cModes, int iPreferredMode,
-        D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions)
+        D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions,
+        const D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, const D3DDDI_VIDEO_PRESENT_TARGET_ID tgtId)
 {
     D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
     const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
@@ -940,8 +943,7 @@ NTSTATUS vboxVidPnCreatePopulateVidPnFromLegacy(PDEVICE_EXTENSION pDevExt, D3DKM
     D3DKMDT_VIDEO_PRESENT_SOURCE_MODE_ID PreferredSrcModeId = D3DDDI_ID_UNINITIALIZED;
     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pNewVidPnSourceModeSetInterface;
-    D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId = 0;
-    D3DDDI_VIDEO_PRESENT_TARGET_ID tgtId = 0;
+
     NTSTATUS Status = pVidPnInterface->pfnCreateNewSourceModeSet(hVidPn,
                         srcId, /*__in CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId */
                         &hNewVidPnSourceModeSet,
@@ -1097,11 +1099,13 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
     PVBOXVIDPNCOFUNCMODALITY pCbContext = (PVBOXVIDPNCOFUNCMODALITY)pContext;
     NTSTATUS Status = STATUS_SUCCESS;
     pCbContext->Status = STATUS_SUCCESS;
-    VIDEO_MODE_INFORMATION *pModes = pCbContext->pModes;
-    uint32_t cModes = pCbContext->cModes;
-    int iPreferredMode = pCbContext->iPreferredMode;
-    uint32_t cResolutions = pCbContext->cResolutions;
-    D3DKMDT_2DREGION * pResolutions = pCbContext->pResolutions;
+    PVBOXWDDM_VIDEOMODES_INFO pInfo = &pCbContext->pInfos[pNewVidPnPresentPathInfo->VidPnTargetId];
+    VIDEO_MODE_INFORMATION *pModes = pInfo->aModes;
+    uint32_t cModes = pInfo->cModes;
+    /* we do not want the mode to be pinned */
+    int iPreferredMode = -1; /* pInfo->iPreferredMode; */
+    uint32_t cResolutions = pInfo->cResolutions;
+    D3DKMDT_2DREGION * pResolutions = pInfo->aResolutions;
 
 
     /* adjust scaling */

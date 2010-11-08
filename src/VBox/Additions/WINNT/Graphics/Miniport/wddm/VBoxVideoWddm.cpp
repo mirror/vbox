@@ -3533,7 +3533,7 @@ DxgkDdiEscape(
                 break;
             }
             case VBOXESC_REINITVIDEOMODES:
-                VBoxWddmInvalidateModesTable(pDevExt);
+                vboxWddmInvalidateVideoModesInfo(pDevExt);
                 Status = STATUS_SUCCESS;
                 break;
             case VBOXESC_DBGPRINT:
@@ -3756,55 +3756,20 @@ DxgkDdiRecommendFunctionalVidPn(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     NTSTATUS Status;
-    uint32_t cModes;
-    int iPreferredMode;
-    VIDEO_MODE_INFORMATION *pModes;
-    uint32_t cResolutions;
-    D3DKMDT_2DREGION *pResolutions;
-    VIDEO_MODE_INFORMATION ModeInfos[4];
-    VIDEO_MODE_INFORMATION *pModeInfos;
-    D3DKMDT_2DREGION Resolution;
-    uint32_t cModeInfos;
-    int32_t iPreferredModeInfo;
-    bool bFreeModes = false;
-    VBoxWddmGetModesTable(pDevExt, /* PDEVICE_EXTENSION DeviceExtension */
-            true, /* bool bRebuildTable*/
-            &pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
-            &cModes, /* uint32_t * pcModes */
-            &iPreferredMode, /* uint32_t * pPreferrableMode*/
-            &pResolutions, /* D3DKMDT_2DREGION **ppResolutions */
-            &cResolutions /* uint32_t * pcResolutions */);
-    Resolution.cx = pModes[iPreferredMode].VisScreenWidth;
-    Resolution.cy = pModes[iPreferredMode].VisScreenHeight;
-    Status = VBoxWddmGetModesForResolution(pDevExt, false,
-            &Resolution,
-            ModeInfos, RT_ELEMENTS(ModeInfos), &cModeInfos, &iPreferredModeInfo);
-    Assert(Status == STATUS_SUCCESS || Status == STATUS_BUFFER_TOO_SMALL);
-    if (Status == STATUS_SUCCESS)
-        pModeInfos = ModeInfos;
-    else if (Status == STATUS_BUFFER_TOO_SMALL)
-    {
-        uint32_t cModeInfos2;
-        pModeInfos = (VIDEO_MODE_INFORMATION*)vboxWddmMemAlloc(sizeof (VIDEO_MODE_INFORMATION) * cModeInfos);
-        if (pModeInfos)
-        {
-            bFreeModes = true;
-            Status = VBoxWddmGetModesForResolution(pDevExt, false,
-                    &Resolution,
-                    pModeInfos, cModeInfos, &cModeInfos2, &iPreferredModeInfo);
-            Assert(Status == STATUS_SUCCESS);
-            Assert(iPreferredModeInfo >= 0); /* the array should contain the preferred info */
-            if (Status != STATUS_SUCCESS)
-                drprintf((__FUNCTION__": second call to VBoxWddmGetModesForResolution failed Status(0x%x), cModeInfos(%d), cModeInfos2(%d)\n", Status, cModeInfos, cModeInfos2));
-        }
-    }
-    else
-        drprintf((__FUNCTION__": VBoxWddmGetModesForResolution failed Status(0x%x)\n", Status));
-
+    vboxWddmInvalidateVideoModesInfo(pDevExt);
+    PVBOXWDDM_VIDEOMODES_INFO pInfos = vboxWddmGetAllVideoModesInfos(pDevExt);
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
+    Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
         for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
         {
+            D3DKMDT_2DREGION Resolution;
+            PVBOXWDDM_VIDEOMODES_INFO pInfo = &pInfos[i];
+            VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
+            Resolution.cx = pModeInfo->VisScreenWidth;
+            Resolution.cy = pModeInfo->VisScreenHeight;
             Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, &Resolution, 1, 0);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
@@ -3812,30 +3777,19 @@ DxgkDdiRecommendFunctionalVidPn(
                 drprintf((__FUNCTION__": vboxVidPnCheckAddMonitorModes failed Status(0x%x)\n", Status));
                 break;
             }
-        }
 
-        if (Status == STATUS_SUCCESS)
-        {
-            const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-            Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+            Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
+                            pInfo->aModes, pInfo->cModes, pInfo->iPreferredMode,
+                            pInfo->aResolutions, pInfo->cResolutions,
+                            i, i);
             Assert(Status == STATUS_SUCCESS);
-            if (Status == STATUS_SUCCESS)
+            if (Status != STATUS_SUCCESS)
             {
-                Assert (iPreferredModeInfo >= 0);
-                Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
-                        pModeInfos, cModeInfos, iPreferredModeInfo,
-                        &Resolution, 1);
-                Assert(Status == STATUS_SUCCESS);
-                if (Status != STATUS_SUCCESS)
-                    drprintf((__FUNCTION__": vboxVidPnCreatePopulateVidPnFromLegacy failed Status(0x%x)\n", Status));
+                drprintf((__FUNCTION__": vboxVidPnCreatePopulateVidPnFromLegacy failed Status(0x%x)\n", Status));
+                break;
             }
-            else
-                drprintf((__FUNCTION__": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
         }
     }
-
-    if (bFreeModes)
-        vboxWddmMemFree(pModeInfos);
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
@@ -3856,9 +3810,9 @@ DxgkDdiEnumVidPnCofuncModality(
 
     vboxVDbgBreakFv();
 
-    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-    NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (Status == STATUS_SUCCESS)
     {
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
@@ -3869,17 +3823,8 @@ DxgkDdiEnumVidPnCofuncModality(
         {
             VBOXVIDPNCOFUNCMODALITY CbContext = {0};
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
-            VBoxWddmGetModesTable(pContext, /* PDEVICE_EXTENSION DeviceExtension */
-                    false, /* bool bRebuildTable*/
-                    &CbContext.pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
-                    &CbContext.cModes, /* uint32_t * pcModes */
-                    &CbContext.iPreferredMode, /* uint32_t * pPreferrableMode*/
-                    &CbContext.pResolutions, /* D3DKMDT_2DREGION **ppResolutions */
-                    &CbContext.cResolutions /* uint32_t * pcResolutions */);
-            Assert(CbContext.cModes);
-            Assert(CbContext.cModes > (uint32_t)CbContext.iPreferredMode);
-            CbContext.iPreferredMode = -1; /* <- we do not want the modes to be pinned */
-            Status = vboxVidPnEnumPaths(pContext, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface,
+            CbContext.pInfos = vboxWddmGetAllVideoModesInfos(pDevExt);
+            Status = vboxVidPnEnumPaths(pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface,
                     hVidPnTopology, pVidPnTopologyInterface,
                     vboxVidPnCofuncModalityPathEnum, &CbContext);
             Assert(Status == STATUS_SUCCESS);
@@ -4169,20 +4114,9 @@ DxgkDdiRecommendMonitorModes(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     NTSTATUS Status;
-    uint32_t cModes;
-    int32_t iPreferredMode;
-    VIDEO_MODE_INFORMATION *pModes;
-    uint32_t cResolutions;
-    D3DKMDT_2DREGION *pResolutions;
-    VBoxWddmGetModesTable(pDevExt, /* PDEVICE_EXTENSION DeviceExtension */
-            false, /* bool bRebuildTable*/
-            &pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
-            &cModes, /* uint32_t * pcModes */
-            &iPreferredMode, /* uint32_t * pPreferrableMode*/
-            &pResolutions, /* D3DKMDT_2DREGION **ppResolutions */
-            &cResolutions /* uint32_t * pcResolutions */);
+    PVBOXWDDM_VIDEOMODES_INFO pInfo = vboxWddmGetVideoModesInfo(pDevExt, pRecommendMonitorModesArg->VideoPresentTargetId);
 
-    for (uint32_t i = 0; i < cResolutions; i++)
+    for (uint32_t i = 0; i < pInfo->cResolutions; i++)
     {
         D3DKMDT_MONITOR_SOURCE_MODE * pNewMonitorSourceModeInfo;
         Status = pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnCreateNewModeInfo(
@@ -4192,7 +4126,7 @@ DxgkDdiRecommendMonitorModes(
         {
             Status = vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(pDevExt,
                     pNewMonitorSourceModeInfo,
-                    &pResolutions[i],
+                    &pInfo->aResolutions[i],
                     D3DKMDT_MCO_DRIVER,
                     FALSE);
             Assert(Status == STATUS_SUCCESS);
