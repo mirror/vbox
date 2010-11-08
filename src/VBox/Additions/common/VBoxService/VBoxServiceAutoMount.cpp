@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <grp.h>
 #include <sys/mount.h>
+#include <mntent.h>
+#include <paths.h>
 #ifdef RT_OS_SOLARIS
 #include <sys/vfs.h>
 #endif
@@ -84,11 +86,67 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
 }
 
 
-static int VBoxServiceAutoMountPrepareMountPoint(const char *pszMountPoint, vbsf_mount_opts *pOpts)
+static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare, 
+                                               char *pszMountPoint, size_t cbMountPoint)
 {
-    AssertPtr(pOpts);
+    AssertPtrReturn(pszShare, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
+    AssertReturn(cbMountPoint, VERR_INVALID_PARAMETER);
 
-    RTFMODE fMode = 0770; /* Owner (=root) and the group (=vboxsf) have full access. */
+    bool fMounted = false;
+    /* @todo What to do if we have a relative path in mtab instead
+     *       of an absolute one ("temp" vs. "/media/temp")?
+     * procfs contains the full path but not the actual share name ...
+     * FILE *pFh = setmntent("/proc/mounts", "r+t"); */
+    FILE *pFh = setmntent(_PATH_MOUNTED, "r+t");
+    if (pFh == NULL)
+        VBoxServiceError("VBoxServiceAutoMountShareIsMounted: Could not open mtab!\n");
+    else
+    {
+        mntent *pMntEnt;
+        while ((pMntEnt = getmntent(pFh)))
+        {
+            if (!RTStrICmp(pMntEnt->mnt_fsname, pszShare))
+            {
+                fMounted = RTStrPrintf(pszMountPoint, cbMountPoint, "%s", pMntEnt->mnt_dir) 
+                         ? true : false;                
+                break;
+            }               
+        }        
+        endmntent(pFh);
+    }
+    return fMounted;
+}
+
+
+static int VBoxServiceAutoMountUnmount(const char *pszMountPoint)
+{
+    AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+    uint8_t uTries = 0;
+    int r;
+    while (uTries++ < 3)
+    {
+        r = umount(pszMountPoint);
+        if (r == 0)
+            break;                
+        RTThreadSleep(5000); /* Wait a while ... */
+    }
+    if (r == -1)
+        rc = RTErrConvertFromErrno(errno);
+    return rc;       
+}
+
+
+static int VBoxServiceAutoMountPrepareMountPoint(const char *pszMountPoint, const char *pszShareName,
+                                                 vbsf_mount_opts *pOpts)
+{
+    AssertPtrReturn(pOpts, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszMountPoint, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszShareName, VERR_INVALID_PARAMETER);
+
+    RTFMODE fMode = RTFS_UNIX_IRWXU | RTFS_UNIX_IRWXG; /* Owner (=root) and the group (=vboxsf) have full access. */
     int rc = RTDirCreateFullPath(pszMountPoint, fMode);
     if (RT_SUCCESS(rc))
     {
@@ -96,18 +154,17 @@ static int VBoxServiceAutoMountPrepareMountPoint(const char *pszMountPoint, vbsf
         if (RT_SUCCESS(rc))
         {
             rc = RTPathSetMode(pszMountPoint, fMode);
-            VBoxServiceVerbose(3, "RTPathSetMode = rc = %Rrc\n");
             if (RT_FAILURE(rc))
-                VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Could not set mode for mount directory \"%s\", rc = %Rrc\n",
-                                 pszMountPoint, rc);
+                VBoxServiceError(": Could not set mode %RTfmode for mount directory \"%s\", rc = %Rrc\n",
+                                 fMode, pszMountPoint, rc);
         }
         else
             VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Could not set permissions for mount directory \"%s\", rc = %Rrc\n",
                              pszMountPoint, rc);
     }
     else
-        VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Could not create mount directory \"%s\", rc = %Rrc\n",
-                         pszMountPoint, rc);
+        VBoxServiceError("VBoxServiceAutoMountPrepareMountPoint: Could not create mount directory \"%s\" with mode %RTfmode, rc = %Rrc\n",
+                         pszMountPoint, fMode, rc);
     return rc;
 }
 
@@ -117,7 +174,23 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
 {
     AssertPtr(pOpts);
 
-    int rc = VBoxServiceAutoMountPrepareMountPoint(pszMountPoint, pOpts);
+    int rc;
+    char szAlreadyMountedTo[RTPATH_MAX];
+    /* If a Shared Folder already is mounted but not to our desired mount point, 
+     * do an unmount first! */
+    if (   VBoxServiceAutoMountShareIsMounted(pszShareName, szAlreadyMountedTo, sizeof(szAlreadyMountedTo))
+        && RTStrICmp(pszMountPoint, szAlreadyMountedTo))
+    {
+        VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already mounted to \"%s\", unmounting ...\n", 
+                           pszShareName, szAlreadyMountedTo);
+        rc = VBoxServiceAutoMountUnmount(szAlreadyMountedTo);
+        if (RT_FAILURE(rc))
+            VBoxServiceError("VBoxServiceAutoMountWorker: Failed to unmount \"%s\", %s (%d)!\n",
+                             szAlreadyMountedTo, strerror(errno), errno);
+    }
+
+    if (RT_SUCCESS(rc))
+        rc = VBoxServiceAutoMountPrepareMountPoint(pszMountPoint, pszShareName, pOpts);
     if (RT_SUCCESS(rc))
     {
 #ifdef RT_OS_SOLARIS
@@ -196,10 +269,12 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                     break;
             }
         }
-        else /* r != 0 */
+        else /* r == -1, we got some error in errno.  */
         {
             if (errno == EPROTO)
             {
+                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Messed up share name, re-trying ...\n");
+
                 /* Sometimes the mount utility messes up the share name.  Try to
                  * un-mangle it again. */
                 char szCWD[4096];
@@ -218,6 +293,8 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
             }
             if (errno == EPROTO)
             {
+                VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Re-trying with old mounting structure ...\n");
+
                 /* New mount tool with old vboxsf module? Try again using the old
                  * vbsf_mount_info_old structure. */
                 struct vbsf_mount_info_old mntinf_old;
@@ -228,16 +305,32 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
                 mntinf_old.ttl = mntinf.ttl;
                 r = mount(NULL, pszMountPoint, "vboxsf", flags, &mntinf_old);
             }
-            if (errno != EBUSY) /* Share is already mounted? Then skip error msg. */
-                VBoxServiceError("VBoxServiceAutoMountWorker: Could not mount shared folder \"%s\" to \"%s\", error = %s\n",
-                                 pszShareName, pszMountPoint, strerror(errno));
+            if (r == -1) /* Was there some error from one of the tries above? */
+            {
+                switch (errno)
+                {
+                    /* If we get EINVAL here, the system already has mounted the Shared Folder to another
+                     * mount point. */
+                    case EINVAL:
+                        VBoxServiceVerbose(0, "VBoxServiceAutoMountWorker: Shared folder \"%s\" already is mounted!\n", pszShareName);
+                        /* Ignore this error! */
+                        break;                                         
+                    case EBUSY:
+                        /* Ignore these errors! */
+                        break;
+
+                    default:
+                        VBoxServiceError("VBoxServiceAutoMountWorker: Could not mount shared folder \"%s\" to \"%s\": %s (%d)\n",
+                                         pszShareName, pszMountPoint, strerror(errno), errno);
+                        rc = RTErrConvertFromErrno(errno);
+                        break;
+                }               
+            }
         }
 #endif /* !RT_OS_SOLARIS */
     }
-
-    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Mounting returned with rc=%Rrc, errno=%d, error=%s\n",
-                       rc, errno, strerror(errno));
-    return RTErrConvertFromErrno(errno);
+    VBoxServiceVerbose(3, "VBoxServiceAutoMountWorker: Mounting returned with rc=%Rrc\n", rc);
+    return rc;
 }
 
 
