@@ -138,6 +138,25 @@
 #define CH_ATTR_SIZE (160 * 100)
 #define VGA_MAX_HEIGHT VBE_DISPI_MAX_YRES
 
+typedef struct vga_retrace {
+    unsigned    frame_cclks;    /* Character clocks per frame. */
+    unsigned    frame_ns;       /* Frame duration in ns. */
+    unsigned    cclk_ns;        /* Character clock duration in ns. */
+    unsigned    vb_start;       /* Vertical blanking start (scanline). */
+    unsigned    vb_end;         /* Vertical blanking end (scanline). */
+    unsigned    vb_end_ns;      /* Vertical blanking end time (length) in ns. */
+    unsigned    vs_start;       /* Vertical sync start (scanline). */
+    unsigned    vs_end;         /* Vertical sync end (scanline). */
+    unsigned    vs_start_ns;    /* Vertical sync start time in ns. */
+    unsigned    vs_end_ns;      /* Vertical sync end time in ns. */
+    unsigned    h_total;        /* Horizontal total (cclks per scanline). */
+    unsigned    h_total_ns;     /* Scanline duration in ns. */
+    unsigned    hb_start;       /* Horizontal blanking start (cclk). */
+    unsigned    hb_end;         /* Horizontal blanking end (cclk). */
+    unsigned    hb_end_ns;      /* Horizontal blanking end time (length) in ns. */
+    unsigned    v_freq_hz;      /* Vertical refresh rate to emulate. */
+} vga_retrace_s;
+
 #ifndef VBOX
 #define VGA_STATE_COMMON                                                \
     uint8_t *vram_ptr;                                                  \
@@ -377,6 +396,10 @@ typedef struct VGAState {
     uint8_t                     Padding4[2];
 # endif
 #endif
+
+    /** Retrace emulation state */
+    bool                        fRealRetrace;
+    struct vga_retrace          retrace_state;
 
 #ifdef VBE_NEW_DYN_LIST
     /** The VBE BIOS extra data. */
