@@ -2035,7 +2035,7 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             NATRule rule;
             uint32_t port = 0;
             (*pf)->getAttributeValue("name", rule.strName);
-            (*pf)->getAttributeValue("proto", rule.proto);
+            (*pf)->getAttributeValue("proto", (uint32_t&)rule.proto);
             (*pf)->getAttributeValue("hostip", rule.strHostIP);
             (*pf)->getAttributeValue("hostport", port);
             rule.u16HostPort = port;
