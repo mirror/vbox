@@ -35,6 +35,13 @@
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/semaphore.h>
+
+#include "internal/file.h"
+#include "internal/magics.h"
+//#include "internal/vfs.h"
 
 
 /*******************************************************************************
@@ -42,13 +49,61 @@
 *******************************************************************************/
 #define RTVFS_MAGIC                 UINT32_C(0x11112222)
 #define RTVFS_MAGIC_DEAD            (~RTVFS_MAGIC)
-#define RTVFSIOSTREAM_MAGIC         UINT32_C(0x33334444)
-#define RTVFSIOSTREAM_MAGIC_DEAD    (~RTVFSIOSTREAM_MAGIC)
+#define RTVFSDIR_MAGIC              UINT32_C(0x77778888)
+#define RTVFSDIR_MAGIC_DEAD         (~RTVFSDIR_MAGIC)
 #define RTVFSFILE_MAGIC             UINT32_C(0x55556666)
 #define RTVFSFILE_MAGIC_DEAD        (~RTVFSFILE_MAGIC)
+#define RTVFSIOSTREAM_MAGIC         UINT32_C(0x33334444)
+#define RTVFSIOSTREAM_MAGIC_DEAD    (~RTVFSIOSTREAM_MAGIC)
+#define RTVFSSYMLINK_MAGIC          UINT32_C(0x9999aaaa)
+#define RTVFSSYMLINK_MAGIC_DEAD     (~RTVFSSYMLINK_MAGIC)
 
 /** The instance data alignment. */
 #define RTVFS_INST_ALIGNMENT        16U
+
+/** The max number of symbolic links to resolve in a path. */
+#define RTVFS_MAX_LINKS             20U
+
+
+/** Takes a write lock. */
+#define RTVFS_WRITE_LOCK(hSemRW)  \
+    do { \
+        if ((hSemRW) != NIL_RTSEMRW) \
+        { \
+            int rcSemEnter = RTSemRWRequestWrite(hSemRW, RT_INDEFINITE_WAIT); \
+            AssertRC(rcSemEnter); \
+        } \
+    } while (0)
+
+/** Releases a write lock. */
+#define RTVFS_WRITE_UNLOCK(hSemRW)  \
+    do { \
+        if ((hSemRW) != NIL_RTSEMRW) \
+        { \
+            int rcSemLeave = RTSemRWReleaseWrite(hSemRW); \
+            AssertRC(rcSemLeave); \
+        } \
+    } while (0)
+
+/** Takes a read lock. */
+#define RTVFS_READ_LOCK(hSemRW)  \
+    do { \
+        if ((hSemRW) != NIL_RTSEMRW) \
+        { \
+            int rcSemEnter = RTSemRWRequestRead(hSemRW, RT_INDEFINITE_WAIT); \
+            AssertRC(rcSemEnter); \
+        } \
+    } while (0)
+
+/** Releases a read lock. */
+#define RTVFS_READ_UNLOCK(hSemRW)  \
+    do { \
+        if ((hSemRW) != NIL_RTSEMRW) \
+        { \
+            int rcSemLeave = RTSemRWReleaseRead(hSemRW); \
+            AssertRC(rcSemLeave); \
+        } \
+    } while (0)
 
 
 /*******************************************************************************
@@ -103,6 +158,28 @@ typedef struct RTVFSDIRINTERNAL
 
 
 /**
+ * The VFS symbolic link handle data.
+ */
+typedef struct RTVFSSYMLINKINTERNAL
+{
+    /** The VFS magic (RTVFSSYMLINK_MAGIC). */
+    uint32_t                uMagic;
+    /** Reserved for flags or something. */
+    uint32_t                fReserved;
+    /** Pointer to the instance data. */
+    void                   *pvThis;
+    /** The vtable. */
+    PCRTVFSSYMLINKOPS       pOps;
+    /** The VFS RW sem if serialized. */
+    RTSEMRW                 hSemRW;
+    /** Reference back to the VFS containing this symbolic link. */
+    RTVFS                   hVfs;
+    /** The number of references to this symbolic link handle. */
+    uint32_t volatile       cRefs;
+} RTVFSSYMLINKINTERNAL;
+
+
+/**
  * The VFS I/O stream handle data.
  *
  * This is normally part of a type specific handle, like a file or pipe.
@@ -144,6 +221,7 @@ typedef struct RTVFSFILEINTERNAL
 } RTVFSFILEINTERNAL;
 
 
+
 /**
  * Internal object retainer that asserts sanity in strict builds.
  *
@@ -183,6 +261,520 @@ DECLINLINE(uint32_t) rtVfsRelease(uint32_t volatile *pcRefs)
 }
 
 
+/*
+ *
+ *  U T I L   U T I L   U T I L
+ *  U T I L   U T I L   U T I L
+ *  U T I L   U T I L   U T I L
+ *
+ */
+
+
+
+/**
+ * Removes dots from the path.
+ *
+ * @returns The new @a pszDst value.
+ * @param   pPath               The path parsing buffer.
+ * @param   pszDst              The current szPath position.  This will be
+ *                              updated and returned.
+ * @param   fTheEnd             Indicates whether we're at the end of the path
+ *                              or not.
+ * @param   piRestartComp       The component to restart parsing at.
+ */
+static char *rtVfsParsePathHandleDots(PRTVFSPARSEDPATH pPath, char *pszDst, bool fTheEnd, uint16_t *piRestartComp)
+{
+    if (pszDst[-1] != '.')
+        return pszDst;
+
+    if (pszDst[-2] == '/')
+    {
+        pPath->cComponents--;
+        pszDst = &pPath->szPath[pPath->aoffComponents[pPath->cComponents]];
+    }
+    else if (pszDst[-2] == '.' && pszDst[-3] == '/')
+    {
+        pPath->cComponents -= pPath->cComponents > 1 ? 2 : 1;
+        pszDst = &pPath->szPath[pPath->aoffComponents[pPath->cComponents]];
+        if (piRestartComp && *piRestartComp + 1 >= pPath->cComponents)
+            *piRestartComp = pPath->cComponents > 0 ? pPath->cComponents - 1 : 0;
+    }
+    else
+        return pszDst;
+
+    /*
+     * Drop the trailing slash if we're at the end of the source path.
+     */
+    if (fTheEnd && pPath->cComponents == 0)
+        pszDst--;
+    return pszDst;
+}
+
+
+RTDECL(int) RTVfsParsePathAppend(PRTVFSPARSEDPATH pPath, const char *pszPath, uint16_t *piRestartComp)
+{
+    AssertReturn(*pszPath != '/', VERR_INTERNAL_ERROR_4);
+
+    /* In case *piRestartComp was set higher than the number of components
+       before making the call to this function. */
+    if (piRestartComp && *piRestartComp + 1 >= pPath->cComponents)
+        *piRestartComp = pPath->cComponents > 0 ? pPath->cComponents - 1 : 0;
+
+    /*
+     * Append a slash to the destination path if necessary.
+     */
+    char *pszDst = &pPath->szPath[pPath->cch];
+    if (pPath->cComponents > 0)
+    {
+        *pszDst++ = '/';
+        if (pszDst - &pPath->szPath[0] >= RTVFSPARSEDPATH_MAX)
+            return VERR_FILENAME_TOO_LONG;
+    }
+    Assert(pszDst[-1] == '/');
+
+    /*
+     * Parse and append the relative path.
+     */
+    const char *pszSrc = pszPath;
+    pPath->fDirSlash   = false;
+    while (pszSrc[0])
+    {
+        /* Skip unncessary slashes. */
+        while (pszSrc[0] == '/')
+            pszSrc++;
+
+        /* Copy until we encounter the next slash. */
+        pPath->aoffComponents[pPath->cComponents++] = pszDst - &pPath->szPath[0];
+        while (pszSrc[0])
+        {
+            if (pszSrc[0] == '/')
+            {
+                pszSrc++;
+                if (pszSrc[0])
+                    *pszDst++ = '/';
+                else
+                    pPath->fDirSlash = true;
+                pszDst = rtVfsParsePathHandleDots(pPath, pszDst, pszSrc[0] == '\0', piRestartComp);
+                break;
+            }
+
+            *pszDst++ = *pszSrc++;
+            if (pszDst - &pPath->szPath[0] >= RTVFSPARSEDPATH_MAX)
+                return VERR_FILENAME_TOO_LONG;
+        }
+    }
+    pszDst = rtVfsParsePathHandleDots(pPath, pszDst, true /*fTheEnd*/, piRestartComp);
+
+    /* Terminate the string and enter its length. */
+    pszDst[0] = '\0';
+    pszDst[1] = '\0';                   /* for aoffComponents */
+    pPath->cch = (uint16_t)(pszDst - &pPath->szPath[0]);
+    pPath->aoffComponents[pPath->cComponents] = pPath->cch + 1;
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTVfsParsePath(PRTVFSPARSEDPATH pPath, const char *pszPath, const char *pszCwd)
+{
+    if (*pszPath != '/')
+    {
+        /*
+         * Relative, recurse and parse pszCwd first.
+         */
+        int rc = RTVfsParsePath(pPath, pszCwd, NULL /*crash if pszCwd is not absolute*/);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else
+    {
+        /*
+         * Make pszPath relative, i.e. set up pPath for the root and skip
+         * leading slashes in pszPath before appending it.
+         */
+        pPath->cch               = 1;
+        pPath->cComponents       = 0;
+        pPath->fDirSlash         = false;
+        pPath->aoffComponents[0] = 1;
+        pPath->aoffComponents[1] = 2;
+        pPath->szPath[0]         = '/';
+        pPath->szPath[1]         = '\0';
+        pPath->szPath[2]         = '\0';
+        while (pszPath[0] == '/')
+            pszPath++;
+        if (!pszPath[0])
+            return VINF_SUCCESS;
+    }
+    return RTVfsParsePathAppend(pPath, pszPath, NULL);
+}
+
+
+
+RTDECL(int) RTVfsParsePathA(const char *pszPath, const char *pszCwd, PRTVFSPARSEDPATH *ppPath)
+{
+    /*
+     * Allocate the output buffer and hand the problem to rtVfsParsePath.
+     */
+    int rc;
+    PRTVFSPARSEDPATH pPath = (PRTVFSPARSEDPATH)RTMemTmpAlloc(sizeof(RTVFSPARSEDPATH));
+    if (pPath)
+    {
+        rc = RTVfsParsePath(pPath, pszPath, pszCwd);
+        if (RT_FAILURE(rc))
+        {
+            RTMemTmpFree(pPath);
+            pPath = NULL;
+        }
+    }
+    else
+        rc = VERR_NO_TMP_MEMORY;
+    *ppPath = pPath;                    /* always set it */
+    return rc;
+}
+
+
+RTDECL(void) RTVfsParsePathFree(PRTVFSPARSEDPATH pPath)
+{
+    if (pPath)
+    {
+        pPath->cch               = UINT16_MAX;
+        pPath->cComponents       = UINT16_MAX;
+        pPath->aoffComponents[0] = UINT16_MAX;
+        pPath->aoffComponents[1] = UINT16_MAX;
+        RTMemTmpFree(pPath);
+    }
+}
+
+
+/**
+ * Handles a symbolic link, adding it to
+ *
+ * @returns IPRT status code.
+ * @param   pPath               The parsed path to update.
+ * @param   piComponent         The component iterator to update.
+ * @param   hSymlink            The symbolic link to process.
+ */
+static int rtVfsTraverseHandleSymlink(PRTVFSPARSEDPATH pPath, uint16_t *piComponent, RTVFSSYMLINK hSymlink)
+{
+    /*
+     * Read the link.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = RTVfsSymlinkRead(hSymlink, szPath, sizeof(szPath) - 1);
+    if (RT_SUCCESS(rc))
+    {
+        szPath[sizeof(szPath) - 1] = '\0';
+        if (szPath[0] == '/')
+        {
+            /*
+             * Absolute symlink.
+             */
+            rc = RTVfsParsePath(pPath, szPath, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                *piComponent = 0;
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            /*
+             * Relative symlink, must replace the current component with the
+             * link value.  We do that by using the remainder of the symlink
+             * buffer as temporary storage.
+             */
+            uint16_t iComponent = *piComponent;
+            if (iComponent + 1 < pPath->cComponents)
+                rc = RTPathAppend(szPath, sizeof(szPath), &pPath->szPath[pPath->aoffComponents[iComponent + 1]]);
+            if (RT_SUCCESS(rc))
+            {
+                pPath->cch = pPath->aoffComponents[iComponent] - (iComponent > 0);
+                pPath->aoffComponents[iComponent + 1] = pPath->cch + 1;
+                pPath->szPath[pPath->cch]     = '\0';
+                pPath->szPath[pPath->cch + 1] = '\0';
+
+                rc = RTVfsParsePathAppend(pPath, szPath, &iComponent);
+                if (RT_SUCCESS(rc))
+                {
+                    *piComponent = iComponent;
+                    return VINF_SUCCESS;
+                }
+            }
+        }
+    }
+    return rc == VERR_BUFFER_OVERFLOW ? VERR_FILENAME_TOO_LONG : rc;
+}
+
+
+/**
+ * Internal worker for various open functions as well as RTVfsTraverseToParent.
+ *
+ * @returns IPRT status code.
+ * @param   pThis           The VFS.
+ * @param   pPath           The parsed path.  This may be changed as symbolic
+ *                          links are processed during the path traversal.
+ * @param   fFollowSymlink  Whether to follow the final component if it is a
+ *                          symbolic link.
+ * @param   ppVfsParentDir  Where to return the parent directory handle
+ *                          (referenced).
+ */
+static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, bool fFollowSymlink,
+                                 RTVFSDIRINTERNAL **ppVfsParentDir)
+{
+    /*
+     * Assert sanity.
+     */
+    AssertPtr(pThis);
+    Assert(pThis->uMagic == RTVFS_MAGIC);
+    Assert(pThis->cRefs > 0);
+    AssertPtr(pPath);
+    AssertPtr(ppVfsParentDir);
+    AssertReturn(pPath->cComponents > 0, VERR_INTERNAL_ERROR_3);
+
+    /*
+     * Open the root directory.
+     */
+    /** @todo Union mounts, traversal optimization methods, races, ++ */
+    RTVFSDIRINTERNAL *pCurDir;
+    RTVFS_READ_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnOpenRoot(pThis->pvThis, &pCurDir);
+    RTVFS_READ_UNLOCK(pThis->hSemRW);
+    if (RT_FAILURE(rc))
+        return rc;
+    Assert(pCurDir->uMagic == RTVFSDIR_MAGIC);
+
+    /*
+     * The traversal loop.
+     */
+    unsigned cLinks     = 0;
+    uint16_t iComponent = 0;
+    for (;;)
+    {
+        /*
+         * Are we done yet?
+         */
+        bool fFinal = iComponent + 1 >= pPath->cComponents;
+        if (fFinal && !fFollowSymlink)
+        {
+            *ppVfsParentDir = pCurDir;
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Try open the next entry.
+         */
+        const char     *pszEntry    = &pPath->szPath[pPath->aoffComponents[iComponent]];
+        char           *pszEntryEnd = &pPath->szPath[pPath->aoffComponents[iComponent + 1] - 1];
+        *pszEntryEnd = '\0';
+        RTVFSDIR        hDir     = NIL_RTVFSDIR;
+        RTVFSSYMLINK    hSymlink = NIL_RTVFSSYMLINK;
+        RTVFS           hVfsMnt  = NIL_RTVFS;
+        if (fFinal)
+        {
+            RTVFS_READ_LOCK(pCurDir->hSemRW);
+            rc = pCurDir->pOps->pfnTraversalOpen(pCurDir->pvThis, pszEntry, NULL, &hSymlink, NULL);
+            RTVFS_READ_UNLOCK(pCurDir->hSemRW);
+            *pszEntryEnd = '\0';
+            if (rc == VERR_PATH_NOT_FOUND)
+                rc = VINF_SUCCESS;
+            if (RT_FAILURE(rc))
+                break;
+
+            if (hSymlink == NIL_RTVFSSYMLINK)
+            {
+                *ppVfsParentDir = pCurDir;
+                return VINF_SUCCESS;
+            }
+        }
+        else
+        {
+            RTVFS_READ_LOCK(pCurDir->hSemRW);
+            rc = pCurDir->pOps->pfnTraversalOpen(pCurDir->pvThis, pszEntry, &hDir, &hSymlink, &hVfsMnt);
+            RTVFS_READ_UNLOCK(pCurDir->hSemRW);
+            *pszEntryEnd = '/';
+            if (RT_FAILURE(rc))
+                break;
+
+            if (   hDir     == NIL_RTVFSDIR
+                && hSymlink == NIL_RTVFSSYMLINK
+                && hVfsMnt  == NIL_RTVFS)
+            {
+                rc = VERR_NOT_A_DIRECTORY;
+                break;
+            }
+        }
+        Assert(   (hDir != NIL_RTVFSDIR && hSymlink == NIL_RTVFSSYMLINK && hVfsMnt == NIL_RTVFS)
+               || (hDir == NIL_RTVFSDIR && hSymlink != NIL_RTVFSSYMLINK && hVfsMnt == NIL_RTVFS)
+               || (hDir == NIL_RTVFSDIR && hSymlink == NIL_RTVFSSYMLINK && hVfsMnt != NIL_RTVFS));
+
+        if (hDir != NIL_RTVFSDIR)
+        {
+            /*
+             * Directory - advance down the path.
+             */
+            AssertPtr(hDir);
+            Assert(hDir->uMagic == RTVFSDIR_MAGIC);
+            RTVfsDirRelease(pCurDir);
+            pCurDir = hDir;
+            iComponent++;
+        }
+        else if (hSymlink != NIL_RTVFSSYMLINK)
+        {
+            /*
+             * Symbolic link - deal with it and retry the current component.
+             */
+            AssertPtr(hSymlink);
+            Assert(hSymlink->uMagic == RTVFSSYMLINK_MAGIC);
+            cLinks++;
+            if (cLinks >= RTVFS_MAX_LINKS)
+            {
+                rc = VERR_TOO_MANY_SYMLINKS;
+                break;
+            }
+            uint16_t iRestartComp = iComponent;
+            rc = rtVfsTraverseHandleSymlink(pPath, &iRestartComp, hSymlink);
+            if (RT_FAILURE(rc))
+                break;
+            if (iRestartComp != iComponent)
+            {
+                /* Must restart from the root (optimize this). */
+                RTVfsDirRelease(pCurDir);
+                RTVFS_READ_LOCK(pThis->hSemRW);
+                rc = pThis->pOps->pfnOpenRoot(pThis->pvThis, &pCurDir);
+                RTVFS_READ_UNLOCK(pThis->hSemRW);
+                if (RT_FAILURE(rc))
+                {
+                    pCurDir = NULL;
+                    break;
+                }
+                iComponent = 0;
+            }
+        }
+        else
+        {
+            /*
+             * Mount point - deal with it and retry the current component.
+             */
+            RTVfsDirRelease(pCurDir);
+            RTVFS_READ_LOCK(hVfsMnt->hSemRW);
+            rc = pThis->pOps->pfnOpenRoot(hVfsMnt->pvThis, &pCurDir);
+            RTVFS_READ_UNLOCK(hVfsMnt->hSemRW);
+            if (RT_FAILURE(rc))
+            {
+                pCurDir = NULL;
+                break;
+            }
+            iComponent = 0;
+            /** @todo union mounts. */
+        }
+    }
+
+    if (pCurDir)
+        RTVfsDirRelease(pCurDir);
+
+    return rc;
+}
+
+
+
+/*
+ *
+ *  D I R   D I R   D I R
+ *  D I R   D I R   D I R
+ *  D I R   D I R   D I R
+ *
+ */
+
+RTDECL(uint32_t)    RTVfsDirRetain(RTVFSDIR hVfsDir)
+{
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, UINT32_MAX);
+    return rtVfsRetain(&pThis->cRefs);
+}
+
+
+RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir)
+{
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, UINT32_MAX);
+
+    uint32_t cRefs = rtVfsRelease(&pThis->cRefs);
+    if (!cRefs)
+    {
+        RTVFS_WRITE_LOCK(pThis->hSemRW);
+        ASMAtomicWriteU32(&pThis->uMagic, RTVFSDIR_MAGIC_DEAD);
+        RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+        pThis->pOps->Obj.pfnClose(pThis->pvThis);
+        RTMemFree(pThis);
+    }
+
+    return cRefs;
+}
+
+
+
+/*
+ *
+ *  S Y M B O L I C   L I N K
+ *  S Y M B O L I C   L I N K
+ *  S Y M B O L I C   L I N K
+ *
+ */
+
+RTDECL(uint32_t)    RTVfsSymlinkRetain(RTVFSSYMLINK hVfsSym)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, UINT32_MAX);
+    return rtVfsRetain(&pThis->cRefs);
+}
+
+
+RTDECL(uint32_t)    RTVfsSymlinkRelease(RTVFSSYMLINK hVfsSym)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, UINT32_MAX);
+
+    uint32_t cRefs = rtVfsRelease(&pThis->cRefs);
+    if (!cRefs)
+    {
+        RTVFS_WRITE_LOCK(pThis->hSemRW);
+        ASMAtomicWriteU32(&pThis->uMagic, RTVFSSYMLINK_MAGIC_DEAD);
+        RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+        pThis->pOps->Obj.pfnClose(pThis->pvThis);
+        RTMemFree(pThis);
+    }
+
+    return cRefs;
+}
+
+
+RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size_t cbTarget)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, VERR_INVALID_HANDLE);
+
+    RTVFS_WRITE_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnRead(pThis->pvThis, pszTarget, cbTarget);
+    RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+
+    return rc;
+}
+
+
+
+/*
+ *
+ *  I / O   S T R E A M     I / O   S T R E A M     I / O   S T R E A M
+ *  I / O   S T R E A M     I / O   S T R E A M     I / O   S T R E A M
+ *  I / O   S T R E A M     I / O   S T R E A M     I / O   S T R E A M
+ *
+ */
+
 RTDECL(uint32_t)    RTVfsIoStrmRetain(RTVFSIOSTREAM hVfsIos)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
@@ -208,7 +800,9 @@ RTDECL(uint32_t)    RTVfsIoStrmRelease(RTVFSIOSTREAM hVfsIos)
          * directory handle because the I/O stream can be a sub-object and we
          * need to get to the real one before handing it to RTMemFree.
          */
+        RTVFS_WRITE_LOCK(pThis->hSemRW);
         ASMAtomicWriteU32(&pThis->uMagic, RTVFSIOSTREAM_MAGIC_DEAD);
+        RTVFS_WRITE_UNLOCK(pThis->hSemRW);
         pThis->pOps->Obj.pfnClose(pThis->pvThis);
 
         switch (pThis->pOps->Obj.enmType)
@@ -261,7 +855,10 @@ RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pOb
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
 
-    return pThis->pOps->Obj.pfnQueryInfo(pThis->pvThis, pObjInfo, enmAddAttr);
+    RTVFS_READ_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->Obj.pfnQueryInfo(pThis->pvThis, pObjInfo, enmAddAttr);
+    RTVFS_READ_UNLOCK(pThis->hSemRW);
+    return rc;
 }
 
 
@@ -274,7 +871,11 @@ RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t c
     RTSGSEG Seg = { pvBuf, cbToRead };
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
-    return pThis->pOps->pfnRead(pThis->pvThis, -1 /*off*/, &SgBuf, pcbRead == NULL /*fBlocking*/, pcbRead);
+
+    RTVFS_WRITE_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnRead(pThis->pvThis, -1 /*off*/, &SgBuf, pcbRead == NULL /*fBlocking*/, pcbRead);
+    RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    return rc;
 }
 
 
@@ -287,7 +888,11 @@ RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, s
     RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
-    return pThis->pOps->pfnWrite(pThis->pvThis, -1 /*off*/, &SgBuf, pcbWritten == NULL /*fBlocking*/, pcbWritten);
+
+    RTVFS_WRITE_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnWrite(pThis->pvThis, -1 /*off*/, &SgBuf, pcbWritten == NULL /*fBlocking*/, pcbWritten);
+    RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    return rc;
 }
 
 
@@ -299,7 +904,10 @@ RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, b
     AssertPtr(pSgBuf);
     AssertReturn(fBlocking || VALID_PTR(pcbRead), VERR_INVALID_PARAMETER);
 
-    return pThis->pOps->pfnRead(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
+    RTVFS_WRITE_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnRead(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
+    RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    return rc;
 }
 
 
@@ -311,7 +919,10 @@ RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, 
     AssertPtr(pSgBuf);
     AssertReturn(fBlocking || VALID_PTR(pcbWritten), VERR_INVALID_PARAMETER);
 
-    return pThis->pOps->pfnWrite(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
+    RTVFS_WRITE_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnWrite(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
+    RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    return rc;
 }
 
 
@@ -321,7 +932,10 @@ RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
 
-    return pThis->pOps->pfnFlush(pThis->pvThis);
+    RTVFS_WRITE_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnFlush(pThis->pvThis);
+    RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    return rc;
 }
 
 
@@ -332,7 +946,10 @@ RTDECL(RTFOFF)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTM
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
 
-    return pThis->pOps->pfnPollOne(pThis->pvThis, fEvents, cMillies, fIntr, pfRetEvents);
+    RTVFS_WRITE_LOCK(pThis->hSemRW);
+    int rc = pThis->pOps->pfnPollOne(pThis->pvThis, fEvents, cMillies, fIntr, pfRetEvents);
+    RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    return rc;
 }
 
 
@@ -343,13 +960,105 @@ RTDECL(RTFOFF)      RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos)
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, -1);
 
     RTFOFF off;
+    RTVFS_READ_LOCK(pThis->hSemRW);
     int rc = pThis->pOps->pfnTell(pThis->pvThis, &off);
+    RTVFS_READ_UNLOCK(pThis->hSemRW);
     if (RT_FAILURE(rc))
         off = rc;
     return off;
 }
 
 
+RTDECL(int)         RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, -1);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, -1);
+    AssertReturn(cb >= 0, VERR_INVALID_PARAMETER);
+
+    int rc;
+    if (pThis->pOps->pfnSkip)
+    {
+        RTVFS_WRITE_LOCK(pThis->hSemRW);
+        rc = pThis->pOps->pfnSkip(pThis->pvThis, cb);
+        RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    }
+    else
+    {
+        void *pvBuf = RTMemTmpAlloc(_64K);
+        if (pvBuf)
+        {
+            rc = VINF_SUCCESS;
+            while (cb > 0)
+            {
+                size_t cbToRead = RT_MIN(cb, _64K);
+                RTVFS_WRITE_LOCK(pThis->hSemRW);
+                rc = RTVfsIoStrmRead(hVfsIos, pvBuf, cbToRead, NULL);
+                RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+                if (RT_FAILURE(rc))
+                    break;
+                cb -= cbToRead;
+            }
+
+            RTMemTmpFree(pvBuf);
+        }
+        else
+            rc = VERR_NO_TMP_MEMORY;
+    }
+    return rc;
+}
+
+
+RTDECL(int)         RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
+{
+    RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    AssertPtrReturn(pThis, -1);
+    AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, -1);
+
+    int rc;
+    if (pThis->pOps->pfnSkip)
+    {
+        RTVFS_WRITE_LOCK(pThis->hSemRW);
+        rc = pThis->pOps->pfnZeroFill(pThis->pvThis, cb);
+        RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+    }
+    else
+    {
+        void *pvBuf = RTMemTmpAllocZ(_64K);
+        if (pvBuf)
+        {
+            rc = VINF_SUCCESS;
+            while (cb > 0)
+            {
+                size_t cbToWrite = RT_MIN(cb, _64K);
+                RTVFS_WRITE_LOCK(pThis->hSemRW);
+                rc = RTVfsIoStrmWrite(hVfsIos, pvBuf, cbToWrite, NULL);
+                RTVFS_WRITE_UNLOCK(pThis->hSemRW);
+                if (RT_FAILURE(rc))
+                    break;
+                cb -= cbToWrite;
+            }
+
+            RTMemTmpFree(pvBuf);
+        }
+        else
+            rc = VERR_NO_TMP_MEMORY;
+    }
+    return rc;
+}
+
+
+
+
+
+
+/*
+ *
+ *  F I L E   F I L E   F I L E
+ *  F I L E   F I L E   F I L E
+ *  F I L E   F I L E   F I L E
+ *
+ */
 
 RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs,
                          PRTVFSFILE phVfsFile, void **ppvInstance)
@@ -402,6 +1111,63 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
 }
 
 
+RTDECL(int)         RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint32_t fOpen, PRTVFSFILE phVfsFile)
+{
+    /*
+     * Validate input.
+     */
+    RTVFSINTERNAL *pThis = hVfs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertPtrReturn(phVfsFile, VERR_INVALID_POINTER);
+
+    int rc = rtFileRecalcAndValidateFlags(&fOpen);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Parse the path, assume current directory is root since we've got no
+     * caller context here.
+     */
+    PRTVFSPARSEDPATH pPath;
+    rc = RTVfsParsePathA(pszFilename, "/", &pPath);
+    if (RT_SUCCESS(rc))
+    {
+        if (!pPath->fDirSlash)
+        {
+            /*
+             * Tranverse the path, resolving the parent node and any symlinks
+             * in the final element, and ask the directory to open the file.
+             */
+            RTVFSDIRINTERNAL *pVfsParentDir;
+            rc = rtVfsTraverseToParent(pThis, pPath, true /*fFollowSymlink*/, &pVfsParentDir);
+            if (RT_SUCCESS(rc))
+            {
+                const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
+
+                /** @todo there is a symlink creation race here. */
+                RTVFS_WRITE_LOCK(pVfsParentDir->hSemRW);
+                rc = pVfsParentDir->pOps->pfnOpenFile(pVfsParentDir->pvThis, pszEntryName, fOpen, phVfsFile);
+                RTVFS_WRITE_UNLOCK(pVfsParentDir->hSemRW);
+
+                RTVfsDirRelease(pVfsParentDir);
+
+                if (RT_SUCCESS(rc))
+                {
+                    AssertPtr(*phVfsFile);
+                    Assert((*phVfsFile)->uMagic == RTVFSFILE_MAGIC);
+                }
+            }
+        }
+        else
+            rc = VERR_INVALID_PARAMETER;
+        RTVfsParsePathFree(pPath);
+    }
+    return rc;
+}
+
+
 RTDECL(uint32_t)    RTVfsFileRetain(RTVFSFILE hVfsFile)
 {
     RTVFSFILEINTERNAL *pThis = hVfsFile;
@@ -420,8 +1186,11 @@ RTDECL(uint32_t)    RTVfsFileRelease(RTVFSFILE hVfsFile)
     uint32_t cRefs = rtVfsRelease(&pThis->Stream.cRefs);
     if (!cRefs)
     {
+        RTVFS_WRITE_LOCK(pThis->Stream.hSemRW);
         ASMAtomicWriteU32(&pThis->uMagic, RTVFSFILE_MAGIC_DEAD);
         ASMAtomicWriteU32(&pThis->Stream.uMagic, RTVFSIOSTREAM_MAGIC_DEAD);
+        RTVFS_WRITE_UNLOCK(pThis->Stream.hSemRW);
+
         pThis->pOps->Stream.Obj.pfnClose(pThis->Stream.pvThis);
         RTMemFree(pThis);
     }

@@ -27,6 +27,7 @@
 #define ___iprt_vfslowlevel_h
 
 #include <iprt/vfs.h>
+#include <iprt/param.h>
 
 
 RT_C_DECLS_BEGIN
@@ -86,7 +87,7 @@ typedef struct RTVFSOPS
     uintptr_t               uEndMarker;
 } RTVFSOPS;
 /** Pointer to constant VFS operations. */
-typedef RTVFSOPS const PCRTVFSOPS;
+typedef RTVFSOPS const *PCRTVFSOPS;
 
 /** The RTVFSOPS structure version. */
 #define RTVFSOPS_VERSION            RT_MAKE_U32_FROM_U8(0xff,0x0f,1,0)
@@ -111,6 +112,8 @@ typedef enum RTVFSOBJTYPE
     RTVFSOBJTYPE_IOSTREAM,
     /** File. */
     RTVFSOBJTYPE_FILE,
+    /** Symbolic link. */
+    RTVFSOBJTYPE_SYMLINK,
     /** End of valid object types. */
     RTVFSOBJTYPE_END,
     /** Pure I/O stream. */
@@ -241,6 +244,29 @@ typedef struct RTVFSDIROPS
     RTVFSOBJSETOPS          ObjSet;
 
     /**
+     * Opens a directory entry for traversal purposes.
+     *
+     * Method which sole purpose is helping the path traversal.  Only one of
+     * the three output variables will be set, the others will left untouched
+     * (caller sets them to NIL).
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_PATH_NOT_FOUND if @a pszEntry was not found.
+     * @param   pvThis          The implementation specific directory data.
+     * @param   pszEntry        The name of the directory entry to remove.
+     * @param   phVfsDir        If not NULL and it is a directory, open it and
+     *                          return the handle here.
+     * @param   phVfsSymlink    If not NULL and it is a symbolic link, open it
+     *                          and return the handle here.
+     * @param   phVfsMounted    If not NULL and it is a mounted VFS directory,
+     *                          reference it and return the handle here.
+     * @todo    Should com dir, symlinks and mount points using some common
+     *          ancestor "class".
+     */
+    DECLCALLBACKMEMBER(int, pfnTraversalOpen)(void *pvThis, const char *pszEntry, PRTVFSDIR phVfsDir,
+                                              PRTVFSSYMLINK phVfsSymlink, PRTVFS phVfsMounted);
+
+    /**
      * Open or create a file.
      *
      * @returns IPRT status code.
@@ -349,6 +375,43 @@ typedef RTVFSDIROPS const *PCRTVFSDIROPS;
 
 
 /**
+ * The symbolic link operations.
+ *
+ * @extends RTVFSOBJOPS
+ * @extends RTVFSOBJSETOPS
+ */
+typedef struct RTVFSSYMLINKOPS
+{
+    /** The basic object operation.  */
+    RTVFSOBJOPS             Obj;
+    /** The structure version (RTVFSSYMLINKOPS_VERSION). */
+    uint32_t                uVersion;
+    /** Reserved field, MBZ. */
+    uint32_t                fReserved;
+    /** The object setter operations. */
+    RTVFSOBJSETOPS          ObjSet;
+
+    /**
+     * Read the symbolic link target.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific symbolic link data.
+     * @param   pszTarget   The target buffer.
+     * @param   cbTarget    The size of the target buffer.
+     * @sa      RTSymlinkRead
+     */
+    DECLCALLBACKMEMBER(int, pfnRead)(void *pvThis, char *pszTarget, size_t cbTarget);
+
+    /** Marks the end of the structure (RTVFSSYMLINKOPS_VERSION). */
+    uintptr_t               uEndMarker;
+} RTVFSSYMLINKOPS;
+/** Pointer to const symbolic link operations. */
+typedef RTVFSSYMLINKOPS const *PCRTVFSSYMLINKOPS;
+/** The RTVFSSYMLINKOPS structure version. */
+#define RTVFSSYMLINKOPS_VERSION     RT_MAKE_U32_FROM_U8(0xff,0x4f,1,0)
+
+
+/**
  * The basis for all I/O objects (files, pipes, sockets, devices, ++).
  *
  * @extends RTVFSOBJOPS
@@ -431,6 +494,26 @@ typedef struct RTVFSIOSTREAMOPS
      */
     DECLCALLBACKMEMBER(int, pfnTell)(void *pvThis, PRTFOFF poffActual);
 
+    /**
+     * Skips @a cb ahead in the stream.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific file data.
+     * @param   cb          The number bytes to skip.
+     * @remarks This is optional and can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnSkip)(void *pvThis, RTFOFF cb);
+
+    /**
+     * Fills the stream with @a cb zeros.
+     *
+     * @returns IPRT status code.
+     * @param   pvThis      The implementation specific file data.
+     * @param   cb          The number of zero bytes to insert.
+     * @remarks This is optional and can be NULL.
+     */
+    DECLCALLBACKMEMBER(int, pfnZeroFill)(void *pvThis, RTFOFF cb);
+
     /** Marks the end of the structure (RTVFSIOSTREAMOPS_VERSION). */
     uintptr_t               uEndMarker;
 } RTVFSIOSTREAMOPS;
@@ -438,7 +521,7 @@ typedef struct RTVFSIOSTREAMOPS
 typedef RTVFSIOSTREAMOPS const *PCRTVFSIOSTREAMOPS;
 
 /** The RTVFSIOSTREAMOPS structure version. */
-#define RTVFSIOSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x4f,1,0)
+#define RTVFSIOSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x5f,1,0)
 
 
 /**
@@ -489,7 +572,7 @@ typedef struct RTVFSFILEOPS
 typedef RTVFSFILEOPS const *PCRTVFSFILEOPS;
 
 /** The RTVFSFILEOPS structure version. */
-#define RTVFSFILEOPS_VERSION        RT_MAKE_U32_FROM_U8(0xff,0x5f,1,0)
+#define RTVFSFILEOPS_VERSION        RT_MAKE_U32_FROM_U8(0xff,0x6f,1,0)
 
 /**
  * Creates a new VFS file handle.
@@ -507,6 +590,94 @@ typedef RTVFSFILEOPS const *PCRTVFSFILEOPS;
 RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs,
                          PRTVFSFILE phVfsFile, void **ppvInstance);
 
+
+/** @defgroup grp_rt_vfs_ll_util        VFS Utility APIs
+ * @{ */
+
+/**
+ * Parsed path.
+ */
+typedef struct RTVFSPARSEDPATH
+{
+    /** The length of the path in szCopy. */
+    uint16_t        cch;
+    /** The number of path components. */
+    uint16_t        cComponents;
+    /** Set if the path ends with slash, indicating that it's a directory
+     * reference and not a file reference.  The slash has been removed from
+     * the copy. */
+    bool            fDirSlash;
+    /** The offset where each path component starts, i.e. the char after the
+     * slash.  The array has cComponents + 1 entries, where the final one is
+     * cch + 1 so that one can always terminate the current component by
+     * szPath[aoffComponent[i] - 1] = '\0'. */
+    uint16_t        aoffComponents[RTPATH_MAX / 2 + 1];
+    /** A normalized copy of the path.
+     * Reserve some extra space so we can be more relaxed about overflow
+     * checks and terminator paddings, especially when recursing. */
+    char            szPath[RTPATH_MAX];
+} RTVFSPARSEDPATH;
+/** Pointer to a parsed path. */
+typedef RTVFSPARSEDPATH *PRTVFSPARSEDPATH;
+
+/** The max accepted path length.
+ * This must be a few chars shorter than RTVFSPARSEDPATH::szPath because we
+ * use two terminators and wish be a little bit lazy with checking. */
+#define RTVFSPARSEDPATH_MAX     (RTPATH_MAX - 4U)
+
+/**
+ * Appends @a pszPath (relative) to the already parsed path @a pPath.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_FILENAME_TOO_LONG
+ * @retval  VERR_INTERNAL_ERROR_4
+ * @param   pPath               The parsed path to append @a pszPath onto.
+ *                              This is both input and output.
+ * @param   pszPath             The path to append.  This must be relative.
+ * @param   piRestartComp       The component to restart parsing at.  This is
+ *                              input/output.  The input does not have to be
+ *                              within the valid range.  Optional.
+ */
+RTDECL(int) RTVfsParsePathAppend(PRTVFSPARSEDPATH pPath, const char *pszPath, uint16_t *piRestartComp);
+
+/**
+ * Parses a path.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_FILENAME_TOO_LONG
+ * @param   pPath               Where to store the parsed path.
+ * @param   pszPath             The path to parse.  Absolute or relative to @a
+ *                              pszCwd.
+ * @param   pszCwd              The current working directory.  Must be
+ *                              absolute.
+ */
+RTDECL(int) RTVfsParsePath(PRTVFSPARSEDPATH pPath, const char *pszPath, const char *pszCwd);
+
+/**
+ * Same as RTVfsParsePath except that it allocates a temporary buffer.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_TMP_MEMORY
+ * @retval  VERR_FILENAME_TOO_LONG
+ * @param   pszPath             The path to parse.  Absolute or relative to @a
+ *                              pszCwd.
+ * @param   pszCwd              The current working directory.  Must be
+ *                              absolute.
+ * @param   ppPath              Where to store the pointer to the allocated
+ *                              buffer containing the parsed path.  This must
+ *                              be freed by calling RTVfsParsePathFree.  NULL
+ *                              will be stored on failured.
+ */
+RTDECL(int) RTVfsParsePathA(const char *pszPath, const char *pszCwd, PRTVFSPARSEDPATH *ppPath);
+
+/**
+ * Frees a buffer returned by RTVfsParsePathA.
+ *
+ * @param   pPath               The parsed path buffer to free.  NULL is fine.
+ */
+RTDECL(void) RTVfsParsePathFree(PRTVFSPARSEDPATH pPath);
+
+/** @}  */
 
 /** @} */
 

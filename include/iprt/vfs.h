@@ -119,13 +119,50 @@ RTDECL(uint32_t)    RTVfsGetAttachmentCount(RTVFS hVfs);
 RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *phVfsAttached, uint32_t *pfFlags,
                                        char *pszMountPoint, size_t cbMountPoint);
 
+
 /** @defgroup grp_vfs_dir           VFS Directory API
  * @{
  */
+
+/**
+ * Retains a reference to the VFS directory handle.
+ *
+ * @returns New reference count on success, UINT32_MAX on failure.
+ * @param   hVfsDir         The VFS directory handle.
+ */
+RTDECL(uint32_t)    RTVfsDirRetain(RTVFSDIR hVfsDir);
+
+/**
+ * Releases a reference to the VFS directory handle.
+ *
+ * @returns New reference count on success (0 if closed), UINT32_MAX on failure.
+ * @param   hVfsIos         The VFS directory handle.
+ */
+RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir);
+
 /** @}  */
 
 
-/** @defgroup grp_vfs_iostream      VFS I/O Stream
+/** @defgroup grp_vfs_iostream      VFS Symbolic Link API
+ * @{
+ */
+
+/**
+ * Read the symbolic link target.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsSym         The VFS symbolic link handle.
+ * @param   pszTarget       The target buffer.
+ * @param   cbTarget        The size of the target buffer.
+ * @sa      RTSymlinkRead
+ */
+RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size_t cbTarget);
+
+/** @}  */
+
+
+
+/** @defgroup grp_vfs_iostream      VFS I/O Stream API
  * @{
  */
 
@@ -263,6 +300,24 @@ RTDECL(RTFOFF)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTM
  * @sa      RTFileTell
  */
 RTDECL(RTFOFF)      RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Skips @a cb ahead in the stream.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   cb              The number bytes to skip.
+ */
+RTDECL(int)         RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb);
+
+/**
+ * Fills the stream with @a cb zeros.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ * @param   cb              The number of zero bytes to insert.
+ */
+RTDECL(int)         RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb);
 /** @} */
 
 
