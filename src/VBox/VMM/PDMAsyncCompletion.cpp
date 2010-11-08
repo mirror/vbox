@@ -1066,9 +1066,6 @@ static PPDMASYNCCOMPLETIONTASK pdmR3AsyncCompletionGetTask(PPDMASYNCCOMPLETIONEN
 
     if (RT_LIKELY(pTask))
     {
-        /* Get ID of the task. */
-        pTask->uTaskId   = ASMAtomicIncU32(&pEndpoint->uTaskIdNext);
-
         /* Initialize common parts. */
         pTask->pvUser    = pvUser;
         pTask->pEndpoint = pEndpoint;
@@ -1218,8 +1215,6 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
             pEndpoint->pNext             = NULL;
             pEndpoint->pPrev             = NULL;
             pEndpoint->pEpClass          = pEndpointClass;
-            pEndpoint->uTaskIdNext       = 0;
-            pEndpoint->fTaskIdWraparound = false;
             pEndpoint->pTemplate         = pTemplate;
             pEndpoint->pszUri            = RTStrDup(pszFilename);
             pEndpoint->cUsers            = 1;
