@@ -588,6 +588,30 @@ static int vboxVideoUpdateCustomVideoModes(PDEVICE_EXTENSION DeviceExtension, VB
     return display;
 }
 
+static bool vboxVideoModesMatch(VIDEO_MODE_INFORMATION *pMode1, VIDEO_MODE_INFORMATION *pMode2)
+{
+    return pMode1->VisScreenHeight == pMode2->VisScreenHeight
+            && pMode1->VisScreenWidth == pMode2->VisScreenWidth
+            && pMode1->BitsPerPlane == pMode2->BitsPerPlane;
+}
+
+static DECLINLINE(void) vboxVideoChackModeAdd(VIDEO_MODE_INFORMATION *pModes, int *pcNumModes)
+{
+    const int cNumModes = *pcNumModes;
+    for (int i = 0; i < cNumModes; ++i)
+    {
+        if (vboxVideoModesMatch(&pModes[i], &pModes[cNumModes]))
+            return;
+    }
+    (*pcNumModes)++;
+}
+
+#ifdef VBOX_WITH_WDDM
+# define VBOXVIDEOMODE_ADDED(_aModes, _pcModes) vboxVideoChackModeAdd(_aModes, _pcModes)
+#else
+# define VBOXVIDEOMODE_ADDED(_aModes, _pcModes) do { (*(_pcModes))++; } while (0)
+#endif
+
 static int vboxVideoBuildModesTable(PDEVICE_EXTENSION DeviceExtension, int iDisplay,
         VIDEO_MODE_INFORMATION * VideoModes, uint32_t * pcVideoModes, int32_t * pPreferrableMode)
 {
@@ -1141,7 +1165,8 @@ static int vboxVideoBuildModesTable(PDEVICE_EXTENSION DeviceExtension, int iDisp
             VideoModes[cNumVideoModes].VideoMemoryBitmapWidth       = xres;
             VideoModes[cNumVideoModes].VideoMemoryBitmapHeight      = yres - yOffset;
             VideoModes[cNumVideoModes].DriverSpecificAttributeFlags = 0;
-            ++cNumVideoModes;
+
+            VBOXVIDEOMODE_ADDED(VideoModes, &cNumVideoModes);
 
             /* next run */
             curKeyNo++;
@@ -1193,7 +1218,8 @@ static int vboxVideoBuildModesTable(PDEVICE_EXTENSION DeviceExtension, int iDisp
             CustomVideoModes[iDisplay].ModeIndex = cNumVideoModes;
             VideoModes[cNumVideoModes] = CustomVideoModes[iDisplay];
             iPreferredVideoMode = cNumVideoModes;
-            ++cNumVideoModes;
+
+            VBOXVIDEOMODE_ADDED(VideoModes, &cNumVideoModes);
         }
 
     } while(0);
