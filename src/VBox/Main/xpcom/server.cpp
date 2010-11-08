@@ -484,7 +484,7 @@ public:
 
         if (sInstance != NULL)
         {
-            /* Either posting a destruction event falied for some reason (most
+            /* Either posting a destruction event failed for some reason (most
              * likely, the quit event has been received before the last release),
              * or the client has terminated abnormally w/o releasing its
              * VirtualBox instance (so NS_ShutdownXPCOM() is doing a cleanup).
