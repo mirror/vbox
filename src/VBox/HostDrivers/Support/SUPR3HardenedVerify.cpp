@@ -80,6 +80,10 @@
 /** The max path length acceptable for a trusted path. */
 #define SUPR3HARDENED_MAX_PATH      260U
 
+#ifdef RT_OS_SOLARIS
+# define dirfd(x) ((d)->dd_fd)
+#endif
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
