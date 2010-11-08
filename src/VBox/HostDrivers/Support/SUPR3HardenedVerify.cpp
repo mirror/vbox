@@ -81,7 +81,7 @@
 #define SUPR3HARDENED_MAX_PATH      260U
 
 #ifdef RT_OS_SOLARIS
-# define dirfd(x) ((d)->d_fd)
+# define dirfd(d) ((d)->d_fd)
 #endif
 
 
