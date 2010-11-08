@@ -101,28 +101,58 @@ public:
     /**
      * Create a partial copy of another MiniString.
      *
+     * @param   a_rSrc          The source string.
+     * @param   a_offSrc        The byte offset into the source string.
      * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
      *                          to copy from the source string.
-     * @param   a_rSrc          The source string.
      */
-    MiniString(size_t a_cchSrc, const MiniString &a_rSrc)
+    MiniString(const MiniString &a_rSrc, size_t a_offSrc, size_t a_cchSrc = npos)
     {
-        Assert(a_cchSrc <= a_rSrc.m_cch);
-        copyFromN(a_rSrc.m_psz, RT_MIN(a_cchSrc, a_rSrc.m_cch));
+        if (a_offSrc < a_rSrc.m_cch)
+            copyFromN(&a_rSrc.m_psz[a_offSrc], RT_MIN(a_cchSrc, a_rSrc.m_cch - a_offSrc));
+        else
+        {
+            m_psz = NULL;
+            m_cch = 0;
+            m_cbAllocated = 0;
+        }
     }
 
     /**
      * Create a partial copy of a C string.
      *
-     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
-     *                          to copy from the source string.
      * @param   a_pszSrc        The source string (UTF-8).
+     * @param   a_cchSrc        The max number of chars (encoded UTF-8 bytes)
+     *                          to copy from the source string.  This must not
+     *                          be '0' as the compiler could easily mistake
+     *                          that for the va_list constructor.
      */
-    MiniString(size_t a_cchSrc, const char *a_pszSrc)
+    MiniString(const char *a_pszSrc, size_t a_cchSrc)
     {
         size_t cchMax = a_pszSrc ? RTStrNLen(a_pszSrc, a_cchSrc) : 0;
-        Assert(a_cchSrc <= cchMax);
         copyFromN(a_pszSrc, RT_MIN(a_cchSrc, cchMax));
+    }
+
+    /**
+     * Create a string containing @a a_cTimes repetitions of the character @a
+     * a_ch.
+     *
+     * @param   a_cTimes        The number of times the character is repeated.
+     * @param   a_ch            The character to fill the string with.
+     */
+    MiniString(size_t a_cTimes, char a_ch)
+        : m_psz(NULL),
+          m_cch(0),
+          m_cbAllocated(0)
+    {
+        Assert((unsigned)a_ch < 0x80);
+        if (a_cTimes)
+        {
+            reserve(a_cTimes + 1);
+            memset(m_psz, a_ch, a_cTimes);
+            m_psz[a_cTimes] = '\0';
+            m_cch = a_cTimes;
+        }
     }
 
     /**
@@ -133,12 +163,12 @@ public:
      * @param   a_va            Argument vector containing the arguments
      *                          specified by the format string.
      * @sa      printfV
+     * @remarks Not part of std::string.
      */
     MiniString(const char *a_pszFormat, va_list a_va)
         : m_psz(NULL),
           m_cch(0),
           m_cbAllocated(0)
-
     {
         printfV(a_pszFormat, a_va);
     }
@@ -782,7 +812,8 @@ protected:
             {
                 m_cch = cchSrc;
                 m_cbAllocated = cchSrc + 1;
-                memcpy(m_psz, pcszSrc, cchSrc + 1);
+                memcpy(m_psz, pcszSrc, cchSrc);
+                m_psz[cchSrc] = '\0';
             }
             else
             {
