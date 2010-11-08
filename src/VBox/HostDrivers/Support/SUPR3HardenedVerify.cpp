@@ -948,7 +948,7 @@ static int supR3HardenedVerifyPathSanity(const char *pszPath, char *pszErr, size
                 break;
             }
             *pszDst++ = *pszSrc++;
-            if (pszDst - &pInfo->szPath[0] >= SUPR3HARDENED_MAX_PATH)
+            if ((uintptr_t)(pszDst - &pInfo->szPath[0]) >= SUPR3HARDENED_MAX_PATH)
                 return supR3HardenedSetError3(VERR_SUPLIB_PATH_TOO_LONG, pszErr, cbErr,
                                               "The path is too long: '", pszPath, "'");
         }
