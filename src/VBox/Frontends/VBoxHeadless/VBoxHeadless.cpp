@@ -383,7 +383,7 @@ static void SaveState(int sig)
     RTPrintf("Signal received, saving state.\n");
 
     HRESULT rc = gConsole->SaveState(progress.asOutParam());
-    if (FAILED(S_OK))
+    if (FAILED(rc))
     {
         RTPrintf("Error saving state! rc = 0x%x\n", rc);
         return;
