@@ -808,6 +808,40 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Update(IDirect3DDevice9Ex *iface, D3DP
     return D3D_OK;
 }
 
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9CreateCubeTexture(IDirect3DDevice9Ex *iface,
+            UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format,
+            D3DPOOL pool, IDirect3DCubeTexture9 **texture, HANDLE *shared_handle,
+            void *pvClientMem) /* <- extension arg to pass in the client memory buffer,
+                                *    applicable ONLY for SYSMEM textures */
+{
+    IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
+    IDirect3DCubeTexture9Impl *object;
+    HRESULT hr;
+
+    TRACE("iface %p, edge_length %u, levels %u, usage %#x, format %#x, pool %#x, texture %p, shared_handle %p.\n",
+            iface, edge_length, levels, usage, format, pool, texture, shared_handle);
+
+    object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
+    if (!object)
+    {
+        ERR("Failed to allocate cube texture memory.\n");
+        return D3DERR_OUTOFVIDEOMEMORY;
+    }
+
+    hr = cubetexture_init(object, This, edge_length, levels, usage, format, pool, shared_handle, pvClientMem);
+    if (FAILED(hr))
+    {
+        WARN("Failed to initialize cube texture, hr %#x.\n", hr);
+        HeapFree(GetProcessHeap(), 0, object);
+        return hr;
+    }
+
+    TRACE("Created cube texture %p.\n", object);
+    *texture = (IDirect3DCubeTexture9 *)object;
+
+    return D3D_OK;
+}
+
 #endif
 
 static HRESULT WINAPI IDirect3DDevice9Impl_CreateTexture(IDirect3DDevice9Ex *iface,
@@ -885,6 +919,10 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateCubeTexture(IDirect3DDevice9Ex 
         UINT edge_length, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool,
         IDirect3DCubeTexture9 **texture, HANDLE *shared_handle)
 {
+#ifdef VBOX_WITH_WDDM
+    return VBoxWineExD3DDev9CreateCubeTexture(iface, edge_length, levels, usage, format,
+            pool, texture, shared_handle, NULL);
+#else
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
     IDirect3DCubeTexture9Impl *object;
     HRESULT hr;
@@ -911,6 +949,7 @@ static HRESULT WINAPI IDirect3DDevice9Impl_CreateCubeTexture(IDirect3DDevice9Ex 
     *texture = (IDirect3DCubeTexture9 *)object;
 
     return D3D_OK;
+#endif
 }
 
 static HRESULT WINAPI IDirect3DDevice9Impl_CreateVertexBuffer(IDirect3DDevice9Ex *iface, UINT size, DWORD usage,

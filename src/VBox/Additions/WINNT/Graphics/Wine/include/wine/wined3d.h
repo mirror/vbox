@@ -7445,7 +7445,12 @@ typedef struct IWineD3DDeviceVtbl {
         WINED3DPOOL pool,
         IWineD3DCubeTexture **texture,
         IUnknown *parent,
-        const struct wined3d_parent_ops *parent_ops);
+        const struct wined3d_parent_ops *parent_ops
+#ifdef VBOX_WITH_WDDM
+        , HANDLE *shared_handle
+        , void *pvClientMem
+#endif
+        );
 
     HRESULT (STDMETHODCALLTYPE *CreateQuery)(
         IWineD3DDevice* This,
@@ -8115,7 +8120,11 @@ interface IWineD3DDevice {
 #endif
 #define IWineD3DDevice_CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateVolumeTexture(This,width,height,depth,levels,usage,format,pool,texture,parent,parent_ops)
 #define IWineD3DDevice_CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops) (This)->lpVtbl->CreateVolume(This,width,height,depth,usage,format,pool,volume,parent,parent_ops)
+#ifdef VBOX_WITH_WDDM
+#define IWineD3DDevice_CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem) (This)->lpVtbl->CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops,shared_handle,pvClientMem)
+#else
 #define IWineD3DDevice_CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops) (This)->lpVtbl->CreateCubeTexture(This,edge_length,levels,usage,format,pool,texture,parent,parent_ops)
+#endif
 #define IWineD3DDevice_CreateQuery(This,type,query,parent) (This)->lpVtbl->CreateQuery(This,type,query,parent)
 #define IWineD3DDevice_CreateSwapChain(This,present_parameters,swapchain,parent,surface_type) (This)->lpVtbl->CreateSwapChain(This,present_parameters,swapchain,parent,surface_type)
 #define IWineD3DDevice_CreateVertexDeclaration(This,declaration,parent,parent_ops,elements,element_count) (This)->lpVtbl->CreateVertexDeclaration(This,declaration,parent,parent_ops,elements,element_count)
