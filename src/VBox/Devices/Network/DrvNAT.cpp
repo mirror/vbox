@@ -130,6 +130,8 @@ typedef struct DRVNAT
 {
     /** The network interface. */
     PDMINETWORKUP           INetworkUp;
+    /** The network NAT Engine configureation. */
+    PDMINETWORKNATCONFIG    INetworkNATCfg;
     /** The port we're attached to. */
     PPDMINETWORKDOWN        pIAboveNet;
     /** The network config of the port we're attached to. */
@@ -649,6 +651,55 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
     RTReqFree(pReq);
 }
 
+static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis,bool fRemove, 
+                                                const char *pNatRuleName, bool fUdp, const char *pHostIp,
+                                                uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
+{
+    RTMAC Mac;
+    RT_ZERO(Mac); /* can't get MAC here */
+    if (pThis->pIAboveConfig)
+        pThis->pIAboveConfig->pfnGetMac(pThis->pIAboveConfig, &Mac);
+
+    struct in_addr guestIp, hostIp;
+
+    if (   pHostIp == NULL 
+        || inet_aton(pHostIp, &hostIp) == 0)
+        hostIp.s_addr = INADDR_ANY;
+
+    if (   pGuestIp == NULL
+        || inet_aton(pGuestIp, &guestIp) == 0)
+        guestIp.s_addr = pThis->GuestIP;
+
+    if (fRemove)
+        slirp_remove_redirect(pThis->pNATState, fUdp, hostIp, u16HostPort, guestIp, u16GuestPort);
+    else
+        slirp_add_redirect(pThis->pNATState, fUdp, hostIp, u16HostPort, guestIp, u16GuestPort, Mac.au8);
+}
+
+DECLCALLBACK(int) drvNATNetworkNatConfig_RedirectRuleCommand(PPDMINETWORKNATCONFIG pInterface, bool fRemove, 
+                                                   const char *pNatRuleName, bool fUdp, const char *pHostIp,
+                                                   uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
+{
+    LogFlow(("drvNATNetworkNatConfig_ApplyNatCommand: cRules=%s\n", (pNatRuleName ? pNatRuleName: "")));
+    PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkNATCfg);
+    PRTREQ pReq;
+    int rc = RTReqCallEx(pThis->pSlirpReqQueue, &pReq, 0 /*cMillies*/, RTREQFLAGS_VOID,
+                         (PFNRT)drvNATNotifyApplyPortForwardCommand, 8, pThis, fRemove,
+                          pNatRuleName, fUdp, pHostIp, u16HostPort, pGuestIp, u16GuestPort);
+    if (RT_LIKELY(rc == VERR_TIMEOUT))
+    {
+        drvNATNotifyNATThread(pThis, "drvNATNetworkNatConfig_RedirectRuleCommand");
+        rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+    }
+    else
+        AssertRC(rc);
+    
+    RTReqFree(pReq);
+    port_forwarding_done:
+    return rc;
+}
+
 /**
  * NAT thread handling the slirp stuff.
  *
@@ -895,6 +946,7 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const cha
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKUP, &pThis->INetworkUp);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKNATCONFIG, &pThis->INetworkNATCfg);
     return NULL;
 }
 
@@ -1005,7 +1057,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
          */
         struct in_addr BindIP;
         GETIP_DEF(rc, pThis, pNode, BindIP, INADDR_ANY);
-        if (slirp_redir(pThis->pNATState, fUDP, BindIP, iHostPort, GuestIP, iGuestPort, Mac.au8) < 0)
+        if (slirp_add_redirect(pThis->pNATState, fUDP, BindIP, iHostPort, GuestIP, iGuestPort, Mac.au8) < 0)
             return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS,
                                        N_("NAT#%d: configuration error: failed to set up "
                                        "redirection of %d to %d. Probably a conflict with "
@@ -1110,6 +1162,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->INetworkUp.pfnEndXmit            = drvNATNetworkUp_EndXmit;
     pThis->INetworkUp.pfnSetPromiscuousMode = drvNATNetworkUp_SetPromiscuousMode;
     pThis->INetworkUp.pfnNotifyLinkChanged  = drvNATNetworkUp_NotifyLinkChanged;
+
+    /* NAT engine configuration */
+    pThis->INetworkNATCfg.pfnRedirectRuleCommand = drvNATNetworkNatConfig_RedirectRuleCommand;
 
     /*
      * Get the configuration settings.

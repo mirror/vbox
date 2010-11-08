@@ -84,6 +84,7 @@ struct port_forward_rule
     struct in_addr bind_ip;
     uint8_t mac_address[6]; /*need ETH_ALEN here */
     int activated;
+    struct socket *so;
     LIST_ENTRY(port_forward_rule) list;
 };
 LIST_HEAD(port_forward_rule_list, port_forward_rule);

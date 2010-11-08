@@ -1091,6 +1091,30 @@ const char *Console::sSSMConsoleUnit = "ConsoleData";
 //static
 uint32_t Console::sSSMConsoleVer = 0x00010001;
 
+inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterType)
+{
+    switch (adapterType)
+    {
+        case NetworkAdapterType_Am79C970A:
+        case NetworkAdapterType_Am79C973:
+            return "pcnet";
+#ifdef VBOX_WITH_E1000
+        case NetworkAdapterType_I82540EM:
+        case NetworkAdapterType_I82543GC:
+        case NetworkAdapterType_I82545EM:
+            return "e1000";
+#endif
+#ifdef VBOX_WITH_VIRTIO
+        case NetworkAdapterType_Virtio:
+            return "virtio-net";
+#endif
+        default:
+            AssertFailed();
+            return "unknown";
+    }
+    return NULL;
+}
+
 /**
  * Loads various console data stored in the saved state file.
  * This method does validation of the state file and returns an error info
@@ -3414,37 +3438,13 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
             if (SUCCEEDED(rc))
             {
                 /*
-                 * Find the pcnet instance, get the config interface and update
+                 * Find the adapter instance, get the config interface and update
                  * the link state.
                  */
                 NetworkAdapterType_T adapterType;
                 rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
                 AssertComRC(rc);
-                const char *pszAdapterName = NULL;
-                switch (adapterType)
-                {
-                    case NetworkAdapterType_Am79C970A:
-                    case NetworkAdapterType_Am79C973:
-                        pszAdapterName = "pcnet";
-                        break;
-#ifdef VBOX_WITH_E1000
-                    case NetworkAdapterType_I82540EM:
-                    case NetworkAdapterType_I82543GC:
-                    case NetworkAdapterType_I82545EM:
-                        pszAdapterName = "e1000";
-                        break;
-#endif
-#ifdef VBOX_WITH_VIRTIO
-                    case NetworkAdapterType_Virtio:
-                        pszAdapterName = "virtio-net";
-                        break;
-#endif
-                    default:
-                        AssertFailed();
-                        pszAdapterName = "unknown";
-                        break;
-                }
-
+                const char *pszAdapterName = networkAdapterTypeToName(adapterType);
                 PPDMIBASE pBase;
                 int vrc = PDMR3QueryDeviceLun(mpVM, pszAdapterName, ulInstance, 0, &pBase);
                 ComAssertRC(vrc);
@@ -3495,6 +3495,89 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
     if (SUCCEEDED(rc))
         CONSOLE_DO_CALLBACKS1(OnNetworkAdapterChanged, aNetworkAdapter);
 
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
+ * Called by IInternalSessionControl::OnNATEngineChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName, 
+                                 NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    int vrc = VINF_SUCCESS;
+    PPDMINETWORKNATCONFIG pNetNatCfg = NULL;
+    /* don't trigger nat engine change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+        ULONG ulInstance;
+        rc = aNetworkAdapter->COMGETTER(Slot)(&ulInstance);
+        AssertComRC(rc);
+        if (FAILED(rc))
+            goto done;
+        /*
+         * Find the adapter instance, get the config interface and update
+         * the link state.
+         */
+        NetworkAdapterType_T adapterType;
+        rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+        AssertComRC(rc);
+        if (FAILED(rc))
+        {
+            rc = E_FAIL;
+            goto done;
+        }
+
+        const char *pszAdapterName = networkAdapterTypeToName(adapterType);
+        PPDMIBASE pBase;
+        vrc = PDMR3QueryLun(mpVM, pszAdapterName, ulInstance, 0, &pBase);
+        ComAssertRC(vrc);
+        if (RT_FAILURE(vrc))
+        {
+            rc = E_FAIL;
+            goto done;
+        }
+        NetworkAttachmentType_T attachmentType;
+        vrc = aNetworkAdapter->COMGETTER(AttachmentType)(&attachmentType);
+
+        if (   RT_FAILURE(vrc) 
+            || attachmentType != NetworkAttachmentType_NAT)
+        {
+            rc = (RT_FAILURE(vrc)) ? E_FAIL: rc;
+            goto done;
+        }
+        
+        /* look down for PDMINETWORKNATCONFIG interface */
+        while (pBase)
+        {
+            if ((pNetNatCfg = (PPDMINETWORKNATCONFIG)pBase->pfnQueryInterface(pBase, PDMINETWORKNATCONFIG_IID)))
+                break;
+            PPDMDRVINS drvins = PDMIBASE_2_PDMDRV(pBase);
+            pBase = drvins->pDownBase;
+        }
+        if (!pNetNatCfg)
+            goto done;
+        bool fUdp = (aProto == NATProtocol_UDP);
+        vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, aNatRuleRemove, Utf8Str(aRuleName).c_str(), fUdp, 
+                                                 Utf8Str(aHostIp).c_str(), aHostPort, Utf8Str(aGuestIp).c_str(), 
+                                                 aGuestPort);
+        if (RT_FAILURE(vrc))
+            rc = E_FAIL;
+    }
+done:
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
 }

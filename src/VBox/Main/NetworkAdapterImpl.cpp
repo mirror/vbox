@@ -74,7 +74,7 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
 
     unconst(mParent) = aParent;
     unconst(mNATEngine).createObject();
-    mNATEngine->init(aParent);
+    mNATEngine->init(aParent, this);
     /* mPeer is left null */
 
     m_fModified = false;
@@ -124,7 +124,7 @@ HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat)
     unconst(mParent) = aParent;
     unconst(mPeer) = aThat;
     unconst(mNATEngine).createObject();
-    mNATEngine->init(aParent, aThat->mNATEngine);
+    mNATEngine->init(aParent, this, aThat->mNATEngine);
 
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
@@ -159,7 +159,7 @@ HRESULT NetworkAdapter::initCopy(Machine *aParent, NetworkAdapter *aThat)
     /* mPeer is left null */
 
     unconst(mNATEngine).createObject();
-    mNATEngine->initCopy(aParent, aThat->mNATEngine);
+    mNATEngine->initCopy(aParent, this, aThat->mNATEngine);
 
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());

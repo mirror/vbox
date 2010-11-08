@@ -31,7 +31,7 @@
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-NATEngine::NATEngine():mParent(NULL){}
+NATEngine::NATEngine():mParent(NULL), mAdapter(NULL){}
 NATEngine::~NATEngine(){}
 
 HRESULT NATEngine::FinalConstruct()
@@ -39,7 +39,7 @@ HRESULT NATEngine::FinalConstruct()
     return S_OK;
 }
 
-HRESULT NATEngine::init(Machine *aParent)
+HRESULT NATEngine::init(Machine *aParent, INetworkAdapter *aAdapter)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -49,10 +49,11 @@ HRESULT NATEngine::init(Machine *aParent)
     mData->mNetwork.setNull();
     mData->mBindIP.setNull();
     unconst(mParent) = aParent;
+    unconst(mAdapter) = aAdapter;
     return S_OK;
 }
 
-HRESULT NATEngine::init(Machine *aParent, NATEngine *aThat)
+HRESULT NATEngine::init(Machine *aParent, INetworkAdapter *aAdapter, NATEngine *aThat)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -71,12 +72,13 @@ HRESULT NATEngine::init(Machine *aParent, NATEngine *aThat)
         mNATRules.insert(std::make_pair(it->first, it->second));
     }
     unconst(mParent) = aParent;
+    unconst(mAdapter) = aAdapter;
     unconst(mPeer) = aThat;
     autoInitSpan.setSucceeded();
     return S_OK;
 }
 
-HRESULT NATEngine::initCopy (Machine *aParent, NATEngine *aThat)
+HRESULT NATEngine::initCopy (Machine *aParent, INetworkAdapter *aAdapter, NATEngine *aThat)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -95,6 +97,7 @@ HRESULT NATEngine::initCopy (Machine *aParent, NATEngine *aThat)
     {
         mNATRules.insert(std::make_pair(it->first, it->second));
     }
+    unconst(mAdapter) = aAdapter;
     unconst(mParent) = aParent;
     autoInitSpan.setSucceeded();
     return S_OK;
@@ -264,22 +267,20 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Utf8Str name = aName;
     settings::NATRule r;
-    if (name.isEmpty())
+    const char *proto;
+    switch (aProto)
     {
-        const char *proto;
-        switch (aProto)
-        {
-            case NATProtocol_TCP:
-                proto = "tcp";
-                break;
-            case NATProtocol_UDP:
-                proto = "udp";
-                break;
-            default:
-                return E_INVALIDARG;
-        }
-        name = Utf8StrFmt("%s_%d_%d", proto, aHostPort, aGuestPort);
+        case NATProtocol_TCP:
+            proto = "tcp";
+            break;
+        case NATProtocol_UDP:
+            proto = "udp";
+            break;
+        default:
+            return E_INVALIDARG;
     }
+    if (name.isEmpty())
+        name = Utf8StrFmt("%s_%d_%d", proto, aHostPort, aGuestPort);
     r.strName = name.c_str();
     r.u32Proto = aProto;
     r.strHostIP = aBindIp;
@@ -289,6 +290,8 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
     mNATRules.insert(std::make_pair(name, r));
     mParent->setModified(Machine::IsModified_NetworkAdapters);
     m_fModified = true;
+    alock.release();
+    mParent->onNATRedirectRuleChange(mAdapter, FALSE, Bstr(name).raw(), aProto, Bstr(r.strHostIP).raw(), r.u16HostPort, Bstr(r.strGuestIP).raw(), r.u16GuestPort);
     return S_OK;
 }
 
@@ -299,14 +302,22 @@ NATEngine::RemoveRedirect(IN_BSTR aName)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Utf8Str rule;
     NATRuleMap::iterator it = mNATRules.find(aName);
     if (it == mNATRules.end())
         return E_INVALIDARG;
     mData.backup();
+    settings::NATRule r = it->second;
+    Utf8Str strHostIP = r.strHostIP;
+    Utf8Str strGuestIP = r.strGuestIP;
+    NATProtocol_T proto = r.u32Proto;
+    uint16_t u16HostPort = r.u16HostPort;
+    uint16_t u16GuestPort = r.u16GuestPort;
+                                                    
     mNATRules.erase(it);
     mParent->setModified(Machine::IsModified_NetworkAdapters);
     m_fModified = true;
+    alock.release();
+    mParent->onNATRedirectRuleChange(mAdapter, TRUE, aName, proto, Bstr(strHostIP).raw(), u16HostPort, Bstr(strGuestIP).raw(), u16GuestPort);
     return S_OK;
 }
 
