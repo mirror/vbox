@@ -1103,9 +1103,9 @@ static int vboxVideoBuildModesTable(PDEVICE_EXTENSION DeviceExtension, int iDisp
         {
             /* the mode is loaded from registry and not verified yet */
             if (vboxVideoIsVideoModeSupported(DeviceExtension, iDisplay, vramSize,
-                    VideoModes[cNumVideoModes].VideoMemoryBitmapWidth,
-                    VideoModes[cNumVideoModes].VideoMemoryBitmapHeight,
-                    VideoModes[cNumVideoModes].BitsPerPlane))
+                    CustomVideoModes[iDisplay].VideoMemoryBitmapWidth,
+                    CustomVideoModes[iDisplay].VideoMemoryBitmapHeight,
+                    CustomVideoModes[iDisplay].BitsPerPlane))
             {
                 CustomVideoModes[iDisplay].ModeIndex = iDisplay;
             }
