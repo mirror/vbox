@@ -488,14 +488,140 @@ static uint16_t expand2[256];
 static uint8_t expand4to8[16];
 #endif /* IN_RING3 */
 
+/* Update the values needed for calculating Vertical Retrace and 
+ * Display Enable status bits more or less accurately. The Display Enable
+ * bit is set (indicating *disabled* display signal) when either the
+ * horizontal (hblank) or vertical (vblank) blanking is active. The
+ * Vertical Retrace bit is set when vertical retrace (vsync) is active.
+ * Unless the CRTC is horribly misprogrammed, vsync implies vblank.
+ */
+static void vga_update_retrace_state(VGAState *s)
+{
+    unsigned        htotal_cclks, vtotal_lines, chars_per_sec;
+    unsigned        hblank_start_cclk, hblank_end_cclk, hblank_width, hblank_skew_cclks;
+    unsigned        vsync_start_line, vsync_end, vsync_width;
+    unsigned        vblank_start_line, vblank_end, vblank_width;
+    unsigned        char_dots, clock_doubled, clock_index;
+    const int       clocks[] = {25175000, 28322000, 25175000, 25175000};
+    vga_retrace_s   *r = &s->retrace_state;
+
+    /* For horizontal timings, we only care about the blanking start/end. */
+    htotal_cclks = s->cr[0x00] + 5;
+    hblank_start_cclk = s->cr[0x02];
+    hblank_end_cclk = (s->cr[0x03] & 0x1f) + ((s->cr[0x05] & 0x80) >> 2);
+    hblank_skew_cclks = (s->cr[0x03] >> 5) & 3;
+
+    /* For vertical timings, we need both the blanking start/end... */
+    vtotal_lines = s->cr[0x06] + ((s->cr[0x07] & 1) << 8) + ((s->cr[0x07] & 0x20) << 4) + 2;
+    vblank_start_line = s->cr[0x15] + ((s->cr[0x07] & 8) << 5) + ((s->cr[0x09] & 0x20) << 4);
+    vblank_end = s->cr[0x16];
+    /* ... and the vertical retrace (vsync) start/end. */
+    vsync_start_line = s->cr[0x10] + ((s->cr[0x07] & 4) << 6) + ((s->cr[0x07] & 0x80) << 2);
+    vsync_end = s->cr[0x11] & 0xf;
+
+    /* Calculate the blanking and sync widths. The way it's implemented in
+     * the VGA with limited-width compare counters is quite a piece of work.
+     */
+    hblank_width = (hblank_end_cclk - hblank_start_cclk) & 0x3f;/* 6 bits */
+    vblank_width = (vblank_end - vblank_start_line) & 0xff;     /* 8 bits */
+    vsync_width  = (vsync_end - vsync_start_line) & 0xf;        /* 4 bits */
+
+    /* Calculate the dot and character clock rates. */
+    clock_doubled = (s->sr[0x01] >> 3) & 1; /* Clock doubling bit. */
+    clock_index = (s->msr >> 2) & 3;
+    char_dots = (s->sr[0x01] & 1) ? 8 : 9;  /* 8 or 9 dots per cclk. */
+
+    chars_per_sec = clocks[clock_index] / char_dots;
+    Assert(chars_per_sec);  /* Can't possibly be zero. */
+
+    htotal_cclks <<= clock_doubled;
+
+    /* Calculate the number of cclks per entire frame. */
+    r->frame_cclks = vtotal_lines * htotal_cclks;
+    Assert(r->frame_cclks); /* Can't possibly be zero. */
+
+    if (r->v_freq_hz) { /* Could be set to emulate a specific rate. */
+        r->cclk_ns = 1000000000 / (r->frame_cclks * r->v_freq_hz);
+    } else {
+        r->cclk_ns = 1000000000 / chars_per_sec;
+    }
+    Assert(r->cclk_ns);
+    r->frame_ns = r->frame_cclks * r->cclk_ns;
+
+    /* Calculate timings in cclks/lines. Stored but not directly used. */
+    r->hb_start = hblank_start_cclk + hblank_skew_cclks;
+    r->hb_end   = hblank_start_cclk + hblank_width + hblank_skew_cclks;
+    r->h_total  = htotal_cclks;
+    Assert(r->h_total);     /* Can't possibly be zero. */
+
+    r->vb_start = vblank_start_line;
+    r->vb_end   = vblank_start_line + vblank_width + 1;
+    r->vs_start = vsync_start_line;
+    r->vs_end   = vsync_start_line + vsync_width + 1;
+
+    /* Calculate timings in nanoseconds. For easier comparisons, the frame
+     * is considered to start at the beginning of the vertical and horizontal
+     * blanking period.
+     */
+    r->h_total_ns  = htotal_cclks * r->cclk_ns;
+    r->hb_end_ns   = hblank_width * r->cclk_ns;
+    r->vb_end_ns   = vblank_width * r->h_total_ns;
+    r->vs_start_ns = (r->vs_start - r->vb_start) * r->h_total_ns;
+    r->vs_end_ns   = (r->vs_end   - r->vb_start) * r->h_total_ns;
+    Assert(r->h_total_ns);  /* See h_total. */
+}
+
+static uint8_t vga_retrace(VGAState *s)
+{
+    vga_retrace_s   *r = &s->retrace_state;
+
+    if (r->frame_ns) {
+        uint8_t     val = s->st01 & ~(ST01_V_RETRACE | ST01_DISP_ENABLE);
+        unsigned    cur_frame_ns, cur_line_ns;
+        int64_t     time_ns;
+
+        time_ns = PDMDevHlpTMTimeVirtGetNano(VGASTATE2DEVINS(s));
+
+        /* Determine the time within the frame. */
+        cur_frame_ns = time_ns % r->frame_ns;
+
+        /* See if we're in the vertical blanking period... */
+        if (cur_frame_ns < r->vb_end_ns) {
+            val |= ST01_DISP_ENABLE;
+            /* ... and additionally in the vertical sync period. */
+            if (cur_frame_ns >= r->vs_start_ns && cur_frame_ns <= r->vs_end_ns)
+                val |= ST01_V_RETRACE;
+        } else {
+            /* Determine the time within the current scanline. */
+            cur_line_ns = cur_frame_ns % r->h_total_ns;
+            /* See if we're in the horizontal blanking period. */
+            if (cur_line_ns < r->hb_end_ns)
+                val |= ST01_DISP_ENABLE;
+        }
+        return val;
+    } else {
+        return s->st01 ^ (ST01_V_RETRACE | ST01_DISP_ENABLE);
+    }
+}
+
+int vga_ioport_invalid(VGAState *s, uint32_t addr)
+{
+    if (s->msr & MSR_COLOR_EMULATION) {
+        /* Color */
+        return (addr >= 0x3b0 && addr <= 0x3bf);
+    } else {
+        /* Monochrome */
+        return (addr >= 0x3d0 && addr <= 0x3df);
+    }
+}
+
 static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
 {
     VGAState *s = (VGAState*)opaque;
     int val, index;
 
     /* check port range access depending on color/monochrome mode */
-    if ((addr >= 0x3b0 && addr <= 0x3bf && (s->msr & MSR_COLOR_EMULATION)) ||
-        (addr >= 0x3d0 && addr <= 0x3df && !(s->msr & MSR_COLOR_EMULATION))) {
+    if (vga_ioport_invalid(s, addr)) {
         val = 0xff;
         Log(("VGA: following read ignored\n"));
     } else {
@@ -561,9 +687,7 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
             break;
         case 0x3ba:
         case 0x3da:
-            /* just toggle to fool polling */
-            s->st01 ^= ST01_V_RETRACE | ST01_DISP_ENABLE;
-            val = s->st01;
+            val = s->st01 = vga_retrace(s);
             s->ar_flip_flop = 0;
             break;
         default:
@@ -583,8 +707,7 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     Log(("VGA: write addr=0x%04x data=0x%02x\n", addr, val));
 
     /* check port range access depending on color/monochrome mode */
-    if ((addr >= 0x3b0 && addr <= 0x3bf && (s->msr & MSR_COLOR_EMULATION)) ||
-        (addr >= 0x3d0 && addr <= 0x3df && !(s->msr & MSR_COLOR_EMULATION))) {
+    if (vga_ioport_invalid(s, addr)) {
         Log(("VGA: previous write ignored\n"));
         return;
     }
@@ -624,6 +747,8 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         break;
     case 0x3c2:
         s->msr = val & ~0x10;
+        if (s->fRealRetrace)
+            vga_update_retrace_state(s);
         break;
     case 0x3c4:
         s->sr_index = val & 7;
@@ -631,7 +756,8 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     case 0x3c5:
         Log2(("vga: write SR%x = 0x%02x\n", s->sr_index, val));
         s->sr[s->sr_index] = val & sr_mask[s->sr_index];
-
+        if (s->fRealRetrace && s->sr_index == 0x01)
+            vga_update_retrace_state(s);
 #ifndef IN_RC
         /* The VGA region is (could be) affected by this change; reset all aliases we've created. */
         if (    s->sr_index == 4 /* mode */
@@ -697,19 +823,25 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                 s->cr[7] = (s->cr[7] & ~0x10) | (val & 0x10);
             return;
         }
-        switch(s->cr_index) {
-        case 0x01: /* horizontal display end */
-        case 0x07:
-        case 0x09:
-        case 0x0c:
-        case 0x0d:
-        case 0x12: /* vertical display end */
-            s->cr[s->cr_index] = val;
-            break;
+        s->cr[s->cr_index] = val;
 
-        default:
-            s->cr[s->cr_index] = val;
-            break;
+        if (s->fRealRetrace) {
+            /* The following registers are only updated during a mode set. */
+            switch(s->cr_index) {
+            case 0x00:
+            case 0x02:
+            case 0x03:
+            case 0x05:
+            case 0x06:
+            case 0x07:
+            case 0x09:
+            case 0x10:
+            case 0x11:
+            case 0x15:
+            case 0x16:
+                vga_update_retrace_state(s);
+                break;
+            }
         }
         break;
     case 0x3ba:
@@ -3965,19 +4097,24 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    int         is_graph;
-    int         w, h, char_height;
-    int         val;
+    PVGASTATE       s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    int             is_graph;
+    int             w, h, char_height, char_dots;
+    int             val, vfreq_hz, hfreq_hz;
+    vga_retrace_s   *r = &s->retrace_state;
+    const char      *clocks[] = { "25.175 MHz", "28.322 MHz", "External", "Reserved?!" };
 
-    is_graph = s->gr[6] & 1;
+    is_graph  = s->gr[6] & 1;
+    char_dots = (s->sr[0x01] & 1) ? 8 : 9;
+    pHlp->pfnPrintf(pHlp, "pixel clock: %s\n", clocks[(s->msr >> 2) & 3]);
     pHlp->pfnPrintf(pHlp, "double scanning %s\n", s->cr[9] & 0x80 ? "on" : "off");
+    pHlp->pfnPrintf(pHlp, "double clocking %s\n", s->sr[1] & 0x08 ? "on" : "off");
     val = s->cr[0] + 5;
-    pHlp->pfnPrintf(pHlp, "htotal: %d px (%d cclk)\n", val * 8, val);
+    pHlp->pfnPrintf(pHlp, "htotal: %d px (%d cclk)\n", val * char_dots, val);
     val = s->cr[6] + ((s->cr[7] & 1) << 8) + ((s->cr[7] & 0x20) << 4) + 2;
     pHlp->pfnPrintf(pHlp, "vtotal: %d px\n", val);
     val = s->cr[1] + 1;
-    w   = val * 8;
+    w   = val * char_dots;
     pHlp->pfnPrintf(pHlp, "hdisp : %d px (%d cclk)\n", w, val);
     val = s->cr[0x12] + ((s->cr[7] & 2) << 7) + ((s->cr[7] & 0x40) << 4) + 1;
     h   = val;
@@ -3989,7 +4126,22 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         val = (s->cr[9] & 0x1f) + 1;
         char_height = val;
         pHlp->pfnPrintf(pHlp, "char height %d\n", val);
-        pHlp->pfnPrintf(pHlp, "text mode %dx%d\n", w / 8, h / char_height);
+        pHlp->pfnPrintf(pHlp, "text mode %dx%d\n", w / char_dots, h / char_height);
+    }
+    if (s->fRealRetrace)
+    {
+        val = r->hb_start;
+        pHlp->pfnPrintf(pHlp, "hblank start: %d px (%d cclk)\n", val * char_dots, val);
+        val = r->hb_end;
+        pHlp->pfnPrintf(pHlp, "hblank end  : %d px (%d cclk)\n", val * char_dots, val);
+        pHlp->pfnPrintf(pHlp, "vblank start: %d px, end: %d px\n", r->vb_start, r->vb_end);
+        pHlp->pfnPrintf(pHlp, "vsync start : %d px, end: %d px\n", r->vs_start, r->vs_end);
+        pHlp->pfnPrintf(pHlp, "cclks per frame: %d\n", r->frame_cclks);
+        pHlp->pfnPrintf(pHlp, "cclk time (ns) : %d\n", r->cclk_ns);
+        vfreq_hz = 1000000000 / r->frame_ns;
+        hfreq_hz = 1000000000 / r->h_total_ns;
+        pHlp->pfnPrintf(pHlp, "vfreq: %d Hz, hfreq: %d.%03d kHz\n",
+                        vfreq_hz, hfreq_hz / 1000, hfreq_hz % 1000);
     }
 }
 
@@ -5233,6 +5385,9 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     pThis->cLatchAccesses       = 0;
     pThis->u64LastLatchedAccess = 0;
     pThis->iMask                = 0;
+
+    /* Reset retrace emulation. */
+    memset(&pThis->retrace_state, 0, sizeof(pThis->retrace_state));
 }
 
 
@@ -5498,6 +5653,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           "LogoFile\0"
                                           "ShowBootMenu\0"
                                           "BiosRom\0"
+                                          "RealRetrace\0"
                                           "CustomVideoModes\0"
                                           "HeightReduction\0"
                                           "CustomVideoMode1\0"
@@ -5885,6 +6041,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = vgaAttach(pDevIns, 0 /* display LUN # */, PDM_TACH_FLAGS_NOT_HOT_PLUG);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Initialize the retrace flag.
+     */
+    rc = CFGMR3QueryBoolDef(pCfg, "RealRetrace", &pThis->fRealRetrace, false);
+    AssertLogRelRCReturn(rc, rc);
 
 #ifdef VBE_NEW_DYN_LIST
     /*
