@@ -306,43 +306,6 @@ VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PDEVICE_EXTENSION pDevE
 }
 
 
-VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal)
-{
-    if(!Reg)
-        return ERROR_INVALID_PARAMETER;
-    NTSTATUS Status = vboxWddmRegQueryValueDword(Reg, pName, (PDWORD)pVal);
-    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
-}
-
-VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
-{
-    if(!Reg)
-        return ERROR_INVALID_PARAMETER;
-    NTSTATUS Status = vboxWddmRegSetValueDword(Reg, pName, Val);
-    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
-}
-
-VP_STATUS VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg)
-{
-    WCHAR Buf[512];
-    ULONG cbBuf = sizeof(Buf);
-    NTSTATUS Status = vboxWddmRegQueryDrvKeyName(pDeviceExtension, cbBuf, Buf, &cbBuf);
-    Assert(Status == STATUS_SUCCESS);
-    if (Status == STATUS_SUCCESS)
-    {
-        Status = vboxWddmRegOpenKey(pReg, Buf, GENERIC_READ | GENERIC_WRITE);
-        Assert(Status == STATUS_SUCCESS);
-        if(Status == STATUS_SUCCESS)
-            return NO_ERROR;
-    }
-
-    /* fall-back to make the subsequent VBoxVideoCmnRegXxx calls treat the fail accordingly
-     * basically needed to make as less modifications to the current XPDM code as possible */
-    *pReg = NULL;
-
-    return ERROR_INVALID_PARAMETER;
-}
-
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo)
 {
     switch (pInfo->BitsPerPlane)
@@ -415,9 +378,9 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
     USHORT DispiId;
     *pAdapterMemorySize = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
 
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
-    DispiId = VBoxVideoCmnPortReadUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
+    DispiId = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
     if (DispiId == VBE_DISPI_ID2)
     {
        dprintf(("VBoxVideoWddm: found the VBE card\n"));
@@ -430,7 +393,7 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
         * Query the adapter's memory size. It's a bit of a hack, we just read
         * an ULONG from the data port without setting an index before.
         */
-       *pAdapterMemorySize = VBoxVideoCmnPortReadUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+       *pAdapterMemorySize = VBoxVideoCmnPortReadUlong(VBE_DISPI_IOPORT_DATA);
        if (VBoxHGSMIIsSupported ())
        {
            PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;

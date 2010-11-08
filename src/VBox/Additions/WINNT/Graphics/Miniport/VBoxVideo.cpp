@@ -16,6 +16,9 @@
 
 #include "VBoxVideo.h"
 #include "Helper.h"
+#ifdef VBOX_WITH_WDDM
+#include "wddm/VBoxVideoMisc.h"
+#endif
 
 #include <iprt/log.h>
 #include <VBox/VMMDev.h>
@@ -98,7 +101,178 @@ static VP_STATUS VBoxVideoGetChildDescriptor(
    PULONG pUId,
    PULONG pUnused);
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+
 #ifndef VBOX_WITH_WDDM
+/*+++
+
+Routine Description:
+
+    This routine is used to read back various registry values.
+
+Arguments:
+
+    HwDeviceExtension
+        Supplies a pointer to the miniport's device extension.
+
+    Context
+        Context value passed to the get registry parameters routine.
+        If this is not null assume it's a ULONG* and save the data value in it.
+
+    ValueName
+        Name of the value requested.
+
+    ValueData
+        Pointer to the requested data.
+
+    ValueLength
+        Length of the requested data.
+
+Return Value:
+
+    If the variable doesn't exist return an error,
+    else if a context is supplied assume it's a PULONG and fill in the value
+    and return no error, else if the value is non-zero return an error.
+
+---*/
+static VP_STATUS VBoxRegistryCallback(PVOID HwDeviceExtension, PVOID Context,
+                                      PWSTR ValueName, PVOID ValueData,
+                                      ULONG ValueLength)
+{
+    //dprintf(("VBoxVideo::VBoxRegistryCallback: Context: %p, ValueName: %S, ValueData: %p, ValueLength: %d\n",
+    //         Context, ValueName, ValueData, ValueLength));
+    if (ValueLength)
+    {
+        if (Context)
+            *(ULONG *)Context = *(PULONG)ValueData;
+        else if (*((PULONG)ValueData) != 0)
+            return ERROR_INVALID_PARAMETER;
+        return NO_ERROR;
+    }
+    else
+        return ERROR_INVALID_PARAMETER;
+}
+#endif /* #ifndef VBOX_WITH_WDDM */
+
+static VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal)
+{
+#ifndef VBOX_WITH_WDDM
+    return VideoPortGetRegistryParameters(Reg, pName, FALSE, VBoxRegistryCallback, pVal);
+#else
+    if(!Reg)
+        return ERROR_INVALID_PARAMETER;
+    NTSTATUS Status = vboxWddmRegQueryValueDword(Reg, pName, (PDWORD)pVal);
+    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
+#endif
+}
+
+static VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
+{
+#ifndef VBOX_WITH_WDDM
+    return VideoPortSetRegistryParameters(Reg, pName, &Val, sizeof(Val));
+#else
+    if(!Reg)
+        return ERROR_INVALID_PARAMETER;
+    NTSTATUS Status = vboxWddmRegSetValueDword(Reg, pName, Val);
+    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
+#endif
+}
+
+static VP_STATUS VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg)
+{
+#ifndef VBOX_WITH_WDDM
+    *pReg = pDeviceExtension->pPrimary;
+    return NO_ERROR;
+#else
+    WCHAR Buf[512];
+    ULONG cbBuf = sizeof(Buf);
+    NTSTATUS Status = vboxWddmRegQueryDrvKeyName(pDeviceExtension, cbBuf, Buf, &cbBuf);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = vboxWddmRegOpenKey(pReg, Buf, GENERIC_READ | GENERIC_WRITE);
+        Assert(Status == STATUS_SUCCESS);
+        if(Status == STATUS_SUCCESS)
+            return NO_ERROR;
+    }
+
+    /* fall-back to make the subsequent VBoxVideoCmnRegXxx calls treat the fail accordingly
+     * basically needed to make as less modifications to the current XPDM code as possible */
+    *pReg = NULL;
+
+    return ERROR_INVALID_PARAMETER;
+#endif
+}
+
+static VP_STATUS VBoxVideoCmnRegFini(IN VBOXCMNREG Reg)
+{
+#ifndef VBOX_WITH_WDDM
+    return NO_ERROR;
+#else
+    if(!Reg)
+        return ERROR_INVALID_PARAMETER;
+
+    NTSTATUS Status = ZwClose(Reg);
+    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
+#endif
+}
+
+void VBoxVideoCmnSignalEvent(PVBOXVIDEO_COMMON pCommon, uint64_t pvEvent)
+{
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
+#ifndef VBOX_WITH_WDDM
+    PEVENT pEvent = (PEVENT)pvEvent;
+    PrimaryExtension->u.primary.VideoPortProcs.pfnSetEvent(PrimaryExtension,
+                                                           pEvent);
+#else
+    PKEVENT pEvent = (PKEVENT)pvEvent;
+    KeSetEvent(pEvent, 0, FALSE);
+#endif
+}
+
+
+#define MEM_TAG 'HVBV'
+
+void *VBoxVideoCmnMemAllocDriver(PVBOXVIDEO_COMMON pCommon, size_t cb)
+{
+    ULONG Tag = MEM_TAG;
+#ifndef VBOX_WITH_WDDM
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
+    return PrimaryExtension->u.primary.VideoPortProcs.pfnAllocatePool(PrimaryExtension, (VBOXVP_POOL_TYPE)VpNonPagedPool, cb, Tag);
+#else
+    return ExAllocatePoolWithTag(NonPagedPool, cb, Tag);
+#endif
+}
+
+
+void VBoxVideoCmnMemFreeDriver(PVBOXVIDEO_COMMON pCommon, void *pv)
+{
+#ifndef VBOX_WITH_WDDM
+    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
+    PrimaryExtension->u.primary.VideoPortProcs.pfnFreePool(PrimaryExtension,
+                                                           pv);
+#else
+    ExFreePool(pv);
+#endif
+}
+
+static VOID VBoxVideoCmnMemZero(PVOID pvMem, ULONG cbMem)
+{
+#ifndef VBOX_WITH_WDDM
+    VideoPortZeroMemory(pvMem, cbMem);
+#else
+    memset(pvMem, 0, cbMem);
+#endif
+}
+
+
+#ifndef VBOX_WITH_WDDM
+static void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension,
+                                VBOXVIDEOPORTPROCS *pCallbacks,
+                                PVIDEO_PORT_CONFIG_INFO pConfigInfo);
+
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 {
     VIDEO_HW_INITIALIZATION_DATA InitData;
@@ -146,110 +320,7 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     dprintf(("VBoxVideo::DriverEntry: returning with rc = 0x%x\n", rc));
     return rc;
 }
-
-/*+++
-
-Routine Description:
-
-    This routine is used to read back various registry values.
-
-Arguments:
-
-    HwDeviceExtension
-        Supplies a pointer to the miniport's device extension.
-
-    Context
-        Context value passed to the get registry parameters routine.
-        If this is not null assume it's a ULONG* and save the data value in it.
-
-    ValueName
-        Name of the value requested.
-
-    ValueData
-        Pointer to the requested data.
-
-    ValueLength
-        Length of the requested data.
-
-Return Value:
-
-    If the variable doesn't exist return an error,
-    else if a context is supplied assume it's a PULONG and fill in the value
-    and return no error, else if the value is non-zero return an error.
-
----*/
-VP_STATUS VBoxRegistryCallback(PVOID HwDeviceExtension, PVOID Context,
-                               PWSTR ValueName, PVOID ValueData, ULONG ValueLength)
-{
-    //dprintf(("VBoxVideo::VBoxRegistryCallback: Context: %p, ValueName: %S, ValueData: %p, ValueLength: %d\n",
-    //         Context, ValueName, ValueData, ValueLength));
-    if (ValueLength)
-    {
-        if (Context)
-            *(ULONG *)Context = *(PULONG)ValueData;
-        else if (*((PULONG)ValueData) != 0)
-            return ERROR_INVALID_PARAMETER;
-        return NO_ERROR;
-    }
-    else
-        return ERROR_INVALID_PARAMETER;
-}
-
-VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal)
-{
-    return VideoPortGetRegistryParameters(Reg, pName, FALSE, VBoxRegistryCallback, pVal);
-}
-
-VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
-{
-    return VideoPortSetRegistryParameters(Reg, pName, &Val, sizeof(Val));
-}
-
-void VBoxVideoCmnSignalEvent(PVBOXVIDEO_COMMON pCommon, uint64_t pvEvent)
-{
-    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
-#ifndef VBOX_WITH_WDDM
-    PEVENT pEvent = (PEVENT)pvEvent;
-    PrimaryExtension->u.primary.VideoPortProcs.pfnSetEvent(PrimaryExtension,
-                                                           pEvent);
-#else
-    PKEVENT pEvent = (PKEVENT)pvEvent;
-    KeSetEvent(pEvent, 0, FALSE);
 #endif
-}
-
-
-#define MEM_TAG 'HVBV'
-
-void *VBoxVideoCmnMemAllocDriver(PVBOXVIDEO_COMMON pCommon, size_t cb)
-{
-    ULONG Tag = MEM_TAG;
-#ifndef VBOX_WITH_WDDM
-    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
-    return PrimaryExtension->u.primary.VideoPortProcs.pfnAllocatePool(PrimaryExtension, (VBOXVP_POOL_TYPE)VpNonPagedPool, cb, Tag);
-#else
-    return ExAllocatePoolWithTag(NonPagedPool, cb, Tag);
-#endif
-}
-
-
-void VBoxVideoCmnMemFreeDriver(PVBOXVIDEO_COMMON pCommon, void *pv)
-{
-#ifndef VBOX_WITH_WDDM
-    PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
-    PrimaryExtension->u.primary.VideoPortProcs.pfnFreePool(PrimaryExtension,
-                                                           pv);
-#else
-    ExFreePool(pv);
-#endif
-}
-
-
-static void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension,
-                                VBOXVIDEOPORTPROCS *pCallbacks,
-                                PVIDEO_PORT_CONFIG_INFO pConfigInfo);
-
-#endif /* #ifndef VBOX_WITH_WDDM */
 
 #ifdef VBOX_WITH_GENERIC_MULTIMONITOR
 
@@ -2326,6 +2397,60 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 
 #endif
 
+void VBoxVideoCmnPortWriteUchar(RTIOPORT Port, uint8_t Value)
+{
+#ifndef VBOX_WITH_WDDM
+    VideoPortWritePortUchar((PUCHAR)Port,Value);
+#else
+    WRITE_PORT_UCHAR((PUCHAR)Port,Value);
+#endif
+}
+
+void VBoxVideoCmnPortWriteUshort(RTIOPORT Port, uint16_t Value)
+{
+#ifndef VBOX_WITH_WDDM
+    VideoPortWritePortUshort((PUSHORT)Port,Value);
+#else
+    WRITE_PORT_USHORT((PUSHORT)Port,Value);
+#endif
+}
+
+void VBoxVideoCmnPortWriteUlong(RTIOPORT Port, uint32_t Value)
+{
+#ifndef VBOX_WITH_WDDM
+    VideoPortWritePortUlong((PULONG)Port,Value);
+#else
+    WRITE_PORT_ULONG((PULONG)Port,Value);
+#endif
+}
+
+uint8_t VBoxVideoCmnPortReadUchar(RTIOPORT Port)
+{
+#ifndef VBOX_WITH_WDDM
+    return VideoPortReadPortUchar((PUCHAR)Port);
+#else
+    return READ_PORT_UCHAR((PUCHAR)Port);
+#endif
+}
+
+uint16_t VBoxVideoCmnPortReadUshort(RTIOPORT Port)
+{
+#ifndef VBOX_WITH_WDDM
+    return VideoPortReadPortUshort((PUSHORT)Port);
+#else
+    return READ_PORT_USHORT((PUSHORT)Port);
+#endif
+}
+
+uint32_t VBoxVideoCmnPortReadUlong(RTIOPORT Port)
+{
+#ifndef VBOX_WITH_WDDM
+    return VideoPortReadPortUlong((PULONG)Port);
+#else
+    return READ_PORT_ULONG((PULONG)Port);
+#endif
+}
+
 int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv, ULONG ulOffset, ULONG ulSize)
 {
     PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
@@ -3645,15 +3770,15 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
         )
 {
     /* set the mode characteristics */
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, width);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, height);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, bpp);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, width);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, height);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, bpp);
     /* enable the mode */
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
 #ifdef VBOX_WITH_WDDM
     /* encode linear offDisplay to xOffset & yOffset to ensure offset fits USHORT */
     ULONG cbLine = VBOXWDDM_ROUNDBOUND(((width * bpp) + 7) / 8, 4);
@@ -3670,10 +3795,10 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtensio
     ULONG yOffset = offDisplay / cbLine;
     Assert(xOffset <= 0xffff);
     Assert(yOffset <= 0xffff);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_X_OFFSET);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)xOffset);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_Y_OFFSET);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)yOffset);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_X_OFFSET);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, (USHORT)xOffset);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_Y_OFFSET);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, (USHORT)yOffset);
 #endif
     /** @todo read from the port to see if the mode switch was successful */
 
@@ -3902,10 +4027,10 @@ BOOLEAN FASTCALL VBoxVideoSetColorRegisters(
         Entry < ColorLookUpTable->NumEntries + ColorLookUpTable->FirstEntry;
         Entry++)
    {
-      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c8, (UCHAR)Entry);
-      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Red);
-      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Green);
-      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Blue);
+      VBoxVideoCmnPortWriteUchar(0x03c8, (UCHAR)Entry);
+      VBoxVideoCmnPortWriteUchar(0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Red);
+      VBoxVideoCmnPortWriteUchar(0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Green);
+      VBoxVideoCmnPortWriteUchar(0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Blue);
    }
 
    return TRUE;

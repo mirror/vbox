@@ -96,10 +96,10 @@ BOOLEAN VBoxHGSMIIsSupported (void)
 {
     USHORT DispiId;
 
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_HGSMI);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_HGSMI);
 
-    DispiId = VBoxVideoCmnPortReadUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
+    DispiId = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
 
     return (DispiId == VBE_DISPI_ID_HGSMI);
 }
