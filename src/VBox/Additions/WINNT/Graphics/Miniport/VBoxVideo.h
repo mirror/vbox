@@ -116,6 +116,7 @@ typedef VBOXVCMNEVENT *PVBOXVCMNEVENT;
 
 typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
+#define VBOX_WITH_GENERIC_MULTIMONITOR
 typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 #include <VBox/VBoxVideo.h>
 #include "wddm/VBoxVideoIf.h"
@@ -603,28 +604,16 @@ DriverEntry(
     );
 RT_C_DECLS_END
 
-typedef struct VBOXWDDM_VIDEOMODES
-{
-    VIDEO_MODE_INFORMATION *pModes;
-    uint32_t cModes;
-    D3DKMDT_2DREGION pResolutions;
-    uint32_t cResolutions;
-    int32_t iPreferrableMode;
-    int32_t iCustomMode;
-} VBOXWDDM_VIDEOMODES;
-
-VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
-        VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, int32_t * pPreferrableMode,
-        D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions);
+PVBOXWDDM_VIDEOMODES_INFO vboxWddmGetVideoModesInfo(PDEVICE_EXTENSION DeviceExtension, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId);
+PVBOXWDDM_VIDEOMODES_INFO vboxWddmGetAllVideoModesInfos(PDEVICE_EXTENSION DeviceExtension);
 
 void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt);
 
-VOID VBoxWddmInvalidateModesTable(PDEVICE_EXTENSION DeviceExtension);
+VOID vboxWddmInvalidateVideoModesInfo(PDEVICE_EXTENSION DeviceExtension);
 
 /* @return STATUS_BUFFER_TOO_SMALL - if buffer is too small, STATUS_SUCCESS - on success */
-NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
-        D3DKMDT_2DREGION *pResolution,
-        VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t * piPreferrableMode);
+NTSTATUS vboxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, PVBOXWDDM_VIDEOMODES_INFO pModeInfos,
+        D3DKMDT_2DREGION *pResolution, VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t *piPreferrableMode);
 
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
 

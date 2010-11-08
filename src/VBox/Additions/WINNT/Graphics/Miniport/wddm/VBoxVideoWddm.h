@@ -219,9 +219,15 @@ typedef struct VBOXWDDM_OPENALLOCATION
 # define VBOXWDDM_FB_ALLOCATION(_pSrc) ((_pSrc)->pPrimaryAllocation)
 #endif
 
-//DECLINLINE(VBOXVIDEOOFFSET) vboxWddmOffsetFromPhAddress(PHYSICAL_ADDRESS phAddr)
-//{
-//    return (VBOXVIDEOOFFSET)(phAddr.QuadPart ? phAddr.QuadPart - VBE_DISPI_LFB_PHYSICAL_ADDRESS : VBOXVIDEOOFFSET_VOID);
-//}
+#define VBOXWDDM_MAX_VIDEOMODES 128
+
+typedef struct VBOXWDDM_VIDEOMODES_INFO
+{
+    int32_t iPreferredMode;
+    uint32_t cModes;
+    VIDEO_MODE_INFORMATION aModes[VBOXWDDM_MAX_VIDEOMODES];
+    uint32_t cResolutions;
+    D3DKMDT_2DREGION aResolutions[VBOXWDDM_MAX_VIDEOMODES];
+} VBOXWDDM_VIDEOMODES_INFO, *PVBOXWDDM_VIDEOMODES_INFO;
 
 #endif /* #ifndef ___VBoxVideoWddm_h___ */
