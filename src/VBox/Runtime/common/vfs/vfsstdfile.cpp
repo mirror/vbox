@@ -333,7 +333,6 @@ static DECLCALLBACK(int) rtVfsStdFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 DECLHIDDEN(const RTVFSFILEOPS) g_rtVfsStdFileOps =
 {
     { /* Stream */
-        /** The basic object operation.  */
         { /* Obj */
             RTVFSOBJOPS_VERSION,
             RTVFSOBJTYPE_FILE,
