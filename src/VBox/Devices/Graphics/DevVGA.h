@@ -138,7 +138,7 @@
 #define CH_ATTR_SIZE (160 * 100)
 #define VGA_MAX_HEIGHT VBE_DISPI_MAX_YRES
 
-typedef struct vga_retrace {
+typedef struct vga_retrace_s {
     unsigned    frame_cclks;    /* Character clocks per frame. */
     unsigned    frame_ns;       /* Frame duration in ns. */
     unsigned    cclk_ns;        /* Character clock duration in ns. */
@@ -399,7 +399,7 @@ typedef struct VGAState {
 
     /** Retrace emulation state */
     bool                        fRealRetrace;
-    struct vga_retrace          retrace_state;
+    vga_retrace_s               retrace_state;
 
 #ifdef VBE_NEW_DYN_LIST
     /** The VBE BIOS extra data. */
