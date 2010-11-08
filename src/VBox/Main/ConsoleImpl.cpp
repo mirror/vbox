@@ -3566,7 +3566,7 @@ HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL 
         if (!pNetNatCfg)
             goto done;
         bool fUdp = (aProto == NATProtocol_UDP);
-        vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, aNatRuleRemove, Utf8Str(aRuleName).c_str(), fUdp,
+        vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, aNatRuleRemove, fUdp,
                                                  Utf8Str(aHostIp).c_str(), aHostPort, Utf8Str(aGuestIp).c_str(),
                                                  aGuestPort);
         if (RT_FAILURE(vrc))
