@@ -281,6 +281,19 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
     }
     if (name.isEmpty())
         name = Utf8StrFmt("%s_%d_%d", proto, aHostPort, aGuestPort);
+
+    NATRuleMap::iterator it;
+    for (it = mNATRules.begin(); it != mNATRules.end(); ++it)
+    {
+        r = it->second;
+        if (   it->first == name
+            || (   r.strHostIP == Utf8Str(aBindIp)
+                && r.u16HostPort == aHostPort))
+        {
+            return E_INVALIDARG;
+        }
+    }
+
     r.strName = name.c_str();
     r.proto = aProto;
     r.strHostIP = aBindIp;
