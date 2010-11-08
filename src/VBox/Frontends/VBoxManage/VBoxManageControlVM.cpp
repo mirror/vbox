@@ -443,8 +443,8 @@ int handleControlVM(HandlerArg *a)
         {                                                                  \
             if (*ch == 0)                                                  \
             {                                                              \
-                return errorSyntax(USAGE_CONTROLVM,                         \
-                                   "Missing or Invalid argument to '%s'",  \
+                return errorSyntax(USAGE_CONTROLVM,                        \
+                                   "Missing or invalid argument to '%s'",  \
                                     a->argv[1]);                           \
             }                                                              \
             ch++;                                                          \
@@ -477,6 +477,12 @@ int handleControlVM(HandlerArg *a)
                     proto = NATProtocol_UDP;
                 else if (RTStrICmp(strProto, "tcp") == 0)
                     proto = NATProtocol_TCP;
+                else
+                {
+                    return errorSyntax(USAGE_CONTROLVM,
+                                       "Wrong rule proto '%s' specified -- only 'udp' and 'tcp' are allowed.",
+                                       strProto);
+                }
                 CHECK_ERROR(engine, AddRedirect(Bstr(strName).raw(), proto, Bstr(strHostIp).raw(),
                         RTStrToUInt16(strHostPort), Bstr(strGuestIp).raw(), RTStrToUInt16(strGuestPort)));
 #undef ITERATE_TO_NEXT_TERM
