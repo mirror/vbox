@@ -3099,6 +3099,10 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
  * those into the given settings::MediaRegistry structures whose registry
  * ID match the given UUID.
  *
+ * Before actually writing to the structures, all media paths (not just the
+ * ones for the given registry) are updated if machines have been renamed
+ * since the last call.
+ *
  * This gets called from two contexts:
  *
  *  -- VirtualBox::saveSettings() with the UUID of the global registry
@@ -3113,7 +3117,7 @@ void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDi
  * attached to a machine have a NULL registry UUID and therefore don't
  * get saved.
  *
- * This throws HRESULT on errors!
+ * This locks the media tree. Throws HRESULT on errors!
  *
  * @param mediaRegistry Settings structure to fill.
  * @param uuidRegistry The UUID of the media registry; either a machine UUID (if machine registry) or the UUID of the global registry.
@@ -3123,6 +3127,41 @@ void VirtualBox::saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
                                    const Guid &uuidRegistry,
                                    const Utf8Str &strMachineFolder)
 {
+    // lock all media for the following; use a write lock because we're
+    // modifying the PendingMachineRenamesList, which is protected by this
+    AutoWriteLock mediaLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    // if a machine was renamed, then we'll need to refresh media paths
+    if (m->llPendingMachineRenames.size())
+    {
+        // make a single list from the three media lists so we don't need three loops
+        MediaList llAllMedia;
+        // with hard disks, we must use the map, not the list, because the list only has base images
+        for (HardDiskMap::iterator it = m->mapHardDisks.begin(); it != m->mapHardDisks.end(); ++it)
+            llAllMedia.push_back(it->second);
+        for (MediaList::iterator it = m->allDVDImages.begin(); it != m->allDVDImages.end(); ++it)
+            llAllMedia.push_back(*it);
+        for (MediaList::iterator it = m->allFloppyImages.begin(); it != m->allFloppyImages.end(); ++it)
+            llAllMedia.push_back(*it);
+
+        for (MediaList::iterator it = llAllMedia.begin();
+             it != llAllMedia.end();
+             ++it)
+        {
+            Medium *pMedium = *it;
+            for (Data::PendingMachineRenamesList::iterator it2 = m->llPendingMachineRenames.begin();
+                 it2 != m->llPendingMachineRenames.end();
+                 ++it2)
+            {
+                const Data::PendingMachineRename &pmr = *it2;
+                pMedium->updatePath(pmr.strConfigDirOld,
+                                    pmr.strConfigDirNew);
+            }
+        }
+        // done, don't do it again until we have more machine renames
+        m->llPendingMachineRenames.clear();
+    }
+
     HRESULT rc;
     // hard disks
     mediaRegistry.llHardDisks.clear();
@@ -3210,50 +3249,9 @@ HRESULT VirtualBox::saveSettings()
             }
         }
 
-        // lock all media for the following; use a write lock because we're
-        // modifying the PendingMachineRenamesList, which is protected by this
-        AutoWriteLock mediaLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-        // if a machine was renamed, then we'll need to refresh media paths
-        if (m->llPendingMachineRenames.size())
-        {
-            // make a single list from the three media lists so we don't need three loops
-            MediaList llAllMedia;
-            // with hard disks, we must use the map, not the list, because the list only has base images
-            for (HardDiskMap::iterator it = m->mapHardDisks.begin(); it != m->mapHardDisks.end(); ++it)
-                llAllMedia.push_back(it->second);
-            for (MediaList::iterator it = m->allDVDImages.begin(); it != m->allDVDImages.end(); ++it)
-                llAllMedia.push_back(*it);
-            for (MediaList::iterator it = m->allFloppyImages.begin(); it != m->allFloppyImages.end(); ++it)
-                llAllMedia.push_back(*it);
-
-            for (MediaList::iterator it = llAllMedia.begin();
-                 it != llAllMedia.end();
-                 ++it)
-            {
-                Medium *pMedium = *it;
-                for (Data::PendingMachineRenamesList::iterator it2 = m->llPendingMachineRenames.begin();
-                     it2 != m->llPendingMachineRenames.end();
-                     ++it2)
-                {
-                    // is medium in global registry:?
-                    if (pMedium->isInRegistry(m->uuidMediaRegistry))
-                    {
-                        const Data::PendingMachineRename &pmr = *it2;
-                        pMedium->updatePath(pmr.strConfigDirOld,
-                                            pmr.strConfigDirNew);
-                    }
-                }
-            }
-            // done, don't do it again until we have more machine renames
-            m->llPendingMachineRenames.clear();
-        }
-
         saveMediaRegistry(m->pMainConfigFile->mediaRegistry,
                           m->uuidMediaRegistry,         // global media registry ID
                           Utf8Str::Empty);              // strMachineFolder
-
-        mediaLock.release();
 
         m->pMainConfigFile->llDhcpServers.clear();
         {
