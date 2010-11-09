@@ -934,6 +934,9 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
         /* Convert keycode to set 1 scan code. */
         UInt32 keyCode = ~0U;
         ::GetEventParameter(inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof (keyCode), NULL, &keyCode);
+        if (   (keyCode == 0xa || keyCode == 0x32)
+            && KBGetLayoutType(LMGetKbdType()) == kKeyboardISO)
+            keyCode = 0x3c - keyCode;
         unsigned scanCode = ::DarwinKeycodeToSet1Scancode(keyCode);
         if (scanCode)
         {
