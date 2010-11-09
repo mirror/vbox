@@ -690,11 +690,11 @@ BOOLEAN vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
 void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon);
 #ifndef VBOX_WITH_WDDM
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
-DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd);
+DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, uint32_t iDisplay, struct _VBVAHOSTCMD ** ppCmd);
 #endif
 
 
-int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
+int vboxVBVAChannelDisplayEnable(PVBOXVIDEO_COMMON pCommon,
         int iDisplay, /* negative would mean this is a miniport handler */
         uint8_t u8Channel);
 
