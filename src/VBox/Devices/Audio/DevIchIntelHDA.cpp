@@ -432,6 +432,7 @@ DECLCALLBACK(int)hdaRegWriteCORBSTS(INTELHDLinkState* pState, uint32_t offset, u
 DECLCALLBACK(int)hdaRegWriteRIRBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegWriteRIRBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int)hdaRegReadIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegReadSDCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 
@@ -505,7 +506,7 @@ const static struct stIchIntelHDRegMap
     { 0x0005E, 0x00001, 0x000000F3, 0x00000000, hdaRegReadU8           , hdaRegWriteUnimplemented, "RIRBSIZE"  , "RIRB Size" },
     { 0x00060, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "IC"        , "Immediate Command" },
     { 0x00064, 0x00004, 0x00000000, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteUnimplemented, "IR"        , "Immediate Response" },
-    { 0x00068, 0x00004, 0x00000002, 0x00000002, hdaRegReadU16          , hdaRegWriteIRS          , "IRS"       , "Immediate Command Status" },
+    { 0x00068, 0x00004, 0x00000002, 0x00000002, hdaRegReadIRS          , hdaRegWriteIRS          , "IRS"       , "Immediate Command Status" },
     { 0x00070, 0x00004, 0xFFFFFFFF, 0xFFFFFF81, hdaRegReadU32          , hdaRegWriteBase         , "DPLBASE"   , "DMA Position Lower Base" },
     { 0x00074, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteBase         , "DPUBASE"   , "DMA Position Upper Base" },
 
@@ -1056,15 +1057,39 @@ DECLCALLBACK(int)hdaRegWriteSDBDPU(INTELHDLinkState* pState, uint32_t offset, ui
     return rc;
 }
 
+DECLCALLBACK(int)hdaRegReadIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
+{
+    int rc = VINF_SUCCESS;
+    /* regarding 3.4.3 we should mark IRS as busy in case CORB is active */
+    if (   CORBWP(pState) != CORBRP(pState)
+        || HDA_REG_FLAG_VALUE(pState, CORBCTL, DMA))
+        IRS(pState) = HDA_REG_FIELD_FLAG_MASK(IRS, ICB);  /* busy */
+
+    rc = hdaRegReadU32(pState, offset, index, pu32Value);
+    return rc;
+}
+
 DECLCALLBACK(int)hdaRegWriteIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
     int rc = VINF_SUCCESS;
     uint64_t resp;
     PFNCODECVERBPROCESSOR pfn = (PFNCODECVERBPROCESSOR)NULL;
+    /*
+     * if guest set ICB bit of IRS register HDA should process verb in IC register and
+     * writes response in IR register and set IRV (valid in case of success) bit of IRS register.
+     */
     if (   u32Value & HDA_REG_FIELD_FLAG_MASK(IRS, ICB)
         && !IRS_ICB(pState))
     {
         uint32_t cmd = IC(pState);
+        if (CORBWP(pState) != CORBRP(pState))
+        {
+            /*
+             * 3.4.3 defines behaviour of immediate Command status register.
+             */
+            LogRel(("hda: guest has tried process immediate verb (%x) with active CORB\n", cmd));
+            return rc;
+        }
         IRS(pState) = HDA_REG_FIELD_FLAG_MASK(IRS, ICB);  /* busy */
         Log(("hda: IC:%x\n", cmd));
         rc = pState->Codec.pfnLookup(&pState->Codec, cmd, &pfn);
@@ -1075,12 +1100,16 @@ DECLCALLBACK(int)hdaRegWriteIRS(INTELHDLinkState* pState, uint32_t offset, uint3
             AssertRCReturn(rc, rc);
         IR(pState) = (uint32_t)resp;
         Log(("hda: IR:%x\n", IR(pState)));
-        IRS(pState) = HDA_REG_FIELD_FLAG_MASK(IRS, IRV);  /* clear busy, result is ready  */
+        IRS(pState) = HDA_REG_FIELD_FLAG_MASK(IRS, IRV);  /* result is ready  */
+        IRS(pState) &= ~HDA_REG_FIELD_FLAG_MASK(IRS, ICB); /* busy is clear */
         return rc;
     }
+    /*
+     * when guest's read the response it should clean the IRV bit of the IRS register.
+     */
     if (   u32Value & HDA_REG_FIELD_FLAG_MASK(IRS, IRV)
         && IRS_IRV(pState))
-        IRS(pState) ^= HDA_REG_FIELD_FLAG_MASK(IRS, IRV);
+        IRS(pState) &= ~HDA_REG_FIELD_FLAG_MASK(IRS, IRV);
     return rc;
 }
 
