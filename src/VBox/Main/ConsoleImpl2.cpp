@@ -891,30 +891,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             hrc = BusMgr->assignPciDevice("ich9pcibridge", pInst);                               H();
         }
 
-#if 0 /* enable this to test PCI bridging */
-        InsertConfigNode(pDevices, "pcibridge", &pDev);
-        InsertConfigNode(pDev,     "0", &pInst);
-        InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        InsertConfigNode(pInst,    "Config", &pCfg);
-        InsertConfigInteger(pInst, "PCIDeviceNo",         14);
-        InsertConfigInteger(pInst, "PCIFunctionNo",        0);
-        rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             0);/* -> pci[0] */          RC_CHECK();
-
-        InsertConfigNode(pDev,     "1", &pInst);
-        InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        InsertConfigNode(pInst,    "Config", &pCfg);
-        InsertConfigInteger(pInst, "PCIDeviceNo",          1);
-        InsertConfigInteger(pInst, "PCIFunctionNo",        0);
-        rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */     RC_CHECK();
-
-        InsertConfigNode(pDev,     "2", &pInst);
-        InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-        InsertConfigNode(pInst,    "Config", &pCfg);
-        InsertConfigInteger(pInst, "PCIDeviceNo",          3);
-        InsertConfigInteger(pInst, "PCIFunctionNo",        0);
-        rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */     RC_CHECK();
-#endif
-
         /*
          * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests
          */
@@ -1561,13 +1537,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
             /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
              * next 4 get 16..19. */
-            unsigned iPciDeviceNo = 3;
-            if (ulInstance)
+            int iPciDeviceNo;
+            switch (ulInstance)
             {
-                if (ulInstance < 4)
+                case 0:
+                    iPciDeviceNo = 3;
+                    break;
+                case 1: case 2: case 3:
                     iPciDeviceNo = ulInstance - 1 + 8;
-                else
+                    break;
+                case 4: case 5: case 6: case 7:
                     iPciDeviceNo = ulInstance - 4 + 16;
+                    break;
+                default:
+                    /* auto assignment */
+                    iPciDeviceNo = -1;
+                    break;
             }
 #ifdef VMWARE_NET_IN_SLOT_11
             /*
