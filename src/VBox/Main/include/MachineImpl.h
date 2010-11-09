@@ -773,8 +773,8 @@ protected:
     HRESULT createImplicitDiffs(IProgress *aProgress,
                                 ULONG aWeight,
                                 bool aOnline,
-                                bool *pfNeedsSaveSettings);
-    HRESULT deleteImplicitDiffs(bool *pfNeedsSaveSettings);
+                                GuidList *pllRegistriesThatNeedSaving);
+    HRESULT deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving);
 
     MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
                                      IN_BSTR aControllerName,
@@ -788,7 +788,7 @@ protected:
     HRESULT detachDevice(MediumAttachment *pAttach,
                          AutoWriteLock &writeLock,
                          Snapshot *pSnapshot,
-                         bool *pfNeedsSaveSettings);
+                         GuidList *pllRegistriesThatNeedSaving);
     HRESULT detachAllMedia(AutoWriteLock &writeLock,
                            Snapshot *pSnapshot,
                            CleanupMode_T cleanupMode,
@@ -862,6 +862,7 @@ protected:
     friend class SessionMachine;
     friend class SnapshotMachine;
     friend class Appliance;
+    friend class VirtualBox;
 };
 
 // SessionMachine class

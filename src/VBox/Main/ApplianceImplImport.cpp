@@ -1808,14 +1808,13 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             strTrgFormat = Utf8Str(bstrFormatName);
         }
 
-        bool fNeedsGlobalSaveSettings;
         /* Create an IMedium object. */
         pTargetHD.createObject();
         rc = pTargetHD->init(mVirtualBox,
                              strTrgFormat,
                              strTargetPath,
-                             Guid::Empty,        // media registry
-                             &fNeedsGlobalSaveSettings);
+                             Guid::Empty,       // media registry: none yet
+                             NULL /* llRegistriesThatNeedSaving */);
         if (FAILED(rc)) throw rc;
 
         /* Now create an empty hard disk. */

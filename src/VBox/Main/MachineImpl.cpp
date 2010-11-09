@@ -3322,11 +3322,6 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    // if this becomes true then we need to call saveSettings in the end
-    // @todo r=dj there is no error handling so far...
-    bool fNeedsMachineSaveSettings = false,
-         fNeedsGlobalSaveSettings = false;
-
     // request the host lock first, since might be calling Host methods for getting host drives;
     // next, protect the media tree all the while we're in here, as well as our member variables
     AutoMultiWriteLock2 alock(mParent->host()->lockHandle(),
@@ -3335,6 +3330,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
+
+    GuidList llRegistriesThatNeedSaving;
 
     /// @todo NEWMEDIA implicit machine registration
     if (!mData->mRegistered)
@@ -3595,7 +3592,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                         medium->getPreferredDiffFormat(),
                         strFullSnapshotFolder.append(RTPATH_SLASH_STR),
                         medium->getFirstRegistryMachineId(),         // store this diff in the same registry as the parent
-                        &fNeedsGlobalSaveSettings);
+                        &llRegistriesThatNeedSaving);
         if (FAILED(rc)) return rc;
 
         /* Apply the normal locking logic to the entire chain. */
@@ -3627,7 +3624,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                                pMediumLockList,
                                                NULL /* aProgress */,
                                                true /* aWait */,
-                                               &fNeedsGlobalSaveSettings);
+                                               &llRegistriesThatNeedSaving);
 
                 alock.enter();
                 treeLock.enter();
@@ -3670,13 +3667,16 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         if (FAILED(rc)) return rc;
 
         // and decide which medium registry to use now that the medium is attached:
+        Guid uuid;
         if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
             // machine XML is VirtualBox 4.0 or higher:
-            medium->addRegistry(getId(),         // machine UUID
-                                &fNeedsMachineSaveSettings);
+            uuid = getId();     // machine UUID
         else
-            medium->addRegistry(mParent->getGlobalRegistryId(), // VirtualBox global registry UUID
-                                &fNeedsGlobalSaveSettings);
+            uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
+
+        if (medium->addRegistry(uuid))
+            // registry actually changed:
+            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
     }
 
     /* success: finally remember the attachment */
@@ -3686,18 +3686,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     mediumLock.release();
     treeLock.leave();
+    alock.release();
 
-    if (fNeedsMachineSaveSettings)
-        saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force);
-
-    if (fNeedsGlobalSaveSettings)
-    {
-        // save the global settings; for that we should hold only the VirtualBox lock
-        alock.release();
-
-        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->saveSettings();
-    }
+    mParent->saveRegistries(llRegistriesThatNeedSaving);
 
     return rc;
 }
@@ -3713,7 +3704,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    bool fNeedsSaveSettings = false;
+    GuidList llRegistriesThatNeedSaving;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -3736,23 +3727,14 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
-    rc = detachDevice(pAttach, alock, NULL /* pSnapshot */, &fNeedsSaveSettings);
+    rc = detachDevice(pAttach, alock, NULL /* pSnapshot */, &llRegistriesThatNeedSaving);
 
-    if (fNeedsSaveSettings)
-    {
-        bool fNeedsGlobalSaveSettings = false;
-        saveSettings(&fNeedsGlobalSaveSettings);
+    alock.release();
 
-        if (fNeedsGlobalSaveSettings)
-        {
-            // save the global settings; for that we should hold only the VirtualBox lock
-            alock.release();
-            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
-            mParent->saveSettings();
-        }
-    }
+    if (SUCCEEDED(rc))
+        rc = mParent->saveRegistries(llRegistriesThatNeedSaving);
 
-    return S_OK;
+    return rc;
 }
 
 STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControllerPort,
@@ -3866,8 +3848,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     setModified(IsModified_Storage);
     mMediaData.backup();
 
-    bool fNeedsMachineSaveSettings = false,
-         fNeedsGlobalSaveSettings = false;
+    GuidList llRegistriesThatNeedSaving;
 
     {
         // The backup operation makes the pAttach reference point to the
@@ -3884,14 +3865,16 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
             pMedium->addBackReference(mData->mUuid);
 
             // and decide which medium registry to use now that the medium is attached:
+            Guid uuid;
             if (mData->pMachineConfigFile->canHaveOwnMediaRegistry())
-                // machine XML is VirtualBox 4.0 or higher: machine UUID
-                pMedium->addRegistry(getId(),
-                                     &fNeedsMachineSaveSettings);
+                // machine XML is VirtualBox 4.0 or higher:
+                uuid = getId();     // machine UUID
             else
-                // VirtualBox global registry UUID
-                pMedium->addRegistry(mParent->getGlobalRegistryId(),
-                                     &fNeedsGlobalSaveSettings);
+                uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
+
+            if (pMedium->addRegistry(uuid))
+                // registry actually changed:
+                mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
         }
 
         pAttach->updateMedium(pMedium);
@@ -3926,18 +3909,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     mediumLock.release();
     multiLock.release();
 
-    if (fNeedsMachineSaveSettings)
-    {
-        AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
-        saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force);
-    }
-
-    if (fNeedsGlobalSaveSettings)
-    {
-        // save the global settings; for that we should hold only the VirtualBox lock
-        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->saveSettings();
-    }
+    mParent->saveRegistries(llRegistriesThatNeedSaving);
 
     return rc;
 }
@@ -4346,7 +4318,7 @@ struct Machine::DeleteTask
     ComObjPtr<Machine>          pMachine;
     std::list<Utf8Str>          llFilesToDelete;
     ComObjPtr<Progress>         pProgress;
-    bool                        fNeedsGlobalSaveSettings;
+    GuidList                    llRegistriesThatNeedSaving;
 };
 
 STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProgress)
@@ -4372,7 +4344,6 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
     // collect files to delete
     pTask->llFilesToDelete = mData->llFilesToDelete;            // saved states pushed here by Unregister()
 
-    pTask->fNeedsGlobalSaveSettings = false;
     for (size_t i = 0; i < sfaMedia.size(); ++i)
     {
         IMedium *pIMedium(sfaMedia[i]);
@@ -4383,7 +4354,7 @@ STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProg
         Utf8Str bstrLocation = pMedium->getLocationFull();
         // close the medium now; if that succeeds, then that means the medium is no longer
         // in use and we can add it to the list of files to delete
-        rc = pMedium->close(&pTask->fNeedsGlobalSaveSettings,
+        rc = pMedium->close(&pTask->llRegistriesThatNeedSaving,
                             mediumAutoCaller);
         if (SUCCEEDED(rc))
             pTask->llFilesToDelete.push_back(bstrLocation);
@@ -4548,11 +4519,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
 
     alock.release();
 
-    if (task.fNeedsGlobalSaveSettings)
-    {
-        AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->saveSettings();
-    }
+    mParent->saveRegistries(task.llRegistriesThatNeedSaving);
 
     return S_OK;
 }
@@ -7464,8 +7431,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
             if (puuidRegistry)
                 // caller wants registry ID to be set on all attached media (OVF import case)
-                medium->addRegistry(*puuidRegistry,
-                                    NULL /* pfNeedsSaveSettings */);
+                medium->addRegistry(*puuidRegistry);
         }
 
         if (FAILED(rc))
@@ -8457,8 +8423,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
  *                          many operations left as the number of hard disks
  *                          attached).
  * @param aOnline           Whether the VM was online prior to this operation.
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs to receive the registry IDs that need saving
  *
  * @note The progress object is not marked as completed, neither on success nor
  *       on failure. This is a responsibility of the caller.
@@ -8468,7 +8433,7 @@ HRESULT Machine::saveStateSettings(int aFlags)
 HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                      ULONG aWeight,
                                      bool aOnline,
-                                     bool *pfNeedsSaveSettings)
+                                     GuidList *pllRegistriesThatNeedSaving)
 {
     LogFlowThisFunc(("aOnline=%d\n", aOnline));
 
@@ -8593,7 +8558,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                             pMedium->getPreferredDiffFormat(),
                             strFullSnapshotFolder.append(RTPATH_SLASH_STR),
                             pMedium->getFirstRegistryMachineId(),        // store the diff in the same registry as the parent
-                            pfNeedsSaveSettings);
+                            pllRegistriesThatNeedSaving);
             if (FAILED(rc)) throw rc;
 
             /** @todo r=bird: How is the locking and diff image cleaned up if we fail before
@@ -8617,7 +8582,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                             pMediumLockList,
                                             NULL /* aProgress */,
                                             true /* aWait */,
-                                            pfNeedsSaveSettings);
+                                            pllRegistriesThatNeedSaving);
             alock.enter();
             if (FAILED(rc)) throw rc;
 
@@ -8664,7 +8629,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
     {
         MultiResult mrc = rc;
 
-        mrc = deleteImplicitDiffs(pfNeedsSaveSettings);
+        mrc = deleteImplicitDiffs(pllRegistriesThatNeedSaving);
     }
 
     return rc;
@@ -8682,7 +8647,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
  *
  * @note Locks this object for writing.
  */
-HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
+HRESULT Machine::deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -8760,7 +8725,7 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
             ComObjPtr<Medium> hd = (*it)->getMedium();
 
             rc = hd->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
-                                   pfNeedsSaveSettings);
+                                   pllRegistriesThatNeedSaving);
             AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, (*it)->getLogName(), hd->getLocationFull().c_str() ));
             mrc = rc;
         }
@@ -8768,9 +8733,7 @@ HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
         alock.enter();
 
         if (mData->mMachineState == MachineState_SettingUp)
-        {
             setMachineState(oldState);
-        }
     }
 
     return mrc;
@@ -8872,7 +8835,7 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
 HRESULT Machine::detachDevice(MediumAttachment *pAttach,
                               AutoWriteLock &writeLock,
                               Snapshot *pSnapshot,
-                              bool *pfNeedsSaveSettings)
+                              GuidList *pllRegistriesThatNeedSaving)
 {
     ComObjPtr<Medium> oldmedium = pAttach->getMedium();
     DeviceType_T mediumType = pAttach->getType();
@@ -8897,7 +8860,7 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
         writeLock.release();
 
         HRESULT rc = oldmedium->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
-                                              pfNeedsSaveSettings);
+                                              pllRegistriesThatNeedSaving);
 
         writeLock.acquire();
 
