@@ -214,7 +214,6 @@ public:
     struct UserData
     {
         settings::MachineUserData s;
-        Utf8Str m_strSnapshotFolderFull;
     };
 
     /**
@@ -613,7 +612,7 @@ public:
 
     // callback handlers
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }
-    virtual HRESULT onNATRedirectRuleChange(INetworkAdapter * /* networkAdapter */, BOOL /* Remove */, IN_BSTR /* Rule name */, 
+    virtual HRESULT onNATRedirectRuleChange(INetworkAdapter * /* networkAdapter */, BOOL /* Remove */, IN_BSTR /* Rule name */,
                                  NATProtocol_T /* proto */, IN_BSTR /* host ip */, LONG /* host port */, IN_BSTR /* guest ip */, LONG /* guest port */) { return S_OK; }
     virtual HRESULT onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
     virtual HRESULT onParallelPortChange(IParallelPort * /* parallelPort */) { return S_OK; }
@@ -956,7 +955,7 @@ public:
     bool checkForDeath();
 
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter);
-    HRESULT onNATRedirectRuleChange(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName, 
+    HRESULT onNATRedirectRuleChange(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName,
                                  NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort);
     HRESULT onStorageControllerChange();
     HRESULT onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);

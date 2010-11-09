@@ -1666,11 +1666,9 @@
         The opened machine remains unregistered until you call
         <link to="#registerMachine"/>.
 
-        The specified settings file name can be absolute
-        (full path) or relative to the <link to="IVirtualBox::homeFolder">
-          VirtualBox home directory</link>. This file must exist
-        and must be a valid machine settings file whose contents
-        will be used to construct the machine object.
+        The specified settings file name must be fully qualified.
+        The file must exist and be a valid machine XML settings file
+        whose contents will be used to construct the machine object.
 
         <result name="VBOX_E_FILE_ERROR">
           Settings file name invalid, not found or sharing violation.

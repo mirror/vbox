@@ -214,6 +214,20 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Config file:     %lS\n", settingsFilePath.raw());
 
+    Bstr snapshotFolder;
+    rc = machine->COMGETTER(SnapshotFolder)(snapshotFolder.asOutParam());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("SnapFldr=\"%lS\"\n", snapshotFolder.raw());
+    else
+        RTPrintf("Snapshot folder: %lS\n", snapshotFolder.raw());
+
+    Bstr logFolder;
+    rc = machine->COMGETTER(LogFolder)(logFolder.asOutParam());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("LogFldr=\"%lS\"\n", logFolder.raw());
+    else
+        RTPrintf("Log folder:      %lS\n", logFolder.raw());
+
     Bstr strHardwareUuid;
     rc = machine->COMGETTER(HardwareUUID)(strHardwareUuid.asOutParam());
     if (details == VMINFO_MACHINEREADABLE)
