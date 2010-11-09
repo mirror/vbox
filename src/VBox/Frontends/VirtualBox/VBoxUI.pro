@@ -28,24 +28,24 @@ FORMS = \
     src/VBoxUpdateDlg.ui \
     src/VBoxVMLogViewer.ui \
     src/settings/UISettingsDialog.ui \
-    src/settings/vm/VBoxVMSettingsGeneral.ui \
-    src/settings/vm/VBoxVMSettingsSystem.ui \
-    src/settings/vm/VBoxVMSettingsDisplay.ui \
-    src/settings/vm/VBoxVMSettingsHD.ui \
-    src/settings/vm/VBoxVMSettingsAudio.ui \
-    src/settings/vm/VBoxVMSettingsNetwork.ui \
-    src/settings/vm/VBoxVMSettingsSerial.ui \
-    src/settings/vm/VBoxVMSettingsParallel.ui \
-    src/settings/vm/VBoxVMSettingsUSB.ui \
-    src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui \
-    src/settings/vm/VBoxVMSettingsSF.ui \
-    src/settings/vm/VBoxVMSettingsSFDetails.ui \
-    src/settings/global/VBoxGLSettingsGeneral.ui \
-    src/settings/global/VBoxGLSettingsInput.ui \
-    src/settings/global/VBoxGLSettingsUpdate.ui \
-    src/settings/global/VBoxGLSettingsLanguage.ui \
-    src/settings/global/VBoxGLSettingsNetwork.ui \
-    src/settings/global/VBoxGLSettingsNetworkDetails.ui \
+    src/settings/global/UIGlobalSettingsGeneral.ui \
+    src/settings/global/UIGlobalSettingsInput.ui \
+    src/settings/global/UIGlobalSettingsUpdate.ui \
+    src/settings/global/UIGlobalSettingsLanguage.ui \
+    src/settings/global/UIGlobalSettingsNetwork.ui \
+    src/settings/global/UIGlobalSettingsNetworkDetails.ui \
+    src/settings/machine/UIMachineSettingsGeneral.ui \
+    src/settings/machine/UIMachineSettingsSystem.ui \
+    src/settings/machine/UIMachineSettingsDisplay.ui \
+    src/settings/machine/UIMachineSettingsStorage.ui \
+    src/settings/machine/UIMachineSettingsAudio.ui \
+    src/settings/machine/UIMachineSettingsNetwork.ui \
+    src/settings/machine/UIMachineSettingsSerial.ui \
+    src/settings/machine/UIMachineSettingsParallel.ui \
+    src/settings/machine/UIMachineSettingsUSB.ui \
+    src/settings/machine/UIMachineSettingsUSBFilterDetails.ui \
+    src/settings/machine/UIMachineSettingsSF.ui \
+    src/settings/machine/UIMachineSettingsSFDetails.ui \
     src/wizards/newvm/UINewVMWzdPage1.ui \
     src/wizards/newvm/UINewVMWzdPage2.ui \
     src/wizards/newvm/UINewVMWzdPage3.ui \

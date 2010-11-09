@@ -26,7 +26,7 @@
 #include "UINewVMWzd.h"
 #include "QIFileDialog.h"
 #include "VBoxProblemReporter.h"
-#include "VBoxVMSettingsHD.h"
+#include "UIMachineSettingsStorage.h"
 
 /* Globals */
 struct osTypePattern
@@ -877,7 +877,7 @@ QString UINewVMWzdPage5::getNextControllerName(KStorageBus type)
     {
         case KStorageBus_IDE:
         {
-            strControllerName = VBoxVMSettingsHD::tr("IDE Controller");
+            strControllerName = UIMachineSettingsStorage::tr("IDE Controller");
             ++m_iIDECount;
             if (m_iIDECount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iIDECount);
@@ -885,7 +885,7 @@ QString UINewVMWzdPage5::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_SATA:
         {
-            strControllerName = VBoxVMSettingsHD::tr("SATA Controller");
+            strControllerName = UIMachineSettingsStorage::tr("SATA Controller");
             ++m_iSATACount;
             if (m_iSATACount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iSATACount);
@@ -893,7 +893,7 @@ QString UINewVMWzdPage5::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_SCSI:
         {
-            strControllerName = VBoxVMSettingsHD::tr("SCSI Controller");
+            strControllerName = UIMachineSettingsStorage::tr("SCSI Controller");
             ++m_iSCSICount;
             if (m_iSCSICount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iSCSICount);
@@ -901,7 +901,7 @@ QString UINewVMWzdPage5::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_Floppy:
         {
-            strControllerName = VBoxVMSettingsHD::tr("Floppy Controller");
+            strControllerName = UIMachineSettingsStorage::tr("Floppy Controller");
             ++m_iFloppyCount;
             if (m_iFloppyCount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iFloppyCount);
@@ -909,7 +909,7 @@ QString UINewVMWzdPage5::getNextControllerName(KStorageBus type)
         }
         case KStorageBus_SAS:
         {
-            strControllerName = VBoxVMSettingsHD::tr("SAS Controller");
+            strControllerName = UIMachineSettingsStorage::tr("SAS Controller");
             ++m_iSASCount;
             if (m_iSASCount > 1)
                 strControllerName = QString("%1 %2").arg(strControllerName).arg(m_iSASCount);

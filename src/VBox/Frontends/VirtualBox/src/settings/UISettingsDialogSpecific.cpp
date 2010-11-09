@@ -31,22 +31,22 @@
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
 
-#include "VBoxGLSettingsGeneral.h"
-#include "VBoxGLSettingsInput.h"
-#include "VBoxGLSettingsUpdate.h"
-#include "VBoxGLSettingsLanguage.h"
-#include "VBoxGLSettingsNetwork.h"
+#include "UIGlobalSettingsGeneral.h"
+#include "UIGlobalSettingsInput.h"
+#include "UIGlobalSettingsUpdate.h"
+#include "UIGlobalSettingsLanguage.h"
+#include "UIGlobalSettingsNetwork.h"
 
-#include "VBoxVMSettingsGeneral.h"
-#include "VBoxVMSettingsSystem.h"
-#include "VBoxVMSettingsDisplay.h"
-#include "VBoxVMSettingsHD.h"
-#include "VBoxVMSettingsAudio.h"
-#include "VBoxVMSettingsNetwork.h"
-#include "VBoxVMSettingsSerial.h"
-#include "VBoxVMSettingsParallel.h"
-#include "VBoxVMSettingsUSB.h"
-#include "VBoxVMSettingsSF.h"
+#include "UIMachineSettingsGeneral.h"
+#include "UIMachineSettingsSystem.h"
+#include "UIMachineSettingsDisplay.h"
+#include "UIMachineSettingsStorage.h"
+#include "UIMachineSettingsAudio.h"
+#include "UIMachineSettingsNetwork.h"
+#include "UIMachineSettingsSerial.h"
+#include "UIMachineSettingsParallel.h"
+#include "UIMachineSettingsUSB.h"
+#include "UIMachineSettingsSF.h"
 
 #if 0 /* Global USB filters are DISABLED now: */
 # define ENABLE_GLOBAL_USB
@@ -302,7 +302,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* General page: */
                 case GLSettingsPage_General:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxGLSettingsGeneral;
+                    UISettingsPage *pSettingsPage = new UIGlobalSettingsGeneral;
                     pSettingsPage->setId(i);
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
@@ -312,7 +312,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* Input page: */
                 case GLSettingsPage_Input:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxGLSettingsInput;
+                    UISettingsPage *pSettingsPage = new UIGlobalSettingsInput;
                     pSettingsPage->setId(i);
                     addItem(":/hostkey_32px.png", ":/hostkey_disabled_32px.png",
                             ":/hostkey_16px.png", ":/hostkey_disabled_16px.png",
@@ -322,7 +322,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* Update page: */
                 case GLSettingsPage_Update:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxGLSettingsUpdate;
+                    UISettingsPage *pSettingsPage = new UIGlobalSettingsUpdate;
                     pSettingsPage->setId(i);
                     addItem(":/refresh_32px.png", ":/refresh_disabled_32px.png",
                             ":/refresh_16px.png", ":/refresh_disabled_16px.png",
@@ -332,7 +332,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* Language page: */
                 case GLSettingsPage_Language:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxGLSettingsLanguage;
+                    UISettingsPage *pSettingsPage = new UIGlobalSettingsLanguage;
                     pSettingsPage->setId(i);
                     addItem(":/site_32px.png", ":/site_disabled_32px.png",
                             ":/site_16px.png", ":/site_disabled_16px.png",
@@ -342,7 +342,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* USB page: */
                 case GLSettingsPage_USB:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(UISettingsPageType_Global);
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Global);
                     pSettingsPage->setId(i);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
@@ -352,7 +352,7 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                 /* Network page: */
                 case GLSettingsPage_Network:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxGLSettingsNetwork;
+                    UISettingsPage *pSettingsPage = new UIGlobalSettingsNetwork;
                     pSettingsPage->setId(i);
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
@@ -517,7 +517,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* General page: */
                 case VMSettingsPage_General:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsGeneral;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsGeneral;
                     pSettingsPage->setId(i);
                     addItem(":/machine_32px.png", ":/machine_disabled_32px.png",
                             ":/machine_16px.png", ":/machine_disabled_16px.png",
@@ -527,7 +527,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* System page: */
                 case VMSettingsPage_System:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSystem;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsSystem;
                     pSettingsPage->setId(i);
                     connect(pSettingsPage, SIGNAL(tableChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/chipset_32px.png", ":/chipset_disabled_32px.png",
@@ -538,7 +538,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Display page: */
                 case VMSettingsPage_Display:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsDisplay;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsDisplay;
                     pSettingsPage->setId(i);
                     addItem(":/vrdp_32px.png", ":/vrdp_disabled_32px.png",
                             ":/vrdp_16px.png", ":/vrdp_disabled_16px.png",
@@ -548,7 +548,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Storage page: */
                 case VMSettingsPage_Storage:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsHD;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsStorage;
                     pSettingsPage->setId(i);
                     connect(pSettingsPage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/hd_32px.png", ":/hd_disabled_32px.png",
@@ -559,7 +559,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Audio page: */
                 case VMSettingsPage_Audio:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsAudio;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsAudio;
                     pSettingsPage->setId(i);
                     addItem(":/sound_32px.png", ":/sound_disabled_32px.png",
                             ":/sound_16px.png", ":/sound_disabled_16px.png",
@@ -569,7 +569,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Network page: */
                 case VMSettingsPage_Network:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsNetworkPage;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsNetworkPage;
                     pSettingsPage->setId(i);
                     addItem(":/nw_32px.png", ":/nw_disabled_32px.png",
                             ":/nw_16px.png", ":/nw_disabled_16px.png",
@@ -587,7 +587,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Serial page: */
                 case VMSettingsPage_Serial:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSerialPage;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsSerialPage;
                     pSettingsPage->setId(i);
                     addItem(":/serial_port_32px.png", ":/serial_port_disabled_32px.png",
                             ":/serial_port_16px.png", ":/serial_port_disabled_16px.png",
@@ -597,7 +597,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Parallel page: */
                 case VMSettingsPage_Parallel:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsParallelPage;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsParallelPage;
                     pSettingsPage->setId(i);
                     addItem(":/parallel_port_32px.png", ":/parallel_port_disabled_32px.png",
                             ":/parallel_port_16px.png", ":/parallel_port_disabled_16px.png",
@@ -607,7 +607,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* USB page: */
                 case VMSettingsPage_USB:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsUSB(UISettingsPageType_Machine);
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Machine);
                     pSettingsPage->setId(i);
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
@@ -617,7 +617,7 @@ UIVMSettingsDlg::UIVMSettingsDlg(QWidget *pParent,
                 /* Shared Folders page: */
                 case VMSettingsPage_SF:
                 {
-                    UISettingsPage *pSettingsPage = new VBoxVMSettingsSF;
+                    UISettingsPage *pSettingsPage = new UIMachineSettingsSF;
                     pSettingsPage->setId(i);
                     addItem(":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png",
                             ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
@@ -708,10 +708,10 @@ void UIVMSettingsDlg::putBackTo()
         vboxProblem().cannotSaveMachineSettings(m_machine);
 
     /* Guest OS type & VT-x/AMD-V option correlation auto-fix: */
-    VBoxVMSettingsGeneral *pGeneralPage =
-        qobject_cast<VBoxVMSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
-    VBoxVMSettingsSystem *pSystemPage =
-        qobject_cast<VBoxVMSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
+    UIMachineSettingsGeneral *pGeneralPage =
+        qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
+    UIMachineSettingsSystem *pSystemPage =
+        qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
     if (pGeneralPage && pSystemPage &&
         pGeneralPage->is64BitOSTypeSelected() && !pSystemPage->isHWVirtExEnabled())
         m_machine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
@@ -720,8 +720,8 @@ void UIVMSettingsDlg::putBackTo()
     /* Disable 2D Video Acceleration for non-Windows guests: */
     if (pGeneralPage && !pGeneralPage->isWindowsOSTypeSelected())
     {
-        VBoxVMSettingsDisplay *pDisplayPage =
-            qobject_cast<VBoxVMSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
+        UIMachineSettingsDisplay *pDisplayPage =
+            qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
         if (pDisplayPage && pDisplayPage->isAcceleration2DVideoSelected())
             m_machine.SetAccelerate2DVideoEnabled(false);
     }
@@ -824,10 +824,10 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
     if (pPage == m_pSelector->idToPage(VMSettingsPage_General))
     {
         /* Get General & System pages: */
-        VBoxVMSettingsGeneral *pGeneralPage =
-            qobject_cast<VBoxVMSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
-        VBoxVMSettingsSystem *pSystemPage =
-            qobject_cast<VBoxVMSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
+        UIMachineSettingsGeneral *pGeneralPage =
+            qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
+        UIMachineSettingsSystem *pSystemPage =
+            qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
 
         /* Guest OS type & VT-x/AMD-V option correlation test: */
         if (pGeneralPage && pSystemPage &&
@@ -846,10 +846,10 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
     if (pPage == m_pSelector->idToPage(VMSettingsPage_Display))
     {
         /* Get General & Display pages: */
-        VBoxVMSettingsGeneral *pGeneralPage =
-            qobject_cast<VBoxVMSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
-        VBoxVMSettingsDisplay *pDisplayPage =
-            qobject_cast<VBoxVMSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
+        UIMachineSettingsGeneral *pGeneralPage =
+            qobject_cast<UIMachineSettingsGeneral*>(m_pSelector->idToPage(VMSettingsPage_General));
+        UIMachineSettingsDisplay *pDisplayPage =
+            qobject_cast<UIMachineSettingsDisplay*>(m_pSelector->idToPage(VMSettingsPage_Display));
 #ifdef VBOX_WITH_CRHGSMI
         if (pGeneralPage && pDisplayPage)
         {
@@ -874,10 +874,10 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
     if (pPage == m_pSelector->idToPage(VMSettingsPage_System))
     {
         /* Get System & USB pages: */
-        VBoxVMSettingsSystem *pSystemPage =
-            qobject_cast<VBoxVMSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
-        VBoxVMSettingsUSB *pUsbPage =
-            qobject_cast<VBoxVMSettingsUSB*>(m_pSelector->idToPage(VMSettingsPage_USB));
+        UIMachineSettingsSystem *pSystemPage =
+            qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
+        UIMachineSettingsUSB *pUsbPage =
+            qobject_cast<UIMachineSettingsUSB*>(m_pSelector->idToPage(VMSettingsPage_USB));
         if (pSystemPage && pUsbPage &&
             pSystemPage->isHIDEnabled() && !pUsbPage->isOHCIEnabled())
         {
