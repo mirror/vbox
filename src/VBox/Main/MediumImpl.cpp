@@ -1656,6 +1656,15 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
                                 m->strLocationFull.c_str(), getChildren().size());
             if (aType == MediumType_Shareable)
             {
+                if (m->state == MediumState_Inaccessible)
+                {
+                    HRESULT rc = queryInfo(false /* fSetImageId */, false /* fSetParentId */);
+                    if (FAILED(rc))
+                        return setError(rc,
+                                        tr("Cannot change type for medium '%s' to 'Shareable' because the medium is inaccesible"),
+                                        m->strLocationFull.c_str());
+                }
+
                 MediumVariant_T variant = getVariant();
                 if (!(variant & MediumVariant_Fixed))
                     return setError(VBOX_E_INVALID_OBJECT_STATE,
