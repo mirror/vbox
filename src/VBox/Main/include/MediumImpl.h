@@ -72,7 +72,7 @@ public:
                  const Utf8Str &aFormat,
                  const Utf8Str &aLocation,
                  const Guid &uuidMachineRegistry,
-                 bool *pfNeedsGlobalSaveSettings);
+                 GuidList *pllRegistriesThatNeedSaving);
 
     // initializer for opening existing media
     // (VirtualBox::OpenMedium(); Machine::AttachDevice())
@@ -175,10 +175,10 @@ public:
     MediumType_T getType() const;
     Utf8Str getName();
 
-    bool addRegistry(const Guid& id,
-                     bool *pfNeedsSaveSettings);
+    bool addRegistry(const Guid& id);
     bool isInRegistry(const Guid& id);
     const Guid& getFirstRegistryMachineId() const;
+    HRESULT addToRegistryIDList(GuidList &llRegistryIDs);
 
     HRESULT addBackReference(const Guid &aMachineId,
                              const Guid &aSnapshotId = Guid::Empty);
@@ -211,11 +211,11 @@ public:
                               MediumLockList *pMediumLockList,
                               ComObjPtr<Progress> *aProgress,
                               bool aWait,
-                              bool *pfNeedsGlobalSaveSettings);
+                              GuidList *pllRegistriesThatNeedSaving);
     Utf8Str getPreferredDiffFormat();
 
-    HRESULT close(bool *pfNeedsGlobalSaveSettings, AutoCaller &autoCaller);
-    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsGlobalSaveSettings);
+    HRESULT close(GuidList *pllRegistriesThatNeedSaving, AutoCaller &autoCaller);
+    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, GuidList *pllRegistriesThatNeedSaving);
     HRESULT markForDeletion();
     HRESULT unmarkForDeletion();
     HRESULT markLockedForDeletion();
@@ -236,7 +236,7 @@ public:
                     MediumLockList *aMediumLockList,
                     ComObjPtr<Progress> *aProgress,
                     bool aWait,
-                    bool *pfNeedsGlobalSaveSettings);
+                    GuidList *pllRegistriesThatNeedSaving);
     void cancelMergeTo(const MediaList &aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
@@ -259,7 +259,7 @@ private:
     HRESULT queryInfo(bool fSetImageId, bool fSetParentId);
 
     HRESULT canClose();
-    HRESULT unregisterWithVirtualBox(bool *pfNeedsGlobalSaveSettings);
+    HRESULT unregisterWithVirtualBox(GuidList *pllRegistriesThatNeedSaving);
 
     HRESULT setStateError();
 
@@ -319,7 +319,7 @@ private:
     friend class ImportTask;
 
     HRESULT startThread(Medium::Task *pTask);
-    HRESULT runNow(Medium::Task *pTask, bool *pfNeedsGlobalSaveSettings);
+    HRESULT runNow(Medium::Task *pTask, GuidList *pllRegistriesThatNeedSaving);
 
     HRESULT taskCreateBaseHandler(Medium::CreateBaseTask &task);
     HRESULT taskCreateDiffHandler(Medium::CreateDiffTask &task);

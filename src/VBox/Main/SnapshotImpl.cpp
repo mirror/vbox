@@ -1353,8 +1353,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    // if this becomes true, we need to call VirtualBox::saveSettings() in the end
-    bool fNeedsGlobalSaveSettings = false;
+    GuidList llRegistriesThatNeedSaving;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1439,7 +1438,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         rc = createImplicitDiffs(aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
                                  !!fTakingSnapshotOnline,
-                                 &fNeedsGlobalSaveSettings);
+                                 &llRegistriesThatNeedSaving);
         if (FAILED(rc))
             throw rc;
 
@@ -1784,7 +1783,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     HRESULT rc = S_OK;
 
     bool stateRestored = false;
-    bool fNeedsGlobalSaveSettings = false;
+    GuidList llRegistriesThatNeedSaving;
 
     try
     {
@@ -1837,7 +1836,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             rc = createImplicitDiffs(aTask.pProgress,
                                      1,
                                      false /* aOnline */,
-                                     &fNeedsGlobalSaveSettings);
+                                     &llRegistriesThatNeedSaving);
             if (FAILED(rc))
                 throw rc;
 
@@ -1973,10 +1972,13 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         }
 
         // save machine settings, reset the modified flag and commit;
+        bool fNeedsGlobalSaveSettings = false;
         rc = saveSettings(&fNeedsGlobalSaveSettings,
                           SaveS_ResetCurStateModified | saveFlags);
         if (FAILED(rc))
             throw rc;
+        if (fNeedsGlobalSaveSettings)
+            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, mParent->getGlobalRegistryId());
 
         // let go of the locks while we're deleting image files below
         alock.leave();
@@ -1991,7 +1993,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
             HRESULT rc2 = pMedium->deleteStorage(NULL /* aProgress */,
                                                  true /* aWait */,
-                                                 &fNeedsGlobalSaveSettings);
+                                                 &llRegistriesThatNeedSaving);
             // ignore errors here because we cannot roll back after saveSettings() above
             if (SUCCEEDED(rc2))
                 pMedium->uninit();
@@ -2018,12 +2020,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         }
     }
 
-    if (fNeedsGlobalSaveSettings)
-    {
-        // finally, VirtualBox.xml needs saving too
-        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->saveSettings();
-    }
+    mParent->saveRegistries(llRegistriesThatNeedSaving);
 
     /* set the result (this will try to fetch current error info on failure) */
     aTask.pProgress->notifyComplete(rc);
@@ -2321,8 +2318,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
     HRESULT rc = S_OK;
 
-    bool fMachineSettingsChanged = false;       // Machine
-    bool fNeedsGlobalSaveSettings = false;            // VirtualBox.xml
+    GuidList llRegistriesThatNeedSaving;
 
     Guid snapshotId;
 
@@ -2517,7 +2513,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                   1);        // weight
 
                 aTask.pSnapshot->deleteStateFile();
-                fMachineSettingsChanged = true;
+                // machine needs saving now
+                mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
             }
         }
 
@@ -2563,11 +2560,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     Assert(pMedium->getState() == MediumState_Deleting);
                     /* No need to hold the lock any longer. */
                     mLock.release();
-                    bool fNeedsSave = false;
                     rc = pMedium->deleteStorage(&aTask.pProgress,
                                                 true /* aWait */,
-                                                &fNeedsSave);
-                    fNeedsGlobalSaveSettings |= fNeedsSave;
+                                                &llRegistriesThatNeedSaving);
                     if (FAILED(rc))
                         throw rc;
 
@@ -2601,9 +2596,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                it->mpMediumLockList,
                                                &aTask.pProgress,
                                                true /* aWait */,
-                                               &fNeedsSave);
+                                               &llRegistriesThatNeedSaving);
                 }
-                fNeedsGlobalSaveSettings |= fNeedsSave;
 
                 // If the merge failed, we need to do our best to have a usable
                 // VM configuration afterwards. The return code doesn't tell
@@ -2699,7 +2693,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 it->mpSource->uninit();
 
             // One attachment is merged, must save the settings
-            fMachineSettingsChanged = true;
+            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
 
             // prevent calling cancelDeleteSnapshotMedium() for this attachment
             it = toDelete.erase(it);
@@ -2718,7 +2712,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             aTask.pSnapshot->beginSnapshotDelete();
             aTask.pSnapshot->uninit();
 
-            fMachineSettingsChanged = true;
+            mParent->addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -2758,26 +2752,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         setMachineState(aTask.machineStateBackup);
         updateMachineStateOnClient();
 
-        if (fMachineSettingsChanged || fNeedsGlobalSaveSettings)
-        {
-            if (fMachineSettingsChanged)
-            {
-                AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
-                /// @todo r=klaus the SaveS_Force is right now a workaround,
-                // as something in saveSettings fails to detect deleted
-                // snapshots in some cases (2 child snapshots -> 1 child
-                // snapshot). Should be fixed, but don't drop SaveS_Force
-                // then, as it avoids a rather costly config equality check
-                // when we know that it is changed.
-                saveSettings(&fNeedsGlobalSaveSettings, SaveS_Force | SaveS_InformCallbacksAnyway);
-            }
-
-            if (fNeedsGlobalSaveSettings)
-            {
-                AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-                mParent->saveSettings();
-            }
-        }
+        mParent->saveRegistries(llRegistriesThatNeedSaving);
     }
 
     // report the result (this will try to fetch current error info on failure)
@@ -3284,7 +3259,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
             pSource->deparent();
 
         // then, register again
-        rc = mParent->registerHardDisk(pTarget, NULL /*&fNeedsGlobalSaveSettings*/);
+        rc = mParent->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
         AssertComRC(rc);
     }
     else

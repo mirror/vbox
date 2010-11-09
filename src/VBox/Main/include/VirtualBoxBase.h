@@ -47,6 +47,7 @@ class Machine;
 class Medium;
 class Host;
 typedef std::list< ComObjPtr<Medium> > MediaList;
+typedef std::list<Guid> GuidList;
 
 ////////////////////////////////////////////////////////////////////////////////
 //

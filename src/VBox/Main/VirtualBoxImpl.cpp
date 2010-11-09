@@ -652,8 +652,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                                  strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = registerHardDisk(pHardDisk,
-                              NULL /*pfNeedsGlobalSaveSettings*/ );
+        rc = registerHardDisk(pHardDisk, NULL /* pllRegistriesThatNeedSaving */);
         if (FAILED(rc)) return rc;
     }
 
@@ -675,7 +674,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
         rc = registerImage(pImage,
                            DeviceType_DVD,
-                           NULL /*pfNeedsGlobalSaveSettings*/ );
+                           NULL /* pllRegistriesThatNeedSaving */);
         if (FAILED(rc)) return rc;
     }
 
@@ -697,7 +696,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
         rc = registerImage(pImage,
                            DeviceType_Floppy,
-                           NULL /*pfNeedsGlobalSaveSettings*/ );
+                           NULL /* pllRegistriesThatNeedSaving */);
         if (FAILED(rc)) return rc;
     }
 
@@ -1429,24 +1428,16 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
     if (format.isEmpty())
         getDefaultHardDiskFormat(format);
 
-    bool fNeedsGlobalSaveSettings = false;
-
     ComObjPtr<Medium> hardDisk;
     hardDisk.createObject();
     HRESULT rc = hardDisk->init(this,
                                 format,
                                 aLocation,
-                                Guid::Empty,        // media registry
-                                &fNeedsGlobalSaveSettings);
+                                Guid::Empty,   // media registry: none yet
+                                NULL /* pllRegistriesThatNeedSaving */);
 
     if (SUCCEEDED(rc))
         hardDisk.queryInterfaceTo(aHardDisk);
-
-    if (fNeedsGlobalSaveSettings)
-    {
-        AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
-        saveSettings();
-    }
 
     return rc;
 }
@@ -1462,7 +1453,6 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    bool fNeedsGlobalSaveSettings = false;
     ComObjPtr<Medium> pMedium;
 
     /* we don't access non-const data members so no need to lock */
@@ -1511,15 +1501,14 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
             switch (deviceType)
             {
                 case DeviceType_HardDisk:
-                    rc = registerHardDisk(pMedium,
-                                          &fNeedsGlobalSaveSettings);
+                    rc = registerHardDisk(pMedium, NULL /* pllRegistriesThatNeedSaving */);
                 break;
 
                 case DeviceType_DVD:
                 case DeviceType_Floppy:
                     rc = registerImage(pMedium,
                                        deviceType,
-                                       &fNeedsGlobalSaveSettings);
+                                       NULL /* pllRegistriesThatNeedSaving */);
                 break;
             }
 
@@ -1536,12 +1525,6 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
 
     if (SUCCEEDED(rc))
         pMedium.queryInterfaceTo(aMedium);
-
-    if (fNeedsGlobalSaveSettings)
-    {
-        AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
-        saveSettings();
-    }
 
     return rc;
 }
@@ -3363,12 +3346,11 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
  *
  * @param aHardDisk Hard disk object to remember.
  * @param uuidMachineRegistry UUID of machine whose registry should be used, or a NULL UUID for the global registry.
- * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs of media registries that need saving.
  * @return
  */
 HRESULT VirtualBox::registerHardDisk(Medium *pMedium,
-                                     bool *pfNeedsGlobalSaveSettings)
+                                     GuidList *pllRegistriesThatNeedSaving)
 {
     AssertReturn(pMedium != NULL, E_INVALIDARG);
 
@@ -3419,10 +3401,8 @@ HRESULT VirtualBox::registerHardDisk(Medium *pMedium,
         // store all hard disks (even differencing images) in the map
         m->mapHardDisks[id] = pMedium;
 
-        if (pfNeedsGlobalSaveSettings)
-            // global settings need saving only if the medium is to be saved in the global registry
-            if (pMedium->isInRegistry(m->uuidMediaRegistry))
-                *pfNeedsGlobalSaveSettings = true;
+        if (pllRegistriesThatNeedSaving)
+            pMedium->addToRegistryIDList(*pllRegistriesThatNeedSaving);
     }
 
     return rc;
@@ -3438,7 +3418,7 @@ HRESULT VirtualBox::registerHardDisk(Medium *pMedium,
  * @note Caller must hold the media tree lock for writing; in addition, this locks @a aHardDisk for reading
  */
 HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
-                                       bool *pfNeedsGlobalSaveSettings)
+                                       GuidList *pllRegistriesThatNeedSaving)
 {
     AssertReturn(aHardDisk != NULL, E_INVALIDARG);
 
@@ -3469,10 +3449,8 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
     Assert(cnt == 1);
     NOREF(cnt);
 
-    if (pfNeedsGlobalSaveSettings)
-        // global settings need saving only if the medium is to be saved in the global registry
-        if (aHardDisk->isInRegistry(m->uuidMediaRegistry))
-            *pfNeedsGlobalSaveSettings = true;
+    if (pllRegistriesThatNeedSaving)
+        aHardDisk->addToRegistryIDList(*pllRegistriesThatNeedSaving);
 
     return S_OK;
 }
@@ -3483,14 +3461,12 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
  * @param argImage      Image object to remember.
  * @param argType       Either DeviceType_DVD or DeviceType_Floppy.
  * @param uuidMachineRegistry UUID of machine whose registry should be used, or a NULL UUID for the global registry.
- * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note Caller must hold the media tree lock for writing; in addition, this locks @a argImage for reading
  */
 HRESULT VirtualBox::registerImage(Medium *pMedium,
                                   DeviceType_T argType,
-                                  bool *pfNeedsGlobalSaveSettings)
+                                  GuidList *pllRegistriesThatNeedSaving)
 {
     AssertReturn(pMedium != NULL, E_INVALIDARG);
 
@@ -3541,10 +3517,8 @@ HRESULT VirtualBox::registerImage(Medium *pMedium,
         all.getList().push_back(pMedium);
                 // access the list directly because we already locked the list above
 
-        if (pfNeedsGlobalSaveSettings)
-            // global settings need saving only if the medium is to be saved in the global registry
-            if (pMedium->isInRegistry(m->uuidMediaRegistry))
-                *pfNeedsGlobalSaveSettings = true;
+        if (pllRegistriesThatNeedSaving)
+            pMedium->addToRegistryIDList(*pllRegistriesThatNeedSaving);
     }
 
     return rc;
@@ -3562,7 +3536,7 @@ HRESULT VirtualBox::registerImage(Medium *pMedium,
  */
 HRESULT VirtualBox::unregisterImage(Medium *argImage,
                                     DeviceType_T argType,
-                                    bool *pfNeedsGlobalSaveSettings)
+                                    GuidList *pllRegistriesThatNeedSaving)
 {
     AssertReturn(argImage != NULL, E_INVALIDARG);
 
@@ -3591,10 +3565,8 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
 
     HRESULT rc = S_OK;
 
-    if (pfNeedsGlobalSaveSettings)
-        // global settings need saving only if the medium is to be saved in the global registry
-        if (argImage->isInRegistry(m->uuidMediaRegistry))
-            *pfNeedsGlobalSaveSettings = true;
+    if (pllRegistriesThatNeedSaving)
+        argImage->addToRegistryIDList(*pllRegistriesThatNeedSaving);
 
     return rc;
 }
@@ -3697,6 +3669,73 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
     onMachineRegistered(id, FALSE);
 
     return rc;
+}
+
+/**
+ * Adds uuid to llRegistriesThatNeedSaving unless it's already on the list.
+ *
+ * @todo maybe there's something in libstdc++ for this
+ *
+ * @param llRegistriesThatNeedSaving
+ * @param uuid
+ */
+void VirtualBox::addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving,
+                                       Guid uuid)
+{
+    for (GuidList::const_iterator it = llRegistriesThatNeedSaving.begin();
+         it != llRegistriesThatNeedSaving.end();
+         ++it)
+    {
+        if (*it == uuid)
+            // uuid is already in list:
+            return;
+    }
+
+    llRegistriesThatNeedSaving.push_back(uuid);
+}
+
+HRESULT VirtualBox::saveRegistries(const GuidList &llRegistriesThatNeedSaving)
+{
+    bool fNeedsGlobalSettings = false;
+    HRESULT rc = S_OK;
+
+    for (GuidList::const_iterator it = llRegistriesThatNeedSaving.begin();
+         it != llRegistriesThatNeedSaving.end();
+         ++it)
+    {
+        const Guid &uuid = *it;
+
+        if (uuid == getGlobalRegistryId())
+            fNeedsGlobalSettings = true;
+        else
+        {
+            // should be machine ID then:
+            ComObjPtr<Machine> pMachine;
+            rc = findMachine(uuid,
+                             false /* fPermitInaccessible */,
+                             false /* aSetError */,
+                             &pMachine);
+            if (SUCCEEDED(rc))
+            {
+                AutoCaller autoCaller(pMachine);
+                if (FAILED(autoCaller.rc())) return autoCaller.rc();
+                AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
+                rc = pMachine->saveSettings(&fNeedsGlobalSettings,
+                                            Machine::SaveS_Force);           // caller said save, so stop arguing
+            }
+
+            if (FAILED(rc))
+                return rc;
+        }
+    }
+
+    if (fNeedsGlobalSettings)
+    {
+        AutoWriteLock vlock(this COMMA_LOCKVAL_SRC_POS);
+        rc = saveSettings();
+    }
+
+    return S_OK;
 }
 
 /**

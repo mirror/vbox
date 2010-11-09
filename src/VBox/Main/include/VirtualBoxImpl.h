@@ -254,11 +254,11 @@ public:
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
 
-    HRESULT registerHardDisk(Medium *aHardDisk, bool *pfNeedsGlobalSaveSettings);
-    HRESULT unregisterHardDisk(Medium *aHardDisk, bool *pfNeedsGlobalSaveSettings);
+    HRESULT registerHardDisk(Medium *aHardDisk, GuidList *pllRegistriesThatNeedSaving);
+    HRESULT unregisterHardDisk(Medium *aHardDisk, GuidList *pllRegistriesThatNeedSaving);
 
-    HRESULT registerImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsGlobalSaveSettings);
-    HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsGlobalSaveSettings);
+    HRESULT registerImage(Medium *aImage, DeviceType_T argType, GuidList *pllRegistriesThatNeedSaving);
+    HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, GuidList *pllRegistriesThatNeedSaving);
 
     void pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
     HRESULT unregisterMachineMedia(const Guid &id);
@@ -272,6 +272,9 @@ public:
                            const Guid &uuidRegistry,
                            const Utf8Str &strMachineFolder);
     HRESULT saveSettings();
+
+    void addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving, Guid uuid);
+    HRESULT saveRegistries(const GuidList &llRegistriesThatNeedSaving);
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName);
 
