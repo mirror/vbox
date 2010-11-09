@@ -31,6 +31,10 @@
 #include <iprt/string.h>
 #include <iprt/stream.h>
 
+#ifndef RT_OS_WINDOWS
+#include <sys/stat.h>
+#endif
+
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
@@ -193,7 +197,8 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
                  fileMode |= newMode;
              }
              else
-                 fileMode |= S_IRWXUGO & ~umaskMode;
+                 fileMode |= S_IRWXU | S_IRWXG | S_IRWXO;
+                 fileMode &= ~umaskMode;
 #endif
          }
 

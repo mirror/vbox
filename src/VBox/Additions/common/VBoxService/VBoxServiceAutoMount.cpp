@@ -93,6 +93,7 @@ static DECLCALLBACK(int) VBoxServiceAutoMountInit(void)
 }
 
 
+/** @todo Integrate into RTFsQueryMountpoint().  */
 static bool VBoxServiceAutoMountShareIsMounted(const char *pszShare,
                                                char *pszMountPoint, size_t cbMountPoint)
 {
