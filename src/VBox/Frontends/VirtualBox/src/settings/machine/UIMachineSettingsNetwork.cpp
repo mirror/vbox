@@ -633,6 +633,22 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage(bool aDisableStaticCo
      * same tab widgets are shown during runtime
      */
     mDisableStaticControls = aDisableStaticControls;
+
+    /* How many adapters to display */
+    ulong uCount = qMin((ULONG)4, vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount());
+    /* Add the tab pages to parent tab widget. Needed for space calculations. */
+    for (ulong iSlot = 0; iSlot < uCount; ++iSlot)
+    {
+        /* Creating adapter's page: */
+        UIMachineSettingsNetwork *pPage = new UIMachineSettingsNetwork(this, mDisableStaticControls);
+
+        /* Attach adapter's page to Tab Widget: */
+        mTwAdapters->addTab(pPage, pPage->pageTitle());
+
+        /* Disable tab page of disabled adapter if it is being configured dynamically: */
+        if (mDisableStaticControls && !m_cache.m_items[iSlot].m_fAdapterEnabled)
+            mTwAdapters->setTabEnabled(iSlot, false);
+    }
 }
 
 void UIMachineSettingsNetworkPage::loadDirectlyFrom(const CMachine &machine)
@@ -822,17 +838,15 @@ void UIMachineSettingsNetworkPage::getFromCache()
     setTabOrder(m_pFirstWidget, mTwAdapters->focusProxy());
     QWidget *pLastFocusWidget = mTwAdapters->focusProxy();
 
-    /* Apply internal variables data to QWidget(s): */
-    for (int iSlot = 0; iSlot < m_cache.m_items.size(); ++iSlot)
+    int uCount = qMin(mTwAdapters->count(), m_cache.m_items.size());
+    for (int iSlot = 0; iSlot < uCount; ++iSlot)
     {
-        /* Creating adapter's page: */
-        UIMachineSettingsNetwork *pPage = new UIMachineSettingsNetwork(this, mDisableStaticControls);
+        UIMachineSettingsNetwork *pPage =
+            qobject_cast<UIMachineSettingsNetwork *>(mTwAdapters->widget(iSlot));
+        Assert(pPage);
 
         /* Loading adapter's data into page: */
         pPage->fetchAdapterData(m_cache.m_items[iSlot]);
-
-        /* Attach adapter's page to Tab Widget: */
-        mTwAdapters->addTab(pPage, pPage->pageTitle());
 
         /* Disable tab page of disabled adapter if it is being configured dynamically: */
         if (mDisableStaticControls && !m_cache.m_items[iSlot].m_fAdapterEnabled)
