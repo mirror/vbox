@@ -1208,14 +1208,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
         }
         break;
 
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
         case SHFL_FN_SET_SYMLINKS:
         {
             pClient->fu32Flags |= SHFL_CF_SYMLINKS;
             rc = VINF_SUCCESS;
             break;
         }
-#endif
 
         default:
         {
