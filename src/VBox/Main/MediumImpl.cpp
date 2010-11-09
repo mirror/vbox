@@ -1661,7 +1661,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
                     HRESULT rc = queryInfo(false /* fSetImageId */, false /* fSetParentId */);
                     if (FAILED(rc))
                         return setError(rc,
-                                        tr("Cannot change type for medium '%s' to 'Shareable' because the medium is inaccesible"),
+                                        tr("Cannot change type for medium '%s' to 'Shareable' because the medium is inaccessible"),
                                         m->strLocationFull.c_str());
                 }
 
