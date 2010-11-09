@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2008 Oracle Corporation
+# Copyright (C) 2006-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-libpng
 VBox-libpng_TEMPLATE = VBOXR3NP
-VBox-libpng_INCS = ../zlib-1.2.1
+VBox-libpng_SDKS = VBOX_ZLIB
 VBox-libpng_SOURCES = \
 	png.c \
 	pngset.c \

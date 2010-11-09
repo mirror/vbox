@@ -12,6 +12,45 @@
  * If you *really* need a unique prefix for all types and library functions,
  * compile with -DZ_PREFIX. The "standard" zlib should be compiled without it.
  */
+#ifdef VBOX /* Map public symbols to make sure the build is sane. */
+#  define deflateInit_          vboxzlib_deflateInit_
+#  define deflate               vboxzlib_deflate
+#  define deflateEnd            vboxzlib_deflateEnd
+#  define inflateInit_          vboxzlib_inflateInit_
+#  define inflate               vboxzlib_inflate
+#  define inflateEnd            vboxzlib_inflateEnd
+#  define deflateInit2_         vboxzlib_deflateInit2_
+#  define deflateSetDictionary  vboxzlib_deflateSetDictionary
+#  define deflateCopy           vboxzlib_deflateCopy
+#  define deflateReset          vboxzlib_deflateReset
+#  define deflatePrime          vboxzlib_deflatePrime
+#  define deflateParams         vboxzlib_deflateParams
+#  define deflateBound          vboxzlib_deflateBound
+#  define inflateInit2_         vboxzlib_inflateInit2_
+#  define inflateSetDictionary  vboxzlib_inflateSetDictionary
+#  define inflateSync           vboxzlib_inflateSync
+#  define inflateSyncPoint      vboxzlib_inflateSyncPoint
+#  define inflateCopy           vboxzlib_inflateCopy
+#  define inflateReset          vboxzlib_inflateReset
+#  define compress              vboxzlib_compress
+#  define compress2             vboxzlib_compress2
+#  define compressBound         vboxzlib_compressBound
+#  define uncompress            vboxzlib_uncompress
+#  define adler32               vboxzlib_adler32
+#  define crc32                 vboxzlib_crc32
+#  define get_crc_table         vboxzlib_get_crc_table
+
+#  define Byte                  vboxzlib_Byte
+#  define uInt                  vboxzlib_uInt
+#  define uLong                 vboxzlib_uLong
+#  define Bytef                 vboxzlib_Bytef
+#  define charf                 vboxzlib_charf
+#  define intf                  vboxzlib_intf
+#  define uIntf                 vboxzlib_uIntf
+#  define uLongf                vboxzlib_uLongf
+#  define voidpf                vboxzlib_voidpf
+#  define voidp                 vboxzlib_voidp
+#else /* !VBOX */
 #ifdef Z_PREFIX
 #  define deflateInit_  z_deflateInit_
 #  define deflate       z_deflate
@@ -51,6 +90,7 @@
 #  define voidpf        z_voidpf
 #  define voidp         z_voidp
 #endif
+#endif /*!VBOX*/
 
 #if defined(__MSDOS__) && !defined(MSDOS)
 #  define MSDOS
