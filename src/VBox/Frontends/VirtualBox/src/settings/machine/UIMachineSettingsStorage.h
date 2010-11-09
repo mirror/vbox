@@ -501,6 +501,8 @@ private:
 
     Qt::ItemFlags flags (const QModelIndex &aIndex) const;
 
+    KChipsetType chipsetType() const;
+
     AbstractItem *mRootItem;
 
     QPixmap mPlusPixmapEn;
@@ -510,8 +512,6 @@ private:
     QPixmap mMinusPixmapDis;
 
     ToolTipType mToolTipType;
-
-    KChipsetType getChipsetType() const;
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 

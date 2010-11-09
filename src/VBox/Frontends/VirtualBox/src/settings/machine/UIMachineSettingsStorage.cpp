@@ -903,17 +903,6 @@ QModelIndex StorageModel::parent (const QModelIndex &aIndex) const
         return QModelIndex();
 }
 
-KChipsetType StorageModel::getChipsetType() const
-{
-#if 0
-    CMachine mach = vboxGlobal().virtualBox().FindMachine(mRootItem->machineId());
-    Assert(!mach.isNull());
-    return mach.GetChipsetType();
-#else
-    return KChipsetType_PIIX3;
-#endif
-}
-
 QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
 {
     if (!aIndex.isValid())
@@ -1033,27 +1022,27 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         case R_IsMoreIDEControllersPossible:
         {
             return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_IDE) <
-                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (getChipsetType(), KStorageBus_IDE);
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_IDE);
         }
         case R_IsMoreSATAControllersPossible:
         {
             return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SATA) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (getChipsetType(), KStorageBus_SATA);
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_SATA);
         }
         case R_IsMoreSCSIControllersPossible:
         {
             return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SCSI) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (getChipsetType(), KStorageBus_SCSI);
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_SCSI);
         }
         case R_IsMoreFloppyControllersPossible:
         {
             return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_Floppy) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (getChipsetType(), KStorageBus_Floppy);
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_Floppy);
         }
         case R_IsMoreSASControllersPossible:
         {
             return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SAS) <
-                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (getChipsetType(), KStorageBus_SAS);
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (chipsetType(), KStorageBus_SAS);
         }
         case R_IsMoreAttachmentsPossible:
         {
@@ -1523,6 +1512,13 @@ Qt::ItemFlags StorageModel::flags (const QModelIndex &aIndex) const
            Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
+KChipsetType StorageModel::chipsetType() const
+{
+    CMachine machine = vboxGlobal().virtualBox().FindMachine(mRootItem->machineId());
+    Assert(!machine.isNull());
+    return machine.GetChipsetType();
+}
+
 /* Storage Delegate */
 StorageDelegate::StorageDelegate (QObject *aParent)
     : QItemDelegate (aParent)
@@ -1787,9 +1783,6 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     connect (mCbShowDiffs, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
     connect (mCbPassthrough, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
 
-    /* Update actions */
-    updateActionsState();
-
     /* Applying language settings */
     retranslateUi();
 
@@ -1879,6 +1872,9 @@ void UIMachineSettingsStorage::getFromCache()
     /* Set the first controller as current if present */
     if (mStorageModel->rowCount(mStorageModel->root()) > 0)
         mTwStorageTree->setCurrentIndex(mStorageModel->index(0, 0, mStorageModel->root()));
+
+    /* Update actions: */
+    updateActionsState();
 
     /* Revalidate if possible: */
     if (mValidator) mValidator->revalidate();
