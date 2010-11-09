@@ -92,7 +92,13 @@ UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     toolBar->addAction (mMdnAction);
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
     toolBar->updateGeometry();
-    toolBar->setMinimumHeight (toolBar->sizeHint().height());
+#ifdef Q_WS_MAC
+    /* On the Mac this has to be slightly higher, than what sizeHint returned.
+     * No idea why. */
+    toolBar->setMinimumHeight(toolBar->sizeHint().height() + 4);
+#else
+    toolBar->setMinimumHeight(toolBar->sizeHint().height());
+#endif /* Q_WS_MAC */
     mWtFilterHandler->layout()->addWidget (toolBar);
 
     /* Setup connections */
