@@ -4938,6 +4938,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc = VINF_SUCCESS;
     char *pszCtrlType = NULL;
+    char  szDevTag[20], szTaggedText[64];
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
@@ -4986,9 +4987,14 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read ControllerType as string"));
     Log(("%s: ControllerType=%s\n", __FUNCTION__, pszCtrlType));
-
+    
     rc = lsilogicGetCtrlTypeFromString(pThis, pszCtrlType);
     MMR3HeapFree(pszCtrlType);
+
+    RTStrPrintf(szDevTag, sizeof(szDevTag), "LSILOGIC%s-%d",
+                pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "SPI" : "SAS",
+                iInstance);
+
 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -5086,11 +5092,10 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return rc;
 
     /* Initialize task queue. (Need two items to handle SMP guest concurrency.) */
+    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%s-Task", szDevTag);
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
                               lsilogicNotifyQueueConsumer, true,
-                              pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                              ? "LsiLogic-Task"
-                              : "LsiLogicSAS-Task",
+                              szTaggedText,
                               &pThis->pNotificationQueueR3);
     if (RT_FAILURE(rc))
         return rc;
@@ -5113,18 +5118,16 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Create critical sections protecting the reply post and free queues.
      */
+    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRFQ", szDevTag);    
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS,
-                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                               ? "LsiLogicRFQ"
-                               : "LsiLogicSasRFQ");
+                               szTaggedText);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply free queue"));
 
+    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRPQ", szDevTag);        
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS,
-                               pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                               ? "LsiLogicRPQ"
-                               : "LsiLogicSasRPQ");
+                               szTaggedText);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply post queue"));
@@ -5206,22 +5209,25 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = vboxscsiInitialize(&pThis->VBoxSCSI);
     AssertRC(rc);
 
-    /* Register I/O port space in ISA region for BIOS access. */
-    if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
-        rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_ISA_IO_PORT, 3, NULL,
-                                     lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
-                                     lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
-                                     "LsiLogic BIOS");
-    else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
-        rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_SAS_ISA_IO_PORT, 3, NULL,
-                                     lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
-                                     lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
-                                     "LsiLogic SAS BIOS");
-    else
-        AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
+    /* Register I/O port space in ISA region for BIOS access, only for first controller. */
+    if (iInstance == 0)
+    {
+        if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
+            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_ISA_IO_PORT, 3, NULL,
+                                         lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
+                                         lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
+                                         "LsiLogic BIOS");
+        else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
+            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_SAS_ISA_IO_PORT, 3, NULL,
+                                         lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
+                                         lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
+                                         "LsiLogic SAS BIOS");
+        else
+            AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
 
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
+    }        
 
     /* Register save state handlers. */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, LSILOGIC_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
