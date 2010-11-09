@@ -943,7 +943,7 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
             OSErr err = noErr;
             SInt32 type;
             if ((err = Gestalt(gestaltKeyboardType, &type)) == noErr)
-                printf("Keyboard type %d %d\n", (int32_t)type, LMGetKbdType());
+                LogRel(("Keyboard type %d %d\n", (int32_t)type, LMGetKbdType()));
         }
 #endif /* DEBUG */
         unsigned scanCode = ::DarwinKeycodeToSet1Scancode(keyCode);
