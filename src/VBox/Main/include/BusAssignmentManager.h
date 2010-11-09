@@ -110,6 +110,11 @@ public:
         return assignPciDevice(pszDevName, pCfg, Address, false);
     }
     virtual bool findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address);
+    virtual bool hasPciDevice(const char* pszDevName, int iInstance)
+    {
+        PciBusAddress Address;
+        return findPciAddress(pszDevName, iInstance, Address);
+    }
 };
 
 #endif //  __BusAssignmentManager_h
