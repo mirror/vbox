@@ -224,7 +224,7 @@ typedef RTGETOPTSTATE *PRTGETOPTSTATE;
  *                      options are understood by the program.
  * @param   cOptions    Number of array items passed in with paOptions.
  * @param   iFirst      The argument to start with (in argv).
- * @param   fFlags      The flags. MBZ for now.
+ * @param   fFlags      The flags, see RTGETOPTINIT_FLAGS_XXX.
  */
 RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
                          PCRTGETOPTDEF paOptions, size_t cOptions,

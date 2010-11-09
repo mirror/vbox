@@ -1270,3 +1270,55 @@ RTDECL(RTVFSIOSTREAM) RTVfsFileToIoStream(RTVFSFILE hVfsFile)
     return &pThis->Stream;
 }
 
+
+
+#if 0 /* unfinished code => laptop */
+
+/*
+ *
+ *  V F S   c h a i n   s p e c i f i c a t i o n s
+ *  V F S   c h a i n   s p e c i f i c a t i o n s
+ *  V F S   c h a i n   s p e c i f i c a t i o n s
+ *
+ */
+
+/**
+ * A parsed VFS setup specficiation.
+ *
+ * Some specification examples.
+ *   :iprtvfs:ios(stdfile="./foo.tgz")|ios(gzip)|vfs(tar)
+ */
+typedef struct RTVFSPARSEDSPEC
+{
+    uint32_t    cElements;
+} RTVFSPARSEDSPEC;
+/** Pointer to a parse VFS setup specification. */
+typedef RTVFSPARSEDSPEC *PRTVFSPARSEDSPEC;
+
+
+/**
+ * Parses the VFS setup specficiation.
+ *
+ * @returns
+ * @param   pInfo       The output.
+ * @param   pszSpec     The input.  This needs some more work but the basic
+ *                      are that anything that does not start with ":iprtvfs:"
+ *                      will be treated like a file.  ":iprtvfs:" prefixed
+ *                      specifications will be understood as a VFS chain
+ *                      specification and parsed and constructured (by the
+ *                      caller).
+ * @param
+ */
+static int rtVfsSpecParse(PRTVFSPARSEDSPEC pInfo, const char *pszSpec)
+{
+
+}
+
+
+RTDECL(int) RTVfsOpenIoStreamFromSpec(const char *pszSpec, uint32_t fOpen, RTVFSIOSTREAM hVfs)
+{
+
+}
+
+#endif
+
