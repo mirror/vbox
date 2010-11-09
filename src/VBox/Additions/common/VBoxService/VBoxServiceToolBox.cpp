@@ -145,8 +145,9 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
      bool fMakeParentDirs = false;
      bool fVerbose = false;
 
-     char *pszDir = NULL;
-     RTFMODE fMode = 0; /** @todo Get standard mode from umask? */
+     char szDir[RTPATH_MAX];
+     RTFMODE newMode = 0;
+     RTFMODE fileMode = RTFS_UNIX_MASK | RTFS_TYPE_DIRECTORY;
 
      while (   (ch = RTGetOpt(&GetState, &ValueUnion))
             && RT_SUCCESS(rc))
@@ -159,7 +160,9 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
                  break;
 
              case 'm':
-                 /* Ignore by now. */
+                 rc = RTStrToUInt32Ex(ValueUnion.psz, NULL, 8 /* Base */, &newMode);
+                 if (RT_FAILURE(rc)) /* Only octet based values supported right now! */
+                     VBoxServiceVerbose(0, "mkdir: Mode flag strings not implemented yet!\n");
                  break;
 
              case 'v':
@@ -168,9 +171,9 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
 
              case VINF_GETOPT_NOT_OPTION:
              {
-                 pszDir = RTPathAbsDup(ValueUnion.psz);
-                 if (!pszDir)
-                     rc = VERR_NO_MEMORY;
+                 rc = RTPathAbs(ValueUnion.psz, szDir, sizeof(szDir));
+                 if (RT_FAILURE(rc))
+                     VBoxServiceError("mkdir: Could not build absolute directory!\n");
                  break;
              }
 
@@ -181,19 +184,37 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
 
      if (RT_SUCCESS(rc))
      {
+         if (fMakeParentDirs || newMode)
+         {
+#ifndef RT_OS_WINDOWS
+             mode_t umaskMode = umask(0); /* Get current umask. */
+             if (newMode)
+             {
+                 fileMode |= newMode;
+             }
+             else
+                 fileMode |= S_IRWXUGO & ~umaskMode;
+#endif
+         }
+
          rc = fMakeParentDirs ?
-                RTDirCreateFullPath(pszDir, fMode)
-              : RTDirCreate(pszDir, fMode);
+                RTDirCreateFullPath(szDir, fileMode)
+              : RTDirCreate(szDir, fileMode);
 
          if (RT_SUCCESS(rc) && fVerbose)
-             VBoxServiceVerbose(0, "mkdir: Created directory '%s'\n", pszDir);
+             VBoxServiceVerbose(0, "mkdir: Created directory '%s', mode 0x%RTfmode\n", szDir, fileMode);
          else if (RT_FAILURE(rc)) /** @todo Add a switch with more helpful error texts! */
-            VBoxServiceError("mkdir: Could not create directory, rc=%Rrc\n", rc);
+         {
+             PCRTSTATUSMSG pMsg = RTErrGet(rc);
+             if (pMsg)
+                 VBoxServiceError("mkdir: Could not create directory: %s\n", pMsg->pszMsgFull);
+             else
+                 VBoxServiceError("mkdir: Could not create directory, rc=%Rrc\n", rc);
+         }
+
      }
-     else
+     else if (fVerbose)
          VBoxServiceError("mkdir: Failed with rc=%Rrc\n", rc);
-     if (pszDir)
-         RTStrFree(pszDir);
      return rc;
 }
 
