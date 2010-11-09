@@ -936,15 +936,16 @@ bool UIKeyboardHandler::darwinKeyboardEvent(const void *pvCocoaEvent, EventRef i
         ::GetEventParameter(inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof (keyCode), NULL, &keyCode);
         if (   (keyCode == 0xa || keyCode == 0x32)
             && KBGetLayoutType(LMGetKbdType()) == kKeyboardISO)
-        {
             keyCode = 0x3c - keyCode;
 #ifdef DEBUG
+        if ((keyCode == 0xa || keyCode == 0x32))
+        {
             OSErr err = noErr;
             SInt32 type;
             if ((err = Gestalt(gestaltKeyboardType, &type)) == noErr)
-                LogRel(("Keyboard type %d\n", (int32_t)type));
-#endif /* DEBUG */
+                printf("Keyboard type %d %d\n", (int32_t)type, LMGetKbdType());
         }
+#endif /* DEBUG */
         unsigned scanCode = ::DarwinKeycodeToSet1Scancode(keyCode);
         if (scanCode)
         {
