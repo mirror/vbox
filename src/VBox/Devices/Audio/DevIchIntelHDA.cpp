@@ -1182,7 +1182,7 @@ static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64B
 
 static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 {
-    uint8_t tmpbuf[4096];
+    uint8_t tmpbuf[512];
     uint32_t temp;
     uint32_t u32Rest = 0;
     uint32_t cbRead = 0;
@@ -1200,7 +1200,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
     while (temp)
     {
         int copied;
-        to_copy = audio_MIN(temp, 4096U);
+        to_copy = audio_MIN(temp, SDFIFOS(pState, 4) & ~((1<<4) - 1));
         copied = AUD_read (voice, tmpbuf, to_copy);
         Log (("hda: read_audio max=%x to_copy=%x copied=%x\n",
               avail, to_copy, copied));
@@ -1218,7 +1218,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 }
 static uint32_t hdaWriteAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 {
-    uint8_t tmpbuf[4096];
+    uint8_t tmpbuf[512];
     uint32_t temp;
     uint32_t u32Rest;
     uint32_t written = 0;
@@ -1231,6 +1231,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, int avail, bool *fStop)
         *fStop = true;
         return written;
     }
+    temp = audio_MIN(SDFIFOS(pState, 4) & ~((1<<4) - 1), temp);
     while (temp)
     {
         int copied;
@@ -1239,7 +1240,6 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, int avail, bool *fStop)
         copied = AUD_write (OSD0FMT_TO_AUDIO_SELECTOR(pState), tmpbuf, to_copy);
         Log (("hda: write_audio max=%x to_copy=%x copied=%x\n",
               avail, to_copy, copied));
-        Assert((copied));
         if (!copied)
         {
             *fStop = true;
@@ -1270,6 +1270,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
     uint8_t  u8Strm;
     uint32_t *pu32Lpib;
     uint32_t u32Lcbl;
+    uint32_t u32Fifos;
     switch (src)
     {
         case PO_INDEX:
@@ -1306,6 +1307,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         || !u64BaseDMA)
         return;
     /* Fetch the Buffer Descriptor Entry (BDE). */
+    *pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
     fetch_bd(pState, pBdle, u64BaseDMA);
     while( avail && !fStop)
     {
@@ -1350,6 +1352,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             fStop = true;   /* Give the guest a chance to refill (or empty) buffers. */
         }
     }
+    *pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
 }
 
 /**
