@@ -208,10 +208,10 @@ const char* controllerString(StorageControllerType_T enmType)
  */
 struct BootNic
 {
-    ULONG       mInstance;
-    unsigned    mPciDev;
-    unsigned    mPciFn;
-    ULONG       mBootPrio;
+    ULONG          mInstance;
+    PciBusAddress  mPciAddress;
+
+    ULONG          mBootPrio;
     bool operator < (const BootNic &rhs) const
     {
         ULONG lval = mBootPrio     - 1; /* 0 will wrap around and get the lowest priority. */
@@ -1582,9 +1582,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
              */
             BootNic     nic;
 
-            nic.mInstance = ulInstance;
-            nic.mPciDev   = iPciDeviceNo;
-            nic.mPciFn    = 0;
+            nic.mInstance    = ulInstance;
+            /* Could be updated by reference, if auto assigned */
+            nic.mPciAddress  = PciAddr;
 
             hrc = networkAdapter->COMGETTER(BootPriority)(&nic.mBootPrio);                  H();
 
@@ -1693,8 +1693,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 achBootIdx[0] = '0' + uBootIdx++;   /* Boot device order. */
                 InsertConfigNode(pNetBootCfg, achBootIdx, &pNetBtDevCfg);
                 InsertConfigInteger(pNetBtDevCfg, "NIC", it->mInstance);
-                InsertConfigInteger(pNetBtDevCfg, "PCIDeviceNo", it->mPciDev);
-                InsertConfigInteger(pNetBtDevCfg, "PCIFunctionNo", it->mPciFn);
+                InsertConfigInteger(pNetBtDevCfg, "PCIBusNo",      it->mPciAddress.iBus);
+                InsertConfigInteger(pNetBtDevCfg, "PCIDeviceNo",   it->mPciAddress.iDevice);
+                InsertConfigInteger(pNetBtDevCfg, "PCIFunctionNo", it->mPciAddress.iFn);
             }
         }
 
@@ -2276,7 +2277,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             if (fOsXGuest && !llBootNics.empty())
             {
                 BootNic aNic = llBootNics.front();
-                uint32_t u32NicPciAddr = (aNic.mPciDev << 16) | aNic.mPciFn;
+                uint32_t u32NicPciAddr = (aNic.mPciAddress.iDevice << 16) | aNic.mPciAddress.iFn;
                 InsertConfigInteger(pCfg, "NicPciAddress",    u32NicPciAddr);
             }
             if (fOsXGuest && fAudioEnabled)
