@@ -1340,26 +1340,29 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
                     InsertConfigInteger(pCfg, "PortCount", cPorts);
 
-                    /* Needed configuration values for the bios. */
-                    if (pBiosCfg)
+                    /* Needed configuration values for the bios, only first controller. */
+                    if (!BusMgr->hasPciDevice("ahci", 1))
                     {
-                        InsertConfigString(pBiosCfg, "SataHardDiskDevice", "ahci");
-                    }
-
-                    for (uint32_t j = 0; j < 4; ++j)
-                    {
-                        static const char * const s_apszConfig[4] =
-                        { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
-                        static const char * const s_apszBiosConfig[4] =
-                        { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
-
-                        LONG lPortNumber = -1;
-                        hrc = ctrls[i]->GetIDEEmulationPort(j, &lPortNumber);               H();
-                        InsertConfigInteger(pCfg, s_apszConfig[j], lPortNumber);
                         if (pBiosCfg)
-                            InsertConfigInteger(pBiosCfg, s_apszBiosConfig[j], lPortNumber);
+                        {
+                            InsertConfigString(pBiosCfg, "SataHardDiskDevice", "ahci");
+                        }
+                        
+                        for (uint32_t j = 0; j < 4; ++j)
+                        {
+                            static const char * const s_apszConfig[4] =
+                                    { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
+                            static const char * const s_apszBiosConfig[4] =
+                                    { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
+                            
+                            LONG lPortNumber = -1;
+                            hrc = ctrls[i]->GetIDEEmulationPort(j, &lPortNumber);               H();
+                            InsertConfigInteger(pCfg, s_apszConfig[j], lPortNumber);
+                            if (pBiosCfg)
+                                InsertConfigInteger(pBiosCfg, s_apszBiosConfig[j], lPortNumber);
+                        }
                     }
-
+                        
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
                     InsertConfigString(pLunL0, "Driver",               "MainStatus");
