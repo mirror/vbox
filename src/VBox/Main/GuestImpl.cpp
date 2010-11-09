@@ -2439,10 +2439,10 @@ STDMETHODIMP Guest::CreateDirectory(IN_BSTR aDirectory,
 #endif
 }
 
-STDMETHODIMP Guest::createDirectoryInternal(IN_BSTR aDirectory,
-                                            IN_BSTR aUserName, IN_BSTR aPassword,
-                                            ULONG aMode, ULONG aFlags,
-                                            IProgress **aProgress, int *pRC)
+HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
+                                       IN_BSTR aUserName, IN_BSTR aPassword,
+                                       ULONG aMode, ULONG aFlags,
+                                       IProgress **aProgress, int *pRC)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
