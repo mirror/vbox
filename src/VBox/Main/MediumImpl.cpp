@@ -2942,6 +2942,127 @@ uint64_t Medium::getSize() const
 }
 
 /**
+ * Returns the medium device type. Must have caller + locking!
+ * @return
+ */
+DeviceType_T Medium::getDeviceType() const
+{
+    return m->devType;
+}
+
+/**
+ * Returns the medium type. Must have caller + locking!
+ * @return
+ */
+MediumType_T Medium::getType() const
+{
+    return m->type;
+}
+
+/**
+ * Returns a short version of the location attribute.
+ *
+ * @note Must be called from under this object's read or write lock.
+ */
+Utf8Str Medium::getName()
+{
+    Utf8Str name = RTPathFilename(m->strLocationFull.c_str());
+    return name;
+}
+
+/**
+ * This adds the given UUID to the list of media registries in which this
+ * medium should be registered. The UUID can either be a machine UUID,
+ * to add a machine registry, or the global registry UUID as returned by
+ * VirtualBox::getGlobalRegistryId().
+ *
+ * Note that for hard disks, this method does nothing if the medium is
+ * already in another registry to avoid having hard disks in more than
+ * one registry, which causes trouble with keeping diff images in sync.
+ * See getFirstRegistryMachineId() for details.
+ *
+ * @param id
+ * @param pfNeedsSaveSettings If != NULL, is set to true if a new reference was added and saveSettings for either the machine or global XML is needed.
+ * @return true if the registry was added.
+ */
+bool Medium::addRegistry(const Guid& id,
+                         bool *pfNeedsSaveSettings)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return false;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (    m->devType == DeviceType_HardDisk
+         && m->llRegistryIDs.size() > 0
+       )
+        return false;
+
+    // no need to add the UUID twice
+    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
+         it != m->llRegistryIDs.end();
+         ++it)
+    {
+        if ((*it) == id)
+            return false;
+    }
+
+    m->llRegistryIDs.push_back(id);
+    if (pfNeedsSaveSettings)
+        *pfNeedsSaveSettings = true;
+    return true;
+}
+
+/**
+ * Returns true if id is in the list of media registries for this medium.
+ * @param id
+ * @return
+ */
+bool Medium::isInRegistry(const Guid& id)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return false;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
+         it != m->llRegistryIDs.end();
+         ++it)
+    {
+        if (*it == id)
+            return true;
+    }
+
+    return false;
+}
+
+/**
+ * Internal method to return the medium's first registry machine (i.e. the machine in whose
+ * machine XML this medium is listed).
+ *
+ * Every medium must now (4.0) reside in at least one media registry, which is identified by
+ * a UUID. This is either a machine UUID if the machine is from 4.0 or newer, in which case
+ * machines have their own media registries, or it is the pseudo-UUID of the VirtualBox
+ * object if the machine is old and still needs the global registry in VirtualBox.xml.
+ *
+ * By definition, hard disks may only be in one media registry, in which all its children
+ * will be stored as well. Otherwise we run into problems with having keep multiple registries
+ * in sync. (This is the "cloned VM" case in which VM1 may link to the disks of VM2; in this
+ * case, only VM2's registry is used for the disk in question.)
+ *
+ * ISOs and RAWs, by contrast, can be in more than one repository to make things easier for
+ * the user.
+ *
+ * Must have caller + locking!
+ *
+ * @return
+ */
+const Guid& Medium::getFirstRegistryMachineId() const
+{
+    return m->llRegistryIDs.front();
+}
+
+/**
  * Adds the given machine and optionally the snapshot to the list of the objects
  * this medium is attached to.
  *
@@ -3424,6 +3545,152 @@ HRESULT Medium::createMediumLockList(bool fFailIfInaccessible,
 }
 
 /**
+ * Creates a new differencing storage unit using the format of the given target
+ * medium and the location. Note that @c aTarget must be NotCreated.
+ *
+ * The @a aMediumLockList parameter contains the associated medium lock list,
+ * which must be in locked state. If @a aWait is @c true then the caller is
+ * responsible for unlocking.
+ *
+ * If @a aProgress is not NULL but the object it points to is @c null then a
+ * new progress object will be created and assigned to @a *aProgress on
+ * success, otherwise the existing progress object is used. If @a aProgress is
+ * NULL, then no progress object is created/used at all.
+ *
+ * When @a aWait is @c false, this method will create a thread to perform the
+ * create operation asynchronously and will return immediately. Otherwise, it
+ * will perform the operation on the calling thread and will not return to the
+ * caller until the operation is completed. Note that @a aProgress cannot be
+ * NULL when @a aWait is @c false (this method will assert in this case).
+ *
+ * @param aTarget           Target medium.
+ * @param aVariant          Precise medium variant to create.
+ * @param aMediumLockList   List of media which should be locked.
+ * @param aProgress         Where to find/store a Progress object to track
+ *                          operation completion.
+ * @param aWait             @c true if this method should block instead of
+ *                          creating an asynchronous thread.
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been
+ *                          initialized to false and that will be set to true
+ *                          by this function if the caller should invoke
+ *                          VirtualBox::saveSettings() because the global
+ *                          settings have changed. This only works in "wait"
+ *                          mode; otherwise saveSettings is called
+ *                          automatically by the thread that was created,
+ *                          and this parameter is ignored.
+ *
+ * @note Locks this object and @a aTarget for writing.
+ */
+HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
+                                  MediumVariant_T aVariant,
+                                  MediumLockList *aMediumLockList,
+                                  ComObjPtr<Progress> *aProgress,
+                                  bool aWait,
+                                  bool *pfNeedsGlobalSaveSettings)
+{
+    AssertReturn(!aTarget.isNull(), E_FAIL);
+    AssertReturn(aMediumLockList, E_FAIL);
+    AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoCaller targetCaller(aTarget);
+    if (FAILED(targetCaller.rc())) return targetCaller.rc();
+
+    HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    Medium::Task *pTask = NULL;
+
+    try
+    {
+        AutoMultiWriteLock2 alock(this, aTarget COMMA_LOCKVAL_SRC_POS);
+
+        ComAssertThrow(   m->type != MediumType_Writethrough
+                       && m->type != MediumType_Shareable
+                       && m->type != MediumType_Readonly, E_FAIL);
+        ComAssertThrow(m->state == MediumState_LockedRead, E_FAIL);
+
+        if (aTarget->m->state != MediumState_NotCreated)
+            throw aTarget->setStateError();
+
+        /* Check that the medium is not attached to the current state of
+         * any VM referring to it. */
+        for (BackRefList::const_iterator it = m->backRefs.begin();
+             it != m->backRefs.end();
+             ++it)
+        {
+            if (it->fInCurState)
+            {
+                /* Note: when a VM snapshot is being taken, all normal media
+                 * attached to the VM in the current state will be, as an
+                 * exception, also associated with the snapshot which is about
+                 * to create (see SnapshotMachine::init()) before deassociating
+                 * them from the current state (which takes place only on
+                 * success in Machine::fixupHardDisks()), so that the size of
+                 * snapshotIds will be 1 in this case. The extra condition is
+                 * used to filter out this legal situation. */
+                if (it->llSnapshotIds.size() == 0)
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Medium '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing media based on it may be created until it is detached"),
+                                   m->strLocationFull.c_str(), it->machineId.raw());
+
+                Assert(it->llSnapshotIds.size() == 1);
+            }
+        }
+
+        if (aProgress != NULL)
+        {
+            /* use the existing progress object... */
+            pProgress = *aProgress;
+
+            /* ...but create a new one if it is null */
+            if (pProgress.isNull())
+            {
+                pProgress.createObject();
+                rc = pProgress->init(m->pVirtualBox,
+                                     static_cast<IMedium*>(this),
+                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.c_str()).raw(),
+                                     TRUE /* aCancelable */);
+                if (FAILED(rc))
+                    throw rc;
+            }
+        }
+
+        /* setup task object to carry out the operation sync/async */
+        pTask = new Medium::CreateDiffTask(this, pProgress, aTarget, aVariant,
+                                           aMediumLockList,
+                                           aWait /* fKeepMediumLockList */);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc))
+             throw rc;
+
+        /* register a task (it will deregister itself when done) */
+        ++m->numCreateDiffTasks;
+        Assert(m->numCreateDiffTasks != 0); /* overflow? */
+
+        aTarget->m->state = MediumState_Creating;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        if (aWait)
+            rc = runNow(pTask, pfNeedsGlobalSaveSettings);
+        else
+            rc = startThread(pTask);
+
+        if (SUCCEEDED(rc) && aProgress != NULL)
+            *aProgress = pProgress;
+    }
+    else if (pTask != NULL)
+        delete pTask;
+
+    return rc;
+}
+
+/**
  * Returns a preferred format for differencing media.
  */
 Utf8Str Medium::getPreferredDiffFormat()
@@ -3442,822 +3709,6 @@ Utf8Str Medium::getPreferredDiffFormat()
 
     /* m->strFormat is const, no need to lock */
     return m->strFormat;
-}
-
-/**
- * Returns the medium device type. Must have caller + locking!
- * @return
- */
-DeviceType_T Medium::getDeviceType() const
-{
-    return m->devType;
-}
-
-/**
- * Returns the medium type. Must have caller + locking!
- * @return
- */
-MediumType_T Medium::getType() const
-{
-    return m->type;
-}
-
-/**
- * Returns a short version of the location attribute.
- *
- * @note Must be called from under this object's read or write lock.
- */
-Utf8Str Medium::getName()
-{
-    Utf8Str name = RTPathFilename(m->strLocationFull.c_str());
-    return name;
-}
-
-/**
- * This adds the given UUID to the list of media registries in which this
- * medium should be registered. The UUID can either be a machine UUID,
- * to add a machine registry, or the global registry UUID as returned by
- * VirtualBox::getGlobalRegistryId().
- *
- * Note that for hard disks, this method does nothing if the medium is
- * already in another registry to avoid having hard disks in more than
- * one registry, which causes trouble with keeping diff images in sync.
- * See getFirstRegistryMachineId() for details.
- *
- * @param id
- * @param pfNeedsSaveSettings If != NULL, is set to true if a new reference was added and saveSettings for either the machine or global XML is needed.
- * @return true if the registry was added.
- */
-bool Medium::addRegistry(const Guid& id,
-                         bool *pfNeedsSaveSettings)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return false;
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (    m->devType == DeviceType_HardDisk
-         && m->llRegistryIDs.size() > 0
-       )
-        return false;
-
-    // no need to add the UUID twice
-    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
-         it != m->llRegistryIDs.end();
-         ++it)
-    {
-        if ((*it) == id)
-            return false;
-    }
-
-    m->llRegistryIDs.push_back(id);
-    if (pfNeedsSaveSettings)
-        *pfNeedsSaveSettings = true;
-    return true;
-}
-
-/**
- * Returns true if id is in the list of media registries for this medium.
- * @param id
- * @return
- */
-bool Medium::isInRegistry(const Guid& id)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return false;
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
-         it != m->llRegistryIDs.end();
-         ++it)
-    {
-        if (*it == id)
-            return true;
-    }
-
-    return false;
-}
-
-/**
- * Internal method to return the medium's first registry machine (i.e. the machine in whose
- * machine XML this medium is listed).
- *
- * Every medium must now (4.0) reside in at least one media registry, which is identified by
- * a UUID. This is either a machine UUID if the machine is from 4.0 or newer, in which case
- * machines have their own media registries, or it is the pseudo-UUID of the VirtualBox
- * object if the machine is old and still needs the global registry in VirtualBox.xml.
- *
- * By definition, hard disks may only be in one media registry, in which all its children
- * will be stored as well. Otherwise we run into problems with having keep multiple registries
- * in sync. (This is the "cloned VM" case in which VM1 may link to the disks of VM2; in this
- * case, only VM2's registry is used for the disk in question.)
- *
- * ISOs and RAWs, by contrast, can be in more than one repository to make things easier for
- * the user.
- *
- * Must have caller + locking!
- *
- * @return
- */
-const Guid& Medium::getFirstRegistryMachineId() const
-{
-    return m->llRegistryIDs.front();
-}
-
-/**
- * Sets the value of m->strLocationFull. The given location must be a fully
- * qualified path; relative paths are not supported here.
- *
- * As a special exception, if the specified location is a file path that ends with '/'
- * then the file name part will be generated by this method automatically in the format
- * '{<uuid>}.<ext>' where <uuid> is a fresh UUID that this method will generate
- * and assign to this medium, and <ext> is the default extension for this
- * medium's storage format. Note that this procedure requires the media state to
- * be NotCreated and will return a failure otherwise.
- *
- * @param aLocation Location of the storage unit. If the location is a FS-path,
- *                  then it can be relative to the VirtualBox home directory.
- * @param aFormat   Optional fallback format if it is an import and the format
- *                  cannot be determined.
- *
- * @note Must be called from under this object's write lock.
- */
-HRESULT Medium::setLocation(const Utf8Str &aLocation,
-                            const Utf8Str &aFormat /* = Utf8Str::Empty */)
-{
-    AssertReturn(!aLocation.isEmpty(), E_FAIL);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
-    /* formatObj may be null only when initializing from an existing path and
-     * no format is known yet */
-    AssertReturn(    (!m->strFormat.isEmpty() && !m->formatObj.isNull())
-                  || (    autoCaller.state() == InInit
-                       && m->state != MediumState_NotCreated
-                       && m->id.isEmpty()
-                       && m->strFormat.isEmpty()
-                       && m->formatObj.isNull()),
-                 E_FAIL);
-
-    /* are we dealing with a new medium constructed using the existing
-     * location? */
-    bool isImport = m->strFormat.isEmpty();
-
-    if (   isImport
-        || (   (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
-            && !m->hostDrive))
-    {
-        Guid id;
-
-        Utf8Str locationFull(aLocation);
-
-        if (m->state == MediumState_NotCreated)
-        {
-            /* must be a file (formatObj must be already known) */
-            Assert(m->formatObj->getCapabilities() & MediumFormatCapabilities_File);
-
-            if (RTPathFilename(aLocation.c_str()) == NULL)
-            {
-                /* no file name is given (either an empty string or ends with a
-                 * slash), generate a new UUID + file name if the state allows
-                 * this */
-
-                ComAssertMsgRet(!m->formatObj->getFileExtensions().empty(),
-                                ("Must be at least one extension if it is MediumFormatCapabilities_File\n"),
-                                E_FAIL);
-
-                Utf8Str strExt = m->formatObj->getFileExtensions().front();
-                ComAssertMsgRet(!strExt.isEmpty(),
-                                ("Default extension must not be empty\n"),
-                                E_FAIL);
-
-                id.create();
-
-                locationFull = Utf8StrFmt("%s{%RTuuid}.%s",
-                                          aLocation.c_str(), id.raw(), strExt.c_str());
-            }
-        }
-
-        // we must always have full paths now
-        if (!RTPathStartsWithRoot(locationFull.c_str()))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("The given path '%s' is not fully qualified"),
-                            locationFull.c_str());
-
-        /* detect the backend from the storage unit if importing */
-        if (isImport)
-        {
-            VDTYPE enmType = VDTYPE_INVALID;
-            char *backendName = NULL;
-
-            int vrc = VINF_SUCCESS;
-
-            /* is it a file? */
-            {
-                RTFILE file;
-                vrc = RTFileOpen(&file, locationFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-                if (RT_SUCCESS(vrc))
-                    RTFileClose(file);
-            }
-            if (RT_SUCCESS(vrc))
-            {
-                vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                                  locationFull.c_str(), &backendName, &enmType);
-            }
-            else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
-            {
-                /* assume it's not a file, restore the original location */
-                locationFull = aLocation;
-                vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
-                                  locationFull.c_str(), &backendName, &enmType);
-            }
-
-            if (RT_FAILURE(vrc))
-            {
-                if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
-                    return setError(VBOX_E_FILE_ERROR,
-                                    tr("Could not find file for the medium '%s' (%Rrc)"),
-                                    locationFull.c_str(), vrc);
-                else if (aFormat.isEmpty())
-                    return setError(VBOX_E_IPRT_ERROR,
-                                    tr("Could not get the storage format of the medium '%s' (%Rrc)"),
-                                    locationFull.c_str(), vrc);
-                else
-                {
-                    HRESULT rc = setFormat(aFormat);
-                    /* setFormat() must not fail since we've just used the backend so
-                     * the format object must be there */
-                    AssertComRCReturnRC(rc);
-                }
-            }
-            else if (   enmType == VDTYPE_INVALID
-                     || m->devType != convertToDeviceType(enmType))
-            {
-                /*
-                 * The user tried to use a image as a device which is not supported
-                 * by the backend.
-                 */
-                return setError(E_FAIL,
-                                tr("The medium '%s' can't be used as the requested device type"),
-                                locationFull.c_str());
-            }
-            else
-            {
-                ComAssertRet(backendName != NULL && *backendName != '\0', E_FAIL);
-
-                HRESULT rc = setFormat(backendName);
-                RTStrFree(backendName);
-
-                /* setFormat() must not fail since we've just used the backend so
-                 * the format object must be there */
-                AssertComRCReturnRC(rc);
-            }
-        }
-
-        m->strLocationFull = locationFull;
-
-        /* is it still a file? */
-        if (    (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
-             && (m->state == MediumState_NotCreated)
-           )
-            /* assign a new UUID (this UUID will be used when calling
-             * VDCreateBase/VDCreateDiff as a wanted UUID). Note that we
-             * also do that if we didn't generate it to make sure it is
-             * either generated by us or reset to null */
-            unconst(m->id) = id;
-    }
-    else
-        m->strLocationFull = aLocation;
-
-    return S_OK;
-}
-
-/**
- * Queries information from the medium.
- *
- * As a result of this call, the accessibility state and data members such as
- * size and description will be updated with the current information.
- *
- * @note This method may block during a system I/O call that checks storage
- *       accessibility.
- *
- * @note Locks medium tree for reading and writing (for new diff media checked
- *       for the first time). Locks mParent for reading. Locks this object for
- *       writing.
- *
- * @param fSetImageId Whether to reset the UUID contained in the image file to the UUID in the medium instance data (see SetIDs())
- * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent UUID in the medium instance data (see SetIDs())
- * @return
- */
-HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   m->state != MediumState_Created
-        && m->state != MediumState_Inaccessible
-        && m->state != MediumState_LockedRead)
-        return E_FAIL;
-
-    HRESULT rc = S_OK;
-
-    int vrc = VINF_SUCCESS;
-
-    /* check if a blocking queryInfo() call is in progress on some other thread,
-     * and wait for it to finish if so instead of querying data ourselves */
-    if (m->queryInfoRunning)
-    {
-        Assert(   m->state == MediumState_LockedRead
-               || m->state == MediumState_LockedWrite);
-
-        alock.leave();
-        vrc = RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
-        alock.enter();
-
-        AssertRC(vrc);
-
-        return S_OK;
-    }
-
-    bool success = false;
-    Utf8Str lastAccessError;
-
-    /* are we dealing with a new medium constructed using the existing
-     * location? */
-    bool isImport = m->id.isEmpty();
-    unsigned uOpenFlags = VD_OPEN_FLAGS_INFO;
-
-    /* Note that we don't use VD_OPEN_FLAGS_READONLY when opening new
-     * media because that would prevent necessary modifications
-     * when opening media of some third-party formats for the first
-     * time in VirtualBox (such as VMDK for which VDOpen() needs to
-     * generate an UUID if it is missing) */
-    if (    (m->hddOpenMode == OpenReadOnly)
-         || m->type == MediumType_Readonly
-         || !isImport
-       )
-        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
-
-    /* Open shareable medium with the appropriate flags */
-    if (m->type == MediumType_Shareable)
-        uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
-
-    /* Lock the medium, which makes the behavior much more consistent */
-    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
-        rc = LockRead(NULL);
-    else
-        rc = LockWrite(NULL);
-    if (FAILED(rc)) return rc;
-
-    /* Copies of the input state fields which are not read-only,
-     * as we're dropping the lock. CAUTION: be extremely careful what
-     * you do with the contents of this medium object, as you will
-     * create races if there are concurrent changes. */
-    Utf8Str format(m->strFormat);
-    Utf8Str location(m->strLocationFull);
-    ComObjPtr<MediumFormat> formatObj = m->formatObj;
-
-    /* "Output" values which can't be set because the lock isn't held
-     * at the time the values are determined. */
-    Guid mediumId = m->id;
-    uint64_t mediumSize = 0;
-    uint64_t mediumLogicalSize = 0;
-
-    /* Flag whether a base image has a non-zero parent UUID and thus
-     * need repairing after it was closed again. */
-    bool fRepairImageZeroParentUuid = false;
-
-    /* leave the lock before a lengthy operation */
-    vrc = RTSemEventMultiReset(m->queryInfoSem);
-    AssertRCReturn(vrc, E_FAIL);
-    m->queryInfoRunning = true;
-    alock.leave();
-
-    try
-    {
-        /* skip accessibility checks for host drives */
-        if (m->hostDrive)
-        {
-            success = true;
-            throw S_OK;
-        }
-
-        PVBOXHDD hdd;
-        vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
-        ComAssertRCThrow(vrc, E_FAIL);
-
-        try
-        {
-            /** @todo This kind of opening of media is assuming that diff
-             * media can be opened as base media. Should be documented that
-             * it must work for all medium format backends. */
-            vrc = VDOpen(hdd,
-                         format.c_str(),
-                         location.c_str(),
-                         uOpenFlags,
-                         m->vdImageIfaces);
-            if (RT_FAILURE(vrc))
-            {
-                lastAccessError = Utf8StrFmt(tr("Could not open the medium '%s'%s"),
-                                             location.c_str(), vdError(vrc).c_str());
-                throw S_OK;
-            }
-
-            if (formatObj->getCapabilities() & MediumFormatCapabilities_Uuid)
-            {
-                /* Modify the UUIDs if necessary. The associated fields are
-                 * not modified by other code, so no need to copy. */
-                if (fSetImageId)
-                {
-                    vrc = VDSetUuid(hdd, 0, m->uuidImage.raw());
-                    ComAssertRCThrow(vrc, E_FAIL);
-                }
-                if (fSetParentId)
-                {
-                    vrc = VDSetParentUuid(hdd, 0, m->uuidParentImage.raw());
-                    ComAssertRCThrow(vrc, E_FAIL);
-                }
-                /* zap the information, these are no long-term members */
-                unconst(m->uuidImage).clear();
-                unconst(m->uuidParentImage).clear();
-
-                /* check the UUID */
-                RTUUID uuid;
-                vrc = VDGetUuid(hdd, 0, &uuid);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                if (isImport)
-                {
-                    mediumId = uuid;
-
-                    if (mediumId.isEmpty() && (m->hddOpenMode == OpenReadOnly))
-                        // only when importing a VDMK that has no UUID, create one in memory
-                        mediumId.create();
-                }
-                else
-                {
-                    Assert(!mediumId.isEmpty());
-
-                    if (mediumId != uuid)
-                    {
-                        lastAccessError = Utf8StrFmt(
-                                tr("UUID {%RTuuid} of the medium '%s' does not match the value {%RTuuid} stored in the media registry ('%s')"),
-                                &uuid,
-                                location.c_str(),
-                                mediumId.raw(),
-                                m->pVirtualBox->settingsFilePath().c_str());
-                        throw S_OK;
-                    }
-                }
-            }
-            else
-            {
-                /* the backend does not support storing UUIDs within the
-                 * underlying storage so use what we store in XML */
-
-                /* generate an UUID for an imported UUID-less medium */
-                if (isImport)
-                {
-                    if (fSetImageId)
-                        mediumId = m->uuidImage;
-                    else
-                        mediumId.create();
-                }
-            }
-
-            /* get the medium variant */
-            unsigned uImageFlags;
-            vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
-            ComAssertRCThrow(vrc, E_FAIL);
-            m->variant = (MediumVariant_T)uImageFlags;
-
-            /* check/get the parent uuid and update corresponding state */
-            if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
-            {
-                RTUUID parentId;
-                vrc = VDGetParentUuid(hdd, 0, &parentId);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                /* streamOptimized VMDK images are only accepted as base
-                 * images, as this allows automatic repair of OVF appliances.
-                 * Since such images don't support random writes they will not
-                 * be created for diff images. Only an overly smart user might
-                 * manually create this case. Too bad for him. */
-                if (   isImport
-                    && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
-                {
-                    /* the parent must be known to us. Note that we freely
-                     * call locking methods of mVirtualBox and parent, as all
-                     * relevant locks must be already held. There may be no
-                     * concurrent access to the just opened medium on other
-                     * threads yet (and init() will fail if this method reports
-                     * MediumState_Inaccessible) */
-
-                    Guid id = parentId;
-                    ComObjPtr<Medium> pParent;
-                    rc = m->pVirtualBox->findHardDiskById(id, false /* aSetError */, &pParent);
-                    if (FAILED(rc))
-                    {
-                        lastAccessError = Utf8StrFmt(
-                                tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
-                                &parentId, location.c_str(),
-                                m->pVirtualBox->settingsFilePath().c_str());
-                        throw S_OK;
-                    }
-
-                    /* we set mParent & children() */
-                    AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-                    Assert(m->pParent.isNull());
-                    m->pParent = pParent;
-                    m->pParent->m->llChildren.push_back(this);
-                }
-                else
-                {
-                    /* we access mParent */
-                    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-                    /* check that parent UUIDs match. Note that there's no need
-                     * for the parent's AutoCaller (our lifetime is bound to
-                     * it) */
-
-                    if (m->pParent.isNull())
-                    {
-                        /* Due to a bug in VDCopy() in VirtualBox 3.0.0-3.0.14
-                         * and 3.1.0-3.1.8 there are base images out there
-                         * which have a non-zero parent UUID. No point in
-                         * complaining about them, instead automatically
-                         * repair the problem. Later we can bring back the
-                         * error message, but we should wait until really
-                         * most users have repaired their images, either with
-                         * VBoxFixHdd or this way. */
-#if 1
-                        fRepairImageZeroParentUuid = true;
-#else /* 0 */
-                        lastAccessError = Utf8StrFmt(
-                                tr("Medium type of '%s' is differencing but it is not associated with any parent medium in the media registry ('%s')"),
-                                location.c_str(),
-                                m->pVirtualBox->settingsFilePath().c_str());
-                        throw S_OK;
-#endif /* 0 */
-                    }
-
-                    AutoReadLock parentLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-                    if (   !fRepairImageZeroParentUuid
-                        && m->pParent->getState() != MediumState_Inaccessible
-                        && m->pParent->getId() != parentId)
-                    {
-                        lastAccessError = Utf8StrFmt(
-                                tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
-                                &parentId, location.c_str(),
-                                m->pParent->getId().raw(),
-                                m->pVirtualBox->settingsFilePath().c_str());
-                        throw S_OK;
-                    }
-
-                    /// @todo NEWMEDIA what to do if the parent is not
-                    /// accessible while the diff is? Probably nothing. The
-                    /// real code will detect the mismatch anyway.
-                }
-            }
-
-            mediumSize = VDGetFileSize(hdd, 0);
-            mediumLogicalSize = VDGetSize(hdd, 0);
-
-            success = true;
-        }
-        catch (HRESULT aRC)
-        {
-            rc = aRC;
-        }
-
-        VDDestroy(hdd);
-    }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    alock.enter();
-
-    if (isImport)
-        unconst(m->id) = mediumId;
-
-    if (success)
-    {
-        m->size = mediumSize;
-        m->logicalSize = mediumLogicalSize;
-        m->strLastAccessError.setNull();
-    }
-    else
-    {
-        m->strLastAccessError = lastAccessError;
-        LogWarningFunc(("'%s' is not accessible (error='%s', rc=%Rhrc, vrc=%Rrc)\n",
-                        location.c_str(), m->strLastAccessError.c_str(),
-                        rc, vrc));
-    }
-
-    /* inform other callers if there are any */
-    RTSemEventMultiSignal(m->queryInfoSem);
-    m->queryInfoRunning = false;
-
-    /* Set the proper state according to the result of the check */
-    if (success)
-        m->preLockState = MediumState_Created;
-    else
-        m->preLockState = MediumState_Inaccessible;
-
-    HRESULT rc2;
-    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
-        rc2 = UnlockRead(NULL);
-    else
-        rc2 = UnlockWrite(NULL);
-    if (SUCCEEDED(rc) && FAILED(rc2))
-        rc = rc2;
-    if (FAILED(rc)) return rc;
-
-    /* If this is a base image which incorrectly has a parent UUID set,
-     * repair the image now by zeroing the parent UUID. This is only done
-     * when we have structural information from a config file, on import
-     * this is not possible. If someone would accidentally call openMedium
-     * with a diff image before the base is registered this would destroy
-     * the diff. Not acceptable. */
-    if (fRepairImageZeroParentUuid)
-    {
-        rc = LockWrite(NULL);
-        if (FAILED(rc)) return rc;
-
-        alock.leave();
-
-        try
-        {
-            PVBOXHDD hdd;
-            vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
-            ComAssertRCThrow(vrc, E_FAIL);
-
-            try
-            {
-                vrc = VDOpen(hdd,
-                             format.c_str(),
-                             location.c_str(),
-                             uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
-                             m->vdImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw S_OK;
-
-                RTUUID zeroParentUuid;
-                RTUuidClear(&zeroParentUuid);
-                vrc = VDSetParentUuid(hdd, 0, &zeroParentUuid);
-                ComAssertRCThrow(vrc, E_FAIL);
-            }
-            catch (HRESULT aRC)
-            {
-                rc = aRC;
-            }
-
-            VDDestroy(hdd);
-        }
-        catch (HRESULT aRC)
-        {
-            rc = aRC;
-        }
-
-        alock.enter();
-
-        rc = UnlockWrite(NULL);
-        if (SUCCEEDED(rc) && FAILED(rc2))
-            rc = rc2;
-        if (FAILED(rc)) return rc;
-    }
-
-    return rc;
-}
-
-/**
- * Sets the extended error info according to the current media state.
- *
- * @note Must be called from under this object's write or read lock.
- */
-HRESULT Medium::setStateError()
-{
-    HRESULT rc = E_FAIL;
-
-    switch (m->state)
-    {
-        case MediumState_NotCreated:
-        {
-            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%s' is not created"),
-                          m->strLocationFull.c_str());
-            break;
-        }
-        case MediumState_Created:
-        {
-            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%s' is already created"),
-                          m->strLocationFull.c_str());
-            break;
-        }
-        case MediumState_LockedRead:
-        {
-            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Medium '%s' is locked for reading by another task"),
-                          m->strLocationFull.c_str());
-            break;
-        }
-        case MediumState_LockedWrite:
-        {
-            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Medium '%s' is locked for writing by another task"),
-                          m->strLocationFull.c_str());
-            break;
-        }
-        case MediumState_Inaccessible:
-        {
-            /* be in sync with Console::powerUpThread() */
-            if (!m->strLastAccessError.isEmpty())
-                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                              tr("Medium '%s' is not accessible. %s"),
-                              m->strLocationFull.c_str(), m->strLastAccessError.c_str());
-            else
-                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                              tr("Medium '%s' is not accessible"),
-                              m->strLocationFull.c_str());
-            break;
-        }
-        case MediumState_Creating:
-        {
-            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%s' is being created"),
-                          m->strLocationFull.c_str());
-            break;
-        }
-        case MediumState_Deleting:
-        {
-            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                          tr("Storage for the medium '%s' is being deleted"),
-                          m->strLocationFull.c_str());
-            break;
-        }
-        default:
-        {
-            AssertFailed();
-            break;
-        }
-    }
-
-    return rc;
-}
-
-/**
- * Converts the Medium device type to the VD type.
- */
-VDTYPE Medium::convertDeviceType()
-{
-    VDTYPE enmType;
-
-    switch (m->devType)
-    {
-        case DeviceType_HardDisk:
-            enmType = VDTYPE_HDD;
-            break;
-        case DeviceType_DVD:
-            enmType = VDTYPE_DVD;
-            break;
-        case DeviceType_Floppy:
-            enmType = VDTYPE_FLOPPY;
-            break;
-        default:
-            ComAssertFailedRet(VDTYPE_INVALID);
-    }
-
-    return enmType;
-}
-
-/**
- * Converts from the VD type to the medium type.
- */
-DeviceType_T Medium::convertToDeviceType(VDTYPE enmType)
-{
-    DeviceType_T devType;
-
-    switch (enmType)
-    {
-        case VDTYPE_HDD:
-            devType = DeviceType_HardDisk;
-            break;
-        case VDTYPE_DVD:
-            devType = DeviceType_DVD;
-            break;
-        case VDTYPE_FLOPPY:
-            devType = DeviceType_Floppy;
-            break;
-        default:
-            ComAssertFailedRet(DeviceType_Null);
-    }
-
-    return devType;
 }
 
 /**
@@ -4590,152 +4041,6 @@ HRESULT Medium::unmarkLockedForDeletion()
     }
     else
         return setStateError();
-}
-
-/**
- * Creates a new differencing storage unit using the format of the given target
- * medium and the location. Note that @c aTarget must be NotCreated.
- *
- * The @a aMediumLockList parameter contains the associated medium lock list,
- * which must be in locked state. If @a aWait is @c true then the caller is
- * responsible for unlocking.
- *
- * If @a aProgress is not NULL but the object it points to is @c null then a
- * new progress object will be created and assigned to @a *aProgress on
- * success, otherwise the existing progress object is used. If @a aProgress is
- * NULL, then no progress object is created/used at all.
- *
- * When @a aWait is @c false, this method will create a thread to perform the
- * create operation asynchronously and will return immediately. Otherwise, it
- * will perform the operation on the calling thread and will not return to the
- * caller until the operation is completed. Note that @a aProgress cannot be
- * NULL when @a aWait is @c false (this method will assert in this case).
- *
- * @param aTarget           Target medium.
- * @param aVariant          Precise medium variant to create.
- * @param aMediumLockList   List of media which should be locked.
- * @param aProgress         Where to find/store a Progress object to track
- *                          operation completion.
- * @param aWait             @c true if this method should block instead of
- *                          creating an asynchronous thread.
- * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been
- *                          initialized to false and that will be set to true
- *                          by this function if the caller should invoke
- *                          VirtualBox::saveSettings() because the global
- *                          settings have changed. This only works in "wait"
- *                          mode; otherwise saveSettings is called
- *                          automatically by the thread that was created,
- *                          and this parameter is ignored.
- *
- * @note Locks this object and @a aTarget for writing.
- */
-HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
-                                  MediumVariant_T aVariant,
-                                  MediumLockList *aMediumLockList,
-                                  ComObjPtr<Progress> *aProgress,
-                                  bool aWait,
-                                  bool *pfNeedsGlobalSaveSettings)
-{
-    AssertReturn(!aTarget.isNull(), E_FAIL);
-    AssertReturn(aMediumLockList, E_FAIL);
-    AssertReturn(aProgress != NULL || aWait == true, E_FAIL);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoCaller targetCaller(aTarget);
-    if (FAILED(targetCaller.rc())) return targetCaller.rc();
-
-    HRESULT rc = S_OK;
-    ComObjPtr<Progress> pProgress;
-    Medium::Task *pTask = NULL;
-
-    try
-    {
-        AutoMultiWriteLock2 alock(this, aTarget COMMA_LOCKVAL_SRC_POS);
-
-        ComAssertThrow(   m->type != MediumType_Writethrough
-                       && m->type != MediumType_Shareable
-                       && m->type != MediumType_Readonly, E_FAIL);
-        ComAssertThrow(m->state == MediumState_LockedRead, E_FAIL);
-
-        if (aTarget->m->state != MediumState_NotCreated)
-            throw aTarget->setStateError();
-
-        /* Check that the medium is not attached to the current state of
-         * any VM referring to it. */
-        for (BackRefList::const_iterator it = m->backRefs.begin();
-             it != m->backRefs.end();
-             ++it)
-        {
-            if (it->fInCurState)
-            {
-                /* Note: when a VM snapshot is being taken, all normal media
-                 * attached to the VM in the current state will be, as an
-                 * exception, also associated with the snapshot which is about
-                 * to create (see SnapshotMachine::init()) before deassociating
-                 * them from the current state (which takes place only on
-                 * success in Machine::fixupHardDisks()), so that the size of
-                 * snapshotIds will be 1 in this case. The extra condition is
-                 * used to filter out this legal situation. */
-                if (it->llSnapshotIds.size() == 0)
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Medium '%s' is attached to a virtual machine with UUID {%RTuuid}. No differencing media based on it may be created until it is detached"),
-                                   m->strLocationFull.c_str(), it->machineId.raw());
-
-                Assert(it->llSnapshotIds.size() == 1);
-            }
-        }
-
-        if (aProgress != NULL)
-        {
-            /* use the existing progress object... */
-            pProgress = *aProgress;
-
-            /* ...but create a new one if it is null */
-            if (pProgress.isNull())
-            {
-                pProgress.createObject();
-                rc = pProgress->init(m->pVirtualBox,
-                                     static_cast<IMedium*>(this),
-                                     BstrFmt(tr("Creating differencing medium storage unit '%s'"), aTarget->m->strLocationFull.c_str()).raw(),
-                                     TRUE /* aCancelable */);
-                if (FAILED(rc))
-                    throw rc;
-            }
-        }
-
-        /* setup task object to carry out the operation sync/async */
-        pTask = new Medium::CreateDiffTask(this, pProgress, aTarget, aVariant,
-                                           aMediumLockList,
-                                           aWait /* fKeepMediumLockList */);
-        rc = pTask->rc();
-        AssertComRC(rc);
-        if (FAILED(rc))
-             throw rc;
-
-        /* register a task (it will deregister itself when done) */
-        ++m->numCreateDiffTasks;
-        Assert(m->numCreateDiffTasks != 0); /* overflow? */
-
-        aTarget->m->state = MediumState_Creating;
-    }
-    catch (HRESULT aRC) { rc = aRC; }
-
-    if (SUCCEEDED(rc))
-    {
-        if (aWait)
-            rc = runNow(pTask, pfNeedsGlobalSaveSettings);
-        else
-            rc = startThread(pTask);
-
-        if (SUCCEEDED(rc) && aProgress != NULL)
-            *aProgress = pProgress;
-    }
-    else if (pTask != NULL)
-        delete pTask;
-
-    return rc;
 }
 
 /**
@@ -5248,7 +4553,103 @@ void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
     }
 }
 
+/**
+ * Fix the parent UUID of all children to point to this medium as their
+ * parent.
+ */
+HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
+{
+    MediumLockList mediumLockList;
+    HRESULT rc = createMediumLockList(true /* fFailIfInaccessible */,
+                                      false /* fMediumLockWrite */,
+                                      this,
+                                      mediumLockList);
+    AssertComRCReturnRC(rc);
 
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            MediumLockList::Base::iterator lockListBegin =
+                mediumLockList.GetBegin();
+            MediumLockList::Base::iterator lockListEnd =
+                mediumLockList.GetEnd();
+            for (MediumLockList::Base::iterator it = lockListBegin;
+                 it != lockListEnd;
+                 ++it)
+            {
+                MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                // open the medium
+                vrc = VDOpen(hdd,
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_READONLY,
+                             pMedium->m->vdImageIfaces);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+            }
+
+            for (MediaList::const_iterator it = childrenToReparent.begin();
+                 it != childrenToReparent.end();
+                 ++it)
+            {
+                /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
+                vrc = VDOpen(hdd,
+                             (*it)->m->strFormat.c_str(),
+                             (*it)->m->strLocationFull.c_str(),
+                             VD_OPEN_FLAGS_INFO,
+                             (*it)->m->vdImageIfaces);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+
+                vrc = VDSetParentUuid(hdd, VD_LAST_IMAGE, m->id.raw());
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+
+                vrc = VDClose(hdd, false /* fDelete */);
+                if (RT_FAILURE(vrc))
+                    throw vrc;
+
+                (*it)->UnlockWrite(NULL);
+            }
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+        catch (int aVRC)
+        {
+            throw setError(E_FAIL,
+                            tr("Could not update medium UUID references to parent '%s' (%s)"),
+                            m->strLocationFull.c_str(),
+                            vdError(aVRC).c_str());
+        }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    return rc;
+}
+
+/**
+ * Used by IAppliance to export disk images.
+ *
+ * @param aFilename             Filename to create (UTF8).
+ * @param aFormat               Medium format for creating @a aFilename.
+ * @param aVariant              Which exact image format variant to use
+ *                              for the destination image.
+ * @param aVDImageIOCallbacks   Pointer to the callback table for a
+ *                              VDINTERFACEIO interface. May be NULL.
+ * @param aVDImageIOUser        Opaque data for the callbacks.
+ * @param aProgress             Progress object to use.
+ * @return
+ * @note The source format is defined by the Medium instance.
+ */
 HRESULT Medium::exportFile(const char *aFilename,
                            const ComObjPtr<MediumFormat> &aFormat,
                            MediumVariant_T aVariant,
@@ -5312,6 +4713,21 @@ HRESULT Medium::exportFile(const char *aFilename,
     return rc;
 }
 
+/**
+ * Used by IAppliance to import disk images.
+ *
+ * @param aFilename             Filename to read (UTF8).
+ * @param aFormat               Medium format for reading @a aFilename.
+ * @param aVariant              Which exact image format variant to use
+ *                              for the destination image.
+ * @param aVDImageIOCallbacks   Pointer to the callback table for a
+ *                              VDINTERFACEIO interface. May be NULL.
+ * @param aVDImageIOUser        Opaque data for the callbacks.
+ * @param aParent               Parent medium. May be NULL.
+ * @param aProgress             Progress object to use.
+ * @return
+ * @note The destination format is defined by the Medium instance.
+ */
 HRESULT Medium::importFile(const char *aFilename,
                            const ComObjPtr<MediumFormat> &aFormat,
                            MediumVariant_T aVariant,
@@ -5391,6 +4807,406 @@ HRESULT Medium::importFile(const char *aFilename,
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Queries information from the medium.
+ *
+ * As a result of this call, the accessibility state and data members such as
+ * size and description will be updated with the current information.
+ *
+ * @note This method may block during a system I/O call that checks storage
+ *       accessibility.
+ *
+ * @note Locks medium tree for reading and writing (for new diff media checked
+ *       for the first time). Locks mParent for reading. Locks this object for
+ *       writing.
+ *
+ * @param fSetImageId Whether to reset the UUID contained in the image file to the UUID in the medium instance data (see SetIDs())
+ * @param fSetParentId Whether to reset the parent UUID contained in the image file to the parent UUID in the medium instance data (see SetIDs())
+ * @return
+ */
+HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (   m->state != MediumState_Created
+        && m->state != MediumState_Inaccessible
+        && m->state != MediumState_LockedRead)
+        return E_FAIL;
+
+    HRESULT rc = S_OK;
+
+    int vrc = VINF_SUCCESS;
+
+    /* check if a blocking queryInfo() call is in progress on some other thread,
+     * and wait for it to finish if so instead of querying data ourselves */
+    if (m->queryInfoRunning)
+    {
+        Assert(   m->state == MediumState_LockedRead
+               || m->state == MediumState_LockedWrite);
+
+        alock.leave();
+        vrc = RTSemEventMultiWait(m->queryInfoSem, RT_INDEFINITE_WAIT);
+        alock.enter();
+
+        AssertRC(vrc);
+
+        return S_OK;
+    }
+
+    bool success = false;
+    Utf8Str lastAccessError;
+
+    /* are we dealing with a new medium constructed using the existing
+     * location? */
+    bool isImport = m->id.isEmpty();
+    unsigned uOpenFlags = VD_OPEN_FLAGS_INFO;
+
+    /* Note that we don't use VD_OPEN_FLAGS_READONLY when opening new
+     * media because that would prevent necessary modifications
+     * when opening media of some third-party formats for the first
+     * time in VirtualBox (such as VMDK for which VDOpen() needs to
+     * generate an UUID if it is missing) */
+    if (    (m->hddOpenMode == OpenReadOnly)
+         || m->type == MediumType_Readonly
+         || !isImport
+       )
+        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+
+    /* Open shareable medium with the appropriate flags */
+    if (m->type == MediumType_Shareable)
+        uOpenFlags |= VD_OPEN_FLAGS_SHAREABLE;
+
+    /* Lock the medium, which makes the behavior much more consistent */
+    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
+        rc = LockRead(NULL);
+    else
+        rc = LockWrite(NULL);
+    if (FAILED(rc)) return rc;
+
+    /* Copies of the input state fields which are not read-only,
+     * as we're dropping the lock. CAUTION: be extremely careful what
+     * you do with the contents of this medium object, as you will
+     * create races if there are concurrent changes. */
+    Utf8Str format(m->strFormat);
+    Utf8Str location(m->strLocationFull);
+    ComObjPtr<MediumFormat> formatObj = m->formatObj;
+
+    /* "Output" values which can't be set because the lock isn't held
+     * at the time the values are determined. */
+    Guid mediumId = m->id;
+    uint64_t mediumSize = 0;
+    uint64_t mediumLogicalSize = 0;
+
+    /* Flag whether a base image has a non-zero parent UUID and thus
+     * need repairing after it was closed again. */
+    bool fRepairImageZeroParentUuid = false;
+
+    /* leave the lock before a lengthy operation */
+    vrc = RTSemEventMultiReset(m->queryInfoSem);
+    AssertRCReturn(vrc, E_FAIL);
+    m->queryInfoRunning = true;
+    alock.leave();
+
+    try
+    {
+        /* skip accessibility checks for host drives */
+        if (m->hostDrive)
+        {
+            success = true;
+            throw S_OK;
+        }
+
+        PVBOXHDD hdd;
+        vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            /** @todo This kind of opening of media is assuming that diff
+             * media can be opened as base media. Should be documented that
+             * it must work for all medium format backends. */
+            vrc = VDOpen(hdd,
+                         format.c_str(),
+                         location.c_str(),
+                         uOpenFlags,
+                         m->vdImageIfaces);
+            if (RT_FAILURE(vrc))
+            {
+                lastAccessError = Utf8StrFmt(tr("Could not open the medium '%s'%s"),
+                                             location.c_str(), vdError(vrc).c_str());
+                throw S_OK;
+            }
+
+            if (formatObj->getCapabilities() & MediumFormatCapabilities_Uuid)
+            {
+                /* Modify the UUIDs if necessary. The associated fields are
+                 * not modified by other code, so no need to copy. */
+                if (fSetImageId)
+                {
+                    vrc = VDSetUuid(hdd, 0, m->uuidImage.raw());
+                    ComAssertRCThrow(vrc, E_FAIL);
+                }
+                if (fSetParentId)
+                {
+                    vrc = VDSetParentUuid(hdd, 0, m->uuidParentImage.raw());
+                    ComAssertRCThrow(vrc, E_FAIL);
+                }
+                /* zap the information, these are no long-term members */
+                unconst(m->uuidImage).clear();
+                unconst(m->uuidParentImage).clear();
+
+                /* check the UUID */
+                RTUUID uuid;
+                vrc = VDGetUuid(hdd, 0, &uuid);
+                ComAssertRCThrow(vrc, E_FAIL);
+
+                if (isImport)
+                {
+                    mediumId = uuid;
+
+                    if (mediumId.isEmpty() && (m->hddOpenMode == OpenReadOnly))
+                        // only when importing a VDMK that has no UUID, create one in memory
+                        mediumId.create();
+                }
+                else
+                {
+                    Assert(!mediumId.isEmpty());
+
+                    if (mediumId != uuid)
+                    {
+                        lastAccessError = Utf8StrFmt(
+                                tr("UUID {%RTuuid} of the medium '%s' does not match the value {%RTuuid} stored in the media registry ('%s')"),
+                                &uuid,
+                                location.c_str(),
+                                mediumId.raw(),
+                                m->pVirtualBox->settingsFilePath().c_str());
+                        throw S_OK;
+                    }
+                }
+            }
+            else
+            {
+                /* the backend does not support storing UUIDs within the
+                 * underlying storage so use what we store in XML */
+
+                /* generate an UUID for an imported UUID-less medium */
+                if (isImport)
+                {
+                    if (fSetImageId)
+                        mediumId = m->uuidImage;
+                    else
+                        mediumId.create();
+                }
+            }
+
+            /* get the medium variant */
+            unsigned uImageFlags;
+            vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
+            ComAssertRCThrow(vrc, E_FAIL);
+            m->variant = (MediumVariant_T)uImageFlags;
+
+            /* check/get the parent uuid and update corresponding state */
+            if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
+            {
+                RTUUID parentId;
+                vrc = VDGetParentUuid(hdd, 0, &parentId);
+                ComAssertRCThrow(vrc, E_FAIL);
+
+                /* streamOptimized VMDK images are only accepted as base
+                 * images, as this allows automatic repair of OVF appliances.
+                 * Since such images don't support random writes they will not
+                 * be created for diff images. Only an overly smart user might
+                 * manually create this case. Too bad for him. */
+                if (   isImport
+                    && !(uImageFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED))
+                {
+                    /* the parent must be known to us. Note that we freely
+                     * call locking methods of mVirtualBox and parent, as all
+                     * relevant locks must be already held. There may be no
+                     * concurrent access to the just opened medium on other
+                     * threads yet (and init() will fail if this method reports
+                     * MediumState_Inaccessible) */
+
+                    Guid id = parentId;
+                    ComObjPtr<Medium> pParent;
+                    rc = m->pVirtualBox->findHardDiskById(id, false /* aSetError */, &pParent);
+                    if (FAILED(rc))
+                    {
+                        lastAccessError = Utf8StrFmt(
+                                tr("Parent medium with UUID {%RTuuid} of the medium '%s' is not found in the media registry ('%s')"),
+                                &parentId, location.c_str(),
+                                m->pVirtualBox->settingsFilePath().c_str());
+                        throw S_OK;
+                    }
+
+                    /* we set mParent & children() */
+                    AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+                    Assert(m->pParent.isNull());
+                    m->pParent = pParent;
+                    m->pParent->m->llChildren.push_back(this);
+                }
+                else
+                {
+                    /* we access mParent */
+                    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+                    /* check that parent UUIDs match. Note that there's no need
+                     * for the parent's AutoCaller (our lifetime is bound to
+                     * it) */
+
+                    if (m->pParent.isNull())
+                    {
+                        /* Due to a bug in VDCopy() in VirtualBox 3.0.0-3.0.14
+                         * and 3.1.0-3.1.8 there are base images out there
+                         * which have a non-zero parent UUID. No point in
+                         * complaining about them, instead automatically
+                         * repair the problem. Later we can bring back the
+                         * error message, but we should wait until really
+                         * most users have repaired their images, either with
+                         * VBoxFixHdd or this way. */
+#if 1
+                        fRepairImageZeroParentUuid = true;
+#else /* 0 */
+                        lastAccessError = Utf8StrFmt(
+                                tr("Medium type of '%s' is differencing but it is not associated with any parent medium in the media registry ('%s')"),
+                                location.c_str(),
+                                m->pVirtualBox->settingsFilePath().c_str());
+                        throw S_OK;
+#endif /* 0 */
+                    }
+
+                    AutoReadLock parentLock(m->pParent COMMA_LOCKVAL_SRC_POS);
+                    if (   !fRepairImageZeroParentUuid
+                        && m->pParent->getState() != MediumState_Inaccessible
+                        && m->pParent->getId() != parentId)
+                    {
+                        lastAccessError = Utf8StrFmt(
+                                tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
+                                &parentId, location.c_str(),
+                                m->pParent->getId().raw(),
+                                m->pVirtualBox->settingsFilePath().c_str());
+                        throw S_OK;
+                    }
+
+                    /// @todo NEWMEDIA what to do if the parent is not
+                    /// accessible while the diff is? Probably nothing. The
+                    /// real code will detect the mismatch anyway.
+                }
+            }
+
+            mediumSize = VDGetFileSize(hdd, 0);
+            mediumLogicalSize = VDGetSize(hdd, 0);
+
+            success = true;
+        }
+        catch (HRESULT aRC)
+        {
+            rc = aRC;
+        }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC)
+    {
+        rc = aRC;
+    }
+
+    alock.enter();
+
+    if (isImport)
+        unconst(m->id) = mediumId;
+
+    if (success)
+    {
+        m->size = mediumSize;
+        m->logicalSize = mediumLogicalSize;
+        m->strLastAccessError.setNull();
+    }
+    else
+    {
+        m->strLastAccessError = lastAccessError;
+        LogWarningFunc(("'%s' is not accessible (error='%s', rc=%Rhrc, vrc=%Rrc)\n",
+                        location.c_str(), m->strLastAccessError.c_str(),
+                        rc, vrc));
+    }
+
+    /* inform other callers if there are any */
+    RTSemEventMultiSignal(m->queryInfoSem);
+    m->queryInfoRunning = false;
+
+    /* Set the proper state according to the result of the check */
+    if (success)
+        m->preLockState = MediumState_Created;
+    else
+        m->preLockState = MediumState_Inaccessible;
+
+    HRESULT rc2;
+    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
+        rc2 = UnlockRead(NULL);
+    else
+        rc2 = UnlockWrite(NULL);
+    if (SUCCEEDED(rc) && FAILED(rc2))
+        rc = rc2;
+    if (FAILED(rc)) return rc;
+
+    /* If this is a base image which incorrectly has a parent UUID set,
+     * repair the image now by zeroing the parent UUID. This is only done
+     * when we have structural information from a config file, on import
+     * this is not possible. If someone would accidentally call openMedium
+     * with a diff image before the base is registered this would destroy
+     * the diff. Not acceptable. */
+    if (fRepairImageZeroParentUuid)
+    {
+        rc = LockWrite(NULL);
+        if (FAILED(rc)) return rc;
+
+        alock.leave();
+
+        try
+        {
+            PVBOXHDD hdd;
+            vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
+            ComAssertRCThrow(vrc, E_FAIL);
+
+            try
+            {
+                vrc = VDOpen(hdd,
+                             format.c_str(),
+                             location.c_str(),
+                             uOpenFlags & ~VD_OPEN_FLAGS_READONLY,
+                             m->vdImageIfaces);
+                if (RT_FAILURE(vrc))
+                    throw S_OK;
+
+                RTUUID zeroParentUuid;
+                RTUuidClear(&zeroParentUuid);
+                vrc = VDSetParentUuid(hdd, 0, &zeroParentUuid);
+                ComAssertRCThrow(vrc, E_FAIL);
+            }
+            catch (HRESULT aRC)
+            {
+                rc = aRC;
+            }
+
+            VDDestroy(hdd);
+        }
+        catch (HRESULT aRC)
+        {
+            rc = aRC;
+        }
+
+        alock.enter();
+
+        rc = UnlockWrite(NULL);
+        if (SUCCEEDED(rc) && FAILED(rc2))
+            rc = rc2;
+        if (FAILED(rc)) return rc;
+    }
+
+    return rc;
+}
+
+/**
  * Performs extra checks if the medium can be closed and returns S_OK in
  * this case. Otherwise, returns a respective error message. Called by
  * Close() under the medium tree lock and the medium lock.
@@ -5468,6 +5284,251 @@ HRESULT Medium::unregisterWithVirtualBox(bool *pfNeedsGlobalSaveSettings)
 }
 
 /**
+ * Sets the extended error info according to the current media state.
+ *
+ * @note Must be called from under this object's write or read lock.
+ */
+HRESULT Medium::setStateError()
+{
+    HRESULT rc = E_FAIL;
+
+    switch (m->state)
+    {
+        case MediumState_NotCreated:
+        {
+            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                          tr("Storage for the medium '%s' is not created"),
+                          m->strLocationFull.c_str());
+            break;
+        }
+        case MediumState_Created:
+        {
+            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                          tr("Storage for the medium '%s' is already created"),
+                          m->strLocationFull.c_str());
+            break;
+        }
+        case MediumState_LockedRead:
+        {
+            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                          tr("Medium '%s' is locked for reading by another task"),
+                          m->strLocationFull.c_str());
+            break;
+        }
+        case MediumState_LockedWrite:
+        {
+            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                          tr("Medium '%s' is locked for writing by another task"),
+                          m->strLocationFull.c_str());
+            break;
+        }
+        case MediumState_Inaccessible:
+        {
+            /* be in sync with Console::powerUpThread() */
+            if (!m->strLastAccessError.isEmpty())
+                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                              tr("Medium '%s' is not accessible. %s"),
+                              m->strLocationFull.c_str(), m->strLastAccessError.c_str());
+            else
+                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                              tr("Medium '%s' is not accessible"),
+                              m->strLocationFull.c_str());
+            break;
+        }
+        case MediumState_Creating:
+        {
+            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                          tr("Storage for the medium '%s' is being created"),
+                          m->strLocationFull.c_str());
+            break;
+        }
+        case MediumState_Deleting:
+        {
+            rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                          tr("Storage for the medium '%s' is being deleted"),
+                          m->strLocationFull.c_str());
+            break;
+        }
+        default:
+        {
+            AssertFailed();
+            break;
+        }
+    }
+
+    return rc;
+}
+
+/**
+ * Sets the value of m->strLocationFull. The given location must be a fully
+ * qualified path; relative paths are not supported here.
+ *
+ * As a special exception, if the specified location is a file path that ends with '/'
+ * then the file name part will be generated by this method automatically in the format
+ * '{<uuid>}.<ext>' where <uuid> is a fresh UUID that this method will generate
+ * and assign to this medium, and <ext> is the default extension for this
+ * medium's storage format. Note that this procedure requires the media state to
+ * be NotCreated and will return a failure otherwise.
+ *
+ * @param aLocation Location of the storage unit. If the location is a FS-path,
+ *                  then it can be relative to the VirtualBox home directory.
+ * @param aFormat   Optional fallback format if it is an import and the format
+ *                  cannot be determined.
+ *
+ * @note Must be called from under this object's write lock.
+ */
+HRESULT Medium::setLocation(const Utf8Str &aLocation,
+                            const Utf8Str &aFormat /* = Utf8Str::Empty */)
+{
+    AssertReturn(!aLocation.isEmpty(), E_FAIL);
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* formatObj may be null only when initializing from an existing path and
+     * no format is known yet */
+    AssertReturn(    (!m->strFormat.isEmpty() && !m->formatObj.isNull())
+                  || (    autoCaller.state() == InInit
+                       && m->state != MediumState_NotCreated
+                       && m->id.isEmpty()
+                       && m->strFormat.isEmpty()
+                       && m->formatObj.isNull()),
+                 E_FAIL);
+
+    /* are we dealing with a new medium constructed using the existing
+     * location? */
+    bool isImport = m->strFormat.isEmpty();
+
+    if (   isImport
+        || (   (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
+            && !m->hostDrive))
+    {
+        Guid id;
+
+        Utf8Str locationFull(aLocation);
+
+        if (m->state == MediumState_NotCreated)
+        {
+            /* must be a file (formatObj must be already known) */
+            Assert(m->formatObj->getCapabilities() & MediumFormatCapabilities_File);
+
+            if (RTPathFilename(aLocation.c_str()) == NULL)
+            {
+                /* no file name is given (either an empty string or ends with a
+                 * slash), generate a new UUID + file name if the state allows
+                 * this */
+
+                ComAssertMsgRet(!m->formatObj->getFileExtensions().empty(),
+                                ("Must be at least one extension if it is MediumFormatCapabilities_File\n"),
+                                E_FAIL);
+
+                Utf8Str strExt = m->formatObj->getFileExtensions().front();
+                ComAssertMsgRet(!strExt.isEmpty(),
+                                ("Default extension must not be empty\n"),
+                                E_FAIL);
+
+                id.create();
+
+                locationFull = Utf8StrFmt("%s{%RTuuid}.%s",
+                                          aLocation.c_str(), id.raw(), strExt.c_str());
+            }
+        }
+
+        // we must always have full paths now
+        if (!RTPathStartsWithRoot(locationFull.c_str()))
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("The given path '%s' is not fully qualified"),
+                            locationFull.c_str());
+
+        /* detect the backend from the storage unit if importing */
+        if (isImport)
+        {
+            VDTYPE enmType = VDTYPE_INVALID;
+            char *backendName = NULL;
+
+            int vrc = VINF_SUCCESS;
+
+            /* is it a file? */
+            {
+                RTFILE file;
+                vrc = RTFileOpen(&file, locationFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+                if (RT_SUCCESS(vrc))
+                    RTFileClose(file);
+            }
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                                  locationFull.c_str(), &backendName, &enmType);
+            }
+            else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
+            {
+                /* assume it's not a file, restore the original location */
+                locationFull = aLocation;
+                vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                                  locationFull.c_str(), &backendName, &enmType);
+            }
+
+            if (RT_FAILURE(vrc))
+            {
+                if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                    return setError(VBOX_E_FILE_ERROR,
+                                    tr("Could not find file for the medium '%s' (%Rrc)"),
+                                    locationFull.c_str(), vrc);
+                else if (aFormat.isEmpty())
+                    return setError(VBOX_E_IPRT_ERROR,
+                                    tr("Could not get the storage format of the medium '%s' (%Rrc)"),
+                                    locationFull.c_str(), vrc);
+                else
+                {
+                    HRESULT rc = setFormat(aFormat);
+                    /* setFormat() must not fail since we've just used the backend so
+                     * the format object must be there */
+                    AssertComRCReturnRC(rc);
+                }
+            }
+            else if (   enmType == VDTYPE_INVALID
+                     || m->devType != convertToDeviceType(enmType))
+            {
+                /*
+                 * The user tried to use a image as a device which is not supported
+                 * by the backend.
+                 */
+                return setError(E_FAIL,
+                                tr("The medium '%s' can't be used as the requested device type"),
+                                locationFull.c_str());
+            }
+            else
+            {
+                ComAssertRet(backendName != NULL && *backendName != '\0', E_FAIL);
+
+                HRESULT rc = setFormat(backendName);
+                RTStrFree(backendName);
+
+                /* setFormat() must not fail since we've just used the backend so
+                 * the format object must be there */
+                AssertComRCReturnRC(rc);
+            }
+        }
+
+        m->strLocationFull = locationFull;
+
+        /* is it still a file? */
+        if (    (m->formatObj->getCapabilities() & MediumFormatCapabilities_File)
+             && (m->state == MediumState_NotCreated)
+           )
+            /* assign a new UUID (this UUID will be used when calling
+             * VDCreateBase/VDCreateDiff as a wanted UUID). Note that we
+             * also do that if we didn't generate it to make sure it is
+             * either generated by us or reset to null */
+            unconst(m->id) = id;
+    }
+    else
+        m->strLocationFull = aLocation;
+
+    return S_OK;
+}
+
+/**
  * Checks that the format ID is valid and sets it on success.
  *
  * Note that this method will caller-reference the format object on success!
@@ -5511,6 +5572,56 @@ HRESULT Medium::setFormat(const Utf8Str &aFormat)
     unconst(m->strFormat) = aFormat;
 
     return S_OK;
+}
+
+/**
+ * Converts the Medium device type to the VD type.
+ */
+VDTYPE Medium::convertDeviceType()
+{
+    VDTYPE enmType;
+
+    switch (m->devType)
+    {
+        case DeviceType_HardDisk:
+            enmType = VDTYPE_HDD;
+            break;
+        case DeviceType_DVD:
+            enmType = VDTYPE_DVD;
+            break;
+        case DeviceType_Floppy:
+            enmType = VDTYPE_FLOPPY;
+            break;
+        default:
+            ComAssertFailedRet(VDTYPE_INVALID);
+    }
+
+    return enmType;
+}
+
+/**
+ * Converts from the VD type to the medium type.
+ */
+DeviceType_T Medium::convertToDeviceType(VDTYPE enmType)
+{
+    DeviceType_T devType;
+
+    switch (enmType)
+    {
+        case VDTYPE_HDD:
+            devType = DeviceType_HardDisk;
+            break;
+        case VDTYPE_DVD:
+            devType = DeviceType_DVD;
+            break;
+        case VDTYPE_FLOPPY:
+            devType = DeviceType_Floppy;
+            break;
+        default:
+            ComAssertFailedRet(DeviceType_Null);
+    }
+
+    return devType;
 }
 
 /**
@@ -5743,7 +5854,6 @@ DECLCALLBACK(int) Medium::vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
     return RTTcpGetPeerAddress(pSocketInt->hSocket, pAddr);
 }
 
-
 /**
  * Starts a new thread driven by the appropriate Medium::Task::handler() method.
  *
@@ -5773,89 +5883,6 @@ HRESULT Medium::startThread(Medium::Task *pTask)
     }
 
     return S_OK;
-}
-
-/**
- * Fix the parent UUID of all children to point to this medium as their
- * parent.
- */
-HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
-{
-    MediumLockList mediumLockList;
-    HRESULT rc = createMediumLockList(true /* fFailIfInaccessible */,
-                                      false /* fMediumLockWrite */,
-                                      this,
-                                      mediumLockList);
-    AssertComRCReturnRC(rc);
-
-    try
-    {
-        PVBOXHDD hdd;
-        int vrc = VDCreate(m->vdDiskIfaces, convertDeviceType(), &hdd);
-        ComAssertRCThrow(vrc, E_FAIL);
-
-        try
-        {
-            MediumLockList::Base::iterator lockListBegin =
-                mediumLockList.GetBegin();
-            MediumLockList::Base::iterator lockListEnd =
-                mediumLockList.GetEnd();
-            for (MediumLockList::Base::iterator it = lockListBegin;
-                 it != lockListEnd;
-                 ++it)
-            {
-                MediumLock &mediumLock = *it;
-                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
-                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
-
-                // open the medium
-                vrc = VDOpen(hdd,
-                             pMedium->m->strFormat.c_str(),
-                             pMedium->m->strLocationFull.c_str(),
-                             VD_OPEN_FLAGS_READONLY,
-                             pMedium->m->vdImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw vrc;
-            }
-
-            for (MediaList::const_iterator it = childrenToReparent.begin();
-                 it != childrenToReparent.end();
-                 ++it)
-            {
-                /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
-                vrc = VDOpen(hdd,
-                             (*it)->m->strFormat.c_str(),
-                             (*it)->m->strLocationFull.c_str(),
-                             VD_OPEN_FLAGS_INFO,
-                             (*it)->m->vdImageIfaces);
-                if (RT_FAILURE(vrc))
-                    throw vrc;
-
-                vrc = VDSetParentUuid(hdd, VD_LAST_IMAGE, m->id.raw());
-                if (RT_FAILURE(vrc))
-                    throw vrc;
-
-                vrc = VDClose(hdd, false /* fDelete */);
-                if (RT_FAILURE(vrc))
-                    throw vrc;
-
-                (*it)->UnlockWrite(NULL);
-            }
-        }
-        catch (HRESULT aRC) { rc = aRC; }
-        catch (int aVRC)
-        {
-            throw setError(E_FAIL,
-                            tr("Could not update medium UUID references to parent '%s' (%s)"),
-                            m->strLocationFull.c_str(),
-                            vdError(aVRC).c_str());
-        }
-
-        VDDestroy(hdd);
-    }
-    catch (HRESULT aRC) { rc = aRC; }
-
-    return rc;
 }
 
 /**
