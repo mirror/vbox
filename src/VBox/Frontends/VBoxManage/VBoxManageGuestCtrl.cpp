@@ -48,7 +48,6 @@
 #endif
 
 #include <signal.h>
-#include <stdlib.h>
 
 #ifdef RT_OS_DARWIN
 # include <CoreFoundation/CFRunLoop.h>
