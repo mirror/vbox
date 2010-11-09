@@ -212,6 +212,7 @@ public:
                               ComObjPtr<Progress> *aProgress,
                               bool aWait,
                               bool *pfNeedsGlobalSaveSettings);
+    Utf8Str getPreferredDiffFormat();
 
     HRESULT close(bool *pfNeedsGlobalSaveSettings, AutoCaller &autoCaller);
     HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsGlobalSaveSettings);
@@ -241,49 +242,17 @@ public:
 
     HRESULT fixParentUuidOfChildren(const MediaList &childrenToReparent);
 
-    /**
-     * Used by IAppliance to export disk images.
-     *
-     * @param aFilename             Filename to create (UTF8).
-     * @param aFormat               Medium format for creating @a aFilename.
-     * @param aVariant              Which exact image format variant to use
-     *                              for the destination image.
-     * @param aVDImageIOCallbacks   Pointer to the callback table for a
-     *                              VDINTERFACEIO interface. May be NULL.
-     * @param aVDImageIOUser        Opaque data for the callbacks.
-     * @param aProgress             Progress object to use.
-     * @return
-     * @note The source format is defined by the Medium instance.
-     */
     HRESULT exportFile(const char *aFilename,
                        const ComObjPtr<MediumFormat> &aFormat,
                        MediumVariant_T aVariant,
                        void *aVDImageIOCallbacks, void *aVDImageIOUser,
                        const ComObjPtr<Progress> &aProgress);
-    /**
-     * Used by IAppliance to import disk images.
-     *
-     * @param aFilename             Filename to read (UTF8).
-     * @param aFormat               Medium format for reading @a aFilename.
-     * @param aVariant              Which exact image format variant to use
-     *                              for the destination image.
-     * @param aVDImageIOCallbacks   Pointer to the callback table for a
-     *                              VDINTERFACEIO interface. May be NULL.
-     * @param aVDImageIOUser        Opaque data for the callbacks.
-     * @param aParent               Parent medium. May be NULL.
-     * @param aProgress             Progress object to use.
-     * @return
-     * @note The destination format is defined by the Medium instance.
-     */
     HRESULT importFile(const char *aFilename,
                        const ComObjPtr<MediumFormat> &aFormat,
                        MediumVariant_T aVariant,
                        void *aVDImageIOCallbacks, void *aVDImageIOUser,
                        const ComObjPtr<Medium> &aParent,
                        const ComObjPtr<Progress> &aProgress);
-
-    /** Returns a preferred format for a differencing hard disk. */
-    Utf8Str getPreferredDiffFormat();
 
 private:
 
@@ -297,10 +266,10 @@ private:
     HRESULT setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat = Utf8Str::Empty);
     HRESULT setFormat(const Utf8Str &aFormat);
 
-    Utf8Str vdError(int aVRC);
-
     VDTYPE convertDeviceType();
     DeviceType_T convertToDeviceType(VDTYPE enmType);
+
+    Utf8Str vdError(int aVRC);
 
     static DECLCALLBACK(void) vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                                           const char *pszFormat, va_list va);
