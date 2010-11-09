@@ -479,7 +479,7 @@ static void vboxVBVAHostCommandHanlder(PPDEV ppdev, VBVAHOSTCMD * pCmd)
 void vboxVHWACommandCheckHostCmds(PPDEV ppdev)
 {
     VBVAHOSTCMD * pCmd, * pNextCmd;
-    int rc = ppdev->pfnHGSMIRequestCommands(ppdev->hMpHGSMI, HGSMI_CH_VBVA, &pCmd);
+    int rc = ppdev->pfnHGSMIRequestCommands(ppdev->hMpHGSMI, HGSMI_CH_VBVA, ppdev->iDevice, &pCmd);
     /* don't assert here, otherwise NT4 will be unhappy */
     if(RT_SUCCESS(rc))
     {

@@ -3577,7 +3577,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             HGSMIQUERYCALLBACKS *pInfo = (HGSMIQUERYCALLBACKS *)RequestPacket->OutputBuffer;
 
-            pInfo->hContext = pDevExt;
+            pInfo->hContext = commonFromDeviceExt(pDevExt);
             pInfo->pfnCompletionHandler = hgsmiHostCmdComplete;
             pInfo->pfnRequestCommandsHandler = hgsmiHostCmdRequest;
 
@@ -3631,7 +3631,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
             HGSMIHANDLERENABLE *pInfo = (HGSMIHANDLERENABLE *)RequestPacket->InputBuffer;
 
-            int rc = vboxVBVAChannelDisplayEnable(pDevExt->pPrimary,
+            int rc = vboxVBVAChannelDisplayEnable(commonFromDeviceExt(pDevExt),
                     pDevExt->iDevice,
                     pInfo->u8Channel);
             if(RT_FAILURE(rc))
