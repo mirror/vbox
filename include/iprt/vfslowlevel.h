@@ -428,16 +428,18 @@ typedef struct RTVFSIOSTREAMOPS
     /**
      * Reads from the file/stream.
      *
-     * @returns IPRT status code.
+     * @returns IPRT status code. See RTVfsIoStrmRead.
      * @param   pvThis      The implementation specific file data.
      * @param   off         Where to read at, -1 for the current position.
      * @param   pSgBuf      Gather buffer describing the bytes that are to be
      *                      written.
      * @param   fBlocking   If @c true, the call is blocking, if @c false it
      *                      should not block.
-     * @param   pcbRead     Where return the number of bytes actually read.  If
-     *                      NULL, try read all and fail if incomplete.
-     * @sa      RTFileRead, RTFileReadAt.
+     * @param   pcbRead     Where return the number of bytes actually read.
+     *                      This is set it 0 by the caller.  If NULL, try read
+     *                      all and fail if incomplete.
+     * @sa      RTVfsIoStrmRead, RTVfsIoStrmSgRead, RTVfsFileRead,
+     *          RTVfsFileReadAt, RTFileRead, RTFileReadAt.
      */
     DECLCALLBACKMEMBER(int, pfnRead)(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
 
@@ -452,9 +454,9 @@ typedef struct RTVFSIOSTREAMOPS
      *                      written.
      * @param   fBlocking   If @c true, the call is blocking, if @c false it
      *                      should not block.
-     * @param   pcbWrite    Where to return the number of bytes actually
-     *                      written.  If  NULL, try write it all and fail if
-     *                      incomplete.
+     * @param   pcbWritten  Where to return the number of bytes actually
+     *                      written.  This is set it 0 by the caller.  If
+     *                      NULL, try write it all and fail if incomplete.
      * @sa      RTFileWrite, RTFileWriteAt.
      */
     DECLCALLBACKMEMBER(int, pfnWrite)(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);

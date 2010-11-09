@@ -1293,6 +1293,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_ZIP_UNSUPPORTED_VERSION            (-953)
 /** The compression method is unsupported. */
 #define VERR_ZIP_UNSUPPORTED_METHOD             (-954)
+/** The compressed data started with a bad header. */
+#define VERR_ZIP_BAD_HEADER                     (-955)
 /** @} */
 
 /* SED-END */
