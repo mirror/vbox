@@ -1292,11 +1292,11 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
         else if (   !strcmp(a->argv[i], "--mode")
                  || !strcmp(a->argv[i], "-m"))
         {
-            if (i + 1 >= a->argc)
+            if (i + 1 >= a->argc
+                || RTStrToUInt32Full(a->argv[i + 1], 10, &uMode) != VINF_SUCCESS)
                 usageOK = false;
             else
             {
-                uMode = atoi(a->argv[i + 1]);
                 ++i;
             }
         }
