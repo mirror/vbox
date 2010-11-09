@@ -7165,7 +7165,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="2af0100b-fda2-4c6a-8e8f-31e4ba871886"
+     uuid="9a949843-b237-46d4-8fcf-c83dcd9121ef"
      wsmap="managed"
      >
     <desc>
@@ -7463,7 +7463,12 @@
     <method name="getMaxInstancesOfStorageBus">
       <desc>Returns the maximum number of storage bus instances which
         can be configured for each VM. This corresponds to the number of
-        storage controllers one can have.</desc>
+        storage controllers one can have. Value may depend on chipset type
+        used.</desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
 
       <param name="bus" type="StorageBus" dir="in">
         <desc>The storage bus type to get the value for.</desc>

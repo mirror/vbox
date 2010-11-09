@@ -510,6 +510,8 @@ private:
     QPixmap mMinusPixmapDis;
 
     ToolTipType mToolTipType;
+
+    KChipsetType getChipsetType() const;
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
