@@ -1140,8 +1140,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             else if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc,
                                         N_("Configuration error: Querying \"Netboot/x/PCIFunctionNo\" as integer failed"));
-            /** @todo: encode bus number too */
-            u16BusDevFn = ((u8PciDev & 0x1F) << 3) | (u8PciFn & 0x7);
+            u16BusDevFn = (((uint16_t)u8PciBus) << 8) | ((u8PciDev & 0x1F) << 3) | (u8PciFn & 0x7);
             pThis->au16NetBootDev[i] = u16BusDevFn;
         }
     }
