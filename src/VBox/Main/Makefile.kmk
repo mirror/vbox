@@ -262,7 +262,7 @@ endif
 VBoxSVC_LIBS += \
 	$(PATH_LIB)/SSMStandalone$(VBOX_SUFF_LIB) \
 	$(LIB_DDU)
-VBoxSVC_SDKS =  VBOX_LIBPNG VBOX_ZLIB
+VBoxSVC_SDKS = VBOX_LIBPNG VBOX_ZLIB
 VBoxSVC_LIBS.solaris = \
 	adm \
 	nsl \
