@@ -69,7 +69,6 @@ static const DeviceAssignmentRule aGenericRules[] =
     /* ACPI controller */
     {"acpi",          0,  7,  0, 0},
 
-
     /* Network controllers */
     /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
      * next 4 get 16..19. */
@@ -126,17 +125,90 @@ static const DeviceAssignmentRule aIch9Rules[] =
     /* to make sure rule never used before rules assigning devices on it */
     {"ich9pcibridge", 0, 24, 0,  10},
     {"ich9pcibridge", 0, 25, 0,  10},
-    {"ich9pcibridge", 1, 24, 0,   5},
-    {"ich9pcibridge", 1, 25, 0,   5},
+    {"ich9pcibridge", 1, 24, 0,   9},
+    {"ich9pcibridge", 1, 25, 0,   9},
+    {"ich9pcibridge", 2, 24, 0,   8},
+    {"ich9pcibridge", 2, 25, 0,   8},
+    {"ich9pcibridge", 3, 24, 0,   7},
+    {"ich9pcibridge", 3, 25, 0,   7},
+    {"ich9pcibridge", 4, 24, 0,   6},
+    {"ich9pcibridge", 4, 25, 0,   6},
+    {"ich9pcibridge", 5, 24, 0,   5},
+    {"ich9pcibridge", 5, 25, 0,   5},
+
+    /* Storage controllers */
+    {"ahci",          1,  0, 0,   0},
+    {"ahci",          1,  1, 0,   0},
+    {"ahci",          1,  2, 0,   0},
+    {"ahci",          1,  3, 0,   0},
+    {"ahci",          1,  4, 0,   0},
+    {"ahci",          1,  5, 0,   0},
+    {"ahci",          1,  6, 0,   0},
+    {"lsilogic",      1,  7, 0,   0},
+    {"lsilogic",      1,  8, 0,   0},
+    {"lsilogic",      1,  9, 0,   0},
+    {"lsilogic",      1, 10, 0,   0},
+    {"lsilogic",      1, 11, 0,   0},
+    {"lsilogic",      1, 12, 0,   0},
+    {"lsilogic",      1, 13, 0,   0},
+    {"buslogic",      1, 14, 0,   0},
+    {"buslogic",      1, 15, 0,   0},
+    {"buslogic",      1, 16, 0,   0},
+    {"buslogic",      1, 17, 0,   0},
+    {"buslogic",      1, 18, 0,   0},
+    {"buslogic",      1, 19, 0,   0},
+    {"buslogic",      1, 20, 0,   0},
+    {"lsilogicsas",   1, 21, 0,   0},
+    {"lsilogicsas",   1, 26, 0,   0},
+    {"lsilogicsas",   1, 27, 0,   0},
+    {"lsilogicsas",   1, 28, 0,   0},
+    {"lsilogicsas",   1, 29, 0,   0},
+    {"lsilogicsas",   1, 30, 0,   0},
+    {"lsilogicsas",   1, 31, 0,   0},
+
+    /* NICs */
+    {"nic",           2,  0, 0,   0},
+    {"nic",           2,  1, 0,   0},
+    {"nic",           2,  2, 0,   0},
+    {"nic",           2,  3, 0,   0},
+    {"nic",           2,  4, 0,   0},
+    {"nic",           2,  5, 0,   0},
+    {"nic",           2,  6, 0,   0},
+    {"nic",           2,  7, 0,   0},
+    {"nic",           2,  8, 0,   0},
+    {"nic",           2,  9, 0,   0},
+    {"nic",           2, 10, 0,   0},
+    {"nic",           2, 11, 0,   0},
+    {"nic",           2, 12, 0,   0},
+    {"nic",           2, 13, 0,   0},
+    {"nic",           2, 14, 0,   0},
+    {"nic",           2, 15, 0,   0},
+    {"nic",           2, 16, 0,   0},
+    {"nic",           2, 17, 0,   0},
+    {"nic",           2, 18, 0,   0},
+    {"nic",           2, 19, 0,   0},
+    {"nic",           2, 20, 0,   0},
+    {"nic",           2, 21, 0,   0},
+    {"nic",           2, 26, 0,   0},
+    {"nic",           2, 27, 0,   0},
+    {"nic",           2, 28, 0,   0},
+    {"nic",           2, 29, 0,   0},
+    {"nic",           2, 30, 0,   0},
+    {"nic",           2, 31, 0,   0},
+
     { NULL,          -1, -1, -1,  0}
 };
 
 /* Aliasing rules */
 static const DeviceAliasRule aDeviceAliases[] =
 {
-    {"e1000",      "nic"},
-    {"pcnet",      "nic"},
-    {"virtio-net", "nic"}
+    {"e1000",       "nic"},
+    {"pcnet",       "nic"},
+    {"virtio-net",  "nic"},
+    {"ahci",        "storage"},
+    {"lsilogic",    "storage"},
+    {"buslogic",    "storage"},
+    {"lsilogicsas", "storage"}
 };
 
 struct BusAssignmentManager::State
@@ -164,7 +236,6 @@ struct BusAssignmentManager::State
     typedef std::map <PciBusAddress,PciDeviceRecord > PciMap;
     typedef std::vector<PciBusAddress>                PciAddrList;
     typedef std::vector<const DeviceAssignmentRule*>  PciRulesList;
-
     typedef std::map <PciDeviceRecord,PciAddrList >   ReversePciMap;
 
     volatile int32_t cRefCnt;
