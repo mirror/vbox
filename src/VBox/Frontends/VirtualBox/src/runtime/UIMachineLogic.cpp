@@ -37,8 +37,8 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMInformationDlg.h"
-#include "VBoxVMSettingsNetwork.h"
-#include "VBoxVMSettingsSF.h"
+#include "UIMachineSettingsNetwork.h"
+#include "UIMachineSettingsSF.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataEventHandler.h"
@@ -111,7 +111,7 @@ public:
         pMainLayout->setSpacing(10);
 
         /* Setup settings layout */
-        m_pSettings = new VBoxVMSettingsNetworkPage(true);
+        m_pSettings = new UIMachineSettingsNetworkPage(true);
         m_pSettings->setOrderAfter(this);
         VBoxGlobal::setLayoutMargin(m_pSettings->layout(), 0);
         m_pSettings->loadDirectlyFrom(m_session.GetMachine());
@@ -159,7 +159,7 @@ protected:
 
 private:
 
-    VBoxVMSettingsNetworkPage *m_pSettings;
+    UIMachineSettingsNetworkPage *m_pSettings;
     CSession &m_session;
 };
 
@@ -185,7 +185,7 @@ public:
         pMainLayout->setSpacing(10);
 
         /* Setup settings layout */
-        m_pSettings = new VBoxVMSettingsSF;
+        m_pSettings = new UIMachineSettingsSF;
         VBoxGlobal::setLayoutMargin(m_pSettings->layout(), 0);
         m_pSettings->loadDirectlyFrom(m_session.GetConsole());
         pMainLayout->addWidget(m_pSettings);
@@ -233,7 +233,7 @@ protected:
 
 private:
 
-    VBoxVMSettingsSF *m_pSettings;
+    UIMachineSettingsSF *m_pSettings;
     CSession &m_session;
 };
 

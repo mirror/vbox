@@ -168,7 +168,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/extensions \
 	./src/settings \
 	./src/settings/global \
-	./src/settings/vm \
+	./src/settings/machine \
 	./src/wizards/newvm \
 	./src/wizards/newhd \
 	./src/wizards/firstrun \
@@ -292,25 +292,25 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
 	src/settings/VBoxSettingsSelector.h \
-	src/settings/global/VBoxGLSettingsGeneral.h \
-	src/settings/global/VBoxGLSettingsInput.h \
-	src/settings/global/VBoxGLSettingsUpdate.h \
-	src/settings/global/VBoxGLSettingsLanguage.h \
-	src/settings/global/VBoxGLSettingsNetwork.h \
-	src/settings/global/VBoxGLSettingsNetworkDetails.h \
-	src/settings/vm/VBoxVMSettingsGeneral.h \
-	src/settings/vm/VBoxVMSettingsSystem.h \
-	src/settings/vm/VBoxVMSettingsDisplay.h \
-	src/settings/vm/VBoxVMSettingsHD.h \
-	src/settings/vm/VBoxVMSettingsAudio.h \
-	src/settings/vm/VBoxVMSettingsNetwork.h \
-	src/settings/vm/VBoxVMSettingsPortForwardingDlg.h \
-	src/settings/vm/VBoxVMSettingsSerial.h \
-	src/settings/vm/VBoxVMSettingsParallel.h \
-	src/settings/vm/VBoxVMSettingsUSB.h \
-	src/settings/vm/VBoxVMSettingsUSBFilterDetails.h \
-	src/settings/vm/VBoxVMSettingsSF.h \
-	src/settings/vm/VBoxVMSettingsSFDetails.h \
+	src/settings/global/UIGlobalSettingsGeneral.h \
+	src/settings/global/UIGlobalSettingsInput.h \
+	src/settings/global/UIGlobalSettingsUpdate.h \
+	src/settings/global/UIGlobalSettingsLanguage.h \
+	src/settings/global/UIGlobalSettingsNetwork.h \
+	src/settings/global/UIGlobalSettingsNetworkDetails.h \
+	src/settings/machine/UIMachineSettingsGeneral.h \
+	src/settings/machine/UIMachineSettingsSystem.h \
+	src/settings/machine/UIMachineSettingsDisplay.h \
+	src/settings/machine/UIMachineSettingsStorage.h \
+	src/settings/machine/UIMachineSettingsAudio.h \
+	src/settings/machine/UIMachineSettingsNetwork.h \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
+	src/settings/machine/UIMachineSettingsSerial.h \
+	src/settings/machine/UIMachineSettingsParallel.h \
+	src/settings/machine/UIMachineSettingsUSB.h \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.h \
+	src/settings/machine/UIMachineSettingsSF.h \
+	src/settings/machine/UIMachineSettingsSFDetails.h \
 	src/wizards/newvm/UINewVMWzd.h \
 	src/wizards/newhd/UINewHDWzd.h \
 	src/wizards/firstrun/UIFirstRunWzd.h \
@@ -379,7 +379,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/extensions/QISplitter.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
-	src/settings/vm/VBoxVMSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
@@ -453,25 +453,25 @@ VirtualBox_SOURCES = \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/UISettingsPage.cpp \
 	src/settings/VBoxSettingsSelector.cpp \
-	src/settings/global/VBoxGLSettingsGeneral.cpp \
-	src/settings/global/VBoxGLSettingsInput.cpp \
-	src/settings/global/VBoxGLSettingsUpdate.cpp \
-	src/settings/global/VBoxGLSettingsLanguage.cpp \
-	src/settings/global/VBoxGLSettingsNetwork.cpp \
-	src/settings/global/VBoxGLSettingsNetworkDetails.cpp \
-	src/settings/vm/VBoxVMSettingsGeneral.cpp \
-	src/settings/vm/VBoxVMSettingsSystem.cpp \
-	src/settings/vm/VBoxVMSettingsDisplay.cpp \
-	src/settings/vm/VBoxVMSettingsHD.cpp \
-	src/settings/vm/VBoxVMSettingsAudio.cpp \
-	src/settings/vm/VBoxVMSettingsNetwork.cpp \
-	src/settings/vm/VBoxVMSettingsPortForwardingDlg.cpp \
-	src/settings/vm/VBoxVMSettingsSerial.cpp \
-	src/settings/vm/VBoxVMSettingsParallel.cpp \
-	src/settings/vm/VBoxVMSettingsUSB.cpp \
-	src/settings/vm/VBoxVMSettingsUSBFilterDetails.cpp \
-	src/settings/vm/VBoxVMSettingsSF.cpp \
-	src/settings/vm/VBoxVMSettingsSFDetails.cpp \
+	src/settings/global/UIGlobalSettingsGeneral.cpp \
+	src/settings/global/UIGlobalSettingsInput.cpp \
+	src/settings/global/UIGlobalSettingsUpdate.cpp \
+	src/settings/global/UIGlobalSettingsLanguage.cpp \
+	src/settings/global/UIGlobalSettingsNetwork.cpp \
+	src/settings/global/UIGlobalSettingsNetworkDetails.cpp \
+	src/settings/machine/UIMachineSettingsGeneral.cpp \
+	src/settings/machine/UIMachineSettingsSystem.cpp \
+	src/settings/machine/UIMachineSettingsDisplay.cpp \
+	src/settings/machine/UIMachineSettingsStorage.cpp \
+	src/settings/machine/UIMachineSettingsAudio.cpp \
+	src/settings/machine/UIMachineSettingsNetwork.cpp \
+	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
+	src/settings/machine/UIMachineSettingsSerial.cpp \
+	src/settings/machine/UIMachineSettingsParallel.cpp \
+	src/settings/machine/UIMachineSettingsUSB.cpp \
+	src/settings/machine/UIMachineSettingsUSBFilterDetails.cpp \
+	src/settings/machine/UIMachineSettingsSF.cpp \
+	src/settings/machine/UIMachineSettingsSFDetails.cpp \
 	src/wizards/newvm/UINewVMWzd.cpp \
 	src/wizards/newhd/UINewHDWzd.cpp \
 	src/wizards/firstrun/UIFirstRunWzd.cpp \
