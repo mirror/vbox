@@ -2315,6 +2315,21 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                     char szOutput[RTPATH_MAX];
                     if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", Utf8Dest.c_str()))
                     {
+                        /*
+                         * Normalize path slashes, based on the detected guest.
+                         */
+                        Utf8Str osType = mData.mOSTypeId;
+                        if (   osType.contains("Microsoft", Utf8Str::CaseInsensitive)
+                            || osType.contains("Windows", Utf8Str::CaseInsensitive))
+                        {
+                            /* We have a Windows guest. */
+                            RTPathChangeToDosSlashes(szOutput, true /* Force conversion. */);
+                        }
+                        else /* ... or something which isn't from Redmond ... */
+                        {
+                            RTPathChangeToUnixSlashes(szOutput, true /* Force conversion. */);
+                        }
+
                         args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw()); /* The actual (internal) tool to use (as argv[0]). */
                         args.push_back(Bstr(szOutput).raw());             /* We want to write a file ... */
                     }
@@ -2325,8 +2340,8 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                     ULONG uPID;
                     if (SUCCEEDED(rc))
                     {
-                        LogRel(("Copying file \"%s\" to guest \"%s\" ...\n",
-                                Utf8Source.c_str(), Utf8Dest.c_str()));
+                        LogRel(("Copying file \"%s\" to guest \"%s\" (%u bytes) ...\n",
+                                Utf8Source.c_str(), Utf8Dest.c_str(), cbSize));
                         /*
                          * Okay, since we gathered all stuff we need until now to start the
                          * actual copying, start the guest part now.
@@ -2388,6 +2403,134 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                     }
                 }
                 RTFileClose(fileSource);
+            }
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+    return rc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP Guest::CreateDirectory(IN_BSTR aDirectory,
+                                    IN_BSTR aUserName, IN_BSTR aPassword,
+                                    ULONG aMode, ULONG aFlags,
+                                    IProgress **aProgress)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else  /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    CheckComArgStrNotEmptyOrNull(aDirectory);
+
+    /* Do not allow anonymous executions (with system rights). */
+    if (RT_UNLIKELY((aUserName) == NULL || *(aUserName) == '\0'))
+        return setError(E_INVALIDARG, tr("No user name specified"));
+
+    LogRel(("Creating guest directory \"%s\" as  user \"%s\" ...\n",
+            Utf8Str(aDirectory).c_str(), Utf8Str(aUserName).c_str()));
+
+    return createDirectoryInternal(aDirectory,
+                                   aUserName, aPassword,
+                                   aMode, aFlags, aProgress, NULL /* rc */);
+#endif
+}
+
+STDMETHODIMP Guest::createDirectoryInternal(IN_BSTR aDirectory,
+                                            IN_BSTR aUserName, IN_BSTR aPassword,
+                                            ULONG aMode, ULONG aFlags,
+                                            IProgress **aProgress, int *pRC)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+    using namespace guestControl;
+
+    CheckComArgStrNotEmptyOrNull(aDirectory);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Validate flags. */
+    if (aFlags != CreateDirectoryFlag_None)
+    {
+        if (!(aFlags & CreateDirectoryFlag_Parents))
+        {
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+        }
+    }
+
+    HRESULT rc = S_OK;
+
+    try
+    {
+        Utf8Str Utf8Directory(aDirectory);
+        Utf8Str Utf8UserName(aUserName);
+        Utf8Str Utf8Password(aPassword);
+
+        com::SafeArray<IN_BSTR> args;
+        com::SafeArray<IN_BSTR> env;
+
+        /*
+         * Prepare tool command line.
+         */
+        args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw()); /* The actual (internal) tool to use (as argv[0]). */
+        if (aFlags & CreateDirectoryFlag_Parents)
+            args.push_back(Bstr("--parents").raw());      /* We also want to create the parent directories. */
+        if (aMode > 0)
+        {
+            args.push_back(Bstr("--mode").raw());         /* Set the creation mode. */
+
+            char szMode[16];
+            if (RTStrPrintf(szMode, sizeof(szMode), "%o", aMode))
+                args.push_back(Bstr(szMode).raw());
+            else
+                rc = setError(VBOX_E_IPRT_ERROR, tr("Error preparing command line"));
+        }
+        args.push_back(Bstr(Utf8Directory).raw());  /* The directory we want to create. */
+
+        /*
+         * Execute guest process.
+         */
+        ComPtr<IProgress> execProgress;
+        ULONG uPID;
+        if (SUCCEEDED(rc))
+        {
+            rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_CAT).raw(),
+                                ExecuteProcessFlag_None,
+                                ComSafeArrayAsInParam(args),
+                                ComSafeArrayAsInParam(env),
+                                Bstr(Utf8UserName).raw(),
+                                Bstr(Utf8Password).raw(),
+                                5 * 1000 /* Wait 5s for getting the process started. */,
+                                &uPID, execProgress.asOutParam());
+        }
+
+        if (SUCCEEDED(rc))
+        {
+            /* Wait for process to exit ... */
+            BOOL fCompleted = FALSE;
+            BOOL fCanceled = FALSE;
+
+            while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
+                   && !fCompleted)
+            {
+                /* Progress canceled by Main API? */
+                if (   SUCCEEDED(execProgress->COMGETTER(Canceled(&fCanceled)))
+                    && fCanceled)
+                {
+                    break;
+                }
+            }
+
+            if (SUCCEEDED(rc))
+            {
+                /* Return the progress to the caller. */
+                execProgress.queryInterfaceTo(aProgress);
             }
         }
     }

@@ -95,6 +95,11 @@ void usageGuestControl(PRTSTREAM pStrm)
                  "                            --username <name> --password <password>\n"
                  "                            [--dryrun] [--recursive] [--verbose] [--flags <flags>]\n"
                  "\n"
+                 "                            createdirectory <vmname>|<uuid>\n"
+                 "                            <directory to create on guest>\n"
+                 "                            --username <name> --password <password>\n"
+                 "                            [--parents] [--mode <mode>]\n"
+                 "\n"
                  "                            updateadditions <vmname>|<uuid>\n"
                  "                            [--source <guest additions .ISO file to use>] [--verbose]\n"
                  "\n");
@@ -592,7 +597,7 @@ int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileD
     {
         return VERR_NO_MEMORY;
     }
-    
+
     pNode->Node.pPrev = NULL;
     pNode->Node.pNext = NULL;
     RTListAppend(pList, &pNode->Node);
@@ -1236,6 +1241,227 @@ static int handleCtrlCopyTo(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static int handleCtrlCreateDirectory(HandlerArg *a)
+{
+    /*
+     * Check the syntax.  We can deduce the correct syntax from the number of
+     * arguments.
+     */
+    if (a->argc < 2) /* At least the directory we want to create should be present :-). */
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    Utf8Str Utf8Directory(a->argv[1]);
+    Utf8Str Utf8UserName;
+    Utf8Str Utf8Password;
+    uint32_t uFlags = CreateDirectoryFlag_None;
+    uint32_t uMode = 0;
+    bool fVerbose = false;
+
+    /* Iterate through all possible commands (if available). */
+    bool usageOK = true;
+    for (int i = 3; usageOK && i < a->argc; i++)
+    {
+        if (   !strcmp(a->argv[i], "--username")
+            || !strcmp(a->argv[i], "--user"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8UserName = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (   !strcmp(a->argv[i], "--password")
+                 || !strcmp(a->argv[i], "--pwd"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8Password = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (   !strcmp(a->argv[i], "--parents")
+                 || !strcmp(a->argv[i], "-p"))
+        {
+            uFlags |= CreateDirectoryFlag_Parents;
+        }
+        else if (   !strcmp(a->argv[i], "--mode")
+                 || !strcmp(a->argv[i], "-m"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                uMode = atoi(a->argv[i + 1]);
+                ++i;
+            }
+        }
+        else if (!strcmp(a->argv[i], "--flags"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                /* Nothing to do here yet. */
+                ++i;
+            }
+        }
+        /** @todo Add force flag for overwriting existing stuff. */
+        else if (!strcmp(a->argv[i], "--verbose"))
+            fVerbose = true;
+        else
+            return errorSyntax(USAGE_GUESTCONTROL,
+                               "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
+    }
+
+    if (!usageOK)
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    if (Utf8Directory.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL,
+                           "No directory specified!");
+
+    if (Utf8UserName.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL,
+                           "No user name specified!");
+
+    /* Lookup VM. */
+    ComPtr<IMachine> machine;
+    /* Assume it's an UUID. */
+    HRESULT rc;
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
+                                           machine.asOutParam()));
+    if (FAILED(rc))
+        return 1;
+
+    /* Machine is running? */
+    MachineState_T machineState;
+    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
+    if (machineState != MachineState_Running)
+    {
+        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
+        return 1;
+    }
+
+    /* Open a session for the VM. */
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+
+    do
+    {
+        /* Get the associated console. */
+        ComPtr<IConsole> console;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+        /* ... and session machine */
+        ComPtr<IMachine> sessionMachine;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+
+        ComPtr<IGuest> guest;
+        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
+
+        ComPtr<IProgress> progress;
+        rc = guest->CreateDirectory(Bstr(Utf8Directory).raw(),
+                                    Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
+                                    uMode, uFlags, progress.asOutParam());
+        if (FAILED(rc))
+        {
+            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+             * because it contains more accurate info about what went wrong. */
+            ErrorInfo info(guest, COM_IIDOF(IGuest));
+            if (info.isFullAvailable())
+            {
+                if (rc == VBOX_E_IPRT_ERROR)
+                    RTMsgError("%ls.", info.getText().raw());
+                else
+                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
+            }
+        }
+        else
+        {
+            /* Setup signal handling if cancelable. */
+            ASSERT(progress);
+            bool fCanceledAlready = false;
+            BOOL fCancelable;
+            HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+            if (FAILED(hrc))
+                fCancelable = FALSE;
+            if (fCancelable)
+            {
+                signal(SIGINT,   ctrlCopySignalHandler);
+        #ifdef SIGBREAK
+                signal(SIGBREAK, ctrlCopySignalHandler);
+        #endif
+            }
+
+            /* Wait for process to exit ... */
+            BOOL fCompleted = FALSE;
+            BOOL fCanceled = FALSE;
+            while (   SUCCEEDED(progress->COMGETTER(Completed(&fCompleted)))
+                   && !fCompleted)
+            {
+                /* Process async cancelation */
+                if (g_fCopyCanceled && !fCanceledAlready)
+                {
+                    hrc = progress->Cancel();
+                    if (SUCCEEDED(hrc))
+                        fCanceledAlready = TRUE;
+                    else
+                        g_fCopyCanceled = false;
+                }
+
+                /* Progress canceled by Main API? */
+                if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
+                    && fCanceled)
+                {
+                    break;
+                }
+            }
+
+            /* Undo signal handling */
+            if (fCancelable)
+            {
+                signal(SIGINT,   SIG_DFL);
+        #ifdef SIGBREAK
+                signal(SIGBREAK, SIG_DFL);
+        #endif
+            }
+
+            if (fCanceled)
+            {
+                //RTPrintf("Copy operation canceled!\n");
+            }
+            else if (   fCompleted
+                     && SUCCEEDED(rc))
+            {
+                LONG iRc = false;
+                CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+                if (FAILED(iRc))
+                {
+                    com::ProgressErrorInfo info(progress);
+                    if (   info.isFullAvailable()
+                        || info.isBasicAvailable())
+                    {
+                        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+                         * because it contains more accurate info about what went wrong. */
+                        if (info.getResultCode() == VBOX_E_IPRT_ERROR)
+                            RTMsgError("%ls.", info.getText().raw());
+                        else
+                        {
+                            RTMsgError("Copy operation error details:");
+                            GluePrintErrorInfo(info);
+                        }
+                    }
+                }
+            }
+        }
+
+        a->session->UnlockMachine();
+    } while (0);
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
 static int handleCtrlUpdateAdditions(HandlerArg *a)
 {
     /*
@@ -1387,9 +1613,16 @@ int handleGuestControl(HandlerArg *a)
     {
         return handleCtrlExecProgram(&arg);
     }
-    else if (!strcmp(a->argv[0], "copyto"))
+    else if (   !strcmp(a->argv[0], "copyto")
+             || !strcmp(a->argv[0], "cp"))
     {
         return handleCtrlCopyTo(&arg);
+    }
+    else if (   !strcmp(a->argv[0], "createdirectory")
+             || !strcmp(a->argv[0], "createdir")
+             || !strcmp(a->argv[0], "mkdir"))
+    {
+        return handleCtrlCreateDirectory(&arg);
     }
     else if (   !strcmp(a->argv[0], "updateadditions")
              || !strcmp(a->argv[0], "updateadds"))

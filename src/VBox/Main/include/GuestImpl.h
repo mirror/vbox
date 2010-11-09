@@ -101,6 +101,7 @@ public:
     STDMETHOD(SetProcessInput)(ULONG aPID, ULONG aFlags, ComSafeArrayIn(BYTE, aData), ULONG *aBytesWritten);
     STDMETHOD(GetProcessStatus)(ULONG aPID, ULONG *aExitCode, ULONG *aFlags, ULONG *aStatus);
     STDMETHOD(CopyToGuest)(IN_BSTR aSource, IN_BSTR aDest, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aFlags, IProgress **aProgress);
+    STDMETHOD(CreateDirectory)(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword, ULONG aMode, ULONG aFlags, IProgress **aProgress);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemShared, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal, ULONG *aMemSharedTotal);
@@ -111,6 +112,8 @@ public:
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aUserName, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
+    HRESULT createDirectoryInternal(IN_BSTR aDirectory, IN_BSTR aUserName, IN_BSTR aPassword,
+                                    ULONG aMode, ULONG aFlags, IProgress **aProgress, int *pRC);
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
     void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
     void setAdditionsStatus(VBoxGuestStatusFacility Facility, VBoxGuestStatusCurrent Status, ULONG ulFlags);
