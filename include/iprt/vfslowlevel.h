@@ -541,8 +541,8 @@ typedef RTVFSIOSTREAMOPS const *PCRTVFSIOSTREAMOPS;
  * @param   ppvInstance         Where to return the pointer to the instance data
  *                              (size is @a cbInstance).
  */
-RTDECL(int) RTVfsNewStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTSEMRW hSemRW,
-                           PRTVFSIOSTREAM phVfsIos, void **ppvInstance);
+RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTSEMRW hSemRW,
+                             PRTVFSIOSTREAM phVfsIos, void **ppvInstance);
 
 
 /**

@@ -1280,6 +1280,21 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_POLL_SET_IS_FULL                   (-953)
 /** @} */
 
+
+/** @name RTZip status codes
+ * @{ */
+/** Generic zip error. */
+#define VERR_ZIP_ERROR                          (-950)
+/** The compressed data was corrupted. */
+#define VERR_ZIP_CORRUPTED                      (-951)
+/** Ran out of memory while compressing or uncompressing. */
+#define VERR_ZIP_NO_MEMORY                      (-952)
+/** The compression format version is unsupported. */
+#define VERR_ZIP_UNSUPPORTED_VERSION            (-953)
+/** The compression method is unsupported. */
+#define VERR_ZIP_UNSUPPORTED_METHOD             (-954)
+/** @} */
+
 /* SED-END */
 
 /** @} */
