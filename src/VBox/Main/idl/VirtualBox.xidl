@@ -7696,9 +7696,26 @@
     </const>
   </enum>
 
+  <enum
+    name="CreateDirectoryFlag"
+    uuid="26ff5bdd-c81f-4304-857b-b8be5e3f9cd6"
+  >
+    <desc>
+      Directory creation flags.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No flag set.</desc>
+    </const>
+
+    <const name="Parents"                 value="1">
+      <desc>No error if existing, make parent directories as needed.</desc>
+    </const>
+  </enum>
+
   <interface
      name="IGuest" extends="$unknown"
-     uuid="ded6983f-5c81-4bf9-90af-73f65fd9b728"
+     uuid="1039b0cc-9bc1-4c6d-8d12-864aa48aa5b9"
      wsmap="managed"
      >
     <desc>
@@ -8022,6 +8039,47 @@
       <param name="flags" type="unsigned long" dir="in">
         <desc>
           Copy flags.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="createDirectory">
+      <desc>
+        Creates a directory on the guest.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while creating directory.
+        </result>
+
+      </desc>
+      <param name="directory" type="wstring" dir="in">
+        <desc>
+          Directory to create.
+        </desc>
+      </param>
+      <param name="userName" type="wstring" dir="in">
+        <desc>
+          User name under which the directory creation will be executed; the
+          user has to exist and have the appropriate rights to create the
+          desired directory.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>
+          Password of the user account specified.
+        </desc>
+      </param>
+      <param name="mode" type="unsigned long" dir="in">
+        <desc>
+          File mode.
+        </desc>
+      </param>
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>
+          Additional flags. Not used at the moment and must be set to 0.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
