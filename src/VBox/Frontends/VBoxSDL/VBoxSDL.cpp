@@ -976,6 +976,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
         }
+        else if (   !strcmp(argv[curArg], "--detecthostkey")
+                 || !strcmp(argv[curArg], "-detecthostkey"))
+        {
+            RTPrintf("Error: please specify \"%s\" without any additional parameters!\n",
+                     argv[curArg]);
+            return 1;
+        }
         else if (   !strcmp(argv[curArg], "--memory")
                  || !strcmp(argv[curArg], "-memory")
                  || !strcmp(argv[curArg], "-m"))
