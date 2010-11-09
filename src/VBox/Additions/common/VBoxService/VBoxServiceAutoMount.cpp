@@ -202,7 +202,7 @@ static int VBoxServiceAutoMountSharedFolder(const char *pszShareName, const char
 {
     AssertPtr(pOpts);
 
-    int rc;
+    int rc = VINF_SUCCESS;
     char szAlreadyMountedTo[RTPATH_MAX];
     /* If a Shared Folder already is mounted but not to our desired mount point,
      * do an unmount first! */
