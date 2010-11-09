@@ -210,11 +210,11 @@ RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pOb
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pvBuf           Where to store the read bytes.
  * @param   cbToRead        The number of bytes to read.
- * @param   pcbRead         Where to store the number of bytes actually read.
- *                          If this is NULL, the call will block until @a
- *                          cbToRead bytes are available.  If this is non-NULL,
- *                          the call will not block and return what is currently
- *                          avaiable.
+ * @param   pcbRead         Where to always store the number of bytes actually
+ *                          read.  If this is NULL, the call will block until
+ *                          @a cbToRead bytes are available.  If this is
+ *                          non-NULL, the call will not block and return what
+ *                          is currently avaiable.
  * @sa      RTFileRead, RTPipeRead, RTPipeReadBlocking, RTSocketRead
  */
 RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, size_t *pcbRead);
@@ -226,11 +226,12 @@ RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t c
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pvBuf           The bytes to write.
  * @param   cbToWrite       The number of bytes to write.
- * @param   pcbWritten      Where to store the number of bytes actually written.
- *                          If this is NULL, the call will block until @a
- *                          cbToWrite bytes are available.  If this is non-NULL,
- *                          the call will not block and return after writing
- *                          what is possible.
+ * @param   pcbWritten      Where to always store the number of bytes actually
+ *                          written.  If this is NULL, the call will block
+ *                          until
+ *                          @a cbToWrite bytes are available.  If this is
+ *                          non-NULL, the call will not block and return after
+ *                          writing what is possible.
  * @sa      RTFileWrite, RTPipeWrite, RTPipeWriteBlocking, RTSocketWrite
  */
 RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
@@ -239,15 +240,28 @@ RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, s
  * Reads bytes from the I/O stream into a scatter buffer.
  *
  * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and the number of bytes read written to @a pcbRead.
+ * @retval  VINF_TRY_AGAIN if @a fBlocking is @c false, @a pcbRead is not NULL,
+ *          and no data was available. @a *pcbRead will be set to 0.
+ * @retval  VINF_EOF when trying to read __beyond__ the end of the stream and
+ *          @a pcbRead is not NULL (it will be set to the number of bytes read,
+ *          or 0 if the end of the stream was reached before this call).
+ *          When the last byte of the read request is the last byte in the
+ *          stream, this status code will not be used.  However, VINF_EOF is
+ *          returned when attempting to read 0 bytes while standing at the end
+ *          of the stream.
+ * @retval  VERR_EOF when trying to read __beyond__ the end of the stream and
+ *          @a pcbRead is NULL.
+ *
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pSgBuf          Pointer to a scatter buffer descriptor.  The number
  *                          of bytes described by the segments is what will be
  *                          attemted read.
  * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
  *                          not, the @a pcbRead parameter must not be NULL.
- * @param   pcbRead         Where to store the number of bytes actually read.
- *                          This can be NULL if @a fBlocking is true.
- * @sa      RTFileSgRead, RTSocketSgRead
+ * @param   pcbRead         Where to always store the number of bytes actually
+ *                          read.  This can be NULL if @a fBlocking is true.
+ * @sa      RTFileSgRead, RTSocketSgRead, RTPipeRead, RTPipeReadBlocking
  */
 RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead);
 
@@ -261,8 +275,8 @@ RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, b
  *                          attemted written.
  * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
  *                          not, the @a pcbWritten parameter must not be NULL.
- * @param   pcbRead         Where to store the number of bytes actually written.
- *                          This can be NULL if @a fBlocking is true.
+ * @param   pcbRead         Where to always store the number of bytes actually
+ *                          written.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileSgWrite, RTSocketSgWrite
  */
 RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten);

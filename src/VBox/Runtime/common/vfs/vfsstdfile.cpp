@@ -83,6 +83,50 @@ static DECLCALLBACK(int) rtVfsStdFile_QueryInfo(void *pvThis, PRTFSOBJINFO pObjI
 
 
 /**
+ * RTFileRead and RTFileReadAt does not return VINF_EOF or VINF_TRY_AGAIN, this
+ * function tries to fix this as best as it can.
+ *
+ * This fixing can be subject to races if some other thread or process is
+ * modifying the file size between the read and our size query here.
+ *
+ * @returns VINF_SUCCESS, VINF_EOF or VINF_TRY_AGAIN.
+ * @param   pThis               The instance data.
+ * @param   off                 The offset parameter.
+ * @param   cbToRead            The number of bytes attempted read .
+ * @param   cbActuallyRead      The number of bytes actually read.
+ */
+DECLINLINE(int) rtVfsStdFile_ReadFixRC(PRTVFSSTDFILE pThis, RTFOFF off, size_t cbToRead, size_t cbActuallyRead)
+{
+    /* If the read returned less bytes than requested, it means the end of the
+       file has been reached. */
+    if (cbToRead > cbActuallyRead)
+        return VINF_EOF;
+
+    /* The other case here is the very special zero byte read at the end of the
+       file, where we're supposed to indicate EOF. */
+    if (cbToRead > 0)
+        return VINF_SUCCESS;
+
+    uint64_t cbFile;
+    int rc = RTFileGetSize(pThis->hFile, &cbFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t off2;
+    if (off >= 0)
+        off2 = off;
+    else
+    {
+        rc = RTFileSeek(pThis->hFile, 0, RTFILE_SEEK_CURRENT, &off2);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return off2 >= cbFile ? VINF_EOF : VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
 static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
@@ -94,42 +138,44 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
     if (pSgBuf->cSegs == 1)
     {
         if (off < 0)
-            rc = RTFileRead(pThis->hFile, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
+            rc = RTFileRead(  pThis->hFile,      pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
         else
             rc = RTFileReadAt(pThis->hFile, off, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, pcbRead);
+        if (rc == VINF_SUCCESS && pcbRead)
+            rc = rtVfsStdFile_ReadFixRC(pThis, off, pSgBuf->paSegs[0].cbSeg, *pcbRead);
     }
     else
     {
+        size_t  cbSeg      = 0;
         size_t  cbRead     = 0;
-        size_t  cbReadSeg;
-        size_t *pcbReadSeg = pcbRead ? &cbReadSeg : NULL;
+        size_t  cbReadSeg  = 0;
         rc = VINF_SUCCESS;
 
         for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
         {
-            void   *pvSeg  = pSgBuf->paSegs[iSeg].pvSeg;
-            size_t  cbSeg  = pSgBuf->paSegs[iSeg].cbSeg;
+            void *pvSeg = pSgBuf->paSegs[iSeg].pvSeg;
+            cbSeg       = pSgBuf->paSegs[iSeg].cbSeg;
 
-            cbReadSeg = 0;
+            cbReadSeg = cbSeg;
             if (off < 0)
-                rc = RTFileRead(pThis->hFile, pvSeg, cbSeg, pcbReadSeg);
+                rc = RTFileRead(  pThis->hFile,      pvSeg, cbSeg, pcbRead ? &cbReadSeg : NULL);
             else
-            {
-                rc = RTFileReadAt(pThis->hFile, off, pvSeg, cbSeg, pcbReadSeg);
-                off += cbSeg;
-            }
+                rc = RTFileReadAt(pThis->hFile, off, pvSeg, cbSeg, pcbRead ? &cbReadSeg : NULL);
             if (RT_FAILURE(rc))
                 break;
-            if (pcbRead)
-            {
-                cbRead += cbReadSeg;
-                if (cbReadSeg != cbSeg)
-                    break;
-            }
+            if (off < 0)
+                off += cbReadSeg;
+            cbRead  += cbReadSeg;
+            if ((pcbRead && cbReadSeg != cbSeg) || rc != VINF_SUCCESS)
+                break;
         }
 
         if (pcbRead)
+        {
             *pcbRead = cbRead;
+            if (rc == VINF_SUCCESS)
+                rc = rtVfsStdFile_ReadFixRC(pThis, off, cbSeg, cbReadSeg);
+        }
     }
 
     return rc;

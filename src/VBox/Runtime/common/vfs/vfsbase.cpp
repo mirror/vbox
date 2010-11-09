@@ -913,6 +913,9 @@ RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pOb
 
 RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
+    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
+    if (pcbRead)
+        *pcbRead = 0;
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
@@ -930,6 +933,9 @@ RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t c
 
 RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
+    AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
+    if (pcbWritten)
+        *pcbWritten = 0;
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
@@ -947,11 +953,14 @@ RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, s
 
 RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
+    AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
+    if (pcbRead)
+        *pcbRead = 0;
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
     AssertPtr(pSgBuf);
-    AssertReturn(fBlocking || VALID_PTR(pcbRead), VERR_INVALID_PARAMETER);
+    AssertReturn(fBlocking || pcbRead, VERR_INVALID_PARAMETER);
 
     RTVFS_WRITE_LOCK(pThis->hSemRW);
     int rc = pThis->pOps->pfnRead(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
@@ -962,11 +971,14 @@ RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, b
 
 RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
+    AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
+    if (pcbWritten)
+        *pcbWritten = 0;
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
     AssertPtr(pSgBuf);
-    AssertReturn(fBlocking || VALID_PTR(pcbWritten), VERR_INVALID_PARAMETER);
+    AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
 
     RTVFS_WRITE_LOCK(pThis->hSemRW);
     int rc = pThis->pOps->pfnWrite(pThis->pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
