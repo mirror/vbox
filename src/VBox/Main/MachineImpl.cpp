@@ -292,10 +292,13 @@ HRESULT Machine::init(VirtualBox *aParent,
         unconst(mData->mUuid) = aId;
 
         mUserData->s.strName = strName;
-        mUserData->s.fNameSync = true;
 
-        /* initialize the default snapshots folder
-         * (note: depends on the name value set above!) */
+        // the "name sync" flag determines whether the machine directory gets renamed along
+        // with the machine file; say so if the settings file name is the same as the
+        // settings file parent directory (machine directory)
+        mUserData->s.fNameSync = isInOwnDir();
+
+        // initialize the default snapshots folder
         rc = COMSETTER(SnapshotFolder)(NULL);
         AssertComRC(rc);
 
@@ -2082,7 +2085,9 @@ STDMETHODIMP Machine::COMGETTER(SnapshotFolder)(BSTR *aSnapshotFolder)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mUserData->m_strSnapshotFolderFull.cloneTo(aSnapshotFolder);
+    Utf8Str strFullSnapshotFolder;
+    calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
+    strFullSnapshotFolder.cloneTo(aSnapshotFolder);
 
     return S_OK;
 }
@@ -2110,20 +2115,12 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder)(IN_BSTR aSnapshotFolder)
                         tr("The snapshot folder of a machine with snapshots cannot be changed (please delete all snapshots first)"));
 
     Utf8Str strSnapshotFolder0(aSnapshotFolder);       // keep original
+
     Utf8Str strSnapshotFolder(strSnapshotFolder0);
-
     if (strSnapshotFolder.isEmpty())
-    {
-        if (isInOwnDir())
-            /* the default snapshots folder is 'Snapshots' in the machine dir */
-            strSnapshotFolder = "Snapshots";
-        else
-            /* the default snapshots folder is {UUID}, for backwards
-             * compatibility and to resolve conflicts */
-            strSnapshotFolder = Utf8StrFmt("{%RTuuid}", mData->mUuid.raw());
-    }
-
-    int vrc = calculateFullPath(strSnapshotFolder, strSnapshotFolder);
+        strSnapshotFolder = "Snapshots";
+    int vrc = calculateFullPath(strSnapshotFolder,
+                                strSnapshotFolder);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL,
                         tr("Invalid snapshot folder '%ls' (%Rrc)"),
@@ -2131,8 +2128,8 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder)(IN_BSTR aSnapshotFolder)
 
     setModified(IsModified_MachineData);
     mUserData.backup();
-    mUserData->s.strSnapshotFolder = strSnapshotFolder0;
-    mUserData->m_strSnapshotFolderFull = strSnapshotFolder;
+
+    copyPathRelativeToMachine(strSnapshotFolder, mUserData->s.strSnapshotFolder);
 
     return S_OK;
 }
@@ -2339,8 +2336,7 @@ STDMETHODIMP Machine::COMGETTER(LogFolder)(BSTR *aLogFolder)
 
     Utf8Str logFolder;
     getLogFolder(logFolder);
-
-    Bstr (logFolder).cloneTo(aLogFolder);
+    logFolder.cloneTo(aLogFolder);
 
     return S_OK;
 }
@@ -3590,11 +3586,14 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             }
         }
 
+        Utf8Str strFullSnapshotFolder;
+        calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
+
         ComObjPtr<Medium> diff;
         diff.createObject();
         rc = diff->init(mParent,
                         medium->getPreferredDiffFormat(),
-                        Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
+                        strFullSnapshotFolder.append(RTPATH_SLASH_STR),
                         medium->getFirstRegistryMachineId(),         // store this diff in the same registry as the parent
                         &fNeedsGlobalSaveSettings);
         if (FAILED(rc)) return rc;
@@ -4534,18 +4533,17 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
         /* delete the Snapshots folder, nothing important should be left
          * there (we don't check for errors because the user might have
          * some private files there that we don't want to delete) */
-        Assert(mUserData->m_strSnapshotFolderFull.length());
-        if (RTDirExists(mUserData->m_strSnapshotFolderFull.c_str()))
-            RTDirRemove(mUserData->m_strSnapshotFolderFull.c_str());
+        Utf8Str strFullSnapshotFolder;
+        calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
+        Assert(!strFullSnapshotFolder.isEmpty());
+        if (RTDirExists(strFullSnapshotFolder.c_str()))
+            RTDirRemove(strFullSnapshotFolder.c_str());
 
-        /* delete the directory that contains the settings file, but only
-         * if it matches the VM name (i.e. a structure created by default in
-         * prepareSaveSettings()) */
-        {
-            Utf8Str settingsDir;
-            if (isInOwnDir(&settingsDir))
-                RTDirRemove(settingsDir.c_str());
-        }
+        // delete the directory that contains the settings file, but only
+        // if it matches the VM name
+        Utf8Str settingsDir;
+        if (isInOwnDir(&settingsDir))
+            RTDirRemove(settingsDir.c_str());
     }
 
     alock.release();
@@ -5815,11 +5813,8 @@ void Machine::getLogFolder(Utf8Str &aLogFolder)
         /* Log folder is <Machines>/<VM_Name>/Logs */
         aLogFolder = settingsDir;
     else
-    {
         /* Log folder is <Machines>/<VM_SnapshotFolder>/Logs */
-        Assert(!mUserData->m_strSnapshotFolderFull.isEmpty());
-        aLogFolder = mUserData->m_strSnapshotFolderFull;
-    }
+        calculateFullPath(mUserData->s.strSnapshotFolder, aLogFolder);
 
     aLogFolder.append(RTPATH_DELIMITER);
     aLogFolder.append("Logs");
@@ -7716,7 +7711,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 }
             }
 
-            /* update m_strConfigFileFull amd mConfigFile */
+            // update m_strConfigFileFull amd mConfigFile
             mData->m_strConfigFileFull = newConfigFile;
             // compute the relative path too
             mParent->copyPathRelativeToConfig(newConfigFile, mData->m_strConfigFile);
@@ -7730,17 +7725,6 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 
                 if (pfNeedsGlobalSaveSettings)
                     *pfNeedsGlobalSaveSettings = true;
-            }
-
-            /* update the snapshot folder */
-            if (RTPathStartsWith(mUserData->m_strSnapshotFolderFull.c_str(),
-                                 configDir.c_str()))
-            {
-                mUserData->m_strSnapshotFolderFull = Utf8StrFmt("%s%s",
-                                                                newConfigDir.c_str(),
-                                                                mUserData->m_strSnapshotFolderFull.c_str() + configDir.length());
-                copyPathRelativeToMachine(mUserData->m_strSnapshotFolderFull,
-                                          mUserData->s.strSnapshotFolder);
             }
 
             /* update the saved state file path */
@@ -8600,11 +8584,14 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                                 pMedium->getBase()->getName().c_str()).raw(),
                                         aWeight);        // weight
 
+            Utf8Str strFullSnapshotFolder;
+            calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
+
             ComObjPtr<Medium> diff;
             diff.createObject();
             rc = diff->init(mParent,
                             pMedium->getPreferredDiffFormat(),
-                            Utf8Str(mUserData->m_strSnapshotFolderFull).append(RTPATH_SLASH_STR),
+                            strFullSnapshotFolder.append(RTPATH_SLASH_STR),
                             pMedium->getFirstRegistryMachineId(),        // store the diff in the same registry as the parent
                             pfNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
@@ -9229,8 +9216,8 @@ void Machine::rollbackMedia()
 
 /**
  *  Returns true if the settings file is located in the directory named exactly
- *  as the machine. This will be true if the machine settings structure was
- *  created by default in #openConfigLoader().
+ *  as the machine; this means, among other things, that the machine directory
+ *  should be auto-renamed.
  *
  *  @param aSettingsDir if not NULL, the full machine settings file directory
  *                      name will be assigned there.
@@ -9240,20 +9227,19 @@ void Machine::rollbackMedia()
  */
 bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */) const
 {
-    Utf8Str settingsDir = mData->m_strConfigFileFull;
-    settingsDir.stripFilename();
-    Utf8Str strDirName = RTPathFilename(settingsDir.c_str());
-
-    AssertReturn(!strDirName.isEmpty(), false);
-
-    /* if we don't rename anything on name change, return false shortly */
-    if (!mUserData->s.fNameSync)
-        return false;
-
+    Utf8Str strMachineDirName(mData->m_strConfigFileFull);  // path/to/machinesfolder/vmname/vmname.vbox
+    strMachineDirName.stripFilename();                      // path/to/machinesfolder/vmname
     if (aSettingsDir)
-        *aSettingsDir = settingsDir;
+        *aSettingsDir = strMachineDirName;
+    strMachineDirName.stripPath();                          // vmname
+    Utf8Str strConfigFileOnly(mData->m_strConfigFileFull);  // path/to/machinesfolder/vmname/vmname.vbox
+    strConfigFileOnly.stripPath()                           // vmname.vbox
+                     .stripExt();                           // vmname
 
-    return strDirName == mUserData->s.strName;
+    AssertReturn(!strMachineDirName.isEmpty(), false);
+    AssertReturn(!strConfigFileOnly.isEmpty(), false);
+
+    return strMachineDirName == strConfigFileOnly;
 }
 
 /**
@@ -10556,9 +10542,12 @@ STDMETHODIMP SessionMachine::BeginSavingState(IProgress **aProgress, BSTR *aStat
     /* stateFilePath is null when the machine is not running */
     if (mData->mMachineState == MachineState_Paused)
     {
+        Utf8Str strFullSnapshotFolder;
+        calculateFullPath(mUserData->s.strSnapshotFolder, strFullSnapshotFolder);
         stateFilePath = Utf8StrFmt("%s%c{%RTuuid}.sav",
-                                   mUserData->m_strSnapshotFolderFull.c_str(),
-                                   RTPATH_DELIMITER, mData->mUuid.raw());
+                                   strFullSnapshotFolder.c_str(),
+                                   RTPATH_DELIMITER,
+                                   mData->mUuid.raw());
     }
 
     /* fill in the snapshot data */
@@ -10924,7 +10913,7 @@ HRESULT SessionMachine::onNetworkAdapterChange(INetworkAdapter *networkAdapter, 
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onNATRedirectRuleChange(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName, 
+HRESULT SessionMachine::onNATRedirectRuleChange(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName,
                                  NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort)
 {
     LogFlowThisFunc(("\n"));
