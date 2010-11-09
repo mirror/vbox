@@ -135,7 +135,11 @@ HRESULT StorageController::init(Machine *aParent,
                         tr("Invalid storage connection type"));
 
     ULONG maxInstances;
-    HRESULT rc = aParent->getVirtualBox()->getSystemProperties()->GetMaxInstancesOfStorageBus(aStorageBus, &maxInstances);
+    ChipsetType_T chipsetType;
+    HRESULT rc = aParent->COMGETTER(ChipsetType)(&chipsetType);
+    if (FAILED(rc))
+        return rc;
+    rc = aParent->getVirtualBox()->getSystemProperties()->GetMaxInstancesOfStorageBus(chipsetType, aStorageBus, &maxInstances);
     if (FAILED(rc))
         return rc;
     if (aInstance >= maxInstances)
