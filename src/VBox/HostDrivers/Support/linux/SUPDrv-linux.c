@@ -307,7 +307,7 @@ static int __init VBoxDrvLinuxInit(void)
         {
 #ifdef RT_ARCH_AMD64
             rc = RTR0MemExecDonate(&g_abExecMemory[0], sizeof(g_abExecMemory));
-            printk("VBoxDrv: dbg - g_abExecMemory=%p\n", (void *)&g_abExecMemory[0]);
+            printk(KERN_DEBUG "VBoxDrv: dbg - g_abExecMemory=%p\n", (void *)&g_abExecMemory[0]);
 #endif
             Log(("VBoxDrv::ModuleInit\n"));
 
@@ -327,7 +327,7 @@ static int __init VBoxDrvLinuxInit(void)
 #endif
                     {
                         printk(KERN_INFO DEVICE_NAME ": TSC mode is %s, kernel timer mode is "
-#ifdef VBOX_HRTIMER
+#ifdef IPRT_LINUX_HAS_HRTIMER
                                "'high-res'"
 #else
                                "'normal'"
