@@ -1423,12 +1423,12 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
         if (Utf8Source.isEmpty())
         {
             char strTemp[RTPATH_MAX];
-            rc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
-            AssertRC(rc);
+            vrc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
+            AssertRC(vrc);
             Utf8Str Utf8Src1 = Utf8Str(strTemp).append("/VBoxGuestAdditions.iso");
 
-            rc = RTPathExecDir(strTemp, sizeof(strTemp));
-            AssertRC(rc);
+            vrc = RTPathExecDir(strTemp, sizeof(strTemp));
+            AssertRC(vrc);
             Utf8Str Utf8Src2 = Utf8Str(strTemp).append("/additions/VBoxGuestAdditions.iso");
 
             /* Check the standard image locations */
@@ -1439,16 +1439,16 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
             else
             {
                 RTMsgError("Source could not be determined! Please use --source to specify a valid source.\n");
-                rc = VERR_FILE_NOT_FOUND;
+                vrc = VERR_FILE_NOT_FOUND;
             }
         }
         else if (!RTFileExists(Utf8Source.c_str()))
         {
             RTMsgError("Source \"%s\" does not exist!\n", Utf8Source.c_str());
-            rc = VERR_FILE_NOT_FOUND;
+            vrc = VERR_FILE_NOT_FOUND;
         }
 
-        if (RT_SUCCESS(rc))
+        if (RT_SUCCESS(vrc))
         {
             if (fVerbose)
                 RTPrintf("Using source: %s\n", Utf8Source.c_str());
