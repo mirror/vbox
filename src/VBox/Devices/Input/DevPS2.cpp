@@ -1696,7 +1696,7 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
-static DECLCALLBACK(void) kdbRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+static DECLCALLBACK(void) kbdRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1847,7 +1847,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* pfnDestruct */
     kbdDestruct,
     /* pfnRelocate */
-    kdbRelocate,
+    kbdRelocate,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
