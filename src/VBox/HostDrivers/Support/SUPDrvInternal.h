@@ -105,11 +105,6 @@
 #   endif /* older kernels */
 #   include <linux/timer.h>
 
-#   if 0
-#    include <linux/hrtimer.h>
-#    define VBOX_HRTIMER
-#   endif
-
 #elif defined(RT_OS_DARWIN)
 #   include <libkern/libkern.h>
 #   include <iprt/string.h>
