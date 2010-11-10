@@ -658,54 +658,11 @@ typedef struct _VBVAMINIPORT_CHANNELCONTEXT
 
 typedef struct _VBVADISP_CHANNELCONTEXT
 {
-    struct _VBVAHOSTCMD * pFirstCmd;
-    struct _VBVAHOSTCMD * pLastCmd;
-    VBOXVCMNSPIN_LOCK pSynchLock;
-#ifdef DEBUG
-    int cCmds;
-#endif
+    /** The generic command handler builds up a list of commands - in reverse
+     * order! - here */
+    VBVAHOSTCMD *pCmd;
     bool bValid;
 }VBVADISP_CHANNELCONTEXT;
-
-#ifdef DEBUG
-void dbgCheckListLocked(const VBVADISP_CHANNELCONTEXT *pList, struct _VBVAHOSTCMD * pCmd)
-{
-    int counter = 0;
-    for(struct _VBVAHOSTCMD * pCur = pList->pFirstCmd; pCur; pCur=pCur->u.pNext)
-    {
-        Assert(pCur != pCmd);
-        if(pCur == pList->pLastCmd)
-        {
-            Assert(pCur->u.pNext == NULL);
-        }
-        if(pCur->u.pNext == NULL)
-        {
-            Assert(pCur == pList->pLastCmd);
-        }
-        counter++;
-    }
-
-    Assert(counter == pList->cCmds);
-}
-
-void dbgCheckList(PVBOXVIDEO_COMMON pCommon, VBVADISP_CHANNELCONTEXT *pList, struct _VBVAHOSTCMD * pCmd)
-{
-    VBOXVCMNIRQL oldIrql;
-    VBoxVideoCmnSpinLockAcquire(commonToPrimaryExt(pCommon), &pList->pSynchLock, &oldIrql);
-
-    dbgCheckListLocked(pList, pCmd);
-
-    VBoxVideoCmnSpinLockRelease(commonToPrimaryExt(pCommon), &pList->pSynchLock, oldIrql);
-}
-
-#define DBG_CHECKLIST_LOCKED(_pl, pc) dbgCheckListLocked(_pl, pc)
-#define DBG_CHECKLIST(_pv, _pl, pc) dbgCheckList(_pv, _pl, pc)
-
-#else
-#define DBG_CHECKLIST_LOCKED(_pl, pc) do{}while(0)
-#define DBG_CHECKLIST(_pv, _pl, pc) do{}while(0)
-#endif
-
 
 typedef struct _VBVA_CHANNELCONTEXTS
 {
@@ -758,6 +715,20 @@ DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOS
     HGSMIHostCmdComplete (pCommon, pCmd);
 }
 
+/** Reverses a NULL-terminated linked list of VBVAHOSTCMD structures. */
+static VBVAHOSTCMD *vboxVBVAReverseList(VBVAHOSTCMD *pList)
+{
+    VBVAHOSTCMD *pFirst = NULL;
+    while (pList)
+    {
+        VBVAHOSTCMD *pNext = pList;
+        pList = pList->u.pNext;
+        pNext->u.pNext = pFirst;
+        pFirst = pNext;
+    }
+    return pFirst;
+}
+
 DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, uint32_t iDevice, struct _VBVAHOSTCMD ** ppCmd)
 {
 //    if(display < 0)
@@ -778,20 +749,11 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
         Assert(pDispContext);
         if(pDispContext)
         {
-            UCHAR oldIrql;
-            VBoxVideoCmnSpinLockAcquire(commonToPrimaryExt(pCommon), &pDispContext->pSynchLock, &oldIrql);
-
-            DBG_CHECKLIST_LOCKED(pDispContext, NULL);
-
-            *ppCmd = pDispContext->pFirstCmd;
-            pDispContext->pFirstCmd = NULL;
-            pDispContext->pLastCmd = NULL;
-#ifdef DEBUG
-            pDispContext->cCmds = 0;
-#endif
-            VBoxVideoCmnSpinLockRelease(commonToPrimaryExt(pCommon), &pDispContext->pSynchLock, oldIrql);
-
-            DBG_CHECKLIST(pCommon, pDispContext, NULL);
+            VBVAHOSTCMD *pCmd;
+            do
+                pCmd = pDispContext->pCmd;
+            while (!ASMAtomicCmpXchgPtr(&pDispContext->pCmd, NULL, pCmd));
+            *ppCmd = vboxVBVAReverseList(pCmd);
 
             return VINF_SUCCESS;
         }
@@ -859,7 +821,6 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                         }
                         default:
                         {
-                            DBG_CHECKLIST(pCallbacks->pCommon, pHandler, pCur);
                             Assert(u16ChannelInfo==VBVAHG_EVENT);
                             Assert(!pCur->u.Data);
 #if 0  /* pLast has been asserted to be NULL, and who should set pNext? */
@@ -885,8 +846,6 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                     }
                 }
 
-                DBG_CHECKLIST(pCallbacks->pCommon, pHandler, pFirst);
-
                 /* we do not support lists currently */
                 Assert(pFirst == pLast);
                 if(pLast)
@@ -897,32 +856,13 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                 if(pFirst)
                 {
                     Assert(pLast);
-                    UCHAR oldIrql;
-                    VBoxVideoCmnSpinLockAcquire(commonToPrimaryExt(pCallbacks->pCommon),
-                                                &pHandler->pSynchLock,
-                                                &oldIrql);
-
-                    DBG_CHECKLIST_LOCKED(pHandler, pFirst);
-
-                    if(pHandler->pLastCmd)
+                    VBVAHOSTCMD *pCmd;
+                    do
                     {
-                        pHandler->pLastCmd->u.pNext = pFirst;
-                        Assert(pHandler->pFirstCmd);
+                        pCmd = pHandler->pCmd;
+                        pFirst->u.pNext = pCmd;
                     }
-                    else
-                    {
-                        Assert(!pHandler->pFirstCmd);
-                        pHandler->pFirstCmd = pFirst;
-                    }
-                    pHandler->pLastCmd = pLast;
-#ifdef DEBUG
-                    pHandler->cCmds++;
-#endif
-                    DBG_CHECKLIST_LOCKED(pHandler, NULL);
-
-                    VBoxVideoCmnSpinLockRelease(commonToPrimaryExt(pCallbacks->pCommon),
-                                                &pHandler->pSynchLock,
-                                                oldIrql);
+                    while (!ASMAtomicCmpXchgPtr(&pHandler->pCmd, pFirst, pCmd));
                 }
                 else
                 {
@@ -976,18 +916,11 @@ int vboxVBVAChannelDisplayEnable(PVBOXVIDEO_COMMON pCommon,
 #ifdef DEBUGVHWASTRICT
         Assert(!pDispContext->bValid);
 #endif
-        Assert(!pDispContext->pFirstCmd);
-        Assert(!pDispContext->pLastCmd);
+        Assert(!pDispContext->pCmd);
         if(!pDispContext->bValid)
         {
             pDispContext->bValid = true;
-            pDispContext->pFirstCmd = NULL;
-            pDispContext->pLastCmd= NULL;
-#ifdef DEBUG
-            pDispContext->cCmds = 0;
-#endif
-
-            VBoxVideoCmnSpinLockCreate(commonToPrimaryExt(pCommon), &pDispContext->pSynchLock);
+            pDispContext->pCmd = NULL;
 
             int rc = VINF_SUCCESS;
             if(!pChannel)
