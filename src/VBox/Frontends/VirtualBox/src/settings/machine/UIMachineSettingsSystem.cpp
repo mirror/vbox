@@ -159,6 +159,11 @@ bool UIMachineSettingsSystem::isHIDEnabled() const
     return mCbUseAbsHID->isChecked();
 }
 
+KChipsetType UIMachineSettingsSystem::chipsetType() const
+{
+    return (KChipsetType)mCbChipset->itemData(mCbChipset->currentIndex()).toInt();
+}
+
 /* Load data to cashe from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)

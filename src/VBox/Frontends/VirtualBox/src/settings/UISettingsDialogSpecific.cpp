@@ -891,6 +891,47 @@ bool UIVMSettingsDlg::recorrelate(QWidget *pPage, QString &strWarning)
     }
 #endif /* !VBOX_OSE */
 
+    if (pPage == m_pSelector->idToPage(VMSettingsPage_Storage))
+    {
+        /* Get System & Storage pages: */
+        UIMachineSettingsSystem *pSystemPage =
+            qobject_cast<UIMachineSettingsSystem*>(m_pSelector->idToPage(VMSettingsPage_System));
+        UIMachineSettingsStorage *pStoragePage =
+            qobject_cast<UIMachineSettingsStorage*>(m_pSelector->idToPage(VMSettingsPage_Storage));
+        if (pSystemPage && pStoragePage)
+        {
+            /* Update chiset type for the Storage settings page: */
+            if (pStoragePage->chipsetType() != pSystemPage->chipsetType())
+                pStoragePage->setChipsetType(pSystemPage->chipsetType());
+            /* Check for excessive controllers on Storage page controllers list: */
+            QStringList excessiveList;
+            QMap<KStorageBus, int> currentType = pStoragePage->currentControllerTypes();
+            QMap<KStorageBus, int> maximumType = pStoragePage->maximumControllerTypes();
+            for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
+            {
+                if (currentType[(KStorageBus)iStorageBusType] > maximumType[(KStorageBus)iStorageBusType])
+                {
+                    QString strExcessiveRecord = QString("%1 (%2)");
+                    strExcessiveRecord = strExcessiveRecord.arg(QString("<b>%1</b>").arg(vboxGlobal().toString((KStorageBus)iStorageBusType)));
+                    strExcessiveRecord = strExcessiveRecord.arg(maximumType[(KStorageBus)iStorageBusType] == 1 ?
+                                                                tr("at most one supported") :
+                                                                tr("up to %1 supported").arg(maximumType[(KStorageBus)iStorageBusType]));
+                    excessiveList << strExcessiveRecord;
+                }
+            }
+            if (!excessiveList.isEmpty())
+            {
+                strWarning = tr(
+                    "you are currently using more storage controllers than a %1 chipset supports. "
+                    "Please change the chipset type on the System settings page or reduce the number "
+                    "of the following storage controllers on the Storage settings page: %2.")
+                    .arg(vboxGlobal().toString(pStoragePage->chipsetType()))
+                    .arg(excessiveList.join(", "));
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
