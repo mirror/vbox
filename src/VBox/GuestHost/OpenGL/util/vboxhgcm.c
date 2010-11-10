@@ -1236,6 +1236,8 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
 
     if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
     {
+        Assert(0);
+
         crWarning("Host doesn't accept our version %d.%d. Make sure you have appropriate additions installed!",
                   parms.vMajor.u.value32, parms.vMinor.u.value32);
         return FALSE;
@@ -1277,6 +1279,7 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
         /* @todo check if we could rollback to softwareopengl */
         if (g_crvboxhgcm.hGuestDrv == INVALID_HANDLE_VALUE)
         {
+            Assert(0);
             crDebug("could not open VBox Guest Additions driver! rc = %d\n", GetLastError());
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return FALSE;
@@ -1291,6 +1294,7 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
         {
             crDebug("could not open Guest Additions kernel module! rc = %d\n", errno);
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
+            Assert(0);
             return FALSE;
         }
     }
@@ -1332,6 +1336,7 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
         else
         {
             crDebug("HGCM connect failed with rc=0x%x\n", info.result);
+            Assert(0);
 
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return FALSE;
@@ -1340,7 +1345,9 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
     else
     {
 #ifdef RT_OS_WINDOWS
-        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", GetLastError());
+        DWORD winEr = GetLastError();
+        Assert(0);
+        crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", winEr);
 #else
         crDebug("IOCTL for HGCM connect failed with rc=0x%x\n", errno);
 #endif
@@ -1626,7 +1633,7 @@ static void _crVBoxHGSMIPollHost(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient
     AssertRC(rc);
     if (RT_FAILURE(rc))
     {
-        crWarning("pfnBufferSubmitAsynch failed with %d \n", rc);
+        crError("pfnBufferSubmitAsynch failed with %d \n", rc);
         return;
     }
 
@@ -1760,7 +1767,7 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
         AssertRC(rc);
         if (RT_FAILURE(rc))
         {
-            crWarning("pfnBufferSubmitAsynch failed with %d \n", rc);
+            crError("pfnBufferSubmitAsynch failed with %d \n", rc);
             break;
         }
 
@@ -1880,6 +1887,11 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
 
             callRes = _crVBoxHGSMICmdBufferGetRc(pClient);
         }
+        else
+        {
+            /* we can not recover at this point, report error & exit */
+            crError("pfnBufferSubmitAsynch failed with %d \n", rc);
+        }
     }
     else
 #endif
@@ -1913,6 +1925,11 @@ static void _crVBoxHGSMIWriteExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClie
 //                CRVBOXHGSMI_BUF_WAIT(pClient->pCmdBuffer);
 
             callRes = _crVBoxHGSMICmdBufferGetRc(pClient);
+        }
+        else
+        {
+            /* we can not recover at this point, report error & exit */
+            crError("Failed to submit CrHhgsmi buffer");
         }
     }
 
