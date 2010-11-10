@@ -1644,6 +1644,11 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     /* Apply UI decorations */
     Ui::UIMachineSettingsStorage::setupUi (this);
 
+    /* Enumerate Mediums. We need at least the MediaList filled, so this is the
+     * lasted point, where we can start. The rest of the media checking is done
+     * in a background thread. */
+    vboxGlobal().startEnumeratingMedia();
+
     /* Initialize pixmap pool */
     PixmapPool::pool (this);
 
@@ -1797,11 +1802,6 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
     UISettingsPageMachine::fetchData(data);
-
-    /* Enumerate Mediums. We need at least the MediaList filled, so this is the
-     * lasted point, where we can start. The rest of the media checking is done
-     * in a background thread. */
-    vboxGlobal().startEnumeratingMedia();
 
     /* Fill internal variables with corresponding values: */
     m_cache.m_strMachineId = m_machine.GetId();
