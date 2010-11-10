@@ -497,11 +497,15 @@ public:
     void sort(int iColumn = 0, Qt::SortOrder order = Qt::AscendingOrder);
     QModelIndex attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot);
 
+    KChipsetType chipsetType() const;
+    void setChipsetType(KChipsetType type);
+
+    QMap<KStorageBus, int> currentControllerTypes() const;
+    QMap<KStorageBus, int> maximumControllerTypes() const;
+
 private:
 
     Qt::ItemFlags flags (const QModelIndex &aIndex) const;
-
-    KChipsetType chipsetType() const;
 
     AbstractItem *mRootItem;
 
@@ -512,6 +516,8 @@ private:
     QPixmap mMinusPixmapDis;
 
     ToolTipType mToolTipType;
+
+    KChipsetType m_chipsetType;
 };
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
@@ -567,6 +573,12 @@ class UIMachineSettingsStorage : public UISettingsPageMachine,
 public:
 
     UIMachineSettingsStorage();
+
+    KChipsetType chipsetType() const;
+    void setChipsetType(KChipsetType type);
+
+    QMap<KStorageBus, int> currentControllerTypes() const;
+    QMap<KStorageBus, int> maximumControllerTypes() const;
 
 signals:
 

@@ -61,6 +61,7 @@ public:
     bool isHWVirtExEnabled() const;
     int cpuCount() const;
     bool isHIDEnabled() const;
+    KChipsetType chipsetType() const;
 
 signals:
 

@@ -1506,17 +1506,42 @@ QModelIndex StorageModel::attachmentBySlot(QModelIndex controllerIndex, StorageS
     return QModelIndex();
 }
 
+KChipsetType StorageModel::chipsetType() const
+{
+    return m_chipsetType;
+}
+
+void StorageModel::setChipsetType(KChipsetType type)
+{
+    m_chipsetType = type;
+}
+
+QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
+{
+    QMap<KStorageBus, int> currentMap;
+    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
+    {
+        currentMap.insert((KStorageBus)iStorageBusType,
+                          static_cast<RootItem*>(mRootItem)->childCount((KStorageBus)iStorageBusType));
+    }
+    return currentMap;
+}
+
+QMap<KStorageBus, int> StorageModel::maximumControllerTypes() const
+{
+    QMap<KStorageBus, int> maximumMap;
+    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
+    {
+        maximumMap.insert((KStorageBus)iStorageBusType,
+                          vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), (KStorageBus)iStorageBusType));
+    }
+    return maximumMap;
+}
+
 Qt::ItemFlags StorageModel::flags (const QModelIndex &aIndex) const
 {
     return !aIndex.isValid() ? QAbstractItemModel::flags (aIndex) :
            Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-}
-
-KChipsetType StorageModel::chipsetType() const
-{
-    CMachine machine = vboxGlobal().virtualBox().FindMachine(mRootItem->machineId());
-    Assert(!machine.isNull());
-    return machine.GetChipsetType();
 }
 
 /* Storage Delegate */
@@ -1794,6 +1819,27 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     /* Initial setup */
     setMinimumWidth (500);
     mSplitter->setSizes (QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
+}
+
+KChipsetType UIMachineSettingsStorage::chipsetType() const
+{
+    return mStorageModel->chipsetType();
+}
+
+void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
+{
+    mStorageModel->setChipsetType(type);
+    updateActionsState();
+}
+
+QMap<KStorageBus, int> UIMachineSettingsStorage::currentControllerTypes() const
+{
+    return mStorageModel->currentControllerTypes();
+}
+
+QMap<KStorageBus, int> UIMachineSettingsStorage::maximumControllerTypes() const
+{
+    return mStorageModel->maximumControllerTypes();
 }
 
 /* Load data to cashe from corresponding external object(s),
