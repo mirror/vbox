@@ -29,7 +29,53 @@
 #include <VBox/hwaccm.h>
 #include <iprt/assert.h>
 #include <iprt/asm-amd64-x86.h>
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+# include <iprt/mem.h>
+# include <iprt/memobj.h>
+# include <VBox/apic.h>
+#endif
 
+
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+/** Local APIC mappings */
+typedef struct
+{
+    bool        fEnabled;
+    uint64_t    PhysBase;
+    RTR0MEMOBJ  hMemObj;
+    RTR0MEMOBJ  hMapObj;
+    void        *pv;
+    uint32_t    fHasThermal;
+} CPUMHOSTLAPIC;
+
+static CPUMHOSTLAPIC g_aLApics[RTCPUSET_MAX_CPUS];
+static int  cpumR0MapLocalApics(void);
+static void cpumR0UnmapLocalApics(void);
+#endif
+
+
+/**
+ * Does the Ring-0 CPU initialization once during module load.
+ * XXX Host-CPU hot-plugging?
+ */
+VMMR0DECL(int) CPUMR0ModuleInit(void)
+{
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    return cpumR0MapLocalApics();
+#endif
+}
+
+
+/**
+ * Terminate the module.
+ */
+VMMR0DECL(int) CPUMR0ModuleTerm(void)
+{
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    cpumR0UnmapLocalApics();
+#endif
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -44,6 +90,12 @@
 VMMR0DECL(int) CPUMR0Init(PVM pVM)
 {
     LogFlow(("CPUMR0Init: %p\n", pVM));
+
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aLApics); i++)
+        if (g_aLApics[i].pv)
+            SUPR0Printf(" CPU%d: %llx => %llx\n", i, g_aLApics[i].PhysBase, (uint64_t)g_aLApics[i].pv);
+#endif
 
     /*
      * Check CR0 & CR4 flags.
@@ -589,3 +641,127 @@ VMMR0DECL(int) CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     return VINF_SUCCESS;
 }
 
+
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+/**
+ * Worker for cpumR0MapLocalApics. Check each CPU for a present Local APIC.
+ * Play safe and treat each CPU separate.
+ */
+static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    uint32_t u32MaxIdx;
+    uint32_t u32EBX, u32ECX, u32EDX;
+    int iCpu = RTMpCpuIdToSetIndex(idCpu);
+    Assert(iCpu < RTCPUSET_MAX_CPUS);
+    ASMCpuId(0, &u32MaxIdx, &u32EBX, &u32ECX, &u32EDX);
+    if (   (   (   u32EBX == X86_CPUID_VENDOR_INTEL_EBX
+                && u32ECX == X86_CPUID_VENDOR_INTEL_ECX
+                && u32EDX == X86_CPUID_VENDOR_INTEL_EDX)
+           ||  (   u32EBX == X86_CPUID_VENDOR_AMD_EBX
+                && u32ECX == X86_CPUID_VENDOR_AMD_ECX
+                && u32EDX == X86_CPUID_VENDOR_AMD_EDX))
+        && u32MaxIdx >= 1)
+    {
+        ASMCpuId(1, &u32MaxIdx, &u32EBX, &u32ECX, &u32EDX);
+        if (    (u32EDX & X86_CPUID_FEATURE_EDX_APIC)
+            &&  (u32EDX & X86_CPUID_FEATURE_EDX_MSR))
+        {
+            uint64_t u64ApicBase = ASMRdMsr(MSR_IA32_APICBASE);
+            uint32_t u32MaxExtIdx;
+            /* see Intel Manual: Local APIC Status and Location: MAXPHYADDR default is bit 36 */
+            uint64_t u64Mask = UINT64_C(0x0000000ffffff000);
+            ASMCpuId(0x80000000, &u32MaxExtIdx, &u32EBX, &u32ECX, &u32EDX);
+            if (   u32MaxExtIdx >= 0x80000008
+                && u32MaxExtIdx <  0x8000ffff)
+            {
+                uint32_t u32PhysBits;
+                ASMCpuId(0x80000008, &u32PhysBits, &u32EBX, &u32ECX, &u32EDX);
+                u32PhysBits &= 0xff;
+                u64Mask = ((UINT64_C(1) << u32PhysBits) - 1) & UINT64_C(0xfffffffffffff000);
+            }
+            g_aLApics[iCpu].fEnabled = true;
+            g_aLApics[iCpu].PhysBase = u64ApicBase & u64Mask;
+        }
+    }
+}
+
+
+/**
+ * Map the MMIO page of each local APIC in the system.
+ */
+static int cpumR0MapLocalApics(void)
+{
+    int rc = RTMpOnAll(cpumR0MapLocalApicWorker, NULL, NULL);
+    for (unsigned iCpu = 0; RT_SUCCESS(rc) && iCpu < RT_ELEMENTS(g_aLApics); iCpu++)
+    {
+        if (g_aLApics[iCpu].fEnabled)
+        {
+            rc = RTR0MemObjEnterPhys(&g_aLApics[iCpu].hMemObj, g_aLApics[iCpu].PhysBase,
+                                     PAGE_SIZE, RTMEM_CACHE_POLICY_MMIO);
+            if (RT_SUCCESS(rc))
+                rc = RTR0MemObjMapKernel(&g_aLApics[iCpu].hMapObj, g_aLApics[iCpu].hMemObj, (void*)-1,
+                                         PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+            if (RT_SUCCESS(rc))
+            {
+                void *pApicBase = RTR0MemObjAddress(g_aLApics[iCpu].hMapObj);
+                uint32_t ApicVersion = ApicRegRead(pApicBase, APIC_REG_VERSION);
+                /*
+                 * 0x0X       82489 external APIC
+                 * 0x1X       Local APIC
+                 * 0x2X..0xFF reserved
+                 */
+                if ((APIC_REG_VERSION_GET_VER(ApicVersion) & 0xF0) != 0x10)
+                {
+                    RTR0MemObjFree(g_aLApics[iCpu].hMapObj, true /* fFreeMappings */);
+                    RTR0MemObjFree(g_aLApics[iCpu].hMemObj, true /* fFreeMappings */);
+                    g_aLApics[iCpu].fEnabled = false;
+                    continue;
+                }
+                g_aLApics[iCpu].fHasThermal = APIC_REG_VERSION_GET_MAX_LVT(ApicVersion) >= 5;
+                g_aLApics[iCpu].pv = pApicBase;
+            }
+        }
+    }
+    if (RT_FAILURE(rc))
+    {
+        cpumR0UnmapLocalApics();
+        return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Unmap the Local APIC of all host CPUs.
+ */
+static void cpumR0UnmapLocalApics(void)
+{
+    for (unsigned iCpu = RT_ELEMENTS(g_aLApics); iCpu-- > 0;)
+    {
+        if (g_aLApics[iCpu].pv)
+        {
+            RTR0MemObjFree(g_aLApics[iCpu].hMapObj, true /* fFreeMappings */);
+            RTR0MemObjFree(g_aLApics[iCpu].hMemObj, true /* fFreeMappings */);
+            g_aLApics[iCpu].fEnabled = false;
+            g_aLApics[iCpu].pv = NULL;
+        }
+    }
+}
+
+
+/**
+ * Write the Local APIC mapping address of the current host CPU to CPUM to be
+ * able to access the APIC registers in the raw mode switcher for disabling/
+ * re-enabling the NMI. Must be called with disabled preemption or disabled
+ * interrupts!
+ *
+ * @param   pVM         VM handle.
+ * @param   idHostCpu   The ID of the current host CPU.
+ */
+VMMR0DECL(void) CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu)
+{
+    pVM->cpum.s.pvApicBase = g_aLApics[RTMpCpuIdToSetIndex(idHostCpu)].pv;
+}
+
+#endif /* VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI */

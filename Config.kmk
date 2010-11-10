@@ -663,6 +663,12 @@ VBOX_DO_STRIP_MODULES = 1
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
 endif
+# Mask all Local APIC interrupt vectors which are set up to NMI mode when switching
+# to/from the guest in raw mode. Modern Linux kernels use the performance counter
+# to raise an NMI from time to time.
+if1of ($(KBUILD_TARGET), linux)
+ VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI = 1
+endif
 ## For testing deadlock detection and lock order validation.
 # If issues are found, create high priority defects and temporarily comment
 # the next line.

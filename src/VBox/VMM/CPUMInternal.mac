@@ -81,6 +81,20 @@ struc CPUM
     .aGuestCpuIdCentaur   resb    16*4
     .GuestCpuIdDef        resb    16
 
+%if HC_ARCH_BITS == 32
+    .abPadding2           resb    4
+%endif
+
+%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+ %if HC_ARCH_BITS == 32
+    .pvApicBase           resd    1
+    .fApicDisVectors      resd    1
+ %else
+    .pvApicBase           resq    1
+    .fApicDisVectors      resd    1
+ %endif
+%endif
+
     alignb 64
     ; CPUMCTX debug stuff...
     .GuestEntry           resb   1024
@@ -448,4 +462,12 @@ endstruc
 ; @param   %1   register name
 %macro CPUM_FROM_CPUMCPU 1
     sub     %1, dword [%1 + CPUMCPU.offCPUM]
+%endmacro
+
+;;
+; Converts the CPUMCPU pointer to CPUM
+; @param   %1   register name (PVM)
+; @param   %2   register name (CPUMCPU offset)
+%macro CPUM_FROM_CPUMCPU_WITH_OFFSET 2
+    sub     %1, %2
 %endmacro
