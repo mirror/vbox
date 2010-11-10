@@ -948,7 +948,11 @@ RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, b
  */
 class RTVfsChainElementAutoRegisterHack
 {
+private:
+    /** The registration record, NULL if registration failed.  */
     PRTVFSCHAINELEMENTREG m_pRegRec;
+
+public:
     RTVfsChainElementAutoRegisterHack(PRTVFSCHAINELEMENTREG a_pRegRec)
         : m_pRegRec(a_pRegRec)
     {
@@ -956,6 +960,7 @@ class RTVfsChainElementAutoRegisterHack
         if (RT_FAILURE(rc))
             m_pRegRec = NULL;
     }
+
     ~RTVfsChainElementAutoRegisterHack()
     {
         RTVfsChainElementDeregisterProvider(m_pRegRec, true);
