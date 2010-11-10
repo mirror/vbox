@@ -1117,7 +1117,7 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
      * so far, which would extend the size. */
     cbSize = RT_ALIGN_64(cbSize, _1M);
     if (    !cbSize
-        ||  cbSize >= _1P * 2 - _1M * 3)
+        ||  cbSize >= _1P * 4 - _1M * 3)
     {
         rc = VERR_VD_INVALID_SIZE;
         goto out;
