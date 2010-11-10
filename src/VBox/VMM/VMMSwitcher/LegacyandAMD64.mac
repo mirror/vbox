@@ -25,6 +25,7 @@
 ;* Header Files                                                                *
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
+%include "VBox/apic.mac"
 %include "VBox/x86.mac"
 %include "VBox/cpum.mac"
 %include "VBox/stam.mac"
@@ -152,6 +153,60 @@ BEGINPROC vmmR0HostToGuestAsm
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [edx + CPUMCPU.Guest.dr + 4*8], 2
+%endif
+
+%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    CPUM_FROM_CPUMCPU_WITH_OFFSET edx, ebp
+    mov     ebx, [edx + CPUM.pvApicBase]
+    or      ebx, ebx
+    jz      htg_noapic
+    mov     eax, [ebx + APIC_REG_LVT_LINT0]
+    mov     ecx, eax
+    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ecx, APIC_REG_LVT_MODE_NMI
+    jne     htg_nolint0
+    or      edi, 0x01
+    or      eax, APIC_REG_LVT_MASKED
+    mov     [ebx + APIC_REG_LVT_LINT0], eax
+    mov     eax, [ebx + APIC_REG_LVT_LINT0] ; write completion
+htg_nolint0:
+    mov     eax, [ebx + APIC_REG_LVT_LINT1]
+    mov     ecx, eax
+    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ecx, APIC_REG_LVT_MODE_NMI
+    jne     htg_nolint1
+    or      edi, 0x02
+    or      eax, APIC_REG_LVT_MASKED
+    mov     [ebx + APIC_REG_LVT_LINT1], eax
+    mov     eax, [ebx + APIC_REG_LVT_LINT1] ; write completion
+htg_nolint1:
+    mov     eax, [ebx + APIC_REG_LVT_PC]
+    mov     ecx, eax
+    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ecx, APIC_REG_LVT_MODE_NMI
+    jne     htg_nopc
+    or      edi, 0x04
+    or      eax, APIC_REG_LVT_MASKED
+    mov     [ebx + APIC_REG_LVT_PC], eax
+    mov     eax, [ebx + APIC_REG_LVT_PC] ; write completion
+htg_nopc:
+    mov     eax, [ebx + APIC_REG_VERSION]
+    shr     eax, 16
+    cmp     al, 5
+    jb      htg_notherm
+    mov     eax, [ebx + APIC_REG_LVT_THMR]
+    mov     ecx, eax
+    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ecx, APIC_REG_LVT_MODE_NMI
+    jne     htg_notherm
+    or      edi, 0x08
+    or      eax, APIC_REG_LVT_MASKED
+    mov     [ebx + APIC_REG_LVT_THMR], eax
+    mov     eax, [ebx + APIC_REG_LVT_THMR] ; write completion
+htg_notherm:
+    mov     [edx + CPUM.fApicDisVectors], edi
+htg_noapic:
+    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
 %endif
 
     ; control registers.
@@ -286,7 +341,7 @@ ALIGNCODE(16)
 GLOBALNAME ICEnterTarget
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
-    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
+    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
 
     mov     rax, cs
     mov     ds, rax
@@ -368,7 +423,7 @@ gth_debug_no:
 
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
-    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
+    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 10
@@ -515,14 +570,14 @@ GLOBALNAME ICExitTarget
 
     FIXUP FIX_GC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
-    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
+    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
     mov     esi, [edx + CPUMCPU.Host.cr3]
     mov     cr3, esi
 
     ;; now we're in host memory context, let's restore regs
     FIXUP FIX_HC_CPUM_OFF, 1, 0
     mov     edx, 0ffffffffh
-    CPUMCPU_FROM_CPUM_WITH_OFFSET    edx, ebp
+    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
 
     ; restore the host EFER
     mov     ebx, edx
@@ -569,6 +624,30 @@ GLOBALNAME ICExitTarget
     mov     cr0, ecx
     ;mov     ecx, [edx + CPUMCPU.Host.cr2] ; assumes this is waste of time.
     ;mov     cr2, ecx
+
+%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    ; Restore blocked Local APIC NMI vectors
+    CPUM_FROM_CPUMCPU_WITH_OFFSET edx, ebp
+    mov     ebx, [edx + CPUM.pvApicBase]
+    mov     ecx, [edx + CPUM.fApicDisVectors]
+    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
+    shr     ecx, 1
+    jnc     gth_nolint0
+    and     dword [ebx + APIC_REG_LVT_LINT0], ~APIC_REG_LVT_MASKED
+gth_nolint0:
+    shr     ecx, 1
+    jnc     gth_nolint1
+    and     dword [ebx + APIC_REG_LVT_LINT1], ~APIC_REG_LVT_MASKED
+gth_nolint1:
+    shr     ecx, 1
+    jnc     gth_nopc
+    and     dword [ebx + APIC_REG_LVT_PC], ~APIC_REG_LVT_MASKED
+gth_nopc:
+    shr     ecx, 1
+    jnc     gth_notherm
+    and     dword [ebx + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
+gth_notherm:
+%endif
 
     ; restore general registers.
     mov     edi, [edx + CPUMCPU.Host.edi]

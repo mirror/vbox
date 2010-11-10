@@ -116,8 +116,12 @@ VMMR0DECL(int) ModuleInit(void)
                         rc = IntNetR0Init();
                         if (RT_SUCCESS(rc))
                         {
-                            LogFlow(("ModuleInit: returns success.\n"));
-                            return VINF_SUCCESS;
+                            rc = CPUMR0ModuleInit();
+                            if (RT_SUCCESS(rc))
+                            {
+                                LogFlow(("ModuleInit: returns success.\n"));
+                                return VINF_SUCCESS;
+                            }
                         }
 
                         /* bail out */
@@ -147,6 +151,11 @@ VMMR0DECL(int) ModuleInit(void)
 VMMR0DECL(void) ModuleTerm(void)
 {
     LogFlow(("ModuleTerm:\n"));
+
+    /*
+     * Terminate the CPUM module (Local APIC cleanup).
+     */
+    CPUMR0ModuleTerm();
 
     /*
      * Terminate the internal network service.
@@ -573,7 +582,11 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 /* Disable preemption and update the periodic preemption timer. */
                 RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
                 RTThreadPreemptDisable(&PreemptState);
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
+                RTCPUID idHostCpu = RTMpCpuId();
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+                CPUMR0SetLApic(pVM, idHostCpu);
+#endif
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
                 if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
                     GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
 
@@ -885,6 +898,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 #endif
 
             RTCCUINTREG fFlags = ASMIntDisableFlags();
+
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+            RTCPUID idHostCpu = RTMpCpuId();
+            CPUMR0SetLApic(pVM, idHostCpu);
+#endif
 
             /* We might need to disable VT-x if the active switcher turns off paging. */
             rc = HWACCMR0EnterSwitcher(pVM, &fVTxDisabled);

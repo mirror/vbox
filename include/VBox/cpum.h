@@ -460,6 +460,8 @@ DECLASM(void)           CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
  * @ingroup grp_cpum
  * @{
  */
+VMMR0DECL(int)          CPUMR0ModuleInit();
+VMMR0DECL(int)          CPUMR0ModuleTerm();
 VMMR0DECL(int)          CPUMR0Init(PVM pVM);
 VMMR0DECL(int)          CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int)          CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
@@ -468,6 +470,9 @@ VMMR0DECL(int)          CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCT
 VMMR0DECL(int)          CPUMR0LoadHostDebugState(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int)          CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int)          CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+VMMR0DECL(void)         CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu);
+#endif
 
 /** @} */
 #endif /* IN_RING0 */
