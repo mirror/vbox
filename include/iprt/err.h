@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,10 +29,15 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
-RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_err            RTErr - Status Codes
  * @ingroup grp_rt
+ *
+ * The IPRT status codes are in two ranges: {0..999} and {22000..32766}.  The
+ * IPRT users are free to use the range {1000..21999}.  See RTERR_RANGE1_FIRST,
+ * RTERR_RANGE1_LAST, RTERR_RANGE2_FIRST, RTERR_RANGE2_LAST, RTERR_USER_FIRST
+ * and RTERR_USER_LAST.
+ *
  * @{
  */
 
@@ -175,6 +180,8 @@ private:
  * @param   rc  The iprt status code to test.
  */
 #define RT_FAILURE_NP(rc)   ( !RT_SUCCESS_NP(rc) )
+
+RT_C_DECLS_BEGIN
 
 /**
  * Converts a Darwin HRESULT error to an iprt status code.
@@ -385,7 +392,27 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 
 #endif /* IN_RING3 */
 
+RT_C_DECLS_END
+
 /** @} */
+
+/** @name Status Code Ranges
+ * @{ */
+/** The first status code in the primary IPRT range. */
+#define RTERR_RANGE1_FIRST                  0
+/** The last status code in the primary IPRT range. */
+#define RTERR_RANGE1_LAST                   999
+
+/** The first status code in the secondary IPRT range. */
+#define RTERR_RANGE2_FIRST                  22000
+/** The last status code in the secondary IPRT range. */
+#define RTERR_RANGE2_LAST                   32766
+
+/** The first status code in the user range. */
+#define RTERR_USER_FIRST                    1000
+/** The last status code in the user range. */
+#define RTERR_USER_LAST                     21999
+/** @}  */
 
 
 /* SED-START */
@@ -1280,28 +1307,53 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_POLL_SET_IS_FULL                   (-953)
 /** @} */
 
-
 /** @name RTZip status codes
  * @{ */
 /** Generic zip error. */
-#define VERR_ZIP_ERROR                          (-950)
+#define VERR_ZIP_ERROR                          (-22000)
 /** The compressed data was corrupted. */
-#define VERR_ZIP_CORRUPTED                      (-951)
+#define VERR_ZIP_CORRUPTED                      (-22001)
 /** Ran out of memory while compressing or uncompressing. */
-#define VERR_ZIP_NO_MEMORY                      (-952)
+#define VERR_ZIP_NO_MEMORY                      (-22002)
 /** The compression format version is unsupported. */
-#define VERR_ZIP_UNSUPPORTED_VERSION            (-953)
+#define VERR_ZIP_UNSUPPORTED_VERSION            (-22003)
 /** The compression method is unsupported. */
-#define VERR_ZIP_UNSUPPORTED_METHOD             (-954)
+#define VERR_ZIP_UNSUPPORTED_METHOD             (-22004)
 /** The compressed data started with a bad header. */
-#define VERR_ZIP_BAD_HEADER                     (-955)
+#define VERR_ZIP_BAD_HEADER                     (-22005)
+/** @} */
+
+/** @name RTVfs status codes
+ * @{ */
+/** The VFS chain specification does not have a valid prefix. */
+#define VERR_VFS_CHAIN_NO_PREFIX                (-22100)
+/** The VFS chain specification is empty. */
+#define VERR_VFS_CHAIN_EMPTY                        (-22101)
+/** Expected an element. */
+#define VERR_VFS_CHAIN_EXPECTED_ELEMENT              (-22102)
+/** The VFS object type is not known. */
+#define VERR_VFS_CHAIN_UNKNOWN_TYPE                 (-22103)
+/** Expected a left paranthese. */
+#define VERR_VFS_CHAIN_EXPECTED_LEFT_PARENTHESES    (-22104)
+/** Expected a right paranthese. */
+#define VERR_VFS_CHAIN_EXPECTED_RIGHT_PARENTHESES   (-22105)
+/** Expected a provider name. */
+#define VERR_VFS_CHAIN_EXPECTED_PROVIDER_NAME       (-22106)
+/** Expected an action (> or |). */
+#define VERR_VFS_CHAIN_EXPECTED_ACTION              (-22107)
+/** Only one action element is currently supported. */
+#define VERR_VFS_CHAIN_MULTIPLE_ACTIONS             (-22108)
+/** Expected to find a driving action (>), but there is none. */
+#define VERR_VFS_CHAIN_NO_ACTION                    (-22109)
+/** Expected pipe action. */
+#define VERR_VFS_CHAIN_EXPECTED_PIPE                (-22110)
+/** Unexpected action type. */
+#define VERR_VFS_CHAIN_UNEXPECTED_ACTION_TYPE       (-22111)
 /** @} */
 
 /* SED-END */
 
 /** @} */
-
-RT_C_DECLS_END
 
 #endif
 

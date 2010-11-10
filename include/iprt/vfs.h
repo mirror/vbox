@@ -60,8 +60,15 @@ RT_C_DECLS_BEGIN
 typedef struct RTVFSINTERNAL           *RTVFS;
 /** Pointer to a VFS handle. */
 typedef RTVFS                          *PRTVFS;
-/** A NIL VFS directory handle. */
+/** A NIL VFS handle. */
 #define NIL_RTVFS                       ((RTVFS)~(uintptr_t)0)
+
+/** Virtual Filesystem base object handle. */
+typedef struct RTVFSOBJINTERNAL        *RTVFSOBJ;
+/** Pointer to a VFS base object handle. */
+typedef RTVFSOBJ                       *PRTVFSOBJ;
+/** A NIL VFS base object handle. */
+#define NIL_RTVFSOBJ                    ((RTVFSOBJ)~(uintptr_t)0)
 
 /** Virtual Filesystem directory handle. */
 typedef struct RTVFSDIRINTERNAL        *RTVFSDIR;
@@ -69,6 +76,13 @@ typedef struct RTVFSDIRINTERNAL        *RTVFSDIR;
 typedef RTVFSDIR                       *PRTVFSDIR;
 /** A NIL VFS directory handle. */
 #define NIL_RTVFSDIR                    ((RTVFSDIR)~(uintptr_t)0)
+
+/** Virtual Filesystem filesystem stream handle. */
+typedef struct RTVFSFSSTREAMINTERNAL   *RTVFSFSSTREAM;
+/** Pointer to a VFS filesystem stream handle. */
+typedef RTVFSFSSTREAM                  *PRTVFSFSSTREAM;
+/** A NIL VFS filesystem stream handle. */
+#define NIL_RTVFSFSSTREAM               ((RTVFSFSSTREAM)~(uintptr_t)0)
 
 /** Virtual Filesystem I/O stream handle. */
 typedef struct RTVFSIOSTREAMINTERNAL   *RTVFSIOSTREAM;
@@ -118,6 +132,27 @@ RTDECL(int)         RTVfsDetach(RTVFS hVfs, const char *pszMountPoint, RTVFS hVf
 RTDECL(uint32_t)    RTVfsGetAttachmentCount(RTVFS hVfs);
 RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *phVfsAttached, uint32_t *pfFlags,
                                        char *pszMountPoint, size_t cbMountPoint);
+
+
+/** @defgroup grp_vfs_dir           VFS Directory API
+ * @{
+ */
+
+RTDECL(RTVFS)           RTVfsObjToVfs(RTVFSOBJ hVfsObj);
+RTDECL(RTVFSFSSTREAM)   RTVfsObjToFsStream(RTVFSOBJ hVfsObj);
+RTDECL(RTVFSDIR)        RTVfsObjToDir(RTVFSOBJ hVfsObj);
+RTDECL(RTVFSIOSTREAM)   RTVfsObjToIoStream(RTVFSOBJ hVfsObj);
+RTDECL(RTVFSFILE)       RTVfsObjToFile(RTVFSOBJ hVfsObj);
+RTDECL(RTVFSSYMLINK)    RTVfsObjToSymlink(RTVFSOBJ hVfsObj);
+
+RTDECL(RTVFSOBJ)        RTVfsObjFromVfs(RTVFS hVfs);
+RTDECL(RTVFSOBJ)        RTVfsObjFromFsStream(RTVFSFSSTREAM hVfsFss);
+RTDECL(RTVFSOBJ)        RTVfsObjFromDir(RTVFSDIR hVfsDir);
+RTDECL(RTVFSOBJ)        RTVfsObjFromIoStream(RTVFSIOSTREAM hVfsIos);
+RTDECL(RTVFSOBJ)        RTVfsObjFromFile(RTVFSFILE hVfsFile);
+RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym);
+
+/** @} */
 
 
 /** @defgroup grp_vfs_dir           VFS Directory API
@@ -397,6 +432,35 @@ RTDECL(RTFOFF)      RTVfsFileGetMaxSize(RTVFSFILE hVfsFile);
 RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
 
 /** @} */
+
+
+/** @defgroup grp_rt_vfs_chain  VFS Chains
+ *
+ * VFS chains is for doing pipe like things with VFS objects from the command
+ * line.  Imagine you want to cat the readme.gz of an ISO you could do
+ * something like:
+ *      RTCat :iprtvfs:vfs(isofs,./mycd.iso)|ios(open,readme.gz)|ios(gunzip)
+ * or
+ *      RTCat :iprtvfs:ios(isofs,./mycd.iso,/readme.gz)|ios(gunzip)
+ *
+ * The "isofs", "open" and "gunzip" bits in the above examples are chain
+ * element providers registered with IPRT.  See RTVFSCHAINELEMENTREG for how
+ * these works.
+ *
+ * @{ */
+
+/** The path prefix used to identify an VFS chain specification. */
+#define RTVFSCHAIN_SPEC_PREFIX   ":iprtvfs:"
+
+RTDECL(int) RTVfsChainOpenVfs(      const char *pszSpec,                 PRTVFS          phVfs,     const char **ppszError);
+RTDECL(int) RTVfsChainOpenFsStream( const char *pszSpec,                 PRTVFSFSSTREAM  phVfsFss,  const char **ppszError);
+RTDECL(int) RTVfsChainOpenDir(      const char *pszSpec, uint32_t fOpen, PRTVFSDIR       phVfsDir,  const char **ppszError);
+RTDECL(int) RTVfsChainOpenFile(     const char *pszSpec, uint32_t fOpen, PRTVFSFILE      phVfsFile, const char **ppszError);
+RTDECL(int) RTVfsChainOpenSymlink(  const char *pszSpec,                 PRTVFSSYMLINK   phVfsSym,  const char **ppszError);
+RTDECL(int) RTVfsChainOpenIoStream( const char *pszSpec, uint32_t fOpen, PRTVFSIOSTREAM  phVfsIos,  const char **ppszError);
+
+/** @}  */
+
 
 /** @} */
 

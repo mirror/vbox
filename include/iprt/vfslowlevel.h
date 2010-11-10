@@ -27,6 +27,8 @@
 #define ___iprt_vfslowlevel_h
 
 #include <iprt/vfs.h>
+#include <iprt/err.h>
+#include <iprt/list.h>
 #include <iprt/param.h>
 
 
@@ -106,10 +108,18 @@ typedef enum RTVFSOBJTYPE
 {
     /** Invalid type. */
     RTVFSOBJTYPE_INVALID = 0,
+    /** Pure base object.
+     * This is returned by the filesystem stream to represent directories,
+     * devices, fifos and similar that needs to be created. */
+    RTVFSOBJTYPE_BASE,
+    /** Virtual filesystem. */
+    RTVFSOBJTYPE_VFS,
+    /** Filesystem stream. */
+    RTVFSOBJTYPE_FS_STREAM,
+    /** Pure I/O stream. */
+    RTVFSOBJTYPE_IO_STREAM,
     /** Directory. */
     RTVFSOBJTYPE_DIR,
-    /** Pure I/O stream. */
-    RTVFSOBJTYPE_IOSTREAM,
     /** File. */
     RTVFSOBJTYPE_FILE,
     /** Symbolic link. */
@@ -119,6 +129,9 @@ typedef enum RTVFSOBJTYPE
     /** Pure I/O stream. */
     RTVFSOBJTYPE_32BIT_HACK = 0x7fffffff
 } RTVFSOBJTYPE;
+/** Pointer to a VFS object type. */
+typedef RTVFSOBJTYPE *PRTVFSOBJTYPE;
+
 
 /**
  * The basis for all virtual file system objects except RTVFS.
@@ -224,6 +237,45 @@ typedef RTVFSOBJSETOPS const *PCRTVFSOBJSETOPS;
 
 /** The RTVFSOBJSETOPS structure version. */
 #define RTVFSOBJSETOPS_VERSION      RT_MAKE_U32_FROM_U8(0xff,0x2f,1,0)
+
+
+/**
+ * The filesystem stream operations.
+ *
+ * @extends RTVFSOBJOPS
+ */
+typedef struct RTVFSFSSTREAMOPS
+{
+    /** The basic object operation.  */
+    RTVFSOBJOPS             Obj;
+    /** The structure version (RTVFSFSSTREAMOPS_VERSION). */
+    uint32_t                uVersion;
+    /** Reserved field, MBZ. */
+    uint32_t                fReserved;
+
+    /**
+     * Gets the next object in the stream.
+     *
+     * @returns IPRT status code.
+     * @retval  VINF_SUCCESS if a new object was retrieved.
+     * @retval  VERR_EOF when there are no more objects.
+     * @param   pvThis      The implementation specific directory data.
+     * @param   ppszName    Where to return the object name.  Must be freed by
+     *                      calling RTStrFree.
+     * @param   penmType    Where to return the object type.
+     * @param   hVfsObj     Where to return the object handle (referenced).
+     *                      This must be cast to the desired type before use.
+     */
+    DECLCALLBACKMEMBER(int, pfnNext)(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
+
+    /** Marks the end of the structure (RTVFSFSSTREAMOPS_VERSION). */
+    uintptr_t               uEndMarker;
+} RTVFSFSSTREAMOPS;
+/** Pointer to const object attribute setter operations. */
+typedef RTVFSFSSTREAMOPS const *PCRTVFSFSSTREAMOPS;
+
+/** The RTVFSFSSTREAMOPS structure version. */
+#define RTVFSFSSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x3f,1,0)
 
 
 /**
@@ -364,14 +416,13 @@ typedef struct RTVFSDIROPS
      */
     DECLCALLBACKMEMBER(int, pfnReadDir)(void *pvThis, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr);
 
-
     /** Marks the end of the structure (RTVFSDIROPS_VERSION). */
     uintptr_t               uEndMarker;
 } RTVFSDIROPS;
 /** Pointer to const directory operations. */
 typedef RTVFSDIROPS const *PCRTVFSDIROPS;
 /** The RTVFSDIROPS structure version. */
-#define RTVFSDIROPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x3f,1,0)
+#define RTVFSDIROPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x4f,1,0)
 
 
 /**
@@ -408,7 +459,7 @@ typedef struct RTVFSSYMLINKOPS
 /** Pointer to const symbolic link operations. */
 typedef RTVFSSYMLINKOPS const *PCRTVFSSYMLINKOPS;
 /** The RTVFSSYMLINKOPS structure version. */
-#define RTVFSSYMLINKOPS_VERSION     RT_MAKE_U32_FROM_U8(0xff,0x4f,1,0)
+#define RTVFSSYMLINKOPS_VERSION     RT_MAKE_U32_FROM_U8(0xff,0x5f,1,0)
 
 
 /**
@@ -523,7 +574,7 @@ typedef struct RTVFSIOSTREAMOPS
 typedef RTVFSIOSTREAMOPS const *PCRTVFSIOSTREAMOPS;
 
 /** The RTVFSIOSTREAMOPS structure version. */
-#define RTVFSIOSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x5f,1,0)
+#define RTVFSIOSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x6f,1,0)
 
 
 /**
@@ -595,7 +646,7 @@ typedef struct RTVFSFILEOPS
 typedef RTVFSFILEOPS const *PCRTVFSFILEOPS;
 
 /** The RTVFSFILEOPS structure version. */
-#define RTVFSFILEOPS_VERSION        RT_MAKE_U32_FROM_U8(0xff,0x6f,1,0)
+#define RTVFSFILEOPS_VERSION        RT_MAKE_U32_FROM_U8(0xff,0x7f,1,0)
 
 /**
  * Creates a new VFS file handle.
@@ -702,12 +753,264 @@ RTDECL(void) RTVfsParsePathFree(PRTVFSPARSEDPATH pPath);
 
 /** @}  */
 
+
+/** @defgroup grp_rt_vfs_lowlevel_chain     VFS Chains
+ * @ref grp_rt_vfs_chain
+ * @{
+ */
+
+
+/**
+ * Chain element input actions.
+ */
+typedef enum RTVFSCHAINACTION
+{
+    /** Invalid action. */
+    RTVFSCHAINACTION_INVALID,
+    /** No action (start of the chain). */
+    RTVFSCHAINACTION_NONE,
+    /** Passive filtering (expressed by pipe symbol). */
+    RTVFSCHAINACTION_PASSIVE,
+    /** Push filtering (expressed by redirection-out symbol). */
+    RTVFSCHAINACTION_PUSH,
+    /** The end of the valid actions. */
+    RTVFSCHAINACTION_END,
+    /** Make sure it's a 32-bit type. */
+    RTVFSCHAINACTION_32BIT_HACK = 0x7fffffff
+} RTVFSCHAINACTION;
+
+
+/**
+ * VFS chain element specification.
+ */
+typedef struct RTVFSCHAINELEMSPEC
+{
+    /** The provider name. */
+    char               *pszProvider;
+    /** The input type. */
+    RTVFSOBJTYPE        enmTypeIn;
+    /** The output type. */
+    RTVFSOBJTYPE        enmTypeOut;
+    /** The action to take (or not). */
+    RTVFSCHAINACTION    enmAction;
+    /** The number of arguments. */
+    uint32_t            cArgs;
+    /** Arguments. */
+    char               **papszArgs;
+} RTVFSCHAINELEMSPEC;
+/** Pointer to a chain element specification. */
+typedef RTVFSCHAINELEMSPEC *PRTVFSCHAINELEMSPEC;
+/** Pointer to a const chain element specification. */
+typedef RTVFSCHAINELEMSPEC const *PCRTVFSCHAINELEMSPEC;
+
+
+/**
+ * Parsed VFS chain specification.
+ */
+typedef struct RTVFSCHAINSPEC
+{
+    /** The action element, UINT32_MAX if none.
+     * Currently we only support one action element (RTVFSCHAINACTION_PASSIVE
+     * is not considered). */
+    uint32_t            iActionElement;
+    /** The number of elements. */
+    uint32_t            cElements;
+    /** The elements. */
+    PRTVFSCHAINELEMSPEC paElements;
+} RTVFSCHAINSPEC;
+/** Pointer to a parsed VFS chain specification. */
+typedef RTVFSCHAINSPEC *PRTVFSCHAINSPEC;
+/** Pointer to a const, parsed VFS chain specification. */
+typedef RTVFSCHAINSPEC const *PCRTVFSCHAINSPEC;
+
+
+/**
+ * A chain element provider registration record.
+ */
+typedef struct RTVFSCHAINELEMENTREG
+{
+    /** The version (RTVFSCHAINELEMENTREG_VERSION). */
+    uint32_t                uVersion;
+    /** Reserved, MBZ. */
+    uint32_t                fReserved;
+    /** The provider name (unique). */
+    const char             *pszName;
+    /** For chaining the providers. */
+    RTLISTNODE              ListEntry;
+
+    /**
+     * Create a VFS from the given chain element specficiation.
+     *
+     * @returns IPRT status code.
+     * @param   pSpec           The chain element specification.
+     * @param   phVfs           Where to returned the VFS handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnOpenVfs)(     PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFS           phVfs);
+
+    /**
+     * Open a directory from the given chain element specficiation.
+     *
+     * @returns IPRT status code.
+     * @param   pSpec           The chain element specification.
+     * @param   phVfsDir        Where to returned the directory handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnOpenDir)(     PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFSDIR        phVfsDir);
+
+    /**
+     * Open a file from the given chain element specficiation.
+     *
+     * @returns IPRT status code.
+     * @param   pSpec           The chain element specification.
+     * @param   fOpen           The open flag.  Can be zero and the
+     *                          specification may modify it.
+     * @param   phVfsFile       Where to returned the file handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnOpenFile)(    PCRTVFSCHAINELEMSPEC pSpec, uint32_t fOpen, PRTVFSFILE       phVfsFile);
+
+    /**
+     * Open a symlink from the given chain element specficiation.
+     *
+     * @returns IPRT status code.
+     * @param   pSpec           The chain element specification.
+     * @param   phVfsSym        Where to returned the symlink handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnOpenSymlink)( PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFSSYMLINK    phVfsSym);
+
+    /**
+     * Open a I/O stream from the given chain element specficiation.
+     *
+     * @returns IPRT status code.
+     * @param   pSpec           The chain element specification.
+     * @param   fOpen           The open flag.  Can be zero and the
+     *                          specification may modify it.
+     * @param   phVfsIos        Where to returned the I/O stream handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnOpenIoStream)(PCRTVFSCHAINELEMSPEC pSpec, uint32_t fOpen, PRTVFSIOSTREAM   phVfsIos);
+
+    /**
+     * Open a filesystem stream from the given chain element specficiation.
+     *
+     * @returns IPRT status code.
+     * @param   pSpec           The chain element specification.
+     * @param   phVfsFss        Where to returned the filesystem stream handle.
+     */
+    DECLCALLBACKMEMBER(int, pfnOpenFsStream)(PCRTVFSCHAINELEMSPEC pSpec,                 PRTVFSFSSTREAM   phVfsFss);
+
+    /** End marker (RTVFSCHAINELEMENTREG_VERSION). */
+    uintptr_t               uEndMarker;
+} RTVFSCHAINELEMENTREG;
+/** Pointer to a VFS chain element registration record. */
+typedef RTVFSCHAINELEMENTREG *PRTVFSCHAINELEMENTREG;
+/** Pointer to a const VFS chain element registration record. */
+typedef RTVFSCHAINELEMENTREG const *PCRTVFSCHAINELEMENTREG;
+
+/** The VFS chain element registration record version number. */
+#define RTVFSCHAINELEMENTREG_VERSION        RT_MAKE_U32_FROM_U8(0xff, 0x7f, 1, 0)
+
+
+/**
+ * Parses the specification.
+ *
+ * @returns IPRT status code.
+ * @param   pszSpec             The specification string to parse.
+ * @param   fFlags              Flags, see RTVFSCHAIN_PF_XXX.
+ * @param   enmLeadingAction    The only allowed leading action type.
+ * @param   enmTrailingAction   The only allowed trailing action type.
+ * @param   ppSpec              Where to return the pointer to the parsed
+ *                              specification.  This must be freed by calling
+ *                              RTVfsChainSpecFree.  Will always be set (unless
+ *                              invalid parameters.)
+ * @param   ppszError           On failure, this will point at the error
+ *                              location in @a pszSpec.  Optional.
+ */
+RTDECL(int)             RTVfsChainSpecParse(const char *pszSpec, RTVFSCHAINACTION enmLeadingAction,
+                                            RTVFSCHAINACTION enmTrailingAction,
+                                            PRTVFSCHAINSPEC *ppSpec, const char *ppszError);
+
+/** @name RTVfsChainSpecParse
+ * @{ */
+/** No real action is permitted, i.e. only passive filtering (aka pipe).  */
+#define RTVFSCHAIN_PF_NO_REAL_ACTION            RT_BIT_32(0)
+/** The specified leading action is optional. */
+#define RTVFSCHAIN_PF_LEADING_ACTION_OPTIONAL   RT_BIT_32(1)
+/** The specified trailing action is optional. */
+#define RTVFSCHAIN_PF_TRAILING_ACTION_OPTIONAL  RT_BIT_32(2)
+/** Mask of valid flags. */
+#define RTVFSCHAIN_PF_VALID_MASK                UINT32_C(0x00000007)
+/** @}*/
+
+/**
+ * Frees a parsed chain specification.
+ *
+ * @param   pSpec               What RTVfsChainSpecParse returned.  NULL is
+ *                              quietly ignored.
+ */
+RTDECL(void)            RTVfsChainSpecFree(PRTVFSCHAINSPEC pSpec);
+
+/**
+ * Registers a chain element provider.
+ *
+ * @returns IPRT status code
+ * @param   pRegRec             The registration record.
+ * @param   fFromCtor           Indicates where we're called from.
+ */
+RTDECL(int) RTVfsChainElementRegisterProvider(PRTVFSCHAINELEMENTREG pRegRec, bool fFromCtor);
+
+/**
+ * Deregisters a chain element provider.
+ *
+ * @returns IPRT status code
+ * @param   pRegRec             The registration record.
+ * @param   fFromDtor           Indicates where we're called from.
+ */
+RTDECL(int) RTVfsChainElementDeregisterProvider(PRTVFSCHAINELEMENTREG pRegRec, bool fFromDtor);
+
+
+/** @def RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER
+ * Automatically registers a chain element provider using a global constructor
+ * and destructor hack.
+ *
+ * @param   pRegRec     Pointer to the registration record.
+ * @param   name        Some unique variable name prefix.
+ */
+
+#ifdef __cplusplus
+/**
+ * Class used for registering a VFS chain element provider.
+ */
+class RTVfsChainElementAutoRegisterHack
+{
+    PRTVFSCHAINELEMENTREG m_pRegRec;
+    RTVfsChainElementAutoRegisterHack(PRTVFSCHAINELEMENTREG a_pRegRec)
+        : m_pRegRec(a_pRegRec)
+    {
+        int rc = RTVfsChainElementRegisterProvider(m_pRegRec, true);
+        if (RT_FAILURE(rc))
+            m_pRegRec = NULL;
+    }
+    ~RTVfsChainElementAutoRegisterHack()
+    {
+        RTVfsChainElementDeregisterProvider(m_pRegRec, true);
+        m_pRegRec = NULL;
+    }
+};
+
+# define RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(pRegRec, name) \
+    static RTVfsChainElementAutoRegisterHack name ## AutoRegistrationHack(pRegRec)
+
+#else
+# define RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER(pRegRec, name) \
+    extern void *name ## AutoRegistrationHack = \
+        &Sorry_but_RTVFSCHAIN_AUTO_REGISTER_ELEMENT_PROVIDER_does_not_work_in_c_source_files
+#endif
+
+
+/** @}  */
+
+
 /** @} */
 
 RT_C_DECLS_END
 
 #endif /* !___iprt_vfslowlevel_h */
-
-
-
 
