@@ -165,10 +165,6 @@ start()
         if ! rm -f $DEVICE; then
             failure "Cannot remove $DEVICE"
         fi
-        # HACK: disable the hardware performance counter framework
-        if [ -e /proc/sys/kernel/perf_counter_paranoid ]; then
-          echo 2 > /proc/sys/kernel/perf_counter_paranoid 
-        fi
         if ! $MODPROBE vboxdrv > /dev/null 2>&1; then
             failure "modprobe vboxdrv failed. Please use 'dmesg' to find out why"
         fi
