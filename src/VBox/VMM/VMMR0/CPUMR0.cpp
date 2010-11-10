@@ -60,9 +60,11 @@ static void cpumR0UnmapLocalApics(void);
  */
 VMMR0DECL(int) CPUMR0ModuleInit(void)
 {
+    int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    return cpumR0MapLocalApics();
+    rc = cpumR0MapLocalApics();
 #endif
+    return rc;
 }
 
 
