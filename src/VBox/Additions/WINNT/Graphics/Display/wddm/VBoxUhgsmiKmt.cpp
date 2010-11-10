@@ -571,27 +571,75 @@ HRESULT vboxDispKmtCallbacksTerm(PVBOXDISPKMT_CALLBACKS pCallbacks)
     return S_OK;
 }
 
-HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
 {
-    D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME OpenAdapterData = {0};
-    wcsncpy(OpenAdapterData.DeviceName, L"\\\\.\\DISPLAY1", RT_ELEMENTS(OpenAdapterData.DeviceName) - 1 /* the last one is always \0 */);
-    HRESULT hr = S_OK;
-    NTSTATUS Status = pCallbacks->pfnD3DKMTOpenAdapterFromGdiDisplayName(&OpenAdapterData);
-    Assert(!Status);
-    if (!Status)
+    HRESULT hr = E_FAIL;
+    DISPLAY_DEVICE DDev;
+    memset(&DDev, 0, sizeof (DDev));
+    DDev.cb = sizeof (DDev);
+
+    for (int i = 0; ; ++i)
     {
-        pAdapter->hAdapter = OpenAdapterData.hAdapter;
-        pAdapter->pCallbacks = pCallbacks;
-        return S_OK;
-    }
-    else
-    {
-        Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
-        hr = E_FAIL;
+        if (EnumDisplayDevices(NULL, /* LPCTSTR lpDevice */ i, /* DWORD iDevNum */
+                &DDev, 0 /* DWORD dwFlags*/))
+        {
+            if (DDev.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+            {
+                HDC hDc = CreateDC(NULL, DDev.DeviceName, NULL, NULL);
+                if (hDc)
+                {
+                    *phDc = hDc;
+                    return S_OK;
+                }
+                else
+                {
+                    DWORD winEr = GetLastError();
+                    Assert(0);
+                    hr = HRESULT_FROM_WIN32(winEr);
+                    Assert(FAILED(hr));
+                    break;
+                }
+            }
+        }
+        else
+        {
+            DWORD winEr = GetLastError();
+            Assert(0);
+            hr = HRESULT_FROM_WIN32(winEr);
+            Assert(FAILED(hr));
+            break;
+        }
     }
 
     return hr;
+}
 
+HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+{
+    D3DKMT_OPENADAPTERFROMHDC OpenAdapterData = {0};
+    OpenAdapterData.hDc = GetWindowDC(NULL);
+    HRESULT hr = vboxDispKmtAdpHdcCreate(&OpenAdapterData.hDc);
+    if (OpenAdapterData.hDc)
+    {
+        NTSTATUS Status = pCallbacks->pfnD3DKMTOpenAdapterFromHdc(&OpenAdapterData);
+        Assert(!Status);
+        if (!Status)
+        {
+            pAdapter->hAdapter = OpenAdapterData.hAdapter;
+            pAdapter->hDc = OpenAdapterData.hDc;
+            pAdapter->pCallbacks = pCallbacks;
+            return S_OK;
+        }
+        else
+        {
+            Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
+            hr = E_FAIL;
+        }
+
+        ReleaseDC(NULL, OpenAdapterData.hDc);
+    }
+
+    return hr;
 }
 
 HRESULT vboxDispKmtCloseAdapter(PVBOXDISPKMT_ADAPTER pAdapter)
@@ -602,12 +650,12 @@ HRESULT vboxDispKmtCloseAdapter(PVBOXDISPKMT_ADAPTER pAdapter)
     Assert(!Status);
     if (!Status)
     {
+        ReleaseDC(NULL, pAdapter->hDc);
         return S_OK;
     }
 
     Log((__FUNCTION__": pfnD3DKMTCloseAdapter failed, Status (0x%x)\n", Status));
-    /* ignore */
-    Status = 0;
+
     return E_FAIL;
 }
 

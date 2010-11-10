@@ -114,6 +114,7 @@ static DWORD vboxDispIfWDDMAdapterOp(PCVBOXDISPIF pIf, LPCWSTR pDevName, PFNVBOX
     wcsncpy(OpenAdapterData.DeviceName, pDevName, RT_ELEMENTS(OpenAdapterData.DeviceName) - 1 /* the last one is always \0 */);
     DWORD err = NO_ERROR;
     NTSTATUS Status = pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName(&OpenAdapterData);
+    Assert(!Status);
     if (!Status)
     {
         BOOLEAN bCloseAdapter = pfnOp(pIf, OpenAdapterData.hAdapter, OpenAdapterData.DeviceName, pContext);

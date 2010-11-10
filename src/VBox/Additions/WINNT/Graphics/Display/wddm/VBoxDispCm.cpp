@@ -136,6 +136,11 @@ HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT 
         vboxDispCmSessionCtxAdd(&g_pVBoxCmMgr.Session, pContext);
         pContext->pDevice = pDevice;
     }
+    else
+    {
+        exit(1);
+    }
+
     return hr;
 }
 
@@ -189,6 +194,10 @@ static HRESULT vboxDispCmSessionCmdQueryData(PVBOXDISPCM_SESSION pSession, PVBOX
         {
             if (!pCmd->Hdr.cbCmdsReturned && !pCmd->Hdr.cbRemainingFirstCmd)
                 hr = S_FALSE;
+        }
+        else
+        {
+            exit(1);
         }
     }
     else
