@@ -916,14 +916,6 @@ VirtualBox</screen>
 
       <itemizedlist>
         <listitem>
-          <para>With Linux 2.6.19 and higher, the NMI watchdog may be active.
-          Add <computeroutput>nmi_watchdog=0</computeroutput> to the kernel
-          command line (e.g. in your grub configuration) and reboot. With the
-          Debian and Ubuntu installation modules, execute <computeroutput>sudo
-          dpkg-reconfigure virtualbox</computeroutput> again.</para>
-        </listitem>
-
-        <listitem>
           <para>The kernel disagrees about the version of the gcc used to
           compile the module. Make sure that you use the same compiler as used
           to build the kernel.</para>
