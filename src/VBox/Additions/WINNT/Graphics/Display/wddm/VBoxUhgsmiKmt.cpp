@@ -636,7 +636,7 @@ HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_A
             hr = E_FAIL;
         }
 
-        ReleaseDC(NULL, OpenAdapterData.hDc);
+        DeleteDC(OpenAdapterData.hDc);
     }
 
     return hr;
@@ -650,7 +650,7 @@ HRESULT vboxDispKmtCloseAdapter(PVBOXDISPKMT_ADAPTER pAdapter)
     Assert(!Status);
     if (!Status)
     {
-        ReleaseDC(NULL, pAdapter->hDc);
+        DeleteDC(pAdapter->hDc);
         return S_OK;
     }
 
