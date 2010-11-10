@@ -93,12 +93,6 @@ VMMR0DECL(int) CPUMR0Init(PVM pVM)
 {
     LogFlow(("CPUMR0Init: %p\n", pVM));
 
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    for (unsigned i = 0; i < RT_ELEMENTS(g_aLApics); i++)
-        if (g_aLApics[i].pv)
-            SUPR0Printf(" CPU%d: %llx => %llx\n", i, g_aLApics[i].PhysBase, (uint64_t)g_aLApics[i].pv);
-#endif
-
     /*
      * Check CR0 & CR4 flags.
      */
