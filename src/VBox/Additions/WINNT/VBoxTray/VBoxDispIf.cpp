@@ -106,36 +106,79 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
     return err;
 }
 
-typedef DECLCALLBACK(BOOLEAN) FNVBOXDISPIFWDDM_ADAPTEROP(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, LPCWSTR pDevName, PVOID pContext);
-typedef FNVBOXDISPIFWDDM_ADAPTEROP *PFNVBOXDISPIFWDDM_ADAPTEROP;
-static DWORD vboxDispIfWDDMAdapterOp(PCVBOXDISPIF pIf, LPCWSTR pDevName, PFNVBOXDISPIFWDDM_ADAPTEROP pfnOp, PVOID pContext)
+static DWORD vboxDispIfWDDMAdpHdcCreate(int iDisplay, HDC *phDc, DISPLAY_DEVICE *pDev)
 {
-    D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME OpenAdapterData = {0};
-    wcsncpy(OpenAdapterData.DeviceName, pDevName, RT_ELEMENTS(OpenAdapterData.DeviceName) - 1 /* the last one is always \0 */);
-    DWORD err = NO_ERROR;
-    NTSTATUS Status = pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName(&OpenAdapterData);
-    Assert(!Status);
-    if (!Status)
-    {
-        BOOLEAN bCloseAdapter = pfnOp(pIf, OpenAdapterData.hAdapter, OpenAdapterData.DeviceName, pContext);
+    DWORD winEr = ERROR_INVALID_STATE;
+    memset(pDev, 0, sizeof (*pDev));
+    pDev->cb = sizeof (*pDev);
 
-        if (bCloseAdapter)
+    for (int i = 0; ; ++i)
+    {
+        if (EnumDisplayDevices(NULL, /* LPCTSTR lpDevice */ i, /* DWORD iDevNum */
+                pDev, 0 /* DWORD dwFlags*/))
         {
-            D3DKMT_CLOSEADAPTER ClosaAdapterData = {0};
-            ClosaAdapterData.hAdapter = OpenAdapterData.hAdapter;
-            Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
-            if (Status)
+            if (i == iDisplay || (iDisplay < 0 && pDev->StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE))
             {
-                Log((__FUNCTION__": pfnD3DKMTCloseAdapter failed, Status (0x%x)\n", Status));
-                /* ignore */
-                Status = 0;
+                HDC hDc = CreateDC(NULL, pDev->DeviceName, NULL, NULL);
+                if (hDc)
+                {
+                    *phDc = hDc;
+                    return NO_ERROR;
+                }
+                else
+                {
+                    winEr = GetLastError();
+                    Assert(0);
+                    break;
+                }
             }
         }
+        else
+        {
+            winEr = GetLastError();
+            Assert(0);
+            break;
+        }
     }
-    else
+
+    return winEr;
+}
+
+
+typedef DECLCALLBACK(BOOLEAN) FNVBOXDISPIFWDDM_ADAPTEROP(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, DISPLAY_DEVICE *pDev, PVOID pContext);
+typedef FNVBOXDISPIFWDDM_ADAPTEROP *PFNVBOXDISPIFWDDM_ADAPTEROP;
+static DWORD vboxDispIfWDDMAdapterOp(PCVBOXDISPIF pIf, int iDisplay, PFNVBOXDISPIFWDDM_ADAPTEROP pfnOp, PVOID pContext)
+{
+    D3DKMT_OPENADAPTERFROMHDC OpenAdapterData = {0};
+    DISPLAY_DEVICE DDev;
+    DWORD err = vboxDispIfWDDMAdpHdcCreate(iDisplay, &OpenAdapterData.hDc, &DDev);
+    Assert(err == NO_ERROR);
+    if (err == NO_ERROR)
     {
-        Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
-        err = ERROR_GEN_FAILURE;
+        NTSTATUS Status = pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc(&OpenAdapterData);
+        Assert(!Status);
+        if (!Status)
+        {
+            BOOLEAN bCloseAdapter = pfnOp(pIf, OpenAdapterData.hAdapter, &DDev, pContext);
+
+            if (bCloseAdapter)
+            {
+                D3DKMT_CLOSEADAPTER ClosaAdapterData = {0};
+                ClosaAdapterData.hAdapter = OpenAdapterData.hAdapter;
+                Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
+                if (Status)
+                {
+                    Log((__FUNCTION__": pfnD3DKMTCloseAdapter failed, Status (0x%x)\n", Status));
+                }
+            }
+        }
+        else
+        {
+            Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
+            err = ERROR_GEN_FAILURE;
+        }
+
+        DeleteDC(OpenAdapterData.hDc);
     }
 
     return err;
@@ -148,7 +191,7 @@ typedef struct
     int cbData;
 } VBOXDISPIFWDDM_ESCAPEOP_CONTEXT, *PVBOXDISPIFWDDM_ESCAPEOP_CONTEXT;
 
-DECLCALLBACK(BOOLEAN) vboxDispIfEscapeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, LPCWSTR pDevName, PVOID pContext)
+DECLCALLBACK(BOOLEAN) vboxDispIfEscapeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, DISPLAY_DEVICE *pDev, PVOID pContext)
 {
     PVBOXDISPIFWDDM_ESCAPEOP_CONTEXT pCtx = (PVBOXDISPIFWDDM_ESCAPEOP_CONTEXT)pContext;
 
@@ -171,7 +214,7 @@ static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, i
     VBOXDISPIFWDDM_ESCAPEOP_CONTEXT Ctx = {0};
     Ctx.pEscape = pEscape;
     Ctx.cbData = cbData;
-    DWORD err = vboxDispIfWDDMAdapterOp(pIf, L"\\\\.\\DISPLAY1", vboxDispIfEscapeWDDMOp, &Ctx);
+    DWORD err = vboxDispIfWDDMAdapterOp(pIf, -1 /* iDisplay, -1 means primary */, vboxDispIfEscapeWDDMOp, &Ctx);
     if (err == NO_ERROR)
     {
         if (!Ctx.Status)
@@ -197,7 +240,7 @@ typedef struct
     VBOXWDDM_RECOMMENDVIDPN_SCREEN_INFO Info;
 } VBOXDISPIFWDDM_RESIZEOP_CONTEXT, *PVBOXDISPIFWDDM_RESIZEOP_CONTEXT;
 
-DECLCALLBACK(BOOLEAN) vboxDispIfResizeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, LPCWSTR pDevName, PVOID pContext)
+DECLCALLBACK(BOOLEAN) vboxDispIfResizeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, DISPLAY_DEVICE *pDev, PVOID pContext)
 {
     PVBOXDISPIFWDDM_RESIZEOP_CONTEXT pCtx = (PVBOXDISPIFWDDM_RESIZEOP_CONTEXT)pContext;
 
@@ -236,7 +279,7 @@ static DWORD vboxDispIfResizeWDDM(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width,
     Ctx.Info.Width = Width;
     Ctx.Info.Height = Height;
     Ctx.Info.BitsPerPixel = BitsPerPixel;
-    DWORD err = vboxDispIfWDDMAdapterOp(pIf, L"\\\\.\\DISPLAY1", vboxDispIfResizeWDDMOp, &Ctx);
+    DWORD err = vboxDispIfWDDMAdapterOp(pIf, (int)Id, vboxDispIfResizeWDDMOp, &Ctx);
     if (err == NO_ERROR)
     {
         if (!Ctx.Status)
