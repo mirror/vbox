@@ -451,7 +451,7 @@ static RTVFSIOSTREAMOPS g_rtZipGzipOps =
 {
     { /* Obj */
         RTVFSOBJOPS_VERSION,
-        RTVFSOBJTYPE_IOSTREAM,
+        RTVFSOBJTYPE_IO_STREAM,
         "gzip",
         rtZipGzip_Close,
         rtZipGzip_QueryInfo,
