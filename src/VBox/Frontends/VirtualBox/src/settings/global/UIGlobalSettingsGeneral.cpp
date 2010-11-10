@@ -24,34 +24,37 @@
 #include "UIGlobalSettingsGeneral.h"
 #include "VBoxGlobal.h"
 
+/* General page constructor: */
 UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
 {
-    /* Apply UI decorations */
-    Ui::UIGlobalSettingsGeneral::setupUi (this);
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsGeneral::setupUi(this);
 
 #ifndef VBOX_GUI_WITH_SYSTRAY
-    mCbCheckTrayIcon->hide();
-    mWtSpacer1->hide();
+    m_pEnableTrayIconCheckbox->hide();
+    m_pSpacerWidget1->hide();
 #endif /* !VBOX_GUI_WITH_SYSTRAY */
 #ifndef Q_WS_MAC
-    mCbCheckPresentationMode->hide();
-    mWtSpacer2->hide();
+    m_pEnablePresentationModeCheckbox->hide();
+    m_pSpacerWidget2->hide();
 #endif /* !Q_WS_MAC */
 //#ifndef Q_WS_WIN /* Checkbox hidden for now! */
-    mCbDisableHostScreenSaver->hide();
-    mWtSpacer3->hide();
+    m_pDisableHostScreenSaverCheckbox->hide();
+    m_pSpacerWidget3->hide();
 //#endif /* !Q_WS_WIN */
 
-    if (mCbCheckTrayIcon->isHidden() &&
-        mCbCheckPresentationMode->isHidden() &&
-        mCbDisableHostScreenSaver->isHidden())
-        mLnSeparator2->hide();
+    /* If all checkboxes hidden, hide separator too: */
+    if (m_pEnableTrayIconCheckbox->isHidden() &&
+        m_pEnablePresentationModeCheckbox->isHidden() &&
+        m_pDisableHostScreenSaverCheckbox->isHidden())
+        m_pLineSeparator2->hide();
 
-    mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
-    mPsVRDP->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
-    mPsVRDP->setMode (VBoxFilePathSelectorWidget::Mode_File_Open);
+    /* Setup widgets: */
+    m_pMachineFolderSelector->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
+    m_pVRDPLibNameSelector->setHomeDir(vboxGlobal().virtualBox().GetHomeFolder());
+    m_pVRDPLibNameSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
 
-    /* Applying language settings */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -80,13 +83,13 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsGeneral::getFromCache()
 {
     /* Fetch from cache: */
-    mPsMach->setPath(m_cache.m_strDefaultMachineFolder);
-    mPsVRDP->setPath(m_cache.m_strVRDEAuthLibrary);
-    mCbCheckTrayIcon->setChecked(m_cache.m_fTrayIconEnabled);
+    m_pMachineFolderSelector->setPath(m_cache.m_strDefaultMachineFolder);
+    m_pVRDPLibNameSelector->setPath(m_cache.m_strVRDEAuthLibrary);
+    m_pEnableTrayIconCheckbox->setChecked(m_cache.m_fTrayIconEnabled);
 #ifdef Q_WS_MAC
-    mCbCheckPresentationMode->setChecked(m_cache.m_fPresentationModeEnabled);
+    m_pEnablePresentationModeCheckbox->setChecked(m_cache.m_fPresentationModeEnabled);
 #endif /* Q_WS_MAC */
-    mCbDisableHostScreenSaver->setChecked(m_cache.m_fHostScreenSaverDisables);
+    m_pDisableHostScreenSaverCheckbox->setChecked(m_cache.m_fHostScreenSaverDisables);
 }
 
 /* Save data from corresponding widgets to cache,
@@ -94,13 +97,13 @@ void UIGlobalSettingsGeneral::getFromCache()
 void UIGlobalSettingsGeneral::putToCache()
 {
     /* Upload to cache: */
-    m_cache.m_strDefaultMachineFolder = mPsMach->path();
-    m_cache.m_strVRDEAuthLibrary = mPsVRDP->path();
-    m_cache.m_fTrayIconEnabled = mCbCheckTrayIcon->isChecked();
+    m_cache.m_strDefaultMachineFolder = m_pMachineFolderSelector->path();
+    m_cache.m_strVRDEAuthLibrary = m_pVRDPLibNameSelector->path();
+    m_cache.m_fTrayIconEnabled = m_pEnableTrayIconCheckbox->isChecked();
 #ifdef Q_WS_MAC
-    m_cache.m_fPresentationModeEnabled = mCbCheckPresentationMode->isChecked();
+    m_cache.m_fPresentationModeEnabled = m_pEnablePresentationModeCheckbox->isChecked();
 #endif /* Q_WS_MAC */
-    m_cache.m_fHostScreenSaverDisables = mCbDisableHostScreenSaver->isChecked();
+    m_cache.m_fHostScreenSaverDisables = m_pDisableHostScreenSaverCheckbox->isChecked();
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -111,9 +114,9 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Save from cache: */
-    if (m_properties.isOk() && mPsMach->isModified())
+    if (m_properties.isOk() && m_pMachineFolderSelector->isModified())
         m_properties.SetDefaultMachineFolder(m_cache.m_strDefaultMachineFolder);
-    if (m_properties.isOk() && mPsVRDP->isModified())
+    if (m_properties.isOk() && m_pVRDPLibNameSelector->isModified())
         m_properties.SetVRDEAuthLibrary(m_cache.m_strVRDEAuthLibrary);
     m_settings.setTrayIconEnabled(m_cache.m_fTrayIconEnabled);
 #ifdef Q_WS_MAC
@@ -125,26 +128,28 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsGeneral::setOrderAfter (QWidget *aWidget)
+/* Navigation stuff: */
+void UIGlobalSettingsGeneral::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder (aWidget, mPsMach);
-    setTabOrder (mPsMach, mPsVRDP);
-    setTabOrder (mPsVRDP, mCbCheckTrayIcon);
-    setTabOrder (mCbCheckTrayIcon, mCbCheckPresentationMode);
-    setTabOrder (mCbCheckPresentationMode, mCbDisableHostScreenSaver);
+    setTabOrder(pWidget, m_pMachineFolderSelector);
+    setTabOrder(m_pMachineFolderSelector, m_pVRDPLibNameSelector);
+    setTabOrder(m_pVRDPLibNameSelector, m_pEnableTrayIconCheckbox);
+    setTabOrder(m_pEnableTrayIconCheckbox, m_pEnablePresentationModeCheckbox);
+    setTabOrder(m_pEnablePresentationModeCheckbox, m_pDisableHostScreenSaverCheckbox);
 }
 
+/* Translation stuff: */
 void UIGlobalSettingsGeneral::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIGlobalSettingsGeneral::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIGlobalSettingsGeneral::retranslateUi(this);
 
-    mPsMach->setWhatsThis (tr ("Displays the path to the default virtual "
-                               "machine folder. This folder is used, if not "
-                               "explicitly specified otherwise, when creating "
-                               "new virtual machines."));
-    mPsVRDP->setWhatsThis (tr ("Displays the path to the library that "
-                               "provides authentication for Remote Display "
-                               "(VRDP) clients."));
+    m_pMachineFolderSelector->setWhatsThis(tr("Displays the path to the default virtual "
+                                              "machine folder. This folder is used, if not "
+                                              "explicitly specified otherwise, when creating "
+                                              "new virtual machines."));
+    m_pVRDPLibNameSelector->setWhatsThis(tr("Displays the path to the library that "
+                                            "provides authentication for Remote Display "
+                                            "(VRDP) clients."));
 }
 

@@ -19,6 +19,7 @@
 #ifndef __UIGlobalSettingsGeneral_h__
 #define __UIGlobalSettingsGeneral_h__
 
+/* Local includes */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsGeneral.gen.h"
 
@@ -35,13 +36,13 @@ struct UISettingsCacheGlobalGeneral
 };
 
 /* Global settings / General page: */
-class UIGlobalSettingsGeneral : public UISettingsPageGlobal,
-                              public Ui::UIGlobalSettingsGeneral
+class UIGlobalSettingsGeneral : public UISettingsPageGlobal, public Ui::UIGlobalSettingsGeneral
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIGlobalSettingsGeneral();
 
 protected:
@@ -60,8 +61,10 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
+    /* Navigation stuff: */
     void setOrderAfter (QWidget *aWidget);
 
+    /* Translation stuff: */
     void retranslateUi();
 
 private:
