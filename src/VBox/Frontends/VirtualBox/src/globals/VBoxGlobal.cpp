@@ -5005,6 +5005,12 @@ void VBoxGlobal::init()
 #endif
 
     mValid = true;
+
+    /* Cache IMedium data.
+     * There could be no used mediums at all,
+     * but this method should be run anyway just to enumerate null VBoxMedium object,
+     * used by some VBox smart widgets, like VBoxMediaComboBox: */
+    vboxGlobal().startEnumeratingMedia();
 }
 
 
