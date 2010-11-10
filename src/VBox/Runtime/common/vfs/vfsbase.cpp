@@ -442,6 +442,218 @@ RTDECL(uint32_t) RTVfsObjRelease(RTVFSOBJ hVfsObj)
 }
 
 
+RTDECL(RTVFS)           RTVfsObjToVfs(RTVFSOBJ hVfsObj)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis != NIL_RTVFSOBJ)
+    {
+        AssertPtrReturn(pThis, NIL_RTVFS);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFS);
+
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        {
+            rtVfsObjRetainVoid(pThis);
+            return RT_FROM_MEMBER(pThis, RTVFSINTERNAL, Base);
+        }
+    }
+    return NIL_RTVFS;
+}
+
+
+RTDECL(RTVFSFSSTREAM)   RTVfsObjToFsStream(RTVFSOBJ hVfsObj)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis != NIL_RTVFSOBJ)
+    {
+        AssertPtrReturn(pThis, NIL_RTVFSFSSTREAM);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSFSSTREAM);
+
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_FS_STREAM)
+        {
+            rtVfsObjRetainVoid(pThis);
+            return RT_FROM_MEMBER(pThis, RTVFSFSSTREAMINTERNAL, Base);
+        }
+    }
+    return NIL_RTVFSFSSTREAM;
+}
+
+
+RTDECL(RTVFSDIR)        RTVfsObjToDir(RTVFSOBJ hVfsObj)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis != NIL_RTVFSOBJ)
+    {
+        AssertPtrReturn(pThis, NIL_RTVFSDIR);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSDIR);
+
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        {
+            rtVfsObjRetainVoid(pThis);
+            return RT_FROM_MEMBER(pThis, RTVFSDIRINTERNAL, Base);
+        }
+    }
+    return NIL_RTVFSDIR;
+}
+
+
+RTDECL(RTVFSIOSTREAM)   RTVfsObjToIoStream(RTVFSOBJ hVfsObj)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis != NIL_RTVFSOBJ)
+    {
+        AssertPtrReturn(pThis, NIL_RTVFSIOSTREAM);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSIOSTREAM);
+
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        {
+            rtVfsObjRetainVoid(pThis);
+            return RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base);
+        }
+    }
+    return NIL_RTVFSIOSTREAM;
+}
+
+
+RTDECL(RTVFSFILE)       RTVfsObjToFile(RTVFSOBJ hVfsObj)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis != NIL_RTVFSOBJ)
+    {
+        AssertPtrReturn(pThis, NIL_RTVFSFILE);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSFILE);
+
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        {
+            rtVfsObjRetainVoid(pThis);
+            return RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream.Base);
+        }
+    }
+    return NIL_RTVFSFILE;
+}
+
+
+RTDECL(RTVFSSYMLINK)    RTVfsObjToSymlink(RTVFSOBJ hVfsObj)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis != NIL_RTVFSOBJ)
+    {
+        AssertPtrReturn(pThis, NIL_RTVFSSYMLINK);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSSYMLINK);
+
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        {
+            rtVfsObjRetainVoid(pThis);
+            return RT_FROM_MEMBER(pThis, RTVFSSYMLINKINTERNAL, Base);
+        }
+    }
+    return NIL_RTVFSSYMLINK;
+}
+
+
+RTDECL(RTVFSOBJ)        RTVfsObjFromVfs(RTVFS hVfs)
+{
+    if (hVfs != NIL_RTVFS)
+    {
+        RTVFSOBJINTERNAL *pThis = &hVfs->Base;
+        AssertPtrReturn(pThis, NIL_RTVFSOBJ);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
+
+        rtVfsObjRetainVoid(pThis);
+        return pThis;
+    }
+    return NIL_RTVFSOBJ;
+}
+
+
+RTDECL(RTVFSOBJ)        RTVfsObjFromFsStream(RTVFSFSSTREAM hVfsFss)
+{
+    if (hVfsFss != NIL_RTVFSFSSTREAM)
+    {
+        RTVFSOBJINTERNAL *pThis = &hVfsFss->Base;
+        AssertPtrReturn(pThis, NIL_RTVFSOBJ);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
+
+        rtVfsObjRetainVoid(pThis);
+        return pThis;
+    }
+    return NIL_RTVFSOBJ;
+}
+
+
+RTDECL(RTVFSOBJ)        RTVfsObjFromDir(RTVFSDIR hVfsDir)
+{
+    if (hVfsDir != NIL_RTVFSDIR)
+    {
+        RTVFSOBJINTERNAL *pThis = &hVfsDir->Base;
+        AssertPtrReturn(pThis, NIL_RTVFSOBJ);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
+
+        rtVfsObjRetainVoid(pThis);
+        return pThis;
+    }
+    return NIL_RTVFSOBJ;
+}
+
+
+RTDECL(RTVFSOBJ)        RTVfsObjFromIoStream(RTVFSIOSTREAM hVfsIos)
+{
+    if (hVfsIos != NIL_RTVFSIOSTREAM)
+    {
+        RTVFSOBJINTERNAL *pThis = &hVfsIos->Base;
+        AssertPtrReturn(pThis, NIL_RTVFSOBJ);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
+
+        rtVfsObjRetainVoid(pThis);
+        return pThis;
+    }
+    return NIL_RTVFSOBJ;
+}
+
+
+RTDECL(RTVFSOBJ)        RTVfsObjFromFile(RTVFSFILE hVfsFile)
+{
+    if (hVfsFile != NIL_RTVFSFILE)
+    {
+        RTVFSOBJINTERNAL *pThis = &hVfsFile->Stream.Base;
+        AssertPtrReturn(pThis, NIL_RTVFSOBJ);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
+
+        rtVfsObjRetainVoid(pThis);
+        return pThis;
+    }
+    return NIL_RTVFSOBJ;
+}
+
+
+RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym)
+{
+    if (hVfsSym != NIL_RTVFSSYMLINK)
+    {
+        RTVFSOBJINTERNAL *pThis = &hVfsSym->Base;
+        AssertPtrReturn(pThis, NIL_RTVFSOBJ);
+        AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSOBJ);
+
+        rtVfsObjRetainVoid(pThis);
+        return pThis;
+    }
+    return NIL_RTVFSOBJ;
+}
+
+
+
+RTDECL(int)         RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RTVFSOBJINTERNAL *pThis = hVfsObj;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
+
+    rtVfsObjReadLock(pThis);
+    int rc = pThis->pOps->pfnQueryInfo(pThis->pvThis, pObjInfo, enmAddAttr);
+    rtVfsObjReadUnlock(pThis);
+    return rc;
+}
+
+
 
 /*
  *
@@ -860,6 +1072,72 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
 
 
 
+
+
+/*
+ *
+ *  F I L E S Y S T E M   S T R E A M
+ *  F I L E S Y S T E M   S T R E A M
+ *  F I L E S Y S T E M   S T R E A M
+ *
+ */
+
+
+RTDECL(int) RTVfsNewIoStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTSEMRW hSemRW,
+                             PRTVFSFSSTREAM phVfsFss, void **ppvInstance)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+RTDECL(uint32_t)    RTVfsFsStrmRetain(RTVFSFSSTREAM hVfsFss)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, UINT32_MAX);
+    return rtVfsObjRetain(&pThis->Base);
+}
+
+
+RTDECL(uint32_t)    RTVfsFsStrmRelease(RTVFSFSSTREAM hVfsFss)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, UINT32_MAX);
+    return rtVfsObjRelease(&pThis->Base);
+}
+
+
+RTDECL(int)         RTVfsFsStrmQueryInfo(RTVFSFSSTREAM hVfsFss, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsObjQueryInfo(&pThis->Base, pObjInfo, enmAddAttr);
+}
+
+
+RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj)
+{
+    RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrNullReturn(ppszName, VERR_INVALID_POINTER);
+    if (ppszName)
+        *ppszName = NULL;
+    AssertPtrNullReturn(penmType, VERR_INVALID_POINTER);
+    if (penmType)
+        *penmType = RTVFSOBJTYPE_INVALID;
+    AssertPtrNullReturn(penmType, VERR_INVALID_POINTER);
+    if (phVfsObj)
+        *phVfsObj = NIL_RTVFSOBJ;
+
+    return pThis->pOps->pfnNext(pThis->Base.pvThis, ppszName, penmType, phVfsObj);
+}
+
+
+
+
 /*
  *
  *  D I R   D I R   D I R
@@ -1025,11 +1303,7 @@ RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pOb
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
-
-    rtVfsObjReadLock(&pThis->Base);
-    int rc = pThis->pOps->Obj.pfnQueryInfo(pThis->Base.pvThis, pObjInfo, enmAddAttr);
-    rtVfsObjReadUnlock(&pThis->Base);
-    return rc;
+    return RTVfsObjQueryInfo(&pThis->Base, pObjInfo, enmAddAttr);
 }
 
 
