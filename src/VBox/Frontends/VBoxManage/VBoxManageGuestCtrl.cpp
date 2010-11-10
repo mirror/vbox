@@ -62,8 +62,7 @@ using namespace com;
 /** @todo */
 
 /** Set by the signal handler. */
-static volatile bool    g_fExecCanceled = false;
-static volatile bool    g_fCopyCanceled = false;
+static volatile bool    g_fGuestCtrlCanceled = false;
 
 /*
  * Structure holding a directory entry.
@@ -108,18 +107,45 @@ void usageGuestControl(PRTSTREAM pStrm)
 #ifndef VBOX_ONLY_DOCS
 
 /**
- * Signal handler that sets g_fCanceled.
+ * Signal handler that sets g_fGuestCtrlCanceled.
  *
  * This can be executed on any thread in the process, on Windows it may even be
  * a thread dedicated to delivering this signal.  Do not doing anything
  * unnecessary here.
  */
-static void ctrlExecProcessSignalHandler(int iSignal)
+static void guestCtrlSignalHandler(int iSignal)
 {
     NOREF(iSignal);
-    ASMAtomicWriteBool(&g_fExecCanceled, true);
+    ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
 }
 
+/**
+ * Installs a custom signal handler to get notified
+ * whenever the user wants to intercept the program.
+ */
+static void ctrlSignalHandlerInstall()
+{
+    signal(SIGINT,   guestCtrlSignalHandler);
+#ifdef SIGBREAK
+    signal(SIGBREAK, guestCtrlSignalHandler);
+#endif
+}
+
+/**
+ * Uninstalls a previously installed signal handler.
+ */
+static void ctrlSignalHandlerUninstall()
+{
+    signal(SIGINT,   SIG_DFL);
+#ifdef SIGBREAK
+    signal(SIGBREAK, SIG_DFL);
+#endif
+}
+
+/**
+ * Translates a process status to a human readable
+ * string.
+ */
 static const char *ctrlExecGetStatus(ULONG uStatus)
 {
     switch (uStatus)
@@ -143,6 +169,89 @@ static const char *ctrlExecGetStatus(ULONG uStatus)
         default:
             return "unknown";
     }
+}
+
+static int ctrlPrintError(ComPtr<IUnknown> object, const GUID &aIID)
+{
+    com::ErrorInfo info(object, aIID);
+    if (   info.isFullAvailable()
+        || info.isBasicAvailable())
+    {
+        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
+         * because it contains more accurate info about what went wrong. */
+        if (info.getResultCode() == VBOX_E_IPRT_ERROR)
+            RTMsgError("%ls.", info.getText().raw());
+        else
+        {
+            RTMsgError("Error details:");
+            GluePrintErrorInfo(info);
+        }
+        return VERR_GENERAL_FAILURE; /** @todo */
+    }
+    AssertMsgFailedReturn(("Object has indicated no error!?\n"),
+                          VERR_INVALID_PARAMETER);
+}
+
+/**
+ * Un-initializes the VM after guest control usage.
+ */
+static void ctrlUninitVM(HandlerArg *pArg)
+{
+    AssertPtrReturnVoid(pArg);
+    if (pArg->session)
+        pArg->session->UnlockMachine();
+}
+
+/**
+ * Initializes the VM, that is checks whether it's up and
+ * running, if it can be locked (shared only) and returns a
+ * valid IGuest pointer on success.
+ *
+ * @return  IPRT status code.
+ * @param   pArg            Our command line argument structure.
+ * @param   pszNameOrId     The VM's name or UUID to use.
+ * @param   pGuest          Pointer where to store the IGuest interface.
+ */
+static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> *pGuest)
+{
+    AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszNameOrId, VERR_INVALID_PARAMETER);
+
+    /* Lookup VM. */
+    ComPtr<IMachine> machine;
+    /* Assume it's an UUID. */
+    HRESULT rc;
+    CHECK_ERROR(pArg->virtualBox, FindMachine(Bstr(pszNameOrId).raw(),
+                                              machine.asOutParam()));
+    if (FAILED(rc))
+        return VERR_NOT_FOUND;
+
+    /* Machine is running? */
+    MachineState_T machineState;
+    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
+    if (machineState != MachineState_Running)
+    {
+        RTMsgError("Machine \"%s\" is not running!\n", pszNameOrId);
+        return VERR_VM_INVALID_VM_STATE;
+    }
+
+    do
+    {
+        /* Open a session for the VM. */
+        CHECK_ERROR_BREAK(machine, LockMachine(pArg->session, LockType_Shared));
+        /* Get the associated console. */
+        ComPtr<IConsole> console;
+        CHECK_ERROR_BREAK(pArg->session, COMGETTER(Console)(console.asOutParam()));
+        /* ... and session machine. */
+        ComPtr<IMachine> sessionMachine;
+        CHECK_ERROR_BREAK(pArg->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+        /* Get IGuest interface. */
+        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(pGuest->asOutParam()));
+    } while (0);
+
+    if (FAILED(rc))
+        ctrlUninitVM(pArg);
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
 static int handleCtrlExecProgram(HandlerArg *a)
@@ -306,39 +415,11 @@ static int handleCtrlExecProgram(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
 
-    /* Lookup VM. */
-    ComPtr<IMachine> machine;
-    /* Assume it's an UUID. */
-    HRESULT rc;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam()));
-    if (FAILED(rc))
-        return 1;
-
-    /* Machine is running? */
-    MachineState_T machineState;
-    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
-    if (machineState != MachineState_Running)
+    HRESULT rc = S_OK;
+    ComPtr<IGuest> guest;
+    int vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
+    if (RT_SUCCESS(vrc))
     {
-        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
-        return 1;
-    }
-
-    /* Open a session for the VM. */
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
-
-    do
-    {
-        /* Get the associated console. */
-        ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-        /* ... and session machine */
-        ComPtr<IMachine> sessionMachine;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-
-        ComPtr<IGuest> guest;
-        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-
         ComPtr<IProgress> progress;
         ULONG uPID = 0;
 
@@ -362,213 +443,163 @@ static int handleCtrlExecProgram(HandlerArg *a)
                                    &uPID, progress.asOutParam());
         if (FAILED(rc))
         {
-            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-             * because it contains more accurate info about what went wrong. */
-            ErrorInfo info(guest, COM_IIDOF(IGuest));
-            if (info.isFullAvailable())
-            {
-                if (rc == VBOX_E_IPRT_ERROR)
-                    RTMsgError("%ls.", info.getText().raw());
-                else
-                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
-            }
-            break;
+            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
         }
-        if (fVerbose)
-            RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
-        if (fWaitForExit)
+        else
         {
-            if (fTimeout)
+            if (fVerbose)
+                RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
+            if (fWaitForExit)
             {
-                /* Calculate timeout value left after process has been started.  */
-                uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
-                /* Is timeout still bigger than current difference? */
-                if (u32TimeoutMS > u64Elapsed)
+                if (fTimeout)
                 {
-                    u32TimeoutMS -= (uint32_t)u64Elapsed;
-                    if (fVerbose)
-                        RTPrintf("Waiting for process to exit (%ums left) ...\n", u32TimeoutMS);
-                }
-                else
-                {
-                    if (fVerbose)
-                        RTPrintf("No time left to wait for process!\n");
-                }
-            }
-            else if (fVerbose)
-                RTPrintf("Waiting for process to exit ...\n");
-
-            /* Setup signal handling if cancelable. */
-            ASSERT(progress);
-            bool fCanceledAlready = false;
-            BOOL fCancelable;
-            HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
-            if (FAILED(hrc))
-                fCancelable = FALSE;
-            if (fCancelable)
-            {
-                signal(SIGINT,   ctrlExecProcessSignalHandler);
-        #ifdef SIGBREAK
-                signal(SIGBREAK, ctrlExecProcessSignalHandler);
-        #endif
-            }
-
-            /* Wait for process to exit ... */
-            BOOL fCompleted = FALSE;
-            BOOL fCanceled = FALSE;
-            while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
-            {
-                SafeArray<BYTE> aOutputData;
-                ULONG cbOutputData = 0;
-
-                /*
-                 * Some data left to output?
-                 */
-                if (   fWaitForStdOut
-                    || fWaitForStdErr)
-                {
-                    rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
-                                                 u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
-                    if (FAILED(rc))
+                    /* Calculate timeout value left after process has been started.  */
+                    uint64_t u64Elapsed = RTTimeMilliTS() - u64StartMS;
+                    /* Is timeout still bigger than current difference? */
+                    if (u32TimeoutMS > u64Elapsed)
                     {
-                        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                         * because it contains more accurate info about what went wrong. */
-                        ErrorInfo info(guest, COM_IIDOF(IGuest));
-                        if (info.isFullAvailable())
-                        {
-                            if (rc == VBOX_E_IPRT_ERROR)
-                                RTMsgError("%ls.", info.getText().raw());
-                            else
-                                RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
-                        }
-                        cbOutputData = 0;
-                        fCompleted = true; /* rc contains a failure, so we'll go into aborted state down below. */
+                        u32TimeoutMS -= (uint32_t)u64Elapsed;
+                        if (fVerbose)
+                            RTPrintf("Waiting for process to exit (%ums left) ...\n", u32TimeoutMS);
                     }
                     else
                     {
-                        cbOutputData = aOutputData.size();
-                        if (cbOutputData > 0)
-                        {
-                            /* aOutputData has a platform dependent line ending, standardize on
-                             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
-                             * Windows. Otherwise we end up with CR/CR/LF on Windows. */
-                            ULONG cbOutputDataPrint = cbOutputData;
-                            for (BYTE *s = aOutputData.raw(), *d = s;
-                                 s - aOutputData.raw() < (ssize_t)cbOutputData;
-                                 s++, d++)
-                            {
-                                if (*s == '\r')
-                                {
-                                    /* skip over CR, adjust destination */
-                                    d--;
-                                    cbOutputDataPrint--;
-                                }
-                                else if (s != d)
-                                    *d = *s;
-                            }
-                            RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
-                        }
+                        if (fVerbose)
+                            RTPrintf("No time left to wait for process!\n");
                     }
-                }
-                if (cbOutputData <= 0) /* No more output data left? */
-                {
-                    if (fCompleted)
-                        break;
-
-                    if (   fTimeout
-                        && RTTimeMilliTS() - u64StartMS > u32TimeoutMS + 5000)
-                    {
-                        progress->Cancel();
-                        break;
-                    }
-                }
-
-                /* Process async cancelation */
-                if (g_fExecCanceled && !fCanceledAlready)
-                {
-                    hrc = progress->Cancel();
-                    if (SUCCEEDED(hrc))
-                        fCanceledAlready = TRUE;
-                    else
-                        g_fExecCanceled = false;
-                }
-
-                /* Progress canceled by Main API? */
-                if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
-                    && fCanceled)
-                {
-                    break;
-                }
-            }
-
-            /* Undo signal handling */
-            if (fCancelable)
-            {
-                signal(SIGINT,   SIG_DFL);
-        #ifdef SIGBREAK
-                signal(SIGBREAK, SIG_DFL);
-        #endif
-            }
-
-            if (fCanceled)
-            {
-                if (fVerbose)
-                    RTPrintf("Process execution canceled!\n");
-            }
-            else if (   fCompleted
-                     && SUCCEEDED(rc))
-            {
-                LONG iRc = false;
-                CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-                if (FAILED(iRc))
-                {
-                    com::ProgressErrorInfo info(progress);
-                    if (   info.isFullAvailable()
-                        || info.isBasicAvailable())
-                    {
-                        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                         * because it contains more accurate info about what went wrong. */
-                        if (info.getResultCode() == VBOX_E_IPRT_ERROR)
-                            RTMsgError("%ls.", info.getText().raw());
-                        else
-                        {
-                            RTMsgError("Process error details:");
-                            GluePrintErrorInfo(info);
-                        }
-                    }
-                    else
-                        com::GluePrintRCMessage(iRc);
                 }
                 else if (fVerbose)
+                    RTPrintf("Waiting for process to exit ...\n");
+
+                /* Setup signal handling if cancelable. */
+                ASSERT(progress);
+                bool fCanceledAlready = false;
+                BOOL fCancelable;
+                HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
+                if (FAILED(hrc))
+                    fCancelable = FALSE;
+                if (fCancelable)
+                    ctrlSignalHandlerInstall();
+
+                /* Wait for process to exit ... */
+                BOOL fCompleted = FALSE;
+                BOOL fCanceled = FALSE;
+                while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
                 {
-                    ULONG uRetStatus, uRetExitCode, uRetFlags;
-                    rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
-                    if (SUCCEEDED(rc))
-                        RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecGetStatus(uRetStatus), uRetFlags);
+                    SafeArray<BYTE> aOutputData;
+                    ULONG cbOutputData = 0;
+
+                    /*
+                     * Some data left to output?
+                     */
+                    if (   fWaitForStdOut
+                        || fWaitForStdErr)
+                    {
+                        rc = guest->GetProcessOutput(uPID, 0 /* aFlags */,
+                                                     u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
+                        if (FAILED(rc))
+                        {
+                            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+
+                            cbOutputData = 0;
+                            fCompleted = true; /* rc contains a failure, so we'll go into aborted state down below. */
+                        }
+                        else
+                        {
+                            cbOutputData = aOutputData.size();
+                            if (cbOutputData > 0)
+                            {
+                                /* aOutputData has a platform dependent line ending, standardize on
+                                 * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+                                 * Windows. Otherwise we end up with CR/CR/LF on Windows. */
+                                ULONG cbOutputDataPrint = cbOutputData;
+                                for (BYTE *s = aOutputData.raw(), *d = s;
+                                     s - aOutputData.raw() < (ssize_t)cbOutputData;
+                                     s++, d++)
+                                {
+                                    if (*s == '\r')
+                                    {
+                                        /* skip over CR, adjust destination */
+                                        d--;
+                                        cbOutputDataPrint--;
+                                    }
+                                    else if (s != d)
+                                        *d = *s;
+                                }
+                                RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                            }
+                        }
+                    }
+                    if (cbOutputData <= 0) /* No more output data left? */
+                    {
+                        if (fCompleted)
+                            break;
+
+                        if (   fTimeout
+                            && RTTimeMilliTS() - u64StartMS > u32TimeoutMS + 5000)
+                        {
+                            progress->Cancel();
+                            break;
+                        }
+                    }
+
+                    /* Process async cancelation */
+                    if (g_fGuestCtrlCanceled && !fCanceledAlready)
+                    {
+                        hrc = progress->Cancel();
+                        if (SUCCEEDED(hrc))
+                            fCanceledAlready = TRUE;
+                        else
+                            g_fGuestCtrlCanceled = false;
+                    }
+
+                    /* Progress canceled by Main API? */
+                    if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
+                        && fCanceled)
+                    {
+                        break;
+                    }
+                }
+
+                /* Undo signal handling */
+                if (fCancelable)
+                    ctrlSignalHandlerUninstall();
+
+                if (fCanceled)
+                {
+                    if (fVerbose)
+                        RTPrintf("Process execution canceled!\n");
+                }
+                else if (   fCompleted
+                         && SUCCEEDED(rc))
+                {
+                    LONG iRc = false;
+                    CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
+                    if (FAILED(iRc))
+                    {
+                        vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
+                    }
+                    else if (fVerbose)
+                    {
+                        ULONG uRetStatus, uRetExitCode, uRetFlags;
+                        rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                        if (SUCCEEDED(rc))
+                            RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, uRetStatus, ctrlExecGetStatus(uRetStatus), uRetFlags);
+                    }
+                }
+                else
+                {
+                    if (fVerbose)
+                        RTPrintf("Process execution aborted!\n");
                 }
             }
-            else
-            {
-                if (fVerbose)
-                    RTPrintf("Process execution aborted!\n");
-            }
         }
-        a->session->UnlockMachine();
-    } while (0);
-    return SUCCEEDED(rc) ? 0 : 1;
-}
+        ctrlUninitVM(a);
+    }
 
-/**
- * Signal handler that sets g_fCopyCanceled.
- *
- * This can be executed on any thread in the process, on Windows it may even be
- * a thread dedicated to delivering this signal.  Do not doing anything
- * unnecessary here.
- */
-static void ctrlCopySignalHandler(int iSignal)
-{
-    NOREF(iSignal);
-    ASMAtomicWriteBool(&g_fCopyCanceled, true);
+    if (RT_FAILURE(vrc))
+        rc = VBOX_E_IPRT_ERROR;
+    return SUCCEEDED(rc) ? 0 : 1;
 }
 
 /**
@@ -939,34 +970,17 @@ int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDe
                                      uFlags, progress.asOutParam());
     if (FAILED(rc))
     {
-        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-         * because it contains more accurate info about what went wrong. */
-        ErrorInfo info(pGuest, COM_IIDOF(IGuest));
-        if (info.isFullAvailable())
-        {
-            if (rc == VBOX_E_IPRT_ERROR)
-                RTMsgError("%ls.", info.getText().raw());
-            else
-                RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
-        }
-        vrc = VERR_GENERAL_FAILURE;
+        vrc = ctrlPrintError(pGuest, COM_IIDOF(IGuest));
     }
     else
     {
         /* Setup signal handling if cancelable. */
         ASSERT(progress);
         bool fCanceledAlready = false;
-        BOOL fCancelable;
+        BOOL fCancelable = FALSE;
         HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
-        if (FAILED(hrc))
-            fCancelable = FALSE;
         if (fCancelable)
-        {
-            signal(SIGINT,   ctrlCopySignalHandler);
-    #ifdef SIGBREAK
-            signal(SIGBREAK, ctrlCopySignalHandler);
-    #endif
-        }
+            ctrlSignalHandlerInstall();
 
         /* Wait for process to exit ... */
         BOOL fCompleted = FALSE;
@@ -975,13 +989,13 @@ int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDe
                && !fCompleted)
         {
             /* Process async cancelation */
-            if (g_fCopyCanceled && !fCanceledAlready)
+            if (g_fGuestCtrlCanceled && !fCanceledAlready)
             {
                 hrc = progress->Cancel();
                 if (SUCCEEDED(hrc))
                     fCanceledAlready = TRUE;
                 else
-                    g_fCopyCanceled = false;
+                    g_fGuestCtrlCanceled = false;
             }
 
             /* Progress canceled by Main API? */
@@ -992,18 +1006,13 @@ int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDe
             }
         }
 
-        /* Undo signal handling */
+        /* Undo signal handling. */
         if (fCancelable)
-        {
-            signal(SIGINT,   SIG_DFL);
-    #ifdef SIGBREAK
-            signal(SIGBREAK, SIG_DFL);
-    #endif
-        }
+            ctrlSignalHandlerUninstall();
 
         if (fCanceled)
         {
-            //RTPrintf("Copy operation canceled!\n");
+            /* Nothing to do here right now. */
         }
         else if (   fCompleted
                  && SUCCEEDED(rc))
@@ -1011,30 +1020,7 @@ int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDe
             LONG iRc = false;
             CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
             if (FAILED(iRc))
-            {
-                com::ProgressErrorInfo info(progress);
-                if (   info.isFullAvailable()
-                    || info.isBasicAvailable())
-                {
-                    /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                     * because it contains more accurate info about what went wrong. */
-                    if (info.getResultCode() == VBOX_E_IPRT_ERROR)
-                        RTMsgError("%ls.", info.getText().raw());
-                    else
-                    {
-                        RTMsgError("Copy operation error details:");
-                        GluePrintErrorInfo(info);
-                    }
-                }
-                else
-                {
-                    if (RT_FAILURE(vrc))
-                        RTMsgError("Error while looking up error code, rc=%Rrc\n", vrc);
-                    else
-                        com::GluePrintRCMessage(iRc);
-                }
-                vrc = VERR_GENERAL_FAILURE;
-            }
+                vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
         }
     }
     return vrc;
@@ -1136,39 +1122,11 @@ static int handleCtrlCopyTo(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
 
-    /* Lookup VM. */
-    ComPtr<IMachine> machine;
-    /* Assume it's an UUID. */
-    HRESULT rc;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam()));
-    if (FAILED(rc))
-        return 1;
-
-    /* Machine is running? */
-    MachineState_T machineState;
-    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
-    if (machineState != MachineState_Running)
+    HRESULT rc = S_OK;
+    ComPtr<IGuest> guest;
+    int vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
+    if (RT_SUCCESS(vrc))
     {
-        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
-        return 1;
-    }
-
-    /* Open a session for the VM. */
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
-
-    do
-    {
-        /* Get the associated console. */
-        ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-        /* ... and session machine */
-        ComPtr<IMachine> sessionMachine;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-
-        ComPtr<IGuest> guest;
-        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-
         if (fVerbose)
         {
             if (fDryRun)
@@ -1178,8 +1136,8 @@ static int handleCtrlCopyTo(HandlerArg *a)
 
         RTLISTNODE listToCopy;
         uint32_t cObjects = 0;
-        int vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), uFlags,
-                               &cObjects, &listToCopy);
+        vrc = ctrlCopyInit(Utf8Source.c_str(), Utf8Dest.c_str(), uFlags,
+                           &cObjects, &listToCopy);
         if (RT_FAILURE(vrc))
         {
             switch (vrc)
@@ -1236,8 +1194,11 @@ static int handleCtrlCopyTo(HandlerArg *a)
             }
             ctrlCopyDestroy(&listToCopy);
         }
-        a->session->UnlockMachine();
-    } while (0);
+        ctrlUninitVM(a);
+    }
+
+    if (RT_FAILURE(vrc))
+        rc = VBOX_E_IPRT_ERROR;
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
@@ -1309,7 +1270,6 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                 ++i;
             }
         }
-        /** @todo Add force flag for overwriting existing stuff. */
         else if (!strcmp(a->argv[i], "--verbose"))
             fVerbose = true;
         else
@@ -1328,39 +1288,11 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
 
-    /* Lookup VM. */
-    ComPtr<IMachine> machine;
-    /* Assume it's an UUID. */
-    HRESULT rc;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam()));
-    if (FAILED(rc))
-        return 1;
-
-    /* Machine is running? */
-    MachineState_T machineState;
-    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
-    if (machineState != MachineState_Running)
+    HRESULT rc = S_OK;
+    ComPtr<IGuest> guest;
+    int vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
+    if (RT_SUCCESS(vrc))
     {
-        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
-        return 1;
-    }
-
-    /* Open a session for the VM. */
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
-
-    do
-    {
-        /* Get the associated console. */
-        ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-        /* ... and session machine */
-        ComPtr<IMachine> sessionMachine;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-
-        ComPtr<IGuest> guest;
-        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-
         ComPtr<IProgress> progress;
         rc = guest->CreateDirectory(Bstr(Utf8Directory).raw(),
                                     Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
@@ -1384,16 +1316,11 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
             ASSERT(progress);
             bool fCanceledAlready = false;
             BOOL fCancelable;
-            HRESULT hrc = progress->COMGETTER(Cancelable)(&fCancelable);
-            if (FAILED(hrc))
+            rc = progress->COMGETTER(Cancelable)(&fCancelable);
+            if (FAILED(rc))
                 fCancelable = FALSE;
             if (fCancelable)
-            {
-                signal(SIGINT,   ctrlCopySignalHandler);
-        #ifdef SIGBREAK
-                signal(SIGBREAK, ctrlCopySignalHandler);
-        #endif
-            }
+                ctrlSignalHandlerInstall();
 
             /* Wait for process to exit ... */
             BOOL fCompleted = FALSE;
@@ -1402,13 +1329,13 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                    && !fCompleted)
             {
                 /* Process async cancelation */
-                if (g_fCopyCanceled && !fCanceledAlready)
+                if (g_fGuestCtrlCanceled && !fCanceledAlready)
                 {
-                    hrc = progress->Cancel();
-                    if (SUCCEEDED(hrc))
+                    rc = progress->Cancel();
+                    if (SUCCEEDED(rc))
                         fCanceledAlready = TRUE;
                     else
-                        g_fCopyCanceled = false;
+                        g_fGuestCtrlCanceled = false;
                 }
 
                 /* Progress canceled by Main API? */
@@ -1419,14 +1346,9 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                 }
             }
 
-            /* Undo signal handling */
+            /* Undo signal handling. */
             if (fCancelable)
-            {
-                signal(SIGINT,   SIG_DFL);
-        #ifdef SIGBREAK
-                signal(SIGBREAK, SIG_DFL);
-        #endif
-            }
+                ctrlSignalHandlerUninstall();
 
             if (fCanceled)
             {
@@ -1438,27 +1360,14 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                 LONG iRc = false;
                 CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
                 if (FAILED(iRc))
-                {
-                    com::ProgressErrorInfo info(progress);
-                    if (   info.isFullAvailable()
-                        || info.isBasicAvailable())
-                    {
-                        /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-                         * because it contains more accurate info about what went wrong. */
-                        if (info.getResultCode() == VBOX_E_IPRT_ERROR)
-                            RTMsgError("%ls.", info.getText().raw());
-                        else
-                        {
-                            RTMsgError("Copy operation error details:");
-                            GluePrintErrorInfo(info);
-                        }
-                    }
-                }
+                    vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
             }
         }
+        ctrlUninitVM(a);
+    }
 
-        a->session->UnlockMachine();
-    } while (0);
+    if (RT_FAILURE(vrc))
+        rc = VBOX_E_IPRT_ERROR;
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
@@ -1498,39 +1407,11 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
     if (!usageOK)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
-    /* Lookup VM. */
-    ComPtr<IMachine> machine;
-    /* Assume it's an UUID. */
-    HRESULT rc;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                           machine.asOutParam()));
-    if (FAILED(rc))
-        return 1;
-
-    /* Machine is running? */
-    MachineState_T machineState;
-    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
-    if (machineState != MachineState_Running)
+    HRESULT rc = S_OK;
+    ComPtr<IGuest> guest;
+    int vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
+    if (RT_SUCCESS(vrc))
     {
-        RTMsgError("Machine \"%s\" is not running!\n", a->argv[0]);
-        return 1;
-    }
-
-    /* Open a session for the VM. */
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
-
-    do
-    {
-        /* Get the associated console. */
-        ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-        /* ... and session machine */
-        ComPtr<IMachine> sessionMachine;
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-
-        ComPtr<IGuest> guest;
-        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
-
         if (fVerbose)
             RTPrintf("Updating Guest Additions of machine \"%s\" ...\n", a->argv[0]);
 
@@ -1542,12 +1423,12 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
         if (Utf8Source.isEmpty())
         {
             char strTemp[RTPATH_MAX];
-            int vrc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
-            AssertRC(vrc);
+            rc = RTPathAppPrivateNoArch(strTemp, sizeof(strTemp));
+            AssertRC(rc);
             Utf8Str Utf8Src1 = Utf8Str(strTemp).append("/VBoxGuestAdditions.iso");
 
-            vrc = RTPathExecDir(strTemp, sizeof(strTemp));
-            AssertRC(vrc);
+            rc = RTPathExecDir(strTemp, sizeof(strTemp));
+            AssertRC(rc);
             Utf8Str Utf8Src2 = Utf8Str(strTemp).append("/additions/VBoxGuestAdditions.iso");
 
             /* Check the standard image locations */
@@ -1558,37 +1439,35 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
             else
             {
                 RTMsgError("Source could not be determined! Please use --source to specify a valid source.\n");
-                break;
+                rc = VERR_FILE_NOT_FOUND;
             }
         }
         else if (!RTFileExists(Utf8Source.c_str()))
         {
             RTMsgError("Source \"%s\" does not exist!\n", Utf8Source.c_str());
-            break;
+            rc = VERR_FILE_NOT_FOUND;
         }
-        if (fVerbose)
-            RTPrintf("Using source: %s\n", Utf8Source.c_str());
 
-        ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(guest, UpdateGuestAdditions(Bstr(Utf8Source).raw(),
-                                                      0 /* Flags, not used. */,
-                                                      progress.asOutParam()));
-        rc = showProgress(progress);
-        if (FAILED(rc))
-        {
-            com::ProgressErrorInfo info(progress);
-            if (info.isBasicAvailable())
-                RTMsgError("Failed to start Guest Additions update. Error message: %lS\n", info.getText().raw());
-            else
-                RTMsgError("Failed to start Guest Additions update. No error message available!\n");
-        }
-        else
+        if (RT_SUCCESS(rc))
         {
             if (fVerbose)
+                RTPrintf("Using source: %s\n", Utf8Source.c_str());
+
+            ComPtr<IProgress> progress;
+            CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(Utf8Source).raw(),
+                                                    0 /* Flags, not used. */,
+                                                    progress.asOutParam()));
+            rc = showProgress(progress);
+            if (FAILED(rc))
+                vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
+            else if (fVerbose)
                 RTPrintf("Guest Additions installer successfully copied and started.\n");
         }
-        a->session->UnlockMachine();
-    } while (0);
+        ctrlUninitVM(a);
+    }
+
+    if (RT_FAILURE(vrc))
+        rc = VBOX_E_IPRT_ERROR;
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
