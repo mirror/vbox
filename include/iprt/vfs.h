@@ -105,6 +105,39 @@ typedef RTVFSSYMLINK                   *PRTVFSSYMLINK;
 /** A NIL VFS symbolic link handle. */
 #define NIL_RTVFSSYMLINK                ((RTVFSSYMLINK)~(uintptr_t)0)
 
+/**
+ * The object type.
+ */
+typedef enum RTVFSOBJTYPE
+{
+    /** Invalid type. */
+    RTVFSOBJTYPE_INVALID = 0,
+    /** Pure base object.
+     * This is returned by the filesystem stream to represent directories,
+     * devices, fifos and similar that needs to be created. */
+    RTVFSOBJTYPE_BASE,
+    /** Virtual filesystem. */
+    RTVFSOBJTYPE_VFS,
+    /** Filesystem stream. */
+    RTVFSOBJTYPE_FS_STREAM,
+    /** Pure I/O stream. */
+    RTVFSOBJTYPE_IO_STREAM,
+    /** Directory. */
+    RTVFSOBJTYPE_DIR,
+    /** File. */
+    RTVFSOBJTYPE_FILE,
+    /** Symbolic link. */
+    RTVFSOBJTYPE_SYMLINK,
+    /** End of valid object types. */
+    RTVFSOBJTYPE_END,
+    /** Pure I/O stream. */
+    RTVFSOBJTYPE_32BIT_HACK = 0x7fffffff
+} RTVFSOBJTYPE;
+/** Pointer to a VFS object type. */
+typedef RTVFSOBJTYPE *PRTVFSOBJTYPE;
+
+
+
 
 /** @name RTVfsCreate flags
  * @{ */
@@ -152,7 +185,61 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromIoStream(RTVFSIOSTREAM hVfsIos);
 RTDECL(RTVFSOBJ)        RTVfsObjFromFile(RTVFSFILE hVfsFile);
 RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym);
 
+/**
+ * Query information about the object.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsObj         The VFS object handle.
+ * @param   pObjInfo        Where to return the info.
+ * @param   enmAddAttr      Which additional attributes should be retrieved.
+ * @sa      RTFileQueryInfo, RTPathQueryInfo
+ */
+RTDECL(int)         RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
 /** @} */
+
+
+/** @defgroup grp_vfs_fsstream      VFS Filesystem Stream API
+ *
+ * Filesystem streams are for tar, cpio and similar.  Any virtual filesystem can
+ * be turned into a filesystem stream using RTVfsFsStrmFromVfs.
+ *
+ * @{
+ */
+
+RTDECL(uint32_t)    RTVfsFsStrmRetain(RTVFSFSSTREAM hVfsFss);
+RTDECL(uint32_t)    RTVfsFsStrmRelease(RTVFSFSSTREAM hVfsFss);
+RTDECL(int)         RTVfsFsStrmQueryInfo(RTVFSFSSTREAM hVfsFss, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
+/**
+ * Gets the next object in the stream.
+ *
+ * This call may affect the stream posision of a previously returned object.
+ *
+ * The type of object returned here typically boils down to three types:
+ *      - I/O streams (representing files),
+ *      - symbolic links
+ *      - base object
+ * The base objects represent anything not convered by the two other, i.e.
+ * directories, device nodes, fifos, sockets and whatnot.  The details can be
+ * queried using RTVfsObjQueryInfo.
+ *
+ * That said, absolutely any object except for filesystem stream objects can be
+ * returned by this call.  Any generic code is adviced to just deal with it all.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if a new object was retrieved.
+ * @retval  VERR_EOF when there are no more objects.
+ * @param   pvThis      The implementation specific directory data.
+ * @param   ppszName    Where to return the object name.  Must be freed by
+ *                      calling RTStrFree.
+ * @param   penmType    Where to return the object type.
+ * @param   hVfsObj     Where to return the object handle (referenced).
+ *                      This must be cast to the desired type before use.
+ */
+RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
+
+/** @}  */
 
 
 /** @defgroup grp_vfs_dir           VFS Directory API
@@ -181,6 +268,9 @@ RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir);
 /** @defgroup grp_vfs_iostream      VFS Symbolic Link API
  * @{
  */
+
+RTDECL(uint32_t)    RTVfsSymlinkRetain(RTVFSSYMLINK hVfsSym);
+RTDECL(uint32_t)    RTVfsSymlinkRelease(RTVFSSYMLINK hVfsSym);
 
 /**
  * Read the symbolic link target.

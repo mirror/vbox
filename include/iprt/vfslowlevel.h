@@ -102,38 +102,6 @@ typedef RTVFSOPS const *PCRTVFSOPS;
 
 
 /**
- * The object type.
- */
-typedef enum RTVFSOBJTYPE
-{
-    /** Invalid type. */
-    RTVFSOBJTYPE_INVALID = 0,
-    /** Pure base object.
-     * This is returned by the filesystem stream to represent directories,
-     * devices, fifos and similar that needs to be created. */
-    RTVFSOBJTYPE_BASE,
-    /** Virtual filesystem. */
-    RTVFSOBJTYPE_VFS,
-    /** Filesystem stream. */
-    RTVFSOBJTYPE_FS_STREAM,
-    /** Pure I/O stream. */
-    RTVFSOBJTYPE_IO_STREAM,
-    /** Directory. */
-    RTVFSOBJTYPE_DIR,
-    /** File. */
-    RTVFSOBJTYPE_FILE,
-    /** Symbolic link. */
-    RTVFSOBJTYPE_SYMLINK,
-    /** End of valid object types. */
-    RTVFSOBJTYPE_END,
-    /** Pure I/O stream. */
-    RTVFSOBJTYPE_32BIT_HACK = 0x7fffffff
-} RTVFSOBJTYPE;
-/** Pointer to a VFS object type. */
-typedef RTVFSOBJTYPE *PRTVFSOBJTYPE;
-
-
-/**
  * The basis for all virtual file system objects except RTVFS.
  */
 typedef struct RTVFSOBJOPS
