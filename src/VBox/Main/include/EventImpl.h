@@ -19,6 +19,7 @@
 #define ____H_EVENTIMPL
 
 #include "VirtualBoxBase.h"
+#include <iprt/asm.h>
 
 class ATL_NO_VTABLE VBoxEvent :
     public VirtualBoxBase,
@@ -227,5 +228,78 @@ private:
  ComPtr<IEvent>        mEvent;
  ComPtr<IEventSource>  mEventSource;
 };
+
+#define NS_IMPL_QUERY_HEAD_INLINE()                                   \
+NS_IMETHODIMP QueryInterface(REFNSIID aIID, void** aInstancePtr)      \
+{                                                                     \
+  NS_ASSERTION(aInstancePtr,                                          \
+               "QueryInterface requires a non-NULL destination!");    \
+  nsISupports* foundInterface;
+
+#ifndef RT_OS_WINDOWS
+#define NS_INTERFACE_MAP_BEGIN_INLINE()      NS_IMPL_QUERY_HEAD_INLINE()
+#define NS_IMPL_QUERY_INTERFACE1_INLINE(_i1)                                 \
+  NS_INTERFACE_MAP_BEGIN_INLINE()                                            \
+    NS_INTERFACE_MAP_ENTRY(_i1)                                              \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, _i1)                       \
+  NS_INTERFACE_MAP_END
+#endif
+
+template <class T, class TParam = void* >
+class ListenerImpl : VBOX_SCRIPTABLE_IMPL(IEventListener)
+{
+    T                 mListener;
+    volatile uint32_t mRefCnt;
+
+    virtual ~ListenerImpl()
+    {}
+
+public:
+    ListenerImpl(TParam param)
+    : mListener(param), mRefCnt(1)
+    {
+    }
+
+    /* On Windows QI implemented by VBOX_SCRIPTABLE_DISPATCH_IMPL */
+#ifndef RT_OS_WINDOWS
+    NS_IMPL_QUERY_INTERFACE1_INLINE(IEventListener)
+#endif
+
+#ifdef RT_OS_WINDOWS
+    STDMETHOD_(ULONG, AddRef)()
+#else
+    NS_IMETHOD_(nsrefcnt) AddRef(void)
+#endif
+    {
+        return ASMAtomicIncU32(&mRefCnt);
+    }
+
+#ifdef RT_OS_WINDOWS
+    STDMETHOD_(ULONG, Release)()
+#else
+    NS_IMETHOD_(nsrefcnt) Release(void)
+#endif
+    {
+        uint32_t cnt = ::ASMAtomicDecU32(&mRefCnt);
+        if (cnt == 0)
+            delete this;
+        return cnt;
+    }
+
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
+
+    STDMETHOD(HandleEvent)(IEvent * aEvent)
+    {
+        VBoxEventType_T aType = VBoxEventType_Invalid;
+        aEvent->COMGETTER(Type)(&aType);
+        return mListener.HandleEvent(aType, aEvent);
+    }
+};
+
+#ifdef VBOX_WITH_XPCOM
+#define VBOX_LISTENER_DECLARE(klazz) NS_DECL_CLASSINFO(klazz)
+#else
+#define VBOX_LISTENER_DECLARE(klazz)
+#endif
 
 #endif // ____H_EVENTIMPL

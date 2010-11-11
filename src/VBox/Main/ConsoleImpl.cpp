@@ -254,15 +254,10 @@ struct VMSaveTask : public VMProgressTask
 ////////////////////////////////////////////////////////////////////////////////
 inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterType);
 
-class VmEventListener :
-  VBOX_SCRIPTABLE_IMPL(IEventListener)
-{
+class VmEventListener {
 public:
     VmEventListener(Console *aConsole)
     {
-#ifndef VBOX_WITH_XPCOM
-        refcnt = 0;
-#endif
         mfNoLoggedInUsers = true;
         mConsole = aConsole;
     }
@@ -271,27 +266,8 @@ public:
     {
     }
 
-#ifndef VBOX_WITH_XPCOM
-    STDMETHOD_(ULONG, AddRef)()
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
-        return ::InterlockedIncrement(&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
-
-    NS_DECL_ISUPPORTS
-
-    STDMETHOD(HandleEvent)(IEvent * aEvent)
-    {
-        VBoxEventType_T aType = VBoxEventType_Invalid;
-        aEvent->COMGETTER(Type)(&aType);
         switch(aType)
         {
             case VBoxEventType_OnNATRedirectEvent:
@@ -336,18 +312,13 @@ public:
         return S_OK;
     }
 private:
-#ifndef VBOX_WITH_XPCOM
-    long refcnt;
-#endif
-
     bool mfNoLoggedInUsers;
     Console *mConsole;
 };
 
-#ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO(VmEventListener)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VmEventListener, IEventListener)
-#endif
+typedef ListenerImpl<VmEventListener, Console*> VmEventListenerImpl;
+
+VBOX_LISTENER_DECLARE(VmEventListenerImpl)
 
 // ConsoleCallbackRegistration
 ////////////////////////////////////////////////////////////////////////////////
@@ -599,8 +570,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
         ComPtr<IEventSource> es;
         rc = virtualbox->COMGETTER(EventSource)(es.asOutParam());
         AssertComRC(rc);
-        mVmListner = new VmEventListener(this);
-        mVmListner->AddRef();
+        mVmListner = new VmEventListenerImpl(this);
         com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnNATRedirectEvent);
         rc = es->RegisterListener(mVmListner, ComSafeArrayAsInParam(eventTypes), true);

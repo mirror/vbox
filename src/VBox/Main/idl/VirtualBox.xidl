@@ -15594,18 +15594,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-    name="INATRedirectEvent" extends="IEvent"
-    uuid="b566336e-ec24-11df-8fbd-f71b6f29dd03"
+    name="INATRedirectEvent" extends="IMachineEvent"
+    uuid="57DE97D7-3CBB-42A0-888F-610D5832D16B"
     wsmap="managed" autogen="VBoxEvent" id="OnNATRedirectEvent"
     >
    <desc>
       Notification when NAT redirect rule added or removed.
    </desc>
-     <attribute name="machineId" type="uuid" mod="string" readonly="yes">
-       <desc>
-        Machine id where redirect event is occured.
-       </desc>
-     </attribute>
      <attribute name="slot"  type="unsigned long" readonly="yes">
        <desc>
          Adapter which NAT attached to.
