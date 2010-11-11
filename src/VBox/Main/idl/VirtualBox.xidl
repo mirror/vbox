@@ -3418,7 +3418,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="cc4fec9a-3150-45df-9ee9-f00ba54d6ac3"
+     uuid="7c05b1c3-c325-46cd-820d-47648d13b7f2"
      wsmap="managed"
      >
     <desc>
@@ -4644,6 +4644,21 @@
         </result>
       </desc>
       <param name="name" type="wstring" dir="in"/>
+    </method>
+
+    <method name="setStorageControllerBootable">
+      <desc>
+        Sets the bootable flag of the storage controller with the given name.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          A storage controller with given name doesn't exist.
+        </result>
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Another storage controller is marked as bootable already.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+      <param name="bootable" type="boolean" dir="in"/>
     </method>
 
     <method name="getSerialPort" const="yes">
@@ -13271,7 +13286,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageController" extends="$unknown"
-    uuid="fd93adc0-bbaa-4256-9e6e-00e29f9151c9"
+    uuid="1556333-09b6-46d9-bfb7-fc239b7fbe1e"
     wsmap="managed"
   >
     <desc>
@@ -13366,6 +13381,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the file. This should be used on OS X and Linux hosts if a high I/O load is expected or many
         virtual machines are running at the same time to prevent I/O cache related hangs.
         This option new with the API of VirtualBox 3.2 and is now the default for non-IDE storage controllers.
+      </desc>
+    </attribute>
+
+    <attribute name="bootable" type="boolean" readonly="yes">
+      <desc>
+        Returns whether it is possible to boot from disks attached to this controller.
       </desc>
     </attribute>
 

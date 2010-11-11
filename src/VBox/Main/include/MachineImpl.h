@@ -506,6 +506,7 @@ public:
     STDMETHOD(RemoveStorageController(IN_BSTR aName));
     STDMETHOD(GetStorageControllerByName(IN_BSTR aName, IStorageController **storageController));
     STDMETHOD(GetStorageControllerByInstance(ULONG aInstance, IStorageController **storageController));
+    STDMETHOD(SetStorageControllerBootable)(IN_BSTR aName, BOOL fBootable);
     STDMETHOD(QuerySavedGuestSize)(ULONG aScreenId, ULONG *puWidth, ULONG *puHeight);
     STDMETHOD(QuerySavedThumbnailSize)(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
     STDMETHOD(ReadSavedThumbnailToArray)(ULONG aScreenId, BOOL aBGR, ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));

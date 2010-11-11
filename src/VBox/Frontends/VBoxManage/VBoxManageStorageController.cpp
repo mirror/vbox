@@ -646,6 +646,7 @@ static const RTGETOPTDEF g_aStorageControllerOptions[] =
     { "--sataportcount",    'p', RTGETOPT_REQ_UINT32 },
     { "--remove",           'r', RTGETOPT_REQ_NOTHING },
     { "--hostiocache",      'i', RTGETOPT_REQ_STRING },
+    { "--bootable",         'b', RTGETOPT_REQ_STRING },
 };
 
 int handleStorageController(HandlerArg *a)
@@ -656,6 +657,7 @@ int handleStorageController(HandlerArg *a)
     const char       *pszBusType     = NULL;
     const char       *pszCtlType     = NULL;
     const char       *pszHostIOCache = NULL;
+    const char       *pszBootable    = NULL;
     ULONG             satabootdev    = ~0U;
     ULONG             sataidedev     = ~0U;
     ULONG             sataportcount  = ~0U;
@@ -724,6 +726,12 @@ int handleStorageController(HandlerArg *a)
             case 'i':
             {
                 pszHostIOCache = ValueUnion.psz;
+                break;
+            }
+
+            case 'b':
+            {
+                pszBootable = ValueUnion.psz;
                 break;
             }
 
@@ -939,6 +947,32 @@ int handleStorageController(HandlerArg *a)
                 else
                 {
                     errorArgument("Invalid --hostiocache argument '%s'", pszHostIOCache);
+                    rc = E_FAIL;
+                }
+            }
+            else
+            {
+                errorArgument("Couldn't find the controller with the name: '%s'\n", pszCtl);
+                rc = E_FAIL;
+            }
+        }
+
+        if (   pszBootable
+            && SUCCEEDED(rc))
+        {
+            if (SUCCEEDED(rc))
+            {
+                if (!RTStrICmp(pszBootable, "on"))
+                {
+                    CHECK_ERROR(machine, SetStorageControllerBootable(Bstr(pszCtl).raw(), TRUE));
+                }
+                else if (!RTStrICmp(pszBootable, "off"))
+                {
+                    CHECK_ERROR(machine, SetStorageControllerBootable(Bstr(pszCtl).raw(), FALSE));
+                }
+                else
+                {
+                    errorArgument("Invalid --bootable argument '%s'", pszHostIOCache);
                     rc = E_FAIL;
                 }
             }

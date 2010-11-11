@@ -46,6 +46,7 @@ struct BackupableStorageControllerData
           mInstance(0),
           mPortCount(2),
           fUseHostIOCache(true),
+          fBootable(false),
           mPortIde0Master(0),
           mPortIde0Slave(1),
           mPortIde1Master(2),
@@ -64,6 +65,8 @@ struct BackupableStorageControllerData
     ULONG mPortCount;
     /** Whether to use the host IO caches. */
     BOOL fUseHostIOCache;
+    /** Whether it is possible to boot from disks attached to this controller. */
+    BOOL fBootable;
 
     /** The following is only for the SATA controller atm. */
     /** Port which acts as primary master for ide emulation. */
@@ -123,7 +126,7 @@ void StorageController::FinalRelease()
 HRESULT StorageController::init(Machine *aParent,
                                 const Utf8Str &aName,
                                 StorageBus_T aStorageBus,
-                                ULONG aInstance)
+                                ULONG aInstance, bool fBootable)
 {
     LogFlowThisFunc(("aParent=%p aName=\"%s\" aInstance=%u\n",
                      aParent, aName.c_str(), aInstance));
@@ -158,6 +161,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     m->bd->strName = aName;
     m->bd->mInstance = aInstance;
+    m->bd->fBootable = fBootable;
     m->bd->mStorageBus = aStorageBus;
     if (   aStorageBus != StorageBus_IDE
         && aStorageBus != StorageBus_Floppy)
@@ -621,6 +625,20 @@ STDMETHODIMP StorageController::COMSETTER(UseHostIOCache) (BOOL fUseHostIOCache)
     return S_OK;
 }
 
+STDMETHODIMP StorageController::COMGETTER(Bootable) (BOOL *fBootable)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* The machine doesn't need to be mutable. */
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *fBootable = m->bd->fBootable;
+
+    return S_OK;
+}
+
 // IStorageController methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -722,6 +740,11 @@ ULONG StorageController::getInstance() const
     return m->bd->mInstance;
 }
 
+bool StorageController::getBootable() const
+{
+    return !!m->bd->fBootable;
+}
+
 /**
  * Returns S_OK if the given port and device numbers are within the range supported
  * by this controller. If not, it sets an error and returns E_INVALIDARG.
@@ -750,6 +773,18 @@ HRESULT StorageController::checkPortAndDeviceValid(LONG aControllerPort,
                         devicesPerPort);
 
     return S_OK;
+}
+
+/** @note Locks objects for writing! */
+void StorageController::setBootable(BOOL fBootable)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->bd.backup();
+    m->bd->fBootable = fBootable;
 }
 
 /** @note Locks objects for writing! */

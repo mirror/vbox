@@ -1280,6 +1280,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             BOOL fUseHostIOCache;
             rc = ctrls[i]->COMGETTER(UseHostIOCache)(&fUseHostIOCache);                     H();
 
+            BOOL fBootable;
+            rc = ctrls[i]->COMGETTER(Bootable)(&fBootable);                                 H();
+
             /* /Devices/<ctrldev>/ */
             const char *pszCtrlDev = pConsole->convertControllerTypeToDev(enmCtrlType);
             pDev = aCtrlNodes[enmCtrlType];
@@ -1303,6 +1306,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 {
                     hrc = BusMgr->assignPciDevice("lsilogic", pCtlInst);                               H();
 
+                    InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
@@ -1319,6 +1323,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 case StorageControllerType_BusLogic:
                 {
                     hrc = BusMgr->assignPciDevice("buslogic", pCtlInst);                               H();
+
+                    InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);
@@ -1339,6 +1345,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     ULONG cPorts = 0;
                     hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
                     InsertConfigInteger(pCfg, "PortCount", cPorts);
+                    InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
                     /* Needed configuration values for the bios, only first controller. */
                     if (!BusMgr->hasPciDevice("ahci", 1))
@@ -1430,6 +1437,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     hrc = BusMgr->assignPciDevice("lsilogicsas", pCtlInst);                               H();
 
                     InsertConfigString(pCfg,  "ControllerType", "SAS1068");
+                    InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
                     /* Attach the status driver */
                     InsertConfigNode(pCtlInst, "LUN#999", &pLunL0);

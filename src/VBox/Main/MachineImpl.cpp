@@ -5135,6 +5135,7 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
 
     /* get a new instance number for the storage controller */
     ULONG ulInstance = 0;
+    bool fBootable = true;
     for (StorageControllerList::const_iterator it = mStorageControllers->begin();
          it != mStorageControllers->end();
          ++it)
@@ -5145,10 +5146,14 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
 
             if (ulCurInst >= ulInstance)
                 ulInstance = ulCurInst + 1;
+
+            /* Only one controller of each type can be marked as bootable. */
+            if ((*it)->getBootable())
+                fBootable = false;
         }
     }
 
-    rc = ctrl->init(this, aName, aConnectionType, ulInstance);
+    rc = ctrl->init(this, aName, aConnectionType, ulInstance, fBootable);
     if (FAILED(rc)) return rc;
 
     setModified(IsModified_Storage);
@@ -5205,6 +5210,60 @@ STDMETHODIMP Machine::GetStorageControllerByInstance(ULONG aInstance,
     return setError(VBOX_E_OBJECT_NOT_FOUND,
                     tr("Could not find a storage controller with instance number '%lu'"),
                     aInstance);
+}
+
+STDMETHODIMP Machine::SetStorageControllerBootable(IN_BSTR aName, BOOL fBootable)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    ComObjPtr<StorageController> ctrl;
+
+    rc = getStorageControllerByName(aName, ctrl, true /* aSetError */);
+    if (SUCCEEDED(rc))
+    {
+        /* Check that only one controller of each type is marked as bootable. */
+        if (fBootable == TRUE)
+        {
+            for (StorageControllerList::const_iterator it = mStorageControllers->begin();
+                 it != mStorageControllers->end();
+                 ++it)
+            {
+                ComObjPtr<StorageController> aCtrl = (*it);
+
+                if (   (aCtrl->getName() != Utf8Str(aName))
+                    && aCtrl->getBootable() == TRUE
+                    && aCtrl->getStorageBus() == ctrl->getStorageBus()
+                    && aCtrl->getControllerType() == ctrl->getControllerType())
+                {
+                    rc = setError(VBOX_E_OBJECT_IN_USE,
+                                  tr("Another storage controller '%s' is already marked as bootable"),
+                                  aCtrl->getName().c_str());
+                    break;
+                }
+            }
+        }
+
+        if (SUCCEEDED(rc))
+        {
+            ctrl->setBootable(fBootable);
+            setModified(IsModified_Storage);
+        }
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        /* inform the direct session if any */
+        alock.leave();
+        onStorageControllerChange();
+    }
+
+    return rc;
 }
 
 STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
@@ -7234,7 +7293,8 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
         rc = pCtl->init(this,
                         ctlData.strName,
                         ctlData.storageBus,
-                        ctlData.ulInstance);
+                        ctlData.ulInstance,
+                        ctlData.fBootable);
         if (FAILED(rc)) return rc;
 
         mStorageControllers->push_back(pCtl);
@@ -8266,6 +8326,7 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         ctl.controllerType = pCtl->getControllerType();
         ctl.storageBus = pCtl->getStorageBus();
         ctl.ulInstance = pCtl->getInstance();
+        ctl.fBootable = pCtl->getBootable();
 
         /* Save the port count. */
         ULONG portCount;

@@ -665,6 +665,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         StorageControllerType_T    enmCtlType = StorageControllerType_Null;
         const char *pszCtl = NULL;
         ULONG ulValue = 0;
+        BOOL  fBootable = FALSE;
         Bstr storageCtlName;
 
         storageCtl->COMGETTER(Name)(storageCtlName.asOutParam());
@@ -723,6 +724,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             RTPrintf("storagecontrollerportcount%u=\"%lu\"\n", i, ulValue);
         else
             RTPrintf("Storage Controller Port Count (%u):      %lu\n", i, ulValue);
+
+        storageCtl->COMGETTER(Bootable)(&fBootable);
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("storagecontrollerbootable%u=\"%s\"\n", i, fBootable ? "on" : "off");
+        else
+            RTPrintf("Storage Controller Bootable (%u):        %s\n", i, fBootable ? "on" : "off");
     }
 
     for (size_t j = 0; j < storageCtls.size(); ++ j)
