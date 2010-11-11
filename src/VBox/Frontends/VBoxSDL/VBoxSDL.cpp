@@ -1785,8 +1785,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         // register listener for global events
         ComPtr<IEventSource> es;
         CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-        vboxListener = new VBoxSDLEventListener();
-        vboxListener->AddRef();
+        vboxListener = new VBoxSDLEventListenerImpl();
         com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnExtraDataChanged);
         CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
@@ -1796,8 +1795,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         // register listener for machine events
         ComPtr<IEventSource> es;
         CHECK_ERROR(gConsole, COMGETTER(EventSource)(es.asOutParam()));
-        consoleListener = new VBoxSDLConsoleEventListener();
-        consoleListener->AddRef();
+        consoleListener = new VBoxSDLConsoleEventListenerImpl();
         com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnMousePointerShapeChanged);
         eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
