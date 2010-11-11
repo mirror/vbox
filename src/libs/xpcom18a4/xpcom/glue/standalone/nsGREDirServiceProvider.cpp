@@ -397,7 +397,11 @@ GRE_GetGREPath()
   // check in the HOME directory
   env = PR_GetEnv("HOME");
   if (env && *env) {
-    sprintf(buffer, "%s" XPCOM_FILE_PATH_SEPARATOR GRE_CONF_NAME, env);
+# ifdef VBOX
+   snprintf(buffer, sizeof(buffer), "%s" XPCOM_FILE_PATH_SEPARATOR GRE_CONF_NAME, env);
+# else
+   sprintf(buffer, "%s" XPCOM_FILE_PATH_SEPARATOR GRE_CONF_NAME, env);
+# endif
 
     if (GRE_GetPathFromConfigFile(buffer, sGRELocation)) {
       return sGRELocation;
@@ -582,7 +586,11 @@ GRE_GetXPCOMPath()
     }
   }
 
+#ifdef VBOX
+  snprintf(sXPCOMPath, sizeof(sXPCOMPath), "%s" XPCOM_FILE_PATH_SEPARATOR XPCOM_DLL, grePath);
+#else
   sprintf(sXPCOMPath, "%s" XPCOM_FILE_PATH_SEPARATOR XPCOM_DLL, grePath);
+#endif
 
   return sXPCOMPath;
 }
