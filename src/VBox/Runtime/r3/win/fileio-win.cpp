@@ -696,15 +696,15 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
             break;
 
         case RTFSOBJATTRADD_UNIX_OWNER:
-            pObjInfo->Info.Attr.enmAdditional     = RTFSOBJATTRADD_UNIX_OWNER;
-            pObjInfo->Info.Attr.u.UnixOwner.uid   = ~0U;
-            pObjInfo->Info.Attr.u.UnixOwner.szName[0] = '\0'; /** @todo return something sensible here. */
+            pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_OWNER;
+            pObjInfo->Attr.u.UnixOwner.uid        = ~0U;
+            pObjInfo->Attr.u.UnixOwner.szName[0]  = '\0'; /** @todo return something sensible here. */
             break;
 
         case RTFSOBJATTRADD_UNIX_GROUP:
-            pObjInfo->Info.Attr.enmAdditional     = RTFSOBJATTRADD_UNIX_GROUP;
-            pObjInfo->Info.Attr.u.UnixGroup.gid   = ~0U;
-            pObjInfo->Info.Attr.u.UnixGroup.szName[0] = '\0';
+            pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_GROUP;
+            pObjInfo->Attr.u.UnixGroup.gid        = ~0U;
+            pObjInfo->Attr.u.UnixGroup.szName[0]  = '\0';
             break;
 
         case RTFSOBJATTRADD_EASIZE:
