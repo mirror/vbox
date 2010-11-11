@@ -37,9 +37,9 @@
 #include <iprt/err.h>
 #include <iprt/log.h>
 
-#include "internal/socket.h"
-
 #include <Windows.h>
+
+#include "internal/socket.h"            /* (Needs Windows.h.) */
 
 
 RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, PRTHANDLE ph)
@@ -97,6 +97,7 @@ RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, PRTHANDLE ph)
     /*
      * Create the IPRT handle.
      */
+    int rc;
     switch (h.enmType)
     {
         case RTHANDLETYPE_FILE:
