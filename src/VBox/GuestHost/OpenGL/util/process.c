@@ -16,7 +16,7 @@
 #include <unistd.h>
 #else
 #pragma warning ( disable : 4127 )
-#define snprintf sprintf_s
+#define snprintf _snprintf
 #endif
 
 /**
