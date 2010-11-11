@@ -363,7 +363,11 @@ disk_create(uint32 device_id, uint32 accessmask, uint32 sharemode, uint32 create
 
 	if (*filename && filename[strlen(filename) - 1] == '/')
 		filename[strlen(filename) - 1] = 0;
+#ifdef VBOX
+	snprintf(path, sizeof(path),  "%s%s", g_rdpdr_device[device_id].local_path, filename);
+#else
 	sprintf(path, "%s%s", g_rdpdr_device[device_id].local_path, filename);
+#endif
 
 	switch (create_disposition)
 	{
@@ -819,8 +823,13 @@ disk_set_information(RD_NTHANDLE handle, uint32 info_class, STREAM in, STREAM ou
 				return RD_STATUS_INVALID_PARAMETER;
 			}
 
+#ifdef VBOX
+			snprintf(fullpath, sizeof(fullpath), "%s%s", g_rdpdr_device[pfinfo->device_id].local_path,
+				newname);
+#else
 			sprintf(fullpath, "%s%s", g_rdpdr_device[pfinfo->device_id].local_path,
 				newname);
+#endif
 
 			if (rename(pfinfo->path, fullpath) != 0)
 			{
@@ -1155,7 +1164,11 @@ disk_query_directory(RD_NTHANDLE handle, uint32 info_class, char *pattern, STREA
 				return RD_STATUS_NO_MORE_FILES;
 
 			/* Get information for directory entry */
+#ifdef VBOX
+			snprintf(fullpath, sizeof(fullpath), "%s/%s", dirname, pdirent->d_name);
+#else
 			sprintf(fullpath, "%s/%s", dirname, pdirent->d_name);
+#endif
 
 			if (stat(fullpath, &filestat))
 			{

@@ -207,7 +207,11 @@ Py_nsIID::PyTypeMethod_repr(PyObject *self)
 	Py_nsIID *s_iid = (Py_nsIID *)self;
 	char buf[256];
 	char *sziid = s_iid->m_iid.ToString();
+#ifdef VBOX
+	snprintf(buf, sizeof(buf), "_xpcom.IID('%s')", sziid);
+#else
 	sprintf(buf, "_xpcom.IID('%s')", sziid);
+#endif
 	nsMemory::Free(sziid);
 	return PyString_FromString(buf);
 }

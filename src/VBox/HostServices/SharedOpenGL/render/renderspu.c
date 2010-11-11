@@ -1019,7 +1019,11 @@ renderspuGetString(GLenum pname)
     else if (pname == GL_VERSION)
         return render_spu.ws.glGetString(GL_VERSION);
     else if (pname == GL_RENDERER) {
+#ifdef VBOX
+        snprintf(tempStr, sizeof(tempStr), "Chromium (%s)", (char *) render_spu.ws.glGetString(GL_RENDERER));
+#else
         sprintf(tempStr, "Chromium (%s)", (char *) render_spu.ws.glGetString(GL_RENDERER));
+#endif
         return (const GLubyte *) tempStr;
     }
 #ifdef CR_OPENGL_VERSION_2_0

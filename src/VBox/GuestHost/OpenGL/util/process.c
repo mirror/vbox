@@ -147,9 +147,17 @@ void crGetProcName( char *name, int maxLen )
 		return;
 	/* pipe output of ps to temp file */
 #ifndef SunOS
+# ifdef VBOX
+	snprintf(command, sizeof(command), "ps > %s", tmp);
+# else
 	sprintf(command, "ps > %s", tmp);
+# endif
 #else
+# ifdef VBOX
+	snprintf(command, sizeof(command), "ps -e -o 'pid tty time comm'> %s", tmp);
+# else
 	sprintf(command, "ps -e -o 'pid tty time comm'> %s", tmp);
+# endif
 #endif
 	system(command);
 

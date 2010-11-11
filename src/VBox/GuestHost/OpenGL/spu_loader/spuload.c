@@ -53,11 +53,19 @@ static char *__findDLL( char *name, char *dir )
                 sprintf ( path, "%s/%s%sspu%s", szSharedLibPath, DLL_PREFIX, name, DLL_SUFFIX );
             else
 #endif /* DARWIN */
+#ifdef VBOX
+                snprintf ( path, sizeof(path), "%s%sspu%s", DLL_PREFIX, name, DLL_SUFFIX );
+#else
                 sprintf ( path, "%s%sspu%s", DLL_PREFIX, name, DLL_SUFFIX );
+#endif
         }
         else
         {
+#ifdef VBOX
+                snprintf ( path, sizeof(path), "%s/%s%sspu%s", dir, DLL_PREFIX, name, DLL_SUFFIX );
+#else
                 sprintf ( path, "%s/%s%sspu%s", dir, DLL_PREFIX, name, DLL_SUFFIX );
+#endif
         }
         return path;
 }

@@ -125,7 +125,11 @@ printer_create(uint32 device_id, uint32 access, uint32 share_mode, uint32 dispos
 	}
 	else
 	{
+#ifdef VBOX
+		snprintf(cmd, sizeof(cmd), "lpr -P %s", pprinter_data->printer);
+#else
 		sprintf(cmd, "lpr -P %s", pprinter_data->printer);
+#endif
 		pprinter_data->printer_fp = popen(cmd, "w");
 	}
 

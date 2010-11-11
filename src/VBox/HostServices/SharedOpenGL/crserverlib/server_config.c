@@ -207,7 +207,11 @@ void crServerSetVBoxConfiguration()
     for (i = 0; i < cr_server.numClients; i++)
     {
         CRClient *newClient = (CRClient *) crCalloc(sizeof(CRClient));
+#ifdef VBOX
+        sscanf(clientlist[i], "%1024s %d", cr_server.protocol, &(newClient->spu_id));
+#else
         sscanf(clientlist[i], "%s %d", cr_server.protocol, &(newClient->spu_id));
+#endif
         newClient->conn = crNetAcceptClient(cr_server.protocol, NULL,
                                             cr_server.tcpip_port,
                                             cr_server.mtu, 0);
