@@ -13286,7 +13286,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageController" extends="$unknown"
-    uuid="1556333-09b6-46d9-bfb7-fc239b7fbe1e"
+    uuid="a1556333-09b6-46d9-bfb7-fc239b7fbe1e"
     wsmap="managed"
   >
     <desc>
