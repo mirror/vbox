@@ -685,7 +685,12 @@ end_error_free_m:
     m_freem(pData, m);
 
 end_error:
-    LogRel(("NAT: error occurred while sending ICMP error message\n"));
+    {
+        static int cIcmpErrorReported;
+        if (!cIcmpErrorReported)
+            LogRel(("NAT: error occurred while sending ICMP error message\n"));
+        cIcmpErrorReported++;
+    }
 }
 #undef ICMP_MAXDATALEN
 
