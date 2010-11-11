@@ -36,6 +36,8 @@
 #  include <sys/stat.h>
 #  define DEV_BSIZE S_BLKSIZE /** @todo bird: add DEV_BSIZE to sys/param.h on OS/2. */
 # endif
+# include <grp.h>
+# include <pwd.h>
 #endif
 
 #include <iprt/fs.h>
@@ -191,8 +193,8 @@ bool rtFsModeIsValidPermissions(RTFMODE fMode)
     return true;
 }
 
-
 #ifndef RT_OS_WINDOWS
+
 /**
  * Internal worker function which setups RTFSOBJINFO based on a UNIX stat struct.
  *
@@ -299,6 +301,50 @@ void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, c
 #endif
     pObjInfo->Attr.u.Unix.Device          = pStat->st_rdev;
 }
+
+
+/**
+ * Set user-owner additional attributes.
+ *
+ * @param   pObjInfo            The object info to fill add attrs for.
+ * @param   uid                 The user id.
+ */
+void    rtFsObjInfoAttrSetUnixOwner(PRTFSOBJINFO pObjInfo, RTUID uid)
+{
+    pObjInfo->Attr.enmAdditional   = RTFSOBJATTRADD_UNIX_OWNER;
+    pObjInfo->Attr.u.UnixOwner.uid = uid;
+    pObjInfo->Attr.u.UnixOwner.szName[0] = '\0';
+
+    char            achBuf[_4K];
+    struct passwd   Pwd;
+    struct passwd  *pPwd;
+    int rc = getpwuid_r(uid, &Pwd, achBuf, sizeof(achBuf), &pPwd);
+    if (!rc && pPwd)
+        RTStrCopy(pObjInfo->Attr.u.UnixOwner.szName, sizeof(pObjInfo->Attr.u.UnixOwner.szName), pPwd->pw_name);
+}
+
+
+/**
+ * Set user-group additional attributes.
+ *
+ * @param   pObjInfo            The object info to fill add attrs for.
+ * @param   gid                 The group id.
+ */
+void rtFsObjInfoAttrSetUnixGroup(PRTFSOBJINFO pObjInfo, RTUID gid)
+{
+    pObjInfo->Attr.enmAdditional   = RTFSOBJATTRADD_UNIX_GROUP;
+    pObjInfo->Attr.u.UnixGroup.gid = gid;
+    pObjInfo->Attr.u.UnixGroup.szName[0] = '\0';
+
+    char            achBuf[_4K];
+    struct group    Grp;
+    struct group   *pGrp;
+
+    int rc = getgrgid_r(gid, &Grp, achBuf, sizeof(achBuf), &pGrp);
+    if (!rc && pGrp)
+        RTStrCopy(pObjInfo->Attr.u.UnixGroup.szName, sizeof(pObjInfo->Attr.u.UnixGroup.szName), pGrp->gr_name);
+}
+
 #endif /* !RT_OS_WINDOWS */
 
 

@@ -118,34 +118,137 @@ RTDECL(int)         RTVfsGetAttachment(RTVFS hVfs, uint32_t iOrdinal, PRTVFS *ph
                                        char *pszMountPoint, size_t cbMountPoint);
 
 
-/** @defgroup grp_vfs_dir           VFS Directory API
+/** @defgroup grp_vfs_dir           VFS Base Object API
  * @{
  */
 
-RTDECL(RTVFS)           RTVfsObjToVfs(RTVFSOBJ hVfsObj);
-RTDECL(RTVFSFSSTREAM)   RTVfsObjToFsStream(RTVFSOBJ hVfsObj);
-RTDECL(RTVFSDIR)        RTVfsObjToDir(RTVFSOBJ hVfsObj);
-RTDECL(RTVFSIOSTREAM)   RTVfsObjToIoStream(RTVFSOBJ hVfsObj);
-RTDECL(RTVFSFILE)       RTVfsObjToFile(RTVFSOBJ hVfsObj);
-RTDECL(RTVFSSYMLINK)    RTVfsObjToSymlink(RTVFSOBJ hVfsObj);
+/**
+ * Retains a reference to the VFS base object handle.
+ *
+ * @returns New reference count on success, UINT32_MAX on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(uint32_t)        RTVfsObjRetain(RTVFSOBJ hVfsObj);
 
-RTDECL(RTVFSOBJ)        RTVfsObjFromVfs(RTVFS hVfs);
-RTDECL(RTVFSOBJ)        RTVfsObjFromFsStream(RTVFSFSSTREAM hVfsFss);
-RTDECL(RTVFSOBJ)        RTVfsObjFromDir(RTVFSDIR hVfsDir);
-RTDECL(RTVFSOBJ)        RTVfsObjFromIoStream(RTVFSIOSTREAM hVfsIos);
-RTDECL(RTVFSOBJ)        RTVfsObjFromFile(RTVFSFILE hVfsFile);
-RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym);
+/**
+ * Releases a reference to the VFS base handle.
+ *
+ * @returns New reference count on success (0 if closed), UINT32_MAX on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(uint32_t)        RTVfsObjRelease(RTVFSOBJ hVfsObj);
 
 /**
  * Query information about the object.
  *
  * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the @a enmAddAttr value is not handled by the
+ *          implementation.
+ *
  * @param   hVfsObj         The VFS object handle.
  * @param   pObjInfo        Where to return the info.
  * @param   enmAddAttr      Which additional attributes should be retrieved.
  * @sa      RTFileQueryInfo, RTPathQueryInfo
  */
-RTDECL(int)         RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+RTDECL(int)             RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
+
+/**
+ * Converts a VFS base object handle to a VFS handle.
+ *
+ * @returns Referenced handle on success, NIL on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(RTVFS)           RTVfsObjToVfs(RTVFSOBJ hVfsObj);
+
+/**
+ * Converts a VFS base object handle to a VFS filesystem stream handle.
+ *
+ * @returns Referenced handle on success, NIL on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(RTVFSFSSTREAM)   RTVfsObjToFsStream(RTVFSOBJ hVfsObj);
+
+/**
+ * Converts a VFS base object handle to a VFS directory handle.
+ *
+ * @returns Referenced handle on success, NIL on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(RTVFSDIR)        RTVfsObjToDir(RTVFSOBJ hVfsObj);
+
+/**
+ * Converts a VFS base object handle to a VFS I/O stream handle.
+ *
+ * @returns Referenced handle on success, NIL on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(RTVFSIOSTREAM)   RTVfsObjToIoStream(RTVFSOBJ hVfsObj);
+
+/**
+ * Converts a VFS base object handle to a VFS file handle.
+ *
+ * @returns Referenced handle on success, NIL on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(RTVFSFILE)       RTVfsObjToFile(RTVFSOBJ hVfsObj);
+
+/**
+ * Converts a VFS base object handle to a VFS symbolic link handle.
+ *
+ * @returns Referenced handle on success, NIL on failure.
+ * @param   hVfsObj         The VFS base object handle.
+ */
+RTDECL(RTVFSSYMLINK)    RTVfsObjToSymlink(RTVFSOBJ hVfsObj);
+
+
+/**
+ * Converts a VFS handle to a VFS base object handle.
+ *
+ * @returns Referenced handle on success, NIL if the input handle was invalid.
+ * @param   hVfs            The VFS handle.
+ */
+RTDECL(RTVFSOBJ)        RTVfsObjFromVfs(RTVFS hVfs);
+
+/**
+ * Converts a VFS filesystem stream handle to a VFS base object handle.
+ *
+ * @returns Referenced handle on success, NIL if the input handle was invalid.
+ * @param   hVfsFSs         The VFS filesystem stream handle.
+ */
+RTDECL(RTVFSOBJ)        RTVfsObjFromFsStream(RTVFSFSSTREAM hVfsFss);
+
+/**
+ * Converts a VFS directory handle to a VFS base object handle.
+ *
+ * @returns Referenced handle on success, NIL if the input handle was invalid.
+ * @param   hVfsDir          The VFS directory handle.
+ */
+RTDECL(RTVFSOBJ)        RTVfsObjFromDir(RTVFSDIR hVfsDir);
+
+/**
+ * Converts a VFS I/O stream handle to a VFS base object handle.
+ *
+ * @returns Referenced handle on success, NIL if the input handle was invalid.
+ * @param   hVfsIos          The VFS I/O stream handle.
+ */
+RTDECL(RTVFSOBJ)        RTVfsObjFromIoStream(RTVFSIOSTREAM hVfsIos);
+
+/**
+ * Converts a VFS file handle to a VFS base object handle.
+ *
+ * @returns Referenced handle on success, NIL if the input handle was invalid.
+ * @param   hVfsFile         The VFS file handle.
+ */
+RTDECL(RTVFSOBJ)        RTVfsObjFromFile(RTVFSFILE hVfsFile);
+
+/**
+ * Converts a VFS symbolic link handle to a VFS base object handle.
+ *
+ * @returns Referenced handle on success, NIL if the input handle was invalid.
+ * @param   hVfsSym            The VFS symbolic link handle.
+ */
+RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym);
 
 /** @} */
 
@@ -181,6 +284,7 @@ RTDECL(int)         RTVfsFsStrmQueryInfo(RTVFSFSSTREAM hVfsFss, PRTFSOBJINFO pOb
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if a new object was retrieved.
  * @retval  VERR_EOF when there are no more objects.
+ *
  * @param   pvThis      The implementation specific directory data.
  * @param   ppszName    Where to return the object name.  Must be freed by
  *                      calling RTStrFree.
@@ -322,6 +426,7 @@ RTDECL(int) RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, R
  *          of the stream.
  * @retval  VERR_EOF when trying to read __beyond__ the end of the stream and
  *          @a pcbRead is NULL.
+ * @retval  VERR_ACCESS_DENIED if the stream is not readable.
  *
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pvBuf           Where to store the read bytes.
@@ -338,6 +443,8 @@ RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead,
  * Write bytes to the I/O stream.
  *
  * @returns IPRT status code.
+ * @retval  VERR_ACCESS_DENIED if the stream is not writable.
+ *
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pvBuf           The bytes to write.
  * @param   cbToWrite       The number of bytes to write.
@@ -365,6 +472,7 @@ RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cb
  *          of the stream.
  * @retval  VERR_EOF when trying to read __beyond__ the end of the stream and
  *          @a pcbRead is NULL.
+ * @retval  VERR_ACCESS_DENIED if the stream is not readable.
  *
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pSgBuf          Pointer to a scatter buffer descriptor.  The number
@@ -382,6 +490,8 @@ RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, b
  * Write bytes to the I/O stream from a gather buffer.
  *
  * @returns IPRT status code.
+ * @retval  VERR_ACCESS_DENIED if the stream is not writable.
+ *
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pSgBuf          Pointer to a gather buffer descriptor.  The number
  *                          of bytes described by the segments is what will be

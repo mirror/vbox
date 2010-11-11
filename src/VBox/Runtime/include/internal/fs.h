@@ -42,6 +42,8 @@ bool    rtFsModeIsValidPermissions(RTFMODE fMode);
 
 #ifndef RT_OS_WINDOWS
 void    rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName);
+void    rtFsObjInfoAttrSetUnixOwner(PRTFSOBJINFO pObjInfo, RTUID uid);
+void    rtFsObjInfoAttrSetUnixGroup(PRTFSOBJINFO pObjInfo, RTUID gid);
 #endif
 
 #ifdef RT_OS_LINUX

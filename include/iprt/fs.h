@@ -262,8 +262,15 @@ typedef enum RTFSOBJATTRADD
 {
     /** No additional information is available / requested. */
     RTFSOBJATTRADD_NOTHING = 1,
-    /** The additional unix attributes (RTFSOBJATTR::u::Unix) are available / requested. */
+    /** The additional unix attributes (RTFSOBJATTR::u::Unix) are available /
+     *  requested. */
     RTFSOBJATTRADD_UNIX,
+    /** The additional unix attributes (RTFSOBJATTR::u::UnixOwner) are
+     * available / requested. */
+    RTFSOBJATTRADD_UNIX_OWNER,
+    /** The additional unix attributes (RTFSOBJATTR::u::UnixGroup) are
+     * available / requested. */
+    RTFSOBJATTRADD_UNIX_GROUP,
     /** The additional extended attribute size (RTFSOBJATTR::u::EASize) is available / requested. */
     RTFSOBJATTRADD_EASIZE,
     /** The last valid item (inclusive).
@@ -274,11 +281,88 @@ typedef enum RTFSOBJATTRADD
     RTFSOBJATTRADD_32BIT_SIZE_HACK = 0x7fffffff
 } RTFSOBJATTRADD;
 
+/** The number of bytes reserved for the additional attribute union. */
+#define RTFSOBJATTRUNION_MAX_SIZE       128
+
+/**
+ * Additional Unix Attributes (RTFSOBJATTRADD_UNIX).
+ */
+typedef struct RTFSOBJATTRUNIX
+{
+    /** The user owning the filesystem object (st_uid).
+     * This field is NIL_UID if not supported. */
+    RTUID           uid;
+
+    /** The group the filesystem object is assigned (st_gid).
+     * This field is NIL_GID if not supported. */
+    RTGID           gid;
+
+    /** Number of hard links to this filesystem object (st_nlink).
+     * This field is 1 if the filesystem doesn't support hardlinking or
+     * the information isn't available.
+     */
+    uint32_t        cHardlinks;
+
+    /** The device number of the device which this filesystem object resides on (st_dev).
+     * This field is 0 if this information is not available. */
+    RTDEV           INodeIdDevice;
+
+    /** The unique identifier (within the filesystem) of this filesystem object (st_ino).
+     * Together with INodeIdDevice, this field can be used as a OS wide unique id
+     * when both their values are not 0.
+     * This field is 0 if the information is not available. */
+    RTINODE         INodeId;
+
+    /** User flags (st_flags).
+     * This field is 0 if this information is not available. */
+    uint32_t        fFlags;
+
+    /** The current generation number (st_gen).
+     * This field is 0 if this information is not available. */
+    uint32_t        GenerationId;
+
+    /** The device number of a character or block device type object (st_rdev).
+     * This field is 0 if the file isn't of a character or block device type and
+     * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
+    RTDEV           Device;
+} RTFSOBJATTRUNIX;
+
+
+/**
+ * Additional Unix Attributes (RTFSOBJATTRADD_UNIX_OWNER).
+ *
+ * @remarks This interface is mainly for TAR.
+ */
+typedef struct RTFSOBJATTRUNIXOWNER
+{
+    /** The user owning the filesystem object (st_uid).
+     * This field is NIL_UID if not supported. */
+    RTUID           uid;
+    /** The user name.
+     * Empty if not available or not supported, truncated if too long. */
+    char            szName[RTFSOBJATTRUNION_MAX_SIZE - sizeof(RTUID)];
+} RTFSOBJATTRUNIXOWNER;
+
+
+/**
+ * Additional Unix Attributes (RTFSOBJATTRADD_UNIX_GROUP).
+ *
+ * @remarks This interface is mainly for TAR.
+ */
+typedef struct RTFSOBJATTRUNIXGROUP
+{
+    /** The user owning the filesystem object (st_uid).
+     * This field is NIL_GID if not supported. */
+    RTGID           gid;
+    /** The group name.
+     * Empty if not available or not supported, truncated if too long. */
+    char            szName[RTFSOBJATTRUNION_MAX_SIZE - sizeof(RTGID)];
+} RTFSOBJATTRUNIXGROUP;
+
 
 /**
  * Filesystem object attributes.
  */
-#pragma pack(1)
 typedef struct RTFSOBJATTR
 {
     /** Mode flags (st_mode). RTFS_UNIX_*, RTFS_TYPE_*, and RTFS_DOS_*. */
@@ -295,48 +379,12 @@ typedef struct RTFSOBJATTR
      */
     union RTFSOBJATTRUNION
     {
-        /** Additional Unix Attributes
-         * These are available when RTFSOBJATTRADD is set in fUnix.
-         */
-         struct RTFSOBJATTRUNIX
-         {
-            /** The user owning the filesystem object (st_uid).
-             * This field is ~0U if not supported. */
-            RTUID           uid;
-
-            /** The group the filesystem object is assigned (st_gid).
-             * This field is ~0U if not supported. */
-            RTGID           gid;
-
-            /** Number of hard links to this filesystem object (st_nlink).
-             * This field is 1 if the filesystem doesn't support hardlinking or
-             * the information isn't available.
-             */
-            uint32_t        cHardlinks;
-
-            /** The device number of the device which this filesystem object resides on (st_dev).
-             * This field is 0 if this information is not available. */
-            RTDEV           INodeIdDevice;
-
-            /** The unique identifier (within the filesystem) of this filesystem object (st_ino).
-             * Together with INodeIdDevice, this field can be used as a OS wide unique id
-             * when both their values are not 0.
-             * This field is 0 if the information is not available. */
-            RTINODE         INodeId;
-
-            /** User flags (st_flags).
-             * This field is 0 if this information is not available. */
-            uint32_t        fFlags;
-
-            /** The current generation number (st_gen).
-             * This field is 0 if this information is not available. */
-            uint32_t        GenerationId;
-
-            /** The device number of a character or block device type object (st_rdev).
-             * This field is 0 if the file isn't of a character or block device type and
-             * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
-            RTDEV           Device;
-        } Unix;
+        /** Additional Unix Attributes - RTFSOBJATTRADD_UNIX. */
+        RTFSOBJATTRUNIX         Unix;
+        /** Additional Unix Owner Attributes - RTFSOBJATTRADD_UNIX_OWNER. */
+        RTFSOBJATTRUNIXOWNER    UnixOwner;
+        /** Additional Unix Group Attributes - RTFSOBJATTRADD_UNIX_GROUP. */
+        RTFSOBJATTRUNIXGROUP    UnixGroup;
 
         /**
          * Extended attribute size is available when RTFS_DOS_HAVE_EA_SIZE is set.
@@ -346,9 +394,10 @@ typedef struct RTFSOBJATTR
             /** Size of EAs. */
             RTFOFF          cb;
         } EASize;
+        /** Reserved space. */
+        uint8_t         abReserveSpace[128];
     } u;
 } RTFSOBJATTR;
-#pragma pack()
 /** Pointer to a filesystem object attributes structure. */
 typedef RTFSOBJATTR *PRTFSOBJATTR;
 /** Pointer to a const filesystem object attributes structure. */
@@ -360,7 +409,6 @@ typedef const RTFSOBJATTR *PCRTFSOBJATTR;
  *
  * This is returned by the RTPathQueryInfo(), RTFileQueryInfo() and RTDirRead() APIs.
  */
-#pragma pack(1)
 typedef struct RTFSOBJINFO
 {
    /** Logical size (st_size).
@@ -394,7 +442,6 @@ typedef struct RTFSOBJINFO
    RTFSOBJATTR  Attr;
 
 } RTFSOBJINFO;
-#pragma pack()
 /** Pointer to a filesystem object information structure. */
 typedef RTFSOBJINFO *PRTFSOBJINFO;
 /** Pointer to a const filesystem object information structure. */

@@ -124,11 +124,11 @@ typedef struct RTVFSOBJOPS
     /**
      * Get information about the file.
      *
-     * @returns IPRT status code.
+     * @returns IPRT status code. See RTVfsObjQueryInfo.
      * @param   pvThis      The implementation specific file data.
      * @param   pObjInfo    Where to return the object info on success.
      * @param   enmAddAttr  Which set of additional attributes to request.
-     * @sa      RTFileQueryInfo
+     * @sa      RTVfsObjQueryInfo, RTFileQueryInfo, RTPathQueryInfo
      */
     DECLCALLBACKMEMBER(int, pfnQueryInfo)(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
 
@@ -233,6 +233,7 @@ typedef struct RTVFSFSSTREAMOPS
      * @param   penmType    Where to return the object type.
      * @param   hVfsObj     Where to return the object handle (referenced).
      *                      This must be cast to the desired type before use.
+     * @sa      RTVfsFsStrmNext
      */
     DECLCALLBACKMEMBER(int, pfnNext)(void *pvThis, char **ppszName, RTVFSOBJTYPE *penmType, PRTVFSOBJ phVfsObj);
 
@@ -244,6 +245,26 @@ typedef RTVFSFSSTREAMOPS const *PCRTVFSFSSTREAMOPS;
 
 /** The RTVFSFSSTREAMOPS structure version. */
 #define RTVFSFSSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x3f,1,0)
+
+
+/**
+ * Creates a new VFS filesystem stream handle.
+ *
+ * @returns IPRT status code
+ * @param   pFsStreamOps        The filesystem stream operations.
+ * @param   cbInstance          The size of the instance data.
+ * @param   hVfs                The VFS handle to associate this filesystem
+ *                              steram with.  NIL_VFS is ok.
+ * @param   hSemRW              The read-write semaphore to use to protect the
+ *                              handle if this differs from the one the VFS
+ *                              uses.  NIL_RTSEMRW is ok if no locking is
+ *                              desired.
+ * @param   phVfsFss            Where to return the new handle.
+ * @param   ppvInstance         Where to return the pointer to the instance data
+ *                              (size is @a cbInstance).
+ */
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTSEMRW hSemRW,
+                             PRTVFSFSSTREAM phVfsFss, void **ppvInstance);
 
 
 /**
@@ -552,8 +573,8 @@ typedef RTVFSIOSTREAMOPS const *PCRTVFSIOSTREAMOPS;
  * @param   pIoStreamOps        The I/O stream operations.
  * @param   cbInstance          The size of the instance data.
  * @param   fOpen               The open flags.  The minimum is the access mask.
- * @param   hVfs                The VFS handle to associate this file with.
- *                              NIL_VFS is ok.
+ * @param   hVfs                The VFS handle to associate this I/O stream
+ *                              with.  NIL_VFS is ok.
  * @param   hSemRW              The read-write semaphore to use to protect the
  *                              handle if this differs from the one the VFS
  *                              uses.  NIL_RTSEMRW is ok if no locking is
