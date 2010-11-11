@@ -724,8 +724,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
     uint32_t vramSize = 0;
-    VBoxSDLEventListener *vboxListener = NULL;
-    VBoxSDLConsoleEventListener *consoleListener = NULL;
+    IEventListener *vboxListener = NULL;
+    VBoxSDLConsoleEventListenerImpl *consoleListener = NULL;
 
     bool fFullscreen = false;
     bool fResizable = true;
@@ -1809,7 +1809,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         eventTypes.push_back(VBoxEventType_OnShowWindow);
         CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
         // until we've tried to to start the VM, ignore power off events
-        consoleListener->ignorePowerOffEvents(true);
+        consoleListener->getWrapped()->ignorePowerOffEvents(true);
     }
 
     if (portVRDP)
@@ -2115,7 +2115,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     // accept power off events from now on because we're running
     // note that there's a possible race condition here...
-    consoleListener->ignorePowerOffEvents(false);
+    consoleListener->getWrapped()->ignorePowerOffEvents(false);
 
     rc = gConsole->COMGETTER(Keyboard)(gKeyboard.asOutParam());
     if (!gKeyboard)
@@ -2644,7 +2644,7 @@ leave:
        )
     do
     {
-        consoleListener->ignorePowerOffEvents(true);
+        consoleListener->getWrapped()->ignorePowerOffEvents(true);
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(gConsole, PowerDown(progress.asOutParam()));
         CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
