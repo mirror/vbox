@@ -514,6 +514,8 @@ private:
     bool m_fIgnorePowerOffEvents;
 };
 
+typedef ListenerImpl<VBoxSDLEventListener>        VBoxSDLEventListenerImpl;
+typedef ListenerImpl<VBoxSDLConsoleEventListener> VBoxSDLConsoleEventListenerImpl;
 
 static void show_usage()
 {
