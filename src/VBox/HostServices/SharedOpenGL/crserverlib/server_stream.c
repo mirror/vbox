@@ -116,15 +116,21 @@ static void crServerCleanupClient(CRClient *client)
     cr_server.curClient = client;
 
     /* Destroy any windows created by the client */
-    for (pos = 0; pos<CR_MAX_WINDOWS && client->windowList[pos]; pos++) 
+    for (pos = 0; pos<CR_MAX_WINDOWS; pos++) 
     {
-        cr_server.dispatch.WindowDestroy(client->windowList[pos]);
+        if (client->windowList[pos])
+        {
+            cr_server.dispatch.WindowDestroy(client->windowList[pos]);
+        }
     }
 
     /* Check if we have context(s) made by this client left, could happen if client side code is lazy */
-    for (pos = 0; pos<CR_MAX_CONTEXTS && client->contextList[pos]; pos++) 
+    for (pos = 0; pos<CR_MAX_CONTEXTS; pos++) 
     {
-        cr_server.dispatch.DestroyContext(client->contextList[pos]);
+        if (client->contextList[pos])
+        {
+            cr_server.dispatch.DestroyContext(client->contextList[pos]);
+        }
     }
 
     cr_server.curClient = oldclient;
