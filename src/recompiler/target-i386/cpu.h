@@ -495,8 +495,8 @@ typedef union {
 
 typedef union {
     uint8_t _b[8];
-    uint16_t _w[2];
-    uint32_t _l[1];
+    uint16_t _w[4];
+    uint32_t _l[2];
     float32 _s[2];
     uint64_t q;
 } MMXReg;
