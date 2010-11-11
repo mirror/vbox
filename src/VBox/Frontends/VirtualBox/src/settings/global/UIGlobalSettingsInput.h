@@ -37,6 +37,7 @@ class UIGlobalSettingsInput : public UISettingsPageGlobal, public Ui::UIGlobalSe
 
 public:
 
+    /* Constructor: */
     UIGlobalSettingsInput();
 
 protected:
