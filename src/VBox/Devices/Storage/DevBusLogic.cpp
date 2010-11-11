@@ -2959,6 +2959,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 {
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     int        rc = VINF_SUCCESS;
+    bool       fBootable = true;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
@@ -2966,7 +2967,8 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
      */
     if (!CFGMR3AreValuesValid(pCfg,
                               "GCEnabled\0"
-                              "R0Enabled\0"))
+                              "R0Enabled\0"
+                              "Bootable\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("BusLogic configuration error: unknown option specified"));
 
@@ -2981,7 +2983,11 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("BusLogic configuration error: failed to read R0Enabled as boolean"));
     Log(("%s: fR0Enabled=%d\n", __FUNCTION__, pThis->fR0Enabled));
-
+    rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &fBootable, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("BusLogic configuration error: failed to read Bootable as boolean"));
+    Log(("%s: fBootable=%RTbool\n", __FUNCTION__, fBootable));
 
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
@@ -3018,13 +3024,16 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Register I/O port space in ISA region for BIOS access. */
-    rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_ISA_IO_PORT, 3, NULL,
-                                 buslogicIsaIOPortWrite, buslogicIsaIOPortRead,
-                                 buslogicIsaIOPortWriteStr, buslogicIsaIOPortReadStr,
-                                 "BusLogic BIOS");
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register legacy I/O handlers"));
+    if (fBootable)
+    {
+        /* Register I/O port space in ISA region for BIOS access. */
+        rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_ISA_IO_PORT, 3, NULL,
+                                     buslogicIsaIOPortWrite, buslogicIsaIOPortRead,
+                                     buslogicIsaIOPortWriteStr, buslogicIsaIOPortReadStr,
+                                     "BusLogic BIOS");
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register legacy I/O handlers"));
+    }
 
     /* Initialize task cache. */
     rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(BUSLOGICTASKSTATE), 0, UINT32_MAX,

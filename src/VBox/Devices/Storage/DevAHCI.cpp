@@ -634,7 +634,8 @@ typedef struct AHCI
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                   fSignalIdle;
-    bool                            afAlignment8[1];
+    /** Flag whether the controller has BIOS access enabled. */
+    bool                            fBootable;
 
     /** Number of usable ports on this controller. */
     uint32_t                        cPortsImpl;
@@ -6695,9 +6696,10 @@ static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
         }
     }
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-        if (!ataControllerIsIdle(&pThis->aCts[i]))
-            return false;
+    if (pThis->fBootable)
+        for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+            if (!ataControllerIsIdle(&pThis->aCts[i]))
+                return false;
 
     return true;
 }
@@ -7405,8 +7407,9 @@ static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
     }
 
     Log(("%s:\n", __FUNCTION__));
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-        ataControllerResume(&pAhci->aCts[i]);
+    if (pAhci->fBootable)
+        for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
+            ataControllerResume(&pAhci->aCts[i]);
     return;
 }
 
@@ -7592,8 +7595,9 @@ static int ahciR3ResetCommon(PPDMDEVINS pDevIns, bool fConstructor)
     for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
         ahciPortHwReset(&pAhci->ahciPort[i]);
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
-        ataControllerReset(&pAhci->aCts[i]);
+    if (pAhci->fBootable)
+        for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
+            ataControllerReset(&pAhci->aCts[i]);
     return VINF_SUCCESS;
 }
 
@@ -7663,13 +7667,14 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Validate and read configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0"
-                                          "R0Enabled\0"
-                                          "PrimaryMaster\0"
-                                          "PrimarySlave\0"
-                                          "SecondaryMaster\0"
-                                          "SecondarySlave\0"
-                                          "PortCount\0"
-                                          "UseAsyncInterfaceIfAvailable\0"))
+                                    "R0Enabled\0"
+                                    "PrimaryMaster\0"
+                                    "PrimarySlave\0"
+                                    "SecondaryMaster\0"
+                                    "SecondarySlave\0"
+                                    "PortCount\0"
+                                    "UseAsyncInterfaceIfAvailable\0"
+                                    "Bootable\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AHCI configuration error: unknown option specified"));
 
@@ -7703,6 +7708,11 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read UseAsyncInterfaceIfAvailable as boolean"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &pThis->fBootable, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("AHCI configuration error: failed to read Bootable as boolean"));
 
     pThis->fR0Enabled = fR0Enabled;
     pThis->fGCEnabled = fGCEnabled;
@@ -7800,7 +7810,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI cannot register PCI memory region for registers"));
 
-    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, RT_SRC_POS, "AHCI");
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, RT_SRC_POS, "AHCI%d", pDevIns->iInstance);
     if (RT_FAILURE(rc))
     {
         Log(("%s: Failed to create critical section.\n", __FUNCTION__));
@@ -8049,100 +8059,103 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("AHCI cannot attach to status driver"));
     }
 
-    /*
-     * Setup IDE emulation.
-     * We only emulate the I/O ports but not bus master DMA.
-     * If the configuration values are not found the setup of the ports is as follows:
-     *     Primary Master:   Port 0
-     *     Primary Slave:    Port 1
-     *     Secondary Master: Port 2
-     *     Secondary Slave:  Port 3
-     */
-
-    /*
-     * Setup I/O ports for the PCI device.
-     */
-    pThis->aCts[0].irq          = 12;
-    pThis->aCts[0].IOPortBase1  = 0x1e8;
-    pThis->aCts[0].IOPortBase2  = 0x3e6;
-    pThis->aCts[1].irq          = 11;
-    pThis->aCts[1].IOPortBase1  = 0x168;
-    pThis->aCts[1].IOPortBase2  = 0x366;
-
-    for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    if (pThis->fBootable)
     {
-        PAHCIATACONTROLLER pCtl = &pThis->aCts[i];
-        uint32_t iPortMaster, iPortSlave;
-        uint32_t cbSSMState = 0;
-        static const char *s_apszDescs[RT_ELEMENTS(pThis->aCts)][RT_ELEMENTS(pCtl->aIfs)] =
+        /*
+         * Setup IDE emulation.
+         * We only emulate the I/O ports but not bus master DMA.
+         * If the configuration values are not found the setup of the ports is as follows:
+         *     Primary Master:   Port 0
+         *     Primary Slave:    Port 1
+         *     Secondary Master: Port 2
+         *     Secondary Slave:  Port 3
+         */
+
+        /*
+         * Setup I/O ports for the PCI device.
+         */
+        pThis->aCts[0].irq          = 12;
+        pThis->aCts[0].IOPortBase1  = 0x1e8;
+        pThis->aCts[0].IOPortBase2  = 0x3e6;
+        pThis->aCts[1].irq          = 11;
+        pThis->aCts[1].IOPortBase1  = 0x168;
+        pThis->aCts[1].IOPortBase2  = 0x366;
+
+        for (i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         {
-            { "PrimaryMaster", "PrimarySlave" },
-            { "SecondaryMaster", "SecondarySlave" }
-        };
+            PAHCIATACONTROLLER pCtl = &pThis->aCts[i];
+            uint32_t iPortMaster, iPortSlave;
+            uint32_t cbSSMState = 0;
+            static const char *s_apszDescs[RT_ELEMENTS(pThis->aCts)][RT_ELEMENTS(pCtl->aIfs)] =
+            {
+                { "PrimaryMaster", "PrimarySlave" },
+                { "SecondaryMaster", "SecondarySlave" }
+            };
 
-        rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][0], &iPortMaster, 2 * i);
-        if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][0]);
+            rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][0], &iPortMaster, 2 * i);
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][0]);
 
-        rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][1], &iPortSlave, 2 * i + 1);
-        if (RT_FAILURE(rc))
-            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                       N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][1]);
+            rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][1], &iPortSlave, 2 * i + 1);
+            if (RT_FAILURE(rc))
+                return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                           N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][1]);
 
-        char szName[24];
-        RTStrPrintf(szName, sizeof(szName), "EmulatedATA%d", i);
-        rc = ataControllerInit(pDevIns, pCtl,
-                               iPortMaster, pThis->ahciPort[iPortMaster].pDrvBase,
-                               iPortSlave, pThis->ahciPort[iPortSlave].pDrvBase,
-                               &cbSSMState, szName, &pThis->ahciPort[iPortMaster].Led,
-                               &pThis->ahciPort[iPortMaster].StatBytesRead,
-                               &pThis->ahciPort[iPortMaster].StatBytesWritten);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        cbTotalBufferSize += cbSSMState;
-
-        rc = PDMDevHlpIOPortRegister(pDevIns, pCtl->IOPortBase1, 8, (RTHCPTR)i,
-                                     ahciIOPortWrite1, ahciIOPortRead1, ahciIOPortWriteStr1, ahciIOPortReadStr1, "AHCI");
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pCtl->IOPortBase1, 8, (RTR0PTR)i,
-                                           "ahciIOPortWrite1", "ahciIOPortRead1", NULL, NULL, "AHCI R0");
+            char szName[24];
+            RTStrPrintf(szName, sizeof(szName), "EmulatedATA%d", i);
+            rc = ataControllerInit(pDevIns, pCtl,
+                                   iPortMaster, pThis->ahciPort[iPortMaster].pDrvBase,
+                                   iPortSlave, pThis->ahciPort[iPortSlave].pDrvBase,
+                                   &cbSSMState, szName, &pThis->ahciPort[iPortMaster].Led,
+                                   &pThis->ahciPort[iPortMaster].StatBytesRead,
+                                   &pThis->ahciPort[iPortMaster].StatBytesWritten);
             if (RT_FAILURE(rc))
                 return rc;
-        }
 
-        if (pThis->fGCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase1, 8, (RTGCPTR)i,
-                                            "ahciIOPortWrite1", "ahciIOPortRead1", NULL, NULL, "AHCI GC");
+            cbTotalBufferSize += cbSSMState;
+
+            rc = PDMDevHlpIOPortRegister(pDevIns, pCtl->IOPortBase1, 8, (RTHCPTR)i,
+                                         ahciIOPortWrite1, ahciIOPortRead1, ahciIOPortWriteStr1, ahciIOPortReadStr1, "AHCI");
             if (RT_FAILURE(rc))
                 return rc;
-        }
 
-        rc = PDMDevHlpIOPortRegister(pDevIns, pCtl->IOPortBase2, 1, (RTHCPTR)i,
-                                     ahciIOPortWrite2, ahciIOPortRead2, NULL, NULL, "AHCI");
-        if (RT_FAILURE(rc))
-            return rc;
+            if (pThis->fR0Enabled)
+            {
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pCtl->IOPortBase1, 8, (RTR0PTR)i,
+                                               "ahciIOPortWrite1", "ahciIOPortRead1", NULL, NULL, "AHCI R0");
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
 
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pCtl->IOPortBase2, 1, (RTR0PTR)i,
-                                            "ahciIOPortWrite2", "ahciIOPortRead2", NULL, NULL, "AHCI R0");
+            if (pThis->fGCEnabled)
+            {
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase1, 8, (RTGCPTR)i,
+                                                "ahciIOPortWrite1", "ahciIOPortRead1", NULL, NULL, "AHCI GC");
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
+
+            rc = PDMDevHlpIOPortRegister(pDevIns, pCtl->IOPortBase2, 1, (RTHCPTR)i,
+                                         ahciIOPortWrite2, ahciIOPortRead2, NULL, NULL, "AHCI");
             if (RT_FAILURE(rc))
                 return rc;
-        }
 
-        if (pThis->fGCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase2, 1, (RTGCPTR)i,
-                                            "ahciIOPortWrite2", "ahciIOPortRead2", NULL, NULL, "AHCI GC");
-            if (RT_FAILURE(rc))
-                return rc;
+            if (pThis->fR0Enabled)
+            {
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pCtl->IOPortBase2, 1, (RTR0PTR)i,
+                                                "ahciIOPortWrite2", "ahciIOPortRead2", NULL, NULL, "AHCI R0");
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
+
+            if (pThis->fGCEnabled)
+            {
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase2, 1, (RTGCPTR)i,
+                                                "ahciIOPortWrite2", "ahciIOPortRead2", NULL, NULL, "AHCI GC");
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
         }
     }
 
