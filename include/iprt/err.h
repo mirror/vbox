@@ -1293,6 +1293,8 @@ RT_C_DECLS_END
 #define VERR_TAR_CHKSUM_MISMATCH                (-925)
 /** The tar end of file record was read. */
 #define VERR_TAR_END_OF_FILE                    (-926)
+/** The tar file ended unexpectedly. */
+#define VERR_TAR_UNEXPECTED_EOS                 (-927)
 /** @} */
 
 /** @name RTPoll status codes

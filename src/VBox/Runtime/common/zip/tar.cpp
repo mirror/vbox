@@ -29,7 +29,6 @@
  *   Header Files                                                             *
  ******************************************************************************/
 #include "internal/iprt.h"
-#include "internal/magics.h"
 #include <iprt/tar.h>
 
 #include <iprt/asm.h>
@@ -39,6 +38,8 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+
+#include "internal/magics.h"
 
 
 /******************************************************************************

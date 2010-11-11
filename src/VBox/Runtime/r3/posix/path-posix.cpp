@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <grp.h>
 
 #include <iprt/path.h>
 #include <iprt/env.h>
@@ -339,15 +340,23 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
             rtFsConvertStatToObjInfo(pObjInfo, &Stat, pszPath, 0);
             switch (enmAdditionalAttribs)
             {
+                case RTFSOBJATTRADD_NOTHING:
+                case RTFSOBJATTRADD_UNIX:
+                    Assert(pObjInfo->Attr.enmAdditional == RTFSOBJATTRADD_UNIX);
+                    break;
+
+                case RTFSOBJATTRADD_UNIX_OWNER:
+                    rtFsObjInfoAttrSetUnixOwner(pObjInfo, Stat.st_uid);
+                    break;
+
+                case RTFSOBJATTRADD_UNIX_GROUP:
+                    rtFsObjInfoAttrSetUnixGroup(pObjInfo, Stat.st_gid);
+                    break;
+
                 case RTFSOBJATTRADD_EASIZE:
                     /** @todo Use SGI extended attribute interface to query EA info. */
                     pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_EASIZE;
                     pObjInfo->Attr.u.EASize.cb            = 0;
-                    break;
-
-                case RTFSOBJATTRADD_NOTHING:
-                case RTFSOBJATTRADD_UNIX:
-                    Assert(pObjInfo->Attr.enmAdditional == RTFSOBJATTRADD_UNIX);
                     break;
 
                 default:

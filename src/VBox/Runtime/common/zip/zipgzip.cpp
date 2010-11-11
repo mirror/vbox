@@ -340,7 +340,6 @@ static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
     int              rc;
 
-    NOREF(fBlocking);
     if (!pThis->fDecompress)
         return VERR_ACCESS_DENIED;
 

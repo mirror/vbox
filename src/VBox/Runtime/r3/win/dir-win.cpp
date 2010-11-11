@@ -436,6 +436,18 @@ RTDECL(int) RTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntr
             pDirEntry->Info.Attr.enmAdditional          = RTFSOBJATTRADD_NOTHING;
             break;
 
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pDirEntry->Info.Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_OWNER;
+            pDirEntry->Info.Attr.u.UnixOwner.uid        = ~0U;
+            pDirEntry->Info.Attr.u.UnixOwner.szName[0]  = '\0'; /** @todo return something sensible here. */
+            break;
+
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pDirEntry->Info.Attr.enmAdditional          = RTFSOBJATTRADD_UNIX_GROUP;
+            pDirEntry->Info.Attr.u.UnixGroup.gid        = ~0U;
+            pDirEntry->Info.Attr.u.UnixGroup.szName[0]  = '\0';
+            break;
+
         default:
             AssertMsgFailed(("Impossible!\n"));
             return VERR_INTERNAL_ERROR;

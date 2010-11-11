@@ -679,9 +679,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
      */
     switch (enmAdditionalAttribs)
     {
-        case RTFSOBJATTRADD_EASIZE:
-            pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_EASIZE;
-            pObjInfo->Attr.u.EASize.cb            = 0;
+        case RTFSOBJATTRADD_NOTHING:
+            pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_NOTHING;
             break;
 
         case RTFSOBJATTRADD_UNIX:
@@ -696,8 +695,21 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD
             pObjInfo->Attr.u.Unix.Device          = 0;
             break;
 
-        case RTFSOBJATTRADD_NOTHING:
-            pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_NOTHING;
+        case RTFSOBJATTRADD_UNIX_OWNER:
+            pObjInfo->Info.Attr.enmAdditional     = RTFSOBJATTRADD_UNIX_OWNER;
+            pObjInfo->Info.Attr.u.UnixOwner.uid   = ~0U;
+            pObjInfo->Info.Attr.u.UnixOwner.szName[0] = '\0'; /** @todo return something sensible here. */
+            break;
+
+        case RTFSOBJATTRADD_UNIX_GROUP:
+            pObjInfo->Info.Attr.enmAdditional     = RTFSOBJATTRADD_UNIX_GROUP;
+            pObjInfo->Info.Attr.u.UnixGroup.gid   = ~0U;
+            pObjInfo->Info.Attr.u.UnixGroup.szName[0] = '\0';
+            break;
+
+        case RTFSOBJATTRADD_EASIZE:
+            pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_EASIZE;
+            pObjInfo->Attr.u.EASize.cb            = 0;
             break;
 
         default:

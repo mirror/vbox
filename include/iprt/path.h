@@ -627,7 +627,8 @@ RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath);
  *          parent directory exists).
  *
  * @param   pszPath     Path to the file system object.
- * @param   pObjInfo    Object information structure to be filled on successful return.
+ * @param   pObjInfo    Object information structure to be filled on successful
+ *                      return.
  * @param   enmAdditionalAttribs
  *                      Which set of additional attributes to request.
  *                      Use RTFSOBJATTRADD_NOTHING if this doesn't matter.

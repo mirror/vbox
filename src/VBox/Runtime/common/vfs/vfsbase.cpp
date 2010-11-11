@@ -69,6 +69,36 @@
 #define RTVFS_MAX_LINKS             20U
 
 
+/** Asserts that the VFS base object vtable is valid. */
+#define RTVFSOBJ_ASSERT_OPS(pObj, enmTypeArg) \
+    do \
+    { \
+        Assert((pObj)->uVersion == RTVFSOBJOPS_VERSION); \
+        Assert((pObj)->enmType == (enmTypeArg) || (enmTypeArg) == RTVFSOBJTYPE_INVALID); \
+        AssertPtr((pObj)->pszName); \
+        Assert(*(pObj)->pszName); \
+        AssertPtr((pObj)->pfnClose); \
+        AssertPtr((pObj)->pfnQueryInfo); \
+        Assert((pObj)->uEndMarker == RTVFSOBJOPS_VERSION); \
+    } while (0)
+
+/** Asserts that the VFS I/O stream vtable is valid. */
+#define RTVFSIOSTREAM_ASSERT_OPS(pIoStreamOps, enmTypeArg) \
+    do { \
+        RTVFSOBJ_ASSERT_OPS(&(pIoStreamOps)->Obj, enmTypeArg); \
+        Assert((pIoStreamOps)->uVersion == RTVFSIOSTREAMOPS_VERSION); \
+        Assert(!(pIoStreamOps)->fReserved); \
+        AssertPtr((pIoStreamOps)->pfnRead); \
+        AssertPtr((pIoStreamOps)->pfnWrite); \
+        AssertPtr((pIoStreamOps)->pfnFlush); \
+        AssertPtr((pIoStreamOps)->pfnPollOne); \
+        AssertPtr((pIoStreamOps)->pfnTell); \
+        AssertPtrNull((pIoStreamOps)->pfnSkip); \
+        AssertPtrNull((pIoStreamOps)->pfnZeroFill); \
+        Assert((pIoStreamOps)->uEndMarker == RTVFSIOSTREAMOPS_VERSION); \
+    } while (0)
+
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -1094,7 +1124,51 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
 RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTSEMRW hSemRW,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance)
 {
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate the input, be extra strict in strict builds.
+     */
+    AssertPtr(pFsStreamOps);
+    AssertReturn(pFsStreamOps->uVersion   == RTVFSFSSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
+    AssertReturn(pFsStreamOps->uEndMarker == RTVFSFSSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
+    Assert(!pFsStreamOps->fReserved);
+    RTVFSOBJ_ASSERT_OPS(&pFsStreamOps->Obj, RTVFSOBJTYPE_FS_STREAM);
+    AssertPtr(pFsStreamOps->pfnNext);
+    Assert(cbInstance > 0);
+    AssertPtr(ppvInstance);
+    AssertPtr(phVfsFss);
+
+    RTVFSINTERNAL *pVfs = NULL;
+    if (hVfs != NIL_RTVFS)
+    {
+        pVfs = hVfs;
+        AssertPtrReturn(pVfs, VERR_INVALID_HANDLE);
+        AssertReturn(pVfs->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
+    }
+
+    /*
+     * Allocate the handle + instance data.
+     */
+    size_t const cbThis = RT_ALIGN_Z(sizeof(RTVFSFSSTREAMINTERNAL), RTVFS_INST_ALIGNMENT)
+                        + RT_ALIGN_Z(cbInstance, RTVFS_INST_ALIGNMENT);
+    RTVFSFSSTREAMINTERNAL *pThis = (RTVFSFSSTREAMINTERNAL *)RTMemAllocZ(cbThis);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->uMagic       = RTVFSFSSTREAM_MAGIC;
+    pThis->fFlags       = RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE;
+    pThis->pOps         = pFsStreamOps;
+    pThis->Base.uMagic  = RTVFSOBJ_MAGIC;
+    pThis->Base.pvThis  = (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT);
+    pThis->Base.pOps    = &pFsStreamOps->Obj;
+    pThis->Base.hSemRW  = hSemRW != NIL_RTSEMRW ? hSemRW : pVfs ? pVfs->Base.hSemRW : NIL_RTSEMRW;
+    pThis->Base.hVfs    = hVfs;
+    pThis->Base.cRefs   = 1;
+    if (hVfs != NIL_RTVFS)
+        rtVfsObjRetainVoid(&pVfs->Base);
+
+    *phVfsFss    = pThis;
+    *ppvInstance = pThis->Base.pvThis;
+    return VINF_SUCCESS;
 }
 
 
@@ -1232,6 +1306,7 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
     AssertReturn(pIoStreamOps->uVersion   == RTVFSIOSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
     AssertReturn(pIoStreamOps->uEndMarker == RTVFSIOSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
     Assert(!pIoStreamOps->fReserved);
+    RTVFSIOSTREAM_ASSERT_OPS(pIoStreamOps, RTVFSOBJTYPE_IO_STREAM);
     Assert(cbInstance > 0);
     Assert(fOpen & RTFILE_O_ACCESS_MASK);
     AssertPtr(ppvInstance);
@@ -1538,6 +1613,7 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
     AssertReturn(pFileOps->uVersion   == RTVFSFILEOPS_VERSION, VERR_VERSION_MISMATCH);
     AssertReturn(pFileOps->uEndMarker == RTVFSFILEOPS_VERSION, VERR_VERSION_MISMATCH);
     Assert(!pFileOps->fReserved);
+    RTVFSIOSTREAM_ASSERT_OPS(&pFileOps->Stream, RTVFSOBJTYPE_FILE);
     Assert(cbInstance > 0);
     Assert(fOpen & RTFILE_O_ACCESS_MASK);
     AssertPtr(ppvInstance);
