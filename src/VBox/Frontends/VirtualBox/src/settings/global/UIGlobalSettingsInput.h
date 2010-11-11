@@ -19,6 +19,7 @@
 #ifndef __UIGlobalSettingsInput_h__
 #define __UIGlobalSettingsInput_h__
 
+/* Local includes */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsInput.gen.h"
 
@@ -30,8 +31,7 @@ struct UISettingsCacheGlobalInput
 };
 
 /* Global settings / Input page: */
-class UIGlobalSettingsInput : public UISettingsPageGlobal,
-                            public Ui::UIGlobalSettingsInput
+class UIGlobalSettingsInput : public UISettingsPageGlobal, public Ui::UIGlobalSettingsInput
 {
     Q_OBJECT;
 
@@ -55,8 +55,10 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    void setOrderAfter (QWidget *aWidget);
+    /* Navigation stuff: */
+    void setOrderAfter(QWidget *pWidget);
 
+    /* Translation stuff: */
     void retranslateUi();
 
 private:

@@ -17,15 +17,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Local includes */
 #include "UIGlobalSettingsInput.h"
 #include "VBoxGlobalSettings.h"
 
+/* Input page constructor: */
 UIGlobalSettingsInput::UIGlobalSettingsInput()
 {
-    /* Apply UI decorations */
+    /* Apply UI decorations: */
     Ui::UIGlobalSettingsInput::setupUi (this);
 
-    /* Applying language settings */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -49,8 +51,8 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsInput::getFromCache()
 {
     /* Fetch from cache: */
-    mHeHostKey->setKey(m_cache.m_iHostKey);
-    mCbAutoGrab->setChecked(m_cache.m_fAutoCapture);
+    m_pHostKeyEditor->setKey(m_cache.m_iHostKey);
+    m_pEnableAutoGrabCheckbox->setChecked(m_cache.m_fAutoCapture);
 }
 
 /* Save data from corresponding widgets to cache,
@@ -58,8 +60,8 @@ void UIGlobalSettingsInput::getFromCache()
 void UIGlobalSettingsInput::putToCache()
 {
     /* Upload to cache: */
-    m_cache.m_iHostKey = mHeHostKey->key();
-    m_cache.m_fAutoCapture = mCbAutoGrab->isChecked();
+    m_cache.m_iHostKey = m_pHostKeyEditor->key();
+    m_cache.m_fAutoCapture = m_pEnableAutoGrabCheckbox->isChecked();
 }
 
 /* Save data from cache to corresponding external object(s),
@@ -77,16 +79,18 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsInput::setOrderAfter (QWidget *aWidget)
+/* Navigation stuff: */
+void UIGlobalSettingsInput::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder (aWidget, mHeHostKey);
-    setTabOrder (mHeHostKey, mTbResetHostKey);
-    setTabOrder (mTbResetHostKey, mCbAutoGrab);
+    setTabOrder(pWidget, m_pHostKeyEditor);
+    setTabOrder(m_pHostKeyEditor, m_pResetHostKeyButton);
+    setTabOrder(m_pResetHostKeyButton, m_pEnableAutoGrabCheckbox);
 }
 
+/* Translation stuff: */
 void UIGlobalSettingsInput::retranslateUi()
 {
-    /* Translate uic generated strings */
+    /* Translate uic generated strings: */
     Ui::UIGlobalSettingsInput::retranslateUi (this);
 }
 
