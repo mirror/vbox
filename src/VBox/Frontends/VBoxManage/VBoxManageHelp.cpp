@@ -477,6 +477,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--sataideemulation<1-4> <1-30>]\n"
                      "                            [--sataportcount <1-30>]\n"
                      "                            [--hostiocache on|off]\n"
+                     "                            [--bootable on|off]\n"
                      "                            [--remove]\n"
                      "\n");
     }

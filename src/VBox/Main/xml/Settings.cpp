@@ -2813,6 +2813,11 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
         pelmController->getAttributeValue("Instance", sctl.ulInstance);
             // default from constructor is 0
 
+        pelmController->getAttributeValue("Bootable", sctl.fBootable);
+            // default from constructor is true which is true
+            // for settings below version 1.11 because they allowed only
+            // one controller per type.
+
         Utf8Str strType;
         if (!pelmController->getAttributeValue("type", strType))
             throw ConfigFileError(this, pelmController, N_("Required StorageController/@type attribute is missing"));
@@ -3992,6 +3997,9 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
         if (m->sv >= SettingsVersion_v1_10)
             pelmController->setAttribute("useHostIOCache", sc.fUseHostIOCache);
 
+        if (m->sv >= SettingsVersion_v1_11)
+            pelmController->setAttribute("Bootable", sc.fBootable);
+
         if (sc.controllerType == StorageControllerType_IntelAhci)
         {
             pelmController->setAttribute("IDE0MasterEmulationPort", sc.lIDE0MasterEmulationPort);
@@ -4387,6 +4395,56 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
         if (hardwareMachine.vrdeSettings.mapProperties.size() != cOldProperties)
             m->sv = SettingsVersion_v1_11;
+    }
+
+    // Settings version 1.11 is required if more than one controller of each type
+    // is present.
+    if (m->sv < SettingsVersion_v1_11)
+    {
+        size_t cSata = 0;
+        size_t cScsiLsi = 0;
+        size_t cScsiBuslogic = 0;
+        size_t cSas = 0;
+        size_t cIde = 0;
+        size_t cFloppy = 0;
+
+        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
+             it != storageMachine.llStorageControllers.end();
+             ++it)
+        {
+            switch ((*it).storageBus)
+            {
+                case StorageBus_IDE:
+                    cIde++;
+                    break;
+                case StorageBus_SATA:
+                    cSata++;
+                    break;
+                case StorageBus_SAS:
+                    cSas++;
+                    break;
+                case StorageBus_SCSI:
+                    if ((*it).controllerType == StorageControllerType_LsiLogic)
+                        cScsiLsi++;
+                    else
+                        cScsiBuslogic++;
+                    break;
+                case StorageBus_Floppy:
+                    cFloppy++;
+                    break;
+                default:
+                    // Do nothing
+                    break;
+            }
+
+            if (   cSata > 1
+                || cScsiLsi > 1
+                || cScsiBuslogic > 1
+                || cSas > 1
+                || cIde > 1
+                || cFloppy > 1)
+                m->sv = SettingsVersion_v1_11;
+        }
     }
 
     // settings version 1.9 is required if there is not exactly one DVD

@@ -50,7 +50,8 @@ public:
     HRESULT init(Machine *aParent,
                  const Utf8Str &aName,
                  StorageBus_T aBus,
-                 ULONG aInstance);
+                 ULONG aInstance,
+                 bool fBootable);
     HRESULT init(Machine *aParent,
                  StorageController *aThat,
                  bool aReshare = false);
@@ -72,6 +73,7 @@ public:
     STDMETHOD(COMSETTER(Instance)) (ULONG aInstance);
     STDMETHOD(COMGETTER(UseHostIOCache)) (BOOL *fUseHostIOCache);
     STDMETHOD(COMSETTER(UseHostIOCache)) (BOOL fUseHostIOCache);
+    STDMETHOD(COMGETTER(Bootable)) (BOOL *fBootable);
 
     // StorageController methods
     STDMETHOD(GetIDEEmulationPort) (LONG DevicePosition, LONG *aPortNumber);
@@ -83,9 +85,12 @@ public:
     StorageControllerType_T getControllerType() const;
     StorageBus_T getStorageBus() const;
     ULONG getInstance() const;
+    bool getBootable() const;
 
     HRESULT checkPortAndDeviceValid(LONG aControllerPort,
                                     LONG aDevice);
+
+    void setBootable(BOOL fBootable);
 
     void rollback();
     void commit();
