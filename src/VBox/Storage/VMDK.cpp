@@ -5923,7 +5923,7 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
     char *pszOldDescName = NULL;
     bool     fImageFreed = false;
     bool   fEmbeddedDesc = false;
-    unsigned    cExtents;
+    unsigned    cExtents = 0;
     char *pszNewBaseName = NULL;
     char *pszOldBaseName = NULL;
     char *pszNewFullName = NULL;
