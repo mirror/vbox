@@ -57,6 +57,7 @@ using namespace com;
 #include <VBox/log.h>
 #include <VBox/version.h>
 #include <VBox/VBoxVideo.h>
+#include <VBox/com/listeners.h>
 
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
