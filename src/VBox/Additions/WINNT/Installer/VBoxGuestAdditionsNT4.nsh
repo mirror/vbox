@@ -78,8 +78,10 @@ Function NT_Prepare
     Call StopVBoxService
   ${EndIf}
 
-  ; Stop / kill VBoxTray
-  Call StopVBoxTray
+  ${If} $g_bNoVBoxTrayExit == "false"
+    ; Stop / kill VBoxTray
+    Call StopVBoxTray
+  ${EndIf}
 
   ; Delete VBoxService from registry
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "VBoxService"
