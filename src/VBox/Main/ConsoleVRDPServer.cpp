@@ -33,6 +33,7 @@
 
 #include <VBox/err.h>
 #include <VBox/RemoteDesktop/VRDEOrders.h>
+#include <VBox/com/listeners.h>
 
 class VRDPConsoleListener
 {

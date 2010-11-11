@@ -24,6 +24,7 @@
 #include <VBox/com/EventQueue.h>
 
 #include <VBox/com/VirtualBox.h>
+#include <VBox/com/listeners.h>
 
 using namespace com;
 
@@ -90,15 +91,11 @@ static VNCFB *g_pFramebufferVNC;
 /**
  *  Handler for global events.
  */
-class VirtualBoxEventListener :
-  VBOX_SCRIPTABLE_IMPL(IEventListener)
+class VirtualBoxEventListener
 {
 public:
     VirtualBoxEventListener()
     {
-#ifndef VBOX_WITH_XPCOM
-        refcnt = 0;
-#endif
         mfNoLoggedInUsers = true;
     }
 
@@ -106,28 +103,8 @@ public:
     {
     }
 
-#ifndef VBOX_WITH_XPCOM
-    STDMETHOD_(ULONG, AddRef)()
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
-        return ::InterlockedIncrement(&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
-
-    NS_DECL_ISUPPORTS
-
-    STDMETHOD(HandleEvent)(IEvent * aEvent)
-    {
-        VBoxEventType_T aType = VBoxEventType_Invalid;
-
-        aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
             case VBoxEventType_OnGuestPropertyChanged:
@@ -213,26 +190,17 @@ public:
     }
 
 private:
-#ifndef VBOX_WITH_XPCOM
-    long refcnt;
-#endif
-
     bool mfNoLoggedInUsers;
 };
-
 
 /**
  *  Handler for machine events.
  */
-class ConsoleEventListener :
-  VBOX_SCRIPTABLE_IMPL(IEventListener)
+class ConsoleEventListener
 {
 public:
     ConsoleEventListener()
     {
-#ifndef VBOX_WITH_XPCOM
-        refcnt = 0;
-#endif
         mLastVRDEPort = -1;
     }
 
@@ -240,28 +208,8 @@ public:
     {
     }
 
-#ifndef VBOX_WITH_XPCOM
-    STDMETHOD_(ULONG, AddRef)()
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
-        return ::InterlockedIncrement(&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
-
-    NS_DECL_ISUPPORTS
-
-    STDMETHOD(HandleEvent)(IEvent * aEvent)
-    {
-        VBoxEventType_T aType = VBoxEventType_Invalid;
-
-        aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
             case VBoxEventType_OnMouseCapabilityChanged:
@@ -357,18 +305,14 @@ public:
 
 private:
 
-#ifndef VBOX_WITH_XPCOM
-    long refcnt;
-#endif
     long mLastVRDEPort;
 };
 
-#ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO(VirtualBoxEventListener)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBoxEventListener, IEventListener)
-NS_DECL_CLASSINFO(ConsoleEventListener)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ConsoleEventListener, IEventListener)
-#endif
+typedef ListenerImpl<VirtualBoxEventListener> VirtualBoxEventListenerImpl;
+typedef ListenerImpl<ConsoleEventListener> ConsoleEventListenerImpl;
+
+VBOX_LISTENER_DECLARE(VirtualBoxEventListenerImpl)
+VBOX_LISTENER_DECLARE(ConsoleEventListenerImpl)
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
 static void SaveState(int sig)
@@ -992,8 +936,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr<IEventSource> es;
             CHECK_ERROR(console, COMGETTER(EventSource)(es.asOutParam()));
-            consoleListener = new ConsoleEventListener();
-            consoleListener->AddRef();
+            consoleListener = new ConsoleEventListenerImpl();
             com::SafeArray <VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
             eventTypes.push_back(VBoxEventType_OnStateChanged);
@@ -1148,8 +1091,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
             ComPtr<IEventSource> es;
             CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-            vboxListener = new VirtualBoxEventListener();
-            vboxListener->AddRef();
+            vboxListener = new VirtualBoxEventListenerImpl();
             com::SafeArray <VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnGuestPropertyChanged);
             CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
