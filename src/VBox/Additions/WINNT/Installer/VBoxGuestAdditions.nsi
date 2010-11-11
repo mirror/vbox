@@ -177,6 +177,7 @@ Var g_iScreenY              ; Cmd line: Screen resolution Y ("/resy=Y")
 Var g_iSfOrder              ; Cmd line: Order of Shared Folders network provider (0=first, 1=second, ...)
 Var g_bIgnoreUnknownOpts    ; Cmd line: Ignore unknown options (don't display the help)
 Var g_bNoVBoxServiceExit    ; Cmd line: Do not quit VBoxService before updating - install on next reboot
+Var g_bNoVBoxTrayExit       ; Cmd line: Do not quit VBoxTray before updating - install on next reboot
 Var g_bNoVideoDrv           ; Cmd line: Do not install the VBoxVideo driver
 Var g_bNoGuestDrv           ; Cmd line: Do not install the VBoxGuest driver
 Var g_bNoMouseDrv           ; Cmd line: Do not install the VBoxMouse driver
@@ -272,6 +273,10 @@ Function HandleCommandLine
 
       ${Case} '/no_vboxservice_exit' ; Not officially documented
         StrCpy $g_bNoVBoxServiceExit "true"
+        ${Break}
+
+      ${Case} '/no_vboxtray_exit' ; Not officially documented
+        StrCpy $g_bNoVBoxTrayExit "true"
         ${Break}
 
       ${Case} '/no_videodrv' ; Not officially documented
@@ -993,6 +998,7 @@ Function .onInit
   StrCpy $g_iScreenBpp "0"
   StrCpy $g_iSfOrder "0"
   StrCpy $g_bNoVBoxServiceExit "false"
+  StrCpy $g_bNoVBoxTrayExit "false"
   StrCpy $g_bNoVideoDrv "false"
   StrCpy $g_bNoGuestDrv "false"
   StrCpy $g_bNoMouseDrv "false"
