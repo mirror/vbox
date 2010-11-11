@@ -25,7 +25,7 @@
 UIGlobalSettingsInput::UIGlobalSettingsInput()
 {
     /* Apply UI decorations: */
-    Ui::UIGlobalSettingsInput::setupUi (this);
+    Ui::UIGlobalSettingsInput::setupUi(this);
 
     /* Apply language settings: */
     retranslateUi();
