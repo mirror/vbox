@@ -664,4 +664,3 @@ RT_C_DECLS_END
 
 #endif /* !___iprt_vfs_h */
 
-

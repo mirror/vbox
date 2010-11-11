@@ -1963,7 +1963,7 @@ static const struct {
     int32_t     iSlot;
     int32_t     iFunction;
 } PciSlotAssignments[] = {
-    /* The only override that have to be here, as host controller is added in the way invisible to bus slot assignment management, 
+    /* The only override that have to be here, as host controller is added in the way invisible to bus slot assignment management,
        maybe to be changed in the future. */
     {
         "i82801",   30, 0 /* Host Controller */

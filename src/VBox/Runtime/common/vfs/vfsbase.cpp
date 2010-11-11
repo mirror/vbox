@@ -1741,4 +1741,3 @@ RTDECL(RTVFSIOSTREAM) RTVfsFileToIoStream(RTVFSFILE hVfsFile)
     return &pThis->Stream;
 }
 
-

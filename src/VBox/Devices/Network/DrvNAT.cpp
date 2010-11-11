@@ -658,7 +658,7 @@ static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
 
     struct in_addr guestIp, hostIp;
 
-    if (   pHostIp == NULL 
+    if (   pHostIp == NULL
         || inet_aton(pHostIp, &hostIp) == 0)
         hostIp.s_addr = INADDR_ANY;
 
@@ -672,7 +672,7 @@ static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
         slirp_add_redirect(pThis->pNATState, fUdp, hostIp, u16HostPort, guestIp, u16GuestPort, Mac.au8);
 }
 
-DECLCALLBACK(int) drvNATNetworkNatConfig_RedirectRuleCommand(PPDMINETWORKNATCONFIG pInterface, bool fRemove, 
+DECLCALLBACK(int) drvNATNetworkNatConfig_RedirectRuleCommand(PPDMINETWORKNATCONFIG pInterface, bool fRemove,
                                                              bool fUdp, const char *pHostIp,
                                                              uint16_t u16HostPort, const char *pGuestIp, uint16_t u16GuestPort)
 {
@@ -692,7 +692,7 @@ DECLCALLBACK(int) drvNATNetworkNatConfig_RedirectRuleCommand(PPDMINETWORKNATCONF
     }
     else
         AssertRC(rc);
-    
+
     RTReqFree(pReq);
     port_forwarding_done:
     return rc;

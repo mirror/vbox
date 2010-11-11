@@ -5944,7 +5944,7 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
         rc = VERR_INVALID_PARAMETER;
         goto out;
     }
-    
+
     cExtents = pImage->cExtents;
 
     /*

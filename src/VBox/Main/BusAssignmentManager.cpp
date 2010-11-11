@@ -43,7 +43,7 @@ struct DeviceAliasRule
 
 /* Those rules define PCI slots assignment */
 
-/* Device           Bus  Device Function Priority */ 
+/* Device           Bus  Device Function Priority */
 
 /* Generic rules */
 static const DeviceAssignmentRule aGenericRules[] =
