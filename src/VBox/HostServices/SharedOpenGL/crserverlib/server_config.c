@@ -208,7 +208,7 @@ void crServerSetVBoxConfiguration()
     {
         CRClient *newClient = (CRClient *) crCalloc(sizeof(CRClient));
 #ifdef VBOX
-        sscanf(clientlist[i], "%1024s %d", cr_server.protocol, &(newClient->spu_id));
+        sscanf(clientlist[i], "%1023s %d", cr_server.protocol, &(newClient->spu_id));
 #else
         sscanf(clientlist[i], "%s %d", cr_server.protocol, &(newClient->spu_id));
 #endif
