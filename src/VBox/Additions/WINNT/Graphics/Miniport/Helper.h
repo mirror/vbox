@@ -46,25 +46,24 @@ int vboxVbvaEnable (ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 /* debug printf */
 #define OSDBGPRINT(a) DbgPrint a
 
-/* dprintf */
-#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
-# ifdef LOG_TO_BACKDOOR
-#  include <VBox/log.h>
-#  define dprintf(a) RTLogBackdoorPrintf a
-# else
-#  define dprintf(a) OSDBGPRINT(a)
-# endif
-/* flow log */
-# define dfprintf dprintf
+#ifdef LOG_TO_BACKDOOR
+# include <VBox/log.h>
+# define dDoPrintf(a) RTLogBackdoorPrintf a
+#else
+# define dDoPrintf(a) OSDBGPRINT(a)
+#endif
+
 /* release log */
-# define drprintf dprintf
+# define drprintf dDoPrintf
+/* flow log */
+# define dfprintf(a) do {} while (0)
+/* basic debug log */
+#if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
+# define dprintf dDoPrintf
 #else
 # define dprintf(a) do {} while (0)
-/* flow log */
-# define dfprintf dprintf
-/* release log */
-# define drprintf dprintf
 #endif
+
 
 /* dprintf2 - extended logging. */
 #if 0
