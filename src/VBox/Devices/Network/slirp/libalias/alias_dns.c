@@ -51,11 +51,16 @@ union dnsmsg_header
 };
 AssertCompileSize(union dnsmsg_header, 12);
 
+struct dns_meta_data
+{
+    uint16_t type;
+    uint16_t class;
+};
+
 struct dnsmsg_answer
 {
     uint16_t name;
-    uint16_t type;
-    uint16_t class;
+    struct dns_meta_data meta;
     uint16_t ttl[2];
     uint16_t rdata_len;
     uint8_t  rdata[1];  /* depends on value at rdata_len */
@@ -73,9 +78,9 @@ fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
     if (!ah->dport || !ah->sport || !ah->lnk)
         return -1;
 
-    fprintf(stderr, "NAT:%s: ah(dport: %hd, sport: %hd) oaddr:%R[IP4] aaddr:%R[IP4]\n",
+    Log(("NAT:%s: ah(dport: %hd, sport: %hd) oaddr:%R[IP4] aaddr:%R[IP4]\n",
         __FUNCTION__, ntohs(*ah->dport), ntohs(*ah->sport),
-        &ah->oaddr, &ah->aaddr);
+        &ah->oaddr, &ah->aaddr));
 
     if (   (ntohs(*ah->dport) == DNS_CONTROL_PORT_NUMBER
         || ntohs(*ah->sport) == DNS_CONTROL_PORT_NUMBER)
@@ -85,7 +90,7 @@ fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
     return -1;
 }
 
-static void doanswer(struct libalias *la, union dnsmsg_header *hdr, uint16_t qtype, uint16_t qclass, char *qname, struct ip *pip, struct hostent *h)
+static void doanswer(struct libalias *la, union dnsmsg_header *hdr, struct dns_meta_data *pReqMeta, char *qname, struct ip *pip, struct hostent *h)
 {
     int i;
 
@@ -105,6 +110,7 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr, uint16_t qty
         char *c;
         uint16_t packet_len = 0;
         uint16_t addr_off = (uint16_t)~0;
+        struct dns_meta_data *meta;
 
 #if 0
         /* here is no compressed names+answers + new query */
@@ -114,15 +120,18 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr, uint16_t qty
                    + sizeof(struct udphdr)
                    + sizeof(union dnsmsg_header)
                    + strlen(qname)
-                   + 2 * sizeof(uint16_t); /* ip + udp + header + query */
+                   + sizeof(struct dns_meta_data); /* ip + udp + header + query */
         query = (char *)&hdr[1];
 
         strcpy(query, qname);
         query += strlen(qname) + 1;
+        /* class & type informations lay right after symbolic inforamtion. */
+        meta = (struct dns_meta_data *)query;
+        meta->type = pReqMeta->type;
+        meta->class = pReqMeta->class;
 
-        *(uint16_t *)query = qtype;
-        ((uint16_t *)query)[1] = qclass;
-        answers = (char *)&((uint16_t *)query)[2];
+        /* answers zone lays after query in response packet */
+        answers = (char *)&meta[1];
 
         off = (char *)&hdr[1] - (char *)hdr;
         off |= (0x3 << 14);
@@ -133,8 +142,8 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr, uint16_t qty
             uint16_t len;
             struct dnsmsg_answer *ans = (struct dnsmsg_answer *)answers;
             ans->name = htons(off);
-            ans->type = htons(5); /* CNAME */
-            ans->class = htons(1);
+            ans->meta.type = htons(5); /* CNAME */
+            ans->meta.class = htons(1);
             *(uint32_t *)ans->ttl = htonl(3600); /* 1h */
             c = (addr_off == (uint16_t)~0 ? h->h_name : *cstr);
             len = strlen(c) + 2;
@@ -156,8 +165,8 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr, uint16_t qty
             struct dnsmsg_answer *ans = (struct dnsmsg_answer *)answers;
 
             ans->name = htons(off);
-            ans->type = htons(1);
-            ans->class = htons(1);
+            ans->meta.type = htons(1);
+            ans->meta.class = htons(1);
             *(uint32_t *)ans->ttl = htonl(3600); /* 1h */
             ans->rdata_len = htons(4); /* IPv4 */
             *(uint32_t *)ans->rdata = *(uint32_t *)h->h_addr_list[i];
@@ -186,6 +195,7 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
     struct hostent *h = NULL;
     char cname[255];
     int cname_len = 0;
+    struct dns_meta_data *meta;
 
     struct udphdr *udp = NULL;
     union dnsmsg_header *hdr = NULL;
@@ -200,16 +210,20 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
     Assert((ntohs(hdr->X.qdcount) == 1));
     if ((ntohs(hdr->X.qdcount) != 1))
     {
-        LogRel(("NAT:alias_dns: multiple quieries isn't supported\n"));
+        static bool fMultiWarn;
+        if (!fMultiWarn)
+        {
+            LogRel(("NAT:alias_dns: multiple quieries isn't supported\n"));
+            fMultiWarn = true;
+        }
         return 1;
     }
 
     for (i = 0; i < ntohs(hdr->X.qdcount); ++i)
     {
-        qw_qtype = (uint16_t *)(qw_qname + strlen(qw_qname) + 1);
-        qw_qclass = &qw_qtype[1];
-        fprintf(stderr, "qname:%s qtype:%hd qclass:%hd\n",
-            qw_qname, ntohs(*qw_qtype), ntohs(*qw_qclass));
+        meta = (struct dns_meta_data *)(qw_qname + strlen(qw_qname) + 1);
+        Log(("qname:%s qtype:%hd qclass:%hd\n",
+            qw_qname, ntohs(meta->type), ntohs(meta->class)));
 
         QStr2CStr(qw_qname, cname, sizeof(cname));
         cname_len = RTStrNLen(cname, sizeof(cname));
@@ -226,7 +240,7 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
         }
         h = gethostbyname(cname);
         fprintf(stderr, "cname:%s\n", cname);
-        doanswer(la, hdr, *qw_qtype, *qw_qclass, qw_qname, pip, h);
+        doanswer(la, hdr, meta, qw_qname, pip, h);
     }
 
     /*
