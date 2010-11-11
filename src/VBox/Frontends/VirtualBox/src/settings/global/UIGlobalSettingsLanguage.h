@@ -19,6 +19,7 @@
 #ifndef __UIGlobalSettingsLanguage_h__
 #define __UIGlobalSettingsLanguage_h__
 
+/* Local includes */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsLanguage.gen.h"
 
@@ -29,13 +30,13 @@ struct UISettingsCacheGlobalLanguage
 };
 
 /* Global settings / Language page: */
-class UIGlobalSettingsLanguage : public UISettingsPageGlobal,
-                               public Ui::UIGlobalSettingsLanguage
+class UIGlobalSettingsLanguage : public UISettingsPageGlobal, public Ui::UIGlobalSettingsLanguage
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIGlobalSettingsLanguage();
 
 protected:
@@ -54,20 +55,27 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    void setOrderAfter (QWidget *aWidget);
+    /* Navigation stuff: */
+    void setOrderAfter(QWidget *pWidget);
 
-    void reload (const QString &aLangId);
-
+    /* Translation stuff: */
     void retranslateUi();
+
+    /* Reload language tree: */
+    void reload(const QString &strLangId);
 
 private slots:
 
-    void mTwItemPainted (QTreeWidgetItem *aItem, QPainter *aPainter);
-    void mTwLanguageChanged (QTreeWidgetItem *aItem);
+    /* Routine to paint language items: */
+    void sltLanguageItemPainted(QTreeWidgetItem *pItem, QPainter *pPainter);
+
+    /* Slot to handle current language change signal: */
+    void sltCurrentLanguageChanged(QTreeWidgetItem *pItem);
 
 private:
 
-    bool mLanguageChanged;
+    /* Edited flag: */
+    bool m_fIsLanguageChanged;
 
     /* Cache: */
     UISettingsCacheGlobalLanguage m_cache;
