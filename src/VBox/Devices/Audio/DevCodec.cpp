@@ -80,7 +80,7 @@ extern "C" {
 #define CODEC_MAKE_F00_02(MajRev, MinRev, RevisionID, SteppingID) (((MajRev) << 20)|((MinRev) << 16)|((RevisionID) << 8)|(SteppingID))
 /* Subordinate node count (7.3.4.3)*/
 #define CODEC_MAKE_F00_04(startNodeNumber, totalNodeNumber) ((((startNodeNumber) & 0xFF) << 16)|((totalNodeNumber) & 0xFF))
-/* 
+/*
  * Function Group Type  (7.3.4.4)
  * 0 & [0x3-0x7f] are reserved types
  * [0x80 - 0xff] are vendor defined function groups
@@ -254,13 +254,13 @@ extern "C" {
 
 /* HDA spec 7.3.3.31 defines layout of configuration registers/verbs (0xF1C) */
 /* Configuration's port connection */
-#define CODEC_F1C_PORT_MASK    (0x3) 
-#define CODEC_F1C_PORT_SHIFT   (30) 
+#define CODEC_F1C_PORT_MASK    (0x3)
+#define CODEC_F1C_PORT_SHIFT   (30)
 
-#define CODEC_F1C_PORT_COMPLEX (0x0) 
-#define CODEC_F1C_PORT_NO_PHYS (0x1) 
-#define CODEC_F1C_PORT_FIXED   (0x2) 
-#define CODEC_F1C_BOTH         (0x3) 
+#define CODEC_F1C_PORT_COMPLEX (0x0)
+#define CODEC_F1C_PORT_NO_PHYS (0x1)
+#define CODEC_F1C_PORT_FIXED   (0x2)
+#define CODEC_F1C_BOTH         (0x3)
 
 /* Configuration's location */
 #define CODEC_F1C_LOCATION_MASK  (0x3F)
@@ -535,8 +535,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = 0xc0;//RT_BIT(6);
             pNode->port.u32F08_param = 0;
             if (!pState->fInReset)
-                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX, 
-                                                          CODEC_F1C_LOCATION_FRONT, 
+                pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
+                                                          CODEC_F1C_LOCATION_FRONT,
                                                           CODEC_F1C_DEVICE_HP,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_GREEN,
@@ -574,10 +574,10 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->port.u32F07_param = RT_BIT(5);
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
-                                                          CODEC_F1C_LOCATION_REAR, 
+                                                          CODEC_F1C_LOCATION_REAR,
                                                           CODEC_F1C_DEVICE_SPEAKER,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
-                                                          CODEC_F1C_COLOR_GREEN, 
+                                                          CODEC_F1C_COLOR_GREEN,
                                                           0x0, 0x1, 0x0);//RT_MAKE_U32_FROM_U8(0x10, 0x40, 0x11, 0x01);
             goto port_init;
         case 0xD:
@@ -593,7 +593,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_FRONT,
-                                                          CODEC_F1C_DEVICE_MIC, 
+                                                          CODEC_F1C_DEVICE_MIC,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_PINK,
                                                           0x0, 0x5, 0x0);//RT_MAKE_U32_FROM_U8(0x50, 0x90, 0xA1, 0x02); /* Microphone */
@@ -644,7 +644,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_REAR,
                                                           CODEC_F1C_DEVICE_SPEAKER,
-                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES, 
+                                                          CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_ORANGE,
                                                           0x0, 0x1, 0x2);//RT_MAKE_U32_FROM_U8(0x12, 0x60, 0x11, 0x01);
             pNode->node.au32F02_param[0] = 0x5;
@@ -685,7 +685,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                                            CODEC_F1C_LOCATION_REAR,
                                                            CODEC_F1C_DEVICE_SPDIF_IN,
                                                            CODEC_F1C_CONNECTION_TYPE_OTHER_DIGITAL,
-                                                           CODEC_F1C_COLOR_BLACK, 
+                                                           CODEC_F1C_COLOR_BLACK,
                                                            0x0, 0x6, 0x0);//(0x1 << 24) | (0xc5 << 16) | (0x10 << 8) | 0x60;
         break;
         case 0x12:
@@ -1815,7 +1815,7 @@ static int codecGetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
 static inline void codecPropogatePowerState(uint32_t *pu32F05_param)
 {
     Assert(pu32F05_param);
-    if (pu32F05_param)
+    if (!pu32F05_param)
         return;
     bool fReset = CODEC_F05_IS_RESET(*pu32F05_param);
     bool fStopOk = CODEC_F05_IS_STOPOK(*pu32F05_param);
@@ -1851,17 +1851,17 @@ static int codecSetPowerState(struct CODECState *pState, uint32_t cmd, uint64_t 
     Assert((pu32Reg));
     if (!pu32Reg)
         return VINF_SUCCESS;
-    
+
     bool fReset = CODEC_F05_IS_RESET(*pu32Reg);
     bool fStopOk = CODEC_F05_IS_STOPOK(*pu32Reg);
 
     if (CODEC_NID(cmd) != 1 /* AFG */)
     {
         /*
-         * We shouldn't propogate actual power state, which actual for AFG  
+         * We shouldn't propogate actual power state, which actual for AFG
          */
         *pu32Reg = CODEC_MAKE_F05(fReset, fStopOk, 0,
-                                  CODEC_F05_ACT(pState->pNodes[1].afg.u32F05_param), 
+                                  CODEC_F05_ACT(pState->pNodes[1].afg.u32F05_param),
                                   CODEC_F05_SET(cmd));
     }
 
