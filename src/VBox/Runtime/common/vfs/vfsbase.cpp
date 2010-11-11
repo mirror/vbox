@@ -368,7 +368,7 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
      * Invalidate the object.
      */
     rtVfsObjWriteLock(pThis);           /* paranoia */
-    void *pvToFree;
+    void *pvToFree = NULL;
     switch (enmType)
     {
         case RTVFSOBJTYPE_BASE:
