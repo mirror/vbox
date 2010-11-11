@@ -62,7 +62,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* Navigation stuff: */
-    void setOrderAfter (QWidget *aWidget);
+    void setOrderAfter(QWidget *pWidget);
 
     /* Translation stuff: */
     void retranslateUi();
