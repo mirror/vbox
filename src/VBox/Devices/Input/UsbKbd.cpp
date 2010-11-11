@@ -375,7 +375,7 @@ static uint8_t aScancode2Hid[] =
     0x45, 0x67, 0x00, 0x00, 0x8c, 0x00, 0x00, 0x00, /* 58-5F */
     0x00, 0x00, 0x00, 0x00, 0x68, 0x69, 0x6a, 0x6b, /* 60-67 */
     0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x00, /* 68-6F */
-    0x88, 0x00, 0x00, 0x87, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
+    0x88, 0x90, 0x91, 0x87, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
     0x00, 0x8a, 0x00, 0x8b, 0x00, 0x89, 0x85, 0x00  /* 78-7F */
 };
 
@@ -907,7 +907,15 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
             pThis->abDepressedKeys[u8HidCode] = 1;
         }
         else
+        {
+            /* For stupid Korean keyboards, we have to fake a key up/down sequence
+             * because they only send break codes for Hangul/Hanja keys.
+             */
+            if (u8HidCode == 0x90 || u8HidCode == 0x91)
+                pThis->abUnreportedKeys[u8HidCode] = 1;
             pThis->abDepressedKeys[u8HidCode] = 0;
+        }
+
 
         /* Send a report if the host is already waiting for it. */
         if (fHaveEvent)
