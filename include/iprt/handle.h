@@ -46,6 +46,16 @@ RT_C_DECLS_BEGIN
  */
 RTDECL(int) RTHandleClose(PRTHANDLE ph);
 
+/**
+ * Gets one of the standard handles.
+ *
+ * @returns IPRT status code.
+ * @param   enmStdHandle    The standard handle.
+ * @param   ph              Pointer to the generic handle.  This will contain
+ *                          the most appropriate IPRT handle on success.
+ */
+RTDECL(int) RTHandleGetStandard(RTHANDLESTD enmStdHandle, PRTHANDLE ph);
+
 /** @} */
 
 RT_C_DECLS_END

@@ -30,6 +30,7 @@
 #include <iprt/types.h>
 #include <iprt/dir.h>
 #include <iprt/fs.h>
+#include <iprt/handle.h>
 #include <iprt/symlink.h>
 #include <iprt/sg.h>
 #include <iprt/time.h>
@@ -55,55 +56,6 @@ RT_C_DECLS_BEGIN
  *
  * @{
  */
-
-/** Virtual Filesystem handle. */
-typedef struct RTVFSINTERNAL           *RTVFS;
-/** Pointer to a VFS handle. */
-typedef RTVFS                          *PRTVFS;
-/** A NIL VFS handle. */
-#define NIL_RTVFS                       ((RTVFS)~(uintptr_t)0)
-
-/** Virtual Filesystem base object handle. */
-typedef struct RTVFSOBJINTERNAL        *RTVFSOBJ;
-/** Pointer to a VFS base object handle. */
-typedef RTVFSOBJ                       *PRTVFSOBJ;
-/** A NIL VFS base object handle. */
-#define NIL_RTVFSOBJ                    ((RTVFSOBJ)~(uintptr_t)0)
-
-/** Virtual Filesystem directory handle. */
-typedef struct RTVFSDIRINTERNAL        *RTVFSDIR;
-/** Pointer to a VFS directory handle. */
-typedef RTVFSDIR                       *PRTVFSDIR;
-/** A NIL VFS directory handle. */
-#define NIL_RTVFSDIR                    ((RTVFSDIR)~(uintptr_t)0)
-
-/** Virtual Filesystem filesystem stream handle. */
-typedef struct RTVFSFSSTREAMINTERNAL   *RTVFSFSSTREAM;
-/** Pointer to a VFS filesystem stream handle. */
-typedef RTVFSFSSTREAM                  *PRTVFSFSSTREAM;
-/** A NIL VFS filesystem stream handle. */
-#define NIL_RTVFSFSSTREAM               ((RTVFSFSSTREAM)~(uintptr_t)0)
-
-/** Virtual Filesystem I/O stream handle. */
-typedef struct RTVFSIOSTREAMINTERNAL   *RTVFSIOSTREAM;
-/** Pointer to a VFS I/O stream handle. */
-typedef RTVFSIOSTREAM                  *PRTVFSIOSTREAM;
-/** A NIL VFS I/O stream handle. */
-#define NIL_RTVFSIOSTREAM               ((RTVFSIOSTREAM)~(uintptr_t)0)
-
-/** Virtual Filesystem file handle. */
-typedef struct RTVFSFILEINTERNAL       *RTVFSFILE;
-/** Pointer to a VFS file handle. */
-typedef RTVFSFILE                      *PRTVFSFILE;
-/** A NIL VFS file handle. */
-#define NIL_RTVFSFILE                   ((RTVFSFILE)~(uintptr_t)0)
-
-/** Virtual Filesystem symbolic link handle. */
-typedef struct RTVFSSYMLINKINTERNAL    *RTVFSSYMLINK;
-/** Pointer to a VFS symbolic link handle. */
-typedef RTVFSSYMLINK                   *PRTVFSSYMLINK;
-/** A NIL VFS symbolic link handle. */
-#define NIL_RTVFSSYMLINK                ((RTVFSSYMLINK)~(uintptr_t)0)
 
 /**
  * The object type.
@@ -135,7 +87,6 @@ typedef enum RTVFSOBJTYPE
 } RTVFSOBJTYPE;
 /** Pointer to a VFS object type. */
 typedef RTVFSOBJTYPE *PRTVFSOBJTYPE;
-
 
 
 
@@ -292,6 +243,33 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
  */
 
 /**
+ * Create a VFS I/O stream handle from a standard IPRT file handle (RTFILE).
+ *
+ * @returns IPRT status code.
+ * @param   hFile           The standard IPRT file handle.
+ * @param   fOpen           The flags the handle was opened with.  Pass 0 to
+ *                          have these detected.
+ * @param   fLeaveOpen      Whether to leave the handle open when the VFS file
+ *                          is released, or to close it (@c false).
+ * @param   phVfsIos        Where to return the VFS I/O stream handle.
+ */
+RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos);
+
+/**
+ * Create a VFS I/O stream handle from one of the standard handles.
+ *
+ * @returns IPRT status code.
+ * @param   enmStdHandle    The standard IPRT file handle.
+ * @param   fOpen           The flags the handle was opened with.  Pass 0 to
+ *                          have these detected.
+ * @param   fLeaveOpen      Whether to leave the handle open when the VFS file
+ *                          is released, or to close it (@c false).
+ * @param   phVfsIos        Where to return the VFS I/O stream handle.
+ */
+RTDECL(int)         RTVfsIoStrmFromStdHandle(RTHANDLESTD enmStdHandle, uint32_t fOpen, bool fLeaveOpen,
+                                             PRTVFSIOSTREAM phVfsIos);
+
+/**
  * Retains a reference to the VFS I/O stream handle.
  *
  * @returns New reference count on success, UINT32_MAX on failure.
@@ -315,7 +293,7 @@ RTDECL(uint32_t)    RTVfsIoStrmRelease(RTVFSIOSTREAM hVfsIos);
  * @param   hVfsIos         The VFS I/O stream handle.
  * @sa      RTVfsFileToIoStream
  */
-RTDECL(RTVFSFILE)   RTVfsIoStrmToFile(RTVFSIOSTREAM hVfsIos);
+RTDECL(RTVFSFILE) RTVfsIoStrmToFile(RTVFSIOSTREAM hVfsIos);
 
 /**
  * Query information about the I/O stream.
@@ -326,23 +304,35 @@ RTDECL(RTVFSFILE)   RTVfsIoStrmToFile(RTVFSIOSTREAM hVfsIos);
  * @param   enmAddAttr      Which additional attributes should be retrieved.
  * @sa      RTFileQueryInfo
  */
-RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+RTDECL(int) RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
 
 /**
  * Read bytes from the I/O stream.
  *
  * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and the number of bytes read written to @a pcbRead.
+ * @retval  VINF_TRY_AGAIN if @a fBlocking is @c false, @a pcbRead is not NULL,
+ *          and no data was available. @a *pcbRead will be set to 0.
+ * @retval  VINF_EOF when trying to read __beyond__ the end of the stream and
+ *          @a pcbRead is not NULL (it will be set to the number of bytes read,
+ *          or 0 if the end of the stream was reached before this call).
+ *          When the last byte of the read request is the last byte in the
+ *          stream, this status code will not be used.  However, VINF_EOF is
+ *          returned when attempting to read 0 bytes while standing at the end
+ *          of the stream.
+ * @retval  VERR_EOF when trying to read __beyond__ the end of the stream and
+ *          @a pcbRead is NULL.
+ *
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pvBuf           Where to store the read bytes.
  * @param   cbToRead        The number of bytes to read.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbRead parameter must not be NULL.
  * @param   pcbRead         Where to always store the number of bytes actually
- *                          read.  If this is NULL, the call will block until
- *                          @a cbToRead bytes are available.  If this is
- *                          non-NULL, the call will not block and return what
- *                          is currently avaiable.
+ *                          read.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileRead, RTPipeRead, RTPipeReadBlocking, RTSocketRead
  */
-RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, bool fBlocking, size_t *pcbRead);
 
 /**
  * Write bytes to the I/O stream.
@@ -351,15 +341,13 @@ RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t c
  * @param   hVfsIos         The VFS I/O stream handle.
  * @param   pvBuf           The bytes to write.
  * @param   cbToWrite       The number of bytes to write.
- * @param   pcbWritten      Where to always store the number of bytes actually
- *                          written.  If this is NULL, the call will block
- *                          until
- *                          @a cbToWrite bytes are available.  If this is
- *                          non-NULL, the call will not block and return after
- *                          writing what is possible.
+ * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
+ *                          not, the @a pcbWritten parameter must not be NULL.
+ * @param   pcbRead         Where to always store the number of bytes actually
+ *                          written.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileWrite, RTPipeWrite, RTPipeWriteBlocking, RTSocketWrite
  */
-RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, bool fBlocking, size_t *pcbWritten);
 
 /**
  * Reads bytes from the I/O stream into a scatter buffer.
@@ -548,6 +536,14 @@ RTDECL(int) RTVfsChainOpenDir(      const char *pszSpec, uint32_t fOpen, PRTVFSD
 RTDECL(int) RTVfsChainOpenFile(     const char *pszSpec, uint32_t fOpen, PRTVFSFILE      phVfsFile, const char **ppszError);
 RTDECL(int) RTVfsChainOpenSymlink(  const char *pszSpec,                 PRTVFSSYMLINK   phVfsSym,  const char **ppszError);
 RTDECL(int) RTVfsChainOpenIoStream( const char *pszSpec, uint32_t fOpen, PRTVFSIOSTREAM  phVfsIos,  const char **ppszError);
+
+/**
+ * Tests if the given string is a chain specification or not.
+ *
+ * @returns true if it is, false if it isn't.
+ * @param   pszSpec         The alleged chain spec.
+ */
+RTDECL(bool)    RTVfsChainIsSpec(const char *pszSpec);
 
 /** @}  */
 

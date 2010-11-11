@@ -571,6 +571,11 @@ PROGRAMS += RTLdrFlt
 RTLdrFlt_TEMPLATE = VBOXR3TSTEXE
 RTLdrFlt_SOURCES = RTLdrFlt.cpp
 
+# RTGzip - our gzip clone (for testing the gzip/gunzip streaming code)
+PROGRAMS += RTGzip
+RTGzip_TEMPLATE = VBOXR3TSTEXE
+RTGzip_SOURCES = RTGzip.cpp
+
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
