@@ -1748,7 +1748,7 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCommitPathEnum(struct _DEVICE_EXTENSION* pDevExt,
 #define VBOXVIDPNDUMP_STRCASE(_t) \
         case _t: return #_t;
 #define VBOXVIDPNDUMP_STRCASE_UNKNOWN() \
-        default: return "Unknown";
+        default: Assert(0); return "Unknown";
 
 #define VBOXVIDPNDUMP_STRFLAGS(_v, _t) \
         if ((_v)._t return #_t;
@@ -1885,6 +1885,20 @@ const char* vboxVidPnDumpStrScanLineOrdering(D3DDDI_VIDEO_SIGNAL_SCANLINE_ORDERI
         VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_INTERLACED_UPPERFIELDFIRST);
         VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_INTERLACED_LOWERFIELDFIRST);
         VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_OTHER);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
+
+const char* vboxVidPnDumpStrCFMPivotType(D3DKMDT_ENUMCOFUNCMODALITY_PIVOT_TYPE EnumPivotType)
+{
+    switch (EnumPivotType)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_EPT_UNINITIALIZED);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_EPT_VIDPNSOURCE);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_EPT_VIDPNTARGET);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_EPT_SCALING);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_EPT_ROTATION);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_EPT_NOPIVOT);
         VBOXVIDPNDUMP_STRCASE_UNKNOWN();
     }
 }
@@ -2134,7 +2148,7 @@ static DECLCALLBACK(BOOLEAN) vboxVidPnDumpSourceModeSetEnum(struct _DEVICE_EXTEN
 
 void vboxVidPnDumpSourceModeSet(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
 {
-    drprintf(("  >>>***SourceMode Set for Source(%d)***\n", VidPnSourceId));
+    drprintf(("  >>>+++SourceMode Set for Source(%d)+++\n", VidPnSourceId));
     D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
 
@@ -2160,7 +2174,7 @@ void vboxVidPnDumpSourceModeSet(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN 
         drprintf(("ERROR getting SourceModeSet for Source(%d), Status(0x%x)\n", VidPnSourceId, Status));
     }
 
-    drprintf(("  <<<***End Of SourceMode Set for Source(%d)***\n", VidPnSourceId));
+    drprintf(("  <<<+++End Of SourceMode Set for Source(%d)+++\n", VidPnSourceId));
 }
 
 DECLCALLBACK(BOOLEAN) vboxVidPnDumpTargetModeSetEnum(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
@@ -2173,7 +2187,7 @@ DECLCALLBACK(BOOLEAN) vboxVidPnDumpTargetModeSetEnum(struct _DEVICE_EXTENSION* p
 
 void vboxVidPnDumpTargetModeSet(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
 {
-    drprintf(("  >>>***TargetMode Set for Target(%d)***\n", VidPnTargetId));
+    drprintf(("  >>>---TargetMode Set for Target(%d)---\n", VidPnTargetId));
     D3DKMDT_HVIDPNTARGETMODESET hCurVidPnTargetModeSet;
     const DXGK_VIDPNTARGETMODESET_INTERFACE *pCurVidPnTargetModeSetInterface;
 
@@ -2199,7 +2213,7 @@ void vboxVidPnDumpTargetModeSet(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN 
         drprintf(("ERROR getting TargetModeSet for Target(%d), Status(0x%x)\n", VidPnTargetId, Status));
     }
 
-    drprintf(("  <<<***End Of TargetMode Set for Target(%d)***\n", VidPnTargetId));
+    drprintf(("  <<<---End Of TargetMode Set for Target(%d)---\n", VidPnTargetId));
 }
 
 
@@ -2240,10 +2254,16 @@ void vboxVidPnDumpPinnedTargetMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN
     }
 }
 
+void vboxVidPnDumpCofuncModalityArg(const char *pPrefix, CONST DXGKARG_ENUMVIDPNCOFUNCMODALITY* CONST  pEnumCofuncModalityArg, const char *pSuffix)
+{
+    drprintf(("%sPivotType(%s), SourceId(0x%x), TargetId(0x%x),%s", pPrefix, vboxVidPnDumpStrCFMPivotType(pEnumCofuncModalityArg->EnumPivotType),
+            pEnumCofuncModalityArg->EnumPivot.VidPnSourceId, pEnumCofuncModalityArg->EnumPivot.VidPnTargetId, pSuffix));
+}
+
 void vboxVidPnDumpPath(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         const D3DKMDT_VIDPN_PRESENT_PATH *pVidPnPresentPathInfo)
 {
-    drprintf((" >>Start Dump VidPn Path>>\n"));
+    drprintf((" >>**** Start Dump VidPn Path ****>>\n"));
     drprintf(("VidPnSourceId(%d),  VidPnTargetId(%d)\n",
             pVidPnPresentPathInfo->VidPnSourceId, pVidPnPresentPathInfo->VidPnTargetId));
 
@@ -2261,7 +2281,7 @@ void vboxVidPnDumpPath(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN h
     vboxVidPnDumpCopyProtectoin(&pVidPnPresentPathInfo->CopyProtection);
     vboxVidPnDumpGammaRamp("GammaRamp: ", &pVidPnPresentPathInfo->GammaRamp, "\n");
 
-    drprintf((" <<Stop Dump VidPn Path<<\n"));
+    drprintf((" <<**** Stop Dump VidPn Path ****<<\n"));
 }
 
 static DECLCALLBACK(BOOLEAN) vboxVidPnDumpPathEnum(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
