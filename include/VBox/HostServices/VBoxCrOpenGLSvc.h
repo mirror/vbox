@@ -47,6 +47,7 @@
 #define SHCRGL_GUEST_FN_WRITE_READ  (4)
 #define SHCRGL_GUEST_FN_SET_VERSION (6)
 #define SHCRGL_GUEST_FN_INJECT      (9)
+#define SHCRGL_GUEST_FN_SET_PID     (12)
 
 /* Parameters count */
 #define SHCRGL_CPARMS_SET_CONSOLE (1)
@@ -58,6 +59,7 @@
 #define SHCRGL_CPARMS_SET_VERSION (2)
 #define SHCRGL_CPARMS_SCREEN_CHANGED (1)
 #define SHCRGL_CPARMS_INJECT (2)
+#define SHCRGL_CPARMS_SET_PID (1)
 
 #ifdef VBOX_WITH_CRHGSMI
 #pragma pack(1)
@@ -139,6 +141,18 @@ typedef struct
      */
     uint32_t iBuffer;
 } CRVBOXHGSMIINJECT;
+
+/** GUEST_FN_SET_PID Parameters structure. */
+typedef struct
+{
+    CRVBOXHGSMIHDR hdr;
+
+    /** 64bit, in
+     *  PID
+     */
+    uint64_t   u64PID;
+} CRVBOXHGSMISETPID;
+
 #pragma pack()
 #endif
 /**
@@ -226,5 +240,16 @@ typedef struct
      */
     HGCMFunctionParameter   pBuffer;
 } CRVBOXHGCMINJECT;
+
+/** GUEST_FN_SET_PID Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** 64bit, in
+     *  PID
+     */
+    HGCMFunctionParameter   u64PID;
+} CRVBOXHGCMSETPID;
 
 #endif

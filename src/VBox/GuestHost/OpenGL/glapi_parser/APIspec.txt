@@ -8515,6 +8515,16 @@ param       id          GLuint
 category    VBox
 chromium    nopack
 
+name        VBoxPackAttachThread
+return      void
+category    VBox
+chromium    nopack
+
+name        VBoxPackDetachThread
+return      void
+category    VBox
+chromium    nopack
+
 # OpenGL 1.5
 
 name        BindBuffer

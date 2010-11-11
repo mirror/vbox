@@ -462,6 +462,32 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             break;
         }
 
+        case SHCRGL_GUEST_FN_SET_PID:
+        {
+            Log(("svcCall: SHCRGL_GUEST_FN_SET_PID\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_SET_PID)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            if (paParms[0].type != VBOX_HGCM_SVC_PARM_64BIT)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                uint64_t pid    = paParms[0].u.uint64;
+
+                /* Execute the function. */
+                rc = crVBoxServerClientSetPID(u32ClientID, pid);
+            }
+
+            break;
+        }
+
         default:
         {
             rc = VERR_NOT_IMPLEMENTED;
@@ -674,6 +700,13 @@ static int vboxCrHgsmiCmd(PVBOXVDMACMD_CHROMIUM_CMD pCmd)
         }
 
         case SHCRGL_GUEST_FN_SET_VERSION:
+        {
+            Assert(0);
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+        }
+
+        case SHCRGL_GUEST_FN_SET_PID:
         {
             Assert(0);
             rc = VERR_NOT_IMPLEMENTED;

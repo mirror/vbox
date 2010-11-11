@@ -38,7 +38,7 @@ packSPUInit( int id, SPU *child, SPU *self,
     (void) child;
     (void) self;
 
-#ifdef CHROMIUM_THREADSAFE
+#if defined(CHROMIUM_THREADSAFE) && !defined(WINDOWS)
     crInitMutex(&_PackMutex);
 #endif
 
@@ -53,6 +53,7 @@ packSPUInit( int id, SPU *child, SPU *self,
         return NULL;
     }
     CRASSERT( thread == &(pack_spu.thread[0]) );
+    pack_spu.idxThreadInUse = 0;
 
     packspuCreateFunctions();
     crStateInit();
@@ -73,9 +74,9 @@ packSPUCleanup(void)
 #ifdef CHROMIUM_THREADSAFE
     crLockMutex(&_PackMutex);
 #endif
-    for (i=0; i<pack_spu.numThreads; ++i)
+    for (i=0; i<MAX_THREADS; ++i)
     {
-        if (pack_spu.thread[i].packer)
+        if (pack_spu.thread[i].inUse && pack_spu.thread[i].packer)
         {
             crPackDeleteContext(pack_spu.thread[i].packer);
         }
@@ -86,7 +87,9 @@ packSPUCleanup(void)
     
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&_PackMutex);
+# ifndef WINDOWS
     crFreeMutex(&_PackMutex);
+# endif
 #endif
     return 1;
 }

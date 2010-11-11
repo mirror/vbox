@@ -108,14 +108,67 @@ void crServerAddToRunQueue( CRClient *client )
     }
 }
 
+static void crServerCleanupClient(CRClient *client)
+{
+    int32_t pos;
+    CRClient *oldclient = cr_server.curClient;
 
+    cr_server.curClient = client;
+
+    /* Destroy any windows created by the client */
+    for (pos = 0; pos<CR_MAX_WINDOWS && client->windowList[pos]; pos++) 
+    {
+        cr_server.dispatch.WindowDestroy(client->windowList[pos]);
+    }
+
+    /* Check if we have context(s) made by this client left, could happen if client side code is lazy */
+    for (pos = 0; pos<CR_MAX_CONTEXTS && client->contextList[pos]; pos++) 
+    {
+        cr_server.dispatch.DestroyContext(client->contextList[pos]);
+    }
+
+    cr_server.curClient = oldclient;
+}
+
+static void crServerCleanupByPID(uint64_t pid)
+{
+    CRClientNode *pNode=cr_server.pCleanupClient, *pNext;
+
+    while (pNode)
+    {
+        if (pNode->pClient->pid==pid)
+        {
+            crServerCleanupClient(pNode->pClient);
+            crFree(pNode->pClient);
+            if (pNode->prev)
+            {
+                pNode->prev->next=pNode->next;
+            }
+            else
+            {
+                cr_server.pCleanupClient=pNode->next;
+            }
+            if (pNode->next)
+            {
+                pNode->next->prev = pNode->prev;
+            }
+
+            pNext=pNode->next;
+            crFree(pNode);
+            pNode=pNext;
+        }
+        else
+        {
+            pNode=pNode->next;
+        }
+    }
+}
 
 void
 crServerDeleteClient( CRClient *client )
 {
     int i, j;
-    int32_t pos;
-    CRClient *oldclient = cr_server.curClient;
+    int cleanup=1;
 
     crDebug("Deleting client %p (%d msgs left)", client, crNetNumMessages(client->conn));
 
@@ -142,21 +195,20 @@ crServerDeleteClient( CRClient *client )
         }
     }
 
-    cr_server.curClient = client;
-
-    /* Destroy any windows created by the client */
-    for (pos = 0; pos<CR_MAX_WINDOWS && client->windowList[pos]; pos++) 
+    /* check if there're any other guest threads in same process */
+    for (i=0; i < cr_server.numClients; i++)
     {
-        cr_server.dispatch.WindowDestroy(client->windowList[pos]);
+        if (cr_server.clients[i]->pid==client->pid)
+        {
+            cleanup=0;
+            break;
+        }
     }
 
-    /* Check if we have context(s) made by this client left, could happen if client side code is lazy */
-    for (pos = 0; pos<CR_MAX_CONTEXTS && client->contextList[pos]; pos++) 
+    if (cleanup)
     {
-        cr_server.dispatch.DestroyContext(client->contextList[pos]);
+        crServerCleanupClient(client);
     }
-
-    cr_server.curClient = oldclient;
 
     /* remove from the run queue */
     if (cr_server.run_queue)
@@ -194,10 +246,30 @@ crServerDeleteClient( CRClient *client )
     }
 
     crNetFreeConnection(client->conn);
+    client->conn = NULL;
 
-    crFree(client);
+    if (cleanup)
+    {
+        crServerCleanupByPID(client->pid);
+        crFree(client);
+    }
+    else
+    {
+        CRClientNode *pNode = (CRClientNode *)crAlloc(sizeof(CRClientNode));
+        if (!pNode)
+        {
+            crWarning("Not enough memory, forcing client cleanup");
+            crServerCleanupClient(client);
+            crServerCleanupByPID(client->pid);
+            crFree(client);
+            return;
+        }
+        pNode->pClient = client;
+        pNode->prev = NULL;
+        pNode->next = cr_server.pCleanupClient;
+        cr_server.pCleanupClient = pNode;
+    }
 }
-
 
 /**
  * Test if the given client is in the middle of a glBegin/End or
