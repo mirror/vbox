@@ -375,7 +375,7 @@ static uint8_t aScancode2Hid[] =
     0x45, 0x67, 0x00, 0x00, 0x8c, 0x00, 0x00, 0x00, /* 58-5F */
     0x00, 0x00, 0x00, 0x00, 0x68, 0x69, 0x6a, 0x6b, /* 60-67 */
     0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x00, /* 68-6F */
-    0x88, 0x90, 0x91, 0x87, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
+    0x88, 0x91, 0x90, 0x87, 0x00, 0x00, 0x00, 0x00, /* 70-77 */
     0x00, 0x8a, 0x00, 0x8b, 0x00, 0x89, 0x85, 0x00  /* 78-7F */
 };
 
@@ -701,6 +701,7 @@ static int usbHidFillReport(PUSBHIDK_REPORT pReport,
                             uint8_t *pabUnreportedKeys,
                             uint8_t *pabDepressedKeys)
 {
+    int rc = false;
     unsigned iBuf = 0;
     RT_ZERO(*pReport);
     for (unsigned iKey = 0; iKey < VBOX_USB_MAX_USAGE_KBD; ++iKey)
@@ -724,11 +725,16 @@ static int usbHidFillReport(PUSBHIDK_REPORT pReport,
             {
                 pReport->aKeys[iBuf] = iKey;
                 ++iBuf;
+                /* More Korean keyboard hackery: Give the caller a hint that
+                 * a key release event needs reporting.
+                 */
+                if (iKey == 0x90 || iKey == 0x91)
+                    rc = true;
             }
             pabUnreportedKeys[iKey] = 0;
         }
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 #ifdef DEBUG
@@ -842,10 +848,12 @@ static int usbHidSendReport(PUSBHID pThis)
     {
         PUSBHIDK_REPORT pReport = (PUSBHIDK_REPORT)&pUrb->abData[0];
 
-        int rc = usbHidFillReport(pReport, pThis->abUnreportedKeys,
-                                  pThis->abDepressedKeys);
-        pThis->fHasPendingChanges = false;
-        AssertRCReturn(rc, rc);
+        int again = usbHidFillReport(pReport, pThis->abUnreportedKeys,
+                                      pThis->abDepressedKeys);
+        if (again)
+            pThis->fHasPendingChanges = true;
+        else
+            pThis->fHasPendingChanges = false;
         return usbHidCompleteOk(pThis, pUrb, sizeof(*pReport));
     }
     else
