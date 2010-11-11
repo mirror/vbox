@@ -449,7 +449,7 @@ HRESULT BusAssignmentManager::assignPciDevice(const char* pszDevName, PCFGMNODE 
         if (!fAvailable)
         {
             if (fAddressRequired)
-                return E_ACCESSDENIED;
+                rc = E_ACCESSDENIED;
             else
                 rc = pState->autoAssign(pszDevName, Address);
         }
