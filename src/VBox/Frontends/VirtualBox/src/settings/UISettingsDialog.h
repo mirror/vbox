@@ -116,6 +116,7 @@ private:
     QTimer *m_pWhatsThisTimer;
     QPointer<QWidget> m_pWhatsThisCandidate;
 
+    QMap<int, int> m_pages;
 #ifdef Q_WS_MAC
     QList<QSize> m_sizeList;
 #endif /* Q_WS_MAC */

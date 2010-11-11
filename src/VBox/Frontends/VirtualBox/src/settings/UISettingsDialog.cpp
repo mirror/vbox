@@ -162,34 +162,25 @@ void UISettingsDialog::sltRevalidate(QIWidgetValidator *pValidator)
 
 void UISettingsDialog::sltCategoryChanged(int cId)
 {
-    QWidget *pRootPage = m_pSelector->rootPage(cId);
+    int index = m_pages[cId];
 #ifdef Q_WS_MAC
     QSize cs = size();
-    /* First make all fully resizeable: */
-    setMinimumSize(QSize(minimumWidth(), 0));
-    setMaximumSize(QSize(minimumWidth(), QWIDGETSIZE_MAX));
-    for (int i = 0; i < m_pStack->count(); ++i)
-        m_pStack->widget(i)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
-    int a = m_pStack->indexOf(pRootPage);
-    if (a < m_sizeList.count())
+    if (index < m_sizeList.count())
     {
-        QSize ss = m_sizeList.at(a);
-        m_pStack->widget(a)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+        QSize ss = m_sizeList.at(index);
         /* Switch to the new page first if we are shrinking: */
         if (cs.height() > ss.height())
-            m_pStack->setCurrentIndex(m_pStack->indexOf(pRootPage));
+            m_pStack->setCurrentIndex(index);
         /* Do the animation: */
         ::darwinWindowAnimateResize(this, QRect (x(), y(), ss.width(), ss.height()));
         /* Switch to the new page last if we are zooming: */
         if (cs.height() <= ss.height())
-            m_pStack->setCurrentIndex(m_pStack->indexOf(pRootPage));
-        /* Make the widget fixed size: */
-        setFixedSize(ss);
+            m_pStack->setCurrentIndex(index);
     }
     ::darwinSetShowsResizeIndicator(this, false);
 #else
     m_pLbTitle->setText(m_pSelector->itemText(cId));
-    m_pStack->setCurrentIndex(m_pStack->indexOf(pRootPage));
+    m_pStack->setCurrentIndex(index);
 #endif
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     setWindowTitle(title());
@@ -280,7 +271,21 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
                                           strSmallIcon, strSmallIconDisabled,
                                           cId, strLink, pSettingsPage, iParentId);
     if (pPage)
-        m_pStack->addWidget(pPage);
+    {
+#ifdef Q_WS_MAC
+        /* On OSX we add a stretch to the vertical end to make sure the page is
+         * always top aligned. */
+        QWidget *pW = new QWidget();
+        pW->setContentsMargins(0, 0, 0, 0);
+        QVBoxLayout *pBox = new QVBoxLayout(pW);
+        VBoxGlobal::setLayoutMargin(pBox, 0);
+        pBox->addWidget(pPage);
+        pBox->addStretch(0);
+        m_pages[cId] = m_pStack->addWidget(pW);
+#else /* Q_WS_MAC */
+        m_pages[cId] = m_pStack->addWidget(pPage);
+#endif /* !Q_WS_MAC */
+    }
     if (pSettingsPage)
         assignValidator(pSettingsPage);
 }
@@ -473,7 +478,18 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
     for (int i = m_pStack->count() - 1; i >= 0; --i)
     {
         m_pStack->widget(i)->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+        /* Prevent this widgets to go in the Small/Mini size state which is
+         * available on Mac OS X. Not sure why this happens but this seems to help
+         * against. */
+        QList <QWidget*> list = m_pStack->widget(i)->findChildren<QWidget*>();
+        for (int a = 0; a < list.size(); ++a)
+        {
+            QWidget *w = list.at(a);
+            if (w->parent() == m_pStack->widget(i))
+                w->setFixedHeight(w->sizeHint().height());
+        }
         m_pStack->setCurrentIndex(i);
+        /* Now make sure the layout is freshly calculated. */
         layout()->activate();
         QSize s = minimumSize();
         if (iMinWidth > s.width())
