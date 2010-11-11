@@ -1917,8 +1917,24 @@ typedef struct X86FPUSTATE
     uint32_t    FPUOO;
     /** FOS. */
     uint32_t    FPUOS;
-    /** FPU view - todo. */
-    X86FPUMMX   regs[8];
+    /* - offset 32 - */
+    union
+    {
+        /** MMX view. */
+        uint64_t    mmx;
+        /** FPU view - todo. */
+        X86FPUMMX   fpu;
+        /** 8-bit view. */
+        uint8_t     au8[16];
+        /** 16-bit view. */
+        uint16_t    au16[8];
+        /** 32-bit view. */
+        uint32_t    au32[4];
+        /** 64-bit view. */
+        uint64_t    au64[2];
+        /** 128-bit view. (yeah, very helpful) */
+        uint128_t   au128[1];
+    } regs[8];
 } X86FPUSTATE;
 #pragma pack()
 /** Pointer to a FPU state. */
