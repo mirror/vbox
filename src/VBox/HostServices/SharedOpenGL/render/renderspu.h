@@ -11,7 +11,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #define RENDER_APIENTRY __stdcall
-#define snprintf sprintf_s
+#define snprintf _snprintf
 #elif defined(DARWIN)
 # ifndef VBOX_WITH_COCOA_QT
 #  include <AGL/AGL.h>
