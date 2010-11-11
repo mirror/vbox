@@ -18,14 +18,14 @@
 
 #include "VBoxHostVersion.h"
 #include "VBoxTray.h"
-#include "helpers.h"
+#include "VBoxHelpers.h"
 
 #include <VBox/VBoxGuestLib.h>
 
 
 /** @todo Move this part in VbglR3 and just provide a callback for the platform-specific
           notification stuff, since this is very similar to the VBoxClient code. */
-int VBoxCheckHostVersion ()
+int VBoxCheckHostVersion()
 {
     int rc;
     uint32_t uGuestPropSvcClientID;
@@ -50,7 +50,7 @@ int VBoxCheckHostVersion ()
                                                 "We recommend updating to the latest version (%s) by choosing the "
                                                 "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
 
-                rc = showBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
+                rc = hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
                 if (RT_FAILURE(rc))
                     Log(("VBoxTray: Guest Additions update found; however: could not show version notifier balloon tooltip! rc = %d\n", rc));
             }

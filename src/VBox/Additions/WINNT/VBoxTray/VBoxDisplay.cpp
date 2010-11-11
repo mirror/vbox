@@ -17,12 +17,12 @@
 #define _WIN32_WINNT 0x0500
 #include <windows.h>
 #include "VBoxTray.h"
+#include "VBoxHelpers.h"
 #include "VBoxSeamless.h"
 #include <VBoxHook.h>
 #include <VBoxDisplay.h>
 #include <VBox/VMMDev.h>
 #include <iprt/assert.h>
-#include "helpers.h"
 #include <malloc.h>
 #include <VBoxGuestInternal.h>
 
@@ -366,11 +366,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         && paRects[Id].bottom - paRects[Id].top == Height
         && paDeviceModes[Id].dmBitsPerPel == BitsPerPixel)
     {
-        Log(("VBoxTray: ResizeDisplayDevice: Already at desired resolution.\n"));
+        Log(("VBoxTray: ResizeDisplayDevice: Already at desired resolution\n"));
         return FALSE;
     }
 
-    resizeRect(paRects, NumDevices, DevPrimaryNum, Id, Width, Height);
+    hlpResizeRect(paRects, NumDevices, DevPrimaryNum, Id, Width, Height);
 #ifdef Log
     for (i = 0; i < NumDevices; i++)
     {

@@ -14,7 +14,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include "VBoxTray.h"
+#include "VBoxHelpers.h"
 #include "VBoxSeamless.h"
 #include "VBoxClipboard.h"
 #include "VBoxDisplay.h"
@@ -27,12 +32,14 @@
 #include <malloc.h>
 #include <VBoxGuestInternal.h>
 
-#include "helpers.h"
 #include <sddl.h>
 
 #include <iprt/buildconfig.h>
 
-/* global variables */
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 HANDLE                gVBoxDriver;
 HANDLE                gStopSem;
 HANDLE                ghSeamlessNotifyEvent = 0;
@@ -102,7 +109,7 @@ static BOOL vboxTrayIconAdd()
     gNotifyIconData.hWnd             = gToolWindow;
     gNotifyIconData.uID              = ID_TRAYICON;
     gNotifyIconData.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-    gNotifyIconData.uCallbackMessage = WM_VBOX_TRAY;
+    gNotifyIconData.uCallbackMessage = WM_VBOXTRAY_TRAY_ICON;
     gNotifyIconData.hIcon            = hIcon;
 
     sprintf(gNotifyIconData.szTip, "%s Guest Additions %d.%d.%dr%d",
@@ -139,7 +146,7 @@ static void vboxTrayIconRemove()
 
 static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
-    Log(("VBoxTray: Starting services...\n"));
+    Log(("VBoxTray: Starting services ...\n"));
 
     pEnv->hStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
@@ -151,7 +158,7 @@ static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 
     while (pTable->pszName)
     {
-        Log(("VBoxTray: Starting %s...\n", pTable->pszName));
+        Log(("VBoxTray: Starting %s ...\n", pTable->pszName));
 
         int rc = VINF_SUCCESS;
 
@@ -162,20 +169,17 @@ static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
         pTable->fStarted = false;
 
         if (pTable->pfnInit)
-        {
             rc = pTable->pfnInit (pEnv, &pTable->pInstance, &fStartThread);
-        }
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
-            Log(("VBoxTray: Failed to initialize rc = %Rrc.\n", rc));
+            Log(("VBoxTray: Failed to initialize rc = %Rrc\n", rc));
         }
         else
         {
             if (pTable->pfnThread && fStartThread)
             {
                 unsigned threadid;
-
                 pTable->hThread = (HANDLE)_beginthreadex (NULL,  /* security */
                                                           0,     /* stacksize */
                                                           pTable->pfnThread,
@@ -184,23 +188,16 @@ static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
                                                           &threadid);
 
                 if (pTable->hThread == (HANDLE)(0))
-                {
                     rc = VERR_NOT_SUPPORTED;
-                }
             }
 
-            if (RT_FAILURE (rc))
-            {
-                Log(("VBoxTray: Failed to start the thread.\n"));
-
-                if (pTable->pfnDestroy)
-                {
-                    pTable->pfnDestroy (pEnv, pTable->pInstance);
-                }
-            }
+            if (RT_SUCCESS(rc))
+                pTable->fStarted = true;
             else
             {
-                pTable->fStarted = true;
+                Log(("VBoxTray: Failed to start the thread\n"));
+                if (pTable->pfnDestroy)
+                    pTable->pfnDestroy(pEnv, pTable->pInstance);
             }
         }
 
@@ -214,9 +211,7 @@ static int vboxStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 static void vboxStopServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 {
     if (!pEnv->hStopEvent)
-    {
         return;
-    }
 
     /* Signal to all threads. */
     SetEvent(pEnv->hStopEvent);
@@ -230,15 +225,12 @@ static void vboxStopServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
                 /* There is a thread, wait for termination. */
                 WaitForSingleObject(pTable->hThread, INFINITE);
 
-                CloseHandle (pTable->hThread);
+                CloseHandle(pTable->hThread);
                 pTable->hThread = 0;
             }
 
             if (pTable->pfnDestroy)
-            {
                 pTable->pfnDestroy (pEnv, pTable->pInstance);
-            }
-
             pTable->fStarted = false;
         }
 
@@ -246,16 +238,18 @@ static void vboxStopServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
         pTable++;
     }
 
-    CloseHandle (pEnv->hStopEvent);
+    CloseHandle(pEnv->hStopEvent);
 }
 
 
-/** Attempt to force Windows to reload the cursor image by attaching to the
+/**
+ * Attempt to force Windows to reload the cursor image by attaching to the
  * thread of the window currently under the mouse, hiding the cursor and
  * showing it again.  This could fail to work in any number of ways (no
  * window under the cursor, the cursor has moved to a different window while
  * we are processing), but we just accept this, as the cursor will be reloaded
- * at some point anyway. */
+ * at some point anyway.
+ */
 void VBoxServiceReloadCursor(void)
 {
     LogFlowFunc(("\n"));
@@ -339,7 +333,7 @@ void WINAPI VBoxServiceStart(void)
     info.dwOSVersionInfoSize = sizeof(info);
     if (GetVersionEx(&info))
     {
-        Log(("VBoxTray: Windows version major %d minor %d.\n", info.dwMajorVersion, info.dwMinorVersion));
+        Log(("VBoxTray: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
         gMajorVersion = info.dwMajorVersion;
     }
 
@@ -450,7 +444,7 @@ void WINAPI VBoxServiceStart(void)
         /* We're ready to create the tooltip balloon. */
         /* Check in 10 seconds (@todo make seconds configurable) ... */
         SetTimer(gToolWindow,
-                 WM_VBOX_CHECK_HOSTVERSION,
+                 TIMERID_VBOXTRAY_CHECK_HOSTVERSION,
                  10 * 1000, /* 10 seconds */
                  NULL       /* No timerproc */);
     }
@@ -478,18 +472,18 @@ void WINAPI VBoxServiceStart(void)
         waitResult = waitResult - WAIT_OBJECT_0;
 
         /* Only enable for message debugging, lots of traffic! */
-        //Log(("VBoxTray: Wait result  = %ld.\n", waitResult));
+        //Log(("VBoxTray: Wait result  = %ld\n", waitResult));
 
         if (waitResult == 0)
         {
-            Log(("VBoxTray: Event 'Exit' triggered.\n"));
+            Log(("VBoxTray: Event 'Exit' triggered\n"));
             /* exit */
             break;
         }
         else if (   (waitResult == 1)
                  && (ghSeamlessNotifyEvent!=0)) /* Only jump in, if seamless is active! */
         {
-            Log(("VBoxTray: Event 'Seamless' triggered.\n"));
+            Log(("VBoxTray: Event 'Seamless' triggered\n"));
 
             /* seamless window notification */
             VBoxSeamlessCheckWindows();
@@ -562,12 +556,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     if (RT_FAILURE(rc))
         return rc;
 
-    LogRel(("VBoxTray: %s r%s started.\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
+    LogRel(("VBoxTray: %s r%s started\n", RTBldCfgVersion(), RTBldCfgRevisionStr()));
 
     gInstance = hInstance;
     VBoxServiceStart();
 
-    LogRel(("VBoxTray: Ended.\n"));
+    LogRel(("VBoxTray: Ended\n"));
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL) {
@@ -589,7 +583,7 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     switch (msg)
     {
         case WM_CREATE:
-            Log(("VBoxTray: Tool window created.\n"));
+            Log(("VBoxTray: Tool window created\n"));
             s_uTaskbarCreated = RegisterWindowMessage(TEXT("TaskbarCreated"));
             if (!s_uTaskbarCreated)
                 Log(("VBoxTray: Cannot register message \"TaskbarCreated\"! Error = %ld\n", GetLastError()));
@@ -599,18 +593,18 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
 
         case WM_DESTROY:
-            Log(("VBoxTray: Tool window destroyed.\n"));
-            KillTimer(gToolWindow, WM_VBOX_CHECK_HOSTVERSION);
+            Log(("VBoxTray: Tool window destroyed\n"));
+            KillTimer(gToolWindow, TIMERID_VBOXTRAY_CHECK_HOSTVERSION);
             break;
 
         case WM_TIMER:
             switch (wParam)
             {
-                case WM_VBOX_CHECK_HOSTVERSION:
+                case WM_VBOXTRAY_CHECK_HOSTVERSION:
                     if (RT_SUCCESS(VBoxCheckHostVersion()))
                     {
                         /* After successful run we don't need to check again. */
-                        KillTimer(gToolWindow, WM_VBOX_CHECK_HOSTVERSION);
+                        KillTimer(gToolWindow, TIMERID_VBOXTRAY_CHECK_HOSTVERSION);
                     }
                     return 0;
 
@@ -620,7 +614,7 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
             break;
 
-        case WM_VBOX_TRAY:
+        case WM_VBOXTRAY_TRAY_ICON:
             switch (lParam)
             {
                 case WM_LBUTTONDBLCLK:
@@ -643,11 +637,11 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             VBoxSeamlessCheckWindows();
             break;
 
-        case WM_VBOX_RESTORED:
+        case WM_VBOXTRAY_VM_RESTORED:
             VBoxRestoreSession();
             break;
 
-        case WM_VBOX_CHECK_VRDP:
+        case WM_VBOXTRAY_VRDP_CHECK:
             VBoxRestoreCheckVRDP();
             break;
 
