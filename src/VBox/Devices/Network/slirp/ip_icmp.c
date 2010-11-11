@@ -274,7 +274,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             break;
 
         default:
-            LogRel(("%s:ICMP: unsupported protocol(%d)\n", __FUNCTION__, ip->ip_p));
+            Log(("NAT:ICMP: unsupported protocol(%d)\n", ip->ip_p));
     }
     sofound:
     if (found == 1 && icm == NULL)
@@ -282,7 +282,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
         if (so->so_state == SS_NOFDREF)
         {
             /* socket is shutdowning we've already sent ICMP on it.*/
-            LogRel(("NAT: Received icmp on shutdowning socket (probably corresponding ICMP socket has been already sent)\n"));
+            Log(("NAT: Received icmp on shutdowning socket (probably corresponding ICMP socket has been already sent)\n"));
             return NULL;
         }
         icm = RTMemAlloc(sizeof(struct icmp_msg));
@@ -365,7 +365,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
         icp_buf = RTMemAlloc(icmplen);
         if (!icp_buf)
         {
-            LogRel(("NAT: not enought memory to allocate the buffer\n"));
+            Log(("NAT: not enought memory to allocate the buffer\n"));
             goto end_error_free_m;
         }
         m_copydata(m, 0, icmplen, icp_buf);
@@ -426,7 +426,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                     status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL,
                                         (void *)&ttl, sizeof(ttl));
                     if (status < 0)
-                        LogRel(("NAT: Error (%s) occurred while setting TTL attribute of IP packet\n",
+                        Log(("NAT: Error (%s) occurred while setting TTL attribute of IP packet\n",
                                 strerror(errno)));
                     rc = sendto(pData->icmp_socket.s, icp, icmplen, 0,
                               (struct sockaddr *)&addr, sizeof(addr));
@@ -474,23 +474,23 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                     /* don't let m_freem at the end free atached buffer */
                     goto done;
                 }
-                LogRel(("NAT: Error (%d) occurred while sending ICMP (", error));
+                Log(("NAT: Error (%d) occurred while sending ICMP (", error));
                 switch (error)
                 {
                     case ERROR_INVALID_PARAMETER:
-                        LogRel(("icmp_socket:%lx is invalid)\n", pData->icmp_socket.s));
+                        Log(("icmp_socket:%lx is invalid)\n", pData->icmp_socket.s));
                         break;
                     case ERROR_NOT_SUPPORTED:
-                        LogRel(("operation is unsupported)\n"));
+                        Log(("operation is unsupported)\n"));
                         break;
                     case ERROR_NOT_ENOUGH_MEMORY:
-                        LogRel(("OOM!!!)\n"));
+                        Log(("OOM!!!)\n"));
                         break;
                     case IP_BUF_TOO_SMALL:
-                        LogRel(("Buffer too small)\n"));
+                        Log(("Buffer too small)\n"));
                         break;
                     default:
-                        LogRel(("Other error!!!)\n"));
+                        Log(("Other error!!!)\n"));
                         break;
                 }
 #endif /* RT_OS_WINDOWS */

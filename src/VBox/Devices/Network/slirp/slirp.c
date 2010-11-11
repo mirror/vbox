@@ -285,25 +285,25 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, pAdapterAddr, &size);
     if (ret != ERROR_BUFFER_OVERFLOW)
     {
-        LogRel(("NAT: error %lu occurred on capacity detection operation\n", ret));
+        Log(("NAT: error %lu occurred on capacity detection operation\n", ret));
         return -1;
     }
     if (size == 0)
     {
-        LogRel(("NAT: Win socket API returns non capacity\n"));
+        Log(("NAT: Win socket API returns non capacity\n"));
         return -1;
     }
 
     pAdapterAddr = RTMemAllocZ(size);
     if (!pAdapterAddr)
     {
-        LogRel(("NAT: No memory available \n"));
+        Log(("NAT: No memory available \n"));
         return -1;
     }
     ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, pAdapterAddr, &size);
     if (ret != ERROR_SUCCESS)
     {
-        LogRel(("NAT: error %lu occurred on fetching adapters info\n", ret));
+        Log(("NAT: error %lu occurred on fetching adapters info\n", ret));
         RTMemFree(pAdapterAddr);
         return -1;
     }
@@ -329,12 +329,12 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             pDns = RTMemAllocZ(sizeof(struct dns_entry));
             if (!pDns)
             {
-                LogRel(("NAT: Can't allocate buffer for DNS entry\n"));
+                Log(("NAT: Can't allocate buffer for DNS entry\n"));
                 RTMemFree(pAdapterAddr);
                 return VERR_NO_MEMORY;
             }
 
-            LogRel(("NAT: adding %R[IP4] to DNS server list\n", &InAddr));
+            Log(("NAT: adding %R[IP4] to DNS server list\n", &InAddr));
             if ((InAddr.s_addr & RT_H2N_U32_C(IN_CLASSA_NET)) == RT_N2H_U32_C(INADDR_LOOPBACK & IN_CLASSA_NET))
                 pDns->de_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
             else
@@ -369,13 +369,13 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 pDomain = RTMemAllocZ(sizeof(struct dns_domain_entry));
                 if (!pDomain)
                 {
-                    LogRel(("NAT: not enough memory\n"));
+                    Log(("NAT: not enough memory\n"));
                     RTStrFree(pszSuffix);
                     RTMemFree(pAdapterAddr);
                     return VERR_NO_MEMORY;
                 }
                 pDomain->dd_pszDomain = pszSuffix;
-                LogRel(("NAT: adding domain name %s to search list\n", pDomain->dd_pszDomain));
+                Log(("NAT: adding domain name %s to search list\n", pDomain->dd_pszDomain));
                 LIST_INSERT_HEAD(&pData->pDomainList, pDomain, dd_list);
             }
         }
@@ -420,7 +420,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     char buff2[256];
     RTFILE f;
     int cNameserversFound = 0;
-    int fWarnTooManyDnsServers = 0;
+    bool fWarnTooManyDnsServers = false;
     struct in_addr tmp_addr;
     int rc;
     size_t bytes;
@@ -473,10 +473,10 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     {
         struct dns_entry *pDns = NULL;
         if (   cNameserversFound == 4
-            && fWarnTooManyDnsServers == 0
+            && !fWarnTooManyDnsServers
             && sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1)
         {
-            fWarnTooManyDnsServers = 1;
+            fWarnTooManyDnsServers = true;
             LogRel(("NAT: too many nameservers registered.\n"));
         }
         if (   sscanf(buff, "nameserver%*[ \t]%255s", buff2) == 1
@@ -489,7 +489,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             pDns = RTMemAllocZ(sizeof (struct dns_entry));
             if (!pDns)
             {
-                LogRel(("can't alloc memory for DNS entry\n"));
+                Log(("can't alloc memory for DNS entry\n"));
                 return -1;
             }
 
@@ -523,11 +523,11 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 pDomain = RTMemAllocZ(sizeof(struct dns_domain_entry));
                 if (!pDomain)
                 {
-                    LogRel(("NAT: not enought memory to add domain list\n"));
+                    Log(("NAT: not enought memory to add domain list\n"));
                     return VERR_NO_MEMORY;
                 }
                 pDomain->dd_pszDomain = RTStrDup(tok);
-                LogRel(("NAT: adding domain name %s to search list\n", pDomain->dd_pszDomain));
+                Log(("NAT: adding domain name %s to search list\n", pDomain->dd_pszDomain));
                 LIST_INSERT_HEAD(&pData->pDomainList, pDomain, dd_list);
             }
         }
@@ -616,7 +616,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     rc = bootp_dhcp_init(pData);
     if (rc != 0)
     {
-        LogRel(("NAT: DHCP server initialization was failed\n"));
+        Log(("NAT: DHCP server initialization was failed\n"));
         return VINF_NAT_DNS;
     }
     debug_init();
@@ -643,7 +643,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     }
     if (i32AliasMode & ~(PKT_ALIAS_LOG|PKT_ALIAS_SAME_PORTS|PKT_ALIAS_PROXY_ONLY))
     {
-        LogRel(("NAT: alias mode %x is ignored\n", i32AliasMode));
+        Log(("NAT: alias mode %x is ignored\n", i32AliasMode));
         i32AliasMode = 0;
     }
     pData->i32AliasMode = i32AliasMode;
@@ -654,7 +654,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         pData->proxy_alias = LibAliasInit(pData, NULL);
         if (pData->proxy_alias == NULL)
         {
-            LogRel(("NAT: LibAlias default rule wasn't initialized\n"));
+            Log(("NAT: LibAlias default rule wasn't initialized\n"));
             AssertMsgFailed(("NAT: LibAlias default rule wasn't initialized\n"));
         }
         flags = LibAliasSetMode(pData->proxy_alias, 0, 0);
@@ -1488,7 +1488,7 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
     m->m_len = cbBuf;
     if (cbBuf < ETH_HLEN)
     {
-        LogRel(("NAT: packet having size %d has been ignored\n", m->m_len));
+        Log(("NAT: packet having size %d has been ignored\n", m->m_len));
         m_freem(pData, m);
         return;
     }
@@ -1568,7 +1568,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
         buf = RTMemAlloc(mlen);
         if (!buf)
         {
-            LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
+            Log(("NAT: Can't alloc memory for outgoing buffer\n"));
             m_freem(pData, m);
             goto done;
         }
@@ -1796,7 +1796,7 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
             pData->cRedirectionsStored--;
             break;
         }
-        
+
     }
     return 0;
 }
@@ -2000,7 +2000,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
     if (m == NULL)
     {
-        LogRel(("NAT: Can't alloc mbuf for ARP request\n"));
+        Log(("NAT: Can't alloc mbuf for ARP request\n"));
         return;
     }
     ehdr = mtod(m, struct ethhdr *);
@@ -2054,7 +2054,7 @@ void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
     ac = RTMemAllocZ(sizeof(struct arp_cache_entry));
     if (ac == NULL)
     {
-        LogRel(("NAT: Can't allocate arp cache entry\n"));
+        Log(("NAT: Can't allocate arp cache entry\n"));
         return;
     }
     ac->ip = ip;

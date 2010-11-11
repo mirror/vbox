@@ -233,7 +233,7 @@ soread(PNATState pData, struct socket *so)
         unsigned long pending = 0;
         status = ioctlsocket(so->s, FIONREAD, &pending);
         if (status < 0)
-            LogRel(("NAT:error in WSAIoctl: %d\n", errno));
+            Log(("NAT:error in WSAIoctl: %d\n", errno));
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
@@ -337,7 +337,7 @@ soread(PNATState pData, struct socket *so)
     buf = RTMemAlloc(len);
     if (buf == NULL)
     {
-        LogRel(("NAT: can't alloc enough memory\n"));
+        Log(("NAT: can't alloc enough memory\n"));
         return -1;
     }
 
@@ -355,7 +355,7 @@ soread(PNATState pData, struct socket *so)
         unsigned long pending = 0;
         status = ioctlsocket(so->s, FIONREAD, &pending);
         if (status < 0)
-            LogRel(("NAT:error in WSAIoctl: %d\n", errno));
+            Log(("NAT:error in WSAIoctl: %d\n", errno));
         if (n == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
@@ -652,9 +652,7 @@ do_sosend(struct socket *so, int fUrg)
 
     n = send(so->s, sbuf_data(sb), len, (fUrg ? MSG_OOB : 0));
     if (n < 0)
-    {
-        LogRel(("NAT: Can't sent sbuf via socket.\n"));
-    }
+        Log(("NAT: Can't sent sbuf via socket.\n"));
     if (fUrg)
         so->so_urgc -= n;
     if (n > 0 && n < len)
@@ -664,7 +662,7 @@ do_sosend(struct socket *so, int fUrg)
         buff = RTMemAlloc(len);
         if (buff == NULL)
         {
-            LogRel(("NAT: No space to allocate temporal buffer\n"));
+            Log(("NAT: No space to allocate temporal buffer\n"));
             return -1;
         }
         ptr = sbuf_data(sb);
