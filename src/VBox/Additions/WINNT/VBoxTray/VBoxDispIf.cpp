@@ -279,7 +279,8 @@ static DWORD vboxDispIfResizeWDDM(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width,
     Ctx.Info.Width = Width;
     Ctx.Info.Height = Height;
     Ctx.Info.BitsPerPixel = BitsPerPixel;
-    DWORD err = vboxDispIfWDDMAdapterOp(pIf, (int)Id, vboxDispIfResizeWDDMOp, &Ctx);
+    DWORD err = vboxDispIfWDDMAdapterOp(pIf, -1, /* (int)Id - always say -1 to use primary display since the display does not really matter here */
+            vboxDispIfResizeWDDMOp, &Ctx);
     if (err == NO_ERROR)
     {
         if (!Ctx.Status)

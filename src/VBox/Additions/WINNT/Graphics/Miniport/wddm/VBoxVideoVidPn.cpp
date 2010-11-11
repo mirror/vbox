@@ -12,7 +12,7 @@
 #include "../VBoxVideo.h"
 #include "../Helper.h"
 
-NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
+NTSTATUS vboxVidPnCheckTopology(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn,
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
         BOOLEAN *pbSupported)
 {
@@ -22,12 +22,24 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
 
     if (Status == STATUS_SUCCESS)
     {
+        BOOLEAN bFoundPrimary = FALSE;
+
         while (1)
         {
-            /* @todo: which paths do we support? no matter for now
-            pNewVidPnPresentPathInfo->VidPnSourceId
-            pNewVidPnPresentPathInfo->VidPnTargetId
+            if (pNewVidPnPresentPathInfo->VidPnSourceId != pNewVidPnPresentPathInfo->VidPnTargetId)
+            {
+                dprintf(("unsupported source(%d)->target(%d) pare\n", pNewVidPnPresentPathInfo->VidPnSourceId, pNewVidPnPresentPathInfo->VidPnTargetId));
+                AssertBreakpoint();
+                bSupported = FALSE;
+                break;
+            }
 
+            if (pNewVidPnPresentPathInfo->VidPnSourceId == 0)
+            {
+                bFoundPrimary = TRUE;
+            }
+
+            /*
             ImportanceOrdinal does not matter for now
             pNewVidPnPresentPathInfo->ImportanceOrdinal
             */
@@ -199,6 +211,8 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                 break;
             }
         }
+
+        bSupported &= bFoundPrimary;
 
         if (pNewVidPnPresentPathInfo)
             pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNewVidPnPresentPathInfo);
@@ -859,10 +873,12 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
         D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions, int32_t iPreferred)
 {
     NTSTATUS Status;
+#if 0
     D3DKMDT_2DREGION *pResolutionsCopy = (D3DKMDT_2DREGION*)vboxWddmMemAlloc(cResolutions * sizeof (D3DKMDT_2DREGION));
     if (pResolutionsCopy)
     {
         memcpy(pResolutionsCopy, pResolutions, cResolutions * sizeof (D3DKMDT_2DREGION));
+#endif
         CONST DXGK_MONITOR_INTERFACE *pMonitorInterface;
         Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryMonitorInterface(pDevExt->u.primary.DxgkInterface.DeviceHandle, DXGK_MONITOR_INTERFACE_VERSION_V1, &pMonitorInterface);
         Assert(Status == STATUS_SUCCESS);
@@ -877,6 +893,7 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
             Assert(Status == STATUS_SUCCESS);
             if (Status == STATUS_SUCCESS)
             {
+#if 0
                 VBOXVIDPNCHECKADDMONITORMODES EnumData = {0};
                 EnumData.cResolutions = cResolutions;
                 EnumData.pResolutions = pResolutionsCopy;
@@ -888,9 +905,14 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
                     Assert(EnumData.Status == STATUS_SUCCESS);
                     if (EnumData.Status == STATUS_SUCCESS)
                     {
+#endif
                         for (uint32_t i = 0; i < cResolutions; ++i)
                         {
+#if 0
                             D3DKMDT_2DREGION *pRes = &pResolutionsCopy[i];
+#else
+                            D3DKMDT_2DREGION *pRes = &pResolutions[i];
+#endif
                             if (pRes->cx)
                             {
                                 Status = vboxVidPnCreatePopulateMonitorSourceModeInfoFromLegacy(pDevExt,
@@ -899,17 +921,22 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
                                         pRes,
                                         enmOrigin,
                                         i == (uint32_t)iPreferred);
-                                Assert(Status == STATUS_SUCCESS);
-                                if (Status != STATUS_SUCCESS)
+                                Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_MODE_ALREADY_IN_MODESET);
+                                if (Status == STATUS_GRAPHICS_MODE_ALREADY_IN_MODESET)
+                                {
+                                    Status = STATUS_SUCCESS;
+                                }
+                                else if (Status != STATUS_SUCCESS)
                                 {
                                     drprintf((__FUNCTION__": vboxVidPnCreatePopulateMonitorSourceModeInfoFromLegacy failed Status(0x%x)\n", Status));
                                     break;
                                 }
                             }
                         }
+#if 0
                     }
                 }
-
+#endif
                 NTSTATUS tmpStatus = pMonitorInterface->pfnReleaseMonitorSourceModeSet(pDevExt->u.primary.DxgkInterface.DeviceHandle, hMonitorSMS);
                 Assert(tmpStatus == STATUS_SUCCESS);
                 if (tmpStatus != STATUS_SUCCESS)
@@ -920,7 +947,7 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
         }
         else
             drprintf((__FUNCTION__": DxgkCbQueryMonitorInterface failed Status(0x%x)\n", Status));
-
+#if 0
         vboxWddmMemFree(pResolutionsCopy);
     }
     else
@@ -928,6 +955,7 @@ NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt,
         drprintf((__FUNCTION__": failed to allocate resolution copy of size (%d)\n", cResolutions));
         Status = STATUS_NO_MEMORY;
     }
+#endif
 
     return Status;
 }
@@ -1773,7 +1801,7 @@ const char* vboxVidPnDumpStrRotation(D3DKMDT_VIDPN_PRESENT_PATH_ROTATION Rotatio
     }
 }
 
-const char* vboxVidPnDumpStrColorBasis(D3DKMDT_COLOR_BASIS ColorBasis)
+const char* vboxVidPnDumpStrColorBasis(const D3DKMDT_COLOR_BASIS ColorBasis)
 {
     switch (ColorBasis)
     {
@@ -1786,6 +1814,20 @@ const char* vboxVidPnDumpStrColorBasis(D3DKMDT_COLOR_BASIS ColorBasis)
         VBOXVIDPNDUMP_STRCASE_UNKNOWN();
     }
 }
+
+const char* vboxVidPnDumpStrPvam(D3DKMDT_PIXEL_VALUE_ACCESS_MODE PixelValueAccessMode)
+{
+    switch (PixelValueAccessMode)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_PVAM_UNINITIALIZED);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_PVAM_DIRECT);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_PVAM_PRESETPALETTE);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_PVAM_SETTABLEPALETTE);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
+
+
 
 const char* vboxVidPnDumpStrContent(D3DKMDT_VIDPN_PRESENT_PATH_CONTENT Content)
 {
@@ -1823,6 +1865,158 @@ const char* vboxVidPnDumpStrGammaRampType(D3DDDI_GAMMARAMP_TYPE Type)
     }
 }
 
+const char* vboxVidPnDumpStrSourceModeType(D3DKMDT_VIDPN_SOURCE_MODE_TYPE Type)
+{
+    switch (Type)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_RMT_UNINITIALIZED);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_RMT_GRAPHICS);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_RMT_TEXT);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
+
+const char* vboxVidPnDumpStrScanLineOrdering(D3DDDI_VIDEO_SIGNAL_SCANLINE_ORDERING ScanLineOrdering)
+{
+    switch (ScanLineOrdering)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_UNINITIALIZED);
+        VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_PROGRESSIVE);
+        VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_INTERLACED_UPPERFIELDFIRST);
+        VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_INTERLACED_LOWERFIELDFIRST);
+        VBOXVIDPNDUMP_STRCASE(D3DDDI_VSSLO_OTHER);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
+
+const char* vboxVidPnDumpStrModePreference(D3DKMDT_MODE_PREFERENCE Preference)
+{
+    switch (Preference)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MP_UNINITIALIZED);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MP_PREFERRED);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_MP_NOTPREFERRED);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
+
+const char* vboxVidPnDumpStrSignalStandard(D3DKMDT_VIDEO_SIGNAL_STANDARD VideoStandard)
+{
+    switch (VideoStandard)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_UNINITIALIZED);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_VESA_DMT);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_VESA_GTF);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_VESA_CVT);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_IBM);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_APPLE);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_NTSC_M);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_NTSC_J);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_NTSC_443);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_B);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_B1);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_G);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_H);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_I);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_D);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_N);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_NC);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_B);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_D);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_G);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_H);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_K);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_K1);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_L);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_SECAM_L1);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_EIA_861);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_EIA_861A);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_EIA_861B);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_K);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_K1);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_L);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_PAL_M);
+        VBOXVIDPNDUMP_STRCASE(D3DKMDT_VSS_OTHER);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
+
+const char* vboxVidPnDumpStrPixFormat(D3DDDIFORMAT PixelFormat)
+{
+    switch (PixelFormat)
+    {
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_UNKNOWN);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_R8G8B8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A8R8G8B8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_X8R8G8B8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_R5G6B5);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_X1R5G5B5);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A1R5G5B5);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A4R4G4B4);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_R3G3B2);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A8R3G3B2);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_X4R4G4B4);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A2B10G10R10);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A8B8G8R8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_X8B8G8R8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_G16R16);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A2R10G10B10);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A16B16G16R16);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A8P8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_R32F);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_G32R32F);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A32B32G32R32F);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_CxV8U8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A1);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_BINARYBUFFER);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_VERTEXDATA);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_INDEX16);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_INDEX32);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_Q16W16V16U16);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_MULTI2_ARGB8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_R16F);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_G16R16F);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A16B16G16R16F);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D32F_LOCKABLE);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D24FS8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D32_LOCKABLE);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_S8_LOCKABLE);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_S1D15);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_S8D24);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_X8D24);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_X4S4D24);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_L16);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_UYVY);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_R8G8_B8G8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_YUY2);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_G8R8_G8B8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_DXT1);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_DXT2);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_DXT3);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_DXT4);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_DXT5);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D16_LOCKABLE);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D32);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D15S1);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D24S8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D24X8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D24X4S4);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_D16);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_P8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_L8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A8L8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A4L4);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_V8U8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_L6V5U5);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_X8L8V8U8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_Q8W8V8U8);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_V16U16);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_W11V11U10);
+        VBOXVIDPNDUMP_STRCASE(D3DDDIFMT_A2W10V10U10);
+        VBOXVIDPNDUMP_STRCASE_UNKNOWN();
+    }
+}
 
 void vboxVidPnDumpCopyProtectoin(const D3DKMDT_VIDPN_PRESENT_PATH_COPYPROTECTION *pCopyProtection)
 {
@@ -1840,7 +2034,12 @@ void vboxVidPnDumpPathTransformation(const D3DKMDT_VIDPN_PRESENT_PATH_TRANSFORMA
 
 void vboxVidPnDumpRegion(const char *pPrefix, const D3DKMDT_2DREGION *pRegion, const char *pSuffix)
 {
-    drprintf(("%scx(%d), cy(%d)%s", pPrefix, pRegion->cx, pRegion->cy, pSuffix));
+    drprintf(("%s%dX%d%s", pPrefix, pRegion->cx, pRegion->cy, pSuffix));
+}
+
+void vboxVidPnDumpRational(const char *pPrefix, const D3DDDI_RATIONAL *pRational, const char *pSuffix)
+{
+    drprintf(("%s%d/%d=%d%s", pPrefix, pRational->Numerator, pRational->Denominator, pRational->Numerator/pRational->Denominator, pSuffix));
 }
 
 void vboxVidPnDumpRanges(const char *pPrefix, const D3DKMDT_COLOR_COEFF_DYNAMIC_RANGES *pDynamicRanges, const char *pSuffix)
@@ -1855,24 +2054,209 @@ void vboxVidPnDumpRanges(const char *pPrefix, const D3DKMDT_COLOR_COEFF_DYNAMIC_
 
 void vboxVidPnDumpGammaRamp(const char *pPrefix, const D3DKMDT_GAMMA_RAMP *pGammaRamp, const char *pSuffix)
 {
-    drprintf(("%Type(%s), DataSize(%d), TODO: dump the rest%s", pPrefix,
+    drprintf(("%sType(%s), DataSize(%d), TODO: dump the rest%s", pPrefix,
             vboxVidPnDumpStrGammaRampType(pGammaRamp->Type), pGammaRamp->DataSize,
             pSuffix));
 }
 
+void vboxVidPnDumpSourceMode(const char *pPrefix, const D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, const char *pSuffix)
+{
+    drprintf(("%sType(%s), ", pPrefix, vboxVidPnDumpStrSourceModeType(pVidPnSourceModeInfo->Type)));
+    vboxVidPnDumpRegion("surf(", &pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize, "), ");
+    vboxVidPnDumpRegion("vis(", &pVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize, "), ");
+    drprintf(("stride(%d), ", pVidPnSourceModeInfo->Format.Graphics.Stride));
+    drprintf(("format(%s), ", vboxVidPnDumpStrPixFormat(pVidPnSourceModeInfo->Format.Graphics.PixelFormat)));
+    drprintf(("clrBasis(%s), ", vboxVidPnDumpStrColorBasis(pVidPnSourceModeInfo->Format.Graphics.ColorBasis)));
+    drprintf(("pvam(%s)%s", vboxVidPnDumpStrPvam(pVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode), pSuffix));
+}
+
+void vboxVidPnDumpSignalInfo(const char *pPrefix, const D3DKMDT_VIDEO_SIGNAL_INFO *pVideoSignalInfo, const char *pSuffix)
+{
+    drprintf(("%sVStd(%s), ", pPrefix, vboxVidPnDumpStrSignalStandard(pVideoSignalInfo->VideoStandard)));
+    vboxVidPnDumpRegion("totSize(", &pVideoSignalInfo->TotalSize, "), ");
+    vboxVidPnDumpRegion("activeSize(", &pVideoSignalInfo->ActiveSize, "), ");
+    vboxVidPnDumpRational("VSynch(", &pVideoSignalInfo->VSyncFreq, "), ");
+    drprintf(("PixelRate(%d), ScanLineOrdering(%s)%s\n", pVideoSignalInfo->PixelRate, vboxVidPnDumpStrScanLineOrdering(pVideoSignalInfo->ScanLineOrdering), pSuffix));
+}
+
+void vboxVidPnDumpTargetMode(const char *pPrefix, const D3DKMDT_VIDPN_TARGET_MODE* CONST  pVidPnTargetModeInfo, const char *pSuffix)
+{
+    drprintf(("%s", pPrefix));
+    vboxVidPnDumpSignalInfo("VSI: ", &pVidPnTargetModeInfo->VideoSignalInfo, ", ");
+    drprintf(("Preference(%s)%s", vboxVidPnDumpStrModePreference(pVidPnTargetModeInfo->Preference), pPrefix));
+}
+
+void vboxVidPnDumpPinnedSourceMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
+    const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
+
+    NTSTATUS Status = pVidPnInterface->pfnAcquireSourceModeSet(hVidPn,
+                        VidPnSourceId,
+                        &hCurVidPnSourceModeSet,
+                        &pCurVidPnSourceModeSetInterface);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        CONST D3DKMDT_VIDPN_SOURCE_MODE* pPinnedVidPnSourceModeInfo;
+
+        Status = pCurVidPnSourceModeSetInterface->pfnAcquirePinnedModeInfo(hCurVidPnSourceModeSet, &pPinnedVidPnSourceModeInfo);
+        Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_MODE_NOT_PINNED);
+        if (Status == STATUS_SUCCESS)
+        {
+            vboxVidPnDumpSourceMode("Source Pinned: ", pPinnedVidPnSourceModeInfo, "\n");
+            pCurVidPnSourceModeSetInterface->pfnReleaseModeInfo(hCurVidPnSourceModeSet, pPinnedVidPnSourceModeInfo);
+        }
+        else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
+        {
+            drprintf(("Source NOT Pinned\n"));
+        }
+        else
+        {
+            drprintf(("ERROR getting piined Source Mode(0x%x)\n", Status));
+        }
+        pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hCurVidPnSourceModeSet);
+    }
+    else
+    {
+        drprintf(("ERROR getting SourceModeSet(0x%x)\n", Status));
+    }
+}
+
+
+static DECLCALLBACK(BOOLEAN) vboxVidPnDumpSourceModeSetEnum(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+        D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet, const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface,
+        const D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo, PVOID pContext)
+{
+    vboxVidPnDumpSourceMode("SourceMode: ", pNewVidPnSourceModeInfo, "\n");
+    return TRUE;
+}
+
+void vboxVidPnDumpSourceModeSet(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId)
+{
+    drprintf(("  >>>***SourceMode Set for Source(%d)***\n", VidPnSourceId));
+    D3DKMDT_HVIDPNSOURCEMODESET hCurVidPnSourceModeSet;
+    const DXGK_VIDPNSOURCEMODESET_INTERFACE *pCurVidPnSourceModeSetInterface;
+
+    NTSTATUS Status = pVidPnInterface->pfnAcquireSourceModeSet(hVidPn,
+                        VidPnSourceId,
+                        &hCurVidPnSourceModeSet,
+                        &pCurVidPnSourceModeSetInterface);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+
+        Status = vboxVidPnEnumSourceModes(pDevExt, hVidPn, pVidPnInterface, hCurVidPnSourceModeSet, pCurVidPnSourceModeSetInterface,
+                vboxVidPnDumpSourceModeSetEnum, NULL);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status != STATUS_SUCCESS)
+        {
+            drprintf(("ERROR enumerating Source Modes(0x%x)\n", Status));
+        }
+        pVidPnInterface->pfnReleaseSourceModeSet(hVidPn, hCurVidPnSourceModeSet);
+    }
+    else
+    {
+        drprintf(("ERROR getting SourceModeSet for Source(%d), Status(0x%x)\n", VidPnSourceId, Status));
+    }
+
+    drprintf(("  <<<***End Of SourceMode Set for Source(%d)***\n", VidPnSourceId));
+}
+
+DECLCALLBACK(BOOLEAN) vboxVidPnDumpTargetModeSetEnum(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+        D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet, const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface,
+        const D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo, PVOID pContext)
+{
+    vboxVidPnDumpTargetMode("TargetMode: ", pNewVidPnTargetModeInfo, "\n");
+    return TRUE;
+}
+
+void vboxVidPnDumpTargetModeSet(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
+{
+    drprintf(("  >>>***TargetMode Set for Target(%d)***\n", VidPnTargetId));
+    D3DKMDT_HVIDPNTARGETMODESET hCurVidPnTargetModeSet;
+    const DXGK_VIDPNTARGETMODESET_INTERFACE *pCurVidPnTargetModeSetInterface;
+
+    NTSTATUS Status = pVidPnInterface->pfnAcquireTargetModeSet(hVidPn,
+                        VidPnTargetId,
+                        &hCurVidPnTargetModeSet,
+                        &pCurVidPnTargetModeSetInterface);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+
+        Status = vboxVidPnEnumTargetModes(pDevExt, hVidPn, pVidPnInterface, hCurVidPnTargetModeSet, pCurVidPnTargetModeSetInterface,
+                vboxVidPnDumpTargetModeSetEnum, NULL);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status != STATUS_SUCCESS)
+        {
+            drprintf(("ERROR enumerating Target Modes(0x%x)\n", Status));
+        }
+        pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hCurVidPnTargetModeSet);
+    }
+    else
+    {
+        drprintf(("ERROR getting TargetModeSet for Target(%d), Status(0x%x)\n", VidPnTargetId, Status));
+    }
+
+    drprintf(("  <<<***End Of TargetMode Set for Target(%d)***\n", VidPnTargetId));
+}
+
+
+void vboxVidPnDumpPinnedTargetMode(const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
+{
+    D3DKMDT_HVIDPNTARGETMODESET hCurVidPnTargetModeSet;
+    const DXGK_VIDPNTARGETMODESET_INTERFACE *pCurVidPnTargetModeSetInterface;
+
+    NTSTATUS Status = pVidPnInterface->pfnAcquireTargetModeSet(hVidPn,
+                        VidPnTargetId,
+                        &hCurVidPnTargetModeSet,
+                        &pCurVidPnTargetModeSetInterface);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        CONST D3DKMDT_VIDPN_TARGET_MODE* pPinnedVidPnTargetModeInfo;
+
+        Status = pCurVidPnTargetModeSetInterface->pfnAcquirePinnedModeInfo(hCurVidPnTargetModeSet, &pPinnedVidPnTargetModeInfo);
+        Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_MODE_NOT_PINNED);
+        if (Status == STATUS_SUCCESS)
+        {
+            vboxVidPnDumpTargetMode("Target Pinned: ", pPinnedVidPnTargetModeInfo, "\n");
+            pCurVidPnTargetModeSetInterface->pfnReleaseModeInfo(hCurVidPnTargetModeSet, pPinnedVidPnTargetModeInfo);
+        }
+        else if (Status == STATUS_GRAPHICS_MODE_NOT_PINNED)
+        {
+            drprintf(("Target NOT Pinned\n"));
+        }
+        else
+        {
+            drprintf(("ERROR getting piined Target Mode(0x%x)\n", Status));
+        }
+        pVidPnInterface->pfnReleaseTargetModeSet(hVidPn, hCurVidPnTargetModeSet);
+    }
+    else
+    {
+        drprintf(("ERROR getting TargetModeSet(0x%x)\n", Status));
+    }
+}
 
 void vboxVidPnDumpPath(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         const D3DKMDT_VIDPN_PRESENT_PATH *pVidPnPresentPathInfo)
 {
     drprintf((" >>Start Dump VidPn Path>>\n"));
-    drprintf(("VidPnSourceId(%d),  VidPnTargetId(%d), ImportanceOrdinal(%s), VidPnTargetColorBasis(%s), Content(%s)\n",
-            pVidPnPresentPathInfo->VidPnSourceId, pVidPnPresentPathInfo->VidPnTargetId,
+    drprintf(("VidPnSourceId(%d),  VidPnTargetId(%d)\n",
+            pVidPnPresentPathInfo->VidPnSourceId, pVidPnPresentPathInfo->VidPnTargetId));
+
+    vboxVidPnDumpPinnedSourceMode(hVidPn, pVidPnInterface, pVidPnPresentPathInfo->VidPnSourceId);
+    vboxVidPnDumpPinnedTargetMode(hVidPn, pVidPnInterface, pVidPnPresentPathInfo->VidPnTargetId);
+
+    drprintf(("ImportanceOrdinal(%s), VidPnTargetColorBasis(%s), Content(%s)\n",
             vboxVidPnDumpStrImportance(pVidPnPresentPathInfo->ImportanceOrdinal),
             vboxVidPnDumpStrColorBasis(pVidPnPresentPathInfo->VidPnTargetColorBasis),
             vboxVidPnDumpStrContent(pVidPnPresentPathInfo->Content)));
     vboxVidPnDumpPathTransformation(&pVidPnPresentPathInfo->ContentTransformation);
-    vboxVidPnDumpRegion("VisibleFromActiveTLOffset: ", &pVidPnPresentPathInfo->VisibleFromActiveTLOffset, "\n");
-    vboxVidPnDumpRegion("VisibleFromActiveBROffset: ", &pVidPnPresentPathInfo->VisibleFromActiveBROffset, "\n");
+    vboxVidPnDumpRegion("VisibleFromActiveTLOffset(", &pVidPnPresentPathInfo->VisibleFromActiveTLOffset, ")\n");
+    vboxVidPnDumpRegion("VisibleFromActiveBROffset(", &pVidPnPresentPathInfo->VisibleFromActiveBROffset, ")\n");
     vboxVidPnDumpRanges("VidPnTargetColorCoeffDynamicRanges: ", &pVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges, "\n");
     vboxVidPnDumpCopyProtectoin(&pVidPnPresentPathInfo->CopyProtection);
     vboxVidPnDumpGammaRamp("GammaRamp: ", &pVidPnPresentPathInfo->GammaRamp, "\n");
@@ -1890,9 +2274,9 @@ static DECLCALLBACK(BOOLEAN) vboxVidPnDumpPathEnum(struct _DEVICE_EXTENSION* pDe
     return TRUE;
 }
 
-void vboxVidPnDumpVidPn(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface)
+void vboxVidPnDumpVidPn(const char * pPrefix, PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, const char * pSuffix)
 {
-    drprintf ((">>>>>>>>>>>>>>>>>Start Dumping VidPn>>>>>>>>>>>>>>>>>>>>>>\n"));
+    drprintf (("%s", pPrefix));
 
     D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
     const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
@@ -1906,5 +2290,11 @@ void vboxVidPnDumpVidPn(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPN hVidPn, const 
         Assert(Status == STATUS_SUCCESS);
     }
 
-    drprintf (("<<<<<<<<<<<<<<<<<Stop Dumping VidPn<<<<<<<<<<<<<<<<<<<<<<\n"));
+    for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
+    {
+        vboxVidPnDumpSourceModeSet(pDevExt, hVidPn, pVidPnInterface, (D3DDDI_VIDEO_PRESENT_SOURCE_ID)i);
+        vboxVidPnDumpTargetModeSet(pDevExt, hVidPn, pVidPnInterface, (D3DDDI_VIDEO_PRESENT_TARGET_ID)i);
+    }
+
+    drprintf (("%s", pSuffix));
 }

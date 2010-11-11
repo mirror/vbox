@@ -3620,12 +3620,16 @@ DxgkDdiIsSupportedVidPn(
     NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (Status == STATUS_SUCCESS)
     {
+#ifdef DEBUG_misha
+        vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>\n", pContext, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
+#endif
+
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
         const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
         Status = pVidPnInterface->pfnGetTopology(pIsSupportedVidPnArg->hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
         if (Status == STATUS_SUCCESS)
         {
-            Status = vboxVidPnCheckTopology(pIsSupportedVidPnArg->hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
+            Status = vboxVidPnCheckTopology(pContext, pIsSupportedVidPnArg->hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
             if (Status == STATUS_SUCCESS && bSupported)
             {
                 for (int id = 0; id < commonFromDeviceExt(pContext)->cDisplays; ++id)
@@ -3701,6 +3705,10 @@ DxgkDdiIsSupportedVidPn(
     }
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
+#ifdef DEBUG_misha
+    drprintf(("The Given VidPn is %ssupported", pIsSupportedVidPnArg->IsVidPnSupported ? "", "!!NOT!! "));
+#endif
+
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
     return Status;
@@ -3729,8 +3737,11 @@ DxgkDdiRecommendFunctionalVidPn(
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
-        for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
+        VIDEO_MODE_INFORMATION *pResModes = NULL;
+        uint32_t cResModes = 0;
+        for (int i = commonFromDeviceExt(pDevExt)->cDisplays -1; i >= 0 ; --i)
         {
+            /* @todo: check that we actually need the current source->target */
             D3DKMDT_2DREGION Resolution;
             PVBOXWDDM_VIDEOMODES_INFO pInfo = &pInfos[i];
             VIDEO_MODE_INFORMATION *pModeInfo = &pInfo->aModes[pInfo->iPreferredMode];
@@ -3744,10 +3755,42 @@ DxgkDdiRecommendFunctionalVidPn(
                 break;
             }
 
+            int32_t iPreferableResMode;
+            uint32_t cActualResModes;
+
+            Status = vboxWddmGetModesForResolution(pDevExt, pInfo, &Resolution,
+                    pResModes, cResModes, &cActualResModes, &iPreferableResMode);
+            Assert(Status == STATUS_SUCCESS || Status == STATUS_BUFFER_TOO_SMALL);
+            if (Status == STATUS_BUFFER_TOO_SMALL)
+            {
+                Assert(cResModes < cActualResModes);
+                if (pResModes)
+                {
+                    vboxWddmMemFree(pResModes);
+                }
+                pResModes = (VIDEO_MODE_INFORMATION*)vboxWddmMemAllocZero(sizeof (*pResModes) * cActualResModes);
+                Assert(pResModes);
+                if (!pResModes)
+                {
+                    Status = STATUS_NO_MEMORY;
+                    break;
+                }
+                cResModes = cActualResModes;
+                Status = vboxWddmGetModesForResolution(pDevExt, pInfo, &Resolution,
+                                    pResModes, cResModes, &cActualResModes, &iPreferableResMode);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status != STATUS_SUCCESS)
+                    break;
+            }
+            else if (Status != STATUS_SUCCESS)
+                break;
+
+            Assert(iPreferableResMode > 0);
+
             Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
-                            pInfo->aModes, pInfo->cModes, pInfo->iPreferredMode,
-                            pInfo->aResolutions, pInfo->cResolutions,
-                            i, i);
+                            pResModes, cResModes, iPreferableResMode,
+                            &Resolution, 1 /* cResolutions */,
+                            i, i); /* srcId, tgtId */
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
             {
@@ -3755,6 +3798,10 @@ DxgkDdiRecommendFunctionalVidPn(
                 break;
             }
         }
+
+#ifdef DEBUG_misha
+        vboxVidPnDumpVidPn("\n>>>>Recommended VidPN: >>>>\n", pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
+#endif
     }
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
@@ -3781,6 +3828,10 @@ DxgkDdiEnumVidPnCofuncModality(
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (Status == STATUS_SUCCESS)
     {
+#ifdef DEBUG_misha
+        vboxVidPnDumpVidPn("\n>>>>MODALITY VidPN (IN) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
+#endif
+
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
         const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
         NTSTATUS Status = pVidPnInterface->pfnGetTopology(pEnumCofuncModalityArg->hConstrainingVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
@@ -3806,6 +3857,10 @@ DxgkDdiEnumVidPnCofuncModality(
         }
         else
             drprintf((__FUNCTION__ ": pfnGetTopology failed Status(0x%x)\n", Status));
+
+#ifdef DEBUG_misha
+        vboxVidPnDumpVidPn("\n>>>>MODALITY VidPN (OUT) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
+#endif
     }
     else
         drprintf((__FUNCTION__ ": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
@@ -3992,8 +4047,12 @@ DxgkDdiCommitVidPn(
 
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pCommitVidPnArg->hFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
+#ifdef DEBUG_misha
+        vboxVidPnDumpVidPn("\n>>>>COMMIT VidPN: >>>>\n", pDevExt, pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
+#endif
         if (pCommitVidPnArg->AffectedVidPnSourceId != D3DDDI_ID_ALL)
         {
             Status = vboxVidPnCommitSourceModeForSrcId(
