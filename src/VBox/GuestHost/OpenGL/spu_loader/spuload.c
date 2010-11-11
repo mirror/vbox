@@ -24,6 +24,7 @@
 #elif defined(DARWIN)
 #define DLL_SUFFIX ".dylib"
 #define DLL_PREFIX "VBoxOGL"
+#define snprintf sprintf_s
 /*
 #define DLL_SUFFIX ".bundle"
 #define DLL_PREFIX ""
