@@ -35,7 +35,7 @@ VBoxTray_SOURCES  = \
 	VBoxDisplay.cpp \
 	VBoxVRDP.cpp \
 	VBoxRestore.cpp \
-	helpers.cpp \
+	VBoxHelpers.cpp \
 	VBoxTray.rc
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxTray_DEFS     +=  _WIN32_IE=0x500 VBOX_WITH_GUEST_PROPS

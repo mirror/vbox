@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,69 +22,62 @@
 
 #include <VBoxGuestInternal.h>
 
-#include "helpers.h"
+#include "VBoxHelpers.h"
 #include "resource.h"
 
-static unsigned nextAdjacentRectXP (RECTL *paRects, unsigned nRects, unsigned iRect)
+static unsigned hlpNextAdjacentRectXP(RECTL *paRects, unsigned nRects, unsigned uRect)
 {
     unsigned i;
     for (i = 0; i < nRects; i++)
     {
-        if (paRects[iRect].right == paRects[i].left)
-        {
+        if (paRects[uRect].right == paRects[i].left)
             return i;
-        }
     }
     return ~0;
 }
 
-static unsigned nextAdjacentRectXN (RECTL *paRects, unsigned nRects, unsigned iRect)
+static unsigned hlpNextAdjacentRectXN(RECTL *paRects, unsigned nRects, unsigned uRect)
 {
     unsigned i;
     for (i = 0; i < nRects; i++)
     {
-        if (paRects[iRect].left == paRects[i].right)
-        {
+        if (paRects[uRect].left == paRects[i].right)
             return i;
-        }
     }
     return ~0;
 }
 
-static unsigned nextAdjacentRectYP (RECTL *paRects, unsigned nRects, unsigned iRect)
+static unsigned hlpNextAdjacentRectYP(RECTL *paRects, unsigned nRects, unsigned uRect)
 {
     unsigned i;
     for (i = 0; i < nRects; i++)
     {
-        if (paRects[iRect].bottom == paRects[i].top)
-        {
+        if (paRects[uRect].bottom == paRects[i].top)
             return i;
-        }
     }
     return ~0;
 }
 
-unsigned nextAdjacentRectYN (RECTL *paRects, unsigned nRects, unsigned iRect)
+static unsigned hlpNextAdjacentRectYN(RECTL *paRects, unsigned nRects, unsigned uRect)
 {
     unsigned i;
     for (i = 0; i < nRects; i++)
     {
-        if (paRects[iRect].top == paRects[i].bottom)
-        {
+        if (paRects[uRect].top == paRects[i].bottom)
             return i;
-        }
     }
     return ~0;
 }
 
-void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iResized, int NewWidth, int NewHeight)
+void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
+                   unsigned uResized, int iNewWidth, int iNewHeight)
 {
-    DDCLOG(("nRects %d, iPrimary %d, iResized %d, NewWidth %d, NewHeight %d\n", nRects, iPrimary, iResized, NewWidth, NewHeight));
+    DDCLOG(("nRects %d, iPrimary %d, iResized %d, NewWidth %d, NewHeight %d\n", nRects, uPrimary, uResized, iNewWidth, iNewHeight));
 
     RECTL *paNewRects = (RECTL *)alloca (sizeof (RECTL) * nRects);
     memcpy (paNewRects, paRects, sizeof (RECTL) * nRects);
-    paNewRects[iResized].right += NewWidth - (paNewRects[iResized].right - paNewRects[iResized].left);
-    paNewRects[iResized].bottom += NewHeight - (paNewRects[iResized].bottom - paNewRects[iResized].top);
+    paNewRects[uResized].right += iNewWidth - (paNewRects[uResized].right - paNewRects[uResized].left);
+    paNewRects[uResized].bottom += iNewHeight - (paNewRects[uResized].bottom - paNewRects[uResized].top);
 
     /* Verify all pairs of originally adjacent rectangles for all 4 directions.
      * If the pair has a "good" delta (that is the first rectangle intersects the second)
@@ -97,10 +90,10 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
     for (iRect = 0; iRect < nRects; iRect++)
     {
         /* Find the next adjacent original rect in x positive direction. */
-        unsigned iNextRect = nextAdjacentRectXP (paRects, nRects, iRect);
+        unsigned iNextRect = hlpNextAdjacentRectXP(paRects, nRects, iRect);
         DDCLOG(("next %d -> %d\n", iRect, iNextRect));
 
-        if (iNextRect == ~0 || iNextRect == iPrimary)
+        if (iNextRect == ~0 || iNextRect == uPrimary)
         {
             continue;
         }
@@ -125,10 +118,10 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
     for (iRect = 0; iRect < nRects; iRect++)
     {
         /* Find the next adjacent original rect in x negative direction. */
-        unsigned iNextRect = nextAdjacentRectXN (paRects, nRects, iRect);
+        unsigned iNextRect = hlpNextAdjacentRectXN(paRects, nRects, iRect);
         DDCLOG(("next %d -> %d\n", iRect, iNextRect));
 
-        if (iNextRect == ~0 || iNextRect == iPrimary)
+        if (iNextRect == ~0 || iNextRect == uPrimary)
         {
             continue;
         }
@@ -153,10 +146,10 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
     for (iRect = 0; iRect < nRects; iRect++)
     {
         /* Find the next adjacent original rect in y positive direction. */
-        unsigned iNextRect = nextAdjacentRectYP (paRects, nRects, iRect);
+        unsigned iNextRect = hlpNextAdjacentRectYP(paRects, nRects, iRect);
         DDCLOG(("next %d -> %d\n", iRect, iNextRect));
 
-        if (iNextRect == ~0 || iNextRect == iPrimary)
+        if (iNextRect == ~0 || iNextRect == uPrimary)
         {
             continue;
         }
@@ -181,10 +174,10 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
     for (iRect = 0; iRect < nRects; iRect++)
     {
         /* Find the next adjacent original rect in x negative direction. */
-        unsigned iNextRect = nextAdjacentRectYN (paRects, nRects, iRect);
+        unsigned iNextRect = hlpNextAdjacentRectYN(paRects, nRects, iRect);
         DDCLOG(("next %d -> %d\n", iRect, iNextRect));
 
-        if (iNextRect == ~0 || iNextRect == iPrimary)
+        if (iNextRect == ~0 || iNextRect == uPrimary)
         {
             continue;
         }
@@ -209,7 +202,9 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
     return;
 }
 
-int showBalloonTip (HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, const char *pszTitle, UINT uTimeout, DWORD dwInfoFlags)
+int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID,
+                      const char *pszMsg, const char *pszTitle,
+                      UINT uTimeout, DWORD dwInfoFlags)
 {
     NOTIFYICONDATA niData;
     niData.cbSize = sizeof(NOTIFYICONDATA);

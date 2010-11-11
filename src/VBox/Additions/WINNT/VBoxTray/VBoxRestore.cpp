@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,12 +17,13 @@
 #define _WIN32_WINNT 0x0500
 #include <windows.h>
 #include "VBoxTray.h"
+#include "VBoxHelpers.h"
 #include "VBoxRestore.h"
 #include <VBoxDisplay.h>
 #include <VBox/VMMDev.h>
 #include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
-#include "helpers.h"
+
 
 typedef struct _VBOXRESTORECONTEXT
 {
@@ -63,24 +64,26 @@ void VBoxRestoreSession()
 
 void VBoxRestoreCheckVRDP()
 {
-    DWORD ret;
     VBOXDISPIFESCAPE escape = {0};
     escape.escapeCode = VBOXESC_ISVRDPACTIVE;
-    /* Check VRDP activity */
+    /* Check VRDP activity. */
 
-    /* send to display driver */
-    ret = VBoxDispIfEscape(&gCtx.pEnv->dispIf, &escape, 0);
-    Log(("VBoxTray: VBoxRestoreSession -> VRDP activate state = %d\n", ret));
+    /* Send to display driver. */
+    DWORD dwRet = VBoxDispIfEscape(&gCtx.pEnv->dispIf, &escape, 0);
+    Log(("VBoxTray: VBoxRestoreCheckVRDP -> VRDP activate state = %d\n", dwRet));
 
-    if (ret != gCtx.fRDPState)
+    if (dwRet != gCtx.fRDPState)
     {
-        DWORD cbReturned;
-
-        if (!DeviceIoControl (gCtx.pEnv->hDriver, ret == NO_ERROR ? VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION : VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION, NULL, 0, NULL, 0, &cbReturned, NULL))
+        DWORD cbReturnIgnored;
+        if (!DeviceIoControl(gCtx.pEnv->hDriver,
+                             dwRet == NO_ERROR
+                             ? VBOXGUEST_IOCTL_ENABLE_VRDP_SESSION
+                             : VBOXGUEST_IOCTL_DISABLE_VRDP_SESSION,
+                             NULL, 0, NULL, 0, &cbReturnIgnored, NULL))
         {
-            Log(("VBoxTray: VBoxRestoreThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+            Log(("VBoxTray: VBoxRestoreCheckVRDP: DeviceIOControl failed, error = %ld\n", GetLastError()));
         }
-        gCtx.fRDPState = ret;
+        gCtx.fRDPState = dwRet;
     }
 }
 
@@ -126,10 +129,10 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
 
             /* did we get the right event? */
             if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_RESTORED)
-                PostMessage(gToolWindow, WM_VBOX_RESTORED, 0, 0);
+                PostMessage(gToolWindow, WM_VBOXTRAY_VM_RESTORED, 0, 0);
             else
                 /** @todo Don't poll, but wait for connect/disconnect events */
-                PostMessage(gToolWindow, WM_VBOX_CHECK_VRDP, 0, 0);
+                PostMessage(gToolWindow, WM_VBOXTRAY_VRDP_CHECK, 0, 0);
         }
         else
         {

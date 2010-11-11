@@ -17,7 +17,7 @@
  */
 
 #include "VBoxTray.h"
-#include "helpers.h"
+#include "VBoxHelpers.h"
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <strsafe.h>
