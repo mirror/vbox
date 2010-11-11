@@ -1362,7 +1362,7 @@ static int clipCTextToWinTxt(Widget widget, unsigned char *pcSrc,
     if (cbSrc == 0)
     {
         *ppwszDest = (PRTUTF16) RTMemAlloc(2);
-        if (!ppwszDest)
+        if (!*ppwszDest)
             return VERR_NO_MEMORY;
         **ppwszDest = 0;
         if (pcbDest)
