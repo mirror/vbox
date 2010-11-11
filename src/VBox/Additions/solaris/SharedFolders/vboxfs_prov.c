@@ -415,7 +415,7 @@ sfprov_fsync(sfp_file_t *fp)
 
 
 static int
-sfprov_getinfo(sfp_mount_t *mnt, char *path, RTFSOBJINFO *info)
+sfprov_getinfo(sfp_mount_t *mnt, char *path, PSHFLFSOBJINFO info)
 {
 	int rc;
 	SHFLCREATEPARMS parms;
@@ -494,7 +494,7 @@ int
 sfprov_get_mode(sfp_mount_t *mnt, char *path, mode_t *mode)
 {
 	int rc;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
@@ -507,7 +507,7 @@ int
 sfprov_get_size(sfp_mount_t *mnt, char *path, uint64_t *size)
 {
 	int rc;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
@@ -528,7 +528,7 @@ int
 sfprov_get_atime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 {
 	int rc;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
@@ -541,7 +541,7 @@ int
 sfprov_get_mtime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 {
 	int rc;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
@@ -554,7 +554,7 @@ int
 sfprov_get_ctime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 {
 	int rc;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
@@ -574,7 +574,7 @@ sfprov_get_attr(
 	timestruc_t *ctime)
 {
 	int rc;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
@@ -614,7 +614,7 @@ sfprov_set_attr(
 	int rc, err;
 	SHFLCREATEPARMS parms;
 	SHFLSTRING *str;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 	uint32_t bytes;
 	int str_size;
 
@@ -712,7 +712,7 @@ sfprov_set_size(sfp_mount_t *mnt, char *path, uint64_t size)
 	int rc, err;
 	SHFLCREATEPARMS parms;
 	SHFLSTRING *str;
-	RTFSOBJINFO info;
+	SHFLFSOBJINFO info;
 	uint32_t bytes;
 	int str_size;
 

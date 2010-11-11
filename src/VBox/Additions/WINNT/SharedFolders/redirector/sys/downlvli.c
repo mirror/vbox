@@ -47,13 +47,13 @@ NTSTATUS VBoxMRxSetEndOfFile (IN OUT struct _RX_CONTEXT * RxContext, IN OUT PLAR
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
     VBoxMRxGetNetRootExtension(capFcb->pNetRoot, pNetRootExtension);
     VBoxMRxGetDeviceExtension(RxContext, pDeviceExtension);
-    PRTFSOBJINFO pObjInfo = 0;
+    PSHFLFSOBJINFO pObjInfo = 0;
     uint32_t cbBuffer;
     int vboxRC;
 
     Log(("VBOXSF: VBoxMRxSetEndOfFile: New size = %RX64 (0x%x), pNewAllocationSize = 0x%x\n", pNewFileSize->QuadPart, pNewFileSize, pNewAllocationSize));
 
-    cbBuffer = sizeof(RTFSOBJINFO);
+    cbBuffer = sizeof(SHFLFSOBJINFO);
     pObjInfo = (PRTFSOBJINFO)vbsfAllocNonPagedMem(cbBuffer);
     if (pObjInfo == 0)
     {
@@ -64,7 +64,8 @@ NTSTATUS VBoxMRxSetEndOfFile (IN OUT struct _RX_CONTEXT * RxContext, IN OUT PLAR
 
     pObjInfo->cbObject = pNewFileSize->QuadPart;
     Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
-    vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile, SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
+    vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                            SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
     AssertRC(vboxRC);
 
     Log(("VBOXSF: VBoxMRxSetEndOfFile: vboxCallFSInfo returned %d\n", vboxRC));

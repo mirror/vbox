@@ -68,9 +68,9 @@ static void sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec *tv)
 
 /* set [inode] attributes based on [info], uid/gid based on [sf_g] */
 void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
-                   RTFSOBJINFO *info)
+                   PSHFLFSOBJINFO info)
 {
-    RTFSOBJATTR *attr;
+    PSHFLFSOBJATTR attr;
     int mode;
 
     TRACE();
@@ -149,7 +149,7 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 }
 
 int sf_stat(const char *caller, struct sf_glob_info *sf_g,
-            SHFLSTRING *path, RTFSOBJINFO *result, int ok_to_fail)
+            SHFLSTRING *path, PSHFLFSOBJINFO result, int ok_to_fail)
 {
     int rc;
     SHFLCREATEPARMS params;
@@ -197,7 +197,7 @@ int sf_inode_revalidate(struct dentry *dentry)
     int err;
     struct sf_glob_info *sf_g;
     struct sf_inode_info *sf_i;
-    RTFSOBJINFO info;
+    SHFLFSOBJINFO info;
 
     TRACE();
     if (!dentry || !dentry->d_inode)
@@ -274,7 +274,7 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
     struct sf_glob_info *sf_g;
     struct sf_inode_info *sf_i;
     SHFLCREATEPARMS params;
-    RTFSOBJINFO info;
+    SHFLFSOBJINFO info;
     uint32_t cbBuffer;
     int rc, err;
 
@@ -556,7 +556,7 @@ int sf_nlscpy(struct sf_glob_info *sf_g,
         while (in_bound_len)
         {
             int nb;
-            wchar_t uni;
+            wchar_t uni; /** @todo this should be unicode_t in more recent kernel versions. */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
             nb = utf8_to_utf32(in, in_bound_len, &uni);

@@ -241,6 +241,212 @@ DECLINLINE(bool) ShflStringIsValidOrNull(PCSHFLSTRING pString, uint32_t cbBuf)
 /** @} */
 
 
+/**
+ * The available additional information in a SHFLFSOBJATTR object.
+ */
+typedef enum SHFLFSOBJATTRADD
+{
+    /** No additional information is available / requested. */
+    SHFLFSOBJATTRADD_NOTHING = 1,
+    /** The additional unix attributes (SHFLFSOBJATTR::u::Unix) are
+     *  available / requested. */
+    SHFLFSOBJATTRADD_UNIX,
+    /** The additional extended attribute size (SHFLFSOBJATTR::u::EASize) is
+     *  available / requested. */
+    SHFLFSOBJATTRADD_EASIZE,
+    /** The last valid item (inclusive).
+     * The valid range is SHFLFSOBJATTRADD_NOTHING thru
+     * SHFLFSOBJATTRADD_LAST. */
+    SHFLFSOBJATTRADD_LAST = SHFLFSOBJATTRADD_EASIZE,
+
+    /** The usual 32-bit hack. */
+    SHFLFSOBJATTRADD_32BIT_SIZE_HACK = 0x7fffffff
+} SHFLFSOBJATTRADD;
+
+
+/* Assert sizes of the IRPT types we're using below. */
+AssertCompileSize(RTFMODE,      4);
+AssertCompileSize(RTFOFF,       8);
+AssertCompileSize(RTINODE,      8);
+AssertCompileSize(RTTIMESPEC,   8);
+AssertCompileSize(RTDEV,        4);
+AssertCompileSize(RTUID,        4);
+
+/**
+ * Shared folder filesystem object attributes.
+ */
+#pragma pack(1)
+typedef struct SHFLFSOBJATTR
+{
+    /** Mode flags (st_mode). RTFS_UNIX_*, RTFS_TYPE_*, and RTFS_DOS_*.
+     * @remarks We depend on a number of RTFS_ defines to remain unchanged.
+     *          Fortuntately, these are depending on windows, dos and unix
+     *          standard values, so this shouldn't be much of a pain. */
+    RTFMODE         fMode;
+
+    /** The additional attributes available. */
+    SHFLFSOBJATTRADD  enmAdditional;
+
+    /**
+     * Additional attributes.
+     *
+     * Unless explicitly specified to an API, the API can provide additional
+     * data as it is provided by the underlying OS.
+     */
+    union SHFLFSOBJATTRUNION
+    {
+        /** Additional Unix Attributes
+         * These are available when SHFLFSOBJATTRADD is set in fUnix.
+         */
+         struct SHFLFSOBJATTRUNIX
+         {
+            /** The user owning the filesystem object (st_uid).
+             * This field is ~0U if not supported. */
+            RTUID           uid;
+
+            /** The group the filesystem object is assigned (st_gid).
+             * This field is ~0U if not supported. */
+            RTGID           gid;
+
+            /** Number of hard links to this filesystem object (st_nlink).
+             * This field is 1 if the filesystem doesn't support hardlinking or
+             * the information isn't available.
+             */
+            uint32_t        cHardlinks;
+
+            /** The device number of the device which this filesystem object resides on (st_dev).
+             * This field is 0 if this information is not available. */
+            RTDEV           INodeIdDevice;
+
+            /** The unique identifier (within the filesystem) of this filesystem object (st_ino).
+             * Together with INodeIdDevice, this field can be used as a OS wide unique id
+             * when both their values are not 0.
+             * This field is 0 if the information is not available. */
+            RTINODE         INodeId;
+
+            /** User flags (st_flags).
+             * This field is 0 if this information is not available. */
+            uint32_t        fFlags;
+
+            /** The current generation number (st_gen).
+             * This field is 0 if this information is not available. */
+            uint32_t        GenerationId;
+
+            /** The device number of a character or block device type object (st_rdev).
+             * This field is 0 if the file isn't of a character or block device type and
+             * when the OS doesn't subscribe to the major+minor device idenfication scheme. */
+            RTDEV           Device;
+        } Unix;
+
+        /**
+         * Extended attribute size.
+         */
+        struct SHFLFSOBJATTREASIZE
+        {
+            /** Size of EAs. */
+            RTFOFF          cb;
+        } EASize;
+    } u;
+} SHFLFSOBJATTR;
+#pragma pack()
+AssertCompileSize(SHFLFSOBJATTR, 44);
+/** Pointer to a shared folder filesystem object attributes structure. */
+typedef SHFLFSOBJATTR *PSHFLFSOBJATTR;
+/** Pointer to a const shared folder filesystem object attributes structure. */
+typedef const SHFLFSOBJATTR *PCSHFLFSOBJATTR;
+
+
+/**
+ * Filesystem object information structure.
+ */
+#pragma pack(1)
+typedef struct SHFLFSOBJINFO
+{
+   /** Logical size (st_size).
+    * For normal files this is the size of the file.
+    * For symbolic links, this is the length of the path name contained
+    * in the symbolic link.
+    * For other objects this fields needs to be specified.
+    */
+   RTFOFF       cbObject;
+
+   /** Disk allocation size (st_blocks * DEV_BSIZE). */
+   RTFOFF       cbAllocated;
+
+   /** Time of last access (st_atime).
+    * @remarks  Here (and other places) we depend on the IPRT timespec to
+    *           remain unchanged. */
+   RTTIMESPEC   AccessTime;
+
+   /** Time of last data modification (st_mtime). */
+   RTTIMESPEC   ModificationTime;
+
+   /** Time of last status change (st_ctime).
+    * If not available this is set to ModificationTime.
+    */
+   RTTIMESPEC   ChangeTime;
+
+   /** Time of file birth (st_birthtime).
+    * If not available this is set to ChangeTime.
+    */
+   RTTIMESPEC   BirthTime;
+
+   /** Attributes. */
+   SHFLFSOBJATTR Attr;
+
+} SHFLFSOBJINFO;
+#pragma pack()
+AssertCompileSize(SHFLFSOBJINFO, 92);
+/** Pointer to a shared folder filesystem object information structure. */
+typedef SHFLFSOBJINFO *PSHFLFSOBJINFO;
+/** Pointer to a const shared folder filesystem object information
+ *  structure. */
+typedef const SHFLFSOBJINFO *PCSHFLFSOBJINFO;
+
+
+/**
+ * Copy file system objinfo from IPRT to shared folder format.
+ *
+ * @param   pDst                The shared folder structure.
+ * @param   pSrc                The IPRT structure.
+ */
+DECLINLINE(void) vbfsCopyFsObjInfoFromIprt(PSHFLFSOBJINFO pDst, PCRTFSOBJINFO pSrc)
+{
+    pDst->cbObject          = pSrc->cbObject;
+    pDst->cbAllocated       = pSrc->cbAllocated;
+    pDst->AccessTime        = pSrc->AccessTime;
+    pDst->ModificationTime  = pSrc->ModificationTime;
+    pDst->ChangeTime        = pSrc->ChangeTime;
+    pDst->BirthTime         = pSrc->BirthTime;
+    pDst->Attr.fMode        = pSrc->Attr.fMode;
+    RT_ZERO(pDst->Attr.u);
+    switch (pSrc->Attr.enmAdditional)
+    {
+        default:
+        case RTFSOBJATTRADD_NOTHING:
+            pDst->Attr.enmAdditional        = SHFLFSOBJATTRADD_NOTHING;
+            break;
+
+        case RTFSOBJATTRADD_UNIX:
+            pDst->Attr.enmAdditional        = SHFLFSOBJATTRADD_UNIX;
+            pDst->Attr.u.Unix.uid           = pSrc->Attr.u.Unix.uid;
+            pDst->Attr.u.Unix.gid           = pSrc->Attr.u.Unix.gid;
+            pDst->Attr.u.Unix.cHardlinks    = pSrc->Attr.u.Unix.cHardlinks;
+            pDst->Attr.u.Unix.INodeIdDevice = pSrc->Attr.u.Unix.INodeIdDevice;
+            pDst->Attr.u.Unix.INodeId       = pSrc->Attr.u.Unix.INodeId;
+            pDst->Attr.u.Unix.fFlags        = pSrc->Attr.u.Unix.fFlags;
+            pDst->Attr.u.Unix.GenerationId  = pSrc->Attr.u.Unix.GenerationId;
+            pDst->Attr.u.Unix.Device        = pSrc->Attr.u.Unix.Device;
+            break;
+
+        case RTFSOBJATTRADD_EASIZE:
+            pDst->Attr.enmAdditional        = SHFLFSOBJATTRADD_EASIZE;
+            pDst->Attr.u.EASize.cb          = pSrc->Attr.u.EASize.cb;
+            break;
+    }
+}
+
+
 /** Result of an open/create request.
  *  Along with handle value the result code
  *  identifies what has happened while
@@ -360,7 +566,7 @@ typedef struct _SHFLCREATEPARMS
     /* Attributes of object to create and
      * returned actual attributes of opened/created object.
      */
-    RTFSOBJINFO Info;
+    SHFLFSOBJINFO Info;
 
 } SHFLCREATEPARMS;
 #pragma pack()
@@ -396,7 +602,7 @@ typedef SHFLMAPPING *PSHFLMAPPING;
 typedef struct _SHFLDIRINFO
 {
     /** Full information about the object. */
-    RTFSOBJINFO     Info;
+    SHFLFSOBJINFO   Info;
     /** The length of the short field (number of RTUTF16 chars).
      * It is 16-bit for reasons of alignment. */
     uint16_t        cucShortName;
@@ -408,6 +614,68 @@ typedef struct _SHFLDIRINFO
     SHFLSTRING      name;
 } SHFLDIRINFO, *PSHFLDIRINFO;
 
+
+/**
+ * Shared folder filesystem properties.
+ */
+typedef struct SHFLFSPROPERTIES
+{
+    /** The maximum size of a filesystem object name.
+     * This does not include the '\\0'. */
+    uint32_t cbMaxComponent;
+
+    /** True if the filesystem is remote.
+     * False if the filesystem is local. */
+    bool    fRemote;
+
+    /** True if the filesystem is case sensitive.
+     * False if the filesystem is case insensitive. */
+    bool    fCaseSensitive;
+
+    /** True if the filesystem is mounted read only.
+     * False if the filesystem is mounted read write. */
+    bool    fReadOnly;
+
+    /** True if the filesystem can encode unicode object names.
+     * False if it can't. */
+    bool    fSupportsUnicode;
+
+    /** True if the filesystem is compresses.
+     * False if it isn't or we don't know. */
+    bool    fCompressed;
+
+    /** True if the filesystem compresses of individual files.
+     * False if it doesn't or we don't know. */
+    bool    fFileCompression;
+
+    /** @todo more? */
+} SHFLFSPROPERTIES;
+AssertCompileSize(SHFLFSPROPERTIES, 12);
+/** Pointer to a shared folder filesystem properties structure. */
+typedef SHFLFSPROPERTIES *PSHFLFSPROPERTIES;
+/** Pointer to a const shared folder filesystem properties structure. */
+typedef SHFLFSPROPERTIES const *PCSHFLFSPROPERTIES;
+
+
+/**
+ * Copy file system properties from IPRT to shared folder format.
+ *
+ * @param   pDst                The shared folder structure.
+ * @param   pSrc                The IPRT structure.
+ */
+DECLINLINE(void) vbfsCopyFsPropertiesFromIprt(PSHFLFSPROPERTIES pDst, PCRTFSPROPERTIES pSrc)
+{
+    RT_ZERO(*pDst);                     /* zap the implicit padding. */
+    pDst->cbMaxComponent   = pSrc->cbMaxComponent;
+    pDst->fRemote          = pSrc->fRemote;
+    pDst->fCaseSensitive   = pSrc->fCaseSensitive;
+    pDst->fReadOnly        = pSrc->fReadOnly;
+    pDst->fSupportsUnicode = pSrc->fSupportsUnicode;
+    pDst->fCompressed      = pSrc->fCompressed;
+    pDst->fFileCompression = pSrc->fFileCompression;
+}
+
+
 typedef struct _SHFLVOLINFO
 {
     RTFOFF         ullTotalAllocationBytes;
@@ -415,7 +683,7 @@ typedef struct _SHFLVOLINFO
     uint32_t       ulBytesPerAllocationUnit;
     uint32_t       ulBytesPerSector;
     uint32_t       ulSerial;
-    RTFSPROPERTIES fsProperties;
+    SHFLFSPROPERTIES fsProperties;
 } SHFLVOLINFO, *PSHFLVOLINFO;
 
 /** @} */
@@ -947,8 +1215,8 @@ typedef struct _VBoxSFInformation
     HGCMFunctionParameter cb;
 
     /** pointer, in/out:
-     * Information to be set/get (RTFSOBJINFO or SHFLSTRING).
-     * Do not forget to set the RTFSOBJINFO::Attr::enmAdditional for Get operation as well.
+     * Information to be set/get (SHFLFSOBJINFO or SHFLSTRING). Do not forget
+     * to set the SHFLFSOBJINFO::Attr::enmAdditional for Get operation as well.
      */
     HGCMFunctionParameter info;
 

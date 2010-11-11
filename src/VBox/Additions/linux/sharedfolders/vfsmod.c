@@ -196,7 +196,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     struct inode *iroot;
     struct sf_inode_info *sf_i;
     struct sf_glob_info *sf_g;
-    RTFSOBJINFO fsinfo;
+    SHFLFSOBJINFO fsinfo;
     struct vbsf_mount_info_new *info;
 
     TRACE();
