@@ -318,7 +318,7 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
     SHFLSTRING *path;
     struct inode *inode;
     ino_t ino;
-    RTFSOBJINFO fsinfo;
+    SHFLFSOBJINFO fsinfo;
 
     TRACE();
     sf_g = GET_GLOB_INFO(parent->i_sb);
@@ -405,7 +405,7 @@ fail0:
  * @returns 0 on success, Linux error code otherwise
  */
 static int sf_instantiate(struct inode *parent, struct dentry *dentry,
-                          SHFLSTRING *path, RTFSOBJINFO *info, SHFLHANDLE handle)
+                          SHFLSTRING *path, PSHFLFSOBJINFO info, SHFLHANDLE handle)
 {
     int err;
     ino_t ino;
@@ -746,7 +746,7 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
     struct sf_inode_info *sf_i;
     struct sf_glob_info *sf_g;
     SHFLSTRING *path, *ssymname;
-    RTFSOBJINFO info;
+    SHFLFSOBJINFO info;
     int symname_len = strlen(symname) + 1;
 
     TRACE();

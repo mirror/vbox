@@ -1009,7 +1009,7 @@ NTSTATUS VBoxMRxQueryFileInformation (IN PRX_CONTEXT RxContext)
     uint8_t *pHGCMBuffer = 0;
     int vboxRC = 0;
     uint32_t cbHGCMBuffer, cbMaxSize = 0;
-    PRTFSOBJINFO pFileEntry = NULL;
+    PSHFLFSOBJINFO pFileEntry = NULL;
     PCHAR pInfoBuffer = NULL;
     ULONG *pLengthRemaining = NULL;
 
@@ -1206,7 +1206,7 @@ NTSTATUS VBoxMRxQueryFileInformation (IN PRX_CONTEXT RxContext)
             goto end;
         }
 
-        pFileEntry = (PRTFSOBJINFO)pHGCMBuffer;
+        pFileEntry = (PSHFLFSOBJINFO)pHGCMBuffer;
         Status = STATUS_SUCCESS;
 
         switch (FunctionalityRequested)
@@ -1491,7 +1491,7 @@ NTSTATUS VBoxMRxSetFileInformation (IN PRX_CONTEXT RxContext)
     case FileBasicInformation:
     {
         PFILE_BASIC_INFORMATION pFileInfo = (PFILE_BASIC_INFORMATION)pBuffer;
-        PRTFSOBJINFO pSHFLFileInfo;
+        PSHFLFSOBJINFO pSHFLFileInfo;
 
         Log(("VBOXSF: VBoxMRxSetFileInformation: FileBasicInformation: CreationTime    %RX64\n", pFileInfo->CreationTime.QuadPart));
         Log(("VBOXSF: VBoxMRxSetFileInformation: FileBasicInformation: LastAccessTime  %RX64\n", pFileInfo->LastAccessTime.QuadPart));
@@ -1519,7 +1519,7 @@ NTSTATUS VBoxMRxSetFileInformation (IN PRX_CONTEXT RxContext)
             pVBoxFobx->fKeepChangeTime = TRUE;
         }
 
-        cbBuffer = sizeof(RTFSOBJINFO);
+        cbBuffer = sizeof(SHFLFSOBJINFO);
         pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbBuffer);
         if (pHGCMBuffer == 0)
         {
@@ -1527,10 +1527,10 @@ NTSTATUS VBoxMRxSetFileInformation (IN PRX_CONTEXT RxContext)
             return STATUS_NO_MEMORY;
         }
         RtlZeroMemory(pHGCMBuffer, cbBuffer);
-        pSHFLFileInfo = (PRTFSOBJINFO)pHGCMBuffer;
+        pSHFLFileInfo = (PSHFLFSOBJINFO)pHGCMBuffer;
 
         Log(("VBOXSF: VBoxMRxSetFileInformation: FileBasicInformation: keeps %d %d %d %d\n",
-              pVBoxFobx->fKeepCreationTime, pVBoxFobx->fKeepLastAccessTime, pVBoxFobx->fKeepLastWriteTime, pVBoxFobx->fKeepChangeTime));
+             pVBoxFobx->fKeepCreationTime, pVBoxFobx->fKeepLastAccessTime, pVBoxFobx->fKeepLastWriteTime, pVBoxFobx->fKeepChangeTime));
 
         /* The properties, that need to be changed, are set to something other than zero */
         if (pFileInfo->CreationTime.QuadPart && !pVBoxFobx->fKeepCreationTime)
@@ -1545,7 +1545,8 @@ NTSTATUS VBoxMRxSetFileInformation (IN PRX_CONTEXT RxContext)
             pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pFileInfo->FileAttributes);
 
         Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
-        vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile, SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
+        vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                                SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
         AssertRC(vboxRC);
 
         if (vboxRC != VINF_SUCCESS)

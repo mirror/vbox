@@ -72,9 +72,9 @@ extern VBSFCLIENT g_VBoxVFSClient;
 
 /** Helper functions */
 extern int vboxvfs_Stat(const char *pszCaller, vboxvfs_globinfo_t *pVBoxVFSGlobalInfo, SHFLSTRING *pPath,
-            RTFSOBJINFO *pResult, boolean_t fAllowFailure);
+            PSHFLFSOBJINFO pResult, boolean_t fAllowFailure);
 extern void vboxvfs_InitVNode(vboxvfs_globinfo_t *pVBoxVFSGlobalInfo, vboxvfs_vnode_t *pVBoxVNode,
-            RTFSOBJINFO *pFSInfo);
+            PSHFLFSOBJINFO pFSInfo);
 
 
 /** Helper macros */

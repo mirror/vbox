@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef __VBOXCALLS__H
-#define __VBOXCALLS__H
+#ifndef ___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h
+#define ___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h
 
 #include <VBox/VBoxGuestLib.h>
 #ifndef _NTIFS_
@@ -179,7 +179,8 @@ DECLVBGL(int) vboxCallUnmapFolder (PVBSFCLIENT pClient, PVBSFMAP pMap);
 DECLVBGL(int) vboxCallSetUtf8 (PVBSFCLIENT pClient);
 
 DECLVBGL(int) vboxReadLink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING ParsedPath, uint32_t pcbBuffer, uint8_t *pBuffer);
-DECLVBGL(int) vboxCallSymlink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath, PRTFSOBJINFO pBuffer);
+DECLVBGL(int) vboxCallSymlink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath, PSHFLFSOBJINFO pBuffer);
 DECLVBGL(int) vboxCallSetSymlinks (PVBSFCLIENT pClient);
 
-#endif /* __VBOXCALLS__H */
+#endif /* !___VBoxGuestLib_VBoxGuestR0LibSharedFolders_h */
+

@@ -713,7 +713,8 @@ DECLVBGL(int) vboxReadLink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pPar
     return rc;
 }
 
-DECLVBGL(int) vboxCallSymlink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath, PRTFSOBJINFO pBuffer)
+DECLVBGL(int) vboxCallSymlink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath,
+                               PSHFLFSOBJINFO pBuffer)
 {
     int rc = VINF_SUCCESS;
 
@@ -733,7 +734,7 @@ DECLVBGL(int) vboxCallSymlink (PVBSFCLIENT pClient, PVBSFMAP pMap, PSHFLSTRING p
     data.oldPath.u.Pointer.u.linearAddr = (uintptr_t)pOldPath;
 
     data.info.type                      = VMMDevHGCMParmType_LinAddr_Out;
-    data.info.u.Pointer.size            = sizeof(RTFSOBJINFO);
+    data.info.u.Pointer.size            = sizeof(SHFLFSOBJINFO);
     data.info.u.Pointer.u.linearAddr    = (uintptr_t)pBuffer;
 
     rc = VbglHGCMCall (pClient->handle, &data.callInfo, sizeof (data));

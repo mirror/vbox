@@ -892,7 +892,7 @@ static int vbsfOpenFile (SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREAT
 #ifdef RT_OS_WINDOWS
                 info.Attr.fMode |= 0111;
 #endif
-                pParms->Info = info;
+                vbfsCopyFsObjInfoFromIprt(&pParms->Info, &info);
             }
             pParms->Result = SHFL_FILE_EXISTS;
 
@@ -968,7 +968,7 @@ static int vbsfOpenFile (SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREAT
 #ifdef RT_OS_WINDOWS
             info.Attr.fMode |= 0111;
 #endif
-            pParms->Info = info;
+            vbfsCopyFsObjInfoFromIprt(&pParms->Info, &info);
         }
     }
     if (RT_FAILURE(rc))
@@ -1065,7 +1065,7 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
                 rc = RTDirQueryInfo (pHandle->dir.Handle, &info, RTFSOBJATTRADD_NOTHING);
                 if (RT_SUCCESS(rc))
                 {
-                    pParms->Info = info;
+                    vbfsCopyFsObjInfoFromIprt(&pParms->Info, &info);
                 }
             }
             else
@@ -1170,7 +1170,7 @@ static int vbsfLookupFile(SHFLCLIENTDATA *pClient, char *pszPath, SHFLCREATEPARM
 #ifdef RT_OS_WINDOWS
             info.Attr.fMode |= 0111;
 #endif
-            pParms->Info = info;
+            vbfsCopyFsObjInfoFromIprt(&pParms->Info, &info);
             pParms->Result = SHFL_FILE_EXISTS;
             break;
         }
@@ -1572,7 +1572,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
 #ifdef RT_OS_WINDOWS
         pDirEntry->Info.Attr.fMode |= 0111;
 #endif
-        pSFDEntry->Info = pDirEntry->Info;
+        vbfsCopyFsObjInfoFromIprt(&pSFDEntry->Info, &pDirEntry->Info);
         pSFDEntry->cucShortName = 0;
 
         if (fUtf8)
@@ -1890,9 +1890,11 @@ int vbsfQueryVolumeInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, uint32_t flags, 
         if (rc != VINF_SUCCESS)
             goto exit;
 
-        rc = RTFsQueryProperties(pszFullPath, &pSFDEntry->fsProperties);
+        RTFSPROPERTIES FsProperties;
+        rc = RTFsQueryProperties(pszFullPath, &FsProperties);
         if (rc != VINF_SUCCESS)
             goto exit;
+        vbfsCopyFsPropertiesFromIprt(&pSFDEntry->fsProperties, &FsProperties);
 
         *pcbBuffer = sizeof(SHFLVOLINFO);
     }
