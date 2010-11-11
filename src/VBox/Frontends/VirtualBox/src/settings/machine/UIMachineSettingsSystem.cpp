@@ -46,7 +46,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
      * Currently, it seems, we are supporting only 4 possible boot device types:
      * 1. Floppy, 2. DVD-ROM, 3. Hard Disk, 4. Network.
      * But maximum boot devices count supported by machine
-     * should be retreived through the ISystemProperties getter.
+     * should be retrieved through the ISystemProperties getter.
      * Moreover, possible boot device types are not listed in some separate Main vector,
      * so we should get them (randomely?) from the list of all device types.
      * Until there will be separate Main getter for list of supported boot device types,
@@ -71,6 +71,17 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
             default:
                 break;
         }
+    }
+
+    /* Add all available devices types, so we could initially calculate the
+     * right size. */
+    for (int i = 0; i < m_possibleBootItems.size(); ++i)
+    {
+        QString name = vboxGlobal().toString(m_possibleBootItems[i]);
+        QTreeWidgetItem *pItem = new QTreeWidgetItem(QStringList(name));
+        pItem->setData(0, ITEM_TYPE_ROLE, QVariant(m_possibleBootItems[i]));
+        pItem->setCheckState(0, Qt::Unchecked);
+        mTwBootOrder->addTopLevelItem(pItem);
     }
 
     /* Setup validators */
@@ -219,6 +230,9 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
  * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsSystem::getFromCache()
 {
+    /* Remove any old data in the boot view. */
+    QAbstractItemView *iv = qobject_cast <QAbstractItemView*> (mTwBootOrder);
+    iv->model()->removeRows(0, iv->model()->rowCount());
     /* Apply internal variables data to QWidget(s): */
     for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
     {
@@ -245,7 +259,6 @@ void UIMachineSettingsSystem::getFromCache()
     mSlCPU->setValue(m_cache.m_cCPUCount);
     int iChipsetPositionPos = mCbChipset->findData(m_cache.m_chipsetType);
     mCbChipset->setCurrentIndex(iChipsetPositionPos == -1 ? 0 : iChipsetPositionPos);
-    adjustBootOrderTWSize();
     if (!m_cache.m_fPFHwVirtExSupported)
         mTwSystem->removeTab(2);
 
@@ -528,17 +541,9 @@ void UIMachineSettingsSystem::adjustBootOrderTWSize()
 
     int h = 2 * mTwBootOrder->frameWidth();
     int w = h;
-#ifdef Q_WS_MAC
-    int left, top, right, bottom;
-    mTwBootOrder->getContentsMargins (&left, &top, &right, &bottom);
-    h += top + bottom;
-    w += left + right;
-#else /* Q_WS_MAC */
-    w += 4;
-#endif /* Q_WS_MAC */
-    mTwBootOrder->setFixedSize (
-        iv->sizeHintForColumn (0) + w,
-        iv->sizeHintForRow (0) * mTwBootOrder->topLevelItemCount() + h);
+    mTwBootOrder->setFixedSize(
+        iv->sizeHintForColumn(0) + w,
+        iv->sizeHintForRow(0) * mTwBootOrder->topLevelItemCount() + h);
 
     /* Update the layout system */
     if (mTabMotherboard->layout())

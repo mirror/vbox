@@ -59,16 +59,6 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork (UIMachineSettingsNetworkPage
     connect (mTbMAC, SIGNAL (clicked()), this, SLOT (generateMac()));
     connect (mPbPortForwarding, SIGNAL (clicked()), this, SLOT (sltOpenPortForwardingDlg()));
 
-#ifdef Q_WS_MAC
-    /* Prevent this widgets to go in the Small/Mini size state which is
-     * available on Mac OS X. Not sure why this happens but this seems to help
-     * against. */
-    QList <QWidget*> list = findChildren <QWidget*>();
-    foreach (QWidget *w, list)
-        if (w->parent() == this)
-            w->setFixedHeight (w->sizeHint().height());
-#endif /* Q_WS_MAC */
-
     /* Applying language settings */
     retranslateUi();
 
