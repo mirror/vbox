@@ -12759,29 +12759,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="changeAdapter" type="boolean" dir="in"/>
     </method>
 
-    <method name="onNATRedirectRuleChange">
-      <desc>
-        Triggered on adding/removing of NAT Engine redirection rule of the
-        associated virtual machine.
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Session state prevents operation.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Session type prevents operation.
-        </result>
-
-      </desc>
-      <param name="networkAdapter" type="INetworkAdapter" dir="in"/>
-      <param name="natRedirectRemove" type="boolean" dir="in"/>
-      <param name="natRuleName" type="wstring" dir="in"/>
-      <param name="natProto" type="NATProtocol" dir="in"/>
-      <param name="natHostIp" type="wstring" dir="in"/>
-      <param name="natHostPort" type="long" dir="in"/>
-      <param name="natGuestIp" type="wstring" dir="in"/>
-      <param name="natGuestPort" type="long" dir="in"/>
-    </method>
-
     <method name="onSerialPortChange">
       <desc>
         Triggered when settings of a serial port of the
@@ -14423,8 +14400,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IGuestMouseEvent">IGuestMouseEvent</link>.
       </desc>
     </const>
+    <const name="OnNATRedirectEvent" value="66">
+      <desc>
+        See <link to="INATRedirectEvent">INATRedirectEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="66">
+    <const name="Last" value="67">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -15609,6 +15591,61 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           the given platform and/or this VirtualBox front-end.
       </desc>
     </attribute>
+  </interface>
+
+  <interface
+    name="INATRedirectEvent" extends="IEvent"
+    uuid="b566336e-ec24-11df-8fbd-f71b6f29dd03"
+    wsmap="managed" autogen="VBoxEvent" id="OnNATRedirectEvent"
+    >
+   <desc>
+      Notification when NAT redirect rule added or removed.
+   </desc>
+     <attribute name="machineId" type="uuid" mod="string" readonly="yes">
+       <desc>
+        Machine id where redirect event is occured.
+       </desc>
+     </attribute>
+     <attribute name="slot"  type="unsigned long" readonly="yes">
+       <desc>
+         Adapter which NAT attached to.
+       </desc>
+     </attribute>
+     <attribute name="remove"  type="boolean" readonly="yes">
+       <desc>
+         Whether rule remove or add.
+       </desc>
+     </attribute>
+     <attribute name="name"  type="wstring" readonly="yes">
+       <desc>
+         Name of the rule.
+       </desc>
+     </attribute>
+     <attribute name="proto"  type="NATProtocol" readonly="yes">
+       <desc>
+         Protocol (TCP or UDP) of the redirect rule.
+       </desc>
+     </attribute>
+     <attribute name="hostIp"  type="wstring" readonly="yes">
+       <desc>
+         Host ip address to bind socket on. 
+       </desc>
+     </attribute>
+     <attribute name="hostPort"  type="long" readonly="yes">
+       <desc>
+         Host port to bind socket on. 
+       </desc>
+     </attribute>
+     <attribute name="guestIp"  type="wstring" readonly="yes">
+       <desc>
+         Guest ip address to redirect to.
+       </desc>
+     </attribute>
+     <attribute name="guestPort"  type="long" readonly="yes">
+       <desc>
+         Guest port to redirect to.
+       </desc>
+     </attribute>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">

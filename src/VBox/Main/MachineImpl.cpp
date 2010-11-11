@@ -10876,7 +10876,7 @@ HRESULT SessionMachine::onNetworkAdapterChange(INetworkAdapter *networkAdapter, 
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onNATRedirectRuleChange(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName,
+HRESULT SessionMachine::onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRemove, IN_BSTR aRuleName,
                                  NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort)
 {
     LogFlowThisFunc(("\n"));
@@ -10893,8 +10893,12 @@ HRESULT SessionMachine::onNATRedirectRuleChange(INetworkAdapter *networkAdapter,
     /* ignore notifications sent after #OnSessionEnd() is called */
     if (!directControl)
         return S_OK;
+    /*
+     * instead acting like callback we ask IVirtualBox deliver corresponding event
+     */
 
-    return directControl->OnNATRedirectRuleChange(networkAdapter, aNatRuleRemove, aRuleName, aProto, aHostIp, aHostPort, aGuestIp, aGuestPort);
+    mParent->onNatRedirectChange(getId(), ulSlot, aNatRuleRemove, aRuleName, aProto, aHostIp, aHostPort, aGuestIp, aGuestPort);
+    return S_OK;
 }
 
 /**

@@ -84,8 +84,6 @@ public:
     STDMETHOD(UpdateMachineState)(MachineState_T aMachineState);
     STDMETHOD(Uninitialize)();
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter, BOOL changeAdapter);
-    STDMETHOD(OnNATRedirectRuleChange)(INetworkAdapter *networkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName, 
-                                 NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort);
     STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
     STDMETHOD(OnParallelPortChange)(IParallelPort *parallelPort);
     STDMETHOD(OnStorageControllerChange)();
