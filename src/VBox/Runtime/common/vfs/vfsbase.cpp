@@ -368,33 +368,41 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
      * Invalidate the object.
      */
     rtVfsObjWriteLock(pThis);           /* paranoia */
+    void *pvToFree;
     switch (enmType)
     {
         case RTVFSOBJTYPE_BASE:
+            pvToFree = pThis;
             break;
 
         case RTVFSOBJTYPE_VFS:
+            pvToFree         = RT_FROM_MEMBER(pThis, RTVFSINTERNAL, Base);
             ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSINTERNAL, Base)->uMagic, RTVFS_MAGIC_DEAD);
             break;
 
         case RTVFSOBJTYPE_FS_STREAM:
+            pvToFree         = RT_FROM_MEMBER(pThis, RTVFSFSSTREAMINTERNAL, Base);
             ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSFSSTREAMINTERNAL, Base)->uMagic, RTVFSFSSTREAM_MAGIC_DEAD);
             break;
 
         case RTVFSOBJTYPE_IO_STREAM:
+            pvToFree         = RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base);
             ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base)->uMagic, RTVFSIOSTREAM_MAGIC_DEAD);
             break;
 
         case RTVFSOBJTYPE_DIR:
+            pvToFree         = RT_FROM_MEMBER(pThis, RTVFSDIRINTERNAL, Base);
             ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSDIRINTERNAL, Base)->uMagic, RTVFSDIR_MAGIC_DEAD);
             break;
 
         case RTVFSOBJTYPE_FILE:
-            ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base)->uMagic, RTVFSIOSTREAM_MAGIC_DEAD);
+            pvToFree         = RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream.Base);
             ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream.Base)->uMagic, RTVFSFILE_MAGIC_DEAD);
+            ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base)->uMagic, RTVFSIOSTREAM_MAGIC_DEAD);
             break;
 
         case RTVFSOBJTYPE_SYMLINK:
+            pvToFree         = RT_FROM_MEMBER(pThis, RTVFSSYMLINKINTERNAL, Base);
             ASMAtomicWriteU32(&RT_FROM_MEMBER(pThis, RTVFSSYMLINKINTERNAL, Base)->uMagic, RTVFSSYMLINK_MAGIC_DEAD);
             break;
 
@@ -413,7 +421,7 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
      */
     int rc = pThis->pOps->pfnClose(pThis->pvThis);
     AssertRC(rc);
-    RTMemFree(pThis);
+    RTMemFree(pvToFree);
 }
 
 
