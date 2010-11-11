@@ -420,6 +420,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                 if (pData->icmp_socket.s != -1)
                 {
                     ssize_t rc;
+                    static bool fIcmpSocketErrorReported;
                     ttl = ip->ip_ttl;
                     Log(("NAT/ICMP: try to set TTL(%d)\n", ttl));
                     status = setsockopt(pData->icmp_socket.s, IPPROTO_IP, IP_TTL,
@@ -437,8 +438,13 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                         goto done;
                     }
 
-                    LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+
+                    if (!fIcmpSocketErrorReported)
+                    {
+                        LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                                 errno, strerror(errno)));
+                        fIcmpSocketErrorReported = true;
+                    }
                     icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
                 }
 #else /* RT_OS_WINDOWS */
@@ -686,10 +692,12 @@ end_error_free_m:
 
 end_error:
     {
-        static int cIcmpErrorReported;
-        if (!cIcmpErrorReported)
+        static bool fIcmpErrorReported;
+        if (!fIcmpErrorReported)
+        {
             LogRel(("NAT: error occurred while sending ICMP error message\n"));
-        cIcmpErrorReported++;
+            fIcmpErrorReported = true;
+        }
     }
 }
 #undef ICMP_MAXDATALEN
