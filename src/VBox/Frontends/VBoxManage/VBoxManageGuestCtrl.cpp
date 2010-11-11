@@ -1298,18 +1298,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                                     Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
                                     uMode, uFlags, progress.asOutParam());
         if (FAILED(rc))
-        {
-            /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
-             * because it contains more accurate info about what went wrong. */
-            ErrorInfo info(guest, COM_IIDOF(IGuest));
-            if (info.isFullAvailable())
-            {
-                if (rc == VBOX_E_IPRT_ERROR)
-                    RTMsgError("%ls.", info.getText().raw());
-                else
-                    RTMsgError("%ls (%Rhrc).", info.getText().raw(), info.getResultCode());
-            }
-        }
+            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
         else
         {
             /* Setup signal handling if cancelable. */
@@ -1457,11 +1446,16 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
             CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(Utf8Source).raw(),
                                                     0 /* Flags, not used. */,
                                                     progress.asOutParam()));
-            rc = showProgress(progress);
             if (FAILED(rc))
-                vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
-            else if (fVerbose)
-                RTPrintf("Guest Additions installer successfully copied and started.\n");
+                vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+            else
+            {
+                rc = showProgress(progress);
+                if (FAILED(rc))
+                    vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
+                else if (fVerbose)
+                    RTPrintf("Guest Additions installer successfully copied and started.\n");
+            }
         }
         ctrlUninitVM(a);
     }
