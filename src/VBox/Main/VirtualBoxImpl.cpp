@@ -2472,6 +2472,19 @@ void VirtualBox::onMachineUninit(Machine *aMachine)
 }
 
 /**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
+                               NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
+                               IN_BSTR aGuestIp, uint16_t aGuestPort)
+{
+    VBoxEventDesc evDesc;
+    evDesc.init(m->pEventSource, VBoxEventType_OnNATRedirectEvent, aMachineId.toUtf16().raw(), ulSlot, fRemove, aName, aProto, aHostIp,
+                aHostPort, aGuestIp, aGuestPort);
+    evDesc.fire(0);
+}
+
+/**
  *  @note Locks this object for reading.
  */
 ComObjPtr<GuestOSType> VirtualBox::getUnknownOSType()

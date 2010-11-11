@@ -250,6 +250,105 @@ struct VMSaveTask : public VMProgressTask
     ComPtr<IProgress> mServerProgress;
 };
 
+// Handler for global events
+////////////////////////////////////////////////////////////////////////////////
+inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterType);
+
+class VmEventListener :
+  VBOX_SCRIPTABLE_IMPL(IEventListener)
+{
+public:
+    VmEventListener(Console *aConsole)
+    {
+#ifndef VBOX_WITH_XPCOM
+        refcnt = 0;
+#endif
+        mfNoLoggedInUsers = true;
+        mConsole = aConsole;
+    }
+
+    virtual ~VmEventListener()
+    {
+    }
+
+#ifndef VBOX_WITH_XPCOM
+    STDMETHOD_(ULONG, AddRef)()
+    {
+        return ::InterlockedIncrement(&refcnt);
+    }
+    STDMETHOD_(ULONG, Release)()
+    {
+        long cnt = ::InterlockedDecrement(&refcnt);
+        if (cnt == 0)
+            delete this;
+        return cnt;
+    }
+#endif
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
+
+    NS_DECL_ISUPPORTS
+
+    STDMETHOD(HandleEvent)(IEvent * aEvent)
+    {
+        VBoxEventType_T aType = VBoxEventType_Invalid;
+        aEvent->COMGETTER(Type)(&aType);
+        switch(aType)
+        {
+            case VBoxEventType_OnNATRedirectEvent:
+            {
+                Bstr id;
+                ComPtr<IMachine> m = mConsole->machine();
+                ComPtr<INetworkAdapter> adapter;
+                ComPtr<INATRedirectEvent> nrev = aEvent;
+                HRESULT rc = E_FAIL;
+                Assert(nrev);
+
+                Bstr interestedId;
+                rc = m->COMGETTER(Id)(interestedId.asOutParam());
+                AssertComRC(rc);
+                rc = nrev->COMGETTER(MachineId)(id.asOutParam());
+                AssertComRC(rc);
+                if (id != interestedId)
+                    break;
+                /* now we can operate with redirects */
+                NATProtocol_T proto;
+                nrev->COMGETTER(Proto)(&proto);
+                BOOL fRemove;
+                nrev->COMGETTER(Remove)(&fRemove);
+                bool fUdp = (proto == NATProtocol_UDP);
+                Bstr hostIp, guestIp;
+                LONG hostPort, guestPort;
+                nrev->COMGETTER(HostIp)(hostIp.asOutParam());
+                nrev->COMGETTER(HostPort)(&hostPort);
+                nrev->COMGETTER(GuestIp)(guestIp.asOutParam());
+                nrev->COMGETTER(GuestPort)(&guestPort);
+                ULONG ulSlot;
+                rc = nrev->COMGETTER(Slot)(&ulSlot);
+                AssertComRC(rc);
+                if (FAILED(rc))
+                    break;
+                mConsole->onNATRedirectRuleChange(ulSlot, fRemove, proto, hostIp.raw(), hostPort, guestIp.raw(), guestPort);
+            }
+            break;
+            default:
+                AssertFailed();
+        }
+        return S_OK;
+    }
+private:
+#ifndef VBOX_WITH_XPCOM
+    long refcnt;
+#endif
+
+    bool mfNoLoggedInUsers;
+    Console *mConsole;
+};
+
+#ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO(VmEventListener)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VmEventListener, IEventListener)
+#endif
+
 // ConsoleCallbackRegistration
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -491,6 +590,24 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     unconst(mAudioSniffer) = new AudioSniffer(this);
     AssertReturn(mAudioSniffer, E_FAIL);
 
+    /* VirtualBox events registration. */
+    {
+        ComPtr<IVirtualBox> virtualbox;
+        rc = aMachine->COMGETTER(Parent)(virtualbox.asOutParam());
+        AssertComRC(rc);
+
+        ComPtr<IEventSource> es;
+        rc = virtualbox->COMGETTER(EventSource)(es.asOutParam());
+        AssertComRC(rc);
+        mVmListner = new VmEventListener(this);
+        mVmListner->AddRef();
+        com::SafeArray <VBoxEventType_T> eventTypes;
+        eventTypes.push_back(VBoxEventType_OnNATRedirectEvent);
+        rc = es->RegisterListener(mVmListner, ComSafeArrayAsInParam(eventTypes), true);
+        AssertComRC(rc);
+    }
+
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -516,6 +633,17 @@ void Console::uninit()
     }
 
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
+    if (mVmListner)
+    {
+        ComPtr<IEventSource> es;
+        ComPtr<IVirtualBox> virtualBox;
+        mMachine->COMGETTER(Parent)(virtualBox.asOutParam());
+        HRESULT rc = virtualBox->COMGETTER(EventSource)(es.asOutParam());
+        AssertComRC(rc);
+        rc = es->UnregisterListener(mVmListner);
+        AssertComRC(rc);
+        mVmListner->Release();
+    }
 
     /* power down the VM if necessary */
     if (mpVM)
@@ -3499,7 +3627,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL aNatRuleRemove, IN_BSTR aRuleName,
+HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
                                  NATProtocol_T aProto, IN_BSTR aHostIp, LONG aHostPort, IN_BSTR aGuestIp, LONG aGuestPort)
 {
     LogFlowThisFunc(("\n"));
@@ -3518,11 +3646,13 @@ HRESULT Console::onNATRedirectRuleChange(INetworkAdapter *aNetworkAdapter, BOOL 
         /* protect mpVM */
         AutoVMCaller autoVMCaller(this);
         if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
-        ULONG ulInstance;
-        rc = aNetworkAdapter->COMGETTER(Slot)(&ulInstance);
-        AssertComRC(rc);
-        if (FAILED(rc))
+
+        ComPtr<INetworkAdapter> aNetworkAdapter;
+        rc = machine()->GetNetworkAdapter(ulInstance, aNetworkAdapter.asOutParam());
+        if (   FAILED(rc)
+            || aNetworkAdapter.isNull())
             goto done;
+
         /*
          * Find the adapter instance, get the config interface and update
          * the link state.
