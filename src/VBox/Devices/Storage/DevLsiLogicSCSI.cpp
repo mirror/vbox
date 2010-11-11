@@ -5126,7 +5126,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Create critical sections protecting the reply post and free queues.
      */
-    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRFQ", szDevTag); 
+    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRFQ", szDevTag);
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS,
                                szTaggedText);
     if (RT_FAILURE(rc))

@@ -488,7 +488,7 @@ static uint16_t expand2[256];
 static uint8_t expand4to8[16];
 #endif /* IN_RING3 */
 
-/* Update the values needed for calculating Vertical Retrace and 
+/* Update the values needed for calculating Vertical Retrace and
  * Display Enable status bits more or less accurately. The Display Enable
  * bit is set (indicating *disabled* display signal) when either the
  * horizontal (hblank) or vertical (vblank) blanking is active. The

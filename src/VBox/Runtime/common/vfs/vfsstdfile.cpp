@@ -455,5 +455,3 @@ RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLe
     return rc;
 }
 
-
-
