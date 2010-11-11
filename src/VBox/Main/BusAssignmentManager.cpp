@@ -43,6 +43,8 @@ struct DeviceAliasRule
 
 /* Those rules define PCI slots assignment */
 
+/* Device           Bus  Device Function Priority */ 
+
 /* Generic rules */
 static const DeviceAssignmentRule aGenericRules[] =
 {
@@ -57,10 +59,10 @@ static const DeviceAssignmentRule aGenericRules[] =
     {"hda",           0,  5, 0,  0},
 
     /* Storage controllers */
-    {"ahci",          0, 13, 0,  0},
-    {"lsilogic",      0, 20, 0,  0},
-    {"buslogic",      0, 21, 0,  0},
-    {"lsilogicsas",   0, 22, 0,  0},
+    {"ahci",          0, 13, 0,  1},
+    {"lsilogic",      0, 20, 0,  1},
+    {"buslogic",      0, 21, 0,  1},
+    {"lsilogicsas",   0, 22, 0,  1},
 
     /* USB controllers */
     {"usb-ohci",      0,  6,  0, 0},
@@ -72,16 +74,16 @@ static const DeviceAssignmentRule aGenericRules[] =
     /* Network controllers */
     /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
      * next 4 get 16..19. */
-    {"nic",           0,  3,  0, 0},
-    {"nic",           0,  8,  0, 0},
-    {"nic",           0,  9,  0, 0},
-    {"nic",           0, 10,  0, 0},
-    {"nic",           0, 16,  0, 0},
-    {"nic",           0, 17,  0, 0},
-    {"nic",           0, 18,  0, 0},
-    {"nic",           0, 19,  0, 0},
+    {"nic",           0,  3,  0, 1},
+    {"nic",           0,  8,  0, 1},
+    {"nic",           0,  9,  0, 1},
+    {"nic",           0, 10,  0, 1},
+    {"nic",           0, 16,  0, 1},
+    {"nic",           0, 17,  0, 1},
+    {"nic",           0, 18,  0, 1},
+    {"nic",           0, 19,  0, 1},
     /* VMWare assigns first NIC to slot 11 */
-    {"nic-vmware",    0, 11,  0, 0},
+    {"nic-vmware",    0, 11,  0, 1},
 
     /* ISA/LPC controller */
     {"lpc",           0, 31,  0, 0},
@@ -117,10 +119,6 @@ static const DeviceAssignmentRule aIch9Rules[] =
     {"usb-ohci",      0, 31, 4,  1},
     {"usb-ehci",      0, 31, 5,  1},
     {"thermal",       0, 31, 6,  1},
-
-    /* ths rule has lower priority than generic one */
-    {"lsilogic",      1, 20, 0,  -1},
-    {"lsilogic",      1, 20, 0,  -1},
 
     /* to make sure rule never used before rules assigning devices on it */
     {"ich9pcibridge", 0, 24, 0,  10},
