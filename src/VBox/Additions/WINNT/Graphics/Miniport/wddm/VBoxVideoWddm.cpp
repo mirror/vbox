@@ -3706,7 +3706,7 @@ DxgkDdiIsSupportedVidPn(
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
 #ifdef DEBUG_misha
-    drprintf(("The Given VidPn is %ssupported", pIsSupportedVidPnArg->IsVidPnSupported ? "", "!!NOT!! "));
+    drprintf(("The Given VidPn is %ssupported", pIsSupportedVidPnArg->IsVidPnSupported ? "" : "!!NOT!! "));
 #endif
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
@@ -3829,7 +3829,8 @@ DxgkDdiEnumVidPnCofuncModality(
     if (Status == STATUS_SUCCESS)
     {
 #ifdef DEBUG_misha
-        vboxVidPnDumpVidPn("\n>>>>MODALITY VidPN (IN) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
+        vboxVidPnDumpCofuncModalityArg(">>>>MODALITY Args: ", pEnumCofuncModalityArg, "\n");
+        vboxVidPnDumpVidPn(">>>>MODALITY VidPN (IN) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
 #endif
 
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
