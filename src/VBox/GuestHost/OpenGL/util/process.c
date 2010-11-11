@@ -14,9 +14,9 @@
 #include <signal.h>
 #ifndef WINDOWS
 #include <unistd.h>
-#define snprintf sprintf_s
 #else
 #pragma warning ( disable : 4127 )
+#define snprintf sprintf_s
 #endif
 
 /**
