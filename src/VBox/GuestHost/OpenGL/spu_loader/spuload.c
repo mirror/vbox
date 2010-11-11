@@ -21,7 +21,7 @@
 #ifdef WINDOWS
 #define DLL_SUFFIX ".dll"
 #define DLL_PREFIX "VBoxOGL"
-#define snprintf sprintf_s
+#define snprintf _snprintf
 #elif defined(DARWIN)
 #define DLL_SUFFIX ".dylib"
 #define DLL_PREFIX "VBoxOGL"
