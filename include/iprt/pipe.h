@@ -87,7 +87,7 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
 /** Make sure the pipe is inheritable if set and not inheritable when clear. */
 #define RTPIPE_N_INHERIT            RT_BIT(2)
 /** Mask of valid flags. */
-#define RTPIPE_N_VALID_MASK         UINT32_C(0x00000003)
+#define RTPIPE_N_VALID_MASK         UINT32_C(0x00000007)
 /** @} */
 
 /**

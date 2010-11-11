@@ -430,7 +430,6 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
             break;
         }
 
-
         /*
          * Ok, there should be an element here so add one to the return struct.
          */
@@ -439,7 +438,9 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
             break;
         pElement->enmAction = enmAction;
 
-        /* First comes a type which is followed by a '('. */
+        /*
+         * First up is the VFS object type followed by a parentheses.
+         */
         if (strncmp(pszSrc, "base", cch = 4) == 0)
             pElement->enmTypeOut = RTVFSOBJTYPE_BASE;
         else if (strncmp(pszSrc, "vfs",  cch = 3) == 0)
@@ -494,7 +495,7 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
             pszSrc += cch;
         }
 
-        /* Must end with a right parantheses. */
+        /* Must end with a right parentheses. */
         if (*pszSrc != ')')
         {
             rc = VERR_VFS_CHAIN_EXPECTED_RIGHT_PARENTHESES;
@@ -655,4 +656,10 @@ RTDECL(int) RTVfsChainOpenIoStream(const char *pszSpec, uint32_t fOpen, PRTVFSIO
 }
 
 
+
+RTDECL(bool) RTVfsChainIsSpec(const char *pszSpec)
+{
+    return pszSpec
+        && strcmp(pszSpec, RTVFSCHAIN_SPEC_PREFIX) == 0;
+}
 

@@ -29,13 +29,15 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #include "internal/iprt.h"
-#include <iprt/vfslowlevel.h>
+#include <iprt/zip.h>
 
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
 #include <iprt/poll.h>
 #include <iprt/string.h>
+#include <iprt/vfslowlevel.h>
+
 #include <zlib.h>
 
 
@@ -476,6 +478,9 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
     AssertPtrReturn(phVfsIosOut, VERR_INVALID_POINTER);
 
+    uint32_t cRefs = RTVfsIoStrmRetain(hVfsIosIn);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
     /*
      * Create the decompression I/O stream.
      */
@@ -506,7 +511,7 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
              *        be handed on to zlib later on.
              */
             size_t cbRead = 0;
-            rc = RTVfsIoStrmRead(pThis->hVfsIos, pThis->abBuffer, sizeof(RTZIPGZIPHDR), NULL /*pcbRead*/);
+            rc = RTVfsIoStrmRead(pThis->hVfsIos, pThis->abBuffer, sizeof(RTZIPGZIPHDR), true /*fBlocking*/, NULL /*pcbRead*/);
             if (RT_SUCCESS(rc))
             {
                 /* Validate the header and make a copy of it. */
@@ -538,8 +543,11 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
             }
         }
         else
-            rc = rtZipGzipConvertErrFromZlib(pThis, rc);
+            rc = rtZipGzipConvertErrFromZlib(pThis, rc); /** @todo cleaning up in this situation is going to go wrong. */
+        RTVfsIoStrmRelease(hVfsIos);
     }
+    else
+        RTVfsIoStrmRelease(hVfsIosIn);
     return rc;
 }
 

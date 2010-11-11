@@ -1481,6 +1481,57 @@ typedef RTSTRCACHE                                 *PRTSTRCACHE;
 /** The default string cache handle. */
 #define RTSTRCACHE_DEFAULT                          ((RTSTRCACHE)-2)
 
+
+/** Virtual Filesystem handle. */
+typedef struct RTVFSINTERNAL                       *RTVFS;
+/** Pointer to a VFS handle. */
+typedef RTVFS                                      *PRTVFS;
+/** A NIL VFS handle. */
+#define NIL_RTVFS                                   ((RTVFS)~(uintptr_t)0)
+
+/** Virtual Filesystem base object handle. */
+typedef struct RTVFSOBJINTERNAL                    *RTVFSOBJ;
+/** Pointer to a VFS base object handle. */
+typedef RTVFSOBJ                                   *PRTVFSOBJ;
+/** A NIL VFS base object handle. */
+#define NIL_RTVFSOBJ                                ((RTVFSOBJ)~(uintptr_t)0)
+
+/** Virtual Filesystem directory handle. */
+typedef struct RTVFSDIRINTERNAL                    *RTVFSDIR;
+/** Pointer to a VFS directory handle. */
+typedef RTVFSDIR                                   *PRTVFSDIR;
+/** A NIL VFS directory handle. */
+#define NIL_RTVFSDIR                                ((RTVFSDIR)~(uintptr_t)0)
+
+/** Virtual Filesystem filesystem stream handle. */
+typedef struct RTVFSFSSTREAMINTERNAL               *RTVFSFSSTREAM;
+/** Pointer to a VFS filesystem stream handle. */
+typedef RTVFSFSSTREAM                              *PRTVFSFSSTREAM;
+/** A NIL VFS filesystem stream handle. */
+#define NIL_RTVFSFSSTREAM                           ((RTVFSFSSTREAM)~(uintptr_t)0)
+
+/** Virtual Filesystem I/O stream handle. */
+typedef struct RTVFSIOSTREAMINTERNAL               *RTVFSIOSTREAM;
+/** Pointer to a VFS I/O stream handle. */
+typedef RTVFSIOSTREAM                              *PRTVFSIOSTREAM;
+/** A NIL VFS I/O stream handle. */
+#define NIL_RTVFSIOSTREAM                           ((RTVFSIOSTREAM)~(uintptr_t)0)
+
+/** Virtual Filesystem file handle. */
+typedef struct RTVFSFILEINTERNAL                   *RTVFSFILE;
+/** Pointer to a VFS file handle. */
+typedef RTVFSFILE                                  *PRTVFSFILE;
+/** A NIL VFS file handle. */
+#define NIL_RTVFSFILE                               ((RTVFSFILE)~(uintptr_t)0)
+
+/** Virtual Filesystem symbolic link handle. */
+typedef struct RTVFSSYMLINKINTERNAL                *RTVFSSYMLINK;
+/** Pointer to a VFS symbolic link handle. */
+typedef RTVFSSYMLINK                               *PRTVFSSYMLINK;
+/** A NIL VFS symbolic link handle. */
+#define NIL_RTVFSSYMLINK                            ((RTVFSSYMLINK)~(uintptr_t)0)
+
+
 /**
  * Handle type.
  *
@@ -1541,6 +1592,27 @@ typedef struct RTHANDLE
 typedef RTHANDLE *PRTHANDLE;
 /** Pointer to a const generic handle. */
 typedef RTHANDLE const *PCRTHANDLE;
+
+
+/**
+ * Standard handles.
+ *
+ * @remarks These have the correct file descriptor values for unixy systems and
+ *          can be used directly in code specific to those platforms.
+ */
+typedef enum RTHANDLESTD
+{
+    /** Invalid standard handle. */
+    RTHANDLESTD_INVALID = -1,
+    /** The standard input handle. */
+    RTHANDLESTD_INPUT = 0,
+    /** The standard output handle. */
+    RTHANDLESTD_OUTPUT,
+    /** The standard error handle. */
+    RTHANDLESTD_ERROR,
+    /** The typical 32-bit type hack. */
+    RTHANDLESTD_32BIT_HACK = 0x7fffffff
+} RTHANDLESTD;
 
 
 /**

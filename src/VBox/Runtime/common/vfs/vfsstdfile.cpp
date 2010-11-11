@@ -445,3 +445,15 @@ RTDECL(int) RTVfsFileFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLeaveOpen, P
     return VINF_SUCCESS;
 }
 
+
+RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos)
+{
+    RTVFSFILE hVfsFile;
+    int rc = RTVfsFileFromRTFile(hFile, fOpen, fLeaveOpen, &hVfsFile);
+    if (RT_SUCCESS(rc))
+        *phVfsIos = RTVfsFileToIoStream(hVfsFile);
+    return rc;
+}
+
+
+

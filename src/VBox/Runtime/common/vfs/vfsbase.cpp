@@ -1083,7 +1083,7 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
  */
 
 
-RTDECL(int) RTVfsNewIoStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTSEMRW hSemRW,
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTSEMRW hSemRW,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance)
 {
     return VERR_NOT_IMPLEMENTED;
@@ -1230,7 +1230,7 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
     AssertPtr(phVfsIos);
 
     RTVFSINTERNAL *pVfs = NULL;
-    if (hVfs == NIL_RTVFS)
+    if (hVfs != NIL_RTVFS)
     {
         pVfs = hVfs;
         AssertPtrReturn(pVfs, VERR_INVALID_HANDLE);
@@ -1251,6 +1251,7 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
     pThis->pOps         = pIoStreamOps;
     pThis->Base.uMagic  = RTVFSOBJ_MAGIC;
     pThis->Base.pvThis  = (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT);
+    pThis->Base.pOps    = &pIoStreamOps->Obj;
     pThis->Base.hSemRW  = hSemRW != NIL_RTSEMRW ? hSemRW : pVfs ? pVfs->Base.hSemRW : NIL_RTSEMRW;
     pThis->Base.hVfs    = hVfs;
     pThis->Base.cRefs   = 1;
@@ -1298,7 +1299,7 @@ RTDECL(RTVFSFILE)   RTVfsIoStrmToFile(RTVFSIOSTREAM hVfsIos)
 }
 
 
-RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+RTDECL(int) RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -1307,7 +1308,7 @@ RTDECL(int)         RTVfsIoStrmQueryInfo(RTVFSIOSTREAM hVfsIos, PRTFSOBJINFO pOb
 }
 
 
-RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead, bool fBlocking, size_t *pcbRead)
 {
     AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
     if (pcbRead)
@@ -1315,19 +1316,20 @@ RTDECL(int)         RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t c
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(fBlocking || pcbRead, VERR_INVALID_PARAMETER);
 
     RTSGSEG Seg = { pvBuf, cbToRead };
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
 
     rtVfsObjWriteLock(&pThis->Base);
-    int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, &SgBuf, pcbRead == NULL /*fBlocking*/, pcbRead);
+    int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbRead);
     rtVfsObjWriteUnlock(&pThis->Base);
     return rc;
 }
 
 
-RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cbToWrite, bool fBlocking, size_t *pcbWritten)
 {
     AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
     if (pcbWritten)
@@ -1335,19 +1337,20 @@ RTDECL(int)         RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, s
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
 
     RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
 
     rtVfsObjWriteLock(&pThis->Base);
-    int rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, pcbWritten == NULL /*fBlocking*/, pcbWritten);
+    int rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbWritten);
     rtVfsObjWriteUnlock(&pThis->Base);
     return rc;
 }
 
 
-RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     AssertPtrNullReturn(pcbRead, VERR_INVALID_POINTER);
     if (pcbRead)
@@ -1365,7 +1368,7 @@ RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, b
 }
 
 
-RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     AssertPtrNullReturn(pcbWritten, VERR_INVALID_POINTER);
     if (pcbWritten)
@@ -1383,7 +1386,7 @@ RTDECL(int)         RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, 
 }
 
 
-RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos)
+RTDECL(int) RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -1396,8 +1399,8 @@ RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos)
 }
 
 
-RTDECL(RTFOFF)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                    uint32_t *pfRetEvents)
+RTDECL(RTFOFF) RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                               uint32_t *pfRetEvents)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -1410,7 +1413,7 @@ RTDECL(RTFOFF)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTM
 }
 
 
-RTDECL(RTFOFF)      RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos)
+RTDECL(RTFOFF) RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, -1);
@@ -1426,7 +1429,7 @@ RTDECL(RTFOFF)      RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos)
 }
 
 
-RTDECL(int)         RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
+RTDECL(int) RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, -1);
@@ -1450,7 +1453,7 @@ RTDECL(int)         RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
             {
                 size_t cbToRead = RT_MIN(cb, _64K);
                 rtVfsObjWriteLock(&pThis->Base);
-                rc = RTVfsIoStrmRead(hVfsIos, pvBuf, cbToRead, NULL);
+                rc = RTVfsIoStrmRead(hVfsIos, pvBuf, cbToRead, true /*fBlocking*/, NULL);
                 rtVfsObjWriteUnlock(&pThis->Base);
                 if (RT_FAILURE(rc))
                     break;
@@ -1466,7 +1469,7 @@ RTDECL(int)         RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
 }
 
 
-RTDECL(int)         RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
+RTDECL(int) RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, -1);
@@ -1489,7 +1492,7 @@ RTDECL(int)         RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
             {
                 size_t cbToWrite = RT_MIN(cb, _64K);
                 rtVfsObjWriteLock(&pThis->Base);
-                rc = RTVfsIoStrmWrite(hVfsIos, pvBuf, cbToWrite, NULL);
+                rc = RTVfsIoStrmWrite(hVfsIos, pvBuf, cbToWrite, true /*fBlocking*/, NULL);
                 rtVfsObjWriteUnlock(&pThis->Base);
                 if (RT_FAILURE(rc))
                     break;
@@ -1533,7 +1536,7 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
     AssertPtr(phVfsFile);
 
     RTVFSINTERNAL *pVfs = NULL;
-    if (hVfs == NIL_RTVFS)
+    if (hVfs != NIL_RTVFS)
     {
         pVfs = hVfs;
         AssertPtrReturn(pVfs, VERR_INVALID_HANDLE);
@@ -1556,6 +1559,7 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
     pThis->Stream.fFlags        = fOpen;
     pThis->Stream.pOps          = &pFileOps->Stream;
     pThis->Stream.Base.pvThis   = (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT);
+    pThis->Stream.Base.pOps     = &pFileOps->Stream.Obj;
     pThis->Stream.Base.hSemRW   = pVfs ? pVfs->Base.hSemRW : NIL_RTSEMRW;
     pThis->Stream.Base.hVfs     = hVfs;
     pThis->Stream.Base.cRefs    = 1;

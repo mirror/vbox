@@ -734,7 +734,7 @@ RTDECL(void) RTVfsParsePathFree(PRTVFSPARSEDPATH pPath);
 typedef enum RTVFSCHAINACTION
 {
     /** Invalid action. */
-    RTVFSCHAINACTION_INVALID,
+    RTVFSCHAINACTION_INVALID = 0,
     /** No action (start of the chain). */
     RTVFSCHAINACTION_NONE,
     /** Passive filtering (expressed by pipe symbol). */
