@@ -129,6 +129,9 @@
       <xsl:value-of select="concat(../@name,'_',@name)"/>
       <xsl:text>,&#x0A;</xsl:text>
     </xsl:for-each>
+    <xsl:text>    </xsl:text>
+    <xsl:value-of select="concat('K',@name)"/>
+    <xsl:text>_Max&#x0A;</xsl:text>
     <xsl:text>};&#x0A;&#x0A;Q_DECLARE_METATYPE(</xsl:text>
     <xsl:value-of select="concat('K',@name)"/>
     <xsl:text>)&#x0A;&#x0A;</xsl:text>
