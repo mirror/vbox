@@ -4939,6 +4939,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     int rc = VINF_SUCCESS;
     char *pszCtrlType = NULL;
     char  szDevTag[20], szTaggedText[64];
+    bool fBootable = true;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
@@ -4949,7 +4950,8 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
                                     "ReplyQueueDepth\0"
                                     "RequestQueueDepth\0"
                                     "ControllerType\0"
-                                    "NumPorts\0");
+                                    "NumPorts\0"
+                                    "Bootable\0");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("LsiLogic configuration error: unknown option specified"));
@@ -4987,7 +4989,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read ControllerType as string"));
     Log(("%s: ControllerType=%s\n", __FUNCTION__, pszCtrlType));
-    
+
     rc = lsilogicGetCtrlTypeFromString(pThis, pszCtrlType);
     MMR3HeapFree(pszCtrlType);
 
@@ -5014,6 +5016,12 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read NumPorts as integer"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &fBootable, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("LsiLogic configuration error: failed to read Bootable as boolean"));
+    Log(("%s: Bootable=%RTbool\n", __FUNCTION__, fBootable));
 
     /* Init static parts. */
     PCIDevSetVendorId(&pThis->PciDev, LSILOGICSCSI_PCI_VENDOR_ID); /* LsiLogic */
@@ -5118,14 +5126,14 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Create critical sections protecting the reply post and free queues.
      */
-    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRFQ", szDevTag);    
+    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRFQ", szDevTag); 
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyFreeQueueCritSect, RT_SRC_POS,
                                szTaggedText);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic: cannot create critical section for reply free queue"));
 
-    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRPQ", szDevTag);        
+    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%sRPQ", szDevTag);
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->ReplyPostQueueCritSect, RT_SRC_POS,
                                szTaggedText);
     if (RT_FAILURE(rc))
@@ -5209,8 +5217,11 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     rc = vboxscsiInitialize(&pThis->VBoxSCSI);
     AssertRC(rc);
 
-    /* Register I/O port space in ISA region for BIOS access, only for first controller. */
-    if (iInstance == 0)
+    /*
+     * Register I/O port space in ISA region for BIOS access
+     * if the controller is marked as bootable.
+     */
+    if (fBootable)
     {
         if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
             rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_ISA_IO_PORT, 3, NULL,
@@ -5227,7 +5238,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
-    }        
+    }
 
     /* Register save state handlers. */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, LSILOGIC_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
