@@ -56,7 +56,7 @@
 #if DEPTH != 15
 
 static inline void glue(vga_draw_glyph_line_, DEPTH)(uint8_t *d,
-                                                     uint32_t font_data,
+                                                     int font_data,
                                                      uint32_t xorcol,
                                                      uint32_t bgcol)
 {
@@ -84,7 +84,8 @@ static void glue(vga_draw_glyph8_, DEPTH)(uint8_t *d, int linesize,
                                           const uint8_t *font_ptr, int h,
                                           uint32_t fgcol, uint32_t bgcol)
 {
-    uint32_t font_data, xorcol;
+    uint32_t xorcol;
+    int      font_data;
 
     xorcol = bgcol ^ fgcol;
     do {
@@ -99,7 +100,8 @@ static void glue(vga_draw_glyph16_, DEPTH)(uint8_t *d, int linesize,
                                           const uint8_t *font_ptr, int h,
                                           uint32_t fgcol, uint32_t bgcol)
 {
-    uint32_t font_data, xorcol;
+    uint32_t xorcol;
+    int      font_data;
 
     xorcol = bgcol ^ fgcol;
     do {
@@ -119,7 +121,8 @@ static void glue(vga_draw_glyph9_, DEPTH)(uint8_t *d, int linesize,
                                           const uint8_t *font_ptr, int h,
                                           uint32_t fgcol, uint32_t bgcol, int dup9)
 {
-    uint32_t font_data, xorcol, v;
+    uint32_t xorcol, v;
+    int      font_data;
 
     xorcol = bgcol ^ fgcol;
     do {
