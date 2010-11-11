@@ -104,3 +104,5 @@ BindRenderbufferEXT
 VBoxPackSetInjectThread
 VBoxPackGetInjectID
 VBoxPackSetInjectID
+VBoxPackAttachThread
+VBoxPackDetachThread

@@ -36,6 +36,7 @@
 #include "cr_endian.h"
 #include "cr_threads.h"
 #include "net_internals.h"
+#include "cr_process.h"
 
 #include <iprt/thread.h>
 #include <iprt/assert.h>
@@ -1170,6 +1171,32 @@ static int crVBoxHGSMISetVersion(CRConnection *conn, unsigned int vMajor, unsign
     return TRUE;
 }
 
+static int crVBoxHGSMISetPID(CRConnection *conn, CRpid pid)
+{
+    CRVBOXHGCMSETPID parms;
+    int rc;
+
+    parms.hdr.result      = VERR_WRONG_ORDER;
+    parms.hdr.u32ClientID = conn->u32ClientID;
+    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_PID;
+    parms.hdr.cParms      = SHCRGL_CPARMS_SET_PID;
+
+    parms.u64PID.type     = VMMDevHGCMParmType_64bit;
+    parms.u64PID.u.value64 = (uintptr_t) pid;
+
+    rc = crVBoxHGCMCall(&parms, sizeof(parms));
+
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    {
+        Assert(0);
+
+        crWarning("SHCRGL_GUEST_FN_SET_PID failed!");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /**
  * The function that actually connects.  This should only be called by clients,
  * guests in vbox case.
@@ -1241,7 +1268,6 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
 # endif
     if (ioctl(g_crvboxhgsmi.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CONNECT, &Hdr) >= 0)
 #else
-    /*@todo it'd fail */
     if (ioctl(g_crvboxhgsmi.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CONNECT, &info, sizeof (info)) >= 0)
 #endif
     {
@@ -1252,6 +1278,11 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
             crDebug("HGCM connect was successful: client id =0x%x\n", conn->u32ClientID);
 
             rc = crVBoxHGSMISetVersion(conn, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
+            if (!rc)
+            {
+                return rc;
+            }
+            rc = crVBoxHGCMSetPID(conn, crGetPID());
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return rc;
         }

@@ -77,6 +77,7 @@ static void deleteContextCallback( void *data )
 static void crServerTearDown( void )
 {
     GLint i;
+    CRClientNode *pNode, *pNext;
 
     /* avoid a race condition */
     if (tearingdown)
@@ -118,6 +119,16 @@ static void crServerTearDown( void )
         }
     }
     cr_server.numClients = 0;
+
+    pNode = cr_server.pCleanupClient;
+    while (pNode)
+    {
+        pNext=pNode->next;
+        crFree(pNode->pClient);
+        crFree(pNode);
+        pNode=pNext;
+    }
+    cr_server.pCleanupClient = NULL;
 
 #if 1
     /* disable these two lines if trying to get stack traces with valgrind */
@@ -289,6 +300,8 @@ GLboolean crVBoxServerInit(void)
     cr_server.bIsInLoadingState = GL_FALSE;
     cr_server.bIsInSavingState  = GL_FALSE;
 
+    cr_server.pCleanupClient = NULL;
+
     /*
      * Create default mural info and hash table.
      */
@@ -357,7 +370,7 @@ int32_t crVBoxServerAddClient(uint32_t u32ClientID)
 
 void crVBoxServerRemoveClient(uint32_t u32ClientID)
 {
-    CRClient *pClient;
+    CRClient *pClient=NULL;
     int32_t i;
 
     crDebug("crServer: RemoveClient u32ClientID=%d", u32ClientID);
@@ -367,11 +380,16 @@ void crVBoxServerRemoveClient(uint32_t u32ClientID)
         if (cr_server.clients[i] && cr_server.clients[i]->conn
             && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
+            pClient = cr_server.clients[i];
             break;
         }
     }
-    pClient = cr_server.clients[i];
-    CRASSERT(pClient);
+    //if (!pClient) return VERR_INVALID_PARAMETER;
+    if (!pClient)
+    {
+        crWarning("Invalid client id %u passed to crVBoxServerRemoveClient", u32ClientID);
+        return;
+    }
 
     /* Disconnect the client */
     pClient->conn->Disconnect(pClient->conn);
@@ -474,7 +492,7 @@ int32_t crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t
 
 int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t *pcbBuffer)
 {
-    CRClient *pClient;
+    CRClient *pClient=NULL;
     int32_t i;
 
     //crDebug("crServer: [%x] ClientRead u32ClientID=%d", crThreadID(), u32ClientID);
@@ -484,11 +502,11 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
         if (cr_server.clients[i] && cr_server.clients[i]->conn
             && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
+            pClient = cr_server.clients[i];
             break;
         }
     }
-    pClient = cr_server.clients[i];
-    CRASSERT(pClient);
+    if (!pClient) return VERR_INVALID_PARAMETER;    
 
     if (!pClient->conn->vMajor) return VERR_NOT_SUPPORTED;
 
@@ -518,7 +536,7 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
 
 int32_t crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor)
 {
-    CRClient *pClient;
+    CRClient *pClient=NULL;
     int32_t i;
 
     for (i = 0; i < cr_server.numClients; i++)
@@ -526,11 +544,11 @@ int32_t crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint
         if (cr_server.clients[i] && cr_server.clients[i]->conn
             && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
         {
+            pClient = cr_server.clients[i];
             break;
         }
     }
-    pClient = cr_server.clients[i];
-    CRASSERT(pClient);
+    if (!pClient) return VERR_INVALID_PARAMETER;
 
     pClient->conn->vMajor = vMajor;
     pClient->conn->vMinor = vMinor;
@@ -541,6 +559,27 @@ int32_t crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint
         return VERR_NOT_SUPPORTED;
     }
     else return VINF_SUCCESS;
+}
+
+int32_t crVBoxServerClientSetPID(uint32_t u32ClientID, uint64_t pid)
+{
+    CRClient *pClient=NULL;
+    int32_t i;
+
+    for (i = 0; i < cr_server.numClients; i++)
+    {
+        if (cr_server.clients[i] && cr_server.clients[i]->conn
+            && cr_server.clients[i]->conn->u32ClientID==u32ClientID)
+        {
+            pClient = cr_server.clients[i];
+            break;
+        }
+    }
+    if (!pClient) return VERR_INVALID_PARAMETER;
+
+    pClient->pid = pid;
+
+    return VINF_SUCCESS;
 }
 
 int
@@ -721,7 +760,6 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
 
     /* Save cr_server.muralTable
      * @todo we don't need it all, just geometry info actually
-     * @todo store visible regions as well
      */
     ui32 = crHashtableNumElements(cr_server.muralTable);
     /* There should be default mural always */

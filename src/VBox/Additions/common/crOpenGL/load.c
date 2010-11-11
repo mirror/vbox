@@ -1181,11 +1181,27 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         break;
     }
 
+#if 0
     case DLL_THREAD_ATTACH:
+    {
+        if (stub_initialized)
+        {
+            CRASSERT(stub.spu);
+            stub.spu->dispatch_table.VBoxPackAttachThread();
+        }
         break;
+    }
 
     case DLL_THREAD_DETACH:
+    {
+        if (stub_initialized)
+        {
+            CRASSERT(stub.spu);
+            stub.spu->dispatch_table.VBoxPackDetachThread();
+        }
         break;
+    }
+#endif
 
     default:
         break;
