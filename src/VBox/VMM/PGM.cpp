@@ -3644,13 +3644,14 @@ static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM
 static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
     /** @todo SMP support */
-    PVMCPU pVCpu = &pVM->aCpus[0];
 
     /*
      * Validate input.
      */
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+
+    PVMCPU pVCpu = &pVM->aCpus[0];
 
     /*
      * Force page directory sync.
@@ -3679,13 +3680,14 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
 static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
 {
     /** @todo SMP support!! */
-    PVMCPU pVCpu = &pVM->aCpus[0];
 
     /*
      * Validate input.
      */
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+
+    PVMCPU pVCpu = &pVM->aCpus[0];
 
     int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Checking shadow CR3 page tables for consistency.\n");
     if (RT_FAILURE(rc))
