@@ -541,14 +541,16 @@ void UIMachineSettingsSystem::adjustBootOrderTWSize()
 
     int h = 2 * mTwBootOrder->frameWidth();
     int w = h;
-#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
+#if QT_VERSION < 0x040700
+# ifdef Q_WS_MAC
     int left, top, right, bottom;
     mTwBootOrder->getContentsMargins (&left, &top, &right, &bottom);
     h += top + bottom;
     w += left + right;
-#else /* defined(Q_WS_MAC) && (QT_VERSION < 0x040700) */
+# else /* Q_WS_MAC */
     w += 4;
-#endif /* !(defined(Q_WS_MAC) && (QT_VERSION < 0x040700)) */
+# endif /* !Q_WS_MAC */
+#endif /* QT_VERSION < 0x040700 */
     mTwBootOrder->setFixedSize(
         iv->sizeHintForColumn(0) + w,
         iv->sizeHintForRow(0) * mTwBootOrder->topLevelItemCount() + h);
