@@ -232,44 +232,19 @@ static volatile int32_t g_cNotifyUpdateEventsPending;
 /**
  * Event handler for VirtualBox events
  */
-class VBoxSDLEventListener :
-  VBOX_SCRIPTABLE_IMPL(IEventListener)
+class VBoxSDLEventListener
 {
 public:
     VBoxSDLEventListener()
     {
-#if defined(RT_OS_WINDOWS)
-        refcnt = 0;
-#endif
     }
 
     virtual ~VBoxSDLEventListener()
     {
     }
 
-#ifdef RT_OS_WINDOWS
-    STDMETHOD_(ULONG, AddRef)()
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
-        return ::InterlockedIncrement(&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
-
-    NS_DECL_ISUPPORTS
-
-
-    STDMETHOD(HandleEvent)(IEvent * aEvent)
-    {
-        VBoxEventType_T aType = VBoxEventType_Invalid;
-
-        aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
             case VBoxEventType_OnExtraDataChanged:
@@ -311,54 +286,24 @@ public:
 
         return S_OK;
     }
-
-private:
-#ifdef RT_OS_WINDOWS
-    long refcnt;
-#endif
-
 };
 
 /**
  * Event handler for machine events
  */
-class VBoxSDLConsoleEventListener :
-    VBOX_SCRIPTABLE_IMPL(IEventListener)
+class VBoxSDLConsoleEventListener
 {
 public:
     VBoxSDLConsoleEventListener() : m_fIgnorePowerOffEvents(false)
     {
-#if defined(RT_OS_WINDOWS)
-        refcnt = 0;
-#endif
     }
 
     virtual ~VBoxSDLConsoleEventListener()
     {
     }
 
-#ifdef RT_OS_WINDOWS
-    STDMETHOD_(ULONG, AddRef)()
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
-        return ::InterlockedIncrement(&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
-
-    NS_DECL_ISUPPORTS
-
-    STDMETHOD(HandleEvent)(IEvent * aEvent)
-    {
-        VBoxEventType_T aType = VBoxEventType_Invalid;
-
-        aEvent->COMGETTER(Type)(&aType);
         // likely all this double copy is now excessive, and we can just use existing event object
         // @todo: eliminate it
         switch (aType)
@@ -566,18 +511,9 @@ public:
     }
 
 private:
-#ifdef RT_OS_WINDOWS
-    long refcnt;
-#endif
     bool m_fIgnorePowerOffEvents;
 };
 
-#ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO(VBoxSDLEventListener)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLEventListener, IEventListener)
-NS_DECL_CLASSINFO(VBoxSDLConsoleEventListener)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLConsoleEventListener, IEventListener)
-#endif /* VBOX_WITH_XPCOM */
 
 static void show_usage()
 {

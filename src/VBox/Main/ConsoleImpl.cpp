@@ -72,6 +72,7 @@
 
 #include <VBox/com/array.h>
 #include "VBox/com/ErrorInfo.h"
+#include <VBox/com/listeners.h>
 
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
