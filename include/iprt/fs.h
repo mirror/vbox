@@ -522,6 +522,8 @@ typedef struct RTFSPROPERTIES
 } RTFSPROPERTIES;
 /** Pointer to a filesystem properties structure. */
 typedef RTFSPROPERTIES *PRTFSPROPERTIES;
+/** Pointer to a const filesystem properties structure. */
+typedef RTFSPROPERTIES const *PCRTFSPROPERTIES;
 
 #ifdef IN_RING3
 
