@@ -107,12 +107,7 @@ RT_C_DECLS_END
 #define VGA_PORT_HGSMI_GUEST 0x3d0
 
 /* common API types */
-#ifndef VBOX_WITH_WDDM
-typedef PSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
-typedef UCHAR VBOXVCMNIRQL, *PVBOXVCMNIRQL;
-
-typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
-#else
+#ifdef VBOX_WITH_WDDM
 #define VBOX_WITH_GENERIC_MULTIMONITOR
 typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 #include <VBox/VBoxVideo.h>
@@ -129,12 +124,6 @@ typedef struct _DEVICE_EXTENSION *PDEVICE_EXTENSION;
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include "wddm/VBoxVideoVhwa.h"
 #endif
-
-
-typedef KSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
-typedef KIRQL VBOXVCMNIRQL, *PVBOXVCMNIRQL;
-
-typedef HANDLE VBOXCMNREG;
 
 #define VBOXWDDM_POINTER_ATTRIBUTES_SIZE VBOXWDDM_ROUNDBOUND( \
         VBOXWDDM_ROUNDBOUND( sizeof (VIDEO_POINTER_ATTRIBUTES), 4 ) + \
@@ -396,60 +385,12 @@ uint16_t VBoxVideoCmnPortReadUshort(RTIOPORT Port);
 uint32_t VBoxVideoCmnPortReadUlong(RTIOPORT Port);
 
 #ifndef VBOX_WITH_WDDM
-/* XPDM-WDDM common API */
-
-DECLINLINE(VOID) VBoxVideoCmnSpinLockAcquire(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, OUT PVBOXVCMNIRQL OldIrql)
-{
-    pDeviceExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(pDeviceExtension, *SpinLock, OldIrql);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnSpinLockRelease(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, IN VBOXVCMNIRQL NewIrql)
-{
-    pDeviceExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(pDeviceExtension, *SpinLock, NewIrql);
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockCreate(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnCreateSpinLock(pDeviceExtension, SpinLock);
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockDelete(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    return pDeviceExtension->u.primary.VideoPortProcs.pfnDeleteSpinLock(pDeviceExtension, *SpinLock);
-}
-
-/* */
 
 RT_C_DECLS_BEGIN
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2);
 RT_C_DECLS_END
 
 #else
-
-/* XPDM-WDDM common API */
-
-DECLINLINE(VOID) VBoxVideoCmnSpinLockAcquire(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, OUT PVBOXVCMNIRQL OldIrql)
-{
-    KeAcquireSpinLock(SpinLock, OldIrql);
-}
-
-DECLINLINE(VOID) VBoxVideoCmnSpinLockRelease(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock, IN VBOXVCMNIRQL NewIrql)
-{
-    KeReleaseSpinLock(SpinLock, NewIrql);
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockCreate(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    KeInitializeSpinLock(SpinLock);
-    return NO_ERROR;
-}
-
-DECLINLINE(VP_STATUS) VBoxVideoCmnSpinLockDelete(IN PDEVICE_EXTENSION pDeviceExtension, IN PVBOXVCMNSPIN_LOCK SpinLock)
-{
-    return NO_ERROR;
-}
-
-/* */
 
 RT_C_DECLS_BEGIN
 NTSTATUS

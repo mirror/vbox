@@ -58,6 +58,20 @@ uint32_t gCustomYRes = 0;
 uint32_t gCustomBPP  = 0;
 #endif /* !VBOX_WITH_MULTIMONITOR_FIX */
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+
+#ifndef VBOX_WITH_WDDM
+typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
+#else
+typedef HANDLE VBOXCMNREG;
+#endif
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+
 int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 
 static VP_STATUS VBoxVideoFindAdapter(
@@ -100,10 +114,6 @@ static VP_STATUS VBoxVideoGetChildDescriptor(
    PUCHAR pChildDescriptor,
    PULONG pUId,
    PULONG pUnused);
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
 
 #ifndef VBOX_WITH_WDDM
 /*+++
@@ -4117,32 +4127,6 @@ VP_STATUS vboxDeleteEventVoid(IN PVOID  HwDeviceExtension, IN PEVENT  pEvent)
     return ERROR_INVALID_FUNCTION;
 }
 
-VP_STATUS vboxCreateSpinLockVoid (IN PVOID  HwDeviceExtension, OUT PSPIN_LOCK  *SpinLock)
-{
-    return ERROR_INVALID_FUNCTION;
-}
-
-VP_STATUS vboxDeleteSpinLockVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock)
-{
-    return ERROR_INVALID_FUNCTION;
-}
-
-VOID vboxAcquireSpinLockVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock, OUT PUCHAR  OldIrql)
-{
-}
-
-VOID vboxReleaseSpinLockVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock, IN UCHAR  NewIrql)
-{
-}
-
-VOID vboxAcquireSpinLockAtDpcLevelVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock)
-{
-}
-
-VOID vboxReleaseSpinLockFromDpcLevelVoid (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock)
-{
-}
-
 PVOID vboxAllocatePoolVoid(IN PVOID  HwDeviceExtension, IN VBOXVP_POOL_TYPE  PoolType, IN size_t  NumberOfBytes, IN ULONG  Tag)
 {
     return NULL;
@@ -4169,12 +4153,6 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
         pCallbacks->pfnClearEvent = vboxClearEventVoid;
         pCallbacks->pfnCreateEvent = vboxCreateEventVoid;
         pCallbacks->pfnDeleteEvent = vboxDeleteEventVoid;
-        pCallbacks->pfnCreateSpinLock = vboxCreateSpinLockVoid;
-        pCallbacks->pfnDeleteSpinLock = vboxDeleteSpinLockVoid;
-        pCallbacks->pfnAcquireSpinLock = vboxAcquireSpinLockVoid;
-        pCallbacks->pfnReleaseSpinLock = vboxReleaseSpinLockVoid;
-        pCallbacks->pfnAcquireSpinLockAtDpcLevel = vboxAcquireSpinLockAtDpcLevelVoid;
-        pCallbacks->pfnReleaseSpinLockFromDpcLevel = vboxReleaseSpinLockFromDpcLevelVoid;
         pCallbacks->pfnAllocatePool = vboxAllocatePoolVoid;
         pCallbacks->pfnFreePool = vboxFreePoolVoid;
         pCallbacks->pfnQueueDpc = vboxQueueDpcVoid;
@@ -4223,55 +4201,6 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
         pCallbacks->pfnDeleteEvent = vboxDeleteEventVoid;
     }
 
-    pCallbacks->pfnCreateSpinLock = (PFNCREATESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
-            (PrimaryExtension,
-             (PUCHAR)"VideoPortCreateSpinLock");
-    Assert(pCallbacks->pfnCreateSpinLock);
-
-    pCallbacks->pfnDeleteSpinLock = (PFNDELETESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
-            (PrimaryExtension,
-             (PUCHAR)"VideoPortDeleteSpinLock");
-    Assert(pCallbacks->pfnDeleteSpinLock);
-
-    pCallbacks->pfnAcquireSpinLock = (PFNACQUIRESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
-            (PrimaryExtension,
-             (PUCHAR)"VideoPortAcquireSpinLock");
-    Assert(pCallbacks->pfnAcquireSpinLock);
-
-    pCallbacks->pfnReleaseSpinLock = (PFNRELEASESPINLOCK)(pConfigInfo->VideoPortGetProcAddress)
-            (PrimaryExtension,
-             (PUCHAR)"VideoPortReleaseSpinLock");
-    Assert(pCallbacks->pfnReleaseSpinLock);
-
-    pCallbacks->pfnAcquireSpinLockAtDpcLevel = (PFNACQUIRESPINLOCKATDPCLEVEL)(pConfigInfo->VideoPortGetProcAddress)
-            (PrimaryExtension,
-             (PUCHAR)"VideoPortAcquireSpinLockAtDpcLevel");
-    Assert(pCallbacks->pfnAcquireSpinLockAtDpcLevel);
-
-    pCallbacks->pfnReleaseSpinLockFromDpcLevel = (PFNRELEASESPINLOCKFROMDPCLEVEL)(pConfigInfo->VideoPortGetProcAddress)
-                (PrimaryExtension,
-                 (PUCHAR)"VideoPortReleaseSpinLockFromDpcLevel");
-    Assert(pCallbacks->pfnReleaseSpinLockFromDpcLevel);
-
-    if(pCallbacks->pfnCreateSpinLock
-            && pCallbacks->pfnDeleteSpinLock
-            && pCallbacks->pfnAcquireSpinLock
-            && pCallbacks->pfnReleaseSpinLock
-            && pCallbacks->pfnAcquireSpinLockAtDpcLevel
-            && pCallbacks->pfnReleaseSpinLockFromDpcLevel)
-    {
-        pCallbacks->fSupportedTypes |= VBOXVIDEOPORTPROCS_SPINLOCK;
-    }
-    else
-    {
-        pCallbacks->pfnCreateSpinLock = vboxCreateSpinLockVoid;
-        pCallbacks->pfnDeleteSpinLock = vboxDeleteSpinLockVoid;
-        pCallbacks->pfnAcquireSpinLock = vboxAcquireSpinLockVoid;
-        pCallbacks->pfnReleaseSpinLock = vboxReleaseSpinLockVoid;
-        pCallbacks->pfnAcquireSpinLockAtDpcLevel = vboxAcquireSpinLockAtDpcLevelVoid;
-        pCallbacks->pfnReleaseSpinLockFromDpcLevel = vboxReleaseSpinLockFromDpcLevelVoid;
-    }
-
     pCallbacks->pfnAllocatePool = (PFNALLOCATEPOOL)(pConfigInfo->VideoPortGetProcAddress)
             (PrimaryExtension,
              (PUCHAR)"VideoPortAllocatePool");
@@ -4309,7 +4238,6 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
 
 #ifdef DEBUG_misha
     Assert(pCallbacks->fSupportedTypes & VBOXVIDEOPORTPROCS_EVENT);
-    Assert(pCallbacks->fSupportedTypes & VBOXVIDEOPORTPROCS_SPINLOCK);
 #endif
 }
 #endif

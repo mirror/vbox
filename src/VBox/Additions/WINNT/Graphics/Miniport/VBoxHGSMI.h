@@ -40,14 +40,6 @@ typedef LONG (*PFNSETEVENT) (IN PVOID  HwDeviceExtension, IN PEVENT  pEvent);
 typedef VOID (*PFNCLEAREVENT) (IN PVOID  HwDeviceExtension, IN PEVENT  pEvent);
 typedef VP_STATUS (*PFNCREATEEVENT) (IN PVOID  HwDeviceExtension, IN ULONG  EventFlag, IN PVOID  Unused, OUT PEVENT  *ppEvent);
 typedef VP_STATUS (*PFNDELETEEVENT) (IN PVOID  HwDeviceExtension, IN PEVENT  pEvent);
-
-typedef VP_STATUS (*PFNCREATESPINLOCK) (IN PVOID  HwDeviceExtension, OUT PSPIN_LOCK  *SpinLock);
-typedef VP_STATUS (*PFNDELETESPINLOCK) (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock);
-
-typedef VOID (*PFNACQUIRESPINLOCK) (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock, OUT PUCHAR  OldIrql);
-typedef VOID (*PFNRELEASESPINLOCK) (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock, IN UCHAR  NewIrql);
-typedef VOID (*PFNACQUIRESPINLOCKATDPCLEVEL) (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock);
-typedef VOID (*PFNRELEASESPINLOCKFROMDPCLEVEL) (IN PVOID  HwDeviceExtension, IN PSPIN_LOCK  SpinLock);
 #endif
 
 typedef long VBOXVP_STATUS;
@@ -74,21 +66,11 @@ typedef void (*PFNCLEAREVENT) (void*  HwDeviceExtension, VBOXPEVENT  pEvent);
 typedef VBOXVP_STATUS (*PFNCREATEEVENT) (void*  HwDeviceExtension, unsigned long  EventFlag, void*  Unused, VBOXPEVENT  *ppEvent);
 typedef VBOXVP_STATUS (*PFNDELETEEVENT) (void*  HwDeviceExtension, VBOXPEVENT  pEvent);
 
-typedef VBOXVP_STATUS (*PFNCREATESPINLOCK) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  *SpinLock);
-typedef VBOXVP_STATUS (*PFNDELETESPINLOCK) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  SpinLock);
-
-typedef void (*PFNACQUIRESPINLOCK) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  SpinLock, unsigned char * OldIrql);
-typedef void (*PFNRELEASESPINLOCK) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  SpinLock, unsigned char  NewIrql);
-typedef void (*PFNACQUIRESPINLOCKATDPCLEVEL) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  SpinLock);
-typedef void (*PFNRELEASESPINLOCKFROMDPCLEVEL) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  SpinLock);
-
 typedef void* (*PFNALLOCATEPOOL) (void*  HwDeviceExtension, VBOXVP_POOL_TYPE PoolType, size_t NumberOfBytes, unsigned long Tag);
 typedef void (*PFNFREEPOOL) (void*  HwDeviceExtension, void*  Ptr);
 
 typedef unsigned char (*PFNQUEUEDPC) (void* HwDeviceExtension, void (*CallbackRoutine)(void* HwDeviceExtension, void *Context), void *Context);
 
-/* pfn*SpinLock* functions are available */
-#define VBOXVIDEOPORTPROCS_SPINLOCK 0x00000001
 /* pfn*Event and pfnWaitForSingleObject functions are available */
 #define VBOXVIDEOPORTPROCS_EVENT    0x00000002
 /* pfn*Pool functions are available */
@@ -107,13 +89,6 @@ typedef struct VBOXVIDEOPORTPROCS
     PFNCLEAREVENT pfnClearEvent;
     PFNCREATEEVENT pfnCreateEvent;
     PFNDELETEEVENT pfnDeleteEvent;
-
-    PFNCREATESPINLOCK pfnCreateSpinLock;
-    PFNDELETESPINLOCK pfnDeleteSpinLock;
-    PFNACQUIRESPINLOCK pfnAcquireSpinLock;
-    PFNRELEASESPINLOCK pfnReleaseSpinLock;
-    PFNACQUIRESPINLOCKATDPCLEVEL pfnAcquireSpinLockAtDpcLevel;
-    PFNRELEASESPINLOCKFROMDPCLEVEL pfnReleaseSpinLockFromDpcLevel;
 
     PFNALLOCATEPOOL pfnAllocatePool;
     PFNFREEPOOL pfnFreePool;

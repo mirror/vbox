@@ -240,13 +240,13 @@ static int vbvaFinalizeQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvDa
         *pCtx->pulValue = p->u32Value;
     }
 
-    dprintf(("VBoxVideo::vboxQueryConf: u32Value = %d\n", p->u32Value));
+    Log(("VBoxVideo::vboxQueryConf: u32Value = %d\n", p->u32Value));
     return VINF_SUCCESS;
 }
 
 static int vboxQueryConfHGSMI (PVBOXVIDEO_COMMON pCommon, uint32_t u32Index, ULONG *pulValue)
 {
-    dprintf(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
+    Log(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
 
     QUERYCONFCTX context;
 
@@ -260,7 +260,7 @@ static int vboxQueryConfHGSMI (PVBOXVIDEO_COMMON pCommon, uint32_t u32Index, ULO
                            vbvaFinalizeQueryConf,
                            &context);
 
-    dprintf(("VBoxVideo::vboxQueryConf: rc = %d\n", rc));
+    Log(("VBoxVideo::vboxQueryConf: rc = %d\n", rc));
 
     return rc;
 }
@@ -329,7 +329,7 @@ static int hgsmiInitFlagsLocation (PVBOXVIDEO_COMMON pCommon, void *pvContext, v
 
 static int vboxSetupAdapterInfoHGSMI (PVBOXVIDEO_COMMON pCommon)
 {
-    dprintf(("VBoxVideo::vboxSetupAdapterInfo\n"));
+    Log(("VBoxVideo::vboxSetupAdapterInfo\n"));
 
     /* setup the flags first to ensure they are initialized by the time the host heap is ready */
     int rc = vboxCallChannel(pCommon,
@@ -364,7 +364,7 @@ static int vboxSetupAdapterInfoHGSMI (PVBOXVIDEO_COMMON pCommon)
     }
 
 
-    dprintf(("VBoxVideo::vboxSetupAdapterInfo finished rc = %d\n", rc));
+    Log(("VBoxVideo::vboxSetupAdapterInfo finished rc = %d\n", rc));
 
     return rc;
 }
@@ -383,7 +383,7 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
 {
     VP_STATUS rc = NO_ERROR;
 
-    dprintf(("VBoxVideo::VBoxSetupDisplays: pCommon = %p\n", pCommon));
+    Log(("VBoxVideo::VBoxSetupDisplays: pCommon = %p\n", pCommon));
 
     memset(pCommon, 0, sizeof(*pCommon));
     pCommon->cbVRAM    = AdapterMemorySize;
@@ -407,7 +407,7 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
                                   );
         if (rc != NO_ERROR)
         {
-            dprintf(("VBoxVideo::VBoxSetupDisplays: VBoxMapAdapterMemory pvAdapterInfoirrmation failed rc = %d\n",
+            Log(("VBoxVideo::VBoxSetupDisplays: VBoxMapAdapterMemory pvAdapterInfoirrmation failed rc = %d\n",
                      rc));
 
             pCommon->bHGSMI = FALSE;
@@ -423,7 +423,7 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
 
             if (RT_FAILURE (rc))
             {
-                dprintf(("VBoxVideo::VBoxSetupDisplays: HGSMIHeapSetup failed rc = %d\n",
+                Log(("VBoxVideo::VBoxSetupDisplays: HGSMIHeapSetup failed rc = %d\n",
                          rc));
 
                 pCommon->bHGSMI = FALSE;
@@ -461,7 +461,7 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
             /* Round up to 4096 bytes. */
             pCommon->cbMiniportHeap = (cbMiniportHeap + 0xFFF) & ~0xFFF;
 
-            dprintf(("VBoxVideo::VBoxSetupDisplays: cbMiniportHeap = 0x%08X, pCommon->cbMiniportHeap = 0x%08X, cbMiniportHeapMaxSize = 0x%08X\n",
+            Log(("VBoxVideo::VBoxSetupDisplays: cbMiniportHeap = 0x%08X, pCommon->cbMiniportHeap = 0x%08X, cbMiniportHeapMaxSize = 0x%08X\n",
                      cbMiniportHeap, pCommon->cbMiniportHeap, cbMiniportHeapMaxSize));
 
             /* Map the heap region.
@@ -510,7 +510,7 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
         ULONG cDisplays = 0;
         vboxQueryConfHGSMI (pCommon, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
 
-        dprintf(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
+        Log(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
                  cDisplays));
 
         if (cDisplays == 0 || cDisplays > VBOX_VIDEO_MAX_SCREENS)
@@ -535,7 +535,7 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     if (!pCommon->bHGSMI)
         VBoxFreeDisplaysHGSMI(pCommon);
 
-    dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
+    Log(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
 
 static bool VBoxUnmapAdpInfoCallback(PVOID pvCommon)
@@ -620,13 +620,13 @@ BOOLEAN vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
     }
 
 #ifndef DEBUG_misha
-    dprintf(("vboxUpdatePointerShape: cbData %d, %dx%d\n",
+    Log(("vboxUpdatePointerShape: cbData %d, %dx%d\n",
              cbData, pointerAttr->Width, pointerAttr->Height));
 #endif
 
     if (cbData > cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES))
     {
-        dprintf(("vboxUpdatePointerShape: calculated pointer data size is too big (%d bytes, limit %d)\n",
+        Log(("vboxUpdatePointerShape: calculated pointer data size is too big (%d bytes, limit %d)\n",
                  cbData, cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES)));
         return FALSE;
     }
@@ -643,7 +643,7 @@ BOOLEAN vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
                            vbvaFinalizeMousePointerShape,
                            &ctx);
 #ifndef DEBUG_misha
-    dprintf(("VBoxVideo::vboxMousePointerShape: rc %d, i32Result = %d\n", rc, ctx.i32Result));
+    Log(("VBoxVideo::vboxMousePointerShape: rc %d, i32Result = %d\n", rc, ctx.i32Result));
 #endif
 
     return RT_SUCCESS(rc) && RT_SUCCESS(ctx.i32Result);
