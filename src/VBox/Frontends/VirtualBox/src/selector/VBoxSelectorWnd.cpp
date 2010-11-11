@@ -1040,6 +1040,7 @@ void VBoxSelectorWnd::retranslateUi()
 #else
     QString title(VBOX_PRODUCT);
 #endif
+    title += " " + tr("Manager");
 
 #ifdef VBOX_BLEEDING_EDGE
     title += QString(" EXPERIMENTAL build ")

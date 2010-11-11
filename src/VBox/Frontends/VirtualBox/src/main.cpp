@@ -249,7 +249,7 @@ static void showHelp()
     dflt = "image";
 #endif
 
-    RTPrintf(VBOX_PRODUCT " Graphical User Interface %s\n"
+    RTPrintf(VBOX_PRODUCT " Manager %s\n"
             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
             "All rights reserved.\n"
             "\n"
