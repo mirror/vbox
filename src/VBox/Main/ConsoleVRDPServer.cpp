@@ -34,56 +34,16 @@
 #include <VBox/err.h>
 #include <VBox/RemoteDesktop/VRDEOrders.h>
 
-class VRDPConsoleListener :
-    VBOX_SCRIPTABLE_IMPL(IEventListener)
+class VRDPConsoleListener
 {
 public:
     VRDPConsoleListener(ConsoleVRDPServer *server)
         : m_server(server)
     {
-#ifndef VBOX_WITH_XPCOM
-        refcnt = 0;
-#endif /* !VBOX_WITH_XPCOM */
     }
 
-    virtual ~VRDPConsoleListener() {}
-
-    NS_DECL_ISUPPORTS
-
-#ifndef VBOX_WITH_XPCOM
-    STDMETHOD_(ULONG, AddRef)() {
-        return ::InterlockedIncrement(&refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
     {
-        long cnt = ::InterlockedDecrement(&refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-    STDMETHOD(QueryInterface)(REFIID riid , void **ppObj)
-    {
-        if (riid == IID_IUnknown) {
-            *ppObj = (IUnknown*)this;
-            AddRef();
-            return S_OK;
-        }
-        if (riid == IID_IEventListener) {
-            *ppObj = (IEventListener*)this;
-            AddRef();
-            return S_OK;
-        }
-        *ppObj = NULL;
-        return E_NOINTERFACE;
-    }
-#endif /* !VBOX_WITH_XPCOM */
-
-
-    STDMETHOD(HandleEvent)(IEvent * aEvent)
-    {
-        VBoxEventType_T aType = VBoxEventType_Invalid;
-
-        aEvent->COMGETTER(Type)(&aType);
         switch (aType)
         {
             case VBoxEventType_OnMousePointerShapeChanged:
@@ -144,16 +104,11 @@ private:
     STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
                                          ULONG width, ULONG height, ComSafeArrayIn(BYTE,shape));
     ConsoleVRDPServer *m_server;
-#ifndef VBOX_WITH_XPCOM
-    long refcnt;
-#endif /* !VBOX_WITH_XPCOM */
 };
 
-#ifdef VBOX_WITH_XPCOM
-#include <nsMemory.h>
-NS_DECL_CLASSINFO(VRDPConsoleListener)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDPConsoleListener, IEventListener)
-#endif /* VBOX_WITH_XPCOM */
+typedef ListenerImpl<VRDPConsoleListener, ConsoleVRDPServer*> VRDPConsoleListenerImpl;
+
+VBOX_LISTENER_DECLARE(VRDPConsoleListenerImpl)
 
 #ifdef DEBUG_sunlover
 #define LOGDUMPPTR Log
@@ -1219,8 +1174,7 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     {
         ComPtr<IEventSource> es;
         console->COMGETTER(EventSource)(es.asOutParam());
-        mConsoleListener = new VRDPConsoleListener(this);
-        mConsoleListener->AddRef();
+        mConsoleListener = new VRDPConsoleListenerImpl(this);
         com::SafeArray <VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnMousePointerShapeChanged);
         eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
