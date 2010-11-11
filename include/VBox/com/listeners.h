@@ -66,6 +66,10 @@ public:
     {
     }
 
+    T* getWrapped()
+    {
+        return &mListener;
+    }
 
     /* On Windows QI implemented by VBOX_SCRIPTABLE_DISPATCH_IMPL */
 #ifndef RT_OS_WINDOWS
