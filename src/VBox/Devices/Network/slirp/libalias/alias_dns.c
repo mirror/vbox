@@ -85,7 +85,7 @@ fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
     return -1;
 }
 
-static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, struct ip *pip, struct hostent *h)
+static void doanswer(struct libalias *la, union dnsmsg_header *hdr, uint16_t qtype, uint16_t qclass, char *qname, struct ip *pip, struct hostent *h)
 {
     int i;
 
@@ -120,8 +120,8 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
         strcpy(query, qname);
         query += strlen(qname) + 1;
 
-        *(uint16_t *)query = htons(1);
-        ((uint16_t *)query)[1] = htons(1);
+        *(uint16_t *)query = qtype;
+        ((uint16_t *)query)[1] = qclass;
         answers = (char *)&((uint16_t *)query)[2];
 
         off = (char *)&hdr[1] - (char *)hdr;
@@ -198,6 +198,11 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
     memset(cname, 0, sizeof(cname));
     qw_qname = (char *)&hdr[1];
     Assert((ntohs(hdr->X.qdcount) == 1));
+    if ((ntohs(hdr->X.qdcount) != 1))
+    {
+        LogRel(("NAT:alias_dns: multiple quieries isn't supported\n"));
+        return 1;
+    }
 
     for (i = 0; i < ntohs(hdr->X.qdcount); ++i)
     {
@@ -205,24 +210,24 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
         qw_qclass = &qw_qtype[1];
         fprintf(stderr, "qname:%s qtype:%hd qclass:%hd\n",
             qw_qname, ntohs(*qw_qtype), ntohs(*qw_qclass));
-    }
 
-    QStr2CStr(qw_qname, cname, sizeof(cname));
-    cname_len = RTStrNLen(cname, sizeof(cname));
-    /* Some guests like win-xp adds _dot_ after host name
-     * and after domain name (not passed with host resolver)
-     * that confuses host resolver.
-     */
-    if (   cname_len > 2
-        && cname[cname_len - 1] == '.'
-        && cname[cname_len - 2] == '.')
-    {
-        cname[cname_len - 1] = 0;
-        cname[cname_len - 2] = 0;
+        QStr2CStr(qw_qname, cname, sizeof(cname));
+        cname_len = RTStrNLen(cname, sizeof(cname));
+        /* Some guests like win-xp adds _dot_ after host name
+         * and after domain name (not passed with host resolver)
+         * that confuses host resolver.
+         */
+        if (   cname_len > 2
+            && cname[cname_len - 1] == '.'
+            && cname[cname_len - 2] == '.')
+        {
+            cname[cname_len - 1] = 0;
+            cname[cname_len - 2] = 0;
+        }
+        h = gethostbyname(cname);
+        fprintf(stderr, "cname:%s\n", cname);
+        doanswer(la, hdr, *qw_qtype, *qw_qclass, qw_qname, pip, h);
     }
-    h = gethostbyname(cname);
-    fprintf(stderr, "cname:%s\n", cname);
-    doanswer(la, hdr, qw_qname, pip, h);
 
     /*
      * We have changed the size and the content of udp, to avoid double csum calculation
