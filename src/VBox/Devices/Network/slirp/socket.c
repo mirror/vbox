@@ -723,6 +723,8 @@ sorecvfrom(PNATState pData, struct socket *so)
         int size;
         int rc = 0;
         static int signalled = 0;
+        uint8_t *pu8Buffer = NULL;
+        bool fWithTemporalBuffer = false;
 
         QSOCKET_LOCK(udb);
         SOCKET_LOCK(so);
@@ -751,35 +753,54 @@ sorecvfrom(PNATState pData, struct socket *so)
         }
 
         len = sizeof(struct udpiphdr);
-        if (n > (if_mtu - len))
-        {
-            n = if_mtu - len; /* can't read than we can put in the mbuf*/
-        }
-        len += n;
-
-        size = MCLBYTES;
-        if (len + if_maxlinkhdr < MSIZE)
-            size = MCLBYTES;
-        else if (len + if_maxlinkhdr < MCLBYTES)
-            size = MCLBYTES;
-        else if (len + if_maxlinkhdr < MJUM9BYTES)
-            size = MJUM9BYTES;
-        else if (len + if_maxlinkhdr < MJUM16BYTES)
-            size = MJUM16BYTES;
-        else
-            AssertMsgFailed(("Unsupported size"));
-
-        m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+        m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, slirp_size(pData));
         if (m == NULL)
             return;
 
+        len += n;
         m->m_data += ETH_HLEN;
         m->m_pkthdr.header = mtod(m, void *);
         m->m_data += sizeof(struct udpiphdr);
-        ret = recvfrom(so->s, mtod(m, char *), n, 0,
+
+        pu8Buffer = mtod(m, uint8_t *);
+        fWithTemporalBuffer = false;
+        /*
+         * Even if amounts of bytes on socket is greater than MTU value
+         * Slirp will able fragment it, but we won't create temporal location
+         * here.
+         */
+        if (n > (slirp_size(pData) - sizeof(struct udpiphdr)))
+        {
+            pu8Buffer = RTMemAlloc((n) * sizeof(uint8_t));
+            if (!pu8Buffer)
+            {
+                m_freem(pData, m);
+                return;
+            }
+            fWithTemporalBuffer = true;
+        }
+        ret = recvfrom(so->s, pu8Buffer, n, 0,
                        (struct sockaddr *)&addr, &addrlen);
-        /* @todo (vvl) check which flags and type should be passed */
-        m->m_len = ret;
+        if (fWithTemporalBuffer)
+        {
+            if (ret > 0)
+            {
+                m_copyback(pData, m, 0, ret, pu8Buffer);
+                /*
+                 * If we've met comporison below our size prediction was failed
+                 * it's not fatal just we've allocated for nothing. (@todo add counter here
+                 * to calculate how rare we here)
+                 */
+                if(ret < slirp_size(pData) && !m->m_next)
+                    Log(("NAT:udp: Expected size(%d) lesser than real(%d) and less minimal mbuf size(%d) \n",
+                         n, ret, slirp_size(pData)));
+            }
+            /* we're freeing buffer anyway */
+            RTMemFree(pu8Buffer);
+        }
+        else
+            m->m_len = ret;
+
         if (ret < 0)
         {
             u_char code = ICMP_UNREACH_PORT;
@@ -805,6 +826,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         }
         else
         {
+            Assert((m_length(m,NULL) == ret));
             /*
              * Hack: domain name lookup will be used the most for UDP,
              * and since they'll only be used once there's no need
