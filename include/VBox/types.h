@@ -618,7 +618,7 @@ typedef struct VBOXIDTE64_INTERRUPTGATE
     unsigned    u32Reserved;
 } VBOXIDTE64_INTERRUPTGATE;
 #pragma pack()
-/** Pointer to IDT Entry, Interrupt gate view. */
+/** Pointer to IDT Entry, 64-bit mode, Interrupt gate view. */
 typedef  VBOXIDTE64_INTERRUPTGATE *PVBOXIDTE64_INTERRUPTGATE;
 
 /** IDT Entry, 64-bit mode, Trap gate view. */
@@ -663,7 +663,7 @@ typedef struct VBOXIDTE64_TRAPGATE
     unsigned    u32Reserved;
 } VBOXIDTE64_TRAPGATE;
 #pragma pack()
-/** Pointer to IDT Entry, Interrupt gate view. */
+/** Pointer to IDT Entry, 64-bit mode, Trap gate view. */
 typedef  VBOXIDTE64_TRAPGATE *PVBOXIDTE64_TRAPGATE;
 
 /** IDT Entry, 64-bit mode, Generic view. */
@@ -696,7 +696,7 @@ typedef struct VBOXIDTE64_GENERIC
     unsigned    u32Reserved;
 } VBOXIDTE64_GENERIC;
 #pragma pack()
-/** Pointer to IDT Entry Generic view. */
+/** Pointer to IDT Entry, 64-bit mode, Generic view. */
 typedef VBOXIDTE64_GENERIC *PVBOXIDTE64_GENERIC;
 
 /** IDT Entry, 64-bit mode. */
