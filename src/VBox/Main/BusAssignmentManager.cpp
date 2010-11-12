@@ -420,7 +420,7 @@ void BusAssignmentManager::AddRef()
 }
 void BusAssignmentManager::Release()
 {
-    if (ASMAtomicDecS32(&pState->cRefCnt) == 1)
+    if (ASMAtomicDecS32(&pState->cRefCnt) == 0)
         delete this;
 }
 
