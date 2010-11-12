@@ -1567,6 +1567,12 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
      * we're processing the chain, that isn't not expected.
      */
     Assert((!m->m_next));
+    if (m->m_next)
+    {
+        Log(("NAT: if_encap's recived the chain, dropping..."));
+        m_freem(pData, m);
+        goto done;
+    }
     mbuf = mtod(m, uint8_t *);
     eh->h_proto = RT_H2N_U16(eth_proto);
     if (flags & ETH_ENCAP_URG)
