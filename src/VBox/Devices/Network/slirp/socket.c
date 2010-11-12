@@ -723,7 +723,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         int size;
         int rc = 0;
         static int signalled = 0;
-        uint8_t *pu8Buffer = NULL;
+        char *pchBuffer = NULL;
         bool fWithTemporalBuffer = false;
 
         QSOCKET_LOCK(udb);
@@ -762,7 +762,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         m->m_pkthdr.header = mtod(m, void *);
         m->m_data += sizeof(struct udpiphdr);
 
-        pu8Buffer = mtod(m, uint8_t *);
+        pchBuffer = mtod(m, char *);
         fWithTemporalBuffer = false;
         /*
          * Even if amounts of bytes on socket is greater than MTU value
@@ -771,21 +771,21 @@ sorecvfrom(PNATState pData, struct socket *so)
          */
         if (n > (slirp_size(pData) - sizeof(struct udpiphdr)))
         {
-            pu8Buffer = RTMemAlloc((n) * sizeof(uint8_t));
-            if (!pu8Buffer)
+            pchBuffer = RTMemAlloc((n) * sizeof(char));
+            if (!pchBuffer)
             {
                 m_freem(pData, m);
                 return;
             }
             fWithTemporalBuffer = true;
         }
-        ret = recvfrom(so->s, pu8Buffer, n, 0,
+        ret = recvfrom(so->s, pchBuffer, n, 0,
                        (struct sockaddr *)&addr, &addrlen);
         if (fWithTemporalBuffer)
         {
             if (ret > 0)
             {
-                m_copyback(pData, m, 0, ret, pu8Buffer);
+                m_copyback(pData, m, 0, ret, pchBuffer);
                 /*
                  * If we've met comporison below our size prediction was failed
                  * it's not fatal just we've allocated for nothing. (@todo add counter here
@@ -796,7 +796,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                          n, ret, slirp_size(pData)));
             }
             /* we're freeing buffer anyway */
-            RTMemFree(pu8Buffer);
+            RTMemFree(pchBuffer);
         }
         else
             m->m_len = ret;
