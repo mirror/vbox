@@ -207,64 +207,17 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         int mhlen, firstlen = len;
         struct mbuf **mnext = &m->m_nextpkt;
         char *buf; /* intermediate buffer we'll use for a copy of the original packet */
-        {
-            struct m_tag *t;
-            char *tmpbuf = NULL;
-            int tmplen = 0;
-            int rcLa;
-            HTONS(ip->ip_len);
-            HTONS(ip->ip_off);
-            ip->ip_sum = 0;
-            ip->ip_sum = cksum(m, hlen);
-            if (m->m_next != NULL)
-            {
-                /* we've received a packet in fragments */
-                tmplen = m_length(m, NULL);
-                tmpbuf = RTMemAlloc(tmplen);
-                Assert(tmpbuf);
-                m_copydata(m, 0, tmplen, tmpbuf);
-            }
-            else
-            {
-                tmpbuf = mtod(m, char *);
-                tmplen = m_length(m, NULL);
-            }
-
-            if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
-                rcLa = LibAliasOut((struct libalias *)&t[1], tmpbuf, tmplen);
-            else
-                rcLa = LibAliasOut(pData->proxy_alias, tmpbuf, tmplen);
-
-            if (m->m_next != NULL)
-            {
-                if (rcLa != PKT_ALIAS_IGNORED)
-                {
-                    struct ip *tmpip = (struct ip *)tmpbuf;
-                    m_copyback(pData, m, 0, RT_N2H_U16(tmpip->ip_len) + (tmpip->ip_hl << 2), tmpbuf);
-                }
-                if (tmpbuf != NULL)
-                    RTMemFree(tmpbuf);
-            }
-            if (rcLa == PKT_ALIAS_IGNORED)
-            {
-                Log(("NAT: packet was droppped\n"));
-                goto exit_drop_package;
-            }
-            NTOHS(ip->ip_len);
-            NTOHS(ip->ip_off);
-            Log2(("NAT: LibAlias return %d\n", rcLa));
-        }
-
         /*
          * Loop through length of segment after first fragment,
          * make new header and copy data of each part and link onto chain.
          */
         m0 = m;
-        mhlen = sizeof (struct ip);
+        mhlen = ip->ip_hl << 2;
+        Log(("NAT:ip:frag: mhlen = %d\n", mhlen));
         for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len)
         {
             register struct ip *mhip;
-            m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
+            m = m_getjcl(pData, M_NOWAIT, MT_HEADER , M_PKTHDR, slirp_size(pData));
             if (m == 0)
             {
                 error = -1;
@@ -274,7 +227,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
-            m->m_len += ip->ip_hl << 2;
             m->m_pkthdr.header = mtod(m, void *);
             /* we've calculated eth_dst for first packet */
 #if 0 /* No options */
@@ -284,7 +236,8 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
                 mhip->ip_hl = mhlen >> 2;
             }
 #endif
-            mhip->ip_off = ((off - hlen) >> 3) + (ip->ip_off & ~IP_MF);
+            m->m_len = mhlen;
+            mhip->ip_off = ((off - mhlen) >> 3) + (ip->ip_off & ~IP_MF);
             if (ip->ip_off & IP_MF)
                 mhip->ip_off |= IP_MF;
             if (off + len >= (u_int16_t)ip->ip_len)
@@ -294,15 +247,20 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             mhip->ip_len = RT_H2N_U16((u_int16_t)(len + mhlen));
 
             buf = RTMemAlloc(len);
+            Log(("NAT:ip:frag: alloc = %d\n", len));
             m_copydata(m0, off, len, buf); /* copy to buffer */
+            Log(("NAT:ip:frag: m_copydata(m0 = %p,off = %d, len = %d,)\n", m0, off, len));
+
             m->m_data += mhlen;
+            m->m_len -= mhlen;
             m_copyback(pData, m, 0, len, buf); /* copy from buffer */
+            Log(("NAT:ip:frag: m_copyback(m = %p,, len = %d,)\n", m, len));
             m->m_data -= mhlen;
             m->m_len += mhlen;
             RTMemFree(buf);
-            m->m_len += RT_N2H_U16(mhip->ip_len);
+            Assert((m->m_len == (mhlen + len)));
 
-            mhip->ip_off = RT_H2N_U16((u_int16_t)mhip->ip_off);
+            mhip->ip_off = RT_H2N_U16((u_int16_t)(mhip->ip_off));
             mhip->ip_sum = 0;
             mhip->ip_sum = cksum(m, mhlen);
             *mnext = m;
@@ -312,19 +270,39 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         /*
          * Update first fragment by trimming what's been copied out
          * and updating header, then send each fragment (in order).
+         *
+         * note: m_adj do all required releases for chained mbufs.
          */
         m = m0;
-        m_adj(m, hlen + firstlen - (u_int16_t)ip->ip_len);
-        ip->ip_len = RT_H2N_U16((u_int16_t)m->m_len);
+        m_adj(m, mhlen + firstlen - (u_int16_t)ip->ip_len);
+        Log(("NAT:ip:frag: m_adj(m(m_len:%d) = %p, len = %d)\n", m->m_len, m, mhlen + firstlen - (u_int16_t)ip->ip_len));
+        ip->ip_len = RT_H2N_U16((u_int16_t)mhlen + firstlen);
         ip->ip_off = RT_H2N_U16((u_int16_t)(ip->ip_off | IP_MF));
         ip->ip_sum = 0;
-        ip->ip_sum = cksum(m, hlen);
+        ip->ip_sum = cksum(m, mhlen);
 
 send_or_free:
         for (m = m0; m; m = m0)
         {
             m0 = m->m_nextpkt;
             m->m_nextpkt = 0;
+            {
+                /* We're aliasing all fragments */
+                struct m_tag *t;
+                int rcLa;
+
+                if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
+                    rcLa = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m->m_len);
+                else
+                    rcLa = LibAliasOut(pData->proxy_alias, mtod(m, char *), m->m_len);
+
+                if (rcLa == PKT_ALIAS_IGNORED)
+                {
+                    Log(("NAT: packet was droppped\n"));
+                    goto exit_drop_package;
+                }
+                Log2(("NAT: LibAlias return %d\n", rcLa));
+            }
             if (error == 0)
             {
                 m->m_data -= ETH_HLEN;
@@ -332,6 +310,7 @@ send_or_free:
                 m->m_data += ETH_HLEN;
                 memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
+                Log(("NAT:ip:frag: if_encap(,,m(m_len = %d) = %p,0)\n", m->m_len, m));
                 if_encap(pData, ETH_P_IP, m, 0);
             }
             else
