@@ -459,5 +459,20 @@ int dns_alias_load(PNATState);
 int dns_alias_unload(PNATState);
 int slirp_arp_lookup_ip_by_ether(PNATState, const uint8_t *, uint32_t *);
 int slirp_arp_lookup_ether_by_ip(PNATState, uint32_t, uint8_t *);
+
+static inline size_t slirp_size(PNATState pData)
+{
+        if (if_mtu < MSIZE)
+            return MCLBYTES;
+        else if (if_mtu < MCLBYTES)
+            return MCLBYTES;
+        else if (if_mtu < MJUM9BYTES)
+            return MJUM9BYTES;
+        else if (if_mtu < MJUM16BYTES)
+            return MJUM16BYTES;
+        else
+            AssertMsgFailed(("Unsupported size"));
+        return 0;
+}
 #endif
 
