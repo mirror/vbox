@@ -26,6 +26,7 @@
 #   define DDCLOG(a) do {} while (0)
 #endif /* !DEBUG_DISPLAY_CHANGE */
 
+extern void hlpReloadCursor(void);
 extern void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary, unsigned uResized, int iNewWidth, int iNewHeight);
 extern int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, const char *pszTitle, UINT uTimeout, DWORD dwInfoFlags);
 

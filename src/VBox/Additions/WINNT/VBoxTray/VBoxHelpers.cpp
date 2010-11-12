@@ -25,6 +25,37 @@
 #include "VBoxHelpers.h"
 #include "resource.h"
 
+
+
+/**
+ * Attempt to force Windows to reload the cursor image by attaching to the
+ * thread of the window currently under the mouse, hiding the cursor and
+ * showing it again.  This could fail to work in any number of ways (no
+ * window under the cursor, the cursor has moved to a different window while
+ * we are processing), but we just accept this, as the cursor will be reloaded
+ * at some point anyway.
+ */
+void hlpReloadCursor(void)
+{
+    POINT mousePos;
+    HWND hWin;
+    DWORD hThread, hCurrentThread;
+
+    GetCursorPos(&mousePos);
+    hWin = WindowFromPoint(mousePos);
+    if (hWin)
+    {
+        hThread = GetWindowThreadProcessId(hWin, NULL);
+        hCurrentThread = GetCurrentThreadId();
+        if (hCurrentThread != hThread)
+            AttachThreadInput(hCurrentThread, hThread, TRUE);
+    }
+    ShowCursor(false);
+    ShowCursor(true);
+    if (hWin && (hCurrentThread != hThread))
+        AttachThreadInput(hCurrentThread, hThread, FALSE);
+}
+
 static unsigned hlpNextAdjacentRectXP(RECTL *paRects, unsigned nRects, unsigned uRect)
 {
     unsigned i;
@@ -207,45 +238,67 @@ int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID,
                       UINT uTimeout, DWORD dwInfoFlags)
 {
     NOTIFYICONDATA niData;
+    ZeroMemory(&niData, sizeof(NOTIFYICONDATA));
     niData.cbSize = sizeof(NOTIFYICONDATA);
-    niData.uFlags = NIF_INFO;
+    niData.uFlags = NIF_INFO; /* Display a balloon notification. */
     niData.hWnd = hWnd;
     niData.uID = uID;
+    /* If not timeout set, set it to 5sec. */
+    if (uTimeout == 0)
+        uTimeout = 5000;
     niData.uTimeout = uTimeout;
+    /* If no info flag (info, warning, error) set,
+     * set it to info by default. */
     if (dwInfoFlags == 0)
         dwInfoFlags = NIIF_INFO;
     niData.dwInfoFlags = dwInfoFlags;
 
-    OSVERSIONINFO   info;
-    DWORD           dwMajorVersion = 5; /* default XP */
+    /* Do we want to have */
 
-    info.dwOSVersionInfoSize = sizeof(info);
-    if (FALSE == GetVersionEx(&info))
-        return FALSE;
+    /* Get running OS version. */
+    OSVERSIONINFO osInfo;
+    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    if (FALSE == GetVersionEx(&osInfo))
+        return RTErrConvertFromWin32(GetLastError());
 
-    if (info.dwMajorVersion >= 5)
+    /* Is the current OS supported (at least WinXP) for displaying
+     * our own icon and do we actually *want* to display our own stuff? */
+    if (   osInfo.dwMajorVersion >= 5
+        && (dwInfoFlags & NIIF_INFO))
     {
-        niData.uFlags |= NIF_ICON;
-        if (   info.dwMajorVersion == 5
-            && info.dwMinorVersion == 1) /* WinXP */
+        /* Load (or retrieve handle of) the app's icon. */
+        HICON hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_VIRTUALBOX));
+        if (hIcon)
+            niData.dwInfoFlags = NIIF_USER; /* Use an own notification icon. */
+
+        if (   osInfo.dwMajorVersion == 5
+            && osInfo.dwMinorVersion == 1) /* WinXP. */
         {
-            //niData.dwInfoFlags = NIIF_USER; /* Use an own icon instead of the default one */
-            niData.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_VIRTUALBOX));
+            /* Use an own icon instead of the default one. */
+            niData.hIcon = hIcon;
         }
-#ifdef BALLOON_WITH_VISTA_TOOLTIP_ICON
-        else if (info.dwMajorVersion == 6) /* Vista and up */
+        else if (osInfo.dwMajorVersion == 6) /* Vista and up. */
         {
-            niData.dwInfoFlags = NIIF_USER | NIIF_LARGE_ICON; /* Use an own icon instead of the default one */
-            niData.hBalloonIcon = LoadIcon(hInst, MAKEINTRESOURCE(IDI_VIRTUALBOX));
+            /* Use an own icon instead of the default one. */
+            niData.dwInfoFlags |= NIIF_LARGE_ICON; /* Use a  large icon if available! */
+            niData.hIcon        = hIcon;
+            niData.hBalloonIcon = hIcon;
         }
-#endif
+    }
+    else
+    {
+        /* This might be a warning, error message or a to old OS. Use the
+         * standard icons provided by Windows (if any). */
     }
 
-    strcpy(niData.szInfo, pszMsg ? pszMsg : "");
-    strcpy(niData.szInfoTitle, pszTitle ? pszTitle : "");
+    strcpy(niData.szInfo, pszMsg ? pszMsg : "-");
+    strcpy(niData.szInfoTitle, pszTitle ? pszTitle : "Information");
 
     if (!Shell_NotifyIcon(NIM_MODIFY, &niData))
-        return GetLastError();
-    return 0;
+    {
+        DWORD dwErr = GetLastError();
+        return RTErrConvertFromWin32(dwErr);
+    }
+    return VINF_SUCCESS;
 }
 

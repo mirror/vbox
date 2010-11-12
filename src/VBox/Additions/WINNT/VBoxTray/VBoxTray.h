@@ -43,7 +43,6 @@
  * General VBoxTray messages.
  */
 #define WM_VBOXTRAY_TRAY_ICON                   WM_APP + 40
-#define WM_VBOXTRAY_TRAY_DISPLAY_BALLOON        WM_APP + 41
 /**
  * VM/VMMDev related messsages.
  */
@@ -52,14 +51,10 @@
  * VRDP messages.
  */
 #define WM_VBOXTRAY_VRDP_CHECK                  WM_APP + 301
-/**
- * Misc. utility functions.
- */
-#define WM_VBOXTRAY_CHECK_HOSTVERSION           WM_APP + 1000
 
 
 /* The tray icon's ID. */
-#define ID_TRAYICON                     2000
+#define ID_TRAYICON                             2000
 
 
 /*
@@ -86,17 +81,28 @@ typedef struct _VBOXSERVICEINFO
     void     (* pfnDestroy)          (const VBOXSERVICEENV *pEnv, void *pInstance);
 
     /* Variables. */
-    HANDLE hThread;
-    void  *pInstance;
-    bool   fStarted;
-
+    HANDLE   hThread;
+    void    *pInstance;
+    bool     fStarted;
 } VBOXSERVICEINFO;
 
+/* Globally unique (system wide) message registration. */
+typedef struct _VBOXGLOBALMESSAGE
+{
+    /** Message name. */
+    char    *pszName;
+    /** Function pointer for handling the message. */
+    int      (* pfnHandler)          (LPARAM lParam, WPARAM wParam);
+
+    /* Variables. */
+
+    /** Message ID;
+     *  to be filled in when registering the actual message. */
+    UINT     uMsgID;
+} VBOXGLOBALMESSAGE, *PVBOXGLOBALMESSAGE;
 
 extern HWND         gToolWindow;
 extern HINSTANCE    gInstance;
-
-extern void VBoxServiceReloadCursor(void);
 
 #endif /* !___VBOXTRAY_H */
 

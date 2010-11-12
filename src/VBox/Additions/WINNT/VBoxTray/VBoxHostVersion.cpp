@@ -48,9 +48,11 @@ int VBoxCheckHostVersion()
                 _snprintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
                 _snprintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
                                                 "We recommend updating to the latest version (%s) by choosing the "
-                                                "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
+                                                "install option from the Devices menu.", "1", "2");
 
-                rc = hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
+                rc = hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON,
+                                       szMsg, szTitle,
+                                       5000 /* Time to display in msec */, NIIF_INFO);
                 if (RT_FAILURE(rc))
                     Log(("VBoxTray: Guest Additions update found; however: could not show version notifier balloon tooltip! rc = %d\n", rc));
             }
