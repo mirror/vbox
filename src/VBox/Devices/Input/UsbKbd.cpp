@@ -62,7 +62,9 @@
 /** @name USB HID additional constants
  * @{ */
 /** The highest USB usage code reported by the VBox emulated keyboard */
-#define VBOX_USB_MAX_USAGE_KBD      231
+#define VBOX_USB_MAX_USAGE_CODE     0xE7
+/** The size of an array needed to store all USB usage codes */
+#define VBOX_USB_USAGE_ARRAY_SIZE   (VBOX_USB_MAX_USAGE_CODE + 1)
 #define USBHID_USAGE_ROLL_OVER      1
 /** @} */
 
@@ -173,9 +175,9 @@ typedef struct USBHID
     bool                fHasPendingChanges;
     /** Keypresses which have not yet been reported.  A workaround for the
      * problem of keys being released before the keypress could be reported. */
-    uint8_t             abUnreportedKeys[VBOX_USB_MAX_USAGE_KBD];
+    uint8_t             abUnreportedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
     /** Currently depressed keys */
-    uint8_t             abDepressedKeys[VBOX_USB_MAX_USAGE_KBD];
+    uint8_t             abDepressedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
 
     /**
      * Keyboard port - LUN#0.
@@ -704,7 +706,7 @@ static int usbHidFillReport(PUSBHIDK_REPORT pReport,
     int rc = false;
     unsigned iBuf = 0;
     RT_ZERO(*pReport);
-    for (unsigned iKey = 0; iKey < VBOX_USB_MAX_USAGE_KBD; ++iKey)
+    for (unsigned iKey = 0; iKey < VBOX_USB_USAGE_ARRAY_SIZE; ++iKey)
     {
         AssertReturn(iBuf <= RT_ELEMENTS(pReport->aKeys),
                      VERR_INTERNAL_ERROR);
@@ -804,8 +806,8 @@ static const uint8_t testUsbHidFillReportData[][4][10] = {
 class testUsbHidFillReport
 {
     USBHIDK_REPORT mReport;
-    uint8_t mabUnreportedKeys[VBOX_USB_MAX_USAGE_KBD];
-    uint8_t mabDepressedKeys[VBOX_USB_MAX_USAGE_KBD];
+    uint8_t mabUnreportedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
+    uint8_t mabDepressedKeys[VBOX_USB_USAGE_ARRAY_SIZE];
     const uint8_t (*mTests)[4][10];
 
     void doTest(unsigned cTest, const uint8_t *paiUnreportedKeys,
@@ -899,7 +901,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
         /* The usage code is valid. */
         fKeyDown = !(u32Usage & 0x80000000);
         u8HidCode = u32Usage & 0xFF;
-        AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_KBD, VERR_INTERNAL_ERROR);
+        AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
 
         LogRelFlowFunc(("key %s: 0x%x->0x%x\n",
                         fKeyDown ? "down" : "up", u8KeyCode, u8HidCode));
