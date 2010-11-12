@@ -70,22 +70,34 @@
 
 
 /** Asserts that the VFS base object vtable is valid. */
-#define RTVFSOBJ_ASSERT_OPS(pObj, enmTypeArg) \
+#define RTVFSOBJ_ASSERT_OPS(a_pObjOps, a_enmType) \
     do \
     { \
-        Assert((pObj)->uVersion == RTVFSOBJOPS_VERSION); \
-        Assert((pObj)->enmType == (enmTypeArg) || (enmTypeArg) == RTVFSOBJTYPE_INVALID); \
-        AssertPtr((pObj)->pszName); \
-        Assert(*(pObj)->pszName); \
-        AssertPtr((pObj)->pfnClose); \
-        AssertPtr((pObj)->pfnQueryInfo); \
-        Assert((pObj)->uEndMarker == RTVFSOBJOPS_VERSION); \
+        Assert((a_pObjOps)->uVersion == RTVFSOBJOPS_VERSION); \
+        Assert((a_pObjOps)->enmType == (a_enmType) || (a_enmType) == RTVFSOBJTYPE_INVALID); \
+        AssertPtr((a_pObjOps)->pszName); \
+        Assert(*(a_pObjOps)->pszName); \
+        AssertPtr((a_pObjOps)->pfnClose); \
+        AssertPtr((a_pObjOps)->pfnQueryInfo); \
+        Assert((a_pObjOps)->uEndMarker == RTVFSOBJOPS_VERSION); \
+    } while (0)
+
+/** Asserts that the VFS set object vtable is valid. */
+#define RTVFSOBJSET_ASSERT_OPS(a_pSetOps, a_offObjOps) \
+    do \
+    { \
+        Assert((a_pSetOps)->uVersion == RTVFSOBJSETOPS_VERSION); \
+        Assert((a_pSetOps)->offObjOps == (a_offObjOps)); \
+        AssertPtr((a_pSetOps)->pfnSetMode); \
+        AssertPtr((a_pSetOps)->pfnSetTimes); \
+        AssertPtr((a_pSetOps)->pfnSetOwner); \
+        Assert((a_pSetOps)->uEndMarker == RTVFSOBJSETOPS_VERSION); \
     } while (0)
 
 /** Asserts that the VFS I/O stream vtable is valid. */
-#define RTVFSIOSTREAM_ASSERT_OPS(pIoStreamOps, enmTypeArg) \
+#define RTVFSIOSTREAM_ASSERT_OPS(pIoStreamOps, a_enmType) \
     do { \
-        RTVFSOBJ_ASSERT_OPS(&(pIoStreamOps)->Obj, enmTypeArg); \
+        RTVFSOBJ_ASSERT_OPS(&(pIoStreamOps)->Obj, a_enmType); \
         Assert((pIoStreamOps)->uVersion == RTVFSIOSTREAMOPS_VERSION); \
         Assert(!(pIoStreamOps)->fReserved); \
         AssertPtr((pIoStreamOps)->pfnRead); \
@@ -98,12 +110,57 @@
         Assert((pIoStreamOps)->uEndMarker == RTVFSIOSTREAMOPS_VERSION); \
     } while (0)
 
+/** Asserts that the VFS symlink vtable is valid. */
+#define RTVFSSYMLINK_ASSERT_OPS(pSymlinkOps, a_enmType) \
+    do { \
+        RTVFSOBJ_ASSERT_OPS(&(pSymlinkOps)->Obj, a_enmType); \
+        RTVFSOBJSET_ASSERT_OPS(&(pSymlinkOps)->ObjSet, \
+            RT_OFFSETOF(RTVFSSYMLINKOPS, Obj) - RT_OFFSETOF(RTVFSSYMLINKOPS, ObjSet)); \
+        Assert((pSymlinkOps)->uVersion == RTVFSSYMLINKOPS_VERSION); \
+        Assert(!(pSymlinkOps)->fReserved); \
+        AssertPtr((pSymlinkOps)->pfnRead); \
+        Assert((pSymlinkOps)->uEndMarker == RTVFSSYMLINKOPS_VERSION); \
+    } while (0)
+
+
+/** Validates a VFS handle and returns @a rcRet if it's invalid. */
+#define RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, rcRet) \
+    do { \
+        if ((hVfs) != NIL_RTVFS) \
+        { \
+            AssertPtrReturn((hVfs), (rcRet)); \
+            AssertReturn((hVfs)->uMagic == RTVFS_MAGIC, (rcRet)); \
+        } \
+    } while (0)
 
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /** @todo Move all this stuff to internal/vfs.h */
+
+
+/**
+ * The VFS internal lock data.
+ */
+typedef struct RTVFSLOCKINTERNAL
+{
+    /** The number of references to the this lock. */
+    uint32_t volatile       cRefs;
+    /** The lock type. */
+    RTVFSLOCKTYPE           enmType;
+    /** Type specific data. */
+    union
+    {
+        /** Read/Write semaphore handle. */
+        RTSEMRW             hSemRW;
+        /** Fast mutex semaphore handle. */
+        RTSEMFASTMUTEX      hFastMtx;
+        /** Regular mutex semaphore handle. */
+        RTSEMMUTEX          hMtx;
+    } u;
+} RTVFSLOCKINTERNAL;
+
 
 /**
  * The VFS base object handle data.
@@ -121,9 +178,9 @@ typedef struct RTVFSOBJINTERNAL
     void                   *pvThis;
     /** The vtable. */
     PCRTVFSOBJOPS           pOps;
-    /** Read-write semaphore protecting all access to the VFS
-     * Only valid RTVFS_C_THREAD_SAFE is set, otherwise it is NIL_RTSEMRW. */
-    RTSEMRW                 hSemRW;
+    /** The lock protecting all access to the VFS.
+     * Only valid RTVFS_C_THREAD_SAFE is set, otherwise it is NIL_RTVFSLOCK. */
+    RTVFSLOCK               hLock;
     /** Reference back to the VFS containing this object. */
     RTVFS                   hVfs;
 } RTVFSOBJINTERNAL;
@@ -278,6 +335,295 @@ typedef struct RTVFSSOCKETINTERNAL
 #endif /* later */
 
 
+
+/*
+ *
+ *  V F S   L o c k   A b s t r a c t i o n
+ *  V F S   L o c k   A b s t r a c t i o n
+ *  V F S   L o c k   A b s t r a c t i o n
+ *
+ *
+ */
+
+
+RTDECL(uint32_t) RTVfsLockRetain(RTVFSLOCK hLock)
+{
+    RTVFSLOCKINTERNAL *pThis = hLock;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertPtrReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p %d\n", cRefs, pThis, pThis->enmType));
+    return cRefs;
+}
+
+
+/**
+ * Destroys a VFS lock handle.
+ *
+ * @param   pThis               The lock to destroy.
+ */
+static void rtVfsLockDestroy(RTVFSLOCKINTERNAL *pThis)
+{
+    switch (pThis->enmType)
+    {
+        case RTVFSLOCKTYPE_RW:
+            RTSemRWDestroy(pThis->u.hSemRW);
+            pThis->u.hSemRW = NIL_RTSEMRW;
+            break;
+
+        case RTVFSLOCKTYPE_FASTMUTEX:
+            RTSemFastMutexDestroy(pThis->u.hFastMtx);
+            pThis->u.hFastMtx = NIL_RTSEMFASTMUTEX;
+            break;
+
+        case RTVFSLOCKTYPE_MUTEX:
+            RTSemMutexDestroy(pThis->u.hMtx);
+            pThis->u.hFastMtx = NIL_RTSEMMUTEX;
+            break;
+
+        default:
+            AssertMsgFailedReturnVoid(("%p %d\n", pThis, pThis->enmType));
+    }
+
+    pThis->enmType = RTVFSLOCKTYPE_INVALID;
+    RTMemFree(pThis);
+}
+
+
+RTDECL(uint32_t) RTVfsLockRelease(RTVFSLOCK hLock)
+{
+    RTVFSLOCKINTERNAL *pThis = hLock;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertPtrReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    AssertMsg(cRefs < _1M, ("%#x %p %d\n", cRefs, pThis, pThis->enmType));
+    if (cRefs == 0)
+        rtVfsLockDestroy(pThis);
+    return cRefs;
+}
+
+
+/**
+ * Creates a read/write lock.
+ *
+ * @returns IPRT status code
+ * @param   phLock              Where to return the lock handle.
+ */
+static int rtVfsLockCreateRW(PRTVFSLOCK phLock)
+{
+    RTVFSLOCKINTERNAL *pThis = (RTVFSLOCKINTERNAL *)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->cRefs    = 1;
+    pThis->enmType  = RTVFSLOCKTYPE_RW;
+
+    int rc = RTSemRWCreate(&pThis->u.hSemRW);
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    *phLock = pThis;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Creates a fast mutex lock.
+ *
+ * @returns IPRT status code
+ * @param   phLock              Where to return the lock handle.
+ */
+static int rtVfsLockCreateFastMutex(PRTVFSLOCK phLock)
+{
+    RTVFSLOCKINTERNAL *pThis = (RTVFSLOCKINTERNAL *)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->cRefs    = 1;
+    pThis->enmType  = RTVFSLOCKTYPE_FASTMUTEX;
+
+    int rc = RTSemFastMutexCreate(&pThis->u.hFastMtx);
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    *phLock = pThis;
+    return VINF_SUCCESS;
+
+}
+
+
+/**
+ * Creates a mutex lock.
+ *
+ * @returns IPRT status code
+ * @param   phLock              Where to return the lock handle.
+ */
+static int rtVfsLockCreateMutex(PRTVFSLOCK phLock)
+{
+    RTVFSLOCKINTERNAL *pThis = (RTVFSLOCKINTERNAL *)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->cRefs    = 1;
+    pThis->enmType  = RTVFSLOCKTYPE_MUTEX;
+
+    int rc = RTSemMutexCreate(&pThis->u.hMtx);
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    *phLock = pThis;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Acquires the lock for reading.
+ *
+ * @param   hLock               Non-nil lock handle.
+ * @internal
+ */
+RTDECL(void) RTVfsLockAcquireReadSlow(RTVFSLOCK hLock)
+{
+    RTVFSLOCKINTERNAL *pThis = hLock;
+    int                rc;
+
+    AssertPtr(pThis);
+    switch (pThis->enmType)
+    {
+        case RTVFSLOCKTYPE_RW:
+            rc = RTSemRWRequestRead(pThis->u.hSemRW, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_FASTMUTEX:
+            rc = RTSemFastMutexRequest(pThis->u.hFastMtx);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_MUTEX:
+            rc = RTSemMutexRequest(pThis->u.hMtx, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+            break;
+        default:
+            AssertFailed();
+    }
+}
+
+
+/**
+ * Release a lock held for reading.
+ *
+ * @param   hLock               Non-nil lock handle.
+ * @internal
+ */
+RTDECL(void) RTVfsLockReleaseReadSlow(RTVFSLOCK hLock)
+{
+    RTVFSLOCKINTERNAL *pThis = hLock;
+    int                rc;
+
+    AssertPtr(pThis);
+    switch (pThis->enmType)
+    {
+        case RTVFSLOCKTYPE_RW:
+            rc = RTSemRWReleaseRead(pThis->u.hSemRW);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_FASTMUTEX:
+            rc = RTSemFastMutexRelease(pThis->u.hFastMtx);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_MUTEX:
+            rc = RTSemMutexRelease(pThis->u.hMtx);
+            AssertRC(rc);
+            break;
+        default:
+            AssertFailed();
+    }
+}
+
+
+/**
+ * Acquires the lock for writing.
+ *
+ * @param   hLock               Non-nil lock handle.
+ * @internal
+ */
+RTDECL(void) RTVfsLockAcquireWriteSlow(RTVFSLOCK hLock)
+{
+    RTVFSLOCKINTERNAL *pThis = hLock;
+    int                rc;
+
+    AssertPtr(pThis);
+    switch (pThis->enmType)
+    {
+        case RTVFSLOCKTYPE_RW:
+            rc = RTSemRWRequestWrite(pThis->u.hSemRW, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_FASTMUTEX:
+            rc = RTSemFastMutexRequest(pThis->u.hFastMtx);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_MUTEX:
+            rc = RTSemMutexRequest(pThis->u.hMtx, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+            break;
+        default:
+            AssertFailed();
+    }
+}
+
+
+/**
+ * Release a lock held for writing.
+ *
+ * @param   hLock               Non-nil lock handle.
+ * @internal
+ */
+RTDECL(void) RTVfsLockReleaseWriteSlow(RTVFSLOCK hLock)
+{
+    RTVFSLOCKINTERNAL *pThis = hLock;
+    int                rc;
+
+    AssertPtr(pThis);
+    switch (pThis->enmType)
+    {
+        case RTVFSLOCKTYPE_RW:
+            rc = RTSemRWReleaseWrite(pThis->u.hSemRW);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_FASTMUTEX:
+            rc = RTSemFastMutexRelease(pThis->u.hFastMtx);
+            AssertRC(rc);
+            break;
+
+        case RTVFSLOCKTYPE_MUTEX:
+            rc = RTSemMutexRelease(pThis->u.hMtx);
+            AssertRC(rc);
+            break;
+        default:
+            AssertFailed();
+    }
+}
+
+
+
 /*
  *
  *  B A S E   O B J E C T
@@ -287,17 +633,139 @@ typedef struct RTVFSSOCKETINTERNAL
  */
 
 /**
+ * Internal object retainer that asserts sanity in strict builds.
+ *
+ * @param   pThis               The base object handle data.
+ */
+DECLINLINE(void) rtVfsObjRetainVoid(RTVFSOBJINTERNAL *pThis)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M,
+              ("%#x %p ops=%p %s (%d)\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType));
+    NOREF(cRefs);
+}
+
+
+/**
+ * Initializes the base object part of a new object.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Pointer to the base object part.
+ * @param   pObjOps             The base object vtable.
+ * @param   hVfs                The VFS handle to associate with.
+ * @param   hLock               The lock handle, pseudo handle or nil.
+ * @param   pvThis              Pointer to the private data.
+ */
+static int rtVfsObjInitNewObject(RTVFSOBJINTERNAL *pThis, PCRTVFSOBJOPS pObjOps, RTVFS hVfs, RTVFSLOCK hLock, void *pvThis)
+{
+    /*
+     * Deal with the lock first as that's the most complicated matter.
+     */
+    if (hLock != NIL_RTVFSLOCK)
+    {
+        int rc;
+        if (hLock == RTVFSLOCK_CREATE_RW)
+        {
+            rc = rtVfsLockCreateRW(&hLock);
+            AssertRCReturn(rc, rc);
+        }
+        else if (hLock == RTVFSLOCK_CREATE_FASTMUTEX)
+        {
+            rc = rtVfsLockCreateFastMutex(&hLock);
+            AssertRCReturn(rc, rc);
+        }
+        else if (hLock == RTVFSLOCK_CREATE_MUTEX)
+        {
+            rc = rtVfsLockCreateMutex(&hLock);
+            AssertRCReturn(rc, rc);
+        }
+        else
+        {
+            /*
+             * The caller specified a lock, we consume the this reference.
+             */
+            AssertPtrReturn(hLock, VERR_INVALID_HANDLE);
+            AssertPtrReturn(hLock->enmType > RTVFSLOCKTYPE_INVALID && hLock->enmType < RTVFSLOCKTYPE_END, VERR_INVALID_HANDLE);
+            AssertPtrReturn(hLock->cRefs > 0, VERR_INVALID_HANDLE);
+        }
+    }
+    else if (hVfs != NIL_RTVFS)
+    {
+        /*
+         * Retain a reference to the VFS lock, if there is one.
+         */
+        hLock = hVfs->Base.hLock;
+        if (hLock != NIL_RTVFSLOCK)
+        {
+            uint32_t cRefs = RTVfsLockRetain(hLock);
+            if (RT_UNLIKELY(cRefs == UINT32_MAX))
+                return VERR_INVALID_HANDLE;
+        }
+    }
+
+
+    /*
+     * Do the actual initializing.
+     */
+    pThis->uMagic  = RTVFSOBJ_MAGIC;
+    pThis->pvThis  = pvThis;
+    pThis->pOps    = pObjOps;
+    pThis->cRefs   = 1;
+    pThis->hVfs    = hVfs;
+    pThis->hLock   = hLock;
+    if (hVfs != NIL_RTVFS)
+        rtVfsObjRetainVoid(&hVfs->Base);
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTVfsNewBaseObj(PCRTVFSOBJOPS pObjOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
+                            PRTVFSOBJ phVfsObj, void **ppvInstance)
+{
+    /*
+     * Validate the input, be extra strict in strict builds.
+     */
+    AssertPtr(pObjOps);
+    AssertReturn(pObjOps->uVersion   == RTVFSOBJOPS_VERSION, VERR_VERSION_MISMATCH);
+    AssertReturn(pObjOps->uEndMarker == RTVFSOBJOPS_VERSION, VERR_VERSION_MISMATCH);
+    RTVFSOBJ_ASSERT_OPS(pObjOps, RTVFSOBJTYPE_BASE);
+    Assert(cbInstance > 0);
+    AssertPtr(ppvInstance);
+    AssertPtr(phVfsObj);
+    RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);
+
+    /*
+     * Allocate the handle + instance data.
+     */
+    size_t const cbThis = RT_ALIGN_Z(sizeof(RTVFSOBJINTERNAL), RTVFS_INST_ALIGNMENT)
+                        + RT_ALIGN_Z(cbInstance, RTVFS_INST_ALIGNMENT);
+    RTVFSOBJINTERNAL *pThis = (RTVFSOBJINTERNAL *)RTMemAllocZ(cbThis);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    int rc = rtVfsObjInitNewObject(pThis, pObjOps, hVfs, hLock,
+                                   (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    *phVfsObj    = pThis;
+    *ppvInstance = pThis->pvThis;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Write locks the object.
  *
  * @param   pThis               The object to lock.
  */
 DECLINLINE(void) rtVfsObjWriteLock(RTVFSOBJINTERNAL *pThis)
 {
-    if (pThis->hSemRW != NIL_RTSEMRW)
-    {
-        int rc = RTSemRWRequestWrite(pThis->hSemRW, RT_INDEFINITE_WAIT);
-        AssertRC(rc);
-    }
+    RTVfsLockAcquireWrite(pThis->hLock);
 }
 
 
@@ -308,11 +776,7 @@ DECLINLINE(void) rtVfsObjWriteLock(RTVFSOBJINTERNAL *pThis)
  */
 DECLINLINE(void) rtVfsObjWriteUnlock(RTVFSOBJINTERNAL *pThis)
 {
-    if (pThis->hSemRW != NIL_RTSEMRW)
-    {
-        int rc = RTSemRWReleaseWrite(pThis->hSemRW);
-        AssertRC(rc);
-    }
+    RTVfsLockReleaseWrite(pThis->hLock);
 }
 
 /**
@@ -322,11 +786,7 @@ DECLINLINE(void) rtVfsObjWriteUnlock(RTVFSOBJINTERNAL *pThis)
  */
 DECLINLINE(void) rtVfsObjReadLock(RTVFSOBJINTERNAL *pThis)
 {
-    if (pThis->hSemRW != NIL_RTSEMRW)
-    {
-        int rc = RTSemRWRequestRead(pThis->hSemRW, RT_INDEFINITE_WAIT);
-        AssertRC(rc);
-    }
+    RTVfsLockAcquireRead(pThis->hLock);
 }
 
 
@@ -337,11 +797,7 @@ DECLINLINE(void) rtVfsObjReadLock(RTVFSOBJINTERNAL *pThis)
  */
 DECLINLINE(void) rtVfsObjReadUnlock(RTVFSOBJINTERNAL *pThis)
 {
-    if (pThis->hSemRW != NIL_RTSEMRW)
-    {
-        int rc = RTSemRWReleaseRead(pThis->hSemRW);
-        AssertRC(rc);
-    }
+    RTVfsLockReleaseRead(pThis->hLock);
 }
 
 
@@ -358,20 +814,6 @@ DECLINLINE(uint32_t) rtVfsObjRetain(RTVFSOBJINTERNAL *pThis)
     AssertMsg(cRefs > 1 && cRefs < _1M,
               ("%#x %p ops=%p %s (%d)\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType));
     return cRefs;
-}
-
-
-/**
- * Internal object retainer that asserts sanity in strict builds.
- *
- * @param   pThis               The base object handle data.
- */
-DECLINLINE(void) rtVfsObjRetainVoid(RTVFSOBJINTERNAL *pThis)
-{
-    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
-    AssertMsg(cRefs > 1 && cRefs < _1M,
-              ("%#x %p ops=%p %s (%d)\n", cRefs, pThis, pThis->pOps, pThis->pOps->pszName, pThis->pOps->enmType));
-    NOREF(cRefs);
 }
 
 
@@ -1121,7 +1563,7 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
  */
 
 
-RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTSEMRW hSemRW,
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance)
 {
     /*
@@ -1136,14 +1578,7 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     Assert(cbInstance > 0);
     AssertPtr(ppvInstance);
     AssertPtr(phVfsFss);
-
-    RTVFSINTERNAL *pVfs = NULL;
-    if (hVfs != NIL_RTVFS)
-    {
-        pVfs = hVfs;
-        AssertPtrReturn(pVfs, VERR_INVALID_HANDLE);
-        AssertReturn(pVfs->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
-    }
+    RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);
 
     /*
      * Allocate the handle + instance data.
@@ -1154,20 +1589,21 @@ RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance,
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    pThis->uMagic       = RTVFSFSSTREAM_MAGIC;
-    pThis->fFlags       = RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE;
-    pThis->pOps         = pFsStreamOps;
-    pThis->Base.uMagic  = RTVFSOBJ_MAGIC;
-    pThis->Base.pvThis  = (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT);
-    pThis->Base.pOps    = &pFsStreamOps->Obj;
-    pThis->Base.hSemRW  = hSemRW != NIL_RTSEMRW ? hSemRW : pVfs ? pVfs->Base.hSemRW : NIL_RTSEMRW;
-    pThis->Base.hVfs    = hVfs;
-    pThis->Base.cRefs   = 1;
-    if (hVfs != NIL_RTVFS)
-        rtVfsObjRetainVoid(&pVfs->Base);
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pFsStreamOps->Obj, hVfs, hLock,
+                                   (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
 
-    *phVfsFss    = pThis;
-    *ppvInstance = pThis->Base.pvThis;
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    pThis->uMagic = RTVFSFSSTREAM_MAGIC;
+    pThis->fFlags = RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE;
+    pThis->pOps   = pFsStreamOps;
+
+    *phVfsFss     = pThis;
+    *ppvInstance  = pThis->Base.pvThis;
     return VINF_SUCCESS;
 }
 
@@ -1255,6 +1691,48 @@ RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir)
  *
  */
 
+RTDECL(int) RTVfsNewSymlink(PCRTVFSSYMLINKOPS pSymlinkOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
+                            PRTVFSSYMLINK phVfsSym, void **ppvInstance)
+{
+    /*
+     * Validate the input, be extra strict in strict builds.
+     */
+    AssertPtr(pSymlinkOps);
+    AssertReturn(pSymlinkOps->uVersion   == RTVFSSYMLINKOPS_VERSION, VERR_VERSION_MISMATCH);
+    AssertReturn(pSymlinkOps->uEndMarker == RTVFSSYMLINKOPS_VERSION, VERR_VERSION_MISMATCH);
+    Assert(!pSymlinkOps->fReserved);
+    RTVFSSYMLINK_ASSERT_OPS(pSymlinkOps, RTVFSOBJTYPE_SYMLINK);
+    Assert(cbInstance > 0);
+    AssertPtr(ppvInstance);
+    AssertPtr(phVfsSym);
+    RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);
+
+    /*
+     * Allocate the handle + instance data.
+     */
+    size_t const cbThis = RT_ALIGN_Z(sizeof(RTVFSSYMLINKINTERNAL), RTVFS_INST_ALIGNMENT)
+                        + RT_ALIGN_Z(cbInstance, RTVFS_INST_ALIGNMENT);
+    RTVFSSYMLINKINTERNAL *pThis = (RTVFSSYMLINKINTERNAL *)RTMemAllocZ(cbThis);
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pSymlinkOps->Obj, hVfs, hLock,
+                                   (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    pThis->uMagic = RTVFSSYMLINK_MAGIC;
+    pThis->pOps   = pSymlinkOps;
+
+    *phVfsSym     = pThis;
+    *ppvInstance  = pThis->Base.pvThis;
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(uint32_t)    RTVfsSymlinkRetain(RTVFSSYMLINK hVfsSym)
 {
     RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
@@ -1296,7 +1774,7 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
  *
  */
 
-RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTSEMRW hSemRW,
+RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTVFSLOCK hLock,
                              PRTVFSIOSTREAM phVfsIos, void **ppvInstance)
 {
     /*
@@ -1311,14 +1789,7 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
     Assert(fOpen & RTFILE_O_ACCESS_MASK);
     AssertPtr(ppvInstance);
     AssertPtr(phVfsIos);
-
-    RTVFSINTERNAL *pVfs = NULL;
-    if (hVfs != NIL_RTVFS)
-    {
-        pVfs = hVfs;
-        AssertPtrReturn(pVfs, VERR_INVALID_HANDLE);
-        AssertReturn(pVfs->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
-    }
+    RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);
 
     /*
      * Allocate the handle + instance data.
@@ -1329,20 +1800,20 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    pThis->uMagic       = RTVFSIOSTREAM_MAGIC;
-    pThis->fFlags       = fOpen;
-    pThis->pOps         = pIoStreamOps;
-    pThis->Base.uMagic  = RTVFSOBJ_MAGIC;
-    pThis->Base.pvThis  = (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT);
-    pThis->Base.pOps    = &pIoStreamOps->Obj;
-    pThis->Base.hSemRW  = hSemRW != NIL_RTSEMRW ? hSemRW : pVfs ? pVfs->Base.hSemRW : NIL_RTSEMRW;
-    pThis->Base.hVfs    = hVfs;
-    pThis->Base.cRefs   = 1;
-    if (hVfs != NIL_RTVFS)
-        rtVfsObjRetainVoid(&pVfs->Base);
+    int rc = rtVfsObjInitNewObject(&pThis->Base, &pIoStreamOps->Obj, hVfs, hLock,
+                                   (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
 
-    *phVfsIos    = pThis;
-    *ppvInstance = pThis->Base.pvThis;
+    pThis->uMagic = RTVFSIOSTREAM_MAGIC;
+    pThis->fFlags = fOpen;
+    pThis->pOps   = pIoStreamOps;
+
+    *phVfsIos     = pThis;
+    *ppvInstance  = pThis->Base.pvThis;
     return VINF_SUCCESS;
 }
 
@@ -1603,7 +2074,7 @@ RTDECL(int) RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
  *
  */
 
-RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs,
+RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTVFSLOCK hLock,
                          PRTVFSFILE phVfsFile, void **ppvInstance)
 {
     /*
@@ -1618,14 +2089,7 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
     Assert(fOpen & RTFILE_O_ACCESS_MASK);
     AssertPtr(ppvInstance);
     AssertPtr(phVfsFile);
-
-    RTVFSINTERNAL *pVfs = NULL;
-    if (hVfs != NIL_RTVFS)
-    {
-        pVfs = hVfs;
-        AssertPtrReturn(pVfs, VERR_INVALID_HANDLE);
-        AssertReturn(pVfs->uMagic == RTVFS_MAGIC, VERR_INVALID_HANDLE);
-    }
+    RTVFS_ASSERT_VALID_HANDLE_OR_NIL_RETURN(hVfs, VERR_INVALID_HANDLE);
 
     /*
      * Allocate the handle + instance data.
@@ -1636,19 +2100,20 @@ RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fO
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    pThis->uMagic               = RTVFSFILE_MAGIC;
-    pThis->fReserved            = 0;
-    pThis->pOps                 = pFileOps;
-    pThis->Stream.uMagic        = RTVFSIOSTREAM_MAGIC;
-    pThis->Stream.fFlags        = fOpen;
-    pThis->Stream.pOps          = &pFileOps->Stream;
-    pThis->Stream.Base.pvThis   = (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT);
-    pThis->Stream.Base.pOps     = &pFileOps->Stream.Obj;
-    pThis->Stream.Base.hSemRW   = pVfs ? pVfs->Base.hSemRW : NIL_RTSEMRW;
-    pThis->Stream.Base.hVfs     = hVfs;
-    pThis->Stream.Base.cRefs    = 1;
-    if (hVfs != NIL_RTVFS)
-        rtVfsObjRetainVoid(&pVfs->Base);
+    int rc = rtVfsObjInitNewObject(&pThis->Stream.Base, &pFileOps->Stream.Obj, hVfs, hLock,
+                                   (char *)pThis + RT_ALIGN_Z(sizeof(*pThis), RTVFS_INST_ALIGNMENT));
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pThis);
+        return rc;
+    }
+
+    pThis->uMagic        = RTVFSFILE_MAGIC;
+    pThis->fReserved     = 0;
+    pThis->pOps          = pFileOps;
+    pThis->Stream.uMagic = RTVFSIOSTREAM_MAGIC;
+    pThis->Stream.fFlags = fOpen;
+    pThis->Stream.pOps   = &pFileOps->Stream;
 
     *phVfsFile   = pThis;
     *ppvInstance = pThis->Stream.Base.pvThis;

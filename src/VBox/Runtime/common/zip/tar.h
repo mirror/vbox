@@ -92,7 +92,7 @@ typedef union RTZIPTARHDR
     /** Byte view. */
     char            ab[512];
     /** The standard header. */
-    RTZIPTARHDRPOSIX   Hdr;
+    RTZIPTARHDRPOSIX Posix;
 } RTZIPTARHDR;
 AssertCompileSize(RTZIPTARHDR, 512);
 /** Pointer to a tar file header. */

@@ -435,7 +435,7 @@ RTDECL(int) RTVfsFileFromRTFile(RTFILE hFile, uint32_t fOpen, bool fLeaveOpen, P
      */
     PRTVFSSTDFILE   pThis;
     RTVFSFILE       hVfsFile;
-    rc = RTVfsNewFile(&g_rtVfsStdFileOps, sizeof(RTVFSSTDFILE), fOpen, NIL_RTVFS, &hVfsFile, (void **)&pThis);
+    rc = RTVfsNewFile(&g_rtVfsStdFileOps, sizeof(RTVFSSTDFILE), fOpen, NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pThis);
     if (RT_FAILURE(rc))
         return rc;
 

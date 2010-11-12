@@ -39,6 +39,126 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+
+/** @name VFS Lock Abstraction
+ * @todo This should be moved somewhere else as it is of general use.
+ * @{ */
+
+/**
+ * VFS lock types.
+ */
+typedef enum RTVFSLOCKTYPE
+{
+    /** Invalid lock type. */
+    RTVFSLOCKTYPE_INVALID = 0,
+    /** Read write semaphore. */
+    RTVFSLOCKTYPE_RW,
+    /** Fast mutex semaphore (critical section in ring-3). */
+    RTVFSLOCKTYPE_FASTMUTEX,
+    /** Full fledged mutex semaphore. */
+    RTVFSLOCKTYPE_MUTEX,
+    /** The end of valid lock types. */
+    RTVFSLOCKTYPE_END,
+    /** The customary 32-bit type hack. */
+    RTVFSLOCKTYPE_32BIT_HACK = 0x7fffffff
+} RTVFSLOCKTYPE;
+
+/** VFS lock handle. */
+typedef struct RTVFSLOCKINTERNAL   *RTVFSLOCK;
+/** Pointer to a VFS lock handle. */
+typedef RTVFSLOCK                  *PRTVFSLOCK;
+/** Nil VFS lock handle. */
+#define NIL_RTVFSLOCK               ((RTVFSLOCK)~(uintptr_t)0)
+
+/** Special handle value for creating a new read/write semaphore based lock. */
+#define RTVFSLOCK_CREATE_RW         ((RTVFSLOCK)~(uintptr_t)1)
+/** Special handle value for creating a new fast mutex semaphore based lock. */
+#define RTVFSLOCK_CREATE_FASTMUTEX  ((RTVFSLOCK)~(uintptr_t)2)
+/** Special handle value for creating a new mutex semaphore based lock. */
+#define RTVFSLOCK_CREATE_MUTEX      ((RTVFSLOCK)~(uintptr_t)3)
+
+/**
+ * Retains a reference to the VFS lock handle.
+ *
+ * @returns New reference count on success, UINT32_MAX on failure.
+ * @param   hLock           The VFS lock handle.
+ */
+RTDECL(uint32_t) RTVfsLockRetain(RTVFSLOCK hLock);
+
+/**
+ * Releases a reference to the VFS lock handle.
+ *
+ * @returns New reference count on success (0 if closed), UINT32_MAX on failure.
+ * @param   hLock           The VFS lock handle.
+ */
+RTDECL(uint32_t) RTVfsLockRelease(RTVFSLOCK hLock);
+
+/**
+ * Gets the lock type.
+ *
+ * @returns The lock type on success, RTVFSLOCKTYPE_INVALID if the handle is
+ *          not valid.
+ * @param   hLock               The lock handle.
+ */
+RTDECL(RTVFSLOCKTYPE) RTVfsLockGetType(RTVFSLOCK hLock);
+
+
+
+RTDECL(void) RTVfsLockAcquireReadSlow(RTVFSLOCK hLock);
+RTDECL(void) RTVfsLockReleaseReadSlow(RTVFSLOCK hLock);
+RTDECL(void) RTVfsLockAcquireWriteSlow(RTVFSLOCK hLock);
+RTDECL(void) RTVfsLockReleaseWriteSlow(RTVFSLOCK hLock);
+/** @}  */
+
+/**
+ * Acquire a read lock.
+ *
+ * @param   hLock               The lock handle, can be NIL.
+ */
+DECLINLINE(void) RTVfsLockAcquireRead(RTVFSLOCK hLock)
+{
+    if (hLock != NIL_RTVFSLOCK)
+        RTVfsLockAcquireReadSlow(hLock);
+}
+
+
+/**
+ * Release a read lock.
+ *
+ * @param   hLock               The lock handle, can be NIL.
+ */
+DECLINLINE(void) RTVfsLockReleaseRead(RTVFSLOCK hLock)
+{
+    if (hLock != NIL_RTVFSLOCK)
+        RTVfsLockReleaseReadSlow(hLock);
+}
+
+
+/**
+ * Acquire a write lock.
+ *
+ * @param   hLock               The lock handle, can be NIL.
+ */
+DECLINLINE(void) RTVfsLockAcquireWrite(RTVFSLOCK hLock)
+{
+    if (hLock != NIL_RTVFSLOCK)
+        RTVfsLockAcquireWriteSlow(hLock);
+}
+
+
+/**
+ * Release a write lock.
+ *
+ * @param   hLock               The lock handle, can be NIL.
+ */
+DECLINLINE(void) RTVfsLockReleaseWrite(RTVFSLOCK hLock)
+{
+    if (hLock != NIL_RTVFSLOCK)
+        RTVfsLockReleaseWriteSlow(hLock);
+}
+
+/** @}  */
+
 /**
  * The VFS operations.
  */
@@ -140,6 +260,25 @@ typedef RTVFSOBJOPS const *PCRTVFSOBJOPS;
 
 /** The RTVFSOBJOPS structure version. */
 #define RTVFSOBJOPS_VERSION         RT_MAKE_U32_FROM_U8(0xff,0x1f,1,0)
+
+
+/**
+ * Creates a new VFS base object handle.
+ *
+ * @returns IPRT status code
+ * @param   pObjOps             The base object operations.
+ * @param   cbInstance          The size of the instance data.
+ * @param   hVfs                The VFS handle to associate this base object
+ *                              with.  NIL_VFS is ok.
+ * @param   hLock               Handle to a custom lock to be used with the new
+ *                              object.  The reference is consumed.  NIL and
+ *                              special lock handles are fine.
+ * @param   phVfsFss            Where to return the new handle.
+ * @param   ppvInstance         Where to return the pointer to the instance data
+ *                              (size is @a cbInstance).
+ */
+RTDECL(int) RTVfsNewBaseObj(PCRTVFSOBJOPS pObjOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
+                            PRTVFSOBJ phVfsObj, void **ppvInstance);
 
 
 /**
@@ -254,16 +393,15 @@ typedef RTVFSFSSTREAMOPS const *PCRTVFSFSSTREAMOPS;
  * @param   pFsStreamOps        The filesystem stream operations.
  * @param   cbInstance          The size of the instance data.
  * @param   hVfs                The VFS handle to associate this filesystem
- *                              steram with.  NIL_VFS is ok.
- * @param   hSemRW              The read-write semaphore to use to protect the
- *                              handle if this differs from the one the VFS
- *                              uses.  NIL_RTSEMRW is ok if no locking is
- *                              desired.
+ *                              stream with.  NIL_VFS is ok.
+ * @param   hLock               Handle to a custom lock to be used with the new
+ *                              object.  The reference is consumed.  NIL and
+ *                              special lock handles are fine.
  * @param   phVfsFss            Where to return the new handle.
  * @param   ppvInstance         Where to return the pointer to the instance data
  *                              (size is @a cbInstance).
  */
-RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTSEMRW hSemRW,
+RTDECL(int) RTVfsNewFsStream(PCRTVFSFSSTREAMOPS pFsStreamOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
                              PRTVFSFSSTREAM phVfsFss, void **ppvInstance);
 
 
@@ -452,6 +590,25 @@ typedef RTVFSSYMLINKOPS const *PCRTVFSSYMLINKOPS;
 
 
 /**
+ * Creates a new VFS symlink handle.
+ *
+ * @returns IPRT status code
+ * @param   pSymlinkOps         The symlink operations.
+ * @param   cbInstance          The size of the instance data.
+ * @param   hVfs                The VFS handle to associate this symlink object
+ *                              with.  NIL_VFS is ok.
+ * @param   hLock               Handle to a custom lock to be used with the new
+ *                              object.  The reference is consumed.  NIL and
+ *                              special lock handles are fine.
+ * @param   phVfsSym            Where to return the new handle.
+ * @param   ppvInstance         Where to return the pointer to the instance data
+ *                              (size is @a cbInstance).
+ */
+RTDECL(int) RTVfsNewSymlink(PCRTVFSSYMLINKOPS pSymlinkOps, size_t cbInstance, RTVFS hVfs, RTVFSLOCK hLock,
+                            PRTVFSSYMLINK phVfsSym, void **ppvInstance);
+
+
+/**
  * The basis for all I/O objects (files, pipes, sockets, devices, ++).
  *
  * @extends RTVFSOBJOPS
@@ -575,15 +732,14 @@ typedef RTVFSIOSTREAMOPS const *PCRTVFSIOSTREAMOPS;
  * @param   fOpen               The open flags.  The minimum is the access mask.
  * @param   hVfs                The VFS handle to associate this I/O stream
  *                              with.  NIL_VFS is ok.
- * @param   hSemRW              The read-write semaphore to use to protect the
- *                              handle if this differs from the one the VFS
- *                              uses.  NIL_RTSEMRW is ok if no locking is
- *                              desired.
+ * @param   hLock               Handle to a custom lock to be used with the new
+ *                              object.  The reference is consumed.  NIL and
+ *                              special lock handles are fine.
  * @param   phVfsIos            Where to return the new handle.
  * @param   ppvInstance         Where to return the pointer to the instance data
  *                              (size is @a cbInstance).
  */
-RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTSEMRW hSemRW,
+RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTVFSLOCK hLock,
                              PRTVFSIOSTREAM phVfsIos, void **ppvInstance);
 
 
@@ -646,11 +802,14 @@ typedef RTVFSFILEOPS const *PCRTVFSFILEOPS;
  * @param   fOpen               The open flags.  The minimum is the access mask.
  * @param   hVfs                The VFS handle to associate this file with.
  *                              NIL_VFS is ok.
+ * @param   hLock               Handle to a custom lock to be used with the new
+ *                              object.  The reference is consumed.  NIL and
+ *                              special lock handles are fine.
  * @param   phVfsFile           Where to return the new handle.
  * @param   ppvInstance         Where to return the pointer to the instance data
  *                              (size is @a cbInstance).
  */
-RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs,
+RTDECL(int) RTVfsNewFile(PCRTVFSFILEOPS pFileOps, size_t cbInstance, uint32_t fOpen, RTVFS hVfs, RTVFSLOCK hLock,
                          PRTVFSFILE phVfsFile, void **ppvInstance);
 
 

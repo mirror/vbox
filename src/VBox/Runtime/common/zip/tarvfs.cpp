@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/poll.h>
+#include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 #include <iprt/vfslowlevel.h>
@@ -110,15 +111,67 @@ typedef RTZIPTARFSSTREAM *PRTZIPTARFSSTREAM;
 
 
 
+/**
+ * Checks if the TAR header includes a posix user name field.
+ *
+ * @returns true / false.
+ * @param   pTar                The TAR header.
+ */
 DECLINLINE(bool) rtZipTarHdrHasPosixUserName(PCRTZIPTARHDR pTar)
 {
     return true;
 }
 
 
+/**
+ * Checks if the TAR header includes a posix group name field.
+ *
+ * @returns true / false.
+ * @param   pTar                The TAR header.
+ */
 DECLINLINE(bool) rtZipTarHdrHasPosixGroupName(PCRTZIPTARHDR pTar)
 {
     return true;
+}
+
+
+/**
+ * Checks if the TAR header includes a posix compatible path prefix field.
+ *
+ * @returns true / false.
+ * @param   pTar                The TAR header.
+ */
+DECLINLINE(bool) rtZipTarHdrHasPrefix(PCRTZIPTARHDR pTar)
+{
+    return true;
+}
+
+
+/**
+ * Validates the TAR header.
+ *
+ * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
+ * @param   pTar                The TAR header.
+ */
+static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
+{
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Translate a TAR header to an IPRT object info structure with additional UNIX
+ * attributes.
+ *
+ * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
+ * @param   pTar                The TAR header (input).
+ * @param   pObjInfo            The object info structure (output).
+ */
+static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
+{
+    RT_ZERO(*pObjInfo);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -167,7 +220,7 @@ static DECLCALLBACK(int) rtZipTarFssBaseObj_QueryInfo(void *pvThis, PRTFSOBJINFO
             pObjInfo->Attr.u.UnixOwner.uid       = pThis->ObjInfo.Attr.u.Unix.uid;
             pObjInfo->Attr.u.UnixOwner.szName[0] = '\0';
             if (rtZipTarHdrHasPosixUserName(&pThis->Hdr))
-                RTStrCopy(pObjInfo->Attr.u.UnixOwner.szName, sizeof(pObjInfo->Attr.u.UnixOwner.szName), pThis->Hdr.Hdr.uname);
+                RTStrCopy(pObjInfo->Attr.u.UnixOwner.szName, sizeof(pObjInfo->Attr.u.UnixOwner.szName), pThis->Hdr.Posix.uname);
             break;
 
         case RTFSOBJATTRADD_UNIX_GROUP:
@@ -176,7 +229,7 @@ static DECLCALLBACK(int) rtZipTarFssBaseObj_QueryInfo(void *pvThis, PRTFSOBJINFO
             pObjInfo->Attr.u.UnixGroup.gid       = pThis->ObjInfo.Attr.u.Unix.gid;
             pObjInfo->Attr.u.UnixGroup.szName[0] = '\0';
             if (rtZipTarHdrHasPosixGroupName(&pThis->Hdr))
-                RTStrCopy(pObjInfo->Attr.u.UnixGroup.szName, sizeof(pObjInfo->Attr.u.UnixGroup.szName), pThis->Hdr.Hdr.gname);
+                RTStrCopy(pObjInfo->Attr.u.UnixGroup.szName, sizeof(pObjInfo->Attr.u.UnixGroup.szName), pThis->Hdr.Posix.gname);
             break;
 
         case RTFSOBJATTRADD_EASIZE:
@@ -193,11 +246,10 @@ static DECLCALLBACK(int) rtZipTarFssBaseObj_QueryInfo(void *pvThis, PRTFSOBJINFO
 }
 
 
-
 /**
- * Tar filesystem stream operations.
+ * Tar filesystem base object operations.
  */
-static const RTVFSOBJOPS g_rtZipTarFsStrmOps =
+static const RTVFSOBJOPS g_rtZipTarFssBaseObjOps =
 {
     RTVFSOBJOPS_VERSION,
     RTVFSOBJTYPE_BASE,
@@ -368,7 +420,7 @@ static DECLCALLBACK(int) rtZipTarFssIos_Tell(void *pvThis, PRTFOFF poffActual)
 
 
 /**
- * Standard file operations.
+ * Tar I/O stream operations.
  */
 static const RTVFSIOSTREAMOPS g_rtZipTarFssIosOps =
 {
@@ -390,6 +442,94 @@ static const RTVFSIOSTREAMOPS g_rtZipTarFssIosOps =
     NULL /*Skip*/,
     NULL /*ZeroFill*/,
     RTVFSIOSTREAMOPS_VERSION
+};
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtZipTarFssSym_Close(void *pvThis)
+{
+    PRTZIPTARBASEOBJ pThis = (PRTZIPTARBASEOBJ)pvThis;
+    return rtZipTarFssBaseObj_Close(pThis);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtZipTarFssSym_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTZIPTARBASEOBJ pThis = (PRTZIPTARBASEOBJ)pvThis;
+    return rtZipTarFssBaseObj_QueryInfo(pThis, pObjInfo, enmAddAttr);
+}
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) rtZipTarFssSym_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    NOREF(pvThis); NOREF(fMode); NOREF(fMask);
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) rtZipTarFssSym_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    NOREF(pvThis); NOREF(pAccessTime); NOREF(pModificationTime); NOREF(pChangeTime); NOREF(pBirthTime);
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) rtZipTarFssSym_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    NOREF(pvThis); NOREF(uid); NOREF(gid);
+    return VERR_ACCESS_DENIED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSSYMLINKOPS,pfnRead}
+ */
+static DECLCALLBACK(int) rtZipTarFssSym_Read(void *pvThis, char *pszTarget, size_t cbTarget)
+{
+    PRTZIPTARBASEOBJ pThis = (PRTZIPTARBASEOBJ)pvThis;
+    return RTStrCopy(pszTarget, cbTarget, pThis->Hdr.Posix.linkname);
+}
+
+
+/**
+ * Tar symbolic (and hardlink) operations.
+ */
+static const RTVFSSYMLINKOPS g_rtZipTarFssSymOps =
+{
+    { /* Obj */
+        RTVFSOBJOPS_VERSION,
+        RTVFSOBJTYPE_IO_STREAM,
+        "TarFsStream::Symlink",
+        rtZipTarFssIos_Close,
+        rtZipTarFssIos_QueryInfo,
+        RTVFSOBJOPS_VERSION
+    },
+    RTVFSSYMLINKOPS_VERSION,
+    0,
+    { /* ObjSet */
+        RTVFSOBJSETOPS_VERSION,
+        RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
+        rtZipTarFssSym_SetMode,
+        rtZipTarFssSym_SetTimes,
+        rtZipTarFssSym_SetOwner,
+        RTVFSOBJSETOPS_VERSION
+    },
+    rtZipTarFssSym_Read,
+    RTVFSSYMLINKOPS_VERSION
 };
 
 
@@ -492,17 +632,155 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
     if (cbRead != sizeof(Hdr))
         return pThis->rcFatal = VERR_TAR_UNEXPECTED_EOS;
 
+    pThis->offNextHdr = off + sizeof(Hdr);
+
     /*
-     * Validate the header.
+     * Validate the header and convert to binary object info.
      */
-    /** @todo continue here... */
+/** @todo look for the two all zero headers terminating the stream... */
+    rc = rtZipTarHdrValidate(&Hdr);
+    if (RT_FAILURE(rc))
+        return pThis->rcFatal = rc;
+
+    RTFSOBJINFO Info;
+    rc = rtZipTarHdrToFsObjInfo(&Hdr, &Info);
+    if (RT_FAILURE(rc))
+        return pThis->rcFatal = rc;
 
     /*
      * Create an object of the appropriate type.
      */
+    RTVFSOBJTYPE    enmType;
+    RTVFSOBJ        hVfsObj;
+    switch (Hdr.Posix.typeflag)
+    {
+        /*
+         * Files are represented by a VFS I/O stream.
+         */
+        case RTZIPTAR_TF_NORMAL:
+        case RTZIPTAR_TF_OLDNORMAL:
+        case RTZIPTAR_TF_CONTIG:
+        {
+            RTVFSIOSTREAM       hVfsIos;
+            PRTZIPTARIOSTREAM   pIosData;
+            rc = RTVfsNewIoStream(&g_rtZipTarFssIosOps,
+                                  sizeof(*pIosData),
+                                  RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                                  NIL_RTVFS,
+                                  NIL_RTVFSLOCK,
+                                  &hVfsIos,
+                                  (void **)&pIosData);
+            if (RT_FAILURE(rc))
+                return pThis->rcFatal = rc;
 
+            pIosData->BaseObj.offHdr  = off;
+            pIosData->BaseObj.Hdr     = Hdr;
+            pIosData->BaseObj.ObjInfo = Info;
+            pIosData->cbFile          = Info.cbObject;
+            pIosData->offFile         = 0;
+            pIosData->cbPadding       = 512 - (uint32_t)(Info.cbObject % 512);
+            pIosData->fEndOfStream    = false;
+            pIosData->hVfsIos         = pThis->hVfsIos;
+            RTVfsIoStrmRetain(pThis->hVfsIos);
 
-    return VERR_NOT_IMPLEMENTED;
+            pThis->pCurIosData = pIosData;
+            pThis->offNextHdr += pIosData->cbFile + pIosData->cbPadding;
+
+            enmType = RTVFSOBJTYPE_IO_STREAM;
+            hVfsObj = RTVfsObjFromIoStream(hVfsIos);
+            RTVfsIoStrmRelease(hVfsIos);
+            break;
+        }
+
+        /*
+         * We represent hard links using a symbolic link object.  This fits
+         * best with the way TAR stores it and there is currently no better
+         * fitting VFS type alternative.
+         */
+        case RTZIPTAR_TF_LINK:
+        case RTZIPTAR_TF_SYMLINK:
+        {
+            RTVFSSYMLINK        hVfsSym;
+            PRTZIPTARBASEOBJ    pBaseObjData;
+            rc = RTVfsNewSymlink(&g_rtZipTarFssSymOps,
+                                 sizeof(*pBaseObjData),
+                                 NIL_RTVFS,
+                                 NIL_RTVFSLOCK,
+                                 &hVfsSym,
+                                 (void **)&pBaseObjData);
+            if (RT_FAILURE(rc))
+                return pThis->rcFatal = rc;
+
+            pBaseObjData->offHdr  = off;
+            pBaseObjData->Hdr     = Hdr;
+            pBaseObjData->ObjInfo = Info;
+
+            enmType = RTVFSOBJTYPE_SYMLINK;
+            hVfsObj = RTVfsObjFromSymlink(hVfsSym);
+            RTVfsSymlinkRelease(hVfsSym);
+            break;
+        }
+
+        /*
+         * All other objects are repesented using a VFS base object since they
+         * carry no data streams (unless some tar extension implements extended
+         * attributes / alternative streams).
+         */
+        case RTZIPTAR_TF_CHR:
+        case RTZIPTAR_TF_BLK:
+        case RTZIPTAR_TF_DIR:
+        case RTZIPTAR_TF_FIFO:
+        {
+            PRTZIPTARBASEOBJ pBaseObjData;
+            rc = RTVfsNewBaseObj(&g_rtZipTarFssBaseObjOps,
+                                 sizeof(*pBaseObjData),
+                                 NIL_RTVFS,
+                                 NIL_RTVFSLOCK,
+                                 &hVfsObj,
+                                 (void **)&pBaseObjData);
+            if (RT_FAILURE(rc))
+                return pThis->rcFatal = rc;
+
+            pBaseObjData->offHdr  = off;
+            pBaseObjData->Hdr     = Hdr;
+            pBaseObjData->ObjInfo = Info;
+
+            enmType = RTVFSOBJTYPE_BASE;
+            break;
+        }
+
+        default:
+            AssertFailed();
+            return pThis->rcFatal = VERR_INTERNAL_ERROR_5;
+    }
+    pThis->hVfsCurObj = hVfsObj;
+
+    /*
+     * Set the return data and we're done.
+     */
+    if (ppszName)
+    {
+        if (rtZipTarHdrHasPrefix(&Hdr))
+        {
+            *ppszName = NULL;
+            rc = RTStrAAppendExN(ppszName, 2, Hdr.Posix.prefix, Hdr.Posix.name);
+        }
+        else
+            rc = RTStrDupEx(ppszName, Hdr.Posix.name);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    if (phVfsObj)
+    {
+        RTVfsObjRetain(hVfsObj);
+        *phVfsObj = hVfsObj;
+    }
+
+    if (penmType)
+        *penmType = enmType;
+
+    return VINF_SUCCESS;
 }
 
 
@@ -547,7 +825,7 @@ RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, PRTVFSFSSTREAM
      */
     PRTZIPTARFSSTREAM pThis;
     RTVFSFSSTREAM     hVfsFss;
-    int rc = RTVfsNewFsStream(&rtZipTarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTSEMRW, &hVfsFss, (void **)&pThis);
+    int rc = RTVfsNewFsStream(&rtZipTarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFss, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
         pThis->hVfsIos          = hVfsIosIn;
