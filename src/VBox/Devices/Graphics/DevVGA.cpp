@@ -1478,7 +1478,8 @@ static int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
 #if defined(IN_RING3)
 typedef void vga_draw_glyph8_func(uint8_t *d, int linesize,
                              const uint8_t *font_ptr, int h,
-                             uint32_t fgcol, uint32_t bgcol);
+                             uint32_t fgcol, uint32_t bgcol,
+                             int dscan);
 typedef void vga_draw_glyph9_func(uint8_t *d, int linesize,
                                   const uint8_t *font_ptr, int h,
                                   uint32_t fgcol, uint32_t bgcol, int dup9);
@@ -1720,8 +1721,6 @@ static const uint8_t cursor_glyph[32 * 4] = {
 /*
  * Text mode update
  * Missing:
- * - double scan
- * - double width
  * - underline
  * - flashing
  */
@@ -1733,7 +1732,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
     uint32_t offset, fgcol, bgcol, v, cursor_offset;
     uint8_t *d1, *d, *src, *s1, *dest, *cursor_ptr;
     const uint8_t *font_ptr, *font_base[2];
-    int dup9, line_offset, depth_index;
+    int dup9, line_offset, depth_index, dscan;
     uint32_t *palette;
     uint32_t *ch_attr_ptr;
     vga_draw_glyph8_func *vga_draw_glyph8;
@@ -1767,6 +1766,9 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
 
     line_offset = s->line_offset;
     s1 = s->CTX_SUFF(vram_ptr) + (s->start_addr * 8); /** @todo r=bird: Add comment why we do *8 instead of *4, it's not so obvious... */
+
+    /* double scanning - not for 9-wide modes */
+    dscan = (s->cr[9] >> 7) & 1;
 
     /* total width & height */
     cheight = (s->cr[9] & 0x1f) + 1;
@@ -1840,7 +1842,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
     cx_max_upd = -1;
     cx_min_upd = width;
 
-    for(cy = 0; cy < height; cy++) {
+    for(cy = 0; cy < height; cy = cy + (1 << dscan)) {
         d1 = dest;
         src = s1;
         cx_min = width;
@@ -1867,7 +1869,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
                 fgcol = palette[cattr & 0x0f];
                 if (cw != 9) {
                     vga_draw_glyph8(d1, linesize,
-                                    font_ptr, cheight, fgcol, bgcol);
+                                    font_ptr, cheight, fgcol, bgcol, dscan);
                 } else {
                     dup9 = 0;
                     if (ch >= 0xb0 && ch <= 0xdf && (s->ar[0x10] & 0x04))
@@ -1886,10 +1888,10 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
                         line_last = cheight - 1;
                     if (line_last >= line_start && line_start < cheight) {
                         h = line_last - line_start + 1;
-                        d = d1 + linesize * line_start;
+                        d = d1 + (linesize * line_start << dscan);
                         if (cw != 9) {
                             vga_draw_glyph8(d, linesize,
-                                            cursor_glyph, h, fgcol, bgcol);
+                                            cursor_glyph, h, fgcol, bgcol, dscan);
                         } else {
                             vga_draw_glyph9(d, linesize,
                                             cursor_glyph, h, fgcol, bgcol, 1);
@@ -1917,7 +1919,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
             cx_max_upd = -1;
             cx_min_upd = width;
         }
-        dest += linesize * cheight;
+        dest += linesize * cheight << dscan;
         s1 += line_offset;
     }
     if (cy_start >= 0)
@@ -4098,7 +4100,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PVGASTATE       s = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    int             is_graph;
+    int             is_graph, double_scan;
     int             w, h, char_height, char_dots;
     int             val, vfreq_hz, hfreq_hz;
     vga_retrace_s   *r = &s->retrace_state;
@@ -4106,8 +4108,9 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
     is_graph  = s->gr[6] & 1;
     char_dots = (s->sr[0x01] & 1) ? 8 : 9;
+    double_scan = s->cr[9] >> 7;
     pHlp->pfnPrintf(pHlp, "pixel clock: %s\n", clocks[(s->msr >> 2) & 3]);
-    pHlp->pfnPrintf(pHlp, "double scanning %s\n", s->cr[9] & 0x80 ? "on" : "off");
+    pHlp->pfnPrintf(pHlp, "double scanning %s\n", double_scan ? "on" : "off");
     pHlp->pfnPrintf(pHlp, "double clocking %s\n", s->sr[1] & 0x08 ? "on" : "off");
     val = s->cr[0] + 5;
     pHlp->pfnPrintf(pHlp, "htotal: %d px (%d cclk)\n", val * char_dots, val);
@@ -4126,7 +4129,7 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         val = (s->cr[9] & 0x1f) + 1;
         char_height = val;
         pHlp->pfnPrintf(pHlp, "char height %d\n", val);
-        pHlp->pfnPrintf(pHlp, "text mode %dx%d\n", w / char_dots, h / char_height);
+        pHlp->pfnPrintf(pHlp, "text mode %dx%d\n", w / char_dots, h / (char_height << double_scan));
     }
     if (s->fRealRetrace)
     {
@@ -4175,6 +4178,7 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
             uint32_t uVDisp;
             uint32_t uCharHeight;
             uint32_t uLines;
+            uint32_t uDblScan;
 
             vga_get_offsets(pThis, &cbLine, &offStart, &uLineCompareIgn);
             if (!cbLine)
@@ -4182,7 +4186,8 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
 
             uVDisp = pThis->cr[0x12] + ((pThis->cr[7] & 2) << 7) + ((pThis->cr[7] & 0x40) << 4) + 1;
             uCharHeight = (pThis->cr[9] & 0x1f) + 1;
-            uLines = uVDisp / uCharHeight;
+            uDblScan = pThis->cr[9] >> 7;
+            uLines = uVDisp / (uCharHeight << uDblScan);
             if (uLines < 25)
                 uLines = 25;
 
