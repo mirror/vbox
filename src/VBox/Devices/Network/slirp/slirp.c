@@ -1549,7 +1549,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     m->m_data -= ETH_HLEN;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
-    mlen = m_length(m, NULL);
+    mlen = m->m_len;//m_length(m, NULL);
 
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0)
     {
@@ -1563,20 +1563,11 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
             goto done;
         }
     }
-    if (m->m_next)
-    {
-        buf = RTMemAlloc(mlen);
-        if (!buf)
-        {
-            Log(("NAT: Can't alloc memory for outgoing buffer\n"));
-            m_freem(pData, m);
-            goto done;
-        }
-        mbuf = buf;
-        m_copydata(m, 0, mlen, (char *)buf);
-    }
-    else
-        mbuf = mtod(m, uint8_t *);
+    /*
+     * we're processing the chain, that isn't not expected.
+     */
+    Assert((!m->m_next));
+    mbuf = mtod(m, uint8_t *);
     eh->h_proto = RT_H2N_U16(eth_proto);
     if (flags & ETH_ENCAP_URG)
         slirp_urg_output(pData->pvUser, m, mbuf, mlen);
