@@ -398,6 +398,7 @@ RuntimeR3_SOURCES       = \
 	r3/alloc-ef.cpp \
 	r3/alloc.cpp \
 	r3/dir.cpp \
+	r3/dir2.cpp \
 	r3/fileio.cpp \
 	r3/fs.cpp \
 	r3/init.cpp \
@@ -552,8 +553,11 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
@@ -636,8 +640,11 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
@@ -685,9 +692,12 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
@@ -737,9 +747,12 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
@@ -787,9 +800,12 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
+	r3/posix/fs2-posix.cpp \
+	r3/posix/fs3-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
 	r3/posix/pipe-posix.cpp \
 	r3/posix/poll-posix.cpp \
@@ -877,6 +893,7 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp
@@ -1005,6 +1022,7 @@ RuntimeGuestR3Mini_SOURCES.freebsd = \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp
 RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1013,6 +1031,7 @@ RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp
 RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/RTMemProtect-posix.cpp \
@@ -1021,6 +1040,7 @@ RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/path-posix.cpp \
+	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp
 RuntimeGuestR3Mini_SOURCES.win = \
 	r3/win/alloc-win.cpp \
