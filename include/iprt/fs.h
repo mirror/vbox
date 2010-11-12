@@ -41,18 +41,20 @@ RT_C_DECLS_BEGIN
 
 /** @name Filesystem Object Mode Flags.
  *
- * There are two sets of flags: the unix mode flags and the dos
- * attributes.
+ * There are two sets of flags: the unix mode flags and the dos attributes.
  *
  * APIs returning mode flags will provide both sets.
  *
- * When specifying mode flags to any API at least one of
- * them must be given. If one set is missing the API will
- * synthesize it from the one given if it requires it.
+ * When specifying mode flags to any API at least one of them must be given. If
+ * one set is missing the API will synthesize it from the one given if it
+ * requires it.
  *
- * Both sets match their x86 ABIs, the DOS/NT one is simply shifted
- * up 16 bits. The DOS/NT range is bits 16 to 31 inclusively. The
- * Unix range is bits 0 to 15 (inclusively).
+ * Both sets match their x86 ABIs, the DOS/NT one is simply shifted up 16 bits.
+ * The DOS/NT range is bits 16 to 31 inclusively. The Unix range is bits 0 to 15
+ * (inclusively).
+ *
+ * @remarks These constants have been comitted to a binary format and must not
+ *          be changed in any incompatible ways.
  *
  * @{
  */
