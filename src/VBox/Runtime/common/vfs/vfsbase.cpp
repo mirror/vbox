@@ -40,6 +40,7 @@
 #include <iprt/semaphore.h>
 
 #include "internal/file.h"
+#include "internal/fs.h"
 #include "internal/magics.h"
 //#include "internal/vfs.h"
 
@@ -350,7 +351,7 @@ RTDECL(uint32_t) RTVfsLockRetain(RTVFSLOCK hLock)
 {
     RTVFSLOCKINTERNAL *pThis = hLock;
     AssertPtrReturn(pThis, UINT32_MAX);
-    AssertPtrReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
+    AssertReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
 
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
     AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p %d\n", cRefs, pThis, pThis->enmType));
@@ -395,7 +396,7 @@ RTDECL(uint32_t) RTVfsLockRelease(RTVFSLOCK hLock)
 {
     RTVFSLOCKINTERNAL *pThis = hLock;
     AssertPtrReturn(pThis, UINT32_MAX);
-    AssertPtrReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
+    AssertReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
 
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     AssertMsg(cRefs < _1M, ("%#x %p %d\n", cRefs, pThis, pThis->enmType));
@@ -1707,7 +1708,65 @@ RTDECL(uint32_t)    RTVfsSymlinkRelease(RTVFSSYMLINK hVfsSym)
 }
 
 
-RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size_t cbTarget)
+RTDECL(int)         RTVfsSymlinkQueryInfo(RTVFSSYMLINK hVfsSym, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, VERR_INVALID_HANDLE);
+    return RTVfsObjQueryInfo(&pThis->Base, pObjInfo, enmAddAttr);
+}
+
+
+RTDECL(int)  RTVfsSymlinkSetMode(RTVFSSYMLINK hVfsSym, RTFMODE fMode, RTFMODE fMask)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, VERR_INVALID_HANDLE);
+
+    fMode = rtFsModeNormalize(fMode, NULL, 0);
+    if (!rtFsModeIsValid(fMode))
+        return VERR_INVALID_PARAMETER;
+
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
+    int rc = pThis->pOps->ObjSet.pfnSetMode(pThis->Base.pvThis, fMode, fMask);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
+    return rc;
+}
+
+
+RTDECL(int) RTVfsSymlinkSetTimes(RTVFSSYMLINK hVfsSym, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                 PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, VERR_INVALID_HANDLE);
+
+    AssertPtrNullReturn(pAccessTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pModificationTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pChangeTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pBirthTime, VERR_INVALID_POINTER);
+
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
+    int rc = pThis->pOps->ObjSet.pfnSetTimes(pThis->Base.pvThis, pAccessTime, pModificationTime, pChangeTime, pBirthTime);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
+    return rc;
+}
+
+
+RTDECL(int) RTVfsSymlinkSetOwner(RTVFSSYMLINK hVfsSym, RTUID uid, RTGID gid)
+{
+    RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, VERR_INVALID_HANDLE);
+
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
+    int rc = pThis->pOps->ObjSet.pfnSetOwner(pThis->Base.pvThis, uid, gid);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
+    return rc;
+}
+
+
+RTDECL(int) RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size_t cbTarget)
 {
     RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -2016,6 +2075,19 @@ RTDECL(int) RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
     }
     return rc;
 }
+
+
+RTDECL(bool) RTVfsIoStrmIsAtEnd(RTVFSIOSTREAM hVfsIos)
+{
+    /*
+     * There is where the zero read behavior comes in handy.
+     */
+    char    bDummy;
+    size_t  cbRead;
+    int rc = RTVfsIoStrmRead(hVfsIos, &bDummy, 0 /*cbToRead*/, false /*fBlocking*/, &cbRead);
+    return rc == VINF_EOF;
+}
+
 
 
 
