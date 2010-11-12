@@ -337,6 +337,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
 {
     register struct udpiphdr *ui;
     int error;
+    int mlen = 0;
 
     DEBUG_CALL("udp_output");
     DEBUG_ARG("so = %lx", (long)so);
@@ -349,6 +350,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
      */
     m->m_data -= sizeof(struct udpiphdr);
     m->m_len += sizeof(struct udpiphdr);
+    mlen = m_length(m, NULL);
 
     /*
      * Fill in mbuf with extended UDP header
@@ -357,7 +359,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     ui = mtod(m, struct udpiphdr *);
     memset(ui->ui_x1, 0, 9);
     ui->ui_pr = IPPROTO_UDP;
-    ui->ui_len = RT_H2N_U16(m->m_len - sizeof(struct ip));
+    ui->ui_len = RT_H2N_U16(mlen - sizeof(struct ip));
     /* XXXXX Check for from-one-location sockets, or from-any-location sockets */
     ui->ui_src = saddr->sin_addr;
     ui->ui_dst = daddr->sin_addr;
@@ -371,10 +373,10 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     ui->ui_sum = 0;
     if (udpcksum)
     {
-        if ((ui->ui_sum = cksum(m, /* sizeof (struct udpiphdr) + */ m->m_len)) == 0)
+        if ((ui->ui_sum = cksum(m, /* sizeof (struct udpiphdr) + */ mlen)) == 0)
             ui->ui_sum = 0xffff;
     }
-    ((struct ip *)ui)->ip_len = m->m_len;
+    ((struct ip *)ui)->ip_len = mlen;
     ((struct ip *)ui)->ip_ttl = ip_defttl;
     ((struct ip *)ui)->ip_tos = iptos;
 
