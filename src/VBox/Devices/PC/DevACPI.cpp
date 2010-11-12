@@ -510,7 +510,7 @@ struct ACPITBLISO
     uint16_t            u16Flags;               /**< MPS INTI flags Global */
 };
 AssertCompileSize(ACPITBLISO, 10);
-#define NUMBER_OF_IRQ_SOURCE_OVERRIDES 1
+#define NUMBER_OF_IRQ_SOURCE_OVERRIDES 2
 
 /** HPET Descriptor Structure */
 struct ACPITBLHPET
@@ -944,7 +944,7 @@ static void acpiSetupRSDP(ACPITBLRSDP *rsdp, RTGCPHYS32 GCPhysRsdt, RTGCPHYS GCP
 static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
 {
     uint16_t cpus = s->cCpus;
-    AcpiTableMADT madt(cpus, 1 /* one source override */ );
+    AcpiTableMADT madt(cpus, NUMBER_OF_IRQ_SOURCE_OVERRIDES);
 
     acpiPrepareHeader(madt.header_addr(), "APIC", madt.size(), 2);
 
@@ -975,15 +975,35 @@ static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
     ioapic->u32GSIB    = RT_H2LE_U32(0);
 
     /* Interrupt Source Overrides */
+    /* Flags:
+        bits[3:2]:
+          00 conforms to the bus
+          01 edge-triggered
+          10 reserved
+          11 level-triggered
+        bits[1:0]
+          00 conforms to the bus
+          01 active-high
+          10 reserved
+          11 active-low */
     /* If changing, also update PDMIsaSetIrq() and MPS */
     ACPITBLISO* isos = madt.ISO_addr();
+    /* Timer interrupt rule IRQ0 to GSI2 */
     isos[0].u8Type     = 2;
     isos[0].u8Length   = sizeof(ACPITBLISO);
     isos[0].u8Bus      = 0; /* Must be 0 */
     isos[0].u8Source   = 0; /* IRQ0 */
     isos[0].u32GSI     = 2; /* connected to pin 2 */
     isos[0].u16Flags   = 0; /* conform to the bus */
-    Assert(NUMBER_OF_IRQ_SOURCE_OVERRIDES == 1);
+
+    /* ACPI interrupt rule - IRQ9 to GSI9 */
+    isos[1].u8Type     = 2;
+    isos[1].u8Length   = sizeof(ACPITBLISO);
+    isos[1].u8Bus      = 0; /* Must be 0 */
+    isos[1].u8Source   = 9; /* IRQ9 */
+    isos[1].u32GSI     = 9; /* connected to pin 9 */
+    isos[1].u16Flags   = 0xd; /* active high, level triggered */
+    Assert(NUMBER_OF_IRQ_SOURCE_OVERRIDES == 2);
 
     madt.header_addr()->u8Checksum = acpiChecksum(madt.data(), madt.size());
     acpiPhyscpy(s, addr, madt.data(), madt.size());
@@ -1077,6 +1097,8 @@ static void update_pm1a(ACPIState *s, uint32_t sts, uint32_t en)
     old_level = pm1a_level(s);
     new_level = (pm1a_pure_en(en) & pm1a_pure_sts(sts)) != 0;
 
+    Log(("update_pm1a() old=%x new=%x\n", old_level, new_level));
+
     s->pm1a_en = en;
     s->pm1a_sts = sts;
 
@@ -1149,6 +1171,7 @@ static int acpiSleep(ACPIState *pThis)
 static DECLCALLBACK(int) acpiPowerButtonPress(PPDMIACPIPORT pInterface)
 {
     ACPIState *s = IACPIPORT_2_ACPISTATE(pInterface);
+    Log(("acpiPowerButtonPress: handled=%d status=%x\n", s->fPowerButtonHandled, s->pm1a_sts));
     s->fPowerButtonHandled = false;
     update_pm1a(s, s->pm1a_sts | PWRBTN_STS, s->pm1a_en);
     return VINF_SUCCESS;
@@ -1776,6 +1799,7 @@ PDMBOTHCBDECL(int) acpiPm1aStsRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
             *pu32 = acpiPm1aStsReadw((ACPIState*)pvUser, Port);
             break;
         default:
+            AssertMsgFailed(("PM1 status read: width %d\n", cb));
             return VERR_IOM_IOPORT_UNUSED;
     }
     return VINF_SUCCESS;
@@ -1789,6 +1813,7 @@ PDMBOTHCBDECL(int) acpiPm1aCtlRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
             *pu32 = acpiPm1aCtlReadw((ACPIState*)pvUser, Port);
             break;
         default:
+            AssertMsgFailed(("PM1 control read: width %d\n", cb));
             return VERR_IOM_IOPORT_UNUSED;
     }
     return VINF_SUCCESS;
@@ -2383,6 +2408,13 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
     ACPIState  *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
 
     Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, Address, cb));
+
+    if (Address == 0x3c && u32Value == 0xff)
+    {
+        Log(("acpi: ignore bogus interrupt line settings\n"));
+        return;
+    }
+
     pThis->pfnAcpiPciConfigWrite(pPciDev, Address, u32Value, cb);
 
     /* PMREGMISC written */
@@ -2393,8 +2425,7 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
         {
             int rc;
 
-            RTIOPORT uNewBase =
-                    RTIOPORT(RT_LE2H_U32(*(uint32_t*)&pPciDev->config[0x40]));
+            RTIOPORT uNewBase = RTIOPORT(PCIDevGetDWord(pPciDev, 0x40));
             uNewBase &= 0xffc0;
 
             rc = acpiUpdatePmHandlers(pThis, uNewBase);
