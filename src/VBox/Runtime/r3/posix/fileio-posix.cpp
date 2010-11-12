@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - File I/O, POSIX.
+ * IPRT - File I/O, POSIX, Part 1.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,15 +48,6 @@
 #endif
 #if defined(RT_OS_OS2) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006)
 # include <io.h>
-#endif
-#ifdef RT_OS_L4
-/* This is currently ifdef'ed out in the relevant L4 header file */
-/* Same as `utimes', but takes an open file descriptor instead of a name.  */
-extern int futimes(int __fd, __const struct timeval __tvp[2]) __THROW;
-#endif
-
-#ifdef RT_OS_SOLARIS
-# define futimes(filedes, timeval)   futimesat(filedes, NULL, timeval)
 #endif
 
 #include <iprt/file.h>
@@ -611,117 +602,6 @@ RTR3DECL(int) RTFileIoCtl(RTFILE File, unsigned long ulRequest, void *pvData, un
     if (piRet)
         *piRet = rc;
     return rc >= 0 ? VINF_SUCCESS : RTErrConvertFromErrno(errno);
-}
-
-
-RTR3DECL(int) RTFileQueryInfo(RTFILE File, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
-{
-    /*
-     * Validate input.
-     */
-    if (File == NIL_RTFILE)
-    {
-        AssertMsgFailed(("Invalid File=%RTfile\n", File));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!pObjInfo)
-    {
-        AssertMsgFailed(("Invalid pObjInfo=%p\n", pObjInfo));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (    enmAdditionalAttribs < RTFSOBJATTRADD_NOTHING
-        ||  enmAdditionalAttribs > RTFSOBJATTRADD_LAST)
-    {
-        AssertMsgFailed(("Invalid enmAdditionalAttribs=%p\n", enmAdditionalAttribs));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Query file info.
-     */
-    struct stat Stat;
-    if (fstat((int)File, &Stat))
-    {
-        int rc = RTErrConvertFromErrno(errno);
-        Log(("RTFileQueryInfo(%RTfile,,%d): returns %Rrc\n", File, enmAdditionalAttribs, rc));
-        return rc;
-    }
-
-    /*
-     * Setup the returned data.
-     */
-    rtFsConvertStatToObjInfo(pObjInfo, &Stat, NULL, 0);
-
-    /*
-     * Requested attributes (we cannot provide anything actually).
-     */
-    switch (enmAdditionalAttribs)
-    {
-        case RTFSOBJATTRADD_NOTHING:
-        case RTFSOBJATTRADD_UNIX:
-            /* done */
-            break;
-
-        case RTFSOBJATTRADD_UNIX_OWNER:
-            rtFsObjInfoAttrSetUnixOwner(pObjInfo, Stat.st_uid);
-            break;
-
-        case RTFSOBJATTRADD_UNIX_GROUP:
-            rtFsObjInfoAttrSetUnixGroup(pObjInfo, Stat.st_gid);
-            break;
-
-        case RTFSOBJATTRADD_EASIZE:
-            pObjInfo->Attr.enmAdditional          = RTFSOBJATTRADD_EASIZE;
-            pObjInfo->Attr.u.EASize.cb            = 0;
-            break;
-
-        default:
-            AssertMsgFailed(("Impossible!\n"));
-            return VERR_INTERNAL_ERROR;
-    }
-
-    LogFlow(("RTFileQueryInfo(%RTfile,,%d): returns VINF_SUCCESS\n", File, enmAdditionalAttribs));
-    return VINF_SUCCESS;
-}
-
-
-RTR3DECL(int) RTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
-                             PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
-{
-    /*
-     * We can only set AccessTime and ModificationTime, so if neither
-     * are specified we can return immediately.
-     */
-    if (!pAccessTime && !pModificationTime)
-        return VINF_SUCCESS;
-
-    /*
-     * Convert the input to timeval, getting the missing one if necessary,
-     * and call the API which does the change.
-     */
-    struct timeval aTimevals[2];
-    if (pAccessTime && pModificationTime)
-    {
-        RTTimeSpecGetTimeval(pAccessTime,       &aTimevals[0]);
-        RTTimeSpecGetTimeval(pModificationTime, &aTimevals[1]);
-    }
-    else
-    {
-        RTFSOBJINFO ObjInfo;
-        int rc = RTFileQueryInfo(File, &ObjInfo, RTFSOBJATTRADD_UNIX);
-        if (RT_FAILURE(rc))
-            return rc;
-        RTTimeSpecGetTimeval(pAccessTime        ? pAccessTime       : &ObjInfo.AccessTime,       &aTimevals[0]);
-        RTTimeSpecGetTimeval(pModificationTime  ? pModificationTime : &ObjInfo.ModificationTime, &aTimevals[1]);
-    }
-
-    if (futimes((int)File, aTimevals))
-    {
-        int rc = RTErrConvertFromErrno(errno);
-        Log(("RTFileSetTimes(%RTfile,%p,%p,,): returns %Rrc\n", File, pAccessTime, pModificationTime, rc));
-        return rc;
-    }
-    return VINF_SUCCESS;
 }
 
 

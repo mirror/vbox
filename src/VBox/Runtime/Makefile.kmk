@@ -551,6 +551,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -639,6 +640,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
 	r3/posix/fs3-posix.cpp \
@@ -691,6 +693,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
 	r3/posix/fs3-posix.cpp \
@@ -745,6 +748,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -798,6 +802,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -890,6 +895,7 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
@@ -1021,6 +1027,7 @@ RuntimeGuestR3Mini_SOURCES.freebsd = \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp
@@ -1030,6 +1037,7 @@ RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp
@@ -1039,6 +1047,7 @@ RuntimeGuestR3Mini_SOURCES.solaris = \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
+	r3/posix/fileio2-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/utf8-posix.cpp
