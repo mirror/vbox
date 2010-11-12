@@ -1295,6 +1295,9 @@ RT_C_DECLS_END
 #define VERR_TAR_END_OF_FILE                    (-926)
 /** The tar file ended unexpectedly. */
 #define VERR_TAR_UNEXPECTED_EOS                 (-927)
+/** The tar termination records was encountered without reaching the end of
+  * the input stream. */
+#define VERR_TAR_EOS_MORE_INPUT                 (-928)
 /** @} */
 
 /** @name RTPoll status codes

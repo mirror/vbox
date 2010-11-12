@@ -1596,7 +1596,7 @@ RTDECL(int)         RTVfsFsStrmNext(RTVFSFSSTREAM hVfsFss, char **ppszName, RTVF
 {
     RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrNullReturn(ppszName, VERR_INVALID_POINTER);
     if (ppszName)
         *ppszName = NULL;
