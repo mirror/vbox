@@ -759,50 +759,6 @@ RTDECL(int) RTVfsNewBaseObj(PCRTVFSOBJOPS pObjOps, size_t cbInstance, RTVFS hVfs
 
 
 /**
- * Write locks the object.
- *
- * @param   pThis               The object to lock.
- */
-DECLINLINE(void) rtVfsObjWriteLock(RTVFSOBJINTERNAL *pThis)
-{
-    RTVfsLockAcquireWrite(pThis->hLock);
-}
-
-
-/**
- * Undoing the effects of rtVfsObjWriteLock.
- *
- * @param   pThis               The object to lock.
- */
-DECLINLINE(void) rtVfsObjWriteUnlock(RTVFSOBJINTERNAL *pThis)
-{
-    RTVfsLockReleaseWrite(pThis->hLock);
-}
-
-/**
- * Read locks the object.
- *
- * @param   pThis               The object to lock.
- */
-DECLINLINE(void) rtVfsObjReadLock(RTVFSOBJINTERNAL *pThis)
-{
-    RTVfsLockAcquireRead(pThis->hLock);
-}
-
-
-/**
- * Undoing the effects of rtVfsObjReadLock.
- *
- * @param   pThis               The object to lock.
- */
-DECLINLINE(void) rtVfsObjReadUnlock(RTVFSOBJINTERNAL *pThis)
-{
-    RTVfsLockReleaseRead(pThis->hLock);
-}
-
-
-
-/**
  * Internal object retainer that asserts sanity in strict builds.
  *
  * @returns The new reference count.
@@ -839,7 +795,7 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
     /*
      * Invalidate the object.
      */
-    rtVfsObjWriteLock(pThis);           /* paranoia */
+    RTVfsLockAcquireWrite(pThis->hLock);    /* paranoia */
     void *pvToFree = NULL;
     switch (enmType)
     {
@@ -886,7 +842,7 @@ static void rtVfsObjDestroy(RTVFSOBJINTERNAL *pThis)
         /* no default as we want gcc warnings. */
     }
     ASMAtomicWriteU32(&pThis->uMagic, RTVFSOBJ_MAGIC_DEAD);
-    rtVfsObjWriteUnlock(pThis);
+    RTVfsLockReleaseWrite(pThis->hLock);
 
     /*
      * Close the object and free the handle.
@@ -1127,9 +1083,9 @@ RTDECL(int)         RTVfsObjQueryInfo(RTVFSOBJ hVfsObj, PRTFSOBJINFO pObjInfo, R
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, VERR_INVALID_HANDLE);
 
-    rtVfsObjReadLock(pThis);
+    RTVfsLockAcquireRead(pThis->hLock);
     int rc = pThis->pOps->pfnQueryInfo(pThis->pvThis, pObjInfo, enmAddAttr);
-    rtVfsObjReadUnlock(pThis);
+    RTVfsLockReleaseRead(pThis->hLock);
     return rc;
 }
 
@@ -1411,9 +1367,9 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
      */
     /** @todo Union mounts, traversal optimization methods, races, ++ */
     RTVFSDIRINTERNAL *pCurDir;
-    rtVfsObjReadLock(&pThis->Base);
+    RTVfsLockAcquireRead(pThis->Base.hLock);
     int rc = pThis->pOps->pfnOpenRoot(pThis->Base.pvThis, &pCurDir);
-    rtVfsObjReadUnlock(&pThis->Base);
+    RTVfsLockReleaseRead(pThis->Base.hLock);
     if (RT_FAILURE(rc))
         return rc;
     Assert(pCurDir->uMagic == RTVFSDIR_MAGIC);
@@ -1446,9 +1402,9 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
         RTVFS           hVfsMnt  = NIL_RTVFS;
         if (fFinal)
         {
-            rtVfsObjReadLock(&pCurDir->Base);
+            RTVfsLockAcquireRead(pCurDir->Base.hLock);
             rc = pCurDir->pOps->pfnTraversalOpen(pCurDir->Base.pvThis, pszEntry, NULL, &hSymlink, NULL);
-            rtVfsObjReadUnlock(&pCurDir->Base);
+            RTVfsLockReleaseRead(pCurDir->Base.hLock);
             *pszEntryEnd = '\0';
             if (rc == VERR_PATH_NOT_FOUND)
                 rc = VINF_SUCCESS;
@@ -1463,9 +1419,9 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
         }
         else
         {
-            rtVfsObjReadLock(&pCurDir->Base);
+            RTVfsLockAcquireRead(pCurDir->Base.hLock);
             rc = pCurDir->pOps->pfnTraversalOpen(pCurDir->Base.pvThis, pszEntry, &hDir, &hSymlink, &hVfsMnt);
-            rtVfsObjReadUnlock(&pCurDir->Base);
+            RTVfsLockReleaseRead(pCurDir->Base.hLock);
             *pszEntryEnd = '/';
             if (RT_FAILURE(rc))
                 break;
@@ -1514,9 +1470,9 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
             {
                 /* Must restart from the root (optimize this). */
                 RTVfsDirRelease(pCurDir);
-                rtVfsObjReadLock(&pThis->Base);
+                RTVfsLockAcquireRead(pThis->Base.hLock);
                 rc = pThis->pOps->pfnOpenRoot(pThis->Base.pvThis, &pCurDir);
-                rtVfsObjReadUnlock(&pThis->Base);
+                RTVfsLockReleaseRead(pThis->Base.hLock);
                 if (RT_FAILURE(rc))
                 {
                     pCurDir = NULL;
@@ -1531,9 +1487,9 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
              * Mount point - deal with it and retry the current component.
              */
             RTVfsDirRelease(pCurDir);
-            rtVfsObjReadLock(&hVfsMnt->Base);
+            RTVfsLockAcquireRead(hVfsMnt->Base.hLock);
             rc = pThis->pOps->pfnOpenRoot(hVfsMnt->Base.pvThis, &pCurDir);
-            rtVfsObjReadUnlock(&hVfsMnt->Base);
+            RTVfsLockReleaseRead(hVfsMnt->Base.hLock);
             if (RT_FAILURE(rc))
             {
                 pCurDir = NULL;
@@ -1757,9 +1713,9 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, VERR_INVALID_HANDLE);
 
-    rtVfsObjWriteLock(&pThis->Base);
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, pszTarget, cbTarget);
-    rtVfsObjWriteUnlock(&pThis->Base);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
 
     return rc;
 }
@@ -1876,9 +1832,9 @@ RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead,
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
 
-    rtVfsObjWriteLock(&pThis->Base);
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbRead);
-    rtVfsObjWriteUnlock(&pThis->Base);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
 
@@ -1897,9 +1853,9 @@ RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cb
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, &Seg, 1);
 
-    rtVfsObjWriteLock(&pThis->Base);
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbWritten);
-    rtVfsObjWriteUnlock(&pThis->Base);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
 
@@ -1915,9 +1871,9 @@ RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlo
     AssertPtr(pSgBuf);
     AssertReturn(fBlocking || pcbRead, VERR_INVALID_PARAMETER);
 
-    rtVfsObjWriteLock(&pThis->Base);
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
-    rtVfsObjWriteUnlock(&pThis->Base);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
 
@@ -1933,9 +1889,9 @@ RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBl
     AssertPtr(pSgBuf);
     AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
 
-    rtVfsObjWriteLock(&pThis->Base);
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
-    rtVfsObjWriteUnlock(&pThis->Base);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
 
@@ -1946,9 +1902,9 @@ RTDECL(int) RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
 
-    rtVfsObjWriteLock(&pThis->Base);
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnFlush(pThis->Base.pvThis);
-    rtVfsObjWriteUnlock(&pThis->Base);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
 
@@ -1960,9 +1916,9 @@ RTDECL(RTFOFF) RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTE
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
 
-    rtVfsObjWriteLock(&pThis->Base);
+    RTVfsLockAcquireWrite(pThis->Base.hLock);
     int rc = pThis->pOps->pfnPollOne(pThis->Base.pvThis, fEvents, cMillies, fIntr, pfRetEvents);
-    rtVfsObjWriteUnlock(&pThis->Base);
+    RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
 
@@ -1974,9 +1930,9 @@ RTDECL(RTFOFF) RTVfsIoStrmTell(RTVFSIOSTREAM hVfsIos)
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, -1);
 
     RTFOFF off;
-    rtVfsObjReadLock(&pThis->Base);
+    RTVfsLockAcquireRead(pThis->Base.hLock);
     int rc = pThis->pOps->pfnTell(pThis->Base.pvThis, &off);
-    rtVfsObjReadUnlock(&pThis->Base);
+    RTVfsLockReleaseRead(pThis->Base.hLock);
     if (RT_FAILURE(rc))
         off = rc;
     return off;
@@ -1993,9 +1949,9 @@ RTDECL(int) RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
     int rc;
     if (pThis->pOps->pfnSkip)
     {
-        rtVfsObjWriteLock(&pThis->Base);
+        RTVfsLockAcquireWrite(pThis->Base.hLock);
         rc = pThis->pOps->pfnSkip(pThis->Base.pvThis, cb);
-        rtVfsObjWriteUnlock(&pThis->Base);
+        RTVfsLockReleaseWrite(pThis->Base.hLock);
     }
     else
     {
@@ -2006,9 +1962,9 @@ RTDECL(int) RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
             while (cb > 0)
             {
                 size_t cbToRead = RT_MIN(cb, _64K);
-                rtVfsObjWriteLock(&pThis->Base);
+                RTVfsLockAcquireWrite(pThis->Base.hLock);
                 rc = RTVfsIoStrmRead(hVfsIos, pvBuf, cbToRead, true /*fBlocking*/, NULL);
-                rtVfsObjWriteUnlock(&pThis->Base);
+                RTVfsLockReleaseWrite(pThis->Base.hLock);
                 if (RT_FAILURE(rc))
                     break;
                 cb -= cbToRead;
@@ -2032,9 +1988,9 @@ RTDECL(int) RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
     int rc;
     if (pThis->pOps->pfnSkip)
     {
-        rtVfsObjWriteLock(&pThis->Base);
+        RTVfsLockAcquireWrite(pThis->Base.hLock);
         rc = pThis->pOps->pfnZeroFill(pThis->Base.pvThis, cb);
-        rtVfsObjWriteUnlock(&pThis->Base);
+        RTVfsLockReleaseWrite(pThis->Base.hLock);
     }
     else
     {
@@ -2045,9 +2001,9 @@ RTDECL(int) RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
             while (cb > 0)
             {
                 size_t cbToWrite = RT_MIN(cb, _64K);
-                rtVfsObjWriteLock(&pThis->Base);
+                RTVfsLockAcquireWrite(pThis->Base.hLock);
                 rc = RTVfsIoStrmWrite(hVfsIos, pvBuf, cbToWrite, true /*fBlocking*/, NULL);
-                rtVfsObjWriteUnlock(&pThis->Base);
+                RTVfsLockReleaseWrite(pThis->Base.hLock);
                 if (RT_FAILURE(rc))
                     break;
                 cb -= cbToWrite;
@@ -2157,9 +2113,9 @@ RTDECL(int)         RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint32_t 
                 const char *pszEntryName = &pPath->szPath[pPath->aoffComponents[pPath->cComponents - 1]];
 
                 /** @todo there is a symlink creation race here. */
-                rtVfsObjWriteLock(&pVfsParentDir->Base);
+                RTVfsLockAcquireWrite(pVfsParentDir->Base.hLock);
                 rc = pVfsParentDir->pOps->pfnOpenFile(pVfsParentDir->Base.pvThis, pszEntryName, fOpen, phVfsFile);
-                rtVfsObjWriteUnlock(&pVfsParentDir->Base);
+                RTVfsLockReleaseWrite(pVfsParentDir->Base.hLock);
 
                 RTVfsDirRelease(pVfsParentDir);
 
