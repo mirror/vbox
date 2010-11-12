@@ -336,8 +336,9 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
     {
         if (err == -ENOENT)
         {
-            /* -ENOENT add NULL inode to dentry so it later can be
+            /* -ENOENT: add NULL inode to dentry so it later can be
                created via call to create/mkdir/open */
+            kfree(path);
             inode = NULL;
         }
         else
