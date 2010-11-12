@@ -31,6 +31,7 @@
 #include "internal/iprt.h"
 #include <iprt/zip.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/poll.h>
@@ -143,7 +144,7 @@ DECLINLINE(bool) rtZipTarHdrHasPosixGroupName(PCRTZIPTARHDR pTar)
  */
 DECLINLINE(bool) rtZipTarHdrHasPrefix(PCRTZIPTARHDR pTar)
 {
-    return true;
+    return pTar->Posix.prefix[0] != '\0';
 }
 
 
@@ -160,6 +161,23 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
 
 
 /**
+ * Converts a numeric header field to the C native type.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszField            The TAR header field.
+ * @param   cchField            The length of the field.
+ * @param   fOctalOnly          Must be octal.
+ * @param   pi64                Where to store the value.
+ */
+static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOctalOnly, int64_t *pi64)
+{
+    /** @todo check for base256 and more  */
+    return RTStrToInt64Full(pszField, 8, pi64);
+}
+
+
+/**
  * Translate a TAR header to an IPRT object info structure with additional UNIX
  * attributes.
  *
@@ -170,6 +188,14 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
 static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
 {
     RT_ZERO(*pObjInfo);
+    int rc;
+
+    int64_t i64;
+    rc = rtZipTarHdrFieldToNum(pTar->Posix.size, sizeof(pTar->Posix.size), false, &i64);
+    AssertRCSuccessReturn(rc, rc);
+    pObjInfo->cbObject = i64;
+
+    pObjInfo->Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
 
     return VINF_SUCCESS;
 }
@@ -266,6 +292,10 @@ static const RTVFSOBJOPS g_rtZipTarFssBaseObjOps =
 static DECLCALLBACK(int) rtZipTarFssIos_Close(void *pvThis)
 {
     PRTZIPTARIOSTREAM pThis = (PRTZIPTARIOSTREAM)pvThis;
+
+    RTVfsIoStrmRelease(pThis->hVfsIos);
+    pThis->hVfsIos = NIL_RTVFSIOSTREAM;
+
     return rtZipTarFssBaseObj_Close(&pThis->BaseObj);
 }
 
@@ -601,7 +631,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
     while (   off >= 0
            && off < pThis->offNextHdr)
     {
-        int rc = RTVfsIoStrmSkip(pThis->hVfsIos, off - pThis->offNextHdr);
+        int rc = RTVfsIoStrmSkip(pThis->hVfsIos, pThis->offNextHdr - off);
         if (RT_FAILURE(rc))
         {
             /** @todo Ignore if we're at the end of the stream? */
@@ -636,11 +666,27 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
 
     /*
      * Validate the header and convert to binary object info.
+     * We pick up the two zero headers in the failure path here.
      */
-/** @todo look for the two all zero headers terminating the stream... */
     rc = rtZipTarHdrValidate(&Hdr);
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE_NP(rc))
+    {
+        if (ASMMemIsAllU32(&Hdr, sizeof(Hdr), 0) == NULL)
+        {
+            int rc2 = RTVfsIoStrmRead(pThis->hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, &cbRead);
+            if (RT_FAILURE(rc2))
+                return pThis->rcFatal = rc2;
+            if (ASMMemIsAllU32(&Hdr, sizeof(Hdr), 0) == NULL)
+            {
+                pThis->fEndOfStream = true;
+                if (RTVfsIoStrmIsAtEnd(pThis->hVfsIos))
+                    return VERR_EOF;
+                return VERR_TAR_EOS_MORE_INPUT;
+            }
+        }
+
         return pThis->rcFatal = rc;
+    }
 
     RTFSOBJINFO Info;
     rc = rtZipTarHdrToFsObjInfo(&Hdr, &Info);
@@ -763,10 +809,16 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
         if (rtZipTarHdrHasPrefix(&Hdr))
         {
             *ppszName = NULL;
-            rc = RTStrAAppendExN(ppszName, 2, Hdr.Posix.prefix, Hdr.Posix.name);
+            rc = RTStrAAppendExN(ppszName, 3,
+                                 Hdr.Posix.prefix, sizeof(Hdr.Posix.prefix),
+                                 "/", 1,
+                                 Hdr.Posix.name, sizeof(Hdr.Posix.name));
         }
         else
-            rc = RTStrDupEx(ppszName, Hdr.Posix.name);
+        {
+            *ppszName = RTStrDupN(Hdr.Posix.name, sizeof(Hdr.Posix.name));
+            rc = *ppszName ? VINF_SUCCESS : VERR_NO_STR_MEMORY;
+        }
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -805,7 +857,7 @@ static const RTVFSFSSTREAMOPS rtZipTarFssOps =
 };
 
 
-RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, PRTVFSFSSTREAM phVfsFss)
+RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss)
 {
     /*
      * Input validation.
@@ -813,6 +865,7 @@ RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, PRTVFSFSSTREAM
     AssertPtrReturn(phVfsFss, VERR_INVALID_HANDLE);
     *phVfsFss = NIL_RTVFSFSSTREAM;
     AssertPtrReturn(hVfsIosIn, VERR_INVALID_HANDLE);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     RTFOFF const offStart = RTVfsIoStrmTell(hVfsIosIn);
     AssertReturn(offStart >= 0, (int)offStart);
