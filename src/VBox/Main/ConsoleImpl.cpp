@@ -5581,7 +5581,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             fCoreFlags |= RTCOREDUMPER_FLAGS_LIVE_CORE;
         }
 
-        Utf8Str strCoreDir(coreDumpDir);
+        Utf8Str strDumpDir(coreDumpDir);
         const char *pszDumpDir = strDumpDir.c_str();
         if (   pszDumpDir
             && *pszDumpDir == '\0')
