@@ -260,7 +260,7 @@ RTDECL(int) RTStrATruncateTag(char **ppsz, size_t cchNew, const char *pszTag)
     else
     {
         AssertPtrReturn(pszOld, VERR_OUT_OF_RANGE);
-        AssertPtrReturn(cchNew < ~(size_t)64, VERR_OUT_OF_RANGE);
+        AssertReturn(cchNew < ~(size_t)64, VERR_OUT_OF_RANGE);
         char *pszZero = RTStrEnd(pszOld, cchNew + 63);
         AssertReturn(!pszZero || (size_t)(pszZero - pszOld) >= cchNew, VERR_OUT_OF_RANGE);
         pszOld[cchNew] = '\0';
