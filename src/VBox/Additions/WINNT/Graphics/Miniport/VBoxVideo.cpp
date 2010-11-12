@@ -598,6 +598,8 @@ static int vboxVideoUpdateCustomVideoModes(PDEVICE_EXTENSION DeviceExtension, VB
     return display;
 }
 
+#ifdef VBOX_WITH_WDDM
+
 static bool vboxVideoModesMatch(VIDEO_MODE_INFORMATION *pMode1, VIDEO_MODE_INFORMATION *pMode2)
 {
     return pMode1->VisScreenHeight == pMode2->VisScreenHeight
@@ -605,7 +607,7 @@ static bool vboxVideoModesMatch(VIDEO_MODE_INFORMATION *pMode1, VIDEO_MODE_INFOR
             && pMode1->BitsPerPlane == pMode2->BitsPerPlane;
 }
 
-static DECLINLINE(void) vboxVideoChackModeAdd(VIDEO_MODE_INFORMATION *pModes, int *pcNumModes)
+static DECLINLINE(void) vboxVideoCheckModeAdd(VIDEO_MODE_INFORMATION *pModes, int *pcNumModes)
 {
     const int cNumModes = *pcNumModes;
     for (int i = 0; i < cNumModes; ++i)
@@ -616,8 +618,7 @@ static DECLINLINE(void) vboxVideoChackModeAdd(VIDEO_MODE_INFORMATION *pModes, in
     (*pcNumModes)++;
 }
 
-#ifdef VBOX_WITH_WDDM
-# define VBOXVIDEOMODE_ADDED(_aModes, _pcModes) vboxVideoChackModeAdd(_aModes, _pcModes)
+# define VBOXVIDEOMODE_ADDED(_aModes, _pcModes) vboxVideoCheckModeAdd(_aModes, _pcModes)
 #else
 # define VBOXVIDEOMODE_ADDED(_aModes, _pcModes) do { (*(_pcModes))++; } while (0)
 #endif
@@ -2317,15 +2318,15 @@ static VOID vboxWddmBuildVideoModesInfo(PDEVICE_EXTENSION DeviceExtension, D3DDD
     vboxVideoBuildResolutionTable(pModes->aModes, pModes->cModes, (SIZE*)((void*)pModes->aResolutions), &pModes->cResolutions);
 }
 
-NTSTATUS vboxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, PVBOXWDDM_VIDEOMODES_INFO pModeInfos,
-        D3DKMDT_2DREGION *pResolution, VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t *piPreferrableMode)
+NTSTATUS vboxWddmGetModesForResolution(VIDEO_MODE_INFORMATION *pAllModes, uint32_t cAllModes, int iSearchPreferredMode,
+        const D3DKMDT_2DREGION *pResolution, VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t *piPreferrableMode)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     uint32_t cFound = 0;
     int iFoundPreferrableMode = -1;
-    for (uint32_t i = 0; i < pModeInfos->cModes; ++i)
+    for (uint32_t i = 0; i < cAllModes; ++i)
     {
-        VIDEO_MODE_INFORMATION *pCur = &pModeInfos->aModes[i];
+        VIDEO_MODE_INFORMATION *pCur = &pAllModes[i];
         if (pResolution->cx == pCur->VisScreenWidth
                         && pResolution->cy == pCur->VisScreenHeight)
         {
@@ -2334,7 +2335,7 @@ NTSTATUS vboxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, PVBOXW
             else
                 Status = STATUS_BUFFER_TOO_SMALL;
 
-            if (i == pModeInfos->iPreferredMode)
+            if (i == iSearchPreferredMode)
                 iFoundPreferrableMode = cFound;
 
             ++cFound;
@@ -2350,6 +2351,184 @@ NTSTATUS vboxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, PVBOXW
     return Status;
 }
 
+int vboxWddmVideoModeFind(const VIDEO_MODE_INFORMATION *pModes, int cModes, const VIDEO_MODE_INFORMATION *pM)
+{
+    for (int i = 0; i < cModes; ++i)
+    {
+        const VIDEO_MODE_INFORMATION *pMode = &pModes[i];
+        if (pMode->VisScreenHeight == pM->VisScreenHeight && pMode->VisScreenWidth == pM->VisScreenWidth && pMode->BitsPerPlane == pM->BitsPerPlane)
+            return i;
+    }
+    return -1;
+}
+
+int vboxWddmVideoResolutionFind(const D3DKMDT_2DREGION *pResolutions, int cResolutions, const D3DKMDT_2DREGION *pRes)
+{
+    for (int i = 0; i < cResolutions; ++i)
+    {
+        const D3DKMDT_2DREGION *pResolution = &pResolutions[i];
+        if (pResolution->cx == pRes->cx && pResolution->cy == pRes->cy)
+            return i;
+    }
+    return -1;
+}
+
+bool vboxWddmVideoResolutionsMatch(const D3DKMDT_2DREGION *pResolutions1, const D3DKMDT_2DREGION *pResolutions2, int cResolutions)
+{
+    for (int i = 0; i < cResolutions; ++i)
+    {
+        const D3DKMDT_2DREGION * pRes1 = &pResolutions1[i];
+        int j = 0;
+        for (;j < cResolutions; ++j)
+        {
+            const D3DKMDT_2DREGION * pRes2 = &pResolutions2[j];
+            if (pRes1->cx == pRes2->cx && pRes1->cy == pRes2->cy)
+                break;
+        }
+
+        if (j == cResolutions)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool vboxWddmVideoModesMatch(const VIDEO_MODE_INFORMATION *pModes1, const VIDEO_MODE_INFORMATION *pModes2, int cModes)
+{
+    for (int i = 0; i < cModes; ++i)
+    {
+        const VIDEO_MODE_INFORMATION *pM1 = &pModes1[i];
+        int j = 0;
+        for (;j < cModes; ++j)
+        {
+            const VIDEO_MODE_INFORMATION *pM2 = &pModes2[j];
+
+            if (pM1->VisScreenHeight == pM2->VisScreenHeight
+                    && pM1->VisScreenWidth == pM2->VisScreenWidth
+                    && pM1->BitsPerPlane == pM2->BitsPerPlane)
+                break;
+        }
+
+        if (j == cModes)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+D3DDDIFORMAT vboxWddmCalcPixelFormat(const VIDEO_MODE_INFORMATION *pInfo)
+{
+    switch (pInfo->BitsPerPlane)
+    {
+        case 32:
+            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                if (pInfo->RedMask == 0xFF0000 && pInfo->GreenMask == 0xFF00 && pInfo->BlueMask == 0xFF)
+                    return D3DDDIFMT_A8R8G8B8;
+                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
+                AssertBreakpoint();
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        case 24:
+            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                if (pInfo->RedMask == 0xFF0000 && pInfo->GreenMask == 0xFF00 && pInfo->BlueMask == 0xFF)
+                    return D3DDDIFMT_R8G8B8;
+                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
+                AssertBreakpoint();
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        case 16:
+            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                if (pInfo->RedMask == 0xF800 && pInfo->GreenMask == 0x7E0 && pInfo->BlueMask == 0x1F)
+                    return D3DDDIFMT_R5G6B5;
+                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
+                AssertBreakpoint();
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        case 8:
+            if((pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && (pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                return D3DDDIFMT_P8;
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        default:
+            drprintf((__FUNCTION__": unsupported bpp(%d)\n", pInfo->BitsPerPlane));
+            AssertBreakpoint();
+            break;
+    }
+
+    return D3DDDIFMT_UNKNOWN;
+}
+
+bool vboxWddmFillMode(VIDEO_MODE_INFORMATION *pInfo, D3DDDIFORMAT enmFormat, ULONG w, ULONG h)
+{
+    pInfo->VisScreenWidth = w;
+    pInfo->VisScreenHeight = h;
+    pInfo->VideoMemoryBitmapWidth = w;
+    pInfo->VideoMemoryBitmapHeight = h;
+
+    switch (enmFormat)
+    {
+        case D3DDDIFMT_A8R8G8B8:
+            pInfo->AttributeFlags = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+            pInfo->BitsPerPlane = 32;
+            pInfo->RedMask = 0xFF0000;
+            pInfo->GreenMask = 0xFF00;
+            pInfo->BlueMask = 0xFF;
+            return true;
+        case D3DDDIFMT_R8G8B8:
+            pInfo->AttributeFlags = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+            pInfo->BitsPerPlane = 24;
+            pInfo->RedMask = 0xFF0000;
+            pInfo->GreenMask = 0xFF00;
+            pInfo->BlueMask = 0xFF;
+            return true;
+        case D3DDDIFMT_R5G6B5:
+            pInfo->AttributeFlags = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+            pInfo->BitsPerPlane = 16;
+            pInfo->RedMask = 0xF800;
+            pInfo->GreenMask = 0x7E0;
+            pInfo->BlueMask = 0x1F;
+            return true;
+        case D3DDDIFMT_P8:
+            pInfo->AttributeFlags = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN | VIDEO_MODE_PALETTE_DRIVEN | VIDEO_MODE_MANAGED_PALETTE;
+            pInfo->BitsPerPlane = 8;
+            pInfo->RedMask = 0;
+            pInfo->GreenMask = 0;
+            pInfo->BlueMask = 0;
+            return true;
+        default:
+            drprintf((__FUNCTION__": unsupported enmFormat(%d)\n", enmFormat));
+            AssertBreakpoint();
+            break;
+    }
+
+    return false;
+}
 
 static VBOXWDDM_VIDEOMODES_INFO g_aVBoxVideoModeInfos[VBOX_VIDEO_MAX_SCREENS] = {0};
 

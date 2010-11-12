@@ -305,73 +305,6 @@ VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PDEVICE_EXTENSION pDevE
     return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
 }
 
-
-D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo)
-{
-    switch (pInfo->BitsPerPlane)
-    {
-        case 32:
-            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
-            {
-                if (pInfo->RedMask == 0xFF0000 && pInfo->GreenMask == 0xFF00 && pInfo->BlueMask == 0xFF)
-                    return D3DDDIFMT_A8R8G8B8;
-                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
-                AssertBreakpoint();
-            }
-            else
-            {
-                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
-                AssertBreakpoint();
-            }
-            break;
-        case 24:
-            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
-            {
-                if (pInfo->RedMask == 0xFF0000 && pInfo->GreenMask == 0xFF00 && pInfo->BlueMask == 0xFF)
-                    return D3DDDIFMT_R8G8B8;
-                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
-                AssertBreakpoint();
-            }
-            else
-            {
-                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
-                AssertBreakpoint();
-            }
-            break;
-        case 16:
-            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
-            {
-                if (pInfo->RedMask == 0xF800 && pInfo->GreenMask == 0x7E0 && pInfo->BlueMask == 0x1F)
-                    return D3DDDIFMT_R5G6B5;
-                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
-                AssertBreakpoint();
-            }
-            else
-            {
-                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
-                AssertBreakpoint();
-            }
-            break;
-        case 8:
-            if((pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && (pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
-            {
-                return D3DDDIFMT_P8;
-            }
-            else
-            {
-                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
-                AssertBreakpoint();
-            }
-            break;
-        default:
-            drprintf((__FUNCTION__": unsupported bpp(%d)\n", pInfo->BitsPerPlane));
-            AssertBreakpoint();
-            break;
-    }
-
-    return D3DDDIFMT_UNKNOWN;
-}
-
 NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDeviceInfo, PULONG pAdapterMemorySize)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -3620,7 +3553,7 @@ DxgkDdiIsSupportedVidPn(
     NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (Status == STATUS_SUCCESS)
     {
-#ifdef DEBUG_misha
+#ifdef VBOXWDDM_DEBUG_VIDPN
         vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>\n", pContext, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
 #endif
 
@@ -3705,7 +3638,7 @@ DxgkDdiIsSupportedVidPn(
     }
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
-#ifdef DEBUG_misha
+#ifdef VBOXWDDM_DEBUG_VIDPN
     drprintf(("The Given VidPn is %ssupported", pIsSupportedVidPnArg->IsVidPnSupported ? "" : "!!NOT!! "));
 #endif
 
@@ -3739,7 +3672,7 @@ DxgkDdiRecommendFunctionalVidPn(
     {
         VIDEO_MODE_INFORMATION *pResModes = NULL;
         uint32_t cResModes = 0;
-        for (int i = commonFromDeviceExt(pDevExt)->cDisplays -1; i >= 0 ; --i)
+        for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
         {
             /* @todo: check that we actually need the current source->target */
             D3DKMDT_2DREGION Resolution;
@@ -3758,7 +3691,7 @@ DxgkDdiRecommendFunctionalVidPn(
             int32_t iPreferableResMode;
             uint32_t cActualResModes;
 
-            Status = vboxWddmGetModesForResolution(pDevExt, pInfo, &Resolution,
+            Status = vboxWddmGetModesForResolution(pInfo->aModes, pInfo->cModes, pInfo->iPreferredMode, &Resolution,
                     pResModes, cResModes, &cActualResModes, &iPreferableResMode);
             Assert(Status == STATUS_SUCCESS || Status == STATUS_BUFFER_TOO_SMALL);
             if (Status == STATUS_BUFFER_TOO_SMALL)
@@ -3776,7 +3709,7 @@ DxgkDdiRecommendFunctionalVidPn(
                     break;
                 }
                 cResModes = cActualResModes;
-                Status = vboxWddmGetModesForResolution(pDevExt, pInfo, &Resolution,
+                Status = vboxWddmGetModesForResolution(pInfo->aModes, pInfo->cModes, pInfo->iPreferredMode, &Resolution,
                                     pResModes, cResModes, &cActualResModes, &iPreferableResMode);
                 Assert(Status == STATUS_SUCCESS);
                 if (Status != STATUS_SUCCESS)
@@ -3785,7 +3718,7 @@ DxgkDdiRecommendFunctionalVidPn(
             else if (Status != STATUS_SUCCESS)
                 break;
 
-            Assert(iPreferableResMode > 0);
+            Assert(iPreferableResMode >= 0);
 
             Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
                             pResModes, cResModes, iPreferableResMode,
@@ -3799,7 +3732,10 @@ DxgkDdiRecommendFunctionalVidPn(
             }
         }
 
-#ifdef DEBUG_misha
+        if(pResModes)
+            vboxWddmMemFree(pResModes);
+
+#ifdef VBOXWDDM_DEBUG_VIDPN
         vboxVidPnDumpVidPn("\n>>>>Recommended VidPN: >>>>\n", pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
 #endif
     }
@@ -3828,7 +3764,7 @@ DxgkDdiEnumVidPnCofuncModality(
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (Status == STATUS_SUCCESS)
     {
-#ifdef DEBUG_misha
+#ifdef VBOXWDDM_DEBUG_VIDPN
         vboxVidPnDumpCofuncModalityArg(">>>>MODALITY Args: ", pEnumCofuncModalityArg, "\n");
         vboxVidPnDumpVidPn(">>>>MODALITY VidPN (IN) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
 #endif
@@ -3840,10 +3776,11 @@ DxgkDdiEnumVidPnCofuncModality(
         if (Status == STATUS_SUCCESS)
         {
             VBOXVIDPNCOFUNCMODALITY CbContext = {0};
+            CbContext.pDevExt = pDevExt;
+            CbContext.pVidPnInterface = pVidPnInterface;
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
             CbContext.pInfos = vboxWddmGetAllVideoModesInfos(pDevExt);
-            Status = vboxVidPnEnumPaths(pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface,
-                    hVidPnTopology, pVidPnTopologyInterface,
+            Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
                     vboxVidPnCofuncModalityPathEnum, &CbContext);
             Assert(Status == STATUS_SUCCESS);
             if (Status == STATUS_SUCCESS)
@@ -3859,7 +3796,7 @@ DxgkDdiEnumVidPnCofuncModality(
         else
             drprintf((__FUNCTION__ ": pfnGetTopology failed Status(0x%x)\n", Status));
 
-#ifdef DEBUG_misha
+#ifdef VBOXWDDM_DEBUG_VIDPN
         vboxVidPnDumpVidPn("\n>>>>MODALITY VidPN (OUT) : >>>>\n", pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
 #endif
     }
@@ -4051,7 +3988,7 @@ DxgkDdiCommitVidPn(
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
-#ifdef DEBUG_misha
+#ifdef VBOXWDDM_DEBUG_VIDPN
         vboxVidPnDumpVidPn("\n>>>>COMMIT VidPN: >>>>\n", pDevExt, pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
 #endif
         if (pCommitVidPnArg->AffectedVidPnSourceId != D3DDDI_ID_ALL)
@@ -4079,9 +4016,10 @@ DxgkDdiCommitVidPn(
             if (Status == STATUS_SUCCESS)
             {
                 VBOXVIDPNCOMMIT CbContext = {0};
+                CbContext.pDevExt = pDevExt;
+                CbContext.pVidPnInterface = pVidPnInterface;
                 CbContext.pCommitVidPnArg = pCommitVidPnArg;
-                Status = vboxVidPnEnumPaths(pDevExt, pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface,
-                            hVidPnTopology, pVidPnTopologyInterface,
+                Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
                             vboxVidPnCommitPathEnum, &CbContext);
                 Assert(Status == STATUS_SUCCESS);
                 if (Status == STATUS_SUCCESS)
