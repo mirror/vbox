@@ -325,9 +325,9 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
     size_t cchUserGroup = strlen(Owner.Attr.u.UnixOwner.szName)
                         + 1
                         + strlen(Group.Attr.u.UnixGroup.szName);
-    int cchPad = cchUserGroup + cchSize + 1 < 18
-               ? 18 - (cchUserGroup + cchSize + 1)
-               : 0;
+    ssize_t cchPad = cchUserGroup + cchSize + 1 < 18
+                   ? 18 - (cchUserGroup + cchSize + 1)
+                   : 0;
 
     /*
      * Go to press.
