@@ -321,11 +321,91 @@ RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir);
 
 
 /** @defgroup grp_vfs_iostream      VFS Symbolic Link API
+ *
+ * @remarks The TAR VFS and filesystem stream uses symbolic links for
+ *          describing hard links as well.  The users must use RTFS_IS_SYMLINK
+ *          to check if it is a real symlink in those cases.
+ *
+ * @remarks Any VFS which is backed by a real file system may be subject to
+ *          races with other processes or threads, so the user may get
+ *          unexpected errors when this happends.  This is a bit host specific,
+ *          i.e. it might be prevent on windows if we care.
+ *
  * @{
  */
 
+
+/**
+ * Retains a reference to the VFS symbolic link handle.
+ *
+ * @returns New reference count on success, UINT32_MAX on failure.
+ * @param   hVfsSym         The VFS symbolic link handle.
+ */
 RTDECL(uint32_t)    RTVfsSymlinkRetain(RTVFSSYMLINK hVfsSym);
+
+/**
+ * Releases a reference to the VFS symbolic link handle.
+ *
+ * @returns New reference count on success (0 if closed), UINT32_MAX on failure.
+ * @param   hVfsSym         The VFS symbolic link handle.
+ */
 RTDECL(uint32_t)    RTVfsSymlinkRelease(RTVFSSYMLINK hVfsSym);
+
+/**
+ * Query information about the symbolic link.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsSym         The VFS symbolic link handle.
+ * @param   pObjInfo        Where to return the info.
+ * @param   enmAddAttr      Which additional attributes should be retrieved.
+ *
+ * @sa      RTFileQueryInfo, RTPathQueryInfo, RTPathQueryInfoEx
+ */
+RTDECL(int)         RTVfsSymlinkQueryInfo(RTVFSSYMLINK hVfsSym, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr);
+
+/**
+ * Set the unix style owner and group.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsSym         The VFS symbolic link handle.
+ * @param   fMode           The new mode bits.
+ * @param   fMask           The mask indicating which bits we are changing.
+ * @sa      RTFileSetMode, RTPathSetMode
+ */
+RTDECL(int)         RTVfsSymlinkSetMode(RTVFSSYMLINK hVfsSym, RTFMODE fMode, RTFMODE fMask);
+
+/**
+ * Set the timestamps associated with the object.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsSym         The VFS symbolic link handle.
+ * @param   pAccessTime     Pointer to the new access time. NULL if not
+ *                          to be changed.
+ * @param   pModificationTime   Pointer to the new modifcation time. NULL if
+ *                              not to be changed.
+ * @param   pChangeTime     Pointer to the new change time. NULL if not to be
+ *                          changed.
+ * @param   pBirthTime      Pointer to the new time of birth. NULL if not to be
+ *                          changed.
+ * @remarks See RTFileSetTimes for restrictions and behavior imposed by the
+ *          host OS or underlying VFS provider.
+ * @sa      RTFileSetTimes, RTPathSetTimes
+ */
+RTDECL(int)         RTVfsSymlinkSetTimes(RTVFSSYMLINK hVfsSym, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                         PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
+
+/**
+ * Set the unix style owner and group.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsSym         The VFS symbolic link handle.
+ * @param   uid             The user ID of the new owner.  NIL_RTUID if
+ *                          unchanged.
+ * @param   gid             The group ID of the new owner group. NIL_RTGID if
+ *                          unchanged.
+ * @sa      RTFileSetOwner, RTPathSetOwner.
+ */
+RTDECL(int)         RTVfsSymlinkSetOwner(RTVFSSYMLINK hVfsSym, RTUID uid, RTGID gid);
 
 /**
  * Read the symbolic link target.
@@ -555,6 +635,14 @@ RTDECL(int)         RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb);
  * @param   cb              The number of zero bytes to insert.
  */
 RTDECL(int)         RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb);
+
+/**
+ * Checks if we're at the end of the I/O stream.
+ *
+ * @returns true if at EOS, otherwise false.
+ * @param   hVfsIos         The VFS I/O stream handle.
+ */
+RTDECL(bool)        RTVfsIoStrmIsAtEnd(RTVFSIOSTREAM hVfsIos);
 /** @} */
 
 
