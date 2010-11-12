@@ -421,7 +421,7 @@ typedef struct VBOXIDTE_TASKGATE
     /** Fixed value bit 2 - Set to 1. */
     unsigned    u1Fixed1 : 1;
     /** Fixed value bit 3 - Set to 0. */
-    unsigned    u1Fixed2: 1;
+    unsigned    u1Fixed2 : 1;
     /** Fixed value bit 4 - Set to 0. */
     unsigned    u1Fixed3 : 1;
     /** Descriptor Privilege level. */
@@ -453,7 +453,7 @@ typedef struct VBOXIDTE_INTERRUPTGATE
     /** Fixed value bit 2 - Set to 0. */
     unsigned    u1Fixed2 : 1;
     /** Fixed value bit 3 - Set to 0. */
-    unsigned    u1Fixed3: 1;
+    unsigned    u1Fixed3 : 1;
     /** Fixed value bit 4 - Set to 1. */
     unsigned    u1Fixed4 : 1;
     /** Fixed value bit 5 - Set to 1. */
@@ -490,7 +490,7 @@ typedef struct VBOXIDTE_TRAPGATE
     /** Fixed value bit 2 - Set to 0. */
     unsigned    u1Fixed2 : 1;
     /** Fixed value bit 3 - Set to 1. */
-    unsigned    u1Fixed3: 1;
+    unsigned    u1Fixed3 : 1;
     /** Fixed value bit 4 - Set to 1. */
     unsigned    u1Fixed4 : 1;
     /** Fixed value bit 5 - Set to 1. */
@@ -576,6 +576,155 @@ typedef VBOXIDTE *PVBOXIDTE;
 /** Pointer to IDT Entry. */
 typedef VBOXIDTE const *PCVBOXIDTE;
 
+/** IDT Entry, 64-bit mode, Intertupt gate view. */
+#pragma pack(1)                         /* paranoia */
+typedef struct VBOXIDTE64_INTERRUPTGATE
+{
+    /** Low offset word. */
+    unsigned    u16OffsetLow : 16;
+    /** Segment Selector. */
+    unsigned    u16SegSel : 16;
+    /** Interrupt Stack Table Index. */
+    unsigned    u3Ist : 3;
+    /** Fixed value bit 0 - Set to 0. */
+    unsigned    u1Fixed0 : 1;
+    /** Fixed value bit 1 - Set to 0. */
+    unsigned    u1Fixed1 : 1;
+    /** Fixed value bit 2 - Set to 0. */
+    unsigned    u1Fixed2 : 1;
+    /** Fixed value bit 3 - Set to 0. */
+    unsigned    u1Fixed3 : 1;
+    /** Fixed value bit 4 - Set to 0. */
+    unsigned    u1Fixed4 : 1;
+    /** Fixed value bit 5 - Set to 0. */
+    unsigned    u1Fixed5 : 1;
+    /** Fixed value bit 6 - Set to 1. */
+    unsigned    u1Fixed6 : 1;
+    /** Fixed value bit 7 - Set to 1. */
+    unsigned    u1Fixed7 : 1;
+    /** Gate size, 1 = 32 bits, 0 = 16 bits. */
+    unsigned    u132BitGate : 1;
+    /** Fixed value bit 5 - Set to 0. */
+    unsigned    u1Fixed8 : 1;
+    /** Descriptor Privilege level. */
+    unsigned    u2DPL : 2;
+    /** Present flag. */
+    unsigned    u1Present : 1;
+    /** High offset word. */
+    unsigned    u16OffsetHigh : 16;
+    /** Offset bits 32..63. */
+    unsigned    u32OffsetHigh64;
+    /** Reserved. */
+    unsigned    u32Reserved;
+} VBOXIDTE64_INTERRUPTGATE;
+#pragma pack()
+/** Pointer to IDT Entry, Interrupt gate view. */
+typedef  VBOXIDTE64_INTERRUPTGATE *PVBOXIDTE64_INTERRUPTGATE;
+
+/** IDT Entry, 64-bit mode, Trap gate view. */
+#pragma pack(1)                         /* paranoia */
+typedef struct VBOXIDTE64_TRAPGATE
+{
+    /** Low offset word. */
+    unsigned    u16OffsetLow : 16;
+    /** Segment Selector. */
+    unsigned    u16SegSel : 16;
+    /** Interrupt Stack Table Index. */
+    unsigned    u3Ist : 3;
+    /** Fixed value bit 0 - Set to 0. */
+    unsigned    u1Fixed0 : 1;
+    /** Fixed value bit 1 - Set to 0. */
+    unsigned    u1Fixed1 : 1;
+    /** Fixed value bit 2 - Set to 0. */
+    unsigned    u1Fixed2 : 1;
+    /** Fixed value bit 3 - Set to 0. */
+    unsigned    u1Fixed3 : 1;
+    /** Fixed value bit 4 - Set to 0. */
+    unsigned    u1Fixed4 : 1;
+    /** Fixed value bit 5 - Set to 1. */
+    unsigned    u1Fixed5 : 1;
+    /** Fixed value bit 6 - Set to 1. */
+    unsigned    u1Fixed6 : 1;
+    /** Fixed value bit 7 - Set to 1. */
+    unsigned    u1Fixed7 : 1;
+    /** Gate size, 1 = 32 bits, 0 = 16 bits. */
+    unsigned    u132BitGate : 1;
+    /** Fixed value bit 5 - Set to 0. */
+    unsigned    u1Fixed8 : 1;
+    /** Descriptor Privilege level. */
+    unsigned    u2DPL : 2;
+    /** Present flag. */
+    unsigned    u1Present : 1;
+    /** High offset word. */
+    unsigned    u16OffsetHigh : 16;
+    /** Offset bits 32..63. */
+    unsigned    u32OffsetHigh64;
+    /** Reserved. */
+    unsigned    u32Reserved;
+} VBOXIDTE64_TRAPGATE;
+#pragma pack()
+/** Pointer to IDT Entry, Interrupt gate view. */
+typedef  VBOXIDTE64_TRAPGATE *PVBOXIDTE64_TRAPGATE;
+
+/** IDT Entry, 64-bit mode, Generic view. */
+#pragma pack(1)                         /* paranoia */
+typedef struct VBOXIDTE64_GENERIC
+{
+    /** Low offset word. */
+    unsigned    u16OffsetLow : 16;
+    /** Segment Selector. */
+    unsigned    u16SegSel : 16;
+    /** Reserved. */
+    unsigned    u3Ist : 3;
+    /** Fixed value bit 0 - Set to 0. */
+    unsigned    u1Fixed0 : 1;
+    /** Fixed value bit 1 - Set to 0. */
+    unsigned    u1Fixed1 : 1;
+    /** IDT Type part one (not used for task gate). */
+    unsigned    u3Type1 : 3;
+    /** IDT Type part two. */
+    unsigned    u5Type2 : 5;
+    /** Descriptor Privilege level. */
+    unsigned    u2DPL : 2;
+    /** Present flag. */
+    unsigned    u1Present : 1;
+    /** High offset word. */
+    unsigned    u16OffsetHigh : 16;
+    /** Offset bits 32..63. */
+    unsigned    u32OffsetHigh64;
+    /** Reserved. */
+    unsigned    u32Reserved;
+} VBOXIDTE64_GENERIC;
+#pragma pack()
+/** Pointer to IDT Entry Generic view. */
+typedef VBOXIDTE64_GENERIC *PVBOXIDTE64_GENERIC;
+
+/** IDT Entry, 64-bit mode. */
+#pragma pack(1)                         /* paranoia */
+typedef union VBOXIDTE64
+{
+    /** Trap gate view. */
+    VBOXIDTE64_TRAPGATE       Trap;
+    /** Interrupt gate view. */
+    VBOXIDTE64_INTERRUPTGATE  Int;
+    /** Generic IDT view. */
+    VBOXIDTE64_GENERIC        Gen;
+
+    /** 8 bit unsigned integer view. */
+    uint8_t     au8[16];
+    /** 16 bit unsigned integer view. */
+    uint16_t    au16[8];
+    /** 32 bit unsigned integer view. */
+    uint32_t    au32[4];
+    /** 64 bit unsigned integer view. */
+    uint64_t    au64[2];
+} VBOXIDTE64;
+#pragma pack()
+/** Pointer to IDT Entry. */
+typedef VBOXIDTE64 *PVBOXIDTE64;
+/** Pointer to IDT Entry. */
+typedef VBOXIDTE64 const *PCVBOXIDTE64;
+
 #pragma pack(1)
 /** IDTR */
 typedef struct VBOXIDTR
@@ -607,6 +756,14 @@ typedef struct VBOXIDTR_VER1_6
 #define VBOXIDTE_OFFSET(desc) \
         (  ((uint32_t)((desc).Gen.u16OffsetHigh) << 16) \
          | (           (desc).Gen.u16OffsetLow        ) )
+
+/** @def VBOXIDTE64_OFFSET
+ * Return the offset of an IDT entry.
+ */
+#define VBOXIDTE64_OFFSET(desc) \
+        (  ((uint64_t)((desc).Gen.u32OffsetHigh64) << 32) \
+         | ((uint32_t)((desc).Gen.u16OffsetHigh)   << 16) \
+         | (           (desc).Gen.u16OffsetLow          ) )
 
 #pragma pack(1)
 /** GDTR */
