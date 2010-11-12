@@ -686,8 +686,8 @@ static int rtVfsObjInitNewObject(RTVFSOBJINTERNAL *pThis, PCRTVFSOBJOPS pObjOps,
              * The caller specified a lock, we consume the this reference.
              */
             AssertPtrReturn(hLock, VERR_INVALID_HANDLE);
-            AssertPtrReturn(hLock->enmType > RTVFSLOCKTYPE_INVALID && hLock->enmType < RTVFSLOCKTYPE_END, VERR_INVALID_HANDLE);
-            AssertPtrReturn(hLock->cRefs > 0, VERR_INVALID_HANDLE);
+            AssertReturn(hLock->enmType > RTVFSLOCKTYPE_INVALID && hLock->enmType < RTVFSLOCKTYPE_END, VERR_INVALID_HANDLE);
+            AssertReturn(hLock->cRefs > 0, VERR_INVALID_HANDLE);
         }
     }
     else if (hVfs != NIL_RTVFS)
