@@ -14,6 +14,8 @@
 
 #include "../VBoxVideo.h"
 
+//#define VBOXWDDM_DEBUG_VIDPN
+
 /* one page size */
 #define VBOXWDDM_C_DMA_BUFFER_SIZE         0x1000
 #define VBOXWDDM_C_DMA_PRIVATEDATA_SIZE    0x4000
