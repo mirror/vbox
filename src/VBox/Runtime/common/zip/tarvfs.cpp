@@ -453,7 +453,7 @@ static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
     if (pObjInfo->Attr.fMode & ~RTFS_UNIX_MASK)
         return VERR_TAR_BAD_MODE_FIELD;
 
-    RTFMODE fModeType;
+    RTFMODE fModeType = 0;
     switch (pTar->Posix.typeflag)
     {
         case RTZIPTAR_TF_OLDNORMAL:
