@@ -1321,8 +1321,8 @@ RT_C_DECLS_END
 #define VERR_TAR_UNKNOWN_TYPE_FLAG              (-937)
 /** The tar header is all zeros. */
 #define VERR_TAR_ZERO_HEADER                    (-938)
-/** Not a uniform standard tape archive header. */
-#define VERR_TAR_NOT_USTAR                      (-939)
+/** Not a uniform standard tape v0.0 archive header. */
+#define VERR_TAR_NOT_USTAR_V00                  (-939)
 /** The name is empty. */
 #define VERR_TAR_EMPTY_NAME                     (-940)
 /** A non-directory entry has a name ending with a slash. */
