@@ -31,16 +31,35 @@
 
 /** @name RTZIPTARHDRPOSIX::typeflag
  * @{  */
-#define RTZIPTAR_TF_OLDNORMAL '\0' /**< Normal disk file, Unix compatible */
-#define RTZIPTAR_TF_NORMAL    '0'  /**< Normal disk file */
-#define RTZIPTAR_TF_LINK      '1'  /**< Link to previously dumped file */
-#define RTZIPTAR_TF_SYMLINK   '2'  /**< Symbolic link */
-#define RTZIPTAR_TF_CHR       '3'  /**< Character special file */
-#define RTZIPTAR_TF_BLK       '4'  /**< Block special file */
-#define RTZIPTAR_TF_DIR       '5'  /**< Directory */
-#define RTZIPTAR_TF_FIFO      '6'  /**< FIFO special file */
-#define RTZIPTAR_TF_CONTIG    '7'  /**< Contiguous file */
+#define RTZIPTAR_TF_OLDNORMAL   '\0' /**< Normal disk file, Unix compatible */
+#define RTZIPTAR_TF_NORMAL      '0'  /**< Normal disk file */
+#define RTZIPTAR_TF_LINK        '1'  /**< Link to previously dumped file */
+#define RTZIPTAR_TF_SYMLINK     '2'  /**< Symbolic link */
+#define RTZIPTAR_TF_CHR         '3'  /**< Character special file */
+#define RTZIPTAR_TF_BLK         '4'  /**< Block special file */
+#define RTZIPTAR_TF_DIR         '5'  /**< Directory */
+#define RTZIPTAR_TF_FIFO        '6'  /**< FIFO special file */
+#define RTZIPTAR_TF_CONTIG      '7'  /**< Contiguous file */
+
+#define RTZIPTAR_TF_X_HDR       'x'  /**< Extended header. */
+#define RTZIPTAR_TF_X_GLOBAL    'g'  /**< Global extended header. */
+
+#define RTZIPTAR_TF_SOLARIS_XHDR    'X'
+
+#define RTZIPTAR_TF_GNU_DUMPDIR     'D'
+#define RTZIPTAR_TF_GNU_LONGLINK    'K'
+#define RTZIPTAR_TF_GNU_LONGNAME    'L'
+#define RTZIPTAR_TF_GNU_MULTIVOL    'M'
+#define RTZIPTAR_TF_GNU_SPARSE      'S'
+#define RTZIPTAR_TF_GNU_VOLDHR      'V'
 /** @} */
+
+/** The uniform standard tape archive format magic value. */
+#define RTZIPTAR_USTAR_MAGIC    "ustar"
+/** The ustar version string.
+ * @remarks The terminator character is not part of the field.  */
+#define RTZIPTAR_USTAR_VERSION  "00"
+
 
 /**
  * The posix header (according to SuS).

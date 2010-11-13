@@ -546,6 +546,29 @@ typedef uint32_t        RTDEV;
 /** Pointer to a device unix number. */
 typedef RTDEV          *PRTDEV;
 
+/** @name RTDEV Macros
+ * @{  */
+/**
+ * Our makedev macro.
+ * @returns RTDEV
+ * @param   uMajor          The major device number.
+ * @param   uMinor          The minor device number.
+ */
+#define RTDEV_MAKE(uMajor, uMinor)      ((RTDEV)( ((RTDEV)(uMajor) << 24) | (uMinor & UINT32_C(0x00ffffff)) ))
+/**
+ * Get the major device node number from an RTDEV type.
+ * @returns The major device number of @a uDev
+ * @param   uDev            The device number.
+ */
+#define RTDEV_MAJOR(uDev)               ((uDev) >> 24)
+/**
+ * Get the minor device node number from an RTDEV type.
+ * @returns The minor device number of @a uDev
+ * @param   uDev            The device number.
+ */
+#define RTDEV_MINOR(uDev)               ((uDev) & UINT32_C(0x00ffffff))
+/** @}  */
+
 /** i-node number. */
 typedef uint64_t        RTINODE;
 /** Pointer to a i-node number. */

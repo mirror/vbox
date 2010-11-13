@@ -1298,6 +1298,43 @@ RT_C_DECLS_END
 /** The tar termination records was encountered without reaching the end of
   * the input stream. */
 #define VERR_TAR_EOS_MORE_INPUT                 (-928)
+/** A number tar header field was malformed.  */
+#define VERR_TAR_BAD_NUM_FIELD                  (-929)
+/** A numeric tar header field was not terminated correctly. */
+#define VERR_TAR_BAD_NUM_FIELD_TERM             (-930)
+/** A number tar header field was encoded using base-256 which this
+ * tar implementation currently does not support.  */
+#define VERR_TAR_BASE_256_NOT_SUPPORTED         (-931)
+/** A number tar header field yielded a value too large for the internal
+ * variable of the tar interpreter. */
+#define VERR_TAR_NUM_VALUE_TOO_LARGE            (-932)
+/** The combined minor and major device number type is too small to hold the
+ * value stored in the tar header.  */
+#define VERR_TAR_DEV_VALUE_TOO_LARGE            (-933)
+/** The mode field in a tar header is bad. */
+#define VERR_TAR_BAD_MODE_FIELD                 (-934)
+/** The mode field should not include the type. */
+#define VERR_TAR_MODE_WITH_TYPE                 (-935)
+/** The size field should be zero for links and symlinks. */
+#define VERR_TAR_SIZE_NOT_ZERO                  (-936)
+/** Encountered an unknown type flag. */
+#define VERR_TAR_UNKNOWN_TYPE_FLAG              (-937)
+/** The tar header is all zeros. */
+#define VERR_TAR_ZERO_HEADER                    (-938)
+/** Not a uniform standard tape archive header. */
+#define VERR_TAR_NOT_USTAR                      (-939)
+/** The name is empty. */
+#define VERR_TAR_EMPTY_NAME                     (-940)
+/** A non-directory entry has a name ending with a slash. */
+#define VERR_TAR_NON_DIR_ENDS_WITH_SLASH        (-941)
+/** Encountered an unsupported portable archive exchange (pax) header. */
+#define VERR_TAR_UNSUPPORTED_PAX_TYPE           (-942)
+/** Encountered an unsupported Solaris Tar extension. */
+#define VERR_TAR_UNSUPPORTED_SOLARIS_HDR_TYPE   (-943)
+/** Encountered an unsupported GNU Tar extension. */
+#define VERR_TAR_UNSUPPORTED_GNU_HDR_TYPE       (-944)
+/** Malformed checksum field in the tar header. */
+#define VERR_TAR_BAD_CHKSUM_FIELD               (-945)
 /** @} */
 
 /** @name RTPoll status codes
