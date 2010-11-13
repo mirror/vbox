@@ -331,7 +331,11 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
      * Perform some basic checks.
      */
     if (!rtZipTarHdrIsUstar(pTar))
-        return VERR_TAR_NOT_USTAR;
+    {
+RTAssertMsg2("%.6s%c%c\n", pTar->Posix.magic, pTar->Posix.version[0], pTar->Posix.version[1]);
+RTAssertMsg2("%.8Rhxs\n", pTar->Posix.magic);
+        return VERR_TAR_NOT_USTAR_V00;
+    }
 
     switch (pTar->Posix.typeflag)
     {
@@ -851,17 +855,17 @@ static const RTVFSSYMLINKOPS g_rtZipTarFssSymOps =
 {
     { /* Obj */
         RTVFSOBJOPS_VERSION,
-        RTVFSOBJTYPE_IO_STREAM,
+        RTVFSOBJTYPE_SYMLINK,
         "TarFsStream::Symlink",
-        rtZipTarFssIos_Close,
-        rtZipTarFssIos_QueryInfo,
+        rtZipTarFssSym_Close,
+        rtZipTarFssSym_QueryInfo,
         RTVFSOBJOPS_VERSION
     },
     RTVFSSYMLINKOPS_VERSION,
     0,
     { /* ObjSet */
         RTVFSOBJSETOPS_VERSION,
-        RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
+        RT_OFFSETOF(RTVFSSYMLINKOPS, Obj) - RT_OFFSETOF(RTVFSSYMLINKOPS, ObjSet),
         rtZipTarFssSym_SetMode,
         rtZipTarFssSym_SetTimes,
         rtZipTarFssSym_SetOwner,

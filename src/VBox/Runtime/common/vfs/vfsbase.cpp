@@ -923,7 +923,7 @@ RTDECL(RTVFSDIR)        RTVfsObjToDir(RTVFSOBJ hVfsObj)
         AssertPtrReturn(pThis, NIL_RTVFSDIR);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSDIR);
 
-        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_DIR)
         {
             rtVfsObjRetainVoid(pThis);
             return RT_FROM_MEMBER(pThis, RTVFSDIRINTERNAL, Base);
@@ -941,7 +941,7 @@ RTDECL(RTVFSIOSTREAM)   RTVfsObjToIoStream(RTVFSOBJ hVfsObj)
         AssertPtrReturn(pThis, NIL_RTVFSIOSTREAM);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSIOSTREAM);
 
-        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_IO_STREAM)
         {
             rtVfsObjRetainVoid(pThis);
             return RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base);
@@ -959,7 +959,7 @@ RTDECL(RTVFSFILE)       RTVfsObjToFile(RTVFSOBJ hVfsObj)
         AssertPtrReturn(pThis, NIL_RTVFSFILE);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSFILE);
 
-        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_FILE)
         {
             rtVfsObjRetainVoid(pThis);
             return RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream.Base);
@@ -977,7 +977,7 @@ RTDECL(RTVFSSYMLINK)    RTVfsObjToSymlink(RTVFSOBJ hVfsObj)
         AssertPtrReturn(pThis, NIL_RTVFSSYMLINK);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSSYMLINK);
 
-        if (pThis->pOps->enmType == RTVFSOBJTYPE_VFS)
+        if (pThis->pOps->enmType == RTVFSOBJTYPE_SYMLINK)
         {
             rtVfsObjRetainVoid(pThis);
             return RT_FROM_MEMBER(pThis, RTVFSSYMLINKINTERNAL, Base);

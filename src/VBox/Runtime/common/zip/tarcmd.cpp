@@ -267,6 +267,22 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
         RT_ZERO(Group);
     }
 
+    char szTarget[RTPATH_MAX];
+    szTarget[0] = '\0';
+    if (RTFS_IS_SYMLINK(UnixInfo.Attr.fMode))
+    {
+        RTVFSSYMLINK hVfsSymlink = RTVfsObjToSymlink(hVfsObj);
+        if (hVfsSymlink != NIL_RTVFSSYMLINK)
+        {
+            rc = RTVfsSymlinkRead(hVfsSymlink, szTarget, sizeof(szTarget));
+            if (RT_FAILURE(rc))
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsSymlinkRead returned %Rrc on '%s'", rc, pszName);
+            RTVfsSymlinkRelease(hVfsSymlink);
+        }
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to get symlink object for '%s'", pszName);
+    }
+
     /*
      * Translate the mode mask.
      */
@@ -330,7 +346,18 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
      * user/group and the size.
      */
     char   szSize[64];
-    size_t cchSize = RTStrPrintf(szSize, sizeof(szSize), "%RU64", UnixInfo.cbObject);
+    size_t cchSize;
+    switch (UnixInfo.Attr.fMode & RTFS_TYPE_MASK)
+    {
+        case RTFS_TYPE_DEV_CHAR:
+        case RTFS_TYPE_DEV_BLOCK:
+            cchSize = RTStrPrintf(szSize, sizeof(szSize), "%u,%u",
+                                  RTDEV_MAJOR(UnixInfo.Attr.u.Unix.Device), RTDEV_MINOR(UnixInfo.Attr.u.Unix.Device));
+            break;
+        default:
+            cchSize = RTStrPrintf(szSize, sizeof(szSize), "%RU64", UnixInfo.cbObject);
+            break;
+    }
 
     size_t cchUserGroup = strlen(Owner.Attr.u.UnixOwner.szName)
                         + 1
@@ -342,13 +369,23 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
     /*
      * Go to press.
      */
-    RTPrintf("%s %s/%s%*s %s %s %s\n",
-             szMode,
-             Owner.Attr.u.UnixOwner.szName, Group.Attr.u.UnixGroup.szName,
-             cchPad, "",
-             szSize,
-             szModTime,
-             pszName);
+    if (RTFS_IS_SYMLINK(UnixInfo.Attr.fMode))
+        RTPrintf("%s %s/%s%*s %s %s %s -> %s\n",
+                 szMode,
+                 Owner.Attr.u.UnixOwner.szName, Group.Attr.u.UnixGroup.szName,
+                 cchPad, "",
+                 szSize,
+                 szModTime,
+                 pszName,
+                 szTarget);
+    else
+        RTPrintf("%s %s/%s%*s %s %s %s\n",
+                 szMode,
+                 Owner.Attr.u.UnixOwner.szName, Group.Attr.u.UnixGroup.szName,
+                 cchPad, "",
+                 szSize,
+                 szModTime,
+                 pszName);
 
     return rcExit;
 }
