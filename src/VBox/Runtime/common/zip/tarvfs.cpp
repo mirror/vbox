@@ -288,7 +288,6 @@ static bool rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_
     {
         i32Unsigned -= *(unsigned char *)pch;
         i32Signed   -= *(signed   char *)pch;
-        pch++;
     } while (++pch != pchEnd);
 
     i32Unsigned += (unsigned char)' ' * sizeof(pHdr->Posix.chksum);
@@ -324,9 +323,9 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
     int rc = rtZipTarHdrFieldToNum(pTar->Posix.chksum, sizeof(pTar->Posix.chksum), true /*fOctalOnly*/, &i64HdrChkSum);
     if (RT_FAILURE(rc))
         return VERR_TAR_BAD_CHKSUM_FIELD;
-//    if (   i32ChkSum          != i64HdrChkSum
-//        && i32ChkSumSignedAlt != i64HdrChkSum) /** @todo check this */
-//        return VERR_TAR_CHKSUM_MISMATCH;
+    if (   i32ChkSum          != i64HdrChkSum
+        && i32ChkSumSignedAlt != i64HdrChkSum) /** @todo check this */
+        return VERR_TAR_CHKSUM_MISMATCH;
 
     /*
      * Perform some basic checks.
@@ -976,7 +975,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
 
     /*
      * Validate the header and convert to binary object info.
-     * We pick up the two zero headers in the failure path here.
+     * We pick up the start of the zero headers here in the failure path.
      */
     rc = rtZipTarHdrValidate(&Hdr);
     if (RT_FAILURE_NP(rc))
@@ -991,7 +990,18 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
                 pThis->fEndOfStream = true;
                 if (RTVfsIoStrmIsAtEnd(pThis->hVfsIos))
                     return VERR_EOF;
-                return VERR_TAR_EOS_MORE_INPUT;
+
+                /* Just drain the stream because blocksize may dictate that
+                   there is a whole bunch of stuff comming up. */
+                for (uint32_t i = 0; i < _32K / 512; i++)
+                {
+                    rc = RTVfsIoStrmRead(pThis->hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, &cbRead);
+                    if (rc == VINF_EOF)
+                        return VERR_EOF;
+                    if (RT_FAILURE(rc))
+                        break;
+                    Assert(cbRead == sizeof(Hdr));
+                }
             }
         }
 
@@ -1034,7 +1044,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
             pIosData->BaseObj.ObjInfo = Info;
             pIosData->cbFile          = Info.cbObject;
             pIosData->offFile         = 0;
-            pIosData->cbPadding       = 512 - (uint32_t)(Info.cbObject % 512);
+            pIosData->cbPadding       = Info.cbAllocated - Info.cbObject;
             pIosData->fEndOfStream    = false;
             pIosData->hVfsIos         = pThis->hVfsIos;
             RTVfsIoStrmRetain(pThis->hVfsIos);

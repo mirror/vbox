@@ -50,7 +50,8 @@
 #define RTZIPTARCMD_OPT_DELETE      1000
 #define RTZIPTARCMD_OPT_OWNER       1001
 #define RTZIPTARCMD_OPT_GROUP       1002
-#define RTZIPTARCMD_OPT_PREFIX      1003
+#define RTZIPTARCMD_OPT_UTC         1003
+#define RTZIPTARCMD_OPT_PREFIX      1004
 
 
 /*******************************************************************************
@@ -85,6 +86,8 @@ typedef struct RTZIPTARCMDOPS
     const char     *pszGroup;
     /** The group ID to set when unpacking if pszGroup is not NULL. */
     RTGID           gidGroup;
+    /** Display the modification times in UTC instead of local time. */
+    bool            fDisplayUtc;
 
     /** What to prefix all names with when creating, adding, whatever. */
     const char     *pszPrefix;
@@ -228,8 +231,10 @@ static RTEXITCODE rtZipTarCmdOpenInputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTR
  * @param   rcExit              The current exit code.
  * @param   hVfsObj             The tar object to display
  * @param   pszName             The name.
+ * @param   pOpts               The tar options.
  */
-static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVfsObj, const char *pszName)
+static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVfsObj, const char *pszName,
+                                                 PRTZIPTARCMDOPS pOpts)
 {
     /*
      * Query all the information.
@@ -308,9 +313,14 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
     /*
      * Format the modification time.
      */
-    char szModTime[32];
-    RTTIME ModTime;
-    if (RTTimeExplode(&ModTime, &UnixInfo.ModificationTime) == NULL)
+    char       szModTime[32];
+    RTTIME     ModTime;
+    PRTTIME    pTime;
+    if (!pOpts->fDisplayUtc)
+        pTime = RTTimeLocalExplode(&ModTime, &UnixInfo.ModificationTime);
+    else
+        pTime = RTTimeExplode(&ModTime, &UnixInfo.ModificationTime);
+    if (!pTime)
         RT_ZERO(ModTime);
     RTStrPrintf(szModTime, sizeof(szModTime), "%04d-%02u-%02u %02u:%02u",
                 ModTime.i32Year, ModTime.u8Month, ModTime.u8MonthDay, ModTime.u8Hour, ModTime.u8Minute);
@@ -325,8 +335,8 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
     size_t cchUserGroup = strlen(Owner.Attr.u.UnixOwner.szName)
                         + 1
                         + strlen(Group.Attr.u.UnixGroup.szName);
-    ssize_t cchPad = cchUserGroup + cchSize + 1 < 18
-                   ? 18 - (cchUserGroup + cchSize + 1)
+    ssize_t cchPad = cchUserGroup + cchSize + 1 < 19
+                   ? 19 - (cchUserGroup + cchSize + 1)
                    : 0;
 
     /*
@@ -402,7 +412,7 @@ static RTEXITCODE rtZipTarCmdList(PRTZIPTARCMDOPS pOpts)
                 if (!pOpts->fVerbose)
                     RTPrintf("%s\n", pszName);
                 else
-                    rcExit = rtZipTarCmdDisplayEntryVerbose(rcExit, hVfsObj, pszName);
+                    rcExit = rtZipTarCmdDisplayEntryVerbose(rcExit, hVfsObj, pszName, pOpts);
             }
 
             /*
@@ -465,6 +475,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         /* other options. */
         { "--owner",                RTZIPTARCMD_OPT_OWNER, RTGETOPT_REQ_STRING },
         { "--group",                RTZIPTARCMD_OPT_GROUP, RTGETOPT_REQ_STRING },
+        { "--utc",                  RTZIPTARCMD_OPT_UTC,  RTGETOPT_REQ_NOTHING },
 
         /* IPRT extensions */
         { "--prefix",               RTZIPTARCMD_OPT_PREFIX, RTGETOPT_REQ_STRING },
@@ -515,7 +526,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
                 break;
 
             case 'v':
-                Opts.fVerbose = false;
+                Opts.fVerbose = true;
                 break;
 
             case 'p':
@@ -541,6 +552,9 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
                 Opts.pszGroup = ValueUnion.psz;
                 break;
 
+            case RTZIPTARCMD_OPT_UTC:
+                Opts.fDisplayUtc = true;
+                break;
 
             /* iprt extensions */
             case RTZIPTARCMD_OPT_PREFIX:
