@@ -1020,6 +1020,11 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
         crDebug("Saving state with %d programs", crHashtableNumElements(pContext->program.programHash));
 
     rc = SSMR3PutS32(pSSM, pContext->shared->id);
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3PutS32(pSSM, crStateContextIsShared(pContext));
+    AssertRCReturn(rc, rc);
+
     if (pContext->shared->refCount>1)
     {
         bSaveShared = pContext->shared->saveCount==0;
@@ -1360,8 +1365,12 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
     /* Deal with shared state */
     {
         crFindSharedCtxParms_t parms;
+        int32_t shared;
 
         rc = SSMR3GetS32(pSSM, &pContext->shared->id);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetS32(pSSM, &shared);
         AssertRCReturn(rc, rc);
 
         pTmpContext->shared = NULL;
@@ -1371,14 +1380,20 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
 
         if (pTmpContext->shared)
         {
-            CRASSERT(pContext->shared->refCount==1 && pTmpContext->shared->refCount>1);
+            CRASSERT(pContext->shared->refCount==1);
             bLoadShared = GL_FALSE;
             crStateFreeShared(pContext->shared);
             pContext->shared = NULL;
+            pTmpContext->shared->refCount++;
         }
         else
         {
             SLC_COPYPTR(shared);
+        }
+
+        if (bLoadShared && shared)
+        {
+            crStateSetSharedContext(pTmpContext);
         }
     }
 

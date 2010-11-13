@@ -127,6 +127,23 @@ crStateShareContext(GLboolean value)
     }
 }
 
+DECLEXPORT(GLboolean) STATE_APIENTRY
+crStateContextIsShared(CRContext *pCtx)
+{
+    return pCtx->shared==gSharedState;
+}
+
+DECLEXPORT(void) STATE_APIENTRY
+crStateSetSharedContext(CRContext *pCtx)
+{
+    if (gSharedState)
+    {
+        crWarning("crStateSetSharedContext: shared is being changed from %p to %p", gSharedState, pCtx->shared);
+    }
+
+    gSharedState = pCtx->shared;
+}
+
 /*
  * Helper for crStateCreateContext, below.
  */
