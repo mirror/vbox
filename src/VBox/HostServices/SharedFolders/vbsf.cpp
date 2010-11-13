@@ -1337,7 +1337,7 @@ int vbsfClose (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
              pClient, Handle));
 
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
-    Assert(pHandle);
+    //Assert(pHandle);
     if (!pHandle)
         return VERR_INVALID_HANDLE;
 
@@ -1541,7 +1541,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
             if (   rc != VINF_SUCCESS
                 && rc != VWRN_NO_DIRENT_INFO)
             {
-                AssertFailed();
+                //AssertFailed();
                 if (   rc == VERR_NO_TRANSLATION
                     || rc == VERR_INVALID_UTF8_ENCODING)
                     continue;
@@ -1688,10 +1688,11 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
     int            rc = VINF_SUCCESS;
-    RTFSOBJINFO   *pObjInfo = (RTFSOBJINFO *)pBuffer;
+    SHFLFSOBJINFO   *pObjInfo = (SHFLFSOBJINFO *)pBuffer;
+    RTFSOBJINFO    fileinfo;
 
 
-    if (pHandle == 0 || pcbBuffer == 0 || pObjInfo == 0 || *pcbBuffer < sizeof(RTFSOBJINFO))
+    if (pHandle == 0 || pcbBuffer == 0 || pObjInfo == 0 || *pcbBuffer < sizeof(SHFLFSOBJINFO))
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
@@ -1704,11 +1705,11 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
 
     if (pHandle->Header.u32Flags & SHFL_HF_TYPE_DIR)
     {
-        rc = RTDirQueryInfo(pHandle->dir.Handle, pObjInfo, RTFSOBJATTRADD_NOTHING);
+        rc = RTDirQueryInfo(pHandle->dir.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
     }
     else
     {
-        rc = RTFileQueryInfo(pHandle->file.Handle, pObjInfo, RTFSOBJATTRADD_NOTHING);
+        rc = RTFileQueryInfo(pHandle->file.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
 #ifdef RT_OS_WINDOWS
         if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
             pObjInfo->Attr.fMode |= 0111;
@@ -1716,7 +1717,8 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
     }
     if (rc == VINF_SUCCESS)
     {
-        *pcbBuffer = sizeof(RTFSOBJINFO);
+        vbfsCopyFsObjInfoFromIprt(pObjInfo, &fileinfo);
+        *pcbBuffer = sizeof(SHFLFSOBJINFO);
     }
     else
         AssertFailed();
@@ -1728,16 +1730,16 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
     int             rc = VINF_SUCCESS;
-    RTFSOBJINFO    *pSFDEntry;
+    SHFLFSOBJINFO  *pSFDEntry;
 
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(RTFSOBJINFO))
+    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(SHFLFSOBJINFO))
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
     }
 
     *pcbBuffer  = 0;
-    pSFDEntry   = (RTFSOBJINFO *)pBuffer;
+    pSFDEntry   = (SHFLFSOBJINFO *)pBuffer;
 
     Assert(flags == (SHFL_INFO_SET | SHFL_INFO_FILE));
 
@@ -1803,7 +1805,7 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
         rc = vbsfQueryFileInfo(pClient, root, Handle, SHFL_INFO_GET|SHFL_INFO_FILE, &bufsize, (uint8_t *)pSFDEntry);
         if (rc == VINF_SUCCESS)
         {
-            *pcbBuffer = sizeof(RTFSOBJINFO);
+            *pcbBuffer = sizeof(SHFLFSOBJINFO);
         }
         else
             AssertFailed();
@@ -1817,7 +1819,7 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
     int             rc = VINF_SUCCESS;
-    RTFSOBJINFO    *pSFDEntry;
+    SHFLFSOBJINFO  *pSFDEntry;
 
     if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(RTFSOBJINFO))
     {
@@ -1826,7 +1828,7 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
     }
 
     *pcbBuffer  = 0;
-    pSFDEntry   = (RTFSOBJINFO *)pBuffer;
+    pSFDEntry   = (SHFLFSOBJINFO *)pBuffer;
 
     if (flags & SHFL_INFO_SIZE)
     {
@@ -1848,8 +1850,8 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
 #ifdef RT_OS_WINDOWS
             fileinfo.Attr.fMode |= 0111;
 #endif
-            *pSFDEntry = fileinfo;
-            *pcbBuffer = sizeof(RTFSOBJINFO);
+            vbfsCopyFsObjInfoFromIprt(pSFDEntry, &fileinfo);
+            *pcbBuffer = sizeof(SHFLFSOBJINFO);
         }
         else
             AssertFailed();
