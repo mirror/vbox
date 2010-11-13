@@ -111,6 +111,39 @@ typedef struct RTZIPTARFSSTREAM
 typedef RTZIPTARFSSTREAM *PRTZIPTARFSSTREAM;
 
 
+/**
+ * Checks if the TAR header is in the ustar format.
+ *
+ * @returns true / false.
+ * @param   pTar                The TAR header.
+ */
+DECLINLINE(bool) rtZipTarHdrIsUstar(PCRTZIPTARHDR pTar)
+{
+    return pTar->Posix.magic[0] == 'u'
+        && pTar->Posix.magic[1] == 's'
+        && pTar->Posix.magic[2] == 't'
+        && pTar->Posix.magic[3] == 'a'
+        && pTar->Posix.magic[4] == 'r'
+        && pTar->Posix.magic[5] == '\0'
+        && pTar->Posix.version[0] == '0'
+        && pTar->Posix.version[1] == '0';
+}
+
+
+/**
+ * Checks if the TAR header is in the ustar format and has a regular file type.
+ *
+ * @returns true / false.
+ * @param   pTar                The TAR header.
+ */
+DECLINLINE(bool) rtZipTarHdrIsRegularUstar(PCRTZIPTARHDR pTar)
+{
+    return rtZipTarHdrIsUstar(pTar)
+        && (    (   pTar->Posix.typeflag >= RTZIPTAR_TF_NORMAL
+                 && pTar->Posix.typeflag <= RTZIPTAR_TF_CONTIG)
+            ||  pTar->Posix.typeflag == RTZIPTAR_TF_OLDNORMAL);
+}
+
 
 /**
  * Checks if the TAR header includes a posix user name field.
@@ -120,7 +153,8 @@ typedef RTZIPTARFSSTREAM *PRTZIPTARFSSTREAM;
  */
 DECLINLINE(bool) rtZipTarHdrHasPosixUserName(PCRTZIPTARHDR pTar)
 {
-    return true;
+    return pTar->Posix.uname[0] != '\0'
+        && rtZipTarHdrIsUstar(pTar);
 }
 
 
@@ -132,7 +166,8 @@ DECLINLINE(bool) rtZipTarHdrHasPosixUserName(PCRTZIPTARHDR pTar)
  */
 DECLINLINE(bool) rtZipTarHdrHasPosixGroupName(PCRTZIPTARHDR pTar)
 {
-    return true;
+    return pTar->Posix.gname[0] != '\0'
+        && rtZipTarHdrIsUstar(pTar);
 }
 
 
@@ -144,19 +179,8 @@ DECLINLINE(bool) rtZipTarHdrHasPosixGroupName(PCRTZIPTARHDR pTar)
  */
 DECLINLINE(bool) rtZipTarHdrHasPrefix(PCRTZIPTARHDR pTar)
 {
-    return pTar->Posix.prefix[0] != '\0';
-}
-
-
-/**
- * Validates the TAR header.
- *
- * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
- * @param   pTar                The TAR header.
- */
-static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
-{
-    return VINF_SUCCESS;
+    return pTar->Posix.prefix[0] != '\0'
+        && rtZipTarHdrIsUstar(pTar);
 }
 
 
@@ -172,8 +196,187 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
  */
 static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOctalOnly, int64_t *pi64)
 {
-    /** @todo check for base256 and more  */
-    return RTStrToInt64Full(pszField, 8, pi64);
+    size_t const cchFieldOrg = cchField;
+    if (   fOctalOnly
+        || !(*(unsigned char *)pszField & 0x80))
+    {
+        /*
+         * Skip leading zeros, saving a few slower loops below.
+         */
+        while (cchField > 0 && *pszField == '0')
+            cchField--, pszField++;
+
+        /*
+         * Convert octal digits.
+         */
+        int64_t i64 = 0;
+        while (cchField > 0)
+        {
+            unsigned char uDigit = *pszField - '0';
+            if (uDigit >= 8)
+                break;
+            i64 <<= 3;
+            i64 |= uDigit;
+
+            pszField++;
+            cchField--;
+        }
+        *pi64 = i64;
+
+        /*
+         * Was it terminated correctly?
+         */
+        while (cchField > 0)
+        {
+            char ch = *pszField++;
+            if (ch != 0 && ch != ' ')
+                return cchField < cchFieldOrg
+                     ? VERR_TAR_BAD_NUM_FIELD_TERM
+                     : VERR_TAR_BAD_NUM_FIELD;
+            cchField--;
+        }
+    }
+    else
+    {
+        /** @todo implement base-256 encoded fields. */
+        return VERR_TAR_BASE_256_NOT_SUPPORTED;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Calculates the tar header checksums and detects if it's all zeros.
+ *
+ * @returns true if all zeros, false if not.
+ * @param   pHdr                The header to checksum.
+ * @param   pi32Unsigned        Where to store the checksum calculated using
+ *                              unsigned chars.   This is the one POSIX
+ *                              specifies.
+ * @param   pi32Signed          Where to store the checksum calculated using
+ *                              signed chars.
+ *
+ * @remarks The reason why we calculate the checksum as both signed and unsigned
+ *          has to do with various the char C type being signed on some hosts
+ *          and unsigned on others.
+ */
+static bool rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_t *pi32Signed)
+{
+    int32_t i32Unsigned = 0;
+    int32_t i32Signed   = 0;
+
+    /*
+     * Sum up the entire header.
+     */
+    const char *pch    = (const char *)pHdr;
+    const char *pchEnd = pch + sizeof(*pHdr);
+    do
+    {
+        i32Unsigned += *(unsigned char *)pch;
+        i32Signed   += *(signed   char *)pch;
+    } while (++pch != pchEnd);
+
+    /*
+     * Check if it's all zeros and replace the chksum field with spaces.
+     */
+    bool const fZeroHdr = i32Unsigned == 0;
+
+    pch    = pHdr->Posix.chksum;
+    pchEnd = pch + sizeof(pHdr->Posix.chksum);
+    do
+    {
+        i32Unsigned -= *(unsigned char *)pch;
+        i32Signed   -= *(signed   char *)pch;
+        pch++;
+    } while (++pch != pchEnd);
+
+    i32Unsigned += (unsigned char)' ' * sizeof(pHdr->Posix.chksum);
+    i32Signed   += (signed   char)' ' * sizeof(pHdr->Posix.chksum);
+
+    *pi32Unsigned = i32Unsigned;
+    if (pi32Signed)
+        *pi32Signed = i32Signed;
+    return fZeroHdr;
+}
+
+
+/**
+ * Validates the TAR header.
+ *
+ * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
+ * @param   pTar                The TAR header.
+ */
+static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
+{
+    /*
+     * Calc the checksum first since this enables us to detect zero headers.
+     */
+    int32_t i32ChkSum;
+    int32_t i32ChkSumSignedAlt;
+    if (rtZipTarCalcChkSum(pTar, &i32ChkSum, &i32ChkSumSignedAlt))
+        return VERR_TAR_ZERO_HEADER;
+
+    /*
+     * Read the checksum field and match the checksums.
+     */
+    int64_t i64HdrChkSum;
+    int rc = rtZipTarHdrFieldToNum(pTar->Posix.chksum, sizeof(pTar->Posix.chksum), true /*fOctalOnly*/, &i64HdrChkSum);
+    if (RT_FAILURE(rc))
+        return VERR_TAR_BAD_CHKSUM_FIELD;
+//    if (   i32ChkSum          != i64HdrChkSum
+//        && i32ChkSumSignedAlt != i64HdrChkSum) /** @todo check this */
+//        return VERR_TAR_CHKSUM_MISMATCH;
+
+    /*
+     * Perform some basic checks.
+     */
+    if (!rtZipTarHdrIsUstar(pTar))
+        return VERR_TAR_NOT_USTAR;
+
+    switch (pTar->Posix.typeflag)
+    {
+        case RTZIPTAR_TF_OLDNORMAL:
+        case RTZIPTAR_TF_NORMAL:
+        case RTZIPTAR_TF_CONTIG:
+        case RTZIPTAR_TF_LINK:
+        case RTZIPTAR_TF_SYMLINK:
+        case RTZIPTAR_TF_CHR:
+        case RTZIPTAR_TF_BLK:
+        case RTZIPTAR_TF_FIFO:
+        {
+            if (!pTar->Posix.name[0])
+                return VERR_TAR_EMPTY_NAME;
+
+            const char *pchEnd = RTStrEnd(&pTar->Posix.name[0], sizeof(pTar->Posix.name));
+            pchEnd = pchEnd ? pchEnd - 1 : &pTar->Posix.name[sizeof(pTar->Posix.name) - 1];
+            if (*pchEnd == '/')
+                return VERR_TAR_NON_DIR_ENDS_WITH_SLASH;
+            break;
+        }
+
+        case RTZIPTAR_TF_DIR:
+            if (!pTar->Posix.name[0])
+                return VERR_TAR_EMPTY_NAME;
+            break;
+
+        case RTZIPTAR_TF_X_HDR:
+        case RTZIPTAR_TF_X_GLOBAL:
+            return VERR_TAR_UNSUPPORTED_PAX_TYPE;
+
+        case RTZIPTAR_TF_SOLARIS_XHDR:
+            return VERR_TAR_UNSUPPORTED_SOLARIS_HDR_TYPE;
+
+        case RTZIPTAR_TF_GNU_DUMPDIR:
+        case RTZIPTAR_TF_GNU_LONGLINK:
+        case RTZIPTAR_TF_GNU_LONGNAME:
+        case RTZIPTAR_TF_GNU_MULTIVOL:
+        case RTZIPTAR_TF_GNU_SPARSE:
+        case RTZIPTAR_TF_GNU_VOLDHR:
+            return VERR_TAR_UNSUPPORTED_GNU_HDR_TYPE;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -181,21 +384,128 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
  * Translate a TAR header to an IPRT object info structure with additional UNIX
  * attributes.
  *
+ * This completes the validation done by rtZipTarHdrValidate.
+ *
  * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
  * @param   pTar                The TAR header (input).
  * @param   pObjInfo            The object info structure (output).
  */
 static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
 {
+    /*
+     * Zap the whole structure, this takes care of unused space in the union.
+     */
     RT_ZERO(*pObjInfo);
-    int rc;
 
-    int64_t i64;
-    rc = rtZipTarHdrFieldToNum(pTar->Posix.size, sizeof(pTar->Posix.size), false, &i64);
-    AssertRCSuccessReturn(rc, rc);
-    pObjInfo->cbObject = i64;
+    /*
+     * Convert the tar field in RTFSOBJINFO order.
+     */
+    int         rc;
+    int64_t     i64Tmp;
+#define GET_TAR_NUMERIC_FIELD_RET(a_Var, a_Field) \
+        do { \
+            rc = rtZipTarHdrFieldToNum(a_Field, sizeof(a_Field), false /*fOctalOnly*/, &i64Tmp); \
+            if (RT_FAILURE(rc)) \
+                return rc; \
+            (a_Var) = i64Tmp; \
+            if ((a_Var) != i64Tmp) \
+                return VERR_TAR_NUM_VALUE_TOO_LARGE; \
+        } while (0)
 
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->cbObject,        pTar->Posix.size);
+    pObjInfo->cbAllocated = RT_ALIGN_64(pObjInfo->cbObject, 512);
+    int64_t c64SecModTime;
+    GET_TAR_NUMERIC_FIELD_RET(c64SecModTime,             pTar->Posix.mtime);
+    RTTimeSpecSetSeconds(&pObjInfo->ChangeTime,           c64SecModTime);
+    RTTimeSpecSetSeconds(&pObjInfo->ModificationTime,     c64SecModTime);
+    RTTimeSpecSetSeconds(&pObjInfo->AccessTime,           c64SecModTime);
+    RTTimeSpecSetSeconds(&pObjInfo->BirthTime,            c64SecModTime);
+    if (c64SecModTime != RTTimeSpecGetSeconds(&pObjInfo->ModificationTime))
+        return VERR_TAR_NUM_VALUE_TOO_LARGE;
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.fMode,      pTar->Posix.mode);
     pObjInfo->Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.u.Unix.uid, pTar->Posix.uid);
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.u.Unix.gid, pTar->Posix.gid);
+    pObjInfo->Attr.u.Unix.cHardlinks    = 1;
+    pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
+    pObjInfo->Attr.u.Unix.INodeId       = 0;
+    pObjInfo->Attr.u.Unix.fFlags        = 0;
+    pObjInfo->Attr.u.Unix.GenerationId  = 0;
+    pObjInfo->Attr.u.Unix.Device        = 0;
+    if (   pTar->Posix.typeflag == RTZIPTAR_TF_CHR
+        || pTar->Posix.typeflag == RTZIPTAR_TF_BLK)
+    {
+        uint32_t uMajor, uMinor;
+        GET_TAR_NUMERIC_FIELD_RET(uMajor,               pTar->Posix.devmajor);
+        GET_TAR_NUMERIC_FIELD_RET(uMinor,               pTar->Posix.devminor);
+        pObjInfo->Attr.u.Unix.Device    = RTDEV_MAKE(uMajor, uMinor);
+        if (   uMajor != RTDEV_MAJOR(pObjInfo->Attr.u.Unix.Device)
+            || uMinor != RTDEV_MINOR(pObjInfo->Attr.u.Unix.Device))
+            return VERR_TAR_DEV_VALUE_TOO_LARGE;
+    }
+
+#undef GET_TAR_NUMERIC_FIELD_RET
+
+    /*
+     * Massage the result a little bit.
+     * Also validate some more now that we've got the numbers to work with.
+     */
+    if (pObjInfo->Attr.fMode & ~RTFS_UNIX_MASK)
+        return VERR_TAR_BAD_MODE_FIELD;
+
+    RTFMODE fModeType;
+    switch (pTar->Posix.typeflag)
+    {
+        case RTZIPTAR_TF_OLDNORMAL:
+        case RTZIPTAR_TF_NORMAL:
+        case RTZIPTAR_TF_CONTIG:
+            fModeType |= RTFS_TYPE_FILE;
+            break;
+
+        case RTZIPTAR_TF_LINK:
+            if (pObjInfo->cbObject != 0)
+                return VERR_TAR_SIZE_NOT_ZERO;
+            fModeType |= RTFS_TYPE_FILE; /* no better idea for now */
+            break;
+
+        case RTZIPTAR_TF_SYMLINK:
+            fModeType |= RTFS_TYPE_SYMLINK;
+            break;
+
+        case RTZIPTAR_TF_CHR:
+            fModeType |= RTFS_TYPE_DEV_CHAR;
+            break;
+
+        case RTZIPTAR_TF_BLK:
+            fModeType |= RTFS_TYPE_DEV_BLOCK;
+            break;
+
+        case RTZIPTAR_TF_DIR:
+            fModeType |= RTFS_TYPE_DIRECTORY;
+            break;
+
+        case RTZIPTAR_TF_FIFO:
+            fModeType |= RTFS_TYPE_FIFO;
+            break;
+
+        default:
+            return VERR_TAR_UNKNOWN_TYPE_FLAG; /* Should've been caught in validate. */
+    }
+    if (   (pObjInfo->Attr.fMode & RTFS_TYPE_MASK)
+        && (pObjInfo->Attr.fMode & RTFS_TYPE_MASK) != fModeType)
+        return VERR_TAR_MODE_WITH_TYPE;
+    pObjInfo->Attr.fMode |= fModeType;
+
+    switch (pTar->Posix.typeflag)
+    {
+        case RTZIPTAR_TF_CHR:
+        case RTZIPTAR_TF_BLK:
+        case RTZIPTAR_TF_DIR:
+        case RTZIPTAR_TF_FIFO:
+            pObjInfo->cbObject    = 0;
+            pObjInfo->cbAllocated = 0;
+            break;
+    }
 
     return VINF_SUCCESS;
 }
@@ -671,7 +981,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
     rc = rtZipTarHdrValidate(&Hdr);
     if (RT_FAILURE_NP(rc))
     {
-        if (ASMMemIsAllU32(&Hdr, sizeof(Hdr), 0) == NULL)
+        if (rc == VERR_TAR_ZERO_HEADER)
         {
             int rc2 = RTVfsIoStrmRead(pThis->hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, &cbRead);
             if (RT_FAILURE(rc2))
