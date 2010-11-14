@@ -79,7 +79,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  INST_BIN             = $(INST_VIRTUALBOX)Contents/MacOS/
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
- INST_EXTPACK         = $(INST_BIN)ExtensionPacks/
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_BIN)
@@ -97,7 +96,6 @@ else
  INST_SDK             = $(INST_BIN)sdk/
  INST_DLL             = $(INST_BIN)
  INST_SYS             = $(INST_BIN)
- INST_EXTPACK         = $(INST_BIN)ExtensionPacks/
  INST_TESTCASE        = $(INST_BIN)testcase/
  INST_ADDITIONS       = $(INST_BIN)additions/
  INST_ADDITIONS_ISO   = $(INST_ADDITIONS)
@@ -106,6 +104,8 @@ else
  INST_LIB             = lib/
  INST_ADDITIONS_LIB   = $(INST_LIB)additions/
 endif
+INST_EXTPACK          = $(INST_BIN)ExtensionPacks/
+INST_EXTPACK_CERTS    = $(INST_BIN)ExtPackCertificates/
 INST_EXTPACK_PUEL     = $(INST_EXTPACK)Puel/
 
 PATH_BIN              = $(patsubst %/,%,$(PATH_INS)/$(INST_BIN))
