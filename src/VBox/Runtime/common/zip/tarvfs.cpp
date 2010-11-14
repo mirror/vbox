@@ -305,8 +305,9 @@ static bool rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_
  *
  * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
  * @param   pTar                The TAR header.
+ * @param   penmType            Where to return the type of header on success.
  */
-static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
+static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar, PRTZIPTARTYPE penmType)
 {
     /*
      * Calc the checksum first since this enables us to detect zero headers.
@@ -324,19 +325,38 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar)
     if (RT_FAILURE(rc))
         return VERR_TAR_BAD_CHKSUM_FIELD;
     if (   i32ChkSum          != i64HdrChkSum
-        && i32ChkSumSignedAlt != i64HdrChkSum) /** @todo check this */
+        && i32ChkSumSignedAlt != i64HdrChkSum) /** @todo test this */
         return VERR_TAR_CHKSUM_MISMATCH;
+
+    /*
+     * Detect the tar type.
+     */
+    RTZIPTARTYPE enmType;
+    if (   pTar->Posix.magic[0] == 'u'
+        && pTar->Posix.magic[1] == 's'
+        && pTar->Posix.magic[2] == 't'
+        && pTar->Posix.magic[3] == 'a'
+        && pTar->Posix.magic[4] == 'r')
+    {
+        if (   pTar->Posix.magic[5]   == '\0'
+            && pTar->Posix.version[0] == '0'
+            && pTar->Posix.version[1] == '0')
+            enmType = RTZIPTARTYPE_POSIX;
+        else if (   pTar->Posix.magic[5]   == ' '
+                && pTar->Posix.version[0] == ' '
+                && pTar->Posix.version[1] == '\0')
+            enmType = RTZIPTARTYPE_GNU;
+        else
+            return VERR_TAR_NOT_USTAR_V00;
+    }
+    else
+        enmType = RTZIPTARTYPE_ANCIENT;
+    *penmType = enmType;
 
     /*
      * Perform some basic checks.
      */
-    if (!rtZipTarHdrIsUstar(pTar))
-    {
-RTAssertMsg2("%.6s%c%c\n", pTar->Posix.magic, pTar->Posix.version[0], pTar->Posix.version[1]);
-RTAssertMsg2("%.8Rhxs\n", pTar->Posix.magic);
-        return VERR_TAR_NOT_USTAR_V00;
-    }
-
+    /** @todo more/less? */
     switch (pTar->Posix.typeflag)
     {
         case RTZIPTAR_TF_OLDNORMAL:
@@ -351,6 +371,7 @@ RTAssertMsg2("%.8Rhxs\n", pTar->Posix.magic);
             if (!pTar->Posix.name[0])
                 return VERR_TAR_EMPTY_NAME;
 
+            /** @todo People claim some (older and newer buggy) tar stores dirs as regular files with a trailing slash. */
             const char *pchEnd = RTStrEnd(&pTar->Posix.name[0], sizeof(pTar->Posix.name));
             pchEnd = pchEnd ? pchEnd - 1 : &pTar->Posix.name[sizeof(pTar->Posix.name) - 1];
             if (*pchEnd == '/')
@@ -378,6 +399,7 @@ RTAssertMsg2("%.8Rhxs\n", pTar->Posix.magic);
         case RTZIPTAR_TF_GNU_VOLDHR:
             return VERR_TAR_UNSUPPORTED_GNU_HDR_TYPE;
     }
+
 
     return VINF_SUCCESS;
 }
@@ -981,7 +1003,8 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
      * Validate the header and convert to binary object info.
      * We pick up the start of the zero headers here in the failure path.
      */
-    rc = rtZipTarHdrValidate(&Hdr);
+    RTZIPTARTYPE enmTarType;
+    rc = rtZipTarHdrValidate(&Hdr, &enmTarType);
     if (RT_FAILURE_NP(rc))
     {
         if (rc == VERR_TAR_ZERO_HEADER)
