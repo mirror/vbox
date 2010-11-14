@@ -34,7 +34,7 @@
 #define VBOX_EXTPACK_INSTALL_DIR        "ExtensionPacks"
 /** The architecture-independent application data subdirectory where the
  * certificates are installed.  Relative to RTPathAppPrivateNoArch. */
-#define VBOX_EXTPACK_CERT_DIR           "Certificates"
+#define VBOX_EXTPACK_CERT_DIR           "ExtPackCertificates"
 
 
 /**
