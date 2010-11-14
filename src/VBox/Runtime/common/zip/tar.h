@@ -104,20 +104,103 @@ AssertCompileMemberOffset(RTZIPTARHDRPOSIX, prefix,    345);
 
 
 /**
+ * The GNU header.
+ */
+typedef struct RTZIPTARHDRGNU
+{
+    char    name[100];
+    char    mode[8];
+    char    uid[8];
+    char    gid[8];
+    char    size[12];
+    char    mtime[12];
+    char    chksum[8];
+    char    typeflag;
+    char    linkname[100];
+    char    magic[8];
+    char    uname[32];
+    char    gname[32];
+    char    devmajor[8];
+    char    devminor[8];
+    char    atime[12];
+    char    ctime[12];
+    char    offset[12];
+    char    longnames[4];
+    char    unused[1];
+    struct
+    {
+        char offset[12];
+        char numbytes[12];
+    }       sparse[4];
+    char    isextended;
+    char    realsize[12];
+    char    unused2[17];
+} RTZIPTARHDRGNU;
+AssertCompileSize(RTZIPTARHDRGNU, 512);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, name,        0);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, mode,      100);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, uid,       108);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, gid,       116);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, size,      124);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, mtime,     136);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, chksum,    148);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, typeflag,  156);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, linkname,  157);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, magic,     257);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, uname,     265);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, gname,     297);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, devmajor,  329);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, devminor,  337);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, atime,     345);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, ctime,     357);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, offset,    369);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, longnames, 381);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, unused,    385);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, sparse,    386);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, isextended,482);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, realsize,  483);
+AssertCompileMemberOffset(RTZIPTARHDRGNU, unused2,   495);
+
+
+/**
  * Tar header union.
  */
 typedef union RTZIPTARHDR
 {
     /** Byte view. */
-    char            ab[512];
+    char                ab[512];
     /** The standard header. */
-    RTZIPTARHDRPOSIX Posix;
+    RTZIPTARHDRPOSIX    Posix;
+    /** The GNU header. */
+    RTZIPTARHDRGNU      Gnu;
 } RTZIPTARHDR;
 AssertCompileSize(RTZIPTARHDR, 512);
 /** Pointer to a tar file header. */
 typedef RTZIPTARHDR *PRTZIPTARHDR;
 /** Pointer to a const tar file header. */
 typedef RTZIPTARHDR const *PCRTZIPTARHDR;
+
+
+/**
+ * Tar header type.
+ */
+typedef enum RTZIPTARTYPE
+{
+    /** Invalid type value. */
+    RTZIPTARTYPE_INVALID = 0,
+    /** Posix header.  */
+    RTZIPTARTYPE_POSIX,
+    /** The old GNU header, has layout conflicting with posix. */
+    RTZIPTARTYPE_GNU,
+    /** Ancient tar header which does not use anything beyond the magic. */
+    RTZIPTARTYPE_ANCIENT,
+    /** End of the valid type values (this is not valid).  */
+    RTZIPTARTYPE_END,
+    /** The usual type blow up.  */
+    RTZIPTARTYPE_32BIT_HACK = 0x7fffffff
+} RTZIPTARTYPE;
+typedef RTZIPTARTYPE *PRTZIPTARTYPE;
+
 
 #endif
 
