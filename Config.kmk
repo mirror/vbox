@@ -119,6 +119,7 @@ VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 VBOX_PATH_ADDITIONS   = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS))
 VBOX_PATH_ADDITIONS_ISO = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_ISO))
 VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
+VBOX_PATH_EXTPACK_PUEL  = $(patsubst %/,%,$(PATH_INS)/$(INST_EXTPACK_PUEL))
 
 
 # Delete targets on failure.
@@ -3486,6 +3487,10 @@ ifdef VBOX_WITH_EXTPACK
  TEMPLATE_VBoxRcExtPack_EXTENDS = VBoxRc
  TEMPLATE_VBoxRcExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
 
+ TEMPLATE_VBoxInsExtPack = For the install targets of an extension pack.
+ TEMPLATE_VBoxInsExtPack_MODE = 0644
+ TEMPLATE_VBoxInsExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
+
  # For each individual extension pack
  ifdef VBOX_WITH_EXTPACK_PUEL
   TEMPLATE_VBoxR3ExtPackPuel = For the ring-3 context modules in the PUEL extension pack.
@@ -3499,7 +3504,11 @@ ifdef VBOX_WITH_EXTPACK
   TEMPLATE_VBoxRcExtPackPuel = For the raw-mode context modules in the PUEL extension pack.
   TEMPLATE_VBoxRcExtPackPuel_EXTENDS = VBoxRcExtPack
   TEMPLATE_VBoxRcExtPackPuel_INST = $(INST_EXTPACK_PUEL)$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/
- endif
+
+  TEMPLATE_VBoxInsExtPackPuel = For the install targets of an extension pack.
+  TEMPLATE_VBoxInsExtPackPuel_EXTENDS = VBoxR0ExtPack
+  TEMPLATE_VBoxInsExtPackPuel_INST = $(INST_EXTPACK_PUEL)
+endif
 endif # VBOX_WITH_EXTPACK
 
 
