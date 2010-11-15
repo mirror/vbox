@@ -1293,6 +1293,7 @@ void UIMachineLogic::sltMountStorageMedium()
         }
         /* Open VMM Dialog: */
         QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(target.type, defaultMachineWindow()->machineWindow());
+        defaultMachineWindow()->machineView()->setFocus();
         if (!strMediumId.isNull())
             newId = strMediumId;
         else return;
