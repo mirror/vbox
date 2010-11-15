@@ -503,7 +503,7 @@ HRESULT VirtualBox::init()
         rc = unconst(m->ptrExtPackManager).createObject();
         if (SUCCEEDED(rc))
             /** @todo Define drop zone location. */
-            rc = m->ptrExtPackManager->init(NULL /*a_pszDropZoneDir*/, false /*a_fCheckDropZone*/);
+            rc = m->ptrExtPackManager->init(this, NULL /*a_pszDropZoneDir*/, false /*a_fCheckDropZone*/);
         if (FAILED(rc))
             throw rc;
 #endif
@@ -569,6 +569,12 @@ HRESULT VirtualBox::init()
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
         autoInitSpan.setSucceeded();
+
+#ifdef VBOX_WITH_EXTPACK
+    /* Let the extension packs have a go at things. */
+    if (SUCCEEDED(rc))
+        m->ptrExtPackManager->callAllVirtualBoxReadyHooks();
+#endif
 
     LogFlowThisFunc(("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
