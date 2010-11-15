@@ -346,6 +346,22 @@ public:
     } while (0)
 
 /**
+ * Converts the Guid input argument (string) to a Guid object, returns with
+ * E_INVALIDARG and error message on failure.
+ *
+ * @param a_Arg     Argument.
+ * @param a_GuidVar The Guid variable name.
+ */
+#define CheckComArgGuid(a_Arg, a_GuidVar) \
+    do { \
+        Guid tmpGuid(a_Arg); \
+        (a_GuidVar) = tmpGuid; \
+        if (RT_UNLIKELY((a_GuidVar).isEmpty())) \
+            return setError(E_INVALIDARG, \
+                tr("GUID argument %s is not valid (\"%ls\")"), #a_Arg, Bstr(a_Arg).raw()); \
+    } while (0)
+
+/**
  * Checks that the given expression (that must involve the argument) is true and
  * returns E_INVALIDARG + extended error info on failure.
  * @param arg   Argument.

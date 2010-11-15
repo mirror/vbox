@@ -28,25 +28,27 @@
 
 
 /**
- * Reads the extension pack description.
+ * Reads the extension pack descriptor.
  *
  * @returns NULL on success, pointer to an error message on failure (caller
  *          deletes it).
  * @param   a_pszDir        The directory containing the description file.
- * @param   a_pExtPackDesc  Where to store the description file.
+ * @param   a_pExtPackDesc  Where to store the extension pack descriptor.
  * @param   a_pObjInfo      Where to store the object info for the file (unix
  *                          attribs). Optional.
  */
 iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo)
 {
     /*
-     * Clear the description.
+     * Clear the descriptor.
      */
     a_pExtPackDesc->strName.setNull();
     a_pExtPackDesc->strDescription.setNull();
     a_pExtPackDesc->strVersion.setNull();
     a_pExtPackDesc->uRevision = 0;
     a_pExtPackDesc->strMainModule.setNull();
+    a_pExtPackDesc->cPlugIns = 0;
+    a_pExtPackDesc->paPlugIns = NULL;
 
     /*
      * Validate, open and parse the XML file.
@@ -54,7 +56,7 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     char szFilePath[RTPATH_MAX];
     int vrc = RTPathJoin(szFilePath, sizeof(szFilePath), a_pszDir, VBOX_EXTPACK_DESCRIPTION_NAME);
     if (RT_FAILURE(vrc))
-        return new iprt::MiniString("No VirtualBoxExtensionPack element");
+        return new iprt::MiniString("RTPathJoin failed with %Rrc", vrc);
 
     RTFSOBJINFO ObjInfo;
     vrc = RTPathQueryInfoEx(szFilePath, &ObjInfo,  RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK);
@@ -79,13 +81,13 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     {
         return new iprt::MiniString(Err.what());
     }
-    xml::ElementNode *pRoot = Doc.getRootElement();
 
     /*
      * Get the main element and check its version.
      */
-    const xml::ElementNode *pVBoxExtPackElm = pRoot->findChildElement(NULL, "VirtualBoxExtensionPack");
-    if (!pVBoxExtPackElm)
+    const xml::ElementNode *pVBoxExtPackElm = Doc.getRootElement();
+    if (   !pVBoxExtPackElm
+        || strcmp(pVBoxExtPackElm->getName(), "VirtualBoxExtensionPack") != 0)
         return new iprt::MiniString("No VirtualBoxExtensionPack element");
 
     iprt::MiniString strFormatVersion;
@@ -132,7 +134,7 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     const char *pszMainModule = pMainModuleElm->getValue();
     if (!pszMainModule || *pszMainModule == '\0')
         return new iprt::MiniString("The 'MainModule' element is empty");
-    if (!VBoxExtPackIsValidMainModuleString(pszVersion))
+    if (!VBoxExtPackIsValidMainModuleString(pszMainModule))
         return &(new iprt::MiniString("Invalid main module string: "))->append(pszMainModule);
 
     /*
@@ -145,6 +147,27 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     a_pExtPackDesc->strMainModule   = pszMainModule;
 
     return NULL;
+}
+
+
+/**
+ * Frees all resources associated with a extension pack descriptor.
+ *
+ * @param   a_pExtPackDesc      The extension pack descriptor to free.
+ */
+void VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
+{
+    if (!a_pExtPackDesc)
+        return;
+
+    a_pExtPackDesc->strName.setNull();
+    a_pExtPackDesc->strDescription.setNull();
+    a_pExtPackDesc->strVersion.setNull();
+    a_pExtPackDesc->uRevision = 0;
+    a_pExtPackDesc->strMainModule.setNull();
+    a_pExtPackDesc->cPlugIns = 0;
+    RTMemFree(a_pExtPackDesc->paPlugIns);
+    a_pExtPackDesc->paPlugIns = NULL;
 }
 
 
@@ -212,7 +235,7 @@ bool VBoxExtPackIsValidName(const char *pszName)
     /*
      * Check min and max name limits.
      */
-    if (   off > VBOX_EXTPACK_NAME_MIN_LEN
+    if (   off > VBOX_EXTPACK_NAME_MAX_LEN
         || off < VBOX_EXTPACK_NAME_MIN_LEN)
         return false;
 
@@ -231,14 +254,16 @@ bool VBoxExtPackIsValidVersionString(const char *pszVersion)
         return false;
 
     /* 1.x.y.z... */
-    if (!RT_C_IS_DIGIT(*pszVersion))
-        return false;
     for (;;)
     {
-        while (RT_C_IS_DIGIT(*pszVersion))
+        if (!RT_C_IS_DIGIT(*pszVersion))
+            return false;
+        do
             pszVersion++;
+        while (RT_C_IS_DIGIT(*pszVersion));
         if (*pszVersion != '.')
             break;
+        pszVersion++;
     }
 
     /* upper case string + numbers indicating the build type */
