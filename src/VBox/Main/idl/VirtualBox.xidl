@@ -14090,14 +14090,38 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-    name="IExtPack" extends="$unknown"
-    uuid="ab26b24e-d46c-4d09-aa44-e5092d2fe9ae"
+    name="IExtPackPlugIn" extends="$unknown"
+    uuid="58000040-e718-4746-bbce-4b86d96da461"
     wsmap="suppress"
     >
     <desc>
-      Interface for querying interfaces and information relating to an
-      extension pack.  The extension pack specific interfaces can be queried
-      via the IUnknown::QueryInterface method.
+      Interface for keeping information about a plug-in that ships with an
+      extension pack.
+    </desc>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>The plug-in name.</desc>
+    </attribute>
+    <attribute name="description" type="wstring" readonly="yes">
+      <desc>The plug-in description.</desc>
+    </attribute>
+    <attribute name="frontend" type="wstring" readonly="yes">
+      <desc>
+        The name of the frontend or component name this plug-in plugs into.
+      </desc>
+    </attribute>
+    <attribute name="modulePath" type="wstring" readonly="yes">
+      <desc> The module path. </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IExtPack" extends="$unknown"
+    uuid="f6549e1d-82f0-40c0-a6ab-e36d237acb0c"
+    wsmap="suppress"
+    >
+    <desc>
+      Interface for querying information about an extension pack as well as
+      accessing COM objects within it.
     </desc>
     <attribute name="name" type="wstring" readonly="yes">
       <desc>The extension pack name.  This is unique.</desc>
@@ -14116,6 +14140,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="revision" type="unsigned long" readonly="yes">
       <desc>The extension pack internal revision number.</desc>
     </attribute>
+    <attribute name="plugIns" type="IExtPackPlugIn" safearray="yes" readonly="yes">
+      <desc>Plug-ins provided by this extension pack.</desc>
+    </attribute>
     <attribute name="usable" type="boolean" readonly="yes">
       <desc>
         Indicates whether the extension pack is usable or not.  An
@@ -14129,6 +14156,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         empty string if usable and always a non-empty string if not usable.
       </desc>
     </attribute>
+    <method name="queryObject">
+      <desc>
+        Queries the IUnknown interface to an object in the extension pack
+        main module.  This allows plug-ins and others to talk directly to an
+        extension pack.
+        </desc>
+      <param name="objUuid" type="wstring" dir="in">
+        <desc>The object ID.  What exactly this is </desc>
+      </param>
+      <param name="returnInterface" type="$unknown" dir="out">
+        <desc>The queried interface.</desc>
+      </param>
+    </method>
   </interface>
 
   <interface
@@ -14186,6 +14226,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
     </method>
+
+    <method name="cleanup">
+      <desc>Cleans up failed installs and uninstalls</desc>
+    </method>
+
+    <method name="QueryAllPlugInsForFrontend">
+      <desc>
+        Gets the path to all the plug-in modules for a given frontend.
+
+        This is a convenience method that is intended to simplify the plug-in
+        loading process for a frontend.
+      </desc>
+      <param name="frontendName" type="wstring" dir="in">
+        <desc>The name of the frontend or component.</desc>
+      </param>
+      <param name="plugInModules" type="wstring" dir="out" safearray="yes">
+        <desc>Array containing the plug-in modules (full paths).</desc>
+      </param>
+    </method>
+
   </interface>
 
   <!--
@@ -15644,12 +15704,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      </attribute>
      <attribute name="hostIp"  type="wstring" readonly="yes">
        <desc>
-         Host ip address to bind socket on. 
+         Host ip address to bind socket on.
        </desc>
      </attribute>
      <attribute name="hostPort"  type="long" readonly="yes">
        <desc>
-         Host port to bind socket on. 
+         Host port to bind socket on.
        </desc>
      </attribute>
      <attribute name="guestIp"  type="wstring" readonly="yes">

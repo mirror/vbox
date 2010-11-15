@@ -778,11 +778,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          *  Load drivers in VBoxC.[so|dll]
          */
         PCFGMNODE pPDM;
-        PCFGMNODE pDrivers;
+        PCFGMNODE pNode;
         PCFGMNODE pMod;
         InsertConfigNode(pRoot,    "PDM", &pPDM);
-        InsertConfigNode(pPDM,     "Drivers", &pDrivers);
-        InsertConfigNode(pDrivers, "VBoxC", &pMod);
+        InsertConfigNode(pPDM,     "Devices", &pNode);
+        InsertConfigNode(pPDM,     "Drivers", &pNode);
+        InsertConfigNode(pNode,    "VBoxC", &pMod);
 #ifdef VBOX_WITH_XPCOM
         // VBoxC is located in the components subdirectory
         char szPathVBoxC[RTPATH_MAX];
@@ -792,6 +793,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #else
         InsertConfigString(pMod,   "Path",  "VBoxC");
 #endif
+
 
         /*
          * I/O settings (cache, max bandwidth, ...).
@@ -2402,7 +2404,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
              * Split the two and get the node, delete the value and create the node
              * if necessary.
              */
-            PCFGMNODE pNode;
             const char *pszCFGMValueName = strrchr(pszExtraDataKey, '/');
             if (pszCFGMValueName)
             {

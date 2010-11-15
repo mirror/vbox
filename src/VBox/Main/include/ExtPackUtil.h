@@ -25,7 +25,7 @@
 #define VBOX_EXTPACK_SUFFIX             ".vbox-extpack"
 
 /** The minimum length (strlen) of a extension pack name. */
-#define VBOX_EXTPACK_NAME_MIN_LEN       6
+#define VBOX_EXTPACK_NAME_MIN_LEN       3
 /** The max length (strlen) of a extension pack name. */
 #define VBOX_EXTPACK_NAME_MAX_LEN       64
 
@@ -38,32 +38,54 @@
 
 
 /**
- * Description of an extension pack.
+ * Plug-in descriptor.
+ */
+typedef struct VBOXEXTPACKPLUGINDESC
+{
+    /** The name. */
+    iprt::MiniString        strName;
+    /** The module name. */
+    iprt::MiniString        strModule;
+    /** The description. */
+    iprt::MiniString        strDescription;
+    /** The frontend or component which it plugs into. */
+    iprt::MiniString        strFrontend;
+} VBOXEXTPACKPLUGINDESC;
+/** Pointer to a plug-in descriptor. */
+typedef VBOXEXTPACKPLUGINDESC *PVBOXEXTPACKPLUGINDESC;
+
+/**
+ * Extension pack descriptor
  *
  * This is the internal representation of the ExtPack.xml.
  */
 typedef struct VBOXEXTPACKDESC
 {
     /** The name. */
-    iprt::MiniString    strName;
+    iprt::MiniString        strName;
     /** The description. */
-    iprt::MiniString    strDescription;
+    iprt::MiniString        strDescription;
     /** The version string. */
-    iprt::MiniString    strVersion;
+    iprt::MiniString        strVersion;
     /** The internal revision number. */
-    uint32_t            uRevision;
+    uint32_t                uRevision;
     /** The name of the main module. */
-    iprt::MiniString    strMainModule;
+    iprt::MiniString        strMainModule;
+    /** The number of plug-in descriptors. */
+    uint32_t                cPlugIns;
+    /** Pointer to an array of plug-in descriptors. */
+    PVBOXEXTPACKPLUGINDESC  paPlugIns;
 } VBOXEXTPACKDESC;
 
-/** Pointer to a extension pack description. */
+/** Pointer to a extension pack descriptor. */
 typedef VBOXEXTPACKDESC *PVBOXEXTPACKDESC;
-/** Pointer to a const extension pack description. */
+/** Pointer to a const extension pack descriptor. */
 typedef VBOXEXTPACKDESC const *PCVBOXEXTPACKDESC;
 
 
 iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
 iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
+void              VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
 bool    VBoxExtPackIsValidName(const char *pszName);
 bool    VBoxExtPackIsValidVersionString(const char *pszName);
 bool    VBoxExtPackIsValidMainModuleString(const char *pszMainModule);

@@ -80,6 +80,9 @@ else
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
  endif
+ ifdef VBOX_OSE
+  include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
+ endif
  ifdef VBOX_WITH_INSTALLER
   include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		        # Keep this last.
  endif
@@ -147,6 +150,9 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 	Frontends \
 	NetworkServices
 
+ ifndef VBOX_OSE
+  SUBDIRS += ExtPacks
+ endif
 
  # This must be the last one.
  ifdef VBOX_WITH_INSTALLER

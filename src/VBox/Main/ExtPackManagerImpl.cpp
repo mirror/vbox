@@ -67,7 +67,7 @@
 struct ExtPack::Data
 {
 public:
-    /** The extension pack description (loaded from the XML, mostly). */
+    /** The extension pack descriptor (loaded from the XML, mostly). */
     VBOXEXTPACKDESC     Desc;
     /** The file system object info of the XML file.
      * This is for detecting changes and save time in refresh().  */
@@ -145,6 +145,9 @@ HRESULT ExtPack::FinalConstruct()
  */
 HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
 {
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
     static const VBOXEXTPACKHLP s_HlpTmpl =
     {
         /* u32Version           = */ VBOXEXTPACKHLP_VERSION,
@@ -153,6 +156,7 @@ HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
         /* u32Padding           = */ 0,
         /* pszVBoxVersion       = */ "",
         /* pfnFindModule        = */ ExtPack::hlpFindModule,
+        /* pfnGetFilePath       = */ ExtPack::hlpGetFilePath,
         /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
     };
 
@@ -184,6 +188,7 @@ HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
      */
     probeAndLoad();
 
+    autoInitSpan.setSucceeded();
     return S_OK;
 }
 
@@ -416,7 +421,7 @@ HRESULT ExtPack::refresh(bool *pfCanDelete)
  */
 void ExtPack::probeAndLoad(void)
 {
-    m->fUsable = true;
+    m->fUsable = false;
 
     /*
      * Query the file system info for the extension pack directory.  This and
@@ -428,7 +433,7 @@ void ExtPack::probeAndLoad(void)
         m->strWhyUnusable.printf(tr("RTPathQueryInfoEx on '%s' failed: %Rrc"), m->strExtPackPath.c_str(), vrc);
         return;
     }
-    if (RTFS_IS_DIRECTORY(m->ObjInfoExtPack.Attr.fMode))
+    if (!RTFS_IS_DIRECTORY(m->ObjInfoExtPack.Attr.fMode))
     {
         if (RTFS_IS_SYMLINK(m->ObjInfoExtPack.Attr.fMode))
             m->strWhyUnusable.printf(tr("'%s' is a symbolic link, this is not allowed"), m->strExtPackPath.c_str(), vrc);
@@ -467,7 +472,7 @@ void ExtPack::probeAndLoad(void)
      */
     if (!m->Desc.strName.equalsIgnoreCase(strSavedName))
     {
-        m->strWhyUnusable.printf(tr("The description name ('%s') and directory name ('%s) does not match"),
+        m->strWhyUnusable.printf(tr("The description name ('%s') and directory name ('%s') does not match"),
                                  m->Desc.strName.c_str(), strSavedName.c_str());
         m->Desc.strName = strSavedName;
         return;
@@ -480,7 +485,7 @@ void ExtPack::probeAndLoad(void)
     if (!findModule(m->Desc.strMainModule.c_str(), NULL /* default extension */,
                     &m->strMainModPath, &fIsNative, &m->ObjInfoMainMod))
     {
-        m->strWhyUnusable.printf(tr("Failed to locate the main module ('%'s)"), m->Desc.strMainModule.c_str());
+        m->strWhyUnusable.printf(tr("Failed to locate the main module ('%s')"), m->Desc.strMainModule.c_str());
         return;
     }
 
@@ -497,7 +502,7 @@ void ExtPack::probeAndLoad(void)
         if (RT_FAILURE(vrc))
         {
             m->hMainMod = NIL_RTLDRMOD;
-            m->strWhyUnusable.printf(tr("Failed to locate load the main module ('%'s): %Rrc"),
+            m->strWhyUnusable.printf(tr("Failed to locate load the main module ('%s'): %Rrc"),
                                            m->strMainModPath.c_str(), vrc);
             return;
         }
@@ -531,6 +536,7 @@ void ExtPack::probeAndLoad(void)
                     && (!m->pReg->pfnVMConfigureVMM || RT_VALID_PTR(m->pReg->pfnVMConfigureVMM))
                     && (!m->pReg->pfnVMPowerOn      || RT_VALID_PTR(m->pReg->pfnVMPowerOn))
                     && (!m->pReg->pfnVMPowerOff     || RT_VALID_PTR(m->pReg->pfnVMPowerOff))
+                    && (!m->pReg->pfnQueryObject    || RT_VALID_PTR(m->pReg->pfnQueryObject))
                     )
                 {
                     /*
@@ -555,6 +561,9 @@ void ExtPack::probeAndLoad(void)
         }
         m->pReg = NULL;
     }
+    else
+        m->strWhyUnusable.printf(tr("Failed to resolve exported symbol '%s' in the main module: %Rrc"),
+                                 VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT, vrc);
 
     RTLdrClose(m->hMainMod);
     m->hMainMod = NIL_RTLDRMOD;
@@ -595,11 +604,11 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
     if (!a_pObjInfo)
         a_pObjInfo = &ObjInfo;
     vrc = RTPathQueryInfo(szPath, a_pObjInfo, RTFSOBJATTRADD_UNIX);
-    if (RT_SUCCESS(vrc) && RTFS_IS_FIFO(a_pObjInfo->Attr.fMode))
+    if (RT_SUCCESS(vrc) && RTFS_IS_FILE(a_pObjInfo->Attr.fMode))
     {
         if (a_pfNative)
             *a_pfNative = true;
-        a_pStrFound = new Utf8Str(szPath);
+        *a_pStrFound = szPath;
         return true;
     }
 
@@ -619,11 +628,11 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
         AssertLogRelRCReturn(vrc, false);
     }
     vrc = RTPathQueryInfo(szPath, a_pObjInfo, RTFSOBJATTRADD_UNIX);
-    if (RT_SUCCESS(vrc) && RTFS_IS_FIFO(a_pObjInfo->Attr.fMode))
+    if (RT_SUCCESS(vrc) && RTFS_IS_FILE(a_pObjInfo->Attr.fMode))
     {
         if (a_pfNative)
             *a_pfNative = false;
-        a_pStrFound = new Utf8Str(szPath);
+        *a_pStrFound = szPath;
         return true;
     }
 
@@ -638,11 +647,11 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
         AssertLogRelRCReturn(vrc, false);
     }
     vrc = RTPathQueryInfo(szPath, a_pObjInfo, RTFSOBJATTRADD_UNIX);
-    if (RT_SUCCESS(vrc) && RTFS_IS_FIFO(a_pObjInfo->Attr.fMode))
+    if (RT_SUCCESS(vrc) && RTFS_IS_FILE(a_pObjInfo->Attr.fMode))
     {
         if (a_pfNative)
             *a_pfNative = false;
-        a_pStrFound = new Utf8Str(szPath);
+        *a_pStrFound = szPath;
         return true;
     }
 
@@ -724,6 +733,32 @@ ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *p
     return VERR_FILE_NOT_FOUND;
 }
 
+/*static*/ DECLCALLBACK(int)
+ExtPack::hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(cbPath > 0, VERR_BUFFER_OVERFLOW);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(m, VERR_INVALID_POINTER);
+    ExtPack *pThis = m->pThis;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    /*
+     * This is a simple RTPathJoin, no checking if things exists or anything.
+     */
+    int vrc = RTPathJoin(pszPath, cbPath, pThis->m->strExtPackPath.c_str(), pszFilename);
+    if (RT_FAILURE(vrc))
+        RT_BZERO(pszPath, cbPath);
+    return vrc;
+}
+
 
 
 
@@ -781,6 +816,16 @@ STDMETHODIMP ExtPack::COMGETTER(Revision)(ULONG *a_puRevision)
     return hrc;
 }
 
+STDMETHODIMP ExtPack::COMGETTER(PlugIns)(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns))
+{
+    /** @todo implement plug-ins. */
+#ifdef VBOX_WITH_XPCOM
+    NOREF(a_paPlugIns);
+    NOREF(a_paPlugInsSize);
+#endif
+    ReturnComNotImplemented();
+}
+
 STDMETHODIMP ExtPack::COMGETTER(Usable)(BOOL *a_pfUsable)
 {
     CheckComArgOutPointerValid(a_pfUsable);
@@ -800,6 +845,31 @@ STDMETHODIMP ExtPack::COMGETTER(WhyUnusable)(BSTR *a_pbstrWhy)
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
         m->strWhyUnusable.cloneTo(a_pbstrWhy);
+    return hrc;
+}
+
+STDMETHODIMP ExtPack::QueryObject(IN_BSTR a_bstrObjectId, IUnknown **a_ppUnknown)
+{
+    com::Guid ObjectId;
+    CheckComArgGuid(a_bstrObjectId, ObjectId);
+    CheckComArgOutPointerValid(a_ppUnknown);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        if (   m->pReg
+            && m->pReg->pfnQueryObject)
+        {
+            void *pvUnknown = m->pReg->pfnQueryObject(m->pReg, ObjectId.raw());
+            if (pvUnknown)
+                *a_ppUnknown = (IUnknown *)pvUnknown;
+            else
+                hrc = E_NOINTERFACE;
+        }
+        else
+            hrc = E_NOINTERFACE;
+    }
     return hrc;
 }
 
@@ -847,7 +917,7 @@ HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone
     char szCertificatDir[RTPATH_MAX];
     rc = RTPathAppPrivateNoArch(szCertificatDir, sizeof(szCertificatDir));
     AssertLogRelRCReturn(rc, E_FAIL);
-    rc = RTPathAppend(szBaseDir, sizeof(szCertificatDir), VBOX_EXTPACK_CERT_DIR);
+    rc = RTPathAppend(szCertificatDir, sizeof(szCertificatDir), VBOX_EXTPACK_CERT_DIR);
     AssertLogRelRCReturn(rc, E_FAIL);
 
     /*
@@ -1144,6 +1214,44 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
         }
     }
 
+    return hrc;
+}
+
+STDMETHODIMP ExtPackManager::Cleanup(void)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * Run the set-uid-to-root binary that performs the cleanup.
+         *
+         * Take the write lock to prevent conflicts with other calls to this
+         * VBoxSVC instance.
+         */
+        AutoWriteLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = runSetUidToRootHelper("cleanup",
+                                    "--base-dir", m->strBaseDir.c_str(),
+                                    NULL);
+    }
+
+    return hrc;
+}
+
+STDMETHODIMP ExtPackManager::QueryAllPlugInsForFrontend(IN_BSTR a_bstrFrontend, ComSafeArrayOut(BSTR, a_pabstrPlugInModules))
+{
+    CheckComArgNotNull(a_bstrFrontend);
+    Utf8Str strName(a_bstrFrontend);
+    CheckComArgOutSafeArrayPointerValid(a_pabstrPlugInModules);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        com::SafeArray<BSTR> saPaths(0);
+        /** @todo implement plug-ins */
+        saPaths.detachTo(ComSafeArrayOutArg(a_pabstrPlugInModules));
+    }
     return hrc;
 }
 

@@ -75,6 +75,23 @@ typedef struct VBOXEXTPACKHLP
     DECLR3CALLBACKMEMBER(int, pfnFindModule,(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
                                              char *pszFound, size_t cbFound, bool *pfNative));
 
+    /**
+     * Gets the path to a file belonging to this extension pack.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_INVALID_POINTER if any of the pointers are invalid.
+     * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small.  The buffer
+     *          will contain nothing.
+     *
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pszFilename     The filename.
+     * @param   pszPath         Where to return the path to the file on
+     *                          success.
+     * @param   cbPath          The size of the buffer @a pszPath.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetFilePath,(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath));
+
+
     /** End of structure marker (VBOXEXTPACKHLP_VERSION). */
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKHLP;
@@ -173,6 +190,17 @@ typedef struct VBOXEXTPACKREG
      * @param   pVM         The VM handle.  Can be NULL.
      */
     DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
+
+    /**
+     * Query the IUnknown interface to an object in the main module.
+     *
+     * This is can be called in any context.
+     *
+     * @returns IUnknown pointer (referenced) on success, NULL on failure.
+     * @param   pThis       Pointer to this structure.
+     * @param   pObjectId   Pointer to the object ID (UUID).
+     */
+    DECLCALLBACKMEMBER(void *, pfnQueryObject)(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
 
     /** End of structure marker (VBOXEXTPACKREG_VERSION). */
     uint32_t                    u32EndMarker;
