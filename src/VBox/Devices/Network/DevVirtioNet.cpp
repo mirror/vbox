@@ -1113,7 +1113,32 @@ static void vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE pQueue, bool f
                     pSgBuf->cbUsed = uSize;
                     //vnetPacketDump(pState, (uint8_t*)pSgBuf->aSegs[0].pvSeg, uSize, "--> Outgoing");
                     if (pGso)
+                    {
+                        /* Some guests (RHEL) may report HdrLen excluding transport layer header! */
+                        if (pGso->cbHdrs < Hdr.u16CSumStart + Hdr.u16CSumOffset + 2)
+                        {
+                            Log4(("%s vnetTransmitPendingPackets: HdrLen before adjustment %d.\n", pGso->cbHdrs));
+                            switch (pGso->u8Type)
+                            {
+                                case PDMNETWORKGSOTYPE_IPV4_TCP:
+                                case PDMNETWORKGSOTYPE_IPV6_TCP:
+                                    pGso->cbHdrs = Hdr.u16CSumStart +
+                                        ((PRTNETTCP)(((uint8_t*)pSgBuf->aSegs[0].pvSeg) + Hdr.u16CSumStart))->th_off * 4;
+                                    break;
+                                case PDMNETWORKGSOTYPE_IPV4_UDP:
+                                    pGso->cbHdrs = Hdr.u16CSumStart + sizeof(RTNETUDP);
+                                    break;
+                            }
+                            /* Update GSO structure embedded into the frame */
+                            ((PPDMNETWORKGSO)pSgBuf->pvUser)->cbHdrs = pGso->cbHdrs;
+                            Log4(("%s vnetTransmitPendingPackets: adjusted HdrLen to %d.\n",
+                                  INSTANCE(pState), pGso->cbHdrs));
+                        }
+                        Log2(("%s vnetTransmitPendingPackets: gso type=%x cbHdr=%u mss=%u"
+                              " off1=0x%x off2=0x%x\n", INSTANCE(pState), pGso->u8Type,
+                              pGso->cbHdrs, pGso->cbMaxSeg, pGso->offHdr1, pGso->offHdr2));
                         STAM_REL_COUNTER_INC(&pState->StatTransmitGSO);
+                    }
                     else if (Hdr.u8Flags & VNETHDR_F_NEEDS_CSUM)
                     {
                         STAM_REL_COUNTER_INC(&pState->StatTransmitCSum);
