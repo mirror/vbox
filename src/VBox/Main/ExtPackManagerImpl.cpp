@@ -1248,7 +1248,7 @@ STDMETHODIMP ExtPackManager::QueryAllPlugInsForFrontend(IN_BSTR a_bstrFrontend, 
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
-        com::SafeArray<BSTR> saPaths(0);
+        com::SafeArray<BSTR> saPaths((size_t)0);
         /** @todo implement plug-ins */
         saPaths.detachTo(ComSafeArrayOutArg(a_pabstrPlugInModules));
     }
