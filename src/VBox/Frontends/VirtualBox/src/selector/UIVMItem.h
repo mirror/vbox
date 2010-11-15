@@ -24,6 +24,7 @@
 
 /* Global includes */
 #include <QDateTime>
+#include <QMimeData>
 
 class UIVMItem
 {
@@ -84,6 +85,27 @@ private:
 
 /* Make the pointer of this class public to the QVariant framework */
 Q_DECLARE_METATYPE(UIVMItem *);
+
+class UIVMItemMimeData: public QMimeData
+{
+    Q_OBJECT;
+
+public:
+
+    UIVMItemMimeData(UIVMItem *pItem);
+
+    UIVMItem *item() const;
+    QStringList formats() const;
+
+    static QString type();
+
+private:
+
+    /* Private member vars */
+    UIVMItem *m_pItem;
+
+    static QString m_type;
+};
 
 #endif /* __UIVMItem_h__ */
 

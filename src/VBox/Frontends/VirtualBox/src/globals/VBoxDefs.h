@@ -123,6 +123,7 @@ struct VBoxDefs
     static const char* GUI_LanguageId;
     static const char* GUI_PreviewUpdate;
     static const char* GUI_DetailsPageBoxes;
+    static const char* GUI_SelectorVMPositions;
 #ifdef Q_WS_X11
     static const char* GUI_LicenseKey;
 #endif
@@ -163,6 +164,9 @@ struct VBoxDefs
     static const char* GUI_DbgEnabled;
     static const char* GUI_DbgAutoShow;
 #endif
+
+    static QStringList VBoxFileExts;
+    static QStringList OVFFileExts;
 };
 
 #define MAC_LEOPARD_STYLE defined(Q_WS_MAC) && (QT_VERSION >= 0x040300)

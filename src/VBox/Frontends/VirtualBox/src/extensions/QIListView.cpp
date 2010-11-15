@@ -41,7 +41,7 @@ QIListView::QIListView (QWidget *aParent /* = 0 */)
     setMidLineWidth (1);
     setLineWidth (0);
     setFrameShape (QFrame::Box);
-    focusChanged (NULL, this);
+    focusChanged (NULL, qApp->focusWidget());
     /* Nesty hack to disable the focus rect on the list view. This interface
      * may change at any time! */
     static_cast<QMacStyle *> (style())->setFocusRectPolicy (this, QMacStyle::FocusDisabled);
@@ -57,7 +57,7 @@ void QIListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
     QPalette pal = viewport()->palette();
     pal.setColor (QPalette::Base, bgColor);
     viewport()->setPalette (pal);
-    viewport()->setAutoFillBackground (true);
+    viewport()->setAutoFillBackground(true);
 #else /* MAC_LEOPARD_STYLE */
     Q_UNUSED (aNow);
 #endif /* MAC_LEOPARD_STYLE */
@@ -66,7 +66,7 @@ void QIListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
 /* QIItemDelegate class */
 
 void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption,
-                                        const QModelIndex &aIndex) const
+                                     const QModelIndex &aIndex) const
 {
 #if MAC_LEOPARD_STYLE
     NOREF (aIndex);
@@ -101,6 +101,13 @@ void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewI
         aPainter->setPen (topLineColor);
         aPainter->drawLine (r.left(), r.top() - 1, r.right(), r.top() - 1);
         aPainter->fillRect (r, linearGrad);
+    }else
+    {
+        /* Color for items and no focus on the application at all */
+        QColor bgColor (212, 221, 229);
+        if (qApp->focusWidget() == NULL)
+            bgColor.setRgb (232, 232, 232);
+        aPainter->fillRect(aOption.rect, bgColor);
     }
 #else /* MAC_LEOPARD_STYLE */
     QItemDelegate::drawBackground (aPainter, aOption, aIndex);

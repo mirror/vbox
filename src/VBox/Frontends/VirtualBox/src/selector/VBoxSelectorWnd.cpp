@@ -178,10 +178,11 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 #endif /* Q_WS_MAC */
 
     /* VM list view */
-    mVMListView = new UIVMListView();
-    mVMModel = new UIVMItemModel(mVMListView);
-    mVMListView->setModel(mVMModel);
+    mVMModel = new UIVMItemModel();
+    mVMListView = new UIVMListView(mVMModel);
     mVMListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    connect(mVMListView, SIGNAL(sigUrlsDropped(QList<QUrl>)),
+            this, SLOT(sltUrlsDropped(QList<QUrl>)), Qt::QueuedConnection);
 
     /* Make non-possible to activate list elements by single click,
      * this hack should disable the current possibility to do it if present */
@@ -487,6 +488,7 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
             QString(item->id()) :
             QString::null;
         vbox.SetExtraData(VBoxDefs::GUI_LastVMSelected, curVMId);
+        vbox.SetExtraDataStringList(VBoxDefs::GUI_SelectorVMPositions, mVMModel->idList());
     }
 
     /* Save the splitter handle position */
@@ -513,9 +515,9 @@ void VBoxSelectorWnd::fileMediaMgr()
     VBoxMediaManagerDlg::showModeless(this);
 }
 
-void VBoxSelectorWnd::fileImportAppliance()
+void VBoxSelectorWnd::fileImportAppliance(const QString &strFile /* = "" */)
 {
-    UIImportApplianceWzd wzd(this);
+    UIImportApplianceWzd wzd(strFile, this);
 
     wzd.exec();
 }
@@ -630,12 +632,7 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
         dlg->putBackTo();
 
         m.SaveSettings();
-        if (m.isOk())
-        {
-            if (oldName.compare(m.GetName()))
-                mVMModel->sort();
-        }
-        else
+        if (!m.isOk())
             vboxProblem().cannotSaveMachineSettings(m);
 
         /* To check use the result in future
@@ -856,10 +853,11 @@ void VBoxSelectorWnd::refreshVMList()
     CVirtualBox vbox = vboxGlobal().virtualBox();
     CMachineVector vec = vbox.GetMachines();
     for (CMachineVector::ConstIterator m = vec.begin();
-         m != vec.end(); ++ m)
-        mVMModel->addItem(new UIVMItem(*m));
-    mVMModel->sort();
-
+         m != vec.end(); ++m)
+        mVMModel->addItem(*m);
+    /* Apply the saved sort order. */
+    mVMModel->sortByIdList(vbox.GetExtraDataStringList(VBoxDefs::GUI_SelectorVMPositions));
+    /* Update details page. */
     vmListViewCurrentChanged();
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -890,6 +888,24 @@ void VBoxSelectorWnd::showContextMenu(const QPoint &aPoint)
         if (mVMListView->model()->data(index,
             UIVMItemModel::UIVMItemPtrRole).value <UIVMItem*>())
                 mVMCtxtMenu->exec(mVMListView->mapToGlobal(aPoint));
+}
+
+void VBoxSelectorWnd::sltUrlsDropped(QList<QUrl> list)
+{
+    /* Make sure any pending D&D events are consumed. */
+    qApp->processEvents();
+    /* Check if we are can handle the dropped urls. */
+    for (int i = 0; i < list.size(); ++i)
+    {
+        QString file = list.at(i).toLocalFile();
+        if (   !file.isEmpty()
+            && VBoxGlobal::isExtentionsAllowed(file, VBoxDefs::OVFFileExts))
+        {
+            /* OVF/OVA. Only one file at the time. */
+            fileImportAppliance(file);
+            break;
+        }
+    }
 }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -1410,8 +1426,7 @@ void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
         CMachine m = vbox.FindMachine(strId);
         if (!m.isNull())
         {
-            mVMModel->addItem(new UIVMItem(m));
-            mVMModel->sort();
+            mVMModel->addItem(m);
             /* Make sure the description, ... pages are properly updated.
              * Actually we haven't call the next method, but unfortunately Qt
              * seems buggy if the new item is on the same position as the
@@ -1428,7 +1443,6 @@ void VBoxSelectorWnd::machineRegistered(QString strId, bool fRegistered)
         {
             int row = mVMModel->rowById(item->id());
             mVMModel->removeItem(item);
-            delete item;
             mVMListView->ensureSomeRowSelected(row);
         }
 

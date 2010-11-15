@@ -26,6 +26,7 @@
 
 /* Qt includes */
 #include <QAbstractListModel>
+#include <QUrl>
 
 class UIVMItemModel: public QAbstractListModel
 {
@@ -44,7 +45,9 @@ public:
     UIVMItemModel(QObject *aParent = 0)
         :QAbstractListModel(aParent) {}
 
+    void addItem(const CMachine &machine);
     void addItem(UIVMItem *aItem);
+    void insertItem(UIVMItem *pItem, int row);
     void removeItem(UIVMItem *aItem);
     void refreshItem(UIVMItem *aItem);
 
@@ -58,10 +61,8 @@ public:
 
     int rowById(const QString &aId) const;;
 
-    void sort(Qt::SortOrder aOrder = Qt::AscendingOrder) { sort(0, aOrder); }
-
-    /* The following are necessary model implementations */
-    void sort(int aColumn, Qt::SortOrder aOrder = Qt::AscendingOrder);
+    QStringList idList() const;
+    void sortByIdList(const QStringList &list);
 
     int rowCount(const QModelIndex &aParent = QModelIndex()) const;
 
@@ -71,9 +72,14 @@ public:
 
     bool removeRows(int aRow, int aCount, const QModelIndex &aParent = QModelIndex());
 
+    Qt::ItemFlags flags(const QModelIndex &index) const;
+    Qt::DropActions supportedDropActions() const;
+    QStringList mimeTypes() const;
+    QMimeData *mimeData(const QModelIndexList &indexes) const;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
+
 private:
     static bool UIVMItemNameCompareLessThan(UIVMItem* aItem1, UIVMItem* aItem2);
-    static bool UIVMItemNameCompareGreaterThan(UIVMItem* aItem1, UIVMItem* aItem2);
 
     /* Private member vars */
     QList<UIVMItem *> m_VMItemList;
@@ -84,27 +90,43 @@ class UIVMListView: public QIListView
     Q_OBJECT;
 
 public:
-    UIVMListView(QWidget *aParent = 0);
+    UIVMListView(QAbstractListModel *pModel, QWidget *aParent = 0);
 
     void selectItemByRow(int row);
     void selectItemById(const QString &aID);
     void ensureSomeRowSelected(int aRowHint);
-    UIVMItem * selectedItem() const;
+    UIVMItem *selectedItem() const;
 
     void ensureCurrentVisible();
 
 signals:
     void currentChanged();
     void activated();
+    void sigUrlsDropped(QList<QUrl>);
 
 protected slots:
     void selectionChanged(const QItemSelection &aSelected, const QItemSelection &aDeselected);
     void currentChanged(const QModelIndex &aCurrent, const QModelIndex &aPrevious);
     void dataChanged(const QModelIndex &aTopLeft, const QModelIndex &aBottomRight);
+    void sltRowsAboutToBeInserted(const QModelIndex &parent, int start, int end);
 
 protected:
     bool selectCurrent();
+    void dragEnterEvent(QDragEnterEvent *pEvent);
+    void dragMoveEvent(QDragMoveEvent *pEvent);
+    void checkDragEvent(QDragMoveEvent *pEvent);
+    void dropEvent(QDropEvent *pEvent);
+    void startDrag(Qt::DropActions supportedActions);
+    void rowsInserted(const QModelIndex & parent, int start, int end);
+    QPixmap dragPixmap(const QModelIndex &index) const;
+    QModelIndex moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers);
+    QModelIndex moveItemTo(const QModelIndex &index, int row);
+
+private:
+    bool m_fItemInMove;
 };
+
+Q_DECLARE_METATYPE(QList<QUrl>);
 
 class UIVMItemPainter: public QIItemDelegate
 {
