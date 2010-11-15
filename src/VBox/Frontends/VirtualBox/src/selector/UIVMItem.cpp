@@ -247,7 +247,7 @@ bool UIVMItem::recache()
         /* this should be in sync with
          * VBoxProblemReporter::confirm_machineDeletion() */
         QFileInfo fi(m_strSettingsFile);
-        QString name = fi.completeSuffix().toLower() == "xml" || fi.completeSuffix().toLower() == "vbox" ?
+        QString name = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxDefs::VBoxFileExts) ?
                        fi.completeBaseName() : fi.fileName();
         needsResort = name != m_strName;
         m_strName = name;

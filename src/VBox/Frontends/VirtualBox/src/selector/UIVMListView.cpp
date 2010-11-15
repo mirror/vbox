@@ -498,8 +498,7 @@ void UIVMListView::checkDragEvent(QDragMoveEvent *pEvent)
     {
         QList<QUrl> list = pEvent->mimeData()->urls();
         QString file = list.at(0).toLocalFile();
-        if (   (   file.endsWith(".ovf", Qt::CaseInsensitive)
-                || file.endsWith(".ova", Qt::CaseInsensitive))
+        if (   VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts)
             && pEvent->possibleActions().testFlag(Qt::CopyAction))
         {
             pEvent->setDropAction(Qt::CopyAction);

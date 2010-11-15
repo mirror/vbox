@@ -220,7 +220,7 @@ void UIExportApplianceWzdPage1::populateVMSelectorItems()
         {
             QString settingsFile = m.GetSettingsFilePath();
             QFileInfo fi(settingsFile);
-            strName = (fi.completeSuffix().toLower() == "xml" || fi.completeSuffix().toLower() == "vbox") ? fi.completeBaseName() : fi.fileName();
+            strName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxDefs::VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
             pixIcon = QPixmap(":/os_other.png").scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
         QListWidgetItem *item = new VMListWidgetItems(pixIcon, strName, strUuid, fInSaveState, m_pVMSelector);
@@ -447,7 +447,7 @@ void UIExportApplianceWzdPage3::initializePage()
 bool UIExportApplianceWzdPage3::isComplete() const
 {
     const QString &strFile = m_pFileSelector->path().toLower();
-    bool bComplete = (strFile.endsWith(".ovf") || strFile.endsWith(".ova"));
+    bool bComplete = VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::OVFFileExts);
     StorageType storageType = field("storageType").value<StorageType>();
     switch (storageType)
     {
