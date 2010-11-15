@@ -200,10 +200,10 @@
       </glossentry>
 
       <glossentry>
-        <glossterm>Suppléments invité.</glossterm>
+        <glossterm>Additions invité.</glossterm>
 
         <glossdef>
-          <para>Avec les <quote>Suppléments invité</quote>, nous faisons 
+          <para>Avec les <quote>Additions invité</quote>, nous faisons 
           référence à des paquets de logiciel spéciaux qui sont fournis avec 
           VirtualBox. Même s'ils font partie de VirtualBox, ils sont faits pour
           être installés à l'intérieur d'une VM pour améliorer la performance de
@@ -258,19 +258,19 @@
       </listitem>
 
       <listitem>
-        <para><emphasis role="bold">Suppléments invité&nbsp;: dossiers partagés,
-       fenêtres transparentes, virtualisation 3D.</emphasis> Les suppléments
+        <para><emphasis role="bold">Additions invité&nbsp;: dossiers partagés,
+       fenêtres intégrées, virtualisation 3D.</emphasis> Les additions
        invité de VirtualBox sont des paquets de logiciels qui peuvent être 
        installés <emphasis>à l'intérieur</emphasis> des systèmes invité 
        supportés pour améliorer leur performance et pour offrir une meilleure 
        intégration supplémentaire et une communication avec le système hôte. 
-       Après avoir installé les suppléments invité, une machine virtuelle 
+       Après avoir installé les additions invité, une machine virtuelle 
        supportera l'ajustement automatique des résolutions graphiques, les 
-       fenêtres transparentes seamless, l'accélération 3D graphique et davantage.
-       Les suppléments invité sont décrits en détail au chapitre <xref
+       fenêtres intégrées seamless, l'accélération 3D graphique et davantage.
+       Les additions invité sont décrits en détail au chapitre <xref
        linkend="guestadditions" />.</para>
        
-       <para>En particulier, les suppléments invité offrent les 
+       <para>En particulier, les additions invité offrent les 
        <quote>répertoires partagés</quote> qui vous permettent d'accéder à des 
        fichiers à partir du système hôte à partir de l'intérieur de la machine 
        invitée. Les dossiers partagés sont décrits au chapitre <xref 
@@ -864,7 +864,7 @@
         et, éventuellement, avec d'autres VMs sur votre hôte.</para>
 
         <para>Il s'en suit que, d'emblée après avoir installé un système 
-        d'exploitation invité et avant que vous installiez les suppléments 
+        d'exploitation invité et avant que vous installiez les additions
         invité (nous vous expliquerons cela dans une minute), seule une des deux
         -- votre VM ou le reste de votre ordinateur -- peut « posséder » le 
         clavier et la souris. Vous verrez un second pointeur de souris qui sera
@@ -928,9 +928,9 @@
 
         <para>Comme ce comportement peut être gênant, VirtualBox fournit un 
         ensemble d'outils et de pilotes de périphérique pour les systèmes invités
-        appelé <quote>Suppléments invité VirtualBox</quote> qui rendent les 
+        appelé <quote>Additions invité VirtualBox</quote> qui rendent les 
         opérations du clavier et de la souris avec la VM beaucoup plus 
-        transparentes. En particulier, les suppléments vont vous débarrasser du
+        transparentes. En particulier, les additions vont vous débarrasser du
         deuxième pointeur de souris <quote>invité</quote> et faire fonctionner 
         le pointeur de votre souris hôte directement dans l'invité.</para>
         

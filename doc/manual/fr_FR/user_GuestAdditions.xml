@@ -2,190 +2,197 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter>
-  <title id="guestadditions">Suppléments invité</title>
+  <title id="guestadditions">Additions invité</title>
 
-  <para>The previous chapter covered getting started with VirtualBox and
-  installing operating systems in a virtual machine. For any serious and
-  interactive use, the VirtualBox Guest Additions will make your life much
-  easier by providing closer integration between host and guest and improving
-  the interactive performance of guest systems. This chapter describes the
-  Guest Additions in detail.</para>
+  <para>Le chapitre précédent a traité de la façon de débuter avec VirtualBox et 
+  d'installer des systèmes d'exploitation dans une machine virtuelle. Pour une 
+  utilisation pousséed et interactive, les additions invité de VirtualBox vous
+  faciliteront beaucoup la vie en vous fournissant une intégration poussée  entre
+  l'hôte et l'invité, et en améliorant les performances interactives des systèmes 
+  invités. Ce chapitre décrit en détail les additions invité.</para>
 
   <sect1>
     <title>Introduction</title>
 
-    <para>As said in <xref linkend="virtintro" />, the Guest Additions are
-    designed to be installed <emphasis>inside</emphasis> a virtual machine
-    after the guest operating system has been installed. They consist of
-    device drivers and system applications that optimize the guest operating
-    system for better performance and usability. Please see <xref
-    linkend="guestossupport" /> for details on what guest operating systems
-    are fully supported with Guest Additions by VirtualBox.</para>
+    <para>Comme indiqué au <xref linkend="virtintro" />, les additions invité 
+    sont conçus pour être installés à l'intérieur d'une machine virtuelle après
+    que le système d'exploitation invité a été installé. Ils consistent en des 
+    pilotes de périphériques et des applications systèmes qui optimisent le 
+    système d'exploitation invité pour de meilleures performances et un usage 
+    facilité. Merci de voir le <xref linkend="guestossupport" /> pour des détails
+    sur les systèmes d'exploitation invités pleinement supportés avec les 
+    additions invité par VirtualBox.</para>
 
-    <para>The VirtualBox Guest Additions for all supported guest operating
-    systems are provided as a single CD-ROM image file which is called
-    <computeroutput>VBoxGuestAdditions.iso</computeroutput>. This image file
-    is located in the installation directory of VirtualBox. To install the
-    Guest Additions for a particular VM, you mount this ISO file in your VM as
-    a virtual CD-ROM and install from there.</para>
+    <para>Les additions invité de VirtualBox de tous les systèmes d'exploitation
+    invités sont fournies sous la forme d'un fichier image unique de CD-ROM 
+    appelé <computeroutput>VBoxGuestAdditions.iso</computeroutput>. Ce fichier 
+    image se situe  dans le répertoire d'installation de VirtualBox. Pour 
+    installer les additions invité pour une VM particulière, vous montez ce 
+    fichier ISO dans votre VM en tant que CD-ROM virtuel et vous l'installez à 
+    partir de là.</para>
 
-    <para>The Guest Additions offer the following features:<glosslist>
+    <para>Les additions invités offrent les fonctionnalités suivantes&nbsp;:<glosslist>
         <glossentry>
-          <glossterm>Mouse pointer integration</glossterm>
+          <glossterm>Intégration du pointeur de la souris</glossterm>
 
           <glossdef>
-            <para>To overcome the limitations for mouse support that were
-            described in <xref linkend="keyb_mouse_normal" />, this provides
-            you with seamless mouse support. You will only have one mouse
-            pointer and pressing the Host key is no longer required to "free"
-            the mouse from being captured by the guest OS. To make this work,
-            a special mouse driver is installed in the guest that communicates
-            with the "real" mouse driver on your host and moves the guest
-            mouse pointer accordingly.</para>
+            <para>Pour dépasser les limites du support de la souris décrites au
+            <xref linkend="keyb_mouse_normal" />, cela vous offre un support de
+            souris intégrée. Vous n'aurez q'un pointeur de souris et l'appui
+            sur la touche Hôte n'est plus nécessaire pour <quote>libérer</quote>
+            la souris de sa capture par l'OS invité. Pour que cela fonctionne, 
+            un pilote de souris spécial est installé dans l'invité, qui 
+            communique avec le pilote de souris <quote>réel</quote> de votre 
+            hôte et il déplace le pointeur de la souris en fonction.</para>
           </glossdef>
         </glossentry>
 
         <glossentry>
-          <glossterm>Better video support</glossterm>
+          <glossterm>Meilleur support graphique</glossterm>
 
           <glossdef>
-            <para>While the virtual graphics card which VirtualBox emulates
-            for any guest operating system provides all the basic features,
-            the custom video drivers that are installed with the Guest
-            Additions provide you with extra high and non-standard video modes
-            as well as accelerated video performance.</para>
+            <para>Alors que la carte graphique virtuelle émulée par VirtualBox 
+            pour tous les systèmes invités fournit toutes les fonctionnalités 
+            de base, les pilotes graphiques personnalisés installés avec les 
+            additions invité vous offrent des modes vidéos plus avancés et non 
+            standards, ainsi que des performances graphiques accélérées.</para>
 
-            <para>In addition, with Windows and recent Linux, Solaris and
-            OpenSolaris guests, if the Guest Additions are installed, you can
-            resize the virtual machine's window, and the video resolution in
-            the guest will be automatically adjusted (as if you had manually
-            entered an arbitrary resolution in the guest's display
-            settings).</para>
+            <para>En outre, avec les invités Windows et les récents Linux, 
+            Solaris et OpenSolaris, si les additions invité sont installés, vous
+            pouvez redimensionner la fenêtre de la machine virtuelle et la 
+            résolution graphique de l'invité sera  automatiquement ajustée 
+            (comme si vous aviez entré à la main une résolution de votre choix 
+            dans les paramètres d'affichage de l'hôte).</para>
 
-            <para>Finally, if the Guest Additions are installed, 3D graphics
-            for guest applications can be accelerated; see <xref
+            <para>Enfin, si vous installez les additions invité, la 3D pour les
+            applications invitées peut être accélérée ; voir le <xref
             linkend="guestadd-3d" />.</para>
           </glossdef>
         </glossentry>
 
         <glossentry>
-          <glossterm>Time synchronization</glossterm>
+          <glossterm>Synchronisation du temps</glossterm>
 
           <glossdef>
-            <para>With the Guest Additions installed, VirtualBox can ensure
-            that the guest's system time is better synchronized with that of
-            the host.</para>
-
-            <para>For various reasons, the time in the guest might run at a
-            slightly different rate than the time on the host. The host could
-            be receiving updates via NTP and its own time might not run
-            linearly. A VM could also be paused, which stops the flow of time
-            in the guest for a shorter or longer period of time. When the wall
-            clock time between the guest and host only differs slightly, the
-            time synchronization service attempts to gradually and smoothly
-            adjust the guest time in small increments to either "catch up" or
-            "lose" time. When the difference is too great (e.g., a VM paused
-            for hours or restored from saved state), the guest time is changed
-            immediately, without a gradual adjustment.</para>
-
-            <para>The Guest Additions will re-synchronize the time regularly.
-            See <xref linkend="changetimesync" /> for how to configure the
-            parameters of the time synchronization mechanism.</para>
+            <para>Une fois les additions invité installées, VirtualBox peut 
+            s'assurer que le système d'horloge de l'invité est mieux synchronisé
+            avec celui de l'hôte.</para>
+            
+            <para>Pour diverses raisons, le temps de l'invité peut s'écouler à 
+            une vitesse légèrement différente du temps de l'hôte. L'hôte pourrait 
+            recevoir des mises à jour par NTP et son propre temps pourrait ne 
+            pas s'écouler de façon linéaire. Une VM pourrait aussi être mise en
+            pause, ce qui arrête le cours du temps dans l'invité pour une 
+            période plus ou moins longue. Quand le temps horloge limite entre 
+            l'invité et l'hôte ne diffère que légèrement, le système de 
+            synchronisation tente d'ajuster graduellement et progressivement 
+            l'heure de l'invité par petites saccades pour <quote>rattraper</quote> 
+            ou <quote>perdre</quote> du temps. Quand la différence est trop 
+            importante (par exemple une VM mise en pause pendant des heures ou 
+            restaurée depuis un état sauvegardé), l'heure de l'invité est 
+            modifiée immédiatement, sans ajustements graduels.</para>
+            
+            <para>Les additions invité resynchroniseront l'heure graduellement.
+            Voir le <xref linkend="changetimesync" /> pour la façon de configurer
+            les paramètres du mécanisme de synchronisation du temps.</para>
           </glossdef>
         </glossentry>
 
         <glossentry>
-          <glossterm>Shared folders</glossterm>
+          <glossterm>Dossiers partagés</glossterm>
 
           <glossdef>
-            <para>These provide an easy way to exchange files between the host
-            and the guest. Much like ordinary Windows network shares, you can
-            tell VirtualBox to treat a certain host directory as a shared
-            folder, and VirtualBox will make it available to the guest
-            operating system as a network share. For details, please refer to
-            <xref linkend="sharedfolders" />.</para>
+            <para>Ceux-ci offrent un moyen facile d'échanger des fichiers entre
+            l'hôte et l'invité. Tout comme les partages de réseau Windows 
+            ordinaires, vous pouvez dire à VirtualBox de traiter un répertoire 
+            hôte en particulier comme un dossier partagé et VirtualBox le rendra
+            disponible pour le système d'exploitation invité en tant que partage
+            réseau. Pour les détails, merci de vous référer au <xref 
+            linkend="sharedfolders" />.</para>
           </glossdef>
         </glossentry>
 
         <glossentry>
-          <glossterm>Seamless windows</glossterm>
+          <glossterm>Intégration de fenêtres</glossterm>
 
           <glossdef>
-            <para>With this feature, the individual windows that are displayed
-            on the desktop of the virtual machine can be mapped on the host's
-            desktop, as if the underlying application was actually running on
-            the host. See <xref linkend="seamlesswindows" /> for
-            details.</para>
+            <para>Avec cette fonctionnalité, les fenêtres individuelles affichées 
+            sur le bureau de la machine virtuelle peuvent être gérées par le 
+            bureau de l'hôte, comme si l'application dans la fenêtre fonctionnait 
+            en fait sur l'hôte. Voir le <xref linkend="seamlesswindows" /> pour
+            les détails.</para>
           </glossdef>
         </glossentry>
 
         <glossentry>
-          <glossterm>Shared clipboard</glossterm>
+          <glossterm>Presse-papier partagé</glossterm>
 
           <glossdef>
-            <para>With the Guest Additions installed, the clipboard of the
-            guest operating system can optionally be shared with your host
-            operating system; see <xref linkend="generalsettings" />.</para>
+            <para>Une fois les additions invité installées, le presse-papier du
+            système d'exploitation invité peut éventuellement être partagés avec
+            votre système d'exploitation hôte&nbsp;; voir le <xref 
+            linkend="generalsettings" />.</para>
           </glossdef>
         </glossentry>
 
         <glossentry>
-          <glossterm>Automated logons (credentials passing)</glossterm>
+          <glossterm>Connexions automatiques (passage de certificats)</glossterm>
 
           <glossdef>
-            <para>For details, please see <xref linkend="autologon" />.</para>
+            <para>Pour des détails, merci de voir le <xref linkend="autologon" />.</para>
           </glossdef>
         </glossentry>
       </glosslist></para>
 
-    <para>Each version of VirtualBox, even minor releases, ship with their own
-    version of the Guest Additions. While the interfaces through which the
-    VirtualBox core communicates with the Guest Additions are kept stable so
-    that Guest Additions already installed in a VM should continue to work
-    when VirtualBox is upgraded on the host, for best results, it is
-    recommended to keep the Guest Additions at the same version.</para>
+    <para>Chaque version de VirtualBox, même celles mineures, est fournie avec 
+    sa propre version des additions invité. Si les interfaces par lesquelles le
+    coeur VirtualBox communique avec les additions invité sont laissées stables
+    afin que les additions invité déjà installées dans une VM continuent à
+    fonctionner lorsque VirtualBox est mis à jour sur l'hôte, il est recommandé,
+    pour de meilleurs résultats, de maintenir les additions invité à la même 
+    version.</para>
 
-    <para>Starting with VirtualBox 3.1, the Windows and Linux Guest Additions
-    therefore check automatically whether they have to be updated. If the host
-    is running a newer VirtualBox version than the Guest Additions, a
-    notification with further instructions is displayed in the guest.</para>
+    <para>À partir de VirtualBox 3.1, les additions invité Windows et Linux 
+    vérifient donc automatiquement s'ils doivent être mis à jour. Si l'hôte 
+    exécute une version de VirtualBox plus récente que les additions invité, une
+    notification avec toutes les instructions est affichée dans l'invité.</para>
 
-    <para>To disable this update check for the Guest Additions of a given
-    virtual machine, set the value of its
-    <computeroutput>/VirtualBox/GuestAdd/CheckHostVersion</computeroutput>
-    guest property to <computeroutput>0</computeroutput>; see <xref
-    linkend="guestadd-guestprops" /> for details.</para>
+    <para>Pour désactiver la vérification des mises à jour des additions invité
+    d'une machine virtuelle donnée, mettez la valeur de sa propriété d'invité 
+    <computeroutput>/VirtualBox/GuestAdd/CheckHostVersion</computeroutput> à 
+    <computeroutput>0</computeroutput>&nbsp;; voir le  <xref
+    linkend="guestadd-guestprops" /> pour les détails.</para>
   </sect1>
 
   <sect1>
-    <title>Installing and Maintaining Guest Additions</title>
+    <title>Installer et maintenir les additions invité</title>
 
-    <para>Guest Additions are available for virtual machines running Windows,
-    Linux, Solaris or OS/2. The following sections describe the specifics of
-    each variant in detail.</para>
+    <para>Les additions invité sont disponibles pour les machines virtuelles qui
+    exécutent  Windows, Linux, Solaris ou OS/2. Les sections suivantes décrivent
+    en détail les spécificités de chaque variante.</para>
 
     <sect2 id="additions-windows">
-      <title>Guest Additions for Windows</title>
+      <title>Additions Invité pour Windows</title>
 
-      <para>The VirtualBox Windows Guest Additions are designed to be
-      installed in a virtual machine running a Windows operating system. The
-      following versions of Windows guests are supported:</para>
+      <para>Les additions invité Windows de VirtualBox sont conçues pour être 
+      installées sur une machine virtuelle exécutant un système d'exploitation 
+      Windows. Les versions suivantes des invités Windows sont supportées&nbsp;:</para>
 
       <itemizedlist>
         <listitem>
-          <para>Microsoft Windows NT 4.0 (any service pack)</para>
+          <para>Microsoft Windows NT 4.0 (tous les packs service)</para>
         </listitem>
 
         <listitem>
-          <para>Microsoft Windows 2000 (any service pack)</para>
+          <para>Microsoft Windows 2000 (tous les packs service)</para>
         </listitem>
 
         <listitem>
-          <para>Microsoft Windows XP (any service pack)</para>
+          <para>Microsoft Windows XP (tous les packs service)</para>
         </listitem>
 
         <listitem>
-          <para>Microsoft Windows Server 2003 (any service pack)</para>
+          <para>Microsoft Windows Server 2003 (tous les packs service)</para>
         </listitem>
 
         <listitem>
@@ -193,559 +200,576 @@
         </listitem>
 
         <listitem>
-          <para>Microsoft Windows Vista (all editions)</para>
+          <para>Microsoft Windows Vista (toutes les éditions)</para>
         </listitem>
 
         <listitem>
-          <para>Microsoft Windows 7 (all editions)</para>
+          <para>Microsoft Windows 7 (toutes les éditions)</para>
         </listitem>
       </itemizedlist>
 
       <sect3 id="mountingadditionsiso">
         <title>Installation</title>
 
-        <para>In the "Devices" menu in the virtual machine's menu bar,
-        VirtualBox has a handy menu item named "Install guest additions",
-        which mounts the Guest Additions ISO file inside your virtual machine.
-        A Windows guest should then automatically start the Guest Additions
-        installer, which installs the Guest Additions into your Windows
-        guest.</para>
+        <para>Dans le menu <quote>Périphériques</quote> de la barre de menu de 
+        la machine virtuelle, VirtualBox a un élément pratique de sous-menu 
+        appelé <quote>Installer les additions invité</quote>, qui monte le 
+        fichier ISO des additions invité dans votre machine virtuelle. Un invité
+        Windows devrait alors lancer automatiquement l'installateur des additions
+        invité qui installe les additions invité dans votre invité Windows.</para>
 
         <note>
-          <para>For Direct 3D acceleration to work in a Windows Guest, you
-          must install the Guest Additions in "Safe Mode"; see <xref
-          linkend="KnownIssues" /> for details.</para>
+          <para>Pour que l'accélération Directe 3D fonctionne dans un invité 
+          Windows, vous devez installer les additions invité en <quote>mode 
+          sécurisé</quote>, voir le <xref linkend="KnownIssues" /> pour les 
+          détails.</para>
         </note>
 
-        <para>If you prefer to mount the additions manually, you can perform
-        the following steps:</para>
+        <para>Si vous préférez monter les additions à la main, vous pouvez 
+        effectuer les étapes suivantes&nbsp;:</para>
 
         <orderedlist>
           <listitem>
-            <para>Start the virtual machine in which you have installed
+            <para>Démarrer la machine virtuelle dans laquelle vous avez installé
             Windows.</para>
           </listitem>
 
           <listitem>
-            <para>Select "Mount CD/DVD-ROM" from the "Devices" menu in the
-            virtual machine's menu bar and then "CD/DVD-ROM image". This
-            brings up the Virtual Media Manager described in <xref
+            <para>Sélectionner <quote>Monter un CD/DVD-ROM</quote> depuis le 
+            menu <quote>Périphériques</quote> de la barre de menu de la machine
+            virtuelle, puis <quote>imag de CD/DVD-ROM</quote>. Cela affiche le 
+            gestionnaire de médias virtuels décrit au <xref
             linkend="vdis" />.</para>
           </listitem>
 
           <listitem>
-            <para>In the Virtual Media Manager, press the "Add" button and
-            browse your host file system for the
-            <computeroutput>VBoxGuestAdditions.iso</computeroutput>
-            file:<itemizedlist>
+            <para>Dans le gestionnaire de médias virtuels, appuyer sur le 
+            bouton <quote>Ajouter</quote> et chercher dans le système de fichiers
+            le fichier <computeroutput>VBoxGuestAdditions.iso</computeroutput>&nbsp;:<itemizedlist>
                 <listitem>
-                  <para>On a Windows host, you can find this file in the
-                  VirtualBox installation directory (usually under
+                  <para>Sur un hôte Windows, vous pouvez trouver ce fichier dans
+                  le répertoire d'installation de VirtualBox (généralement sous
                   <computeroutput>C:\Program
                   files\Oracle\VirtualBox</computeroutput> ).</para>
                 </listitem>
 
                 <listitem>
-                  <para>On Mac OS X hosts, you can find this file in the
-                  application bundle of VirtualBox. (Right click on the
-                  VirtualBox icon in Finder and choose <emphasis>Show Package
-                  Contents</emphasis>. There it is located in the
-                  <computeroutput>Contents/MacOS</computeroutput>
-                  folder.)</para>
+                  <para>Sur les hôtes Mac OS X, vous pouvez trouver ce fichier 
+                  dans le groupe application de VirtualBox. (Faire un clic droit
+                  sur l'icône VirtualBox de Finder et choisir <emphasis>Montrer le 
+                  contenu du paquet</emphasis>. Il se trouve alors dans le dossier
+                  <computeroutput>Contents/MacOS</computeroutput>.)</para>
                 </listitem>
 
                 <listitem>
-                  <para>On a Linux host, you can find this file in the
-                  <computeroutput>additions</computeroutput> folder under
-                  where you installed VirtualBox (normally
-                  <computeroutput>/opt/VirtualBox/</computeroutput>).</para>
+                  <para>Sur un hôte Linux, vous pouvez trouver ce fichier dans 
+                  le dossier additions sous lequel vous avez installé VirtualBox
+                  (normalement <computeroutput>/opt/VirtualBox/</computeroutput>).</para>
                 </listitem>
 
                 <listitem>
-                  <para>On Solaris hosts, you can find this file in the
-                  <computeroutput>additions</computeroutput> folder under
-                  where you installed VirtualBox (normally
+                  <para>Sur les hôtes Solaris, vous pouvez trouver ce fichier 
+                  dans le dossier <computeroutput>additions</computeroutput> 
+                  sous lequel vous avez installé VirtualBox (normalement 
                   <computeroutput>/opt/VirtualBox</computeroutput>).</para>
                 </listitem>
               </itemizedlist></para>
           </listitem>
 
           <listitem>
-            <para>Back in the Virtual Media Manager, select that ISO file and
-            press the "Select" button. This will mount the ISO file and
-            present it to your Windows guest as a CD-ROM.</para>
+            <para>Retourner dans le gestionnaire de médias virtuels, sélectionner
+            ce fichier ISO et appuyer sur le bouton <quote>Sélectionner</quote>.
+            Cela montera le fichier ISO et le présentera à votre invité Windows
+            comme un CD-ROM.</para>
           </listitem>
         </orderedlist>
 
-        <para>Unless you have the Autostart feature disabled in your Windows
-        guest, Windows will now autostart the VirtualBox Guest Additions
-        installation program from the Additions ISO. If the Autostart feature
-        has been turned off, choose
-        <computeroutput>VBoxWindowsAdditions.exe</computeroutput> from the
-        CD/DVD drive inside the guest to start the installer.</para>
+        <para>Sauf si vous avez désactivé la fonction de démarrage automatique 
+        sur votre invité Windows, Windows démarrera automatiquement alors le 
+        programme d'installation des additions invité de VirtualBox depuis l'ISO
+        des additions. Si vous avez désactivé la fonction de démarrage 
+        automatique, choisissez <computeroutput>VBoxWindowsAdditions.exe</computeroutput> 
+        depuis le lecteur de CD/DVD à l'intérieur de l'invité pour démarrer 
+        l'installateur.</para>
 
-        <para>The installer will add several device drivers to the Windows
-        driver database and then invoke the hardware detection wizard.</para>
+        <para>L'installateur ajoutera plusieurs pilotes de périphérique à la base
+        de données des pilotes de Windows puis il invoquera l'assistant de 
+        détection du matériel.</para>
 
-        <para>Depending on your configuration, it might display warnings that
-        the drivers are not digitally signed. You must confirm these in order
-        to continue the installation and properly install the
-        Additions.</para>
+        <para>Selon votre configuration, il pourrait afficher des avertissements
+        selon lesquels les pilotes ne sont pas signés de façon digitale. Vous 
+        devez confirmer afin de poursuivre l'installation et d'installer 
+        correctement les additions.</para>
 
-        <para>After installation, reboot your guest operating system to
-        activate the Additions.</para>
+        <para>Après l'installation, redémarrez votre système d'exploitation 
+        invité pour activer les additions.</para>
       </sect3>
 
       <sect3>
-        <title>Updating the Windows Guest Additions</title>
+        <title>Mettre à jour les additions invité Windows</title>
 
-        <para>Windows Guest Additions can be updated by running the
-        installation program again, as previously described. This will then
-        replace the previous Additions drivers with updated versions.</para>
+        <para>Vous pouvez mettre à jour les additions invité Windows en relançant
+        le programme d'installation comme décrit précédemment. Cela remplacera 
+        alors les pilotes des additions précédents par les versions mises à jour.</para>
 
-        <para>Alternatively, you may also open the Windows Device Manager and
-        select "Update driver..." for two devices:</para>
+        <para>Sinon, vous pouvez aussi ouvrir le gestionnaire de périphériques 
+        et sélectionner <quote>Mettre à jour les périphériques...</quote> pour 
+        deux périphériques&nbsp;:</para>
 
         <orderedlist>
           <listitem>
-            <para>the VirtualBox Graphics Adapter and</para>
+            <para>l'adaptateur vidéo de VirtualBox et</para>
           </listitem>
 
           <listitem>
-            <para>the VirtualBox System Device.</para>
+            <para>le périphérique système de VirtualBox.</para>
           </listitem>
         </orderedlist>
 
-        <para>For each, choose to provide your own driver and use "Have Disk"
-        to point the wizard to the CD-ROM drive with the Guest
-        Additions.</para>
+        <para>Pour chacun d'eux, choisissez de fournir votre propre pilote et 
+        utilisez <quote>J'ai un disque</quote> pour orienter l'assistant vers le
+        lecteur  CD-ROM contenant les additions invité.</para>
       </sect3>
 
       <sect3>
-        <title>Unattended Installation</title>
+        <title>Installation sans effort</title>
 
-        <para>In order to allow for completely unattended guest installations,
-        you can specify a command line parameter to the install
-        launcher:</para>
+        <para>Afin d'obtenir des installations invité entièrement sans efforts,
+        vous pouvez spécifier un paramètre en ligne de commande au lanceur de 
+        l'installation&nbsp;:</para>
 
         <screen>VBoxWindowsAdditions.exe /S</screen>
 
-        <para>This automatically installs the right files and drivers for the
-        corresponding platform (32- or 64-bit).</para>
+        <para>Cela installe automatiquement les bons fichiers et les pilotes 
+        pour la plateforme correspondante (32 ou 64 bits).</para>
 
         <note>
-          <para>Because of the drivers are not yet WHQL certified, you still
-          might get some driver installation popups, depending on the Windows
-          guest version.</para>
+          <para>Comme les pilotes ne sont pas encore certifiés WHQL, il se 
+          pourrait que vous ayez encore des fenêtres <quote>pop-up</quote>
+          d'installation de pilotes, selon la version de l'invité Windows.</para>
         </note>
 
-        <para>For more options regarding unattended guest installations,
-        consult the command line help by using the command:</para>
+        <para>Pour plus d'options concernant l'installation de l'invité sans 
+        efforts, consultez l'aide de la ligne de commande en utilisant la 
+        commande&nbsp;:</para>
 
         <screen>VBoxWindowsAdditions.exe /?</screen>
       </sect3>
 
       <sect3 id="windows-guest-file-extraction">
-        <title>Manual file extraction</title>
+        <title>Extraction manuelle de fichiers</title>
 
-        <para>If you would like to install the files and drivers manually, you
-        can extract the files from the Windows Guest Additions setup by
-        typing:</para>
+        <para>Si vous aimeriez installer les fichiers et les pilotes à la main,
+        vous pouvez extraire les fichiers du paramétrage des additions invité 
+        Windows en tapant&nbsp;:</para>
 
         <screen>VBoxWindowsAdditions.exe /extract</screen>
 
-        <para>To explicitly extract the Windows Guest Additions for another
-        platform than the current running one (e.g. 64-bit files on a 32-bit
-        system), you have to execute the appropriate platform installer
-        (<computeroutput>VBoxWindowsAdditions-x86.exe</computeroutput> or
-        <computeroutput>VBoxWindowsAdditions-amd64.exe</computeroutput>) with
-        the <computeroutput>/extract</computeroutput> parameter.</para>
+        <para>Pour extraire explicitement les additions invité Windows pour une
+        autre plateforme que celle actuellement en cours de fonctionnement 
+        (comme les fichiers 64 bits sur un système 32 bits), vous devez exécuter
+        l'installateur de la plateforme appropriée 
+        (<computeroutput>VBoxWindowsAdditions-x86.exe</computeroutput> ou
+        <computeroutput>VBoxWindowsAdditions-amd64.exe</computeroutput>) avec le
+        paramètre <computeroutput>/extract</computeroutput>.</para>
       </sect3>
 
       <sect3 id="vista_networking">
-        <title>Windows Vista networking</title>
+        <title>Le réseau et Windows Vista</title>
 
-        <para>Earlier versions of VirtualBox provided a virtual AMD PCNet
-        Ethernet card to guests by default. Since Microsoft no longer ships a
-        driver for that card with Windows (starting with Windows Vista), if
-        you select Windows Vista or newer as the guest operating system for a
-        virtual machine, VirtualBox will instead present a virtual Intel
-        network controller to the guest (see <xref
-        linkend="nichardware" />).</para>
+        <para>Les versions précédentes de VirtualBox fournissaient par défaut 
+        une carte virtuelle AMD PCNet Ethernet à l'invité. Depuis que Microsoft
+        n'inclut plus de pilote pour cette carte avec Windows (à partir de 
+        Windows Vista), si vous sélectionnez Windows Vista ou supérieur comme 
+        système d'exploitation invité de la machine virtuelle, VirtualBox 
+        présentera plutôt un contrôleur réseau virtuel Intel à l'invité (voir le 
+        <xref linkend="nichardware" />).</para>
 
-        <para>However, if for any reason you have a 32-bit Windows Vista VM
-        that is configured to use an AMD PCNet card, you will have no
-        networking in the guest initially.</para>
+        <para>Cependant, si pour une raison quelconque vous avez une VM Windows
+        Vista 32 bits configurée pour utiliser une carte AMD PCNet, vous n'aurez
+        pas de réseau au départ dans l'invité.</para>
 
-        <para>As a convenience, VirtualBox ships with a 32-bit driver for the
-        AMD PCNet card, which comes with the Windows Guest Additions. If you
-        install these in a 32-bit Vista guest, the driver will automatically
-        be installed as well. If, for some reason, you would like to install
-        the driver manually, you can extract the required files from the
-        Windows Guest Additions setup. Please consult <xref
-        linkend="windows-guest-file-extraction" /> on how to achieve this. You
-        will then find the AMD PCNet driver files in the
-        <computeroutput>x86\Network\AMD\netamd.inf</computeroutput>
-        subdirectory of the default install directory.</para>
+        <para>Afin d'être pratique, VirtualBox est fourni avec un pilote 32 bits
+        pour la carte AMD PCNet card, qui est fourni avec les additions invité 
+        Windows. Si vous l'installez sur un invité Vista 32 bits, le pilote sera
+        automatiquement installé. Si pour une raison quelconque vous aimeriez 
+        installer le pilote à la main, vous pouvez extraire les fichiers requis
+        du paramétrage des additions invité. Merci de consulter le <xref
+        linkend="windows-guest-file-extraction" /> sur la façon d'effectuer 
+        cela. Vous trouverez alors les fichiers du pilote AMD PCNet dans le 
+        sous-répertoire <computeroutput>x86\Network\AMD\netamd.inf</computeroutput>
+        du répertoire d'installation par défaut.</para>
+        
+        <para>Sinon, modifiez les paramètres de la VM invité Vista pour utiliser
+        une carte réseau Intel au lieu de la carte AMD PCNet par défaut ; voir 
+        le chapitre <xref linkend="settings-network" />.</para>
 
-        <para>Alternatively, change the Vista guest's VM settings to use an
-        Intel networking card instead of the default AMD PCNet card; see <xref
-        linkend="settings-network" /> for details.</para>
-
-        <para>Unfortunately, there is no 64-bit driver available for the AMD
-        PCNet card. So for 64-bit Windows VMs, you should always use the Intel
-        networking devices.</para>
+        <para>Malheureusement, il n'y a pas de pilote 64 bits disponible pour la
+        carte AMD PCNet. Donc pour les VMs Windows 64 bits, vous devriez toujours
+        utiliser les périphériques réseau Intel.</para>
       </sect3>
     </sect2>
 
     <sect2>
-      <title>Guest Additions for Linux</title>
+      <title>Additions Invité pour Linux</title>
 
-      <para>Like the Windows Guest Additions, the VirtualBox Guest Additions
-      for Linux take the form of a set of device drivers and system
-      applications which may be installed in the guest operating
-      system.</para>
+      <para>Comme les additions invité Windows, les additions invité de 
+      VirtualBox pour Linux ont la forme d'un ensemble de pilotes de 
+      périphériques et d'applications système qui peuvent être installées dans 
+      le système d'exploitation invité.</para>
 
-      <para>The following Linux distributions are officially supported:</para>
+      <para>Les distributions Linux suivantes sont officiellement supportées&nbsp;:</para>
 
       <itemizedlist>
         <listitem>
-          <para>Fedora as of Fedora Core 4;</para>
+          <para>Fedora à partir de Fedora Core 4&nbsp;;</para>
         </listitem>
 
         <listitem>
-          <para>Redhat Enterprise Linux as of version 3;</para>
+          <para>Redhat Enterprise Linux à partir de la version 3&nbsp;;</para>
         </listitem>
 
         <listitem>
-          <para>SUSE and openSUSE Linux as of version 9;</para>
+          <para>SUSE et openSUSE Linux à partir de la version 9&nbsp;;</para>
         </listitem>
 
         <listitem>
-          <para>Ubuntu as of version 5.10.</para>
+          <para>Ubuntu à partir de la version 5.10.</para>
         </listitem>
       </itemizedlist>
 
-      <para>Many other distributions are known to work with the Guest
-      Additions.</para>
+      <para>De nombreuses autres distributions sont connues pour fonctionner 
+      avec les additions invité.</para>
 
-      <para>The version of the Linux kernel supplied by default in SUSE and
-      openSUSE 10.2, Ubuntu 6.10 (all versions) and Ubuntu 6.06 (server
-      edition) contains a bug which can cause it to crash during startup when
-      it is run in a virtual machine. The Guest Additions work in those
-      distributions.</para>
+      <para>La version du noyau par défaut fournie par SUSE et openSUSE 10.2, 
+      Ubuntu 6.10 (toutes les versions) et Ubuntu 6.06 (édition serveur) contient
+      un bogue qui peut l'amener à planter pendant le démarrage lorsqu'il est 
+      lancé dans une machine virtuelle. Les additions invité fonctionnent dans 
+      ces distributions.</para>
 
-      <para>Note that some Linux distributions already come with VirtualBox
-      Guest Additions or a part thereof. You may keep the distribution's
-      version of the Guest Additions but often, these are not up to date
-      and limited in functionality. Therefore, you can choose the install
-      the Guest Additions that come with VirtualBox, overriding the already
-      installed version. The VirtualBox Linux Guest Additions installer tries
-      to detect existing installation and replace them but depending on how
-      the distribution integrates the Guest Additions, they may require some
-      manual interaction. It is highly recommended to take a snapshot of the
-      virtual machine before overriding the installation.</para>
+      <para>Remarquez que certaines distributions Linux sont déjà fournies avec
+      les additions invité de VirtualBox ou avec une partie d'entre eux. Vous
+      pouvez conserver la version des additions invité de la distribution mais,
+      souvent, ils ne sont pas à jour et leurs fonctionnalités sont limitées. 
+      Vous pouvez donc choisir d'installer les additions invité fournies avec 
+      VirtualBox, ce qui écrasera la version déjà installée. L'installateur des
+      additions invité Linux de VirtualBox essaie de détecter une installation 
+      existante et il les remplace, mais selon la manière dont la distribution 
+      intègre les additions invité, ils peuvent exiger quelques interventions à
+      la main. Il est hautement recommandé de prendre un instantané de la 
+      machine virtuelle avant d'écraser l'installation.</para>
 
       <sect3>
-        <title>Installing the Linux Guest Additions</title>
+        <title>Installer les additions Invité Linux</title>
 
-        <para>The VirtualBox Guest Additions for Linux are provided on the
-        same ISO CD-ROM as the Additions for Windows described above. They
-        also come with an installation program guiding you through the setup
-        process, although, due to the significant differences between Linux
-        distributions, installation may be slightly more complex.</para>
+        <para>Les additions invité de VirtualBox pour Linux sont fournies sur le
+        même CD-ROM ISO que les additions pour Windows décrits ci-dessus. Ils 
+        sont aussi fournis avec un programme d'installation qui vous guide à 
+        travers le processus d'installation, bien que, du fait de différences 
+        importantes entre les distributions Linux, l'installation pourrait être
+        légèrement plus complexe.</para>
 
-        <para>Installation generally involves the following steps:</para>
+        <para>L'installation consiste en les étapes suivantes&nbsp;:</para>
 
         <orderedlist>
           <listitem>
-            <para>Before installing the Guest Additions, you will have to
-            prepare your guest system for building external kernel modules.
-            This works similarly as described in <xref
-            linkend="externalkernelmodules" />, except that this step must now
-            be performed in your Linux <emphasis>guest</emphasis> instead of
-            on a Linux host system, as described there.</para>
+            <para>Avant d'installer les additions invités, vous devrez préparer
+            votre système invité à construire les modules noyau externes. Cela 
+            fonctionne de la  même façon que décrit au chapitre <xref
+            linkend="externalkernelmodules" />, sauf que cette étape doit se 
+            faire maintenant dans votre invité Linux au lieu d'un système Linux
+            hôte, comme décrit ici.</para>
 
-            <para>Again, as with Linux hosts, we recommend using DKMS for
-            Linux guests as well. If it is not installed, use this
-            command for Ubuntu/Debian systems:<screen>sudo apt-get install dkms</screen>
-            or for Fedora systems: <screen>yum install dkms</screen></para>
+            <para>À nouveau, comme avec les hôtes Linux, nous vous recommandons
+            d'utiliser DKMS pour les invités Linux. S'il n'est pas installé, 
+            utilisez cette commande pour les systèmes Ubuntu/Debian&nbsp;:<screen>sudo apt-get install dkms</screen>
+            ou pour les systèmes Fedora&nbsp;: <screen>yum install dkms</screen></para>
 
-            <para>Make sure to nstall DKMS <emphasis>before</emphasis> installing the
-            Linux Guest Additions.</para>
+            <para>Assurez-vous d'installer DKMS <emphasis>avant</emphasis>
+            d'installer les additions invité Linux.</para>
           </listitem>
 
           <listitem>
-            <para>Mount the
-            <computeroutput>VBoxGuestAdditions.iso</computeroutput> file as
-            your Linux guest's virtual CD-ROM drive, exactly the same way as
-            described for a Windows guest in <xref
+            <para>Montez le fichier
+            <computeroutput>VBoxGuestAdditions.iso</computeroutput> comme 
+            lecteur de CD-ROM virtuel de votre invité Linux, exactement de la 
+            même façon que décrit pour un invité Windows au <xref
             linkend="mountingadditionsiso" />.</para>
           </listitem>
 
           <listitem>
-            <para>Change to the directory where your CD-ROM drive is mounted
-            and execute as root:</para>
+            <para>Allez dans le répertoire où est monté votre lecteur de CD-ROM
+            et exécutez en tant qu'administrateur&nbsp;:</para>
 
             <screen>sh ./VBoxLinuxAdditions-x86.run</screen>
 
-            <para>In a 64-bit Linux guest, use
-            <computeroutput>VBoxLinuxAdditions-amd64.run</computeroutput>
-            instead.</para>
+            <para>Sur un invité Linux 64 bits, utilisez plutôt l'installeur
+            <computeroutput>VBoxLinuxAdditions-amd64.run</computeroutput>.</para>
           </listitem>
         </orderedlist>
 
-        <para>For your convenience, the following step-by-step instructions
-        have been verified to work for freshly installed copies of the most
-        popular Linux distributions. After these preparational steps, you
-        can execute the VirtualBox Guest Additions installer as described
-        above.</para>
+        <para>Pour vous aider, les instructions pas-à-pas suivantes ont été 
+        vérifiées comme opérationnelles pour des copies fraîchement installées 
+        des distributions Linux les plus populaires. Après ces étapes 
+        préparatoires, vous pouvez exécuter l'installateur des additions invité
+        de VirtualBox comme décrit ci-dessus.</para>
 
-        <sect4><title>Ubuntu 10.04 ("Lucid Lynx")</title><para>
+        <sect4><title>Ubuntu 10.04 (<quote>Lucid Lynx</quote>)</title><para>
         <orderedlist>
           <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
+            <para>Pour mettre à jour votre système vers la dernière version des
+            paquets, ouvrez un terminal et, en tant qu'administrateur, exécutez
             <screen>apt-get update</screen>
-            followed by
+            suivi de
             <screen>apt-get upgrade</screen></para>
           </listitem>
           <listitem>
-            <para>Install DKMS using
+            <para>Installez DKMS en utilisant
             <screen>apt-get install dkms</screen></para>
           </listitem>
           <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates and then proceed as described above.</para>
+            <para>Redémarrez votre système invité afin d'activer les mises à 
+            jour puis procédez comme décrit ci-dessus.</para>
           </listitem>
         </orderedlist></para></sect4>
 
-        <sect4><title>Fedora 13 ("Goddard")</title><para>
+        <sect4><title>Fedora 13 (<quote>Goddard</quote>)</title><para>
         <orderedlist>
           <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
+            <para>Pour mettre à jour votre système vers la dernière version des
+            paquets, ouvrez un terminal et, en tant qu'administrateur, exécutez
             <screen>yum update</screen></para>
           </listitem>
           <listitem>
-            <para>Install DKMS and the GNU C compiler using
+            <para>Installez DKMS et le compilateur GNU C en utilisant
             <screen>yum install dkms</screen>
-            followed by
+            suivi de
             <screen>yum install gcc</screen></para>
           </listitem>
           <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates and then proceed as described above.</para>
+            <para>Redémarrez votre système invité afin d'activer les mises à 
+            jour puis procédez comme décrit ci-dessus.</para>
           </listitem>
         </orderedlist></para></sect4>
 
         <sect4><title>openSUSE 11.2</title><para>
         <orderedlist>
           <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
+            <para>Pour mettre à jour votre système vers la dernière version des
+            paquets, ouvrez un terminal et, en tant qu'administrateur, exécutez
             <screen>zypper update</screen></para>
           </listitem>
           <listitem>
-            <para>Install the make tool and the GNU C compiler using
+            <para>Installez l'outil make et le compilateur GNU C en utilisant
             <screen>zypper install make gcc</screen></para>
           </listitem>
           <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates.</para>
+            <para>Redémarrez votre système invité afin d'activer les mises à 
+            jour.</para>
           </listitem>
           <listitem>
-            <para>Find out which kernel you are running using
+            <para>Cherchez quel est le noyau que vous exécutez en utilisant
             <screen>uname -a</screen>
-            An example would be <computeroutput>2.6.31.12-0.2-default</computeroutput>
-            which refers to the "default" kernel. Then install the correct kernel
-            development package. In the above example this would be
+            Un exemple serait <computeroutput>2.6.31.12-0.2-default</computeroutput>
+            qui se réfère au noyau par défaut. Puis, installez le bon paquet de
+            développement du noyau. Dans l'exemple ci-dessus, il s'agirait de
             <screen>zypper install kernel-default-devel</screen></para>
           </listitem>
           <listitem>
-            <para>Make sure that your running kernel
-            (<computeroutput>uname -a</computeroutput>) and the kernel packages
-            you have installed (<computeroutput>rpm -qa kernel\*</computeroutput>)
-            have the exact same version number. Proceed with the installation as described
-            above.</para>
+            <para>Assurez-vous que votre noyau en fonction (uname -a) et les 
+            paquets du noyau que vous avez installés
+            (<computeroutput>uname -a</computeroutput>) ont exactement le même 
+            numéro de version. Procédez comme décrit ci-dessus.</para>
           </listitem>
         </orderedlist></para></sect4>
 
         <sect4><title>SuSE Linux Enterprise Desktop (SLED) 11</title><para>
         <orderedlist>
           <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
+            <para>Pour mettre à jour votre système vers la dernière version des
+            paquets, ouvrez un terminal et, en tant qu'administrateur, exécutez
             <screen>zypper update</screen></para>
           </listitem>
           <listitem>
-            <para>Install the GNU C compiler using
+            <para>Installez le compilateur GNU C en utilisant
             <screen>zypper install gcc</screen></para>
           </listitem>
           <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates.</para>
+            <para>Redémarrez votre système invité afin d'activer les mises à 
+            jour.</para>
           </listitem>
           <listitem>
-            <para>Find out which kernel you are running using
+            <para>Cherchez le noyau que vous exécutez en utilisant
             <screen>uname -a</screen>
-            An example would be <computeroutput>2.6.27.19-5.1-default</computeroutput>
-            which refers to the "default" kernel. Then install the correct kernel
-            development package. In the above example this would be
+            Un exemple serait <computeroutput>2.6.27.19-5.1-default</computeroutput>
+            qui se réfère au noyau <quote>default</quote>. Puis installez
+            le bon paquet de développement du noyau. Dans l'exemple ci-dessus,
+            il s'agirait de
             <screen>zypper install kernel-syms kernel-source</screen></para>
           </listitem>
           <listitem>
-            <para>Make sure that your running kernel
-            (<computeroutput>uname -a</computeroutput>) and the kernel packages
-            you have installed (<computeroutput>rpm -qa kernel\*</computeroutput>)
-            have the exact same version number. Proceed with the installation as described
-            above.</para>
+            <para>Assurez-vous que votre noyau actuel
+            (<computeroutput>uname -a</computeroutput>) et les paquets du
+            noyau que vous avez installés (<computeroutput>rpm -qa kernel\*</computeroutput>)
+            ont exactement le même numéro de version. Procédez comme décrit 
+            ci-dessus.</para>
           </listitem>
         </orderedlist></para></sect4>
 
         <sect4><title>Mandrake 2010</title><para>
         <orderedlist>
           <listitem>
-            <para>Mandrake ships with the VirtualBox Guest Additions which
-            will be replaced if you follow these steps.</para>
+            <para>Mandrake inclut les additions invité de VirtualBox qui seront
+            remplacés si vous suivez ces étapes.</para>
           </listitem>
           <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root and execute
+            <para>Pour mettre à jour votre système vers la dernière version des
+            paquets, ouvrez un terminal et, en tant qu'administrateur, exécutez
             <screen>urpmi --auto-update</screen></para>
           </listitem>
-          <listitem><para>Reboot your system in order to activate the updates.</para>
+          <listitem><para>Redémarrez votre système invité afin d'activer les 
+          mises à jour.</para>
           </listitem>
-          <listitem><para>Install DKMS using
+          <listitem><para>Installez DKMS en utilisant
             <screen>urpmi dkms</screen>
-            and make sure the choose the correct kernel-devel package when asked
-            by the installer (use <computeroutput>uname -a</computeroutput> to compare).</para>
+            et assurez-vous de choisir le bon paquet kernel-devel lorsque
+           cela vous est demandé (utilisez <computeroutput>uname -a</computeroutput> 
+           pour comparer).</para>
           </listitem>
         </orderedlist></para></sect4>
 
-        <sect4><title>CentOS 5.5, Red Hat Enterprise Linux 5.5 and Oracle Enterprise
+        <sect4><title>CentOS 5.5, Red Hat Enterprise Linux 5.5 et Oracle Enterprise
             Linux 5.5</title><para>
         <orderedlist>
           <listitem>
-            <para>Add <computeroutput>divider=10</computeroutput> to the kernel boot options
-            in <computeroutput>/etc/grub.conf</computeroutput> to reduce the idle CPU load.</para>
+            <para>Ajoutez <computeroutput>divider=10</computeroutput> aux options
+            de démarrage du noyau dans <computeroutput>/etc/grub.conf</computeroutput> 
+            pour réduire la charge d'occupation du processeur.</para>
           </listitem>
           <listitem>
-            <para>To update your system to the latest version
-            of the packets, open a terminal and as root, execute
+            <para>Pour mettre à jour votre système vers la dernière version des
+            paquets, ouvrez un terminal et, en tant qu'administrateur, exécutez
             <screen>yum update</screen></para>
           </listitem>
           <listitem>
-            <para>Install the GNU C compiler and the kernel development packages using
+            <para>Installez le compilateur GNU C et les paquets de développement
+            du noyau en utilisant
             <screen>yum install gcc</screen>
-            followed by
+            suivi de
             <screen>yum install kernel-devel</screen></para>
           </listitem>
           <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates and then proceed as described above.</para>
+            <para>Redémarrez votre système invité afin d'activer les mises à 
+            jour puis procédez comme décrit ci-dessus.</para>
           </listitem>
           <listitem>
-            <para>Note that OpenGL support is not available unless you update to a later Linux kernel.</para>
-            <para>In case Oracle Enterprise Linux does not find the required packages, you either have to
-            install them from a different source (e.g. DVD) or use Oracle's public Yum server located at
-            <ulink url="http://public-yum.oracle.com/">http://public-yum.oracle.com</ulink>.</para>
+            <para>Remarquez que le support d'OpenGL n'est pas disponible, sauf 
+            si vous mettez à jour vers un noyau Linux récent.</para>
+            <para>Si Oracle Enterprise Linux ne trruve pas les paquets requis,
+            vous devez les installer soit à partir d'une autre source (comme
+            un DVD) soit en utilisant le serveur public Yum d'Oracle qui se
+            trouve sur <ulink url="http://public-yum.oracle.com/">http://public-yum.oracle.com</ulink>.</para>
           </listitem>
         </orderedlist></para></sect4>
 
-        <sect4><title>Debian 5 ("Lenny")</title><para>
+        <sect4><title>Debian 5 (<quote>Lenny</quote>)</title><para>
         <orderedlist>
           <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
+            <para>Pour mettre à jour votre système vers la dernière version des
+            paquets, ouvrez un terminal et, en tant qu'administrateur, exécutez
             <screen>apt-get update</screen>
-            followed by
+            suivi de
             <screen>apt-get upgrade</screen></para>
           </listitem>
           <listitem>
-            <para>Install the make tool and the GNU C compiler using
+            <para>Installez l'outil make et le compilateur GNU C en utilisant
             <screen>apt-get install make gcc</screen></para>
           </listitem>
           <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates.</para>
+            <para>Redémarrez votre système invité afin d'activer les mises à 
+            jour.</para>
           </listitem>
           <listitem>
-            <para>Determine the exact version of your kernel using
-            <computeroutput>uname -a</computeroutput> and install the correct version
-            of the linux-headers package, e.g. using
+            <para>Déterminez la version exacte de votre noyau en utilisant
+            <computeroutput>uname -a</computeroutput> et installez la bonne
+            version du paquet linux-headers, en utilisant par exemple
             <screen>apt-get install linux-headers-2.6.26-2-686</screen></para>
 
           <listitem>
-            <para>Note that OpenGL support is not available unless you update to a later Linux kernel.</para>
+            <para>Remarquez que le support d'OpenGL n'est pas disponible, sauf 
+            si vous mettez à jour vers un noyau Linux récent.</para>
           </listitem>
           </listitem>
         </orderedlist></para></sect4>
         </sect3>
 
-        <sect3><title>Manual setup of selected guest services</title>
-        <para>The VirtualBox Guest Additions contain several different
-        drivers. If for any reason you do not wish to set them all up, you can
-        install the Guest Additions using the following command:</para>
+        <sect3><title>Paramétrage manuel des services invité sélectionnés</title>
+        <para>Les additions invité de VirtualBox contiennent plusieurs pilotes 
+        différents. Si pour une raison quelconque vous ne souhaitez pas tous les
+        initialiser, vous pouvez installer les additions invité en utilisant la
+        commande suivante&nbsp;:</para>
 
         <screen>  sh ./VBoxLinuxAdditions-x86.run no_setup</screen>
 
-        <para>(substituting <computeroutput>VBoxLinuxAdditions-amd64
-        </computeroutput> on a 64-bit guest).</para>
+        <para>(en remplaçant par <computeroutput>VBoxLinuxAdditions-amd64
+        </computeroutput> sur un invité 64 bits).</para>
 
-        <para>After this, you will need to at least compile the kernel modules
-        by running the command <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
-        as root (you will need to replace <emphasis>lib</emphasis> by
-        <emphasis>lib64</emphasis>
-        on some 64bit guests), and on older guests without the udev service
-        you will need to add the <emphasis>vboxadd</emphasis> service to the
-        default runlevel to ensure that the modules get loaded.</para>
+        <para>Après cela, vous devrez au moins compiler les modules noyau en 
+        lançant la commande <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
+        en tant qu'administrateur (vous devrez remplacer <emphasis>lib</emphasis>
+        par <emphasis>lib64</emphasis> sur certains invités 64 bits), et sur les 
+        invités anciens sans le service udev vous devrez ajouter le service 
+        <emphasis>vboxadd</emphasis> au niveau d'exécution par défaut pour 
+        garantir que les modules seront chargés.</para>
 
-        <para>To setup the time synchronization service, run the command
+        <para>Pour initialiser le service de synchronisation de temps, lancez la
+        commande
         <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-service setup</screen>
-        and add the service vboxadd-service to the default runlevel. To set up
-        the X11 and OpenGL part of the Guest Additions, run the command
-        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-x11 setup</screen> (you
-        do not need to enable any services for this).</para>
+        et ajoutez le service vboxadd-service au niveau d'exécution par défaut.
+        Pour initialiser la partie OpenGL de X11 des additions invité, lancez la
+        commande <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-x11 setup</screen>
+        (vous n'avez besoin d'activer aucun service pour cela).</para>
 
-        <para>To recompile the guest kernel modules, use this command:
-        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen> After
-        compilation you should reboot your guest to ensure that the new
-        modules are actually used.</para>
+        <para>Pour recompiler les modules du noyau de l'invité, utilisez
+        cette commande&nbsp;:
+        <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen> Après la 
+        compilation vous devriez redémarrer votre invité pour garantir que les 
+        nouveaux modules seront bien utilisés.</para>
       </sect3>
 
       <sect3>
-        <title>Video acceleration and high resolution graphics modes</title>
+        <title>Accélération vidéo et modes graphiques haute résolution</title>
 
-        <para>In Linux guests, VirtualBox video acceleration is available
-        through the X Window System. Typically, in today's Linux
-        distributions, this will be the X.Org server. During the installation
-        process, X will be set up to use the VirtualBox video driver shipped
-        with the Guest Additions.</para>
+        <para>Sur les invités Linux, l'accélération graphique de VirtualBox est
+        disponible à travers le système X Window. En général, sur les 
+        distributions Linux actuelles, il s'agira du serveur X.Org. Pendant le 
+        processus d'installation, X sera initialisé pour utiliser le pilote 
+        graphique fourni avec les additions invité.</para>
 
-        <para>For Linux and Solaris guests, the X.org server version 1.3 or
-        later is required for automatic resizing (the feature has been
-        disabled on Fedora 9 guests due to a bug in the X server they supply).
-        The server version can be checked with <computeroutput>Xorg
+        <para>Pour les invités Linux et Solaris, la version 1.3 du serveur X.org
+        est nécessaire pour le redimensionnement (la fonctionnalité a été 
+        désactivée sur les invités Fedora 9 du fait d'un bogue dans leur serveur
+        X). La version du serveur peut être vérifiée avec <computeroutput>Xorg
         -version</computeroutput>.</para>
 
-        <para>You can also send video mode hints using the
-        <computeroutput>VBoxManage</computeroutput> tool.</para>
+        <para>Vous pouvez aussi envoyer des astuces du mode graphique en utilisant l'outil
+        <computeroutput>VBoxManage</computeroutput>.</para>
 
-        <para>If you are only using recent Linux guests systems, you can skip
-        the rest of this section. On older guest systems, whatever graphics
-        modes were set up before the installation will be used. If these modes
-        do not suit your requirements, you can change your setup by editing
-        the configuration file of the X server, usually found in
-        <computeroutput>/etc/X11/xorg.conf</computeroutput>.</para>
+        <para>Si vous n'utilisez que des systèmes invités Linux récents, vous 
+        pouvez sauter le reste de cette section. Sur les systèmes invités 
+        anciens, tous les modes graphiques initialisés avant l'installation 
+        seront utilisés. Si ces modes ne satisfont pas vos exigences, vous 
+        pouvez modifier vos paramètres en éditant le fichier de configuration du 
+        serveur X, situé en général dans <computeroutput>/etc/X11/xorg.conf</computeroutput>.</para>
 
-        <para>VirtualBox can use any default X graphics mode which fits into
-        the virtual video memory allocated to the virtual machine, as
-        described in <xref linkend="generalsettings" />. You can also add your
-        own modes to the X server configuration file. You simply need to add
-        them to the "Modes" list in the "Display" subsection of the "Screen"
-        section. For example, the section shown here has a custom 2048x800
-        resolution mode added:</para>
+        <para>VirtualBox peut utiliser n'importe quel mode graphique X par défaut
+        adapté à la mémoire vidéo virtuelle allouée à la machine virtuelle comme
+        décrit au chapitre <xref linkend="generalsettings" />. Vous pouvez aussi  
+        ajouter vos propres modes au fichier de configuration du serveur X. Vous
+        n'avez besoin que de les ajouter à la liste des <quote>modes</quote> de
+        la sous-section <quote>Display</quote> de la section <quote>Screen</quote>. 
+        Par exemple, la section montrée ici a une résolution personnalisée en 
+        mode ajouté 2048x800&nbsp;:</para>
 
         <screen>Section "Screen"
         Identifier    "Default Screen"
@@ -760,274 +784,284 @@ EndSection</screen>
       </sect3>
 
       <sect3>
-        <title>Updating the Linux Guest Additions</title>
+        <title>Mettre à jour les additions Invité Linux</title>
 
-        <para>The Guest Additions can simply be updated by going through the
-        installation procedure again with an updated CD-ROM image. This will
-        replace the drivers with updated versions. You should reboot after
-        updating the Guest Additions.</para>
+        <para>Vous pouvez simplement mettre à jour les additions invité en 
+        refaisant la procédure d'installation avec une image de CD-ROM mise à 
+        jour. Ceci remplacera les pilotes par les versions mises à jour. Vous 
+        devriez redémarrer après la mise à jour des additions invité.</para>
       </sect3>
 
       <sect3>
-        <title>Uninstalling the Linux Guest Additions</title>
+        <title>Désinstaller les additions invité Linux</title>
 
-        <para>If you have a version of the Guest Additions installed on your
-        virtual machine and wish to remove it without installing new ones,
-        you can do so by inserting the Guest Additions CD image into the
-        virtual CD-ROM drive as described above and running the installer for
-        the current Guest Additions with the "uninstall" parameter from the
-        path that the CD image is mounted on in the guest:
+        <para>Si vous avez installé une version des additions invité sur votre
+        machine virtuelle et si vous souhaitez la supprimer sans en installer
+        de nouvelles, vous pouvez le faire en insérant l'image du CD des additions
+        invité dans le lecteur de CD-ROM virtuel comme décrit ci-dessus et en 
+        lançant l'installeur des additions invité actuelles avec le paramètre
+        <quote>uninstall</quote> depuis le chemin de l'invité où est monté 
+        l'image de CD&nbsp;:
         <screen>sh ./VBoxLinuxAdditions-x86.run uninstall</screen>
-        <para>(substituting <computeroutput>VBoxLinuxAdditions-amd64</computeroutput>
-          on a 64-bit guest).  While this will normally work
-        without issues, you may need to do some manual clean up of the guest
-        (particularly of the XFree86Config or xorg.conf file) in some cases,
-        particularly if the Additions version installed or the guest
-        operating system were very old, or if you made your own changes to
-        the Guest Additions setup after you installed them.</para>
+        <para>(en remplaçant <computeroutput>VBoxLinuxAdditions-amd64</computeroutput>
+        sur un invité 64 bits). Si cela fonctionnera normalement sans problèmes,
+        il se peut que vous deviez faire du nettoyage manuel de l'invité (en
+        particulier du fichier XFree86Config ou xorg.conf) dans certains cas,
+        surtout si la version des additions installée ou si le système
+        d'exploitation invité était très vieux, ou si vous avez fait vos
+        propres modifications sur le réglage des additions invité après avoir 
+        installé.</para>
        </para>
        <para>
-         Starting with version 3.1.0, you can uninstall the Additions
-         by invoking
+         À partir de la version 3.1.0, vous pouvez désinstaller les additions
+         en appelant
          <screen>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING/uninstall.sh</screen>
-         substituting <computeroutput>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING</computeroutput>
-         with the Guest Additions installation directory.
+         en remplaçant <computeroutput>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING</computeroutput>
+         par le répertoire d'installation des additions invité.
        </para>
       </sect3>
     </sect2>
 
     <sect2>
-      <title>Guest Additions for Solaris</title>
+      <title>Additions Invité pour Solaris</title>
 
-      <para>Like the Windows Guest Additions, the VirtualBox Guest Additions
-      for Solaris take the form of a set of device drivers and system
-      applications which may be installed in the guest operating
-      system.</para>
+      <para>Comme les additions invité Windows, les additions invité de Solaris
+      ont la forme de pilotes de périphériques et d'applications système qui 
+      peuvent être installés sur le système d'exploitation invité.</para>
 
-      <para>The following Solaris distributions are officially
-      supported:</para>
+      <para>Les distributions Solaris suivantes sont officiellement 
+      supportées&nbsp;:</para>
 
       <itemizedlist>
         <listitem>
-          <para>OpenSolaris Nevada (Build 82 and higher; this includes
-          OpenSolaris 2008.05, 2008.11 and 2009.06);</para>
+          <para>OpenSolaris Nevada (construction 82 et supérieur&nbsp;; ceci
+          inclut OpenSolaris 2008.05, 2008.11 et 2009.06);</para>
         </listitem>
 
         <listitem>
-          <para>OpenSolaris Indiana (Developer Preview 2 and higher);</para>
+          <para>OpenSolaris Indiana (Developer Preview 2 et supérieur);</para>
         </listitem>
 
         <listitem>
-          <para>Solaris 10 (u5 and higher).</para>
+          <para>Solaris 10 (u5 et supérieur).</para>
         </listitem>
       </itemizedlist>
 
-      <para>Other distributions may work if they are based on comparable
-      software releases.</para>
+      <para>Il se peut que d'autres distributions fonctionnent si elles se basent 
+      sur des versions de logiciels comparables.</para>
 
       <sect3>
-        <title>Installing the Solaris Guest Additions</title>
+        <title>Installer les additions Solaris</title>
 
-        <para>The VirtualBox Guest Additions for Solaris are provided on the
-        same ISO CD-ROM as the Additions for Windows and Linux described
-        above. They also come with an installation program guiding you through
-        the setup process.</para>
+        <para>Les additions invité VirtualBox pour Solaris sont fournis sur la 
+        même ISO de CD-ROM que les additions pour Windows et Linux décrits 
+        ci-dessus. Ils sont aussi fournis avec un programme d'installation vous
+        guidant à travers le processus d'initialisation.</para>
 
-        <para>Installation involves the following steps:</para>
+        <para>L'installation implique les étapes suivantes&nbsp;:</para>
 
         <orderedlist>
           <listitem>
-            <para>Mount the
-            <computeroutput>VBoxGuestAdditions.iso</computeroutput> file as
-            your Solaris guest's virtual CD-ROM drive, exactly the same way as
-            described for a Windows guest in <xref
+            <para>Monter le fichier
+            <computeroutput>VBoxGuestAdditions.iso</computeroutput> en tant que
+            votre lecteur de CD-ROM virtuel de votre invité Solaris, exactement
+            de la même façon que celle décrite pour un invité Windows au <xref
             linkend="mountingadditionsiso" />.</para>
 
-            <para>If in case the CD-ROM drive on the guest doesn't get mounted
-            (observed on some versions of Solaris 10), execute as root:</para>
+            <para>Si le lecteur CD-ROM de l'invité n'est pas monté, (on le voit
+            sur certaines versions de Solaris 10), exécutez en tant 
+            qu'administrateur&nbsp;:</para>
 
             <screen>svcadm restart volfs</screen>
           </listitem>
 
           <listitem>
-            <para>Change to the directory where your CD-ROM drive is mounted
-            and execute as root:</para>
+            <para>Aller dans le répertoire où est monté votre lecteur CD-ROM et
+            exécutez en tant qu'administrateur&nbsp;:</para>
 
             <screen>pkgadd -G -d ./VBoxSolarisAdditions.pkg</screen>
           </listitem>
 
           <listitem>
-            <para>Choose "1" and confirm installation of the Guest Additions
-            package. After the installation is complete, re-login to X server
-            on your guest to activate the X11 Guest Additions.</para>
+            <para>Choisissez <quote>1</quote> et confirmer l'installation du 
+            paquet des additions invité. Après que l'installation est terminée,
+            reconnectez le serveur X de votre invité pour activer les additions
+            invité X11.</para>
           </listitem>
         </orderedlist>
       </sect3>
 
       <sect3>
-        <title>Uninstalling the Solaris Guest Additions</title>
+        <title>Désinstaller les additions Solaris</title>
 
-        <para>The Solaris Guest Additions can be safely removed by removing
-        the package from the guest. Open a root terminal session and
-        execute:</para>
+        <para>Vous pouvez supprimer en toute sécurité les additions invité 
+        Solaris en supprimant le paquet de l'invité. Ouvrez une session de 
+        terminal administrateur et exécutez&nbsp;:</para>
 
         <para><screen>pkgrm SUNWvboxguest</screen></para>
       </sect3>
 
       <sect3>
-        <title>Updating the Solaris Guest Additions</title>
+        <title>Mettre à jour les additions Solaris</title>
 
-        <para>The Guest Additions should be updated by first uninstalling the
-        existing Guest Additions and then installing the new ones. Attempting
-        to install new Guest Additions without removing the existing ones is
-        not possible.</para>
+        <para>Les additions invité devraient être mis à jour en désinstallant 
+        d'abord les additions invité existants puis en installant les nouveaux.
+        Tenter d'installer les nouvelles additions invité sans supprimer celles
+        existantes n'est pas possible.</para>
       </sect3>
     </sect2>
 
     <sect2>
-      <title>Guest Additions for OS/2</title>
+      <title>Additions Invité pour OS/2</title>
 
-      <para>VirtualBox also ships with a set of drivers that improve running
-      OS/2 in a virtual machine. Due to restrictions of OS/2 itself, this
-      variant of the Guest Additions has a limited feature set; see <xref
-      linkend="KnownIssues" /> for details.</para>
+      <para>VirtualBox offre aussi un ensemble de pilotes qui améliorent le 
+      fonctionnement  d'OS/2 dans une machine virtuelle. Du fait de restrictions 
+      d'OS/2 lui-même, cette variante des additions invité a un ensemble de 
+      fonctionnalités limité&nbsp;; voir le <xref linkend="KnownIssues" /> pour
+      les détails.</para>
 
-      <para>The OS/2 Guest Additions are provided on the same ISO CD-ROM as
-      those for the other platforms. As a result, mount the ISO in OS/2 as
-      described previously. The OS/2 Guest Additions are located in the
-      directory <computeroutput>\32bit\OS2</computeroutput>.</para>
+      <para>Les additions invité OS/2 sont fournies sur la même ISO de CD-ROM 
+      comme ceux pour les autres plateformes. Par conséquent, montez l'ISO sous
+      OS/2 comme décrit précédemment. Les additions invité OS/2 se situent dans
+      le répertoire <computeroutput>\32bit\OS2</computeroutput>.</para>
 
-      <para>As we do not provide an automatic installer at this time, please
-      refer to the <computeroutput>readme.txt</computeroutput> file in that
-      directory, which describes how to install the OS/2 Guest Additions
-      manually.</para>
+      <para>Comme nous ne fournissons pas d'installateur automatique pour le 
+      moment, merci de vous référer au fichier <computeroutput>readme.txt</computeroutput> 
+      de ce répertoire qui décrit comment installer les additions invité OS/2 à
+      la main.</para>
     </sect2>
   </sect1>
 
   <sect1 id="sharedfolders">
-    <title>Shared folders</title>
+    <title>Dossiers partagés</title>
 
-    <para>With the "shared folders" feature of VirtualBox, you can access
-    files of your host system from within the guest system. This is similar
-    how you would use network shares in Windows networks -- except that shared
-    folders do not need require networking, so long as the Guest Additions are
-    installed. Shared Folders are supported with Windows (2000 or newer),
-    Linux and Solaris guests.</para>
+    <para>Avec la fonctionnalité <quote>dossiers partagés</quote> de VirtualBox,
+    vous pouvez accéder à des fichiers de votre système hôte à partir de 
+    l'intérieur du système invité, presque comme le feraient les partages 
+    ordinaires sur les réseaux Windows  -- sauf que les dossiers partagés, tant
+    que les additions invité sont installés, n'exigent pas de réseau --. Les 
+    dossiers partagés sont supportés avec des invités Windows (2000 ou supérieur), 
+    Linux et Solaris.</para>
 
-    <para>Shared folders must physically reside on the
-    <emphasis>host</emphasis> and are then shared with the guest; sharing is
-    accomplished using a special service on the host and a file system driver
-    for the guest, both of which are provided by VirtualBox. For Windows
-    guests, shared folders are implemented as a pseudo-network redirector; for
-    Linux and Solaris guests, the Guest Additions provide a virtual filesystem
-    driver which handles communication with the host.</para>
+    <para>Les dossiers partagés doivent résider physiquement sur
+    <emphasis>l'hôte</emphasis> et sont alors partagés avec l'invité&nbsp;; le 
+    partage se fait en utilisant un service spécial de l'hôte et un pilote de 
+    système de fichiers pour l'invité, les deux étant fournis par VirtualBox. 
+    Pour les invités Windows, les dossiers partagés sont implémentés comme un 
+    redirecteur pseudo-réseau&nbsp;; pour les invités Linux et Solaris, les 
+    additions invité fournissent un pilote de système de fichiers virtuel qui 
+    gère la communication avec l'hôte.</para>
 
-    <para>To share a host folder with a virtual machine in VirtualBox, you
-    must specify the path of that folder and choose for it a "share name" that
-    the guest can use to access it. Hence, first create the shared folder on
-    the host; then, within the guest, connect to it.</para>
+    <para>Pour partager un dossier hôte avec une machine virtuelle dans 
+    VirtualBox, vous devez spécifier le chemin vers ce dossiers et lui choisir 
+    un <quote>nom de partage</quote> que l'invité peut utiliser pour y accéder.
+    Aussi, créez d'abord le dossier partagé sur l'hôte, puis à l'intérieur de 
+    l'invité, connectez-vous-y.</para>
 
-    <para>There are several ways in which shared folders can be set up for a
-    particular virtual machine:<itemizedlist>
+    <para>Il y a plusieurs façons de paramétrer les dossiers partagés pour une 
+    machine virtuelle particulière&nbsp;:<itemizedlist>
         <listitem>
-          <para>In the graphical user interface of a running virtual machine,
-          you can select "Shared folders" from the "Devices" menu, or click on
-          the folder icon on the status bar in the bottom right corner of the
-          virtual machine window.</para>
+          <para>Dans l'interface graphique de la machine virtuelle en fonction,
+          vous pouvez sélectionner <quote>Dossiers partagés</quote> depuis le 
+          menu <quote>Périphériques</quote>, ou cliquer sur l'icône de dossier 
+          de la barre de statut dans le coin en bas à  droite de la fenêtre de 
+          la machine virtuelle.</para>
         </listitem>
 
         <listitem>
-          <para>If a virtual machine is not currently running, you can
-          configure shared folders in each virtual machine's "Settings"
-          dialog.</para>
+          <para>Si une machine virtuelle n'est pas actuellement en fonction, 
+          vous pouvez configurer les dossiers partagés dans la boîte de dialogue
+          <quote>Paramètres</quote> de chaque machine virtuelle.</para>
         </listitem>
 
         <listitem>
-          <para>From the command line, you can create shared folders using the
-          VBoxManage command line interface; see <xref
-          linkend="vboxmanage" />. The command is as follows: <screen>VBoxManage sharedfolder add "VM name" --name "sharename" --hostpath "C:\test"</screen></para>
+          <para>Depuis la ligne de commande, vous pouvez créer des dossiers 
+          partagés en utilisant l'interface en ligne de commande VBoxManage&nbsp;;
+          voir le <xref linkend="vboxmanage" />. La commande est comme suit&nbsp;: 
+          <screen>VBoxManage sharedfolder add "nom VM" --name "sharename" --hostpath "C:\test"</screen></para>
         </listitem>
       </itemizedlist></para>
 
-    <para>There are two types of shares:</para>
+    <para>Il y a deux types de partages&nbsp;:</para>
 
     <orderedlist>
       <listitem>
-        <para>VM shares which are only available to the VM for which they have
-        been defined;</para>
+        <para>Les partages de VM qui ne sont disponibles que pour la VM pour la
+        quelle ils ont été définis&nbsp;;</para>
       </listitem>
 
       <listitem>
-        <para>transient VM shares, which can be added and removed at runtime
-        and do not persist after a VM has stopped; for these, add the
-        <computeroutput>--transient</computeroutput> option to the above
-        command line.</para>
+        <para>Les partages avec VM transitoires, qui peuvent être ajoutés et 
+        supprimés au moment de l'exécution et qui ne demeurent pas après qu'une
+        VM a été arrêtée&nbsp;; pour ces derniers, ajoutez l'option
+        <computeroutput>--transient</computeroutput> à la ligne de commande 
+        ci-dessus.</para>
       </listitem>
     </orderedlist>
 
-    <para>Shared folders have read/write access to the files at the host path
-    by default. To restrict the guest to have read-only access, create a
-    read-only shared folder. This can either be achieved using the GUI or by
-    appending the parameter <computeroutput>--readonly</computeroutput> when
-    creating the shared folder with VBoxManage.</para>
+    <para>Les dossiers partagés ont un accès en lecture/écriture aux fichiers du
+    chemin de l'hôte par défaut. Pour obliger l'invité à n'avoir un accès qu'en
+    lecture seule, créez un répertoire partagé en lecture seule. Vous pouvez 
+    faire cela, soit en utilisant la GUI, soit en indiquant le paramètre
+    <computeroutput>--readonly</computeroutput> lorsque vous créez le dossier 
+    partagé avec VBoxManage.</para>
 
     <sect2 id="sf_mount_manual">
-      <title>Manual mounting</title>
+      <title>Montage manuel</title>
 
-        <para>You can mount the shared folder from inside a VM the same way
-        as you would mount an ordinary network share:</para>
+        <para>Vous pouvez monter le dossier partagé depuis l'intérieur d'une VM
+        de la même façon que vous monteriez un partage réseau ordinaire&nbsp;:</para>
 
         <para><itemizedlist>
         <listitem>
-          <para>In a Windows guest, starting with VirtualBox 1.5.0, shared
-          folders are browseable and are therefore visible in Windows
-          Explorer. So, to attach the host's shared folder to your Windows
-          guest, open Windows Explorer and look for it under "My Networking
-          Places" -&gt; "Entire Network" -&gt; "VirtualBox Shared Folders". By
-          right-clicking on a shared folder and selecting "Map network drive"
-          from the menu that pops up, you can assign a drive letter to that
-          shared folder.</para>
+          <para>Sur un invité Windows, à partir de VirtualBox 1.5.0, on peut
+          naviguer dans les dossiers partagés et ils sont donc visibles dans
+          l'explorateur Windows. Donc, pour attacher le dossier partagé de l'hôte
+          à votre invité Windows, ouvrez l'explorateur Windows et cherchez-le 
+          sous <quote>Mes emplacements réseau</quote> -&gt; <quote>Tout le
+          réseau</quote> -&gt; <quote>Dossiers partagés de VirtualBox</quote>. 
+          En faisant un clic droit sur un dossier partagé et en cliquant sur
+          <quote>Connecter un lecteur réseau</quote> dans le menu qui s'affiche,
+          vous pouvez affecter une lettre de lecteur à ce dossier partagé.</para>
 
-          <para>Alternatively, on the Windows command line, use the
-          following:</para>
+          <para>En alternative, sur la ligne de commande Windows, utilisez ce 
+          qui suit&nbsp;:</para>
 
-          <screen>net use x: \\vboxsvr\sharename</screen>
+          <screen>net use x: \\vboxsvr\nom_partage</screen>
 
-          <para>While <computeroutput>vboxsvr</computeroutput> is a fixed name
-          (note that <computeroutput>vboxsrv</computeroutput> would also
-          work), replace "x:" with the drive letter that you want to use for
-          the share, and <computeroutput>sharename</computeroutput> with the
-          share name specified with
-          <computeroutput>VBoxManage</computeroutput>.</para>
+          <para>Alors que <computeroutput>vboxsvr</computeroutput> est un nom 
+          corrigé (notez que vboxsrv devrait aussi fonctionner), remplacez 
+          <quote>x:</quote> par la lettre de lecteur que vous voulez utiliser 
+          pour le partage, et <computeroutput>nom_partage</computeroutput> par 
+          le nom partagé spécifié avec <computeroutput>VBoxManage</computeroutput>.</para>
         </listitem>
 
         <listitem>
-          <para>In a Linux guest, use the following command:</para>
+          <para>Sur un invité Linux, utilisez la commande suivante&nbsp;:</para>
 
-          <screen>mount -t vboxsf [-o OPTIONS] sharename mountpoint</screen>
+          <screen>mount -t vboxsf [-o OPTIONS] nom_partage point_montage</screen>
 
-          <para>To mount a shared folder during boot, add the following entry
-          to /etc/fstab:</para>
+          <para>Pour monter un dossier partagé au démarrage, ajoutez
+          l'entrée suivante à /etc/fstab&nbsp;:</para>
 
           <screen>sharename   mountpoint   vboxsf   defaults  0   0</screen>
         </listitem>
 
         <listitem>
-          <para>In a Solaris guest, use the following command:</para>
+          <para>Sur un invité Solaris, utilisez la commande suivante&nbsp;:</para>
 
-          <screen>mount -F vboxfs [-o OPTIONS] sharename mountpoint</screen>
+          <screen>mount -F vboxfs [-o OPTIONS] nom_partage point_montage</screen>
 
-          <para>Replace <computeroutput>sharename</computeroutput> (use
-          lowercase) with the share name specified with
-          <computeroutput>VBoxManage</computeroutput> or the GUI, and
-          <computeroutput>mountpoint</computeroutput> with the path where you
-          want the share to be mounted on the guest (e.g.
-          <computeroutput>/mnt/share</computeroutput>). The usual mount rules
-          apply, that is, create this directory first if it does not exist
-          yet.</para>
+          <para>Remplacez <computeroutput>nom_partage</computeroutput> (utilisez
+          des minuscules) par le nom réseau spécifié avec
+          <computeroutput>VBoxManage</computeroutput> ou la GUI, et point_montage
+          par le chemin où vous voulez que le partage soit monté sur l'invité 
+          (comme <computeroutput>/mnt/share</computeroutput>). Les règles de 
+          montage  habituelles s'appliquent, à savoir créez ce répertoire au 
+          préalable s'il n'existe pas encore.</para>
 
-          <para>Here is an example of mounting the shared folder for the user
-          "jack" on OpenSolaris:</para>
+          <para>Voici un exemple de montage de dossier partagé pour l'utilisateur
+          <quote>jack</quote> sur OpenSolaris&nbsp;:</para>
 
           <screen>$ id
 uid=5000(jack) gid=1(other)
@@ -1037,281 +1071,297 @@ $ cd ~/mount
 $ ls
 sharedfile1.mp3 sharedfile2.txt
 $</screen>
-          <para>Beyond the standard options supplied by the
-          <computeroutput>mount</computeroutput> command, the following are
-          available:</para>
+
+          <para>Au-delà des options de montage fournies par la commande
+          <computeroutput>mount</computeroutput>, celles suivantes sont 
+          disponibles&nbsp;:</para>
 
           <screen>iocharset CHARSET</screen>
 
-          <para>to set the character set used for I/O operations (utf8 by
-          default) and</para>
+          <para>pour régler l'encodage utilisé pour les opérations E/S (utf8 par
+          défaut) et</para>
 
           <screen>convertcp CHARSET</screen>
 
-          <para>to specify the character set used for the shared folder name
-          (utf8 by default).</para>
+          <para>pour spécifier l'encodage utilisé pour le nom du dossier partagé
+          (utf8 par défaut).</para>
 
-          <para>The generic mount options (documented in the mount manual
-          page) apply also. Especially useful are the options
-          <computeroutput>uid</computeroutput>,
-          <computeroutput>gid</computeroutput> and
-          <computeroutput>mode</computeroutput>, as they allow access by
-          normal users (in read/write mode, depending on the settings) even if
-          root has mounted the filesystem.</para>
+          <para>Les options génériques de mount (documentées dans la page de 
+          manuel de mount) s'appliquent également. Celles particulièrement
+          utiles sont les options <computeroutput>gid</computeroutput> et
+          <computeroutput>mode</computeroutput>, car elles autorisent l'accès 
+          par des utilisateurs normaux (en mode lecture/écriture selon les 
+          réglages) même si l'administrateur a monté le système de fichiers.</para>
         </listitem>
       </itemizedlist></para>
     </sect2>
 
     <sect2 id="sf_mount_auto">
-      <title>Automatic mounting</title>
+      <title>Montage automatique</title>
 
-      <para>Starting with version 3.3.0, VirtualBox supports automatic mounting
-      support for shared folders. The installed Guest Additions will then take
-      care of all shared folders which are marked as being auto-mounted as soon
-      as a user is logged in to the guest OS. This makes it more convenient
-      instead of mounting shared folders manually described in <xref
+      <para>À partir de la version 3.3.0, VirtualBox supporte le montage
+      automatique des dossiers partagés. Les additions invité installées prendront
+      en compte tous les dossiers partagés qui sont marqués comme devant être
+      montés automatiquement dès que l'utilisateur est connecté sur le système
+      d'exploitation invité. Cela le rend plus pratique, plutôt que de monter
+      les dossiers partagés à la main comme décrit au <xref
       linkend="sf_mount_manual" />.</para>
       <note>
-        <para>Auto-mounting currently is only supported on Windows, Linux and
-        Solaris guests.</para>
+        <para>Le montage automatique n'est actuellement supporté que sur les
+        invités Windows, Linux et Solaris.</para>
       </note>
 
-      <para>On Windows guests an auto-mounted shared folder will be represented by an own
-      drive letter (e.g. <computeroutput>E:</computeroutput>), depending on the
-      remaining free drive letters of the system.</para>
+      <para>Sur les invités Windows, un dossier monté automatiquement sera
+      représenté par sa propre lettre de lecteur (comme <computeroutput>E:</computeroutput>), 
+      selon les lettres de lecteur qui restent disponibles sur le système.</para>
 
-      <para>On Linux and Solaris guests auto-mounted shared folders get mounted into
-      the <computeroutput>/media</computeroutput> directory, along with the prefix
-      <computeroutput>sf_</computeroutput>, so the shared folder <computeroutput>myfiles</computeroutput>
-      would be mounted to <computeroutput>/media/sf_myfiles</computeroutput> on Linux
-      and <computeroutput>/mnt/sf_myfiles</computeroutput> on Solaris.</para>
+      <para>Sur les invités Linux et Solaris, les dossiers partagés automatiquement
+      montés sont montés dans le répertoire <computeroutput>/media</computeroutput>,
+      avec le préfixe <computeroutput>sf_</computeroutput>, donc le 
+      dossier partagé <computeroutput>myfiles</computeroutput> serait monté dans
+      <computeroutput>/media/sf_myfiles</computeroutput> sur Linux
+      et dans <computeroutput>/mnt/sf_myfiles</computeroutput> sur Solaris.</para>
 
-      <para>To change the prefix <computeroutput>sf_</computeroutput> of a given
-      virtual machine, set the value of its <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
-      guest property to another value; see <xref linkend="guestadd-guestprops" /> for details.</para>
+      <para>Pour modifier le préfixe <computeroutput>sf_</computeroutput> d'une
+      machine virtuelle donnée, réglez la valeur de sa propriété invité
+      <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
+      sur une autre valeur&nbsp;; voir le <xref linkend="guestadd-guestprops" />
+      pour des détails.</para>
 
-      <para>To get a user full access to the auto-mounted shared folders on the guest
-      this user needs to be part of the newly create group "vboxsf", which is created by the
-      VirtualBox Guest Additions installer. Without being in that group read-only access
-      is provided.</para>
+      <para>Pour qu'un utilisateur ait accès complet aux dossiers partagés 
+      automatiquement montés sur l'invité, cet utilisateur a besoin de faire
+      partie du groupe nouvellement créé <quote>vboxsf</quote>, qui est
+      créé par l'installeur des additions invité de VirtualBox. S'il n'est pas
+      dans ce groupe, il aura un accès en lecture seule.</para>
 
-      <para>To get changes applied, for example by adding new or deleting auto-mounted
-      shared folders while a VM is running, the guest OS needs to be rebooted. However,
-      this does not affect <xref linkend="sf_mount_manual" />.</para>
+      <para>Pour appliquer les modifications, par exemple l'ajout ou la 
+      suppression d'un nouveau dossier monté automatiquement, alors qu'une VM est
+      en fonction, il faut redémarrer l'OS invité. Cependant, cela ne touche pas
+      <xref linkend="sf_mount_manual" />.</para>
     </sect2>
   </sect1>
 
   <sect1 id="seamlesswindows">
-    <title>Seamless windows</title>
+    <title>Fenêtres intégrées</title>
 
-    <para>With the "seamless windows" feature of VirtualBox, you can have the
-    windows that are displayed within a virtual machine appear side by side
-    next to the windows of your host. This feature is supported for the
-    following guest operating systems (provided that the Guest Additions are
-    installed):<itemizedlist>
+    <para>Avec la fonctionnalité <quote>fenêtres intégrées</quote> de 
+    VirtualBox, vous pouvez faire apparaître les fenêtres affichées dans une 
+    machine virtuelle côte à côte près des fenêtres de votre hôte. Cette 
+    fonctionnalité est supportée pour les systèmes d'exploitation suivants 
+    (fournis lorsque les additions invité sont installées)&nbsp;:<itemizedlist>
         <listitem>
-          <para>Windows guests (support added with VirtualBox 1.5);</para>
+          <para>Invités Windows (support ajoutés avec VirtualBox 1.5)&nbsp;;</para>
         </listitem>
 
         <listitem>
-          <para>Linux or Solaris/OpenSolaris guests with an X.org server
-          version 1.3 or higher<footnote>
-              <para>The X server version is not the same as the version of the
-              entire X.org suite. You can type <computeroutput>X
-              -version</computeroutput> in a terminal to find out about the
-              X.org server version level that is currently installed.</para>
-            </footnote> (support added with VirtualBox 1.6). The exception is
-          Fedora 9, due to a bug in its X server.</para>
+          <para>Invités Linux ou Solaris/OpenSolaris avec une version 1.3 ou 
+          supérieure du serveur X.org <footnote> 
+              <para>La version du serveur X n'est pas la même que la version de
+              toute la suite X.org. Vous pouvez taper <computeroutput>X
+              -version</computeroutput> dans un terminal pour connaître le
+              niveau de version du serveur X.org actuellement installée.</para>
+            </footnote> (support ajouté avec VirtualBox 1.6). 
+          L'exception est Fedora 9, du fait d'un bogue dans leur serveur X.</para>
         </listitem>
       </itemizedlist></para>
 
-    <para>After seamless windows are enabled (see below), VirtualBox
-    suppresses the display of the Desktop background of your guest, allowing
-    you to run the windows of your guest operating system seamlessly next to
-    the windows of your host:</para>
-
+    <para>Après que l'intégration des fenêtres a été activée (voir ci-dessous),
+    VirtualBox  supprime l'affichage du fond d'écran du bureau de votre invité,
+    vous permettant de lancer les fenêtres de votre système d'exploitation 
+    invité de façon intégrée à côté des fenêtres de votre hôte&nbsp;:</para>
     <para><mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/seamless.png" width="10cm" />
         </imageobject>
-      </mediaobject>To enable seamless mode, after starting the virtual
-    machine, press the Host key (normally the right control key) together with
-    "L". This will enlarge the size of the VM's display to the size of your
-    host screen and mask out the guest operating system's background. To go
-    back to the "normal" VM display (i.e. to disable seamless windows), press
-    the Host key and "L" again.</para>
+      </mediaobject>Pour activer ce mode, après avoir démarré la machine 
+      virtuelle, appuyez sur la touche Hôte (en principe la touche Contrôle 
+      droite) simultanément avec <quote>L</quote>. Cela agrandira la taille de 
+      l'affichage de la VM jusqu'à la taille de  l'écran de votre hôte et 
+      masquera le fond d'écran du système d'exploitation invité. Pour revenir à
+      l'affichage <quote>normal</quote> de la VM (désactivant ainsi l'intégration
+      des fenêtres), ré-appuyez sur les touches Hôte et <quote>L</quote>.</para>
   </sect1>
 
   <sect1>
-    <title>Hardware-accelerated graphics</title>
+    <title>Le graphisme avec l'accélération matérielle</title>
 
     <sect2 id="guestadd-3d">
-      <title>Hardware 3D acceleration (OpenGL and Direct3D 8/9)</title>
+      <title>Accélération 3D matérielle (OpenGL et Direct3D 8/9)</title>
 
-      <para>The VirtualBox Guest Additions contain experimental hardware 3D
-      support for Windows, Linux and Solaris guests.<footnote>
-          <para>OpenGL support for Windows guests was added with VirtualBox
-          2.1; support for Linux and Solaris followed with VirtualBox 2.2.
-          With VirtualBox 3.0, Direct3D 8/9 support was added for Windows
-          guests. OpenGL 2.0 is now supported as well.</para>
+      <para>Les additions invité de VirtualBox contiennent un support matériel 
+      expérimental du 3D pour les invités Windows, Linux et Solaris.<footnote>
+          <para>Le support d'OpenGL pour les invités Windows a été ajouté avec
+          VirtualBox 2.1&nbsp;; le support pour Linux et Solaris a suivi avec
+          VirtualBox 2.2. Avec VirtualBox 3.0, le support Direct3D 8/9 a été
+          ajouté pour les invités Windows. OpenGL 2.0 est maintenant
+          également supporté.</para>
         </footnote></para>
 
-      <para>With this feature, if an application inside your virtual machine
-      uses 3D features through the OpenGL or Direct3D 8/9 programming
-      interfaces, instead of emulating them in software (which would be slow),
-      VirtualBox will attempt to use your host's 3D hardware. This works for
-      all supported host platforms (Windows, Mac, Linux, Solaris), provided
-      that your host operating system can make use of your accelerated 3D
-      hardware in the first place.</para>
+      <para>Avec cette fonctionnalité, si une application à l'intérieur de votre
+      machine virtuelle utilise des fonctionnalités 3D passant par les interfa
+      ces de programmation d'OpenGL ou de Direct3D 8/9, au lieu de les émuler de
+      manière logicielle (ce qui serait lent), VirtualBox essaiera d'utiliser le
+      matériel 3D de votre hôte. Ceci fonctionne pour toutes les plateformes 
+      supportées (Windows, Mac, Linux, Solaris), à condition que votre système 
+      d'exploitation hôte puisse d'abord lui-même utiliser  votre matériel 3D 
+      accéléré.</para>
 
-      <para>The 3D acceleration currently has the following
-      preconditions:<orderedlist>
+      <para>L'accélération 3D nécessite actuellement les conditions suivantes&nbsp;:<orderedlist>
           <listitem>
-            <para>It is only available for certain Windows, Linux and Solaris
-            guests. In particular:<itemizedlist>
+            <para>Elle n'est disponible que pour certains invités Windows, Linux 
+            et Solaris. En particulier&nbsp;:<itemizedlist>
                 <listitem>
-                  <para>For Windows guests, support is restricted to 32-bit
-                  versions of XP and Vista. Both OpenGL and Direct3D 8/9 are
-                  supported (experimental).</para>
+                  <para>Pour les invités Windows, le support se réduit aux 
+                  versions 32 bits d'XP et de Vista. OpenGL et Direct3D 8/9 sont
+                  supportés (expérimental).</para>
                 </listitem>
 
                 <listitem>
-                  <para>OpenGL on Linux requires kernel 2.6.27 and higher as
-                  well as X.org server version 1.5 and higher. Ubuntu 8.10 and
-                  Fedora 10 have been tested and confirmed as working.</para>
+                  <para>OpenGL sur Linux exige un noyau 2.6.27 et supérieur 
+                  ainsi qu'une version du serveur X.org 1.5 et supérieure. Ubuntu
+                  8.10 et Fedora 10 ont été testées et confirmées comme 
+                  fonctionnant.</para>
                 </listitem>
 
                 <listitem>
-                  <para>OpenGL on Solaris guests requires X.org server version
-                  1.5 and higher.</para>
+                  <para>OpenGL sur les invités Solaris exige une version de X.org 
+                  1.5 et supérieur.</para>
                 </listitem>
               </itemizedlist></para>
           </listitem>
 
           <listitem>
-            <para>The Guest Additions must be installed.<note>
-                <para>For Direct 3D acceleration to work in a Windows Guest,
-                VirtualBox needs to replace Windows system files in the
-                virtual machine. As a result, the Guest Additions installation
-                program offers Direct 3D acceleration as an option that must
-                be explicitly enabled.</para>
-
-                <para>Also, you must install the Guest Additions in "Safe
-                Mode"; see <xref linkend="KnownIssues" /> for details.</para>
+            <para>Les additions invité doivent être installés.<note>
+                <para>Pour que l'accélération Direct 3D fonctionne dans un invité
+                Windows, VirtualBox doit remplacer les fichiers du système 
+                Windows de la machine virtuelle. Il en résulte que l'installation
+                du programme des additions  invité offre l'accélération Direct 
+                3D en tant qu'option qui doit être explicitement activée.</para>
+                
+                <para>Vous devez aussi installer les additions invité en 
+                <quote>mode sécurisé</quote>&nbsp;; voir le <xref
+                linkend="KnownIssues" /> pour les détails.</para>
               </note></para>
           </listitem>
 
           <listitem>
-            <para>Because 3D support is still experimental at this time, it is
-            disabled by default and must be <emphasis role="bold">manually
-            enabled</emphasis> in the VM settings (see <xref
-            linkend="generalsettings" />).<note>
-                <para>Enabling 3D acceleration may expose security holes to
-                malicious software running the guest. The third-party code
-                that VirtualBox uses for this purpose (Chromium) is not
-                hardened enough to prevent every risky 3D operation on the
-                host.</para>
+            <para>Vu que le support 3D est encore pour l'instant expérimental, 
+            il est désactivé par défaut et vous devez 
+            <emphasis role="bold">l'activer à la main</emphasis> dans les 
+            paramètres de la VM (voir le chapitre <xref linkend="generalsettings" />).<note>
+
+                <para>Il se peut que l'activation de l'accélération 3D expose des 
+                trous de sécurité à des logiciels malveillants en fonction sur 
+                l'invité. Le code tiers utilisé par VirtualBox à cette fin 
+                (Chromium) n'est pas assez endurci pour empêcher n'importe quelle 
+                opération 3D risquée sur l'hôte.</para>
               </note></para>
           </listitem>
         </orderedlist></para>
 
-      <para>Technically, VirtualBox implements this by installing an
-      additional hardware 3D driver inside your guest when the Guest Additions
-      are installed. This driver acts as a hardware 3D driver and reports to
-      the guest operating system that the (virtual) hardware is capable of 3D
-      hardware acceleration. When an application in the guest then requests
-      hardware acceleration through the OpenGL or Direct3D programming
-      interfaces, these are sent to the host through a special communication
-      tunnel implemented by VirtualBox, and then the host performs the
-      requested 3D operation via the host's programming interfaces.</para>
+      <para>Techniquement, VirtualBox implémente cela en installant un pilote 3D
+      matériel supplémentaire dans votre invité lorsque vous installez les 
+      additions invité. Ce pilote agit comme un pilote de matériel 3D et signale 
+      au système d'exploitation invité que le matériel (virtuel) est capable 
+      d'une accélération 3D matérielle. Lorsqu'une application sur l'invité 
+      demande l'accélération matérielle par les interfaces de programmation 
+      d'OpenGL ou de Direct3D, les requêtes sont envoyées à l'hôte par un tunnel 
+      de communication spécial implémenté par VirtualBox, puis l'hôte effectue 
+      l'opération 3D demandée par les interfaces de programmation de l'hôte.</para>
     </sect2>
 
     <sect2 id="guestadd-2d">
-      <title>Hardware 2D video acceleration for Windows guests</title>
+      <title>Accélération vidéo 2D pour Windows</title>
 
-      <para>Starting with version 3.1, the VirtualBox Guest Additions contain
-      experimental hardware 2D video acceleration support for Windows
-      guests.</para>
+      <para>À partir de la version 3.1, les additions invité de VirtualBox 
+      contiennent le support expérimental de l'accélération 2D matérielle pour 
+      les invités Windows.</para>
 
-      <para>With this feature, if an application (e.g. a video player) inside
-      your Windows VM uses 2D video overlays to play a movie clip, then
-      VirtualBox will attempt to use your host's video acceleration hardware
-      instead of performing overlay stretching and color conversion in
-      software (which would be slow). This currently works for Windows, Linux
-      and Mac host platforms, provided that your host operating system can
-      make use of 2D video acceleration in the first place.</para>
+      <para>Avec cette fonctionnalité, si une application (telle qu'un lecteur 
+      vidéo) dans votre VM utilise les superpositions vidéos 2D pour jouer un 
+      clip animé, VirtualBox essaiera alors d'utiliser le matériel d'accélération 
+      graphique de votre hôte au lieu de l'étirement des superpositions ou la 
+      conversion de couleurs logiciels (ce qui serait lent). Cela fonctionne 
+      actuellement pour les plateformes d'hôtes Windows, Linux et Mac, à 
+      condition que votre système d'exploitation puisse lui-même utiliser 
+      l'accélération graphique 2D.</para>
 
-      <para>The 2D video acceleration currently has the following
-      preconditions:<orderedlist>
+      <para>L'accélération graphique 2D fonctionne actuellement sous les 
+      conditions suivantes&nbsp;:<orderedlist>
           <listitem>
-            <para>It is only available for Windows guests (XP or
-            later).</para>
+            <para>Elle n'est disponible que pour les invités Windows (XP ou
+            supérieur).</para>
           </listitem>
 
           <listitem>
-            <para>The Guest Additions must be installed.</para>
+            <para>Les additions invité doivent être installés.</para>
           </listitem>
 
           <listitem>
-            <para>Because 2D support is still experimental at this time, it is
-            disabled by default and must be <emphasis role="bold">manually
-            enabled</emphasis> in the VM settings (see <xref
+            <para>Comme le support 2D est encore pour l'instant expérimental, il 
+            est par défaut désactivé et vous devez <emphasis role="bold">l'activer 
+            à la main</emphasis> dans les paramètres de la VM (voir le <xref
             linkend="generalsettings" />).</para>
           </listitem>
         </orderedlist></para>
 
-      <para>Technically, VirtualBox implements this by exposing video overlay
-      DirectDraw capabilities in the Guest Additions video driver. The driver
-      sends all overlay commands to the host through a special communication
-      tunnel implemented by VirtualBox. On the host side, OpenGL is then used
-      to implement color space transformation and scaling</para>
+      <para>Techniquement, VirtualBox implémente cela en offrant dans le pilote
+      graphique invité les capacités de superposition graphique DirectDraw. Le 
+      pilote envoie toutes les commandes de superposition à l'hôte à travers un
+      tunnel de communication spécial implémenté par VirtualBox. De l'autre côté, 
+      OpenGL est alors utilisé pour implémenter échelonnement de transformation
+      d'espace de couleurs</para>
     </sect2>
   </sect1>
 
   <sect1 id="guestadd-guestprops">
-    <title>Guest properties</title>
+    <title>Propriétés invité</title>
 
-    <para>Starting with version 2.1, VirtualBox allows for requesting certain
-    properties from a running guest, provided that the VirtualBox Guest
-    Additions are installed and the VM is running. This is good for two
-    things:<orderedlist>
+    <para>À partir de la version 2.1, VirtualBox vous permet d'exiger certaines
+    propriétés de la part d'un invité en fonction, à condition que les additions
+    invité de VirtualBox soient installées et que la VM soit en fonction. Ceci 
+    est intéressant pour deux choses&nbsp;:<orderedlist>
         <listitem>
-          <para>A number of predefined VM characteristics are automatically
-          maintained by VirtualBox and can be retrieved on the host, e.g. to
-          monitor VM performance and statistics.</para>
+          <para>Un certain nombre de caractéristiques prédéfinies d'une VM 
+          peuvent être automatiquement maintenues par l'hôte et récupérées sur 
+          l'hôte, comme la surveillance de performances et des statiques de la 
+          VM.</para>
         </listitem>
 
         <listitem>
-          <para>In addition, arbitrary string data can be exchanged between
-          guest and host. This works in both directions.</para>
+          <para>Des chaînes de données de votre choix peuvent être échangées 
+          entre l'invité et l'hôte. Cela fonctionne dans les deux sens.</para>
         </listitem>
       </orderedlist></para>
 
-    <para>To accomplish this, VirtualBox establishes a private communication
-    channel between the VirtualBox Guest Additions and the host, and software
-    on both sides can use this channel to exchange string data for arbitrary
-    purposes. Guest properties are simply string keys to which a value is
-    attached. They can be set (written to) by either the host and the guest,
-    and they can also be read from both sides.</para>
+    <para>Pour faire cela, VirtualBox établit un canal de communication privé 
+    entre les additions invité de VirtualBox et l'hôte, et le logiciel des deux
+    côtés peut utiliser ce canal pour échanger des chaînes de données à des fins 
+    de votre choix. Les propriétés de l'invité sont simplement des chaînes de 
+    touches auxquelles est attachée une valeur. Elles peuvent être paramétrées 
+    (on peut écrire dessus) soit depuis l'hôte, soit depuis l'invité, et on peut
+    les lire des deux côtés.</para>
 
-    <para>In addition to establishing the general mechanism of reading and
-    writing values, a set of predefined guest properties is automatically
-    maintained by the VirtualBox Guest Additions to allow for retrieving
-    interesting guest data such as the guest's exact operating system and
-    service pack level, the installed version of the Guest Additions, users
-    that are currently logged into the guest OS, network statistics and more.
-    These predefined properties are all prefixed with
-    <computeroutput>/VirtualBox/</computeroutput> and organized into a
-    hierarchical tree of keys.</para>
+    <para>En plus d'établir un mécanisme général de valeurs de lecture et 
+    d'écriture, le paramétrage de propriétés d'invité prédéfinies est 
+    automatiquement maintenu par les additions invité de VirtualBox pour 
+    permettre de récupérer des données de l'invité intéressantes telles que le 
+    système d'exploitation exact de l'invité et le niveau du pack service, la 
+    version des additions invité installée, les utilisateurs actuellement 
+    connectés à l'OS invité, les statistiques du réseau et davantage. Ces 
+    propriétés prédéfinies sont toutes précédées de <computeroutput>/VirtualBox/</computeroutput>
+    et organisées dans une arborescence de clés hiérarchiques.</para>
 
-    <para>Some of this runtime information is shown when you select "Session
-    Information Dialog" from a virtual machine's "Machine" menu.</para>
+    <para>Certaines de ces informations apparaissent en fonctionnement quand vous 
+    sélectionnez <quote>Boîte de dialogue d'informations de session</quote>
+    depuis le menu <quote>Machine</quote> d'une machine virtuelle.</para>
 
-    <para>A more flexible way to use this channel is via the
-    <computeroutput>VBoxManage guestproperty</computeroutput> command set; see
-    <xref linkend="vboxmanage-guestproperty" /> for details. For example, to
-    have <emphasis>all</emphasis> the available guest properties for a given
-    running VM listed with their respective values, use this:<screen>$ VBoxManage guestproperty enumerate "Windows Vista III"
+    <para>Une façon plus flexible d'utiliser ce canal est de passer par la 
+    commande de paramétrage <computeroutput>VBoxManage guestproperty</computeroutput>&nbsp;; 
+    voir le <xref linkend="vboxmanage-guestproperty" /> pour les détails. Par
+     exemple, pour que toutes les propriétés invité soient disponibles pour une
+     VM en cours de fonctionnement donnée, listées avec leurs valeurs respectives, 
+     utilisez ceci&nbsp;:<screen>$ VBoxManage guestproperty enumerate "Windows Vista III"
 VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
 (C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
 All rights reserved.
@@ -1368,8 +1418,8 @@ Name: /VirtualBox/GuestInfo/Net/0/Status, value: Up,
 Name: /VirtualBox/GuestInfo/OS/LoggedInUsersList, value: username,
     timestamp: 1229099826317386000, flags:</screen></para>
 
-    <para>To query the value of a single property, use the "get" subcommand
-    like this:<screen>$ VBoxManage guestproperty get "Windows Vista III"
+    <para>Pour chercher la valeur d'une seule propriété, utilisez la 
+    sous-commande <quote>get</quote> comme ceci&nbsp;:<screen>$ VBoxManage guestproperty get "Windows Vista III"
          "/VirtualBox/GuestInfo/OS/Product"
 VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
 (C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
@@ -1378,10 +1428,11 @@ All rights reserved.
 Value: Windows Vista Business Edition
 </screen></para>
 
-    <para>To add or change guest properties from the guest, use the tool
-    <computeroutput>VBoxControl</computeroutput>. This tool is included in the
-    Guest Additions of VirtualBox 2.2 or later. When started from a Linux
-    guest, this tool requires root privileges for security reasons:<screen>$ sudo VBoxControl guestproperty enumerate
+    <para>Pour ajouter ou modifier des propriétés depuis l'invité, utilisez 
+    l'outil <computeroutput>VBoxControl</computeroutput>. Cet outil est inclu 
+    avec les additions invité de VirtualBox 2.2 ou supérieur. Lorsqu'il est lancé
+    depuis un invité Linux, cet outil exige les privilèges administrateur pour 
+    des raisons de sécurité&nbsp;:<screen>$ sudo VBoxControl guestproperty enumerate
 VirtualBox Guest Additions Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
 (C) 2009-$VBOX_C_YEAR $VBOX_VENDOR
 All rights reserved.
@@ -1392,142 +1443,158 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     timestamp: 1265813265836305000, flags: &lt;NULL&gt;
       ...</screen></para>
 
-    <para>For more complex needs, you can use the VirtualBox programming
-    interfaces; see <xref linkend="VirtualBoxAPI" />.</para>
+    <para>Pour des besoins plus complexes, vous pouvez utiliser les interfaces 
+    de programmation de VirtualBox&nbsp;; voir le <xref linkend="VirtualBoxAPI" />.</para>
   </sect1>
 
   <sect1 id="guestadd-guestcontrol">
-    <title>Guest control</title>
+    <title>Contrôle invité</title>
 
-    <para>Starting with version 3.2, the Guest Additions of VirtualBox allow
-    starting applications inside a VM from the host system.</para>
+    <para>À partir de la version 3.2, les additions invité de VirtualBox 
+    permettent le démarrage d'applications à l'intérieur d'une VM depuis le 
+    système hôte.</para>
 
-    <para>For this to work, the application needs to be installed inside the
-    guest; no additional software needs to be installed on the host.
-    Additionally, text mode output (to stdout and stderr) can be shown on the
-    host for further processing along with options to specify user
-    credentials and a timeout value (in milliseconds) to limit time the
-    application is able to run.</para>
+    <para>Pour que cela fonctionne, l'application doit être installée dans 
+    l'invité&nbsp;; aucun logiciel supplémentaire ne doit être installé sur 
+    l'hôte. En outre, la sortie en mode texte (sur stdout et stderr) peut être 
+    affiché sur l'hôte pour un traitement ultérieur avec des options pour 
+    spécifier les droits de l'utilisateur et une valeur de timeout (en
+    millisecondes) pour limiter le temps pendant lequel l'application peut 
+    s'exécuter.</para>
 
-    <para>This feature can be used to automate deployment of software within
-    the guest.</para>
+    <para>Cette fonctionnalité peut être utilisée pour automatiser le déploiement 
+    de logiciels dans l'invité.</para>
 
-    <para>To use this feature, use the VirtualBox command line. See <xref
-    linkend="vboxmanage-guestcontrol" /> for details.</para>
+    <para>Pour utiliser cette fonctionnalité, utilisez la ligne de commande de 
+    VirtualBox. Voir le <xref linkend="vboxmanage-guestcontrol" /> pour des
+    détails.</para>
   </sect1>
 
   <sect1 id="guestadd-balloon">
-    <title>Memory ballooning</title>
+    <title>Faire de la montgolfière avec la mémoire</title>
 
-    <para>Starting with version 3.2, the Guest Additions of VirtualBox can
-    change the amount of memory of a virtual machine while the machine is
-    running. Because of how this is implemented, this feature is called
-    "memory ballooning".</para>
+    <para>À partir de la version 3.2, les additions invité de VirtualBox peuvent
+    modifier la quantité de mémoire d'une machine virtuelle alors que la machine
+    est en fonction. Vu la façon dont ceci est implémenté, cette fonctionnalité
+    est appelée <quote>faire de la montgolfière</quote>.</para>
 
-    <para>Normally, to change the amount of memory allocated to a virtual
-    machine, one has to shut down the virtual machine entirely and change the
-    virtual machine's settings. With memory ballooning, memory that was
-    allocated for a virtual machine can be given to another virtual machine
-    without having to shut the machine down. This can be useful to temporarily
-    start another virtual machine, or in more complicated environments for
-    sophisticated memory management of many virtual machines that may be
-    running in parallel depending on how memory is used by the guests.</para>
+    <para>Normalement, pour modifier la quantité de mémoire allouée à une machine
+    virtuelle, il faut éteindre complètement la machine virtuelle et modifier les 
+    paramètres de la machine virtuelle. Avec la pratique de la montgolfière, on
+    peut donner de la mémoire qui a été allouée à une machine virtuelle à une 
+    autre machine virtuelle sans devoir éteindre la machine. Cela peut être 
+    utile pour démarrer temporairement une autre machine virtuelle, ou dans des
+    environnements plus compliqués pour la gestion sophistiquée de la mémoire de
+    beaucoup de machines virtuelles qui peuvent être en fonction en même temps, 
+    en fonction de la façon dont la mémoire est utilisée par les invités.</para>
 
-    <para>When memory ballooning is requested, the VirtualBox Guest Additions
-    (which run inside the guest) allocate physical memory from the guest
-    operating system on the kernel level and lock this memory down in the
-    guest. This ensures that the guest will not use that memory any longer: no
-    guest applications can allocate it, and the guest operating system will
-    not use it either. VirtualBox can then re-use this memory and give it to a
-    second virtual machine.</para>
+    <para>Quand on demande la mémoire en montgolfière, les additions invité de 
+    VirtualBox (qui se lancent dans l'invité) allouent de la mémoire physique à
+    partir du système d'exploitation invité au niveau du noyau et verrouillent 
+    vers le bas cette mémoire dans l'invité. Cela garantit que l'invité 
+    n'utilisera plus cette mémoire&nbsp;: aucune application invitée ne peut 
+    l'allouer, et le système d'exploitation invité ne l'utilisera pas non plus. 
+    VirtualBox peut alors réutiliser cette mémoire et la donner à une seconde 
+    machine.</para>
 
-    <para>The memory made available through the ballooning mechanism is only
-    available for re-use by VirtualBox. It is <emphasis>not</emphasis>
-    returned as free memory to the host. Requesting balloon memory from a
-    running guest will therefore not increase the amount of free, unallocated
-    memory on the host.</para>
+    <para>La mémoire rendue disponible par le mécanisme de la montgolfière n'est
+    disponible que pour une réutilisation par VirtualBox. Elle n'est pas libérée 
+    pour l'hôte. La demande de la montgolfière depuis un invité en fonction 
+    n'augmentera donc pas la quantité de mémoire libre et non allouée de l'hôte.</para>
 
-    <para>Effectively, memory ballooning is therefore a memory overcommitment
-    mechanism for multiple virtual machines while they are running.</para>
+    <para>En fait, la pratique de la montgolfière est donc un mécanisme de 
+    réaffectation de mémoire pour plusieurs machines virtuelles alors qu'elles 
+    sont en fonction.</para>
 
-    <para>At this time, memory ballooning is only supported in VBoxManage, the
-    VirtualBox command-line utility. Use the following command to increase or
-    decrease the size of the memory balloon within a running virtual machine
-    that has Guest Additions installed: <screen>VBoxManage controlvm "VM name" guestmemoryballoon &lt;n&gt;</screen>
-    where <computeroutput>"VM name"</computeroutput> is the name or UUID of
-    the virtual machine in question and
-    <computeroutput>&lt;n&gt;</computeroutput> is the amount of memory to
-    allocate from the guest in megabytes; see <xref
-    linkend="vboxmanage-controlvm" /> for more information.</para>
+    <para>Pour l'instant, la pratique de la montgolfière avec de la mémoire 
+    n'est supportée que dans VBoxManage, l'outil de VirtualBox en ligne de 
+    commande. Utilisez la commande suivante pour augmenter ou diminuer la taille 
+    du ballon de la mémoire dans une machine virtuelle en fonction où les 
+    additions invité sont installés&nbsp;:<screen>VBoxManage controlvm "nom VM" guestmemoryballoon &lt;n&gt;</screen>
+    où <computeroutput>"nom VM"</computeroutput> est le nom ou l'UUID de la 
+    machine virtuelle en question et <computeroutput>&lt;n&gt;</computeroutput> 
+    est la quantité de mémoire à allouer depuis l'invité, en mégaoctets&nbsp;; 
+    voir le <xref linkend="vboxmanage-controlvm" /> pour plus d'informations..</para>
 
-    <para>You can also set a default balloon that will automatically be
-    requested from the VM every time after it has started up with the
-    following command: <screen>VBoxManage modifyvm "VM name" --guestmemoryballoon &lt;n&gt;</screen></para>
+    <para>Vous pouvez aussi régler un ballon par défaut qui sera automatiquement
+    demandée depuis la VM à chaque fois qu'elle a été démarrée avec la commande
+    suivante&nbsp;: <screen>VBoxManage modifyvm "nom VM" --guestmemoryballoon &lt;n&gt;</screen></para>
 
-    <para>By default, no balloon memory is allocated. This is a VM setting,
-    like other <computeroutput>modifyvm</computeroutput> settings, and
-    therefore can only be set while the machine is shut down; see <xref
+    <para>Par défaut, aucun ballon de mémoire n'est alloué. C'est un paramètre 
+    de la VM, comme d'autres paramètres de modifyvm, et il peut donc être réglé
+    alors que machine éteinte&nbsp;; voir le <xref
     linkend="vboxmanage-modifyvm" />.</para>
 
     <para><note>
-        <para>VirtualBox supports memory ballooning only on 64-bit hosts,
-        memory ballooning is <emphasis>not</emphasis> supported on Mac OS X
-        hosts.</para>
+        <para>VirtualBox ne supporte la pratique de la montgolfière que sur les
+        hôtes 64 bits, la pratique de la montgolfière n'est pas supportée sur 
+        les hôtes Mac OS X.</para>
       </note></para>
   </sect1>
 
   <sect1 id="guestadd-pagefusion">
-    <title>Page Fusion</title>
+    <title>Fusion de page</title>
 
-    <para>Page Fusion is a novel technique to further improve VM density on the host,
-    i.e. a way of overcommitting resources. It was first introduced with VirtualBox 3.2
-    and is currently limited to VMs running Windows 2000 and later. In a typical scenario,
-    dozens, up to hundreds of very similar VMs are consolidated on a powerful host
-    computer and the level of consolidation is most often limited by the amount of RAM
-    that can be installed in a system at reasonable cost. Often, due to RAM exhaustion,
-    additional VMs cannot be started even though the host's CPUs still provide capacity.
-    To circumvent this restriction, hypervisors can benefit from the fact that often, VMs
-    are very similar (e.g. multiple VMs running Windows XP Service Pack 2) and therefore
-    contain a number of identical RAM cells. The hypervisor can look for such duplicate
-    data in memory, eliminate the redundancy (deduplication) and thereby free additional
-    memory.</para>
+    <para>La fusion de page est une technologie nouvelle pour améliorer encore 
+    plus la densité de la VM sur l'hôte, et donc une manière de partager les 
+    ressources. Elle a été introduite tout d'abord avec VirtualBox 3.2 et est 
+    actuellement limitée aux VMs qui utilisent Windows 2000 et supérieur. Dans
+    un scénario classique, des douzaines, voire des centaines de VMs très 
+    similaires sont consolidées sur un ordinateur hôte puissant et le niveau de
+    consolidation est limité le plus souvent par la quantité de RAM qui peut 
+    être installée sur un système pour un coût raisonnable. Souvent, du fait 
+    d'un épuisement de RAM, on ne peut démarrer de VMs supplémentaires, bien que
+    les processeurs de l'hôte offrent encore de la capacité. Pour dépasser cette
+    limite, les hyperviseurs peuvent bénéficier du fait que souvent, les VMs se
+    ressemblent (comme plusieurs VMs exécutant Windows XP Pack Service 2) et 
+    donc, elles contiennent une quantité de cellules de RAM identiques. 
+    L'hyperviseur peut chercher de telles données en double en mémoire, éliminer 
+    les redondances et libérer ainsi de la mémoire supplémentaire.</para>
 
-    <para>Traditional hypervisors use a technique often called "page sharing" or
-    "same page merging" where they go through all memory and compute checksums (hashes)
-    for each memory page. Then, they look for pages with identical hashes and compare
-    the content of the pages (if two pages produce the same hash, it is very likely that
-    the pages are identical in content). Identical pages get eliminated so that all VMs
-    point to the same page as long as none of the VMs tries to modify the page. If such
-    a page gets modified, the previously eliminated duplicates get allocated again. All
-    this is fully transparent to the virtual machine. However, the classical algorithm
-    has several drawbacks. First of all, it takes rather long to scan the complete
-    memory (esp. when the system is not idling) so the additional memory only becomes
-    available after some time (this can be hours or even days!). Also, the whole page
-    sharing algorithm generally consumes significant CPU resources and increases the
-    virtualization overhead by 10-20%.</para>
+    <para>Les hyperviseurs traditionnels utilisent une technique souvent appelée 
+    le <quote>partage de mémoire</quote> ou la <quote>synchronisation de la même
+    page</quote> quand ils parcourent toute la mémoire et calculent des sommes 
+    de contrôle (hashes) pour chaque page de mémoire. Puis, ils cherchent des 
+    pages avec des hashes identiques et ils comparent le contenu des pages (si 
+    deux pages donnent le mêmes hash, c'est très vraisemblablement que les pages 
+    ont un contenu identique). Les pages identiques sont éliminées afin que 
+    toutes les VMs pointent vers la même page tant qu'aucune VM n'essaie de 
+    modifier la page. Si une telle page est modifiée, le doublon précédemment 
+    éliminé est à nouveau alloué. Tout cela est complètement transparent pour la 
+    machine virtuelle. Cependant, l'algorithme classique comporte plusieurs 
+    inconvénients. Avant tout, il est plutôt long pour scanner la mémoire 
+    complète (surtout lorsque le système n'est pas en veille) donc la mémoire 
+    supplémentaire ne devient disponibles qu'après du temps (cela peut prendre 
+    plusieurs jours&nbsp;!). En outre, tout l'algorithme de partage de page 
+    consomme en général des ressources processeur significatives et augmente la
+    surcharge de virtualisation de 10 à 20%.</para>
 
-    <para>Page Fusion in VirtualBox uses the VirtualBox Guest Additions to identify
-    memory cells that are most likely identical across VMs and therefore achieves
-    most of the possible savings of page sharing almost immediately and with almost no
-    overhead. Page Fusion is also much less likely to be tricked by identical memory
-    that it will eliminate just to learn seconds later that the memory will now change
-    and having to perform a highly expensive and often service disrupting reallocation.
+    <para>La fusion de page dans VirtualBox utilise les additions invité de 
+    VirtualBox pour identifier les cellules de mémoire qui sont le plus 
+    vraisemblablement identiques entre les VMs et donc effectue la plupart des 
+    sauvegardes possibles de partage de mémoire presque immédiatement et presque 
+    sans surcharge. La fusion de page a également beaucoup moins de chances 
+    d'être faussée par de la mémoire identique en l'éliminant pour apprendre 
+    quelques secondes plus tard que la mémoire a maintenant changé, devant alors 
+    effectuer une ré-allocation très coûteuse et souvent perturbatrice.</para>
+
+    <para>Vous pouvez activer la fusion de page pour une VM en utilisant&nbsp;:
+    <screen>VBoxManage modifyvm "nom VM" --pagefusion on</screen>
     </para>
 
-    <para>Page Fusion can be enabled for a VM using:
-    <screen>VBoxManage modifyvm "VM name" --pagefusion on</screen>
-    </para>
-
-    <para>You can observe Page Fusion operation using some metrics.
-    <computeroutput>RAM/VMM/Shared</computeroutput> shows the total amount of fused
-    pages whereas the per VM metric <computeroutput>Guest/RAM/Usage/Shared</computeroutput>
-    will return the amount of fused memory for a given VM. Please refer to
-    <xref linkend="metrics" /> for information on how to query metrics.</para>
+    <para>Vous pouvez observer l'opération de fusion de page en utilisant 
+    certaines unités.     <computeroutput>RAM/VMM/Shared</computeroutput> 
+    affiche la quantité totale de pages  fusionnées alors que l'unité 
+    <computeroutput>Guest/RAM/Usage/Shared</computeroutput> par VM retournera la
+    quantité de mémoire fusionnée pour une machine donnée. Merci de vous reporter 
+    au <xref linkend="metrics" /> pour des informations sur la façon de demander 
+    des unités.</para>
 
     <para><note>
-      <para>VirtualBox supports Page Fusion only on 64-bit host operating systems.
-      Mac OS X hosts are currently not supported. Page Fusion is only available for
-      Windows 2000 and later guests with current Guest Additions.</para>
+      <para>VirtualBox ne supporte la fusion de page que sur des systèmes 
+      d'exploitation hôtes 64 bits. Les hôtes Mac OS X ne sont pas actuellement
+      supportés. La fusion de page n'est disponible que pour les invités Windows 
+      2000 et supérieur avec les additions invité actuelles.</para>
     </note></para>
   </sect1>
 </chapter>

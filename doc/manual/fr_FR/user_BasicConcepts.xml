@@ -36,7 +36,7 @@
             <para>Toutes les versions/éditions et les packs service sont 
             complètement supportés&nbsp;; néanmoins, il y a quelques problèmes 
             avec les packs services plus anciens. Nous recommandons d'installer
-            le pack service 6a. Les suppléments invité sont disponibles avec un
+            le pack service 6a. Les additions invité sont disponibles avec un
             ensemble de fonctionnalités limité.</para>
           </glossdef>
         </glossentry>
@@ -49,7 +49,7 @@
             <para>Toutes les versions/éditions et les packs service sont
             complètement supportées (y compris les versions 64 bits, sous les
             conditions listées ci-dessous).
-            Les suppléments invité sont disponibles.</para>
+            Les additions invité sont disponibles.</para>
           </glossdef>
         </glossentry>
 
@@ -58,8 +58,8 @@
 
           <glossdef>
             <para>Des tests limités ont été effectués. L'utilisation des 
-            mécanismes d'installation non régulier n'est pas recommandée. Aucun
-            supplément invité disponible.</para>
+            mécanismes d'installation non régulier n'est pas recommandée. Aucune
+            addition invité disponible.</para>
           </glossdef>
         </glossentry>
 
@@ -76,7 +76,7 @@
 
           <glossdef>
             <para>Toutes les versions/éditions sont complètement supportées (32
-            bits et 64 bits). Les suppléments invité sont disponibles.</para>
+            bits et 64 bits). Les additions invité sont disponibles.</para>
 
             <para>Nous vous recommandons fort d'utiliser une version du noyau 
             Linux  2.6.13 ou supérieure pour de meilleures performances.<note>
@@ -92,7 +92,7 @@
           <glossterm>Solaris 10, OpenSolaris</glossterm>
 
           <glossdef>
-            <para>Complètement supporté (32 bits et 64 bits). Les suppléments
+            <para>Complètement supporté (32 bits et 64 bits). Les additions
             invité sont disponibles.</para>
           </glossdef>
         </glossentry>
@@ -102,7 +102,7 @@
 
           <glossdef>
             <para>Exige qu'on active la virtualisation du matériel. Support 
-            limité. Les suppléments invité ne sont pas encore disponibles.</para>
+            limité. Les additions invité ne sont pas encore disponibles.</para>
           </glossdef>
         </glossentry>
 
@@ -111,7 +111,7 @@
 
           <glossdef>
             <para>Exige d'activer la virtualisation du matériel. Les versions 
-            3.7 et supérieures sont supportées. Les suppléments invité ne sont 
+            3.7 et supérieures sont supportées. Les additions invité ne sont 
             pas encore disponibles.</para>
           </glossdef>
         </glossentry>
@@ -122,7 +122,7 @@
           <glossdef>
             <para>Exige qu'on active la virtualisation du matériel. Nous ne 
             supportons officiellement que MCP2&nbsp;; les autres versions
-            d'OS/2 peuvent ne pas fonctionner. Les suppléments invité sont 
+            d'OS/2 peuvent ne pas fonctionner. Les additions invité sont 
             disponibles avec un ensemble de fonctionnalités limité.<footnote>
                 <para>Voir <xref linkend="KnownIssues" />.</para>
               </footnote></para>
@@ -384,7 +384,7 @@
             <glossterm>Presse-papier partagé</glossterm>
 
             <glossdef>
-              <para>Si vous avez installé les suppléments invité dans la machine
+              <para>Si vous avez installé les additions invité dans la machine
               virtuelle, vous pouvez sélectionner ici si le presse-papier du 
               système d'exploitation invité devrait être partagé avec celui de 
               votre hôte. Si vous sélectionnez <quote>Bidirectionnel</quote>, 
@@ -409,13 +409,13 @@
             <glossterm>Barre d'outils compacte</glossterm>
 
             <glossdef>
-              <para>En mode plein-écran ou dans le mode transparent, VirtualBox
+              <para>En mode plein-écran ou intégré, VirtualBox
               peut afficher une petite barre d'outils qui contient certains des
               menus qui sont normalement disponibles à partir de la barre de 
               menu de la machine virtuelle. Cette barre d'outils se réduit à une
               petite ligne grise sauf si vous déplacez la souris dessus. Avec la
               barre d'outils, vous pouvez quitter le mode plein-écran  ou le 
-              mode transparent, contrôler l'exécution de la machine ou activer 
+              mode intégré, contrôler l'exécution de la machine ou activer 
               certains périphériques. Si vous ne voulez pas voir la barre d'outils, 
               désactivez ce paramètre.</para>
             </glossdef>
@@ -566,7 +566,7 @@
               de la VM en événement de tablette sans devoir
               <quote>capturer</quote> la souris dans l'invité comme décrit au
               <xref linkend="keyb_mouse_normal" />. Cela rend l'utilisation de 
-              la VM moins pénible même si on n'installe pas les suppléments 
+              la VM moins pénible même si on n'installe pas les additions 
               invité.<footnote>
                   <para>La tablette USB virtuelle a été ajoutée à VirtualBox 3.2.
                   Selon le système d'exploitation invité sélectionné, elle est 
@@ -697,15 +697,15 @@
           <para>La sortie des divers moniteurs sera affichée sur l'hôte dans 
           plusieurs fenêtres de VM qui se lancent côte à côte.</para>
           
-          <para> Néanmoins, en mode plein écran et en mode transparent, elles 
+          <para> Néanmoins, en mode plein écran et intégré, elles 
           utiliseront les moniteurs physiques disponibles attachés à l'hôte. Il
-          en résulte que pour que les modes plein écran et transparent 
+          en résulte que pour que les modes plein écran et intégré 
           fonctionnent avec plusieurs moniteurs, vous aurez besoin d'au moins 
           autant de moniteurs physiques que le nombre de moniteurs virtuels que
           vous aurez configurés, ou VirtualBox renverra une erreur. Vous pouvez
           configurer la relation entre les moniteurs invités et hôtes en 
           utilisant le menu vues en appuyant sur la touche Hôte + Origine quand
-          vous êtes en mode plein écran ou transparent.</para>
+          vous êtes en mode plein écran ou intégré.</para>
           
           <para>Merci de voir aussi le <xref linkend="KnownIssues" />.</para>
         </glossdef>
@@ -715,7 +715,7 @@
         <glossterm>Activer l'accélération 3D</glossterm>
 
         <glossdef>
-          <para>Si vous avez installé les suppléments invité dans une machine 
+          <para>Si vous avez installé les additions invité dans une machine 
           virtuelle, vous pouvez sélectionner ici si l'invité supporte la vidéo
           graphique accélérée. Merci de vous reporter au chapitre xref
           linkend="guestadd-3d" /> pour des détails.</para>
@@ -726,7 +726,7 @@
         <glossterm>Activer l'accélçration graphique 2D</glossterm>
 
         <glossdef>
-          <para>Si vous avez installé les suppléments invité sur une machine 
+          <para>Si vous avez installé les additions invité sur une machine 
           virtuelle avec Microsoft Windows, vous pouvez sélectionner ici si 
           l'invité devrait supporter les graphiques vidéos 2D accélérés. Merci 
           de vous référer au chapitre <xref linkend="guestadd-2d" /> pour les 
@@ -1224,7 +1224,7 @@
 
     <para>Les répertoires partagés vous permettent d'échanger facilement des 
     données entre une machine virtuelle et votre hôte. Cette fonctionnalité exige
-    que les suppléments invité soient installés sur une machine virtuelle et
+    que les additions invité soient installés sur une machine virtuelle et
     est décrite en détails au <xref linkend="sharedfolders" />.</para>
 
   </sect1>
