@@ -227,7 +227,7 @@ bool VBoxExtPackIsValidName(const char *pszName)
     size_t off = 0;
     while (pszName[off])
     {
-        if (!RT_C_IS_ALNUM(pszName[off]) && !pszName[off] == ' ')
+        if (!RT_C_IS_ALNUM(pszName[off]) && pszName[off] != ' ')
             return false;
         off++;
     }

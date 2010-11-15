@@ -231,6 +231,15 @@ typedef const OLECHAR *CBSTR;
  */
 #define COM_IIDOF(I) _ATL_IIDOF(I)
 
+/**
+ * For using interfaces before including the interface definitions. This will
+ * deal with XPCOM using 'class' and COM using 'struct' when defining
+ * interfaces.
+ *
+ * @param   I   interface name.
+ */
+#define COM_STRUCT_OR_CLASS(I)  struct I
+
 #else /* defined (RT_OS_WINDOWS) */
 
 #error "VBOX_WITH_XPCOM must be defined on a platform other than Windows!"
@@ -354,6 +363,8 @@ typedef nsIID   IID;
 #define STDMETHODIMP NS_IMETHODIMP
 
 #define COM_IIDOF(I) NS_GET_IID(I)
+
+#define COM_STRUCT_OR_CLASS(I) class I
 
 /* A few very simple ATL emulator classes to provide
  * FinalConstruct()/FinalRelease() functionality on Linux. */
