@@ -171,7 +171,7 @@
           <number>1</number>
          </property>
          <item>
-          <widget class="VBoxBootTable" name="mTwBootOrder">
+          <widget class="UIBootTable" name="mTwBootOrder">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -188,12 +188,6 @@
             <enum>Qt::ScrollBarAlwaysOff</enum>
            </property>
            <property name="alternatingRowColors">
-            <bool>true</bool>
-           </property>
-           <property name="rootIsDecorated">
-            <bool>false</bool>
-           </property>
-           <property name="uniformRowHeights">
             <bool>true</bool>
            </property>
            <column>
@@ -638,9 +632,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>VBoxBootTable</class>
-   <extends>QTreeWidget</extends>
-   <header>VBoxBootTable.h</header>
+   <class>UIBootTable</class>
+   <extends>QListWidget</extends>
+   <header>UIBootTable.h</header>
   </customwidget>
   <customwidget>
    <class>QILineEdit</class>

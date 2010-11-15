@@ -324,7 +324,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UISpacerWidgets.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/VBoxApplianceEditorWgt.h \
-	src/widgets/VBoxBootTable.h \
+	src/widgets/UIBootTable.h \
 	src/widgets/VBoxExportApplianceWgt.h \
 	src/widgets/VBoxFilePathSelectorWidget.h \
 	src/widgets/VBoxImportApplianceWgt.h \
@@ -338,6 +338,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIVMDesktop.h \
 	src/selector/UIVMListView.h \
 	src/selector/UIVMPreviewWindow.h \
+	src/selector/UIVMItem.h \
 	src/selector/UIVirtualBoxEventHandler.h \
 	src/selector/VBoxSelectorWnd.h \
 	src/selector/VBoxSnapshotsWgt.h \
@@ -485,7 +486,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIToolBar.cpp \
 	src/widgets/VBoxApplianceEditorWgt.cpp \
-	src/widgets/VBoxBootTable.cpp \
+	src/widgets/UIBootTable.cpp \
 	src/widgets/VBoxExportApplianceWgt.cpp \
 	src/widgets/VBoxFilePathSelectorWidget.cpp \
 	src/widgets/VBoxGuestRAMSlider.cpp \
