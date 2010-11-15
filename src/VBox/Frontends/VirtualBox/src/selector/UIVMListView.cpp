@@ -27,23 +27,35 @@
 #include "VBoxSelectorWnd.h"
 
 /* Global includes */
+#include <QScrollBar>
 #include <QPainter>
 #include <QLinearGradient>
 #include <QPixmapCache>
+#include <QDropEvent>
+#include <QUrl>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* UIVMItemModel class */
 
+void UIVMItemModel::addItem(const CMachine &machine)
+{
+    addItem(new UIVMItem(machine));
+}
+
 void UIVMItemModel::addItem(UIVMItem *aItem)
 {
     Assert(aItem);
-    int row = m_VMItemList.count();
-    emit layoutAboutToBeChanged();
+    insertItem(aItem, m_VMItemList.count());
+}
+
+void UIVMItemModel::insertItem(UIVMItem *pItem, int row)
+{
+    Assert(pItem);
     beginInsertRows(QModelIndex(), row, row);
-    m_VMItemList << aItem;
+    m_VMItemList.insert(row, pItem);
     endInsertRows();
-    refreshItem(aItem);
+    refreshItem(pItem);
 }
 
 void UIVMItemModel::removeItem(UIVMItem *aItem)
@@ -55,11 +67,10 @@ void UIVMItemModel::removeItem(UIVMItem *aItem)
 
 bool UIVMItemModel::removeRows(int aRow, int aCount, const QModelIndex &aParent /* = QModelIndex() */)
 {
-    emit layoutAboutToBeChanged();
-    beginRemoveRows(aParent, aRow, aRow + aCount);
-    m_VMItemList.erase(m_VMItemList.begin() + aRow, m_VMItemList.begin() + aRow + aCount);
+    beginRemoveRows(aParent, aRow, aRow + aCount - 1);
+    for (int i = aRow + aCount - 1; i >= aRow; --i)
+        delete m_VMItemList.takeAt(i);
     endRemoveRows();
-    emit layoutChanged();
     return true;
 }
 
@@ -69,8 +80,7 @@ bool UIVMItemModel::removeRows(int aRow, int aCount, const QModelIndex &aParent 
 void UIVMItemModel::refreshItem(UIVMItem *aItem)
 {
     Assert(aItem);
-    if (aItem->recache())
-        sort();
+    aItem->recache();
     itemChanged(aItem);
 }
 
@@ -130,13 +140,44 @@ int UIVMItemModel::rowById(const QString &aId) const
     return -1;
 }
 
-void UIVMItemModel::sort(int /* aColumn */, Qt::SortOrder aOrder /* = Qt::AscendingOrder */)
+QStringList UIVMItemModel::idList() const
+{
+    QStringList list;
+    foreach(UIVMItem *item, m_VMItemList)
+        list << item->id();
+    return list;
+}
+
+void UIVMItemModel::sortByIdList(const QStringList &list)
 {
     emit layoutAboutToBeChanged();
-    switch (aOrder)
+    QList<UIVMItem*> tmpVMItemList(m_VMItemList);
+    m_VMItemList.clear();
+    /* Iterate over all ids and move the corresponding items ordered in the new
+       list. */
+    foreach(QString id, list)
     {
-        case Qt::AscendingOrder: qSort(m_VMItemList.begin(), m_VMItemList.end(), UIVMItemNameCompareLessThan); break;
-        case Qt::DescendingOrder: qSort(m_VMItemList.begin(), m_VMItemList.end(), UIVMItemNameCompareGreaterThan); break;
+        QMutableListIterator<UIVMItem*> it(tmpVMItemList);
+        while (it.hasNext())
+        {
+            UIVMItem *pItem = it.next();
+            if (pItem->id() == id)
+            {
+                m_VMItemList << pItem;
+                it.remove();
+                break;
+            }
+        }
+    }
+    /* If there are items which didn't have been in the id list, we sort them
+       by name and appending them to the new list afterward. This make sure the
+       old behavior of VBox is respected. */
+    if (tmpVMItemList.count() > 0)
+    {
+        qSort(tmpVMItemList.begin(), tmpVMItemList.end(), UIVMItemNameCompareLessThan);
+        QListIterator<UIVMItem*> it(tmpVMItemList);
+        while (it.hasNext())
+            m_VMItemList << it.next();
     }
     emit layoutChanged();
 }
@@ -238,8 +279,8 @@ QVariant UIVMItemModel::data(const QModelIndex &aIndex, int aRole) const
     return v;
 }
 
-QVariant UIVMItemModel::headerData(int /*aSection*/, Qt::Orientation /*aOrientation*/,
-                                  int /*aRole = Qt::DisplayRole */) const
+QVariant UIVMItemModel::headerData(int /* aSection */, Qt::Orientation /* aOrientation */,
+                                   int /* aRole = Qt::DisplayRole */) const
 {
     return QVariant();
 }
@@ -251,21 +292,83 @@ bool UIVMItemModel::UIVMItemNameCompareLessThan(UIVMItem* aItem1, UIVMItem* aIte
     return aItem1->name().toLower() < aItem2->name().toLower();
 }
 
-bool UIVMItemModel::UIVMItemNameCompareGreaterThan(UIVMItem* aItem1, UIVMItem* aItem2)
+Qt::ItemFlags UIVMItemModel::flags(const QModelIndex &index) const
 {
-    Assert(aItem1);
-    Assert(aItem2);
-    return aItem2->name().toLower() < aItem1->name().toLower();
+    Qt::ItemFlags defaultFlags = QAbstractListModel::flags(index);
+
+    if (index.isValid())
+        return Qt::ItemIsDragEnabled | defaultFlags;
+    else
+        return Qt::ItemIsDropEnabled | defaultFlags;
+}
+
+Qt::DropActions UIVMItemModel::supportedDropActions() const
+{
+    return Qt::MoveAction;
+}
+
+QStringList UIVMItemModel::mimeTypes() const
+{
+    QStringList types;
+    types << UIVMItemMimeData::type();
+    return types;
+}
+
+QMimeData *UIVMItemModel::mimeData(const QModelIndexList &indexes) const
+{
+    UIVMItemMimeData *pMimeData = new UIVMItemMimeData(m_VMItemList.at(indexes.at(0).row()));
+    return pMimeData;
+}
+
+bool UIVMItemModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+{
+    if (action == Qt::IgnoreAction)
+        return true;
+
+    if (column > 0)
+        return false;
+
+    int beginRow;
+    if (row != -1)
+        beginRow = row;
+    else if (parent.isValid())
+        beginRow = parent.row();
+    else
+        beginRow = rowCount(QModelIndex());
+
+    if (data->hasFormat(UIVMItemMimeData::type()))
+    {
+        /* Only move allowed. */
+        if (action != Qt::MoveAction)
+            return false;
+        /* Get our own mime data type. */
+        const UIVMItemMimeData *pMimeData = qobject_cast<const UIVMItemMimeData*>(data);
+        if (pMimeData)
+        {
+            insertItem(new UIVMItem(pMimeData->item()->machine()), beginRow);
+            return true;
+        }
+    }
+    return false;
 }
 
 /* UIVMListView class */
 
-UIVMListView::UIVMListView(QWidget *aParent /* = 0 */)
-    :QIListView(aParent)
+UIVMListView::UIVMListView(QAbstractListModel *pModel, QWidget *aParent /* = 0 */)
+    : QIListView(aParent)
+    , m_fItemInMove(false)
 {
+    /* For queued events Q_DECLARE_METATYPE isn't sufficient. */
+    qRegisterMetaType< QList<QUrl> >("QList<QUrl>");
+    setDropIndicatorShown(true);
+    setDragEnabled(true);
+    setAcceptDrops(true);
+    viewport()->setAutoFillBackground(false);
+    setSelectionMode(QAbstractItemView::SingleSelection);
     /* Create & set our delegation class */
     UIVMItemPainter *delegate = new UIVMItemPainter(this);
     setItemDelegate(delegate);
+    setModel(pModel);
     /* Default icon size */
     setIconSize(QSize(32, 32));
     /* Publish the activation of items */
@@ -273,6 +376,8 @@ UIVMListView::UIVMListView(QWidget *aParent /* = 0 */)
             this, SIGNAL(activated()));
     /* Use the correct policy for the context menu */
     setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(pModel, SIGNAL(rowsAboutToBeInserted(const QModelIndex &, int, int)),
+            this, SLOT(sltRowsAboutToBeInserted(const QModelIndex &, int, int)));
 }
 
 void UIVMListView::selectItemByRow(int row)
@@ -303,12 +408,12 @@ void UIVMListView::ensureSomeRowSelected(int aRowHint)
     }
 }
 
-UIVMItem * UIVMListView::selectedItem() const
+UIVMItem *UIVMListView::selectedItem() const
 {
     QModelIndexList indexes = selectedIndexes();
     if (indexes.isEmpty())
         return NULL;
-    return model()->data(indexes.first(), UIVMItemModel::UIVMItemPtrRole).value <UIVMItem *>();
+    return model()->data(indexes.first(), UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
 }
 
 void UIVMListView::ensureCurrentVisible()
@@ -340,6 +445,23 @@ void UIVMListView::dataChanged(const QModelIndex &aTopLeft, const QModelIndex &a
     emit currentChanged();
 }
 
+void UIVMListView::sltRowsAboutToBeInserted(const QModelIndex & /* parent */, int /* start */, int /* end */)
+{
+    /* On D&D the items in the view jumps like hell, cause after inserting the
+       new item, but before deleting the old item an update is triggered. We
+       disable the updates now. */
+    if (m_fItemInMove)
+        setUpdatesEnabled(false);
+}
+
+void UIVMListView::rowsInserted(const QModelIndex & /* parent */, int start, int /* end */)
+{
+    /* Select the new item, after a D&D operation. Note: don't call the base
+       class, cause this will trigger an update. */
+    if (m_fItemInMove)
+        selectItemByRow(start);
+}
+
 bool UIVMListView::selectCurrent()
 {
     QModelIndexList indexes = selectionModel()->selectedIndexes();
@@ -351,6 +473,174 @@ bool UIVMListView::selectCurrent()
         return true;
     }
     return false;
+}
+
+void UIVMListView::dragEnterEvent(QDragEnterEvent *pEvent)
+{
+    if (qApp->activeModalWidget() != 0)
+        pEvent->ignore();
+    else
+    {
+        QListView::dragEnterEvent(pEvent);
+        checkDragEvent(pEvent);
+    }
+}
+
+void UIVMListView::dragMoveEvent(QDragMoveEvent *pEvent)
+{
+    QListView::dragMoveEvent(pEvent);
+    checkDragEvent(pEvent);
+}
+
+void UIVMListView::checkDragEvent(QDragMoveEvent *pEvent)
+{
+    if (pEvent->mimeData()->hasUrls())
+    {
+        QList<QUrl> list = pEvent->mimeData()->urls();
+        QString file = list.at(0).toLocalFile();
+        if (   (   file.endsWith(".ovf", Qt::CaseInsensitive)
+                || file.endsWith(".ova", Qt::CaseInsensitive))
+            && pEvent->possibleActions().testFlag(Qt::CopyAction))
+        {
+            pEvent->setDropAction(Qt::CopyAction);
+            pEvent->accept();
+        }
+    }
+}
+
+void UIVMListView::dropEvent(QDropEvent *pEvent)
+{
+    if (pEvent->mimeData()->hasFormat(UIVMItemMimeData::type()))
+        QListView::dropEvent(pEvent);
+    else if (pEvent->mimeData()->hasUrls())
+    {
+        QList<QUrl> list = pEvent->mimeData()->urls();
+        pEvent->acceptProposedAction();
+        emit sigUrlsDropped(list);
+    }
+}
+
+void UIVMListView::startDrag(Qt::DropActions supportedActions)
+{
+    /* Select all indexes which are currently selected and dragable. */
+    QModelIndexList indexes = selectedIndexes();
+    for(int i = indexes.count() - 1 ; i >= 0; --i)
+    {
+        if (!(model()->flags(indexes.at(i)) & Qt::ItemIsDragEnabled))
+            indexes.removeAt(i);
+    }
+    if (indexes.count() > 0)
+    {
+        m_fItemInMove = true;
+        QMimeData *data = model()->mimeData(indexes);
+        if (!data)
+            return;
+        /* We only support one at the time. Also we need a persistent index,
+           cause the position of the old index may change. */
+        QPersistentModelIndex oldIdx(indexes.at(0));
+        QRect rect;
+        QPixmap pixmap = dragPixmap(oldIdx);
+        rect.adjust(horizontalOffset(), verticalOffset(), 0, 0);
+        QDrag *drag = new QDrag(this);
+        drag->setPixmap(pixmap);
+        drag->setMimeData(data);
+        drag->setHotSpot(QPoint(5, 5));
+        Qt::DropAction defaultDropAction = Qt::MoveAction;
+        /* Now start the drag. */
+        if (drag->exec(supportedActions, defaultDropAction) == Qt::MoveAction)
+            /* Remove the old item */
+            model()->removeRows(oldIdx.row(), 1, QModelIndex());
+        m_fItemInMove = false;
+        setUpdatesEnabled(true);
+    }
+}
+
+QPixmap UIVMListView::dragPixmap(const QModelIndex &index) const
+{
+    QString name = index.data(Qt::DisplayRole).toString();
+    if (name.length() > 100)
+        name = name.remove(97, name.length() - 97) + "...";
+    QSize nameSize = fontMetrics().boundingRect(name).size();
+    nameSize.setWidth(nameSize.width() + 30);
+    QPixmap osType = index.data(Qt::DecorationRole).value<QIcon>().pixmap(32, 32);
+    QSize osTypeSize = osType.size();
+    int space = 5, margin = 15;
+    QSize s(2 * margin + qMax(osTypeSize.width(), nameSize.width()),
+            2 * margin + osTypeSize.height() + space + nameSize.height());
+    QImage image(s, QImage::Format_ARGB32);
+    image.fill(Qt::transparent);
+    QPainter p(&image);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(QPen(Qt::white, 2));
+    p.setBrush(QColor(qRgb(80, 80, 80)));
+    p.drawRoundedRect(3, 3, s.width() - 3 * 2, s.height() - 3 * 2, 6, 6);
+    p.drawPixmap((s.width() - osTypeSize.width()) / 2, margin, osType);
+    p.setPen(Qt::white);
+    p.setFont(font());
+    p.drawText(QRect(margin, margin + osTypeSize.height() + space,  s.width() - 2 * margin, nameSize.height()), Qt::AlignCenter, name);
+    QImage p1(s, QImage::Format_ARGB32);
+    p1.fill(qRgba(0, 0, 0, 177));
+    p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+    p.drawImage(0, 0, p1);
+    p.end();
+    return QPixmap::fromImage(image);
+}
+
+QModelIndex UIVMListView::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
+{
+    if (modifiers.testFlag(Qt::ControlModifier))
+    {
+        switch (cursorAction)
+        {
+            case QAbstractItemView::MoveUp:
+            {
+                QModelIndex index = currentIndex();
+                return moveItemTo(index, index.row() - 1);
+            }
+            case QAbstractItemView::MoveDown:
+            {
+                QModelIndex index = currentIndex();
+                return moveItemTo(index, index.row() + 2);
+            }
+            case QAbstractItemView::MovePageUp:
+            {
+                QModelIndex index = currentIndex();
+                return moveItemTo(index, qMax(0, index.row() - verticalScrollBar()->pageStep()));
+            }
+            case QAbstractItemView::MovePageDown:
+            {
+                QModelIndex index = currentIndex();
+                return moveItemTo(index, qMin(model()->rowCount(), index.row() + verticalScrollBar()->pageStep() + 1));
+            }
+            case QAbstractItemView::MoveHome:
+                return moveItemTo(currentIndex(), 0);
+            case QAbstractItemView::MoveEnd:
+                return moveItemTo(currentIndex(), model()->rowCount());
+            default:
+                break;
+        }
+    }
+    return QListView::moveCursor(cursorAction, modifiers);
+}
+
+QModelIndex UIVMListView::moveItemTo(const QModelIndex &index, int row)
+{
+    if (!index.isValid())
+        return QModelIndex();
+
+    UIVMItemModel *pModel = static_cast<UIVMItemModel*>(model());
+    if (row < 0 || row > pModel->rowCount())
+        return QModelIndex();
+
+    QPersistentModelIndex perIndex(index);
+    UIVMItem *pItem = pModel->data(index, UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
+    m_fItemInMove = true;
+    pModel->insertItem(new UIVMItem(pItem->machine()), row);
+    QPersistentModelIndex newIndex = pModel->index(row);
+    pModel->removeRows(perIndex.row(), 1, QModelIndex());
+    m_fItemInMove = false;
+    setUpdatesEnabled(true);
+    return newIndex;
 }
 
 /* UIVMItemPainter class */
@@ -413,14 +703,16 @@ void UIVMItemPainter::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
 {
     /* Generate the key used in the pixmap cache. Needs to be composed with all
      * values which might be changed. */
-    QString key = QString("vbox:%1:%2:%3:%4:%5:%6:%7")
+    QString key = QString("vbox:%1:%2:%3:%4:%5:%6:%7:%8:%9")
         .arg(index.data(Qt::DisplayRole).toString())
         .arg(index.data(UIVMItemModel::OSTypeIdRole).toString())
         .arg(index.data(UIVMItemModel::SnapShotDisplayRole).toString())
         .arg(index.data(UIVMItemModel::MachineStateDisplayRole).toString())
         .arg(index.data(UIVMItemModel::SessionStateDisplayRole).toString())
         .arg(option.state)
-        .arg(option.rect.width());
+        .arg(option.rect.width())
+        .arg(qobject_cast<QWidget*>(parent())->hasFocus())
+        .arg(qApp->focusWidget() == NULL);
 
     /* Check if the pixmap already exists in the cache. */
     QPixmap pixmap;
@@ -463,7 +755,7 @@ void UIVMItemPainter::paint(QPainter *pPainter, const QStyleOptionViewItem &opti
 }
 
 QRect UIVMItemPainter::paintContent(QPainter *pPainter, const QStyleOptionViewItem &option,
-                                   const QModelIndex &index) const
+                                    const QModelIndex &index) const
 {
     /* Name and decoration */
     const QString vmName = index.data(Qt::DisplayRole).toString();
@@ -580,42 +872,42 @@ QRect UIVMItemPainter::rect(const QStyleOptionViewItem &aOption,
     switch (aRole)
     {
         case Qt::DisplayRole:
-            {
-                QString text = aIndex.data(Qt::DisplayRole).toString();
-                QFontMetrics fm(fontMetric(aIndex, Qt::FontRole));
-                return QRect(QPoint(0, 0), fm.size(0, text));
-                break;
-            }
+        {
+            QString text = aIndex.data(Qt::DisplayRole).toString();
+            QFontMetrics fm(fontMetric(aIndex, Qt::FontRole));
+            return QRect(QPoint(0, 0), fm.size(0, text));
+            break;
+        }
         case Qt::DecorationRole:
-            {
-                QIcon icon = aIndex.data(Qt::DecorationRole).value<QIcon>();
-                return QRect(QPoint(0, 0), icon.actualSize(aOption.decorationSize, iconMode(aOption.state), iconState(aOption.state)));
-                break;
-            }
+        {
+            QIcon icon = aIndex.data(Qt::DecorationRole).value<QIcon>();
+            return QRect(QPoint(0, 0), icon.actualSize(aOption.decorationSize, iconMode(aOption.state), iconState(aOption.state)));
+            break;
+        }
         case UIVMItemModel::SnapShotDisplayRole:
+        {
+            QString text = aIndex.data(UIVMItemModel::SnapShotDisplayRole).toString();
+            if (!text.isEmpty())
             {
-                QString text = aIndex.data(UIVMItemModel::SnapShotDisplayRole).toString();
-                if (!text.isEmpty())
-                {
-                    QFontMetrics fm(fontMetric(aIndex, UIVMItemModel::SnapShotFontRole));
-                    return QRect(QPoint(0, 0), fm.size(0, QString("(%1)").arg(text)));
-                }else
-                    return QRect();
-                break;
-            }
+                QFontMetrics fm(fontMetric(aIndex, UIVMItemModel::SnapShotFontRole));
+                return QRect(QPoint(0, 0), fm.size(0, QString("(%1)").arg(text)));
+            }else
+                return QRect();
+            break;
+        }
         case UIVMItemModel::MachineStateDisplayRole:
-            {
-                QString text = aIndex.data(UIVMItemModel::MachineStateDisplayRole).toString();
-                QFontMetrics fm(fontMetric(aIndex, UIVMItemModel::MachineStateFontRole));
-                return QRect(QPoint(0, 0), fm.size(0, text));
-                break;
-            }
+        {
+            QString text = aIndex.data(UIVMItemModel::MachineStateDisplayRole).toString();
+            QFontMetrics fm(fontMetric(aIndex, UIVMItemModel::MachineStateFontRole));
+            return QRect(QPoint(0, 0), fm.size(0, text));
+            break;
+        }
         case UIVMItemModel::MachineStateDecorationRole:
-            {
-                QIcon icon = aIndex.data(UIVMItemModel::MachineStateDecorationRole).value<QIcon>();
-                return QRect(QPoint(0, 0), icon.actualSize(QSize(16, 16), iconMode(aOption.state), iconState(aOption.state)));
-                break;
-            }
+        {
+            QIcon icon = aIndex.data(UIVMItemModel::MachineStateDecorationRole).value<QIcon>();
+            return QRect(QPoint(0, 0), icon.actualSize(QSize(16, 16), iconMode(aOption.state), iconState(aOption.state)));
+            break;
+        }
     }
     return QRect();
 }

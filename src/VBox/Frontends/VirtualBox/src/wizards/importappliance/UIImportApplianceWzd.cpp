@@ -101,11 +101,20 @@ void UIImportLicenseViewer::sltSave()
     }
 }
 
-UIImportApplianceWzd::UIImportApplianceWzd(QWidget *pParent) : QIWizard(pParent)
+UIImportApplianceWzd::UIImportApplianceWzd(const QString &strFile /* = "" */, QWidget *pParent /* = 0 */)
+  : QIWizard(pParent)
 {
     /* Create & add pages */
-    addPage(new UIImportApplianceWzdPage1);
+    if (strFile.isEmpty())
+        addPage(new UIImportApplianceWzdPage1);
     addPage(new UIImportApplianceWzdPage2);
+    if (!strFile.isEmpty())
+    {
+        VBoxImportApplianceWgt *applianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
+
+        if (!applianceWidget->setFile(strFile))
+            return;
+    }
 
     /* Initial translate */
     retranslateUi();

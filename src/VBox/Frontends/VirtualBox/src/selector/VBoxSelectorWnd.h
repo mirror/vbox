@@ -28,6 +28,7 @@
 
 /* Global includes */
 #include <QMainWindow>
+#include <QUrl>
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include <QSystemTrayIcon>
 #endif /* VBOX_GUI_WITH_SYSTRAY */
@@ -61,7 +62,7 @@ signals:
 public slots:
 
     void fileMediaMgr();
-    void fileImportAppliance();
+    void fileImportAppliance(const QString &strFile = "");
     void fileExportAppliance();
     void fileSettings();
     void fileExit();
@@ -79,6 +80,8 @@ public slots:
     void refreshVMItem(const QString &aID, bool aDetails, bool aSnapshots, bool aDescription);
 
     void showContextMenu(const QPoint &aPoint);
+
+    void sltUrlsDropped(QList<QUrl> list);
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     void trayIconActivated(QSystemTrayIcon::ActivationReason aReason);

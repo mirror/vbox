@@ -247,7 +247,7 @@ bool UIVMItem::recache()
         /* this should be in sync with
          * VBoxProblemReporter::confirm_machineDeletion() */
         QFileInfo fi(m_strSettingsFile);
-        QString name = fi.completeSuffix().toLower() == "xml" ?
+        QString name = fi.completeSuffix().toLower() == "xml" || fi.completeSuffix().toLower() == "vbox" ?
                        fi.completeBaseName() : fi.fileName();
         needsResort = name != m_strName;
         m_strName = name;
@@ -396,5 +396,30 @@ bool UIVMItem::switchTo()
 #endif
 
 #endif
+}
+
+QString UIVMItemMimeData::m_type = "application/org.virtualbox.gui.vmselector.uivmitem";
+
+UIVMItemMimeData::UIVMItemMimeData(UIVMItem *pItem)
+  : m_pItem(pItem)
+{
+}
+
+UIVMItem *UIVMItemMimeData::item() const
+{
+    return m_pItem;
+}
+
+QStringList UIVMItemMimeData::formats() const
+{
+    QStringList types;
+    types << type();
+    return types;
+}
+
+/* static */
+QString UIVMItemMimeData::type()
+{
+    return m_type;
 }
 
