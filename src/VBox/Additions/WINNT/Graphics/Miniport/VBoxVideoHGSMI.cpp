@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <string.h>
 
 #include "VBoxVideo.h"
 #include "Helper.h"
@@ -26,9 +27,9 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxVideo.h>
 
-#include <VBoxDisplay.h>
+// #include <VBoxDisplay.h>
 
-#include "vboxioctl.h"
+// #include "vboxioctl.h"
 
 void HGSMINotifyHostCmdComplete (PVBOXVIDEO_COMMON pCommon, HGSMIOFFSET offt)
 {
@@ -92,9 +93,9 @@ void hgsmiProcessHostCommandQueue(PVBOXVIDEO_COMMON pCommon)
 }
 
 /* Detect whether HGSMI is supported by the host. */
-BOOLEAN VBoxHGSMIIsSupported (void)
+bool VBoxHGSMIIsSupported (void)
 {
-    USHORT DispiId;
+    uint16_t DispiId;
 
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID_HGSMI);
@@ -215,8 +216,8 @@ static int vboxCallVBVA (PVBOXVIDEO_COMMON pCommon,
 
 typedef struct _QUERYCONFCTX
 {
-    uint32_t u32Index;
-    ULONG *pulValue;
+    uint32_t  u32Index;
+    uint32_t *pulValue;
 } QUERYCONFCTX;
 
 static int vbvaInitQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
@@ -244,7 +245,7 @@ static int vbvaFinalizeQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvDa
     return VINF_SUCCESS;
 }
 
-static int vboxQueryConfHGSMI (PVBOXVIDEO_COMMON pCommon, uint32_t u32Index, ULONG *pulValue)
+static int vboxQueryConfHGSMI (PVBOXVIDEO_COMMON pCommon, uint32_t u32Index, uint32_t *pulValue)
 {
     Log(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
 
@@ -378,10 +379,14 @@ static int vboxSetupAdapterInfoHGSMI (PVBOXVIDEO_COMMON pCommon)
  * HGSMI variant is a bit different because it uses only HGSMI interface (VBVA channel)
  * to talk to the host.
  */
-VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
-                            ULONG AdapterMemorySize, uint32_t fCaps)
+void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
+                            uint32_t AdapterMemorySize, uint32_t fCaps)
 {
-    VP_STATUS rc = NO_ERROR;
+    /** @todo I simply converted this from Windows error codes.  That is wrong,
+     * but we currently freely mix and match those (failure == rc > 0) and iprt
+     * ones (failure == rc < 0) anyway.  This needs to be fully reviewed and
+     * fixed. */
+    int rc = VINF_SUCCESS;
 
     Log(("VBoxVideo::VBoxSetupDisplays: pCommon = %p\n", pCommon));
 
@@ -401,16 +406,18 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
         pCommon->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 
         /* Map the adapter information. It will be needed for HGSMI IO. */
+        /** @todo all callers of VBoxMapAdapterMemory expect it to use iprt
+         * error codes, but it doesn't. */
         rc = VBoxMapAdapterMemory (pCommon, &pCommon->pvAdapterInformation,
                                    AdapterMemorySize - VBVA_ADAPTER_INFORMATION_SIZE,
                                    VBVA_ADAPTER_INFORMATION_SIZE
                                   );
-        if (rc != NO_ERROR)
+        if (RT_FAILURE(rc))
         {
             Log(("VBoxVideo::VBoxSetupDisplays: VBoxMapAdapterMemory pvAdapterInfoirrmation failed rc = %d\n",
                      rc));
 
-            pCommon->bHGSMI = FALSE;
+            pCommon->bHGSMI = false;
         }
         else
         {
@@ -421,12 +428,12 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
                                  pCommon->cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
                                  false /*fOffsetBased*/);
 
-            if (RT_FAILURE (rc))
+            if (RT_FAILURE(rc))
             {
                 Log(("VBoxVideo::VBoxSetupDisplays: HGSMIHeapSetup failed rc = %d\n",
                          rc));
 
-                pCommon->bHGSMI = FALSE;
+                pCommon->bHGSMI = false;
             }
             else
             {
@@ -440,13 +447,13 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     if (pCommon->bHGSMI)
     {
         /* The miniport heap is used for the host buffers. */
-        ULONG cbMiniportHeap = 0;
+        uint32_t cbMiniportHeap = 0;
         vboxQueryConfHGSMI (pCommon, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbMiniportHeap);
 
         if (cbMiniportHeap != 0)
         {
             /* Do not allow too big heap. No more than 25% of VRAM is allowed. */
-            ULONG cbMiniportHeapMaxSize = AdapterMemorySize / 4;
+            uint32_t cbMiniportHeapMaxSize = AdapterMemorySize / 4;
 
             if (cbMiniportHeapMaxSize >= VBVA_ADAPTER_INFORMATION_SIZE)
             {
@@ -476,11 +483,11 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
                                        - pCommon->cbMiniportHeap,
                                        pCommon->cbMiniportHeap
                                       );
-            if (rc != NO_ERROR)
+            if (RT_FAILURE(rc))
             {
                 pCommon->pvMiniportHeap = NULL;
                 pCommon->cbMiniportHeap = 0;
-                pCommon->bHGSMI = FALSE;
+                pCommon->bHGSMI = false;
             }
             else
             {
@@ -507,7 +514,7 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     if (pCommon->bHGSMI)
     {
         /* Query the configured number of displays. */
-        ULONG cDisplays = 0;
+        uint32_t cDisplays = 0;
         vboxQueryConfHGSMI (pCommon, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
 
         Log(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
@@ -526,9 +533,9 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
         /* Setup the information for the host. */
         rc = vboxSetupAdapterInfoHGSMI (pCommon);
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
-            pCommon->bHGSMI = FALSE;
+            pCommon->bHGSMI = false;
         }
     }
 
@@ -538,12 +545,12 @@ VOID VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     Log(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
 
-static bool VBoxUnmapAdpInfoCallback(PVOID pvCommon)
+static bool VBoxUnmapAdpInfoCallback(void *pvCommon)
 {
     PVBOXVIDEO_COMMON pCommon = (PVBOXVIDEO_COMMON)pvCommon;
 
     pCommon->pHostFlags = NULL;
-    return TRUE;
+    return true;
 }
 
 void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon)
@@ -561,9 +568,14 @@ void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon)
  */
 typedef struct _MOUSEPOINTERSHAPECTX
 {
-    VIDEO_POINTER_ATTRIBUTES *pPointerAttr;
+    uint32_t fFlags;
+    uint32_t cHotX;
+    uint32_t cHotY;
+    uint32_t cWidth;
+    uint32_t cHeight;
     uint32_t cbData;
-    int32_t i32Result;
+    uint8_t *pPixels;
+    int32_t  i32Result;
 } MOUSEPOINTERSHAPECTX;
 
 static int vbvaInitMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
@@ -575,12 +587,12 @@ static int vbvaInitMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, void *
     p->i32Result = VINF_SUCCESS;
 
     /* We have our custom flags in the field */
-    p->fu32Flags = pCtx->pPointerAttr->Enable & 0x0000FFFF;
+    p->fu32Flags = pCtx->fFlags;
 
-    p->u32HotX   = (pCtx->pPointerAttr->Enable >> 16) & 0xFF;
-    p->u32HotY   = (pCtx->pPointerAttr->Enable >> 24) & 0xFF;
-    p->u32Width  = pCtx->pPointerAttr->Width;
-    p->u32Height = pCtx->pPointerAttr->Height;
+    p->u32HotX   = pCtx->cHotX;
+    p->u32HotY   = pCtx->cHotY;
+    p->u32Width  = pCtx->cWidth;
+    p->u32Height = pCtx->cHeight;
 
     if (p->fu32Flags & VBOX_MOUSE_POINTER_SHAPE)
     {
@@ -590,7 +602,7 @@ static int vbvaInitMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, void *
         p->fu32Flags |= VBOX_MOUSE_POINTER_VISIBLE;
 
         /* Copy the actual pointer data. */
-        memcpy (p->au8Data, pCtx->pPointerAttr->Pixels, pCtx->cbData);
+        memcpy (p->au8Data, pCtx->pPixels, pCtx->cbData);
     }
 
     return VINF_SUCCESS;
@@ -606,35 +618,45 @@ static int vbvaFinalizeMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, vo
     return VINF_SUCCESS;
 }
 
-BOOLEAN vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
-                                PVIDEO_POINTER_ATTRIBUTES pointerAttr,
-                                uint32_t cbLength)
+bool vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
+                             uint32_t fFlags,
+                             uint32_t cHotX,
+                             uint32_t cHotY,
+                             uint32_t cWidth,
+                             uint32_t cHeight,
+                             uint8_t *pPixels,
+                             uint32_t cbLength)
 {
     uint32_t cbData = 0;
 
-    if (pointerAttr->Enable & VBOX_MOUSE_POINTER_SHAPE)
+    if (fFlags & VBOX_MOUSE_POINTER_SHAPE)
     {
         /* Size of the pointer data: sizeof (AND mask) + sizeof (XOR_MASK) */
-        cbData = ((((pointerAttr->Width + 7) / 8) * pointerAttr->Height + 3) & ~3)
-                 + pointerAttr->Width * 4 * pointerAttr->Height;
+        cbData = ((((cWidth + 7) / 8) * cHeight + 3) & ~3)
+                 + cWidth * 4 * cHeight;
     }
 
 #ifndef DEBUG_misha
     Log(("vboxUpdatePointerShape: cbData %d, %dx%d\n",
-             cbData, pointerAttr->Width, pointerAttr->Height));
+             cbData, cWidth, cHeight));
 #endif
 
-    if (cbData > cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES))
+    if (cbData > cbLength)
     {
         Log(("vboxUpdatePointerShape: calculated pointer data size is too big (%d bytes, limit %d)\n",
-                 cbData, cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES)));
-        return FALSE;
+                 cbData, cbLength));
+        return false;
     }
 
     MOUSEPOINTERSHAPECTX ctx;
 
-    ctx.pPointerAttr = pointerAttr;
-    ctx.cbData = cbData;
+    ctx.fFlags    = fFlags;
+    ctx.cHotX     = cHotX;
+    ctx.cHotY     = cHotY;
+    ctx.cWidth    = cWidth;
+    ctx.cHeight   = cHeight;
+    ctx.pPixels   = pPixels;
+    ctx.cbData    = cbData;
     ctx.i32Result = VERR_NOT_SUPPORTED;
 
     int rc = vboxCallVBVA (pCommon, VBVA_MOUSE_POINTER_SHAPE,

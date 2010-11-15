@@ -21,7 +21,7 @@ extern "C"
 # include <ntddk.h>
 }
 #else
-# include "VBoxVideo.h"
+# include "VBoxVideo-win.h"
 #endif
 
 #include <VBox/err.h>
@@ -64,9 +64,9 @@ bool g_bVBoxVDbgBreakFv = false;
 #pragma alloc_text(PAGE, vboxQueryHostWantsAbsolute)
 #pragma alloc_text(PAGE, vboxQueryWinVersion)
 
-BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint32_t *pDisplayId)
+bool vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint32_t *pDisplayId)
 {
-    BOOLEAN bRC = FALSE;
+    bool bRC = FALSE;
 
     dprintf(("VBoxVideo::vboxQueryDisplayRequest: xres = 0x%p, yres = 0x%p bpp = 0x%p\n", xres, yres, bpp));
 
@@ -110,9 +110,9 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, u
     return bRC;
 }
 
-BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint32_t bpp)
+bool vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint32_t bpp)
 {
-    BOOLEAN bRC = FALSE;
+    bool bRC = FALSE;
 
     VMMDevVideoModeSupportedRequest2 *req2 = NULL;
 
@@ -170,9 +170,9 @@ BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, ui
     return bRC;
 }
 
-ULONG vboxGetHeightReduction()
+uint32_t vboxGetHeightReduction()
 {
-    ULONG retHeight = 0;
+    uint32_t retHeight = 0;
 
     dprintf(("VBoxVideo::vboxGetHeightReduction\n"));
 
@@ -188,7 +188,7 @@ ULONG vboxGetHeightReduction()
         rc = VbglGRPerform(&req->header);
         if (RT_SUCCESS(rc))
         {
-            retHeight = (ULONG)req->heightReduction;
+            retHeight = req->heightReduction;
         }
         else
         {
@@ -202,9 +202,9 @@ ULONG vboxGetHeightReduction()
     return retHeight;
 }
 
-static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *pointerYPos)
+static bool vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *pointerYPos)
 {
-    BOOLEAN bRC = FALSE;
+    bool bRC = FALSE;
 
     /* Activate next line only when really needed; floods the log very quickly! */
     /*dprintf(("VBoxVideo::vboxQueryPointerPosInternal: pointerXPos = %p, pointerYPos = %p\n", pointerXPos, pointerYPos));*/
@@ -254,11 +254,11 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
  * Return the current absolute mouse position in normalized format
  * (between 0 and 0xFFFF).
  *
- * @returns BOOLEAN     success indicator
+ * @returns bool        success indicator
  * @param   pointerXPos address of result variable for x pos
  * @param   pointerYPos address of result variable for y pos
  */
-BOOLEAN vboxQueryPointerPos(uint16_t *pointerXPos, uint16_t *pointerYPos)
+bool vboxQueryPointerPos(uint16_t *pointerXPos, uint16_t *pointerYPos)
 {
     if (!pointerXPos || !pointerYPos)
     {
@@ -271,9 +271,9 @@ BOOLEAN vboxQueryPointerPos(uint16_t *pointerXPos, uint16_t *pointerYPos)
 /**
  * Returns whether the host wants us to take absolute coordinates.
  *
- * @returns BOOLEAN TRUE if the host wants to send absolute coordinates.
+ * @returns bool TRUE if the host wants to send absolute coordinates.
  */
-BOOLEAN vboxQueryHostWantsAbsolute (void)
+bool vboxQueryHostWantsAbsolute (void)
 {
     return vboxQueryPointerPosInternal (NULL, NULL);
 }
@@ -319,4 +319,3 @@ winVersion_t vboxQueryWinVersion()
     }
     return winVersion;
 }
-

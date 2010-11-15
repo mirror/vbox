@@ -14,7 +14,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxVideo.h"
+#include "VBoxVideo-win.h"
 #include "Helper.h"
 #ifdef VBOX_WITH_WDDM
 #include "wddm/VBoxVideoMisc.h"
@@ -2666,7 +2666,7 @@ uint32_t VBoxVideoCmnPortReadUlong(RTIOPORT Port)
 #endif
 }
 
-int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv, ULONG ulOffset, ULONG ulSize)
+int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv, uint32_t ulOffset, uint32_t ulSize)
 {
     PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
     dprintf(("VBoxVideo::VBoxMapAdapterMemory 0x%08X[0x%X]\n", ulOffset, ulSize));
@@ -3208,7 +3208,7 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
          */
         PointerAttributes.Enable = VBOX_MOUSE_POINTER_VISIBLE;
 
-        Result = vboxUpdatePointerShape(commonFromDeviceExt(PrimaryExtension), &PointerAttributes, sizeof (PointerAttributes));
+        Result = vboxUpdatePointerShapeWrap(commonFromDeviceExt(PrimaryExtension), &PointerAttributes, sizeof (PointerAttributes));
 
         if (Result)
             DEV_SET_MOUSE_SHOWN(PrimaryExtension);
@@ -3456,7 +3456,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                  */
                 PointerAttributes.Enable = 0;
 
-                Result = vboxUpdatePointerShape(commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension), &PointerAttributes, sizeof (PointerAttributes));
+                Result = vboxUpdatePointerShapeWrap(commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension), &PointerAttributes, sizeof (PointerAttributes));
 
                 if (Result)
                     DEV_SET_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension);
@@ -3501,7 +3501,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                          pPointerAttributes->Row));
                 dprintf(("\tBytes attached: %d\n", RequestPacket->InputBufferLength - sizeof(VIDEO_POINTER_ATTRIBUTES)));
 #endif
-                Result = vboxUpdatePointerShape(commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension), pPointerAttributes, RequestPacket->InputBufferLength);
+                Result = vboxUpdatePointerShapeWrap(commonFromDeviceExt((PDEVICE_EXTENSION)HwDeviceExtension), pPointerAttributes, RequestPacket->InputBufferLength);
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not set hardware pointer -> fallback\n"));
             } else
