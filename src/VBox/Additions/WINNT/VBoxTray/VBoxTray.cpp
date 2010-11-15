@@ -19,6 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "VBoxTray.h"
+#include "VBoxTrayMsg.h"
 #include "VBoxHelpers.h"
 #include "VBoxSeamless.h"
 #include "VBoxClipboard.h"
@@ -27,6 +28,7 @@
 #include "VBoxVRDP.h"
 #include "VBoxHostVersion.h"
 #include "VBoxSharedFolders.h"
+#include "VBoxIPC.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -51,8 +53,8 @@ NOTIFYICONDATA        gNotifyIconData;
 DWORD                 gMajorVersion;
 
 /* Global message handler prototypes. */
-int vboxTrayGlMsgTaskbarCreated(LPARAM lParam, WPARAM wParam);
-int vboxTrayGlMsgShowBalloonMsg(LPARAM lParam, WPARAM wParam);
+int vboxTrayGlMsgTaskbarCreated(WPARAM lParam, LPARAM wParam);
+int vboxTrayGlMsgShowBalloonMsg(WPARAM lParam, LPARAM wParam);
 
 /* Prototypes */
 int vboxTrayCreateTrayIcon(void);
@@ -96,6 +98,12 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxVRDPDestroy
     },
     {
+        "IPC",
+        VBoxIPCInit,
+        VBoxIPCThread,
+        VBoxIPCDestroy
+    },
+    {
         NULL
     }
 };
@@ -110,10 +118,7 @@ static VBOXGLOBALMESSAGE s_vboxGlobalMessageTable[] =
     },
 
     /* VBoxTray specific stuff. */
-    {
-        "VBoxTrayShowBalloonMsg",
-        vboxTrayGlMsgShowBalloonMsg
-    },
+    /** @todo Add new messages here! */
 
     {
         NULL
@@ -128,31 +133,9 @@ static VBOXGLOBALMESSAGE s_vboxGlobalMessageTable[] =
  * @param   wParam
  * @param   lParam
  */
-static int vboxTrayGlMsgTaskbarCreated(LPARAM lParam, WPARAM wParam)
+static int vboxTrayGlMsgTaskbarCreated(WPARAM wParam, LPARAM lParam)
 {
     return vboxTrayCreateTrayIcon();
-}
-
-/**
- * Shows a balloon tooltip message in VBoxTray's
- * message area in the Windows main taskbar.
- *
- * @return  IPRT status code.
- * @param   wParam
- * @param   lParam
- */
-static int vboxTrayGlMsgShowBalloonMsg(LPARAM wParam, WPARAM lParam)
-{
-    int rc = hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON,
-                               (char*)wParam /* Ugly hack! */, "Foo",
-                               5000 /* Time to display in msec */, NIIF_INFO);
-    /*
-     * If something went wrong while displaying, log the message into the
-     * the release log so that the user still is being informed, at least somehow.
-     */
-    if (RT_FAILURE(rc))
-        LogRel(("VBoxTray Information: %s\n", "Foo"));
-    return rc;
 }
 
 static int vboxTrayCreateTrayIcon(void)
@@ -244,12 +227,12 @@ static int vboxTrayStartServices(VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
             if (pTable->pfnThread && fStartThread)
             {
                 unsigned threadid;
-                pTable->hThread = (HANDLE)_beginthreadex (NULL,  /* security */
-                                                          0,     /* stacksize */
-                                                          pTable->pfnThread,
-                                                          pTable->pInstance,
-                                                          0,     /* initflag */
-                                                          &threadid);
+                pTable->hThread = (HANDLE)_beginthreadex(NULL,  /* security */
+                                                         0,     /* stacksize */
+                                                         pTable->pfnThread,
+                                                         pTable->pInstance,
+                                                         0,     /* initflag */
+                                                         &threadid);
 
                 if (pTable->hThread == (HANDLE)(0))
                     rc = VERR_NOT_SUPPORTED;

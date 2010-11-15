@@ -92,7 +92,7 @@ typedef struct _VBOXGLOBALMESSAGE
     /** Message name. */
     char    *pszName;
     /** Function pointer for handling the message. */
-    int      (* pfnHandler)          (LPARAM lParam, WPARAM wParam);
+    int      (* pfnHandler)          (WPARAM wParam, LPARAM lParam);
 
     /* Variables. */
 
