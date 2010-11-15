@@ -1821,7 +1821,7 @@ static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE H
     int             rc = VINF_SUCCESS;
     SHFLFSOBJINFO  *pSFDEntry;
 
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(RTFSOBJINFO))
+    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(SHFLFSOBJINFO))
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
