@@ -596,7 +596,10 @@ void VBoxSelectorWnd::vmAdd()
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
     QString strTitle = tr("Select a virtual machine file");
-    QString strFilter = tr("Virtual machine files (*.vbox)");
+    QStringList extensions;
+    for (int i = 0; i < VBoxDefs::VBoxFileExts.size(); ++i)
+        extensions << QString("*.%1").arg(VBoxDefs::VBoxFileExts[i]);
+    QString strFilter = tr("Virtual machine files (%1)").arg(extensions.join(" "));
 
     /* Create open file dialog: */
     QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
