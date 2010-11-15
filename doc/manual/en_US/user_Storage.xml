@@ -837,8 +837,12 @@
     may be able to get it working with the experimental passthrough support
     described in <xref linkend="storage-write-cds" />.</para>
 
-    <para>Audio CD and video CD formats are not supported, which means you
+    <para>Video CD formats are not supported, which means you
     cannot play such media from a virtual machine.</para>
+
+    <para>To be able to access audio CD formats from a virtual machine
+    the experimental passthrough support needs to be enabled as described in
+    <xref linkend="storage-write-cds" />.</para>
   </sect1>
 
   <sect1 id="storage-write-cds">
@@ -850,8 +854,8 @@
     to the host drive. In particular, you cannot burn CDs and DVDs from the
     guest this way.</para>
 
-    <para>As an experimental feature (which currently works for data media
-    only, audio and video CD formats are not supported), it is possible to
+    <para>As an experimental feature (which currently works for data and audio
+    media only, video CD formats are not supported), it is possible to
     give the guest access to the CD/DVD writing features of the host drive (if
     available). There is a "Passthrough" checkbox in the GUI dialog for
     configuring the media attached to a storage controller, or you can use the
