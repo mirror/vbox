@@ -41,6 +41,8 @@
 #include <VBox/version.h>
 #include "AutoCaller.h"
 #include "Global.h"
+#include "SystemPropertiesImpl.h"
+#include "VirtualBoxImpl.h"
 
 
 /*******************************************************************************
@@ -96,6 +98,8 @@ public:
     ExtPack            *pThis;
     /** The extension pack registration structure. */
     PCVBOXEXTPACKREG    pReg;
+    /** Pointer to the VirtualBox object (for VRDE registration). */
+    VirtualBox         *pVirtualBox;
 };
 
 /** List of extension packs. */
@@ -116,6 +120,8 @@ struct ExtPackManager::Data
     Utf8Str     strCertificatDirPath;
     /** The list of installed extension packs. */
     ExtPackList llInstalledExtPacks;
+    /** Pointer to the VirtualBox object, our parent. */
+    VirtualBox *pVirtualBox;
 };
 
 
@@ -138,12 +144,13 @@ HRESULT ExtPack::FinalConstruct()
  * Initializes the extension pack by reading its file.
  *
  * @returns COM status code.
+ * @param   a_pVirtualBox   Pointer to the VirtualBox object (grandparent).
  * @param   a_pszName       The name of the extension pack.  This is also the
  *                          name of the subdirector under @a a_pszParentDir
  *                          where the extension pack is installed.
  * @param   a_pszParentDir  The parent directory.
  */
-HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
+HRESULT ExtPack::init(VirtualBox *a_pVirtualBox, const char *a_pszName, const char *a_pszParentDir)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -157,6 +164,7 @@ HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
         /* pszVBoxVersion       = */ "",
         /* pfnFindModule        = */ ExtPack::hlpFindModule,
         /* pfnGetFilePath       = */ ExtPack::hlpGetFilePath,
+        /* pfnRegisterVrde      = */ ExtPack::hlpRegisterVrde,
         /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
     };
 
@@ -182,6 +190,7 @@ HRESULT ExtPack::init(const char *a_pszName, const char *a_pszParentDir)
     m->Hlp.uVBoxInternalRevision    = RTBldCfgRevision();
     m->pThis                        = this;
     m->pReg                         = NULL;
+    m->pVirtualBox                  = a_pVirtualBox;
 
     /*
      * Probe the extension pack (this code is shared with refresh()).
@@ -228,32 +237,35 @@ void ExtPack::uninit()
 
 /**
  * Calls the installed hook.
+ *
+ * @param   a_pVirtualBox       The VirtualBox interface.
  * @remarks Caller holds the extension manager lock.
  */
-void    ExtPack::callInstalledHook(void)
+void    ExtPack::callInstalledHook(IVirtualBox *a_pVirtualBox)
 {
     if (   m->hMainMod != NIL_RTLDRMOD
         && m->pReg->pfnInstalled)
-        m->pReg->pfnInstalled(m->pReg);
+        m->pReg->pfnInstalled(m->pReg, a_pVirtualBox);
 }
 
 /**
  * Calls the uninstall hook and closes the module.
  *
  * @returns S_OK or COM error status with error information.
+ * @param   a_pVirtualBox       The VirtualBox interface.
  * @param   a_fForcedRemoval    When set, we'll ignore complaints from the
  *                              uninstall hook.
  * @remarks The caller holds the manager's write lock.
  */
-HRESULT ExtPack::callUninstallHookAndClose(bool a_fForcedRemoval)
+HRESULT ExtPack::callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fForcedRemoval)
 {
     HRESULT hrc = S_OK;
 
     if (m->hMainMod != NIL_RTLDRMOD)
     {
-        if (m->pReg->pfnUninstall)
+        if (m->pReg->pfnUninstall && !a_fForcedRemoval)
         {
-            int vrc = m->pReg->pfnUninstall(m->pReg);
+            int vrc = m->pReg->pfnUninstall(m->pReg, a_pVirtualBox);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("ExtPack pfnUninstall returned %Rrc for %s\n", vrc, m->Desc.strName.c_str()));
@@ -273,16 +285,30 @@ HRESULT ExtPack::callUninstallHookAndClose(bool a_fForcedRemoval)
 }
 
 /**
+ * Calls the pfnVirtualBoxReady hook.
+ *
+ * @param   a_pVirtualBox       The VirtualBox interface.
+ * @remarks Caller holds the extension manager lock.
+ */
+void ExtPack::callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox)
+{
+    if (   m->hMainMod != NIL_RTLDRMOD
+        && m->pReg->pfnVirtualBoxReady)
+        m->pReg->pfnVirtualBoxReady(m->pReg, a_pVirtualBox);
+}
+
+/**
  * Calls the pfnVMCreate hook.
  *
+ * @param   a_pVirtualBox       The VirtualBox interface.
  * @param   a_pMachine          The machine interface of the new VM.
  * @remarks Caller holds the extension manager lock.
  */
-void ExtPack::callVmCreatedHook(IMachine *a_pMachine)
+void ExtPack::callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine)
 {
     if (   m->hMainMod != NIL_RTLDRMOD
         && m->pReg->pfnVMCreated)
-        m->pReg->pfnVMCreated(m->pReg, a_pMachine);
+        m->pReg->pfnVMCreated(m->pReg, a_pVirtualBox, a_pMachine);
 }
 
 /**
@@ -529,14 +555,15 @@ void ExtPack::probeAndLoad(void)
             if (   m->pReg->u32Version   == VBOXEXTPACKREG_VERSION
                 && m->pReg->u32EndMarker == VBOXEXTPACKREG_VERSION)
             {
-                if (   (!m->pReg->pfnInstalled      || RT_VALID_PTR(m->pReg->pfnInstalled))
-                    && (!m->pReg->pfnUninstall      || RT_VALID_PTR(m->pReg->pfnUninstall))
-                    && (!m->pReg->pfnUnload         || RT_VALID_PTR(m->pReg->pfnUnload))
-                    && (!m->pReg->pfnVMCreated      || RT_VALID_PTR(m->pReg->pfnVMCreated))
-                    && (!m->pReg->pfnVMConfigureVMM || RT_VALID_PTR(m->pReg->pfnVMConfigureVMM))
-                    && (!m->pReg->pfnVMPowerOn      || RT_VALID_PTR(m->pReg->pfnVMPowerOn))
-                    && (!m->pReg->pfnVMPowerOff     || RT_VALID_PTR(m->pReg->pfnVMPowerOff))
-                    && (!m->pReg->pfnQueryObject    || RT_VALID_PTR(m->pReg->pfnQueryObject))
+                if (   (!m->pReg->pfnInstalled       || RT_VALID_PTR(m->pReg->pfnInstalled))
+                    && (!m->pReg->pfnUninstall       || RT_VALID_PTR(m->pReg->pfnUninstall))
+                    && (!m->pReg->pfnVirtualBoxReady || RT_VALID_PTR(m->pReg->pfnVirtualBoxReady))
+                    && (!m->pReg->pfnUnload          || RT_VALID_PTR(m->pReg->pfnUnload))
+                    && (!m->pReg->pfnVMCreated       || RT_VALID_PTR(m->pReg->pfnVMCreated))
+                    && (!m->pReg->pfnVMConfigureVMM  || RT_VALID_PTR(m->pReg->pfnVMConfigureVMM))
+                    && (!m->pReg->pfnVMPowerOn       || RT_VALID_PTR(m->pReg->pfnVMPowerOn))
+                    && (!m->pReg->pfnVMPowerOff      || RT_VALID_PTR(m->pReg->pfnVMPowerOff))
+                    && (!m->pReg->pfnQueryObject     || RT_VALID_PTR(m->pReg->pfnQueryObject))
                     )
                 {
                     /*
@@ -759,6 +786,55 @@ ExtPack::hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *ps
     return vrc;
 }
 
+/*static*/ DECLCALLBACK(int)
+ExtPack::hlpRegisterVrde(PCVBOXEXTPACKHLP pHlp, const char *pszName, bool fSetDefault)
+{
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(m, VERR_INVALID_POINTER);
+    ExtPack *pThis = m->pThis;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pThis->m->pVirtualBox, VERR_WRONG_ORDER);
+
+    /*
+     * Find the given module and register it (will succeed if it's already
+     * registered).
+     */
+/** @todo Might consider redoing this VRDERegistration interface to be an aspect of the extension
+ * pack manager instead of IVirtualBox.  That would make sure we won't have any broke paths and stuff later on. */
+    int vrc = VERR_MODULE_NOT_FOUND;
+#if 0 /** @todo causing lock order asserts. Should execute the above todo I think. */
+    Utf8Str strFound;
+    if (pThis->findModule(pszName, NULL, &strFound, NULL, NULL))
+    {
+        Bstr bstrFound(strFound);
+        HRESULT hrc = pThis->m->pVirtualBox->VRDERegisterLibrary(bstrFound.raw());
+        if (SUCCEEDED(hrc) && fSetDefault)
+        {
+            /*
+             * Is there a default already?
+             */
+            SystemProperties *pSysProps = pThis->m->pVirtualBox->getSystemProperties();
+            Bstr bstrDefaultLib;
+            hrc = pSysProps->COMGETTER(DefaultVRDELibrary)(bstrDefaultLib.asOutParam());
+            if (SUCCEEDED(hrc) && bstrDefaultLib.isEmpty())
+            {
+                bstrDefaultLib = strFound;
+                hrc = pSysProps->COMSETTER(DefaultVRDELibrary)(bstrDefaultLib.raw());
+            }
+        }
+        vrc = Global::vboxStatusCodeFromCOM(hrc);
+    }
+#endif
+    return vrc;
+}
+
 
 
 
@@ -895,12 +971,13 @@ HRESULT ExtPackManager::FinalConstruct()
  * Initializes the extension pack manager.
  *
  * @returns COM status code.
+ * @param   a_pVirtualBox           Pointer to the VirtualBox object.
  * @param   a_pszDropZoneDir        The path to the drop zone directory.
  * @param   a_fCheckDropZone        Whether to check the drop zone for new
  *                                  extensions or not.  Only VBoxSVC does this
  *                                  and then only when wanted.
  */
-HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone)
+HRESULT ExtPackManager::init(VirtualBox *a_pVirtualBox, const char *a_pszDropZoneDir, bool a_fCheckDropZone)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -927,6 +1004,7 @@ HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone
     m->strBaseDir           = szBaseDir;
     m->strCertificatDirPath = szCertificatDir;
     m->strDropZoneDir       = a_pszDropZoneDir;
+    m->pVirtualBox          = a_pVirtualBox;
 
     /*
      * Go looking for extensions.  The RTDirOpen may fail if nothing has been
@@ -961,7 +1039,7 @@ HRESULT ExtPackManager::init(const char *a_pszDropZoneDir, bool a_fCheckDropZone
                 ComObjPtr<ExtPack> NewExtPack;
                 HRESULT hrc2 = NewExtPack.createObject();
                 if (SUCCEEDED(hrc2))
-                    hrc2 = NewExtPack->init(Entry.szName, szBaseDir);
+                    hrc2 = NewExtPack->init(m->pVirtualBox, Entry.szName, szBaseDir);
                 if (SUCCEEDED(hrc2))
                     m->llInstalledExtPacks.push_back(NewExtPack);
                 else if (SUCCEEDED(rc))
@@ -1109,7 +1187,7 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                                 if (SUCCEEDED(hrc))
                                 {
                                     LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
-                                    pExtPack->callInstalledHook();
+                                    pExtPack->callInstalledHook(m->pVirtualBox);
                                 }
                             }
                             else
@@ -1175,7 +1253,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
                 /*
                  * Call the uninstall hook and unload the main dll.
                  */
-                hrc = pExtPack->callUninstallHookAndClose(a_fForcedRemoval != FALSE);
+                hrc = pExtPack->callUninstallHookAndClose(m->pVirtualBox, a_fForcedRemoval != FALSE);
                 if (SUCCEEDED(hrc))
                 {
                     /*
@@ -1573,7 +1651,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
             ComObjPtr<ExtPack> NewExtPack;
             hrc = NewExtPack.createObject();
             if (SUCCEEDED(hrc))
-                hrc = NewExtPack->init(a_pszName, m->strBaseDir.c_str());
+                hrc = NewExtPack->init(m->pVirtualBox, a_pszName, m->strBaseDir.c_str());
             if (SUCCEEDED(hrc))
             {
                 m->llInstalledExtPacks.push_back(NewExtPack);
@@ -1690,6 +1768,23 @@ void ExtPackManager::processDropZone(void)
 
 
 /**
+ * Calls the pfnVirtualBoxReady hook for all working extension packs.
+ */
+void ExtPackManager::callAllVirtualBoxReadyHooks(void)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (FAILED(hrc))
+        return;
+    AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+         it != m->llInstalledExtPacks.end();
+         it++)
+        (*it)->callVirtualBoxReadyHook(m->pVirtualBox);
+}
+
+/**
  * Calls the pfnVMCreated hook for all working extension packs.
  *
  * @param   a_pMachine          The machine interface of the new VM.
@@ -1705,7 +1800,7 @@ void ExtPackManager::callAllVmCreatedHooks(IMachine *a_pMachine)
     for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
          it != m->llInstalledExtPacks.end();
          it++)
-        (*it)->callVmCreatedHook(a_pMachine);
+        (*it)->callVmCreatedHook(m->pVirtualBox, a_pMachine);
 }
 
 /**

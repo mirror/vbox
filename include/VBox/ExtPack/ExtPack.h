@@ -28,13 +28,19 @@
 
 #include <VBox/types.h>
 
-#if defined(__cplusplus)
-class IConsole;
-class IMachine;
+/** @def VBOXEXTPACK_IF_CS
+ * Selects 'class' on 'struct' for interface references.
+ * @param I         The interface name
+ */
+#if defined(__cplusplus) && !defined(RT_OS_WINDOWS)
+# define VBOXEXTPACK_IF_CS(I)   class I
 #else
-typedef struct IConsole IConsole;
-typedef struct IMachine IMachine;
+# define VBOXEXTPACK_IF_CS(I)   struct I
 #endif
+
+VBOXEXTPACK_IF_CS(IConsole);
+VBOXEXTPACK_IF_CS(IMachine);
+VBOXEXTPACK_IF_CS(IVirtualBox);
 
 
 /** Pointer to const helpers passed to the VBoxExtPackRegister() call. */
@@ -91,6 +97,20 @@ typedef struct VBOXEXTPACKHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnGetFilePath,(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath));
 
+    /**
+     * Registers a VRDE library (IVirtualBox::VRDERegisterLibrary wrapper).
+     *
+     * @returns VBox status code.
+     * @param   pHlp            Pointer to this helper structure.
+     * @param   pszName         The module base name.  This will be found using
+     *                          the pfnFindModule algorithm.
+     * @param   fSetDefault     Whether to make it default if no other default
+     *                          is set.
+     *
+     * @remarks This helper should be called from pfnVirtualBoxReady as it may
+     *          cause trouble when called from pfnInstalled.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRegisterVrde,(PCVBOXEXTPACKHLP pHlp, const char *pszName, bool fSetDefault));
 
     /** End of structure marker (VBOXEXTPACKHLP_VERSION). */
     uint32_t                    u32EndMarker;
@@ -118,8 +138,9 @@ typedef struct VBOXEXTPACKREG
      * This is called in the context of the per-user service (VBoxSVC).
      *
      * @param   pThis       Pointer to this structure.
+     * @param   pVirtualBox The VirtualBox interface.
      */
-    DECLCALLBACKMEMBER(void, pfnInstalled)(PCVBOXEXTPACKREG pThis);
+    DECLCALLBACKMEMBER(void, pfnInstalled)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
 
     /**
      * Hook for cleaning up before the extension pack is uninstalled.
@@ -128,8 +149,20 @@ typedef struct VBOXEXTPACKREG
      *
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
+     * @param   pVirtualBox The VirtualBox interface.
      */
-    DECLCALLBACKMEMBER(int, pfnUninstall)(PCVBOXEXTPACKREG pThis);
+    DECLCALLBACKMEMBER(int, pfnUninstall)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+
+    /**
+     * Hook for doing work after the VirtualBox object is ready.
+     *
+     * This is called in the context of the per-user service (VBoxSVC).  There
+     * will not be any similar call from the VM process.
+     *
+     * @param   pThis       Pointer to this structure.
+     * @param   pVirtualBox The VirtualBox interface.
+     */
+    DECLCALLBACKMEMBER(void, pfnVirtualBoxReady)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
 
     /**
      * Hook for doing work before unloading.
@@ -152,9 +185,11 @@ typedef struct VBOXEXTPACKREG
      *
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
+     * @param   pVirtualBox The VirtualBox interface.
      * @param   pMachine    The machine interface.
      */
-    DECLCALLBACKMEMBER(int, pfnVMCreated)(PCVBOXEXTPACKREG pThis, IMachine *pMachine);
+    DECLCALLBACKMEMBER(int, pfnVMCreated)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox,
+                                          VBOXEXTPACK_IF_CS(IMachine) *pMachine);
 
     /**
      * Hook for configuring the VMM for a VM.
@@ -166,7 +201,7 @@ typedef struct VBOXEXTPACKREG
      * @param   pConsole    The console interface.
      * @param   pVM         The VM handle.
      */
-    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
+    DECLCALLBACKMEMBER(int, pfnVMConfigureVMM)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
 
     /**
      * Hook for doing work right before powering on the VM.
@@ -178,7 +213,7 @@ typedef struct VBOXEXTPACKREG
      * @param   pConsole    The console interface.
      * @param   pVM         The VM handle.
      */
-    DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
+    DECLCALLBACKMEMBER(int, pfnVMPowerOn)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
 
     /**
      * Hook for doing work after powering on the VM.
@@ -189,7 +224,7 @@ typedef struct VBOXEXTPACKREG
      * @param   pConsole    The console interface.
      * @param   pVM         The VM handle.  Can be NULL.
      */
-    DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
+    DECLCALLBACKMEMBER(void, pfnVMPowerOff)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole, PVM pVM);
 
     /**
      * Query the IUnknown interface to an object in the main module.

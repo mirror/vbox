@@ -47,7 +47,7 @@ public:
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     init(const char *a_pszName, const char *a_pszParentDir);
+    HRESULT     init(VirtualBox *a_pVirtualBox, const char *a_pszName, const char *a_pszParentDir);
     void        uninit();
     /** @}  */
 
@@ -65,9 +65,10 @@ public:
 
     /** @name Internal interfaces used by ExtPackManager.
      * @{ */
-    void        callInstalledHook(void);
-    HRESULT     callUninstallHookAndClose(bool a_fForcedRemoval);
-    void        callVmCreatedHook(IMachine *a_pMachine);
+    void        callInstalledHook(IVirtualBox *a_pVirtualBox);
+    HRESULT     callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fForcedRemoval);
+    void        callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox);
+    void        callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine);
     int         callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM);
     int         callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM);
     void        callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM);
@@ -88,6 +89,7 @@ protected:
     static DECLCALLBACK(int)    hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
                                               char *pszFound, size_t cbFound, bool *pfNative);
     static DECLCALLBACK(int)    hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath);
+    static DECLCALLBACK(int)    hlpRegisterVrde(PCVBOXEXTPACKHLP pHlp, const char *pszName, bool fSetDefault);
     /** @}  */
 
 private:
@@ -120,7 +122,7 @@ class ATL_NO_VTABLE ExtPackManager :
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     init(const char *a_pszDropZonePath, bool a_fCheckDropZone);
+    HRESULT     init(VirtualBox *a_pVirtualBox, const char *a_pszDropZonePath, bool a_fCheckDropZone);
     void        uninit();
     /** @}  */
 
@@ -137,6 +139,7 @@ class ATL_NO_VTABLE ExtPackManager :
     /** @name Internal interfaces used by other Main classes.
      * @{ */
     void        processDropZone(void);
+    void        callAllVirtualBoxReadyHooks(void);
     void        callAllVmCreatedHooks(IMachine *a_pMachine);
     int         callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM);
     int         callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM);

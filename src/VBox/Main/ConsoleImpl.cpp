@@ -531,7 +531,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
 #ifdef VBOX_WITH_EXTPACK
     unconst(mptrExtPackManager).createObject();
-    rc = mptrExtPackManager->init(NULL, false); /* Drop zone handling is VBoxSVC only. */
+    rc = mptrExtPackManager->init(NULL, NULL, false); /* Drop zone handling is VBoxSVC only. */
     AssertComRCReturnRC(rc);
 #endif
 
