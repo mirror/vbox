@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- * MS COM / XPCOM Abstraction Layer:
- * Guid class declaration
+ * MS COM / XPCOM Abstraction Layer - Guid class declaration.
  */
 
 /*
@@ -37,13 +35,14 @@
 # define __STDC_CONSTANT_MACROS
 #endif
 
-#if defined (VBOX_WITH_XPCOM)
-#include <nsMemory.h>
+#if defined(VBOX_WITH_XPCOM)
+# include <nsMemory.h>
 #endif
 
 #include "VBox/com/string.h"
 
 #include <iprt/uuid.h>
+#include <iprt/err.h>
 
 namespace com
 {
@@ -58,165 +57,214 @@ public:
 
     Guid()
     {
-        ::RTUuidClear(&uuid);
+        ::RTUuidClear(&mUuid);
         refresh();
     }
 
     Guid(const Guid &that)
     {
-        uuid = that.uuid;
+        mUuid = that.mUuid;
         refresh();
     }
 
     Guid(const RTUUID &that)
     {
-        uuid = that;
+        mUuid = that;
         refresh();
     }
 
     Guid(const GUID &that)
     {
         AssertCompileSize(GUID, sizeof(RTUUID));
-        ::memcpy(&uuid, &that, sizeof(GUID));
+        ::memcpy(&mUuid, &that, sizeof(GUID));
         refresh();
     }
 
+    /**
+     * Construct a GUID from a string.
+     *
+     * Should the string be invalid, the object will be set to the null GUID
+     * (isEmpty() == true).
+     *
+     * @param   that        The UUID string.  We feed this to RTUuidFromStr(),
+     *                      so check it out for the exact format.
+     */
     Guid(const char *that)
     {
-        ::RTUuidClear(&uuid);
-        ::RTUuidFromStr(&uuid, that);
+        int rc = ::RTUuidFromStr(&mUuid, that);
+        if (RT_FAILURE(rc))
+            ::RTUuidClear(&mUuid);
         refresh();
     }
 
+    /**
+     * Construct a GUID from a BSTR.
+     *
+     * Should the string be empty or invalid, the object will be set to the
+     * null GUID (isEmpty() == true).
+     *
+     * @param   that        The UUID BSTR.  We feed this to RTUuidFromUtf16(),
+     *                      so check it out for the exact format.
+     */
     Guid(const Bstr &that)
     {
-        ::RTUuidClear(&uuid);
-        if (!that.isEmpty())
-           ::RTUuidFromUtf16(&uuid, that.raw());
+        int rc = !that.isEmpty()
+               ? ::RTUuidFromUtf16(&mUuid, that.raw())
+               : VERR_INVALID_UUID_FORMAT;
+        if (RT_FAILURE(rc))
+            ::RTUuidClear(&mUuid);
         refresh();
     }
 
     Guid& operator=(const Guid &that)
     {
-        ::memcpy(&uuid, &that.uuid, sizeof (RTUUID));
+        ::memcpy(&mUuid, &that.mUuid, sizeof (RTUUID));
         refresh();
         return *this;
     }
     Guid& operator=(const GUID &guid)
     {
-        ::memcpy(&uuid, &guid, sizeof (GUID));
+        ::memcpy(&mUuid, &guid, sizeof (GUID));
         refresh();
         return *this;
     }
     Guid& operator=(const RTUUID &guid)
     {
-        ::memcpy(&uuid, &guid, sizeof (RTUUID));
+        ::memcpy(&mUuid, &guid, sizeof (RTUUID));
         refresh();
         return *this;
     }
     Guid& operator=(const char *str)
     {
-        ::RTUuidFromStr(&uuid, str);
+        int rc = ::RTUuidFromStr(&mUuid, str);
+        if (RT_FAILURE(rc))
+            ::RTUuidClear(&mUuid);
         refresh();
         return *this;
     }
 
     void create()
     {
-        ::RTUuidCreate(&uuid);
+        ::RTUuidCreate(&mUuid);
         refresh();
     }
     void clear()
     {
-        ::RTUuidClear(&uuid);
+        ::RTUuidClear(&mUuid);
         refresh();
     }
 
+    /**
+     * Convert the GUID to a string.
+     *
+     * @returns String object containing the formatted GUID.
+     * @throws  std::bad_alloc
+     */
     Utf8Str toString() const
     {
         char buf[RTUUID_STR_LENGTH];
-        ::RTUuidToStr(&uuid, buf, RTUUID_STR_LENGTH);
+        ::RTUuidToStr(&mUuid, buf, RTUUID_STR_LENGTH);
         return Utf8Str(buf);
     }
 
     /**
      * Like toString, but encloses the returned string in curly brackets.
-     * @return
+     *
+     * @returns String object containing the formatted GUID in curly brackets.
+     * @throws  std::bad_alloc
      */
     Utf8Str toStringCurly() const
     {
         char buf[RTUUID_STR_LENGTH + 2] = "{";
-        ::RTUuidToStr(&uuid, buf + 1, RTUUID_STR_LENGTH);
+        ::RTUuidToStr(&mUuid, buf + 1, RTUUID_STR_LENGTH);
         buf[sizeof(buf) - 2] = '}';
         buf[sizeof(buf) - 1] = '\0';
         return Utf8Str(buf);
     }
 
+    /**
+     * Convert the GUID to a string.
+     *
+     * @returns Bstr object containing the formatted GUID.
+     * @throws  std::bad_alloc
+     */
     Bstr toUtf16() const
     {
         if (isEmpty())
           return Bstr();
 
         RTUTF16 buf[RTUUID_STR_LENGTH];
-        ::RTUuidToUtf16(&uuid, buf, RTUUID_STR_LENGTH);
+        ::RTUuidToUtf16(&mUuid, buf, RTUUID_STR_LENGTH);
         return Bstr(buf);
     }
 
     bool isEmpty() const
     {
-        return ::RTUuidIsNull (&uuid);
+        return ::RTUuidIsNull(&mUuid);
     }
 
-    bool operator==(const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) == 0; }
-    bool operator==(const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) == 0; }
+    bool isNotEmpty() const
+    {
+        return !::RTUuidIsNull(&mUuid);
+    }
+
+    bool operator==(const Guid &that) const { return ::RTUuidCompare(&mUuid, &that.mUuid)    == 0; }
+    bool operator==(const GUID &guid) const { return ::RTUuidCompare(&mUuid, (PRTUUID)&guid) == 0; }
     bool operator!=(const Guid &that) const { return !operator==(that); }
     bool operator!=(const GUID &guid) const { return !operator==(guid); }
-    bool operator<(const Guid &that) const { return ::RTUuidCompare (&uuid, &that.uuid) < 0; }
-    bool operator<(const GUID &guid) const { return ::RTUuidCompare (&uuid, (PRTUUID) &guid) < 0; }
+    bool operator<( const Guid &that) const { return ::RTUuidCompare(&mUuid, &that.mUuid)    < 0; }
+    bool operator<( const GUID &guid) const { return ::RTUuidCompare(&mUuid, (PRTUUID)&guid) < 0; }
 
-    /* to directly copy the contents to a GUID, or for passing it as
-     * an input parameter of type (const GUID *), the compiler converts */
+    /**
+     * To directly copy the contents to a GUID, or for passing it as an input
+     * parameter of type (const GUID *), the compiler converts. */
     const GUID &ref() const
     {
-        return *(const GUID *)&uuid;
+        return *(const GUID *)&mUuid;
     }
 
-    /* to pass instances to printf-like functions */
+    /**
+     * To pass instances to printf-like functions.
+     */
     PCRTUUID raw() const
     {
-        return (PCRTUUID)&uuid;
+        return (PCRTUUID)&mUuid;
     }
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
-    /* to assign instances to OUT_GUID parameters from within the
-     *  interface method */
-    const Guid &cloneTo (GUID *pguid) const
+    /** To assign instances to OUT_GUID parameters from within the interface
+     * method. */
+    const Guid &cloneTo(GUID *pguid) const
     {
         if (pguid)
-            ::memcpy(pguid, &uuid, sizeof(GUID));
+            ::memcpy(pguid, &mUuid, sizeof(GUID));
         return *this;
     }
 
-    /* to pass instances as OUT_GUID parameters to interface methods */
+    /** To pass instances as OUT_GUID parameters to interface methods. */
     GUID *asOutParam()
     {
-        return (GUID*)&uuid;
+        return (GUID *)&mUuid;
     }
 
 #else
 
-    /* to assign instances to OUT_GUID parameters from within the
+    /** To assign instances to OUT_GUID parameters from within the
      * interface method */
-    const Guid &cloneTo (nsID **ppguid) const
+    const Guid &cloneTo(nsID **ppGuid) const
     {
-        if (ppguid) { *ppguid = (nsID *) nsMemory::Clone (&uuid, sizeof (nsID)); }
+        if (ppGuid)
+            *ppGuid = (nsID *)nsMemory::Clone(&mUuid, sizeof(nsID));
         return *this;
     }
 
-    // internal helper class for asOutParam(); this takes a GUID refrence
-    // in the constructor and copies the uuid from the method to that instance
-    // in its destructor
+    /**
+     * Internal helper class for asOutParam().
+     *
+     * This takes a GUID refrence in the constructor and copies the mUuid from
+     * the method to that instance in its destructor.
+     */
     class GuidOutParam
     {
         GuidOutParam(Guid &guid)
@@ -244,7 +292,7 @@ public:
         friend class Guid;
     };
 
-    /* to pass instances as OUT_GUID parameters to interface methods */
+    /** to pass instances as OUT_GUID parameters to interface methods */
     GuidOutParam asOutParam() { return GuidOutParam(*this); }
 
 #endif
@@ -261,40 +309,45 @@ public:
     static const Guid Empty;
 
 private:
-    // in debug code, refresh the UUID string representatino for
-    // debugging; must be called every time the internal uuid
-    // changes; compiles to nothing in release code
+    /**
+     * Refresh the debug-only UUID string.
+     *
+     * In debug code, refresh the UUID string representatino for debugging;
+     * must be called every time the internal uuid changes; compiles to nothing
+     * in release code.
+     */
     inline void refresh()
     {
 #ifdef DEBUG
-        ::RTUuidToStr(&uuid, szUUID, RTUUID_STR_LENGTH);
-        pcszUUID = szUUID;
+        ::RTUuidToStr(&mUuid, mszUuid, RTUUID_STR_LENGTH);
+        m_pcszUUID = mszUuid;
 #endif
     }
 
-    RTUUID uuid;
+    /** The UUID. */
+    RTUUID mUuid;
 
 #ifdef DEBUG
-    // in debug builds, have a Utf8Str representation of the UUID so we can look
-    // at it in the debugger more easily
-    char szUUID[RTUUID_STR_LENGTH];
-    const char *pcszUUID;
+    /** String representation of mUuid for printing in the debugger. */
+    char mszUuid[RTUUID_STR_LENGTH];
+    /** Another string variant for the debugger, points to szUUID. */
+    const char *m_pcszUUID;
 #endif
 };
 
 inline Bstr asGuidStr(const Bstr& str)
 {
    Guid guid(str);
-   return  guid.isEmpty() ? Bstr() : guid.toUtf16();
+   return guid.isEmpty() ? Bstr() : guid.toUtf16();
 }
 
 inline bool isValidGuid(const Bstr& str)
 {
    Guid guid(str);
-   return  !guid.isEmpty();
+   return !guid.isEmpty();
 }
 
 } /* namespace com */
 
-#endif /* ___VBox_com_Guid_h */
+#endif /* !___VBox_com_Guid_h */
 

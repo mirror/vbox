@@ -30,7 +30,8 @@ cpp_features_hdrs := \
 r3_cpp_hdrs := \
 	VBox/dbggui.h \
 	VBox/settings.h \
-	$(wildcard iprt/*_cpp.h iprt/cpp/*.h )
+	VBox/com/Guid.h \
+	$(wildcard iprt/*_cpp.h iprt/cpp/*.h VBox/com/*.h )
 
 # Ring-3 only headers.
 r3_only_hdrs := \
@@ -41,6 +42,7 @@ r3_only_hdrs := \
 	VBox/dbus.h \
 	VBox/uvm.h \
 	VBox/vscsi.h \
+	$(wildcard VBox/ExtPack/*.h ) \
 	iprt/alloca.h \
 	iprt/tcp.h \
 	iprt/localipc.h \
@@ -63,7 +65,7 @@ hdrs := $(filter-out \
 	\
 	$(foreach os,$(filter-out $(KBUILD_TARGET),$(KBUILD_OSES)),iprt/$(os)/% VBox/$(os)/%) \
 	$(xforeach arch,$(KBUILD_ARCHES),iprt/nocrt/$(arch)/%) \
-	, $(wildcard VBox/*.h iprt/*.h iprt/*/*.h))
+	, $(wildcard VBox/*.h VBox/*/*.h iprt/*.h iprt/*/*.h))
 
 # ring-3, ring-0 and raw-mode context specific exclusions.
 hdrs.r3 := $(filter-out , $(hdrs))
@@ -108,18 +110,18 @@ include $(KBUILD_PATH)/footer.kmk
 
 define def_hdr
 $(eval flatname := $(subst /,_,$(basename $(hdr))))
-$$(PATH_TARGET)/$(flatname)-cpp.cpp: $$(PATH_TARGET)/
+$$(PATH_TARGET)/$(flatname)-cpp.cpp: $(VBOX_ROOT_INCLUDE_MAKEFILE) | $$(PATH_TARGET)/
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
-
-$$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE)  | $$(PATH_TARGET)/
-ifn1of ($(hdr), $(r3_cpp_hdrs) $(cpp_features_hdrs) )
-	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
-else
-	$(QUIET)$$(APPEND) -t -n $$@ 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
-endif
 
 $(subst .h,.o,$(notdir $(hdr)))::
+if1of ($(hdr), $(r3_cpp_hdrs) $(cpp_features_hdrs))
+	$$(MAKE) -f $(MAKEFILE) $(flatname)-cpp.o
+else
 	$$(MAKE) -f $(MAKEFILE) $(flatname)-c.o $(flatname)-cpp.o
+
+$$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE) | $$(PATH_TARGET)/
+	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
+endif
 
 endef
 
