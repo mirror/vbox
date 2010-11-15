@@ -95,10 +95,7 @@ private slots:
     void valueChangedRAM (int aVal);
     void textChangedRAM (const QString &aText);
 
-    void moveBootItemUp();
-    void moveBootItemDown();
-    void onCurrentBootItemChanged (QTreeWidgetItem *aItem,
-                                   QTreeWidgetItem *aPrev = 0);
+    void onCurrentBootItemChanged (int);
 
     void valueChangedCPU (int aVal);
     void textChangedCPU (const QString &aText);

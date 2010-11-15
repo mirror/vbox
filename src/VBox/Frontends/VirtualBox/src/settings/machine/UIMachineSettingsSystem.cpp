@@ -27,8 +27,6 @@
 #include <iprt/cdefs.h>
 #include <QHeaderView>
 
-#define ITEM_TYPE_ROLE Qt::UserRole + 1
-
 UIMachineSettingsSystem::UIMachineSettingsSystem()
     : mValidator(0)
     , mMinGuestCPU(0), mMaxGuestCPU(0)
@@ -77,11 +75,8 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
      * right size. */
     for (int i = 0; i < m_possibleBootItems.size(); ++i)
     {
-        QString name = vboxGlobal().toString(m_possibleBootItems[i]);
-        QTreeWidgetItem *pItem = new QTreeWidgetItem(QStringList(name));
-        pItem->setData(0, ITEM_TYPE_ROLE, QVariant(m_possibleBootItems[i]));
-        pItem->setCheckState(0, Qt::Unchecked);
-        mTwBootOrder->addTopLevelItem(pItem);
+        QListWidgetItem *pItem = new UIBootTableItem(m_possibleBootItems[i]);
+        mTwBootOrder->addItem(pItem);
     }
 
     /* Setup validators */
@@ -95,19 +90,11 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
              this, SLOT (textChangedRAM (const QString&)));
 
     connect (mTbBootItemUp, SIGNAL (clicked()),
-             this, SLOT (moveBootItemUp()));
+             mTwBootOrder, SLOT(sltMoveItemUp()));
     connect (mTbBootItemDown, SIGNAL (clicked()),
-             this, SLOT (moveBootItemDown()));
-    connect (mTwBootOrder, SIGNAL (moveItemUp()),
-             this, SLOT (moveBootItemUp()));
-    connect (mTwBootOrder, SIGNAL (moveItemDown()),
-             this, SLOT (moveBootItemDown()));
-    connect (mTwBootOrder, SIGNAL (itemToggled()),
-             this, SIGNAL (tableChanged()));
-    connect (mTwBootOrder, SIGNAL (currentItemChanged (QTreeWidgetItem*,
-                                                       QTreeWidgetItem*)),
-             this, SLOT (onCurrentBootItemChanged (QTreeWidgetItem*,
-                                                   QTreeWidgetItem*)));
+             mTwBootOrder, SLOT(sltMoveItemDown()));
+    connect (mTwBootOrder, SIGNAL (sigRowChanged(int)),
+             this, SLOT (onCurrentBootItemChanged (int)));
 
     connect (mSlCPU, SIGNAL (valueChanged (int)),
              this, SLOT (valueChangedCPU (int)));
@@ -237,11 +224,9 @@ void UIMachineSettingsSystem::getFromCache()
     for (int i = 0; i < m_cache.m_bootItems.size(); ++i)
     {
         UIBootItemData data = m_cache.m_bootItems[i];
-        QString name = vboxGlobal().toString(data.m_type);
-        QTreeWidgetItem *pItem = new QTreeWidgetItem(QStringList(name));
-        pItem->setData(0, ITEM_TYPE_ROLE, QVariant(data.m_type));
-        pItem->setCheckState(0, data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
-        mTwBootOrder->addTopLevelItem(pItem);
+        QListWidgetItem *pItem = new UIBootTableItem(data.m_type);
+        pItem->setCheckState(data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
+        mTwBootOrder->addItem(pItem);
     }
     mCbApic->setChecked(m_cache.m_fIoApicEnabled);
     mCbEFI->setChecked(m_cache.m_fEFIEnabled);
@@ -272,12 +257,12 @@ void UIMachineSettingsSystem::putToCache()
 {
     /* Gather internal variables data from QWidget(s): */
     m_cache.m_bootItems.clear();
-    for (int i = 0; i < mTwBootOrder->topLevelItemCount(); ++i)
+    for (int i = 0; i < mTwBootOrder->count(); ++i)
     {
-        QTreeWidgetItem *pItem = mTwBootOrder->topLevelItem(i);
+        QListWidgetItem *pItem = mTwBootOrder->item(i);
         UIBootItemData data;
-        data.m_type = (KDeviceType)pItem->data(0, ITEM_TYPE_ROLE).toInt();
-        data.m_fEnabled = pItem->checkState(0) == Qt::Checked;
+        data.m_type = static_cast<UIBootTableItem*>(pItem)->type();
+        data.m_fEnabled = pItem->checkState() == Qt::Checked;
         m_cache.m_bootItems << data;
     }
     m_cache.m_fIoApicEnabled = mCbApic->isChecked() || mSlCPU->value() > 1 ||
@@ -449,19 +434,6 @@ void UIMachineSettingsSystem::retranslateUi()
     /* Translate uic generated strings */
     Ui::UIMachineSettingsSystem::retranslateUi (this);
 
-    /* Adjust the boot order tree widget */
-    mTwBootOrder->header()->setResizeMode (QHeaderView::ResizeToContents);
-    mTwBootOrder->resizeColumnToContents (0);
-    mTwBootOrder->updateGeometry();
-    /* Retranslate the boot order items */
-    QTreeWidgetItemIterator it (mTwBootOrder);
-    while (*it)
-    {
-        QTreeWidgetItem *item = (*it);
-        item->setText (0, vboxGlobal().toString (
-             static_cast <KDeviceType> (item->data (0, ITEM_TYPE_ROLE).toInt())));
-        ++ it;
-    }
     /* Readjust the tree widget items size */
     adjustBootOrderTWSize();
 
@@ -486,45 +458,10 @@ void UIMachineSettingsSystem::textChangedRAM (const QString &aText)
     mSlMemory->setValue (aText.toInt());
 }
 
-void UIMachineSettingsSystem::moveBootItemUp()
+void UIMachineSettingsSystem::onCurrentBootItemChanged (int i)
 {
-    QTreeWidgetItem *item = mTwBootOrder->currentItem();
-    Assert (item);
-    if (!mTwBootOrder->itemAbove (item))
-        return;
-
-    int index = mTwBootOrder->indexOfTopLevelItem (item);
-    QTreeWidgetItem *takenItem = mTwBootOrder->takeTopLevelItem (index);
-    Assert (takenItem == item);
-
-    mTwBootOrder->insertTopLevelItem (index - 1, takenItem);
-    mTwBootOrder->setCurrentItem (item);
-
-    emit tableChanged();
-}
-
-void UIMachineSettingsSystem::moveBootItemDown()
-{
-    QTreeWidgetItem *item = mTwBootOrder->currentItem();
-    Assert (item);
-    if (!mTwBootOrder->itemBelow (item))
-        return;
-
-    int index = mTwBootOrder->indexOfTopLevelItem (item);
-    QTreeWidgetItem *takenItem = mTwBootOrder->takeTopLevelItem (index);
-    Assert (takenItem == item);
-
-    mTwBootOrder->insertTopLevelItem (index + 1, takenItem);
-    mTwBootOrder->setCurrentItem (item);
-
-    emit tableChanged();
-}
-
-void UIMachineSettingsSystem::onCurrentBootItemChanged (QTreeWidgetItem *aItem,
-                                                     QTreeWidgetItem *)
-{
-    bool upEnabled   = aItem && mTwBootOrder->itemAbove (aItem);
-    bool downEnabled = aItem && mTwBootOrder->itemBelow (aItem);
+    bool upEnabled   = i > 0;
+    bool downEnabled = i < mTwBootOrder->count() - 1;
     if ((mTbBootItemUp->hasFocus() && !upEnabled) ||
         (mTbBootItemDown->hasFocus() && !downEnabled))
         mTwBootOrder->setFocus();
@@ -534,26 +471,7 @@ void UIMachineSettingsSystem::onCurrentBootItemChanged (QTreeWidgetItem *aItem,
 
 void UIMachineSettingsSystem::adjustBootOrderTWSize()
 {
-    /* Calculate the optimal size of the tree widget & set it as fixed
-     * size. */
-
-    QAbstractItemView *iv = qobject_cast <QAbstractItemView*> (mTwBootOrder);
-
-    int h = 2 * mTwBootOrder->frameWidth();
-    int w = h;
-#if QT_VERSION < 0x040700
-# ifdef Q_WS_MAC
-    int left, top, right, bottom;
-    mTwBootOrder->getContentsMargins (&left, &top, &right, &bottom);
-    h += top + bottom;
-    w += left + right;
-# else /* Q_WS_MAC */
-    w += 4;
-# endif /* !Q_WS_MAC */
-#endif /* QT_VERSION < 0x040700 */
-    mTwBootOrder->setFixedSize(
-        iv->sizeHintForColumn(0) + w,
-        iv->sizeHintForRow(0) * mTwBootOrder->topLevelItemCount() + h);
+    mTwBootOrder->adjustSizeToFitContent();
 
     /* Update the layout system */
     if (mTabMotherboard->layout())
@@ -590,9 +508,9 @@ bool UIMachineSettingsSystem::eventFilter (QObject *aObject, QEvent *aEvent)
             if (widget == mTwBootOrder)
             {
                 if (!mTwBootOrder->currentItem())
-                    mTwBootOrder->setCurrentItem (mTwBootOrder->topLevelItem (0));
+                    mTwBootOrder->setCurrentItem (mTwBootOrder->item (0));
                 else
-                    onCurrentBootItemChanged (mTwBootOrder->currentItem());
+                    onCurrentBootItemChanged (mTwBootOrder->currentRow());
                 mTwBootOrder->currentItem()->setSelected (true);
             }
             else if (widget != mTbBootItemUp && widget != mTbBootItemDown)
