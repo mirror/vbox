@@ -309,6 +309,19 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define ICH6_HDA_REG_SD6FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 60) /* 0x150 */
 #define ICH6_HDA_REG_SD7FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 70) /* 0x170 */
 
+/*
+ * ICH6 datasheet defines limits for FIFOS registers (18.2.39)
+ * formula: size - 1
+ * Other values not listed are not supported.
+ */
+#define HDA_SDONFIFO_16B  (0xF) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_32B  (0x1F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_64B  (0x3F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_128B (0x7F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_192B (0xBF) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_256B (0xFF) /* 20-, 24-bit Output Streams */
+#define HDA_SDINFIFO_120B (0x77) /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
+#define HDA_SDINFIFO_160B (0x9F) /* 20-, 24-bit Input Streams Streams */
 #define SDFIFOS(pState, num) HDA_REG((pState), SD(FIFOS, num))
 
 #define ICH6_HDA_REG_SD0FMT     39 /* 0x92 */
@@ -438,6 +451,7 @@ DECLCALLBACK(int)hdaRegReadSDCTL(INTELHDLinkState* pState, uint32_t offset, uint
 
 DECLCALLBACK(int)hdaRegWriteSDSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteSDLVI(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int)hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteSDBDPL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteSDBDPU(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteBase(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
@@ -516,7 +530,7 @@ const static struct stIchIntelHDRegMap
     { 0x00088, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "ISD0CBL"  , "ISD0 Cyclic Buffer Length" },
     { 0x0008C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "ISD0LVI"  , "ISD0 Last Valid Index" },
     { 0x0008E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "ISD0FIFOW", "ISD0 FIFO Watermark" },
-    { 0x00090, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "ISD0FIFOS", "ISD0 FIFO Size" },
+    { 0x00090, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16          , "ISD0FIFOS", "ISD0 FIFO Size" },
     { 0x00092, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "ISD0FMT"  , "ISD0 Format" },
     { 0x00098, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "ISD0BDPL" , "ISD0 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x0009C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "ISD0BDPU" , "ISD0 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -527,7 +541,7 @@ const static struct stIchIntelHDRegMap
     { 0x000A8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "ISD1CBL"  , "ISD1 Cyclic Buffer Length" },
     { 0x000AC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "ISD1LVI"  , "ISD1 Last Valid Index" },
     { 0x000AE, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "ISD1FIFOW", "ISD1 FIFO Watermark" },
-    { 0x000B0, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "ISD1FIFOS", "ISD1 FIFO Size" },
+    { 0x000B0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16          , "ISD1FIFOS", "ISD1 FIFO Size" },
     { 0x000B2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "ISD1FMT"  , "ISD1 Format" },
     { 0x000B8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "ISD1BDPL" , "ISD1 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x000BC, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "ISD1BDPU" , "ISD1 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -538,7 +552,7 @@ const static struct stIchIntelHDRegMap
     { 0x000C8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "ISD2CBL"  , "ISD2 Cyclic Buffer Length" },
     { 0x000CC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "ISD2LVI"  , "ISD2 Last Valid Index" },
     { 0x000CE, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "ISD2FIFOW", "ISD2 FIFO Watermark" },
-    { 0x000D0, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "ISD2FIFOS", "ISD2 FIFO Size" },
+    { 0x000D0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16          , "ISD2FIFOS", "ISD2 FIFO Size" },
     { 0x000D2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "ISD2FMT"  , "ISD2 Format" },
     { 0x000D8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "ISD2BDPL" , "ISD2 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x000DC, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "ISD2BDPU" , "ISD2 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -549,7 +563,7 @@ const static struct stIchIntelHDRegMap
     { 0x000E8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "ISD3CBL"  , "ISD3 Cyclic Buffer Length" },
     { 0x000EC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "ISD3LVI"  , "ISD3 Last Valid Index" },
     { 0x000EE, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "ISD3FIFOW", "ISD3 FIFO Watermark" },
-    { 0x000F0, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "ISD3FIFOS", "ISD3 FIFO Size" },
+    { 0x000F0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16          , "ISD3FIFOS", "ISD3 FIFO Size" },
     { 0x000F2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "ISD3FMT"  , "ISD3 Format" },
     { 0x000F8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "ISD3BDPL" , "ISD3 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x000FC, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "ISD3BDPU" , "ISD3 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -560,7 +574,7 @@ const static struct stIchIntelHDRegMap
     { 0x00108, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD0CBL"  , "OSD0 Cyclic Buffer Length" },
     { 0x0010C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD0LVI"  , "OSD0 Last Valid Index" },
     { 0x0010E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD0FIFOW", "OSD0 FIFO Watermark" },
-    { 0x00110, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "OSD0FIFOS", "OSD0 FIFO Size" },
+    { 0x00110, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD0FIFOS", "OSD0 FIFO Size" },
     { 0x00112, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD0FMT"  , "OSD0 Format" },
     { 0x00118, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD0BDPL" , "OSD0 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x0011C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD0BDPU" , "OSD0 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -571,7 +585,7 @@ const static struct stIchIntelHDRegMap
     { 0x00128, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD1CBL"  , "OSD1 Cyclic Buffer Length" },
     { 0x0012C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD1LVI"  , "OSD1 Last Valid Index" },
     { 0x0012E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD1FIFOW", "OSD1 FIFO Watermark" },
-    { 0x00130, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "OSD1FIFOS", "OSD1 FIFO Size" },
+    { 0x00130, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD1FIFOS", "OSD1 FIFO Size" },
     { 0x00132, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD1FMT"  , "OSD1 Format" },
     { 0x00138, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD1BDPL" , "OSD1 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x0013C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD1BDPU" , "OSD1 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -582,7 +596,7 @@ const static struct stIchIntelHDRegMap
     { 0x00148, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD2CBL"  , "OSD2 Cyclic Buffer Length" },
     { 0x0014C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD2LVI"  , "OSD2 Last Valid Index" },
     { 0x0014E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD2FIFOW", "OSD2 FIFO Watermark" },
-    { 0x00150, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "OSD2FIFOS", "OSD2 FIFO Size" },
+    { 0x00150, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD2FIFOS", "OSD2 FIFO Size" },
     { 0x00152, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD2FMT"  , "OSD2 Format" },
     { 0x00158, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD2BDPL" , "OSD2 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x0015C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD2BDPU" , "OSD2 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -593,7 +607,7 @@ const static struct stIchIntelHDRegMap
     { 0x00168, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD3CBL"  , "OSD3 Cyclic Buffer Length" },
     { 0x0016C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD3LVI"  , "OSD3 Last Valid Index" },
     { 0x0016E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD3FIFOW", "OSD3 FIFO Watermark" },
-    { 0x00170, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteU16          , "OSD3FIFOS", "OSD3 FIFO Size" },
+    { 0x00170, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD3FIFOS", "OSD3 FIFO Size" },
     { 0x00172, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD3FMT"  , "OSD3 Format" },
     { 0x00178, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD3BDPL" , "OSD3 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x0017C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD3BDPU" , "OSD3 Buffer Descriptor List Pointer-Upper Base Address" },
@@ -1041,6 +1055,46 @@ DECLCALLBACK(int)hdaRegWriteSDLVI(INTELHDLinkState* pState, uint32_t offset, uin
     return rc;
 }
 
+/*
+ * Note this method could be called for changing value on Output Streams only (ICH6 datacheet 18.2.39)
+ *
+ */
+DECLCALLBACK(int)hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
+{
+    switch (index)
+    {
+        /* SDInFIFOS is RO, n=0-3 */
+        case ICH6_HDA_REG_SD0FIFOS:
+        case ICH6_HDA_REG_SD1FIFOS:
+        case ICH6_HDA_REG_SD2FIFOS:
+        case ICH6_HDA_REG_SD3FIFOS:
+            Log(("hda: Guest tries change value of FIFO size of Input Stream\n"));
+            return VINF_SUCCESS;
+        case ICH6_HDA_REG_SD4FIFOS:
+        case ICH6_HDA_REG_SD5FIFOS:
+        case ICH6_HDA_REG_SD6FIFOS:
+        case ICH6_HDA_REG_SD7FIFOS:
+            switch(u32Value)
+            {
+                case HDA_SDONFIFO_16B:
+                case HDA_SDONFIFO_32B:
+                case HDA_SDONFIFO_64B:
+                case HDA_SDONFIFO_128B:
+                case HDA_SDONFIFO_192B:
+                    return hdaRegWriteU16(pState, offset, index, u32Value);
+                    
+                case HDA_SDONFIFO_256B:
+                    Log(("hda: 256 bit is unsupported, HDA is switched into 192B mode\n"));
+                default:
+                    return hdaRegWriteU16(pState, offset, index, HDA_SDONFIFO_192B);
+            } 
+            return VINF_SUCCESS;
+        default:
+            AssertMsgFailed(("Something wierd happens with register lookup routine"));
+    } 
+    return VINF_SUCCESS;
+}
+
 DECLCALLBACK(int)hdaRegWriteSDBDPL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
 {
     int rc = hdaRegWriteU32(pState, offset, index, u32Value);
@@ -1211,7 +1265,7 @@ static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64B
 
 static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 {
-    uint8_t tmpbuf[512];
+    uint8_t tmpbuf[256];
     uint32_t temp;
     uint32_t u32Rest = 0;
     uint32_t cbRead = 0;
@@ -1229,7 +1283,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
     while (temp)
     {
         int copied;
-        to_copy = audio_MIN(temp, SDFIFOS(pState, 4) & ~((1<<4) - 1));
+        to_copy = audio_MIN(temp, SDFIFOS(pState, 4) + 1);
         copied = AUD_read (voice, tmpbuf, to_copy);
         Log (("hda: read_audio max=%x to_copy=%x copied=%x\n",
               avail, to_copy, copied));
@@ -1247,7 +1301,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 }
 static uint32_t hdaWriteAudio(INTELHDLinkState *pState, int avail, bool *fStop)
 {
-    uint8_t tmpbuf[512];
+    uint8_t tmpbuf[256];
     uint32_t temp;
     uint32_t u32Rest;
     uint32_t written = 0;
@@ -1260,15 +1314,15 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, int avail, bool *fStop)
         *fStop = true;
         return written;
     }
-    temp = audio_MIN(SDFIFOS(pState, 4) & ~((1<<4) - 1), temp);
+    temp = audio_MIN(SDFIFOS(pState, 4) + 1, temp);
     while (temp)
     {
         int copied;
         to_copy = audio_MIN(temp, 4096U);
         PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, tmpbuf, to_copy);
         copied = AUD_write (OSD0FMT_TO_AUDIO_SELECTOR(pState), tmpbuf, to_copy);
-        Log (("hda: write_audio max=%x to_copy=%x copied=%x\n",
-              avail, to_copy, copied));
+        Log(("hda: write_audio max=%x to_copy=%x copied=%x\n",
+             avail, to_copy, copied));
         if (!copied)
         {
             *fStop = true;
@@ -1629,14 +1683,14 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     SDCTL(&pThis->hda, 7) = 0x40000;
 
     /* ICH6 defines default values (0x77 for input and 0xBF for output descriptors) of FIFO size. 18.2.39 */
-    SDFIFOS(&pThis->hda, 0) = 0x77;
-    SDFIFOS(&pThis->hda, 1) = 0x77;
-    SDFIFOS(&pThis->hda, 2) = 0x77;
-    SDFIFOS(&pThis->hda, 3) = 0x77;
-    SDFIFOS(&pThis->hda, 4) = 0xBF;
-    SDFIFOS(&pThis->hda, 5) = 0xBF;
-    SDFIFOS(&pThis->hda, 6) = 0xBF;
-    SDFIFOS(&pThis->hda, 7) = 0xBF;
+    SDFIFOS(&pThis->hda, 0) = HDA_SDINFIFO_120B;
+    SDFIFOS(&pThis->hda, 1) = HDA_SDINFIFO_120B;
+    SDFIFOS(&pThis->hda, 2) = HDA_SDINFIFO_120B;
+    SDFIFOS(&pThis->hda, 3) = HDA_SDINFIFO_120B;
+    SDFIFOS(&pThis->hda, 4) = HDA_SDONFIFO_192B;
+    SDFIFOS(&pThis->hda, 5) = HDA_SDONFIFO_192B;
+    SDFIFOS(&pThis->hda, 6) = HDA_SDONFIFO_192B;
+    SDFIFOS(&pThis->hda, 7) = HDA_SDONFIFO_192B;
 
     /* emulateion of codec "wake up" HDA spec (5.5.1 and 6.5)*/
     STATESTS(&pThis->hda) = 0x1;
