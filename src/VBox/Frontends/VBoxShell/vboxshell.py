@@ -3300,8 +3300,16 @@ def main(argv):
         if vpp is None and (os.path.isfile(os.path.join(cwd, "VirtualBox")) or os.path.isfile(os.path.join(cwd, "VirtualBox.exe"))) :
             vpp = cwd
             print "Autodetected VBOX_PROGRAM_PATH as",vpp
-            os.environ["VBOX_PROGRAM_PATH"] = cwd
+            os.environ["VBOX_PROGRAM_PATH"] = vpp
             sys.path.append(os.path.join(vpp, "sdk", "installer"))
+        vsp = os.environ.get("VBOX_SDK_PATH")
+        if vsp is None and os.path.isfile(os.path.join(cwd, "sdk", "bindings", "VirtualBox.xidl")) :
+            vsp = os.path.join(cwd, "sdk")
+        if vsp is None and os.path.isfile(os.path.join(vpp, "sdk", "bindings", "VirtualBox.xidl")) :
+            vsp = os.path.join(vpp, "sdk")
+        if vsp is not None :
+            print "Autodetected VBOX_SDK_PATH as",vsp
+            os.environ["VBOX_SDK_PATH"] = vsp
 
     from vboxapi import VirtualBoxManager
     g_virtualBoxManager = VirtualBoxManager(style, params)
