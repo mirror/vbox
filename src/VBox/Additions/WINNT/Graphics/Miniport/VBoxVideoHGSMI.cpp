@@ -773,7 +773,7 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
         {
             VBVAHOSTCMD *pCmd;
             do
-                pCmd = pDispContext->pCmd;
+                pCmd = ASMAtomicReadPtrT(&pDispContext->pCmd, VBVAHOSTCMD *);
             while (!ASMAtomicCmpXchgPtr(&pDispContext->pCmd, NULL, pCmd));
             *ppCmd = vboxVBVAReverseList(pCmd);
 
@@ -881,7 +881,7 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                     VBVAHOSTCMD *pCmd;
                     do
                     {
-                        pCmd = pHandler->pCmd;
+                        pCmd = ASMAtomicReadPtrT(&pHandler->pCmd, VBVAHOSTCMD *);
                         pFirst->u.pNext = pCmd;
                     }
                     while (!ASMAtomicCmpXchgPtr(&pHandler->pCmd, pFirst, pCmd));
