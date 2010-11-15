@@ -1165,11 +1165,13 @@ vslick.h: include/VBox/cdefs.h include/iprt/cdefs.h $(MAKEFILE)
 	@$(APPEND) $@.tmp '#define NS_IMETHODIMP_(type)            type '
 	@$(APPEND) $@.tmp '#define PARSERS_EXPORT '
 if1of ($(KBUILD_HOST),win)
+	@$(APPEND) $@.tmp '#define COM_STRUCT_OR_CLASS(I)          struct I '
 	@$(APPEND) $@.tmp '#define STDMETHOD(m)                    virtual HRESULT m '
 	@$(APPEND) $@.tmp '#define STDMETHOD_(type,m)              virtual type m '
 	@$(APPEND) $@.tmp '#define STDMETHODIMP                    HRESULT '
 	@$(APPEND) $@.tmp '#define STDMETHODIMP_(type)             type '
 else
+	@$(APPEND) $@.tmp '#define COM_STRUCT_OR_CLASS(I)          class I '
 	@$(APPEND) $@.tmp '#define STDMETHOD(m)                    virtual nsresult m '
 	@$(APPEND) $@.tmp '#define STDMETHOD_(type,m)              virtual type m '
 	@$(APPEND) $@.tmp '#define STDMETHODIMP                    nsresult '

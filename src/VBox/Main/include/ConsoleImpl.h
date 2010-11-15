@@ -37,7 +37,7 @@ class AudioSniffer;
 class ConsoleVRDPServer;
 class VMMDev;
 class Progress;
-class IEventListener;
+COM_STRUCT_OR_CLASS(IEventListener);
 #ifdef VBOX_WITH_EXTPACK
 class ExtPackManager;
 #endif
@@ -736,7 +736,7 @@ private:
         }
     }
     mCallbackData;
-    class IEventListener *mVmListner;
+    COM_STRUCT_OR_CLASS(IEventListener) *mVmListner;
 
     friend struct VMTask;
 };
