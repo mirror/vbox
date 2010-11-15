@@ -899,7 +899,7 @@ void VBoxSelectorWnd::sltUrlsDropped(QList<QUrl> list)
     {
         QString file = list.at(i).toLocalFile();
         if (   !file.isEmpty()
-            && VBoxGlobal::isExtentionsAllowed(file, VBoxDefs::OVFFileExts))
+            && VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts))
         {
             /* OVF/OVA. Only one file at the time. */
             fileImportAppliance(file);
