@@ -1281,7 +1281,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->pszLanBootFile = NULL;
     }
 
-    uint64_t cbFileLanBoot;
+    uint64_t cbFileLanBoot, cbFileLanBootAlign;
     const uint8_t *pu8LanBootBinary = NULL;
     uint64_t cbLanBootBinary;
 
@@ -1298,8 +1298,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = RTFileGetSize(FileLanBoot, &cbFileLanBoot);
             if (RT_SUCCESS(rc))
             {
-                if (    RT_ALIGN(cbFileLanBoot, _4K) != cbFileLanBoot
-                    ||  cbFileLanBoot > _64K)
+                cbFileLanBootAlign = RT_ALIGN(cbFileLanBoot, _4K);
+                if (cbFileLanBootAlign > _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff))
                     rc = VERR_TOO_MUCH_DATA;
             }
         }
@@ -1324,7 +1324,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Allocate buffer for the LAN boot ROM data.
          */
-        pThis->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, cbFileLanBoot);
+        pThis->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAllocZ(pDevIns, cbFileLanBootAlign);
         if (pThis->pu8LanBoot)
         {
             rc = RTFileRead(FileLanBoot, pThis->pu8LanBoot, cbFileLanBoot, NULL);
@@ -1357,13 +1357,13 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     else
     {
         pu8LanBootBinary = pThis->pu8LanBoot;
-        cbLanBootBinary  = cbFileLanBoot;
+        cbLanBootBinary  = cbFileLanBootAlign;
     }
 
     /*
      * Map the Network Boot ROM into memory.
-     * Currently there is a fixed mapping: 0x000c8000 to 0x000cffff contains
-     * the (up to) 32 kb ROM image.
+     * Currently there is a fixed mapping: 0x000d2000 to 0x000dffff contains
+     * the (up to) 56 kb ROM image.
      */
     if (pu8LanBootBinary)
     {
