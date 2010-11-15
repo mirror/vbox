@@ -631,6 +631,23 @@ void VBoxProblemReporter::cannotCreateMachine (const CVirtualBox &vbox,
     );
 }
 
+void VBoxProblemReporter::cannotOpenMachine(QWidget *pParent, const QString &strMachinePath, const CVirtualBox &vbox)
+{
+    message(pParent ? pParent : mainWindowShown(),
+            Error,
+            tr("Failed to open a virtual machine located in %1.")
+               .arg(strMachinePath),
+            formatErrorInfo(vbox));
+}
+
+void VBoxProblemReporter::cannotReregisterMachine(QWidget *pParent, const QString &strMachinePath, const QString &strMachineName)
+{
+    message(pParent ? pParent : mainWindowShown(),
+            Error,
+            tr("Failed to add a virtual machine <b>%1</b> located in <i>%2</i> because its already present.")
+               .arg(strMachineName).arg(strMachinePath));
+}
+
 void VBoxProblemReporter::
 cannotApplyMachineSettings (const CMachine &machine, const COMResult &res)
 {
@@ -1076,86 +1093,53 @@ int VBoxProblemReporter::cannotEnterSeamlessMode()
 
 int VBoxProblemReporter::confirmMachineDeletion(const CMachine &machine)
 {
-    QString msg;
-    QString button;
-    QString name;
-
     if (machine.GetAccessible())
     {
         int cDisks = 0;
-        const QVector<CMediumAttachment> &mediums = machine.GetMediumAttachments();
-        for (int i=0; i < mediums.size(); ++i)
+        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+        for (int i = 0; i < attachments.size(); ++i)
         {
-            const CMediumAttachment &m = mediums.at(i);
-            /* Check if the medium is a harddisk */
-            if (m.GetType() == KDeviceType_HardDisk)
+            const CMediumAttachment &attachment = attachments.at(i);
+            /* Check if the medium is a harddisk: */
+            if (attachment.GetType() == KDeviceType_HardDisk)
             {
-                /* Check if the disk isn't shared. If the disk is shared, it
-                 * will be *never* deleted. */
-                QVector <QString> ids = m.GetMedium().GetMachineIds();
+                /* Check if the disk isn't shared.
+                 * If the disk is shared, it will be *never* deleted. */
+                QVector<QString> ids = attachment.GetMedium().GetMachineIds();
                 if (ids.size() == 1)
                     ++cDisks;
             }
         }
-        const QString strDeleteBtn = tr("Delete", "machine");
-        const QString strDeleteAllBtn = tr("Delete All", "machine");
-        const QString strKeepHarddisksBtn = tr("Keep Harddisks", "machine");
-        const QString strText  = tr("<p>Are you sure you want to permanently delete the virtual "
-                                    "machine <b>%1</b>?</p>"
-                                    "<p>This operation <i>cannot</i> be undone.</p>")
+        const QString strBase = tr("<p>You are about to remove the virtual machine <b>%1</b> from the machine list.</p>"
+                                   "<p>Would you like to remove it from your hard disk as well?</p>")
                                    .arg(machine.GetName());
-        const QString strText1 = tr("<p>If you select <b>%1</b> both the machine itself and the "
-                                    "virtual disks attached to it will be removed. If you wish "
-                                    "to preserve the virtual disks for later use, select "
-                                    "<b>%2</b>.</p>")
-                                   .arg(strDeleteAllBtn)
-                                   .arg(strKeepHarddisksBtn);
-        if (cDisks == 0)
-            return message(&vboxGlobal().selectorWnd(), Question,
-                           strText,
-                           0, /* aAutoConfirmId */
-                           QIMessageBox::Yes,
-                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-                           0,
-                           strDeleteBtn);
-        else if (cDisks == 1)
-            return message(&vboxGlobal().selectorWnd(), Question,
-                           strText + strText1,
-                           0, /* aAutoConfirmId */
-                           QIMessageBox::No,
-                           QIMessageBox::Yes,
-                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-                           strKeepHarddisksBtn,
-                           strDeleteAllBtn);
-        else
-            return message(&vboxGlobal().selectorWnd(), Question,
-                           strText +
-                           tr("<p>You have more than one virtual disk attached. Please make sure "
-                              "that you do not need any of them before continuing.</p>") +
-                           strText1,
-                           0, /* aAutoConfirmId */
-                           QIMessageBox::No,
-                           QIMessageBox::Yes,
-                           QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-                           strKeepHarddisksBtn,
-                           strDeleteAllBtn);
+        const QString strExtd = tr("<p>You are about to remove the virtual machine <b>%1</b> from the machine list.</p>"
+                                   "<p>Would you like to remove it from your hard disk as well? "
+                                   "Doing this will also remove the files containing the machine's virtual hard disks.</p>")
+                                   .arg(machine.GetName());
+        return message(&vboxGlobal().selectorWnd(),
+                       Question,
+                       cDisks == 0 ? strBase : strExtd,
+                       0, /* auto-confirm id */
+                       QIMessageBox::Yes,
+                       QIMessageBox::No,
+                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default);
     }
     else
     {
-        /* this should be in sync with UIVMListBoxItem::recache() */
-        QFileInfo fi (machine.GetSettingsFilePath());
-        name = fi.suffix().toLower() == "xml" ?
-               fi.completeBaseName() : fi.fileName();
-        msg = tr ("<p>Are you sure you want to unregister the inaccessible "
-                  "virtual machine <b>%1</b>?</p>"
-                  "<p>You will not be able to register it again from "
-                  "GUI.</p>")
-                  .arg (name);
-        button = tr ("Unregister", "machine");
+        /* This should be in sync with UIVMListBoxItem::recache(): */
+        QFileInfo fi(machine.GetSettingsFilePath());
+        const QString strName = fi.suffix().toLower() == "xml" ? fi.completeBaseName() : fi.fileName();
+        const QString strBase = tr("You are about to remove the inaccessible virtual machine "
+                                   "<b>%1</b> from the machine list. Do you wish to proceed?")
+                                   .arg(strName);
+        return message(&vboxGlobal().selectorWnd(),
+                       Question,
+                       strBase,
+                       0, /* auto-confirm id */
+                       QIMessageBox::Ok,
+                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default);
     }
-
-    return messageOkCancel (&vboxGlobal().selectorWnd(), Question, msg,
-                            0 /* aAutoConfirmId */, button);
 }
 
 bool VBoxProblemReporter::confirmDiscardSavedState (const CMachine &machine)
