@@ -1441,8 +1441,10 @@ DECLINLINE(char *) RTLatin1PrevCp(const char *psz)
  *      - \%S   - R3: Same as \%s except it is printed in the current codeset
  *                instead of UTF-8 (source is still UTF-8).
  *                Other contexts: Same as \%s.
- *      - \%lS  - Same as \%S except that the input is UTF-16 (output UTF-8).
- *      - \%LS  - Same as \%S except that the input is UCS-32 (output UTF-8).
+ *      - \%lS  - Same as \%S except that the input is UTF-16 (output current
+ *                codeset).
+ *      - \%LS  - Same as \%S except that the input is UCS-32 (output current
+ *                codeset).
  *      - \%c   - Takes a char and prints it.
  *      - \%d   - Takes a signed integer and prints it as decimal. Thousand
  *                separator (\'), zero padding (0), adjustment (-+), width,
