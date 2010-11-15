@@ -188,6 +188,10 @@ public:
                               QWidget *parent = 0);
     void cannotCreateMachine (const CVirtualBox &vbox, const CMachine &machine,
                               QWidget *parent = 0);
+
+    void cannotOpenMachine(QWidget *pParent, const QString &strMachinePath, const CVirtualBox &vbox);
+    void cannotReregisterMachine(QWidget *pParent, const QString &strMachinePath, const QString &strMachineName);
+
     void cannotApplyMachineSettings (const CMachine &machine, const COMResult &res);
     void cannotSaveMachineSettings (const CMachine &machine,
                                     QWidget *parent = 0);

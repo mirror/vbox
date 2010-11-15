@@ -36,6 +36,7 @@
 #include "UISettingsDialogSpecific.h"
 #include "UIToolBar.h"
 #include "VBoxVMLogViewer.h"
+#include "QIFileDialog.h"
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include "VBoxTrayIcon.h"
@@ -124,6 +125,10 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mVmNewAction = new QAction(this);
     mVmNewAction->setIcon(UIIconPool::iconSetFull(
+        QSize(32, 32), QSize(16, 16),
+        ":/vm_new_32px.png", ":/new_16px.png"));
+    mVmAddAction = new QAction(this);
+    mVmAddAction->setIcon(UIIconPool::iconSetFull(
         QSize(32, 32), QSize(16, 16),
         ":/vm_new_32px.png", ":/new_16px.png"));
     mVmConfigAction = new QAction(this);
@@ -272,6 +277,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 
     mVMMenu = menuBar()->addMenu(QString::null);
     mVMMenu->addAction(mVmNewAction);
+    mVMMenu->addAction(mVmAddAction);
     mVMMenu->addAction(mVmConfigAction);
     mVMMenu->addAction(mVmDeleteAction);
     mVMMenu->addSeparator();
@@ -398,6 +404,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(mFileSettingsAction, SIGNAL(triggered()), this, SLOT(fileSettings()));
     connect(mFileExitAction, SIGNAL(triggered()), this, SLOT(fileExit()));
     connect(mVmNewAction, SIGNAL(triggered()), this, SLOT(vmNew()));
+    connect(mVmAddAction, SIGNAL(triggered()), this, SLOT(vmAdd()));
 
     connect(mVmConfigAction, SIGNAL(triggered()), this, SLOT(vmSettings()));
     connect(mVmDeleteAction, SIGNAL(triggered()), this, SLOT(vmDelete()));
@@ -583,6 +590,52 @@ void VBoxSelectorWnd::vmNew()
     }
 }
 
+void VBoxSelectorWnd::vmAdd()
+{
+    /* Initialize variables: */
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+    QString strTitle = tr("Select a virtual machine file");
+    QString strFilter = tr("Virtual machine files (*.vbox)");
+
+    /* Create open file dialog: */
+    QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
+    if (!fileNames.empty() && !fileNames[0].isEmpty())
+    {
+        /* Get filename: */
+        QString strMachinePath = fileNames[0];
+        /* Open corresponding machine: */
+        CMachine newMachine = vbox.OpenMachine(strMachinePath);
+        /* First we should test what machine was opened: */
+        if (vbox.isOk() && !newMachine.isNull())
+        {
+            /* Second we should check what such machine was NOT already registered.
+             * Actually current Main implementation will even prevent such machine opening
+             * but we will perform such a check anyway: */
+            CMachine oldMachine = vbox.FindMachine(newMachine.GetId());
+            if (oldMachine.isNull())
+            {
+                /* Register that machine: */
+                vbox.RegisterMachine(newMachine);
+
+                /* Wait until the list is updated by OnMachineRegistered(): */
+                QModelIndex index;
+                while(!index.isValid())
+                {
+                    qApp->processEvents();
+                    index = mVMModel->indexById(newMachine.GetId());
+                }
+                /* And choose the new machine item: */
+                mVMListView->setCurrentIndex(index);
+            }
+            else
+                vboxProblem().cannotReregisterMachine(this, strMachinePath, oldMachine.GetName());
+        }
+        else
+            vboxProblem().cannotOpenMachine(this, strMachinePath, vbox);
+    }
+}
+
 /**
  *  Opens the VM settings dialog.
  */
@@ -648,8 +701,7 @@ void VBoxSelectorWnd::vmSettings(const QString &aCategory /* = QString::null */,
 
 void VBoxSelectorWnd::vmDelete(const QString &aUuid /* = QString::null */)
 {
-    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
-                       mVMModel->itemById(aUuid);
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() : mVMModel->itemById(aUuid);
 
     AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
@@ -657,23 +709,31 @@ void VBoxSelectorWnd::vmDelete(const QString &aUuid /* = QString::null */)
     int rc = vboxProblem().confirmMachineDeletion(machine);
     if (rc != QIMessageBox::Cancel)
     {
-        QVector<CMedium> aMedia = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);          //  @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
-        if (machine.isOk() && item->accessible())
+        if (rc == QIMessageBox::Yes)
         {
-            /* If not Yes, we don't want touch the harddisks */
-            if (rc == QIMessageBox::No)
-                aMedia.clear();
-            /* delete machine settings */
-            CProgress progress = machine.Delete(aMedia);
+            /* Unregister and cleanup machine's data & hard-disks: */
+            CMediumVector mediums = machine.Unregister(KCleanupMode_DetachAllReturnHardDisksOnly);
             if (machine.isOk())
             {
-                vboxProblem().showModalProgressDialog(progress, item->name(), 0, 0);
-                if (progress.GetResultCode() != 0)
-                    vboxProblem().cannotDeleteMachine(machine);
+                /* Delete machine hard-disks: */
+                CProgress progress = machine.Delete(mediums);
+                if (machine.isOk())
+                {
+                    vboxProblem().showModalProgressDialog(progress, item->name(), 0, 0);
+                    if (progress.GetResultCode() != 0)
+                        vboxProblem().cannotDeleteMachine(machine);
+                }
             }
+            if (!machine.isOk())
+                vboxProblem().cannotDeleteMachine(machine);
         }
-        if (!machine.isOk())
-            vboxProblem().cannotDeleteMachine(machine);
+        else
+        {
+            /* Just unregister machine: */
+            machine.Unregister(KCleanupMode_DetachAllReturnNone);
+            if (!machine.isOk())
+                vboxProblem().cannotDeleteMachine(machine);
+        }
     }
 }
 
@@ -1116,15 +1176,21 @@ void VBoxSelectorWnd::retranslateUi()
     mVmNewAction->setToolTip(mVmNewAction->text().remove('&').remove('.') +
         QString("(%1)").arg(mVmNewAction->shortcut().toString()));
 
+    mVmAddAction->setText(tr("&Add..."));
+    mVmAddAction->setShortcut(QKeySequence("Ctrl+A"));
+    mVmAddAction->setStatusTip(tr("Add an existing virtual machine"));
+    mVmAddAction->setToolTip(mVmAddAction->text().remove('&').remove('.') +
+        QString("(%1)").arg(mVmAddAction->shortcut().toString()));
+
     mVmConfigAction->setText(tr("&Settings..."));
     mVmConfigAction->setShortcut(QKeySequence("Ctrl+S"));
     mVmConfigAction->setStatusTip(tr("Configure the selected virtual machine"));
     mVmConfigAction->setToolTip(mVmConfigAction->text().remove('&').remove('.') +
         QString("(%1)").arg(mVmConfigAction->shortcut().toString()));
 
-    mVmDeleteAction->setText(tr("&Delete"));
+    mVmDeleteAction->setText(tr("&Remove"));
     mVmDeleteAction->setShortcut(QKeySequence("Ctrl+R"));
-    mVmDeleteAction->setStatusTip(tr("Delete the selected virtual machine"));
+    mVmDeleteAction->setStatusTip(tr("Remove the selected virtual machine"));
 
     /* Note: mVmStartAction text is set up in vmListViewCurrentChanged() */
 

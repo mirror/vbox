@@ -68,6 +68,7 @@ public slots:
     void fileExit();
 
     void vmNew();
+    void vmAdd();
     void vmSettings(const QString &aCategory = QString::null, const QString &aControl = QString::null, const QString & = QString::null);
     void vmDelete(const QString & = QString::null);
     void vmStart(const QString & = QString::null);
@@ -89,6 +90,7 @@ public slots:
 #endif
 
     const QAction *vmNewAction() const { return mVmNewAction; }
+    const QAction *vmAddAction() const { return mVmAddAction; }
     const QAction *vmConfigAction() const { return mVmConfigAction; }
     const QAction *vmDeleteAction() const { return mVmDeleteAction; }
     const QAction *vmStartAction() const { return mVmStartAction; }
@@ -158,6 +160,7 @@ private:
     QAction *mFileSettingsAction;
     QAction *mFileExitAction;
     QAction *mVmNewAction;
+    QAction *mVmAddAction;
     QAction *mVmConfigAction;
     QAction *mVmDeleteAction;
     QAction *mVmStartAction;
