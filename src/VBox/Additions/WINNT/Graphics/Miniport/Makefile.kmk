@@ -90,6 +90,7 @@ ifdef VBOX_WITH_WDDM
  ifdef DEBUG_misha
   VBoxVideoWddm_DEFS       += LOG_ENABLED
  endif
+ VBoxVideoWddm_DEFS       += LOG_DISABLED
  #VBoxVideoWddm_DEFS       += VBOX_WITH_MULTIMONITOR_FIX
  #VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
  VBoxVideoWddm_INCS       += ../../include

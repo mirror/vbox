@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "../VBoxVideo.h"
+#include "../VBoxVideo-win.h"
 #include "../Helper.h"
 
 static int vboxVBVAInformHost (PDEVICE_EXTENSION pDevExt, VBOXVBVAINFO * pVbva, BOOL bEnable)

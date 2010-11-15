@@ -30,21 +30,26 @@ typedef enum
 
 extern "C"
 {
-BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint32_t *pDisplayId);
-BOOLEAN vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint32_t bpp);
-ULONG vboxGetHeightReduction();
-BOOLEAN vboxQueryPointerPos(uint16_t *pointerXPos, uint16_t *pointerYPos);
-BOOLEAN vboxQueryHostWantsAbsolute();
+bool vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint32_t *pDisplayId);
+bool vboxLikesVideoMode(uint32_t display, uint32_t width, uint32_t height, uint32_t bpp);
+uint32_t vboxGetHeightReduction();
+bool vboxQueryPointerPos(uint16_t *pointerXPos, uint16_t *pointerYPos);
+bool vboxQueryHostWantsAbsolute();
 winVersion_t vboxQueryWinVersion();
 
-#include "vboxioctl.h"
+// #include "vboxioctl.h"
 
-int vboxVbvaEnable (ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
+// int vboxVbvaEnable (ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 }
 
 
 /* debug printf */
-#define OSDBGPRINT(a) DbgPrint a
+/** @todo replace this with normal IPRT guest logging */
+#ifdef RT_OS_WINDOWS
+# define OSDBGPRINT(a) DbgPrint a
+#else
+# define OSDBGPRINT(a) do { } while(0)
+#endif
 
 #ifdef LOG_TO_BACKDOOR
 # include <VBox/log.h>

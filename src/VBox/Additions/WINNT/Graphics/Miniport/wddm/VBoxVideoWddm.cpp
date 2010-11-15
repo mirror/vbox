@@ -10,7 +10,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "../VBoxVideo.h"
+#include "../VBoxVideo-win.h"
 #include "../Helper.h"
 
 #include <iprt/asm.h>
@@ -3180,7 +3180,7 @@ DxgkDdiSetPointerPosition(
          */
         PointerAttributes.Enable = pSetPointerPosition->Flags.Visible ? VBOX_MOUSE_POINTER_VISIBLE : 0;
 
-        BOOLEAN bResult = vboxUpdatePointerShape(commonFromDeviceExt(pDevExt), &PointerAttributes, sizeof (PointerAttributes));
+        BOOLEAN bResult = vboxUpdatePointerShapeWrap(commonFromDeviceExt(pDevExt), &PointerAttributes, sizeof (PointerAttributes));
         Assert(bResult);
     }
 
@@ -3210,7 +3210,7 @@ DxgkDdiSetPointerShape(
          *  need to maintain the pre-allocated HGSMI buffer and convert the data directly to it */
         if (vboxVddmPointerShapeToAttributes(pSetPointerShape, pPointerInfo))
         {
-            if (vboxUpdatePointerShape (commonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
+            if (vboxUpdatePointerShapeWrap (commonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
                 Status = STATUS_SUCCESS;
             else
             {
