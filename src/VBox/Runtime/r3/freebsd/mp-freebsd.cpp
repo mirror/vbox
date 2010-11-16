@@ -83,25 +83,19 @@ RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 
 RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 {
-    int rc = VINF_SUCCESS;
-    char szName[32];
-    char szDriver[10];
-    size_t cbDriver = sizeof(szDriver);
-
     /*
-     * FreeBSD doesn't support CPU hotplugging
-     * so every CPU which appears in the tree is also online.
+     * FreeBSD doesn't support CPU hotplugging so every CPU which appears
+     * in the tree is also online.
      */
-    memset(szDriver, 0, sizeof(szDriver));
-    memset(szName, 0, sizeof(szName));
+    char    szName[40];
+    RTStrPrintf(szName, sizeof(szName), "dev.cpu.%d.%%driver", (int)idCpu);
 
-    rc = RTStrPrintf(szName, sizeof(szName), "dev.cpu.%d.%%driver", (int)idCpu);
-    if (RT_SUCCESS(rc))
-    {
-        int rcBsd = sysctlbyname(szName, szDriver, &cbDriver, NULL, NULL);
-        if (rcBsd == 0)
-            return true;
-    }
+    char    szDriver[10];
+    size_t  cbDriver = sizeof(szDriver);
+    RT_ZERO(szDevice);                  /* this shouldn't be necessary. */
+    int rcBsd = sysctlbyname(szName, szDriver, &cbDriver, NULL, NULL);
+    if (rcBsd == 0)
+        return true;
 
     return false;
 }
