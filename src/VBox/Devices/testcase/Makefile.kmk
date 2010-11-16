@@ -40,7 +40,7 @@ endif
 TESTING += \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
 
-tstDeviceStructSize_FEATURES = \
+VBOX_tstDeviceStructSize_FEATURES = \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,) \
 	$(if $(VBOX_WITH_USB),VBOX_WITH_USB,) \
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
@@ -62,7 +62,7 @@ ifdef VBOX_WITH_RAW_MODE
  #
  PROGRAMS += tstDeviceStructSizeRC
  tstDeviceStructSizeRC_TEMPLATE  = VBoxRcExe
- tstDeviceStructSizeRC_DEFS      = $(tstDeviceStructSize_FEATURES)
+ tstDeviceStructSizeRC_DEFS      = $(VBOX_tstDeviceStructSize_FEATURES)
  tstDeviceStructSizeRC_SOURCES   = tstDeviceStructSizeRC.cpp
  tstDeviceStructSizeRC_INCS      = \
  	$(VBOX_PATH_DEVICES_SRC) \
@@ -75,7 +75,7 @@ endif # VBOX_WITH_RAW_MODE
 #
 PROGRAMS += tstDeviceStructSize
 tstDeviceStructSize_TEMPLATE = VBOXR3AUTOTST
-tstDeviceStructSize_DEFS     = $(tstDeviceStructSize_FEATURES)
+tstDeviceStructSize_DEFS     = $(VBOX_tstDeviceStructSize_FEATURES)
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
