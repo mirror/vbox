@@ -119,7 +119,7 @@ icmp_init(PNATState pData)
                                     GetProcAddress(pData->hmIcmpLibrary, "GetAdaptersAddresses");
         if (pData->pfGetAdaptersAddresses == NULL)
         {
-            LogRel(("NAT: Can't find GetAdapterAddresses in Iphlpapi.dll"));
+            LogRel(("NAT: Can't find GetAdapterAddresses in Iphlpapi.dll\n"));
         }
     }
 
@@ -334,9 +334,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 
     /* int code; */
 
-    DEBUG_CALL("icmp_input");
-    DEBUG_ARG("m = %lx", (long )m);
-    DEBUG_ARG("m_len = %d", m ? m->m_len : 0);
+    LogFlow(("icmp_input: m = %lx, m_len = %d\n", (long)m, m ? m->m_len : 0));
 
     icmpstat.icps_received++;
 
@@ -380,7 +378,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
     /* icmpstat.icps_inhist[icp->icmp_type]++; */
     /* code = icp->icmp_code; */
 
-    DEBUG_ARG("icmp_type = %d", icp->icmp_type);
+    LogFlow(("icmp_type = %d\n", icp->icmp_type));
     switch (icp->icmp_type)
     {
         case ICMP_ECHO:
@@ -441,7 +439,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 
                     if (!fIcmpSocketErrorReported)
                     {
-                        LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                        LogRel(("icmp_input udp sendto tx errno = %d (%s)\n",
                                 errno, strerror(errno)));
                         fIcmpSocketErrorReported = true;
                     }
@@ -551,9 +549,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     int new_m_size = 0;
     int size = 0;
 
-    DEBUG_CALL("icmp_error");
-    DEBUG_ARG("msrc = %lx", (long )msrc);
-    DEBUG_ARG("msrc_len = %d", msrc ? msrc->m_len : 0);
+    LogFlow(("icmp_error: msrc = %lx, msrc_len = %d\n", (long)msrc, msrc ? msrc->m_len : 0));
     if (msrc != NULL)
         M_ASSERTPKTHDR(msrc);
 
@@ -572,7 +568,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         char bufa[20], bufb[20];
         strcpy(bufa, inet_ntoa(ip->ip_src));
         strcpy(bufb, inet_ntoa(ip->ip_dst));
-        DEBUG_MISC((dfd, " %.16s to %.16s\n", bufa, bufb));
+        Log2((" %.16s to %.16s\n", bufa, bufb));
     }
 #endif
     if (   ip->ip_off & IP_OFFMASK
@@ -625,7 +621,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
     /* make the header of the reply packet */
     ip   = mtod(m, struct ip *);
-    hlen = sizeof(struct ip );             /* no options in reply */
+    hlen = sizeof(struct ip);             /* no options in reply */
 
     /* fill in icmp */
     m->m_data += hlen;
@@ -681,7 +677,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     ip->ip_dst = ip->ip_src;    /* ip adresses */
     ip->ip_src = alias_addr;
 
-    (void ) ip_output0(pData, (struct socket *)NULL, m, 1);
+    (void) ip_output0(pData, (struct socket *)NULL, m, 1);
 
     icmpstat.icps_reflect++;
 
@@ -711,7 +707,7 @@ icmp_reflect(PNATState pData, struct mbuf *m)
 {
     register struct ip *ip = mtod(m, struct ip *);
     int hlen = ip->ip_hl << 2;
-    int optlen = hlen - sizeof(struct ip );
+    int optlen = hlen - sizeof(struct ip);
     register struct icmp *icp;
 
     /*
@@ -728,7 +724,7 @@ icmp_reflect(PNATState pData, struct mbuf *m)
     m->m_data -= hlen;
     m->m_len += hlen;
 
-    (void ) ip_output(pData, (struct socket *)NULL, m);
+    (void) ip_output(pData, (struct socket *)NULL, m);
 
     icmpstat.icps_reflect++;
 }

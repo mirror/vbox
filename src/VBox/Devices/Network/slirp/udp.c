@@ -94,10 +94,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     int ret;
     int ttl;
 
-    DEBUG_CALL("udp_input");
-    DEBUG_ARG("m = %lx", (long)m);
+    LogFlow(("udp_input: m = %lx, iphlen = %d\n", (long)m, iphlen));
     ip = mtod(m, struct ip *);
-    DEBUG_ARG("iphlen = %d", iphlen);
     Log2(("%R[IP4] iphlen = %d\n", &ip->ip_dst, iphlen));
 
     udpstat.udps_ipackets++;
@@ -246,7 +244,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         }
         if (udp_attach(pData, so, 0) == -1)
         {
-            Log2(("NAT: IP(id: %hd) udp_attach errno = %d-%s\n",
+            Log2(("NAT: IP(id: %hd) udp_attach errno = %d (%s)\n",
                         ip->ip_id, errno, strerror(errno)));
             sofree(pData, so);
             goto bad_free_mbuf;
@@ -296,8 +294,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         m->m_len += iphlen;
         m->m_data -= iphlen;
         *ip = save_ip;
-        DEBUG_MISC((dfd,"NAT: UDP tx errno = %d-%s (on sent to %R[IP4])\n", errno,
-                   strerror(errno), &ip->ip_dst));
+        Log2(("NAT: UDP tx errno = %d (%s) on sent to %R[IP4]\n",
+              errno, strerror(errno), &ip->ip_dst));
         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         /* in case we receive ICMP on this socket we'll aware that ICMP has been already sent to host*/
         so->so_m = NULL;
@@ -339,11 +337,8 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     int error;
     int mlen = 0;
 
-    DEBUG_CALL("udp_output");
-    DEBUG_ARG("so = %lx", (long)so);
-    DEBUG_ARG("m = %lx", (long)m);
-    DEBUG_ARG("saddr = %lx", (long)saddr->sin_addr.s_addr);
-    DEBUG_ARG("daddr = %lx", (long)daddr->sin_addr.s_addr);
+    LogFlow(("udp_output: so = %lx, m = %lx, saddr = %lx, daddr = %lx\n",
+            (long)so, (long)m, (long)saddr->sin_addr.s_addr, (long)daddr->sin_addr.s_addr));
 
     /*
      * Adjust for header

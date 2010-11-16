@@ -123,7 +123,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
         char *data;
         if (so1 == NULL)
         {
-            LogRel(("NAT: can't create DNS socket \n"));
+            LogRel(("NAT: can't create DNS socket\n"));
             return;
         }
         if(udp_attach(pData, so1, 0) == -1)
@@ -213,7 +213,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     /* read packet from socket */
     if ((byte = recvfrom(fd, buf, sizeof(buf), 0,
                 (struct sockaddr *)&fromaddr, &fromlen)) == -1) {
-        LogRel(("recvfrom failed: %s", strerror(errno)));
+        LogRel(("recvfrom failed: %s\n", strerror(errno)));
         ++dropped_queries;
         return;
     }
@@ -233,8 +233,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 
     /* check for minimum dns packet length */
     if (byte < 12) {
-        LogRel(("query too short from %s",
-            inet_ntoa(fromaddr.sin_addr)));
+        LogRel(("query too short from %s\n", inet_ntoa(fromaddr.sin_addr)));
         ++dropped_queries;
         return;
     }
@@ -242,7 +241,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 #ifndef VBOX
     /* allocate new request */
     if ((req = calloc(1, sizeof(struct request))) == NULL) {
-        LogRel(("calloc: %s", strerror(errno)));
+        LogRel(("calloc failed\n"));
         ++dropped_queries;
         return;
     }
@@ -256,7 +255,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     if (req == NULL)
     {
         if ((req = RTMemAllocZ(sizeof(struct request) + byte)) == NULL) {
-            LogRel(("calloc: %s", strerror(errno)));
+            LogRel(("calloc failed\n"));
             ++dropped_queries;
             return;
         }
@@ -327,7 +326,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         if ((byte = sendto(sock_answer, buf, (unsigned int)byte, 0,
                     (struct sockaddr *)&recursive_addr,
                     sizeof(struct sockaddr_in))) == -1) {
-            LogRel(("sendto failed: %s", strerror(errno)));
+            LogRel(("sendto failed: %s\n", strerror(errno)));
             ++dropped_queries;
             return;
         }
@@ -345,7 +344,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         if ((byte = sendto(sock_answer, buf, (unsigned int)byte, 0,
                     (struct sockaddr *)&authoritative_addr,
                     sizeof(struct sockaddr_in))) == -1) {
-            LogRel(("sendto failed: %s", strerror(errno)));
+            LogRel(("sendto failed: %s\n", strerror(errno)));
             ++dropped_queries;
             return;
         }
@@ -362,7 +361,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         if ((byte = sendto(so->s, buf, (unsigned int)byte, 0,
                     (struct sockaddr *)&addr,
                     sizeof(struct sockaddr_in))) == -1) {
-            LogRel(("sendto failed: %s", strerror(errno)));
+            LogRel(("sendto failed: %s\n", strerror(errno)));
             ++dropped_queries;
             return;
         }
@@ -402,7 +401,7 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
 
     /* read packet from socket */
     if ((byte = recvfrom(fd, buf, sizeof(buf), 0, NULL, NULL)) == -1) {
-        LogRel(("recvfrom failed: %s", strerror(errno)));
+        LogRel(("recvfrom failed: %s\n", strerror(errno)));
         ++dropped_answers;
         return;
     }
@@ -416,7 +415,7 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
 
     /* check for minimum dns packet length */
     if (byte < 12) {
-        LogRel(("answer too short"));
+        LogRel(("answer too short\n"));
         ++dropped_answers;
         return;
     }
@@ -451,7 +450,7 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
     if (sendto(sock_query, buf, (unsigned int)byte, 0,
                 (struct sockaddr *)&query->client,
                 sizeof(struct sockaddr_in)) == -1) {
-        LogRel(("sendto failed: %s", strerror(errno)));
+        LogRel(("sendto failed: %s\n", strerror(errno)));
         ++dropped_answers;
     } else
         ++answered_queries;

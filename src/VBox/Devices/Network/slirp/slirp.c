@@ -297,7 +297,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     pAdapterAddr = RTMemAllocZ(size);
     if (!pAdapterAddr)
     {
-        Log(("NAT: No memory available \n"));
+        Log(("NAT: No memory available\n"));
         return -1;
     }
     ret = pData->pfGetAdaptersAddresses(AF_INET, 0, NULL /* reserved */, pAdapterAddr, &size);
@@ -1195,7 +1195,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                     TCP_OUTPUT(pData, sototcpcb(so));
                 else
                 {
-                    Log2(("%R[natsock] errno %d:%s\n", so, errno, strerror(errno)));
+                    Log2(("%R[natsock] errno %d (%s)\n", so, errno, strerror(errno)));
                     break;
                 }
             }
@@ -1569,7 +1569,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
     Assert((!m->m_next));
     if (m->m_next)
     {
-        Log(("NAT: if_encap's recived the chain, dropping..."));
+        Log(("NAT: if_encap's recived the chain, dropping...\n"));
         m_freem(pData, m);
         goto done;
     }
@@ -1863,19 +1863,19 @@ void *slirp_get_queue(PNATState pData)
 
 void slirp_set_dhcp_TFTP_prefix(PNATState pData, const char *tftpPrefix)
 {
-    Log2(("tftp_prefix:%s\n", tftpPrefix));
+    Log2(("tftp_prefix: %s\n", tftpPrefix));
     tftp_prefix = tftpPrefix;
 }
 
 void slirp_set_dhcp_TFTP_bootfile(PNATState pData, const char *bootFile)
 {
-    Log2(("bootFile:%s\n", bootFile));
+    Log2(("bootFile: %s\n", bootFile));
     bootp_filename = bootFile;
 }
 
 void slirp_set_dhcp_next_server(PNATState pData, const char *next_server)
 {
-    Log2(("next_server:%s\n", next_server));
+    Log2(("next_server: %s\n", next_server));
     if (next_server == NULL)
         pData->tftp_server.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_TFTP);
     else

@@ -60,7 +60,7 @@ lprint(const char *pszFormat, ...)
 void
 ipstats(PNATState pData)
 {
-    lprint(" \n");
+    lprint("\n");
 
     lprint("IP stats:\n");
     lprint("  %6d total packets received (%d were unaligned)\n",
@@ -84,7 +84,7 @@ ipstats(PNATState pData)
 void
 tcpstats(PNATState pData)
 {
-    lprint(" \n");
+    lprint("\n");
 
     lprint("TCP stats:\n");
 
@@ -151,7 +151,7 @@ tcpstats(PNATState pData)
 void
 udpstats(PNATState pData)
 {
-    lprint(" \n");
+    lprint("\n");
 
     lprint("UDP stats:\n");
     lprint("  %6d datagrams received\n", udpstat.udps_ipackets);
@@ -165,7 +165,7 @@ udpstats(PNATState pData)
 void
 icmpstats(PNATState pData)
 {
-    lprint(" \n");
+    lprint("\n");
     lprint("ICMP stats:\n");
     lprint("  %6d ICMP packets received\n", icmpstat.icps_received);
     lprint("  %6d were too short\n", icmpstat.icps_tooshort);
@@ -191,7 +191,7 @@ sockstats(PNATState pData)
     size_t n;
     struct socket *so, *so_next;
 
-    lprint(" \n");
+    lprint("\n");
 
     lprint(
            "Proto[state]     Sock     Local Address, Port  Remote Address, Port RecvQ SendQ\n");

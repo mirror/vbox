@@ -101,8 +101,7 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     int idle, sendalot;
     int size;
 
-    DEBUG_CALL("tcp_output");
-    DEBUG_ARG("tp = %lx", (long )tp);
+    LogFlow(("tcp_output: tp = %lx\n", (long)tp));
 
     /*
      * Determine length of data that should be transmitted,
@@ -126,7 +125,7 @@ again:
 
     flags = tcp_outflags[tp->t_state];
 
-    DEBUG_MISC((dfd, " --- tcp_output flags = 0x%x\n",flags));
+    Log2((" --- tcp_output flags = 0x%x\n", flags));
 
     /*
      * If in persist timeout with window of 0, send 1 byte.

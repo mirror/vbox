@@ -110,7 +110,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 {
     register struct ip *ip;
     register struct mbuf *m = m0;
-    register int hlen = sizeof(struct ip );
+    register int hlen = sizeof(struct ip);
     int len, off, error = 0;
     extern uint8_t zerro_ethaddr[ETH_ALEN];
     struct ethhdr *eh = NULL;
@@ -119,9 +119,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 
     STAM_PROFILE_START(&pData->StatIP_output, a);
 
-    DEBUG_CALL("ip_output");
-    DEBUG_ARG("so = %lx", (long)so);
-    DEBUG_ARG("m0 = %lx", (long)m0);
+    LogFlow(("ip_output: so = %lx, m0 = %lx\n", (long)so, (long)m0));
 
     M_ASSERTPKTHDR(m);
     Assert(m->m_pkthdr.header);
