@@ -40,6 +40,8 @@
 #endif
 #include <iprt/semaphore.h>
 
+#include <VBox/err.h>
+
 #include <QFile>
 #include <QTextStream>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
