@@ -302,8 +302,7 @@
 
           <listitem>
             <para><computeroutput>writecore</computeroutput> -- writes a VM
-            core file to disk, refer <xref linkend="guestcoreformat" />
-            </para>
+            core file to disk, refer <xref linkend="guestcoreformat" /></para>
           </listitem>
         </itemizedlist></para>
 
@@ -680,22 +679,6 @@
       virus scanners, are known to increases the CPU load notably even if the
       guest appears to be idle. We recommend to deactivate virus scanners
       within virtualized guests if possible.</para>
-    </sect2>
-
-    <sect2 id="win7_audio">
-      <title>No audio in Windows Vista (64-bit) and Windows 7 guests</title>
-
-      <para>32-bit Windows 7 does not ship with drivers for our emulated audio
-      hardware (AC'97). However, running Windows Update should solve the
-      problem by getting an appropriate driver for it automatically. After
-      that update followed by a reboot you should have working audio.</para>
-
-      <para>For the 64-bit versions of Windows Vista and 7 you have to
-      download the Realtek AC'97 drivers to enable audio.</para>
-
-      <para>See <ulink
-      url="http://www.realtek.com.tw/downloads">http://www.realtek.com.tw/downloads</ulink>
-      for download instructions.</para>
     </sect2>
 
     <sect2>

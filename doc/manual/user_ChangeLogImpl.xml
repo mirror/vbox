@@ -11,25 +11,34 @@
     <itemizedlist>
 
       <listitem>
+        <para>New settings/disk file layout; see <xref linkend="vboxconfigdata" />.</para>
+      </listitem>
+
+      <listitem>
+        <para>Open Virtualization Format Archive (OVA) support; see <xref linkend="ovf" />.</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: support more than 1.5/2 GB guest RAM on 32-bit hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: support for automatically updating the Guest Additions
+        (requires installed Windows Guest Additions 4.0 or later)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: support for copying files into the guest file system</para>
+      </listitem>
+
+      <listitem>
         <para>Language bindings: implemented uniform Java bindings for both local
           (COM/XPCOM) and remote (SOAP) invocation APIs</para>
       </listitem>
 
       <listitem>
-        <para>Open Virtualization Format Archive (OVA) support</para>
-      </listitem>
-
-      <listitem>
-        <para>VMM: Support more than 1.5/2 GB guest RAM on 32-bit hosts</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows Additions: Support for automatic updating Guest Additions
-        (only already installed Windows Guest Additions 4.0 and later)</para>
-      </listitem>
-
-      <listitem>
-        <para>Guest Additions: Support for copying files from host to the guest</para>
+        <para>Audio: Intel HD Audio is now available as guest hardware, for better support
+          with modern guest operating systems (e.g. 64-bit Windows).</para>
       </listitem>
 
     </itemizedlist>
