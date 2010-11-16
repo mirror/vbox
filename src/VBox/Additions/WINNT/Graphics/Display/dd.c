@@ -1799,7 +1799,7 @@ DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
             pSrcDesc->bVisible = true;
             if(pSrcDesc->UpdatedMemRegion.bValid)
             {
-                pBody->u.in.xUpdatedSrcMemValid = 1;
+                pBody->u.in.xFlags = VBOXVHWACMD_SURF_OVERLAY_UPDATE_F_SRCMEMRECT;
                 vboxVHWAFromRECTL(&pBody->u.in.xUpdatedSrcMemRect, &pSrcDesc->UpdatedMemRegion.Rect);
                 vboxVHWARegionClear(&pSrcDesc->UpdatedMemRegion);
             }

@@ -1190,9 +1190,12 @@ int vbvaVHWAReset (PVGASTATE pVGAState)
 }
 
 /* @todo call this also on reset? */
-int vbvaVHWADisable (PVGASTATE pVGAState)
+int vbvaVHWAEnable (PVGASTATE pVGAState, bool bEnable)
 {
-    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_DISABLE, 0, 0);
+    const VBOXVHWACMD_TYPE enmType = bEnable ? VBOXVHWACMD_TYPE_HH_ENABLE : VBOXVHWACMD_TYPE_HH_DISABLE;
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState,
+                        enmType,
+                    0, 0);
     Assert(pCmd);
     if(pCmd)
     {
@@ -1219,7 +1222,7 @@ int vbvaVHWADisable (PVGASTATE pVGAState)
             ++iDisplay;
             if (iDisplay >= pVGAState->cMonitors)
                 break;
-            vbvaVHWAHHCommandReinit(pCmd, VBOXVHWACMD_TYPE_DISABLE, (int32_t)iDisplay);
+            vbvaVHWAHHCommandReinit(pCmd, enmType, (int32_t)iDisplay);
 
         } while (true);
 
@@ -1233,7 +1236,13 @@ int vbvaVHWADisable (PVGASTATE pVGAState)
 int vboxVBVASaveStatePrep (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     /* ensure we have no pending commands */
-    return vbvaVHWADisable(PDMINS_2_DATA(pDevIns, PVGASTATE));
+    return vbvaVHWAEnable(PDMINS_2_DATA(pDevIns, PVGASTATE), false);
+}
+
+int vboxVBVASaveStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    /* ensure we have no pending commands */
+    return vbvaVHWAEnable(PDMINS_2_DATA(pDevIns, PVGASTATE), true);
 }
 
 int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd)
