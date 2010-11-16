@@ -145,7 +145,6 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
 
     VBOXTRAYIPCHEADER hdr;
     hdr.ulMsg = VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG;
-    hdr.ulVer = 1;
 
     VBOXTRAYIPCMSG_SHOWBALLOONMSG msg;
     HRESULT hr = VBoxPopString(msg.szBody, sizeof(msg.szBody) / sizeof(TCHAR));
