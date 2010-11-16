@@ -590,25 +590,28 @@ void VBoxSelectorWnd::vmNew()
     }
 }
 
-void VBoxSelectorWnd::vmAdd()
+void VBoxSelectorWnd::vmAdd(const QString &strFile /* = "" */)
 {
+    QString strTmpFile = strFile;
     /* Initialize variables: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
-    QString strTitle = tr("Select a virtual machine file");
-    QStringList extensions;
-    for (int i = 0; i < VBoxDefs::VBoxFileExts.size(); ++i)
-        extensions << QString("*.%1").arg(VBoxDefs::VBoxFileExts[i]);
-    QString strFilter = tr("Virtual machine files (%1)").arg(extensions.join(" "));
-
-    /* Create open file dialog: */
-    QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
-    if (!fileNames.empty() && !fileNames[0].isEmpty())
+    if (strTmpFile.isEmpty())
     {
-        /* Get filename: */
-        QString strMachinePath = fileNames[0];
+        QString strBaseFolder = vbox.GetSystemProperties().GetDefaultMachineFolder();
+        QString strTitle = tr("Select a virtual machine file");
+        QStringList extensions;
+        for (int i = 0; i < VBoxDefs::VBoxFileExts.size(); ++i)
+            extensions << QString("*.%1").arg(VBoxDefs::VBoxFileExts[i]);
+        QString strFilter = tr("Virtual machine files (%1)").arg(extensions.join(" "));
+        /* Create open file dialog: */
+        QStringList fileNames = QIFileDialog::getOpenFileNames(strBaseFolder, strFilter, this, strTitle, 0, true, true);
+        if (!fileNames.isEmpty())
+            strTmpFile = fileNames.at(0);
+    }
+    if (!strTmpFile.isEmpty())
+    {
         /* Open corresponding machine: */
-        CMachine newMachine = vbox.OpenMachine(strMachinePath);
+        CMachine newMachine = vbox.OpenMachine(strTmpFile);
         /* First we should test what machine was opened: */
         if (vbox.isOk() && !newMachine.isNull())
         {
@@ -632,10 +635,10 @@ void VBoxSelectorWnd::vmAdd()
                 mVMListView->setCurrentIndex(index);
             }
             else
-                vboxProblem().cannotReregisterMachine(this, strMachinePath, oldMachine.GetName());
+                vboxProblem().cannotReregisterMachine(this, strTmpFile, oldMachine.GetName());
         }
         else
-            vboxProblem().cannotOpenMachine(this, strMachinePath, vbox);
+            vboxProblem().cannotOpenMachine(this, strTmpFile, vbox);
     }
 }
 
@@ -961,12 +964,20 @@ void VBoxSelectorWnd::sltUrlsDropped(QList<QUrl> list)
     for (int i = 0; i < list.size(); ++i)
     {
         QString file = list.at(i).toLocalFile();
-        if (   !file.isEmpty()
-            && VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts))
+        if (!file.isEmpty())
         {
-            /* OVF/OVA. Only one file at the time. */
-            fileImportAppliance(file);
-            break;
+            if (VBoxGlobal::hasAllowedExtension(file, VBoxDefs::VBoxFileExts))
+            {
+                /* VBox config files. Only one file at the time. */
+                vmAdd(file);
+                break;
+            }
+            else if (VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts))
+            {
+                /* OVF/OVA. Only one file at the time. */
+                fileImportAppliance(file);
+                break;
+            }
         }
     }
 }

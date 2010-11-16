@@ -73,6 +73,7 @@ public:
     bool removeRows(int aRow, int aCount, const QModelIndex &aParent = QModelIndex());
 
     Qt::ItemFlags flags(const QModelIndex &index) const;
+    Qt::DropActions supportedDragActions() const;
     Qt::DropActions supportedDropActions() const;
     QStringList mimeTypes() const;
     QMimeData *mimeData(const QModelIndexList &indexes) const;
