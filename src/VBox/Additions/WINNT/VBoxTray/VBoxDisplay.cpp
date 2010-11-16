@@ -211,7 +211,8 @@ static bool isVBoxDisplayDriverActive(VBOXDISPLAYCONTEXT *pCtx)
 }
 
 /* Returns TRUE to try again. */
-static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel)
+static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel,
+                                        VBOXDISPLAYCONTEXT *pCtx)
 {
     BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0);
 
@@ -381,6 +382,54 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     }
 #endif /* Log */
 
+#ifdef VBOX_WITH_WDDM
+    VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType (pCtx);
+    if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
+    {
+        /* Assign the new rectangles to displays. */
+        for (i = 0; i < NumDevices; i++)
+        {
+            paDeviceModes[i].dmPosition.x = paRects[i].left;
+            paDeviceModes[i].dmPosition.y = paRects[i].top;
+            paDeviceModes[i].dmPelsWidth  = paRects[i].right - paRects[i].left;
+            paDeviceModes[i].dmPelsHeight = paRects[i].bottom - paRects[i].top;
+
+            /* On Vista one must specify DM_BITSPERPEL.
+             * Note that the current mode dmBitsPerPel is already in the DEVMODE structure.
+             */
+            paDeviceModes[i].dmFields = DM_POSITION | DM_PELSHEIGHT | DM_PELSWIDTH | DM_BITSPERPEL;
+
+            if (   i == Id
+                && BitsPerPixel != 0)
+            {
+                /* Change dmBitsPerPel if requested. */
+                paDeviceModes[i].dmBitsPerPel = BitsPerPixel;
+            }
+
+            Log(("VBoxTray: ResizeDisplayDevice: pfnChangeDisplaySettingsEx %x: %dx%dx%d at %d,%d\n",
+                  gCtx.pfnChangeDisplaySettingsEx,
+                  paDeviceModes[i].dmPelsWidth,
+                  paDeviceModes[i].dmPelsHeight,
+                  paDeviceModes[i].dmBitsPerPel,
+                  paDeviceModes[i].dmPosition.x,
+                  paDeviceModes[i].dmPosition.y));
+
+        }
+
+        DWORD err = VBoxDispIfResizeModes(&pCtx->pEnv->dispIf, paDisplayDevices, paDeviceModes, NumDevices);
+        if (err == NO_ERROR || err != ERROR_RETRY)
+        {
+            if (err == NO_ERROR)
+                Log(("VBoxTray: VBoxDisplayThread: (WDDM) VBoxDispIfResizeModes succeeded\n"));
+            else
+                Log(("VBoxTray: VBoxDisplayThread: (WDDM) Failure VBoxDispIfResizeModes (%d)\n", err));
+            return FALSE;
+        }
+
+        Log(("VBoxTray: ResizeDisplayDevice: (WDDM) RETRY requested\n"));
+        return TRUE;
+    }
+#endif
     /* Without this, Windows will not ask the miniport for its
      * mode table but uses an internal cache instead.
      */
@@ -549,27 +598,12 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                             {
                                 Log(("VBoxTray: VBoxDisplayThread: Detected W2K or later\n"));
 
-#ifdef  VBOX_WITH_WDDM
-                                if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
-                                {
-                                    DWORD err = VBoxDispIfResize(&pCtx->pEnv->dispIf,
-                                                        displayChangeRequest.display,
-                                                        displayChangeRequest.xres,
-                                                        displayChangeRequest.yres,
-                                                        displayChangeRequest.bpp);
-                                    if (err == NO_ERROR)
-                                    {
-                                        Log(("VBoxTray: VBoxDisplayThread: VBoxDispIfResize succeeded\n"));
-                                        break;
-                                    }
-                                    Log(("VBoxTray: VBoxDisplayThread: VBoxDispIfResize failed err(%d)\n", err));
-                                }
-#endif
                                 /* W2K or later. */
                                 if (!ResizeDisplayDevice(displayChangeRequest.display,
                                                          displayChangeRequest.xres,
                                                          displayChangeRequest.yres,
-                                                         displayChangeRequest.bpp
+                                                         displayChangeRequest.bpp,
+                                                         pCtx
                                                          ))
                                 {
                                     break;

@@ -32,7 +32,7 @@
 
 typedef struct
 {
-    ULONG Id;
+    DWORD Id;
     DWORD Width;
     DWORD Height;
     DWORD BitsPerPixel;

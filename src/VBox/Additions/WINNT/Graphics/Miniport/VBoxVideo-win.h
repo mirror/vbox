@@ -312,6 +312,7 @@ RT_C_DECLS_END
 
 PVBOXWDDM_VIDEOMODES_INFO vboxWddmGetVideoModesInfo(PDEVICE_EXTENSION DeviceExtension, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId);
 PVBOXWDDM_VIDEOMODES_INFO vboxWddmGetAllVideoModesInfos(PDEVICE_EXTENSION DeviceExtension);
+PVBOXWDDM_VIDEOMODES_INFO vboxWddmUpdateVideoModesInfo(PDEVICE_EXTENSION DeviceExtension, PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo);
 
 void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt);
 
@@ -321,7 +322,7 @@ VOID vboxWddmInvalidateVideoModesInfo(PDEVICE_EXTENSION DeviceExtension);
 NTSTATUS vboxWddmGetModesForResolution(VIDEO_MODE_INFORMATION *pAllModes, uint32_t cAllModes, int iSearchPreferredMode,
         const D3DKMDT_2DREGION *pResolution, VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t *piPreferrableMode);
 
-int vboxWddmVideoModeFind(const VIDEO_MODE_INFORMATION *pModes, int cModes, const VIDEO_MODE_INFORMATION *pM);
+int vboxVideoModeFind(const VIDEO_MODE_INFORMATION *pModes, int cModes, const VIDEO_MODE_INFORMATION *pM);
 int vboxWddmVideoResolutionFind(const D3DKMDT_2DREGION *pResolutions, int cResolutions, const D3DKMDT_2DREGION *pRes);
 bool vboxWddmVideoResolutionsMatch(const D3DKMDT_2DREGION *pResolutions1, const D3DKMDT_2DREGION *pResolutions2, int cResolutions);
 bool vboxWddmVideoModesMatch(const VIDEO_MODE_INFORMATION *pModes1, const VIDEO_MODE_INFORMATION *pModes2, int cModes);

@@ -20,6 +20,8 @@
 #include <iprt/err.h>
 #include <iprt/assert.h>
 
+#include <malloc.h>
+
 /* display driver interface abstraction for XPDM & WDDM
  * with WDDM we can not use ExtEscape to communicate with our driver
  * because we do not have XPDM display driver any more, i.e. escape requests are handled by cdd
@@ -57,43 +59,62 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
     OSVERSIONINFO OSinfo;
     OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
     GetVersionEx (&OSinfo);
+    bool bSupported = true;
+
     if (OSinfo.dwMajorVersion >= 6)
     {
-        /* this is vista and up */
         Log((__FUNCTION__": this is vista and up\n"));
-        HMODULE hGdi32 = GetModuleHandle("gdi32");
-        if (hGdi32 != NULL)
+        HMODULE hUser = GetModuleHandle("USER32");
+        if (hUser)
         {
-            bool bSupported = true;
-            pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc = (PFND3DKMT_OPENADAPTERFROMHDC)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromHdc");
-            Log((__FUNCTION__"pfnD3DKMTOpenAdapterFromHdc = %p\n", pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc));
-            bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc);
+            *(uintptr_t *)&pIf->modeData.wddm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
+            Log((__FUNCTION__": VBoxDisplayInit: pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.wddm.pfnChangeDisplaySettingsEx));
+            bSupported &= !!(pIf->modeData.wddm.pfnChangeDisplaySettingsEx);
 
-            pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName = (PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromGdiDisplayName");
-            Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName = %p\n", pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName));
-            bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName);
+            *(uintptr_t *)&pIf->modeData.wddm.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
+            Log((__FUNCTION__": VBoxDisplayInit: pfnEnumDisplayDevices = %p\n", pIf->modeData.wddm.pfnEnumDisplayDevices));
+            bSupported &= !!(pIf->modeData.wddm.pfnEnumDisplayDevices);
 
-            pIf->modeData.wddm.pfnD3DKMTCloseAdapter = (PFND3DKMT_CLOSEADAPTER)GetProcAddress(hGdi32, "D3DKMTCloseAdapter");
-            Log((__FUNCTION__": pfnD3DKMTCloseAdapter = %p\n", pIf->modeData.wddm.pfnD3DKMTCloseAdapter));
-            bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTCloseAdapter);
-
-            pIf->modeData.wddm.pfnD3DKMTEscape = (PFND3DKMT_ESCAPE)GetProcAddress(hGdi32, "D3DKMTEscape");
-            Log((__FUNCTION__": pfnD3DKMTEscape = %p\n", pIf->modeData.wddm.pfnD3DKMTEscape));
-            bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTCloseAdapter);
-
-            pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn = (PFND3DKMT_INVALIDATEACTIVEVIDPN)GetProcAddress(hGdi32, "D3DKMTInvalidateActiveVidPn");
-            Log((__FUNCTION__": pfnD3DKMTInvalidateActiveVidPn = %p\n", pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn));
-            bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn);
-
-            if (!bSupported)
+            /* this is vista and up */
+            HMODULE hGdi32 = GetModuleHandle("gdi32");
+            if (hGdi32 != NULL)
             {
-                Log((__FUNCTION__": one of pfnD3DKMT function pointers failed to initialize\n"));
+                pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc = (PFND3DKMT_OPENADAPTERFROMHDC)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromHdc");
+                Log((__FUNCTION__"pfnD3DKMTOpenAdapterFromHdc = %p\n", pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc));
+                bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc);
+
+                pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName = (PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromGdiDisplayName");
+                Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName = %p\n", pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName));
+                bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName);
+
+                pIf->modeData.wddm.pfnD3DKMTCloseAdapter = (PFND3DKMT_CLOSEADAPTER)GetProcAddress(hGdi32, "D3DKMTCloseAdapter");
+                Log((__FUNCTION__": pfnD3DKMTCloseAdapter = %p\n", pIf->modeData.wddm.pfnD3DKMTCloseAdapter));
+                bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTCloseAdapter);
+
+                pIf->modeData.wddm.pfnD3DKMTEscape = (PFND3DKMT_ESCAPE)GetProcAddress(hGdi32, "D3DKMTEscape");
+                Log((__FUNCTION__": pfnD3DKMTEscape = %p\n", pIf->modeData.wddm.pfnD3DKMTEscape));
+                bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTCloseAdapter);
+
+                pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn = (PFND3DKMT_INVALIDATEACTIVEVIDPN)GetProcAddress(hGdi32, "D3DKMTInvalidateActiveVidPn");
+                Log((__FUNCTION__": pfnD3DKMTInvalidateActiveVidPn = %p\n", pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn));
+                bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn);
+
+                if (!bSupported)
+                {
+                    Log((__FUNCTION__": one of pfnD3DKMT function pointers failed to initialize\n"));
+                    err = ERROR_NOT_SUPPORTED;
+                }
+            }
+            else
+            {
+                Log((__FUNCTION__": GetModuleHandle(gdi32) failed, err(%d)\n", GetLastError()));
                 err = ERROR_NOT_SUPPORTED;
             }
+
         }
         else
         {
-            Log((__FUNCTION__": GetModuleHandle(gdi32) failed, err(%d)\n", GetLastError()));
+            Log((__FUNCTION__": GetModuleHandle(USER32) failed, err(%d)\n", GetLastError()));
             err = ERROR_NOT_SUPPORTED;
         }
     }
@@ -258,6 +279,7 @@ DECLCALLBACK(BOOLEAN) vboxDispIfResizeWDDMOp(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAd
         IAVidPnData.PrivateDriverDataSize = cbData;
 
         pCtx->Status = pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn(&IAVidPnData);
+        Assert(!pCtx->Status);
         if (pCtx->Status)
             Log((__FUNCTION__": pfnD3DKMTInvalidateActiveVidPn failed, Status (0x%x)\n", pCtx->Status));
 
@@ -334,6 +356,247 @@ DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Heig
 #ifdef VBOX_WITH_WDDM
         case VBOXDISPIF_MODE_WDDM:
             return vboxDispIfResizeWDDM(pIf, Id, Width, Height, BitsPerPixel);
+#endif
+        default:
+            Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            return ERROR_INVALID_PARAMETER;
+    }
+}
+
+static BOOL vboxDispIfValidateResize(DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
+{
+    DISPLAY_DEVICE DisplayDevice;
+    int i = 0;
+    UINT cMatched = 0;
+    DEVMODE DeviceMode;
+    for (int i = 0; ; ++i)
+    {
+        ZeroMemory(&DisplayDevice, sizeof(DISPLAY_DEVICE));
+        DisplayDevice.cb = sizeof(DISPLAY_DEVICE);
+
+        if (!EnumDisplayDevices (NULL, i, &DisplayDevice, 0))
+            break;
+
+        Log(("VBoxTray: vboxDispIfValidateResize: [%d(%d)] %s\n", i, cMatched, DisplayDevice.DeviceName));
+
+        BOOL bFetchDevice = FALSE;
+
+        if (DisplayDevice.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
+        {
+            Log(("VBoxTray: vboxDispIfValidateResize: Found primary device. err %d\n", GetLastError ()));
+            bFetchDevice = TRUE;
+        }
+        else if (!(DisplayDevice.StateFlags & DISPLAY_DEVICE_MIRRORING_DRIVER))
+        {
+
+            Log(("VBoxTray: vboxDispIfValidateResize: Found secondary device. err %d\n", GetLastError ()));
+            bFetchDevice = TRUE;
+        }
+
+        if (bFetchDevice)
+        {
+            if (cMatched >= cDevModes)
+            {
+                Log(("VBoxTray: vboxDispIfValidateResize: %d >= %d\n", cDevModes, cMatched));
+                return FALSE;
+            }
+
+            /* First try to get the video mode stored in registry (ENUM_REGISTRY_SETTINGS).
+             * A secondary display could be not active at the moment and would not have
+             * a current video mode (ENUM_CURRENT_SETTINGS).
+             */
+            ZeroMemory(&DeviceMode, sizeof(DeviceMode));
+            DeviceMode.dmSize = sizeof(DEVMODE);
+            if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
+                 ENUM_REGISTRY_SETTINGS, &DeviceMode))
+            {
+                Log(("VBoxTray: vboxDispIfValidateResize: EnumDisplaySettings error %d\n", GetLastError ()));
+                return FALSE;
+            }
+
+            if (   DeviceMode.dmPelsWidth == 0
+                || DeviceMode.dmPelsHeight == 0)
+            {
+                /* No ENUM_REGISTRY_SETTINGS yet. Seen on Vista after installation.
+                 * Get the current video mode then.
+                 */
+                ZeroMemory(&DeviceMode, sizeof(DeviceMode));
+                DeviceMode.dmSize = sizeof(DeviceMode);
+                if (!EnumDisplaySettings((LPSTR)DisplayDevice.DeviceName,
+                     ENUM_CURRENT_SETTINGS, &DeviceMode))
+                {
+                    /* ENUM_CURRENT_SETTINGS returns FALSE when the display is not active:
+                     * for example a disabled secondary display */
+                    Log(("VBoxTray: vboxDispIfValidateResize: EnumDisplaySettings(ENUM_CURRENT_SETTINGS) error %d\n", GetLastError ()));
+                    return FALSE;
+                }
+            }
+
+            UINT j = 0;
+            for (; j < cDevModes; ++j)
+            {
+                if (!strncmp(DisplayDevice.DeviceName, paDisplayDevices[j].DeviceName, RT_ELEMENTS(DeviceMode.dmDeviceName)))
+                {
+                    if (paDeviceModes[j].dmBitsPerPel != DeviceMode.dmBitsPerPel
+                            || (paDeviceModes[j].dmPelsWidth & 0xfff8) != (DeviceMode.dmPelsWidth & 0xfff8)
+                            || (paDeviceModes[j].dmPelsHeight & 0xfff8) != (DeviceMode.dmPelsHeight & 0xfff8)
+                            || (paDeviceModes[j].dmPosition.x & 0xfff8) != (DeviceMode.dmPosition.x & 0xfff8)
+                            || (paDeviceModes[j].dmPosition.y & 0xfff8) != (DeviceMode.dmPosition.y & 0xfff8)
+                            || (paDisplayDevices[j].StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) == (DisplayDevice.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP))
+                    {
+                        return FALSE;
+                    }
+                    break;
+                }
+            }
+
+            if (j == cDevModes)
+                return FALSE;
+
+            ++cMatched;
+        }
+    }
+
+    return cMatched == cDevModes;
+}
+
+DWORD vboxDispIfResizeModesWDDM(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
+{
+    UINT cbVidPnInfo = VBOXWDDM_RECOMMENDVIDPN_SIZE(cDevModes);
+    PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo = (PVBOXWDDM_RECOMMENDVIDPN)alloca(cbVidPnInfo);
+    pVidPnInfo->cScreenInfos = cDevModes;
+    D3DKMT_HANDLE hAdapter = NULL;
+    NTSTATUS Status;
+    DWORD winEr = NO_ERROR;
+    UINT i = 0;
+
+    for (; i < cDevModes; i++)
+    {
+        PVBOXWDDM_RECOMMENDVIDPN_SCREEN_INFO pInfo = &pVidPnInfo->aScreenInfos[i];
+        D3DKMT_OPENADAPTERFROMHDC OpenAdapterData = {0};
+        OpenAdapterData.hDc = CreateDC(NULL, paDisplayDevices[i].DeviceName, NULL, NULL);
+        if (!OpenAdapterData.hDc)
+        {
+            winEr = GetLastError();
+            Assert(0);
+            break;
+        }
+
+        Status = pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc(&OpenAdapterData);
+        Assert(!Status);
+        if (Status)
+        {
+            winEr = ERROR_GEN_FAILURE;
+            Assert(0);
+            break;
+        }
+
+        pInfo->Id = OpenAdapterData.VidPnSourceId;
+        pInfo->Width = paDeviceModes[i].dmPelsWidth;
+        pInfo->Height = paDeviceModes[i].dmPelsHeight;
+        pInfo->BitsPerPixel = paDeviceModes[i].dmBitsPerPel;
+
+        if (!hAdapter)
+        {
+            hAdapter = OpenAdapterData.hAdapter;
+        }
+        else
+        {
+            D3DKMT_CLOSEADAPTER ClosaAdapterData = {0};
+            ClosaAdapterData.hAdapter = OpenAdapterData.hAdapter;
+            Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
+            Assert(!Status);
+        }
+    }
+
+    if (winEr == NO_ERROR)
+    {
+        Assert(hAdapter);
+
+        D3DKMT_INVALIDATEACTIVEVIDPN IAVidPnData = {0};
+        IAVidPnData.hAdapter = hAdapter;
+        IAVidPnData.pPrivateDriverData = pVidPnInfo;
+        IAVidPnData.PrivateDriverDataSize = cbVidPnInfo;
+
+        DWORD winEr = NO_ERROR;
+        Status = pIf->modeData.wddm.pfnD3DKMTInvalidateActiveVidPn(&IAVidPnData);
+        Assert(!Status);
+        if (Status)
+        {
+            Log((__FUNCTION__": pfnD3DKMTInvalidateActiveVidPn failed, Status (0x%x)\n", Status));
+            winEr = ERROR_GEN_FAILURE;
+        }
+    }
+
+    if (hAdapter)
+    {
+        D3DKMT_CLOSEADAPTER ClosaAdapterData = {0};
+        ClosaAdapterData.hAdapter = hAdapter;
+        Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
+        Assert(!Status);
+    }
+
+    /* ignore any prev errors and just check if resize is OK */
+    if (!vboxDispIfValidateResize(paDisplayDevices, paDeviceModes, cDevModes))
+    {
+        /* now try to resize in a "regular" way */
+        /* Assign the new rectangles to displays. */
+        for (i = 0; i < cDevModes; i++)
+        {
+            /* On Vista one must specify DM_BITSPERPEL.
+             * Note that the current mode dmBitsPerPel is already in the DEVMODE structure.
+             */
+            paDeviceModes[i].dmFields = DM_POSITION | DM_PELSHEIGHT | DM_PELSWIDTH | DM_BITSPERPEL;
+
+            Log(("VBoxTray: ResizeDisplayDevice: pfnChangeDisplaySettingsEx %x: %dx%dx%d at %d,%d\n",
+                    pIf->modeData.wddm.pfnChangeDisplaySettingsEx,
+                  paDeviceModes[i].dmPelsWidth,
+                  paDeviceModes[i].dmPelsHeight,
+                  paDeviceModes[i].dmBitsPerPel,
+                  paDeviceModes[i].dmPosition.x,
+                  paDeviceModes[i].dmPosition.y));
+
+            LONG status = pIf->modeData.wddm.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
+                                            &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
+            Log(("VBoxTray: ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError ()));
+        }
+
+        /* A second call to ChangeDisplaySettings updates the monitor. */
+        LONG status = pIf->modeData.wddm.pfnChangeDisplaySettingsEx(NULL, NULL, NULL, 0, NULL);
+        Log(("VBoxTray: ResizeDisplayDevice: ChangeDisplaySettings update status %d\n", status));
+        if (status == DISP_CHANGE_SUCCESSFUL)
+        {
+            winEr = NO_ERROR;
+        }
+        else if (status == DISP_CHANGE_BADMODE)
+        {
+            /* Successfully set new video mode or our driver can not set the requested mode. Stop trying. */
+            winEr = ERROR_RETRY;
+        }
+        else
+        {
+            winEr = ERROR_GEN_FAILURE;
+        }
+    }
+    else
+    {
+        winEr = NO_ERROR;
+    }
+
+    return winEr;
+}
+
+DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
+{
+    switch (pIf->enmMode)
+    {
+        case VBOXDISPIF_MODE_XPDM_NT4:
+            return ERROR_NOT_SUPPORTED;
+        case VBOXDISPIF_MODE_XPDM:
+            return ERROR_NOT_SUPPORTED;
+#ifdef VBOX_WITH_WDDM
+        case VBOXDISPIF_MODE_WDDM:
+            return vboxDispIfResizeModesWDDM(pIf, paDisplayDevices, paDeviceModes, cDevModes);
 #endif
         default:
             Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
