@@ -1122,23 +1122,32 @@ ServicesR0_SOURCES   = \
 	Network/SrvIntNetR0.cpp
 
 
-#
-# The EHCI (USB 2.0) Extension Pack Modules.
-#
-if defined(VBOX_WITH_USB) && defined(VBOX_WITH_EXTPACK_PUEL)
- DLLS += VBoxEhciR3
- VBoxEhciR3_TEMPLATE = VBoxR3ExtPackPuel
- VBoxEhciR3_SOURCES  = USB/DevEHCI.cpp
+ifdef VBOX_WITH_EXTPACK_PUEL
+ #
+ # The EHCI (USB 2.0) Extension Pack Modules.
+ #
+ if defined(VBOX_WITH_USB)
+  DLLS += VBoxEhciR3
+  VBoxEhciR3_TEMPLATE = VBoxR3ExtPackPuel
+  VBoxEhciR3_SOURCES  = USB/DevEHCI.cpp
 
- SYSMODS += VBoxEhciR0
- VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
- VBoxEhciR0_SOURCES  = USB/DevEHCI.cpp
+  SYSMODS += VBoxEhciR0
+  VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
+  VBoxEhciR0_SOURCES  = USB/DevEHCI.cpp
 
- ifdef VBOX_WITH_RAW_MODE
-  SYSMODS += VBoxEhciRC
-  VBoxEhciRC_TEMPLATE = VBoxRcExtPackPuel
-  VBoxEhciRC_SOURCES  = USB/DevEHCI.cpp
+  ifdef VBOX_WITH_RAW_MODE
+   SYSMODS += VBoxEhciRC
+   VBoxEhciRC_TEMPLATE = VBoxRcExtPackPuel
+   VBoxEhciRC_SOURCES  = USB/DevEHCI.cpp
+  endif
  endif
+
+ #
+ # The Intel PXE rom.
+ #
+ INSTALLS += VBoxExtPackPuelInsRoms
+ VBoxExtPackPuelInsRoms_TEMPLATE = VBoxInsExtPackPuel
+ VBoxExtPackPuelInsRoms_SOURCES = PC/PXE/pxepcnet.rom=>PXE-Intel.rom
 endif # VBOX_WITH_USB && VBOX_WITH_EXTPACK_PUEL
 
 
