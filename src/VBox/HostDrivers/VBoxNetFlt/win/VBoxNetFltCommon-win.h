@@ -332,7 +332,15 @@ typedef struct _ADAPT
     /** driver bind adapter state. */
     VBOXADAPTSTATE                 enmState;
 #ifndef VBOXNETADP
-    /** true if we should indicate the receive complete used by the ProtocolReceeive mechanism */
+    /** true if we should indicate the receive complete used by the ProtocolReceive mechanism.
+     * We need to indicate it only with the ProtocolReceive + NdisMEthIndicateReceive path.
+     * There is no guarantee in the docs that the ProtocolReceive & ProtocolReceiveComplete
+     * for one transfer are called on one same CPU, however this is how the latest passthru
+     * sample handles this
+     * Note: we're using KeGetCurrentProcessorNumber, which is not entirely correct in case
+     * we're running on 64bit win7+, which can handle > 64 CPUs, however since KeGetCurrentProcessorNumber
+     * always returns the number < than the number of CPUs in the first group, we're guaranteed to have CPU index < 64
+     * @todo: use KeGetCurrentProcessorNumberEx for Win7+ 64 and dynamically extended array */
     bool                        abIndicateRcvComplete[64];
 
     /** TRUE iff a request is pending at the miniport below */
