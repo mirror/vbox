@@ -655,7 +655,7 @@ QModelIndex UIVMListView::moveItemTo(const QModelIndex &index, int row)
     pModel->removeRows(perIndex.row(), 1, QModelIndex());
     m_fItemInMove = false;
     setUpdatesEnabled(true);
-    return newIndex;
+    return QModelIndex(newIndex);
 }
 
 /* UIVMItemPainter class */
