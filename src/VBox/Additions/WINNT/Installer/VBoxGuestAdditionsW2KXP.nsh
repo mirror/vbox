@@ -223,7 +223,7 @@ Function W2K_CopyFiles
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target arch in
-    ; Wow64 node (32-bit sub system).
+    ; Wow64 node (32-bit sub system)
     ${EnableX64FSRedirection}
     SetOutPath $SYSDIR
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxOGLarrayspu.dll"

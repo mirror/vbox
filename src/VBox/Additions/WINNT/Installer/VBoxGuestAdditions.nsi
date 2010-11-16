@@ -4,33 +4,40 @@
 !endif
 
 ; Defines for special functions
-!define WHQL_FAKE    ; Turns on the faking of non WHQL signed / approved drivers.
+!define WHQL_FAKE    ; Turns on the faking of non WHQL signed / approved drivers
                      ; Needs the VBoxWHQLFake.exe in the additions output directory!
 
-!define VENDOR_ROOT_KEY "SOFTWARE\$%VBOX_VENDOR_SHORT%"
+!define VENDOR_ROOT_KEY             "SOFTWARE\$%VBOX_VENDOR_SHORT%"
 
-!define PRODUCT_NAME "$%VBOX_PRODUCT% Guest Additions"
-!define PRODUCT_DESC "$%VBOX_PRODUCT% Guest Additions"
-!define PRODUCT_VERSION "$%VBOX_VERSION_MAJOR%.$%VBOX_VERSION_MINOR%.$%VBOX_VERSION_BUILD%.0"
-!define PRODUCT_PUBLISHER " $%VBOX_VENDOR%"
-!define PRODUCT_COPYRIGHT "(C) $%VBOX_C_YEAR% $%VBOX_VENDOR%"
-!define PRODUCT_OUTPUT "VBoxWindowsAdditions-$%BUILD_TARGET_ARCH%.exe"
-!define PRODUCT_WEB_SITE "http://www.virtualbox.org"
-!define PRODUCT_INSTALL_KEY "${VENDOR_ROOT_KEY}\VirtualBox Guest Additions"
-!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
-!define PRODUCT_UNINST_ROOT_KEY "HKLM"
+!define PRODUCT_NAME                "$%VBOX_PRODUCT% Guest Additions"
+!define PRODUCT_DESC                "$%VBOX_PRODUCT% Guest Additions"
+!define PRODUCT_VERSION             "$%VBOX_VERSION_MAJOR%.$%VBOX_VERSION_MINOR%.$%VBOX_VERSION_BUILD%.0"
+!define PRODUCT_PUBLISHER           "$%VBOX_VENDOR%"
+!define PRODUCT_COPYRIGHT           "(C) $%VBOX_C_YEAR% $%VBOX_VENDOR%"
+!define PRODUCT_OUTPUT              "VBoxWindowsAdditions-$%BUILD_TARGET_ARCH%.exe"
+!define PRODUCT_WEB_SITE            "http://www.virtualbox.org"
+!define PRODUCT_INSTALL_KEY         "${VENDOR_ROOT_KEY}\VirtualBox Guest Additions"
+!define PRODUCT_UNINST_KEY          "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+!define PRODUCT_UNINST_ROOT_KEY     "HKLM"
 
 VIProductVersion "${PRODUCT_VERSION}"
-VIAddVersionKey "FileVersion" "$%VBOX_VERSION_STRING%"
-VIAddVersionKey "ProductName" "${PRODUCT_NAME}"
-VIAddVersionKey "ProductVersion" "${PRODUCT_VERSION}"
-VIAddVersionKey "CompanyName" "${PRODUCT_PUBLISHER}"
-VIAddVersionKey "FileDescription" "${PRODUCT_DESC}"
-VIAddVersionKey "LegalCopyright" "${PRODUCT_COPYRIGHT}"
-VIAddVersionKey "InternalName" "${PRODUCT_OUTPUT}"
+VIAddVersionKey "FileVersion"       "$%VBOX_VERSION_STRING%"
+VIAddVersionKey "ProductName"       "${PRODUCT_NAME}"
+VIAddVersionKey "ProductVersion"    "${PRODUCT_VERSION}"
+VIAddVersionKey "CompanyName"       "${PRODUCT_PUBLISHER}"
+VIAddVersionKey "FileDescription"   "${PRODUCT_DESC}"
+VIAddVersionKey "LegalCopyright"    "${PRODUCT_COPYRIGHT}"
+VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 
 ; This registry key will hold the mouse driver path before install (NT4 only)
 !define ORG_MOUSE_PATH "MousePath"
+
+; If we have our guest install helper DLL, add the
+; plugin path so that NSIS can find it when compiling the installer
+; Note: NSIS plugins *always* have to be compiled in 32-bit!
+!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
+  !addplugindir "$%PATH_TARGET_X86%\VBoxGuestInstallHelper"
+!endif
 
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
@@ -112,7 +119,7 @@ VIAddVersionKey "InternalName" "${PRODUCT_OUTPUT}"
   ; Set license language
   LicenseLangString VBOX_LICENSE ${LANG_ENGLISH} "$%VBOX_BRAND_LICENSE_RTF%"
 
-  ; If license files not available (OSE / PUEL) build, then use the English one as default.
+  ; If license files not available (OSE / PUEL) build, then use the English one as default
   !ifdef VBOX_BRAND_fr_FR_LICENSE_RTF
     LicenseLangString VBOX_LICENSE ${LANG_FRENCH} "$%VBOX_BRAND_fr_FR_LICENSE_RTF%"
   !else
@@ -141,12 +148,13 @@ VIAddVersionKey "InternalName" "${PRODUCT_OUTPUT}"
 ; Variables and output files
 Name "${PRODUCT_NAME} $%VBOX_VERSION_STRING%"
 !ifdef UNINSTALLER_ONLY
-!echo "Uninstaller only!"
-OutFile "$%PATH_TARGET%\VBoxWindowsAdditions-$%BUILD_TARGET_ARCH%-uninst.exe"
+  !echo "Uninstaller only!"
+  OutFile "$%PATH_TARGET%\VBoxWindowsAdditions-$%BUILD_TARGET_ARCH%-uninst.exe"
 !else
-OutFile "VBoxWindowsAdditions-$%BUILD_TARGET_ARCH%.exe"
-!endif
+  OutFile "VBoxWindowsAdditions-$%BUILD_TARGET_ARCH%.exe"
+!endif ; UNINSTALLER_ONLY
 
+; Define default installation directory
 !if $%BUILD_TARGET_ARCH% == "x86" ; 32-bit
   InstallDir  "$PROGRAMFILES32\$%VBOX_VENDOR_SHORT%\VirtualBox Guest Additions"
 !else       ; 64-bit
@@ -158,34 +166,39 @@ ShowInstDetails show
 ShowUnInstDetails show
 RequestExecutionLevel highest
 
-Var g_iSystemMode           ; Current system mode (0 = Normal boot, 1 = Fail-safe boot, 2 = Fail-safe with network boot)
-Var g_strSystemDir          ; Windows system directory
-Var g_strCurUser            ; Current user using the system
-Var g_strAddVerMaj          ; Installed Guest Additions: Major version
-Var g_strAddVerMin          ; Installed Guest Additions: Minor version
-Var g_strAddVerBuild        ; Installed Guest Additions: Build number
-Var g_strAddVerRev          ; Installed Guest Additions: SVN revision
-Var g_strWinVersion         ; Current Windows version we're running on
-Var g_bLogEnable            ; Do logging when installing? "true" or "false"
-Var g_bFakeWHQL             ; Cmd line: Fake Windows to install non WHQL certificated drivers (only for W2K and XP currently!!) ("/unsig_drv")
-Var g_bForceInstall         ; Cmd line: Force installation on unknown Windows OS version.
-Var g_bUninstall            ; Cmd line: Just uninstall any previous Guest Additions and exit
-Var g_bRebootOnExit         ; Cmd line: Auto-Reboot on successful installation. Good for unattended installations ("/reboot")
-Var g_iScreenBpp            ; Cmd line: Screen depth ("/depth=X")
-Var g_iScreenX              ; Cmd line: Screen resolution X ("/resx=X")
-Var g_iScreenY              ; Cmd line: Screen resolution Y ("/resy=Y")
-Var g_iSfOrder              ; Cmd line: Order of Shared Folders network provider (0=first, 1=second, ...)
-Var g_bIgnoreUnknownOpts    ; Cmd line: Ignore unknown options (don't display the help)
-Var g_bNoVBoxServiceExit    ; Cmd line: Do not quit VBoxService before updating - install on next reboot
-Var g_bNoVBoxTrayExit       ; Cmd line: Do not quit VBoxTray before updating - install on next reboot
-Var g_bNoVideoDrv           ; Cmd line: Do not install the VBoxVideo driver
-Var g_bNoGuestDrv           ; Cmd line: Do not install the VBoxGuest driver
-Var g_bNoMouseDrv           ; Cmd line: Do not install the VBoxMouse driver
-Var g_bWithAutoLogon        ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
-Var g_bWithD3D              ; Cmd line: Install Direct3D support
-Var g_bWithWDDM             ; Install the WDDM driver instead of the normal one
-Var g_bOnlyExtract          ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
-Var g_bCapWDDM              ; Capability: Is the guest able to handle/use our WDDM driver?
+; Internal parameters
+Var g_iSystemMode                       ; Current system mode (0 = Normal boot, 1 = Fail-safe boot, 2 = Fail-safe with network boot)
+Var g_strSystemDir                      ; Windows system directory
+Var g_strCurUser                        ; Current user using the system
+Var g_strAddVerMaj                      ; Installed Guest Additions: Major version
+Var g_strAddVerMin                      ; Installed Guest Additions: Minor version
+Var g_strAddVerBuild                    ; Installed Guest Additions: Build number
+Var g_strAddVerRev                      ; Installed Guest Additions: SVN revision
+Var g_strWinVersion                     ; Current Windows version we're running on
+Var g_bLogEnable                        ; Do logging when installing? "true" or "false"
+Var g_bWithWDDM                         ; Install the WDDM driver instead of the normal one
+Var g_bCapWDDM                          ; Capability: Is the guest able to handle/use our WDDM driver?
+
+; Command line parameters - these can be set/modified
+; on the command line
+Var g_bFakeWHQL                         ; Cmd line: Fake Windows to install non WHQL certificated drivers (only for W2K and XP currently!!) ("/unsig_drv")
+Var g_bForceInstall                     ; Cmd line: Force installation on unknown Windows OS version
+Var g_bUninstall                        ; Cmd line: Just uninstall any previous Guest Additions and exit
+Var g_bRebootOnExit                     ; Cmd line: Auto-Reboot on successful installation. Good for unattended installations ("/reboot")
+Var g_iScreenBpp                        ; Cmd line: Screen depth ("/depth=X")
+Var g_iScreenX                          ; Cmd line: Screen resolution X ("/resx=X")
+Var g_iScreenY                          ; Cmd line: Screen resolution Y ("/resy=Y")
+Var g_iSfOrder                          ; Cmd line: Order of Shared Folders network provider (0=first, 1=second, ...)
+Var g_bIgnoreUnknownOpts                ; Cmd line: Ignore unknown options (don't display the help)
+Var g_bNoVBoxServiceExit                ; Cmd line: Do not quit VBoxService before updating - install on next reboot
+Var g_bNoVBoxTrayExit                   ; Cmd line: Do not quit VBoxTray before updating - install on next reboot
+Var g_bNoVideoDrv                       ; Cmd line: Do not install the VBoxVideo driver
+Var g_bNoGuestDrv                       ; Cmd line: Do not install the VBoxGuest driver
+Var g_bNoMouseDrv                       ; Cmd line: Do not install the VBoxMouse driver
+Var g_bWithAutoLogon                    ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
+Var g_bWithD3D                          ; Cmd line: Install Direct3D support
+Var g_bOnlyExtract                      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
+Var g_bPostInstallStatus                ; Cmd line: Post the overall installation status to some external program (VBoxTray)
 
 ; Platform parts of this installer
 !include "VBoxGuestAdditionsCommon.nsh"
@@ -219,7 +232,7 @@ Function HandleCommandLine
 
   ${WordFind} $0 " " "#" $1                   ; Get number of parameters in cmd line
   ${If} $0 == $1                              ; If result matches the input then
-    StrCpy $1 "1"                             ; no delimiter was found. Correct to 1 word total.
+    StrCpy $1 "1"                             ; no delimiter was found. Correct to 1 word total
   ${EndIf}
 
   ${While} $2 <= $1                           ; Loop through all params
@@ -290,6 +303,17 @@ Function HandleCommandLine
       ${Case} '/no_mousedrv' ; Not officially documented
         StrCpy $g_bNoMouseDrv "true"
         ${Break}
+
+!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
+      ; This switch tells our installer that it
+      ; - should not quit VBoxTray during the update, because ...
+      ; - ... it should show the overall installation status
+      ;   using VBoxTray's balloon message feature (since VBox 4.0)
+      ${Case} '/post_installstatus' ; Not officially documented
+        StrCpy $g_bNoVBoxTrayExit "true"
+        StrCpy $g_bPostInstallStatus "true"
+        ${Break}
+!endif
 
       ${Case} '/reboot'
         StrCpy $g_bRebootOnExit "true"
@@ -413,7 +437,7 @@ sun_check:
 
   ; Check for old "Sun VirtualBox Guest Additions"
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Sun VirtualBox Guest Additions" "UninstallString"
-  StrCmp $0 "" sun_xvm_check     ; If string is empty, Sun additions are probably not installed (anymore).
+  StrCmp $0 "" sun_xvm_check     ; If string is empty, Sun additions are probably not installed (anymore)
 
   MessageBox MB_YESNO $(VBOX_SUN_FOUND) /SD IDYES IDYES sun_uninstall
     Pop $2
@@ -431,7 +455,7 @@ sun_xvm_check:
 
   ; Check for old "innotek" Guest Additions" before rebranding to "Sun"
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Sun xVM VirtualBox Guest Additions" "UninstallString"
-  StrCmp $0 "" innotek_check     ; If string is empty, Sun xVM additions are probably not installed (anymore).
+  StrCmp $0 "" innotek_check     ; If string is empty, Sun xVM additions are probably not installed (anymore)
 
   MessageBox MB_YESNO $(VBOX_SUN_FOUND) /SD IDYES IDYES sun_xvm_uninstall
     Pop $2
@@ -449,7 +473,7 @@ innotek_check:
 
   ; Check for old "innotek" Guest Additions" before rebranding to "Sun"
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\innotek VirtualBox Guest Additions" "UninstallString"
-  StrCmp $0 "" exit     ; If string is empty, Guest Additions are probably not installed (anymore).
+  StrCmp $0 "" exit     ; If string is empty, Guest Additions are probably not installed (anymore)
 
   MessageBox MB_YESNO $(VBOX_INNOTEK_FOUND) /SD IDYES IDYES innotek_uninstall
     Pop $2
@@ -663,7 +687,7 @@ SectionEnd
 Section /o -$(VBOX_COMPONENT_AUTOLOGON) SEC02
 
   ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths.
+  ; do some tricks for the Windows paths
 !if $%BUILD_TARGET_ARCH% == "amd64"
   ; Because the next two lines will crash at the license page (??) we have to re-enable that here again
   ${DisableX64FSRedirection}
@@ -676,7 +700,7 @@ Section /o -$(VBOX_COMPONENT_AUTOLOGON) SEC02
   DetailPrint "Installing auto-logon support ..."
 
   ; Another GINA already is installed? Check if this is ours, otherwise let the user decide (unless it's a silent setup)
-  ; whether to replace it with the VirtualBox one or not.
+  ; whether to replace it with the VirtualBox one or not
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${If} $0 != ""
     ${If} $0 != "VBoxGINA.dll"
@@ -964,6 +988,11 @@ FunctionEnd
 Function .onInstFailed
 
   MessageBox MB_ICONSTOP $(VBOX_ERROR_INST_FAILED) /SD IDOK
+
+  Push "Error while installing ${PRODUCT_NAME}!"
+  Push 2 ; Message type = error
+  Call WriteLogVBoxTray
+
   StrCpy $g_bLogEnable "true"
   Call WriteLogUI
   SetErrorLevel 1
@@ -973,7 +1002,9 @@ FunctionEnd
 ; This function is called when installation was successful!
 Function .onInstSuccess
 
-  ; Nothing to do here yet ...
+  Push "${PRODUCT_NAME} successfully updated!"
+  Push 0 ; Message type = info
+  Call WriteLogVBoxTray
 
 FunctionEnd
 
@@ -1007,6 +1038,7 @@ Function .onInit
   StrCpy $g_bOnlyExtract "false"
   StrCpy $g_bWithWDDM "false"
   StrCpy $g_bCapWDDM "false"
+  StrCpy $g_bPostInstallStatus "false"
 
   SetErrorLevel 0
   ClearErrors
@@ -1015,6 +1047,10 @@ Function .onInit
 
   ; Handle command line
   Call HandleCommandLine
+
+  Push "${PRODUCT_NAME} update started, please wait ..."
+  Push 0 ; Message type = info
+  Call WriteLogVBoxTray
 
   ; Retrieve Windows version and store result in $g_strWinVersion
   Call GetWindowsVer
@@ -1069,7 +1105,7 @@ Function .onInit
 
   ; Because this NSIS installer is always built in 32-bit mode, we have to
   ; do some tricks for the Windows paths for checking for old additions
-  ; in block below.
+  ; in block below
 !if $%BUILD_TARGET_ARCH% == "amd64"
   ${DisableX64FSRedirection}
   SetRegView 64
@@ -1081,7 +1117,7 @@ Function .onInit
 
   ; Due to some bug in NSIS the license page won't be displayed if we're in
   ; 64-bit registry view, so as a workaround switch back to 32-bit (Wow6432Node)
-  ; mode for now.
+  ; mode for now
 !if $%BUILD_TARGET_ARCH% == "amd64"
   ${EnableX64FSRedirection}
   SetRegView 32
@@ -1106,9 +1142,9 @@ extract_files:
 
   ;
   ; If UNINSTALLER_ONLY is defined, we're only interested in uninst.exe
-  ; so we can sign it.
+  ; so we can sign it
   ;
-  ; Note that the Quit causes the exit status to be 2 instead of 0.
+  ; Note that the Quit causes the exit status to be 2 instead of 0
   ;
   WriteUninstaller "$%PATH_TARGET%\uninst.exe"
   Goto exit
@@ -1124,9 +1160,9 @@ done:
 FunctionEnd
 
 ;
-; The uninstaller is built separately when doing code signing.
+; The uninstaller is built separately when doing code signing
 ; For some reason NSIS still finds the Uninstall section even
-; when EXTERNAL_UNINSTALLER is defined. This causes a silly warning.
+; when EXTERNAL_UNINSTALLER is defined. This causes a silly warning
 ;
 !ifndef EXTERNAL_UNINSTALLER
 
@@ -1147,13 +1183,13 @@ Function un.onInit
 proceed:
 
   ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths.
+  ; do some tricks for the Windows paths
 !if $%BUILD_TARGET_ARCH% == "amd64"
   ${DisableX64FSRedirection}
   SetRegView 64
 !endif
 
-  ; Set system directory.
+  ; Set system directory
   StrCpy $g_strSystemDir "$SYSDIR"
 
   ; Retrieve Windows version we're running on and store it in $g_strWinVersion
@@ -1172,14 +1208,14 @@ Section Uninstall
 !endif
 
   ; Because this NSIS installer is always built in 32-bit mode, we have to
-  ; do some tricks for the Windows paths.
+  ; do some tricks for the Windows paths
 !if $%BUILD_TARGET_ARCH% == "amd64"
-  ; Do *not* add this line in .onInit - it will crash at the license page (??) because of a weird NSIS bug.
+  ; Do *not* add this line in .onInit - it will crash at the license page (??) because of a weird NSIS bug
   ${DisableX64FSRedirection}
   SetRegView 64
 !endif
 
-  ; Call the uninstall main function.
+  ; Call the uninstall main function
   Call un.Uninstall
 
   ; ... and remove the local install directory

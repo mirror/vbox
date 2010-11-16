@@ -3,7 +3,7 @@
 Function ExtractFiles
 
   ; @todo: Use a define for all the file specs to group the files per module
-  ; and keep the redundancy low.
+  ; and keep the redundancy low
 
   Push $0
   StrCpy "$0" "$INSTDIR\$%BUILD_TARGET_ARCH%"
@@ -27,7 +27,7 @@ Function ExtractFiles
   FILE "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
   FILE "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
 
-  ; Do *not* install 64-bit d3d files - they don't work yet.
+  ; Do *not* install 64-bit d3d files - they don't work yet
   !if $%BUILD_TARGET_ARCH% == "x86"
     SetOutPath "$0\VBoxVideo\OpenGL"
     FILE "$%PATH_OUT%\bin\additions\d3d8.dll"
@@ -167,10 +167,39 @@ FunctionEnd
 !insertmacro WriteLogUI ""
 !insertmacro WriteLogUI "un."
 
+!macro WriteLogVBoxTray un
+Function ${un}WriteLogVBoxTray
+
+  ; Pop function parameters off the stack
+  ; in reverse order
+  Exch $1 ; Message type (0=Info, 1=Warning, 2=Error)
+  Exch
+  Exch $0 ; Body string
+
+  ; @todo Add more paramters here!
+!if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
+  ${If} $g_bPostInstallStatus == "true"
+    ; Parameters:
+    ; - String: Description / Body
+    ; - String: Title / Name of application
+    ; - Integer: Type of message: 0 (Info), 1 (Warning), 2 (Error)
+    ; - Integer: Time (in msec) to show the notification
+    VBoxGuestInstallHelper::VBoxTrayShowBallonMsg "$0" "VirtualBox Guest Additions Setup" $1 5000
+    Pop $0 ; Get return value (ignored for now)
+  ${EndIf}
+!endif
+  Pop $0
+  Pop $1
+
+FunctionEnd
+!macroend
+!insertmacro WriteLogVBoxTray ""
+!insertmacro WriteLogVBoxTray "un."
+
 !macro GetWindowsVer un
 Function ${un}GetWindowsVer
 
-  ; Check if we are running on w2k or above.
+  ; Check if we are running on w2k or above
   ; For other windows versions (>XP) it may be necessary to change winver.nsh
   Call ${un}GetWindowsVersion
   Pop $R3     ; Windows Version
@@ -203,7 +232,7 @@ exit:
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro GetWindowsVer ""
 !insertmacro GetWindowsVer "un."
 
@@ -270,7 +299,7 @@ exit:
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro GetAdditionsVersion ""
 !insertmacro GetAdditionsVersion "un."
 
@@ -289,7 +318,7 @@ is_admin:
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro IsUserAdmin ""
 !insertmacro IsUserAdmin "un."
 
@@ -352,7 +381,7 @@ exit:
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro StopVBoxService ""
 !insertmacro StopVBoxService "un."
 
@@ -387,7 +416,7 @@ exit:
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro StopVBoxTray ""
 !insertmacro StopVBoxTray "un."
 
@@ -408,7 +437,7 @@ Function ${un}AbortShutdown
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro AbortShutdown ""
 !insertmacro AbortShutdown "un."
 
@@ -429,7 +458,7 @@ Function ${un}CheckForWDDMCapability
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro CheckForWDDMCapability ""
 !insertmacro CheckForWDDMCapability "un."
 
@@ -441,7 +470,7 @@ Function ${un}CheckForCapabilities
 FunctionEnd
 !macroend
 
-; Insert function as an installer and uninstaller function.
+; Insert function as an installer and uninstaller function
 !insertmacro CheckForCapabilities ""
 !insertmacro CheckForCapabilities "un."
 
