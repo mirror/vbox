@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="KnownIssues">
   <title>Known limitations</title>
 
@@ -29,7 +29,6 @@
             2000, XP and 2003 guests. Requires 3.0.12 or higher Guest
             Additions to be installed.</para>
           </listitem>
-
         </itemizedlist></para>
     </listitem>
 
@@ -51,19 +50,20 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Guest control.</emphasis> On
-      Windows guests, a process lauched via the guest control execute support is
-      only able to display a graphical user interface if the user account it is
-      started under, is currently logged in and has a desktop
-      session. Otherwise, the process will not be able to display its user
-      interface. </para>
-      <para>Also, for using accounts without or with an empty password specified,
-      the group policy needs to be changed on the guest. To do so, open the
-      group policy editor on the command line by typing
+      <para><emphasis role="bold">Guest control.</emphasis> On Windows guests,
+      a process lauched via the guest control execute support is only able to
+      display a graphical user interface if the user account it is started
+      under, is currently logged in and has a desktop session. Otherwise, the
+      process will not be able to display its user interface.</para>
+
+      <para>Also, for using accounts without or with an empty password
+      specified, the group policy needs to be changed on the guest. To do so,
+      open the group policy editor on the command line by typing
       <computeroutput>gpedit.msc</computeroutput>, open the key
-      <emphasis>Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options</emphasis>
-      and change the value of <emphasis>Accounts: Limit local account use of blank passwords to console logon only</emphasis>
-      to <emphasis>Disabled</emphasis>.</para>
+      <emphasis>Computer Configuration\Windows Settings\Security
+      Settings\Local Policies\Security Options</emphasis> and change the value
+      of <emphasis>Accounts: Limit local account use of blank passwords to
+      console logon only</emphasis> to <emphasis>Disabled</emphasis>.</para>
     </listitem>
 
     <listitem>
@@ -101,10 +101,10 @@
       <para><emphasis role="bold">OVF import/export:</emphasis><itemizedlist>
           <listitem>
             <para>When importing an OVF that was previously exported by
-            VirtualBox 3.2 or higher which contains a complete VirtualBox machine
-            configuration in the &lt;vbox:Machine&gt; element, some of the
-            import customizations that can be specified (in either the GUI or
-            on the VBoxManage command line) are presently ignored. In
+            VirtualBox 3.2 or higher which contains a complete VirtualBox
+            machine configuration in the &lt;vbox:Machine&gt; element, some of
+            the import customizations that can be specified (in either the GUI
+            or on the VBoxManage command line) are presently ignored. In
             particular, customizations of the imported storage configuration
             are ignored. This will be fixed in the next release.</para>
           </listitem>
@@ -123,10 +123,6 @@
             <para>OVF environment documents, including their property sections
             and appliance configuration with ISO images, are not yet
             supported.</para>
-          </listitem>
-
-          <listitem>
-            <para>OVA archives (TAR containers) are not yet supported.</para>
           </listitem>
 
           <listitem>
@@ -221,7 +217,8 @@
       <para><emphasis role="bold">Solaris hosts.</emphasis> The following
       restrictions apply for OpenSolaris and Solaris 10:<itemizedlist>
           <listitem>
-            <para>There is no support for USB devices connected to Solaris 10 hosts.</para>
+            <para>There is no support for USB devices connected to Solaris 10
+            hosts.</para>
           </listitem>
 
           <listitem>

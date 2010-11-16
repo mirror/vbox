@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="BasicConcepts">
   <title>Configuring virtual machines</title>
 
@@ -23,8 +23,8 @@
 
     <para>Since VirtualBox is designed to provide a generic virtualization
     environment for x86 systems, it may run operating systems of any kind,
-    even those that are not officially supported by $VBOX_VENDOR. However, our
-    focus is to optimize the product's performance for a select list of guest
+    even those that are not officially supported. However, our focus is to
+    optimize the product's performance for a select list of guest
     systems:</para>
 
     <para><glosslist>
@@ -32,10 +32,10 @@
           <glossterm>Windows NT 4.0</glossterm>
 
           <glossdef>
-            <para>All versions/editions and service packs are fully supported;
-            however, there are some issues with older service packs. We
-            recommend to install service pack 6a. Guest Additions are
-            available with a limited feature set.</para>
+            <para>All versions, editions and service packs are fully
+            supported; however, there are some issues with older service
+            packs. We recommend to install service pack 6a. Guest Additions
+            are available with a limited feature set.</para>
           </glossdef>
         </glossentry>
 
@@ -44,7 +44,7 @@
           Windows 7</glossterm>
 
           <glossdef>
-            <para>All versions/editions and service packs are fully supported
+            <para>All versions, editions and service packs are fully supported
             (including 64-bit versions, under the preconditions listed below).
             Guest Additions are available.</para>
           </glossdef>
@@ -154,21 +154,20 @@
       issues</emphasis> before attempting to install a Mac OS X Server
       guest:<orderedlist>
           <listitem>
-            <para>Mac OS X is commercial, licensed software and contains both
-            license and technical restrictions that limit its use to certain
-            hardware and usage scenarios. It is important that you understand
-            and obey these restrictions. Only the Mac OS X Server is designed
-            to be used in a virtual environment and therefore, VirtualBox does
-            not support Mac OS X client as a guest.</para>
+            <para>Mac OS X is commercial, licensed software and contains
+            <emphasis role="bold">both license and technical
+            restrictions</emphasis> that limit its use to certain hardware and
+            usage scenarios. It is important that you understand and obey
+            these restrictions. </para>
 
-            <para>As a result, before attempting to install Mac OS X Server in
-            a virtual machine, make sure you understand the <emphasis
-            role="bold">license restrictions</emphasis> of the Mac OS X
-            version you want to use. For most versions of Mac OS X Server,
-            Apple prohibits installing them on non-Apple hardware.</para>
+            <para>In particular, for most versions of Mac OS X Server, Apple
+            prohibits installing them on non-Apple hardware. Also, only the
+            server versions of Mac OS X are designed to be used in a virtual
+            environment; as a result, VirtualBox does not support client
+            versions of Mac OS X as a guest.</para>
 
             <para>These license restrictions are also enforced on a technical
-            level: Mac OS X Server verifies whether it is running on Apple
+            level. Mac OS X Server verifies whether it is running on Apple
             hardware, and most DVDs that that come with Apple hardware even
             check for an exact model. These restrictions are
             <emphasis>not</emphasis> circumvented by VirtualBox and continue
@@ -177,11 +176,11 @@
 
           <listitem>
             <para>Only <emphasis role="bold">CPUs</emphasis> known and tested
-            by Apple are supported. As a result, if the Intel CPU is newer
-            than the build of Mac OS X Server, it will most likely panic
-            during bootup with an "Unsupported CPU" exception. It is generally
-            best to use the Mac OS X Server DVD that came with your Apple
-            hardware.</para>
+            by Apple are supported. As a result, if your Intel CPU is newer
+            than the build of Mac OS X Server, or if you have a non-Intel CPU,
+            it will most likely panic during bootup with an "Unsupported CPU"
+            exception. It is generally best to use the Mac OS X Server DVD
+            that came with your Apple hardware.</para>
           </listitem>
 
           <listitem>
@@ -203,13 +202,13 @@
     <sect2 id="intro-64bitguests">
       <title>64-bit guests</title>
 
-      <para>Starting with version 2.0, VirtualBox supports 64-bit guest
-      operating systems. Starting with version 2.1, you can even run 64-bit
-      guests on a 32-bit host operating system. The hardware prerequisites are
-      identical for both cases.</para>
-
-      <para>In particular, 64-bit guests are supported under the following
-      conditions:<orderedlist>
+      <para>VirtualBox supports 64-bit guest operating systems, even on 32-bit
+      host operating systems,<footnote>
+          <para>64-bit guest support was added with VirtualBox 2.0; support
+          for 64-bit guests on 32-bit hosts was added with VirtualBox
+          2.1.</para>
+        </footnote> provided that the following conditions are
+      met:<orderedlist>
           <listitem>
             <para>You need a 64-bit processor with hardware virtualization
             support (see <xref linkend="hwvirt" />).</para>
@@ -262,29 +261,32 @@
           <para><emphasis role="bold">Input devices.</emphasis> By default,
           VirtualBox emulates a standard PS/2 keyboard and mouse. These
           devices are supported by almost all past and present operating
-          systems. In addition, VirtualBox can provide virtual USB input
-          devices.</para>
+          systems. </para>
+
+          <para>In addition, VirtualBox can provide virtual USB input devices
+          to avoid having to capture mouse and keyboard, as described in <xref
+          linkend="keyb_mouse_normal" />.</para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold">Graphics.</emphasis> the VirtualBox
+          <para><emphasis role="bold">Graphics.</emphasis> The VirtualBox
           graphics device (sometimes referred to as VGA device) is, unlike
           nearly all other emulated devices, not based on any physical
           counterpart. It is a simple, synthetic device which provides
           compatibility with standard VGA and several extended registers used
-          by VESA BIOS Extensions (VBE).</para>
+          by the VESA BIOS Extensions (VBE).</para>
         </listitem>
 
         <listitem>
           <para><emphasis role="bold">Storage.</emphasis> VirtualBox currently
           emulates the standard ATA interface found on Intel PIIX3/PIIX4
-          chips, SATA (AHCI) interface, and two SCSI adapters (LSI Logic and
-          BusLogic); see <xref linkend="harddiskcontrollers" /> for details.
-          Whereas providing one of these would be enough for VirtualBox by
-          itself, this multitude of storage adapters is required for
-          compatibility with other hypervisors. Windows is particularly picky
-          about its boot devices, and migrating VMs between hypervisors is
-          very difficult or impossible if the storage controllers are
+          chips, the SATA (AHCI) interface, and two SCSI adapters (LSI Logic
+          and BusLogic); see <xref linkend="harddiskcontrollers" /> for
+          details. Whereas providing one of these would be enough for
+          VirtualBox by itself, this multitude of storage adapters is required
+          for compatibility with other hypervisors. Windows is particularly
+          picky about its boot devices, and migrating VMs between hypervisors
+          is very difficult or impossible if the storage controllers are
           different.</para>
         </listitem>
 
@@ -299,15 +301,14 @@
           controllers because OHCI only handles USB low- and full-speed
           devices (both USB 1.x and 2.0), while EHCI only handles high-speed
           devices (USB 2.0 only). The emulated USB controllers do not
-          communicate directly with devices on the host but rather with the
-          VUSB layer (see below), which abstracts the USB protocol and allows
-          the use of remote USB devices (with VRDP).</para>
+          communicate directly with devices on the host but rather with a
+          virtual USB layer which abstracts the USB protocol and allows the
+          use of remote USB devices.</para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold">Audio.</emphasis> Two audio devices are
-          emulated, an AC97 controller plus codec, and a classic SoundBlaster
-          16 (digital audio only).</para>
+          <para><emphasis role="bold">Audio.</emphasis> See <xref
+          linkend="settings-audio" />.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
@@ -345,13 +346,13 @@
         </glossentry>
 
         <glossentry>
-          <glossterm>Operating System / Version</glossterm>
+          <glossterm>Operating system / version</glossterm>
 
           <glossdef>
             <para>The type of the guest operating system that is (or will be)
             installed in the VM. This is the same setting that was specified
-            in the "New Virtual Machine" wizard, as described with <xref
-            linkend="gui-createvm" /> above.</para>
+            in the "New Virtual Machine" wizard, as described in <xref
+            linkend="gui-createvm" />.</para>
           </glossdef>
         </glossentry>
       </glosslist>
@@ -373,7 +374,7 @@
           </glossentry>
 
           <glossentry>
-            <glossterm>Shared Clipboard</glossterm>
+            <glossterm>Shared clipboard</glossterm>
 
             <glossdef>
               <para>If the virtual machine has Guest Additions installed, you
@@ -387,7 +388,7 @@
           </glossentry>
 
           <glossentry>
-            <glossterm>Removable Media: Remember Runtime Changes</glossterm>
+            <glossterm>Removable media: remember runtime changes</glossterm>
 
             <glossdef>
               <para>If this is checked, VirtualBox will save the state of what
@@ -397,7 +398,7 @@
           </glossentry>
 
           <glossentry>
-            <glossterm>Mini Toolbar</glossterm>
+            <glossterm>Mini toolbar</glossterm>
 
             <glossdef>
               <para>In full screen or seamless mode, VirtualBox can display a
@@ -417,7 +418,7 @@
       <title>"Description" tab</title>
 
       <para>Here you can enter any description for your virtual machine, if
-      you want. This has no effect of the functionality of the machine, but
+      you want. This has no effect on the functionality of the machine, but
       you may find this space useful to note down things like the
       configuration of a virtual machine and the software that has been
       installed into it.</para>
@@ -631,10 +632,8 @@
       <para>If your host's CPU supports the <emphasis role="bold">nested
       paging</emphasis> (AMD-V) or <emphasis role="bold">EPT</emphasis> (Intel
       VT-x) features, then you can expect a significant performance increase
-      by enabling nested paging in addition to hardware virtualization. Nested
-      paging is still disabled by default even for new machines, but it can be
-      enabled for each virtual machine individually. For technical details,
-      see <xref linkend="nestedpaging" />.</para>
+      by enabling nested paging in addition to hardware virtualization. For
+      technical details, see <xref linkend="nestedpaging" />.</para>
     </sect2>
   </sect1>
 
@@ -708,11 +707,12 @@
         <glossterm>Remote display</glossterm>
 
         <glossdef>
-          <para>Under the "Remote display" tab, you can enable the VRDP server
-          that is built into VirtualBox to allow you to connect to the virtual
-          machine remotely. For this, you can use any standard RDP viewer,
-          such as <computeroutput>mstsc.exe</computeroutput> that comes with
-          Microsoft Windows or, on Linux systems, the standard open-source
+          <para>Under the "Remote display" tab, if the VirtualBox Remote
+          Display Extension (VRDE) is installed, you can enable the RDP server
+          that is built into VirtualBox. This allows you to connect to the
+          virtual machine remotely with any standard RDP viewer, such as
+          <computeroutput>mstsc.exe</computeroutput> that comes with Microsoft
+          Windows or, on Linux systems, the standard open-source
           <computeroutput>rdesktop</computeroutput> program. These features
           are described in detail in <xref linkend="vrdp" />.</para>
         </glossdef>
@@ -780,16 +780,20 @@
     Disk". Alternatively, right-click on the storage controller and select a
     menu item there.</para>
 
-    <para>On the right part of the window, you can then select where the
-    virtual disk should be connected to on the controller and which image file
-    to use.<itemizedlist>
+    <para>On the right part of the window, you can then select to which slot
+    of the controller the virtual disk should be connected to and which image
+    file to use.<itemizedlist>
         <listitem>
           <para>For virtual hard disks, a drop-down list appears on the right,
           listing all the hard disk images that VirtualBox currently knows
-          about. If you click on the "Open Virtual Media Manager" icon to the
-          right, this will bring up a window in which you can select or create
-          a different hard disk image (see <xref linkend="vdis" /> for
-          details).</para>
+          about. </para>
+
+          <para>The folder icon next to the drop-down allow you to select a
+          different disk image using a standard file dialog.</para>
+
+          <para>The second icon next to the drop-down allows you to create a
+          new disk image; this will bring up the "Create new disk" wizard,
+          which was described in <xref linkend="gui-createvm" />.</para>
         </listitem>
 
         <listitem>
@@ -808,11 +812,12 @@
                 your physical device. This is, for instance, useful if you
                 want to install Windows from a real installation CD. In this
                 case, select your host drive from the drop-down list
-                presented.<note>
-                    <para>If you want to write CDs or DVDs using the host
-                    drive, you need to enable a special setting first; see
-                    <xref linkend="storage-write-cds" />.</para>
-                  </note></para>
+                presented.</para>
+
+                <para>If you want to write (burn) CDs or DVDs using the host
+                drive, you need to enable the <emphasis
+                role="bold">"Passthrough"</emphasis> option; see <xref
+                linkend="storage-write-cds" />.</para>
               </listitem>
 
               <listitem>
@@ -856,7 +861,7 @@
     about storage configuration.</para>
   </sect1>
 
-  <sect1>
+  <sect1 id="settings-audio">
     <title>Audio settings</title>
 
     <para>The "Audio" section in a virtual machine's Settings window
@@ -864,20 +869,18 @@
     audio output should be heard on the host system.</para>
 
     <para>If audio is enabled for a guest, you can choose between the
-    emulation of an Intel AC'97 controller or a SoundBlaster 16 card. In any
-    case, you can select what audio driver VirtualBox will use on the
-    host.</para>
+    emulation of an Intel AC'97 controller, an Intel HD Audio
+    controller<footnote>
+        <para>Intel HD Audio support was added with VirtualBox 4.0 because
+        Windows 7 (32-bit and 64-bit versions) as well as 64-bit Windows Vista
+        do not support the Intel AC'97 controller.</para>
+      </footnote> or a SoundBlaster 16 card. In any case, you can select what
+    audio driver VirtualBox will use on the host.</para>
 
     <para>On a Linux host, depending on your host configuration, you can also
     select between the OSS, ALSA or the PulseAudio subsystem. On newer Linux
     distributions (Fedora 8 and above, Ubuntu 8.04 and above) the PulseAudio
-    subsystem should be preferred.<note>
-        <para>Newer Windows versions do not ship with drivers for the virtual
-        audio hardware emulated by VirtualBox. This applies to Windows 7
-        (32-bit and 64-bit versions) as well as 64-bit Windows Vista. See
-        <xref linkend="win7_audio" /> for instructions how to solve this
-        problem.</para>
-      </note></para>
+    subsystem should be preferred.</para>
   </sect1>
 
   <sect1 id="settings-network">
