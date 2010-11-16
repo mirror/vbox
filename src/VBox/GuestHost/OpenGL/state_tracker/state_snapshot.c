@@ -88,7 +88,7 @@ static int32_t crStateSaveTextureObjData(CRTextureObj *pTexture, PSSMHANDLE pSSM
              * Even with CR_STATE_NO_TEXTURE_IMAGE_STORE defined, it's possible that ptl->img!=NULL.
              * For ex. we're saving snapshot right after it was loaded
              * and some context hasn't been used by the guest application yet
-             * (pContext->texture.bResyncNeeded==GL_TRUE).
+             * (pContext->shared->bTexResyncNeeded==GL_TRUE).
              */
             else if (ptl->bytes)
             {
@@ -1629,7 +1629,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
     }
 
     /* Mark textures for resending to GPU */
-    pContext->texture.bResyncNeeded = GL_TRUE;
+    pContext->shared->bTexResyncNeeded = GL_TRUE;
 
     /* Load lights */
     CRASSERT(pContext->lighting.light);
@@ -1777,7 +1777,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
         }
     }
 
-    pContext->bufferobject.bResyncNeeded = GL_TRUE;
+    pContext->shared->bVBOResyncNeeded = GL_TRUE;
 #endif
 
     /* Load pixel/vertex programs */
@@ -1866,7 +1866,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
                                                      : crHashtableSearch(pContext->shared->rbTable, ui);
 
     /* Mark FBOs/RBOs for resending to GPU */
-    pContext->framebufferobject.bResyncNeeded = GL_TRUE;
+    pContext->shared->bFBOResyncNeeded = GL_TRUE;
 #endif
 
 #ifdef CR_OPENGL_VERSION_2_0

@@ -202,9 +202,6 @@ typedef struct {
     
     GLboolean   broadcastTextures; /*@todo what is it for?*/
 
-    /* Indicates that we have to resend texture data to GPU on first glMakeCurrent call with owning context */
-    GLboolean   bResyncNeeded;
-
     /* Per-texture unit state: */
     CRTextureUnit   unit[CR_MAX_TEXTURE_UNITS];
 } CRTextureState;
