@@ -25,22 +25,7 @@ VBOX_PATH_DEVICES_SRC ?= $(PATH_ROOT)/src/VBox/Devices
 VBOX_DEVICES_TEST_OUT_DIR := $(PATH_TARGET)/Devices/testcase
 BLDDIRS += $(VBOX_DEVICES_TEST_OUT_DIR)
 
-#
-# We setup one 'other' target for executing the structure & alignment
-# validation testcases. Perhaps a bit hackish, but extremely useful.
-#
-ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
- ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
-  OTHERS += \
-	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
- endif
-endif
-
-# The normal testing pass.
-TESTING += \
-	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
-
-VBOX_tstDeviceStructSize_FEATURES = \
+VBOX_DEVICES_TESTS_FEATURES = \
 	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,) \
 	$(if $(VBOX_WITH_USB),VBOX_WITH_USB,) \
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI,) \
@@ -56,13 +41,28 @@ VBOX_tstDeviceStructSize_FEATURES = \
 	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM,) \
 	$(if $(VBOX_WITH_VIDEOHWACCEL),VBOX_WITH_VIDEOHWACCEL,)
 
+#
+# We setup one 'other' target for executing the structure & alignment
+# validation testcases. Perhaps a bit hackish, but extremely useful.
+#
+ifeq ($(KBUILD_TARGET),$(KBUILD_HOST))
+ ifeq ($(filter-out x86.x86 amd64.amd64 x86.amd64, $(KBUILD_TARGET_ARCH).$(KBUILD_HOST_ARCH)),)
+  OTHERS += \
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
+ endif
+endif
+
+# The normal testing pass.
+TESTING += \
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
+
 ifdef VBOX_WITH_RAW_MODE
  #
  # The testcase generator.
  #
  PROGRAMS += tstDeviceStructSizeRC
  tstDeviceStructSizeRC_TEMPLATE  = VBoxRcExe
- tstDeviceStructSizeRC_DEFS      = $(VBOX_tstDeviceStructSize_FEATURES)
+ tstDeviceStructSizeRC_DEFS      = $(VBOX_DEVICES_TESTS_FEATURES)
  tstDeviceStructSizeRC_SOURCES   = tstDeviceStructSizeRC.cpp
  tstDeviceStructSizeRC_INCS      = \
  	$(VBOX_PATH_DEVICES_SRC) \
@@ -75,7 +75,7 @@ endif # VBOX_WITH_RAW_MODE
 #
 PROGRAMS += tstDeviceStructSize
 tstDeviceStructSize_TEMPLATE = VBOXR3AUTOTST
-tstDeviceStructSize_DEFS     = $(VBOX_tstDeviceStructSize_FEATURES)
+tstDeviceStructSize_DEFS     = $(VBOX_DEVICES_TESTS_FEATURES)
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \
 	$(VBOX_PATH_DEVICES_SRC)/Bus \
