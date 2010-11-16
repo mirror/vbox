@@ -229,6 +229,9 @@ typedef struct RTSHA1STORAGE
     Utf8Str      strDigest;
 } RTSHA1STORAGE, *PRTSHA1STORAGE;
 
+/** @todo r=bird: RT is a prefix reserved for IPRT, using it outside will only
+ * cause confusion. Please find a different prefix unless the plan is to move
+ * this code into IPRT. (I can find no @todo in the code hinting at this.) */
 PVDINTERFACEIO RTSha1CreateInterface();
 PVDINTERFACEIO RTFileCreateInterface();
 PVDINTERFACEIO RTTarCreateInterface();
