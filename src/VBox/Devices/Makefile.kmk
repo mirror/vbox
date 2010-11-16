@@ -1147,7 +1147,7 @@ ifdef VBOX_WITH_EXTPACK_PUEL
  #
  INSTALLS += VBoxExtPackPuelInsRoms
  VBoxExtPackPuelInsRoms_TEMPLATE = VBoxInsExtPackPuel
- VBoxExtPackPuelInsRoms_SOURCES = PC/PXE/pxepcnet.rom=>PXE-Intel.rom
+ VBoxExtPackPuelInsRoms_SOURCES = PC/PXE/PXE-Intel.rom=>PXE-Intel.rom
 endif # VBOX_WITH_USB && VBOX_WITH_EXTPACK_PUEL
 
 
