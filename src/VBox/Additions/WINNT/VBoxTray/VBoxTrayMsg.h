@@ -18,7 +18,8 @@
 #ifndef ___VBOXTRAY_MSG_H
 #define ___VBOXTRAY_MSG_H
 
-#define VBOXTRAY_PIPE_IPC "\\\\.\\pipe\\VBoxTrayIPC"
+#define VBOXTRAY_PIPE_IPC               "\\\\.\\pipe\\VBoxTrayIPC"
+#define VBOXTRAY_PIPE_IPC_BUFSIZE       64 * 1024
 
 enum VBOXTRAYIPCMSGTYPE
 {
@@ -32,9 +33,9 @@ enum VBOXTRAYIPCMSGTYPE
 typedef struct _VBOXTRAYIPCHEADER
 {
     /** Message type. */
-    UINT uMsg;
+    ULONG ulMsg;
     /** Version of message type. */
-    UINT uVer;
+    ULONG ulVer;
 } VBOXTRAYIPCHEADER, *PVBOXTRAYIPCHEADER;
 
 typedef struct _VBOXTRAYIPCMSG_SHOWBALLOONMSG
@@ -44,11 +45,11 @@ typedef struct _VBOXTRAYIPCMSG_SHOWBALLOONMSG
     /** Message body. */
     TCHAR    szTitle[64];
     /** Message type. */
-    UINT     uType;
+    ULONG    ulType;
     /** Flags; not used yet. */
-    UINT     uFlags;
+    ULONG    ulFlags;
     /** Time to show the message (in msec). */
-    UINT     uShowMS;
+    ULONG    ulShowMS;
 } VBOXTRAYIPCMSG_SHOWBALLOONMSG, *PVBOXTRAYIPCMSG_SHOWBALLOONMSG;
 
 #endif /* !___VBOXTRAY_MSG_H */
