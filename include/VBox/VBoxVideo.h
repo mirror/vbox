@@ -278,6 +278,8 @@ typedef enum
     , VBOXVHWACMD_TYPE_SURF_GETINFO
     , VBOXVHWACMD_TYPE_SURF_COLORFILL
 #endif
+    , VBOXVHWACMD_TYPE_HH_DISABLE
+    , VBOXVHWACMD_TYPE_HH_ENABLE
 } VBOXVHWACMD_TYPE;
 
 /* the command processing was asynch, set by the host to indicate asynch command completion
@@ -723,6 +725,9 @@ typedef struct _VBOXVHWACMD_SURF_COLORKEY_SET
     } u;
 } VBOXVHWACMD_SURF_COLORKEY_SET;
 
+#define VBOXVHWACMD_SURF_OVERLAY_UPDATE_F_SRCMEMRECT 0x00000001
+#define VBOXVHWACMD_SURF_OVERLAY_UPDATE_F_DSTMEMRECT 0x00000002
+
 typedef struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE
 {
     union
@@ -736,7 +741,7 @@ typedef struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE
             uint64_t offSrcSurface;
             VBOXVHWA_RECTL srcRect;
             uint32_t flags;
-            uint32_t xUpdatedSrcMemValid;
+            uint32_t xFlags;
             VBOXVHWA_OVERLAYFX desc;
             VBOXVHWA_RECTL xUpdatedSrcMemRect;
             VBOXVHWA_RECTL xUpdatedDstMemRect;

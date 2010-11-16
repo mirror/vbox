@@ -1001,6 +1001,7 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
 
             if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
             {
+                pBody->u.in.xFlags |= VBOXVHWACMD_SURF_OVERLAY_UPDATE_F_SRCMEMRECT;
                 if (pOurInfo->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID)
                     pBody->u.in.xUpdatedSrcMemRect = *(VBOXVHWA_RECTL*)((void*)&pOurInfo->DirtyRegion.Rect);
                 else
@@ -1013,6 +1014,7 @@ int vboxVhwaHlpOverlayUpdate(PVBOXWDDM_OVERLAY pOverlay, const DXGK_OVERLAYINFO 
 
             if (pDstUpdateRect)
             {
+                pBody->u.in.xFlags |= VBOXVHWACMD_SURF_OVERLAY_UPDATE_F_DSTMEMRECT;
                 pBody->u.in.xUpdatedDstMemRect = *(VBOXVHWA_RECTL*)((void*)pDstUpdateRect);
             }
 

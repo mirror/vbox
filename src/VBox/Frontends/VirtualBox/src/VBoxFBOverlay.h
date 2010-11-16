@@ -1317,6 +1317,8 @@ public:
         return NULL;
     }
 
+
+
     const VBoxVHWACommandElement * contentsRo (const VBoxVHWACommandElement **ppLast) const
     {
         if (ppLast)
@@ -1325,6 +1327,7 @@ public:
     }
 
     bool isEmpty() const { return !mpLast; }
+
 private:
     VBoxVHWACommandElement *mpFirst;
     VBoxVHWACommandElement *mpLast;
@@ -1367,6 +1370,7 @@ class VBoxVHWARefCounter
 #define VBOXVHWA_INIFITE_WAITCOUNT (~0U)
 public:
     VBoxVHWARefCounter() : m_cRefs(0) {}
+    VBoxVHWARefCounter(uint32_t cRefs) : m_cRefs(cRefs) {}
     void inc() { ASMAtomicIncU32(&m_cRefs); }
     uint32_t dec()
     {
@@ -1417,6 +1421,10 @@ public:
             class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     void reset(class VBoxVHWACommandElement ** ppHead, class VBoxVHWACommandElement ** ppTail);
     void setNotifyObject(QObject *pNotifyObject);
+    int loadExec (struct SSMHANDLE * pSSM, uint32_t u32Version, void *pvVRAM);
+    void saveExec (struct SSMHANDLE * pSSM, void *pvVRAM);
+    void lock();
+    void unlock();
 #ifdef DEBUG_misha
     void checkConsistence(uint32_t cEvents2Submit = 0, const VBoxVHWACommandElementPipe *pPipe = NULL);
 #endif

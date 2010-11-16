@@ -5219,6 +5219,14 @@ static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 #endif
 }
 
+static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    return vboxVBVASaveStateDone(pDevIns, pSSM);
+#else
+    return VINF_SUCCESS;
+#endif
+}
 
 /**
  * @copydoc FNSSMDEVSAVEEXEC
@@ -6006,7 +6014,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /* save */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VGA_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
                                 NULL,          vgaR3LiveExec, NULL,
-                                vgaR3SavePrep, vgaR3SaveExec, NULL,
+                                vgaR3SavePrep, vgaR3SaveExec, vgaR3SaveDone,
                                 NULL,          vgaR3LoadExec, vgaR3LoadDone);
     if (RT_FAILURE(rc))
         return rc;
