@@ -222,21 +222,18 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
 
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
 
-typedef struct RTSHA1STORAGE
+typedef struct SHA1STORAGE
 {
     PVDINTERFACE pVDImageIfaces;
     bool         fCreateDigest;
     Utf8Str      strDigest;
-} RTSHA1STORAGE, *PRTSHA1STORAGE;
+} SHA1STORAGE, *PSHA1STORAGE;
 
-/** @todo r=bird: RT is a prefix reserved for IPRT, using it outside will only
- * cause confusion. Please find a different prefix unless the plan is to move
- * this code into IPRT. (I can find no @todo in the code hinting at this.) */
-PVDINTERFACEIO RTSha1CreateInterface();
-PVDINTERFACEIO RTFileCreateInterface();
-PVDINTERFACEIO RTTarCreateInterface();
-int RTSha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
-int RTSha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
+PVDINTERFACEIO Sha1CreateInterface();
+PVDINTERFACEIO FileCreateInterface();
+PVDINTERFACEIO TarCreateInterface();
+int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
+int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pCallbacks, void *pvUser);
 
 #endif // ____H_APPLIANCEIMPLPRIVATE
 
