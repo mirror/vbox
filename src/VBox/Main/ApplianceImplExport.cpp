@@ -1589,43 +1589,43 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pRTSha1Callbacks = 0;
-    PVDINTERFACEIO pRTFileCallbacks = 0;
+    PVDINTERFACEIO pSha1Callbacks = 0;
+    PVDINTERFACEIO pFileCallbacks = 0;
     do
     {
-        pRTSha1Callbacks = RTSha1CreateInterface();
-        if (!pRTSha1Callbacks)
+        pSha1Callbacks = Sha1CreateInterface();
+        if (!pSha1Callbacks)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        pRTFileCallbacks = RTFileCreateInterface();
-        if (!pRTFileCallbacks)
+        pFileCallbacks = FileCreateInterface();
+        if (!pFileCallbacks)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
 
-        RTSHA1STORAGE storage;
+        SHA1STORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
         VDINTERFACE VDInterfaceIO;
-        int vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IORTFile",
-                                 VDINTERFACETYPE_IO, pRTFileCallbacks,
+        int vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOFile",
+                                 VDINTERFACETYPE_IO, pFileCallbacks,
                                  0, &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pRTSha1Callbacks, &storage);
+        rc = writeFSImpl(pTask, writeLock, pSha1Callbacks, &storage);
     }while(0);
 
     /* Cleanup */
-    if (pRTSha1Callbacks)
-        RTMemFree(pRTSha1Callbacks);
-    if (pRTFileCallbacks)
-        RTMemFree(pRTFileCallbacks);
+    if (pSha1Callbacks)
+        RTMemFree(pSha1Callbacks);
+    if (pFileCallbacks)
+        RTMemFree(pFileCallbacks);
 
     LogFlowFuncLeave();
     return rc;
@@ -1644,44 +1644,44 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pRTSha1Callbacks = 0;
-    PVDINTERFACEIO pRTTarCallbacks = 0;
+    PVDINTERFACEIO pSha1Callbacks = 0;
+    PVDINTERFACEIO pTarCallbacks = 0;
     do
     {
-        pRTSha1Callbacks = RTSha1CreateInterface();
-        if (!pRTSha1Callbacks)
+        pSha1Callbacks = Sha1CreateInterface();
+        if (!pSha1Callbacks)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
-        pRTTarCallbacks = RTTarCreateInterface();
-        if (!pRTTarCallbacks)
+        pTarCallbacks = TarCreateInterface();
+        if (!pTarCallbacks)
         {
             rc = E_OUTOFMEMORY;
             break;
         }
         VDINTERFACE VDInterfaceIO;
-        RTSHA1STORAGE storage;
+        SHA1STORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
-        vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IORTTar",
-                             VDINTERFACETYPE_IO, pRTTarCallbacks,
+        vrc = VDInterfaceAdd(&VDInterfaceIO, "Appliance::IOTar",
+                             VDINTERFACETYPE_IO, pTarCallbacks,
                              tar, &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pRTSha1Callbacks, &storage);
+        rc = writeFSImpl(pTask, writeLock, pSha1Callbacks, &storage);
     }while(0);
 
     RTTarClose(tar);
 
     /* Cleanup */
-    if (pRTSha1Callbacks)
-        RTMemFree(pRTSha1Callbacks);
-    if (pRTTarCallbacks)
-        RTMemFree(pRTTarCallbacks);
+    if (pSha1Callbacks)
+        RTMemFree(pSha1Callbacks);
+    if (pTarCallbacks)
+        RTMemFree(pTarCallbacks);
 
     /* Delete ova file on error */
     if(FAILED(rc))
@@ -1691,7 +1691,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     return rc;
 }
 
-HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pCallbacks, PRTSHA1STORAGE pStorage)
+HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -1723,7 +1723,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                                tr("Could not create OVF file '%s'"),
                                strOvfFile.c_str());
             /* Write the ovf file to disk. */
-            vrc = RTSha1WriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            vrc = Sha1WriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create OVF file '%s' (%Rrc)"),
@@ -1840,7 +1840,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             /* Disable digest creation for the manifest file. */
             pStorage->fCreateDigest = false;
             /* Write the manifest file to disk. */
-            vrc = RTSha1WriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
+            vrc = Sha1WriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pCallbacks, pStorage);
             RTMemFree(pvBuf);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
