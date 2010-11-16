@@ -643,7 +643,7 @@ NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK f
     UNICODE_STRING RtlStr;
 
     RtlInitUnicodeString(&RtlStr, pName);
-    InitializeObjectAttributes(&ObjAttr, &RtlStr, OBJ_CASE_INSENSITIVE, NULL, NULL);
+    InitializeObjectAttributes(&ObjAttr, &RtlStr, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
 
     return ZwOpenKey(phKey, fAccess, &ObjAttr);
 }

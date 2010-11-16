@@ -1083,7 +1083,7 @@ NTSTATUS DxgkDdiQueryChildRelations(
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_HD15; /* VGA */
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.MonitorOrientationAwareness = D3DKMDT_MOA_INTERRUPTIBLE; /* ?? D3DKMDT_MOA_NONE*/
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.SupportsSdtvModes = FALSE;
-        ChildRelations[i].ChildCapabilities.HpdAwareness = HpdAwarenessInterruptible; /* ?? HpdAwarenessAlwaysConnected; */
+        ChildRelations[i].ChildCapabilities.HpdAwareness = HpdAwarenessAlwaysConnected; //HpdAwarenessInterruptible; /* ?? HpdAwarenessAlwaysConnected; */
         ChildRelations[i].AcpiUid =  i; /* */
         ChildRelations[i].ChildUid = i; /* should be == target id */
     }
@@ -3554,7 +3554,7 @@ DxgkDdiIsSupportedVidPn(
     if (Status == STATUS_SUCCESS)
     {
 #ifdef VBOXWDDM_DEBUG_VIDPN
-        vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>\n", pContext, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n\n");
+        vboxVidPnDumpVidPn("\n>>>>IS SUPPORTED VidPN : >>>>\n", pContext, pIsSupportedVidPnArg->hDesiredVidPn, pVidPnInterface, "<<<<<<<<<<<<<<<<<<<<\n");
 #endif
 
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
@@ -3565,6 +3565,7 @@ DxgkDdiIsSupportedVidPn(
             Status = vboxVidPnCheckTopology(pContext, pIsSupportedVidPnArg->hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
             if (Status == STATUS_SUCCESS && bSupported)
             {
+#if 0
                 for (int id = 0; id < commonFromDeviceExt(pContext)->cDisplays; ++id)
                 {
                     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
@@ -3576,6 +3577,8 @@ DxgkDdiIsSupportedVidPn(
                     if (Status == STATUS_SUCCESS)
                     {
                         Status = vboxVidPnCheckSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnSourceModeSet, pVidPnSourceModeSetInterface, &bSupported);
+
+                        Assert(bSupported);
 
                         pVidPnInterface->pfnReleaseSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnSourceModeSet);
 
@@ -3608,6 +3611,8 @@ DxgkDdiIsSupportedVidPn(
                         {
                             Status = vboxVidPnCheckTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnTargetModeSet, pVidPnTargetModeSetInterface, &bSupported);
 
+                            Assert(bSupported);
+
                             pVidPnInterface->pfnReleaseTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnTargetModeSet);
 
                             if (Status != STATUS_SUCCESS || !bSupported)
@@ -3625,6 +3630,7 @@ DxgkDdiIsSupportedVidPn(
                         }
                     }
                 }
+#endif
             }
         }
         else
@@ -3639,7 +3645,7 @@ DxgkDdiIsSupportedVidPn(
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
 #ifdef VBOXWDDM_DEBUG_VIDPN
-    drprintf(("The Given VidPn is %ssupported", pIsSupportedVidPnArg->IsVidPnSupported ? "" : "!!NOT!! "));
+    drprintf(("The Given VidPn is %ssupported\n\n", pIsSupportedVidPnArg->IsVidPnSupported ? "" : "!!NOT!! "));
 #endif
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
@@ -3663,8 +3669,9 @@ DxgkDdiRecommendFunctionalVidPn(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     NTSTATUS Status;
-    vboxWddmInvalidateVideoModesInfo(pDevExt);
-    PVBOXWDDM_VIDEOMODES_INFO pInfos = vboxWddmGetAllVideoModesInfos(pDevExt);
+    PVBOXWDDM_RECOMMENDVIDPN pVidPnInfo = pRecommendFunctionalVidPnArg->PrivateDriverDataSize >= sizeof (VBOXWDDM_RECOMMENDVIDPN) ?
+            (PVBOXWDDM_RECOMMENDVIDPN)pRecommendFunctionalVidPnArg->pPrivateDriverData : NULL;
+    PVBOXWDDM_VIDEOMODES_INFO pInfos = vboxWddmUpdateVideoModesInfo(pDevExt, pVidPnInfo);
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     Assert(Status == STATUS_SUCCESS);
@@ -3719,9 +3726,10 @@ DxgkDdiRecommendFunctionalVidPn(
                 break;
 
             Assert(iPreferableResMode >= 0);
+            Assert(cActualResModes);
 
             Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
-                            pResModes, cResModes, iPreferableResMode,
+                            pResModes, cActualResModes, iPreferableResMode,
                             &Resolution, 1 /* cResolutions */,
                             i, i); /* srcId, tgtId */
             Assert(Status == STATUS_SUCCESS);
@@ -3775,11 +3783,23 @@ DxgkDdiEnumVidPnCofuncModality(
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
+            BOOLEAN bSupported = FALSE;
+            Status = vboxVidPnCheckTopology(pDevExt, pEnumCofuncModalityArg->hConstrainingVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
+            Assert(Status == STATUS_SUCCESS);
+            Assert(bSupported);
+
             VBOXVIDPNCOFUNCMODALITY CbContext = {0};
             CbContext.pDevExt = pDevExt;
             CbContext.pVidPnInterface = pVidPnInterface;
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
             CbContext.pInfos = vboxWddmGetAllVideoModesInfos(pDevExt);
+
+#if 1
+            for (int i = 0; i < commonFromDeviceExt(pDevExt)->cDisplays; ++i)
+            {
+                vboxVidPnCofuncModalityForPath(&CbContext, i, i, TRUE);
+            }
+#else
             Status = vboxVidPnEnumPaths(hVidPnTopology, pVidPnTopologyInterface,
                     vboxVidPnCofuncModalityPathEnum, &CbContext);
             Assert(Status == STATUS_SUCCESS);
@@ -3792,6 +3812,7 @@ DxgkDdiEnumVidPnCofuncModality(
             }
             else
                 drprintf((__FUNCTION__ ": vboxVidPnEnumPaths failed Status(0x%x)\n", Status));
+#endif
         }
         else
             drprintf((__FUNCTION__ ": pfnGetTopology failed Status(0x%x)\n", Status));
