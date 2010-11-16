@@ -631,13 +631,8 @@ UIMachineSettingsNetworkPage::UIMachineSettingsNetworkPage(bool aDisableStaticCo
     {
         /* Creating adapter's page: */
         UIMachineSettingsNetwork *pPage = new UIMachineSettingsNetwork(this, mDisableStaticControls);
-
         /* Attach adapter's page to Tab Widget: */
         mTwAdapters->addTab(pPage, pPage->pageTitle());
-
-        /* Disable tab page of disabled adapter if it is being configured dynamically: */
-        if (mDisableStaticControls && !m_cache.m_items[iSlot].m_fAdapterEnabled)
-            mTwAdapters->setTabEnabled(iSlot, false);
     }
 }
 
