@@ -757,7 +757,7 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
 
                     hrc = server->mConsole->machine()->GetExtraData(com::Bstr(extraData).raw(),
                                                                     bstrValue.asOutParam());
-                    if (FAILED(hrc) || bstrValue.isEmpty())
+                    if (FAILED(hrc))
                     {
                         rc = VERR_NOT_SUPPORTED;
                     }
