@@ -19,9 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define    LOG_GROUP LOG_GROUP_DRV_USBPROXY
+#define LOG_GROUP LOG_GROUP_DRV_USBPROXY
 #ifdef VBOX
-#include <iprt/stdint.h>
+# include <iprt/stdint.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
