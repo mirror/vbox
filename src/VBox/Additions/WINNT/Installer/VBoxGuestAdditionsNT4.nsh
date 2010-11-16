@@ -42,7 +42,7 @@ Function NT_SaveMouseDriverInfo
   ; value to the current installer's "uninstall" directory in both mentioned
   ; functions above, otherwise NT4 will be screwed because it then would store
   ; "VBoxMouseNT.sys" as the original i8042prt driver which obviously isn't there
-  ; after uninstallation anymore.
+  ; after uninstallation anymore
   ; !!! NOTE !!!
 
   ; Save current mouse driver info so we may restore it on uninstallation

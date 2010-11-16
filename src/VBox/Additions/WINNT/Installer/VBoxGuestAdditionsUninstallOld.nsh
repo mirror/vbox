@@ -32,7 +32,7 @@ handle_result:
 
   ; Note that here a race might going on after the user clicked on
   ; "Reboot now" in the installer ran above and this installer cleaning
-  ; up afterwards.
+  ; up afterwards
 
   ; ... so try to abort the current reboot / shutdown caused by the installer ran before
   Call ${un}AbortShutdown
@@ -253,7 +253,7 @@ FunctionEnd
 !insertmacro Uninstall_SunXVM ""
 !insertmacro Uninstall_SunXVM "un."
 
-; This function cleans up an old innotek installation.
+; This function cleans up an old innotek installation
 !macro Uninstall_Innotek un
 Function ${un}Uninstall_Innotek
 

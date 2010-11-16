@@ -1,5 +1,5 @@
 
-; @todo Replace this crappy stuff with a "VBoxDrvInst /delnetprovider".
+; @todo Replace this crappy stuff with a "VBoxDrvInst /delnetprovider"
 !macro RemoveFromProvider un
 Function ${un}RemoveFromProvider
   Exch $0
