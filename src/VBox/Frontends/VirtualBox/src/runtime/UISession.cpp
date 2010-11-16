@@ -619,22 +619,6 @@ void UISession::loadSessionSettings()
    /* Get uisession machine: */
     CMachine machine = session().GetConsole().GetMachine();
 
-    /* Availability settings: */
-    {
-        /* VRDE Stuff: */
-        CVRDEServer server = machine.GetVRDEServer();
-        if (server.isNull())
-        {
-            /* Hide VRDE Action: */
-            uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDEServer)->setVisible(false);
-        }
-        else
-        {
-            /* Check/Uncheck VRDE action depending on VRDE server status: */
-            uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDEServer)->setChecked(server.GetEnabled());
-        }
-    }
-
     /* Load extra-data settings: */
     {
         /* Temporary: */
@@ -940,36 +924,19 @@ void UISession::reinitMenuPool()
     /* Get uisession machine: */
     const CMachine &machine = session().GetConsole().GetMachine();
 
-    /* Availability settings: */
-    {
-        /* USB Stuff: */
-        const CUSBController &usbController = machine.GetUSBController();
-        if (   usbController.isNull()
-            || !usbController.GetEnabled()
-            || !usbController.GetProxyAvailable())
-        {
-            /* Hide USB menu if controller is NULL or no USB proxy available: */
-            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(false);
-        }
-        else
-        {
-            /* Enable/Disable USB menu depending on USB controller: */
-            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setEnabled(usbController.GetEnabled());
-        }
-    }
-
-    /* Prepare some initial settings: */
+    /* Storage stuff: */
     {
         /* Initialize CD/FD menus: */
         int iDevicesCountCD = 0;
         int iDevicesCountFD = 0;
         const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
+        for (int i = 0; i < attachments.size(); ++i)
         {
+            const CMediumAttachment &attachment = attachments[i];
             if (attachment.GetType() == KDeviceType_DVD)
-                ++ iDevicesCountCD;
+                ++iDevicesCountCD;
             if (attachment.GetType() == KDeviceType_Floppy)
-                ++ iDevicesCountFD;
+                ++iDevicesCountFD;
         }
         QAction *pOpticalDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices);
         QAction *pFloppyDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices);
@@ -977,6 +944,44 @@ void UISession::reinitMenuPool()
         pOpticalDevicesMenu->setVisible(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
         pFloppyDevicesMenu->setVisible(iDevicesCountFD);
+    }
+
+    /* VRDE stuff: */
+    {
+        /* Get VRDE server: */
+        CVRDEServer server = machine.GetVRDEServer();
+        bool fIsVRDEServerAvailable = !server.isNull();
+        /* Show/Hide VRDE action depending on VRDE server availability status: */
+        uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDEServer)->setVisible(fIsVRDEServerAvailable);
+        /* Check/Uncheck VRDE action depending on VRDE server activity status: */
+        if (fIsVRDEServerAvailable)
+            uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDEServer)->setChecked(server.GetEnabled());
+    }
+
+    /* Network stuff: */
+    {
+        bool fAtLeastOneAdapterActive = false;
+        ULONG uSlots = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
+        for (ULONG uSlot = 0; uSlot < uSlots; ++uSlot)
+        {
+            const CNetworkAdapter &adapter = machine.GetNetworkAdapter(uSlot);
+            if (adapter.GetEnabled())
+            {
+                fAtLeastOneAdapterActive = true;
+                break;
+            }
+        }
+        /* Show/Hide Network Adapters action depending on overall adapters activity status: */
+        uimachine()->actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog)->setVisible(fAtLeastOneAdapterActive);
+    }
+
+    /* USB stuff: */
+    {
+        /* Get USB controller: */
+        const CUSBController &usbController = machine.GetUSBController();
+        bool fUSBControllerEnabled = !usbController.isNull() && usbController.GetEnabled() && usbController.GetProxyAvailable();
+        /* Show/Hide USB menu depending on controller availability, activity and USB-proxy presence: */
+        uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(fUSBControllerEnabled);
     }
 }
 
