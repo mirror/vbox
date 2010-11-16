@@ -2300,7 +2300,6 @@ DECLHIDDEN(VOID) vboxNetFltWinPtFiniPADAPT(PADAPT pAdapt)
         vboxNetFltWinMemFree(pAdapt->DeviceName.Buffer);
     }
 
-
     FINI_INTERLOCKED_SINGLE_LIST(&pAdapt->TransferDataList);
 # if defined(DEBUG_NETFLT_LOOPBACK) || !defined(VBOX_LOOPBACK_USEFLAGS)
     FINI_INTERLOCKED_SINGLE_LIST(&pAdapt->SendPacketQueue);
@@ -2452,7 +2451,6 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitPADAPT(IN  PADAPT pAdapt)
             }
         }
 #endif
-
         /* moved to vboxNetFltOsInitInstance */
     } while(0);
 
@@ -3541,7 +3539,12 @@ int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, void *pvIfData, PINTNETSG pSG, ui
                                                              false /*fToWire*/, true /*fCopyMemory*/);
         if (pPacket)
         {
+#ifdef VBOXNETADP
             NdisMIndicateReceivePacket(pAdapt->hMiniportHandle, &pPacket, 1);
+#else
+            /* flush any packets currently queued */
+            vboxNetFltWinPtQueueReceivedPacket(pAdapt, pPacket, TRUE /* BOOLEAN DoIndicate */);
+#endif
             cRefs--;
 #ifdef VBOXNETADP
             STATISTIC_INCREASE(pAdapt->cRxSuccess);

@@ -333,7 +333,7 @@ typedef struct _ADAPT
     VBOXADAPTSTATE                 enmState;
 #ifndef VBOXNETADP
     /** true if we should indicate the receive complete used by the ProtocolReceeive mechanism */
-    bool                        bIndicateRcvComplete;
+    bool                        abIndicateRcvComplete[64];
 
     /** TRUE iff a request is pending at the miniport below */
     bool                        bOutstandingRequests;
@@ -365,8 +365,6 @@ typedef struct _ADAPT
     PNDIS_PACKET                   aReceivedPackets[MAX_RECEIVE_PACKET_ARRAY_SIZE];
     /** number of packets in the aReceivedPackets array*/
     ULONG                          cReceivedPacketCount;
-    /** flag indicating whether rx packet queueing is allowed */
-    BOOLEAN                        bIsReceivePacketQueueingDisabled;
     /** packet filter flags set by the upper protocols */
     ULONG                          fUpperProtocolSetFilter;
     /** packet filter flags set by the upper protocols */
