@@ -302,9 +302,14 @@ Qt::ItemFlags UIVMItemModel::flags(const QModelIndex &index) const
         return Qt::ItemIsDropEnabled | defaultFlags;
 }
 
-Qt::DropActions UIVMItemModel::supportedDropActions() const
+Qt::DropActions UIVMItemModel::supportedDragActions() const
 {
     return Qt::MoveAction;
+}
+
+Qt::DropActions UIVMItemModel::supportedDropActions() const
+{
+    return Qt::MoveAction; //| Qt::CopyAction | Qt::LinkAction;
 }
 
 QStringList UIVMItemModel::mimeTypes() const
@@ -360,11 +365,11 @@ UIVMListView::UIVMListView(QAbstractListModel *pModel, QWidget *aParent /* = 0 *
 {
     /* For queued events Q_DECLARE_METATYPE isn't sufficient. */
     qRegisterMetaType< QList<QUrl> >("QList<QUrl>");
-    setDropIndicatorShown(true);
+    setSelectionMode(QAbstractItemView::SingleSelection);
     setDragEnabled(true);
     setAcceptDrops(true);
+    setDropIndicatorShown(true);
     viewport()->setAutoFillBackground(false);
-    setSelectionMode(QAbstractItemView::SingleSelection);
     /* Create & set our delegation class */
     UIVMItemPainter *delegate = new UIVMItemPainter(this);
     setItemDelegate(delegate);
@@ -498,8 +503,20 @@ void UIVMListView::checkDragEvent(QDragMoveEvent *pEvent)
     {
         QList<QUrl> list = pEvent->mimeData()->urls();
         QString file = list.at(0).toLocalFile();
-        if (   VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts)
-            && pEvent->possibleActions().testFlag(Qt::CopyAction))
+        if (VBoxGlobal::hasAllowedExtension(file, VBoxDefs::VBoxFileExts))
+        {
+            Qt::DropAction action = Qt::IgnoreAction;
+            if (pEvent->possibleActions().testFlag(Qt::LinkAction))
+                action = Qt::LinkAction;
+            else if (pEvent->possibleActions().testFlag(Qt::CopyAction))
+                action = Qt::CopyAction;
+            if (action != Qt::IgnoreAction)
+            {
+                pEvent->setDropAction(action);
+                pEvent->accept();
+            }
+        }else if (   VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts)
+                  && pEvent->possibleActions().testFlag(Qt::CopyAction))
         {
             pEvent->setDropAction(Qt::CopyAction);
             pEvent->accept();
