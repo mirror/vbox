@@ -327,8 +327,6 @@ vboxNetFltWinPtDoUnbinding(PADAPT pAdapt, bool bOnUnbind)
         NumberOfPackets = pAdapt->cReceivedPacketCount;
 
         pAdapt->cReceivedPacketCount = 0;
-        /* reset the value in case */
-        pAdapt->bIsReceivePacketQueueingDisabled = FALSE;
         ReturnPackets = TRUE;
     }
 
@@ -835,8 +833,7 @@ static void vboxNetFltWinPutPacketToList(PINTERLOCKED_SINGLE_LIST pList, PNDIS_P
  * @param Indicate -  Do the indication now.
  * @return NONE
  */
-static VOID
-vboxNetFltWinPtQueueReceivedPacket(
+DECLHIDDEN(VOID) vboxNetFltWinPtQueueReceivedPacket(
     IN PADAPT       pAdapt,
     IN PNDIS_PACKET Packet,
     IN BOOLEAN      DoIndicate
@@ -848,7 +845,6 @@ vboxNetFltWinPtQueueReceivedPacket(
     PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
-    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
     do{
         RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
 
@@ -877,8 +873,7 @@ vboxNetFltWinPtQueueReceivedPacket(
          *  with resources, do the indicating now.
          */
 
-        if ((pAdapt->cReceivedPacketCount == MAX_RECEIVE_PACKET_ARRAY_SIZE) || DoIndicate || bReturn
-                || pAdapt->bIsReceivePacketQueueingDisabled)
+        if ((pAdapt->cReceivedPacketCount == MAX_RECEIVE_PACKET_ARRAY_SIZE) || DoIndicate || bReturn)
         {
             NdisMoveMemory(PacketArray,
                            pAdapt->aReceivedPackets,
@@ -893,7 +888,6 @@ vboxNetFltWinPtQueueReceivedPacket(
             if(!bReturn)
             {
                 DoIndicate = TRUE;
-                pAdapt->bIsReceivePacketQueueingDisabled = TRUE;
             }
         }
         RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
@@ -903,22 +897,7 @@ vboxNetFltWinPtQueueReceivedPacket(
     {
         if(DoIndicate)
         {
-            /* the tcp stack can send ACK packets right in the context of its PtReceive for this packet,
-             * and those (tcp-sent) packets can be looped back again.
-             * If this happens there is a possibility that new RX packets are received by us
-             * after we do this NdisMIndicateReceivePacket and before we do a new NdisMIndicateReceivePacket
-             * for the looped back tcp-sent packet.
-             * If we queue those newly received packets and indicate them together with the looped back packet
-             * with the latter NdisMIndicateReceivePacket, we may end up tcp stack sending ACKs in the context of its PtReceive again.
-             * Thus this may lead to stack overflows on a heavy network loads.
-             * To prevent this we disable the RX packet queuing when we do NdisMIndicateReceivePacket here,
-             * thus if new packets arrive to us in another thread, we simply indicate them up instead of queuing them.
-             * */
-            Assert(pAdapt->bIsReceivePacketQueueingDisabled);
             NdisMIndicateReceivePacket(pAdapt->hMiniportHandle, PacketArray, NumberOfPackets);
-            RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
-            pAdapt->bIsReceivePacketQueueingDisabled = FALSE;
-            RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
         }
     }
     else
@@ -1819,22 +1798,25 @@ vboxNetFltWinPtReceive(
              * fAdaptActive should be true to ensure we release adapt*/
             Assert(fAdaptActive);
 
-            pAdapt->bIndicateRcvComplete = TRUE;
-            switch (pAdapt->Medium)
             {
-                case NdisMedium802_3:
-                case NdisMediumWan:
-                    NdisMEthIndicateReceive(pAdapt->hMiniportHandle,
-                                                 MacReceiveContext,
-                                                 (PCHAR)pHeaderBuffer,
-                                                 cbHeaderBuffer,
-                                                 pLookAheadBuffer,
-                                                 cbLookAheadBuffer,
-                                                 cbPacket);
-                    break;
-                default:
-                    Assert(FALSE);
-                    break;
+                ULONG Proc = KeGetCurrentProcessorNumber();
+                pAdapt->abIndicateRcvComplete[Proc] = TRUE;
+                switch (pAdapt->Medium)
+                {
+                    case NdisMedium802_3:
+                    case NdisMediumWan:
+                        NdisMEthIndicateReceive(pAdapt->hMiniportHandle,
+                                                     MacReceiveContext,
+                                                     (PCHAR)pHeaderBuffer,
+                                                     cbHeaderBuffer,
+                                                     pLookAheadBuffer,
+                                                     cbLookAheadBuffer,
+                                                     cbPacket);
+                        break;
+                    default:
+                        Assert(FALSE);
+                        break;
+                }
             }
         } while(0);
 
@@ -1881,12 +1863,13 @@ vboxNetFltWinPtReceiveComplete(
      * on netflt activation/deactivation */
     bool bNetFltActive;
     bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &bNetFltActive);
+    ULONG Proc = KeGetCurrentProcessorNumber();
 
     vboxNetFltWinPtFlushReceiveQueue(pAdapt, false);
 
     if ((pAdapt->hMiniportHandle != NULL)
                /* && (pAdapt->MPDeviceState == NdisDeviceStateD0) */
-                && (pAdapt->bIndicateRcvComplete == TRUE))
+                && (pAdapt->abIndicateRcvComplete[Proc] == TRUE))
     {
         switch (pAdapt->Medium)
         {
@@ -1900,7 +1883,7 @@ vboxNetFltWinPtReceiveComplete(
         }
     }
 
-    pAdapt->bIndicateRcvComplete = FALSE;
+    pAdapt->abIndicateRcvComplete[Proc] = FALSE;
 
     if(fAdaptActive)
     {
