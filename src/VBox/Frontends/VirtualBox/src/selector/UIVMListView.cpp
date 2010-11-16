@@ -369,7 +369,6 @@ UIVMListView::UIVMListView(QAbstractListModel *pModel, QWidget *aParent /* = 0 *
     setDragEnabled(true);
     setAcceptDrops(true);
     setDropIndicatorShown(true);
-    viewport()->setAutoFillBackground(false);
     /* Create & set our delegation class */
     UIVMItemPainter *delegate = new UIVMItemPainter(this);
     setItemDelegate(delegate);
