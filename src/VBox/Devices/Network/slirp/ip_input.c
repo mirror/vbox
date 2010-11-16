@@ -110,8 +110,7 @@ ip_input(PNATState pData, struct mbuf *m)
 
     STAM_PROFILE_START(&pData->StatIP_input, a);
 
-    DEBUG_CALL("ip_input");
-    DEBUG_ARG("m = %lx", (long)m);
+    LogFlow(("ip_input: m = %lx\n", (long)m));
     ip = mtod(m, struct ip *);
     Log2(("ip_dst=%R[IP4](len:%d) m_len = %d\n", &ip->ip_dst, RT_N2H_U16(ip->ip_len), m->m_len));
 
@@ -578,7 +577,7 @@ ip_slowtimo(PNATState pData)
      * additional loop see (see ip_input.c in FreeBSD tree)
      */
     int i;
-    DEBUG_CALL("ip_slowtimo");
+    LogFlow(("ip_slowtimo:\n"));
     for (i = 0; i < IPREASS_NHASH; i++)
     {
         for(fp = TAILQ_FIRST(&ipq[i]); fp;)

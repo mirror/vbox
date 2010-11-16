@@ -151,8 +151,7 @@ soread(PNATState pData, struct socket *so)
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
 
-    DEBUG_CALL("soread");
-    DEBUG_ARG("so = %lx", (long)so);
+    LogFlow(("soread: so = %lx\n", (long)so));
 
     /*
      * No need to check if there's enough room to read.
@@ -216,7 +215,7 @@ soread(PNATState pData, struct socket *so)
 
 #ifdef HAVE_READV
     nn = readv(so->s, (struct iovec *)iov, n);
-    DEBUG_MISC((dfd, " ... read nn = %d bytes\n", nn));
+    Log2((" ... read nn = %d bytes\n", nn));
 #else
     nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, (so->so_tcpcb->t_force? MSG_OOB:0));
 #endif
@@ -252,8 +251,8 @@ soread(PNATState pData, struct socket *so)
         else
         {
             /* nn == 0 means peer has performed an orderly shutdown */
-            DEBUG_MISC((dfd, " --- soread() disconnected, nn = %d, errno = %d-%s\n",
-                        nn, errno, strerror(errno)));
+            Log2((" --- soread() disconnected, nn = %d, errno = %d (%s)\n",
+                  nn, errno, strerror(errno)));
             sofcantrcvmore(so);
             tcp_sockclosed(pData, sototcpcb(so));
             SOCKET_UNLOCK(so);
@@ -299,7 +298,7 @@ soread(PNATState pData, struct socket *so)
         );
     }
 
-    DEBUG_MISC((dfd, " ... read nn = %d bytes\n", nn));
+    Log2((" ... read nn = %d bytes\n", nn));
 #endif
 
     /* Update fields */
@@ -329,8 +328,7 @@ soread(PNATState pData, struct socket *so)
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
 
-    DEBUG_CALL("soread");
-    DEBUG_ARG("so = %lx", (long)so);
+    LogFlow(("soread: so = %lx\n", (long)so));
 
     if (len > mss)
         len -= len % mss;
@@ -375,8 +373,8 @@ soread(PNATState pData, struct socket *so)
         }
         else
         {
-            DEBUG_MISC((dfd, " --- soread() disconnected, n = %d, errno = %d-%s\n",
-                        n, errno, strerror(errno)));
+            Log2((" --- soread() disconnected, n = %d, errno = %d (%s)\n",
+                  n, errno, strerror(errno)));
             sofcantrcvmore(so);
             tcp_sockclosed(pData, sototcpcb(so));
             SOCKET_UNLOCK(so);
@@ -405,8 +403,7 @@ sorecvoob(PNATState pData, struct socket *so)
     struct tcpcb *tp = sototcpcb(so);
     ssize_t ret;
 
-    DEBUG_CALL("sorecvoob");
-    DEBUG_ARG("so = %lx", (long)so);
+    LogFlow(("sorecvoob: so = %lx\n", (long)so));
 
     /*
      * We take a guess at how much urgent data has arrived.
@@ -435,8 +432,7 @@ sosendoob(struct socket *so)
 
     int n, len;
 
-    DEBUG_CALL("sosendoob");
-    DEBUG_ARG("so = %lx", (long)so);
+    LogFlow(("sosendoob so = %lx\n", (long)so));
 
     if (so->so_urgc > sizeof(buff))
         so->so_urgc = sizeof(buff); /* XXX */
@@ -447,8 +443,8 @@ sosendoob(struct socket *so)
         n = send(so->s, sb->sb_rptr, so->so_urgc, (MSG_OOB)); /* |MSG_DONTWAIT)); */
         so->so_urgc -= n;
 
-        DEBUG_MISC((dfd, " --- sent %d bytes urgent data, %d urgent bytes left\n",
-                    n, so->so_urgc));
+        Log2((" --- sent %d bytes urgent data, %d urgent bytes left\n",
+              n, so->so_urgc));
     }
     else
     {
@@ -474,10 +470,10 @@ sosendoob(struct socket *so)
         n = send(so->s, buff, len, (MSG_OOB)); /* |MSG_DONTWAIT)); */
 #ifdef DEBUG
         if (n != len)
-            DEBUG_ERROR((dfd, "Didn't send all data urgently XXXXX\n"));
+            Log(("Didn't send all data urgently XXXXX\n"));
 #endif
-        DEBUG_MISC((dfd, " ---2 sent %d bytes urgent data, %d urgent bytes left\n",
-                    n, so->so_urgc));
+        Log2((" ---2 sent %d bytes urgent data, %d urgent bytes left\n",
+              n, so->so_urgc));
     }
 
     sb->sb_cc -= n;
@@ -509,8 +505,7 @@ sowrite(PNATState pData, struct socket *so)
     STAM_COUNTER_RESET(&pData->StatIOWrite_no_w);
     STAM_COUNTER_RESET(&pData->StatIOWrite_rest);
     STAM_COUNTER_RESET(&pData->StatIOWrite_rest_bytes);
-    DEBUG_CALL("sowrite");
-    DEBUG_ARG("so = %lx", (long)so);
+    LogFlow(("sowrite: so = %lx\n", (long)so));
     QSOCKET_LOCK(tcb);
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
@@ -576,7 +571,7 @@ sowrite(PNATState pData, struct socket *so)
     /* Check if there's urgent data to send, and if so, send it */
 #ifdef HAVE_READV
     nn = writev(so->s, (const struct iovec *)iov, n);
-    DEBUG_MISC((dfd, "  ... wrote nn = %d bytes\n", nn));
+    Log2(("  ... wrote nn = %d bytes\n", nn));
 #else
     nn = send(so->s, iov[0].iov_base, iov[0].iov_len, 0);
 #endif
@@ -593,8 +588,8 @@ sowrite(PNATState pData, struct socket *so)
 
     if (nn < 0 || (nn == 0 && iov[0].iov_len > 0))
     {
-        DEBUG_MISC((dfd, " --- sowrite disconnected, so->so_state = %x, errno = %d\n",
-                   so->so_state, errno));
+        Log2((" --- sowrite disconnected, so->so_state = %x, errno = %d\n",
+              so->so_state, errno));
         sofcantsendmore(so);
         tcp_sockclosed(pData, sototcpcb(so));
         SOCKET_UNLOCK(so);
@@ -617,7 +612,7 @@ sowrite(PNATState pData, struct socket *so)
             }
         });
     }
-    DEBUG_MISC((dfd, "  ... wrote nn = %d bytes\n", nn));
+    Log2(("  ... wrote nn = %d bytes\n", nn));
 #endif
 
     /* Update sbuf */
@@ -645,8 +640,7 @@ do_sosend(struct socket *so, int fUrg)
 
     int n, len;
 
-    DEBUG_CALL("sosendoob");
-    DEBUG_ARG("so = %lx", (long)so);
+    LogFlow(("sosendoob: so = %lx\n", (long)so));
 
     len = sbuf_len(sb);
 
@@ -701,8 +695,7 @@ sorecvfrom(PNATState pData, struct socket *so)
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
 
-    DEBUG_CALL("sorecvfrom");
-    DEBUG_ARG("so = %lx", (long)so);
+    LogFlow(("sorecvfrom: so = %lx\n", (long)so));
 
     if (so->so_type == IPPROTO_ICMP)
     {
@@ -792,7 +785,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                  * to calculate how rare we here)
                  */
                 if(ret < slirp_size(pData) && !m->m_next)
-                    Log(("NAT:udp: Expected size(%d) lesser than real(%d) and less minimal mbuf size(%d) \n",
+                    Log(("NAT:udp: Expected size(%d) lesser than real(%d) and less minimal mbuf size(%d)\n",
                          n, ret, slirp_size(pData)));
             }
             /* we're freeing buffer anyway */
@@ -879,9 +872,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     caddr_t buf;
     int mlen;
 
-    DEBUG_CALL("sosendto");
-    DEBUG_ARG("so = %lx", (long)so);
-    DEBUG_ARG("m = %lx", (long)m);
+    LogFlow(("sosendto: so = %lx, m = %lx\n", (long)so, (long)m));
 
     memset(&addr, 0, sizeof(struct sockaddr));
 #ifdef RT_OS_DARWIN
@@ -925,8 +916,8 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
         paddr->sin_addr = so->so_faddr;
     paddr->sin_port = so->so_fport;
 
-    DEBUG_MISC((dfd, " sendto()ing, addr.sin_port=%d, addr.sin_addr.s_addr=%.16s\n",
-                RT_N2H_U16(paddr->sin_port), inet_ntoa(paddr->sin_addr)));
+    Log2((" sendto()ing, addr.sin_port=%d, addr.sin_addr.s_addr=%.16s\n",
+          RT_N2H_U16(paddr->sin_port), inet_ntoa(paddr->sin_addr)));
 
     /* Don't care what port we get */
     mlen = m_length(m, NULL);
@@ -967,11 +958,7 @@ solisten(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_in
     int s, opt = 1;
     int status;
 
-    DEBUG_CALL("solisten");
-    DEBUG_ARG("port = %d", port);
-    DEBUG_ARG("laddr = %x", laddr);
-    DEBUG_ARG("lport = %d", lport);
-    DEBUG_ARG("flags = %x", flags);
+    LogFlow(("solisten: port = %d, laddr = %x, lport = %d, flags = %x\n", port, laddr, lport, flags));
 
     if ((so = socreate()) == NULL)
     {
@@ -1489,12 +1476,11 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
         else if (errno == ENETUNREACH)
             code = ICMP_UNREACH_NET;
 
-        LogRel((" udp icmp rx errno = %d-%s\n",
-                    errno, strerror(errno)));
+        LogRel((" udp icmp rx errno = %d (%s)\n", errno, strerror(errno)));
         icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
         m_freem(pData, so->so_m);
         so->so_m = NULL;
-        Log(("sorecvfrom_icmp_unix: 1 - step can't read IP datagramm \n"));
+        Log(("sorecvfrom_icmp_unix: 1 - step can't read IP datagramm\n"));
         return;
     }
     /* basic check of IP header */
@@ -1504,7 +1490,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 # endif
         )
     {
-        Log(("sorecvfrom_icmp_unix: 1 - step IP isn't IPv4 \n"));
+        Log(("sorecvfrom_icmp_unix: 1 - step IP isn't IPv4\n"));
         return;
     }
 # ifndef RT_OS_DARWIN

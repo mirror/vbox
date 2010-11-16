@@ -295,9 +295,8 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 /*  int ts_present = 0; */
     STAM_PROFILE_START(&pData->StatTCP_input, counter_input);
 
-    DEBUG_CALL("tcp_input");
-    DEBUG_ARGS((dfd," m = %8lx  iphlen = %2d  inso = %lx\n",
-                (long )m, iphlen, (long )inso ));
+    LogFlow(("tcp_input: m = %8lx, iphlen = %2d, inso = %lx\n",
+             (long)m, iphlen, (long)inso));
 
     if (inso != NULL)
     {
@@ -341,10 +340,10 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
      * Note: IP leaves IP header in first mbuf.
      */
     ti = mtod(m, struct tcpiphdr *);
-    if (iphlen > sizeof(struct ip ))
+    if (iphlen > sizeof(struct ip))
     {
         ip_stripoptions(m, (struct mbuf *)0);
-        iphlen = sizeof(struct ip );
+        iphlen = sizeof(struct ip);
     }
     /* XXX Check if too short */
 
@@ -368,7 +367,7 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
     tlen = ((struct ip *)ti)->ip_len;
     memset(ti->ti_x1, 0, 9);
     ti->ti_len = RT_H2N_U16((u_int16_t)tlen);
-    len = sizeof(struct ip ) + tlen;
+    len = sizeof(struct ip) + tlen;
     /* keep checksum for ICMP reply
      * ti->ti_sum = cksum(m, len);
      * if (ti->ti_sum) { */
@@ -771,8 +770,7 @@ findso:
                 && errno != EWOULDBLOCK)
             {
                 u_char code = ICMP_UNREACH_NET;
-                DEBUG_MISC((dfd," tcp fconnect errno = %d-%s\n",
-                            errno, strerror(errno)));
+                Log2((" tcp fconnect errno = %d (%s)\n", errno, strerror(errno)));
                 if (errno == ECONNREFUSED)
                 {
                     /* ACK the SYN, send RST to refuse the connection */
@@ -926,7 +924,7 @@ trimthenstep6:
             }
             tp->snd_wl1 = ti->ti_seq - 1;
             tp->rcv_up = ti->ti_seq;
-            Log2(("hit6"));
+            Log2(("hit6\n"));
             goto step6;
     } /* switch tp->t_state */
     /*
@@ -1211,8 +1209,7 @@ close:
                 if (ti->ti_len == 0 && tiwin == tp->snd_wnd)
                 {
                     tcpstat.tcps_rcvdupack++;
-                    DEBUG_MISC((dfd," dup ack  m = %lx  so = %lx \n",
-                                (long )m, (long )so));
+                    Log2((" dup ack  m = %lx, so = %lx\n", (long)m, (long)so));
                     /*
                      * If we have outstanding data (other than
                      * a window probe), this is a completely
@@ -1336,7 +1333,7 @@ synrx_to_est:
             {
                 tp->snd_wnd -= SBUF_LEN(&so->so_snd);
 #ifndef VBOX_WITH_SLIRP_BSD_SBUF
-                sbdrop(&so->so_snd, (int )so->so_snd.sb_cc);
+                sbdrop(&so->so_snd, (int)so->so_snd.sb_cc);
 #else
                 sbuf_clear(&so->so_snd);
 #endif
@@ -1694,8 +1691,7 @@ tcp_dooptions(PNATState pData, struct tcpcb *tp, u_char *cp, int cnt, struct tcp
     u_int16_t mss;
     int opt, optlen;
 
-    DEBUG_CALL("tcp_dooptions");
-    DEBUG_ARGS((dfd," tp = %lx  cnt=%i \n", (long )tp, cnt));
+    LogFlow(("tcp_dooptions: tp = %lx, cnt=%i\n", (long)tp, cnt));
 
     for (; cnt > 0; cnt -= optlen, cp += optlen)
     {
@@ -1806,9 +1802,7 @@ tcp_xmit_timer(PNATState pData, register struct tcpcb *tp, int rtt)
 {
     register short delta;
 
-    DEBUG_CALL("tcp_xmit_timer");
-    DEBUG_ARG("tp = %lx", (long)tp);
-    DEBUG_ARG("rtt = %d", rtt);
+    LogFlow(("tcp_xmit_timer: tp = %lx rtt = %d\n", (long)tp, rtt));
 
     tcpstat.tcps_rttupdated++;
     if (tp->t_srtt != 0)
@@ -1898,9 +1892,7 @@ tcp_mss(PNATState pData, register struct tcpcb *tp, u_int offer)
     struct socket *so = tp->t_socket;
     int mss;
 
-    DEBUG_CALL("tcp_mss");
-    DEBUG_ARG("tp = %lx", (long)tp);
-    DEBUG_ARG("offer = %d", offer);
+    LogFlow(("tcp_mss: tp = %lx, offet = %d\n", (long)tp, offer));
 
     mss = min(if_mtu, if_mru) - sizeof(struct tcpiphdr);
     if (offer)
@@ -1919,7 +1911,7 @@ tcp_mss(PNATState pData, register struct tcpcb *tp, u_int offer)
     sbuf_new(&so->so_rcv, NULL, tcp_rcvspace+((tcp_rcvspace%mss)?(mss-(tcp_rcvspace%mss)):0), SBUF_AUTOEXTEND);
 #endif
 
-    DEBUG_MISC((dfd, " returning mss = %d\n", mss));
+    Log2((" returning mss = %d\n", mss));
 
     return mss;
 }
