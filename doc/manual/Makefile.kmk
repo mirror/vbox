@@ -232,13 +232,16 @@ else
 endif
 VBOXMANAGEPATH       ?= $(PATH_BIN)/VBoxManage$(SUFF_EXE)
 
+ # PDFLATEX_INTERACTION = errorstopmode - Use this when you wants to figure out build failures
+ #                                        without catting the log a million times.
+ PDFLATEX_INTERACTION ?= batchmode
 ifeq ($(KBUILD_HOST),win)
  # tell MiKTeX to automatically download packages
- PDFLATEX             = pdflatex -halt-on-error -interaction batchmode --enable-installer
+ PDFLATEX             = pdflatex -halt-on-error -interactio $(PDFLATEX_INTERACTION) --enable-installer
 else
  PDFLATEX_HALT        = $(shell \
  	( pdflatex -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
- PDFLATEX             = pdflatex $(PDFLATEX_HALT) -interaction batchmode
+ PDFLATEX             = pdflatex $(PDFLATEX_HALT) -interaction $(PDFLATEX_INTERACTION)
 endif
 
 # Windows HTML Help Workshop compiler (stupid thing always returns an error!)
@@ -483,10 +486,10 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 		  $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_PNG_FILES_$(f)))) | $$(dir $$@)
 # PDF generation via Latex: generate the .tex file
 	$(call MSG_L1,pdflatex $< (three passes) -> $@)
-	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
-	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
-	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
-	$(QUIET)$(REDIRECT) -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
 ##@todo restore this when above has been converted to INSTALLS target.	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
 # generate temporary LaTeX source from processed XML
