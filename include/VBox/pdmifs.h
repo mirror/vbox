@@ -1927,36 +1927,40 @@ typedef struct PDMIVMMDEVPORT
      * Return the current absolute mouse position in pixels
      *
      * @returns VBox status code
-     * @param   pAbsX   Pointer of result value, can be NULL
-     * @param   pAbsY   Pointer of result value, can be NULL
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pxAbs           Pointer of result value, can be NULL
+     * @param   pyAbs           Pointer of result value, can be NULL
      */
-    DECLR3CALLBACKMEMBER(int, pfnQueryAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, uint32_t *pAbsX, uint32_t *pAbsY));
+    DECLR3CALLBACKMEMBER(int, pfnQueryAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, uint32_t *pxAbs, uint32_t *pyAbs));
 
     /**
      * Set the new absolute mouse position in pixels
      *
      * @returns VBox status code
-     * @param   absX   New absolute X position
-     * @param   absY   New absolute Y position
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   xabs            New absolute X position
+     * @param   yAbs            New absolute Y position
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, uint32_t absX, uint32_t absY));
+    DECLR3CALLBACKMEMBER(int, pfnSetAbsoluteMouse,(PPDMIVMMDEVPORT pInterface, uint32_t xAbs, uint32_t yAbs));
 
     /**
      * Return the current mouse capability flags
      *
      * @returns VBox status code
-     * @param   pCapabilities  Pointer of result value
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pfCapabilities  Pointer of result value
      */
-    DECLR3CALLBACKMEMBER(int, pfnQueryMouseCapabilities,(PPDMIVMMDEVPORT pInterface, uint32_t *pCapabilities));
+    DECLR3CALLBACKMEMBER(int, pfnQueryMouseCapabilities,(PPDMIVMMDEVPORT pInterface, uint32_t *pfCapabilities));
 
     /**
      * Set the current mouse capability flag (host side)
      *
      * @returns VBox status code
-     * @param   fCapsAdded    Mask of capabilities to add to the flag
-     * @param   fCapsRemoved  Mask of capabilities to remove from the flag
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fCapsAdded      Mask of capabilities to add to the flag
+     * @param   fCapsRemoved    Mask of capabilities to remove from the flag
      */
-    DECLR3CALLBACKMEMBER(int, pfnUpdateMouseCapabilities,(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAdded, uint32_t fCapsremoved));
+    DECLR3CALLBACKMEMBER(int, pfnUpdateMouseCapabilities,(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAdded, uint32_t fCapsRemoved));
 
     /**
      * Issue a display resolution change request.
@@ -1965,12 +1969,13 @@ typedef struct PDMIVMMDEVPORT
      * not process it, issuing another request will overwrite the previous.
      *
      * @returns VBox status code
-     * @param   cx          Horizontal pixel resolution (0 = do not change).
-     * @param   cy          Vertical pixel resolution (0 = do not change).
-     * @param   cBits       Bits per pixel (0 = do not change).
-     * @param   display     The display index.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   cx              Horizontal pixel resolution (0 = do not change).
+     * @param   cy              Vertical pixel resolution (0 = do not change).
+     * @param   cBits           Bits per pixel (0 = do not change).
+     * @param   idxDisplay      The display index.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRequestDisplayChange,(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32_t cy, uint32_t cBits, uint32_t display));
+    DECLR3CALLBACKMEMBER(int, pfnRequestDisplayChange,(PPDMIVMMDEVPORT pInterface, uint32_t cx, uint32_t cy, uint32_t cBits, uint32_t idxDisplay));
 
     /**
      * Pass credentials to guest.
@@ -1979,10 +1984,11 @@ typedef struct PDMIVMMDEVPORT
      * query them and may do whatever it wants with them.
      *
      * @returns VBox status code.
-     * @param   pszUsername            User name, may be empty (UTF-8).
-     * @param   pszPassword            Password, may be empty (UTF-8).
-     * @param   pszDomain              Domain name, may be empty (UTF-8).
-     * @param   fFlags                 VMMDEV_SETCREDENTIALS_*.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pszUsername     User name, may be empty (UTF-8).
+     * @param   pszPassword     Password, may be empty (UTF-8).
+     * @param   pszDomain       Domain name, may be empty (UTF-8).
+     * @param   fFlags          VMMDEV_SETCREDENTIALS_*.
      */
     DECLR3CALLBACKMEMBER(int, pfnSetCredentials,(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
                                                  const char *pszPassword, const char *pszDomain,
@@ -1992,7 +1998,8 @@ typedef struct PDMIVMMDEVPORT
      * Notify the driver about a VBVA status change.
      *
      * @returns Nothing. Because it is informational callback.
-     * @param   fEnabled    Current VBVA status.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fEnabled        Current VBVA status.
      */
     DECLR3CALLBACKMEMBER(void, pfnVBVAChange, (PPDMIVMMDEVPORT pInterface, bool fEnabled));
 
@@ -2003,7 +2010,8 @@ typedef struct PDMIVMMDEVPORT
      * not process it, issuing another request will overwrite the previous.
      *
      * @returns VBox status code
-     * @param   fEnabled       Seamless mode enabled or not
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fEnabled        Seamless mode enabled or not
      */
     DECLR3CALLBACKMEMBER(int, pfnRequestSeamlessChange,(PPDMIVMMDEVPORT pInterface, bool fEnabled));
 
@@ -2014,9 +2022,10 @@ typedef struct PDMIVMMDEVPORT
      * not process it, issuing another request will overwrite the previous.
      *
      * @returns VBox status code
-     * @param   ulBalloonSize   Balloon size in megabytes
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   cMbBalloon      Balloon size in megabytes
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetMemoryBalloon,(PPDMIVMMDEVPORT pInterface, uint32_t ulBalloonSize));
+    DECLR3CALLBACKMEMBER(int, pfnSetMemoryBalloon,(PPDMIVMMDEVPORT pInterface, uint32_t cMbBalloon));
 
     /**
      * Issue a statistcs interval change request.
@@ -2025,25 +2034,30 @@ typedef struct PDMIVMMDEVPORT
      * not process it, issuing another request will overwrite the previous.
      *
      * @returns VBox status code
-     * @param   ulStatInterval  Statistics query interval in seconds (0=disable)
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     * @param   cSecsStatInterval   Statistics query interval in seconds
+     *                              (0=disable).
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetStatisticsInterval,(PPDMIVMMDEVPORT pInterface, uint32_t ulStatInterval));
+    DECLR3CALLBACKMEMBER(int, pfnSetStatisticsInterval,(PPDMIVMMDEVPORT pInterface, uint32_t cSecsStatInterval));
 
     /**
      * Notify the guest about a VRDP status change.
      *
      * @returns VBox status code
-     * @param   fVRDPEnabled           Current VRDP status.
-     * @param   u32VRDPExperienceLevel Which visual effects to be disabled in the guest.
+     * @param   pInterface              Pointer to the interface structure containing the called function pointer.
+     * @param   fVRDPEnabled            Current VRDP status.
+     * @param   uVRDPExperienceLevel    Which visual effects to be disabled in
+     *                                  the guest.
      */
-    DECLR3CALLBACKMEMBER(int, pfnVRDPChange, (PPDMIVMMDEVPORT pInterface, bool fVRDPEnabled, uint32_t u32VRDPExperienceLevel));
+    DECLR3CALLBACKMEMBER(int, pfnVRDPChange, (PPDMIVMMDEVPORT pInterface, bool fVRDPEnabled, uint32_t uVRDPExperienceLevel));
 
     /**
      * Notify the guest of CPU hot-unplug event.
      *
      * @returns VBox status code
-     * @param   idCpuCore    The core id of the CPU to remove.
-     * @param   idCpuPackage The package id of the CPU to remove.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   idCpuCore       The core id of the CPU to remove.
+     * @param   idCpuPackage    The package id of the CPU to remove.
      */
     DECLR3CALLBACKMEMBER(int, pfnCpuHotUnplug, (PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage));
 
@@ -2051,8 +2065,9 @@ typedef struct PDMIVMMDEVPORT
      * Notify the guest of CPU hot-plug event.
      *
      * @returns VBox status code
-     * @param   idCpuCore    The core id of the CPU to add.
-     * @param   idCpuPackage The package id of the CPU to add.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   idCpuCore       The core id of the CPU to add.
+     * @param   idCpuPackage    The package id of the CPU to add.
      */
     DECLR3CALLBACKMEMBER(int, pfnCpuHotPlug, (PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage));
 
