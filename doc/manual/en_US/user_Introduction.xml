@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter>
   <title id="Introduction">First steps</title>
 
@@ -51,14 +51,25 @@
 
     <itemizedlist>
       <listitem>
-        <para><emphasis role="bold">Operating system support.</emphasis> With
-        VirtualBox, one can run software written for one operating system on
-        another (for example, Windows software on Linux or a Mac) without
-        having to reboot to use it. Since you can configure what kinds of
-        hardware should be presented to each virtual machine, you can even
-        install an old operating system such as DOS or OS/2 in a virtual
-        machine if your real computer's hardware is no longer supported by
-        that operating system.</para>
+        <para><emphasis role="bold">Running multiple operating systems
+        simultaneously.</emphasis> VirtualBox allows you to run more than one
+        operating system at a time. This way, you can run software written for
+        one operating system on another (for example, Windows software on
+        Linux or a Mac) without having to reboot to use it. Since you can
+        configure what kinds of "virtual" hardware should be presented to each
+        such operating system, you can install an old operating system such as
+        DOS or OS/2 even if your real computer's hardware is no longer
+        supported by that operating system.</para>
+      </listitem>
+
+      <listitem>
+        <para><emphasis role="bold">Easier software installations.</emphasis>
+        Software vendors can use virtual machines to ship entire software
+        configurations. For example, installing a complete mail server
+        solution on a real machine can be a tedious task. With VirtualBox,
+        such a complex setup (then often called an "appliance") can be packed
+        into in a virtual machine. Installing and running a mail server
+        becomes as easy as importing such an appliance into VirtualBox.</para>
       </listitem>
 
       <listitem>
@@ -83,30 +94,12 @@
       <listitem>
         <para><emphasis role="bold">Infrastructure consolidation.</emphasis>
         Virtualization can significantly reduce hardware and electricity
-        costs. Servers today typically run with fairly low average system
-        loads and are rarely used to their full potential. A lot of hardware
-        potential as well as electricity is thereby wasted. So, instead of
-        running many such physical computers that are only partially used, one
-        can pack many virtual machines onto a few powerful hosts and balance
-        the loads between them.</para>
-
-        <para>With VirtualBox, you can even run virtual machines as mere
-        servers for the VirtualBox Remote Desktop Protocol (VRDP), with full
-        client USB support. This allows for consolidating the desktop machines
-        in an enterprise on just a few RDP servers, while the actual clients
-        only have to be capable of displaying VRDP data.</para>
-      </listitem>
-
-      <listitem>
-        <para><emphasis role="bold">Easier software installations.</emphasis>
-        Virtual machines can be used by software vendors to ship entire
-        software configurations. For example, installing a complete mail
-        server solution on a real machine can be a tedious task. With
-        virtualization it becomes possible to ship an entire software
-        solution, possibly consisting of many different components, in a
-        virtual machine, which is then often called an "appliance". Installing
-        and running a mail server becomes as easy as importing such an
-        appliance into VirtualBox.</para>
+        costs. Most of the time, computers today only use a fraction of their
+        potential power and run with low average system loads. A lot of
+        hardware resources as well as electricity is thereby wasted. So,
+        instead of running many such physical computers that are only
+        partially used, one can pack many virtual machines onto a few powerful
+        hosts and balance the loads between them.</para>
       </listitem>
     </itemizedlist>
   </sect1>
@@ -120,29 +113,30 @@
 
     <glosslist>
       <glossentry>
-        <glossterm>Host operating system (host OS):</glossterm>
+        <glossterm>Host operating system (host OS).</glossterm>
 
         <glossdef>
-          <para>the operating system of the physical computer on which
+          <para>This is the operating system of the physical computer on which
           VirtualBox was installed. There are versions of VirtualBox for
           Windows, Mac OS X, Linux and Solaris hosts; for details, please see
-          <xref linkend="hostossupport" />. While the various VirtualBox
-          versions are usually discussed together in this document, there may
-          be platform-specific differences which we will point out where
-          appropriate.</para>
+          <xref linkend="hostossupport" />. </para>
+
+          <para>Most of the time, this User Manual discusses all VirtualBox
+          versions together. There may be platform-specific differences which
+          we will point out where appropriate.</para>
         </glossdef>
       </glossentry>
 
       <glossentry>
-        <glossterm>Guest operating system (guest OS):</glossterm>
+        <glossterm>Guest operating system (guest OS).</glossterm>
 
         <glossdef>
-          <para>the operating system that is running inside the virtual
-          machine. Theoretically, VirtualBox can run any x86 operating system
-          (DOS, Windows, OS/2, FreeBSD, OpenBSD), but to achieve near-native
-          performance of the guest code on your machine, we had to go through
-          a lot of optimizations that are specific to certain operating
-          systems. So while your favorite operating system
+          <para>This is the operating system that is running inside the
+          virtual machine. Theoretically, VirtualBox can run any x86 operating
+          system (DOS, Windows, OS/2, FreeBSD, OpenBSD), but to achieve
+          near-native performance of the guest code on your machine, we had to
+          go through a lot of optimizations that are specific to certain
+          operating systems. So while your favorite operating system
           <emphasis>may</emphasis> run as a guest, we officially support and
           optimize for a select few (which, however, include the most common
           ones).</para>
@@ -155,26 +149,23 @@
         <glossterm>Virtual machine (VM).</glossterm>
 
         <glossdef>
-          <para>When running, a VM is the special environment that VirtualBox
-          creates for your guest operating system. So, in other words, you run
-          your guest operating system "in" a VM. Normally, a VM will be shown
-          as a window on your computer's desktop, but depending on which of
-          the various frontends of VirtualBox you use, it can be displayed in
-          full-screen mode or remotely by use of the VirtualBox Remote Desktop
-          Protocol (VRDP).</para>
+          <para>This is the special environment that VirtualBox creates for
+          your guest operating system while it is running. In other words, you
+          run your guest operating system "in" a VM. Normally, a VM will be
+          shown as a window on your computer's desktop, but depending on which
+          of the various frontends of VirtualBox you use, it can be displayed
+          in full-screen mode or remotely on another computer.</para>
 
-          <para>Sometimes we also use the term "virtual machine" in a more
-          abstract way. Internally, VirtualBox thinks of a VM as a set of
-          parameters that determine its behavior. They include hardware
-          settings (how much memory the VM should have, what hard disks
-          VirtualBox should virtualize through which container files, what CDs
-          are mounted etc.) as well as state information (whether the VM is
-          currently running, saved, its snapshots etc.).</para>
-
-          <para>These settings are mirrored in the VirtualBox graphical user
-          interface as well as the <computeroutput>VBoxManage</computeroutput>
-          command line program; see <xref linkend="vboxmanage" />. In other
-          words, a VM is also what you can see in its settings dialog.</para>
+          <para>In a more abstract way, internally, VirtualBox thinks of a VM
+          as a set of parameters that determine its behavior. They include
+          hardware settings (how much memory the VM should have, what hard
+          disks VirtualBox should virtualize through which container files,
+          what CDs are mounted etc.) as well as state information (whether the
+          VM is currently running, saved, its snapshots etc.). These settings
+          are mirrored in the VirtualBox Manager window as well as the
+          <computeroutput>VBoxManage</computeroutput> command line program;
+          see <xref linkend="vboxmanage" />. In other words, a VM is also what
+          you can see in its settings dialog.</para>
         </glossdef>
       </glossentry>
 
@@ -182,9 +173,8 @@
         <glossterm>Guest Additions.</glossterm>
 
         <glossdef>
-          <para>With "Guest Additions", we refer to special software packages
-          that are shipped with VirtualBox. Even though they are part of
-          VirtualBox, they are designed to be installed
+          <para>This refers to special software packages which are shipped
+          with VirtualBox but designed to be installed
           <emphasis>inside</emphasis> a VM to improve performance of the guest
           OS and to add extra features. This is described in detail in <xref
           linkend="guestadditions" />.</para>
@@ -230,7 +220,7 @@
         the processor features built into newer hardware like Intel VT-x or
         AMD-V. As opposed to many other virtualization solutions, you can
         therefore use VirtualBox even on older hardware where these features
-        are not present. More details can be found in <xref
+        are not present. The technical details are explained in <xref
         linkend="hwvirt" />.</para>
       </listitem>
 
@@ -260,12 +250,12 @@
           <listitem>
             <para><emphasis role="bold">Guest multiprocessing
             (SMP).</emphasis> VirtualBox can present up to 32 virtual CPUs to
-            a virtual machine, irrespective of how many CPU cores are actually
-            present in your host.</para>
+            each virtual machine, irrespective of how many CPU cores are
+            physically present on your host.</para>
           </listitem>
 
           <listitem>
-            <para><emphasis role="bold">USB 2.0 device support.</emphasis>
+            <para><emphasis role="bold">USB device support.</emphasis>
             VirtualBox implements a virtual USB controller and allows you to
             connect arbitrary USB devices to your virtual machines without
             having to install device-specific drivers on the host. USB support
@@ -328,8 +318,8 @@
         state of the virtual machine. You can go back in time and revert the
         virtual machine to any such snapshot and start an alternative VM
         configuration from there, effectively creating a whole snapshot tree.
-        For details, see <xref linkend="snapshots" />. You can delete
-        snapshots while the virtual machine is running.</para>
+        For details, see <xref linkend="snapshots" />. You can create and
+        delete snapshots while the virtual machine is running.</para>
       </listitem>
 
       <listitem>
@@ -351,21 +341,18 @@
       </listitem>
 
       <listitem>
-        <para><emphasis role="bold">Remote machine display.</emphasis> You can
-        run any virtual machine in a special VirtualBox program that acts as a
-        server for the VirtualBox Remote Desktop Protocol (VRDP), a
-        backward-compatible extension of the standard Remote Desktop Protocol.
-        With this unique feature, VirtualBox provides high-performance remote
-        access to any virtual machine.</para>
+        <para><emphasis role="bold">Remote machine display.</emphasis> The
+        VirtualBox Remote Desktop Extension (VRDE) allows for high-performance
+        remote access to any running virtual machine. This extension supports
+        the Remote Desktop Protocol (RDP) originally built into Microsoft
+        Windows, with special additions for full client USB support. </para>
 
-        <para>VirtualBox's VRDP support does not rely on the RDP server that
-        is built into Microsoft Windows. Instead, a custom VRDP server has
-        been built directly into the virtualization layer. As a result, it
-        works with any operating system (even in text mode) and does not
-        require application support in the virtual machine either.</para>
-
-        <para>VRDP support is described in detail in <xref
-        linkend="vrdp" />.</para>
+        <para>The VRDE does not rely on the RDP server that is built into
+        Microsoft Windows; instead, it is plugged directly into the
+        virtualization layer. As a result, it works with guest operating
+        systems other than Windows (even in text mode) and does not require
+        application support in the virtual machine either. The VRDE is
+        described in detail in <xref linkend="vrdp" />.</para>
 
         <para>On top of this special capacity, VirtualBox offers you more
         unique features:<itemizedlist>
