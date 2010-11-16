@@ -20,10 +20,12 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 # Include Sub-Makefiles.
 include $(PATH_SUB_CURRENT)/Loader/Makefile.kmk
+include $(PATH_SUB_CURRENT)/InstallHelper/Makefile.kmk
 
 # Globals
 VBOX_PATH_WIN_ADD_INS_SRC := $(PATH_SUB_CURRENT)
 VBOX_PATH_ADDITIONS.win.x86 := $(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/bin/additions
+VBOX_WITH_GUEST_INSTALL_HELPER := 1 # Use our guest install helper DLL.
 
 ## @todo VBOX_WIN_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/Installer/win
 
@@ -148,6 +150,7 @@ endif
 VB_WIN_ADD_NSIS_ENV := \
 	-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
 	-E 'PATH_TARGET=$(subst /,\,$(PATH_TARGET))' \
+	-E 'PATH_TARGET_X86=$(subst /,\,$(PATH_OUT_BASE)/win.x86/$(KBUILD_TYPE)/obj)' \
 	-E 'VBOX_PATH_ADDITIONS_WIN_X86=$(subst /,\,$(VBOX_PATH_ADDITIONS.win.x86))' \
 	-E 'VBOX_VENDOR=$(VBOX_VENDOR)' \
 	-E 'VBOX_VENDOR_SHORT=$(VBOX_VENDOR_SHORT)' \
@@ -161,6 +164,7 @@ VB_WIN_ADD_NSIS_ENV := \
 	-E 'VBOX_WINDOWS_ADDITIONS_ICON_FILE=$(subst /,\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))' \
 	-E 'VBOX_NSIS_ICON_FILE=$(subst /,\,$(VBOX_NSIS_ICON_FILE))' \
 	-E 'VBOX_WITH_CROGL=$(if $(VBOX_WITH_CROGL),1,0)' \
+	-E 'VBOX_WITH_GUEST_INSTALL_HELPER=$(if $(VBOX_WITH_GUEST_INSTALL_HELPER),1,0)' \
 	-E 'VBOX_WITH_WDDM=$(if $(VBOX_WITH_WDDM),1,0)' \
 	-E 'VBOX_BRAND_WIN_ADD_INST_DLGBMP=$(subst /,\,$(VBOX_BRAND_WIN_ADD_INST_DLGBMP))' \
 	-E 'VBOX_BRAND_LICENSE_RTF=$(subst /,\,$(VBOX_BRAND_LICENSE_RTF))' \
