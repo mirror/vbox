@@ -1799,7 +1799,12 @@ vboxNetFltWinPtReceive(
             Assert(fAdaptActive);
 
             {
+                /* Note: we're using KeGetCurrentProcessorNumber, which is not entirely correct in case
+                * we're running on 64bit win7+, which can handle > 64 CPUs, however since KeGetCurrentProcessorNumber
+                * always returns the number < than the number of CPUs in the first group, we're guaranteed to have CPU index < 64
+                * @todo: use KeGetCurrentProcessorNumberEx for Win7+ 64 and dynamically extended array */
                 ULONG Proc = KeGetCurrentProcessorNumber();
+                Assert(Proc < RT_ELEMENTS(pAdapt->abIndicateRcvComplete));
                 pAdapt->abIndicateRcvComplete[Proc] = TRUE;
                 switch (pAdapt->Medium)
                 {
@@ -1863,7 +1868,12 @@ vboxNetFltWinPtReceiveComplete(
      * on netflt activation/deactivation */
     bool bNetFltActive;
     bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &bNetFltActive);
+    /* Note: we're using KeGetCurrentProcessorNumber, which is not entirely correct in case
+    * we're running on 64bit win7+, which can handle > 64 CPUs, however since KeGetCurrentProcessorNumber
+    * always returns the number < than the number of CPUs in the first group, we're guaranteed to have CPU index < 64
+    * @todo: use KeGetCurrentProcessorNumberEx for Win7+ 64 and dynamically extended array */
     ULONG Proc = KeGetCurrentProcessorNumber();
+    Assert(Proc < RT_ELEMENTS(pAdapt->abIndicateRcvComplete));
 
     vboxNetFltWinPtFlushReceiveQueue(pAdapt, false);
 
