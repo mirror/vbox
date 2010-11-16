@@ -167,6 +167,7 @@ public:
                                         hrc = machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
                                         if (SUCCEEDED(hrc) && vrdeServer)
                                         {
+                                            LogRel(("VRDE: the guest user has logged out, disconnecting remote clients.\n"));
                                             vrdeServer->COMSETTER(Enabled)(FALSE);
                                             vrdeServer->COMSETTER(Enabled)(TRUE);
                                         }
