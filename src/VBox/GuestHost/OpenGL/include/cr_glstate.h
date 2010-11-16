@@ -104,6 +104,11 @@ typedef struct _CRSharedState {
     GLint refCount;
     GLint id;                   /*unique shared state id, it's not always matching some existing context id!*/
     GLint saveCount;
+
+    /* Indicates that we have to resend data to GPU on first glMakeCurrent call with owning context */
+    GLboolean   bTexResyncNeeded;
+    GLboolean   bVBOResyncNeeded;
+    GLboolean   bFBOResyncNeeded;
 } CRSharedState;
 
 

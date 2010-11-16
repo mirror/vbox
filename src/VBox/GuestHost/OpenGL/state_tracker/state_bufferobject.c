@@ -97,7 +97,7 @@ void crStateBufferObjectInit (CRContext *ctx)
     b->nullBuffer->refCount += 2;
 #endif
 
-    b->bResyncNeeded = GL_FALSE;
+    ctx->shared->bVBOResyncNeeded = GL_FALSE;
 }
 
 void crStateFreeBufferObject(void *data)
@@ -987,13 +987,13 @@ void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID,
     if (!HaveBufferObjectExtension())
         return;
 
-    if (to->bResyncNeeded)
+    if (toCtx->shared->bVBOResyncNeeded)
     {
         CRClientPointer *cp;
         GLboolean locked = toCtx->client.array.locked;
 
         crHashtableWalk(toCtx->shared->buffersTable, crStateBufferObjectSyncCB, to);
-        to->bResyncNeeded = GL_FALSE;
+        toCtx->shared->bVBOResyncNeeded = GL_FALSE;
 
         /*@todo, move to state_client.c*/
         cp = &toCtx->client.array.v;

@@ -51,8 +51,6 @@ typedef struct {
     CRBufferObject *unpackBuffer;
 
 	CRBufferObject *nullBuffer;  /* name = 0 */
-
-    GLboolean   bResyncNeeded;
 } CRBufferObjectState;
 
 DECLEXPORT(CRBufferObject *) crStateGetBoundBufferObject(GLenum target, CRBufferObjectState *b);

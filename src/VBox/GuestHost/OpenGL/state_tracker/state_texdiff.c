@@ -500,9 +500,9 @@ void crStateTextureSwitch( CRTextureBits *tb, CRbitvalue *bitID,
     }
 
     /* Resend texture images */
-    if (toCtx->texture.bResyncNeeded)
+    if (toCtx->shared->bTexResyncNeeded)
     {
-        toCtx->texture.bResyncNeeded = GL_FALSE;
+        toCtx->shared->bTexResyncNeeded = GL_FALSE;
 
         crStateDiffAllTextureObjects(toCtx, bitID, GL_TRUE);
     }

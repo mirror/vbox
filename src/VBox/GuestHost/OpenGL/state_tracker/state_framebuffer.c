@@ -36,7 +36,7 @@ crStateFramebufferObjectInit(CRContext *ctx)
     fbo->readFB = NULL;
     fbo->drawFB = NULL;
     fbo->renderbuffer = NULL;
-    fbo->bResyncNeeded = GL_FALSE;
+    ctx->shared->bFBOResyncNeeded = GL_FALSE;
 }
 
 void crStateFreeFBO(void *data)
@@ -692,9 +692,9 @@ static void crStateSyncFramebuffersCB(unsigned long key, void *data1, void *data
 DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
 {
-    if (to->framebufferobject.bResyncNeeded)
+    if (to->shared->bFBOResyncNeeded)
     {
-        to->framebufferobject.bResyncNeeded = GL_FALSE;
+        to->shared->bFBOResyncNeeded = GL_FALSE;
 
         crHashtableWalk(to->shared->rbTable, crStateSyncRenderbuffersCB, NULL);
         crHashtableWalk(to->shared->fbTable, crStateSyncFramebuffersCB, to);
