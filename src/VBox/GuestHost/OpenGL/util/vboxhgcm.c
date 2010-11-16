@@ -1250,7 +1250,7 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
     return TRUE;
 }
 
-static int crVBoxHGCMSetPID(CRConnection *conn, CRpid pid)
+static int crVBoxHGCMSetPID(CRConnection *conn, unsigned long long pid)
 {
     CRVBOXHGCMSETPID parms;
     int rc;
@@ -1261,7 +1261,7 @@ static int crVBoxHGCMSetPID(CRConnection *conn, CRpid pid)
     parms.hdr.cParms      = SHCRGL_CPARMS_SET_PID;
 
     parms.u64PID.type     = VMMDevHGCMParmType_64bit;
-    parms.u64PID.u.value64 = (uintptr_t) pid;
+    parms.u64PID.u.value64 = pid;
 
     rc = crVBoxHGCMCall(&parms, sizeof(parms));
 
@@ -1362,7 +1362,11 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
             {
                 return rc;
             }
+#ifdef RT_OS_WINDOWS
+            rc = crVBoxHGCMSetPID(conn, GetCurrentProcessId());
+#else
             rc = crVBoxHGCMSetPID(conn, crGetPID());
+#endif
             VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
             return rc;
         }
