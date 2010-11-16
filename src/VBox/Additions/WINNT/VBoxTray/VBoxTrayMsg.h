@@ -34,8 +34,10 @@ typedef struct _VBOXTRAYIPCHEADER
 {
     /** Message type. */
     ULONG ulMsg;
-    /** Version of message type. */
-    ULONG ulVer;
+    /** User-supplied wParam. */
+    ULONG wParam;
+    /** User-supplied lParam. */
+    ULONG lParam;
 } VBOXTRAYIPCHEADER, *PVBOXTRAYIPCHEADER;
 
 typedef struct _VBOXTRAYIPCMSG_SHOWBALLOONMSG
