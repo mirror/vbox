@@ -1,6 +1,6 @@
 # $Id$
 ## @file
-# Sub-Makefile for the Windows Guest Additions Installer.
+# Sub-Makefile for the Windows Guest Additions Installer Helper DLL.
 #
 
 #
@@ -19,23 +19,16 @@ SUB_DEPTH = ../../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 #
-# Build template for NSIS plugins.
-# Must always be built in 32-bit, since NSIS is 32-bit only.
-#
-TEMPLATE_NSISPLUGIN = NSIS Plugin
-TEMPLATE_NSISPLUGIN_EXTENDS = VBOXGUESTR3DLL
-TEMPLATE_NSISPLUGIN_BLD_TRG = win
-TEMPLATE_NSISPLUGIN_BLD_TRG_ARCH = x86 # Force always building in 32-bit.
-
-#
 # NSIS plugins always have to be compiled in 32-bit!
 #
-DLLS += VBoxGuestInstallHelper
-VBoxGuestInstallHelper_TEMPLATE = NSISPLUGIN
+## @todo kBuild: This needs the WINPSDK fix to work for cross building.
+DLLS.x86 += VBoxGuestInstallHelper
+VBoxGuestInstallHelper_TEMPLATE = VBOXGUESTR3DLL
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxGuestInstallHelper_NOINST  = true
 endif
 VBoxGuestInstallHelper_DEFS     = _WIN32_WINNT=0x0400 WIN32_LEAN_AND_MEAN=1
+VBoxGuestInstallHelper_BLD_TRG_ARCH = x86
 VBoxGuestInstallHelper_SOURCES  = \
 	VBoxGuestInstallHelper.cpp \
 	VBoxGuestInstallHelper.rc
