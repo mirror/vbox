@@ -22,6 +22,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/mem.h>
 #include <VBoxGuestInternal.h>
 
 typedef struct _VBOXIPCCONTEXT
@@ -31,24 +32,27 @@ typedef struct _VBOXIPCCONTEXT
 
 } VBOXIPCCONTEXT, *PVBOXIPCCONTEXT;
 
-#define VBOXTRAY_PIPE_BUFSIZE 512
-
 static VBOXIPCCONTEXT gCtx = {0};
 
 int VBoxIPCReadMessage(PVBOXIPCCONTEXT pCtx, BYTE *pMessage, DWORD cbMessage)
 {
     int rc = VINF_SUCCESS;
-    while (RT_SUCCESS(rc))
+    do
     {
         DWORD dwRead;
         if (!ReadFile(pCtx->hPipe, pMessage, cbMessage, &dwRead, 0))
-            rc = RTErrConvertFromWin32(GetLastError());
-        if (rc == VERR_MORE_DATA)
         {
-            rc = VINF_SUCCESS;
+            rc = RTErrConvertFromWin32(GetLastError());
+        }
+        else
+        {
+            if (rc == VERR_MORE_DATA)
+                rc = VINF_SUCCESS;
             pMessage += dwRead;
+            cbMessage -= dwRead;
         }
     }
+    while (cbMessage && RT_SUCCESS(rc));
     return rc;
 }
 
@@ -68,8 +72,8 @@ int VBoxIPCWriteMessage(PVBOXIPCCONTEXT pCtx, BYTE *pMessage, DWORD cbMessage)
 int VBoxIPCPostQuitMessage(PVBOXIPCCONTEXT pCtx)
 {
     VBOXTRAYIPCHEADER hdr;
-    hdr.uMsg = VBOXTRAYIPCMSGTYPE_QUIT;
-    hdr.uVer = 0;
+    hdr.ulMsg = VBOXTRAYIPCMSGTYPE_QUIT;
+    hdr.ulVer = 0;
     return VBoxIPCWriteMessage(pCtx, (BYTE*)&hdr, sizeof(hdr));
 }
 
@@ -90,7 +94,7 @@ int VBoxIPCMsgShowBalloonMsg(PVBOXIPCCONTEXT pCtx, UINT uVersion)
     {
         hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON,
                           msg.szBody, msg.szTitle,
-                          msg.uShowMS, msg.uType);
+                          msg.ulShowMS, msg.ulType);
     }
     return rc;
 }
@@ -102,36 +106,45 @@ int VBoxIPCInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
     *pfStartThread = false;
     gCtx.pEnv = pEnv;
 
-    SECURITY_ATTRIBUTES sa;
-    sa.lpSecurityDescriptor = (PSECURITY_DESCRIPTOR)malloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
-    if (!InitializeSecurityDescriptor(sa.lpSecurityDescriptor, SECURITY_DESCRIPTOR_REVISION))
-    {
-        DWORD er = ::GetLastError();
-    }
-    if (!SetSecurityDescriptorDacl(sa.lpSecurityDescriptor, TRUE, (PACL)0, FALSE))
-    {
-        DWORD er = ::GetLastError();
-    }
-    sa.nLength = sizeof sa;
-    sa.bInheritHandle = TRUE;
-
     int rc = VINF_SUCCESS;
-    gCtx.hPipe = ::CreateNamedPipe((LPSTR)VBOXTRAY_PIPE_IPC,
-                                   PIPE_ACCESS_DUPLEX,
-                                   PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
-                                   PIPE_UNLIMITED_INSTANCES,
-                                   VBOXTRAY_PIPE_BUFSIZE, // output buffer size
-                                   VBOXTRAY_PIPE_BUFSIZE, // input buffer size
-                                   NMPWAIT_USE_DEFAULT_WAIT,
-                                   &sa);
-    if (gCtx.hPipe == INVALID_HANDLE_VALUE)
-    {
-        DWORD dwError = ::GetLastError();
-    }
+    SECURITY_ATTRIBUTES sa;
+    sa.lpSecurityDescriptor = (PSECURITY_DESCRIPTOR)RTMemAlloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
+    if (!sa.lpSecurityDescriptor)
+        rc = VERR_NO_MEMORY;
     else
     {
-        *pfStartThread = true;
-        *ppInstance = &gCtx;
+        if (!InitializeSecurityDescriptor(sa.lpSecurityDescriptor, SECURITY_DESCRIPTOR_REVISION))
+            rc = RTErrConvertFromWin32(GetLastError());
+        else
+        {
+            if (!SetSecurityDescriptorDacl(sa.lpSecurityDescriptor, TRUE, (PACL)0, FALSE))
+                rc = RTErrConvertFromWin32(GetLastError());
+            else
+            {
+                sa.nLength = sizeof(sa);
+                sa.bInheritHandle = TRUE;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            gCtx.hPipe = CreateNamedPipe((LPSTR)VBOXTRAY_PIPE_IPC,
+                                         PIPE_ACCESS_DUPLEX,
+                                         PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+                                         PIPE_UNLIMITED_INSTANCES,
+                                         VBOXTRAY_PIPE_IPC_BUFSIZE, /* Output buffer size. */
+                                         VBOXTRAY_PIPE_IPC_BUFSIZE, /* Input buffer size. */
+                                         NMPWAIT_USE_DEFAULT_WAIT,
+                                         &sa);
+            if (gCtx.hPipe == INVALID_HANDLE_VALUE)
+                rc = RTErrConvertFromWin32(GetLastError());
+            else
+            {
+                *pfStartThread = true;
+                *ppInstance = &gCtx;
+            }
+        }
+        RTMemFree(sa.lpSecurityDescriptor);
     }
     return rc;
 }
@@ -190,10 +203,10 @@ unsigned __stdcall VBoxIPCThread(void *pInstance)
 
             if (SUCCEEDED(dwErr))
             {
-                switch (hdr.uMsg)
+                switch (hdr.ulMsg)
                 {
                     case VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG:
-                        rc = VBoxIPCMsgShowBalloonMsg(pCtx, hdr.uVer);
+                        rc = VBoxIPCMsgShowBalloonMsg(pCtx, hdr.ulVer);
                         break;
 
                     /* Someone asked us to quit ... */
