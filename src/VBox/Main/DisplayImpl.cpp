@@ -3458,15 +3458,11 @@ void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVH
 
         if (pFramebuffer != NULL)
         {
-            pFramebuffer->Lock();
-
             HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
             if (FAILED(hr))
             {
                 rc = (hr == E_NOTIMPL) ? VERR_NOT_IMPLEMENTED : VERR_GENERAL_FAILURE;
             }
-
-            pFramebuffer->Unlock();
         }
         else
         {

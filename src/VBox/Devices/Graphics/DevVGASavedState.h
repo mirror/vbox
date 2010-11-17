@@ -22,7 +22,7 @@
 #ifndef Graphics_DevVGASavedState_h
 #define Graphics_DevVGASavedState_h
 
-#define VGA_SAVEDSTATE_VERSION              7
+#define VGA_SAVEDSTATE_VERSION              8
 #define VGA_SAVEDSTATE_VERSION_WDDM         7
 #define VGA_SAVEDSTATE_VERSION_PRE_WDDM     6
 #define VGA_SAVEDSTATE_VERSION_HOST_HEAP    5

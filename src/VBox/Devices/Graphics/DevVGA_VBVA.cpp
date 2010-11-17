@@ -725,296 +725,8 @@ static void dumpctx(const VBVACONTEXT *pCtx)
 }
 #endif /* DEBUG_sunlover */
 
-int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    PVGASTATE pVGAState = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
-
-    int rc = HGSMIHostSaveStateExec (pIns, pSSM);
-    if (RT_SUCCESS(rc))
-    {
-        /* Save VBVACONTEXT. */
-        VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pIns);
-
-        if (!pCtx)
-        {
-            AssertFailed();
-
-            /* Still write a valid value to the SSM. */
-            rc = SSMR3PutU32 (pSSM, 0);
-            AssertRCReturn(rc, rc);
-        }
-        else
-        {
-#ifdef DEBUG_sunlover
-            dumpctx(pCtx);
-#endif
-
-            rc = SSMR3PutU32 (pSSM, pCtx->cViews);
-            AssertRCReturn(rc, rc);
-
-            uint32_t iView;
-            for (iView = 0; iView < pCtx->cViews; iView++)
-            {
-                VBVAVIEW *pView = &pCtx->aViews[iView];
-
-                rc = SSMR3PutU32 (pSSM, pView->view.u32ViewIndex);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU32 (pSSM, pView->view.u32ViewOffset);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU32 (pSSM, pView->view.u32ViewSize);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU32 (pSSM, pView->view.u32MaxScreenSize);
-                AssertRCReturn(rc, rc);
-
-                rc = SSMR3PutU32 (pSSM, pView->screen.u32ViewIndex);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutS32 (pSSM, pView->screen.i32OriginX);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutS32 (pSSM, pView->screen.i32OriginY);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU32 (pSSM, pView->screen.u32StartOffset);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU32 (pSSM, pView->screen.u32LineSize);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU32 (pSSM, pView->screen.u32Width);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU32 (pSSM, pView->screen.u32Height);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU16 (pSSM, pView->screen.u16BitsPerPixel);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3PutU16 (pSSM, pView->screen.u16Flags);
-                AssertRCReturn(rc, rc);
-
-                rc = SSMR3PutU32 (pSSM, pView->pVBVA? pView->u32VBVAOffset: HGSMIOFFSET_VOID);
-                AssertRCReturn(rc, rc);
-
-                rc = SSMR3PutU32 (pSSM, pView->partialRecord.cb);
-                AssertRCReturn(rc, rc);
-
-                if (pView->partialRecord.cb > 0)
-                {
-                    rc = SSMR3PutMem (pSSM, pView->partialRecord.pu8, pView->partialRecord.cb);
-                    AssertRCReturn(rc, rc);
-                }
-            }
-
-            /* Save mouse pointer shape information. */
-            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fSet);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fVisible);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fAlpha);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32HotX);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32HotY);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32Width);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32Height);
-            AssertRCReturn(rc, rc);
-            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.cbShape);
-            AssertRCReturn(rc, rc);
-            if (pCtx->mouseShapeInfo.cbShape)
-            {
-                rc = SSMR3PutMem (pSSM, pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbShape);
-                AssertRCReturn(rc, rc);
-            }
-
-            /* Size of some additional data. For future extensions. */
-            rc = SSMR3PutU32 (pSSM, 0);
-            AssertRCReturn(rc, rc);
-        }
-    }
-
-    return rc;
-}
-
-int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
-{
-    if (u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
-    {
-        /* Nothing was saved. */
-        return VINF_SUCCESS;
-    }
-
-    PVGASTATE pVGAState = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
-    int rc = HGSMIHostLoadStateExec (pIns, pSSM, u32Version);
-    if (RT_SUCCESS(rc))
-    {
-        /* Load VBVACONTEXT. */
-        VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pIns);
-
-        if (!pCtx)
-        {
-            /* This should not happen. */
-            AssertFailed();
-            rc = VERR_INVALID_PARAMETER;
-        }
-        else
-        {
-            uint32_t cViews = 0;
-            rc = SSMR3GetU32 (pSSM, &cViews);
-            AssertRCReturn(rc, rc);
-
-            uint32_t iView;
-            for (iView = 0; iView < cViews; iView++)
-            {
-                VBVAVIEW *pView = &pCtx->aViews[iView];
-
-                rc = SSMR3GetU32 (pSSM, &pView->view.u32ViewIndex);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pView->view.u32ViewOffset);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pView->view.u32ViewSize);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pView->view.u32MaxScreenSize);
-                AssertRCReturn(rc, rc);
-
-                rc = SSMR3GetU32 (pSSM, &pView->screen.u32ViewIndex);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetS32 (pSSM, &pView->screen.i32OriginX);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetS32 (pSSM, &pView->screen.i32OriginY);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pView->screen.u32StartOffset);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pView->screen.u32LineSize);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pView->screen.u32Width);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pView->screen.u32Height);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU16 (pSSM, &pView->screen.u16BitsPerPixel);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU16 (pSSM, &pView->screen.u16Flags);
-                AssertRCReturn(rc, rc);
-
-                rc = SSMR3GetU32 (pSSM, &pView->u32VBVAOffset);
-                AssertRCReturn(rc, rc);
-
-                rc = SSMR3GetU32 (pSSM, &pView->partialRecord.cb);
-                AssertRCReturn(rc, rc);
-
-                if (pView->partialRecord.cb == 0)
-                {
-                    pView->partialRecord.pu8 = NULL;
-                }
-                else
-                {
-                    Assert(pView->partialRecord.pu8 == NULL); /* Should be it. */
-
-                    uint8_t *pu8 = (uint8_t *)RTMemAlloc (pView->partialRecord.cb);
-
-                    if (!pu8)
-                    {
-                        return VERR_NO_MEMORY;
-                    }
-
-                    pView->partialRecord.pu8 = pu8;
-
-                    rc = SSMR3GetMem (pSSM, pView->partialRecord.pu8, pView->partialRecord.cb);
-                    AssertRCReturn(rc, rc);
-                }
-
-                if (   pView->u32VBVAOffset == HGSMIOFFSET_VOID
-                    || pView->screen.u32LineSize == 0) /* Earlier broken saved states. */
-                {
-                    pView->pVBVA = NULL;
-                }
-                else
-                {
-                    pView->pVBVA = (VBVABUFFER *)HGSMIOffsetToPointerHost (pIns, pView->u32VBVAOffset);
-                }
-            }
-
-            if (u32Version > VGA_SAVEDSTATE_VERSION_WITH_CONFIG)
-            {
-                /* Read mouse pointer shape information. */
-                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fSet);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fVisible);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fAlpha);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32HotX);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32HotY);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32Width);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32Height);
-                AssertRCReturn(rc, rc);
-                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.cbShape);
-                AssertRCReturn(rc, rc);
-                if (pCtx->mouseShapeInfo.cbShape)
-                {
-                    pCtx->mouseShapeInfo.pu8Shape = (uint8_t *)RTMemAlloc(pCtx->mouseShapeInfo.cbShape);
-                    if (pCtx->mouseShapeInfo.pu8Shape == NULL)
-                    {
-                        return VERR_NO_MEMORY;
-                    }
-                    pCtx->mouseShapeInfo.cbAllocated = pCtx->mouseShapeInfo.cbShape;
-                    rc = SSMR3GetMem (pSSM, pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbShape);
-                    AssertRCReturn(rc, rc);
-                }
-                else
-                {
-                    pCtx->mouseShapeInfo.pu8Shape = NULL;
-                }
-
-                /* Size of some additional data. For future extensions. */
-                uint32_t cbExtra = 0;
-                rc = SSMR3GetU32 (pSSM, &cbExtra);
-                AssertRCReturn(rc, rc);
-                if (cbExtra > 0)
-                {
-                    rc = SSMR3Skip(pSSM, cbExtra);
-                    AssertRCReturn(rc, rc);
-                }
-            }
-
-            pCtx->cViews = iView;
-            LogFlowFunc(("%d views loaded\n", pCtx->cViews));
-
-#ifdef DEBUG_sunlover
-            dumpctx(pCtx);
-#endif
-        }
-    }
-
-    return rc;
-}
-
-int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    PVGASTATE pVGAState = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
-
-    if (pCtx)
-    {
-        uint32_t iView;
-        for (iView = 0; iView < pCtx->cViews; iView++)
-        {
-            VBVAVIEW *pView = &pCtx->aViews[iView];
-
-            if (pView->pVBVA)
-            {
-                vbvaEnable (iView, pVGAState, pCtx, pView->pVBVA, pView->u32VBVAOffset);
-                vbvaResize (pVGAState, pView, &pView->screen);
-            }
-        }
-
-        if (pCtx->mouseShapeInfo.fSet)
-        {
-            vbvaUpdateMousePointerShape(pVGAState, &pCtx->mouseShapeInfo, true, pCtx->mouseShapeInfo.pu8Shape);
-        }
-    }
-
-    return VINF_SUCCESS;
-}
+#define VBOXVBVASAVEDSTATE_VHWAAVAILABLE_MAGIC   0x12345678
+#define VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC 0x9abcdef0
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 static void vbvaVHWAHHCommandReinit(VBOXVHWACMD* pHdr, VBOXVHWACMD_TYPE enmCmd, int32_t iDisplay)
@@ -1189,24 +901,34 @@ int vbvaVHWAReset (PVGASTATE pVGAState)
     return VERR_OUT_OF_RESOURCES;
 }
 
-/* @todo call this also on reset? */
-int vbvaVHWAEnable (PVGASTATE pVGAState, bool bEnable)
-{
-    const VBOXVHWACMD_TYPE enmType = bEnable ? VBOXVHWACMD_TYPE_HH_ENABLE : VBOXVHWACMD_TYPE_HH_DISABLE;
-    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState,
-                        enmType,
-                    0, 0);
-    Assert(pCmd);
-    if(pCmd)
-    {
-        int rc = VINF_SUCCESS;
-        uint32_t iDisplay = 0;
+typedef DECLCALLBACK(bool) FNVBOXVHWAHHCMDPRECB(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, uint32_t iDisplay, void *pvContext);
+typedef FNVBOXVHWAHHCMDPRECB *PFNVBOXVHWAHHCMDPRECB;
 
-        do
+typedef DECLCALLBACK(bool) FNVBOXVHWAHHCMDPOSTCB(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, uint32_t iDisplay, int rc, void *pvContext);
+typedef FNVBOXVHWAHHCMDPOSTCB *PFNVBOXVHWAHHCMDPOSTCB;
+
+int vbvaVHWAHHPost(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, PFNVBOXVHWAHHCMDPRECB pfnPre, PFNVBOXVHWAHHCMDPOSTCB pfnPost, void *pvContext)
+{
+    const VBOXVHWACMD_TYPE enmType = pCmd->enmCmd;
+    int rc = VINF_SUCCESS;
+    uint32_t iDisplay = 0;
+
+    do
+    {
+        if (!pfnPre || pfnPre(pVGAState, pCmd, iDisplay, pvContext))
         {
             rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
             AssertRC(rc);
-            if(RT_SUCCESS(rc))
+            if (pfnPost)
+            {
+                if (!pfnPost(pVGAState, pCmd, iDisplay, rc, pvContext))
+                {
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+                rc = VINF_SUCCESS;
+            }
+            else if(RT_SUCCESS(rc))
             {
                 rc = pCmd->rc;
                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
@@ -1218,16 +940,29 @@ int vbvaVHWAEnable (PVGASTATE pVGAState, bool bEnable)
 
             if (!RT_SUCCESS(rc))
                 break;
+        }
 
-            ++iDisplay;
-            if (iDisplay >= pVGAState->cMonitors)
-                break;
-            vbvaVHWAHHCommandReinit(pCmd, enmType, (int32_t)iDisplay);
+        ++iDisplay;
+        if (iDisplay >= pVGAState->cMonitors)
+            break;
+        vbvaVHWAHHCommandReinit(pCmd, enmType, (int32_t)iDisplay);
+    } while (true);
 
-        } while (true);
+    return rc;
+}
 
+/* @todo call this also on reset? */
+int vbvaVHWAEnable (PVGASTATE pVGAState, bool bEnable)
+{
+    const VBOXVHWACMD_TYPE enmType = bEnable ? VBOXVHWACMD_TYPE_HH_ENABLE : VBOXVHWACMD_TYPE_HH_DISABLE;
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState,
+                        enmType,
+                    0, 0);
+    Assert(pCmd);
+    if(pCmd)
+    {
+        int rc = vbvaVHWAHHPost (pVGAState, pCmd, NULL, NULL, NULL);
         vbvaVHWAHHCommandRelease(pCmd);
-
         return rc;
     }
     return VERR_OUT_OF_RESOURCES;
@@ -1333,8 +1068,530 @@ int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
     }
     return rc;
 }
+
+typedef struct VBOXVBVASAVEDSTATECBDATA
+{
+    PSSMHANDLE pSSM;
+    int rc;
+    bool ab2DOn[VBOX_VIDEO_MAX_SCREENS];
+} VBOXVBVASAVEDSTATECBDATA, *PVBOXVBVASAVEDSTATECBDATA;
+
+static DECLCALLBACK(bool) vboxVBVASaveStateBeginPostCb(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, uint32_t iDisplay, int rc, void *pvContext)
+{
+    PVBOXVBVASAVEDSTATECBDATA pData = (PVBOXVBVASAVEDSTATECBDATA)pvContext;
+    if (RT_FAILURE(pData->rc))
+        return false;
+    if (RT_FAILURE(rc))
+    {
+        pData->rc = rc;
+        return false;
+    }
+
+    Assert(iDisplay < RT_ELEMENTS(pData->ab2DOn));
+    if (iDisplay >= RT_ELEMENTS(pData->ab2DOn))
+    {
+        pData->rc = VERR_INVALID_PARAMETER;
+        return false;
+    }
+
+    Assert(RT_SUCCESS(pCmd->rc) || pCmd->rc == VERR_NOT_IMPLEMENTED);
+    if (RT_SUCCESS(pCmd->rc))
+    {
+        pData->ab2DOn[iDisplay] = true;
+    }
+    else if (pCmd->rc != VERR_NOT_IMPLEMENTED)
+    {
+        pData->rc = pCmd->rc;
+        return false;
+    }
+
+    return true;
+}
+
+static DECLCALLBACK(bool) vboxVBVASaveStatePerformPreCb(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, uint32_t iDisplay, void *pvContext)
+{
+    PVBOXVBVASAVEDSTATECBDATA pData = (PVBOXVBVASAVEDSTATECBDATA)pvContext;
+    if (RT_FAILURE(pData->rc))
+        return false;
+
+    Assert(iDisplay < RT_ELEMENTS(pData->ab2DOn));
+    if (iDisplay >= RT_ELEMENTS(pData->ab2DOn))
+    {
+        pData->rc = VERR_INVALID_PARAMETER;
+        return false;
+    }
+
+    int rc;
+
+    if (pData->ab2DOn[iDisplay])
+    {
+        rc = SSMR3PutU32 (pData->pSSM, VBOXVBVASAVEDSTATE_VHWAAVAILABLE_MAGIC); AssertRC(rc);
+        if (RT_FAILURE(rc))
+        {
+            pData->rc = rc;
+            return false;
+        }
+        return true;
+    }
+
+    rc = SSMR3PutU32 (pData->pSSM, VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC); AssertRC(rc);
+    if (RT_FAILURE(rc))
+    {
+        pData->rc = rc;
+        return false;
+    }
+
+    return false;
+}
+
+static DECLCALLBACK(bool) vboxVBVASaveStateEndPreCb(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, uint32_t iDisplay, void *pvContext)
+{
+    PVBOXVBVASAVEDSTATECBDATA pData = (PVBOXVBVASAVEDSTATECBDATA)pvContext;
+    Assert(iDisplay < RT_ELEMENTS(pData->ab2DOn));
+    if (pData->ab2DOn[iDisplay])
+    {
+        return true;
+    }
+
+    return false;
+}
+
+static DECLCALLBACK(bool) vboxVBVALoadStatePerformPostCb(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, uint32_t iDisplay, int rc, void *pvContext)
+{
+    PVBOXVBVASAVEDSTATECBDATA pData = (PVBOXVBVASAVEDSTATECBDATA)pvContext;
+    if (RT_FAILURE(pData->rc))
+        return false;
+    if (RT_FAILURE(rc))
+    {
+        pData->rc = rc;
+        return false;
+    }
+
+    Assert(iDisplay < RT_ELEMENTS(pData->ab2DOn));
+    if (iDisplay >= RT_ELEMENTS(pData->ab2DOn))
+    {
+        pData->rc = VERR_INVALID_PARAMETER;
+        return false;
+    }
+
+    Assert(RT_SUCCESS(pCmd->rc) || pCmd->rc == VERR_NOT_IMPLEMENTED);
+    if (pCmd->rc == VERR_NOT_IMPLEMENTED)
+    {
+        pData->rc = SSMR3SkipToEndOfUnit(pData->pSSM);
+        AssertRC(pData->rc);
+        return false;
+    }
+    if (RT_FAILURE(pCmd->rc))
+    {
+        pData->rc = pCmd->rc;
+        return false;
+    }
+
+    return true;
+}
+
+static DECLCALLBACK(bool) vboxVBVALoadStatePerformPreCb(PVGASTATE pVGAState, VBOXVHWACMD *pCmd, uint32_t iDisplay, void *pvContext)
+{
+    PVBOXVBVASAVEDSTATECBDATA pData = (PVBOXVBVASAVEDSTATECBDATA)pvContext;
+    if (RT_FAILURE(pData->rc))
+        return false;
+
+    Assert(iDisplay < RT_ELEMENTS(pData->ab2DOn));
+    if (iDisplay >= RT_ELEMENTS(pData->ab2DOn))
+    {
+        pData->rc = VERR_INVALID_PARAMETER;
+        return false;
+    }
+
+    int rc;
+    uint32_t u32;
+    rc = SSMR3GetU32(pData->pSSM, &u32); AssertRC(rc);
+    if (RT_FAILURE(rc))
+    {
+        pData->rc = rc;
+        return false;
+    }
+
+    switch (u32)
+    {
+        case VBOXVBVASAVEDSTATE_VHWAAVAILABLE_MAGIC:
+            return true;
+        case VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC:
+            return false;
+        default:
+            pData->rc = VERR_INVALID_STATE;
+            return false;
+    }
+}
+#endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */
+
+int vboxVBVASaveDevStateExec (PVGASTATE pVGAState, PSSMHANDLE pSSM)
+{
+    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
+    int rc = HGSMIHostSaveStateExec (pIns, pSSM);
+    if (RT_SUCCESS(rc))
+    {
+        /* Save VBVACONTEXT. */
+        VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pIns);
+
+        if (!pCtx)
+        {
+            AssertFailed();
+
+            /* Still write a valid value to the SSM. */
+            rc = SSMR3PutU32 (pSSM, 0);
+            AssertRCReturn(rc, rc);
+        }
+        else
+        {
+#ifdef DEBUG_sunlover
+            dumpctx(pCtx);
 #endif
 
+            rc = SSMR3PutU32 (pSSM, pCtx->cViews);
+            AssertRCReturn(rc, rc);
+
+            uint32_t iView;
+            for (iView = 0; iView < pCtx->cViews; iView++)
+            {
+                VBVAVIEW *pView = &pCtx->aViews[iView];
+
+                rc = SSMR3PutU32 (pSSM, pView->view.u32ViewIndex);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU32 (pSSM, pView->view.u32ViewOffset);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU32 (pSSM, pView->view.u32ViewSize);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU32 (pSSM, pView->view.u32MaxScreenSize);
+                AssertRCReturn(rc, rc);
+
+                rc = SSMR3PutU32 (pSSM, pView->screen.u32ViewIndex);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutS32 (pSSM, pView->screen.i32OriginX);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutS32 (pSSM, pView->screen.i32OriginY);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU32 (pSSM, pView->screen.u32StartOffset);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU32 (pSSM, pView->screen.u32LineSize);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU32 (pSSM, pView->screen.u32Width);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU32 (pSSM, pView->screen.u32Height);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU16 (pSSM, pView->screen.u16BitsPerPixel);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3PutU16 (pSSM, pView->screen.u16Flags);
+                AssertRCReturn(rc, rc);
+
+                rc = SSMR3PutU32 (pSSM, pView->pVBVA? pView->u32VBVAOffset: HGSMIOFFSET_VOID);
+                AssertRCReturn(rc, rc);
+
+                rc = SSMR3PutU32 (pSSM, pView->partialRecord.cb);
+                AssertRCReturn(rc, rc);
+
+                if (pView->partialRecord.cb > 0)
+                {
+                    rc = SSMR3PutMem (pSSM, pView->partialRecord.pu8, pView->partialRecord.cb);
+                    AssertRCReturn(rc, rc);
+                }
+            }
+
+            /* Save mouse pointer shape information. */
+            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fSet);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fVisible);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutBool (pSSM, pCtx->mouseShapeInfo.fAlpha);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32HotX);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32HotY);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32Width);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.u32Height);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pCtx->mouseShapeInfo.cbShape);
+            AssertRCReturn(rc, rc);
+            if (pCtx->mouseShapeInfo.cbShape)
+            {
+                rc = SSMR3PutMem (pSSM, pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbShape);
+                AssertRCReturn(rc, rc);
+            }
+
+            /* Size of some additional data. For future extensions. */
+            rc = SSMR3PutU32 (pSSM, 0);
+            AssertRCReturn(rc, rc);
+        }
+    }
+
+    return rc;
+}
+
+int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PVGASTATE pVGAState = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    int rc;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    VBOXVBVASAVEDSTATECBDATA VhwaData = {0};
+    VhwaData.pSSM = pSSM;
+    uint32_t cbCmd = sizeof (VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM); /* maximum cmd size */
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_SAVESTATE_SAVEBEGIN, 0, cbCmd);
+    Assert(pCmd);
+    if(pCmd)
+    {
+        vbvaVHWAHHPost (pVGAState, pCmd, NULL, vboxVBVASaveStateBeginPostCb, &VhwaData);
+        rc = VhwaData.rc;
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+#endif
+            rc = vboxVBVASaveDevStateExec (pVGAState, pSSM);
+            AssertRC(rc);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            if (RT_SUCCESS(rc))
+            {
+                vbvaVHWAHHCommandReinit(pCmd, VBOXVHWACMD_TYPE_HH_SAVESTATE_SAVEPERFORM, 0);
+                VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM *pSave = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM);
+                pSave->pSSM = pSSM;
+                vbvaVHWAHHPost (pVGAState, pCmd, vboxVBVASaveStatePerformPreCb, NULL, &VhwaData);
+                rc = VhwaData.rc;
+                AssertRC(rc);
+                if (RT_SUCCESS(rc))
+                {
+                    vbvaVHWAHHCommandReinit(pCmd, VBOXVHWACMD_TYPE_HH_SAVESTATE_SAVEEND, 0);
+                    vbvaVHWAHHPost (pVGAState, pCmd, vboxVBVASaveStateEndPreCb, NULL, &VhwaData);
+                    rc = VhwaData.rc;
+                    AssertRC(rc);
+                }
+            }
+        }
+
+        vbvaVHWAHHCommandRelease(pCmd);
+        return rc;
+    }
+#else
+    for (UINT i = 0; i < pVGAState->cMonitors; ++i)
+    {
+        rc = SSMR3PutU32 (pSSM, VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC);
+        AssertRCReturn(rc, rc);
+    }
+#endif
+    return VERR_OUT_OF_RESOURCES;
+}
+
+int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    if (u32Version < VGA_SAVEDSTATE_VERSION_HGSMI)
+    {
+        /* Nothing was saved. */
+        return VINF_SUCCESS;
+    }
+
+    PVGASTATE pVGAState = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
+    int rc = HGSMIHostLoadStateExec (pIns, pSSM, u32Version);
+    if (RT_SUCCESS(rc))
+    {
+        /* Load VBVACONTEXT. */
+        VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pIns);
+
+        if (!pCtx)
+        {
+            /* This should not happen. */
+            AssertFailed();
+            rc = VERR_INVALID_PARAMETER;
+        }
+        else
+        {
+            uint32_t cViews = 0;
+            rc = SSMR3GetU32 (pSSM, &cViews);
+            AssertRCReturn(rc, rc);
+
+            uint32_t iView;
+            for (iView = 0; iView < cViews; iView++)
+            {
+                VBVAVIEW *pView = &pCtx->aViews[iView];
+
+                rc = SSMR3GetU32 (pSSM, &pView->view.u32ViewIndex);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pView->view.u32ViewOffset);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pView->view.u32ViewSize);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pView->view.u32MaxScreenSize);
+                AssertRCReturn(rc, rc);
+
+                rc = SSMR3GetU32 (pSSM, &pView->screen.u32ViewIndex);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetS32 (pSSM, &pView->screen.i32OriginX);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetS32 (pSSM, &pView->screen.i32OriginY);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pView->screen.u32StartOffset);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pView->screen.u32LineSize);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pView->screen.u32Width);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pView->screen.u32Height);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU16 (pSSM, &pView->screen.u16BitsPerPixel);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU16 (pSSM, &pView->screen.u16Flags);
+                AssertRCReturn(rc, rc);
+
+                rc = SSMR3GetU32 (pSSM, &pView->u32VBVAOffset);
+                AssertRCReturn(rc, rc);
+
+                rc = SSMR3GetU32 (pSSM, &pView->partialRecord.cb);
+                AssertRCReturn(rc, rc);
+
+                if (pView->partialRecord.cb == 0)
+                {
+                    pView->partialRecord.pu8 = NULL;
+                }
+                else
+                {
+                    Assert(pView->partialRecord.pu8 == NULL); /* Should be it. */
+
+                    uint8_t *pu8 = (uint8_t *)RTMemAlloc (pView->partialRecord.cb);
+
+                    if (!pu8)
+                    {
+                        return VERR_NO_MEMORY;
+                    }
+
+                    pView->partialRecord.pu8 = pu8;
+
+                    rc = SSMR3GetMem (pSSM, pView->partialRecord.pu8, pView->partialRecord.cb);
+                    AssertRCReturn(rc, rc);
+                }
+
+                if (   pView->u32VBVAOffset == HGSMIOFFSET_VOID
+                    || pView->screen.u32LineSize == 0) /* Earlier broken saved states. */
+                {
+                    pView->pVBVA = NULL;
+                }
+                else
+                {
+                    pView->pVBVA = (VBVABUFFER *)HGSMIOffsetToPointerHost (pIns, pView->u32VBVAOffset);
+                }
+            }
+
+            if (u32Version > VGA_SAVEDSTATE_VERSION_WITH_CONFIG)
+            {
+                /* Read mouse pointer shape information. */
+                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fSet);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fVisible);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetBool (pSSM, &pCtx->mouseShapeInfo.fAlpha);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32HotX);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32HotY);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32Width);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.u32Height);
+                AssertRCReturn(rc, rc);
+                rc = SSMR3GetU32 (pSSM, &pCtx->mouseShapeInfo.cbShape);
+                AssertRCReturn(rc, rc);
+                if (pCtx->mouseShapeInfo.cbShape)
+                {
+                    pCtx->mouseShapeInfo.pu8Shape = (uint8_t *)RTMemAlloc(pCtx->mouseShapeInfo.cbShape);
+                    if (pCtx->mouseShapeInfo.pu8Shape == NULL)
+                    {
+                        return VERR_NO_MEMORY;
+                    }
+                    pCtx->mouseShapeInfo.cbAllocated = pCtx->mouseShapeInfo.cbShape;
+                    rc = SSMR3GetMem (pSSM, pCtx->mouseShapeInfo.pu8Shape, pCtx->mouseShapeInfo.cbShape);
+                    AssertRCReturn(rc, rc);
+                }
+                else
+                {
+                    pCtx->mouseShapeInfo.pu8Shape = NULL;
+                }
+
+                /* Size of some additional data. For future extensions. */
+                uint32_t cbExtra = 0;
+                rc = SSMR3GetU32 (pSSM, &cbExtra);
+                AssertRCReturn(rc, rc);
+                if (cbExtra > 0)
+                {
+                    rc = SSMR3Skip(pSSM, cbExtra);
+                    AssertRCReturn(rc, rc);
+                }
+            }
+
+            pCtx->cViews = iView;
+            LogFlowFunc(("%d views loaded\n", pCtx->cViews));
+
+            if (u32Version > VGA_SAVEDSTATE_VERSION_WDDM)
+            {
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                uint32_t cbCmd = sizeof (VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM); /* maximum cmd size */
+                VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_SAVESTATE_LOADPERFORM, 0, cbCmd);
+                Assert(pCmd);
+                if(pCmd)
+                {
+                    VBOXVBVASAVEDSTATECBDATA VhwaData = {0};
+                    VhwaData.pSSM = pSSM;
+                    VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM *pLoad = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM);
+                    pLoad->pSSM = pSSM;
+                    vbvaVHWAHHPost (pVGAState, pCmd, vboxVBVALoadStatePerformPreCb, vboxVBVALoadStatePerformPostCb, &VhwaData);
+                    rc = VhwaData.rc;
+                    AssertRC(rc);
+                    vbvaVHWAHHCommandRelease(pCmd);
+                }
+                else
+                {
+                    rc = VERR_OUT_OF_RESOURCES;
+                }
+#else
+                rc = SSMR3SkipToEndOfUnit(pSSM);
+                AssertRCReturn(rc, rc);
+#endif
+            }
+
+#ifdef DEBUG_sunlover
+            dumpctx(pCtx);
+#endif
+        }
+    }
+
+    return rc;
+}
+
+int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    PVGASTATE pVGAState = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
+
+    if (pCtx)
+    {
+        uint32_t iView;
+        for (iView = 0; iView < pCtx->cViews; iView++)
+        {
+            VBVAVIEW *pView = &pCtx->aViews[iView];
+
+            if (pView->pVBVA)
+            {
+                vbvaEnable (iView, pVGAState, pCtx, pView->pVBVA, pView->u32VBVAOffset);
+                vbvaResize (pVGAState, pView, &pView->screen);
+            }
+        }
+
+        if (pCtx->mouseShapeInfo.fSet)
+        {
+            vbvaUpdateMousePointerShape(pVGAState, &pCtx->mouseShapeInfo, true, pCtx->mouseShapeInfo.pu8Shape);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
 
 /*
  *
