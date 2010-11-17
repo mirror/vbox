@@ -115,6 +115,7 @@
 #else
 # error "dunno which arch this is!"
 #endif
+/** @} */
 
 /** Ring-3 request wrapper for big requests.
  *
