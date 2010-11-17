@@ -97,12 +97,10 @@ typedef struct
  * @param hFile             The file to write to.
  * @param cProgHdrs         Number of program headers.
  * @param cSecHdrs          Number of section headers.
- * @param pcbElfHdr         Where to store the size of written header to file,
- *                          can be NULL.
  *
  * @return IPRT status code.
  */
-static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs, uint64_t *pcbElfHdr)
+static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs)
 {
     Elf64_Ehdr ElfHdr;
     RT_ZERO(ElfHdr);
@@ -127,10 +125,7 @@ static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs,
     ElfHdr.e_phentsize       = sizeof(Elf64_Phdr);
     ElfHdr.e_shentsize       = sizeof(Elf64_Shdr);
 
-    int rc = RTFileWrite(hFile, &ElfHdr, sizeof(ElfHdr), NULL /* all */);
-    if (RT_SUCCESS(rc) && pcbElfHdr)
-        *pcbElfHdr = sizeof(ElfHdr);
-    return rc;
+    return RTFileWrite(hFile, &ElfHdr, sizeof(ElfHdr), NULL /* all */);
 }
 
 
@@ -144,13 +139,11 @@ static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs,
  * @param cbFileData        Size of contents in the file.
  * @param cbMemData         Size of contents in memory.
  * @param Phys              Physical address, pass zero if not applicable.
- * @param pcbProgHdr        Where to store the size of written header to file,
- *                          can be NULL.
  *
  * @return IPRT status code.
  */
 static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint64_t offFileData, uint64_t cbFileData,
-                             uint64_t cbMemData, RTGCPHYS Phys, uint64_t *pcbProgHdr)
+                             uint64_t cbMemData, RTGCPHYS Phys)
 {
     Elf64_Phdr ProgHdr;
     RT_ZERO(ProgHdr);
@@ -161,10 +154,7 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
     ProgHdr.p_memsz         = cbMemData;
     ProgHdr.p_paddr         = Phys;
 
-    int rc = RTFileWrite(hFile, &ProgHdr, sizeof(ProgHdr), NULL /* all */);
-    if (RT_SUCCESS(rc) && pcbProgHdr)
-        *pcbProgHdr = sizeof(ProgHdr);
-    return rc;
+    return RTFileWrite(hFile, &ProgHdr, sizeof(ProgHdr), NULL /* all */);
 }
 
 
@@ -176,7 +166,7 @@ static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint6
  *
  * @return The size of the NOTE section as rounded to the file alignment.
  */
-static inline uint64_t Elf64NoteSectionSize(const char *pszName, uint64_t cbData)
+static uint64_t Elf64NoteSectionSize(const char *pszName, uint64_t cbData)
 {
     uint64_t cbNote = sizeof(Elf64_Nhdr);
 
@@ -197,12 +187,10 @@ static inline uint64_t Elf64NoteSectionSize(const char *pszName, uint64_t cbData
  * @param pszName           Name of this section.
  * @param pcv               Opaque pointer to the data, if NULL only computes size.
  * @param cbData            Size of the data.
- * @param pcbNoteHdr        Where to store the size of written header to file,
- *                          can be NULL.
  *
  * @return IPRT status code.
  */
-static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcvData, uint64_t cbData, uint64_t *pcbNoteHdr)
+static int Elf64WriteNoteHdr(RTFILE hFile, uint16_t Type, const char *pszName, const void *pcvData, uint64_t cbData)
 {
     AssertReturn(pcvData, VERR_INVALID_POINTER);
     AssertReturn(cbData > 0, VERR_NO_DATA);
@@ -318,9 +306,9 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
     /*
      * Collect core information.
      */
-    uint32_t u32MemRanges = dbgfR3GetRamRangeCount(pVM);
-    uint16_t cMemRanges   = u32MemRanges < UINT16_MAX - 1 ? u32MemRanges : UINT16_MAX - 1;    /* One PT_NOTE Program header */
-    uint16_t cProgHdrs    = cMemRanges + 1;
+    uint32_t const cu32MemRanges = dbgfR3GetRamRangeCount(pVM);
+    uint16_t const cMemRanges    = cu32MemRanges < UINT16_MAX - 1 ? cu32MemRanges : UINT16_MAX - 1; /* One PT_NOTE Program header */
+    uint16_t const cProgHdrs     = cMemRanges + 1;
 
     DBGFCOREDESCRIPTOR CoreDescriptor;
     RT_ZERO(CoreDescriptor);
@@ -334,20 +322,25 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
     Log((DBGFLOG_NAME ": CoreDescriptor Version=%u Revision=%u\n", CoreDescriptor.u32VBoxVersion, CoreDescriptor.u32VBoxRevision));
 
     /*
-     * Compute total size of the note section.
+     * Compute the file layout (see pg_dbgf_vmcore).
      */
-    uint64_t cbNoteSection =   Elf64NoteSectionSize(s_pcszCoreVBoxCore, sizeof(CoreDescriptor))
-                             + pVM->cCpus * Elf64NoteSectionSize(s_pcszCoreVBoxCpu, sizeof(CPUMCTX));
-    uint64_t off = 0;
+    uint64_t const offElfHdr        = RTFileTell(hFile);
+    uint64_t const offNoteSection   = offElfHdr         + sizeof(Elf64_Ehdr);
+    uint64_t const offLoadSections  = offNoteSection    + sizeof(Elf64_Phdr);
+    uint64_t const cbLoadSections   = cMemRanges * sizeof(Elf64_Phdr);
+    uint64_t const offCoreDescriptor= offLoadSections   + cbLoadSections;
+    uint64_t const cbCoreDescriptor = Elf64NoteSectionSize(s_pcszCoreVBoxCore, sizeof(CoreDescriptor));
+    uint64_t const offCpuDumps      = offCoreDescriptor + cbCoreDescriptor;
+    uint64_t const cbCpuDumps       = pVM->cCpus * Elf64NoteSectionSize(s_pcszCoreVBoxCpu, sizeof(CPUMCTX));
+    uint64_t const offMemory        = offCpuDumps       + cbCpuDumps;
+
+    uint64_t const offNoteSectionData = offCoreDescriptor;
+    uint64_t const cbNoteSectionData  = cbCoreDescriptor + cbCpuDumps;
 
     /*
      * Write ELF header.
      */
-    uint64_t cbElfHdr = 0;
-    uint64_t cbProgHdr = 0;
-    uint64_t offMemRange = 0;
-    int rc = Elf64WriteElfHdr(hFile, cProgHdrs, 0 /* cSecHdrs */, &cbElfHdr);
-    off += cbElfHdr;
+    int rc = Elf64WriteElfHdr(hFile, cProgHdrs, 0 /* cSecHdrs */);
     if (RT_FAILURE(rc))
     {
         LogRel((DBGFLOG_NAME ": Elf64WriteElfHdr failed. rc=%Rrc\n", rc));
@@ -357,15 +350,12 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
     /*
      * Write PT_NOTE program header.
      */
+    Assert(RTFileTell(hFile) == offNoteSection);
     rc = Elf64WriteProgHdr(hFile, PT_NOTE, PF_R,
-                           cbElfHdr + cProgHdrs * sizeof(Elf64_Phdr),   /* file offset to contents */
-                           cbNoteSection,                               /* size in core file */
-                           cbNoteSection,                               /* size in memory */
-                           0,                                           /* physical address */
-                           &cbProgHdr);
-    Assert(cbProgHdr == sizeof(Elf64_Phdr));
-    off += cbProgHdr;
-
+                           offNoteSectionData,  /* file offset to contents */
+                           cbNoteSectionData,   /* size in core file */
+                           cbNoteSectionData,   /* size in memory */
+                           0);                  /* physical address */
     if (RT_FAILURE(rc))
     {
         LogRel((DBGFLOG_NAME ": Elf64WritreProgHdr failed for PT_NOTE. rc=%Rrc\n", rc));
@@ -375,13 +365,13 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
     /*
      * Write PT_LOAD program header for each memory range.
      */
-    offMemRange = off + cbNoteSection;  /** @todo this isn't taking the cmemRanges of prog hdrs into account. */
+    Assert(RTFileTell(hFile) == offLoadSections);
+    uint64_t offMemRange = offMemory;
     for (uint16_t iRange = 0; iRange < cMemRanges; iRange++)
     {
-        RTGCPHYS GCPhysStart;
-        RTGCPHYS GCPhysEnd;
-
-        bool fIsMmio;
+        RTGCPHYS    GCPhysStart;
+        RTGCPHYS    GCPhysEnd;
+        bool        fIsMmio;
         rc = PGMR3PhysGetRange(pVM, iRange, &GCPhysStart, &GCPhysEnd, NULL /* pszDesc */, &fIsMmio);
         if (RT_FAILURE(rc))
         {
@@ -399,13 +389,11 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
                                offMemRange,                         /* file offset to contents */
                                cbFileRange,                         /* size in core file */
                                cbMemRange,                          /* size in memory */
-                               GCPhysStart,                         /* physical address */
-                               &cbProgHdr);
-        Assert(cbProgHdr == sizeof(Elf64_Phdr));
+                               GCPhysStart);                        /* physical address */
         if (RT_FAILURE(rc))
         {
-            LogRel((DBGFLOG_NAME ": Elf64WriteProgHdr failed for memory range(%u) cbFileRange=%u cbMemRange=%u rc=%Rrc\n", iRange,
-                    cbFileRange, cbMemRange, rc));
+            LogRel((DBGFLOG_NAME ": Elf64WriteProgHdr failed for memory range(%u) cbFileRange=%u cbMemRange=%u rc=%Rrc\n",
+                    iRange, cbFileRange, cbMemRange, rc));
             return rc;
         }
 
@@ -415,8 +403,8 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
     /*
      * Write the Core descriptor note header and data.
      */
-    rc = Elf64WriteNoteHdr(hFile, NT_VBOXCORE, s_pcszCoreVBoxCore, &CoreDescriptor, sizeof(CoreDescriptor),
-                           NULL /* pcbNoteHdr */);
+    Assert(RTFileTell(hFile) == offCoreDescriptor);
+    rc = Elf64WriteNoteHdr(hFile, NT_VBOXCORE, s_pcszCoreVBoxCore, &CoreDescriptor, sizeof(CoreDescriptor));
     if (RT_FAILURE(rc))
     {
         LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for Note '%s' rc=%Rrc\n", s_pcszCoreVBoxCore, rc));
@@ -426,10 +414,11 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
     /*
      * Write the CPU context note headers and data.
      */
+    Assert(RTFileTell(hFile) == offCpuDumps);
     for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         PCPUMCTX pCpuCtx = &pVM->aCpus[iCpu].cpum.s.Guest;
-        rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, s_pcszCoreVBoxCpu, pCpuCtx, sizeof(CPUMCTX), NULL /* pcbNoteHdr */);
+        rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, s_pcszCoreVBoxCpu, pCpuCtx, sizeof(CPUMCTX));
         if (RT_FAILURE(rc))
         {
             LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", iCpu, rc));
@@ -440,11 +429,12 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
     /*
      * Write memory ranges.
      */
+    Assert(RTFileTell(hFile) == offMemory);
     for (uint16_t iRange = 0; iRange < cMemRanges; iRange++)
     {
         RTGCPHYS GCPhysStart;
         RTGCPHYS GCPhysEnd;
-        bool fIsMmio;
+        bool     fIsMmio;
         rc = PGMR3PhysGetRange(pVM, iRange, &GCPhysStart, &GCPhysEnd, NULL /* pszDesc */, &fIsMmio);
         if (RT_FAILURE(rc))
         {
@@ -459,37 +449,26 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
          * Write page-by-page of this memory range.
          */
         uint64_t cbMemRange  = GCPhysEnd - GCPhysStart + 1;
-        uint64_t cPages = cbMemRange >> PAGE_SHIFT;
+        uint64_t cPages      = cbMemRange >> PAGE_SHIFT;
         for (uint64_t iPage = 0; iPage < cPages; iPage++)
         {
-            const int cbBuf = PAGE_SIZE;
-            void *pvBuf     = MMR3HeapAlloc(pVM, MM_TAG_DBGF_CORE_WRITE, cbBuf);
-            if (RT_UNLIKELY(!pvBuf))
-            {
-                LogRel((DBGFLOG_NAME ": MMR3HeapAlloc failed. iRange=%u iPage=%u\n", iRange, iPage));
-                return rc;
-            }
-
-            rc = PGMPhysRead(pVM, GCPhysStart, pvBuf, cbBuf);
+            uint8_t abPage[PAGE_SIZE];
+            rc = PGMPhysRead(pVM, GCPhysStart, abPage, sizeof(abPage));
             if (RT_FAILURE(rc))
             {
                 /*
                  * For some reason this failed, write out a zero page instead.
                  */
-                LogRel((DBGFLOG_NAME ": PGMPhysRead failed for iRange=%u iPage=%u. rc=%Rrc. Ignoring...\n", iRange,
-                        iPage, rc));
-                memset(pvBuf, 0, cbBuf);
+                LogRel((DBGFLOG_NAME ": PGMPhysRead failed for iRange=%u iPage=%u. rc=%Rrc. Ignoring...\n", iRange, iPage, rc));
+                RT_ZERO(abPage);
             }
 
-            rc = RTFileWrite(hFile, pvBuf, cbBuf, NULL /* all */);
+            rc = RTFileWrite(hFile, abPage, sizeof(abPage), NULL /* all */);
             if (RT_FAILURE(rc))
             {
                 LogRel((DBGFLOG_NAME ": RTFileWrite failed. iRange=%u iPage=%u rc=%Rrc\n", iRange, iPage, rc));
-                MMR3HeapFree(pvBuf);
                 return rc;
             }
-
-            MMR3HeapFree(pvBuf);
         }
     }
 
