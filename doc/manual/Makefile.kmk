@@ -237,7 +237,7 @@ VBOXMANAGEPATH       ?= $(PATH_BIN)/VBoxManage$(SUFF_EXE)
  PDFLATEX_INTERACTION ?= batchmode
 ifeq ($(KBUILD_HOST),win)
  # tell MiKTeX to automatically download packages
- PDFLATEX             = pdflatex -halt-on-error -interactio $(PDFLATEX_INTERACTION) --enable-installer
+ PDFLATEX             = pdflatex -halt-on-error -interaction $(PDFLATEX_INTERACTION) --enable-installer
 else
  PDFLATEX_HALT        = $(shell \
  	( pdflatex -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
