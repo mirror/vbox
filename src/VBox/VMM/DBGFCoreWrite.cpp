@@ -15,29 +15,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/*
- * VBox VMCore Format:
+/** @page pg_dbgf_vmcore    VMCore Format
+ *
+ * The VirtualBox VMCore Format:
  * [ ELF 64 Header]  -- Only 1
  *
  * [ PT_NOTE ]       -- Only 1
  *    - Offset into CoreDescriptor followed by list of Notes (Note Hdr + data) of VBox CPUs.
- *    - (Any Additional custom Note sections)
+ *    - (Any Additional custom Note sections).
  *
  * [ PT_LOAD ]       -- One for each contiguous memory chunk
- *    - Memory offset
- *    - File offset
+ *    - Memory offset (physical).
+ *    - File offset.
  *
  * CoreDescriptor
- *    - Magic, VBox version
- *    - Number of CPus
+ *    - Magic, VBox version.
+ *    - Number of CPus.
  *
  * Per-CPU register dump
- *    - CPU 1 Note Hdr + Data
- *    - CPU 2 Note Hdr + Data
+ *    - CPU 1 Note Hdr + Data.
+ *    - CPU 2 Note Hdr + Data.
  *    ...
  * (Additional custom notes Hdr+data)
- *    - VBox 1 Note Hdr + Data
- *    - VBox 2 Note Hdr + Data
+ *    - VBox 1 Note Hdr + Data.
+ *    - VBox 2 Note Hdr + Data.
  *    ...
  * Memory dump
  *
@@ -113,7 +114,7 @@ static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs,
     ElfHdr.e_type            = ET_CORE;
     ElfHdr.e_version         = EV_CURRENT;
     ElfHdr.e_ident[EI_CLASS] = ELFCLASS64;
-    /* 32-bit VMs will produce cores with e_machine EM_386. */
+    /* 32-bit builds will produce cores with e_machine EM_386. */
 #ifdef RT_ARCH_AMD64
     ElfHdr.e_machine         = EM_X86_64;
 #else
@@ -148,8 +149,8 @@ static int Elf64WriteElfHdr(RTFILE hFile, uint16_t cProgHdrs, uint16_t cSecHdrs,
  *
  * @return IPRT status code.
  */
-static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint64_t offFileData, uint64_t cbFileData, uint64_t cbMemData,
-                             RTGCPHYS Phys, uint64_t *pcbProgHdr)
+static int Elf64WriteProgHdr(RTFILE hFile, uint32_t Type, uint32_t fFlags, uint64_t offFileData, uint64_t cbFileData,
+                             uint64_t cbMemData, RTGCPHYS Phys, uint64_t *pcbProgHdr)
 {
     Elf64_Phdr ProgHdr;
     RT_ZERO(ProgHdr);
@@ -305,25 +306,15 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
 
 
 /**
- * EMT Rendezvous worker function for DBGFR3CoreWrite.
+ * Worker function for dbgfR3CoreWrite which does the writing.
  *
- * @param   pVM              The VM handle.
- * @param   pVCpu            The handle of the calling VCPU.
- * @param   pvData           Opaque data.
- *
- * @return VBox status code.
+ * @returns VBox status code
+ * @param   pVM                 The VM handle.
+ * @param   pDbgfData           The core dump parameters.
+ * @param   hFile               The file to write to.  Caller closes this.
  */
-static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *pvData)
+static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
 {
-    /*
-     * Validate input.
-     */
-    AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(pVCpu, VERR_INVALID_VMCPU_HANDLE);
-    AssertReturn(pvData, VERR_INVALID_POINTER);
-
-    PDBGFCOREDATA pDbgfData = (PDBGFCOREDATA)pvData;
-
     /*
      * Collect core information.
      */
@@ -350,28 +341,17 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     uint64_t off = 0;
 
     /*
-     * Create the core file.
-     */
-    RTFILE hFile = NIL_RTFILE;
-    int rc = RTFileOpen(&hFile, pDbgfData->pszDumpPath, RTFILE_O_CREATE_REPLACE | RTFILE_O_READWRITE);
-    if (RT_FAILURE(rc))
-    {
-        LogRel((DBGFLOG_NAME ": RTFileOpen failed for '%s' rc=%Rrc\n", pDbgfData->pszDumpPath, rc));
-        return rc;
-    }
-
-    /*
      * Write ELF header.
      */
     uint64_t cbElfHdr = 0;
     uint64_t cbProgHdr = 0;
     uint64_t offMemRange = 0;
-    rc = Elf64WriteElfHdr(hFile, cProgHdrs, 0 /* cSecHdrs */, &cbElfHdr);
+    int rc = Elf64WriteElfHdr(hFile, cProgHdrs, 0 /* cSecHdrs */, &cbElfHdr);
     off += cbElfHdr;
     if (RT_FAILURE(rc))
     {
         LogRel((DBGFLOG_NAME ": Elf64WriteElfHdr failed. rc=%Rrc\n", rc));
-        goto CoreWriteDone;
+        return rc;
     }
 
     /*
@@ -389,13 +369,13 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     if (RT_FAILURE(rc))
     {
         LogRel((DBGFLOG_NAME ": Elf64WritreProgHdr failed for PT_NOTE. rc=%Rrc\n", rc));
-        goto CoreWriteDone;
+        return rc;
     }
 
     /*
      * Write PT_LOAD program header for each memory range.
      */
-    offMemRange = off + cbNoteSection;
+    offMemRange = off + cbNoteSection;  /** @todo this isn't taking the cmemRanges of prog hdrs into account. */
     for (uint16_t iRange = 0; iRange < cMemRanges; iRange++)
     {
         RTGCPHYS GCPhysStart;
@@ -406,14 +386,14 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         if (RT_FAILURE(rc))
         {
             LogRel((DBGFLOG_NAME ": PGMR3PhysGetRange failed for iRange(%u) rc=%Rrc\n", iRange, rc));
-            goto CoreWriteDone;
+            return rc;
         }
 
         uint64_t cbMemRange  = GCPhysEnd - GCPhysStart + 1;
         uint64_t cbFileRange = fIsMmio ? 0 : cbMemRange;
 
         Log((DBGFLOG_NAME ": PGMR3PhysGetRange iRange=%u GCPhysStart=%#x GCPhysEnd=%#x cbMemRange=%u\n",
-                iRange, GCPhysStart, GCPhysEnd, cbMemRange));
+             iRange, GCPhysStart, GCPhysEnd, cbMemRange));
 
         rc = Elf64WriteProgHdr(hFile, PT_LOAD, PF_R,
                                offMemRange,                         /* file offset to contents */
@@ -426,7 +406,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         {
             LogRel((DBGFLOG_NAME ": Elf64WriteProgHdr failed for memory range(%u) cbFileRange=%u cbMemRange=%u rc=%Rrc\n", iRange,
                     cbFileRange, cbMemRange, rc));
-            goto CoreWriteDone;
+            return rc;
         }
 
         offMemRange += cbFileRange;
@@ -440,7 +420,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
     if (RT_FAILURE(rc))
     {
         LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for Note '%s' rc=%Rrc\n", s_pcszCoreVBoxCore, rc));
-        goto CoreWriteDone;
+        return rc;
     }
 
     /*
@@ -453,7 +433,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         if (RT_FAILURE(rc))
         {
             LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", iCpu, rc));
-            goto CoreWriteDone;
+            return rc;
         }
     }
 
@@ -469,7 +449,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
         if (RT_FAILURE(rc))
         {
             LogRel((DBGFLOG_NAME ": PGMR3PhysGetRange(2) failed for iRange(%u) rc=%Rrc\n", iRange, rc));
-            goto CoreWriteDone;
+            return rc;
         }
 
         if (fIsMmio)
@@ -487,7 +467,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
             if (RT_UNLIKELY(!pvBuf))
             {
                 LogRel((DBGFLOG_NAME ": MMR3HeapAlloc failed. iRange=%u iPage=%u\n", iRange, iPage));
-                goto CoreWriteDone;
+                return rc;
             }
 
             rc = PGMPhysRead(pVM, GCPhysStart, pvBuf, cbBuf);
@@ -506,16 +486,49 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
             {
                 LogRel((DBGFLOG_NAME ": RTFileWrite failed. iRange=%u iPage=%u rc=%Rrc\n", iRange, iPage, rc));
                 MMR3HeapFree(pvBuf);
-                goto CoreWriteDone;
+                return rc;
             }
 
             MMR3HeapFree(pvBuf);
         }
     }
 
-CoreWriteDone:
-    RTFileClose(hFile);
+    return rc;
+}
 
+
+/**
+ * EMT Rendezvous worker function for DBGFR3CoreWrite.
+ *
+ * @param   pVM              The VM handle.
+ * @param   pVCpu            The handle of the calling VCPU.
+ * @param   pvData           Opaque data.
+ *
+ * @return VBox status code.
+ */
+static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *pvData)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn(pVCpu, VERR_INVALID_VMCPU_HANDLE);
+    AssertReturn(pvData, VERR_INVALID_POINTER);
+
+    PDBGFCOREDATA pDbgfData = (PDBGFCOREDATA)pvData;
+
+    /*
+     * Create the core file.
+     */
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pDbgfData->pszDumpPath, RTFILE_O_CREATE_REPLACE | RTFILE_O_READWRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = dbgfR3CoreWriteWorker(pVM, pDbgfData, hFile);
+        RTFileClose(hFile);
+    }
+    else
+        LogRel((DBGFLOG_NAME ": RTFileOpen failed for '%s' rc=%Rrc\n", pDbgfData->pszDumpPath, rc));
     return rc;
 }
 
