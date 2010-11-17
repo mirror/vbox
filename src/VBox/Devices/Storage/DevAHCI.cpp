@@ -997,7 +997,8 @@ DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUse
 {
     PAHCI pAhci = (PAHCI)pvUser;
 
-    ahciHbaSetInterrupt(pAhci, pAhci->uCccPortNr, VINF_SUCCESS);
+    int rc = ahciHbaSetInterrupt(pAhci, pAhci->uCccPortNr, VERR_IGNORED);
+    AssertRC(rc);
 }
 #endif
 
@@ -1163,7 +1164,10 @@ static int PortSControl_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
                 ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
 
                 if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
-                    ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VINF_SUCCESS);
+                {
+                    int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+                    AssertRC(rc);
+                }
             }
        }
 #endif
@@ -1240,7 +1244,6 @@ static int PortCmd_r(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *p
  */
 static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    int rc = VINF_SUCCESS;
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
     ahciLog(("%s: ICC=%d ASP=%d ALPE=%d DLAE=%d ATAPI=%d CPD=%d ISP=%d HPCP=%d PMA=%d CPS=%d CR=%d FR=%d ISS=%d CCS=%d FRE=%d CLO=%d POD=%d SUD=%d ST=%d\n",
              __FUNCTION__, (u32Value & AHCI_PORT_CMD_ICC) >> 28, (u32Value & AHCI_PORT_CMD_ASP) >> 27,
@@ -1308,7 +1311,10 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
                 ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
 
                 if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
-                    ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VINF_SUCCESS);
+                {
+                    int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+                    AssertRC(rc);
+                }
 #endif
             }
         }
@@ -1345,7 +1351,7 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
 
     pAhciPort->regCMD = u32Value;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -4452,6 +4458,8 @@ static AHCITXDIR atapiParseCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPort
  */
 static void ahciFinishStorageDeviceReset(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
 {
+    int rc;
+
     /* Send a status good D2H FIS. */
     ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
     pAhciPort->fResetDevice = false;
@@ -4465,7 +4473,8 @@ static void ahciFinishStorageDeviceReset(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE
         pAhciPort->regSIG = AHCI_PORT_SIG_DISK;
     ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciPortTaskState->uTag));
 
-    ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VINF_SUCCESS);
+    rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+    AssertRC(rc);
 }
 
 /**
@@ -4546,7 +4555,10 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTask
         ASMAtomicOrU32(&pAhciPort->u32TasksFinished, (1 << pAhciPortTaskState->uTag));
 
         if (fAssertIntr)
-            ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VINF_SUCCESS);
+        {
+            int rc = ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VERR_IGNORED);
+            AssertRC(rc);
+        }
     }
 }
 
@@ -4610,7 +4622,10 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, bool fI
         ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, uFinishedTasks);
 
         if (fAssertIntr)
-            ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VINF_SUCCESS);
+        {
+            int rc = ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VERR_IGNORED);
+            AssertRC(rc);
+        }
     }
 }
 
@@ -7197,7 +7212,10 @@ static DECLCALLBACK(void) ahciMountNotify(PPDMIMOUNTNOTIFY pInterface)
         ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS);
         pAhciPort->regSERR |= AHCI_PORT_SERR_N;
         if (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
-            ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VINF_SUCCESS);
+        {
+            int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+            AssertRC(rc);
+        }
     }
 }
 
@@ -7234,7 +7252,10 @@ static DECLCALLBACK(void) ahciUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
         ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS);
         pAhciPort->regSERR |= AHCI_PORT_SERR_N;
         if (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
-            ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VINF_SUCCESS);
+        {
+            int rc = ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
+            AssertRC(rc);
+        }
     }
 }
 
