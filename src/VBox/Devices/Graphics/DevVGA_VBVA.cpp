@@ -1372,7 +1372,7 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         return rc;
     }
 #else
-    for (UINT i = 0; i < pVGAState->cMonitors; ++i)
+    for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
     {
         rc = SSMR3PutU32 (pSSM, VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC);
         AssertRCReturn(rc, rc);

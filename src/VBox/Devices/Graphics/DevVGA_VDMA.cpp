@@ -100,7 +100,7 @@ typedef FNVBOXVDMACRCTL_CALLBACK *PFNVBOXVDMACRCTL_CALLBACK;
 typedef struct VBOXVDMACMD_CHROMIUM_CTL_PRIVATE
 {
     uint32_t cRefs;
-    uint32_t rc;
+    int32_t rc;
     PFNVBOXVDMACRCTL_CALLBACK pfnCompletion;
     void *pvCompletion;
     VBOXVDMACMD_CHROMIUM_CTL Cmd;
@@ -460,7 +460,7 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
     Assert(pBlt->cDstSubRects);
 
     uint8_t * pvRam = pVdma->pVGAState->vram_ptrR3;
-    VBOXVDMA_RECTL updateRectl = {0};
+    VBOXVDMA_RECTL updateRectl = {0, 0, 0, 0};
 
     if (pBlt->cDstSubRects)
     {

@@ -59,7 +59,8 @@
 #endif
 
 #define VBOXQGL_STATE_NAMEBASE "QGLVHWAData"
-#define VBOXQGL_STATE_VERSION 2
+#define VBOXQGL_STATE_VERSION           3
+#define VBOXQGL_STATE_VERSION_PIPESAVED 3
 
 #ifdef DEBUG
 VBoxVHWADbgTimer::VBoxVHWADbgTimer(uint32_t cPeriods) :
@@ -4775,8 +4776,11 @@ int VBoxQGLOverlay::vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version)
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
-        rc = mCmdPipe.loadExec(pSSM, u32Version, mOverlayImage.vramBase());
-        AssertRC(rc);
+        if (u32Version >= VBOXQGL_STATE_VERSION_PIPESAVED)
+        {
+            rc = mCmdPipe.loadExec(pSSM, u32Version, mOverlayImage.vramBase());
+            AssertRC(rc);
+        }
     }
     return rc;
 }
@@ -5198,7 +5202,7 @@ int VBoxVHWACommandElementProcessor::loadExec (struct SSMHANDLE * pSSM, uint32_t
     uint32_t u32;
     bool b;
     int rc;
-    rc = SSMR3GetU32(pSSM, &u32);
+    rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
         Assert(u32 == VBOXVHWACOMMANDELEMENTLISTBEGIN_MAGIC);
@@ -5263,14 +5267,6 @@ int VBoxVHWACommandElementProcessor::loadExec (struct SSMHANDLE * pSSM, uint32_t
         {
             rc = VERR_INVALID_MAGIC;
         }
-    }
-    else if (rc == VERR_SSM_LOADED_TOO_MUCH)
-    {
-        /* this would mean we do not have a cmd pipe data saved.
-         * skip the failure.
-         * not sure if that's a good idea actually,
-         * but this allows keeping the state version unchanged */
-        rc = VINF_SUCCESS;
     }
 
     return rc;
