@@ -12,6 +12,7 @@
 #include "cr_string.h"
 #include "stub.h"
 #include "dri_glx.h"
+#include "GL/internal/glcore.h"
 
 #include <X11/Xregion.h>
 
@@ -1829,7 +1830,6 @@ DECLEXPORT(XVisualInfo *) VBOXGLXTAG(glXGetVisualFromFBConfig)(Display *dpy, GLX
         }
     }
     */
-
     {
         XVisualInfo temp, *pret;
         int nret;
@@ -1839,8 +1839,23 @@ DECLEXPORT(XVisualInfo *) VBOXGLXTAG(glXGetVisualFromFBConfig)(Display *dpy, GLX
         pret = XGetVisualInfo(dpy, VisualIDMask, &temp, &nret);
         XUNLOCK(dpy);
         
-        if (nret!=1) crWarning("XGetVisualInfo returned %i visuals for %p", nret, config);
+        if (nret!=1)
+        {
+            crWarning("XGetVisualInfo returned %i visuals for %p", nret, config);
+            /* Hack for glut based apps.
+               We fail to patch first call to glXChooseFBConfigSGIX, which ends up in the mesa's fbconfigs being passed to this function later.
+            */
+            if (!nret && config)
+            {
+                temp.visualid = (VisualID) ((__GLcontextModes*)config)->visualID;
+                XLOCK(dpy);
+                pret = XGetVisualInfo(dpy, VisualIDMask, &temp, &nret);
+                XUNLOCK(dpy);
+                crWarning("Retry with %#x returned %i visuals", ((__GLcontextModes*)config)->visualID, nret);
+            }
+        }
         //crDebug("glXGetVisualFromFBConfig(cfg/visid==0x%x): depth=%i", (int) config, pret->depth);
+//crDebug("here");
         return pret;
     }
 
