@@ -300,6 +300,14 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 #define ICH6_HDA_REG_SD6FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 60) /* 0x14E */
 #define ICH6_HDA_REG_SD7FIFOW   (HDA_STREAM_REG_DEF(FIFOW, 0) + 70) /* 0x16E */
 
+/*
+ * ICH6 datasheet defined limits for FIFOW values (18.2.38)
+ */
+#define HDA_SDFIFOW_8B       (0x2)
+#define HDA_SDFIFOW_16B      (0x3)
+#define HDA_SDFIFOW_32B      (0x4)
+#define SDFIFOW(pState, num) HDA_REG((pState), SD(FIFOW, num))
+
 #define ICH6_HDA_REG_SD0FIFOS   38 /* 0x90 */
 #define ICH6_HDA_REG_SD1FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 10) /* 0xB0 */
 #define ICH6_HDA_REG_SD2FIFOS   (HDA_STREAM_REG_DEF(FIFOS, 0) + 20) /* 0xD0 */
@@ -375,6 +383,8 @@ typedef struct HDABDLEDESC
     uint32_t    u32BdleCviLen;
     uint32_t    u32BdleCviPos;
     bool        fBdleCviIoc;
+    uint32_t    cbUnderFifoW;
+    uint8_t     au8HdaBuffer[HDA_SDONFIFO_256B + 1];
 } HDABDLEDESC, *PHDABDLEDESC;
 
 typedef struct INTELHDLinkState
@@ -429,6 +439,7 @@ typedef struct PCIINTELHDLinkState
     INTELHDLinkState hda;
 } PCIINTELHDLinkState;
 
+
 DECLCALLBACK(int)hdaRegReadUnimplemented(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 DECLCALLBACK(int)hdaRegWriteUnimplemented(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 DECLCALLBACK(int)hdaRegReadGCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
@@ -451,6 +462,7 @@ DECLCALLBACK(int)hdaRegReadSDCTL(INTELHDLinkState* pState, uint32_t offset, uint
 
 DECLCALLBACK(int)hdaRegWriteSDSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteSDLVI(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int)hdaRegWriteSDFIFOW(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteSDBDPL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 DECLCALLBACK(int)hdaRegWriteSDBDPU(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
@@ -529,7 +541,7 @@ const static struct stIchIntelHDRegMap
     { 0x00084, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadU32          , hdaRegWriteU32          , "ISD0LPIB" , "ISD0 Link Position In Buffer" },
     { 0x00088, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "ISD0CBL"  , "ISD0 Cyclic Buffer Length" },
     { 0x0008C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "ISD0LVI"  , "ISD0 Last Valid Index" },
-    { 0x0008E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "ISD0FIFOW", "ISD0 FIFO Watermark" },
+    { 0x0008E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW      , "ISD0FIFOW", "ISD0 FIFO Watermark" },
     { 0x00090, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16          , "ISD0FIFOS", "ISD0 FIFO Size" },
     { 0x00092, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "ISD0FMT"  , "ISD0 Format" },
     { 0x00098, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "ISD0BDPL" , "ISD0 Buffer Descriptor List Pointer-Lower Base Address" },
@@ -540,7 +552,7 @@ const static struct stIchIntelHDRegMap
     { 0x000A4, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadU32          , hdaRegWriteU32          , "ISD1LPIB" , "ISD1 Link Position In Buffer" },
     { 0x000A8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "ISD1CBL"  , "ISD1 Cyclic Buffer Length" },
     { 0x000AC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "ISD1LVI"  , "ISD1 Last Valid Index" },
-    { 0x000AE, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "ISD1FIFOW", "ISD1 FIFO Watermark" },
+    { 0x000AE, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW      , "ISD1FIFOW", "ISD1 FIFO Watermark" },
     { 0x000B0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16          , "ISD1FIFOS", "ISD1 FIFO Size" },
     { 0x000B2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "ISD1FMT"  , "ISD1 Format" },
     { 0x000B8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "ISD1BDPL" , "ISD1 Buffer Descriptor List Pointer-Lower Base Address" },
@@ -551,7 +563,7 @@ const static struct stIchIntelHDRegMap
     { 0x000C4, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadU32          , hdaRegWriteU32          , "ISD2LPIB" , "ISD2 Link Position In Buffer" },
     { 0x000C8, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "ISD2CBL"  , "ISD2 Cyclic Buffer Length" },
     { 0x000CC, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "ISD2LVI"  , "ISD2 Last Valid Index" },
-    { 0x000CE, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "ISD2FIFOW", "ISD2 FIFO Watermark" },
+    { 0x000CE, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW      , "ISD2FIFOW", "ISD2 FIFO Watermark" },
     { 0x000D0, 0x00002, 0x000000FF, 0x00000000, hdaRegReadU16          , hdaRegWriteU16          , "ISD2FIFOS", "ISD2 FIFO Size" },
     { 0x000D2, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "ISD2FMT"  , "ISD2 Format" },
     { 0x000D8, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "ISD2BDPL" , "ISD2 Buffer Descriptor List Pointer-Lower Base Address" },
@@ -573,7 +585,7 @@ const static struct stIchIntelHDRegMap
     { 0x00104, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadU32          , hdaRegWriteU32          , "OSD0LPIB" , "OSD0 Link Position In Buffer" },
     { 0x00108, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD0CBL"  , "OSD0 Cyclic Buffer Length" },
     { 0x0010C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD0LVI"  , "OSD0 Last Valid Index" },
-    { 0x0010E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD0FIFOW", "OSD0 FIFO Watermark" },
+    { 0x0010E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW      , "OSD0FIFOW", "OSD0 FIFO Watermark" },
     { 0x00110, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD0FIFOS", "OSD0 FIFO Size" },
     { 0x00112, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD0FMT"  , "OSD0 Format" },
     { 0x00118, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD0BDPL" , "OSD0 Buffer Descriptor List Pointer-Lower Base Address" },
@@ -584,7 +596,7 @@ const static struct stIchIntelHDRegMap
     { 0x00124, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadU32          , hdaRegWriteU32          , "OSD1LPIB" , "OSD1 Link Position In Buffer" },
     { 0x00128, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD1CBL"  , "OSD1 Cyclic Buffer Length" },
     { 0x0012C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD1LVI"  , "OSD1 Last Valid Index" },
-    { 0x0012E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD1FIFOW", "OSD1 FIFO Watermark" },
+    { 0x0012E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW      , "OSD1FIFOW", "OSD1 FIFO Watermark" },
     { 0x00130, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD1FIFOS", "OSD1 FIFO Size" },
     { 0x00132, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD1FMT"  , "OSD1 Format" },
     { 0x00138, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD1BDPL" , "OSD1 Buffer Descriptor List Pointer-Lower Base Address" },
@@ -595,7 +607,7 @@ const static struct stIchIntelHDRegMap
     { 0x00144, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadU32          , hdaRegWriteU32          , "OSD2LPIB" , "OSD2 Link Position In Buffer" },
     { 0x00148, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD2CBL"  , "OSD2 Cyclic Buffer Length" },
     { 0x0014C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD2LVI"  , "OSD2 Last Valid Index" },
-    { 0x0014E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD2FIFOW", "OSD2 FIFO Watermark" },
+    { 0x0014E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW      , "OSD2FIFOW", "OSD2 FIFO Watermark" },
     { 0x00150, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD2FIFOS", "OSD2 FIFO Size" },
     { 0x00152, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD2FMT"  , "OSD2 Format" },
     { 0x00158, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD2BDPL" , "OSD2 Buffer Descriptor List Pointer-Lower Base Address" },
@@ -606,12 +618,38 @@ const static struct stIchIntelHDRegMap
     { 0x00164, 0x00004, 0xFFFFFFFF, 0x00000000, hdaRegReadU32          , hdaRegWriteU32          , "OSD3LPIB" , "OSD3 Link Position In Buffer" },
     { 0x00168, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteU32          , "OSD3CBL"  , "OSD3 Cyclic Buffer Length" },
     { 0x0016C, 0x00002, 0x0000FFFF, 0x0000FFFF, hdaRegReadU16          , hdaRegWriteSDLVI        , "OSD3LVI"  , "OSD3 Last Valid Index" },
-    { 0x0016E, 0x00002, 0x00000005, 0x00000005, hdaRegReadU16          , hdaRegWriteU16          , "OSD3FIFOW", "OSD3 FIFO Watermark" },
+    { 0x0016E, 0x00002, 0x00000007, 0x00000007, hdaRegReadU16          , hdaRegWriteSDFIFOW      , "OSD3FIFOW", "OSD3 FIFO Watermark" },
     { 0x00170, 0x00002, 0x000000FF, 0x000000FF, hdaRegReadU16          , hdaRegWriteSDFIFOS      , "OSD3FIFOS", "OSD3 FIFO Size" },
     { 0x00172, 0x00002, 0x00007F7F, 0x00007F7F, hdaRegReadU16          , hdaRegWriteU16          , "OSD3FMT"  , "OSD3 Format" },
     { 0x00178, 0x00004, 0xFFFFFF80, 0xFFFFFF80, hdaRegReadU32          , hdaRegWriteSDBDPL       , "OSD3BDPL" , "OSD3 Buffer Descriptor List Pointer-Lower Base Address" },
     { 0x0017C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD3BDPU" , "OSD3 Buffer Descriptor List Pointer-Upper Base Address" },
 };
+
+static uint32_t inline hdaFifoWToSz(INTELHDLinkState *pState, int iNum)
+{
+    switch (ICH6_HDA_REG_SD0FIFOW + 10*iNum)
+    {
+        case ICH6_HDA_REG_SD0FIFOW:
+        case ICH6_HDA_REG_SD1FIFOW:
+        case ICH6_HDA_REG_SD2FIFOW:
+        case ICH6_HDA_REG_SD3FIFOW:
+        case ICH6_HDA_REG_SD4FIFOW:
+        case ICH6_HDA_REG_SD5FIFOW:
+        case ICH6_HDA_REG_SD6FIFOW:
+        case ICH6_HDA_REG_SD7FIFOW:
+            switch(HDA_REG_IND(pState, ICH6_HDA_REG_SD0FIFOW + 10*iNum))
+            {
+                case HDA_SDFIFOW_8B: return 8;
+                case HDA_SDFIFOW_16B: return 16;
+                case HDA_SDFIFOW_32B: return 32;
+                default:
+                    AssertMsgFailed(("hda: unsupported value (%x) in SDFIFOW(,%d)\n", HDA_REG_IND(pState, iNum), iNum));
+            }
+        default:
+            AssertMsgFailed(("hda: Not SDnFIFOW register"));
+            return 0;
+    }
+} 
 
 static int hdaProcessInterrupt(INTELHDLinkState* pState)
 {
@@ -1004,8 +1042,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
             AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 1);
         if (offset == 0x100)
         {
-            uint64_t u64BaseDMA = SDBDPL(pState, 4);
-            u64BaseDMA |= (((uint64_t)SDBDPU(pState, 4)) << 32);
+            uint64_t u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
             if (u64BaseDMA)
                 AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 1);
         }
@@ -1055,6 +1092,20 @@ DECLCALLBACK(int)hdaRegWriteSDLVI(INTELHDLinkState* pState, uint32_t offset, uin
     return rc;
 }
 
+DECLCALLBACK(int)hdaRegWriteSDFIFOW(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value)
+{
+    switch (u32Value)
+    {
+        case HDA_SDFIFOW_8B:
+        case HDA_SDFIFOW_16B:
+        case HDA_SDFIFOW_32B:
+            return hdaRegWriteU16(pState, offset, index, u32Value);
+        default:
+            Log(("hda: Attempt to store unsupported value(%x) in SDFIFOW\n", u32Value));
+            return hdaRegWriteU16(pState, offset, index, HDA_SDFIFOW_32B);
+    }
+    return VINF_SUCCESS;
+}
 /*
  * Note this method could be called for changing value on Output Streams only (ICH6 datacheet 18.2.39)
  *
@@ -1241,7 +1292,7 @@ static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64Ba
         addr = *(uint64_t *)bdle;
         len = *(uint32_t *)&bdle[8];
         ioc = *(uint32_t *)&bdle[12];
-        Log(("hda: %s bdle[%d] a:%lx, len:%x, ioc:%d\n",  (i == pBdle->u32BdleCvi? "[C]": "   "), i, addr, len, ioc));
+        Log(("hda: %s bdle[%d] a:%lx, len:%d, ioc:%d\n",  (i == pBdle->u32BdleCvi? "[C]": "   "), i, addr, len, ioc & 0x1));
         sum += len;
     }
     Log(("hda: sum: %d\n", sum));
@@ -1263,75 +1314,159 @@ static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64B
     dump_bd(pState, pBdle, u64BaseDMA);
 }
 
-static uint32_t hdaReadAudio(INTELHDLinkState *pState, int avail, bool *fStop)
+static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
 {
-    uint8_t tmpbuf[256];
-    uint32_t temp;
-    uint32_t u32Rest = 0;
-    uint32_t cbRead = 0;
-    uint32_t to_copy = 0;
-    /* todo: add input line detection */
     PHDABDLEDESC pBdle = &pState->stInBdle;
-    SWVoiceIn *voice = ISD0FMT_TO_AUDIO_SELECTOR(pState);
-    u32Rest = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
-    temp = audio_MIN(u32Rest, (uint32_t)avail);
-    if (!temp)
+    uint32_t cbTransfered = 0;
+    while(   *pu32Avail
+          && pBdle->u32BdleCviPos < pBdle->u32BdleCviLen)
     {
-        *fStop = true;
-        return cbRead;
-    }
-    while (temp)
-    {
-        int copied;
-        to_copy = audio_MIN(temp, SDFIFOS(pState, 4) + 1);
-        copied = AUD_read (voice, tmpbuf, to_copy);
-        Log (("hda: read_audio max=%x to_copy=%x copied=%x\n",
-              avail, to_copy, copied));
-        if (!copied)
+        uint32_t cb2Copy = 0;
+        uint32_t cbBackendCopy = 0;
+        bool fUnderFifoCleared = false;
+        if (   !pBdle->u32BdleCviLen
+            || (*pu32Avail < hdaFifoWToSz(pState, 0)))
         {
+            *fStop = true;
+            return 0;
+        }
+        Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+        Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
+        cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
+        cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 0) + 1 - pBdle->cbUnderFifoW); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
+        Assert((*pu32Avail > 0));
+        cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* sanity check to avoid overriding sound backend buffer */
+        cb2Copy = RT_MIN(cb2Copy, u32CblLimit);
+        if (   !cb2Copy
+            || cb2Copy < pBdle->cbUnderFifoW)
+        {
+            *fStop = true;
+            return 0;
+        }
+
+        /*
+         * read from backend input line
+         */
+        cbBackendCopy = AUD_read (ISD0FMT_TO_AUDIO_SELECTOR(pState), pBdle->au8HdaBuffer, cb2Copy);
+        /*
+         * write on the HDA DMA
+         */
+        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
+
+        Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */
+        *pu32Avail -= cb2Copy;
+        pBdle->u32BdleCviPos += RT_MIN(cb2Copy, cbBackendCopy);
+        if (pBdle->cbUnderFifoW + cbBackendCopy > hdaFifoWToSz(pState, 0))
+        {
+            Log(("hda:ra: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+            cbTransfered += cbBackendCopy + pBdle->cbUnderFifoW;
+            pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbBackendCopy);
+            Assert(!pBdle->cbUnderFifoW); /* we assume, we've read Under FIFO W fully */
+        }
+        else
+        {
+            Log(("hda:ra: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+            pBdle->cbUnderFifoW += RT_MIN(cbBackendCopy, cb2Copy);
+            Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 0)));
             *fStop = true;
             break;
         }
-        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, tmpbuf, copied);
-        temp    -= copied;
-        cbRead += copied;
-        pBdle->u32BdleCviPos += copied;
+        Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+        if (   cbTransfered == (SDFIFOS(pState, 0) + 1)
+            || pBdle->u32BdleCviLen == pBdle->u32BdleCviPos)
+            break;
     }
-    return cbRead;
+    Assert((cbTransfered <= (SDFIFOS(pState, 0) + 1)));
+    Log(("hda:ra: cbTransfered: %d\n", cbTransfered));
+    return cbTransfered;
 }
-static uint32_t hdaWriteAudio(INTELHDLinkState *pState, int avail, bool *fStop)
+
+static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool *fStop, uint32_t u32LcblLimit)
 {
-    uint8_t tmpbuf[256];
-    uint32_t temp;
-    uint32_t u32Rest;
-    uint32_t written = 0;
-    int to_copy = 0;
     PHDABDLEDESC pBdle = &pState->stOutBdle;
-    u32Rest = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
-    temp = audio_MIN(u32Rest, (uint32_t)avail);
-    if (!temp)
+    uint32_t cbTransfered = 0;
+    /*
+     * We're coping data from DMA using chuks of size FIFOS(pState, 4) + 1
+     */
+    while(   *pu32Avail
+          && pBdle->u32BdleCviPos < pBdle->u32BdleCviLen)
     {
-        *fStop = true;
-        return written;
-    }
-    while (temp)
-    {
-        int copied;
-        to_copy = audio_MIN(SDFIFOS(pState, 4) + 1, temp);
-        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, tmpbuf, to_copy);
-        copied = AUD_write (OSD0FMT_TO_AUDIO_SELECTOR(pState), tmpbuf, to_copy);
-        Log(("hda: write_audio max=%x to_copy=%x copied=%x\n",
-             avail, to_copy, copied));
-        if (!copied)
+        uint32_t cb2Copy = 0; /* local byte counter (on local buffer) */
+        uint32_t cbBackendCopy = 0; /* local byte counter, how many bytes copied to backend */
+        Log(("hda:wa: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+        /* border check assert */
+        if (   (   !pBdle->u32BdleCviLen
+                && (pBdle->cbUnderFifoW < hdaFifoWToSz(pState, 4)))
+            ||  *pu32Avail < hdaFifoWToSz(pState, 4))
         {
+            /* buffer length is 0, to little data on marked as "under FIFOW" to send to backed.*/
+            Log(("hda:wa: exits CVI(iAvail:%d, cbUnderFifoW:%d, len:%d)\n", *pu32Avail, pBdle->u32BdleCviLen, pBdle->cbUnderFifoW));
             *fStop = true;
+            return 0;
+        }
+        /*
+         * Amounts of bytes depends on current position in buffer (u32BdleCviLen-u32BdleCviPos)
+         */
+        if (pBdle->u32BdleCviLen)
+        {
+            Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
+            cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
+            cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 4) + 1 - pBdle->cbUnderFifoW); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
+            cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* sanity check to avoid overriding sound backend buffer */
+            cb2Copy = RT_MIN(cb2Copy, u32LcblLimit); /* avoid LCBL overrun */
+        }
+        if (   cb2Copy == 0
+            && pBdle->cbUnderFifoW < hdaFifoWToSz(pState, 4))
+        {
+            Log(("hda:wa: amount of bytes to copy is zero and (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, hdaFifoWToSz(pState, 4)));
+            *fStop = true;
+            return 0;
+        } 
+        
+        /*
+         * Copy from DMA to the corresponding hdaBuffer (if there exists some bytes from the previous not reported transfer we write to ''pBdle->cbUnderFifoW'' offset)
+         */
+        if (cb2Copy)
+            PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
+        /*
+         * Write to audio backend.
+         */
+        if (cb2Copy >= hdaFifoWToSz(pState, 4))
+        {
+            cbBackendCopy = AUD_write (OSD0FMT_TO_AUDIO_SELECTOR(pState), pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
+            Assert((cbBackendCopy));
+            /* Assertion!!! It was copied less than cbUnderFifoW 
+             * Probably we need to move the buffer, but it rather hard to imagine situation
+             * why it may happen.
+             */
+            Assert((cbBackendCopy == pBdle->cbUnderFifoW + cb2Copy)); /* we assume that we write whole buffer including not reported bytes */
+            if (   pBdle->cbUnderFifoW
+                && pBdle->cbUnderFifoW <= cbBackendCopy)
+                Log(("hda:wa: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+            pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbBackendCopy);
+            pBdle->u32BdleCviPos += RT_MIN(cb2Copy, cbBackendCopy);
+            Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos && *pu32Avail >= cbBackendCopy)); /* sanity */
+            *pu32Avail -= cbBackendCopy;
+            cbTransfered += cbBackendCopy; 
+        }
+        else
+        {
+            Log(("hda:wa: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+            pBdle->cbUnderFifoW += cb2Copy;
+            pBdle->u32BdleCviPos += cb2Copy;
+            Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 4)));
             break;
         }
-        temp    -= copied;
-        written += copied;
-        pBdle->u32BdleCviPos += copied;
+        Log(("hda:wa: CVI(pos:%d, len:%d, cbTransfered:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransfered));
+
+        Assert((cbTransfered <= (SDFIFOS(pState, 4) + 1)));
+        if (   cbTransfered == (SDFIFOS(pState, 4) + 1)
+            || pBdle->u32BdleCviLen == pBdle->u32BdleCviPos)
+            break;
     }
-    return written;
+    Assert((cbTransfered <= (SDFIFOS(pState, 4) + 1)));
+    Log(("hda:wa: cbTransfered: %d\n", cbTransfered));
+    return cbTransfered;
 }
 
 DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
@@ -1353,19 +1488,21 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
     uint32_t *pu32Lpib;
     uint32_t u32Lcbl;
     uint32_t u32Fifos;
+    uint32_t u32Fifow;
     switch (src)
     {
         case PO_INDEX:
         {
             u8Strm = 4;
             u32Ctl = SDCTL(pState, 4);
-            u64BaseDMA = SDBDPL(pState, 4);
-            u64BaseDMA |= (((uint64_t)SDBDPU(pState, 4)) << 32);
+            u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
             pu32Lpib = &SDLPIB(pState, 4);
             pu32Sts = &SDSTS(pState, 4);
             u32Lcbl = SDLCBL(pState, 4);
             pBdle = &pState->stOutBdle;
             pBdle->u32BdleMaxCvi = SDLVI(pState, 4);
+            u32Fifos = SDFIFOS(pState, 4);
+            u32Fifow = hdaFifoWToSz(pState, 4);
             break;
         }
         case PI_INDEX:
@@ -1375,10 +1512,11 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             pu32Lpib = &SDLPIB(pState, 0);
             pu32Sts = &SDSTS(pState, 0);
             u32Lcbl = SDLCBL(pState, 0);
-            u64BaseDMA = SDBDPL(pState, 0);
-            u64BaseDMA |= (((uint64_t)SDBDPU(pState, 0)) << 32);
+            u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 0), SDBDPU(pState, 0));
             pBdle = &pState->stInBdle;
             pBdle->u32BdleMaxCvi = SDLVI(pState, 0);
+            u32Fifos = SDFIFOS(pState, 0);
+            u32Fifow = hdaFifoWToSz(pState, 0);
             break;
         }
         default:
@@ -1393,45 +1531,65 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
     fetch_bd(pState, pBdle, u64BaseDMA);
     while( avail && !fStop)
     {
+        Assert((avail >= 0 && (u32Lcbl >= (*pu32Lpib)))); /* sanity */
+        uint32_t u32CblLimit = u32Lcbl - (*pu32Lpib);
+        Log(("hda: CBL=%d, LPIB=%d\n", u32Lcbl, *pu32Lpib));
         switch (src)
         {
             case PO_INDEX:
-                nBytes = hdaWriteAudio(pState, avail, &fStop);
+                nBytes = hdaWriteAudio(pState, (uint32_t *)&avail, &fStop, u32CblLimit);
                 break;
             case PI_INDEX:
-                nBytes = hdaReadAudio(pState, avail, &fStop);
+                nBytes = hdaReadAudio(pState, (uint32_t *)&avail, &fStop, u32CblLimit);
                 break;
             default:
                 nBytes = 0;
                 fStop  = true;
                 AssertMsgFailed(("Unsupported"));
         }
-        /* Update the buffer position and handle Cyclic Buffer Length (CBL) wraparound. */
-        *pu32Lpib += nBytes;
-        avail -= nBytes;
-        if (*pu32Lpib >= u32Lcbl)
-            *pu32Lpib  -= u32Lcbl;
-
-        /* Optionally write back the current DMA position. */
-        if (pState->u64DPBase & DPBASE_ENABLED)
-            PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState),
+        /*
+         * if we're under FIFO Watermark it's expected that HDA doesn't fetch anything.
+         * (ICH6 datasheet 18.2.38)
+         */
+        Assert(nBytes <= (u32Fifos + 1));
+        if (!pBdle->cbUnderFifoW)
+        {
+            *pu32Lpib += nBytes;
+            /* 
+             * Update the buffer position and handle Cyclic Buffer Length (CBL) wraparound.
+             */
+            Assert((*pu32Lpib <= u32Lcbl));
+    
+            /* Optionally write back the current DMA position. */
+            if (pState->u64DPBase & DPBASE_ENABLED)
+                PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState),
                                (pState->u64DPBase & DPBASE_ADDR_MASK) + u8Strm*8, pu32Lpib, sizeof(*pu32Lpib));
-
+    
+        }
         /* Process end of buffer condition. */
-        if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
+        if (   pBdle->u32BdleCviPos == pBdle->u32BdleCviLen
+            || *pu32Lpib == u32Lcbl)
         {
             if (pBdle->fBdleCviIoc)
             {
                 *pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
                 hdaProcessInterrupt(pState);
             }
-            pBdle->u32BdleCviPos = 0;
-            pBdle->u32BdleCvi++;
-            if (pBdle->u32BdleCvi == pBdle->u32BdleMaxCvi + 1)
+            if (*pu32Lpib == u32Lcbl)
+                *pu32Lpib -= u32Lcbl;
+
+            if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
             {
-                pBdle->u32BdleCvi = 0;
+                pBdle->u32BdleCviPos = 0;
+                pBdle->u32BdleCvi++;
+                if (pBdle->u32BdleCvi == pBdle->u32BdleMaxCvi + 1)
+                {
+                    pBdle->u32BdleCvi = 0;
+                }
+                fetch_bd(pState, pBdle, u64BaseDMA);
             }
-            fStop = true;   /* Give the guest a chance to refill (or empty) buffers. */
+            if (nBytes > (u32Fifow))
+                fStop = true;
         }
     }
     *pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
@@ -1686,10 +1844,14 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     SDFIFOS(&pThis->hda, 1) = HDA_SDINFIFO_120B;
     SDFIFOS(&pThis->hda, 2) = HDA_SDINFIFO_120B;
     SDFIFOS(&pThis->hda, 3) = HDA_SDINFIFO_120B;
+
     SDFIFOS(&pThis->hda, 4) = HDA_SDONFIFO_192B;
     SDFIFOS(&pThis->hda, 5) = HDA_SDONFIFO_192B;
     SDFIFOS(&pThis->hda, 6) = HDA_SDONFIFO_192B;
     SDFIFOS(&pThis->hda, 7) = HDA_SDONFIFO_192B;
+
+    SDFIFOW(&pThis->hda, 0) = HDA_SDFIFOW_8B;
+    SDFIFOW(&pThis->hda, 4) = HDA_SDFIFOW_32B;
 
     /* emulateion of codec "wake up" HDA spec (5.5.1 and 6.5)*/
     STATESTS(&pThis->hda) = 0x1;
