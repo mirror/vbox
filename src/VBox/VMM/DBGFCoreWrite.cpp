@@ -500,7 +500,7 @@ static DECLCALLBACK(VBOXSTRICTRC) dbgfR3CoreWrite(PVM pVM, PVMCPU pVCpu, void *p
      * Create the core file.
      */
     RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pDbgfData->pszDumpPath, RTFILE_O_CREATE_REPLACE | RTFILE_O_READWRITE);
+    int rc = RTFileOpen(&hFile, pDbgfData->pszDumpPath, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
         rc = dbgfR3CoreWriteWorker(pVM, pDbgfData, hFile);
