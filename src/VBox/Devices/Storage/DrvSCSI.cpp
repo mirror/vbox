@@ -111,7 +111,7 @@ typedef struct DRVSCSI
 /** Converts a pointer to DRVSCSI::IPortAsync to a PDRVSCSI. */
 #define PDMIBLOCKASYNCPORT_2_DRVSCSI(pInterface) ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, IPortAsync)) )
 
-static int drvscsiIsRedoPossible(int rc)
+static bool drvscsiIsRedoPossible(int rc)
 {
     if (   rc == VERR_DISK_FULL
         || rc == VERR_FILE_TOO_BIG
