@@ -4271,6 +4271,47 @@ int VBoxQGLOverlay::onVHWACommand(struct _VBOXVHWACMD * pCmd)
             pCmd->Flags &= ~VBOXVHWACMD_FLAG_HG_ASYNCH;
             pCmd->rc = VINF_SUCCESS;
             return VINF_SUCCESS;
+        case VBOXVHWACMD_TYPE_HH_SAVESTATE_SAVEBEGIN:
+            mCmdPipe.disable();
+            pCmd->Flags &= ~VBOXVHWACMD_FLAG_HG_ASYNCH;
+            pCmd->rc = VINF_SUCCESS;
+            return VINF_SUCCESS;
+        case VBOXVHWACMD_TYPE_HH_SAVESTATE_SAVEEND:
+            mCmdPipe.enable();
+            pCmd->Flags &= ~VBOXVHWACMD_FLAG_HG_ASYNCH;
+            pCmd->rc = VINF_SUCCESS;
+            return VINF_SUCCESS;
+        case VBOXVHWACMD_TYPE_HH_SAVESTATE_SAVEPERFORM:
+        {
+            VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM *pSave = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_SAVESTATE_SAVEPERFORM);
+            PSSMHANDLE pSSM = pSave->pSSM;
+            int rc = SSMR3PutU32(pSSM, VBOXQGL_STATE_VERSION); AssertRC(rc);
+            if (RT_SUCCESS(rc))
+            {
+                vhwaSaveExec(pSSM);
+            }
+            pCmd->Flags &= ~VBOXVHWACMD_FLAG_HG_ASYNCH;
+            pCmd->rc = rc;
+            return VINF_SUCCESS;
+        }
+        case VBOXVHWACMD_TYPE_HH_SAVESTATE_LOADPERFORM:
+        {
+            VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM *pLoad = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_SAVESTATE_LOADPERFORM);
+            PSSMHANDLE pSSM = pLoad->pSSM;
+            uint32_t u32Version;
+            int rc = SSMR3GetU32(pSSM, &u32Version); Assert(RT_SUCCESS(rc) || rc == VERR_SSM_LOADED_TOO_MUCH);
+            if (RT_SUCCESS(rc))
+            {
+                rc = vhwaLoadExec(pSSM, u32Version); AssertRC(rc);
+            }
+            else if (rc == VERR_SSM_LOADED_TOO_MUCH)
+            {
+                rc = VINF_SUCCESS;
+            }
+            pCmd->Flags &= ~VBOXVHWACMD_FLAG_HG_ASYNCH;
+            pCmd->rc = rc;
+            return VINF_SUCCESS;
+        }
         default:
             break;
     }
@@ -4742,10 +4783,8 @@ int VBoxQGLOverlay::vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version)
 
 void VBoxQGLOverlay::vhwaSaveExec(struct SSMHANDLE * pSSM)
 {
-    mCmdPipe.lock();
     mOverlayImage.vhwaSaveExec(pSSM);
     mCmdPipe.saveExec(pSSM, mOverlayImage.vramBase());
-    mCmdPipe.unlock();
 }
 
 int VBoxQGLOverlay::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
@@ -4767,7 +4806,7 @@ int VBoxQGLOverlay::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
                               * Only for progress indicators. */
             NULL, NULL, NULL, /* pfnLiveXxx */
             NULL,            /* Prepare save callback, optional. */
-            vboxQGLOverlaySaveExec, /* Execute save callback, optional. */
+            NULL, //vboxQGLOverlaySaveExec, /* Execute save callback, optional. */
             NULL,            /* Done save callback, optional. */
             NULL,            /* Prepare load callback, optional. */
             vboxQGLOverlayLoadExec, /* Execute load callback, optional. */
@@ -4857,7 +4896,8 @@ VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement *
 VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pNotifyObject) :
     m_pNotifyObject(pNotifyObject),
     mbNewEvent (false),
-    mbProcessingList (false)
+    mbProcessingList (false),
+    mcDisabled (0)
 {
     int rc = RTCritSectInit(&mCritSect);
     AssertRC(rc);
@@ -5060,6 +5100,7 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
         VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
 {
     VBoxVHWACommandElement * pList = NULL;
+    QObject * pNotifyObject = NULL;
     RTCritSectEnter(&mCritSect);
     if (pFirst2Free)
     {
@@ -5070,21 +5111,47 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
     checkConsistence();
 #endif
 
-    pList = m_CmdPipe.detachList(ppLast);
-
-    if (pList)
+    if (!mcDisabled)
     {
-        /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
-        mbProcessingList = true;
-        RTCritSectLeave(&mCritSect);
-        return pList;
+        pList = m_CmdPipe.detachList(ppLast);
+
+        if (pList)
+        {
+            /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
+            mbProcessingList = true;
+            RTCritSectLeave(&mCritSect);
+            return pList;
+        }
+        else
+        {
+            mbProcessingList = false;
+        }
     }
     else
     {
-        mbProcessingList = false;
+        Assert(!mbProcessingList);
+        if (!m_CmdPipe.isEmpty())
+        {
+            Assert(m_pNotifyObject);
+            if (m_pNotifyObject)
+            {
+                m_NotifyObjectRefs.inc(); /* ensure the parent does not get destroyed while we are using it */
+                pNotifyObject = m_pNotifyObject;
+#ifdef DEBUG_misha
+                checkConsistence();
+#endif
+            }
+        }
     }
 
     RTCritSectLeave(&mCritSect);
+
+    if (pNotifyObject)
+    {
+        VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent();
+        QApplication::postEvent(pNotifyObject, pCurrentEvent);
+        m_NotifyObjectRefs.dec();
+    }
     return NULL;
 }
 
@@ -5271,6 +5338,20 @@ void VBoxVHWACommandElementProcessor::lock()
 void VBoxVHWACommandElementProcessor::unlock()
 {
     RTCritSectLeave(&mCritSect);
+}
+
+void VBoxVHWACommandElementProcessor::disable()
+{
+    lock();
+    ++mcDisabled;
+    unlock();
+}
+
+void VBoxVHWACommandElementProcessor::enable()
+{
+    lock();
+    --mcDisabled;
+    unlock();
 }
 
 VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :

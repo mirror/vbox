@@ -1423,6 +1423,8 @@ public:
     void setNotifyObject(QObject *pNotifyObject);
     int loadExec (struct SSMHANDLE * pSSM, uint32_t u32Version, void *pvVRAM);
     void saveExec (struct SSMHANDLE * pSSM, void *pvVRAM);
+    void disable();
+    void enable();
     void lock();
     void unlock();
 #ifdef DEBUG_misha
@@ -1435,6 +1437,7 @@ private:
     VBoxVHWARefCounter m_NotifyObjectRefs;
     bool mbNewEvent;
     bool mbProcessingList;
+    uint32_t mcDisabled;
     VBoxVHWACommandElementStack mFreeElements;
     VBoxVHWACommandElement mElementsBuffer[2048];
 };
