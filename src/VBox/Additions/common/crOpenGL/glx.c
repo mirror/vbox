@@ -667,13 +667,8 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable,
 
 DECLEXPORT(GLXPixmap) VBOXGLXTAG(glXCreateGLXPixmap)( Display *dpy, XVisualInfo *vis, Pixmap pixmap )
 {
-    (void) dpy;
-    (void) vis;
-    (void) pixmap;
-
     stubInit();
-    crWarning( "Unsupported GLX Call: glXCreateGLXPixmap()" );
-    return (GLXPixmap) 0;
+    return VBOXGLXTAG(glXCreatePixmap)(dpy, (GLXFBConfig)vis->visualid, pixmap, NULL);
 }
 
 DECLEXPORT(void) VBOXGLXTAG(glXDestroyGLXPixmap)( Display *dpy, GLXPixmap pix )
@@ -1212,7 +1207,7 @@ DECLEXPORT(const char *) VBOXGLXTAG(glXGetClientString)( Display *dpy, int name 
             break;
 
         case GLX_VERSION:
-            retval  = "1.2 Chromium";
+            retval  = "1.3 Chromium";
             break;
 
         case GLX_EXTENSIONS:
@@ -1240,7 +1235,7 @@ DECLEXPORT(const char *) VBOXGLXTAG(glXQueryServerString)( Display *dpy, int scr
             break;
 
         case GLX_VERSION:
-            retval  = "1.2 Chromium";
+            retval  = "1.3 Chromium";
             break;
 
         case GLX_EXTENSIONS:
@@ -1323,12 +1318,7 @@ DECLEXPORT(GLXFBConfigSGIX *)
 VBOXGLXTAG(glXChooseFBConfigSGIX)(Display *dpy, int screen,
                                   int *attrib_list, int *nelements)
 {
-    (void) dpy;
-    (void) screen;
-    (void) attrib_list;
-    (void) nelements;
-    crWarning("glXChooseFBConfigSGIX not implemented by Chromium");
-    return NULL;
+    return VBOXGLXTAG(glXChooseFBConfig)(dpy, screen, attrib_list, nelements);
 }
 
 DECLEXPORT(GLXPixmap) 
@@ -1336,11 +1326,8 @@ VBOXGLXTAG(glXCreateGLXPixmapWithConfigSGIX)(Display *dpy,
                                              GLXFBConfig config,
                                              Pixmap pixmap)
 {
-    (void) dpy;
-    (void) config;
-    (void) pixmap;
-    crWarning("glXCreateGLXPixmapWithConfigSGIX not implemented by Chromium");
-    return 0;    }
+    return VBOXGLXTAG(glXCreatePixmap)(dpy, config, pixmap, NULL);
+}
 
 DECLEXPORT(GLXContext) 
 VBOXGLXTAG(glXCreateContextWithConfigSGIX)(Display *dpy, GLXFBConfig config,
@@ -1348,45 +1335,182 @@ VBOXGLXTAG(glXCreateContextWithConfigSGIX)(Display *dpy, GLXFBConfig config,
                                            GLXContext share_list,
                                            Bool direct)
 {
-    (void) dpy;
-    (void) config;
-    (void) render_type;
-    (void) share_list;
-    (void) direct;
-    crWarning("glXCreateContextWithConfigSGIX not implemented by Chromium");
-    return NULL;
+    if (render_type!=GLX_RGBA_TYPE_SGIX)
+    {
+        crWarning("glXCreateContextWithConfigSGIX: Unsupported render type %i", render_type);
+        return NULL;
+    }
+    else
+    {
+        XVisualInfo *vis;
+        GLXContext ret;
+
+        vis = VBOXGLXTAG(glXGetVisualFromFBConfigSGIX)(dpy, config);
+        if (!vis)
+        {
+            crWarning("glXCreateContextWithConfigSGIX: no visuals for %p", config);
+            return NULL;
+        }
+        ret =  VBOXGLXTAG(glXCreateContext)(dpy, vis, share_list, direct);
+        XFree(vis);
+        return ret;
+    }
 }
 
 DECLEXPORT(XVisualInfo *) 
 VBOXGLXTAG(glXGetVisualFromFBConfigSGIX)(Display *dpy,
                                          GLXFBConfig config)
 {
-    (void) dpy;
-    (void) config;
-    crWarning("glXGetVisualFromFBConfigSGIX not implemented by Chromium");
-    return NULL;
+    return VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, config);
 }
 
 DECLEXPORT(GLXFBConfigSGIX)
 VBOXGLXTAG(glXGetFBConfigFromVisualSGIX)(Display *dpy, XVisualInfo *vis)
 {
-    (void) dpy;
-    (void) vis;
-    crWarning("glXGetFBConfigFromVisualSGIX not implemented by Chromium");
-    return NULL;
+    if (!vis)
+    {
+        return NULL;
+    }
+    /*Note: Caller is supposed to call XFree on returned value, so can't just return (GLXFBConfig)vis->visualid*/
+    return (GLXFBConfigSGIX) VBOXGLXTAG(glXGetVisualFromFBConfig)(dpy, (GLXFBConfig)vis->visualid);
 }
 
 /*
  * GLX 1.3 functions
  */
-DECLEXPORT(GLXFBConfig *) 
+DECLEXPORT(GLXFBConfig *)
 VBOXGLXTAG(glXChooseFBConfig)(Display *dpy, int screen, ATTRIB_TYPE *attrib_list, int *nelements)
 {
-    (void) dpy;
-    (void) screen;
-    (void) attrib_list;
-    (void) nelements;
-    crWarning("glXChooseFBConfig not implemented by Chromium");
+    ATTRIB_TYPE *attrib;
+    intptr_t fbconfig = 0;
+
+    stubInit();
+
+    if (!attrib_list)
+    {
+        return VBOXGLXTAG(glXGetFBConfigs)(dpy, screen, nelements);
+    }
+
+    for (attrib = attrib_list; *attrib != None; attrib++)
+    {
+        switch (*attrib)
+        {
+            case GLX_FBCONFIG_ID:
+                fbconfig = attrib[1];
+                attrib++;
+                break;
+
+            case GLX_BUFFER_SIZE:
+                /* this is for color-index visuals, which we don't support */
+                goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_LEVEL:
+                if (attrib[1] != 0)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_AUX_BUFFERS:
+                if (attrib[1] != 0)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_DOUBLEBUFFER: /* @todo, check if we support it */
+                attrib++;
+                break;
+
+            case GLX_STEREO:
+                if (attrib[1] != 0)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_RED_SIZE:
+            case GLX_GREEN_SIZE:
+            case GLX_BLUE_SIZE:
+            case GLX_ALPHA_SIZE:
+                if (attrib[1] > 8)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_DEPTH_SIZE:
+                if (attrib[1] > 16)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_STENCIL_SIZE:
+                if (attrib[1] > 8)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_ACCUM_RED_SIZE:
+            case GLX_ACCUM_GREEN_SIZE:
+            case GLX_ACCUM_BLUE_SIZE:
+            case GLX_ACCUM_ALPHA_SIZE:
+                if (attrib[1] > 16)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_X_RENDERABLE:
+            case GLX_CONFIG_CAVEAT:
+                attrib++;
+                break;
+
+            case GLX_RENDER_TYPE:
+                if (attrib[1]!=GLX_RGBA_BIT)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_DRAWABLE_TYPE:
+                if (attrib[1]!=GLX_WINDOW_BIT)
+                    goto err_exit;
+                attrib++;
+                break;
+
+            case GLX_X_VISUAL_TYPE:
+            case GLX_TRANSPARENT_TYPE_EXT:
+            case GLX_TRANSPARENT_INDEX_VALUE_EXT:
+            case GLX_TRANSPARENT_RED_VALUE_EXT:
+            case GLX_TRANSPARENT_GREEN_VALUE_EXT:
+            case GLX_TRANSPARENT_BLUE_VALUE_EXT:
+            case GLX_TRANSPARENT_ALPHA_VALUE_EXT:
+                /* ignore */
+                crWarning("glXChooseVisual: ignoring attribute 0x%x", *attrib);
+                attrib++;
+                break;
+
+                break;
+            default:
+                crWarning( "glXChooseVisual: bad attrib=0x%x, ignoring", *attrib );
+                attrib++;
+                break;
+        }
+    }
+
+    if (fbconfig)
+    {
+        GLXFBConfig *pGLXFBConfigs;
+
+        *nelements = 1;
+        pGLXFBConfigs = (GLXFBConfig *) crAlloc(*nelements * sizeof(GLXFBConfig));
+        pGLXFBConfigs[0] = (GLXFBConfig)fbconfig;
+        return pGLXFBConfigs;
+    }
+    else
+    {
+        return VBOXGLXTAG(glXGetFBConfigs)(dpy, screen, nelements);
+    }
+
+err_exit:
+    crWarning("glXChooseFBConfig returning NULL, due to attrib=0x%x, next=0x%x", attrib[0], attrib[1]);
     return NULL;
 }
 
@@ -1719,6 +1843,9 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
         case GLX_SAMPLE_BUFFERS:
         case GLX_SAMPLES:
             *value = 1;
+            break;
+        case GLX_FRAMEBUFFER_SRGB_CAPABLE_EXT:
+            *value = 0;
             break;
         default:
             crDebug("glXGetFBConfigAttrib: unknown attribute=0x%x", attribute); 
