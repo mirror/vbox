@@ -2102,7 +2102,7 @@ static int dmgSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
     int rc;
 
     /* Image must be opened and the new flags must be valid. */
-    if (!pThis || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO || VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL)))
+    if (!pThis || (uOpenFlags & ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL)))
     {
         rc = VERR_INVALID_PARAMETER;
         goto out;
@@ -2157,7 +2157,6 @@ static int dmgSetComment(void *pBackendData, const char *pszComment)
     else
         rc = VERR_VD_NOT_OPENED;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }

@@ -1013,7 +1013,6 @@ static int parallelsSetComment(void *pBackendData, const char *pszComment)
     else
         rc = VERR_VD_NOT_OPENED;
 
-out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
