@@ -1111,11 +1111,12 @@ int VBoxProblemReporter::confirmMachineDeletion(const CMachine &machine)
             }
         }
         const QString strBase = tr("<p>You are about to remove the virtual machine <b>%1</b> from the machine list.</p>"
-                                   "<p>Would you like to remove it from your hard disk as well?</p>")
+                                   "<p>Would you like to delete the files containing the virtual machine from your hard disk as well?</p>")
                                    .arg(machine.GetName());
         const QString strExtd = tr("<p>You are about to remove the virtual machine <b>%1</b> from the machine list.</p>"
-                                   "<p>Would you like to remove it from your hard disk as well? "
-                                   "Doing this will also remove the files containing the machine's virtual hard disks.</p>")
+                                   "<p>Would you like to delete the files containing the virtual machine from your hard disk as well? "
+                                   "Doing this will also remove the files containing the machine's virtual hard disks "
+                                   "if they are not in use by another machine.</p>")
                                    .arg(machine.GetName());
         return message(&vboxGlobal().selectorWnd(),
                        Question,
@@ -1123,7 +1124,9 @@ int VBoxProblemReporter::confirmMachineDeletion(const CMachine &machine)
                        0, /* auto-confirm id */
                        QIMessageBox::Yes,
                        QIMessageBox::No,
-                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default);
+                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                       tr("Delete all files"),
+                       tr("Remove only"));
     }
     else
     {
@@ -1138,7 +1141,9 @@ int VBoxProblemReporter::confirmMachineDeletion(const CMachine &machine)
                        strBase,
                        0, /* auto-confirm id */
                        QIMessageBox::Ok,
-                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default);
+                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                       0,
+                       tr("Remove"));
     }
 }
 
