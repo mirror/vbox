@@ -47,12 +47,45 @@
 #define RTZIPTAR_TF_SOLARIS_XHDR    'X'
 
 #define RTZIPTAR_TF_GNU_DUMPDIR     'D'
-#define RTZIPTAR_TF_GNU_LONGLINK    'K'
-#define RTZIPTAR_TF_GNU_LONGNAME    'L'
+#define RTZIPTAR_TF_GNU_LONGLINK    'K' /**< GNU long link header. */
+#define RTZIPTAR_TF_GNU_LONGNAME    'L' /**< GNU long name header. */
 #define RTZIPTAR_TF_GNU_MULTIVOL    'M'
 #define RTZIPTAR_TF_GNU_SPARSE      'S'
 #define RTZIPTAR_TF_GNU_VOLDHR      'V'
 /** @} */
+
+
+/**
+ * The ancient tar header.
+ *
+ * The posix and gnu headers are compatible with the members up to and including
+ * link name, from there on they differ.
+ */
+typedef struct RTZIPTARHDRANCIENT
+{
+    char    name[100];
+    char    mode[8];
+    char    uid[8];
+    char    gid[8];
+    char    size[12];
+    char    mtime[12];
+    char    chksum[8];
+    char    typeflag;
+    char    linkname[100];              /**< Was called linkflag. */
+    char    unused[8+64+16+155+12];
+} RTZIPTARHDRANCIENT;
+AssertCompileSize(RTZIPTARHDRANCIENT, 512);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, name,        0);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, mode,      100);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, uid,       108);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, gid,       116);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, size,      124);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, mtime,     136);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, chksum,    148);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, typeflag,  156);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, linkname,  157);
+AssertCompileMemberOffset(RTZIPTARHDRANCIENT, unused,    257);
+
 
 /** The uniform standard tape archive format magic value. */
 #define RTZIPTAR_USTAR_MAGIC    "ustar"
@@ -163,6 +196,30 @@ AssertCompileMemberOffset(RTZIPTARHDRGNU, unused2,   495);
 
 
 /**
+ * The bits common to posix and GNU.
+ */
+typedef struct RTZIPTARHDRCOMMON
+{
+    char    name[100];
+    char    mode[8];
+    char    uid[8];
+    char    gid[8];
+    char    size[12];
+    char    mtime[12];
+    char    chksum[8];
+    char    typeflag;
+    char    linkname[100];
+    char    magic[6];
+    char    version[2];
+    char    uname[32];
+    char    gname[32];
+    char    devmajor[8];
+    char    devminor[8];
+    char    not_common[155+12];
+} RTZIPTARHDRCOMMON;
+
+
+/**
  * Tar header union.
  */
 typedef union RTZIPTARHDR
@@ -170,9 +227,13 @@ typedef union RTZIPTARHDR
     /** Byte view. */
     char                ab[512];
     /** The standard header. */
+    RTZIPTARHDRANCIENT  Ancient;
+    /** The standard header. */
     RTZIPTARHDRPOSIX    Posix;
     /** The GNU header. */
     RTZIPTARHDRGNU      Gnu;
+    /** The bits common to both GNU and the standard header. */
+    RTZIPTARHDRCOMMON   Common;
 } RTZIPTARHDR;
 AssertCompileSize(RTZIPTARHDR, 512);
 /** Pointer to a tar file header. */

@@ -267,21 +267,20 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
         RT_ZERO(Group);
     }
 
+    const char *pszLinkType = NULL;
     char szTarget[RTPATH_MAX];
     szTarget[0] = '\0';
-    if (RTFS_IS_SYMLINK(UnixInfo.Attr.fMode))
+    RTVFSSYMLINK hVfsSymlink = RTVfsObjToSymlink(hVfsObj);
+    if (hVfsSymlink != NIL_RTVFSSYMLINK)
     {
-        RTVFSSYMLINK hVfsSymlink = RTVfsObjToSymlink(hVfsObj);
-        if (hVfsSymlink != NIL_RTVFSSYMLINK)
-        {
-            rc = RTVfsSymlinkRead(hVfsSymlink, szTarget, sizeof(szTarget));
-            if (RT_FAILURE(rc))
-                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsSymlinkRead returned %Rrc on '%s'", rc, pszName);
-            RTVfsSymlinkRelease(hVfsSymlink);
-        }
-        else
-            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to get symlink object for '%s'", pszName);
+        rc = RTVfsSymlinkRead(hVfsSymlink, szTarget, sizeof(szTarget));
+        if (RT_FAILURE(rc))
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsSymlinkRead returned %Rrc on '%s'", rc, pszName);
+        RTVfsSymlinkRelease(hVfsSymlink);
+        pszLinkType = RTFS_IS_SYMLINK(UnixInfo.Attr.fMode) ? "->" : "link to";
     }
+    else if (RTFS_IS_SYMLINK(UnixInfo.Attr.fMode))
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to get symlink object for '%s'", pszName);
 
     /*
      * Translate the mode mask.
@@ -299,6 +298,8 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
         case RTFS_TYPE_WHITEOUT:    szMode[0] = 'w'; break;
         default:                    szMode[0] = '?'; break;
     }
+    if (pszLinkType && szMode[0] != 's')
+        szMode[0] = 'h';
 
     szMode[1] = UnixInfo.Attr.fMode & RTFS_UNIX_IRUSR ? 'r' : '-';
     szMode[2] = UnixInfo.Attr.fMode & RTFS_UNIX_IWUSR ? 'w' : '-';
@@ -369,14 +370,15 @@ static RTEXITCODE rtZipTarCmdDisplayEntryVerbose(RTEXITCODE rcExit, RTVFSOBJ hVf
     /*
      * Go to press.
      */
-    if (RTFS_IS_SYMLINK(UnixInfo.Attr.fMode))
-        RTPrintf("%s %s/%s%*s %s %s %s -> %s\n",
+    if (pszLinkType)
+        RTPrintf("%s %s/%s%*s %s %s %s %s %s\n",
                  szMode,
                  Owner.Attr.u.UnixOwner.szName, Group.Attr.u.UnixGroup.szName,
                  cchPad, "",
                  szSize,
                  szModTime,
                  pszName,
+                 pszLinkType,
                  szTarget);
     else
         RTPrintf("%s %s/%s%*s %s %s %s\n",

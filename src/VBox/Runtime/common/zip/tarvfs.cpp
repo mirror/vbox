@@ -33,6 +33,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/poll.h>
 #include <iprt/file.h>
@@ -47,18 +48,69 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
+ * TAR reader state machine states.
+ */
+typedef enum RTZIPTARREADERSTATE
+{
+    /** Invalid state. */
+    RTZIPTARREADERSTATE_INVALID = 0,
+    /** Expecting the next file/dir/whatever entry. */
+    RTZIPTARREADERSTATE_FIRST,
+    /** Expecting more zero headers or the end of the stream. */
+    RTZIPTARREADERSTATE_ZERO,
+    /** Expecting a GNU long name. */
+    RTZIPTARREADERSTATE_GNU_LONGNAME,
+    /** Expecting a GNU long link. */
+    RTZIPTARREADERSTATE_GNU_LONGLINK,
+    /** Expecting a normal header or another GNU specific one. */
+    RTZIPTARREADERSTATE_GNU_NEXT,
+    /** End of valid states (not included). */
+    RTZIPTARREADERSTATE_END
+} RTZIPTARREADERSTATE;
+
+/**
+ * Tar reader instance data.
+ */
+typedef struct RTZIPTARREADER
+{
+    /** Zero header counter. */
+    uint32_t                cZeroHdrs;
+    /** The state machine state. */
+    RTZIPTARREADERSTATE     enmState;
+    /** The type of the previous TAR header. */
+    RTZIPTARTYPE            enmPrevType;
+    /** The type of the current TAR header. */
+    RTZIPTARTYPE            enmType;
+    /** The current header. */
+    RTZIPTARHDR             Hdr;
+    /** The expected long name/link length (GNU). */
+    uint32_t                cbGnuLongExpect;
+    /** The current long name/link length (GNU). */
+    uint32_t                offGnuLongCur;
+    /** The name of the current object.
+     * This is for handling GNU and PAX long names. */
+    char                    szName[RTPATH_MAX];
+    /** The current link target if symlink or hardlink. */
+    char                    szTarget[RTPATH_MAX];
+} RTZIPTARREADER;
+/** Pointer to the TAR reader instance data. */
+typedef RTZIPTARREADER *PRTZIPTARREADER;
+
+/**
  * Tar directory, character device, block device, fifo socket or symbolic link.
  */
 typedef struct RTZIPTARBASEOBJ
 {
     /** The stream offset of the (first) header.  */
-    RTFOFF              offHdr;
-    /** The tar header. */
-    RTZIPTARHDR         Hdr;
+    RTFOFF                  offHdr;
+    /** Pointer to the reader instance data (resides in the filesystem
+     * stream).
+     * @todo Fix this so it won't go stale... Back ref from this obj to fss? */
+    PRTZIPTARREADER         pTarReader;
     /** The object info with unix attributes. */
-    RTFSOBJINFO         ObjInfo;
+    RTFSOBJINFO             ObjInfo;
 } RTZIPTARBASEOBJ;
-/** Pointer to a tar filesystem stream base object. */
+/** Pointer to a TAR filesystem stream base object. */
 typedef RTZIPTARBASEOBJ *PRTZIPTARBASEOBJ;
 
 
@@ -67,20 +119,20 @@ typedef RTZIPTARBASEOBJ *PRTZIPTARBASEOBJ;
  */
 typedef struct RTZIPTARIOSTREAM
 {
-    /** The basic tar object data. */
-    RTZIPTARBASEOBJ     BaseObj;
+    /** The basic TAR object data. */
+    RTZIPTARBASEOBJ         BaseObj;
     /** The number of bytes in the file. */
-    RTFOFF              cbFile;
+    RTFOFF                  cbFile;
     /** The current file position. */
-    RTFOFF              offFile;
+    RTFOFF                  offFile;
     /** The number of padding bytes following the file. */
-    uint32_t            cbPadding;
+    uint32_t                cbPadding;
     /** Set if we've reached the end of the file. */
-    bool                fEndOfStream;
+    bool                    fEndOfStream;
     /** The input I/O stream. */
-    RTVFSIOSTREAM       hVfsIos;
+    RTVFSIOSTREAM           hVfsIos;
 } RTZIPTARIOSTREAM;
-/** Pointer to a the private data of a tar file I/O stream. */
+/** Pointer to a the private data of a TAR file I/O stream. */
 typedef RTZIPTARIOSTREAM *PRTZIPTARIOSTREAM;
 
 
@@ -90,98 +142,29 @@ typedef RTZIPTARIOSTREAM *PRTZIPTARIOSTREAM;
 typedef struct RTZIPTARFSSTREAM
 {
     /** The input I/O stream. */
-    RTVFSIOSTREAM       hVfsIos;
+    RTVFSIOSTREAM           hVfsIos;
 
     /** The current object (referenced). */
-    RTVFSOBJ            hVfsCurObj;
+    RTVFSOBJ                hVfsCurObj;
     /** Pointer to the private data if hVfsCurObj is representing a file. */
-    PRTZIPTARIOSTREAM   pCurIosData;
+    PRTZIPTARIOSTREAM       pCurIosData;
 
     /** The start offset. */
-    RTFOFF              offStart;
+    RTFOFF                  offStart;
     /** The offset of the next header. */
-    RTFOFF              offNextHdr;
+    RTFOFF                  offNextHdr;
 
     /** Set if we've reached the end of the stream. */
-    bool                fEndOfStream;
+    bool                    fEndOfStream;
     /** Set if we've encountered a fatal error. */
-    int                 rcFatal;
+    int                     rcFatal;
+
+    /** The TAR reader instance data. */
+    RTZIPTARREADER          TarReader;
 } RTZIPTARFSSTREAM;
-/** Pointer to a the private data of a tar filesystem stream. */
+/** Pointer to a the private data of a TAR filesystem stream. */
 typedef RTZIPTARFSSTREAM *PRTZIPTARFSSTREAM;
 
-
-/**
- * Checks if the TAR header is in the ustar format.
- *
- * @returns true / false.
- * @param   pTar                The TAR header.
- */
-DECLINLINE(bool) rtZipTarHdrIsUstar(PCRTZIPTARHDR pTar)
-{
-    return pTar->Posix.magic[0] == 'u'
-        && pTar->Posix.magic[1] == 's'
-        && pTar->Posix.magic[2] == 't'
-        && pTar->Posix.magic[3] == 'a'
-        && pTar->Posix.magic[4] == 'r'
-        && pTar->Posix.magic[5] == '\0'
-        && pTar->Posix.version[0] == '0'
-        && pTar->Posix.version[1] == '0';
-}
-
-
-/**
- * Checks if the TAR header is in the ustar format and has a regular file type.
- *
- * @returns true / false.
- * @param   pTar                The TAR header.
- */
-DECLINLINE(bool) rtZipTarHdrIsRegularUstar(PCRTZIPTARHDR pTar)
-{
-    return rtZipTarHdrIsUstar(pTar)
-        && (    (   pTar->Posix.typeflag >= RTZIPTAR_TF_NORMAL
-                 && pTar->Posix.typeflag <= RTZIPTAR_TF_CONTIG)
-            ||  pTar->Posix.typeflag == RTZIPTAR_TF_OLDNORMAL);
-}
-
-
-/**
- * Checks if the TAR header includes a posix user name field.
- *
- * @returns true / false.
- * @param   pTar                The TAR header.
- */
-DECLINLINE(bool) rtZipTarHdrHasPosixUserName(PCRTZIPTARHDR pTar)
-{
-    return pTar->Posix.uname[0] != '\0'
-        && rtZipTarHdrIsUstar(pTar);
-}
-
-
-/**
- * Checks if the TAR header includes a posix group name field.
- *
- * @returns true / false.
- * @param   pTar                The TAR header.
- */
-DECLINLINE(bool) rtZipTarHdrHasPosixGroupName(PCRTZIPTARHDR pTar)
-{
-    return pTar->Posix.gname[0] != '\0'
-        && rtZipTarHdrIsUstar(pTar);
-}
-
-
-/**
- * Checks if the TAR header includes a posix compatible path prefix field.
- *
- * @returns true / false.
- * @param   pTar                The TAR header.
- */
-DECLINLINE(bool) rtZipTarHdrHasPrefix(PCRTZIPTARHDR pTar)
-{
-    return pTar->Posix.prefix[0] != '\0'
-        && rtZipTarHdrIsUstar(pTar);
-}
 
 
 /**
@@ -201,9 +184,10 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
         || !(*(unsigned char *)pszField & 0x80))
     {
         /*
-         * Skip leading zeros, saving a few slower loops below.
+         * Skip leading spaces. Include zeros to save a few slower loops below.
          */
-        while (cchField > 0 && *pszField == '0')
+        char ch;
+        while (cchField > 0 && ((ch = *pszField) == ' '|| ch == '0'))
             cchField--, pszField++;
 
         /*
@@ -228,7 +212,7 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
          */
         while (cchField > 0)
         {
-            char ch = *pszField++;
+            ch = *pszField++;
             if (ch != 0 && ch != ' ')
                 return cchField < cchFieldOrg
                      ? VERR_TAR_BAD_NUM_FIELD_TERM
@@ -247,7 +231,7 @@ static int rtZipTarHdrFieldToNum(const char *pszField, size_t cchField, bool fOc
 
 
 /**
- * Calculates the tar header checksums and detects if it's all zeros.
+ * Calculates the TAR header checksums and detects if it's all zeros.
  *
  * @returns true if all zeros, false if not.
  * @param   pHdr                The header to checksum.
@@ -282,16 +266,16 @@ static bool rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_
      */
     bool const fZeroHdr = i32Unsigned == 0;
 
-    pch    = pHdr->Posix.chksum;
-    pchEnd = pch + sizeof(pHdr->Posix.chksum);
+    pch    = pHdr->Common.chksum;
+    pchEnd = pch + sizeof(pHdr->Common.chksum);
     do
     {
         i32Unsigned -= *(unsigned char *)pch;
         i32Signed   -= *(signed   char *)pch;
     } while (++pch != pchEnd);
 
-    i32Unsigned += (unsigned char)' ' * sizeof(pHdr->Posix.chksum);
-    i32Signed   += (signed   char)' ' * sizeof(pHdr->Posix.chksum);
+    i32Unsigned += (unsigned char)' ' * sizeof(pHdr->Common.chksum);
+    i32Signed   += (signed   char)' ' * sizeof(pHdr->Common.chksum);
 
     *pi32Unsigned = i32Unsigned;
     if (pi32Signed)
@@ -303,7 +287,8 @@ static bool rtZipTarCalcChkSum(PCRTZIPTARHDR pHdr, int32_t *pi32Unsigned, int32_
 /**
  * Validates the TAR header.
  *
- * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
+ * @returns VINF_SUCCESS if valid, VERR_TAR_ZERO_HEADER if all zeros, and
+ *          the appropriate VERR_TAR_XXX otherwise.
  * @param   pTar                The TAR header.
  * @param   penmType            Where to return the type of header on success.
  */
@@ -321,7 +306,7 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar, PRTZIPTARTYPE penmType)
      * Read the checksum field and match the checksums.
      */
     int64_t i64HdrChkSum;
-    int rc = rtZipTarHdrFieldToNum(pTar->Posix.chksum, sizeof(pTar->Posix.chksum), true /*fOctalOnly*/, &i64HdrChkSum);
+    int rc = rtZipTarHdrFieldToNum(pTar->Common.chksum, sizeof(pTar->Common.chksum), true /*fOctalOnly*/, &i64HdrChkSum);
     if (RT_FAILURE(rc))
         return VERR_TAR_BAD_CHKSUM_FIELD;
     if (   i32ChkSum          != i64HdrChkSum
@@ -329,22 +314,23 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar, PRTZIPTARTYPE penmType)
         return VERR_TAR_CHKSUM_MISMATCH;
 
     /*
-     * Detect the tar type.
+     * Detect the TAR type.
      */
     RTZIPTARTYPE enmType;
-    if (   pTar->Posix.magic[0] == 'u'
-        && pTar->Posix.magic[1] == 's'
-        && pTar->Posix.magic[2] == 't'
-        && pTar->Posix.magic[3] == 'a'
-        && pTar->Posix.magic[4] == 'r')
+    if (   pTar->Common.magic[0] == 'u'
+        && pTar->Common.magic[1] == 's'
+        && pTar->Common.magic[2] == 't'
+        && pTar->Common.magic[3] == 'a'
+        && pTar->Common.magic[4] == 'r')
     {
-        if (   pTar->Posix.magic[5]   == '\0'
-            && pTar->Posix.version[0] == '0'
-            && pTar->Posix.version[1] == '0')
+/** @todo detect star headers */
+        if (   pTar->Common.magic[5]   == '\0'
+            && pTar->Common.version[0] == '0'
+            && pTar->Common.version[1] == '0')
             enmType = RTZIPTARTYPE_POSIX;
-        else if (   pTar->Posix.magic[5]   == ' '
-                && pTar->Posix.version[0] == ' '
-                && pTar->Posix.version[1] == '\0')
+        else if (   pTar->Common.magic[5]   == ' '
+                && pTar->Common.version[0] == ' '
+                && pTar->Common.version[1] == '\0')
             enmType = RTZIPTARTYPE_GNU;
         else
             return VERR_TAR_NOT_USTAR_V00;
@@ -356,8 +342,102 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar, PRTZIPTARTYPE penmType)
     /*
      * Perform some basic checks.
      */
-    /** @todo more/less? */
-    switch (pTar->Posix.typeflag)
+    switch (enmType)
+    {
+        case RTZIPTARTYPE_POSIX:
+            if (   !RT_C_IS_ALNUM(pTar->Common.typeflag)
+                && !pTar->Common.typeflag == '\0')
+                return VERR_TAR_UNKNOWN_TYPE_FLAG;
+            break;
+
+        case RTZIPTARTYPE_GNU:
+            switch (pTar->Common.typeflag)
+            {
+                case RTZIPTAR_TF_OLDNORMAL:
+                case RTZIPTAR_TF_NORMAL:
+                case RTZIPTAR_TF_CONTIG:
+                case RTZIPTAR_TF_DIR:
+                case RTZIPTAR_TF_CHR:
+                case RTZIPTAR_TF_BLK:
+                case RTZIPTAR_TF_LINK:
+                case RTZIPTAR_TF_SYMLINK:
+                case RTZIPTAR_TF_FIFO:
+                    break;
+
+                case RTZIPTAR_TF_GNU_LONGLINK:
+                case RTZIPTAR_TF_GNU_LONGNAME:
+                    break;
+
+                case RTZIPTAR_TF_GNU_DUMPDIR:
+                case RTZIPTAR_TF_GNU_MULTIVOL:
+                case RTZIPTAR_TF_GNU_SPARSE:
+                case RTZIPTAR_TF_GNU_VOLDHR:
+                    /** @todo Implement full GNU TAR support. .*/
+                    return VERR_TAR_UNSUPPORTED_GNU_HDR_TYPE;
+
+                default:
+                    return VERR_TAR_UNKNOWN_TYPE_FLAG;
+            }
+            break;
+
+        case RTZIPTARTYPE_ANCIENT:
+            switch (pTar->Common.typeflag)
+            {
+                case RTZIPTAR_TF_OLDNORMAL:
+                case RTZIPTAR_TF_NORMAL:
+                case RTZIPTAR_TF_CONTIG:
+                case RTZIPTAR_TF_DIR:
+                case RTZIPTAR_TF_LINK:
+                case RTZIPTAR_TF_SYMLINK:
+                case RTZIPTAR_TF_FIFO:
+                    break;
+                default:
+                    return VERR_TAR_UNKNOWN_TYPE_FLAG;
+            }
+            break;
+        default: /* shut up gcc */
+            AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Parses and validates the first TAR header of a archive/file/dir/whatever.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The TAR reader stat.
+ * @param   pTar                The TAR header that has been read.
+ * @param   fFirst              Set if this is the first header, otherwise
+ *                              clear.
+ */
+static int rtZipTarReaderParseNextHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pHdr, bool fFirst)
+{
+    int rc;
+
+    /*
+     * Basic header validation and detection first.
+     */
+    RTZIPTARTYPE enmType;
+    rc = rtZipTarHdrValidate(pHdr, &enmType);
+    if (RT_FAILURE_NP(rc))
+    {
+        if (rc == VERR_TAR_ZERO_HEADER)
+        {
+            pThis->cZeroHdrs = 1;
+            pThis->enmState = RTZIPTARREADERSTATE_ZERO;
+            return VINF_SUCCESS;
+        }
+        return rc;
+    }
+    if (fFirst)
+        pThis->enmType = enmType;
+
+    /*
+     * Handle the header by type.
+     */
+    switch (pHdr->Common.typeflag)
     {
         case RTZIPTAR_TF_OLDNORMAL:
         case RTZIPTAR_TF_NORMAL:
@@ -367,43 +447,185 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar, PRTZIPTARTYPE penmType)
         case RTZIPTAR_TF_CHR:
         case RTZIPTAR_TF_BLK:
         case RTZIPTAR_TF_FIFO:
-        {
-            if (!pTar->Posix.name[0])
-                return VERR_TAR_EMPTY_NAME;
-
-            /** @todo People claim some (older and newer buggy) tar stores dirs as regular files with a trailing slash. */
-            const char *pchEnd = RTStrEnd(&pTar->Posix.name[0], sizeof(pTar->Posix.name));
-            pchEnd = pchEnd ? pchEnd - 1 : &pTar->Posix.name[sizeof(pTar->Posix.name) - 1];
-            if (*pchEnd == '/')
-                return VERR_TAR_NON_DIR_ENDS_WITH_SLASH;
-            break;
-        }
-
         case RTZIPTAR_TF_DIR:
-            if (!pTar->Posix.name[0])
+            /*
+             * Extract the name first.
+             */
+            if (!pHdr->Common.name[0])
                 return VERR_TAR_EMPTY_NAME;
+            if (pThis->enmType == RTZIPTARTYPE_POSIX)
+            {
+                Assert(pThis->offGnuLongCur == 0); Assert(pThis->szName[0] == '\0');
+                pThis->szName[0] = '\0';
+                if (pHdr->Posix.prefix[0])
+                {
+                    rc = RTStrCopyEx(pThis->szName, sizeof(pThis->szName), pHdr->Posix.prefix, sizeof(pHdr->Posix.prefix));
+                    AssertRC(rc); /* shall not fail */
+                    rc = RTStrCat(pThis->szName, sizeof(pThis->szName), "/");
+                    AssertRC(rc); /* ditto */
+                }
+                rc = RTStrCatEx(pThis->szName, sizeof(pThis->szName), pHdr->Common.name, sizeof(pHdr->Common.name));
+                AssertRCReturn(rc, rc);
+            }
+            else if (pThis->enmType == RTZIPTARTYPE_GNU)
+            {
+                if (!pThis->szName[0])
+                {
+                    rc = RTStrCopyEx(pThis->szName, sizeof(pThis->szName), pHdr->Common.name, sizeof(pHdr->Common.name));
+                    AssertRCReturn(rc, rc);
+                }
+            }
+            else
+            {
+                /* Old TAR */
+                Assert(pThis->offGnuLongCur == 0); Assert(pThis->szName[0] == '\0');
+                rc = RTStrCopyEx(pThis->szName, sizeof(pThis->szName), pHdr->Common.name, sizeof(pHdr->Common.name));
+                AssertRCReturn(rc, rc);
+            }
+
+            /*
+             * Extract the link target.
+             */
+            if (   pHdr->Common.typeflag == RTZIPTAR_TF_LINK
+                || pHdr->Common.typeflag == RTZIPTAR_TF_SYMLINK)
+            {
+                if (   pThis->enmType == RTZIPTARTYPE_POSIX
+                    || pThis->enmType == RTZIPTARTYPE_ANCIENT
+                    || (pThis->enmType == RTZIPTARTYPE_GNU && pThis->szTarget[0] == '\0')
+                   )
+                {
+                    Assert(pThis->szTarget[0] == '\0');
+                    rc = RTStrCopyEx(pThis->szTarget, sizeof(pThis->szTarget),
+                                     pHdr->Common.linkname, sizeof(pHdr->Common.linkname));
+                    AssertRCReturn(rc, rc);
+                }
+            }
+            else
+                pThis->szTarget[0] = '\0';
+
+            pThis->Hdr = *pHdr;
             break;
 
         case RTZIPTAR_TF_X_HDR:
         case RTZIPTAR_TF_X_GLOBAL:
+            /** @todo implement PAX */
             return VERR_TAR_UNSUPPORTED_PAX_TYPE;
 
         case RTZIPTAR_TF_SOLARIS_XHDR:
+            /** @todo implement solaris / pax attribute lists. */
             return VERR_TAR_UNSUPPORTED_SOLARIS_HDR_TYPE;
 
-        case RTZIPTAR_TF_GNU_DUMPDIR:
-        case RTZIPTAR_TF_GNU_LONGLINK:
+
+        /*
+         * A GNU long name or long link is a dummy record followed by one or
+         * more 512 byte string blocks holding the long name/link.  The name
+         * lenght is encoded in the size field, null terminator included.  If
+         * it is a symlink or hard link the long name may be followed by a
+         * long link sequence.
+         */
         case RTZIPTAR_TF_GNU_LONGNAME:
+        case RTZIPTAR_TF_GNU_LONGLINK:
+        {
+            if (strcmp(pHdr->Gnu.name, "././@LongLink"))
+                return VERR_TAR_MALFORMED_GNU_LONGXXXX;
+
+            int64_t cch64;
+            rc = rtZipTarHdrFieldToNum(pHdr->Gnu.size, sizeof(pHdr->Gnu.size), false /*fOctalOnly*/, &cch64);
+            if (RT_FAILURE(rc) || cch64 < 0 || cch64 > _1M)
+                return VERR_TAR_MALFORMED_GNU_LONGXXXX;
+            if (cch64 >= sizeof(pThis->szName))
+                return VERR_TAR_NAME_TOO_LONG;
+
+            pThis->cbGnuLongExpect  = (uint32_t)cch64;
+            pThis->offGnuLongCur    = 0;
+            pThis->enmState         = pHdr->Common.typeflag == RTZIPTAR_TF_GNU_LONGNAME
+                                    ? RTZIPTARREADERSTATE_GNU_LONGNAME
+                                    : RTZIPTARREADERSTATE_GNU_LONGLINK;
+            break;
+        }
+
+        case RTZIPTAR_TF_GNU_DUMPDIR:
         case RTZIPTAR_TF_GNU_MULTIVOL:
         case RTZIPTAR_TF_GNU_SPARSE:
         case RTZIPTAR_TF_GNU_VOLDHR:
+            /** @todo Implement or skip GNU headers */
             return VERR_TAR_UNSUPPORTED_GNU_HDR_TYPE;
-    }
 
+        default:
+            return VERR_TAR_UNKNOWN_TYPE_FLAG;
+    }
 
     return VINF_SUCCESS;
 }
 
+/**
+ * Parses and validates a TAR header.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The TAR reader stat.
+ * @param   pTar                The TAR header that has been read.
+ */
+static int rtZipTarReaderParseHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pHdr)
+{
+    switch (pThis->enmState)
+    {
+        /*
+         * The first record for a file/directory/whatever.
+         */
+        case RTZIPTARREADERSTATE_FIRST:
+            pThis->Hdr.Common.typeflag  = 0x7f;
+            pThis->enmPrevType          = pThis->enmType;
+            pThis->enmType              = RTZIPTARTYPE_INVALID;
+            pThis->offGnuLongCur        = 0;
+            pThis->cbGnuLongExpect      = 0;
+            pThis->szName[0]            = '\0';
+            pThis->szTarget[0]          = '\0';
+            return rtZipTarReaderParseNextHeader(pThis, pHdr, true /*fFirst*/);
+
+        /*
+         * There should only be so many zero headers at the end of the file as
+         * it is a function of the block size used when writing.  Don't go on
+         * reading them forever in case someone points us to /dev/zero.
+         */
+        case RTZIPTARREADERSTATE_ZERO:
+            if (ASMMemIsAllU32(pHdr, sizeof(*pHdr), 0) != NULL)
+                return VERR_TAR_ZERO_HEADER;
+            pThis->cZeroHdrs++;
+            if (pThis->cZeroHdrs <= _64K / 512 + 2)
+                return VINF_SUCCESS;
+            return VERR_TAR_ZERO_HEADER;
+
+        case RTZIPTARREADERSTATE_GNU_LONGNAME:
+        case RTZIPTARREADERSTATE_GNU_LONGLINK:
+        {
+            size_t cbIncoming = RTStrNLen((const char *)pHdr->ab, sizeof(*pHdr));
+            if (cbIncoming < sizeof(*pHdr))
+                cbIncoming += 1;
+
+            if (cbIncoming + pThis->offGnuLongCur > pThis->cbGnuLongExpect)
+                return VERR_TAR_MALFORMED_GNU_LONGXXXX;
+            if (   cbIncoming < sizeof(*pHdr)
+                && cbIncoming + pThis->offGnuLongCur != pThis->cbGnuLongExpect)
+                return VERR_TAR_MALFORMED_GNU_LONGXXXX;
+
+            char *pszDst = pThis->enmState == RTZIPTARREADERSTATE_GNU_LONGNAME ? pThis->szName : pThis->szTarget;
+            pszDst += pThis->offGnuLongCur;
+            memcpy(pszDst, pHdr->ab, cbIncoming);
+
+            pThis->offGnuLongCur += cbIncoming;
+            if (pThis->offGnuLongCur == pThis->cbGnuLongExpect)
+                pThis->enmState = RTZIPTARREADERSTATE_GNU_NEXT;
+            return VINF_SUCCESS;
+        }
+
+        case RTZIPTARREADERSTATE_GNU_NEXT:
+            pThis->enmState = RTZIPTARREADERSTATE_FIRST;
+            return rtZipTarReaderParseNextHeader(pThis, pHdr, false /*fFirst*/);
+
+        default:
+            return VERR_INTERNAL_ERROR_5;
+    }
+}
 
 /**
  * Translate a TAR header to an IPRT object info structure with additional UNIX
@@ -412,10 +634,10 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar, PRTZIPTARTYPE penmType)
  * This completes the validation done by rtZipTarHdrValidate.
  *
  * @returns VINF_SUCCESS if valid, appropriate VERR_TAR_XXX if not.
- * @param   pTar                The TAR header (input).
+ * @param   pThis               The TAR reader instance.
  * @param   pObjInfo            The object info structure (output).
  */
-static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
+static int rtZipTarReaderGetFsObjInfo(PRTZIPTARREADER pThis, PRTFSOBJINFO pObjInfo)
 {
     /*
      * Zap the whole structure, this takes care of unused space in the union.
@@ -423,7 +645,7 @@ static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
     RT_ZERO(*pObjInfo);
 
     /*
-     * Convert the tar field in RTFSOBJINFO order.
+     * Convert the TAR field in RTFSOBJINFO order.
      */
     int         rc;
     int64_t     i64Tmp;
@@ -437,36 +659,47 @@ static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
                 return VERR_TAR_NUM_VALUE_TOO_LARGE; \
         } while (0)
 
-    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->cbObject,        pTar->Posix.size);
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->cbObject,        pThis->Hdr.Common.size);
     pObjInfo->cbAllocated = RT_ALIGN_64(pObjInfo->cbObject, 512);
     int64_t c64SecModTime;
-    GET_TAR_NUMERIC_FIELD_RET(c64SecModTime,             pTar->Posix.mtime);
-    RTTimeSpecSetSeconds(&pObjInfo->ChangeTime,           c64SecModTime);
-    RTTimeSpecSetSeconds(&pObjInfo->ModificationTime,     c64SecModTime);
-    RTTimeSpecSetSeconds(&pObjInfo->AccessTime,           c64SecModTime);
-    RTTimeSpecSetSeconds(&pObjInfo->BirthTime,            c64SecModTime);
+    GET_TAR_NUMERIC_FIELD_RET(c64SecModTime,             pThis->Hdr.Common.mtime);
+    RTTimeSpecSetSeconds(&pObjInfo->ChangeTime,          c64SecModTime);
+    RTTimeSpecSetSeconds(&pObjInfo->ModificationTime,    c64SecModTime);
+    RTTimeSpecSetSeconds(&pObjInfo->AccessTime,          c64SecModTime);
+    RTTimeSpecSetSeconds(&pObjInfo->BirthTime,           c64SecModTime);
     if (c64SecModTime != RTTimeSpecGetSeconds(&pObjInfo->ModificationTime))
         return VERR_TAR_NUM_VALUE_TOO_LARGE;
-    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.fMode,      pTar->Posix.mode);
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.fMode,      pThis->Hdr.Common.mode);
     pObjInfo->Attr.enmAdditional = RTFSOBJATTRADD_UNIX;
-    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.u.Unix.uid, pTar->Posix.uid);
-    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.u.Unix.gid, pTar->Posix.gid);
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.u.Unix.uid, pThis->Hdr.Common.uid);
+    GET_TAR_NUMERIC_FIELD_RET(pObjInfo->Attr.u.Unix.gid, pThis->Hdr.Common.gid);
     pObjInfo->Attr.u.Unix.cHardlinks    = 1;
     pObjInfo->Attr.u.Unix.INodeIdDevice = 0;
     pObjInfo->Attr.u.Unix.INodeId       = 0;
     pObjInfo->Attr.u.Unix.fFlags        = 0;
     pObjInfo->Attr.u.Unix.GenerationId  = 0;
     pObjInfo->Attr.u.Unix.Device        = 0;
-    if (   pTar->Posix.typeflag == RTZIPTAR_TF_CHR
-        || pTar->Posix.typeflag == RTZIPTAR_TF_BLK)
+    switch (pThis->enmType)
     {
-        uint32_t uMajor, uMinor;
-        GET_TAR_NUMERIC_FIELD_RET(uMajor,               pTar->Posix.devmajor);
-        GET_TAR_NUMERIC_FIELD_RET(uMinor,               pTar->Posix.devminor);
-        pObjInfo->Attr.u.Unix.Device    = RTDEV_MAKE(uMajor, uMinor);
-        if (   uMajor != RTDEV_MAJOR(pObjInfo->Attr.u.Unix.Device)
-            || uMinor != RTDEV_MINOR(pObjInfo->Attr.u.Unix.Device))
-            return VERR_TAR_DEV_VALUE_TOO_LARGE;
+        case RTZIPTARTYPE_POSIX:
+        case RTZIPTARTYPE_GNU:
+            if (   pThis->Hdr.Common.typeflag == RTZIPTAR_TF_CHR
+                || pThis->Hdr.Common.typeflag == RTZIPTAR_TF_BLK)
+            {
+                uint32_t uMajor, uMinor;
+                GET_TAR_NUMERIC_FIELD_RET(uMajor,        pThis->Hdr.Common.devmajor);
+                GET_TAR_NUMERIC_FIELD_RET(uMinor,        pThis->Hdr.Common.devminor);
+                pObjInfo->Attr.u.Unix.Device    = RTDEV_MAKE(uMajor, uMinor);
+                if (   uMajor != RTDEV_MAJOR(pObjInfo->Attr.u.Unix.Device)
+                    || uMinor != RTDEV_MINOR(pObjInfo->Attr.u.Unix.Device))
+                    return VERR_TAR_DEV_VALUE_TOO_LARGE;
+            }
+            break;
+
+        default:
+            if (   pThis->Hdr.Common.typeflag == RTZIPTAR_TF_CHR
+                || pThis->Hdr.Common.typeflag == RTZIPTAR_TF_BLK)
+                return VERR_TAR_UNKNOWN_TYPE_FLAG;
     }
 
 #undef GET_TAR_NUMERIC_FIELD_RET
@@ -475,21 +708,33 @@ static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
      * Massage the result a little bit.
      * Also validate some more now that we've got the numbers to work with.
      */
-    if (pObjInfo->Attr.fMode & ~RTFS_UNIX_MASK)
+    if (   (pObjInfo->Attr.fMode & ~RTFS_UNIX_MASK)
+        && pThis->enmType == RTZIPTARTYPE_POSIX)
         return VERR_TAR_BAD_MODE_FIELD;
+    pObjInfo->Attr.fMode &= RTFS_UNIX_MASK;
 
     RTFMODE fModeType = 0;
-    switch (pTar->Posix.typeflag)
+    switch (pThis->Hdr.Common.typeflag)
     {
         case RTZIPTAR_TF_OLDNORMAL:
         case RTZIPTAR_TF_NORMAL:
         case RTZIPTAR_TF_CONTIG:
-            fModeType |= RTFS_TYPE_FILE;
+        {
+            const char *pszEnd = strchr(pThis->szName, '\0');
+            if (pszEnd == &pThis->szName[0] || pszEnd[-1] != '/')
+                fModeType |= RTFS_TYPE_FILE;
+            else
+                fModeType |= RTFS_TYPE_DIRECTORY;
             break;
+        }
 
         case RTZIPTAR_TF_LINK:
             if (pObjInfo->cbObject != 0)
+#if 0 /* too strict */
                 return VERR_TAR_SIZE_NOT_ZERO;
+#else
+                pObjInfo->cbObject = pObjInfo->cbAllocated = 0;
+#endif
             fModeType |= RTFS_TYPE_FILE; /* no better idea for now */
             break;
 
@@ -513,15 +758,35 @@ static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
             fModeType |= RTFS_TYPE_FIFO;
             break;
 
+        case RTZIPTAR_TF_GNU_LONGLINK:
+        case RTZIPTAR_TF_GNU_LONGNAME:
+            /* ASSUMES RTFS_TYPE_XXX uses the same values as GNU stored in the mode field. */
+            fModeType = pObjInfo->Attr.fMode & RTFS_TYPE_MASK;
+            switch (fModeType)
+            {
+                case RTFS_TYPE_FILE:
+                case RTFS_TYPE_DIRECTORY:
+                case RTFS_TYPE_SYMLINK:
+                case RTFS_TYPE_DEV_BLOCK:
+                case RTFS_TYPE_DEV_CHAR:
+                case RTFS_TYPE_FIFO:
+                    break;
+
+                default:
+                case 0:
+                    return VERR_TAR_UNKNOWN_TYPE_FLAG; /** @todo new status code */
+            }
+
         default:
             return VERR_TAR_UNKNOWN_TYPE_FLAG; /* Should've been caught in validate. */
     }
     if (   (pObjInfo->Attr.fMode & RTFS_TYPE_MASK)
         && (pObjInfo->Attr.fMode & RTFS_TYPE_MASK) != fModeType)
         return VERR_TAR_MODE_WITH_TYPE;
+    pObjInfo->Attr.fMode &= ~RTFS_TYPE_MASK;
     pObjInfo->Attr.fMode |= fModeType;
 
-    switch (pTar->Posix.typeflag)
+    switch (pThis->Hdr.Common.typeflag)
     {
         case RTZIPTAR_TF_CHR:
         case RTZIPTAR_TF_BLK:
@@ -533,6 +798,76 @@ static int rtZipTarHdrToFsObjInfo(PCRTZIPTARHDR pTar, PRTFSOBJINFO pObjInfo)
     }
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks if the reader is expecting more headers.
+ *
+ * @returns true / false.
+ * @param   pThis               The TAR reader instance.
+ */
+static bool rtZipTarReaderExpectingMoreHeaders(PRTZIPTARREADER pThis)
+{
+    return pThis->enmState != RTZIPTARREADERSTATE_FIRST;
+}
+
+
+/**
+ * Checks if we're at the end of the TAR file.
+ *
+ * @returns true / false.
+ * @param   pThis               The TAR reader instance.
+ */
+static bool rtZipTarReaderIsAtEnd(PRTZIPTARREADER pThis)
+{
+    if (!pThis->cZeroHdrs)
+        return false;
+
+    /* Here is a kludge to try deal with archivers not putting at least two
+       zero headers at the end.  Afraid it may require further relaxing
+       later on, but let's try be strict about things for now. */
+    return pThis->cZeroHdrs >= (pThis->enmPrevType == RTZIPTARTYPE_POSIX ? 2 : 1);
+}
+
+
+/**
+ * Checks if the current TAR object is a hard link or not.
+ *
+ * @returns true if it is, false if not.
+ * @param   pThis               The TAR reader instance.
+ */
+static bool rtZipTarReaderIsHardlink(PRTZIPTARREADER pThis)
+{
+    return pThis->Hdr.Common.typeflag == RTZIPTAR_TF_LINK;
+}
+
+
+/**
+ * Checks if the TAR header includes a POSIX or GNU user name field.
+ *
+ * @returns true / false.
+ * @param   pThis               The TAR reader instance.
+ */
+DECLINLINE(bool) rtZipTarReaderHasUserName(PRTZIPTARREADER pThis)
+{
+    return pThis->Hdr.Common.uname[0] != '\0'
+        && (   pThis->enmType == RTZIPTARTYPE_POSIX
+            || pThis->enmType == RTZIPTARTYPE_GNU);
+}
+
+
+/**
+ * Checks if the TAR header includes a POSIX or GNU group name field.
+ *
+ * @returns true / false.
+ * @param   pThis               The TAR reader instance.
+ */
+DECLINLINE(bool) rtZipTarReaderHasGroupName(PRTZIPTARREADER pThis)
+{
+    return pThis->Hdr.Common.gname[0] != '\0'
+        && (   pThis->enmType == RTZIPTARTYPE_POSIX
+            || pThis->enmType == RTZIPTARTYPE_GNU);
 }
 
 
@@ -580,8 +915,9 @@ static DECLCALLBACK(int) rtZipTarFssBaseObj_QueryInfo(void *pvThis, PRTFSOBJINFO
             pObjInfo->Attr.enmAdditional         = RTFSOBJATTRADD_UNIX_OWNER;
             pObjInfo->Attr.u.UnixOwner.uid       = pThis->ObjInfo.Attr.u.Unix.uid;
             pObjInfo->Attr.u.UnixOwner.szName[0] = '\0';
-            if (rtZipTarHdrHasPosixUserName(&pThis->Hdr))
-                RTStrCopy(pObjInfo->Attr.u.UnixOwner.szName, sizeof(pObjInfo->Attr.u.UnixOwner.szName), pThis->Hdr.Posix.uname);
+            if (rtZipTarReaderHasUserName(pThis->pTarReader))
+                RTStrCopy(pObjInfo->Attr.u.UnixOwner.szName, sizeof(pObjInfo->Attr.u.UnixOwner.szName),
+                          pThis->pTarReader->Hdr.Common.uname);
             break;
 
         case RTFSOBJATTRADD_UNIX_GROUP:
@@ -589,8 +925,9 @@ static DECLCALLBACK(int) rtZipTarFssBaseObj_QueryInfo(void *pvThis, PRTFSOBJINFO
             pObjInfo->Attr.enmAdditional         = RTFSOBJATTRADD_UNIX_GROUP;
             pObjInfo->Attr.u.UnixGroup.gid       = pThis->ObjInfo.Attr.u.Unix.gid;
             pObjInfo->Attr.u.UnixGroup.szName[0] = '\0';
-            if (rtZipTarHdrHasPosixGroupName(&pThis->Hdr))
-                RTStrCopy(pObjInfo->Attr.u.UnixGroup.szName, sizeof(pObjInfo->Attr.u.UnixGroup.szName), pThis->Hdr.Posix.gname);
+            if (rtZipTarReaderHasGroupName(pThis->pTarReader))
+                RTStrCopy(pObjInfo->Attr.u.UnixGroup.szName, sizeof(pObjInfo->Attr.u.UnixGroup.szName),
+                          pThis->pTarReader->Hdr.Common.gname);
             break;
 
         case RTFSOBJATTRADD_EASIZE:
@@ -866,7 +1203,7 @@ static DECLCALLBACK(int) rtZipTarFssSym_SetOwner(void *pvThis, RTUID uid, RTGID 
 static DECLCALLBACK(int) rtZipTarFssSym_Read(void *pvThis, char *pszTarget, size_t cbTarget)
 {
     PRTZIPTARBASEOBJ pThis = (PRTZIPTARBASEOBJ)pvThis;
-    return RTStrCopy(pszTarget, cbTarget, pThis->Hdr.Posix.linkname);
+    return RTStrCopy(pszTarget, cbTarget, pThis->pTarReader->szTarget);
 }
 
 
@@ -962,81 +1299,65 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
     /*
      * Make sure the input stream is in the right place.
      */
-    RTFOFF off = RTVfsIoStrmTell(pThis->hVfsIos);
-    while (   off >= 0
-           && off < pThis->offNextHdr)
+    RTFOFF offHdr = RTVfsIoStrmTell(pThis->hVfsIos);
+    while (   offHdr >= 0
+           && offHdr < pThis->offNextHdr)
     {
-        int rc = RTVfsIoStrmSkip(pThis->hVfsIos, pThis->offNextHdr - off);
+        int rc = RTVfsIoStrmSkip(pThis->hVfsIos, pThis->offNextHdr - offHdr);
         if (RT_FAILURE(rc))
         {
             /** @todo Ignore if we're at the end of the stream? */
             return pThis->rcFatal = rc;
         }
 
-        off = RTVfsIoStrmTell(pThis->hVfsIos);
+        offHdr = RTVfsIoStrmTell(pThis->hVfsIos);
     }
 
-    if (off < 0)
-        return pThis->rcFatal = (int)off;
-    if (off > pThis->offNextHdr)
+    if (offHdr < 0)
+        return pThis->rcFatal = (int)offHdr;
+    if (offHdr > pThis->offNextHdr)
         return pThis->rcFatal = VERR_INTERNAL_ERROR_3;
 
     /*
-     * Read the next header.
+     * Consume TAR headers.
      */
-    size_t      cbRead;
-    RTZIPTARHDR Hdr;
-    int rc = RTVfsIoStrmRead(pThis->hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, &cbRead);
-    if (RT_FAILURE(rc))
-        return pThis->rcFatal = rc;
-    if (rc == VINF_EOF && cbRead == 0)
+    size_t cbHdrs = 0;
+    int rc;
+    do
     {
-        pThis->fEndOfStream = true;
-        return VERR_EOF;
-    }
-    if (cbRead != sizeof(Hdr))
-        return pThis->rcFatal = VERR_TAR_UNEXPECTED_EOS;
+        /*
+         * Read the next header.
+         */
+        RTZIPTARHDR Hdr;
+        size_t cbRead;
+        rc = RTVfsIoStrmRead(pThis->hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, &cbRead);
+        if (RT_FAILURE(rc))
+            return pThis->rcFatal = rc;
+        if (rc == VINF_EOF && cbRead == 0)
+        {
+            pThis->fEndOfStream = true;
+            return rtZipTarReaderIsAtEnd(&pThis->TarReader) ? VERR_EOF : VERR_TAR_UNEXPECTED_EOS;
+        }
+        if (cbRead != sizeof(Hdr))
+            return pThis->rcFatal = VERR_TAR_UNEXPECTED_EOS;
 
-    pThis->offNextHdr = off + sizeof(Hdr);
+        cbHdrs += sizeof(Hdr);
+
+        /*
+         * Parse the it.
+         */
+        rc = rtZipTarReaderParseHeader(&pThis->TarReader, &Hdr);
+        if (RT_FAILURE(rc))
+            return pThis->rcFatal = rc;
+    } while (rtZipTarReaderExpectingMoreHeaders(&pThis->TarReader));
+
+    pThis->offNextHdr = offHdr + cbHdrs;
 
     /*
-     * Validate the header and convert to binary object info.
-     * We pick up the start of the zero headers here in the failure path.
+     * Fill an object info structure from the current TAR state.
      */
-    RTZIPTARTYPE enmTarType;
-    rc = rtZipTarHdrValidate(&Hdr, &enmTarType);
-    if (RT_FAILURE_NP(rc))
-    {
-        if (rc == VERR_TAR_ZERO_HEADER)
-        {
-            int rc2 = RTVfsIoStrmRead(pThis->hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, &cbRead);
-            if (RT_FAILURE(rc2))
-                return pThis->rcFatal = rc2;
-            if (ASMMemIsAllU32(&Hdr, sizeof(Hdr), 0) == NULL)
-            {
-                pThis->fEndOfStream = true;
-                if (RTVfsIoStrmIsAtEnd(pThis->hVfsIos))
-                    return VERR_EOF;
-
-                /* Just drain the stream because blocksize may dictate that
-                   there is a whole bunch of stuff comming up. */
-                for (uint32_t i = 0; i < _32K / 512; i++)
-                {
-                    rc = RTVfsIoStrmRead(pThis->hVfsIos, &Hdr, sizeof(Hdr), true /*fBlocking*/, &cbRead);
-                    if (rc == VINF_EOF)
-                        return VERR_EOF;
-                    if (RT_FAILURE(rc))
-                        break;
-                    Assert(cbRead == sizeof(Hdr));
-                }
-            }
-        }
-
-        return pThis->rcFatal = rc;
-    }
-
     RTFSOBJINFO Info;
-    rc = rtZipTarHdrToFsObjInfo(&Hdr, &Info);
+    rc = rtZipTarReaderGetFsObjInfo(&pThis->TarReader, &Info);
     if (RT_FAILURE(rc))
         return pThis->rcFatal = rc;
 
@@ -1045,14 +1366,15 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
      */
     RTVFSOBJTYPE    enmType;
     RTVFSOBJ        hVfsObj;
-    switch (Hdr.Posix.typeflag)
+    RTFMODE         fType = Info.Attr.fMode & RTFS_TYPE_MASK;
+    if (rtZipTarReaderIsHardlink(&pThis->TarReader))
+        fType = RTFS_TYPE_SYMLINK;
+    switch (fType)
     {
         /*
          * Files are represented by a VFS I/O stream.
          */
-        case RTZIPTAR_TF_NORMAL:
-        case RTZIPTAR_TF_OLDNORMAL:
-        case RTZIPTAR_TF_CONTIG:
+        case RTFS_TYPE_FILE:
         {
             RTVFSIOSTREAM       hVfsIos;
             PRTZIPTARIOSTREAM   pIosData;
@@ -1066,14 +1388,14 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
             if (RT_FAILURE(rc))
                 return pThis->rcFatal = rc;
 
-            pIosData->BaseObj.offHdr  = off;
-            pIosData->BaseObj.Hdr     = Hdr;
-            pIosData->BaseObj.ObjInfo = Info;
-            pIosData->cbFile          = Info.cbObject;
-            pIosData->offFile         = 0;
-            pIosData->cbPadding       = Info.cbAllocated - Info.cbObject;
-            pIosData->fEndOfStream    = false;
-            pIosData->hVfsIos         = pThis->hVfsIos;
+            pIosData->BaseObj.offHdr    = offHdr;
+            pIosData->BaseObj.pTarReader= &pThis->TarReader;
+            pIosData->BaseObj.ObjInfo   = Info;
+            pIosData->cbFile            = Info.cbObject;
+            pIosData->offFile           = 0;
+            pIosData->cbPadding         = Info.cbAllocated - Info.cbObject;
+            pIosData->fEndOfStream      = false;
+            pIosData->hVfsIos           = pThis->hVfsIos;
             RTVfsIoStrmRetain(pThis->hVfsIos);
 
             pThis->pCurIosData = pIosData;
@@ -1090,8 +1412,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
          * best with the way TAR stores it and there is currently no better
          * fitting VFS type alternative.
          */
-        case RTZIPTAR_TF_LINK:
-        case RTZIPTAR_TF_SYMLINK:
+        case RTFS_TYPE_SYMLINK:
         {
             RTVFSSYMLINK        hVfsSym;
             PRTZIPTARBASEOBJ    pBaseObjData;
@@ -1104,9 +1425,9 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
             if (RT_FAILURE(rc))
                 return pThis->rcFatal = rc;
 
-            pBaseObjData->offHdr  = off;
-            pBaseObjData->Hdr     = Hdr;
-            pBaseObjData->ObjInfo = Info;
+            pBaseObjData->offHdr    = offHdr;
+            pBaseObjData->pTarReader= &pThis->TarReader;
+            pBaseObjData->ObjInfo   = Info;
 
             enmType = RTVFSOBJTYPE_SYMLINK;
             hVfsObj = RTVfsObjFromSymlink(hVfsSym);
@@ -1116,13 +1437,13 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
 
         /*
          * All other objects are repesented using a VFS base object since they
-         * carry no data streams (unless some tar extension implements extended
+         * carry no data streams (unless some TAR extension implements extended
          * attributes / alternative streams).
          */
-        case RTZIPTAR_TF_CHR:
-        case RTZIPTAR_TF_BLK:
-        case RTZIPTAR_TF_DIR:
-        case RTZIPTAR_TF_FIFO:
+        case RTFS_TYPE_DEV_BLOCK:
+        case RTFS_TYPE_DEV_CHAR:
+        case RTFS_TYPE_DIRECTORY:
+        case RTFS_TYPE_FIFO:
         {
             PRTZIPTARBASEOBJ pBaseObjData;
             rc = RTVfsNewBaseObj(&g_rtZipTarFssBaseObjOps,
@@ -1134,9 +1455,9 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
             if (RT_FAILURE(rc))
                 return pThis->rcFatal = rc;
 
-            pBaseObjData->offHdr  = off;
-            pBaseObjData->Hdr     = Hdr;
-            pBaseObjData->ObjInfo = Info;
+            pBaseObjData->offHdr    = offHdr;
+            pBaseObjData->pTarReader= &pThis->TarReader;
+            pBaseObjData->ObjInfo   = Info;
 
             enmType = RTVFSOBJTYPE_BASE;
             break;
@@ -1153,19 +1474,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
      */
     if (ppszName)
     {
-        if (rtZipTarHdrHasPrefix(&Hdr))
-        {
-            *ppszName = NULL;
-            rc = RTStrAAppendExN(ppszName, 3,
-                                 Hdr.Posix.prefix, sizeof(Hdr.Posix.prefix),
-                                 "/", 1,
-                                 Hdr.Posix.name, sizeof(Hdr.Posix.name));
-        }
-        else
-        {
-            *ppszName = RTStrDupN(Hdr.Posix.name, sizeof(Hdr.Posix.name));
-            rc = *ppszName ? VINF_SUCCESS : VERR_NO_STR_MEMORY;
-        }
+        rc = RTStrDupEx(ppszName, pThis->TarReader.szName);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1228,13 +1537,16 @@ RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlag
     int rc = RTVfsNewFsStream(&rtZipTarFssOps, sizeof(*pThis), NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFss, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
-        pThis->hVfsIos          = hVfsIosIn;
-        pThis->hVfsCurObj       = NIL_RTVFSOBJ;
-        pThis->pCurIosData      = NULL;
-        pThis->offStart         = offStart;
-        pThis->offNextHdr       = offStart;
-        pThis->fEndOfStream     = false;
-        pThis->rcFatal          = VINF_SUCCESS;
+        pThis->hVfsIos              = hVfsIosIn;
+        pThis->hVfsCurObj           = NIL_RTVFSOBJ;
+        pThis->pCurIosData          = NULL;
+        pThis->offStart             = offStart;
+        pThis->offNextHdr           = offStart;
+        pThis->fEndOfStream         = false;
+        pThis->rcFatal              = VINF_SUCCESS;
+        pThis->TarReader.enmPrevType= RTZIPTARTYPE_INVALID;
+        pThis->TarReader.enmType    = RTZIPTARTYPE_INVALID;
+        pThis->TarReader.enmState   = RTZIPTARREADERSTATE_FIRST;
 
         /* Don't check if it's a TAR stream here, do that in the
            rtZipTarFss_Next. */
