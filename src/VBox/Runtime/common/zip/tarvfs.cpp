@@ -559,6 +559,7 @@ static int rtZipTarReaderParseNextHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pH
     return VINF_SUCCESS;
 }
 
+
 /**
  * Parses and validates a TAR header.
  *
@@ -627,6 +628,7 @@ static int rtZipTarReaderParseHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pHdr)
             return VERR_INTERNAL_ERROR_5;
     }
 }
+
 
 /**
  * Translate a TAR header to an IPRT object info structure with additional UNIX
