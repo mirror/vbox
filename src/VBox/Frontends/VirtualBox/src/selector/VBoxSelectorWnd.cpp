@@ -199,9 +199,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
 
 #define BIG_TOOLBAR
 #if MAC_LEOPARD_STYLE
-    /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3 */
     addToolBar(mVMToolBar);
-    mVMToolBar->setMacToolbar();
     /* Central widget @ horizontal layout */
     setCentralWidget(m_pSplitter);
     m_pSplitter->addWidget(mVMListView);
@@ -345,9 +343,16 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
             && (x + w > ar.left()) && (x < ar.right()) /* & horizontal bounds */)
         {
             mNormalGeo.moveTo(x, y);
-            mNormalGeo.setSize(QSize(w, h).expandedTo(minimumSizeHint())
-                                          .boundedTo(ar.size()));
+            mNormalGeo.setSize(QSize(w, h)
+                               .expandedTo(minimumSizeHint())
+                               .boundedTo(ar.size()));
+#if defined(Q_WS_MAC) && (QT_VERSION >= 0x040700)
+            move(mNormalGeo.topLeft());
+            resize(mNormalGeo.size());
+            mNormalGeo = normalGeometry();
+#else /* defined(Q_WS_MAC) && (QT_VERSION >= 0x040700) */
             setGeometry(mNormalGeo);
+#endif /* !(defined(Q_WS_MAC) && (QT_VERSION >= 0x040700)) */
             if (max) /* maximize if needed */
                 showMaximized();
         }
@@ -359,6 +364,12 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
             setGeometry(mNormalGeo);
         }
     }
+#if MAC_LEOPARD_STYLE
+    /* Enable unified toolbars on Mac OS X. Available on Qt >= 4.3. We do this
+     * after setting the window pos/size, cause Qt sometime includes the
+     * toolbar height in the content height. */
+    mVMToolBar->setMacToolbar();
+#endif /* MAC_LEOPARD_STYLE */
 
     /* Update the list */
     refreshVMList();
@@ -472,10 +483,15 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
 
     /* Save the position of the window */
     {
-        int y = mNormalGeo.y();
+#if defined(Q_WS_MAC) && (QT_VERSION >= 0x040700)
+        QRect frameGeo = frameGeometry();
+        QRect save(frameGeo.x(), frameGeo.y(), mNormalGeo.width(), mNormalGeo.height());
+#else /* defined(Q_WS_MAC) && (QT_VERSION >= 0x040700) */
+        QRect save(mNormalGeo);
+#endif /* !(defined(Q_WS_MAC) && (QT_VERSION >= 0x040700)) */
         QString winPos = QString("%1,%2,%3,%4")
-            .arg(mNormalGeo.x()).arg(y)
-            .arg(mNormalGeo.width()).arg(mNormalGeo.height());
+            .arg(save.x()).arg(save.y())
+            .arg(save.width()).arg(save.height());
 #ifdef Q_WS_MAC
         UIWindowMenuManager::destroy();
         ::darwinUnregisterForUnifiedToolbarContextMenuEvents(this);
