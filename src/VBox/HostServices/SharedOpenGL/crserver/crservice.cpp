@@ -513,6 +513,10 @@ static int vboxCrHgsmiCtl(PVBOXVDMACMD_CHROMIUM_CTL pCtl)
             g_pvVRamBase = (uint8_t*)pSetup->pvRamBase;
             rc = VINF_SUCCESS;
         } break;
+        case VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_BEGIN:
+        case VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_END:
+            rc = VINF_SUCCESS;
+            break;
         default:
             Assert(0);
             rc = VERR_INVALID_PARAMETER;
