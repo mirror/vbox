@@ -1281,7 +1281,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->pszLanBootFile = NULL;
     }
 
-    uint64_t cbFileLanBoot, cbFileLanBootAlign;
+    uint64_t cbFileLanBoot;
     const uint8_t *pu8LanBootBinary = NULL;
     uint64_t cbLanBootBinary;
 
@@ -1298,8 +1298,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             rc = RTFileGetSize(FileLanBoot, &cbFileLanBoot);
             if (RT_SUCCESS(rc))
             {
-                cbFileLanBootAlign = RT_ALIGN(cbFileLanBoot, _4K);
-                if (cbFileLanBootAlign > _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff))
+                if (cbFileLanBoot > _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff))
                     rc = VERR_TOO_MUCH_DATA;
             }
         }
@@ -1324,7 +1323,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Allocate buffer for the LAN boot ROM data.
          */
-        pThis->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAllocZ(pDevIns, cbFileLanBootAlign);
+        pThis->pu8LanBoot = (uint8_t *)PDMDevHlpMMHeapAllocZ(pDevIns, cbFileLanBoot);
         if (pThis->pu8LanBoot)
         {
             rc = RTFileRead(FileLanBoot, pThis->pu8LanBoot, cbFileLanBoot, NULL);
@@ -1357,7 +1356,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     else
     {
         pu8LanBootBinary = pThis->pu8LanBoot;
-        cbLanBootBinary  = cbFileLanBootAlign;
+        cbLanBootBinary  = cbFileLanBoot;
     }
 
     /*
@@ -1370,7 +1369,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         pThis->cbLanBoot = cbLanBootBinary;
 
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4,  RT_MAX(cbLanBootBinary, 56*_1K),
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4,  RT_MAX(cbLanBootBinary, _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff)),
                                   pu8LanBootBinary, cbLanBootBinary,
                                   PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
         AssertRCReturn(rc, rc);
