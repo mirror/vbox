@@ -320,7 +320,8 @@ typedef struct HWACCM
 
     struct
     {
-        /** Set by the ring-0 driver to indicate VMX is supported by the CPU. */
+        /** Set by the ring-0 side of HWACCM to indicate VMX is supported by the
+         *  CPU. */
         bool                        fSupported;
 
         /** Set when we've enabled VMX. */
@@ -419,7 +420,8 @@ typedef struct HWACCM
 
     struct
     {
-        /** Set by the ring-0 driver to indicate SVM is supported by the CPU. */
+        /** Set by the ring-0 side of HWACCM to indicate SVM is supported by the
+         *  CPU. */
         bool                        fSupported;
         /** Set when we've enabled SVM. */
         bool                        fEnabled;
