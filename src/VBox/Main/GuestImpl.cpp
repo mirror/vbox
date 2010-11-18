@@ -157,14 +157,15 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
      */
 
     HRESULT rc = S_OK;
+    BOOL fCompleted;
+    BOOL fCanceled;
 
     try
     {
         Guest *pGuest = aTask->pGuest;
         AssertPtr(pGuest);
 
-        if (aTask->progress)
-            aTask->progress->SetCurrentOperationProgress(10);
+        aTask->progress->SetCurrentOperationProgress(10);
 
         bool fIsWindows = false;
         Utf8Str osType = pGuest->mData.mOSTypeId;
@@ -232,10 +233,8 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
             else
             {
                 /* Okay, we're ready to start our copy routine on the guest! */
-                if (aTask->progress)
-                    aTask->progress->SetCurrentOperationProgress(15);
-
                 LogRel(("Automatic update of Guest Additions started\n"));
+                aTask->progress->SetCurrentOperationProgress(15);
 
                 /* Prepare command line args. */
                 com::SafeArray<IN_BSTR> args;
@@ -247,7 +246,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
 
                 if (SUCCEEDED(rc))
                 {
-                    ComPtr<IProgress> progressCopy;
+                    ComPtr<IProgress> progressCat;
                     ULONG uPID;
 
                     /*
@@ -262,48 +261,45 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                         Bstr("").raw() /* Username. */,
                                                         Bstr("").raw() /* Password */,
                                                         5 * 1000 /* Wait 5s for getting the process started. */,
-                                                        &uPID, progressCopy.asOutParam(), &vrc);
-                    if (RT_FAILURE(vrc))
+                                                        &uPID, progressCat.asOutParam(), &vrc);
+                    if (   RT_FAILURE(vrc)
+                        || FAILED(rc))
                     {
                         switch (vrc)
                         {
                             /* If we got back VERR_INVALID_PARAMETER we're running an old(er) Guest Additions version
                              * (< 4.0) which does not support automatic updating and/or has not the internal tool "vbox_cat". */
                             case VERR_INVALID_PARAMETER:
-                                rc = setError(VBOX_E_NOT_SUPPORTED,
+                                rc = setError(VBOX_E_IPRT_ERROR,
                                               tr("Currently installed Guest Additions don't support automatic updating, please update them manually"));
                                 break;
                             /* Getting back a VERR_TIMEOUT basically means that either VBoxService on the guest does not run (anymore) or that
                              * no Guest Additions (on a supported automatic updating OS) are installed at all. */
                             case VERR_TIMEOUT:
-                                rc = setError(VBOX_E_NOT_SUPPORTED,
+                                rc = setError(VBOX_E_IPRT_ERROR,
                                               tr("Guest Additions seem not to be installed on the guest or are not responding, please update them manually"));
                                 break;
 
                             default:
+                                rc = setError(E_FAIL,
+                                              tr("Error copying Guest Additions installer (%Rrc)"), vrc);
                                 break;
                         }
                     }
                     else
                     {
                         LogRel(("Copying Guest Additions installer to guest ...\n"));
-
-                        if (aTask->progress)
-                            aTask->progress->SetCurrentOperationProgress(20);
+                        aTask->progress->SetCurrentOperationProgress(20);
 
                         /* Wait for process to exit ... */
-                        BOOL fCompleted = FALSE;
-                        BOOL fCanceled = FALSE;
-
-                        size_t cbRead;
-                        size_t cbToRead;
                         SafeArray<BYTE> aInputData(_64K);
-                        while (   SUCCEEDED(progressCopy->COMGETTER(Completed(&fCompleted)))
+                        while (   SUCCEEDED(progressCat->COMGETTER(Completed(&fCompleted)))
                                && !fCompleted)
                         {
+                            size_t cbRead;
                             /* cbLength contains remaining bytes of our installer file
                              * opened above to read. */
-                            cbToRead = RT_MIN(cbLength, _64K);
+                            size_t cbToRead = RT_MIN(cbLength, _64K);
                             if (cbToRead)
                             {
                                 vrc = RTFileRead(iso.file, (uint8_t*)aInputData.raw(), cbToRead, &cbRead);
@@ -320,29 +316,45 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                             aInputData.resize(cbRead); /* Adjust array size (less than 64K read). */
                                     }
 
+                                    /*
+                                     * Task canceled by caller?
+                                     * Then let the started process (cat) know by specifying end-of-file
+                                     * for the netxt input event that hopefully leads to a graceful exit ...
+                                     */
+                                    if (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
+                                        && fCanceled)
+                                    {
+                                        uFlags |= ProcessInputFlag_EndOfFile;
+                                    }
+
                                     /* Transfer the current chunk ... */
+                                #ifdef DEBUG_andy
+                                    LogRel(("Copying Guest Additions (%u bytes left) ...\n", cbLength));
+                                #endif
                                     ULONG uBytesWritten;
-                                    rc = SetProcessInput(uPID, uFlags,
-                                                         ComSafeArrayAsInParam(aInputData), &uBytesWritten);
+                                    rc = pGuest->SetProcessInput(uPID, uFlags,
+                                                                 ComSafeArrayAsInParam(aInputData), &uBytesWritten);
                                     if (FAILED(rc))
                                         break;
 
+                                    /* If task was canceled above also cancel the process execution. */
+                                    if (fCanceled)
+                                        progressCat->Cancel();
+
+                                #ifdef DEBUG_andy
+                                    LogRel(("Copying Guest Additions (%u bytes written) ...\n", uBytesWritten));
+                                #endif
                                     Assert(cbLength >= uBytesWritten);
                                     cbLength -= uBytesWritten;
-
-                                    /* Progress canceled by Main API? */
-                                    if (   SUCCEEDED(progressCopy->COMGETTER(Canceled(&fCanceled)))
-                                        && fCanceled)
-                                    {
-                                        break;
-                                    }
-                                    if (aTask->progress)
-                                    {
-                                        if (SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
-                                            && fCanceled)
-                                            break;
-                                    }
                                 }
+                            }
+
+                            /* Internal progress canceled? */
+                            if (   SUCCEEDED(progressCat->COMGETTER(Canceled(&fCanceled)))
+                                && fCanceled)
+                            {
+                                aTask->progress->Cancel();
+                                break;
                             }
                         }
                     }
@@ -350,14 +362,18 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
             }
             RTIsoFsClose(&iso);
 
-            if (SUCCEEDED(rc))
+            if (   SUCCEEDED(rc)
+                && (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
+                    && !fCanceled
+                   )
+               )
             {
                 /*
                  * Installer was transferred successfully, so let's start it
                  * (with system rights).
                  */
-                if (aTask->progress)
-                    aTask->progress->SetCurrentOperationProgress(66);
+                LogRel(("Preparing to execute Guest Additions update ...\n"));
+                aTask->progress->SetCurrentOperationProgress(66);
 
                 /* Prepare command line args for installer. */
                 com::SafeArray<IN_BSTR> installerArgs;
@@ -399,24 +415,36 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
             }
         }
     }
-    catch(HRESULT aRC)
+    catch (HRESULT aRC)
     {
         rc = aRC;
     }
 
     /* Clean up */
-    if (aTask->progress)
-        aTask->progress->SetCurrentOperationProgress(99);
-
-    /* Assign data. */
-    if (rc == S_OK)
-    {
-    }
-
     aTask->rc = rc;
+    aTask->progress->SetCurrentOperationProgress(99);
 
-    if (!aTask->progress.isNull())
+    if (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
+        && !fCanceled)
+    {
+        /* Task completed, regardless whether successful/failed. */
+
+        /* Assign data. */
+        if (rc == S_OK)
+        {
+            /* No data to assign yet. */
+        }
+
         aTask->progress->notifyComplete(rc);
+    }
+    else /* The task was canceled, set error code to prevent assertions. */
+    {
+        LogRel(("Automatic Guest Additions update was canceled\n"));
+        aTask->progress->notifyComplete(VBOX_E_IPRT_ERROR,
+                                        COM_IIDOF(IGuest),
+                                        Guest::getStaticComponentName(),
+                                        "Automatic Guest Additions update was canceled");
+    }
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -2576,7 +2604,9 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
         if (FAILED(rc)) throw rc;
 
         /* Initialize our worker task. */
-        std::auto_ptr<TaskGuest> task(new TaskGuest(TaskGuest::UpdateGuestAdditions, this, progress));
+        TaskGuest *pTask = new TaskGuest(TaskGuest::UpdateGuestAdditions, this, progress);
+        AssertPtr(pTask);
+        std::auto_ptr<TaskGuest> task(pTask);
 
         /* Assign data - in that case aSource is the full path
          * to the Guest Additions .ISO we want to mount. */
