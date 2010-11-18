@@ -41,6 +41,11 @@
           with modern guest operating systems (e.g. 64-bit Windows).</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: new mode for scaling the VM window content with preserved
+         interactivity</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>
@@ -145,11 +150,29 @@
       </listitem>
 
       <listitem>
-        <para>OVF: creation of the manifest file on export is optional now</para>
+        <para>OVF/OVA: creation of the manifest file on export is optional
+         now</para>
       </listitem>
 
       <listitem>
-        <para>OVF: allow overwriting the target disk format on import</para>
+        <para>OVF/OVA: allow overwriting the target disk format on
+         import</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF/OVA: fixed export of VM's with iSCSI disks</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: new detail view with guest window preview</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: add configuration dialog for port forwarding in NAT mode</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: show the guest window content on save and restore</para>
       </listitem>
 
     </itemizedlist>
