@@ -1023,6 +1023,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
 {
     bool fOn = RT_BOOL((u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)));
     int rc = VINF_SUCCESS;
+    uint64_t u64BaseDMA = 0;
     if(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST))
     {
         Log(("hda: guest has initiated hw stream reset\n"));
@@ -1043,7 +1044,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
             Log(("hda: DMA SD0CTL switched %s\n", fOn ? "on" : " off"));
             break;
         case ICH6_HDA_REG_SD4CTL:
-            uint64_t u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
+            u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
             fOn = fOn && u64BaseDMA;
             SDSTS(pState, 4) &= ~(1<<5);
             AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), fOn);
