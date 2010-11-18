@@ -1973,8 +1973,7 @@ VMMR3DECL(int) CFGMR3QueryS64Def(PCFGMNODE pNode, const char *pszName, int64_t *
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, i64Def);
-    if (RT_SUCCESS(rc))
-        *pi64 = (int64_t)u64;
+    *pi64 = (int64_t)u64;
     return rc;
 }
 
@@ -2022,6 +2021,8 @@ VMMR3DECL(int) CFGMR3QueryU32Def(PCFGMNODE pNode, const char *pszName, uint32_t 
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pu32 = u32Def;
     return rc;
 }
 
@@ -2071,6 +2072,8 @@ VMMR3DECL(int) CFGMR3QueryS32Def(PCFGMNODE pNode, const char *pszName, int32_t *
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pi32 = i32Def;
     return rc;
 }
 
@@ -2118,6 +2121,8 @@ VMMR3DECL(int) CFGMR3QueryU16Def(PCFGMNODE pNode, const char *pszName, uint16_t 
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pu16 = u16Def;
     return rc;
 }
 
@@ -2167,6 +2172,8 @@ VMMR3DECL(int) CFGMR3QueryS16Def(PCFGMNODE pNode, const char *pszName, int16_t *
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pi16 = i16Def;
     return rc;
 }
 
@@ -2214,6 +2221,8 @@ VMMR3DECL(int) CFGMR3QueryU8Def(PCFGMNODE pNode, const char *pszName, uint8_t *p
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pu8 = u8Def;
     return rc;
 }
 
@@ -2263,6 +2272,8 @@ VMMR3DECL(int) CFGMR3QueryS8Def(PCFGMNODE pNode, const char *pszName, int8_t *pi
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pi8 = i8Def;
     return rc;
 }
 
@@ -2443,6 +2454,8 @@ VMMR3DECL(int) CFGMR3QueryPtrDef(PCFGMNODE pNode, const char *pszName, void **pp
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *ppv = pvDef;
     return rc;
 }
 
@@ -2492,6 +2505,8 @@ VMMR3DECL(int) CFGMR3QueryGCPtrDef(PCFGMNODE pNode, const char *pszName, PRTGCPT
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pGCPtr = GCPtrDef;
     return rc;
 }
 
@@ -2541,6 +2556,8 @@ VMMR3DECL(int) CFGMR3QueryGCPtrUDef(PCFGMNODE pNode, const char *pszName, PRTGCU
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pGCPtr = GCPtrDef;
     return rc;
 }
 
@@ -2590,6 +2607,8 @@ VMMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGCI
         else
             rc = VERR_CFGM_INTEGER_TOO_BIG;
     }
+    if (RT_FAILURE(rc))
+        *pGCPtr = GCPtrDef;
     return rc;
 }
 
