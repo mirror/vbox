@@ -92,7 +92,7 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
 
     char    szDriver[10];
     size_t  cbDriver = sizeof(szDriver);
-    RT_ZERO(szDevice);                  /* this shouldn't be necessary. */
+    RT_ZERO(szDriver);                  /* this shouldn't be necessary. */
     int rcBsd = sysctlbyname(szName, szDriver, &cbDriver, NULL, NULL);
     if (rcBsd == 0)
         return true;
