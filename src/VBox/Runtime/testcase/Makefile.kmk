@@ -108,6 +108,7 @@ PROGRAMS += \
 	tstRTTemp \
 	tstTermCallbacks \
 	tstThread-1 \
+	tstRTThreadPoke \
 	tstTime \
 	tstTime-2 \
 	tstTime-3 \
@@ -459,6 +460,9 @@ tstRTTemp_SOURCES = tstRTTemp.cpp
 tstTermCallbacks_SOURCES = tstTermCallbacks.cpp
 
 tstThread-1_SOURCES = tstThread-1.cpp
+
+tstRTThreadPoke_TEMPLATE = VBOXR3TSTEXE
+tstRTThreadPoke_SOURCES = tstRTThreadPoke.cpp
 
 tstTime_SOURCES = tstTime.cpp
 
