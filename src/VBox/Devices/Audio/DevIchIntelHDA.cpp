@@ -625,6 +625,12 @@ const static struct stIchIntelHDRegMap
     { 0x0017C, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, hdaRegReadU32          , hdaRegWriteSDBDPU       , "OSD3BDPU" , "OSD3 Buffer Descriptor List Pointer-Upper Base Address" },
 };
 
+static void inline hdaUpdatePosBuf(INTELHDLinkState *pState, uint8_t u8Strm, uint32_t u32Value)
+{
+    if (pState->u64DPBase & DPBASE_ENABLED)
+        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState),
+                       (pState->u64DPBase & DPBASE_ADDR_MASK) + u8Strm*8, &u32Value, sizeof(uint32_t));
+}
 static uint32_t inline hdaFifoWToSz(INTELHDLinkState *pState, int iNum)
 {
     switch (ICH6_HDA_REG_SD0FIFOW + 10*iNum)
@@ -1035,6 +1041,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     {
         PHDABDLEDESC pBdle = NULL;
         uint32_t *pu32Lpib = NULL;
+        uint8_t u8Strm = 0;
         Log(("hda: guest has initiated exit of stream reset\n"));
         pState->u8StreamsInReset &= ~HDA_STREAM_BITMASK(offset);
         HDA_REG_IND(pState, index) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
@@ -1044,6 +1051,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
                 pBdle = &pState->stInBdle;
                 pu32Lpib = &SDLPIB(pState, 0);
                 AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 0);
+                u8Strm = 0;
                 break;
             case ICH6_HDA_REG_SD4CTL:
                 u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
@@ -1051,6 +1059,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
                 AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 0);
                 pBdle = &pState->stOutBdle;
                 pu32Lpib = &SDLPIB(pState, 4);
+                u8Strm = 4;
                 break;
             default:
                 Log(("Attempt to reset DMA state on unattached SDI(%s), ignored\n", s_ichIntelHDRegMap[index].abbrev));
@@ -1060,6 +1069,7 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
         {
             memset(pBdle, 0, sizeof(HDABDLEDESC));
             *pu32Lpib = 0;
+            hdaUpdatePosBuf(pState, u8Strm, 0);
         }
     }
     /*
@@ -1436,17 +1446,19 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, boo
         {
             Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
             cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos; /* align copy buffer to size of trailing space in BDLE buffer */
-            cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 4) + 1 - pBdle->cbUnderFifoW); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
+            cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 4) + 1); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
             cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* align copying buffer size up to size of back end buffer */
             cb2Copy = RT_MIN(cb2Copy, u32CblLimit); /* avoid LCBL overrun */
         }
-        if (   cb2Copy == 0
-            && pBdle->cbUnderFifoW < hdaFifoWToSz(pState, 4))
+        if (   (   cb2Copy == 0
+               && pBdle->cbUnderFifoW < hdaFifoWToSz(pState, 4))
+            || cb2Copy < pBdle->cbUnderFifoW)
         {
             Log(("hda:wa: amount of bytes to copy is zero and (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, hdaFifoWToSz(pState, 4)));
             *fStop = true;
             return 0;
         } 
+        cb2Copy -= pBdle->cbUnderFifoW; /* force reserve "Unreported bits" */
         
         /*
          * Copy from DMA to the corresponding hdaBuffer (if there exists some bytes from the previous not reported transfer we write to ''pBdle->cbUnderFifoW'' offset)
@@ -1592,9 +1604,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             Assert((*pu32Lpib <= u32Cbl));
     
             /* Optionally write back the current DMA position. */
-            if (pState->u64DPBase & DPBASE_ENABLED)
-                PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState),
-                               (pState->u64DPBase & DPBASE_ADDR_MASK) + u8Strm*8, pu32Lpib, sizeof(*pu32Lpib));
+            hdaUpdatePosBuf(pState, u8Strm, *pu32Lpib);
     
         }
         /* Process end of buffer condition. */
@@ -1610,6 +1620,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             }
             if (*pu32Lpib == u32Cbl)
                 *pu32Lpib -= u32Cbl;
+            hdaUpdatePosBuf(pState, u8Strm, *pu32Lpib);
 
             if (pBdle->u32BdleCviPos == pBdle->u32BdleCviLen)
             {
