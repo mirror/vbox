@@ -1450,14 +1450,12 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, boo
             cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* align copying buffer size up to size of back end buffer */
             cb2Copy = RT_MIN(cb2Copy, u32CblLimit); /* avoid LCBL overrun */
         }
-        if (   (   cb2Copy == 0
-               && pBdle->cbUnderFifoW < hdaFifoWToSz(pState, 4))
-            || cb2Copy < pBdle->cbUnderFifoW)
+        if (cb2Copy < pBdle->cbUnderFifoW)
         {
-            Log(("hda:wa: amount of bytes to copy is zero and (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, hdaFifoWToSz(pState, 4)));
+            Log(("hda:wa: amount of unreported bytes is less than room may be transfered  (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, cb2Copy));
             *fStop = true;
-            return 0;
-        } 
+            break;
+        }
         cb2Copy -= pBdle->cbUnderFifoW; /* force reserve "Unreported bits" */
         
         /*
@@ -1497,6 +1495,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, boo
             pBdle->cbUnderFifoW += cb2Copy;
             pBdle->u32BdleCviPos += cb2Copy;
             Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 4)));
+            *fStop = true;
             break;
         }
         Log(("hda:wa: CVI(pos:%d, len:%d, cbTransfered:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransfered));
