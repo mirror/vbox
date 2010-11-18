@@ -491,7 +491,7 @@ VMMR3DECL(int)      PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
 /** @} */
 
 VMMR3DECL(int)      PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb,
-                                         const void *pvBinary, uint32_t fFlags, const char *pszDesc);
+                                         const void *pvBinary, uint32_t cbBinary, uint32_t fFlags, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROMPROT enmProt);
 VMMR3DECL(int)      PGMR3PhysRegister(PVM pVM, void *pvRam, RTGCPHYS GCPhys, size_t cb, unsigned fFlags, const SUPPAGE *paPages, const char *pszDesc);
 VMMDECL(void)       PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable);

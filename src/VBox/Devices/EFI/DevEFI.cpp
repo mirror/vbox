@@ -800,6 +800,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
                               pThis->GCLoadAddress,
                               cbQuart,
                               pThis->pu8EfiRom,
+                              cbQuart,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume");
     if (RT_FAILURE(rc))
@@ -808,6 +809,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
                               pThis->GCLoadAddress + cbQuart,
                               cbQuart,
                               pThis->pu8EfiRom + cbQuart,
+                              cbQuart,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume (Part 2)");
     if (RT_FAILURE(rc))
@@ -816,6 +818,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
                               pThis->GCLoadAddress + cbQuart * 2,
                               cbQuart,
                               pThis->pu8EfiRom + cbQuart * 2,
+                              cbQuart,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume (Part 3)");
     if (RT_FAILURE(rc))
@@ -824,6 +827,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
                               pThis->GCLoadAddress + cbQuart * 3,
                               pThis->cbEfiRom - cbQuart * 3,
                               pThis->pu8EfiRom + cbQuart * 3,
+                              pThis->cbEfiRom - cbQuart * 3,
                               PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
                               "EFI Firmware Volume (Part 4)");
     if (RT_FAILURE(rc))
@@ -886,7 +890,7 @@ static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfg)
 
     /* Register the page as a ROM (data will be copied). */
     rc = PDMDevHlpROMRegister(pThis->pDevIns, UINT32_C(0xfffff000), PAGE_SIZE,
-                              pThis->pu8EfiThunk,
+                              pThis->pu8EfiThunk, PAGE_SIZE,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "EFI Thunk");
     if (RT_FAILURE(rc))
         return rc;
@@ -901,7 +905,7 @@ static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfg)
      *        be needed during reset)
      */
     rc = PDMDevHlpROMRegister(pThis->pDevIns, 0xff000, PAGE_SIZE,
-                              pThis->pu8EfiThunk,
+                              pThis->pu8EfiThunk, PAGE_SIZE,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "EFI Thunk (2)");
     if (RT_FAILURE(rc))
         return rc;
@@ -1204,7 +1208,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
                               _4K - VBOX_DMI_TABLE_SIZE,
                               pThis->cCpus);
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
 
     AssertRCReturn(rc, rc);

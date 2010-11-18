@@ -2767,10 +2767,11 @@ VMMR3DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  * @param   pDevIns             The device instance owning the ROM.
  * @param   GCPhys              First physical address in the range.
  *                              Must be page aligned!
- * @param   cbRange             The size of the range (in bytes).
+ * @param   cb                  The size of the range (in bytes).
  *                              Must be page aligned!
  * @param   pvBinary            Pointer to the binary data backing the ROM image.
- *                              This must be exactly \a cbRange in size.
+ * @param   cbBinary            The size of the binary data pvBinary points to.
+ *                              This must be less or equal to @a cb.
  * @param   fFlags              Mask of flags. PGMPHYS_ROM_FLAGS_SHADOWED
  *                              and/or PGMPHYS_ROM_FLAGS_PERMANENT_BINARY.
  * @param   pszDesc             Pointer to description string. This must not be freed.
@@ -2780,10 +2781,10 @@ VMMR3DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
  *          just not something we expect to be necessary for a while.
  */
 VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb,
-                                    const void *pvBinary, uint32_t fFlags, const char *pszDesc)
+                                    const void *pvBinary, uint32_t cbBinary, uint32_t fFlags, const char *pszDesc)
 {
-    Log(("PGMR3PhysRomRegister: pDevIns=%p GCPhys=%RGp(-%RGp) cb=%RGp pvBinary=%p fFlags=%#x pszDesc=%s\n",
-         pDevIns, GCPhys, GCPhys + cb, cb, pvBinary, fFlags, pszDesc));
+    Log(("PGMR3PhysRomRegister: pDevIns=%p GCPhys=%RGp(-%RGp) cb=%RGp pvBinary=%p cbBinary=%#x fFlags=%#x pszDesc=%s\n",
+         pDevIns, GCPhys, GCPhys + cb, cb, pvBinary, cbBinary, fFlags, pszDesc));
 
     /*
      * Validate input.
@@ -3015,7 +3016,8 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                  * Copy the image over to the virgin pages.
                  * This must be done after linking in the RAM range.
                  */
-                PPGMPAGE pRamPage = &pRamNew->aPages[(GCPhys - pRamNew->GCPhys) >> PAGE_SHIFT];
+                size_t          cbBinaryLeft = cbBinary;
+                PPGMPAGE        pRamPage     = &pRamNew->aPages[(GCPhys - pRamNew->GCPhys) >> PAGE_SHIFT];
                 for (uint32_t iPage = 0; iPage < cPages; iPage++, pRamPage++)
                 {
                     void *pvDstPage;
@@ -3025,7 +3027,20 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                         VMSetError(pVM, rc, RT_SRC_POS, "Failed to map virgin ROM page at %RGp", GCPhys);
                         break;
                     }
-                    memcpy(pvDstPage, (const uint8_t *)pvBinary + (iPage << PAGE_SHIFT), PAGE_SIZE);
+                    if (cbBinary >= PAGE_SIZE)
+                    {
+                        memcpy(pvDstPage, (uint8_t const *)pvBinary + ((size_t)iPage << PAGE_SHIFT), PAGE_SIZE);
+                        cbBinaryLeft -= PAGE_SIZE;
+                    }
+                    else
+                    {
+                        ASMMemZeroPage(pvDstPage); /* (shouldn't be necessary, but can't hurt either) */
+                        if (cbBinaryLeft > 0)
+                        {
+                            memcpy(pvDstPage, (uint8_t const *)pvBinary + ((size_t)iPage << PAGE_SHIFT), cbBinaryLeft);
+                            cbBinaryLeft = 0;
+                        }
+                    }
                 }
                 if (RT_SUCCESS(rc))
                 {
@@ -3033,18 +3048,19 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                      * Initialize the ROM range.
                      * Note that the Virgin member of the pages has already been initialized above.
                      */
-                    pRomNew->GCPhys = GCPhys;
+                    pRomNew->GCPhys     = GCPhys;
                     pRomNew->GCPhysLast = GCPhysLast;
-                    pRomNew->cb = cb;
-                    pRomNew->fFlags = fFlags;
+                    pRomNew->cb         = cb;
+                    pRomNew->fFlags     = fFlags;
                     pRomNew->idSavedState = UINT8_MAX;
+                    pRomNew->cbOriginal = cbBinary;
 #ifdef VBOX_STRICT
                     pRomNew->pvOriginal = fFlags & PGMPHYS_ROM_FLAGS_PERMANENT_BINARY
-                                        ? pvBinary : RTMemDup(pvBinary, cPages * PAGE_SIZE);
+                                        ? pvBinary : RTMemDup(pvBinary, cbBinary);
 #else
                     pRomNew->pvOriginal = fFlags & PGMPHYS_ROM_FLAGS_PERMANENT_BINARY ? pvBinary : NULL;
 #endif
-                    pRomNew->pszDesc = pszDesc;
+                    pRomNew->pszDesc    = pszDesc;
 
                     for (unsigned iPage = 0; iPage < cPages; iPage++)
                     {
@@ -3290,17 +3306,20 @@ int pgmR3PhysRomReset(PVM pVM)
          */
         if (pRom->pvOriginal)
         {
+            size_t         cbSrcLeft = pRom->cbOriginal;
             uint8_t const *pbSrcPage = (uint8_t const *)pRom->pvOriginal;
-            for (uint32_t iPage = 0; iPage < cPages; iPage++, pbSrcPage += PAGE_SIZE)
+            for (uint32_t iPage = 0; iPage < cPages && cbSrcLeft > 0; iPage++, pbSrcPage += PAGE_SIZE)
             {
                 const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
                 void const *pvDstPage;
                 int rc = pgmPhysPageMapReadOnly(pVM, &pRom->aPages[iPage].Virgin, GCPhys, &pvDstPage);
                 if (RT_FAILURE(rc))
                     break;
-                if (memcmp(pvDstPage, pbSrcPage, PAGE_SIZE))
+
+                if (memcmp(pvDstPage, pbSrcPage, RT_MIN(cbSrcLeft, PAGE_SIZE)))
                     LogRel(("pgmR3PhysRomReset: %RGp rom page changed (%s) - loaded saved state?\n",
                             GCPhys, pRom->pszDesc));
+                cbSrcLeft -= RT_MIN(cbSrcLeft, PAGE_SIZE);
             }
         }
 #endif
