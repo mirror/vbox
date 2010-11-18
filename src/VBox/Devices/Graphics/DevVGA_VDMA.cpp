@@ -1165,6 +1165,37 @@ DECLCALLBACK(bool) vboxVDMACommandSubmitCb(PVBOXVDMAPIPE pPipe, void *pvCallback
 }
 #endif
 
+int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
+{
+    PVGASTATE pVGAState = pVdma->pVGAState;
+    PVBOXVDMACMD_CHROMIUM_CTL pCmd = (PVBOXVDMACMD_CHROMIUM_CTL)vboxVDMACrCtlCreate(
+            VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_BEGIN, sizeof (*pCmd));
+    Assert(pCmd);
+    if (pCmd)
+    {
+        int rc = vboxVDMACrCtlPost(pVGAState, pCmd);
+        AssertRC(rc);
+        return rc;
+    }
+    return VERR_NO_MEMORY;
+}
+
+int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
+{
+    PVGASTATE pVGAState = pVdma->pVGAState;
+    PVBOXVDMACMD_CHROMIUM_CTL pCmd = (PVBOXVDMACMD_CHROMIUM_CTL)vboxVDMACrCtlCreate(
+            VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_END, sizeof (*pCmd));
+    Assert(pCmd);
+    if (pCmd)
+    {
+        int rc = vboxVDMACrCtlPost(pVGAState, pCmd);
+        AssertRC(rc);
+        return rc;
+    }
+    return VERR_NO_MEMORY;
+}
+
+
 void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd)
 {
 #if 1
