@@ -17,24 +17,26 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Local includes */
 #include "UIGlobalSettingsUpdate.h"
 #include "VBoxGlobal.h"
 
+/* Update page constructor: */
 UIGlobalSettingsUpdate::UIGlobalSettingsUpdate()
-    : mSettingsChanged(false)
-    , mLastChosen(0)
+    : m_pLastChosenRadio(0)
+    , m_fChanged(false)
 {
-    /* Apply UI decorations */
-    Ui::UIGlobalSettingsUpdate::setupUi (this);
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsUpdate::setupUi(this);
 
-    /* Setup connections */
-    connect (mCbCheck, SIGNAL (toggled (bool)), this, SLOT (toggleUpdater (bool)));
-    connect (mCbOncePer, SIGNAL (activated (int)), this, SLOT (activatedPeriod (int)));
-    connect (mRbStable, SIGNAL (toggled (bool)), this, SLOT (toggledBranch()));
-    connect (mRbAllRelease, SIGNAL (toggled (bool)), this, SLOT (toggledBranch()));
-    connect (mRbWithBetas, SIGNAL (toggled (bool)), this, SLOT (toggledBranch()));
+    /* Setup connections: */
+    connect(m_pEnableUpdateCheckbox, SIGNAL(toggled(bool)), this, SLOT(sltUpdaterToggled(bool)));
+    connect(m_pUpdatePeriodCombo, SIGNAL(activated(int)), this, SLOT(sltPeriodActivated()));
+    connect(m_pUpdateFilterStableRadio, SIGNAL(toggled(bool)), this, SLOT(sltBranchToggled()));
+    connect(m_pUpdateFilterEveryRadio, SIGNAL(toggled(bool)), this, SLOT(sltBranchToggled()));
+    connect(m_pUpdateFilterBetasRadio, SIGNAL(toggled(bool)), this, SLOT(sltBranchToggled()));
 
-    /* Applying language settings */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -61,21 +63,21 @@ void UIGlobalSettingsUpdate::loadToCacheFrom(QVariant &data)
 void UIGlobalSettingsUpdate::getFromCache()
 {
     /* Apply internal variables data to QWidget(s): */
-    mCbCheck->setChecked(m_cache.m_fCheckEnabled);
-    if (mCbCheck->isChecked())
+    m_pEnableUpdateCheckbox->setChecked(m_cache.m_fCheckEnabled);
+    if (m_pEnableUpdateCheckbox->isChecked())
     {
-        mCbOncePer->setCurrentIndex(m_cache.m_periodIndex);
+        m_pUpdatePeriodCombo->setCurrentIndex(m_cache.m_periodIndex);
         if (m_cache.m_branchIndex == VBoxUpdateData::BranchWithBetas)
-            mRbWithBetas->setChecked(true);
+            m_pUpdateFilterBetasRadio->setChecked(true);
         else if (m_cache.m_branchIndex == VBoxUpdateData::BranchAllRelease)
-            mRbAllRelease->setChecked(true);
+            m_pUpdateFilterEveryRadio->setChecked(true);
         else
-            mRbStable->setChecked(true);
+            m_pUpdateFilterStableRadio->setChecked(true);
     }
-    mTxDate->setText(m_cache.m_strDate);
+    m_pUpdateDateText->setText(m_cache.m_strDate);
 
     /* Reset settings altering flag: */
-    mSettingsChanged = false;
+    m_fChanged = false;
 }
 
 /* Save data from corresponding widgets to cache,
@@ -92,7 +94,7 @@ void UIGlobalSettingsUpdate::putToCache()
 void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
 {
     /* Test settings altering flag: */
-    if (!mSettingsChanged)
+    if (!m_fChanged)
         return;
 
     /* Fetch data to properties & settings: */
@@ -106,92 +108,82 @@ void UIGlobalSettingsUpdate::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsUpdate::setOrderAfter (QWidget *aWidget)
+void UIGlobalSettingsUpdate::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder (aWidget, mCbCheck);
-    setTabOrder (mCbCheck, mCbOncePer);
-    setTabOrder (mCbOncePer, mRbStable);
-    setTabOrder (mRbStable, mRbAllRelease);
-    setTabOrder (mRbAllRelease, mRbWithBetas);
+    setTabOrder(pWidget, m_pEnableUpdateCheckbox);
+    setTabOrder(m_pEnableUpdateCheckbox, m_pUpdatePeriodCombo);
+    setTabOrder(m_pUpdatePeriodCombo, m_pUpdateFilterStableRadio);
+    setTabOrder(m_pUpdateFilterStableRadio, m_pUpdateFilterEveryRadio);
+    setTabOrder(m_pUpdateFilterEveryRadio, m_pUpdateFilterBetasRadio);
 }
 
 void UIGlobalSettingsUpdate::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIGlobalSettingsUpdate::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIGlobalSettingsUpdate::retranslateUi(this);
 
-    /* Retranslate mCbOncePer combobox */
-    int ci = mCbOncePer->currentIndex();
-    mCbOncePer->clear();
+    /* Retranslate m_pUpdatePeriodCombo combobox: */
+    int iCurrenIndex = m_pUpdatePeriodCombo->currentIndex();
+    m_pUpdatePeriodCombo->clear();
     VBoxUpdateData::populate();
-    mCbOncePer->insertItems (0, VBoxUpdateData::list());
-    mCbOncePer->setCurrentIndex (ci == -1 ? 0 : ci);
+    m_pUpdatePeriodCombo->insertItems (0, VBoxUpdateData::list());
+    m_pUpdatePeriodCombo->setCurrentIndex(iCurrenIndex == -1 ? 0 : iCurrenIndex);
 }
 
-void UIGlobalSettingsUpdate::toggleUpdater (bool aOn)
+void UIGlobalSettingsUpdate::sltUpdaterToggled(bool fEnabled)
 {
-    /* Enable/disable the sub widget */
-    mLbOncePer->setEnabled (aOn);
-    mCbOncePer->setEnabled (aOn);
-    mLbDate->setEnabled (aOn);
-    mTxDate->setEnabled (aOn);
-    mLbFilter->setEnabled (aOn);
-    mRbStable->setEnabled (aOn);
-    mRbAllRelease->setEnabled (aOn);
-    mRbWithBetas->setEnabled (aOn);
-    mRbStable->setAutoExclusive (aOn);
-    mRbAllRelease->setAutoExclusive (aOn);
-    mRbWithBetas->setAutoExclusive (aOn);
+    /* Enable/disable the sub-widgets depending on activity status: */
+    m_pUpdatePeriodLabel->setEnabled(fEnabled);
+    m_pUpdatePeriodCombo->setEnabled(fEnabled);
+    m_pUpdateDateLabel->setEnabled(fEnabled);
+    m_pUpdateDateText->setEnabled(fEnabled);
+    m_pUpdateFilterLabel->setEnabled(fEnabled);
+    m_pUpdateFilterStableRadio->setEnabled(fEnabled);
+    m_pUpdateFilterEveryRadio->setEnabled(fEnabled);
+    m_pUpdateFilterBetasRadio->setEnabled(fEnabled);
+    m_pUpdateFilterStableRadio->setAutoExclusive(fEnabled);
+    m_pUpdateFilterEveryRadio->setAutoExclusive(fEnabled);
+    m_pUpdateFilterBetasRadio->setAutoExclusive(fEnabled);
 
-    /* Update 'check for new version' time */
-    if (aOn)
-        activatedPeriod (mCbOncePer->currentIndex());
-    else
+    /* Update time of next check: */
+    sltPeriodActivated();
+
+    /* Temporary remember branch type if was switched off: */
+    if (!fEnabled)
     {
-        activatedPeriod (VBoxUpdateData::PeriodNever);
-        mLastChosen = mRbWithBetas->isChecked() ? mRbWithBetas :
-                      mRbAllRelease->isChecked() ? mRbAllRelease : mRbStable;
+        m_pLastChosenRadio = m_pUpdateFilterBetasRadio->isChecked() ? m_pUpdateFilterBetasRadio :
+                             m_pUpdateFilterEveryRadio->isChecked() ? m_pUpdateFilterEveryRadio : m_pUpdateFilterStableRadio;
     }
 
-    if (mLastChosen)
-        mLastChosen->setChecked (aOn);
+    /* Check/uncheck last selected radio depending on activity status: */
+    if (m_pLastChosenRadio)
+        m_pLastChosenRadio->setChecked(fEnabled);
 }
 
-void UIGlobalSettingsUpdate::activatedPeriod (int /*aIndex*/)
+void UIGlobalSettingsUpdate::sltPeriodActivated()
 {
-    VBoxUpdateData data (periodType(), branchType());
-    mTxDate->setText (data.date());
-    mSettingsChanged = true;
+    VBoxUpdateData data(periodType(), branchType());
+    m_pUpdateDateText->setText(data.date());
+    m_fChanged = true;
 }
 
-void UIGlobalSettingsUpdate::toggledBranch()
+void UIGlobalSettingsUpdate::sltBranchToggled()
 {
-    mSettingsChanged = true;
-}
-
-void UIGlobalSettingsUpdate::showEvent (QShowEvent *aEvent)
-{
-    UISettingsPage::showEvent (aEvent);
-
-    /* That little hack allows avoid one of qt4 children focusing bug */
-    QWidget *current = QApplication::focusWidget();
-    mCbOncePer->setFocus (Qt::TabFocusReason);
-    if (current)
-        current->setFocus (Qt::TabFocusReason);
+    m_fChanged = true;
 }
 
 VBoxUpdateData::PeriodType UIGlobalSettingsUpdate::periodType() const
 {
-    VBoxUpdateData::PeriodType result = mCbCheck->isChecked() ?
-        (VBoxUpdateData::PeriodType) mCbOncePer->currentIndex() : VBoxUpdateData::PeriodNever;
+    VBoxUpdateData::PeriodType result = m_pEnableUpdateCheckbox->isChecked() ?
+        (VBoxUpdateData::PeriodType)m_pUpdatePeriodCombo->currentIndex() : VBoxUpdateData::PeriodNever;
     return result == VBoxUpdateData::PeriodUndefined ? VBoxUpdateData::Period1Day : result;
 }
 
 VBoxUpdateData::BranchType UIGlobalSettingsUpdate::branchType() const
 {
-    if (mRbWithBetas->isChecked())
+    if (m_pUpdateFilterBetasRadio->isChecked())
         return VBoxUpdateData::BranchWithBetas;
-    else if (mRbAllRelease->isChecked())
+    else if (m_pUpdateFilterEveryRadio->isChecked())
         return VBoxUpdateData::BranchAllRelease;
     else
         return VBoxUpdateData::BranchStable;

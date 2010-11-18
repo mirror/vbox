@@ -19,6 +19,7 @@
 #ifndef __UIGlobalSettingsUpdate_h__
 #define __UIGlobalSettingsUpdate_h__
 
+/* Local includes */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsUpdate.gen.h"
 #include "VBoxUpdateDlg.h"
@@ -33,13 +34,13 @@ struct UISettingsCacheGlobalUpdate
 };
 
 /* Global settings / Update page: */
-class UIGlobalSettingsUpdate : public UISettingsPageGlobal,
-                             public Ui::UIGlobalSettingsUpdate
+class UIGlobalSettingsUpdate : public UISettingsPageGlobal, public Ui::UIGlobalSettingsUpdate
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIGlobalSettingsUpdate();
 
 protected:
@@ -58,25 +59,30 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    void setOrderAfter (QWidget *aWidget);
+    /* Navigation stuff: */
+    void setOrderAfter(QWidget *pWidget);
 
+    /* Translation stuff: */
     void retranslateUi();
 
 private slots:
 
-    void toggleUpdater (bool aOn);
-    void activatedPeriod (int aIndex);
-    void toggledBranch();
+    /* Various helper slots: */
+    void sltUpdaterToggled(bool fEnabled);
+    void sltPeriodActivated();
+    void sltBranchToggled();
 
 private:
 
-    void showEvent (QShowEvent *aEvent);
-
+    /* Helpers: */
     VBoxUpdateData::PeriodType periodType() const;
     VBoxUpdateData::BranchType branchType() const;
 
-    bool mSettingsChanged;
-    QRadioButton *mLastChosen;
+    /* Last chosen radio-button: */
+    QRadioButton *m_pLastChosenRadio;
+
+    /* Editnes flag: */
+    bool m_fChanged;
 
     /* Cache: */
     UISettingsCacheGlobalUpdate m_cache;

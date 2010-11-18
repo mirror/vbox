@@ -1,8 +1,8 @@
-<ui version="4.0" >
+<ui version="4.0">
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2008 Oracle Corporation
+     Copyright (C) 2008-2010 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -13,66 +13,57 @@
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
  <class>UIGlobalSettingsUpdate</class>
- <widget class="QWidget" name="UIGlobalSettingsUpdate" >
-  <property name="geometry" >
+ <widget class="QWidget" name="UIGlobalSettingsUpdate">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>300</width>
-    <height>131</height>
+    <height>150</height>
    </rect>
   </property>
-  <layout class="QGridLayout" >
-   <property name="leftMargin" >
+  <layout class="QGridLayout">
+   <property name="margin">
     <number>0</number>
    </property>
-   <property name="topMargin" >
-    <number>0</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
-    <number>0</number>
-   </property>
-   <item row="0" column="1" colspan="4" >
-    <widget class="QCheckBox" name="mCbCheck" >
-     <property name="whatsThis" >
-      <string>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</string>
-     </property>
-     <property name="text" >
-      <string>&amp;Check for updates</string>
-     </property>
-     <property name="checked" >
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0" >
+   <item row="0" column="0">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="sizeType" >
+     <property name="sizeType">
       <enum>QSizePolicy::Fixed</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint">
       <size>
        <width>40</width>
-       <height>0</height>
+       <height>20</height>
       </size>
      </property>
     </spacer>
    </item>
-   <item row="1" column="1" rowspan="2" >
+   <item row="0" column="1" colspan="4">
+    <widget class="QCheckBox" name="m_pEnableUpdateCheckbox">
+     <property name="whatsThis">
+      <string>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</string>
+     </property>
+     <property name="text">
+      <string>&amp;Check for updates</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1" rowspan="2">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="sizeType" >
+     <property name="sizeType">
       <enum>QSizePolicy::Fixed</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint">
       <size>
        <width>16</width>
        <height>0</height>
@@ -80,32 +71,32 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="2" >
-    <widget class="QLabel" name="mLbOncePer" >
-     <property name="text" >
+   <item row="1" column="2">
+    <widget class="QLabel" name="m_pUpdatePeriodLabel">
+     <property name="text">
       <string>&amp;Once per:</string>
      </property>
-     <property name="alignment" >
+     <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
-     <property name="buddy" >
-      <cstring>mCbOncePer</cstring>
+     <property name="buddy">
+      <cstring>m_pUpdatePeriodCombo</cstring>
      </property>
     </widget>
    </item>
-   <item row="1" column="3" >
-    <widget class="QComboBox" name="mCbOncePer" >
-     <property name="whatsThis" >
+   <item row="1" column="3">
+    <widget class="QComboBox" name="m_pUpdatePeriodCombo">
+     <property name="whatsThis">
       <string>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="4" >
+   <item row="1" column="4">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint">
       <size>
        <width>0</width>
        <height>0</height>
@@ -113,84 +104,84 @@
      </property>
     </spacer>
    </item>
-   <item row="2" column="2" >
-    <widget class="QLabel" name="mLbDate" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+   <item row="2" column="2">
+    <widget class="QLabel" name="m_pUpdateDateLabel">
+     <property name="sizePolicy">
+      <sizepolicy vsizetype="Preferred" hsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="text" >
+     <property name="text">
       <string>Next Check:</string>
      </property>
-     <property name="alignment" >
+     <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
     </widget>
    </item>
-   <item row="2" column="3" colspan="2" >
-    <widget class="QLabel" name="mTxDate" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Preferred" hsizetype="Expanding" >
+   <item row="2" column="3" colspan="2">
+    <widget class="QLabel" name="m_pUpdateDateText">
+     <property name="sizePolicy">
+      <sizepolicy vsizetype="Preferred" hsizetype="Expanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
     </widget>
    </item>
-   <item row="3" column="2" >
-    <widget class="QLabel" name="mLbFilter" >
-     <property name="sizePolicy" >
-      <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+   <item row="3" column="2">
+    <widget class="QLabel" name="m_pUpdateFilterLabel">
+     <property name="sizePolicy">
+      <sizepolicy vsizetype="Preferred" hsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="text" >
+     <property name="text">
       <string>Check for:</string>
      </property>
-     <property name="alignment" >
+     <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
     </widget>
    </item>
-   <item row="3" column="3" colspan="2" >
-    <widget class="QRadioButton" name="mRbStable" >
-     <property name="whatsThis" >
+   <item row="3" column="3" colspan="2">
+    <widget class="QRadioButton" name="m_pUpdateFilterStableRadio">
+     <property name="whatsThis">
       <string>&lt;p>Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p></string>
      </property>
-     <property name="text" >
+     <property name="text">
       <string>&amp;Stable release versions</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="3" colspan="2" >
-    <widget class="QRadioButton" name="mRbAllRelease" >
-     <property name="whatsThis" >
+   <item row="4" column="3" colspan="2">
+    <widget class="QRadioButton" name="m_pUpdateFilterEveryRadio">
+     <property name="whatsThis">
       <string>&lt;p>Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p></string>
      </property>
-     <property name="text" >
+     <property name="text">
       <string>&amp;All new releases</string>
      </property>
     </widget>
    </item>
-   <item row="5" column="3" colspan="2" >
-    <widget class="QRadioButton" name="mRbWithBetas" >
-     <property name="whatsThis" >
+   <item row="5" column="3" colspan="2">
+    <widget class="QRadioButton" name="m_pUpdateFilterBetasRadio">
+     <property name="whatsThis">
       <string>&lt;p>Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p></string>
      </property>
-     <property name="text" >
+     <property name="text">
       <string>All new releases and &amp;pre-releases</string>
      </property>
     </widget>
    </item>
-   <item row="6" column="1" colspan="4" >
+   <item row="6" column="1" colspan="4">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint">
       <size>
        <width>0</width>
        <height>0</height>
