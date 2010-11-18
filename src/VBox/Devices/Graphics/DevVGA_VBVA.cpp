@@ -1320,9 +1320,17 @@ int vboxVBVASaveDevStateExec (PVGASTATE pVGAState, PSSMHANDLE pSSM)
                 AssertRCReturn(rc, rc);
             }
 
+#ifdef VBOX_WITH_WDDM
+            /* Size of some additional data. For future extensions. */
+            rc = SSMR3PutU32 (pSSM, 4);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3PutU32 (pSSM, pVGAState->fGuestCaps);
+            AssertRCReturn(rc, rc);
+#else
             /* Size of some additional data. For future extensions. */
             rc = SSMR3PutU32 (pSSM, 0);
             AssertRCReturn(rc, rc);
+#endif
         }
     }
 
@@ -1519,6 +1527,14 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                 uint32_t cbExtra = 0;
                 rc = SSMR3GetU32 (pSSM, &cbExtra);
                 AssertRCReturn(rc, rc);
+#ifdef VBOX_WITH_WDDM
+                if (cbExtra >= 4)
+                {
+                    rc = SSMR3GetU32 (pSSM, &pVGAState->fGuestCaps);
+                    AssertRCReturn(rc, rc);
+                    cbExtra -= 4;
+                }
+#endif
                 if (cbExtra > 0)
                 {
                     rc = SSMR3Skip(pSSM, cbExtra);

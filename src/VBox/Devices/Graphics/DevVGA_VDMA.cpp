@@ -82,7 +82,6 @@ typedef struct VBOXVDMAHOST
 {
     PHGSMIINSTANCE pHgsmi;
     PVGASTATE pVGAState;
-    bool bEnabled;
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
     VBOXVDMAPIPE Pipe;
     HGSMILIST PendingList;
@@ -202,7 +201,7 @@ static int vboxVDMACrCtlPost(PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd
     return rc;
 }
 
-static int vboxVDMACrCtlHgsmiSetupAsync(struct VBOXVDMAHOST *pVdma)
+static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
 {
     PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pCmd = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP)vboxVDMACrCtlCreate(
             VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP, sizeof (*pCmd));
@@ -210,17 +209,13 @@ static int vboxVDMACrCtlHgsmiSetupAsync(struct VBOXVDMAHOST *pVdma)
     {
         PVGASTATE pVGAState = pVdma->pVGAState;
         pCmd->pvRamBase = pVGAState->vram_ptrR3;
-        int rc = vboxVDMACrCtlPostAsync(pVGAState, &pCmd->Hdr, vboxVDMACrCtlCbReleaseCmd, NULL);
-#ifdef DEBUG_misha
+        int rc = vboxVDMACrCtlPost(pVGAState, &pCmd->Hdr);
         AssertRC(rc);
-#endif
-#if 0
         if (RT_SUCCESS(rc))
         {
             rc = vboxVDMACrCtlGetRc(&pCmd->Hdr);
         }
         vboxVDMACrCtlRelease(&pCmd->Hdr);
-#endif
         return rc;
     }
     return VERR_NO_MEMORY;
@@ -1071,7 +1066,7 @@ static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD ThreadSelf, void *pvUser)
 }
 #endif
 
-int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_t cPipeElements)
+int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
 {
     int rc;
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
@@ -1107,7 +1102,13 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_
 #  endif
 # endif
 #endif
-                *ppVdma = pVdma;
+                pVGAState->pVdma = pVdma;
+#ifdef VBOX_WITH_CRHGSMI
+                rc = vboxVDMACrCtlHgsmiSetup(pVdma);
+# ifdef DEBUG_misha
+                AssertRC(rc);
+# endif
+#endif
                 return VINF_SUCCESS;
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
             }
@@ -1167,6 +1168,7 @@ DECLCALLBACK(bool) vboxVDMACommandSubmitCb(PVBOXVDMAPIPE pPipe, void *pvCallback
 
 int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
 {
+#ifdef VBOX_WITH_CRHGSMI
     PVGASTATE pVGAState = pVdma->pVGAState;
     PVBOXVDMACMD_CHROMIUM_CTL pCmd = (PVBOXVDMACMD_CHROMIUM_CTL)vboxVDMACrCtlCreate(
             VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_BEGIN, sizeof (*pCmd));
@@ -1175,13 +1177,22 @@ int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
     {
         int rc = vboxVDMACrCtlPost(pVGAState, pCmd);
         AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vboxVDMACrCtlGetRc(pCmd);
+        }
+        vboxVDMACrCtlRelease(pCmd);
         return rc;
     }
     return VERR_NO_MEMORY;
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
 {
+#ifdef VBOX_WITH_CRHGSMI
     PVGASTATE pVGAState = pVdma->pVGAState;
     PVBOXVDMACMD_CHROMIUM_CTL pCmd = (PVBOXVDMACMD_CHROMIUM_CTL)vboxVDMACrCtlCreate(
             VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_END, sizeof (*pCmd));
@@ -1190,9 +1201,17 @@ int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM)
     {
         int rc = vboxVDMACrCtlPost(pVGAState, pCmd);
         AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            rc = vboxVDMACrCtlGetRc(pCmd);
+        }
+        vboxVDMACrCtlRelease(pCmd);
         return rc;
     }
     return VERR_NO_MEMORY;
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 
@@ -1204,18 +1223,9 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd)
     switch (pCmd->enmCtl)
     {
         case VBOXVDMA_CTL_TYPE_ENABLE:
-        {
-            pVdma->bEnabled = true;
             pCmd->i32Result = VINF_SUCCESS;
-#ifdef VBOX_WITH_CRHGSMI
-            /* @todo: use async completion to ensure we notify a status to guest */
-            int tmpRc = vboxVDMACrCtlHgsmiSetupAsync(pVdma);
-            AssertRC(tmpRc);
-#endif
-        }
             break;
         case VBOXVDMA_CTL_TYPE_DISABLE:
-            pVdma->bEnabled = false;
             pCmd->i32Result = VINF_SUCCESS;
             break;
         case VBOXVDMA_CTL_TYPE_FLUSH:
@@ -1297,9 +1307,4 @@ void vboxVDMACommand(struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd)
     pCmd->rc = rc;
     int tmpRc = VBoxSHGSMICommandComplete (pIns, pCmd);
     AssertRC(tmpRc);
-}
-
-bool vboxVDMAIsEnabled(PVBOXVDMAHOST pVdma)
-{
-    return pVdma->bEnabled;
 }
