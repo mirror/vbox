@@ -18,8 +18,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>379</width>
-    <height>173</height>
+    <width>400</width>
+    <height>200</height>
    </rect>
   </property>
   <layout class="QGridLayout">
@@ -106,9 +106,6 @@
      </property>
      <property name="text">
       <string>&amp;Show System Tray Icon</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
      </property>
     </widget>
    </item>
