@@ -5234,11 +5234,18 @@ static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+#ifdef VBOX_WITH_VDMA
+    vboxVDMASaveStateExecPrep(pThis->pVdma, pSSM);
+#endif
     vgaR3SaveConfig(pThis, pSSM);
     vga_save(pSSM, PDMINS_2_DATA(pDevIns, PVGASTATE));
 #ifdef VBOX_WITH_HGSMI
     SSMR3PutBool(pSSM, true);
-    return vboxVBVASaveStateExec(pDevIns, pSSM);
+    int rc = vboxVBVASaveStateExec(pDevIns, pSSM);
+# ifdef VBOX_WITH_VDMA
+    vboxVDMASaveStateExecDone(pThis->pVdma, pSSM);
+# endif
+    return rc;
 #else
     SSMR3PutBool(pSSM, false);
     return VINF_SUCCESS;
@@ -6428,9 +6435,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #ifdef VBOX_WITH_VDMA
     if(rc == VINF_SUCCESS)
     {
-        /* @todo: perhaps this should be done from some guest->host callback,
-        * that would as well specify the cmd pool size */
-        rc = vboxVDMAConstruct(pThis, &pThis->pVdma, 1024);
+        rc = vboxVDMAConstruct(pThis, 1024);
         AssertRC(rc);
     }
 #endif

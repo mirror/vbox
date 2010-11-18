@@ -2900,7 +2900,11 @@ void Display::setupCrHgsmiData(void)
     if (pVMMDev)
         rc = pVMMDev->hgcmHostSvcHandleCreate("VBoxSharedCrOpenGL", &mhCrOglSvc);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        Assert(mhCrOglSvc);
+    }
+    else
     {
         mhCrOglSvc = NULL;
     }

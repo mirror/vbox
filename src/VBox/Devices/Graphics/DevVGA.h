@@ -549,11 +549,12 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 
 # ifdef VBOX_WITH_VDMA
 typedef struct VBOXVDMAHOST *PVBOXVDMAHOST;
-int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_t cPipeElements);
+int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements);
 int vboxVDMADestruct(PVBOXVDMAHOST pVdma);
 void vboxVDMAControl(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd);
 void vboxVDMACommand(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd);
-bool vboxVDMAIsEnabled(PVBOXVDMAHOST pVdma);
+int vboxVDMASaveStateExecPrep(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
+int vboxVDMASaveStateExecDone(struct VBOXVDMAHOST *pVdma, PSSMHANDLE pSSM);
 # endif /* VBOX_WITH_VDMA */
 
 #endif /* VBOX_WITH_HGSMI */
