@@ -56,8 +56,8 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #ifndef IN_GUEST
-/** The signal we're using for RTThreadPoke. */
-# define RTTHREAD_POSIX_WITH_POKE    SIGUSR2
+/** Includes RTThreadPoke. */
+# define RTTHREAD_POSIX_WITH_POKE
 #endif
 
 
