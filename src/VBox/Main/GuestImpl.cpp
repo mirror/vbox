@@ -373,6 +373,10 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                 /* Don't quit VBoxService during upgrade because it still is used for this
                  * piece of code we're in right now (that is, here!) ... */
                 installerArgs.push_back(Bstr("/no_vboxservice_exit").raw());
+                /* Tell the installer to report its current installation status
+                 * using a running VBoxTray instance via balloon messages in the
+                 * Windows taskbar. */
+                installerArgs.push_back(Bstr("/post_installstatus").raw());
 
                 /*
                  * Start the just copied over installer with system rights
