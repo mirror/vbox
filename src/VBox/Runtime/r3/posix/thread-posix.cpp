@@ -103,7 +103,9 @@ int rtThreadNativeInit(void)
         SIGRTMAX-2,
         SIGRTMAX-1,
 # endif
+# ifndef RT_OS_SOLARIS
         SIGUSR2,
+# endif
         SIGWINCH
     };
 
