@@ -261,51 +261,66 @@ typedef struct _VBoxGuestCtrlHGCMMsgType
 
 } VBoxGuestCtrlHGCMMsgType;
 
+/**
+ * Asks the guest control host service to cancel all pending
+ * (outstanding) waits which were not processed yet. This is
+ * handy for a graceful shutdown.
+ */
 typedef struct _VBoxGuestCtrlHGCMMsgCancelPendingWaits
 {
     VBoxGuestHGCMCallInfo hdr;
 } VBoxGuestCtrlHGCMMsgCancelPendingWaits;
 
+/**
+ * Executes a command inside the guest.
+ */
 typedef struct _VBoxGuestCtrlHGCMMsgExecCmd
 {
     VBoxGuestHGCMCallInfo hdr;
-
+    /** Context ID. */
     HGCMFunctionParameter context;
-
+    /** The command to execute on the guest. */
     HGCMFunctionParameter cmd;
-
+    /** Execution flags (see IGuest::ExecuteProcessFlag_*). */
     HGCMFunctionParameter flags;
-
+    /** Number of arguments. */
     HGCMFunctionParameter num_args;
-
+    /** The actual arguments. */
     HGCMFunctionParameter args;
-
+    /** Number of environment value pairs. */
     HGCMFunctionParameter num_env;
     /** Size (in bytes) of environment block, including terminating zeros. */
     HGCMFunctionParameter cb_env;
-
+    /** The actual environment block. */
     HGCMFunctionParameter env;
-
+    /** The user name to run the executed command under. */
     HGCMFunctionParameter username;
-
+    /** The user's password. */
     HGCMFunctionParameter password;
-
+    /** Timeout (in msec) which either specifies the
+     *  overall lifetime of the process or how long it
+     *  can take to bring the process up and running -
+     *  (depends on the IGuest::ExecuteProcessFlag_*). */
     HGCMFunctionParameter timeout;
 
 } VBoxGuestCtrlHGCMMsgExecCmd;
 
+/**
+ * Injects input to a previously executed process via
+ * stdin.
+ */
 typedef struct _VBoxGuestCtrlHGCMMsgExecIn
 {
     VBoxGuestHGCMCallInfo hdr;
     /** Context ID. */
     HGCMFunctionParameter context;
-    /** The process ID (PID). */
+    /** The process ID (PID) to send the input to. */
     HGCMFunctionParameter pid;
-    /** Flags (see IGuest::ProcessInputFlag_*). */
+    /** Input flags (see IGuest::ProcessInputFlag_*). */
     HGCMFunctionParameter flags;
     /** Data buffer. */
     HGCMFunctionParameter data;
-    /** Actual size of data. */
+    /** Actual size of data (in bytes). */
     HGCMFunctionParameter size;
 
 } VBoxGuestCtrlHGCMMsgExecIn;
