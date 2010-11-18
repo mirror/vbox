@@ -1033,21 +1033,52 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     }
     else if (HDA_IS_STREAM_IN_RESET(pState, offset))
     {
+        PHDABDLEDESC pBdle = NULL;
+        uint32_t *pu32Lpib = NULL;
         Log(("hda: guest has initiated exit of stream reset\n"));
         pState->u8StreamsInReset &= ~HDA_STREAM_BITMASK(offset);
         HDA_REG_IND(pState, index) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
+        switch (index)
+        {
+            case ICH6_HDA_REG_SD0CTL:
+                pBdle = &pState->stInBdle;
+                pu32Lpib = &SDLPIB(pState, 0);
+                AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 0);
+                break;
+            case ICH6_HDA_REG_SD4CTL:
+                u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
+                fOn = fOn && u64BaseDMA;
+                AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 0);
+                pBdle = &pState->stOutBdle;
+                pu32Lpib = &SDLPIB(pState, 4);
+                break;
+            default:
+                Log(("Attempt to reset DMA state on unattached SDI(%s), ignored\n", s_ichIntelHDRegMap[index].abbrev));
+        }
+        if (   pBdle
+            && pu32Lpib)
+        {
+            memset(pBdle, 0, sizeof(HDABDLEDESC));
+            *pu32Lpib = 0;
+        }
     }
+    /*
+     * Stopping streams we postpone up to reset exit to let HDA complete the tasks
+     */
     switch (index)
     {
         case ICH6_HDA_REG_SD0CTL:
-            AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), fOn);
+            if (fOn)
+                AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 1);
             Log(("hda: DMA SD0CTL switched %s\n", fOn ? "on" : " off"));
             break;
         case ICH6_HDA_REG_SD4CTL:
+            if (fOn)
+                SDSTS(pState, 4) &= ~(1<<5);
             u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
             fOn = fOn && u64BaseDMA;
-            SDSTS(pState, 4) &= ~(1<<5);
-            AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), fOn);
+            if (fOn)
+                AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 1);
             Log(("hda: DMA SD4CTL switched %s\n", fOn ? "on" : " off"));
             break;
         default:
