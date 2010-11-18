@@ -529,14 +529,15 @@ static int rtZipTarReaderParseNextHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pH
             if (strcmp(pHdr->Gnu.name, "././@LongLink"))
                 return VERR_TAR_MALFORMED_GNU_LONGXXXX;
 
-            int64_t cch64;
-            rc = rtZipTarHdrFieldToNum(pHdr->Gnu.size, sizeof(pHdr->Gnu.size), false /*fOctalOnly*/, &cch64);
-            if (RT_FAILURE(rc) || cch64 < 0 || cch64 > _1M)
+            int64_t cb64;
+            rc = rtZipTarHdrFieldToNum(pHdr->Gnu.size, sizeof(pHdr->Gnu.size), false /*fOctalOnly*/, &cb64);
+            if (RT_FAILURE(rc) || cb64 < 0 || cb64 > _1M)
                 return VERR_TAR_MALFORMED_GNU_LONGXXXX;
-            if (cch64 >= sizeof(pThis->szName))
+            uint32_t cb = (uint32_t)cb64;
+            if (cb >= sizeof(pThis->szName))
                 return VERR_TAR_NAME_TOO_LONG;
 
-            pThis->cbGnuLongExpect  = (uint32_t)cch64;
+            pThis->cbGnuLongExpect  = cb;
             pThis->offGnuLongCur    = 0;
             pThis->enmState         = pHdr->Common.typeflag == RTZIPTAR_TF_GNU_LONGNAME
                                     ? RTZIPTARREADERSTATE_GNU_LONGNAME
@@ -612,7 +613,7 @@ static int rtZipTarReaderParseHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pHdr)
             pszDst += pThis->offGnuLongCur;
             memcpy(pszDst, pHdr->ab, cbIncoming);
 
-            pThis->offGnuLongCur += cbIncoming;
+            pThis->offGnuLongCur += (uint32_t)cbIncoming;
             if (pThis->offGnuLongCur == pThis->cbGnuLongExpect)
                 pThis->enmState = RTZIPTARREADERSTATE_GNU_NEXT;
             return VINF_SUCCESS;
@@ -827,7 +828,7 @@ static bool rtZipTarReaderIsAtEnd(PRTZIPTARREADER pThis)
     /* Here is a kludge to try deal with archivers not putting at least two
        zero headers at the end.  Afraid it may require further relaxing
        later on, but let's try be strict about things for now. */
-    return pThis->cZeroHdrs >= (pThis->enmPrevType == RTZIPTARTYPE_POSIX ? 2 : 1);
+    return pThis->cZeroHdrs >= (pThis->enmPrevType == RTZIPTARTYPE_POSIX ? 2U : 1U);
 }
 
 
