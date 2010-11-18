@@ -1335,6 +1335,10 @@ RT_C_DECLS_END
 #define VERR_TAR_UNSUPPORTED_GNU_HDR_TYPE       (-944)
 /** Malformed checksum field in the tar header. */
 #define VERR_TAR_BAD_CHKSUM_FIELD               (-945)
+/** Malformed checksum field in the tar header. */
+#define VERR_TAR_MALFORMED_GNU_LONGXXXX         (-946)
+/** Too long name or link string. */
+#define VERR_TAR_NAME_TOO_LONG                  (-947)
 /** @} */
 
 /** @name RTPoll status codes
