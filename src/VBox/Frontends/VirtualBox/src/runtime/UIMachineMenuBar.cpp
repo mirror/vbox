@@ -166,10 +166,8 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsP
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Shutdown));
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
-#else /* Q_WS_MAC */
-    if (m_fIsFirstTime)
 #endif /* !Q_WS_MAC */
-        pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Close));
+    pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Close));
 }
 
 void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsPool)
@@ -221,46 +219,47 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu, UIActionsPool *pActionsPool
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Register));
 #endif
 
-#ifdef Q_WS_MAC
+#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
     if (m_fIsFirstTime)
-#endif /* Q_WS_MAC */
+# endif
         pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Update));
-
 #ifndef Q_WS_MAC
     pMenu->addSeparator();
-#else /* Q_WS_MAC */
-    if (m_fIsFirstTime)
 #endif /* !Q_WS_MAC */
+#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
+    if (m_fIsFirstTime)
+# endif
         pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_About));
 
+
+#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
     /* Because this connections are done to VBoxGlobal, they are needed once only.
      * Otherwise we will get the slots called more than once. */
     if (m_fIsFirstTime)
     {
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Help), SIGNAL(triggered()),
-                            &vboxProblem(), SLOT(showHelpHelpDialog()));
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Web), SIGNAL(triggered()),
-                            &vboxProblem(), SLOT(showHelpWebDialog()));
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
-                            &vboxProblem(), SLOT(resetSuppressedMessages()));
-#ifdef VBOX_WITH_REGISTRATION
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Register), SIGNAL(triggered()),
-                            &vboxGlobal(), SLOT(showRegistrationDialog()));
-#endif /* VBOX_WITH_REGISTRATION */
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Update), SIGNAL(triggered()),
-                            &vboxGlobal(), SLOT(showUpdateDialog()));
+#endif
         VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
                             &vboxProblem(), SLOT(showHelpAboutDialog()));
-
-#ifdef VBOX_WITH_REGISTRATION
-        VBoxGlobal::connect(gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)),
-                            pActionsPool->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
-#endif /* VBOX_WITH_REGISTRATION */
-        VBoxGlobal::connect(gEDataEvents, SIGNAL(sigCanShowUpdateDlg(bool)),
-                            pActionsPool->action(UIActionIndex_Simple_Update), SLOT(setEnabled(bool)));
-
-        m_fIsFirstTime = false;
+        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Update), SIGNAL(triggered()),
+                            &vboxGlobal(), SLOT(showUpdateDialog()));
+#if defined(Q_WS_MAC) && (QT_VERSION < 0x040700)
     }
+#endif
+
+    VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Help), SIGNAL(triggered()),
+                        &vboxProblem(), SLOT(showHelpHelpDialog()));
+    VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Web), SIGNAL(triggered()),
+                        &vboxProblem(), SLOT(showHelpWebDialog()));
+    VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
+                        &vboxProblem(), SLOT(resetSuppressedMessages()));
+#ifdef VBOX_WITH_REGISTRATION
+    VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Register), SIGNAL(triggered()),
+                        &vboxGlobal(), SLOT(showRegistrationDialog()));
+    VBoxGlobal::connect(gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)),
+                        pActionsPool->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
+#endif /* VBOX_WITH_REGISTRATION */
+
+    m_fIsFirstTime = false;
 }
 
 #include "UIMachineMenuBar.moc"
