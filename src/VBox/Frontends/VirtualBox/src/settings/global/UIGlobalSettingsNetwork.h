@@ -19,10 +19,11 @@
 #ifndef __UIGlobalSettingsNetwork_h__
 #define __UIGlobalSettingsNetwork_h__
 
+/* Local includes */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsNetwork.gen.h"
 
-/* Host interface data: */
+/* Global settings / Network page / Host interface data: */
 struct UIHostInterfaceData
 {
     /* Host-only Interface: */
@@ -35,7 +36,7 @@ struct UIHostInterfaceData
     QString m_strInterfaceMaskLength6;
 };
 
-/* DHCP server data: */
+/* Global settings / Network page / DHCP server data: */
 struct UIDHCPServerData
 {
     /* DHCP Server */
@@ -46,7 +47,7 @@ struct UIDHCPServerData
     QString m_strDhcpUpperAddress;
 };
 
-/* Global network data: */
+/* Global settings / Network page / Full network data: */
 struct UIHostNetworkData
 {
     UIHostInterfaceData m_interface;
@@ -59,20 +60,25 @@ struct UISettingsCacheGlobalNetwork
     QList<UIHostNetworkData> m_items;
 };
 
-class NetworkItem : public QTreeWidgetItem
+/* Global settings / Network page / Host interface item: */
+class UIHostInterfaceItem : public QTreeWidgetItem
 {
 public:
 
-    NetworkItem();
+    /* Constructor: */
+    UIHostInterfaceItem();
 
+    /* Get/return data to/form items: */
     void fetchNetworkData(const UIHostNetworkData &data);
     void uploadNetworkData(UIHostNetworkData &data);
 
-    bool revalidate (QString &aWarning, QString &aTitle);
+    /* Validation stuff: */
+    bool revalidate(QString &strWarning, QString &strTitle);
 
+    /* Helpers: */
     QString updateInfo();
 
-    /* Page getters */
+    /* Network item getters: */
     QString name() const { return m_data.m_interface.m_strName; }
     bool isDhcpClientEnabled() const { return m_data.m_interface.m_fDhcpClientEnabled; }
     QString interfaceAddress() const { return m_data.m_interface.m_strInterfaceAddress; }
@@ -87,19 +93,19 @@ public:
     QString dhcpLowerAddress() const { return m_data.m_dhcpserver.m_strDhcpLowerAddress; }
     QString dhcpUpperAddress() const { return m_data.m_dhcpserver.m_strDhcpUpperAddress; }
 
-    /* Page setters */
-    void setDhcpClientEnabled (bool aEnabled) { m_data.m_interface.m_fDhcpClientEnabled = aEnabled; }
-    void setInterfaceAddress (const QString &aValue) { m_data.m_interface.m_strInterfaceAddress = aValue; }
-    void setInterfaceMask (const QString &aValue) { m_data.m_interface.m_strInterfaceMask = aValue; }
-    void setIp6Supported (bool aSupported) { m_data.m_interface.m_fIpv6Supported = aSupported; }
-    void setInterfaceAddress6 (const QString &aValue) { m_data.m_interface.m_strInterfaceAddress6 = aValue; }
-    void setInterfaceMaskLength6 (const QString &aValue) { m_data.m_interface.m_strInterfaceMaskLength6 = aValue; }
+    /* Network item setters */
+    void setDhcpClientEnabled(bool fEnabled) { m_data.m_interface.m_fDhcpClientEnabled = fEnabled; }
+    void setInterfaceAddress (const QString &strValue) { m_data.m_interface.m_strInterfaceAddress = strValue; }
+    void setInterfaceMask (const QString &strValue) { m_data.m_interface.m_strInterfaceMask = strValue; }
+    void setIp6Supported (bool fSupported) { m_data.m_interface.m_fIpv6Supported = fSupported; }
+    void setInterfaceAddress6 (const QString &strValue) { m_data.m_interface.m_strInterfaceAddress6 = strValue; }
+    void setInterfaceMaskLength6 (const QString &strValue) { m_data.m_interface.m_strInterfaceMaskLength6 = strValue; }
 
-    void setDhcpServerEnabled (bool aEnabled) { m_data.m_dhcpserver.m_fDhcpServerEnabled = aEnabled; }
-    void setDhcpServerAddress (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpServerAddress = aValue; }
-    void setDhcpServerMask (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpServerMask = aValue; }
-    void setDhcpLowerAddress (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpLowerAddress = aValue; }
-    void setDhcpUpperAddress (const QString &aValue) { m_data.m_dhcpserver.m_strDhcpUpperAddress = aValue; }
+    void setDhcpServerEnabled (bool fEnabled) { m_data.m_dhcpserver.m_fDhcpServerEnabled = fEnabled; }
+    void setDhcpServerAddress (const QString &sttValue) { m_data.m_dhcpserver.m_strDhcpServerAddress = sttValue; }
+    void setDhcpServerMask (const QString &strValue) { m_data.m_dhcpserver.m_strDhcpServerMask = strValue; }
+    void setDhcpLowerAddress (const QString &strValue) { m_data.m_dhcpserver.m_strDhcpLowerAddress = strValue; }
+    void setDhcpUpperAddress (const QString &strValue) { m_data.m_dhcpserver.m_strDhcpUpperAddress = strValue; }
 
 private:
 
@@ -108,13 +114,13 @@ private:
 };
 
 /* Global settings / Network page: */
-class UIGlobalSettingsNetwork : public UISettingsPageGlobal,
-                              public Ui::UIGlobalSettingsNetwork
+class UIGlobalSettingsNetwork : public UISettingsPageGlobal, public Ui::UIGlobalSettingsNetwork
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIGlobalSettingsNetwork();
 
 protected:
@@ -133,29 +139,36 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    void setValidator (QIWidgetValidator *aVal);
-    bool revalidate (QString &aWarning, QString &aTitle);
+    /* Validation stuff: */
+    void setValidator(QIWidgetValidator *pValidator);
+    bool revalidate(QString &strWarning, QString &strTitle);
 
+    /* Navigation stuff: */
     void setOrderAfter (QWidget *aWidget);
 
+    /* Translation stuff: */
     void retranslateUi();
 
 private slots:
 
-    void addInterface();
-    void remInterface();
-    void editInterface();
-    void updateCurrentItem();
-    void showContextMenu (const QPoint &aPos);
+    /* Helper slots: */
+    void sltAddInterface();
+    void sltDelInterface();
+    void sltEditInterface();
+    void sltUpdateCurrentItem();
+    void sltChowContextMenu(const QPoint &pos);
 
 private:
 
-    QIWidgetValidator *mValidator;
+    /* Validator: */
+    QIWidgetValidator *m_pValidator;
 
-    QAction *mAddInterface;
-    QAction *mRemInterface;
-    QAction *mEditInterface;
+    /* Helper actions: */
+    QAction *m_pAddAction;
+    QAction *m_pDelAction;
+    QAction *m_pEditAction;
 
+    /* Editness flag: */
     bool m_fChanged;
 
     /* Cache: */

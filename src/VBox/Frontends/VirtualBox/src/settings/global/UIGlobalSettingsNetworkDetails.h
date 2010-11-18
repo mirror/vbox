@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,38 +19,42 @@
 #ifndef __UIGlobalSettingsNetworkDetails_h__
 #define __UIGlobalSettingsNetworkDetails_h__
 
-/* VBox includes */
+/* Local includes */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIGlobalSettingsNetworkDetails.gen.h"
 
-/* VBox forwards */
-class NetworkItem;
+/* Forward decalrations: */
+class UIHostInterfaceItem;
 
-class UIGlobalSettingsNetworkDetails : public QIWithRetranslateUI2 <QIDialog>,
-                                     public Ui::UIGlobalSettingsNetworkDetails
+/* Global settings / Network page / Details sub-dialog: */
+class UIGlobalSettingsNetworkDetails : public QIWithRetranslateUI2<QIDialog>, public Ui::UIGlobalSettingsNetworkDetails
 {
     Q_OBJECT;
 
 public:
 
-    UIGlobalSettingsNetworkDetails (QWidget *aParent);
+    /* Constructor: */
+    UIGlobalSettingsNetworkDetails(QWidget *pParent);
 
-    void getFromItem (NetworkItem *aItem);
+    /* Get/return data to/from details sub-dialog: */
+    void getFromItem(UIHostInterfaceItem *aItem);
     void putBackToItem();
 
 protected:
 
+    /* Validation stuff: */
     void retranslateUi();
 
 private slots:
 
-    void dhcpClientStatusChanged();
-    void dhcpServerStatusChanged();
+    /* Various helper slots: */
+    void sltDhcpClientStatusChanged();
+    void sltDhcpServerStatusChanged();
 
 private:
 
-    NetworkItem *mItem;
+    UIHostInterfaceItem *m_pItem;
 };
 
 #endif // __UIGlobalSettingsNetworkDetails_h__
