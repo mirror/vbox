@@ -333,16 +333,23 @@ static int usbReadBCD(const char *pszValue, unsigned uBase, uint16_t *pu16, char
 /**
  * Reads a string, i.e. allocates memory and copies it.
  *
- * We assume that a string is pure ASCII, if that's not the case
- * tell me how to figure out the codeset please.
+ * We assume that a string is Utf8 and if that's not the case
+ * (pre-2.6.32-kernels used Latin-1, but so few devices return non-ASCII that
+ * this usually goes unnoticed) then we mercilessly force it to be so.
  */
 static int usbReadStr(const char *pszValue, const char **ppsz)
 {
+    char *psz;
+
     if (*ppsz)
         RTStrFree((char *)*ppsz);
-    *ppsz = RTStrDup(pszValue);
-    if (*ppsz)
+    psz = RTStrDup(pszValue);
+    if (psz)
+    {
+        RTStrPurgeEncoding(psz);
+        *ppsz = psz;
         return VINF_SUCCESS;
+    }
     return VERR_NO_MEMORY;
 }
 
