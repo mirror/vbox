@@ -75,7 +75,6 @@ static char                     g_szCoreDumpFile[PATH_MAX]   = { 0 };
 #define CORELOG(a)          Log(a)
 #define CORELOGRELSYS(a)       \
     do { \
-        LogRel(a); \
         rtCoreDumperSysLogWrapper a; \
     } while (0)
 
