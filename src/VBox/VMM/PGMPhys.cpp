@@ -3027,7 +3027,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                         VMSetError(pVM, rc, RT_SRC_POS, "Failed to map virgin ROM page at %RGp", GCPhys);
                         break;
                     }
-                    if (cbBinary >= PAGE_SIZE)
+                    if (cbBinaryLeft >= PAGE_SIZE)
                     {
                         memcpy(pvDstPage, (uint8_t const *)pvBinary + ((size_t)iPage << PAGE_SHIFT), PAGE_SIZE);
                         cbBinaryLeft -= PAGE_SIZE;
