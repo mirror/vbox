@@ -17,6 +17,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Global includes */
+#include <QHeaderView>
+#include <QHostAddress>
+
 /* Local includes */
 #include "QIWidgetValidator.h"
 #include "UIIconPool.h"
@@ -25,16 +29,14 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
-/* Qt includes */
-#include <QHeaderView>
-#include <QHostAddress>
-
-NetworkItem::NetworkItem()
+/* Host-network item constructor: */
+UIHostInterfaceItem::UIHostInterfaceItem()
     : QTreeWidgetItem()
 {
 }
 
-void NetworkItem::fetchNetworkData(const UIHostNetworkData &data)
+/* Get data to item: */
+void UIHostInterfaceItem::fetchNetworkData(const UIHostNetworkData &data)
 {
     /* Fetch from cache: */
     m_data = data;
@@ -43,209 +45,207 @@ void NetworkItem::fetchNetworkData(const UIHostNetworkData &data)
     updateInfo();
 }
 
-void NetworkItem::uploadNetworkData(UIHostNetworkData &data)
+/* Return data from item: */
+void UIHostInterfaceItem::uploadNetworkData(UIHostNetworkData &data)
 {
     /* Upload to cache: */
     data = m_data;
 }
 
-bool NetworkItem::revalidate (QString &aWarning, QString & /* aTitle */)
+/* Validation stuff: */
+bool UIHostInterfaceItem::revalidate(QString &strWarning, QString & /* strTitle */)
 {
-    /* Host-only Interface validation */
+    /* Host-only interface validation: */
     if (!m_data.m_interface.m_fDhcpClientEnabled)
     {
         if (m_data.m_interface.m_strInterfaceAddress.isEmpty() &&
-            (QHostAddress (m_data.m_interface.m_strInterfaceAddress) == QHostAddress::Any ||
-             QHostAddress (m_data.m_interface.m_strInterfaceAddress).protocol() != QAbstractSocket::IPv4Protocol))
+            (QHostAddress(m_data.m_interface.m_strInterfaceAddress) == QHostAddress::Any ||
+             QHostAddress(m_data.m_interface.m_strInterfaceAddress).protocol() != QAbstractSocket::IPv4Protocol))
         {
-            aWarning = UIGlobalSettingsNetwork::tr ("host IPv4 address of <b>%1</b> is wrong").arg (text (0));
+            strWarning = UIGlobalSettingsNetwork::tr("host IPv4 address of <b>%1</b> is wrong").arg(text(0));
             return false;
         }
         if (!m_data.m_interface.m_strInterfaceMask.isEmpty() &&
-            (QHostAddress (m_data.m_interface.m_strInterfaceMask) == QHostAddress::Any ||
-             QHostAddress (m_data.m_interface.m_strInterfaceMask).protocol() != QAbstractSocket::IPv4Protocol))
+            (QHostAddress(m_data.m_interface.m_strInterfaceMask) == QHostAddress::Any ||
+             QHostAddress(m_data.m_interface.m_strInterfaceMask).protocol() != QAbstractSocket::IPv4Protocol))
         {
-            aWarning = UIGlobalSettingsNetwork::tr ("host IPv4 network mask of <b>%1</b> is wrong").arg (text (0));
+            strWarning = UIGlobalSettingsNetwork::tr("host IPv4 network mask of <b>%1</b> is wrong").arg(text(0));
             return false;
         }
         if (m_data.m_interface.m_fIpv6Supported)
         {
             if (!m_data.m_interface.m_strInterfaceAddress6.isEmpty() &&
-                (QHostAddress (m_data.m_interface.m_strInterfaceAddress6) == QHostAddress::AnyIPv6 ||
-                 QHostAddress (m_data.m_interface.m_strInterfaceAddress6).protocol() != QAbstractSocket::IPv6Protocol))
+                (QHostAddress(m_data.m_interface.m_strInterfaceAddress6) == QHostAddress::AnyIPv6 ||
+                 QHostAddress(m_data.m_interface.m_strInterfaceAddress6).protocol() != QAbstractSocket::IPv6Protocol))
             {
-                aWarning = UIGlobalSettingsNetwork::tr ("host IPv6 address of <b>%1</b> is wrong").arg (text (0));
+                strWarning = UIGlobalSettingsNetwork::tr("host IPv6 address of <b>%1</b> is wrong").arg(text(0));
                 return false;
             }
         }
     }
 
-    /* DHCP Server settings */
+    /* DHCP server validation: */
     if (m_data.m_dhcpserver.m_fDhcpServerEnabled)
     {
-        if (QHostAddress (m_data.m_dhcpserver.m_strDhcpServerAddress) == QHostAddress::Any ||
-            QHostAddress (m_data.m_dhcpserver.m_strDhcpServerAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpServerAddress) == QHostAddress::Any ||
+            QHostAddress(m_data.m_dhcpserver.m_strDhcpServerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = UIGlobalSettingsNetwork::tr ("DHCP server address of <b>%1</b> is wrong").arg (text (0));
+            strWarning = UIGlobalSettingsNetwork::tr("DHCP server address of <b>%1</b> is wrong").arg(text(0));
             return false;
         }
-        if (QHostAddress (m_data.m_dhcpserver.m_strDhcpServerMask) == QHostAddress::Any ||
-            QHostAddress (m_data.m_dhcpserver.m_strDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpServerMask) == QHostAddress::Any ||
+            QHostAddress(m_data.m_dhcpserver.m_strDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = UIGlobalSettingsNetwork::tr ("DHCP server network mask of <b>%1</b> is wrong").arg (text (0));
+            strWarning = UIGlobalSettingsNetwork::tr("DHCP server network mask of <b>%1</b> is wrong").arg(text(0));
             return false;
         }
-        if (QHostAddress (m_data.m_dhcpserver.m_strDhcpLowerAddress) == QHostAddress::Any ||
-            QHostAddress (m_data.m_dhcpserver.m_strDhcpLowerAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpLowerAddress) == QHostAddress::Any ||
+            QHostAddress(m_data.m_dhcpserver.m_strDhcpLowerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = UIGlobalSettingsNetwork::tr ("DHCP lower address bound of <b>%1</b> is wrong").arg (text (0));
+            strWarning = UIGlobalSettingsNetwork::tr("DHCP lower address bound of <b>%1</b> is wrong").arg(text(0));
             return false;
         }
-        if (QHostAddress (m_data.m_dhcpserver.m_strDhcpUpperAddress) == QHostAddress::Any ||
-            QHostAddress (m_data.m_dhcpserver.m_strDhcpUpperAddress).protocol() != QAbstractSocket::IPv4Protocol)
+        if (QHostAddress(m_data.m_dhcpserver.m_strDhcpUpperAddress) == QHostAddress::Any ||
+            QHostAddress(m_data.m_dhcpserver.m_strDhcpUpperAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            aWarning = UIGlobalSettingsNetwork::tr ("DHCP upper address bound of <b>%1</b> is wrong").arg (text (0));
+            strWarning = UIGlobalSettingsNetwork::tr("DHCP upper address bound of <b>%1</b> is wrong").arg(text(0));
             return false;
         }
     }
     return true;
 }
 
-QString NetworkItem::updateInfo()
+QString UIHostInterfaceItem::updateInfo()
 {
     /* Update text: */
     setText(0, m_data.m_interface.m_strName);
 
-    /* Update information label */
-    QString hdr ("<tr><td><nobr>%1:&nbsp;</nobr></td>"
-                 "<td><nobr>%2</nobr></td></tr>");
-    QString sub ("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td>"
-                 "<td><nobr>%2</nobr></td></tr>");
-    QString data, tip, buffer;
+    /* Update information label: */
+    QString strHeader("<tr><td><nobr>%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    QString strSubHeader("<tr><td><nobr>&nbsp;&nbsp;%1:&nbsp;</nobr></td><td><nobr>%2</nobr></td></tr>");
+    QString strData, strToolTip, strBuffer;
 
-    /* Host-only Interface information */
-    buffer = hdr.arg (UIGlobalSettingsNetwork::tr ("Adapter"))
-                .arg (m_data.m_interface.m_fDhcpClientEnabled ? UIGlobalSettingsNetwork::tr ("Automatically configured", "interface")
-                                                              : UIGlobalSettingsNetwork::tr ("Manually configured", "interface"));
-    data += buffer;
-    tip += buffer;
-
+    /* Host-only interface information: */
+    strBuffer = strHeader.arg(UIGlobalSettingsNetwork::tr("Adapter"))
+                .arg(m_data.m_interface.m_fDhcpClientEnabled ? UIGlobalSettingsNetwork::tr("Automatically configured", "interface")
+                                                             : UIGlobalSettingsNetwork::tr("Manually configured", "interface"));
+    strData += strBuffer;
+    strToolTip += strBuffer;
     if (!m_data.m_interface.m_fDhcpClientEnabled)
     {
-        buffer = sub.arg (UIGlobalSettingsNetwork::tr ("IPv4 Address"))
-                    .arg (m_data.m_interface.m_strInterfaceAddress.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "address")
-                                                                             : m_data.m_interface.m_strInterfaceAddress) +
-                 sub.arg (UIGlobalSettingsNetwork::tr ("IPv4 Network Mask"))
-                    .arg (m_data.m_interface.m_strInterfaceMask.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "mask")
-                                                                          : m_data.m_interface.m_strInterfaceMask);
-        tip += buffer;
-
+        strBuffer = strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv4 Address"))
+                                .arg(m_data.m_interface.m_strInterfaceAddress.isEmpty() ?
+                                     UIGlobalSettingsNetwork::tr ("Not set", "address") :
+                                     m_data.m_interface.m_strInterfaceAddress) +
+                    strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv4 Network Mask"))
+                                .arg(m_data.m_interface.m_strInterfaceMask.isEmpty() ?
+                                     UIGlobalSettingsNetwork::tr ("Not set", "mask") :
+                                     m_data.m_interface.m_strInterfaceMask);
+        strToolTip += strBuffer;
         if (m_data.m_interface.m_fIpv6Supported)
         {
-            buffer = sub.arg (UIGlobalSettingsNetwork::tr ("IPv6 Address"))
-                        .arg (m_data.m_interface.m_strInterfaceAddress6.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "address")
-                                                                                  : m_data.m_interface.m_strInterfaceAddress6) +
-                     sub.arg (UIGlobalSettingsNetwork::tr ("IPv6 Network Mask Length"))
-                        .arg (m_data.m_interface.m_strInterfaceMaskLength6.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "length")
-                                                              : m_data.m_interface.m_strInterfaceMaskLength6);
-            tip += buffer;
+            strBuffer = strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv6 Address"))
+                                    .arg(m_data.m_interface.m_strInterfaceAddress6.isEmpty() ?
+                                         UIGlobalSettingsNetwork::tr("Not set", "address") :
+                                         m_data.m_interface.m_strInterfaceAddress6) +
+                        strSubHeader.arg(UIGlobalSettingsNetwork::tr("IPv6 Network Mask Length"))
+                                    .arg(m_data.m_interface.m_strInterfaceMaskLength6.isEmpty() ?
+                                         UIGlobalSettingsNetwork::tr("Not set", "length") :
+                                         m_data.m_interface.m_strInterfaceMaskLength6);
+            strToolTip += strBuffer;
         }
     }
 
-    /* DHCP Server information */
-    buffer = hdr.arg (UIGlobalSettingsNetwork::tr ("DHCP Server"))
-                .arg (m_data.m_dhcpserver.m_fDhcpServerEnabled ? UIGlobalSettingsNetwork::tr ("Enabled", "server")
-                                                               : UIGlobalSettingsNetwork::tr ("Disabled", "server"));
-    data += buffer;
-    tip += buffer;
-
+    /* DHCP server information: */
+    strBuffer = strHeader.arg(UIGlobalSettingsNetwork::tr("DHCP Server"))
+                         .arg(m_data.m_dhcpserver.m_fDhcpServerEnabled ?
+                              UIGlobalSettingsNetwork::tr("Enabled", "server") :
+                              UIGlobalSettingsNetwork::tr("Disabled", "server"));
+    strData += strBuffer;
+    strToolTip += strBuffer;
     if (m_data.m_dhcpserver.m_fDhcpServerEnabled)
     {
-        buffer = sub.arg (UIGlobalSettingsNetwork::tr ("Address"))
-                    .arg (m_data.m_dhcpserver.m_strDhcpServerAddress.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "address")
-                                                                               : m_data.m_dhcpserver.m_strDhcpServerAddress) +
-                 sub.arg (UIGlobalSettingsNetwork::tr ("Network Mask"))
-                    .arg (m_data.m_dhcpserver.m_strDhcpServerMask.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "mask")
-                                                                            : m_data.m_dhcpserver.m_strDhcpServerMask) +
-                 sub.arg (UIGlobalSettingsNetwork::tr ("Lower Bound"))
-                    .arg (m_data.m_dhcpserver.m_strDhcpLowerAddress.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "bound")
-                                                                              : m_data.m_dhcpserver.m_strDhcpLowerAddress) +
-                 sub.arg (UIGlobalSettingsNetwork::tr ("Upper Bound"))
-                    .arg (m_data.m_dhcpserver.m_strDhcpUpperAddress.isEmpty() ? UIGlobalSettingsNetwork::tr ("Not set", "bound")
-                                                                              : m_data.m_dhcpserver.m_strDhcpUpperAddress);
-        tip += buffer;
+        strBuffer = strSubHeader.arg(UIGlobalSettingsNetwork::tr("Address"))
+                                .arg(m_data.m_dhcpserver.m_strDhcpServerAddress.isEmpty() ?
+                                     UIGlobalSettingsNetwork::tr("Not set", "address") :
+                                     m_data.m_dhcpserver.m_strDhcpServerAddress) +
+                    strSubHeader.arg(UIGlobalSettingsNetwork::tr("Network Mask"))
+                                .arg(m_data.m_dhcpserver.m_strDhcpServerMask.isEmpty() ?
+                                     UIGlobalSettingsNetwork::tr("Not set", "mask") :
+                                     m_data.m_dhcpserver.m_strDhcpServerMask) +
+                    strSubHeader.arg(UIGlobalSettingsNetwork::tr("Lower Bound"))
+                                .arg(m_data.m_dhcpserver.m_strDhcpLowerAddress.isEmpty() ?
+                                     UIGlobalSettingsNetwork::tr("Not set", "bound") :
+                                     m_data.m_dhcpserver.m_strDhcpLowerAddress) +
+                    strSubHeader.arg(UIGlobalSettingsNetwork::tr("Upper Bound"))
+                                .arg(m_data.m_dhcpserver.m_strDhcpUpperAddress.isEmpty() ?
+                                     UIGlobalSettingsNetwork::tr("Not set", "bound") :
+                                     m_data.m_dhcpserver.m_strDhcpUpperAddress);
+        strToolTip += strBuffer;
     }
 
-    setToolTip (0, tip);
+    setToolTip(0, strToolTip);
 
-    return QString ("<table>") + data + QString ("</table>");
+    return QString("<table>") + strData + QString("</table>");
 }
 
+/* Network page constructor: */
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
-    : mValidator(0)
-    , mAddInterface(0), mRemInterface(0), mEditInterface(0)
+    : m_pValidator(0)
+    , m_pAddAction(0), m_pDelAction(0), m_pEditAction(0)
     , m_fChanged(false)
 {
-    /* Apply UI decorations */
+    /* Apply UI decorations: */
     Ui::UIGlobalSettingsNetwork::setupUi (this);
 
 #ifdef Q_WS_MAC
-    /* Make shifting spacer for MAC as we have fixed-size networks list */
-    QSpacerItem *shiftSpacer =
-        new QSpacerItem (0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
-    QGridLayout *mainLayout = static_cast <QGridLayout*> (layout());
-    mainLayout->addItem (shiftSpacer, 1, 4);
-    //static_cast <QHBoxLayout*> (mWtActions->layout())->addStretch();
-#endif
+    /* Make shifting spacer for MAC as we have fixed-size networks list: */
+    QSpacerItem *pShiftSpacer = new QSpacerItem(0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
+    m_pLayout1->addItem(pShiftSpacer);
+#endif /* Q_WS_MAC */
 
-    /* Setup tree-widget */
-    mTwInterfaces->header()->hide();
-    mTwInterfaces->setContextMenuPolicy (Qt::CustomContextMenu);
+    /* Setup tree-widget: */
+    m_pInterfacesTree->header()->hide();
+    m_pInterfacesTree->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    /* Prepare toolbar */
-    mAddInterface = new QAction (mTwInterfaces);
-    mRemInterface = new QAction (mTwInterfaces);
-    mEditInterface = new QAction (mTwInterfaces);
+    /* Prepare toolbar: */
+    m_pAddAction = new QAction(m_pInterfacesTree);
+    m_pDelAction = new QAction(m_pInterfacesTree);
+    m_pEditAction = new QAction(m_pInterfacesTree);
 
-    mAddInterface->setShortcuts (QList <QKeySequence> ()
-                                 << QKeySequence ("Ins")
-                                 << QKeySequence ("Ctrl+N"));
-    mRemInterface->setShortcuts (QList <QKeySequence> ()
-                                 << QKeySequence ("Del")
-                                 << QKeySequence ("Ctrl+R"));
-    mEditInterface->setShortcuts (QList <QKeySequence> ()
-                                  << QKeySequence ("Space")
-                                  << QKeySequence ("F2"));
+    m_pAddAction->setShortcuts(QList<QKeySequence>() << QKeySequence("Ins") << QKeySequence("Ctrl+N"));
+    m_pDelAction->setShortcuts(QList<QKeySequence>() << QKeySequence("Del") << QKeySequence("Ctrl+R"));
+    m_pEditAction->setShortcuts(QList<QKeySequence>() << QKeySequence("Space") << QKeySequence("F2"));
 
-    mAddInterface->setIcon(UIIconPool::iconSet(":/add_host_iface_16px.png",
-                                               ":/add_host_iface_disabled_16px.png"));
-    mRemInterface->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
-                                               ":/remove_host_iface_disabled_16px.png"));
-    mEditInterface->setIcon(UIIconPool::iconSet(":/guesttools_16px.png",
-                                                ":/guesttools_disabled_16px.png"));
+    m_pAddAction->setIcon(UIIconPool::iconSet(":/add_host_iface_16px.png",
+                                              ":/add_host_iface_disabled_16px.png"));
+    m_pDelAction->setIcon(UIIconPool::iconSet(":/remove_host_iface_16px.png",
+                                              ":/remove_host_iface_disabled_16px.png"));
+    m_pEditAction->setIcon(UIIconPool::iconSet(":/guesttools_16px.png",
+                                               ":/guesttools_disabled_16px.png"));
 
-    mTbActions->setUsesTextLabel (false);
-    mTbActions->setIconSize (QSize (16, 16));
-    mTbActions->setOrientation (Qt::Vertical);
-    mTbActions->addAction (mAddInterface);
-    mTbActions->addAction (mRemInterface);
-    mTbActions->addAction (mEditInterface);
-    mTbActions->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    mTbActions->updateGeometry();
-    mTbActions->setMinimumHeight (mTbActions->sizeHint().height());
+    m_pActionsToolbar->setUsesTextLabel(false);
+    m_pActionsToolbar->setIconSize(QSize(16, 16));
+    m_pActionsToolbar->setOrientation(Qt::Vertical);
+    m_pActionsToolbar->addAction(m_pAddAction);
+    m_pActionsToolbar->addAction(m_pDelAction);
+    m_pActionsToolbar->addAction(m_pEditAction);
+    m_pActionsToolbar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    m_pActionsToolbar->updateGeometry();
+    m_pActionsToolbar->setMinimumHeight(m_pActionsToolbar->sizeHint().height());
 
-    /* Setup connections */
-    connect (mAddInterface, SIGNAL (triggered (bool)), this, SLOT (addInterface()));
-    connect (mRemInterface, SIGNAL (triggered (bool)), this, SLOT (remInterface()));
-    connect (mEditInterface, SIGNAL (triggered (bool)), this, SLOT (editInterface()));
-    connect (mTwInterfaces, SIGNAL (currentItemChanged (QTreeWidgetItem *, QTreeWidgetItem *)),
-             this, SLOT (updateCurrentItem()));
-    connect (mTwInterfaces, SIGNAL (customContextMenuRequested (const QPoint &)),
-             this, SLOT (showContextMenu (const QPoint &)));
-    connect (mTwInterfaces, SIGNAL (itemDoubleClicked (QTreeWidgetItem*, int)),
-             this, SLOT (editInterface()));
+    /* Setup connections: */
+    connect(m_pAddAction, SIGNAL(triggered(bool)), this, SLOT(sltAddInterface()));
+    connect(m_pDelAction, SIGNAL(triggered(bool)), this, SLOT(sltDelInterface()));
+    connect(m_pEditAction, SIGNAL(triggered(bool)), this, SLOT(sltEditInterface()));
+    connect(m_pInterfacesTree, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
+            this, SLOT(sltUpdateCurrentItem()));
+    connect(m_pInterfacesTree, SIGNAL(customContextMenuRequested(const QPoint&)),
+            this, SLOT(sltChowContextMenu(const QPoint&)));
+    connect(m_pInterfacesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
+            this, SLOT(sltEditInterface()));
 
-    /* Applying language settings */
+    /* Apply language settings: */
     retranslateUi();
 }
 
@@ -300,18 +300,18 @@ void UIGlobalSettingsNetwork::getFromCache()
     for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size(); ++iNetworkIndex)
     {
         const UIHostNetworkData &data = m_cache.m_items[iNetworkIndex];
-        NetworkItem *pItem = new NetworkItem;
+        UIHostInterfaceItem *pItem = new UIHostInterfaceItem;
         pItem->fetchNetworkData(data);
-        mTwInterfaces->addTopLevelItem(pItem);
+        m_pInterfacesTree->addTopLevelItem(pItem);
     }
-    mTwInterfaces->setCurrentItem(mTwInterfaces->topLevelItem(0));
-    updateCurrentItem();
+    m_pInterfacesTree->setCurrentItem(m_pInterfacesTree->topLevelItem(0));
+    sltUpdateCurrentItem();
 #ifdef Q_WS_MAC
-    int width = qMax(static_cast<QAbstractItemView*>(mTwInterfaces)->sizeHintForColumn(0) +
-                     2 * mTwInterfaces->frameWidth() + QApplication::style()->pixelMetric(QStyle::PM_ScrollBarExtent),
+    int width = qMax(static_cast<QAbstractItemView*>(m_pInterfacesTree)->sizeHintForColumn(0) +
+                     2 * m_pInterfacesTree->frameWidth() + QApplication::style()->pixelMetric(QStyle::PM_ScrollBarExtent),
                      220);
-    mTwInterfaces->setFixedWidth(width);
-    mTwInterfaces->resizeColumnToContents(0);
+    m_pInterfacesTree->setFixedWidth(width);
+    m_pInterfacesTree->resizeColumnToContents(0);
 #endif /* Q_WS_MAC */
 }
 
@@ -321,10 +321,10 @@ void UIGlobalSettingsNetwork::putToCache()
 {
     /* Upload to cache: */
     m_cache.m_items.clear();
-    for (int iNetworkIndex = 0; iNetworkIndex < mTwInterfaces->topLevelItemCount(); ++iNetworkIndex)
+    for (int iNetworkIndex = 0; iNetworkIndex < m_pInterfacesTree->topLevelItemCount(); ++iNetworkIndex)
     {
         UIHostNetworkData data;
-        NetworkItem *pItem = static_cast<NetworkItem*>(mTwInterfaces->topLevelItem(iNetworkIndex));
+        UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->topLevelItem(iNetworkIndex));
         pItem->uploadNetworkData(data);
         m_cache.m_items << data;
     }
@@ -449,44 +449,50 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
+/* Validation assignments: */
+void UIGlobalSettingsNetwork::setValidator(QIWidgetValidator *pValidator)
 {
-    mValidator = aValidator;
+    m_pValidator = pValidator;
 }
 
-bool UIGlobalSettingsNetwork::revalidate (QString &aWarning, QString &aTitle)
+/* Validation processing: */
+bool UIGlobalSettingsNetwork::revalidate(QString &strWarning, QString &strTitle)
 {
-    NetworkItem *item = static_cast <NetworkItem*> (mTwInterfaces->currentItem());
-    return item ? item->revalidate (aWarning, aTitle) : true;
+    UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->currentItem());
+    return pItem ? pItem->revalidate(strWarning, strTitle) : true;
 }
 
-void UIGlobalSettingsNetwork::setOrderAfter (QWidget *aWidget)
+/* Navigation stuff: */
+void UIGlobalSettingsNetwork::setOrderAfter(QWidget *pWidget)
 {
-    setTabOrder (aWidget, mTwInterfaces);
+    setTabOrder(pWidget, m_pInterfacesTree);
 }
 
+/* Translation stuff: */
 void UIGlobalSettingsNetwork::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIGlobalSettingsNetwork::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIGlobalSettingsNetwork::retranslateUi(this);
 
-    /* Translate action tool-tips */
-    mAddInterface->setText (tr ("&Add host-only network"));
-    mRemInterface->setText (tr ("&Remove host-only network"));
-    mEditInterface->setText (tr ("&Edit host-only network"));
+    /* Translate action tool-tips: */
+    m_pAddAction->setText(tr("&Add host-only network"));
+    m_pDelAction->setText(tr("&Remove host-only network"));
+    m_pEditAction->setText(tr("&Edit host-only network"));
 
-    mAddInterface->setToolTip (mAddInterface->text().remove ('&') +
-        QString (" (%1)").arg (mAddInterface->shortcut().toString()));
-    mRemInterface->setToolTip (mRemInterface->text().remove ('&') +
-        QString (" (%1)").arg (mRemInterface->shortcut().toString()));
-    mEditInterface->setToolTip (mEditInterface->text().remove ('&') +
-        QString (" (%1)").arg (mEditInterface->shortcut().toString()));
+    /* Assign tool-tips: */
+    m_pAddAction->setToolTip(m_pAddAction->text().remove('&') +
+        QString(" (%1)").arg(m_pAddAction->shortcut().toString()));
+    m_pDelAction->setToolTip(m_pDelAction->text().remove('&') +
+        QString(" (%1)").arg(m_pDelAction->shortcut().toString()));
+    m_pEditAction->setToolTip(m_pEditAction->text().remove('&') +
+        QString(" (%1)").arg(m_pEditAction->shortcut().toString()));
 }
 
-void UIGlobalSettingsNetwork::addInterface()
+/* Adds new network interface: */
+void UIGlobalSettingsNetwork::sltAddInterface()
 {
     /* Creating interface item: */
-    NetworkItem *pItem = new NetworkItem;
+    UIHostInterfaceItem *pItem = new UIHostInterfaceItem;
     /* Fill item's data: */
     UIHostNetworkData data;
     /* Interface data: */
@@ -499,17 +505,18 @@ void UIGlobalSettingsNetwork::addInterface()
     /* Fetch item with data: */
     pItem->fetchNetworkData(data);
     /* Add new top-level item: */
-    mTwInterfaces->addTopLevelItem(pItem);
-    mTwInterfaces->sortItems(0, Qt::AscendingOrder);
-    mTwInterfaces->setCurrentItem(pItem);
+    m_pInterfacesTree->addTopLevelItem(pItem);
+    m_pInterfacesTree->sortItems(0, Qt::AscendingOrder);
+    m_pInterfacesTree->setCurrentItem(pItem);
     /* Mark dialog as edited: */
     m_fChanged = true;
 }
 
-void UIGlobalSettingsNetwork::remInterface()
+/* Removes selected network interface: */
+void UIGlobalSettingsNetwork::sltDelInterface()
 {
     /* Get interface item: */
-    NetworkItem *pItem = static_cast<NetworkItem*>(mTwInterfaces->currentItem());
+    UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->currentItem());
     AssertMsg(pItem, ("Current item should present!\n"));
     /* Get interface name: */
     QString strInterfaceName(pItem->name());
@@ -522,50 +529,52 @@ void UIGlobalSettingsNetwork::remInterface()
     m_fChanged = true;
 }
 
-void UIGlobalSettingsNetwork::editInterface()
+/* Edits selected network interface: */
+void UIGlobalSettingsNetwork::sltEditInterface()
 {
     /* Check interface presence */
-    NetworkItem *item = static_cast <NetworkItem*> (mTwInterfaces->currentItem());
-    AssertMsg (item, ("Current item should be selected!\n"));
+    UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->currentItem());
+    AssertMsg(pItem, ("Current item should be selected!\n"));
     /* Edit current item data */
-    UIGlobalSettingsNetworkDetails details (this);
-    details.getFromItem (item);
+    UIGlobalSettingsNetworkDetails details(this);
+    details.getFromItem(pItem);
     if (details.exec() == QDialog::Accepted)
     {
         details.putBackToItem();
-        item->updateInfo();
+        pItem->updateInfo();
     }
-    updateCurrentItem();
-    mValidator->revalidate();
+    sltUpdateCurrentItem();
+    m_pValidator->revalidate();
     /* Mark dialog as edited: */
     m_fChanged = true;
 }
 
-void UIGlobalSettingsNetwork::updateCurrentItem()
+/* Update current network interface data relations: */
+void UIGlobalSettingsNetwork::sltUpdateCurrentItem()
 {
-    /* Get current item */
-    NetworkItem *item = static_cast <NetworkItem*> (mTwInterfaces->currentItem());
-    /* Set the final label text */
-    mLbInfo->setText (item ? item->updateInfo() : QString());
-    /* Update availability */
-    mRemInterface->setEnabled (item);
-    mEditInterface->setEnabled (item);
+    /* Get current item: */
+    UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->currentItem());
+    /* Set the final label text: */
+    m_pInfoLabel->setText(pItem ? pItem->updateInfo() : QString());
+    /* Update availability: */
+    m_pDelAction->setEnabled(pItem);
+    m_pEditAction->setEnabled(pItem);
 }
 
-void UIGlobalSettingsNetwork::showContextMenu (const QPoint &aPos)
+/* Show network interface context-menu: */
+void UIGlobalSettingsNetwork::sltChowContextMenu(const QPoint &pos)
 {
     QMenu menu;
-
-    if (mTwInterfaces->itemAt (aPos))
+    if (m_pInterfacesTree->itemAt(pos))
     {
-        menu.addAction (mEditInterface);
-        menu.addAction (mRemInterface);
+        menu.addAction(m_pEditAction);
+        menu.addAction(m_pDelAction);
     }
     else
     {
-        menu.addAction (mAddInterface);
+        menu.addAction(m_pAddAction);
     }
 
-    menu.exec (mTwInterfaces->mapToGlobal (aPos));
+    menu.exec(m_pInterfacesTree->mapToGlobal(pos));
 }
 

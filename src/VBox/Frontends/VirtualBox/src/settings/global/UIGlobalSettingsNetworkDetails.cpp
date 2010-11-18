@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,192 +17,196 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* VBox Includes */
-#include "UIGlobalSettingsNetwork.h"
-#include "UIGlobalSettingsNetworkDetails.h"
-
-/* Qt Includes */
+/* Global includes */
 #include <QHostAddress>
 #include <QRegExpValidator>
 
-UIGlobalSettingsNetworkDetails::UIGlobalSettingsNetworkDetails (QWidget *aParent)
-    : QIWithRetranslateUI2 <QIDialog> (aParent
+/* Local includes */
+#include "UIGlobalSettingsNetwork.h"
+#include "UIGlobalSettingsNetworkDetails.h"
+
+/* Network page details constructor: */
+UIGlobalSettingsNetworkDetails::UIGlobalSettingsNetworkDetails(QWidget *pParent)
+    : QIWithRetranslateUI2<QIDialog>(pParent
 #ifdef Q_WS_MAC
     ,Qt::Sheet
 #endif /* Q_WS_MAC */
     )
-    , mItem(0)
+    , m_pItem(0)
 {
-    /* Apply UI decorations */
-    Ui::UIGlobalSettingsNetworkDetails::setupUi (this);
+    /* Apply UI decorations: */
+    Ui::UIGlobalSettingsNetworkDetails::setupUi(this);
 
-    /* Setup dialog */
-    setWindowIcon (QIcon (":/guesttools_16px.png"));
+    /* Setup dialog: */
+    setWindowIcon(QIcon(":/guesttools_16px.png"));
 
-    /* Setup validators */
-    QString templateIPv4 ("([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
-                          "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
-                          "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
-                          "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
-    QString templateIPv6 ("[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                          "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                          "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                          "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}");
+    /* Setup validators: */
+    QString strTemplateIPv4("([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
+                            "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
+                            "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
+                            "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
+    QString strTemplateIPv6("[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                            "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                            "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
+                            "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}");
 
-    mLeIPv4->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
-    mLeNMv4->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
-    mLeIPv6->setValidator (new QRegExpValidator (QRegExp (templateIPv6), this));
-    mLeNMv6->setValidator (new QRegExpValidator (QRegExp ("[1-9][0-9]|1[0-1][0-9]|12[0-8]"), this));
-    mLeDhcpAddress->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
-    mLeDhcpMask->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
-    mLeDhcpLowerAddress->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
-    mLeDhcpUpperAddress->setValidator (new QRegExpValidator (QRegExp (templateIPv4), this));
+    m_pIPv4Editor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
+    m_pNMv4Editor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
+    m_pIPv6Editor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv6), this));
+    m_pNMv6Editor->setValidator(new QRegExpValidator(QRegExp("[1-9][0-9]|1[0-1][0-9]|12[0-8]"), this));
+    m_pDhcpAddressEditor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
+    m_pDhcpMaskEditor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
+    m_pDhcpLowerAddressEditor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
+    m_pDhcpUpperAddressEditor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
 
     /* Setup widgets */
-    mLeIPv6->setFixedWidthByText (QString().fill ('X', 32) + QString().fill (':', 7));
+    m_pIPv6Editor->setFixedWidthByText(QString().fill('X', 32) + QString().fill(':', 7));
 
-#if 0 /* defined (Q_WS_WIN32) */
+#if 0 /* defined (Q_WS_WIN) */
     QStyleOption options1;
-    options1.initFrom (mCbManual);
-    QGridLayout *layout1 = qobject_cast <QGridLayout*> (mTwDetails->widget (0)->layout());
-    int wid1 = mCbManual->style()->pixelMetric (QStyle::PM_IndicatorWidth, &options1, mCbManual) +
-               mCbManual->style()->pixelMetric (QStyle::PM_CheckBoxLabelSpacing, &options1, mCbManual) -
-               layout1->spacing() - 1;
-    QSpacerItem *spacer1 = new QSpacerItem (wid1, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-    layout1->addItem (spacer1, 1, 0, 4);
+    options1.initFrom(m_pEnableManualCheckbox);
+    QGridLayout *playout1 = qobject_cast<QGridLayout*>(m_pDetailsTabWidget->widget(0)->layout());
+    int iWid1 = m_pEnableManualCheckbox->style()->pixelMetric(QStyle::PM_IndicatorWidth, &options1, m_pEnableManualCheckbox) +
+                m_pEnableManualCheckbox->style()->pixelMetric(QStyle::PM_CheckBoxLabelSpacing, &options1, m_pEnableManualCheckbox) -
+                playout1->spacing() - 1;
+    QSpacerItem *spacer1 = new QSpacerItem(iWid1, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+    playout1->addItem(spacer1, 1, 0, 4);
 #else
-    mCbManual->setVisible (false);
+    m_pEnableManualCheckbox->setVisible(false);
 #endif
 
     QStyleOption options2;
-    options2.initFrom (mCbDhcpServerEnabled);
-    QGridLayout *layout2 = qobject_cast <QGridLayout*> (mTwDetails->widget (1)->layout());
-    int wid2 = mCbDhcpServerEnabled->style()->pixelMetric (QStyle::PM_IndicatorWidth, &options2, mCbDhcpServerEnabled) +
-               mCbDhcpServerEnabled->style()->pixelMetric (QStyle::PM_CheckBoxLabelSpacing, &options2, mCbDhcpServerEnabled) -
-               layout2->spacing() - 1;
-    QSpacerItem *spacer2 = new QSpacerItem (wid2, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-    layout2->addItem (spacer2, 1, 0, 4);
+    options2.initFrom(m_pEnabledDhcpServerCheckbox);
+    QGridLayout *pLayout2 = qobject_cast<QGridLayout*>(m_pDetailsTabWidget->widget(1)->layout());
+    int wid2 = m_pEnabledDhcpServerCheckbox->style()->pixelMetric(QStyle::PM_IndicatorWidth, &options2, m_pEnabledDhcpServerCheckbox) +
+               m_pEnabledDhcpServerCheckbox->style()->pixelMetric(QStyle::PM_CheckBoxLabelSpacing, &options2, m_pEnabledDhcpServerCheckbox) -
+               pLayout2->spacing() - 1;
+    QSpacerItem *pSpacer2 = new QSpacerItem(wid2, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
+    pLayout2->addItem(pSpacer2, 1, 0, 4);
 
-    /* Setup connections */
-    connect (mCbManual, SIGNAL (stateChanged (int)),
-             this, SLOT (dhcpClientStatusChanged()));
-    connect (mCbDhcpServerEnabled, SIGNAL (stateChanged (int)),
-             this, SLOT (dhcpServerStatusChanged()));
+    /* Setup connections: */
+    connect(m_pEnableManualCheckbox, SIGNAL(stateChanged(int)), this, SLOT (sltDhcpClientStatusChanged()));
+    connect(m_pEnabledDhcpServerCheckbox, SIGNAL(stateChanged (int)), this, SLOT(sltDhcpServerStatusChanged()));
 
-    /* Applying language settings */
+    /* Apply language settings: */
     retranslateUi();
 
-    /* Fix minimum possible size */
-    resize (minimumSizeHint());
+    /* Fix minimum possible size: */
+    resize(minimumSizeHint());
     qApp->processEvents();
-    setFixedSize (minimumSizeHint());
+    setFixedSize(minimumSizeHint());
 }
 
-void UIGlobalSettingsNetworkDetails::getFromItem (NetworkItem *aItem)
+/* Get data to details sub-dialog: */
+void UIGlobalSettingsNetworkDetails::getFromItem(UIHostInterfaceItem *pItem)
 {
-    mItem = aItem;
+    m_pItem = pItem;
 
-    /* Host-only Interface */
-    mCbManual->setChecked (!mItem->isDhcpClientEnabled());
-#if !0 /* !defined (Q_WS_WIN32) */
-    /* Disable automatic for all hosts for now */
-    mCbManual->setChecked (true);
-    mCbManual->setEnabled (false);
+    /* Host-only Interface: */
+    m_pEnableManualCheckbox->setChecked(!m_pItem->isDhcpClientEnabled());
+#if !0 /* !defined (Q_WS_WIN) */
+    /* Disable automatic for all hosts for now: */
+    m_pEnableManualCheckbox->setChecked(true);
+    m_pEnableManualCheckbox->setEnabled(false);
 #endif
-    dhcpClientStatusChanged();
+    sltDhcpClientStatusChanged();
 
-    /* DHCP Server */
-    mCbDhcpServerEnabled->setChecked (mItem->isDhcpServerEnabled());
-    dhcpServerStatusChanged();
+    /* DHCP Server: */
+    m_pEnabledDhcpServerCheckbox->setChecked(m_pItem->isDhcpServerEnabled());
+    sltDhcpServerStatusChanged();
 }
 
+/* Return data from details sub-dialog: */
 void UIGlobalSettingsNetworkDetails::putBackToItem()
 {
-    /* Host-only Interface */
-    mItem->setDhcpClientEnabled (!mCbManual->isChecked());
-    if (mCbManual->isChecked())
+    /* Host-only Interface: */
+    m_pItem->setDhcpClientEnabled(!m_pEnableManualCheckbox->isChecked());
+    if (m_pEnableManualCheckbox->isChecked())
     {
-        mItem->setInterfaceAddress (mLeIPv4->text());
-        mItem->setInterfaceMask (mLeNMv4->text());
-        if (mItem->isIpv6Supported())
+        m_pItem->setInterfaceAddress(m_pIPv4Editor->text());
+        m_pItem->setInterfaceMask(m_pNMv4Editor->text());
+        if (m_pItem->isIpv6Supported())
         {
-            mItem->setInterfaceAddress6 (mLeIPv6->text());
-            mItem->setInterfaceMaskLength6 (mLeNMv6->text());
+            m_pItem->setInterfaceAddress6(m_pIPv6Editor->text());
+            m_pItem->setInterfaceMaskLength6(m_pNMv6Editor->text());
         }
     }
 
-    /* DHCP Server */
-    mItem->setDhcpServerEnabled (mCbDhcpServerEnabled->isChecked());
-    if (mCbDhcpServerEnabled->isChecked())
+    /* DHCP Server: */
+    m_pItem->setDhcpServerEnabled(m_pEnabledDhcpServerCheckbox->isChecked());
+    if (m_pEnabledDhcpServerCheckbox->isChecked())
     {
-        mItem->setDhcpServerAddress (mLeDhcpAddress->text());
-        mItem->setDhcpServerMask (mLeDhcpMask->text());
-        mItem->setDhcpLowerAddress (mLeDhcpLowerAddress->text());
-        mItem->setDhcpUpperAddress (mLeDhcpUpperAddress->text());
+        m_pItem->setDhcpServerAddress(m_pDhcpAddressEditor->text());
+        m_pItem->setDhcpServerMask(m_pDhcpMaskEditor->text());
+        m_pItem->setDhcpLowerAddress(m_pDhcpLowerAddressEditor->text());
+        m_pItem->setDhcpUpperAddress(m_pDhcpUpperAddressEditor->text());
     }
 }
 
+/* Validation stuff: */
 void UIGlobalSettingsNetworkDetails::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIGlobalSettingsNetworkDetails::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIGlobalSettingsNetworkDetails::retranslateUi(this);
 }
 
-void UIGlobalSettingsNetworkDetails::dhcpClientStatusChanged()
+/* Handler for DHCP client settings change: */
+void UIGlobalSettingsNetworkDetails::sltDhcpClientStatusChanged()
 {
-    bool isManual = mCbManual->isChecked();
-    bool isIpv6Supported = isManual && mItem->isIpv6Supported();
+    bool fIsManual = m_pEnableManualCheckbox->isChecked();
+    bool fIsIpv6Supported = fIsManual && m_pItem->isIpv6Supported();
 
-    mLeIPv4->clear();
-    mLeNMv4->clear();
-    mLeIPv6->clear();
-    mLeNMv6->clear();
+    m_pIPv4Editor->clear();
+    m_pNMv4Editor->clear();
+    m_pIPv6Editor->clear();
+    m_pNMv6Editor->clear();
 
-    mLbIPv4->setEnabled (isManual);
-    mLbNMv4->setEnabled (isManual);
-    mLeIPv4->setEnabled (isManual);
-    mLeNMv4->setEnabled (isManual);
-    mLbIPv6->setEnabled (isIpv6Supported);
-    mLbNMv6->setEnabled (isIpv6Supported);
-    mLeIPv6->setEnabled (isIpv6Supported);
-    mLeNMv6->setEnabled (isIpv6Supported);
+    m_pIPv4Label->setEnabled(fIsManual);
+    m_pNMv4Label->setEnabled(fIsManual);
+    m_pIPv4Editor->setEnabled(fIsManual);
+    m_pNMv4Editor->setEnabled(fIsManual);
+    m_pIPv6Label->setEnabled(fIsIpv6Supported);
+    m_pNMv6Label->setEnabled(fIsIpv6Supported);
+    m_pIPv6Editor->setEnabled(fIsIpv6Supported);
+    m_pNMv6Editor->setEnabled(fIsIpv6Supported);
 
-    if (isManual)
+    if (fIsManual)
     {
-        mLeIPv4->setText (mItem->interfaceAddress());
-        mLeNMv4->setText (mItem->interfaceMask());
-        if (isIpv6Supported)
+        m_pIPv4Editor->setText(m_pItem->interfaceAddress());
+        m_pNMv4Editor->setText(m_pItem->interfaceMask());
+        if (fIsIpv6Supported)
         {
-            mLeIPv6->setText (mItem->interfaceAddress6());
-            mLeNMv6->setText (mItem->interfaceMaskLength6());
+            m_pIPv6Editor->setText(m_pItem->interfaceAddress6());
+            m_pNMv6Editor->setText(m_pItem->interfaceMaskLength6());
         }
     }
 }
 
-void UIGlobalSettingsNetworkDetails::dhcpServerStatusChanged()
+/* Handler for DHCP server settings change: */
+void UIGlobalSettingsNetworkDetails::sltDhcpServerStatusChanged()
 {
-    bool isEnabled = mCbDhcpServerEnabled->isChecked();
+    bool fIsManual = m_pEnabledDhcpServerCheckbox->isChecked();
 
-    mLeDhcpAddress->clear();
-    mLeDhcpMask->clear();
-    mLeDhcpLowerAddress->clear();
-    mLeDhcpUpperAddress->clear();
+    m_pDhcpAddressEditor->clear();
+    m_pDhcpMaskEditor->clear();
+    m_pDhcpLowerAddressEditor->clear();
+    m_pDhcpUpperAddressEditor->clear();
 
-    mLbDhcpAddress->setEnabled (isEnabled);
-    mLbDhcpMask->setEnabled (isEnabled);
-    mLbDhcpLowerAddress->setEnabled (isEnabled);
-    mLbDhcpUpperAddress->setEnabled (isEnabled);
-    mLeDhcpAddress->setEnabled (isEnabled);
-    mLeDhcpMask->setEnabled (isEnabled);
-    mLeDhcpLowerAddress->setEnabled (isEnabled);
-    mLeDhcpUpperAddress->setEnabled (isEnabled);
+    m_pDhcpAddressLabel->setEnabled(fIsManual);
+    m_pDhcpMaskLabel->setEnabled(fIsManual);
+    m_pDhcpLowerAddressLabel->setEnabled(fIsManual);
+    m_pDhcpUpperAddressLabel->setEnabled(fIsManual);
+    m_pDhcpAddressEditor->setEnabled(fIsManual);
+    m_pDhcpMaskEditor->setEnabled(fIsManual);
+    m_pDhcpLowerAddressEditor->setEnabled(fIsManual);
+    m_pDhcpUpperAddressEditor->setEnabled(fIsManual);
 
-    if (isEnabled)
+    if (fIsManual)
     {
-        mLeDhcpAddress->setText (mItem->dhcpServerAddress());
-        mLeDhcpMask->setText (mItem->dhcpServerMask());
-        mLeDhcpLowerAddress->setText (mItem->dhcpLowerAddress());
-        mLeDhcpUpperAddress->setText (mItem->dhcpUpperAddress());
+        m_pDhcpAddressEditor->setText(m_pItem->dhcpServerAddress());
+        m_pDhcpMaskEditor->setText(m_pItem->dhcpServerMask());
+        m_pDhcpLowerAddressEditor->setText(m_pItem->dhcpLowerAddress());
+        m_pDhcpUpperAddressEditor->setText(m_pItem->dhcpUpperAddress());
     }
 }
 
