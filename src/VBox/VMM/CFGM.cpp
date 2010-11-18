@@ -2300,8 +2300,7 @@ VMMR3DECL(int) CFGMR3QueryBoolDef(PCFGMNODE pNode, const char *pszName, bool *pf
 {
     uint64_t u64;
     int rc = CFGMR3QueryIntegerDef(pNode, pszName, &u64, fDef);
-    if (RT_SUCCESS(rc))
-        *pf = u64 ? true : false;
+    *pf = u64 ? true : false;
     return rc;
 }
 
