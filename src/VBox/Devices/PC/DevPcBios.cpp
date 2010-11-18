@@ -1363,13 +1363,15 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Map the Network Boot ROM into memory.
      * Currently there is a fixed mapping: 0x000d2000 to 0x000dffff contains
-     * the (up to) 56 kb ROM image.
+     * the (up to) 56 kb ROM image.  The mapping size is fixed to trouble with
+     * the saved state (in PGM).
      */
     if (pu8LanBootBinary)
     {
         pThis->cbLanBoot = cbLanBootBinary;
 
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary, cbLanBootBinary,
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4,  RT_MAX(cbLanBootBinary, 56*_1K),
+                                  pu8LanBootBinary, cbLanBootBinary,
                                   PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
         AssertRCReturn(rc, rc);
     }
