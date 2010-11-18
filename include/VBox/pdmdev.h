@@ -2278,15 +2278,16 @@ typedef struct PDMDEVHLPR3
      * @param   cbRange             The size of the range (in bytes).
      *                              Must be page aligned!
      * @param   pvBinary            Pointer to the binary data backing the ROM image.
-     *                              This must be cbRange bytes big.
-     *                              It will be copied and doesn't have to stick around if fShadow is clear.
+     * @param   cbBinary            The size of the binary pointer.  This must
+     *                              be equal or smaller than @a cbRange.
      * @param   fFlags              Shadow ROM flags, PGMPHYS_ROM_FLAGS_* in pgm.h.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      *
      * @remark  There is no way to remove the rom, automatically on device cleanup or
      *          manually from the device yet. At present I doubt we need such features...
      */
-    DECLR3CALLBACKMEMBER(int, pfnROMRegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, uint32_t fFlags, const char *pszDesc));
+    DECLR3CALLBACKMEMBER(int, pfnROMRegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange,
+                                              const void *pvBinary, uint32_t cbBinary, uint32_t fFlags, const char *pszDesc));
 
     /**
      * Changes the protection of shadowed ROM mapping.
@@ -3975,9 +3976,10 @@ DECLINLINE(int) PDMDevHlpMMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RT
 /**
  * @copydoc PDMDEVHLPR3::pfnROMRegister
  */
-DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, uint32_t fFlags, const char *pszDesc)
+DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange,
+                                     const void *pvBinary, uint32_t cbBinary, uint32_t fFlags, const char *pszDesc)
 {
-    return pDevIns->pHlpR3->pfnROMRegister(pDevIns, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc);
+    return pDevIns->pHlpR3->pfnROMRegister(pDevIns, GCPhysStart, cbRange, pvBinary, cbBinary, fFlags, pszDesc);
 }
 
 /**

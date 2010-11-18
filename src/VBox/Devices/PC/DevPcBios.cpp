@@ -1068,7 +1068,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         FwCommonPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
                               _4K - VBOX_DMI_TABLE_SIZE, pThis->cCpus);
 
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
     if (RT_FAILURE(rc))
         return rc;
@@ -1254,11 +1254,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertReleaseMsg(RT_ALIGN_Z(cbPcBiosBinary, _64K) == cbPcBiosBinary,
                      ("cbPcBiosBinary=%#x\n", cbPcBiosBinary));
     cb = RT_MIN(cbPcBiosBinary, 128 * _1K); /* Effectively either 64 or 128K. */
-    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb],
+    rc = PDMDevHlpROMRegister(pDevIns, 0x00100000 - cb, cb, &pu8PcBiosBinary[cbPcBiosBinary - cb], cb,
                               fFlags, "PC BIOS - 0xfffff");
     if (RT_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary,
+    rc = PDMDevHlpROMRegister(pDevIns, (uint32_t)-(int32_t)cbPcBiosBinary, cbPcBiosBinary, pu8PcBiosBinary, cbPcBiosBinary,
                               fFlags, "PC BIOS - 0xffffffff");
     if (RT_FAILURE(rc))
         return rc;
@@ -1369,7 +1369,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         pThis->cbLanBoot = cbLanBootBinary;
 
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary,
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4, cbLanBootBinary, pu8LanBootBinary, cbLanBootBinary,
                                   PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
         AssertRCReturn(rc, rc);
     }
