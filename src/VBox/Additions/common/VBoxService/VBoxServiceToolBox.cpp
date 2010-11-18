@@ -236,7 +236,8 @@ int VBoxServiceToolboxCat(int argc, char **argv)
      static const RTGETOPTDEF s_aOptions[] =
      {
          { "--input",     'i', RTGETOPT_REQ_STRING },
-         { "--output",    'o', RTGETOPT_REQ_STRING }
+         { "--output",    'o', RTGETOPT_REQ_STRING },
+         { "--flags",     'f', RTGETOPT_REQ_STRING }
      };
 
      int ch;
@@ -246,7 +247,11 @@ int VBoxServiceToolboxCat(int argc, char **argv)
 
      int rc = VINF_SUCCESS;
      RTFILE hInput = NIL_RTFILE;
+
      RTFILE hOutput = NIL_RTFILE;
+     uint32_t ofFlags =   RTFILE_O_CREATE_REPLACE /* Output file flags. */
+                        | RTFILE_O_WRITE
+                        | RTFILE_O_DENY_WRITE;
 
      while (   (ch = RTGetOpt(&GetState, &ValueUnion))
             && RT_SUCCESS(rc))
@@ -254,12 +259,19 @@ int VBoxServiceToolboxCat(int argc, char **argv)
          /* For options that require an argument, ValueUnion has received the value. */
          switch (ch)
          {
+             case 'f':
+                 /* Process flags; no fancy parsing here yet. */
+                 if (RTStrIStr(ValueUnion.psz, "noindex"))
+                     ofFlags |= RTFILE_O_NOT_CONTENT_INDEXED;
+                 else
+                 {
+                     VBoxServiceError("cat: Unknown flag set!\n");
+                     rc = VERR_INVALID_PARAMETER;
+                 }
+                 break;
+
              case 'o':
-                 rc = RTFileOpen(&hOutput, ValueUnion.psz,
-                                 RTFILE_O_CREATE_REPLACE |
-                                 RTFILE_O_NOT_CONTENT_INDEXED | /* We don't need indexing here. */
-                                 RTFILE_O_WRITE |
-                                 RTFILE_O_DENY_WRITE);
+                 rc = RTFileOpen(&hOutput, ValueUnion.psz, ofFlags);
                  if (RT_FAILURE(rc))
                      VBoxServiceError("cat: Could not create output file \"%s\"! rc=%Rrc\n",
                                       ValueUnion.psz, rc);
