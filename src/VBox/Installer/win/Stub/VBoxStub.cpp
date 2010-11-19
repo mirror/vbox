@@ -300,8 +300,8 @@ static BOOL PackageIsNeeded(PVBOXSTUBPKG pPackage)
  */
 int CopyDir(const char *pszDestDir, const char *pszSourceDir)
 {
-    char szDest[_MAX_PATH + 1];
-    char szSource[_MAX_PATH + 1];
+    char szDest[RTPATH_MAX + 1];
+    char szSource[RTPATH_MAX + 1];
 
     AssertStmt(pszDestDir, "Destination directory invalid!");
     AssertStmt(pszSourceDir, "Source directory invalid!");
@@ -328,8 +328,8 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                    char      *lpCmdLine,
                    int        nCmdShow)
 {
-    char **pArgV = __argv;
-    int iArgC = __argc;
+    char **argv = __argv;
+    int argc    = __argc;
 
     /* Check if we're already running and jump out if so. */
     /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
@@ -351,70 +351,78 @@ int WINAPI WinMain(HINSTANCE  hInstance,
     BOOL fExtractOnly = FALSE;
     BOOL fSilent = FALSE;
     BOOL fEnableLogging = FALSE;
-    BOOL bExit = FALSE;
+    BOOL fExit = FALSE;
 
     /* Temp variables for arguments. */
     char szExtractPath[RTPATH_MAX] = {0};
     char szMSIArgs[RTPATH_MAX] = {0};
 
     /* Process arguments. */
-    for (int i = 0; i < iArgC; i++)
+    for (int i = 0; i < argc; i++)
     {
-        if (   (0 == RTStrICmp(pArgV[i], "-x"))
-            || (0 == RTStrICmp(pArgV[i], "-extract"))
-            || (0 == RTStrICmp(pArgV[i], "/extract")))
+        if (   (0 == RTStrICmp(argv[i], "-x"))
+            || (0 == RTStrICmp(argv[i], "-extract"))
+            || (0 == RTStrICmp(argv[i], "/extract")))
         {
             fExtractOnly = TRUE;
         }
 
-        else if (   (0 == RTStrICmp(pArgV[i], "-s"))
-                 || (0 == RTStrICmp(pArgV[i], "-silent"))
-                 || (0 == RTStrICmp(pArgV[i], "/silent")))
+        else if (   (0 == RTStrICmp(argv[i], "-s"))
+                 || (0 == RTStrICmp(argv[i], "-silent"))
+                 || (0 == RTStrICmp(argv[i], "/silent")))
         {
             fSilent = TRUE;
         }
 
-        else if (   (0 == RTStrICmp(pArgV[i], "-l"))
-                 || (0 == RTStrICmp(pArgV[i], "-logging"))
-                 || (0 == RTStrICmp(pArgV[i], "/logging")))
+        else if (   (0 == RTStrICmp(argv[i], "-l"))
+                 || (0 == RTStrICmp(argv[i], "-logging"))
+                 || (0 == RTStrICmp(argv[i], "/logging")))
         {
             fEnableLogging = TRUE;
         }
 
-        else if ((  (0 == RTStrICmp(pArgV[i], "-p"))
-                 || (0 == RTStrICmp(pArgV[i], "-path"))
-                 || (0 == RTStrICmp(pArgV[i], "/path")))
-                 && (iArgC > i))
+        else if ((  (0 == RTStrICmp(argv[i], "-p"))
+                 || (0 == RTStrICmp(argv[i], "-path"))
+                 || (0 == RTStrICmp(argv[i], "/path")))
+                 )
         {
-            vrc = ::StringCbCat(szExtractPath, sizeof(szExtractPath), pArgV[i+1]);
-            i++; /* Avoid the specify path from being parsed */
+            if (argc > i)
+            {
+                vrc = ::StringCbCat(szExtractPath, sizeof(szExtractPath), argv[i+1]);
+                i++; /* Avoid the specified path from being parsed. */
+            }
+            else
+            {
+                ShowError("No path for extraction specified!");
+                fExit = TRUE;
+            }
         }
 
-        else if ((  (0 == RTStrICmp(pArgV[i], "-msiparams"))
-                 || (0 == RTStrICmp(pArgV[i], "/msiparams")))
-                 && (iArgC > i))
+        else if ((  (0 == RTStrICmp(argv[i], "-msiparams"))
+                 || (0 == RTStrICmp(argv[i], "/msiparams")))
+                 && (argc > i))
         {
-            for (int a=i+1; a<iArgC; a++)
+            for (int a = i + 1; a < argc; a++)
             {
                 if (a > i+1) /* Insert a space. */
                     vrc = ::StringCbCat(szMSIArgs, sizeof(szMSIArgs), " ");
 
-                vrc = ::StringCbCat(szMSIArgs, sizeof(szMSIArgs), pArgV[a]);
+                vrc = ::StringCbCat(szMSIArgs, sizeof(szMSIArgs), argv[a]);
             }
         }
 
-        else if (   (0 == RTStrICmp(pArgV[i], "-v"))
-                 || (0 == RTStrICmp(pArgV[i], "-version"))
-                 || (0 == RTStrICmp(pArgV[i], "/version")))
+        else if (   (0 == RTStrICmp(argv[i], "-v"))
+                 || (0 == RTStrICmp(argv[i], "-version"))
+                 || (0 == RTStrICmp(argv[i], "/version")))
         {
             ShowInfo("Version: %d.%d.%d.%d",
                      VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
-            bExit = TRUE;
+            fExit = TRUE;
         }
 
-        else if (   (0 == RTStrICmp(pArgV[i], "-help"))
-                 || (0 == RTStrICmp(pArgV[i], "/help"))
-                 || (0 == RTStrICmp(pArgV[i], "/?")))
+        else if (   (0 == RTStrICmp(argv[i], "-help"))
+                 || (0 == RTStrICmp(argv[i], "/help"))
+                 || (0 == RTStrICmp(argv[i], "/?")))
         {
             ShowInfo("-- %s v%d.%d.%d.%d --\n"
                          "Command Line Parameters:\n\n"
@@ -429,22 +437,22 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                          "%s -msiparams INSTALLDIR=C:\\VBox\n"
                          "%s -extract -path C:\\VBox\n",
                          VBOX_STUB_TITLE, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
-                         pArgV[0], pArgV[0]);
-            bExit = TRUE;
+                         argv[0], argv[0]);
+            fExit = TRUE;
         }
         else
         {
             if (i > 0)
             {
-                ShowInfo("Unknown option \"%s\"!\n"
-                         "Please refer to the command line help by specifying \"/?\"\n"
-                         "to get more information.", pArgV[i]);
-                bExit = TRUE;
+                ShowError("Unknown option \"%s\"!\n"
+                          "Please refer to the command line help by specifying \"/?\"\n"
+                          "to get more information.", argv[i]);
+                fExit = TRUE;
             }
         }
     }
 
-    if (bExit)
+    if (fExit)
         return 0;
 
     HRESULT hr = S_OK;
@@ -485,9 +493,9 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         {
             PVBOXSTUBPKG pPackage = NULL;
             DWORD cbPackage = 0;
-            char szHeaderName[_MAX_PATH] = {0};
+            char szHeaderName[RTPATH_MAX + 1] = {0};
 
-            hr = ::StringCchPrintf(szHeaderName, _MAX_PATH, "HDR_%02d", k);
+            hr = ::StringCchPrintf(szHeaderName, RTPATH_MAX, "HDR_%02d", k);
             vrc = ReadData(NULL, szHeaderName, (LPVOID*)&pPackage, &cbPackage);
             AssertMsgRCBreak(vrc, ("Header not found!\n")); /** @todo include header name, how? */
 
@@ -524,9 +532,9 @@ int WINAPI WinMain(HINSTANCE  hInstance,
             {
                 PVBOXSTUBPKG pPackage = NULL;
                 DWORD cbPackage = 0;
-                char szHeaderName[_MAX_PATH] = {0};
+                char szHeaderName[RTPATH_MAX] = {0};
 
-                hr = StringCchPrintf(szHeaderName, _MAX_PATH, "HDR_%02d", k);
+                hr = StringCchPrintf(szHeaderName, RTPATH_MAX, "HDR_%02d", k);
                 vrc = ReadData(NULL, szHeaderName, (LPVOID*)&pPackage, &cbPackage);
                 AssertMsgRCBreak(vrc, ("Package not found!\n"));
 
