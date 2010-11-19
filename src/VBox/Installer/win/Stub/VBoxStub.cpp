@@ -459,6 +459,9 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
             vrc = RTPathAppend(szExtractPath, sizeof(szExtractPath), "VirtualBox");
             AssertMsgRCBreak(vrc, ("Could not construct temp directory!\n"));
+
+            /* Convert slahes; this is necessary for MSI routines later! */
+            RTPathChangeToDosSlashes(szExtractPath, true /* Force conversion. */);
         }
         if (!RTDirExists(szExtractPath))
         {
@@ -506,6 +509,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
              * file(s) can use it.
              */
             char *pszPathCustomDir = RTPathJoinA(szPathExe, ".custom");
+            pszPathCustomDir = RTPathChangeToDosSlashes(pszPathCustomDir, true /* Force conversion. */);
             if (pszPathCustomDir && RTDirExists(pszPathCustomDir))
             {
                 vrc = CopyDir(szExtractPath, pszPathCustomDir);
@@ -547,6 +551,8 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                         if (fEnableLogging)
                         {
                             char *pszLog = RTPathJoinA(szExtractPath, "VBoxInstallLog.txt");
+                            /* Convert slahes; this is necessary for MSI routines! */
+                            pszLog = RTPathChangeToDosSlashes(pszLog, true /* Force conversion. */);
                             AssertMsgBreak(pszLog, ("Could not construct path for log file!\n"));
                             UINT uLogLevel = MsiEnableLog(INSTALLLOGMODE_VERBOSE,
                                                           pszLog, INSTALLLOGATTRIBUTES_FLUSHEACHLINE);
