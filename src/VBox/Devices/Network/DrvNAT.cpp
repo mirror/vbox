@@ -990,6 +990,16 @@ static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
 
 
 /**
+ * Info handler.
+ */
+static DECLCALLBACK(void) drvNATInfo(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    slirp_info(pThis->pNATState, pHlp, pszArgs);
+}
+
+
+/**
  * Sets up the redirectors.
  *
  * @returns VBox status code.
@@ -1312,6 +1322,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
 
             rc = RTCritSectInit(&pThis->XmitLock);
             AssertRCReturn(rc, rc);
+
+            char szTmp[128];
+            RTStrPrintf(szTmp, sizeof(szTmp), "nat%d", pDrvIns->iInstance);
+            PDMDrvHlpDBGFInfoRegister(pDrvIns, szTmp, "NAT info.", drvNATInfo);
 
 #ifndef RT_OS_WINDOWS
             /*
