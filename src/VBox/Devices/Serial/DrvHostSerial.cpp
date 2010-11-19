@@ -369,6 +369,18 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
 
     tcsetattr(pThis->DeviceFile, TCSANOW, termiosSetup);
     RTMemTmpFree(termiosSetup);
+
+#ifdef RT_OS_LINUX
+    /*
+     * XXX In Linux, if a thread calls tcsetattr while the monitor thread is
+     * waiting in ioctl for a modem status change then 8250.c wrongly disables
+     * modem irqs and so the monitor thread never gets released. The workaround
+     * is to send a signal after each tcsetattr.
+     */
+    LogRel(("POKE\n"));
+    RTThreadPoke(pThis->pMonitorThread->Thread);
+#endif
+
 #elif defined(RT_OS_WINDOWS)
     comSetup = (LPDCB)RTMemTmpAllocZ(sizeof(DCB));
 
@@ -913,40 +925,17 @@ static DECLCALLBACK(int) drvHostSerialMonitorThread(PPDMDRVINS pDrvIns, PPDMTHRE
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc = VINF_SUCCESS;
-    unsigned uStatusLinesToCheck = 0;
-
-    uStatusLinesToCheck = TIOCM_CAR | TIOCM_RNG | TIOCM_LE | TIOCM_CTS;
+    unsigned long const uStatusLinesToCheck = TIOCM_CAR | TIOCM_RNG | TIOCM_DSR | TIOCM_CTS;
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    do
     {
-        uint32_t newStatusLine = 0;
         unsigned int statusLines;
-
-# ifdef RT_OS_LINUX
+       
         /*
-         * Wait for status line change.
-         */
-        rc = ioctl(pThis->DeviceFile, TIOCMIWAIT, uStatusLinesToCheck);
-        if (pThread->enmState != PDMTHREADSTATE_RUNNING)
-            break;
-        if (rc < 0)
-        {
-ioctl_error:
-            PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
-                                       N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
-                                       pThis->pszDevicePath, RTErrConvertFromErrno(errno));
-            break;
-        }
-
-        rc = ioctl(pThis->DeviceFile, TIOCMGET, &statusLines);
-        if (rc < 0)
-            goto ioctl_error;
-# else  /* !RT_OS_LINUX */
-        /*
-         * Poll for the status line change.
+         * Get the status line state.
          */
         rc = ioctl(pThis->DeviceFile, TIOCMGET, &statusLines);
         if (rc < 0)
@@ -956,24 +945,42 @@ ioctl_error:
                                        pThis->pszDevicePath, RTErrConvertFromErrno(errno));
             break;
         }
-        if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
-        {
-            PDMR3ThreadSleep(pThread, 500); /* 0.5 sec */
-            continue;
-        }
-        pThis->fStatusLines = statusLines;
-# endif /* !RT_OS_LINUX */
+
+        uint32_t newStatusLine = 0;
 
         if (statusLines & TIOCM_CAR)
             newStatusLine |= PDMICHARPORT_STATUS_LINES_DCD;
         if (statusLines & TIOCM_RNG)
             newStatusLine |= PDMICHARPORT_STATUS_LINES_RI;
-        if (statusLines & TIOCM_LE)
+        if (statusLines & TIOCM_DSR)
             newStatusLine |= PDMICHARPORT_STATUS_LINES_DSR;
         if (statusLines & TIOCM_CTS)
             newStatusLine |= PDMICHARPORT_STATUS_LINES_CTS;
-        rc = pThis->pDrvCharPort->pfnNotifyStatusLinesChanged(pThis->pDrvCharPort, newStatusLine);
+        LogRel(("new status line state %x\n", newStatusLine));
+        pThis->pDrvCharPort->pfnNotifyStatusLinesChanged(pThis->pDrvCharPort, newStatusLine);
+
+        if (PDMTHREADSTATE_RUNNING != pThread->enmState)
+            break;
+
+# ifdef RT_OS_LINUX
+        /*
+         * Wait for status line change.
+         *
+         * XXX In Linux, if a thread calls tcsetattr while the monitor thread is
+         * waiting in ioctl for a modem status change then 8250.c wrongly disables
+         * modem irqs and so the monitor thread never gets released. The workaround
+         * is to send a signal after each tcsetattr.
+         */
+        ioctl(pThis->DeviceFile, TIOCMIWAIT, uStatusLinesToCheck);
+        LogRel(("status line change\n"));
+# else
+        /* Poll for status line change. */
+        if (!((statusLines ^ pThis->fStatusLines) & uStatusLinesToCheck))
+            PDMR3ThreadSleep(pThread, 500); /* 0.5 sec */
+        pThis->fStatusLines = statusLines;
+# endif
     }
+    while (PDMTHREADSTATE_RUNNING == pThread->enmState);
 
     return VINF_SUCCESS;
 }
@@ -992,84 +999,6 @@ static DECLCALLBACK(int) drvHostSerialWakeupMonitorThread(PPDMDRVINS pDrvIns, PP
 # ifdef RT_OS_LINUX
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     int rc = VINF_SUCCESS;
-#  if 0
-     unsigned int uSerialLineFlags;
-     unsigned int uSerialLineStatus;
-     unsigned int uIoctl;
-#  endif
-
-    /*
-     * Linux is a bit difficult as the thread is sleeping in an ioctl call.
-     * So there is no way to have a wakeup pipe.
-     *
-     * 1. That's why we set the serial device into loopback mode and change one of the
-     *    modem control bits.
-     *    This should make the ioctl call return.
-     *
-     * 2. We still got reports about long shutdown times. It may be possible
-     *    that the loopback mode is not implemented on all devices.
-     *    The next possible solution is to close the device file to make the ioctl
-     *    return with EBADF and be able to suspend the thread.
-     *
-     * 3. The second approach doesn't work too, the ioctl doesn't return.
-     *    But it seems that the ioctl is interruptible (return code in errno is EINTR).
-     */
-
-#  if 0 /* Disabled because it does not work for all. */
-    /* Get current status of control lines. */
-    rc = ioctl(pThis->DeviceFile, TIOCMGET, &uSerialLineStatus);
-    if (rc < 0)
-        goto ioctl_error;
-
-    uSerialLineFlags = TIOCM_LOOP;
-    rc = ioctl(pThis->DeviceFile, TIOCMBIS, &uSerialLineFlags);
-    if (rc < 0)
-        goto ioctl_error;
-
-    /*
-     * Change current level on the RTS pin to make the ioctl call return in the
-     * monitor thread.
-     */
-    uIoctl = (uSerialLineStatus & TIOCM_CTS) ? TIOCMBIC : TIOCMBIS;
-    uSerialLineFlags = TIOCM_RTS;
-
-    rc = ioctl(pThis->DeviceFile, uIoctl, &uSerialLineFlags);
-    if (rc < 0)
-        goto ioctl_error;
-
-    /* Change RTS back to the previous level. */
-    uIoctl = (uIoctl == TIOCMBIC) ? TIOCMBIS : TIOCMBIC;
-
-    rc = ioctl(pThis->DeviceFile, uIoctl, &uSerialLineFlags);
-    if (rc < 0)
-        goto ioctl_error;
-
-    /*
-     * Set serial device into normal state.
-     */
-    uSerialLineFlags = TIOCM_LOOP;
-    rc = ioctl(pThis->DeviceFile, TIOCMBIC, &uSerialLineFlags);
-    if (rc >= 0)
-        return VINF_SUCCESS;
-
-ioctl_error:
-    PDMDrvHlpVMSetRuntimeError(pDrvIns, 0 /*fFlags*/, "DrvHostSerialFail",
-                                N_("Ioctl failed for serial host device '%s' (%Rrc). The device will not work properly"),
-                                pThis->pszDevicePath, RTErrConvertFromErrno(errno));
-#  endif
-
-#  if 0
-    /* Close file to make ioctl return. */
-    RTFileClose(pData->DeviceFile);
-    /* Open again to make use after suspend possible again. */
-    rc = RTFileOpen(&pData->DeviceFile, pData->pszDevicePath, RTFILE_O_OPEN | RTFILE_O_READWRITE);
-    AssertMsgRC(rc, ("Opening device file again failed rc=%Rrc\n", rc));
-
-    if (RT_FAILURE(rc))
-        PDMDrvHlpVMSetRuntimeError(pDrvIns, false, "DrvHostSerialFail",
-                                    N_("Opening failed for serial host device '%s' (%Rrc). The device will not work"),
-                                    pData->pszDevicePath, rc);
-#  endif
 
     rc = RTThreadPoke(pThread->Thread);
     if (RT_FAILURE(rc))
