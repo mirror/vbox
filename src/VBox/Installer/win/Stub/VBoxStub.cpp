@@ -19,6 +19,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <windows.h>
+#include <lmerr.h>
 #include <msiquery.h>
 #include <objbase.h>
 #include <shlobj.h>
@@ -88,17 +89,17 @@ static int ShowError(const char *pszFmt, ...)
 {
     char       *pszMsg;
     va_list     va;
+    int         rc;
 
     va_start(va, pszFmt);
-    RTStrAPrintfV(&pszMsg, pszFmt, va);
-    va_end(va);
-
-    int rc;
-    if (pszMsg)
+    if (RTStrAPrintfV(&pszMsg, pszFmt, va))
+    {
         rc = MessageBox(GetDesktopWindow(), pszMsg, VBOX_STUB_TITLE, MB_ICONERROR);
-    else
-        rc = MessageBox(GetDesktopWindow(), pszFmt, VBOX_STUB_TITLE, MB_ICONERROR);
-    RTStrFree(pszMsg);
+        RTStrFree(pszMsg);
+    }
+    else /* Should never happen! */
+        AssertMsgFailed(("Failed to format error text of format string: %s!\n", pszFmt));
+    va_end(va);
     return rc;
 }
 
@@ -129,7 +130,7 @@ static int ReadData(HINSTANCE   hInst,
 
         /* Get resource size. */
         *pdwSize = SizeofResource(hInst, hRsrc);
-        AssertMsgBreak((*pdwSize > 0, "Size of resource is invalid!\n"));
+        AssertMsgBreak(*pdwSize > 0, ("Size of resource is invalid!\n"));
 
         /* Get pointer to resource. */
         HGLOBAL hData = LoadResource(hInst, hRsrc);
@@ -546,7 +547,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
                         if (fEnableLogging)
                         {
                             char *pszLog = RTPathJoinA(szExtractPath, "VBoxInstallLog.txt");
-                            AssertMsgRCBreak(vrc, ("Could not convert MSI log string to current codepage!\n"));
+                            AssertMsgBreak(pszLog, ("Could not construct path for log file!\n"));
                             UINT uLogLevel = MsiEnableLog(INSTALLLOGMODE_VERBOSE,
                                                           pszLog, INSTALLLOGATTRIBUTES_FLUSHEACHLINE);
                             RTStrFree(pszLog);
@@ -570,14 +571,43 @@ int WINAPI WinMain(HINSTANCE  hInstance,
 
                                     case ERROR_INSTALL_PLATFORM_UNSUPPORTED:
 
-                                        ShowError("This installation package is not supported on this platform.\n");
+                                        ShowError("This installation package is not supported on this platform.");
                                         break;
 
                                     default:
+                                    {
+                                        DWORD dwFormatFlags =   FORMAT_MESSAGE_ALLOCATE_BUFFER
+                                                              | FORMAT_MESSAGE_IGNORE_INSERTS
+                                                              | FORMAT_MESSAGE_FROM_SYSTEM;
+                                        HMODULE hModule = NULL;
+                                        if (uStatus >= NERR_BASE && uStatus <= MAX_NERR)
+                                        {
+                                            hModule = LoadLibraryEx(TEXT("netmsg.dll"),
+                                                                    NULL,
+                                                                    LOAD_LIBRARY_AS_DATAFILE);
+                                            if (hModule != NULL)
+                                                dwFormatFlags |= FORMAT_MESSAGE_FROM_HMODULE;
+                                        }
 
-                                        /** @todo Use FormatMessage here! */
-                                        ShowError("Installation failed! ERROR: %u", uStatus);
+                                        DWORD dwBufferLength;
+                                        LPSTR szMessageBuffer;
+                                        if (dwBufferLength = FormatMessageA(dwFormatFlags,
+                                                                            hModule, /* If NULL, load system stuff. */
+                                                                            uStatus,
+                                                                            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                                                            (LPSTR)&szMessageBuffer,
+                                                                            0,
+                                                                            NULL))
+                                        {
+                                            ShowError("Installation failed! Error: %s", szMessageBuffer);
+                                            LocalFree(szMessageBuffer);
+                                        }
+                                        else /* If text lookup failed, show at least the error number. */
+                                            ShowError("Installation failed! Error: %u", uStatus);
+                                        if (hModule)
+                                            FreeLibrary(hModule);
                                         break;
+                                    }
                                 }
                             }
 
