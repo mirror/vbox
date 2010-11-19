@@ -3134,6 +3134,11 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
     }
     if (fResetToC)
         sLoadedLangId = "C";
+#ifdef Q_WS_MAC
+    /* Qt doesn't translate the items in the Application menu initially.
+     * Manually trigger an update. */
+    ::darwinRetranslateAppMenu();
+#endif /* Q_WS_MAC */
 }
 
 QString VBoxGlobal::helpFile() const
