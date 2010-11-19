@@ -313,7 +313,7 @@ vboxRepatchMesaExports(void)
 {
     FAKEDRI_PatchNode *pFreeNode, *pPatchNode;
     int64_t offset;
-    char patch[12];
+    char patch[13];
 
     pPatchNode = g_pRepatchList;
     while (pPatchNode)
@@ -325,7 +325,7 @@ vboxRepatchMesaExports(void)
         pFreeNode = g_pFreeList;
         while (pFreeNode)
         {
-            if (pFreeNode->pDstEnd-pFreeNode->pDstStart>=12)
+            if (pFreeNode->pDstEnd-pFreeNode->pDstStart>=13)
             {
                 offset = ((intptr_t)pFreeNode->pDstStart-((intptr_t)pPatchNode->pDstStart+5));
                 if (offset<=INT32_MAX && offset>=INT32_MIN)
@@ -352,18 +352,19 @@ vboxRepatchMesaExports(void)
         vboxApplyPatch(pPatchNode->psFuncName, pPatchNode->pDstStart, &patch[0], 5);
 
         /*add 64bit abs jmp, from free space to our stub code*/
-        patch[0] = 0x48; /*movq %rax,imm64*/
-        patch[1] = 0xB8;
+        patch[0] = 0x49; /*movq %r11,imm64*/
+        patch[1] = 0xBB;
         crMemcpy(&patch[2], &pPatchNode->pSrcStart, 8);
-        patch[10] = 0xFF; /*jmp *%rax*/
-        patch[11] = 0xE0;
+        patch[10] = 0x41; /*jmp *%r11*/
+        patch[11] = 0xFF;
+        patch[12] = 0xE3;
 # ifndef VBOX_NO_MESA_PATCH_REPORTS
         crDebug("Adding jmp from mesa %s+%#lx to vbox %s", pFreeNode->psFuncName, pFreeNode->pDstStart-pFreeNode->pSrcStart,
                 pPatchNode->psFuncName);
 # endif
-        vboxApplyPatch(pFreeNode->psFuncName, pFreeNode->pDstStart, &patch[0], 12);
+        vboxApplyPatch(pFreeNode->psFuncName, pFreeNode->pDstStart, &patch[0], 13);
         /*mark this space as used*/
-        pFreeNode->pDstStart = pFreeNode->pDstStart+12;
+        pFreeNode->pDstStart = pFreeNode->pDstStart+13;
 
         pPatchNode = pPatchNode->pNext;
     }
