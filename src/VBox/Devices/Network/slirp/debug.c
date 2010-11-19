@@ -278,18 +278,18 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                 "socket is null");
     if (so->so_state == SS_NOFDREF || so->s == -1)
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                "socket(%d) SS_NODREF",so->s);
-    status = getsockname(so->s, &addr, &socklen);
+                "socket(%d) SS_NOFDREF", so->s);
 
+    status = getsockname(so->s, &addr, &socklen);
     if(status != 0 || addr.sa_family != AF_INET)
     {
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                "socket(%d) is invalid(probably closed)",so->s);
+                "socket(%d) is invalid(probably closed)", so->s);
     }
 
     in_addr = (struct sockaddr_in *)&addr;
     ip = RT_N2H_U32(so->so_faddr.s_addr);
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %4d:(proto:%u) "
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) "
             "state=%04x ip=" IP4_ADDR_PRINTF_FORMAT ":%d "
             "name=" IP4_ADDR_PRINTF_FORMAT ":%d",
             so->s, so->so_type, so->so_state, IP4_ADDR_PRINTF_DECOMP(ip),
