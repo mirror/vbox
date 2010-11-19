@@ -173,6 +173,10 @@ vboxApplyPatch(const char* psFuncName, void *pDst, const void *pSrc, unsigned lo
     }
 }
 
+#ifdef RT_ARCH_AMD64
+# define FAKEDRI_JMP64_PATCH_SIZE 13
+#endif
+
 static void
 vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd)
 {
@@ -290,7 +294,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
 
 #ifdef RT_ARCH_AMD64
     /*Add rest of mesa function body to free list*/
-    if (sym->st_size-(pEnd-pStart)>=5)
+    if (sym->st_size-(pEnd-pStart)>=FAKEDRI_JMP64_PATCH_SIZE)
     {
         FAKEDRI_PatchNode *pNode = (FAKEDRI_PatchNode *)crAlloc(sizeof(FAKEDRI_PatchNode));
         if (pNode)
@@ -302,6 +306,10 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
                 pNode->pSrcEnd = NULL;
                 pNode->pNext = g_pFreeList;
                 g_pFreeList = pNode;
+# ifndef VBOX_NO_MESA_PATCH_REPORTS
+                crDebug("Added free node %s, func start=%p, free start=%p, size=%#lx",
+                        psFuncName, pNode->pSrcStart, pNode->pDstStart, pNode->pDstEnd-pNode->pDstStart);
+# endif
         }
     }
 #endif
@@ -313,7 +321,7 @@ vboxRepatchMesaExports(void)
 {
     FAKEDRI_PatchNode *pFreeNode, *pPatchNode;
     int64_t offset;
-    char patch[13];
+    char patch[FAKEDRI_JMP64_PATCH_SIZE];
 
     pPatchNode = g_pRepatchList;
     while (pPatchNode)
@@ -325,7 +333,7 @@ vboxRepatchMesaExports(void)
         pFreeNode = g_pFreeList;
         while (pFreeNode)
         {
-            if (pFreeNode->pDstEnd-pFreeNode->pDstStart>=13)
+            if (pFreeNode->pDstEnd-pFreeNode->pDstStart>=FAKEDRI_JMP64_PATCH_SIZE)
             {
                 offset = ((intptr_t)pFreeNode->pDstStart-((intptr_t)pPatchNode->pDstStart+5));
                 if (offset<=INT32_MAX && offset>=INT32_MIN)
@@ -362,9 +370,9 @@ vboxRepatchMesaExports(void)
         crDebug("Adding jmp from mesa %s+%#lx to vbox %s", pFreeNode->psFuncName, pFreeNode->pDstStart-pFreeNode->pSrcStart,
                 pPatchNode->psFuncName);
 # endif
-        vboxApplyPatch(pFreeNode->psFuncName, pFreeNode->pDstStart, &patch[0], 13);
+        vboxApplyPatch(pFreeNode->psFuncName, pFreeNode->pDstStart, &patch[0], FAKEDRI_JMP64_PATCH_SIZE);
         /*mark this space as used*/
-        pFreeNode->pDstStart = pFreeNode->pDstStart+13;
+        pFreeNode->pDstStart = pFreeNode->pDstStart+FAKEDRI_JMP64_PATCH_SIZE;
 
         pPatchNode = pPatchNode->pNext;
     }
