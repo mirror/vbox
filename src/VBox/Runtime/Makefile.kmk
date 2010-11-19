@@ -288,6 +288,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
 	common/path/RTPathAppend.cpp \
+	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathChangeToDosSlashes.cpp \
 	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/path/RTPathCopyComponents.cpp \
@@ -298,6 +299,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathHavePath.cpp \
 	common/path/RTPathJoin.cpp \
 	common/path/RTPathJoinA.cpp \
+	common/path/RTPathJoinEx.cpp \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathStartsWithRoot.cpp \
@@ -983,6 +985,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
 	common/path/RTPathAppend.cpp \
+	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathHaveExt.cpp \
@@ -1456,6 +1459,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
 	common/path/RTPathAppend.cpp \
+	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathHaveExt.cpp \

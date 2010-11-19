@@ -444,6 +444,32 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
  * @param   pszAppend       The partial path to append to pszPath. This can be
  *                          NULL, in which case nothing is done.
  *
+ * @remarks See the RTPathAppendEx remarks.
+ */
+RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend);
+
+/**
+ * Appends one partial path to another.
+ *
+ * The main purpose of this function is to deal correctly with the slashes when
+ * concatenating the two partial paths.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the result is too big to fit within
+ *          cbPathDst bytes. No changes has been made.
+ * @retval  VERR_INVALID_PARAMETER if the string pointed to by pszPath is longer
+ *          than cbPathDst-1 bytes (failed to find terminator). Asserted.
+ *
+ * @param   pszPath         The path to append pszAppend to. This serves as both
+ *                          input and output. This can be empty, in which case
+ *                          pszAppend is just copied over.
+ * @param   cbPathDst       The size of the buffer pszPath points to, terminator
+ *                          included. This should NOT be strlen(pszPath).
+ * @param   pszAppend       The partial path to append to pszPath. This can be
+ *                          NULL, in which case nothing is done.
+ * @param   cchAppendMax    The maximum number or characters to take from @a
+ *                          pszAppend.  RTSTR_MAX is fine.
+ *
  * @remarks On OS/2, Window and similar systems, concatenating a drive letter
  *          specifier with a slash prefixed path will result in an absolute
  *          path. Meaning, RTPathAppend(strcpy(szBuf, "C:"), sizeof(szBuf),
@@ -455,7 +481,7 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
  *          absolute path. Meaning, RTPathAppend(strcpy(szBuf, "C:"),
  *          sizeof(szBuf), "bar") will result in "C:bar".
  */
-RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend);
+RTDECL(int) RTPathAppendEx(char *pszPath, size_t cbPathDst, const char *pszAppend, size_t cchAppendMax);
 
 /**
  * Like RTPathAppend, but with the base path as a separate argument instead of
@@ -491,6 +517,32 @@ RTDECL(int) RTPathJoin(char *pszPathDst, size_t cbPathDst, const char *pszPathSr
  *
  */
 RTDECL(char *) RTPathJoinA(const char *pszPathSrc, const char *pszAppend);
+
+/**
+ * Extended version of RTPathJoin, both inputs can be specified as substrings.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the result is too big to fit within
+ *          cbPathDst bytes.
+ * @retval  VERR_INVALID_PARAMETER if the string pointed to by pszPath is longer
+ *          than cbPathDst-1 bytes (failed to find terminator). Asserted.
+ *
+ * @param   pszPathDst      Where to store the resulting path.
+ * @param   cbPathDst       The size of the buffer pszPathDst points to,
+ *                          terminator included.
+ * @param   pszPathSrc      The base path to copy into @a pszPathDst before
+ *                          appending @a pszAppend.
+ * @param   cchPathSrcMax   The maximum number of bytes to copy from @a
+ *                          pszPathSrc.  RTSTR_MAX is find.
+ * @param   pszAppend       The partial path to append to pszPathSrc. This can
+ *                          be NULL, in which case nothing is done.
+ * @param   cchAppendMax    The maximum number of bytes to copy from @a
+ *                          pszAppend.  RTSTR_MAX is find.
+ *
+ */
+RTDECL(int) RTPathJoinEx(char *pszPathDst, size_t cbPathDst,
+                         const char *pszPathSrc, size_t cchPathSrcMax,
+                         const char *pszAppend, size_t cchAppendMax);
 
 /**
  * Callback for RTPathTraverseList that's called for each element.
