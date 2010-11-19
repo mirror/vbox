@@ -651,6 +651,10 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
         rc = pdmR3ThreadDestroyDriver(pVM, pCur);
         AssertRC(rc);
 
+        /* Info handlers. */
+        rc = DBGFR3InfoDeregisterDriver(pVM, pCur, NULL);
+        AssertRC(rc);
+
         /* PDM critsects. */
         rc = pdmR3CritSectDeleteDriver(pVM, pCur);
         AssertRC(rc);
@@ -1034,6 +1038,35 @@ static DECLCALLBACK(int) pdmR3DrvHlp_SSMDeregister(PPDMDRVINS pDrvIns, const cha
 }
 
 
+/** @interface_method_impl{PDMDEVHLP,pfnDBGFInfoRegister} */
+static DECLCALLBACK(int) pdmR3DrvHlp_DBGFInfoRegister(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    LogFlow(("pdmR3DrvHlp_DBGFInfoRegister: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, pszName, pszName, pszDesc, pszDesc, pfnHandler));
+
+    int rc = DBGFR3InfoRegisterDriver(pDrvIns->Internal.s.pVMR3, pszName, pszDesc, pfnHandler, pDrvIns);
+
+    LogFlow(("pdmR3DrvHlp_DBGFInfoRegister: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLP,pfnDBGFInfoDeregister} */
+static DECLCALLBACK(int) pdmR3DrvHlp_DBGFInfoDeregister(PPDMDRVINS pDrvIns, const char *pszName)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    LogFlow(("pdmR3DrvHlp_DBGFInfoDeregister: caller='%s'/%d: pszName=%p:{%s} pszDesc=%p:{%s} pfnHandler=%p\n",
+             pDrvIns->pReg->szName, pDrvIns->iInstance, pszName));
+
+    int rc = DBGFR3InfoDeregisterDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, pszName);
+
+    LogFlow(("pdmR3DrvHlp_DBGFInfoDeregister: caller='%s'/%d: returns %Rrc\n", pDrvIns->pReg->szName, pDrvIns->iInstance, rc));
+
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDRVHLP,pfnSTAMRegister} */
 static DECLCALLBACK(void) pdmR3DrvHlp_STAMRegister(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
@@ -1385,6 +1418,8 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_TMTimerCreate,
     pdmR3DrvHlp_SSMRegister,
     pdmR3DrvHlp_SSMDeregister,
+    pdmR3DrvHlp_DBGFInfoRegister,
+    pdmR3DrvHlp_DBGFInfoDeregister,
     pdmR3DrvHlp_STAMRegister,
     pdmR3DrvHlp_STAMRegisterF,
     pdmR3DrvHlp_STAMRegisterV,

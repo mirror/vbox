@@ -984,6 +984,28 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnSSMDeregister,(PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance));
 
     /**
+     * Register an info handler with DBGF.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         Driver instance.
+     * @param   pszName         Data unit name.
+     * @param   pszDesc         The description of the info and any arguments
+     *                          the handler may take.
+     * @param   pfnHandler      The handler function to be called to display the
+     *                          info.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler));
+
+    /**
+     * Deregister an info handler from DBGF.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         Driver instance.
+     * @param   pszName         Data unit name.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoDeregister,(PPDMDRVINS pDrvIns, const char *pszName));
+
+    /**
      * Registers a statistics sample if statistics are enabled.
      *
      * @param   pDrvIns     Driver instance.
@@ -1464,6 +1486,22 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDO
                                               NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
                                               NULL /*pfnSavePrep*/, NULL /*pfnSaveExec*/, NULL /*pfnSaveDone*/,
                                               NULL /*pfnLoadPrep*/, NULL /*pfnLoadExec*/, pfnLoadDone);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnDBGFInfoRegister
+ */
+DECLINLINE(int) PDMDrvHlpDBGFInfoRegister(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler)
+{
+    return pDrvIns->pHlpR3->pfnDBGFInfoRegister(pDrvIns, pszName, pszDesc, pfnHandler);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnDBGFInfoDeregister
+ */
+DECLINLINE(int) PDMDrvHlpDBGFInfoDeregister(PPDMDRVINS pDrvIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDRV pfnHandler)
+{
+    return pDrvIns->pHlpR3->pfnDBGFInfoRegister(pDrvIns, pszName, pszDesc, pfnHandler);
 }
 
 /**
