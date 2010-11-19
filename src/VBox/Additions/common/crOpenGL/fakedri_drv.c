@@ -173,9 +173,7 @@ vboxApplyPatch(const char* psFuncName, void *pDst, const void *pSrc, unsigned lo
     }
 }
 
-#ifdef RT_ARCH_AMD64
-# define FAKEDRI_JMP64_PATCH_SIZE 13
-#endif
+#define FAKEDRI_JMP64_PATCH_SIZE 13
 
 static void
 vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd)
@@ -185,7 +183,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
     int rv;
     void *alPatch;
     void *pMesaEntry;
-    char patch[5];
+    char patch[FAKEDRI_JMP64_PATCH_SIZE];
     void *shift;
 
 #ifndef VBOX_NO_MESA_PATCH_REPORTS
@@ -236,27 +234,42 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
     if (sym->st_size<(pEnd-pStart))
 #endif
     {
+#ifdef RT_ARCH_AMD64
+        int64_t offset;
+#endif
         /* Try to insert 5 bytes jmp/jmpq to our stub code */
 
     	if (sym->st_size<5)
         {
             if (crStrcmp(psFuncName, "glXCreateGLXPixmapMESA"))
             {
-                crError("Can't patch size too small.(%s)", psFuncName);
+                crError("Can't patch size is too small.(%s)", psFuncName);
             }
             return;
         }
 
         shift = (void*)((intptr_t)pStart-((intptr_t)dlip.dli_saddr+5));
-#ifndef VBOX_NO_MESA_PATCH_REPORTS
-        crDebug("Inserting jmp[q] with shift %p instead", shift);
-#endif
-
 #ifdef RT_ARCH_AMD64
+        offset = (intptr_t)shift;
+        if (offset>INT32_MAX || offset<INT32_MIN)
         {
-            int64_t offset = (intptr_t)shift;
-
-            if (offset>INT32_MAX || offset<INT32_MIN)
+            /*try to insert 64bit abs jmp*/
+            if (sym->st_size>=FAKEDRI_JMP64_PATCH_SIZE)
+            {
+# ifndef VBOX_NO_MESA_PATCH_REPORTS
+                crDebug("Inserting movq/jmp instead");
+# endif
+                /*add 64bit abs jmp*/
+                patch[0] = 0x49; /*movq %r11,imm64*/
+                patch[1] = 0xBB;
+                crMemcpy(&patch[2], &pStart, 8);
+                patch[10] = 0x41; /*jmp *%r11*/
+                patch[11] = 0xFF;
+                patch[12] = 0xE3;
+                pStart = &patch[0];
+                pEnd = &patch[FAKEDRI_JMP64_PATCH_SIZE];
+            }
+            else
             {
                 FAKEDRI_PatchNode *pNode;
 # ifndef VBOX_NO_MESA_PATCH_REPORTS
@@ -279,15 +292,17 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
                 return;
             }
         }
+        else
 #endif
-
-        patch[0] = 0xE9;
-        crMemcpy(&patch[1], &shift, 4);
+        {
 #ifndef VBOX_NO_MESA_PATCH_REPORTS
-        crDebug("Patch: E9 %x", *((int*)&patch[1]));
+            crDebug("Inserting jmp[q] with shift %p instead", shift);
 #endif
-        pStart = &patch[0];
-        pEnd = &patch[5];
+            patch[0] = 0xE9;
+            crMemcpy(&patch[1], &shift, 4);
+            pStart = &patch[0];
+            pEnd = &patch[5];
+        }
     }
 
     vboxApplyPatch(psFuncName, dlip.dli_saddr, pStart, pEnd-pStart);
