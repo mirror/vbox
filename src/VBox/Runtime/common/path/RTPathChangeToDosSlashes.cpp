@@ -52,8 +52,8 @@ RTDECL(char *) RTPathChangeToDosSlashes(char *pszPath, bool fForce)
         char   *psz = pszPath;
         while ((ch = *psz) != '\0')
         {
-            if (ch == '\\')
-                *psz = '/';
+            if (ch == '/')
+                *psz = '\\';
             psz++;
         }
     }
