@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathAppend
+ * IPRT - RTPathJoinEx.
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,12 +30,30 @@
 *******************************************************************************/
 #include "internal/iprt.h"
 #include <iprt/path.h>
-
+#include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 
 
-RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend)
+
+
+RTDECL(int) RTPathJoinEx(char *pszPathDst, size_t cbPathDst,
+                         const char *pszPathSrc, size_t cchPathSrcMax,
+                         const char *pszAppend, size_t cchAppendMax)
 {
-    return RTPathAppendEx(pszPath, cbPathDst, pszAppend, RTSTR_MAX);
+    AssertPtr(pszPathDst);
+    AssertPtr(pszPathSrc);
+    AssertPtr(pszAppend);
+
+    /*
+     * The easy way: Copy the path into the buffer and call RTPathAppend.
+     */
+    size_t cchPathSrc = RTStrNLen(pszPathSrc, cchPathSrcMax);
+    if (cchPathSrc >= cbPathDst)
+        return VERR_BUFFER_OVERFLOW;
+    memcpy(pszPathDst, pszPathSrc, cchPathSrc);
+    pszPathDst[cchPathSrc] = '\0';
+
+    return RTPathAppendEx(pszPathDst, cbPathDst, pszAppend, cchAppendMax);
 }
 
