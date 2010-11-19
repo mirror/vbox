@@ -2,6 +2,37 @@
 <!DOCTYPE TS><TS version="1.1" language="ja">
 <defaultcodec></defaultcodec>
 <context>
+    <name>MAC_APPLICATION_MENU</name>
+    <message>
+        <source>Services</source>
+        <translation>サービス</translation>
+    </message>
+    <message>
+        <source>Hide %1</source>
+        <translation>%1を隠す</translation>
+    </message>
+    <message>
+        <source>Hide Others</source>
+        <translation>ほかを隠す</translation>
+    </message>
+    <message>
+        <source>Show All</source>
+        <translation>すべてを表示</translation>
+    </message>
+    <message>
+        <source>Preferences...</source>
+        <translation>環境設定...</translation>
+    </message>
+    <message>
+        <source>Quit %1</source>
+        <translation>%1 を終了</translation>
+    </message>
+    <message>
+        <source>About %1</source>
+        <translation>%1 について</translation>
+    </message>
+</context>
+<context>
     <name>AudioOutput</name>
     <message>
         <location filename="" line="326436454"/>
