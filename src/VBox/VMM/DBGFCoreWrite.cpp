@@ -447,19 +447,20 @@ static int dbgfR3CoreWriteWorker(PVM pVM, PDBGFCOREDATA pDbgfData, RTFILE hFile)
 
         /*
          * Write page-by-page of this memory range.
+         *
+         * The read function may fail on MMIO ranges, we write these as zero
+         * pages for now (would be nice to have the VGA bits there though).
          */
         uint64_t cbMemRange  = GCPhysEnd - GCPhysStart + 1;
         uint64_t cPages      = cbMemRange >> PAGE_SHIFT;
         for (uint64_t iPage = 0; iPage < cPages; iPage++)
         {
             uint8_t abPage[PAGE_SIZE];
-            rc = PGMPhysRead(pVM, GCPhysStart + (iPage << PAGE_SHIFT), abPage, sizeof(abPage));
+            rc = PGMPhysSimpleReadGCPhys(pVM, abPage, GCPhysStart + (iPage << PAGE_SHIFT),  sizeof(abPage));
             if (RT_FAILURE(rc))
             {
-                /*
-                 * For some reason this failed, write out a zero page instead.
-                 */
-                LogRel((DBGFLOG_NAME ": PGMPhysRead failed for iRange=%u iPage=%u. rc=%Rrc. Ignoring...\n", iRange, iPage, rc));
+                if (rc != VERR_PGM_PHYS_PAGE_RESERVED)
+                    LogRel((DBGFLOG_NAME ": PGMPhysRead failed for iRange=%u iPage=%u. rc=%Rrc. Ignoring...\n", iRange, iPage, rc));
                 RT_ZERO(abPage);
             }
 
