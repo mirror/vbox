@@ -554,7 +554,7 @@ static void ich9pciApicSetIrq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, 
             pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level);
         }
     } else {
-        Log3(("ich9pciApicSetIrq: %s: irq_num1=%d level=%d acpi_irq=%d\n",
+        Log3(("ich9pciApicSetIrq: (forced) %s: irq_num1=%d level=%d acpi_irq=%d\n",
               R3STRING(pPciDev->name), irq_num1, iLevel, iForcedIrq));
         pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), iForcedIrq, iLevel);
     }
@@ -1604,25 +1604,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
                                uCmd | PCI_COMMAND_IOACCESS,
                                1);
             break;
-        case 0x0800:
-            /* PIC */
-            if (uVendor == 0x1014)
-            {
-                /* IBM */
-                if (uDevice == 0x0046 || uDevice == 0xFFFF)
-                    /* MPIC & MPIC2 */
-                    ich9pciSetRegionAddress(pGlobals, uBus, uDevFn, 0, 0x80800000 + 0x00040000);
-            }
-            break;
-        case 0xff00:
-            if ((uVendor == 0x0106b)
-                && (uDevice == 0x0017 || uDevice == 0x0022))
-            {
-                /* macio bridge */
-                ich9pciSetRegionAddress(pGlobals, uBus, uDevFn, 0, 0x80800000);
-            }
-            break;
-        case 0x0604:
+       case 0x0604:
             /* PCI-to-PCI bridge. */
             ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_PRIMARY_BUS, uBus, 1);
 
@@ -1676,26 +1658,7 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
             break;
         }
     }
-
-    /* map the interrupt */
-    uint32_t uPin = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_INTERRUPT_PIN, 1);
-    if (uPin != 0)
-    {
-        uint8_t uBridgeDevFn = uDevFn;
-        uPin--;
-
-        /* We need to go up to the host bus to see which irq this device will assert there. */
-        while (cBridgeDepth != 0)
-        {
-            /* Get the pin the device would assert on the bridge. */
-            uPin = ((uBridgeDevFn >> 3) + uPin) & 3;
-            uBridgeDevFn = paBridgePositions[cBridgeDepth];
-            cBridgeDepth--;
-        }
-    }
 }
-
-static const uint8_t auPciIrqs[4] = { 11, 9, 11, 9 };
 
 static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 {
@@ -1711,26 +1674,6 @@ static DECLCALLBACK(int) ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
     pGlobals->uPciBiosIo  = 0xd000;
     pGlobals->uPciBiosMmio = UINT32_C(0xf0000000);
     pGlobals->uBus = 0;
-
-    /*
-     * Activate IRQ mappings.
-     */
-    for (i = 0; i < 4; i++)
-    {
-        uint8_t irq = auPciIrqs[i];
-        /* Set to trigger level. */
-        elcr[irq >> 3] |= (1 << (irq & 7));
-    }
-
-    /* Tell to the PIC. */
-    VBOXSTRICTRC rcStrict = IOMIOPortWrite(pVM, 0x4d0, elcr[0], sizeof(uint8_t));
-    if (rcStrict == VINF_SUCCESS)
-        rcStrict = IOMIOPortWrite(pVM, 0x4d1, elcr[1], sizeof(uint8_t));
-    if (rcStrict != VINF_SUCCESS)
-    {
-        AssertMsgFailed(("Writing to PIC failed! rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-        return RT_SUCCESS(rcStrict) ? VERR_INTERNAL_ERROR : VBOXSTRICTRC_VAL(rcStrict);
-    }
 
     /*
      * Init the devices.
