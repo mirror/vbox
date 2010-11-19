@@ -605,10 +605,6 @@ QPixmap UIVMListView::dragPixmap(const QModelIndex &index) const
     QPainter p1(&i1);
     p1.drawImage(image.rect(), image);
     p1.end();
-#ifdef DEBUG
-    image.save("test.png", "PNG");
-    i1.save("test_pixmap.png", "PNG");
-#endif
     return i1;
 }
 
