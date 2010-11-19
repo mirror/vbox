@@ -1377,16 +1377,20 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         }
 
         vbvaVHWAHHCommandRelease(pCmd);
-        return rc;
     }
+    else
+        rc = VERR_OUT_OF_RESOURCES;
 #else
-    for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
+    if (RT_SUCCESS(rc))
     {
-        rc = SSMR3PutU32 (pSSM, VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC);
-        AssertRCReturn(rc, rc);
+        for (uint32_t i = 0; i < pVGAState->cMonitors; ++i)
+        {
+            rc = SSMR3PutU32 (pSSM, VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC);
+            AssertRCReturn(rc, rc);
+        }
     }
 #endif
-    return VERR_OUT_OF_RESOURCES;
+    return rc;
 }
 
 int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
