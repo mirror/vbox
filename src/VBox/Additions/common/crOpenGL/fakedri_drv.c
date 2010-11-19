@@ -241,11 +241,31 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
 
     	if (sym->st_size<5)
         {
-            if (crStrcmp(psFuncName, "glXCreateGLXPixmapMESA"))
+            /*@todo we don't really know the size of targeted static function, but it's long enough in practice. We will also patch same place twice, but it's ok.*/
+            if (!crStrcmp(psFuncName, "glXDestroyContext") || !crStrcmp(psFuncName, "glXFreeContextEXT"))
+            {
+                if (((unsigned char*)dlip.dli_saddr)[0]==0xEB)
+                {
+                    /*it's a rel8 jmp, so we're going to patch the place it targets instead of jmp itself*/
+                    dlip.dli_saddr = (void*) ((intptr_t)dlip.dli_saddr + ((char*)dlip.dli_saddr)[1] + 2);
+                    sym->st_size = FAKEDRI_JMP64_PATCH_SIZE;
+                }
+                else
+                {
+                    crError("Can't patch size is too small.(%s)", psFuncName);
+                    return;
+                }
+            }
+            else if (!crStrcmp(psFuncName, "glXCreateGLXPixmapMESA"))
+            {
+                /*@todo it's just a return 0, which we're fine with for now*/
+                return;
+            }
+            else
             {
                 crError("Can't patch size is too small.(%s)", psFuncName);
+                return;
             }
-            return;
         }
 
         shift = (void*)((intptr_t)pStart-((intptr_t)dlip.dli_saddr+5));
