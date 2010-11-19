@@ -588,14 +588,18 @@ QPixmap UIVMListView::dragPixmap(const QModelIndex &index) const
     p.setRenderHint(QPainter::Antialiasing);
     p.setPen(QPen(Qt::white, 2));
     p.setBrush(QColor(80, 80, 80));
-    p.drawRoundedRect(3, 3, s.width() - 3 * 2, s.height() - 3 * 2, 6, 6);
+    p.drawRoundedRect(1, 1, s.width() - 1 * 2, s.height() - 1 * 2, 6, 6);
     p.drawPixmap((s.width() - osTypeSize.width()) / 2, margin, osType);
     p.setPen(Qt::white);
     p.setFont(font());
     p.drawText(QRect(margin, margin + osTypeSize.height() + space,  s.width() - 2 * margin, nameSize.height()), Qt::AlignCenter, name);
+#ifdef Q_WS_MAC
     p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
     p.fillRect(image.rect(), QColor(0, 0, 0, 177));
+#endif /* Q_WS_MAC */
     p.end();
+    /* Some Qt versions seems buggy in creating QPixmap from QImage. Seems they
+     * don't clear the background. */
     QPixmap i1(s);
     i1.fill(Qt::transparent);
     QPainter p1(&i1);
@@ -605,7 +609,7 @@ QPixmap UIVMListView::dragPixmap(const QModelIndex &index) const
     image.save("test.png", "PNG");
     i1.save("test_pixmap.png", "PNG");
 #endif
-    return i1;//QPixmap::fromImage(image);
+    return i1;
 }
 
 QModelIndex UIVMListView::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
