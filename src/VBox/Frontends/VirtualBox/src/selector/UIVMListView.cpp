@@ -583,21 +583,18 @@ QPixmap UIVMListView::dragPixmap(const QModelIndex &index) const
     QSize s(2 * margin + qMax(osTypeSize.width(), nameSize.width()),
             2 * margin + osTypeSize.height() + space + nameSize.height());
     QImage image(s, QImage::Format_ARGB32);
-    image.fill(Qt::transparent);
+    image.fill(QColor(Qt::transparent).rgba());
     QPainter p(&image);
     p.setRenderHint(QPainter::Antialiasing);
     p.setPen(QPen(Qt::white, 2));
-    p.setBrush(QColor(qRgb(80, 80, 80)));
+    p.setBrush(QColor(80, 80, 80));
     p.drawRoundedRect(3, 3, s.width() - 3 * 2, s.height() - 3 * 2, 6, 6);
     p.drawPixmap((s.width() - osTypeSize.width()) / 2, margin, osType);
     p.setPen(Qt::white);
     p.setFont(font());
     p.drawText(QRect(margin, margin + osTypeSize.height() + space,  s.width() - 2 * margin, nameSize.height()), Qt::AlignCenter, name);
-    QImage p1(s, QImage::Format_ARGB32);
-    p1.fill(qRgba(0, 0, 0, 177));
     p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-    p.drawImage(0, 0, p1);
-    p.end();
+    p.fillRect(image.rect(), QColor(0, 0, 0, 177));
     return QPixmap::fromImage(image);
 }
 
