@@ -30,6 +30,7 @@ ADD_COCOA_NATIVE_REF(NSEvent);
 ADD_COCOA_NATIVE_REF(NSImage);
 ADD_COCOA_NATIVE_REF(NSView);
 ADD_COCOA_NATIVE_REF(NSWindow);
+ADD_COCOA_NATIVE_REF(NSString);
 
 class QImage;
 class QMainWindow;
@@ -47,6 +48,7 @@ RT_C_DECLS_BEGIN
  ********************************************************************************/
 NativeNSWindowRef darwinToNativeWindowImpl(NativeNSViewRef pView);
 NativeNSViewRef darwinToNativeViewImpl(NativeNSWindowRef pWindow);
+NativeNSStringRef darwinToNativeString(const char* pcszString);
 
 /********************************************************************************
  *
@@ -59,17 +61,24 @@ void darwinSetHidesAllTitleButtonsImpl(NativeNSWindowRef pWindow);
 void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnabled);
 void darwinSetMouseCoalescingEnabled(bool fEnabled);
 
+void darwintest(NativeNSWindowRef pWindow);
 /********************************************************************************
  *
  * Simple helper methods (OS System native)
  *
  ********************************************************************************/
 void darwinWindowAnimateResizeImpl(NativeNSWindowRef pWindow, int x, int y, int width, int height);
+void darwinWindowAnimateResizeNewImpl(NativeNSWindowRef pWindow, int height, bool fAnimate);
+void darwinTest(NativeNSViewRef pView, NativeNSViewRef pView1, int h);
 void darwinWindowInvalidateShapeImpl(NativeNSWindowRef pWindow);
 void darwinWindowInvalidateShadowImpl(NativeNSWindowRef pWindow);
 int  darwinWindowToolBarHeight(NativeNSWindowRef pWindow);
 bool darwinIsToolbarVisible(NativeNSWindowRef pWindow);
 bool darwinIsWindowMaximized(NativeNSWindowRef pWindow);
+void darwinMinaturizeWindow(NativeNSWindowRef pWindow);
+
+bool darwinShowFileInFinder(NativeNSStringRef pstrFile);
+bool darwinOpenFile(NativeNSStringRef pstrFile);
 
 float darwinSmallFontSize();
 bool darwinSetFrontMostProcess();
@@ -79,6 +88,8 @@ bool darwinUnifiedToolbarEvents(const void *pvCocoaEvent, const void *pvCarbonEv
 void darwinCreateContextMenuEvent(void *pvWin, int x, int y);
 
 bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent);
+
+void darwinRetranslateAppMenu();
 
 RT_C_DECLS_END
 
@@ -167,17 +178,25 @@ void darwinSetShowsWindowTransparent(QWidget *pWidget, bool fEnabled);
 void darwinSetDockIconMenu(QMenu *pMenu);
 void darwinDisableIconsInMenus(void);
 
+void darwinTest(QWidget *pWidget1, QWidget *pWidget2, int h);
+
 /********************************************************************************
  *
  * Simple helper methods (Qt Wrapper)
  *
  ********************************************************************************/
 void darwinWindowAnimateResize(QWidget *pWidget, const QRect &aTarget);
+void darwinWindowAnimateResizeNew(QWidget *pWidget, int h, bool fAnimate);
 void darwinWindowInvalidateShape(QWidget *pWidget);
 void darwinWindowInvalidateShadow(QWidget *pWidget);
 int  darwinWindowToolBarHeight(QWidget *pWidget);
 bool darwinIsToolbarVisible(QToolBar *pToolBar);
 bool darwinIsWindowMaximized(QWidget *pWidget);
+void darwinMinaturizeWindow(QWidget *pWidget);
+
+bool darwinShowFileInFinder(const QString &strFile);
+bool darwinOpenFile(const QString &strFile);
+
 QString darwinSystemLanguage(void);
 QPixmap darwinCreateDragPixmap(const QPixmap& aPixmap, const QString &aText);
 

@@ -37,12 +37,16 @@ extern void qt_mac_set_menubar_icons(bool b);
 
 NativeNSViewRef darwinToNativeView(QWidget *pWidget)
 {
-    return reinterpret_cast<NativeNSViewRef>(pWidget->winId());
+    if (pWidget)
+        return reinterpret_cast<NativeNSViewRef>(pWidget->winId());
+    return nil;
 }
 
 NativeNSWindowRef darwinToNativeWindow(QWidget *pWidget)
 {
-    return ::darwinToNativeWindowImpl(::darwinToNativeView(pWidget));
+    if (pWidget)
+        return ::darwinToNativeWindowImpl(::darwinToNativeView(pWidget));
+    return nil;
 }
 
 NativeNSWindowRef darwinToNativeWindow(NativeNSViewRef aView)
@@ -82,6 +86,16 @@ void darwinWindowAnimateResize(QWidget *pWidget, const QRect &aTarget)
     ::darwinWindowAnimateResizeImpl(::darwinToNativeWindow(pWidget), aTarget.x(), aTarget.y(), aTarget.width(), aTarget.height());
 }
 
+void darwinWindowAnimateResizeNew(QWidget *pWidget, int h, bool fAnimate)
+{
+    ::darwinWindowAnimateResizeNewImpl(::darwinToNativeWindow(pWidget), h, fAnimate);
+}
+
+void darwinTest(QWidget *pWidget1, QWidget *pWidget2, int h)
+{
+    ::darwinTest(::darwinToNativeView(pWidget1), ::darwinToNativeView(pWidget2), h);
+}
+
 void darwinWindowInvalidateShape(QWidget *pWidget)
 {
 #ifdef QT_MAC_USE_COCOA
@@ -115,6 +129,21 @@ bool darwinIsWindowMaximized(QWidget *pWidget)
     NOREF(pWidget);
     return false;
 #endif /* !QT_MAC_USE_COCOA */
+}
+
+void darwinMinaturizeWindow(QWidget *pWidget)
+{
+    return ::darwinMinaturizeWindow(::darwinToNativeWindow(pWidget));
+}
+
+bool darwinShowFileInFinder(const QString& strFile)
+{
+    return ::darwinShowFileInFinder(darwinToNativeString(strFile.toUtf8().constData()));
+}
+
+bool darwinOpenFile(const QString& strFile)
+{
+    return ::darwinOpenFile(darwinToNativeString(strFile.toUtf8().constData()));
 }
 
 QString darwinSystemLanguage(void)

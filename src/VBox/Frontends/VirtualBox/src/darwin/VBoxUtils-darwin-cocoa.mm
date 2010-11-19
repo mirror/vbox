@@ -85,6 +85,11 @@ NativeNSImageRef darwinToNSImageRef(const char *pczSource)
    return pNSImage;
 }
 
+NativeNSStringRef darwinToNativeString(const char* pcszString)
+{
+    return [NSString stringWithUTF8String: pcszString];
+}
+
 void darwinSetShowsToolbarButtonImpl(NativeNSWindowRef pWindow, bool fEnabled)
 {
     [pWindow setShowsToolbarButton:fEnabled];
@@ -137,6 +142,15 @@ void darwinSetShowsWindowTransparentImpl(NativeNSWindowRef pWindow, bool fEnable
     }
 }
 
+void darwinMinaturizeWindow(NativeNSWindowRef pWindow)
+{
+//    [[NSApplication sharedApplication] miniaturizeAll];
+//    printf("bla\n");
+//    [pWindow miniaturize:pWindow];
+//    [[NSApplication sharedApplication] deactivate];
+//    [pWindow performMiniaturize:nil];
+}
+
 void darwinSetDockIconMenu(QMenu* pMenu)
 {
     extern void qt_mac_set_dock_menu(QMenu *);
@@ -168,7 +182,87 @@ void darwinWindowAnimateResizeImpl(NativeNSWindowRef pWindow, int x, int y, int 
     windowFrame.size.height = h;
     windowFrame.origin.y -= h1;
 
-    [pWindow setFrame:windowFrame display:YES animate:YES];
+    [pWindow setFrame:windowFrame display:YES animate: YES];
+}
+
+void darwinWindowAnimateResizeNewImpl(NativeNSWindowRef pWindow, int height, bool fAnimate)
+{
+    /* It seems that Qt doesn't return the height of the window with the
+     * toolbar height included. So add this size manually. Could easily be that
+     * the Trolls fix this in the final release. */
+    NSToolbar *toolbar = [pWindow toolbar];
+    NSRect windowFrame = [pWindow frame];
+    int toolbarHeight = 0;
+    if(toolbar && [toolbar isVisible])
+        toolbarHeight = NSHeight(windowFrame) - NSHeight([[pWindow contentView] frame]);
+    int h = height + toolbarHeight;
+    int h1 = h - NSHeight(windowFrame);
+    windowFrame.size.height = h;
+    windowFrame.origin.y -= h1;
+
+    [pWindow setFrame:windowFrame display:YES animate: fAnimate ? YES : NO];
+}
+
+void darwinTest(NativeNSViewRef pViewOld, NativeNSViewRef pViewNew, int h)
+{
+    NSMutableDictionary *pDicts[3] = { nil, nil, nil };
+    int c = 0;
+
+    /* Scaling necessary? */
+    if (h != -1)
+    {
+        NSWindow *pWindow  = [(pViewOld ? pViewOld : pViewNew) window];
+        NSToolbar *toolbar = [pWindow toolbar];
+        NSRect windowFrame = [pWindow frame];
+        /* Dictionary containing all animation parameters. */
+        pDicts[c] = [NSMutableDictionary dictionaryWithCapacity:2];
+        /* Specify the animation target. */
+        [pDicts[c] setObject:pWindow forKey:NSViewAnimationTargetKey];
+        /* Scaling effect. */
+        [pDicts[c] setObject:[NSValue valueWithRect:windowFrame] forKey:NSViewAnimationStartFrameKey];
+        int toolbarHeight = 0;
+        if(toolbar && [toolbar isVisible])
+            toolbarHeight = NSHeight(windowFrame) - NSHeight([[pWindow contentView] frame]);
+        int h1 = h + toolbarHeight;
+        int h2 = h1 - NSHeight(windowFrame);
+        windowFrame.size.height = h1;
+        windowFrame.origin.y -= h2;
+        [pDicts[c] setObject:[NSValue valueWithRect:windowFrame] forKey:NSViewAnimationEndFrameKey];
+        ++c;
+    }
+    /* Fade out effect. */
+    if (pViewOld)
+    {
+        /* Dictionary containing all animation parameters. */
+        pDicts[c] = [NSMutableDictionary dictionaryWithCapacity:2];
+        /* Specify the animation target. */
+        [pDicts[c] setObject:pViewOld forKey:NSViewAnimationTargetKey];
+        /* Fade out effect. */
+        [pDicts[c] setObject:NSViewAnimationFadeOutEffect forKey:NSViewAnimationEffectKey];
+        ++c;
+    }
+    /* Fade in effect. */
+    if (pViewNew)
+    {
+        /* Dictionary containing all animation parameters. */
+        pDicts[c] = [NSMutableDictionary dictionaryWithCapacity:2];
+        /* Specify the animation target. */
+        [pDicts[c] setObject:pViewNew forKey:NSViewAnimationTargetKey];
+        /* Fade in effect. */
+        [pDicts[c] setObject:NSViewAnimationFadeInEffect forKey:NSViewAnimationEffectKey];
+        ++c;
+    }
+    /* Create our animation object. */
+    NSViewAnimation *pAni = [[NSViewAnimation alloc] initWithViewAnimations:[NSArray arrayWithObjects:pDicts count:c]];
+    [pAni setDuration:.15];
+    [pAni setAnimationCurve:NSAnimationEaseIn];
+    [pAni setAnimationBlockingMode:NSAnimationBlocking];
+//    [pAni setAnimationBlockingMode:NSAnimationNonblockingThreaded];
+
+    /* Run the animation. */
+    [pAni startAnimation];
+    /* Cleanup */
+    [pAni release];
 }
 
 void darwinWindowInvalidateShadowImpl(NativeNSWindowRef pWindow)
@@ -202,6 +296,16 @@ bool darwinIsWindowMaximized(NativeNSWindowRef pWindow)
     bool fResult = [pWindow isZoomed];
 
     return fResult;
+}
+
+bool darwinShowFileInFinder(NativeNSStringRef pstrFile)
+{
+    return [[NSWorkspace sharedWorkspace] selectFile:pstrFile inFileViewerRootedAtPath:@""];
+}
+
+bool darwinOpenFile(NativeNSStringRef pstrFile)
+{
+    return [[NSWorkspace sharedWorkspace] openFile:pstrFile];
 }
 
 float darwinSmallFontSize()
@@ -251,6 +355,12 @@ bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent)
 {
     NSEventType  eEvtType = [pEvent type];
     bool         fGlobalHotkey = false;
+//
+//    if (   (eEvtType == NSKeyDown || eEvtType == NSKeyUp)
+//        && [[NSApp mainMenu] performKeyEquivalent:pEvent])
+//        return true;
+//    return false;
+//        && [[[NSApp mainMenu] delegate] menuHasKeyEquivalent:[NSApp mainMenu] forEvent:pEvent target:b action:a])
 
     switch (eEvtType)
     {
@@ -265,7 +375,7 @@ bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent)
                 if (   KeyCode == 0x0c  /* CMD+Q (Quit) */
                     || KeyCode == 0x04) /* CMD+H (Hide) */
                     fGlobalHotkey = true;
-            } 
+            }
             else if (   ((fEvtMask & (NX_NONCOALSESCEDMASK | NX_ALTERNATEMASK | NX_DEVICELALTKEYMASK | NX_COMMANDMASK | NX_DEVICELCMDKEYMASK)) == (NX_NONCOALSESCEDMASK | NX_ALTERNATEMASK | NX_DEVICELALTKEYMASK | NX_COMMANDMASK | NX_DEVICELCMDKEYMASK)) /* L+ALT+CMD */
                      || ((fEvtMask & (NX_NONCOALSESCEDMASK | NX_ALTERNATEMASK | NX_DEVICERCMDKEYMASK | NX_COMMANDMASK | NX_DEVICERCMDKEYMASK)) == (NX_NONCOALSESCEDMASK | NX_ALTERNATEMASK | NX_DEVICERCMDKEYMASK | NX_COMMANDMASK | NX_DEVICERCMDKEYMASK))) /* R+ALT+CMD */
             {
@@ -277,5 +387,17 @@ bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent)
         default: break;
     }
     return fGlobalHotkey;
+}
+
+void darwinRetranslateAppMenu()
+{
+    /* This is purely Qt internal. If the Trolls change something here, it will
+       not work anymore, but at least it will not be a burning man. */
+    if ([NSApp respondsToSelector:@selector(qt_qcocoamenuLoader)])
+    {
+        id loader = [NSApp performSelector:@selector(qt_qcocoamenuLoader)];
+        if ([loader respondsToSelector:@selector(qtTranslateApplicationMenu)])
+            [loader performSelector:@selector(qtTranslateApplicationMenu)];
+    }
 }
 
