@@ -185,6 +185,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
     void *pMesaEntry;
     char patch[FAKEDRI_JMP64_PATCH_SIZE];
     void *shift;
+    int ignore_size=false;
 
 #ifndef VBOX_NO_MESA_PATCH_REPORTS
     crDebug("\nvboxPatchMesaExport: %s", psFuncName);
@@ -248,7 +249,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
                 {
                     /*it's a rel8 jmp, so we're going to patch the place it targets instead of jmp itself*/
                     dlip.dli_saddr = (void*) ((intptr_t)dlip.dli_saddr + ((char*)dlip.dli_saddr)[1] + 2);
-                    sym->st_size = FAKEDRI_JMP64_PATCH_SIZE;
+                    ignore_size = true;
                 }
                 else
                 {
@@ -274,7 +275,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
         if (offset>INT32_MAX || offset<INT32_MIN)
         {
             /*try to insert 64bit abs jmp*/
-            if (sym->st_size>=FAKEDRI_JMP64_PATCH_SIZE)
+            if (sym->st_size>=FAKEDRI_JMP64_PATCH_SIZE || ignore_size)
             {
 # ifndef VBOX_NO_MESA_PATCH_REPORTS
                 crDebug("Inserting movq/jmp instead");
