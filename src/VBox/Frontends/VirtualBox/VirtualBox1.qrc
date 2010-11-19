@@ -6,6 +6,7 @@
     <file alias="vm_delete_disabled_32px.png">images/vm_delete_disabled_32px.png</file>
     <file alias="vm_discard_32px.png">images/vm_discard_32px.png</file>
     <file alias="vm_discard_disabled_32px.png">images/vm_discard_disabled_32px.png</file>
+    <file alias="vm_add_32px.png">images/vm_add_32px.png</file>
     <file alias="vm_new_32px.png">images/vm_new_32px.png</file>
     <file alias="vm_new_disabled_32px.png">images/vm_new_disabled_32px.png</file>
     <file alias="vm_pause_32px.png">images/vm_pause_32px.png</file>

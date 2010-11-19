@@ -128,9 +128,8 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
         QSize(32, 32), QSize(16, 16),
         ":/vm_new_32px.png", ":/new_16px.png"));
     mVmAddAction = new QAction(this);
-    mVmAddAction->setIcon(UIIconPool::iconSetFull(
-        QSize(32, 32), QSize(16, 16),
-        ":/vm_new_32px.png", ":/new_16px.png"));
+    mVmAddAction->setIcon(UIIconPool::iconSet(
+        ":/vm_add_32px.png"));
     mVmConfigAction = new QAction(this);
     mVmConfigAction->setIcon(UIIconPool::iconSetFull(
         QSize(32, 32), QSize(16, 16),
