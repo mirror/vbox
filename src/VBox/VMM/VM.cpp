@@ -544,7 +544,7 @@ static int vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUV
         }
         RTTlsFree(pUVM->vm.s.idxTLS);
     }
-    RTMemPageFree(pUVM, sizeof(*pUVM));
+    RTMemPageFree(pUVM, RT_OFFSETOF(UVM, aCpus[pUVM->cCpus]));
     return rc;
 }
 
@@ -2596,7 +2596,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
     RTTlsFree(pUVM->vm.s.idxTLS);
 
     ASMAtomicUoWriteU32(&pUVM->u32Magic, UINT32_MAX);
-    RTMemPageFree(pUVM, sizeof(*pUVM));
+    RTMemPageFree(pUVM, RT_OFFSETOF(UVM, aCpus[pUVM->cCpus]));
 
     RTLogFlush(NULL);
 }
