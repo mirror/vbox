@@ -296,6 +296,54 @@ RTDECL(int)                 RTAvllU32Destroy(PPAVLLU32NODECORE pTree, PAVLLU32CA
 
 
 
+/** AVL tree of uint64_t ranges.
+ * @{
+ */
+
+/**
+ * AVL key type
+ */
+typedef uint64_t AVLRU64KEY;
+
+/**
+ * AVL Core node.
+ */
+typedef struct AVLRU64NodeCore
+{
+    AVLRU64KEY               Key;        /**< First key value in the range (inclusive). */
+    AVLRU64KEY               KeyLast;    /**< Last key value in the range (inclusive). */
+    struct AVLRU64NodeCore  *pLeft;      /**< Pointer to left leaf node. */
+    struct AVLRU64NodeCore  *pRight;     /**< Pointer to right leaf node. */
+    unsigned char            uchHeight;  /**< Height of this tree: max(height(left), height(right)) + 1 */
+} AVLRU64NODECORE, *PAVLRU64NODECORE, **PPAVLRU64NODECORE;
+
+/** A tree with void pointer keys. */
+typedef PAVLRU64NODECORE    AVLRU64TREE;
+/** Pointer to a tree with void pointer keys. */
+typedef PPAVLRU64NODECORE   PAVLRU64TREE;
+
+/** Callback function for AVLRU64DoWithAll(). */
+typedef DECLCALLBACK(int) AVLRU64CALLBACK(PAVLRU64NODECORE, void *);
+/** Pointer to callback function for AVLU64DoWithAll(). */
+typedef AVLRU64CALLBACK *PAVLRU64CALLBACK;
+
+/*
+ * Functions.
+ */
+RTDECL(bool)             RTAvlrU64Insert(PAVLRU64TREE ppTree, PAVLRU64NODECORE pNode);
+RTDECL(PAVLRU64NODECORE) RTAvlrU64Remove(PAVLRU64TREE ppTree, AVLRU64KEY Key);
+RTDECL(PAVLRU64NODECORE) RTAvlrU64Get(PAVLRU64TREE ppTree, AVLRU64KEY Key);
+RTDECL(PAVLRU64NODECORE) RTAvlrU64RangeGet(PAVLRU64TREE ppTree, AVLRU64KEY Key);
+RTDECL(PAVLRU64NODECORE) RTAvlrU64RangeRemove(PAVLRU64TREE ppTree, AVLRU64KEY Key);
+RTDECL(PAVLRU64NODECORE) RTAvlrU64GetBestFit(PAVLRU64TREE ppTree, AVLRU64KEY Key, bool fAbove);
+RTDECL(PAVLRU64NODECORE) RTAvlrU64RemoveBestFit(PAVLRU64TREE ppTree, AVLRU64KEY Key, bool fAbove);
+RTDECL(int)              RTAvlrU64DoWithAll(PAVLRU64TREE ppTree, int fFromLeft, PAVLRU64CALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)              RTAvlrU64Destroy(PAVLRU64TREE ppTree, PAVLRU64CALLBACK pfnCallBack, void *pvParam);
+
+/** @} */
+
+
+
 /** AVL tree of RTGCPHYSes - using relative offsets internally.
  * @{
  */
