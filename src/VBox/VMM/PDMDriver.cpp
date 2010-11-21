@@ -659,6 +659,9 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
         rc = pdmR3CritSectDeleteDriver(pVM, pCur);
         AssertRC(rc);
 
+        /* Block caches. */
+        PDMR3BlkCacheReleaseDriver(pVM, pCur);
+
         /* Finally, the driver it self. */
         bool fHyperHeap = pCur->Internal.s.fHyperHeap;
         ASMMemFill32(pCur, RT_OFFSETOF(PDMDRVINS, achInstanceData[pCur->pReg->cbInstance]), 0xdeadd0d0);

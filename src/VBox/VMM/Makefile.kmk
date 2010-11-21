@@ -166,7 +166,8 @@ VMMR3_SOURCES   = \
 	PATM/PATMGuest.cpp \
 	PATM/PATMA.asm \
 	PATM/PATMSSM.cpp \
-	PATM/VMMAll/PATMAll.cpp
+	PATM/VMMAll/PATMAll.cpp \
+	PDMBlkCache.cpp
 ifdef VBOX_WITH_VUSB
  VMMR3_SOURCES += PDMUsb.cpp
 endif
