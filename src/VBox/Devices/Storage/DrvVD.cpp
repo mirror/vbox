@@ -23,6 +23,7 @@
 #include <VBox/vd.h>
 #include <VBox/pdmdrv.h>
 #include <VBox/pdmasynccompletion.h>
+#include <VBox/pdmblkcache.h>
 #include <iprt/asm.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
@@ -192,6 +193,9 @@ typedef struct VBOXDISK
     VDINTERFACE         VDIIOCache;
     /** Interface list for the cache image. */
     PVDINTERFACE        pVDIfsCache;
+
+    /** The block cache handle if configured. */
+    PPDMBLKCACHE        pBlkCache;
 } VBOXDISK, *PVBOXDISK;
 
 
@@ -1686,25 +1690,41 @@ static void drvvdAsyncReqComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser1;
 
-    int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
-                                                                  pvUser2, rcReq);
-    AssertRC(rc);
+    if (!pThis->pBlkCache)
+    {
+        int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
+                                                                      pvUser2, rcReq);
+        AssertRC(rc);
+    }
+    else
+        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, (PPDMBLKCACHEIOXFER)pvUser2, rcReq);
 }
 
 static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
                                         PCRTSGSEG paSeg, unsigned cSeg,
                                         size_t cbRead, void *pvUser)
 {
-    LogFlowFunc(("uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d\n pvUser=%#p",
+    LogFlowFunc(("uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d pvUser=%#p\n",
                  uOffset, paSeg, cSeg, cbRead, pvUser));
+    int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
 
     pThis->fBootAccelActive = false;
 
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, paSeg, cSeg);
-    int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, &SgBuf,
+    if (!pThis->pBlkCache)
+        rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, &SgBuf,
                          drvvdAsyncReqComplete, pThis, pvUser);
+    else
+    {
+        rc = PDMR3BlkCacheRead(pThis->pBlkCache, uOffset, &SgBuf, cbRead, pvUser);
+        if (rc == VINF_AIO_TASK_PENDING)
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        else if (rc == VINF_SUCCESS)
+            rc = VINF_VD_ASYNC_IO_FINISHED;
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1715,14 +1735,26 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
 {
     LogFlowFunc(("uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d pvUser=%#p\n",
                  uOffset, paSeg, cSeg, cbWrite, pvUser));
+    int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
 
     pThis->fBootAccelActive = false;
 
     RTSGBUF SgBuf;
     RTSgBufInit(&SgBuf, paSeg, cSeg);
-    int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, &SgBuf,
+
+    if (!pThis->pBlkCache)
+        rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, &SgBuf,
                           drvvdAsyncReqComplete, pThis, pvUser);
+    else
+    {
+        rc = PDMR3BlkCacheWrite(pThis->pBlkCache, uOffset, &SgBuf, cbWrite, pvUser);
+        if (rc == VINF_AIO_TASK_PENDING)
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        else if (rc == VINF_SUCCESS)
+            rc = VINF_VD_ASYNC_IO_FINISHED;
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1730,12 +1762,63 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
 static DECLCALLBACK(int) drvvdStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUser)
 {
     LogFlowFunc(("pvUser=%#p\n", pvUser));
+    int rc = VINF_SUCCESS;
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
-    int rc = VDAsyncFlush(pThis->pDisk, drvvdAsyncReqComplete, pThis, pvUser);
+
+    if (!pThis->pBlkCache)
+        rc = VDAsyncFlush(pThis->pDisk, drvvdAsyncReqComplete, pThis, pvUser);
+    else
+    {
+        rc = PDMR3BlkCacheFlush(pThis->pBlkCache, pvUser);
+    }
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
+/** @copydoc FNPDMBLKCACHEXFERCOMPLETEDRV */
+static void drvvdBlkCacheXferComplete(PPDMDRVINS pDrvIns, void *pvUser, int rcReq)
+{
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+
+    int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
+                                                                  pvUser, rcReq);
+    AssertRC(rc);
+}
+
+/** @copydoc FNPDMBLKCACHEXFERENQUEUEDRV */
+static int drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
+                                    PDMBLKCACHEXFERDIR enmXferDir,
+                                    uint64_t off, size_t cbXfer,
+                                    PCRTSGBUF pcSgBuf, PPDMBLKCACHEIOXFER hIoXfer)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+
+    switch (enmXferDir)
+    {
+        case PDMBLKCACHEXFERDIR_READ:
+            rc = VDAsyncRead(pThis->pDisk, off, cbXfer, pcSgBuf, drvvdAsyncReqComplete,
+                             pThis, hIoXfer);
+            break;
+        case PDMBLKCACHEXFERDIR_WRITE:
+            rc = VDAsyncWrite(pThis->pDisk, off, cbXfer, pcSgBuf, drvvdAsyncReqComplete,
+                              pThis, hIoXfer);
+            break;
+        case PDMBLKCACHEXFERDIR_FLUSH:
+            rc = VDAsyncFlush(pThis->pDisk, drvvdAsyncReqComplete, pThis, hIoXfer);
+            break;
+        default:
+            AssertMsgFailed(("Invalid transfer type %d\n", enmXferDir));
+            rc = VERR_INVALID_PARAMETER;
+    }
+
+    if (rc == VINF_VD_ASYNC_IO_FINISHED)
+        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, VINF_SUCCESS);
+    else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, rc);
+
+    return VINF_SUCCESS;
+}
 
 /*******************************************************************************
 *   Base interface methods                                                     *
@@ -1905,6 +1988,12 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
     }
 
+    if (VALID_PTR(pThis->pBlkCache))
+    {
+        PDMR3BlkCacheRelease(pThis->pBlkCache);
+        pThis->pBlkCache = NULL;
+    }
+
     if (VALID_PTR(pThis->pDisk))
     {
         VDDestroy(pThis->pDisk);
@@ -2012,6 +2101,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
      */
     bool        fHostIP = false;
     bool        fUseNewIo = false;
+    bool        fUseBlockCache = false;
     unsigned    iLevel = 0;
     PCFGMNODE   pCurNode = pCfg;
     VDTYPE      enmType = VDTYPE_HDD;
@@ -2028,7 +2118,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                           "Format\0Path\0"
                                           "ReadOnly\0MaybeReadOnly\0TempReadOnly\0Shareable\0HonorZeroWrites\0"
                                           "HostIPStack\0UseNewIo\0BootAcceleration\0BootAccelerationBuffer\0"
-                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0"
+                                          "SetupMerge\0MergeSource\0MergeTarget\0BwGroup\0Type\0BlockCache\0"
                                           "CachePath\0CacheFormat\0");
         }
         else
@@ -2133,6 +2223,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"BootAccelerationBuffer\" as integer failed"));
+                break;
+            }
+            rc = CFGMR3QueryBoolDef(pCurNode, "BlockCache", &fUseBlockCache, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"BlockCache\" as boolean failed"));
                 break;
             }
             rc = CFGMR3QueryStringAlloc(pCurNode, "BwGroup", &pThis->pszBwGroup);
@@ -2521,6 +2618,35 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     {
         rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
                               N_("DrvVD: Configuration error: Inconsistent image merge data"));
+    }
+
+    /* Create the block cache if enabled. */
+    if (   fUseBlockCache
+        && RT_SUCCESS(rc))
+    {
+        /* Create a unique ID from the UUID of the last image in the chain. */
+        char achUuid[RTUUID_STR_LENGTH + 1];
+        RTUUID Uuid;
+
+        /** @todo: Images without UUIDs. */
+        rc = VDGetUuid(pThis->pDisk, VDGetCount(pThis->pDisk) - 1, &Uuid);
+        AssertRC(rc);
+
+        memset(achUuid, 0, sizeof(achUuid));
+        rc = RTUuidToStr(&Uuid, achUuid, RTUUID_STR_LENGTH);
+        AssertRC(rc);
+
+        rc = PDMDrvHlpBlkCacheRetain(pDrvIns, &pThis->pBlkCache,
+                                     drvvdBlkCacheXferComplete,
+                                     drvvdBlkCacheXferEnqueue,
+                                     achUuid);
+        if (rc == VERR_NOT_SUPPORTED)
+        {
+            LogRel(("VD: Block cache is not supported\n"));
+            rc = VINF_SUCCESS;
+        }
+        else
+            AssertRC(rc);
     }
 
     /*
