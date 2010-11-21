@@ -902,8 +902,7 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOv
 
 DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
                                   uint64_t uOffset, size_t cbTransfer,
-                                  PCRTSGSEG pcaSeg, unsigned cSeg,
-                                  void *pvAllocation,
+                                  PCRTSGBUF pcSgBuf, void *pvAllocation,
                                   PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
 {
     PVDIOCTX pIoCtx = NULL;
@@ -927,7 +926,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
 
         /* There is no S/G list for a flush request. */
         if (enmTxDir != VDIOCTXTXDIR_FLUSH)
-            RTSgBufInit(&pIoCtx->SgBuf, pcaSeg, cSeg);
+            RTSgBufClone(&pIoCtx->SgBuf, pcSgBuf);
         else
             memset(&pIoCtx->SgBuf, 0, sizeof(RTSGBUF));
     }
@@ -937,14 +936,14 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
 
 DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
                                       uint64_t uOffset, size_t cbTransfer,
-                                      PCRTSGSEG paSeg, unsigned cSeg,
+                                      PCRTSGBUF pcSgBuf,
                                       PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                       void *pvUser1, void *pvUser2,
                                       void *pvAllocation,
                                       PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
 {
     PVDIOCTX pIoCtx = vdIoCtxAlloc(pDisk, enmTxDir, uOffset, cbTransfer,
-                                   paSeg, cSeg, pvAllocation, pfnIoCtxTransfer);
+                                   pcSgBuf, pvAllocation, pfnIoCtxTransfer);
 
     if (RT_LIKELY(pIoCtx))
     {
@@ -960,13 +959,13 @@ DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
 
 DECLINLINE(PVDIOCTX) vdIoCtxChildAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
                                        uint64_t uOffset, size_t cbTransfer,
-                                       PCRTSGSEG paSeg, unsigned cSeg,
+                                       PCRTSGBUF pcSgBuf,
                                        PVDIOCTX pIoCtxParent, size_t cbTransferParent,
                                        size_t cbWriteParent, void *pvAllocation,
                                        PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
 {
     PVDIOCTX pIoCtx = vdIoCtxAlloc(pDisk, enmTxDir, uOffset, cbTransfer,
-                                   paSeg, cSeg, pvAllocation, pfnIoCtxTransfer);
+                                   pcSgBuf, pvAllocation, pfnIoCtxTransfer);
 
     AssertPtr(pIoCtxParent);
     Assert(!pIoCtxParent->pIoCtxParent);
@@ -1933,15 +1932,17 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                  * Allocate segment and buffer in one go.
                  * A bit hackish but avoids the need to allocate memory twice.
                  */
-                PRTSGSEG pTmp = (PRTSGSEG)RTMemAlloc(cbPreRead + cbThisWrite + cbPostRead + sizeof(RTSGSEG));
+                PRTSGBUF pTmp = (PRTSGBUF)RTMemAlloc(cbPreRead + cbThisWrite + cbPostRead + sizeof(RTSGSEG) + sizeof(RTSGBUF));
                 AssertBreakStmt(VALID_PTR(pTmp), rc = VERR_NO_MEMORY);
+                PRTSGSEG pSeg = (PRTSGSEG)(pTmp + 1);
 
-                pTmp->pvSeg = pTmp + 1;
-                pTmp->cbSeg = cbPreRead + cbThisWrite + cbPostRead;
+                pSeg->pvSeg = pSeg + 1;
+                pSeg->cbSeg = cbPreRead + cbThisWrite + cbPostRead;
+                RTSgBufInit(pTmp, pSeg, 1);
 
                 PVDIOCTX pIoCtxWrite = vdIoCtxChildAlloc(pDisk, VDIOCTXTXDIR_WRITE,
-                                                         uOffset, pTmp->cbSeg,
-                                                         pTmp, 1,
+                                                         uOffset, pSeg->cbSeg,
+                                                         pTmp,
                                                          pIoCtx, cbThisWrite,
                                                          cbWrite,
                                                          pTmp,
@@ -7917,7 +7918,7 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
 
 
 VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
-                              PCRTSGSEG paSeg, unsigned cSeg,
+                              PCRTSGBUF pcSgBuf,
                               PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                               void *pvUser1, void *pvUser2)
 {
@@ -7926,8 +7927,8 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
     bool fLockRead = false;
     PVDIOCTX pIoCtx = NULL;
 
-    LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbRead=%zu pvUser1=%#p pvUser2=%#p\n",
-                 pDisk, uOffset, paSeg, cSeg, cbRead, pvUser1, pvUser2));
+    LogFlowFunc(("pDisk=%#p uOffset=%llu pcSgBuf=%#p cbRead=%zu pvUser1=%#p pvUser2=%#p\n",
+                 pDisk, uOffset, pcSgBuf, cbRead, pvUser1, pvUser2));
 
     do
     {
@@ -7939,11 +7940,8 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
         AssertMsgBreakStmt(cbRead,
                            ("cbRead=%zu\n", cbRead),
                            rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(paSeg),
-                           ("paSeg=%#p\n", paSeg),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cSeg,
-                           ("cSeg=%zu\n", cSeg),
+        AssertMsgBreakStmt(VALID_PTR(pcSgBuf),
+                           ("pcSgBuf=%#p\n", pcSgBuf),
                            rc = VERR_INVALID_PARAMETER);
 
         rc2 = vdThreadStartRead(pDisk);
@@ -7956,7 +7954,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                            rc = VERR_INVALID_PARAMETER);
 
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_READ, uOffset,
-                                  cbRead, paSeg, cSeg,
+                                  cbRead, pcSgBuf,
                                   pfnComplete, pvUser1, pvUser2,
                                   NULL, vdReadHelperAsync);
         if (!pIoCtx)
@@ -7994,7 +7992,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
 
 
 VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
-                               PCRTSGSEG paSeg, unsigned cSeg,
+                               PCRTSGBUF pcSgBuf,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2)
 {
@@ -8003,8 +8001,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
     bool fLockWrite = false;
     PVDIOCTX pIoCtx = NULL;
 
-    LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbWrite=%zu pvUser1=%#p pvUser2=%#p\n",
-                 pDisk, uOffset, paSeg, cSeg, cbWrite, pvUser1, pvUser2));
+    LogFlowFunc(("pDisk=%#p uOffset=%llu cSgBuf=%#p cbWrite=%zu pvUser1=%#p pvUser2=%#p\n",
+                 pDisk, uOffset, pcSgBuf, cbWrite, pvUser1, pvUser2));
     do
     {
         /* sanity check */
@@ -8015,11 +8013,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
         AssertMsgBreakStmt(cbWrite,
                            ("cbWrite=%zu\n", cbWrite),
                            rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(paSeg),
-                           ("paSeg=%#p\n", paSeg),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cSeg,
-                           ("cSeg=%zu\n", cSeg),
+        AssertMsgBreakStmt(VALID_PTR(pcSgBuf),
+                           ("pcSgBuf=%#p\n", pcSgBuf),
                            rc = VERR_INVALID_PARAMETER);
 
         rc2 = vdThreadStartWrite(pDisk);
@@ -8032,7 +8027,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
                            rc = VERR_INVALID_PARAMETER);
 
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_WRITE, uOffset,
-                                  cbWrite, paSeg, cSeg,
+                                  cbWrite, pcSgBuf,
                                   pfnComplete, pvUser1, pvUser2,
                                   NULL, vdWriteHelperAsync);
         if (!pIoCtx)
@@ -8090,7 +8085,7 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCom
         fLockWrite = true;
 
         pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_FLUSH, 0,
-                                  0, NULL, 0,
+                                  0, NULL,
                                   pfnComplete, pvUser1, pvUser2,
                                   NULL, vdFlushHelperAsync);
         if (!pIoCtx)
