@@ -134,8 +134,6 @@ typedef struct PDMBLKCACHEGLOBAL
     /** List of all users of this cache. */
     RTLISTNODE        ListUsers;
 #ifdef VBOX_WITH_STATISTICS
-    /** Alignment */
-    uint32_t          u32Alignment;
     /** Hit counter. */
     STAMCOUNTER       cHits;
     /** Partial hit counter. */
@@ -242,6 +240,7 @@ typedef struct PDMBLKCACHE
     } u;
 
 #ifdef VBOX_WITH_STATISTICS
+    uint32_t    u32Alignment;
     /** Number of times a write was deferred because the cache entry was still in progress */
     STAMCOUNTER StatWriteDeferred;
 #endif
