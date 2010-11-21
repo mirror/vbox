@@ -343,6 +343,8 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
         rc = pdmR3AsyncCompletionInit(pVM);
 #endif
     if (RT_SUCCESS(rc))
+        rc = pdmR3BlkCacheInit(pVM);
+    if (RT_SUCCESS(rc))
         rc = pdmR3DrvInit(pVM);
     if (RT_SUCCESS(rc))
         rc = pdmR3DevInit(pVM);
@@ -604,6 +606,11 @@ VMMR3DECL(int) PDMR3Term(PVM pVM)
      * Destroy all threads.
      */
     pdmR3ThreadDestroyAll(pVM);
+
+    /*
+     * Destroy the block cache.
+     */
+    pdmR3BlkCacheTerm(pVM);
 
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     /*

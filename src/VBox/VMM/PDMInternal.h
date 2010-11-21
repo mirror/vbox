@@ -24,6 +24,7 @@
 #include <VBox/stam.h>
 #include <VBox/vusb.h>
 #include <VBox/pdmasynccompletion.h>
+#include <VBox/pdmblkcache.h>
 #include <VBox/pdmcommon.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -913,6 +914,8 @@ typedef struct PDMASYNCCOMPLETIONTEMPLATE *PPDMASYNCCOMPLETIONTEMPLATE;
 /** Pointer to the main PDM Async completion endpoint class. */
 typedef struct PDMASYNCCOMPLETIONEPCLASS *PPDMASYNCCOMPLETIONEPCLASS;
 
+/** Pointer to the global block cache structure. */
+typedef struct PDMBLKCACHEGLOBAL *PPDMBLKCACHEGLOBAL;
 
 /**
  * PDM VMCPU Instance data.
@@ -1051,6 +1054,8 @@ typedef struct PDMUSERPERVM
     R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
     /** @} */
 
+    R3PTRTYPE(PPDMBLKCACHEGLOBAL)   pBlkCacheGlobal;
+
 } PDMUSERPERVM;
 /** Pointer to the PDM data kept in the UVM. */
 typedef PDMUSERPERVM *PPDMUSERPERVM;
@@ -1161,6 +1166,9 @@ int         pdmR3AsyncCompletionInit(PVM pVM);
 int         pdmR3AsyncCompletionTerm(PVM pVM);
 void        pdmR3AsyncCompletionResume(PVM pVM);
 #endif
+
+int         pdmR3BlkCacheInit(PVM pVM);
+void        pdmR3BlkCacheTerm(PVM pVM);
 
 #endif /* IN_RING3 */
 
