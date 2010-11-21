@@ -33,6 +33,7 @@
 #include <VBox/pdmins.h>
 #include <VBox/pdmcommon.h>
 #include <VBox/pdmasynccompletion.h>
+#include <VBox/pdmblkcache.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
@@ -1245,6 +1246,21 @@ typedef struct PDMDRVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnFTSetCheckpoint,(PPDMDRVINS pDrvIns, FTMCHECKPOINTTYPE enmType));
 
+    /**
+     * Creates a block cache for a driver driver instance.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         The driver instance.
+     * @param   ppBlkCache      Where to store the handle to the block cache.
+     * @param   pfnXferComplete The I/O transfer complete callback.
+     * @param   pfnXferEnqueue  The I/O request enqueue callback.
+     * @param   pcszId          Unique ID used to identify the user.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnBlkCacheRetain, (PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkCache,
+                                                  PFNPDMBLKCACHEXFERCOMPLETEDRV pfnXferComplete,
+                                                  PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
+                                                  const char *pcszId));
+
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
@@ -1694,6 +1710,16 @@ DECLINLINE(int) PDMDrvHlpCallR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_
     return pDrvIns->pHlpR3->pfnCallR0(pDrvIns, uOperation, u64Arg);
 }
 
+/**
+ * @copydoc PDMDRVHLP::pfnBlkCacheRetain
+ */
+DECLINLINE(int) PDMDrvHlpBlkCacheRetain(PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkCache,
+                                        PFNPDMBLKCACHEXFERCOMPLETEDRV pfnXferComplete,
+                                        PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
+                                        const char *pcszId)
+{
+    return pDrvIns->pHlpR3->pfnBlkCacheRetain(pDrvIns, ppBlkCache, pfnXferComplete, pfnXferEnqueue, pcszId);
+}
 
 /** Pointer to callbacks provided to the VBoxDriverRegister() call. */
 typedef struct PDMDRVREGCB *PPDMDRVREGCB;
