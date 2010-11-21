@@ -1701,7 +1701,9 @@ static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOf
 
     pThis->fBootAccelActive = false;
 
-    int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, paSeg, cSeg,
+    RTSGBUF SgBuf;
+    RTSgBufInit(&SgBuf, paSeg, cSeg);
+    int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, &SgBuf,
                          drvvdAsyncReqComplete, pThis, pvUser);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1717,7 +1719,9 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
 
     pThis->fBootAccelActive = false;
 
-    int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, paSeg, cSeg,
+    RTSGBUF SgBuf;
+    RTSgBufInit(&SgBuf, paSeg, cSeg);
+    int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, &SgBuf,
                           drvvdAsyncReqComplete, pThis, pvUser);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
