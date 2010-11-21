@@ -1396,6 +1396,18 @@ static DECLCALLBACK(int) pdmR3DrvHlp_FTSetCheckpoint(PPDMDRVINS pDrvIns, FTMCHEC
 }
 
 
+/** @interface_method_impl{PDMDRVHLP,pfnBlkCacheRetain} */
+static DECLCALLBACK(int) pdmR3DrvHlp_BlkCacheRetain(PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkCache,
+                                                    PFNPDMBLKCACHEXFERCOMPLETEDRV pfnXferComplete,
+                                                    PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
+                                                    const char *pcszId)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    return PDMR3BlkCacheRetainDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, ppBlkCache,
+                                     pfnXferComplete, pfnXferEnqueue, pcszId);
+}
+
+
 /**
  * The driver helper structure.
  */
@@ -1438,6 +1450,7 @@ const PDMDRVHLPR3 g_pdmR3DrvHlp =
     pdmR3DrvHlp_CritSectInit,
     pdmR3DrvHlp_CallR0,
     pdmR3DrvHlp_FTSetCheckpoint,
+    pdmR3DrvHlp_BlkCacheRetain,
     PDM_DRVHLPR3_VERSION /* u32TheEnd */
 };
 
