@@ -602,6 +602,7 @@ static int pdmBlkCacheRequestPassthrough(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ
     if (RT_UNLIKELY(!pIoXfer))
         return VERR_NO_MEMORY;
 
+    ASMAtomicIncU32(&pReq->cXfersPending);
     pIoXfer->fIoCache    = false;
     pIoXfer->pReq        = pReq;
     pIoXfer->cbXfer      = cbData;
@@ -944,6 +945,7 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
 {
     int rc = VINF_SUCCESS;
     PPDMBLKCACHE pBlkCache = NULL;
+    bool fAlreadyExists = false;
     PPDMBLKCACHEGLOBAL pBlkCacheGlobal = pVM->pUVM->pdm.s.pBlkCacheGlobal;
 
     if (!pBlkCacheGlobal)
@@ -958,10 +960,13 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
     RTListForEach(&pBlkCacheGlobal->ListUsers, pBlkCache, PDMBLKCACHE, NodeCacheUser)
     {
         if (!RTStrCmp(pBlkCache->pszId, pcszId))
+        {
+            fAlreadyExists = true;
             break;
+        }
     }
 
-    if (!pBlkCache)
+    if (!fAlreadyExists)
     {
         pBlkCache = (PPDMBLKCACHE)RTMemAllocZ(sizeof(PDMBLKCACHE));
 
@@ -1044,9 +1049,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMBLKCA
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
+        pBlkCache->enmType = PDMBLKCACHETYPE_DRV;
         pBlkCache->u.Drv.pfnXferComplete = pfnXferComplete;
         pBlkCache->u.Drv.pfnXferEnqueue  = pfnXferEnqueue;
         pBlkCache->u.Drv.pDrvIns         = pDrvIns;
+        *ppBlkCache = pBlkCache;
     }
 
     LogFlowFunc(("Leave rc=%Rrc\n", rc));
@@ -1064,9 +1071,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMBLKCA
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
+        pBlkCache->enmType = PDMBLKCACHETYPE_DEV;
         pBlkCache->u.Dev.pfnXferComplete = pfnXferComplete;
         pBlkCache->u.Dev.pfnXferEnqueue  = pfnXferEnqueue;
         pBlkCache->u.Dev.pDevIns         = pDevIns;
+        *ppBlkCache = pBlkCache;
     }
 
     LogFlowFunc(("Leave rc=%Rrc\n", rc));
@@ -1085,9 +1094,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMBLKCACHE
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
+        pBlkCache->enmType = PDMBLKCACHETYPE_USB;
         pBlkCache->u.Usb.pfnXferComplete = pfnXferComplete;
         pBlkCache->u.Usb.pfnXferEnqueue  = pfnXferEnqueue;
         pBlkCache->u.Usb.pUsbIns         = pUsbIns;
+        *ppBlkCache = pBlkCache;
     }
 
     LogFlowFunc(("Leave rc=%Rrc\n", rc));
@@ -1106,9 +1117,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainInt(PVM pVM, void *pvUser, PPPDMBLKCACHE ppBlk
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
+        pBlkCache->enmType = PDMBLKCACHETYPE_INTERNAL;
         pBlkCache->u.Int.pfnXferComplete = pfnXferComplete;
         pBlkCache->u.Int.pfnXferEnqueue  = pfnXferEnqueue;
         pBlkCache->u.Int.pvUser          = pvUser;
+        *ppBlkCache = pBlkCache;
     }
 
     LogFlowFunc(("Leave rc=%Rrc\n", rc));
@@ -1487,6 +1500,7 @@ static int pdmBlkCacheEntryWaitersAdd(PPDMBLKCACHEENTRY pEntry,
     if (!pWaiter)
         return VERR_NO_MEMORY;
 
+    ASMAtomicIncU32(&pReq->cXfersPending);
     pWaiter->pReq          = pReq;
     pWaiter->offCacheEntry = offDiff;
     pWaiter->cbTransfer    = cbData;
@@ -1732,6 +1746,7 @@ static bool pdmBlkCacheReqUpdate(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ pReq,
         return true;
     }
 
+    LogFlowFunc(("pReq=%#p cXfersPending=%u cbXfer=%u\n", pReq, cXfersPending, (cbOld - cbComplete)));
     return false;
 }
 
@@ -1751,7 +1766,7 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
 
     /* Allocate new request structure. */
     pReq = pdmBlkCacheReqAlloc(cbRead, pvUser);
-    if (RT_UNLIKELY(pReq))
+    if (RT_UNLIKELY(!pReq))
         return VERR_NO_MEMORY;
 
     /* Increment data transfer counter to keep the request valid while we access it. */
@@ -1817,6 +1832,7 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
                 {
                     /* Read as much as we can from the entry. */
                     RTSgBufCopyFromBuf(&SgBuf, pEntry->pbData + offDiff, cbToRead);
+                    ASMAtomicSubU32(&pReq->cbXfer, cbToRead);
                 }
 
                 /* Move this entry to the top position */
@@ -1966,7 +1982,7 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
 
     /* Allocate new request structure. */
     pReq = pdmBlkCacheReqAlloc(cbWrite, pvUser);
-    if (RT_UNLIKELY(pReq))
+    if (RT_UNLIKELY(!pReq))
         return VERR_NO_MEMORY;
 
     /* Increment data transfer counter to keep the request valid while we access it. */
