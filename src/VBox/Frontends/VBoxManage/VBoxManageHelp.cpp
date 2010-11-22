@@ -114,7 +114,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                      "                            usbhost|usbfilters|systemproperties|\n"
-                     "                            vrdelibraries|extpacks\n"
+                     "                            extpacks\n"
                      "\n");
     }
 
@@ -305,7 +305,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                         bidirectional]\n");
         RTStrmPrintf(pStrm,
                      "                            [--vrde on|off]\n"
-                     "                            [--vrdelibrary default|<name>\n"
+                     "                            [--vrdeextpack default|<name>\n"
                      "                            [--vrdeproperty <name=[value]>]\n"
                      "                            [--vrdeauthtype null|external|guest]\n"
                      "                            [--vrdemulticon on|off]\n"
@@ -578,7 +578,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            machinefolder default|<folder> |\n"
                      "                            vrdeauthlibrary default|<library> |\n"
                      "                            websrvauthlibrary default|null|<library> |\n"
-                     "                            vrdelibrary null|<library> |\n"
+                     "                            vrdeextpack null|<library> |\n"
                      "                            loghistorycount <value>\n"
                      "\n");
     }
@@ -723,18 +723,12 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "\n");
     }
-    if (u64Cmd & USAGE_VRDE)
-    {
-        RTStrmPrintf(pStrm,
-                     "VBoxManage vrde             register <name>\n"
-                     "VBoxManage vrde             unregister <name>\n"
-                     "\n");
-    }
     if (u64Cmd & USAGE_EXTPACK)
     {
         RTStrmPrintf(pStrm,
                      "VBoxManage extpack          install <tarball>\n"
                      "VBoxManage extpack          uninstall [--force] <name>\n"
+                     "VBoxManage extpack          cleanup\n"
                      "\n");
     }
 }

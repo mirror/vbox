@@ -430,7 +430,6 @@ int main(int argc, char *argv[])
             { "hostonlyif",       USAGE_HOSTONLYIFS,       handleHostonlyIf },
 #endif
             { "dhcpserver",       USAGE_DHCPSERVER,        handleDHCPServer},
-            { "vrde",             USAGE_VRDE,              handleVRDE},
             { "extpack",          USAGE_EXTPACK,           handleExtPack},
             { NULL,               0,                       NULL }
         };

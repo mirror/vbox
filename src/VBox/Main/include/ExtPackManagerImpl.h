@@ -57,6 +57,7 @@ public:
     STDMETHOD(COMGETTER(Description))(BSTR *a_pbstrDescription);
     STDMETHOD(COMGETTER(Version))(BSTR *a_pbstrVersion);
     STDMETHOD(COMGETTER(Revision))(ULONG *a_puRevision);
+    STDMETHOD(COMGETTER(VRDEModule))(BSTR *a_pbstrVrdeModule);
     STDMETHOD(COMGETTER(PlugIns))(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns));
     STDMETHOD(COMGETTER(Usable))(BOOL *a_pfUsable);
     STDMETHOD(COMGETTER(WhyUnusable))(BSTR *a_pbstrWhy);
@@ -72,6 +73,9 @@ public:
     int         callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM);
     int         callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM);
     void        callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM);
+    HRESULT     checkVrde(void);
+    HRESULT     getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary);
+    bool        wantsToBeDefaultVrde(void) const;
     HRESULT     refresh(bool *pfCanDelete);
     /** @}  */
 
@@ -79,7 +83,7 @@ protected:
     /** @name Internal helper methods.
      * @{ */
     void        probeAndLoad(void);
-    bool        findModule(const char *a_pszName, const char *a_pszExt,
+    bool        findModule(const char *a_pszName, const char *a_pszExt, VBOXEXTPACKMODKIND a_enmKind,
                            Utf8Str *a_ppStrFound, bool *a_pfNative, PRTFSOBJINFO a_pObjInfo) const;
     static bool objinfoIsEqual(PCRTFSOBJINFO pObjInfo1, PCRTFSOBJINFO pObjInfo2);
     /** @}  */
@@ -87,9 +91,8 @@ protected:
     /** @name Extension Pack Helpers
      * @{ */
     static DECLCALLBACK(int)    hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
-                                              char *pszFound, size_t cbFound, bool *pfNative);
+                                              VBOXEXTPACKMODKIND enmKind, char *pszFound, size_t cbFound, bool *pfNative);
     static DECLCALLBACK(int)    hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath);
-    static DECLCALLBACK(int)    hlpRegisterVrde(PCVBOXEXTPACKHLP pHlp, const char *pszName, bool fSetDefault);
     /** @}  */
 
 private:
@@ -144,6 +147,9 @@ class ATL_NO_VTABLE ExtPackManager :
     int         callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM);
     int         callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM);
     void        callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM);
+    HRESULT     checkVrdeExtPack(Utf8Str const *a_pstrExtPack);
+    int         getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);
+    HRESULT     getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack);
     /** @}  */
 
 private:

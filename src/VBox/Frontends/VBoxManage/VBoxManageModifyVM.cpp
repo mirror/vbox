@@ -145,7 +145,7 @@ enum
     MODIFYVM_VRDEREUSECON,
     MODIFYVM_VRDEVIDEOCHANNEL,
     MODIFYVM_VRDEVIDEOCHANNELQUALITY,
-    MODIFYVM_VRDELIBRARY,
+    MODIFYVM_VRDE_EXTPACK,
     MODIFYVM_VRDE,
     MODIFYVM_RTCUSEUTC,
     MODIFYVM_USBEHCI,
@@ -268,7 +268,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdereusecon",             MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdevideochannel",         MODIFYVM_VRDEVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdevideochannelquality",  MODIFYVM_VRDEVIDEOCHANNELQUALITY,   RTGETOPT_REQ_UINT32 },
-    { "--vrdelibrary",              MODIFYVM_VRDELIBRARY,               RTGETOPT_REQ_STRING },
+    { "--vrdeextpack",              MODIFYVM_VRDE_EXTPACK,              RTGETOPT_REQ_STRING },
     { "--vrde",                     MODIFYVM_VRDE,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
@@ -1820,7 +1820,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_VRDELIBRARY:
+            case MODIFYVM_VRDE_EXTPACK:
             {
                 ComPtr<IVRDEServer> vrdeServer;
                 machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
@@ -1831,10 +1831,10 @@ int handleModifyVM(HandlerArg *a)
                     if (strcmp(ValueUnion.psz, "default") != 0)
                     {
                         Bstr bstr(ValueUnion.psz);
-                        CHECK_ERROR(vrdeServer, COMSETTER(VRDELibrary)(bstr.raw()));
+                        CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)(bstr.raw()));
                     }
                     else
-                        CHECK_ERROR(vrdeServer, COMSETTER(VRDELibrary)(NULL));
+                        CHECK_ERROR(vrdeServer, COMSETTER(VRDEExtPack)(NULL));
                 }
                 break;
             }

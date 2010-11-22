@@ -796,6 +796,18 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
 
 #endif /* VBOX_WITH_GUEST_PROPS */
 
+#ifdef VBOX_WITH_EXTPACK
+/**
+ * Used by VRDEServer and others to talke to the extension pack manager.
+ *
+ * @returns The extension pack manager.
+ */
+ExtPackManager *Console::getExtPackManager()
+{
+    return mptrExtPackManager;
+}
+#endif
+
 
 int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain)
 {

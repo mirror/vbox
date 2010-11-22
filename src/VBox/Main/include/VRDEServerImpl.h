@@ -40,7 +40,7 @@ public:
         BOOL mReuseSingleConnection;
         BOOL mVideoChannel;
         ULONG mVideoChannelQuality;
-        Bstr mVRDELibrary;
+        Utf8Str mVrdeExtPack;
         settings::StringsMap mProperties;
     };
 
@@ -82,8 +82,8 @@ public:
     STDMETHOD(COMSETTER(VideoChannel)) (BOOL aVideoChannel);
     STDMETHOD(COMGETTER(VideoChannelQuality)) (ULONG *aVideoChannelQuality);
     STDMETHOD(COMSETTER(VideoChannelQuality)) (ULONG aVideoChannelQuality);
-    STDMETHOD(COMGETTER(VRDELibrary)) (BSTR *aValue);
-    STDMETHOD(COMSETTER(VRDELibrary)) (IN_BSTR aValue);
+    STDMETHOD(COMGETTER(VRDEExtPack))(BSTR *aExtPack);
+    STDMETHOD(COMSETTER(VRDEExtPack))(IN_BSTR aExtPack);
 
     // IVRDEServer methods
     STDMETHOD(SetVRDEProperty) (IN_BSTR aKey, IN_BSTR aValue);

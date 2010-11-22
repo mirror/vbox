@@ -18,6 +18,9 @@
 #include "VRDEServerImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
+#endif
 
 #include <iprt/cpp/utils.h>
 #include <iprt/ctype.h>
@@ -29,6 +32,7 @@
 
 #include "AutoStateDep.h"
 #include "AutoCaller.h"
+#include "Global.h"
 #include "Logging.h"
 
 // defines
@@ -87,7 +91,7 @@ HRESULT VRDEServer::init (Machine *aParent)
     mData->mReuseSingleConnection = FALSE;
     mData->mVideoChannel         = FALSE;
     mData->mVideoChannelQuality  = 75;
-    mData->mVRDELibrary          = (const char *)NULL;
+    mData->mVrdeExtPack.setNull();
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -205,7 +209,7 @@ HRESULT VRDEServer::loadSettings(const settings::VRDESettings &data)
     mData->mReuseSingleConnection = data.fReuseSingleConnection;
     mData->mVideoChannel = data.fVideoChannel;
     mData->mVideoChannelQuality = data.ulVideoChannelQuality;
-    mData->mVRDELibrary = data.strVRDELibrary;
+    mData->mVrdeExtPack = data.strVrdeExtPack;
     mData->mProperties = data.mapProperties;
 
     return S_OK;
@@ -232,7 +236,7 @@ HRESULT VRDEServer::saveSettings(settings::VRDESettings &data)
     data.fReuseSingleConnection = !!mData->mReuseSingleConnection;
     data.fVideoChannel = !!mData->mVideoChannel;
     data.ulVideoChannelQuality = mData->mVideoChannelQuality;
-    data.strVRDELibrary = mData->mVRDELibrary;
+    data.strVrdeExtPack = mData->mVrdeExtPack;
     data.mapProperties = mData->mProperties;
 
     return S_OK;
@@ -752,81 +756,104 @@ STDMETHODIMP VRDEServer::COMSETTER(VideoChannelQuality) (
     return S_OK;
 }
 
-STDMETHODIMP VRDEServer::COMGETTER(VRDELibrary) (BSTR *aVRDELibrary)
+STDMETHODIMP VRDEServer::COMGETTER(VRDEExtPack) (BSTR *aExtPack)
 {
-    CheckComArgOutPointerValid(aVRDELibrary);
+    CheckComArgOutPointerValid(aExtPack);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Bstr bstrLibrary;
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    bstrLibrary = mData->mVRDELibrary;
-    alock.release();
-
-    if (!bstrLibrary.isEmpty())
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
     {
-        BOOL fRegistered = FALSE;
-        HRESULT hrc = mParent->getVirtualBox()->VRDEIsLibraryRegistered(bstrLibrary.raw(), &fRegistered);
-        if (FAILED(hrc) || !fRegistered)
-            return setError(E_FAIL, "The library is not registered\n");
-    }
-    else
-    {
-        /* Get the global setting. */
-        ComPtr<ISystemProperties> systemProperties;
-        HRESULT hrc = mParent->getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-
-        if (SUCCEEDED(hrc))
-            hrc = systemProperties->COMGETTER(DefaultVRDELibrary)(bstrLibrary.asOutParam());
-
-        if (FAILED(hrc))
-            return setError(hrc, "failed to query the library setting\n");
-    }
-
-    bstrLibrary.cloneTo(aVRDELibrary);
-
-    return S_OK;
-}
-
-STDMETHODIMP VRDEServer::COMSETTER(VRDELibrary) (IN_BSTR aVRDELibrary)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(mParent);
-    if (FAILED(adep.rc())) return adep.rc();
-
-    Bstr bstrLibrary(aVRDELibrary);
-
-    if (!bstrLibrary.isEmpty())
-    {
-        BOOL fRegistered = FALSE;
-        HRESULT rc = mParent->getVirtualBox()->VRDEIsLibraryRegistered(bstrLibrary.raw(), &fRegistered);
-        if (FAILED(rc) || !fRegistered)
-            return setError(E_FAIL, "The library is not registered\n");
-    }
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mData->mVRDELibrary != aVRDELibrary)
-    {
-        mData.backup();
-        mData->mVRDELibrary = aVRDELibrary;
-
-        /* leave the lock before informing callbacks */
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Utf8Str strExtPack = mData->mVrdeExtPack;
         alock.release();
 
-        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
-        mParent->setModified(Machine::IsModified_VRDEServer);
-        mlock.release();
-
-        mParent->onVRDEServerChange(/* aRestart */ TRUE);
+        if (strExtPack.isNotEmpty())
+        {
+            if (strExtPack.equals(VBOXVRDP_KLUDGE_EXTPACK_NAME))
+                hrc = S_OK;
+            else
+            {
+#ifdef VBOX_WITH_EXTPACK
+                ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->getExtPackManager();
+                hrc = pExtPackMgr->checkVrdeExtPack(&strExtPack);
+#else
+                hrc = setError(E_FAIL, tr("Extension pack '%s' does not exist"), strExtPack.c_str());
+#endif
+            }
+            if (SUCCEEDED(hrc))
+                strExtPack.cloneTo(aExtPack);
+        }
+        else
+        {
+            /* Get the global setting. */
+            ComPtr<ISystemProperties> systemProperties;
+            hrc = mParent->getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+            if (SUCCEEDED(hrc))
+                hrc = systemProperties->COMGETTER(DefaultVRDEExtPack)(aExtPack);
+        }
     }
 
-    return S_OK;
+    return hrc;
+}
+
+STDMETHODIMP VRDEServer::COMSETTER(VRDEExtPack)(IN_BSTR aExtPack)
+{
+    CheckComArgNotNull(aExtPack);
+    Utf8Str strExtPack(aExtPack);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        /* the machine needs to be mutable */
+        AutoMutableStateDependency adep(mParent);
+        hrc = adep.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /*
+             * If not empty, check the specific extension pack.
+             */
+            if (!strExtPack.isEmpty())
+            {
+                if (strExtPack.equals(VBOXVRDP_KLUDGE_EXTPACK_NAME))
+                    hrc = S_OK;
+                else
+                {
+#ifdef VBOX_WITH_EXTPACK
+                    ExtPackManager *pExtPackMgr = mParent->getVirtualBox()->getExtPackManager();
+                    hrc = pExtPackMgr->checkVrdeExtPack(&strExtPack);
+#else
+                    hrc = setError(E_FAIL, tr("Extension pack '%s' does not exist"), strExtPack.c_str());
+#endif
+                }
+            }
+            if (SUCCEEDED(hrc))
+            {
+                /*
+                 * Update the setting if there is an actual change, post an
+                 * change event to trigger a VRDE server restart.
+                 */
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                if (strExtPack != mData->mVrdeExtPack)
+                {
+                    mData.backup();
+                    mData->mVrdeExtPack = strExtPack;
+
+                    /* leave the lock before informing callbacks */
+                    alock.release();
+
+                    AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
+                    mParent->setModified(Machine::IsModified_VRDEServer);
+                    mlock.release();
+
+                    mParent->onVRDEServerChange(/* aRestart */ TRUE);
+                }
+            }
+        }
+    }
+
+    return hrc;
 }
 
 // public methods only for internal purposes

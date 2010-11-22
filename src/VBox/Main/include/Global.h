@@ -1,8 +1,6 @@
 /* $Id$ */
-
 /** @file
- *
- * VirtualBox COM global declarations
+ * VirtualBox COM API - Global Declarations and Definitions.
  */
 
 /*
@@ -40,6 +38,13 @@
 #define VBOXOSHINT_HPET                 RT_BIT(6)
 #define VBOXOSHINT_USBTABLET            RT_BIT(7)
 #define VBOXOSHINT_RTCUTC               RT_BIT(8)
+
+/** The VBoxVRDP kludge extension pack name.
+ *
+ * This is not a valid extension pack name (dashes are not allowed), and
+ * hence will not conflict with real extension packs.
+ */
+#define VBOXVRDP_KLUDGE_EXTPACK_NAME    "Built-in-VBoxVRDP"
 
 /**
  * Contains global static definitions that can be referenced by all COM classes

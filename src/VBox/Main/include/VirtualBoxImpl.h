@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -41,6 +39,9 @@ class SystemProperties;
 class DHCPServer;
 class PerformanceCollector;
 class VirtualBoxCallbackRegistration; /* see VirtualBoxImpl.cpp */
+#ifdef VBOX_WITH_EXTPACK
+class ExtPackManager;
+#endif
 
 typedef std::list< ComObjPtr<SessionMachine> > SessionMachinesList;
 
@@ -158,10 +159,6 @@ public:
     STDMETHOD(CheckFirmwarePresent)(FirmwareType_T aFirmwareType, IN_BSTR aVersion,
                                     BSTR * aUrl, BSTR * aFile, BOOL * aResult);
 
-    STDMETHOD(VRDERegisterLibrary)(IN_BSTR aName);
-    STDMETHOD(VRDEUnregisterLibrary)(IN_BSTR aName);
-    STDMETHOD(VRDEListLibraries)(ComSafeArrayOut(BSTR, aNames));
-    STDMETHOD(VRDEIsLibraryRegistered)(IN_BSTR aName, BOOL *aRegistered);
     /* public methods only for internal purposes */
 
     /**
@@ -244,6 +241,9 @@ public:
 
     const ComObjPtr<Host>& host() const;
     SystemProperties* getSystemProperties() const;
+#ifdef VBOX_WITH_EXTPACK
+    ExtPackManager* getExtPackManager() const;
+#endif
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     const ComObjPtr<PerformanceCollector>& performanceCollector() const;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -326,3 +326,4 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 #endif // !____H_VIRTUALBOXIMPL
+
