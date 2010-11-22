@@ -580,7 +580,7 @@ typedef uint32_t        RTUID;
 typedef RTUID          *PRTUID;
 /** NIL user id.
  * @todo check this for portability! */
-#define NIL_RTUID       (~(RTUID)0);
+#define NIL_RTUID       (~(RTUID)0)
 
 /** Group id. */
 typedef uint32_t        RTGID;
@@ -588,7 +588,7 @@ typedef uint32_t        RTGID;
 typedef RTGID          *PRTGID;
 /** NIL group id.
  * @todo check this for portability! */
-#define NIL_RTGID       (~(RTGID)0);
+#define NIL_RTGID       (~(RTGID)0)
 
 /** I/O Port. */
 typedef uint16_t        RTIOPORT;
