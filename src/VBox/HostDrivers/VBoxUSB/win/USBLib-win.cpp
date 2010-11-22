@@ -2695,7 +2695,7 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
 
 
 /**
- * Return all attached USB devices.that are captured by the filter
+ * Return all attached USB devices that are captured by the filter
  *
  * @returns VBox status code
  * @param ppDevices         Receives pointer to list of devices
@@ -2705,8 +2705,6 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
 {
     USBSUP_GETNUMDEV numdev;
     PUSBDEVICE pDevice = NULL;
-    PUSBDEVICE pCaptured = NULL;
-    PUSBDEVICE pList = NULL;
     Log(("usbLibGetDevices: enter\n"));
 
     if (g_hUSBMonitor == INVALID_HANDLE_VALUE)
@@ -2797,7 +2795,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
     }
     Assert(numdev.cUSBDevices == *pcDevices);
 
-    if (numdev.cUSBDevices == 0 || *pcDevices == 0)
+    if ((int32_t)numdev.cUSBDevices <= 0 || *pcDevices == 0)
     {
         /* Only return the host devices */
         *ppDevices = pHostDevices;
@@ -2809,8 +2807,12 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
     /* 2: Get all the USB devices that the filter has captured for us */
 
     /* Get the required info for each captured device */
-    pCaptured = NULL;
-    for (int i = 0; i < (int32_t)numdev.cUSBDevices; i++)
+    PUSBDEVICE *ppCaptured = (PUSBDEVICE*)RTMemAllocZ(sizeof(PUSBDEVICE * numDev.cUSBDevices));
+    if (!ppCaptured)
+        goto failure;
+
+    uint32_t cCaptured = 0;
+    for (uint32_t i = 0; i < numdev.cUSBDevices; i++)
     {
         USBSUP_GETDEV dev = {0};
         HANDLE hDev;
@@ -2832,7 +2834,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
             else
             {
                 pDevice = (PUSBDEVICE)RTMemAllocZ(sizeof(USBDEVICE));
-                if (pDevice == NULL)
+                if (!pDevice)
                     goto failure;
 
                 pDevice->idVendor      = dev.vid;
@@ -2846,13 +2848,8 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
                 pDevice->enmSpeed      = dev.fHiSpeed ? USBDEVICESPEED_HIGH : USBDEVICESPEED_FULL;
                 Log(("usbLibGetDevices: Detected device vid=%x did=%x rev=%x hispd=%d hash=%s hash=%RX64\n", dev.vid, dev.did, dev.rev, dev.fHiSpeed, dev.serial_hash, pDevice->u64SerialHash));
 
-                /* Insert into the list */
-                pDevice->pNext = pCaptured;
-                if (pCaptured)
-                    pCaptured->pPrev = pDevice;
-
-                pCaptured = pDevice;
-
+                ppCaptured[i] = pDevice;
+                cCaptured++;
             }
 
             CloseHandle(hDev);
@@ -2861,7 +2858,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
             AssertMsgFailed(("Unexpected failure to open %s. lasterr=%d\n", pszDevname, GetLastError()));
     }
 
-    if (!pCaptured)
+    if (!cCaptured)
     {
         /* Only return the host devices */
         *ppDevices = pHostDevices;
@@ -2870,21 +2867,17 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
         return VINF_SUCCESS;
     }
 
-    /* 3: Add all host devices to array of captured devices; obviously making sure there are no duplicates */
-    Assert(pHostDevices && pCaptured);
-    pList = pCaptured;
+    /* 3: Go through the list of captured devices, lookup the corresponding device
+     *    in the list of host devices and update the information there. */
+    Assert(pHostDevices);
     for (uint32_t i = 0; i < numdev.cUSBDevices; i++)
     {
-        uint32_t j;
+        char *pszDeviceRegPath = usblibQueryDeviceRegPath(i);
+        Assert(pszDeviceRegPath);
 
         pDevice = pHostDevices;
-        Assert(pDevice);
-
-        for (j = 0; j < cHostDevices; j++)
+        for (uint32_t j = 0; j < cHostDevices; j++)
         {
-            char *pszDeviceRegPath = usblibQueryDeviceRegPath(i);
-
-            Assert(pszDeviceRegPath);
             if (pszDeviceRegPath)
             {
                 if (!strcmp(pszDeviceRegPath, pDevice->pszAddress))
@@ -2909,38 +2902,31 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
             Assert(pDevice);
 
             pDevice->enmState = USBDEVICESTATE_HELD_BY_PROXY;
-            pDevice->enmSpeed = pList->enmSpeed;    // @todo: Is that right?
+            if (ppCaptured[i])
+                pDevice->enmSpeed = ppCaptured[i]->enmSpeed;    // @todo: Is that right?
             RTStrFree(pDevice->pszAltAddress);
             pDevice->pszAltAddress = (char *)pDevice->pszAddress;
             pDevice->pszAddress = RTStrDup(usblibQueryDeviceName(i));
         }
-        pList = pList->pNext;
     }
     *pcDevices = cHostDevices;
 
     /* Free captured devices list */
-    pDevice = pCaptured;
-    while (pDevice)
+    for (uint32_t i = 0; i < numdev.cUSBDevices; i++)
     {
-        PUSBDEVICE pOldDev = pDevice;
-
-        if (pDevice->pszAddress)
+        pDevice = ppCaptured[i];
+        if (pDevice)
+        {
             RTMemFree((void *)pDevice->pszAddress);
-        if (pDevice->pszAltAddress)
             RTStrFree(pDevice->pszAltAddress);
-        if (pDevice->pszHubName)
             RTStrFree(pDevice->pszHubName);
-        if (pDevice->pszManufacturer)
             RTMemFree((void *)pDevice->pszManufacturer);
-        if (pDevice->pszProduct)
             RTMemFree((void *)pDevice->pszProduct);
-        if (pDevice->pszSerialNumber)
             RTMemFree((void *)pDevice->pszSerialNumber);
-
-        pDevice = pDevice->pNext;
-
-        RTMemFree(pOldDev);
+            RTMemFree(pDevice);
+        }
     }
+    RTMemFree(ppCaptured);
 
     Log(("usbLibGetDevices: returns %d devices\n", *pcDevices));
 #ifdef LOG_ENABLED
@@ -2990,31 +2976,36 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
     return VINF_SUCCESS;
 
 failure:
+    /* free host devices */
     pDevice      = pHostDevices;
     pHostDevices = NULL;
     while (pDevice)
     {
-        PUSBDEVICE pOldDev = pDevice;
+        PUSBDEVICE pNext = pDevice->pNext;
 
-        if (pDevice->pszAddress)
-            RTMemFree((void *)pDevice->pszAddress);
-        if (pDevice->pszManufacturer)
-            RTMemFree((void *)pDevice->pszManufacturer);
-        if (pDevice->pszProduct)
-            RTMemFree((void *)pDevice->pszProduct);
-        if (pDevice->pszSerialNumber)
-            RTMemFree((void *)pDevice->pszSerialNumber);
+        RTMemFree((void *)pDevice->pszAddress);
+        RTMemFree((void *)pDevice->pszManufacturer);
+        RTMemFree((void *)pDevice->pszProduct);
+        RTMemFree((void *)pDevice->pszSerialNumber);
+        RTMemFree(pDevice);
 
-        pDevice = pDevice->pNext;
+        pDevice = Next;
+    }
 
-        RTMemFree(pOldDev);
-
-        if (pDevice == NULL && pCaptured)
+    /* free captured devices */
+    for (uint32_t i = 0; i < numdev.cUSBDevices; i++)
+    {
+        pDevice = ppCaptured[i];
+        if (pDevice)
         {
-            pDevice   = pCaptured;
-            pCaptured = NULL;
+            RTMemFree((void *)pDevice->pszAddress);
+            RTMemFree((void *)pDevice->pszManufacturer);
+            RTMemFree((void *)pDevice->pszProduct);
+            RTMemFree((void *)pDevice->pszSerialNumber);
+            RTMemFree(pDevice);
         }
     }
+    RTMemFree(ppCaptured);
 
     *ppDevices = NULL;
     Log(("usbLibGetDevices: returns VERR_NO_MEMORY\n"));
