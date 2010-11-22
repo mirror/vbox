@@ -2876,7 +2876,8 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
         Assert(pszDeviceRegPath);
 
         pDevice = pHostDevices;
-        for (uint32_t j = 0; j < cHostDevices; j++)
+        uint32_t j;
+        for (j = 0; j < cHostDevices; j++)
         {
             if (pszDeviceRegPath)
             {
