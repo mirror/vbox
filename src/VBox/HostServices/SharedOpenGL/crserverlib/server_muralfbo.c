@@ -27,8 +27,8 @@ static int crServerGetPointScreen(GLint x, GLint y)
 
     for (i=0; i<cr_server.screenCount; ++i)
     {
-        if ((x>=cr_server.screen[i].x && x<=cr_server.screen[i].x+(int)cr_server.screen[i].w)
-           && (y>=cr_server.screen[i].y && y<=cr_server.screen[i].y+(int)cr_server.screen[i].h))
+        if ((x>=cr_server.screen[i].x && x<cr_server.screen[i].x+(int)cr_server.screen[i].w)
+           && (y>=cr_server.screen[i].y && y<cr_server.screen[i].y+(int)cr_server.screen[i].h))
         {
             return i;
         }
@@ -63,7 +63,7 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     }
 
     tlS = crServerGetPointScreen(mural->gX, mural->gY);
-    brS = crServerGetPointScreen(mural->gX+mural->width, mural->gY+mural->height);
+    brS = crServerGetPointScreen(mural->gX+mural->width-1, mural->gY+mural->height-1);
 
     if (tlS==brS && tlS>=0)
     {
@@ -72,8 +72,8 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
     }
     else
     {
-        trS = crServerGetPointScreen(mural->gX+mural->width, mural->gY);
-        blS = crServerGetPointScreen(mural->gX, mural->gY+mural->height);
+        trS = crServerGetPointScreen(mural->gX+mural->width-1, mural->gY);
+        blS = crServerGetPointScreen(mural->gX, mural->gY+mural->height-1);
 
         primaryS = -1; overlappingScreenCount = 0;
         for (i=0; i<cr_server.screenCount; ++i)
