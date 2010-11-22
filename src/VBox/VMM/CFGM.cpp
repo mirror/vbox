@@ -2654,30 +2654,43 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
  * @param   pszName         Value name. This value must be of zero terminated character string type.
  * @param   ppszString      Where to store the string pointer. Not set on failure.
  *                          Free this using MMR3HeapFree().
+ * @param   pszDef          The default return value.  This can be NULL.
  */
 VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
 {
-    size_t cbString;
-    int rc = CFGMR3QuerySize(pNode, pszName, &cbString);
-    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
-    {
-        cbString = strlen(pszDef) + 1;
-        rc = VINF_SUCCESS;
-    }
+    /*
+     * (Don't call CFGMR3QuerySize and CFGMR3QueryStringDef here as the latter
+     * cannot handle pszDef being NULL.)
+     */
+    PCFGMLEAF pLeaf;
+    int rc = cfgmR3ResolveLeaf(pNode, pszName, &pLeaf);
     if (RT_SUCCESS(rc))
     {
-        char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbString);
-        if (pszString)
+        if (pLeaf->enmType == CFGMVALUETYPE_STRING)
         {
-            rc = CFGMR3QueryStringDef(pNode, pszName, pszString, cbString, pszDef);
-            if (RT_SUCCESS(rc))
+            size_t const cbSrc = pLeaf->Value.String.cb;
+            char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbSrc);
+            if (pszString)
+            {
+                memcpy(pszString, pLeaf->Value.String.psz, cbSrc);
                 *ppszString = pszString;
+            }
             else
-                MMR3HeapFree(pszString);
+                rc = VERR_NO_MEMORY;
         }
         else
-            rc = VERR_NO_MEMORY;
+            rc = VERR_CFGM_NOT_STRING;
     }
+    if (RT_FAILURE(rc))
+    {
+        if (!pszDef)
+            *ppszString = NULL;
+        else
+            *ppszString = MMR3HeapStrDup(pNode->pVM, MM_TAG_CFGM_USER, pszDef);
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+            rc = VINF_SUCCESS;
+    }
+
     return rc;
 }
 
