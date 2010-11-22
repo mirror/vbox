@@ -330,7 +330,7 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
  * @param   hStdErrR
  */
 static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
-                                          RTPROCESS hProcess, RTMSINTERVAL cMillies, RTPOLLSET hPollSet,
+                                          RTPROCESS hProcess, RTMSINTERVAL cMsTimeout, RTPOLLSET hPollSet,
                                           PRTPIPE phStdInW, PRTPIPE phStdOutR, PRTPIPE phStdErrR)
 {
     AssertPtrReturn(phStdInW, VERR_INVALID_PARAMETER);
@@ -464,20 +464,20 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
          * Check for timed out, killing the process.
          */
         uint32_t cMilliesLeft = RT_INDEFINITE_WAIT;
-        if (cMillies != RT_INDEFINITE_WAIT)
+        if (cMsTimeout != RT_INDEFINITE_WAIT)
         {
             uint64_t u64Now = RTTimeMilliTS();
             uint64_t cMsElapsed = u64Now - MsStart;
-            if (cMsElapsed >= cMillies)
+            if (cMsElapsed >= cMsTimeout)
             {
-                VBoxServiceVerbose(3, "ControlExec: Process timed out (%ums elapsed > %ums timeout), killing ...", cMsElapsed, cMillies);
+                VBoxServiceVerbose(3, "ControlExec: Process timed out (%ums elapsed > %ums timeout), killing ...", cMsElapsed, cMsTimeout);
 
                 fProcessTimedOut = true;
                 if (    MsProcessKilled == UINT64_MAX
                     ||  u64Now - MsProcessKilled > 1000)
                 {
                     if (u64Now - MsProcessKilled > 20*60*1000)
-                        break; /* give up after 20 mins */
+                        break; /* Give up after 20 mins. */
                     RTProcTerminate(hProcess);
                     MsProcessKilled = u64Now;
                     continue;
@@ -485,7 +485,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
                 cMilliesLeft = 10000;
             }
             else
-                cMilliesLeft = cMillies - (uint32_t)cMsElapsed;
+                cMilliesLeft = cMsTimeout - (uint32_t)cMsElapsed;
         }
 
         /* Reset the polling interval since we've done all pending work. */
