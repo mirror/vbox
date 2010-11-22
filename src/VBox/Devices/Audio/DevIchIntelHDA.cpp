@@ -1336,7 +1336,7 @@ static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64B
     dump_bd(pState, pBdle, u64BaseDMA);
 }
 
-static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, uint32_t u32CblLimit)
+static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
 {
     PHDABDLEDESC pBdle = &pState->stInBdle;
     uint32_t cbTransfered = 0;
@@ -1349,6 +1349,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, uint
         if (   !pBdle->u32BdleCviLen
             || (*pu32Avail < hdaFifoWToSz(pState, 0)))
         {
+            *fStop = true;
             return 0;
         }
         Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
@@ -1361,6 +1362,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, uint
         if (   !cb2Copy
             || cb2Copy < pBdle->cbUnderFifoW)
         {
+            *fStop = true;
             return 0;
         }
 
@@ -1388,6 +1390,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, uint
             Log(("hda:ra: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
             pBdle->cbUnderFifoW += RT_MIN(cbBackendCopy, cb2Copy);
             Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 0)));
+            *fStop = true;
             break;
         }
         Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
@@ -1400,7 +1403,7 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, uint
     return cbTransfered;
 }
 
-static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, uint32_t u32CblLimit)
+static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
 {
     PHDABDLEDESC pBdle = &pState->stOutBdle;
     uint32_t cbTransfered = 0;
@@ -1423,6 +1426,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, uin
     if (cb2Copy <= pBdle->cbUnderFifoW)
     {
         Log(("hda:wa: amount of unreported bytes is less than room may be transfered  (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, cb2Copy));
+        *fStop = true;
         goto done;
     }
     cb2Copy -= pBdle->cbUnderFifoW; /* force reserve "Unreported bits" */
@@ -1481,6 +1485,7 @@ DECLCALLBACK(int) hdaCodecReset(CODECState *pCodecState)
 
 DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int avail)
 {
+    bool fStop = false;
     uint64_t u64BaseDMA = 0;
     PHDABDLEDESC pBdle = NULL;
     INTELHDLinkState *pState = (INTELHDLinkState *)pCodecState->pHDAState;
@@ -1532,7 +1537,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
     /* Fetch the Buffer Descriptor Entry (BDE). */
     *pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
     fetch_bd(pState, pBdle, u64BaseDMA);
-    while(avail)
+    while( avail && !fStop)
     {
         Assert((avail >= 0 && (u32Cbl >= (*pu32Lpib)))); /* sanity */
         uint32_t u32CblLimit = u32Cbl - (*pu32Lpib);
@@ -1540,15 +1545,15 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         switch (src)
         {
             case PO_INDEX:
-                nBytes = hdaWriteAudio(pState, (uint32_t *)&avail, u32CblLimit);
+                nBytes = hdaWriteAudio(pState, (uint32_t *)&avail, &fStop, u32CblLimit);
                 break;
             case PI_INDEX:
-                nBytes = hdaReadAudio(pState, (uint32_t *)&avail, u32CblLimit);
+                nBytes = hdaReadAudio(pState, (uint32_t *)&avail, &fStop, u32CblLimit);
                 break;
             default:
                 nBytes = 0;
+                fStop  = true;
                 AssertMsgFailed(("Unsupported"));
-                break;
         }
         /*
          * if we're under FIFO Watermark it's expected that HDA doesn't fetch anything.
@@ -1591,7 +1596,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                     pBdle->u32BdleCvi = 0;
 
             }
-            break;
+            fStop = true;
         }
     }
     *pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
