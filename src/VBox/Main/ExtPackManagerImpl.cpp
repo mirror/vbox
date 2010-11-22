@@ -164,7 +164,6 @@ HRESULT ExtPack::init(VirtualBox *a_pVirtualBox, const char *a_pszName, const ch
         /* pszVBoxVersion       = */ "",
         /* pfnFindModule        = */ ExtPack::hlpFindModule,
         /* pfnGetFilePath       = */ ExtPack::hlpGetFilePath,
-        /* pfnRegisterVrde      = */ ExtPack::hlpRegisterVrde,
         /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
     };
 
@@ -228,6 +227,8 @@ void ExtPack::uninit()
             m->hMainMod = NIL_RTLDRMOD;
             m->pReg = NULL;
         }
+
+        VBoxExtPackFreeDesc(&m->Desc);
 
         delete m;
         m = NULL;
@@ -372,6 +373,68 @@ void ExtPack::callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM)
 }
 
 /**
+ * Check if the extension pack is usable and has an VRDE module.
+ *
+ * @returns S_OK or COM error status with error information.
+ *
+ * @remarks Caller holds the extension manager lock for reading, no locking
+ *          necessary.
+ */
+HRESULT ExtPack::checkVrde(void)
+{
+    HRESULT hrc;
+    if (m->fUsable)
+    {
+        if (m->Desc.strVrdeModule.isNotEmpty())
+            hrc = S_OK;
+        else
+            hrc = setError(E_FAIL, tr("The extension pack '%s' does not include a VRDE module"), m->Desc.strName.c_str());
+    }
+    else
+        hrc = setError(E_FAIL, tr("%s"), m->strWhyUnusable.c_str());
+    return hrc;
+}
+
+/**
+ * Same as checkVrde(), except that it also resolves the path to the module.
+ *
+ * @returns S_OK or COM error status with error information.
+ * @param   a_pstrVrdeLibrary  Where to return the path on success.
+ *
+ * @remarks Caller holds the extension manager lock for reading, no locking
+ *          necessary.
+ */
+HRESULT ExtPack::getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary)
+{
+    HRESULT hrc = checkVrde();
+    if (SUCCEEDED(hrc))
+    {
+        if (findModule(m->Desc.strVrdeModule.c_str(), NULL, VBOXEXTPACKMODKIND_R3,
+                       a_pstrVrdeLibrary, NULL /*a_pfNative*/, NULL /*a_pObjInfo*/))
+            hrc = S_OK;
+        else
+            hrc = setError(E_FAIL, tr("Failed to locate the VRDE module '%s' in extension pack '%s'"),
+                           m->Desc.strVrdeModule.c_str(), m->Desc.strName.c_str());
+    }
+    return hrc;
+}
+
+/**
+ * Check if this extension pack wishes to be the default VRDE provider.
+ *
+ * @returns @c true if it wants to and it is in a usable state, otherwise
+ *          @c false.
+ *
+ * @remarks Caller holds the extension manager lock for reading, no locking
+ *          necessary.
+ */
+bool ExtPack::wantsToBeDefaultVrde(void) const
+{
+    return m->fUsable
+        && m->Desc.strVrdeModule.isNotEmpty();
+}
+
+/**
  * Refreshes the extension pack state.
  *
  * This is called by the manager so that the on disk changes are picked up.
@@ -508,7 +571,7 @@ void ExtPack::probeAndLoad(void)
      * Load the main DLL and call the predefined entry point.
      */
     bool fIsNative;
-    if (!findModule(m->Desc.strMainModule.c_str(), NULL /* default extension */,
+    if (!findModule(m->Desc.strMainModule.c_str(), NULL /* default extension */, VBOXEXTPACKMODKIND_R3,
                     &m->strMainModPath, &fIsNative, &m->ObjInfoMainMod))
     {
         m->strWhyUnusable.printf(tr("Failed to locate the main module ('%s')"), m->Desc.strMainModule.c_str());
@@ -603,6 +666,7 @@ void ExtPack::probeAndLoad(void)
  * @param   a_pszName           The module base name (no extension).
  * @param   a_pszExt            The extension. If NULL we use default
  *                              extensions.
+ * @param   a_enmKind           The kind of module to locate.
  * @param   a_pStrFound         Where to return the path to the module we've
  *                              found.
  * @param   a_pfNative          Where to return whether this is a native module
@@ -610,7 +674,7 @@ void ExtPack::probeAndLoad(void)
  * @param   a_pObjInfo          Where to return the file system object info for
  *                              the module. Optional.
  */
-bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
+bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt, VBOXEXTPACKMODKIND a_enmKind,
                          Utf8Str *a_pStrFound, bool *a_pfNative, PRTFSOBJINFO a_pObjInfo) const
 {
     /*
@@ -623,7 +687,16 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
     AssertLogRelRCReturn(vrc, false);
     if (!a_pszExt)
     {
-        vrc = RTStrCat(szPath, sizeof(szPath), RTLdrGetSuff());
+        const char *pszDefExt;
+        switch (a_enmKind)
+        {
+            case VBOXEXTPACKMODKIND_RC: pszDefExt = ".rc"; break;
+            case VBOXEXTPACKMODKIND_R0: pszDefExt = ".r0"; break;
+            case VBOXEXTPACKMODKIND_R3: pszDefExt = RTLdrGetSuff(); break;
+            default:
+                AssertFailedReturn(false);
+        }
+        vrc = RTStrCat(szPath, sizeof(szPath), pszDefExt);
         AssertLogRelRCReturn(vrc, false);
     }
 
@@ -733,7 +806,7 @@ bool ExtPack::findModule(const char *a_pszName, const char *a_pszExt,
  * @interface_method_impl{VBOXEXTPACKHLP,pfnFindModule}
  */
 /*static*/ DECLCALLBACK(int)
-ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
+ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt, VBOXEXTPACKMODKIND enmKind,
                        char *pszFound, size_t cbFound, bool *pfNative)
 {
     /*
@@ -743,6 +816,7 @@ ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *p
     AssertPtrNullReturn(pszExt, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFound, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfNative, VERR_INVALID_POINTER);
+    AssertReturn(enmKind > VBOXEXTPACKMODKIND_INVALID && enmKind < VBOXEXTPACKMODKIND_END, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
     AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
@@ -755,7 +829,7 @@ ExtPack::hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *p
      * This is just a wrapper around findModule.
      */
     Utf8Str strFound;
-    if (pThis->findModule(pszName, pszExt, &strFound, pfNative, NULL))
+    if (pThis->findModule(pszName, pszExt, enmKind, &strFound, pfNative, NULL))
         return RTStrCopy(pszFound, cbFound, strFound.c_str());
     return VERR_FILE_NOT_FOUND;
 }
@@ -783,55 +857,6 @@ ExtPack::hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *ps
     int vrc = RTPathJoin(pszPath, cbPath, pThis->m->strExtPackPath.c_str(), pszFilename);
     if (RT_FAILURE(vrc))
         RT_BZERO(pszPath, cbPath);
-    return vrc;
-}
-
-/*static*/ DECLCALLBACK(int)
-ExtPack::hlpRegisterVrde(PCVBOXEXTPACKHLP pHlp, const char *pszName, bool fSetDefault)
-{
-    /*
-     * Validate the input and get our bearings.
-     */
-    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
-
-    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
-    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
-    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
-    AssertPtrReturn(m, VERR_INVALID_POINTER);
-    ExtPack *pThis = m->pThis;
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(pThis->m->pVirtualBox, VERR_WRONG_ORDER);
-
-    /*
-     * Find the given module and register it (will succeed if it's already
-     * registered).
-     */
-/** @todo Might consider redoing this VRDERegistration interface to be an aspect of the extension
- * pack manager instead of IVirtualBox.  That would make sure we won't have any broke paths and stuff later on. */
-    int vrc = VERR_MODULE_NOT_FOUND;
-#if 0 /** @todo causing lock order asserts. Should execute the above todo I think. */
-    Utf8Str strFound;
-    if (pThis->findModule(pszName, NULL, &strFound, NULL, NULL))
-    {
-        Bstr bstrFound(strFound);
-        HRESULT hrc = pThis->m->pVirtualBox->VRDERegisterLibrary(bstrFound.raw());
-        if (SUCCEEDED(hrc) && fSetDefault)
-        {
-            /*
-             * Is there a default already?
-             */
-            SystemProperties *pSysProps = pThis->m->pVirtualBox->getSystemProperties();
-            Bstr bstrDefaultLib;
-            hrc = pSysProps->COMGETTER(DefaultVRDELibrary)(bstrDefaultLib.asOutParam());
-            if (SUCCEEDED(hrc) && bstrDefaultLib.isEmpty())
-            {
-                bstrDefaultLib = strFound;
-                hrc = pSysProps->COMSETTER(DefaultVRDELibrary)(bstrDefaultLib.raw());
-            }
-        }
-        vrc = Global::vboxStatusCodeFromCOM(hrc);
-    }
-#endif
     return vrc;
 }
 
@@ -889,6 +914,20 @@ STDMETHODIMP ExtPack::COMGETTER(Revision)(ULONG *a_puRevision)
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
         *a_puRevision = m->Desc.uRevision;
+    return hrc;
+}
+
+STDMETHODIMP ExtPack::COMGETTER(VRDEModule)(BSTR *a_pbstrVrdeModule)
+{
+    CheckComArgOutPointerValid(a_pbstrVrdeModule);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        Bstr str(m->Desc.strVrdeModule);
+        str.cloneTo(a_pbstrVrdeModule);
+    }
     return hrc;
 }
 
@@ -1879,5 +1918,91 @@ void ExtPackManager::callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
         (*it)->callVmPowerOnHook(a_pConsole, a_pVM);
 }
 
+
+/**
+ * Checks that the specified extension pack contains a VRDE module and that it
+ * is shipshape.
+ *
+ * @returns S_OK if ok, appropriate failure status code with details.
+ * @param   a_pstrExtPack   The name of the extension pack.
+ */
+HRESULT ExtPackManager::checkVrdeExtPack(Utf8Str const *a_pstrExtPack)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        ExtPack *pExtPack = findExtPack(a_pstrExtPack->c_str());
+        if (pExtPack)
+            hrc = pExtPack->checkVrde();
+        else
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
+    }
+
+    return hrc;
+}
+
+/**
+ * Gets the full path to the VRDE library of the specified extension pack.
+ *
+ * This will do extacly the same as checkVrdeExtPack and then resolve the
+ * library path.
+ *
+ * @returns S_OK if a path is returned, COM error status and message return if
+ *          not.
+ * @param   a_pstrExtPack       The extension pack.
+ * @param   a_pstrVrdeLibrary   Where to return the path.
+ */
+int ExtPackManager::getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        ExtPack *pExtPack = findExtPack(a_pstrExtPack->c_str());
+        if (pExtPack)
+            hrc = pExtPack->getVrdpLibraryName(a_pstrVrdeLibrary);
+        else
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
+    }
+
+    return hrc;
+}
+
+/**
+ * Gets the name of the default VRDE extension pack.
+ *
+ * @returns S_OK or some COM error status on red tape failure.
+ * @param   a_pstrExtPack   Where to return the extension pack name.  Returns
+ *                          empty if no extension pack wishes to be the default
+ *                          VRDP provider.
+ */
+HRESULT ExtPackManager::getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
+{
+    a_pstrExtPack->setNull();
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
+             it != m->llInstalledExtPacks.end();
+             it++)
+        {
+            if ((*it)->wantsToBeDefaultVrde())
+            {
+                *a_pstrExtPack = (*it)->m->Desc.strName;
+                break;
+            }
+        }
+    }
+    return hrc;
+}
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

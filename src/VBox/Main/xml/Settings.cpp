@@ -1205,47 +1205,6 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
 }
 
 /**
- * Creates an <VRDE> node under the given parent element with
- * <VRDELibrary> children according to the contents of the given
- * list.
- *
- * @param elmParent
- * @param me
- */
-void MainConfigFile::buildVRDE(xml::ElementNode &elmParent,
-                               const VRDELibrariesList &me)
-{
-    if (me.size())
-    {
-        xml::ElementNode *pelmVRDE = elmParent.createChild("VRDE");
-        for (VRDELibrariesList::const_iterator it = me.begin();
-             it != me.end();
-             ++it)
-        {
-            const Utf8Str &strName = *it;
-            xml::ElementNode *pelmThis = pelmVRDE->createChild("VRDELibrary");
-            pelmThis->setAttribute("name", strName);
-        }
-    }
-}
-
-void MainConfigFile::readVRDE(const xml::ElementNode &elmVRDE)
-{
-    xml::NodesLoop nl1(elmVRDE);
-    const xml::ElementNode *pelmLibrary;
-    while ((pelmLibrary = nl1.forAllNodes()))
-    {
-        if (pelmLibrary->nameEquals("VRDELibrary"))
-        {
-            Utf8Str strName;
-            if (pelmLibrary->getAttributeValue("name", strName))
-                llVRDELibraries.push_back(strName);
-            else
-                throw ConfigFileError(this, pelmLibrary, N_("Required VRDELibrary/@name attribute is missing"));
-        }
-    }
-}
-/**
  * Constructor.
  *
  * If pstrFilename is != NULL, this reads the given settings file into the member
@@ -1283,7 +1242,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                             // pre-1.11 used @remoteDisplayAuthLibrary instead
                             pelmGlobalChild->getAttributeValue("remoteDisplayAuthLibrary", systemProperties.strVRDEAuthLibrary);
                         pelmGlobalChild->getAttributeValue("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
-                        pelmGlobalChild->getAttributeValue("defaultVRDELibrary", systemProperties.strDefaultVRDELibrary);
+                        pelmGlobalChild->getAttributeValue("defaultVRDEExtPack", systemProperties.strDefaultVRDEExtPack);
                         pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.ulLogHistoryCount);
                     }
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
@@ -1308,8 +1267,6 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                     }
                     else if (pelmGlobalChild->nameEquals("USBDeviceFilters"))
                         readUSBDeviceFilters(*pelmGlobalChild, host.llUSBDeviceFilters);
-                    else if (pelmGlobalChild->nameEquals("VRDE"))
-                        readVRDE(*pelmGlobalChild);
                 }
             } // end if (pelmRootChild->nameEquals("Global"))
         }
@@ -1394,15 +1351,13 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("VRDEAuthLibrary", systemProperties.strVRDEAuthLibrary);
     if (systemProperties.strWebServiceAuthLibrary.length())
         pelmSysProps->setAttribute("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
-    if (systemProperties.strDefaultVRDELibrary.length())
-        pelmSysProps->setAttribute("defaultVRDELibrary", systemProperties.strDefaultVRDELibrary);
+    if (systemProperties.strDefaultVRDEExtPack.length())
+        pelmSysProps->setAttribute("defaultVRDEExtPack", systemProperties.strDefaultVRDEExtPack);
     pelmSysProps->setAttribute("LogHistoryCount", systemProperties.ulLogHistoryCount);
 
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
                           host.llUSBDeviceFilters,
                           true);               // fHostMode
-
-    buildVRDE(*pelmGlobal, llVRDELibraries);
 
     // now go write the XML
     xml::XmlFileWriter writer(*m->pDoc);
@@ -1434,7 +1389,7 @@ bool VRDESettings::operator==(const VRDESettings& v) const
                   && (fReuseSingleConnection    == v.fReuseSingleConnection)
                   && (fVideoChannel             == v.fVideoChannel)
                   && (ulVideoChannelQuality     == v.ulVideoChannelQuality)
-                  && (strVRDELibrary            == v.strVRDELibrary)
+                  && (strVrdeExtPack            == v.strVrdeExtPack)
                   && (mapProperties             == v.mapProperties)
                 )
            );
@@ -2529,7 +2484,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmVideoChannel->getAttributeValue("quality", hw.vrdeSettings.ulVideoChannelQuality);
                 hw.vrdeSettings.ulVideoChannelQuality = RT_CLAMP(hw.vrdeSettings.ulVideoChannelQuality, 10, 100);
             }
-            pelmHwChild->getAttributeValue("VRDELibrary", hw.vrdeSettings.strVRDELibrary);
+            pelmHwChild->getAttributeValue("VRDEExtPack", hw.vrdeSettings.strVrdeExtPack);
 
             const xml::ElementNode *pelmProperties = pelmHwChild->findChildElement("VRDEProperties");
             if (pelmProperties != NULL)
@@ -3485,8 +3440,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     }
     if (m->sv >= SettingsVersion_v1_11)
     {
-        if (hw.vrdeSettings.strVRDELibrary.length())
-            pelmVRDE->setAttribute("VRDELibrary", hw.vrdeSettings.strVRDELibrary);
+        if (hw.vrdeSettings.strVrdeExtPack.isNotEmpty())
+            pelmVRDE->setAttribute("VRDEExtPack", hw.vrdeSettings.strVrdeExtPack);
         if (hw.vrdeSettings.mapProperties.size() > 0)
         {
             xml::ElementNode *pelmProperties = pelmVRDE->createChild("VRDEProperties");
@@ -4364,7 +4319,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_11)
     {
-        // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance and per-machine media registries
+        // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance,
+        // per-machine media registries and VRDE.
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
              || hardwareMachine.ulCpuExecutionCap != 100
              || machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
@@ -4374,7 +4330,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              || mediaRegistry.llHardDisks.size()
              || mediaRegistry.llDvdImages.size()
              || mediaRegistry.llFloppyImages.size()
-             || !hardwareMachine.vrdeSettings.strVRDELibrary.isEmpty()
+             || !hardwareMachine.vrdeSettings.strVrdeExtPack.isEmpty()
            )
             m->sv = SettingsVersion_v1_11;
     }

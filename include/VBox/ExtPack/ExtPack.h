@@ -42,6 +42,25 @@ VBOXEXTPACK_IF_CS(IConsole);
 VBOXEXTPACK_IF_CS(IMachine);
 VBOXEXTPACK_IF_CS(IVirtualBox);
 
+/**
+ * Module kind for use with VBOXEXTPACKHLP::pfnFindModule.
+ */
+typedef enum VBOXEXTPACKMODKIND
+{
+    /** Zero is invalid as alwasy. */
+    VBOXEXTPACKMODKIND_INVALID = 0,
+    /** Raw-mode context module. */
+    VBOXEXTPACKMODKIND_RC,
+    /** Ring-0 context module. */
+    VBOXEXTPACKMODKIND_R0,
+    /** Ring-3 context module. */
+    VBOXEXTPACKMODKIND_R3,
+    /** End of the valid values (exclusive). */
+    VBOXEXTPACKMODKIND_END,
+    /** The usual 32-bit type hack. */
+    VBOXEXTPACKMODKIND_32BIT_HACK = 0x7fffffff
+} VBOXEXTPACKMODKIND;
+
 
 /** Pointer to const helpers passed to the VBoxExtPackRegister() call. */
 typedef const struct VBOXEXTPACKHLP *PCVBOXEXTPACKHLP;
@@ -73,12 +92,14 @@ typedef struct VBOXEXTPACKHLP
      * @param   pszName         The module base name.
      * @param   pszExt          The extension. If NULL the default ring-3
      *                          library extension will be used.
+     * @param   enmKind         The kind of module to locate.
      * @param   pszFound        Where to return the path to the module on
      *                          success.
      * @param   cbFound         The size of the buffer @a pszFound points to.
      * @param   pfNative        Where to return the native/agnostic indicator.
      */
     DECLR3CALLBACKMEMBER(int, pfnFindModule,(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
+                                             VBOXEXTPACKMODKIND enmKind,
                                              char *pszFound, size_t cbFound, bool *pfNative));
 
     /**
@@ -96,21 +117,6 @@ typedef struct VBOXEXTPACKHLP
      * @param   cbPath          The size of the buffer @a pszPath.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetFilePath,(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath));
-
-    /**
-     * Registers a VRDE library (IVirtualBox::VRDERegisterLibrary wrapper).
-     *
-     * @returns VBox status code.
-     * @param   pHlp            Pointer to this helper structure.
-     * @param   pszName         The module base name.  This will be found using
-     *                          the pfnFindModule algorithm.
-     * @param   fSetDefault     Whether to make it default if no other default
-     *                          is set.
-     *
-     * @remarks This helper should be called from pfnVirtualBoxReady as it may
-     *          cause trouble when called from pfnInstalled.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnRegisterVrde,(PCVBOXEXTPACKHLP pHlp, const char *pszName, bool fSetDefault));
 
     /** End of structure marker (VBOXEXTPACKHLP_VERSION). */
     uint32_t                    u32EndMarker;

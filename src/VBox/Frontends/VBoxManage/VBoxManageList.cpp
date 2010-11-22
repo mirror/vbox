@@ -213,6 +213,8 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &rptrVirtualBox)
         CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Version)(bstrVersion.asOutParam()),    hrc = hrcCheck; bstrVersion.setNull());
         ULONG   uRevision;
         CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Revision)(&uRevision),                 hrc = hrcCheck; uRevision = 0);
+        Bstr    bstrVrdeModule;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(VRDEModule)(bstrVrdeModule.asOutParam()),hrc=hrcCheck; bstrVrdeModule.setNull());
         BOOL    fUsable;
         CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Usable)(&fUsable),                     hrc = hrcCheck; fUsable = FALSE);
         Bstr    bstrWhy;
@@ -225,14 +227,18 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &rptrVirtualBox)
                  "Version:      %lS\n"
                  "Revision:     %u\n"
                  "Description:  %lS\n"
+                 "VRDE Module:  %lS\n"
                  "Usable:       %RTbool\n"
                  "Why unusable: %lS\n",
                  i, bstrName.raw(),
                  bstrVersion.raw(),
                  uRevision,
                  bstrDesc.raw(),
+                 bstrVrdeModule.raw(),
                  fUsable != FALSE,
                  bstrWhy.raw());
+
+        /* Query plugins and display them. */
     }
     return hrc;
 }
@@ -263,7 +269,6 @@ enum enmListType
     kListUsbFilters,
     kListSystemProperties,
     kListDhcpServers,
-    kListVrdeLibraries,
     kListExtPacks
 };
 
@@ -892,8 +897,8 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             RTPrintf("VRDE auth library:               %lS\n", str.raw());
             systemProperties->COMGETTER(WebServiceAuthLibrary)(str.asOutParam());
             RTPrintf("Webservice auth. library:        %lS\n", str.raw());
-            systemProperties->COMGETTER(DefaultVRDELibrary)(str.asOutParam());
-            RTPrintf("Remote desktop library:          %lS\n", str.raw());
+            systemProperties->COMGETTER(DefaultVRDEExtPack)(str.asOutParam());
+            RTPrintf("Remote desktop ExtPack:          %lS\n", str.raw());
             systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
             RTPrintf("Log history count:               %u\n", ulValue);
             break;
@@ -925,21 +930,6 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                 svr->COMGETTER(Enabled)(&fEnabled);
                 RTPrintf("Enabled:        %s\n", fEnabled ? "Yes" : "No");
                 RTPrintf("\n");
-            }
-            break;
-        }
-
-        case kListVrdeLibraries:
-        {
-            SafeArray<BSTR> libs;
-            CHECK_ERROR(rptrVirtualBox, VRDEListLibraries(ComSafeArrayAsOutParam(libs)));
-            if (SUCCEEDED(rc))
-            {
-                for (size_t i = 0; i < libs.size(); ++i)
-                {
-                    Bstr bstrName(libs[i]);
-                    RTPrintf("%lS\n", bstrName.raw());
-                }
             }
             break;
         }
@@ -991,7 +981,6 @@ int handleList(HandlerArg *a)
         { "usbfilters",         kListUsbFilters,         RTGETOPT_REQ_NOTHING },
         { "systemproperties",   kListSystemProperties,   RTGETOPT_REQ_NOTHING },
         { "dhcpservers",        kListDhcpServers,        RTGETOPT_REQ_NOTHING },
-        { "vrdelibraries",      kListVrdeLibraries,      RTGETOPT_REQ_NOTHING },
         { "extpacks",           kListExtPacks,           RTGETOPT_REQ_NOTHING },
     };
 
@@ -1034,7 +1023,6 @@ int handleList(HandlerArg *a)
             case kListUsbFilters:
             case kListSystemProperties:
             case kListDhcpServers:
-            case kListVrdeLibraries:
             case kListExtPacks:
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)

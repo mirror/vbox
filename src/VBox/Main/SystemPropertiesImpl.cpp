@@ -20,14 +20,20 @@
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
+#endif
 #include "AutoCaller.h"
+#include "Global.h"
 #include "Logging.h"
 
 // generated header
 #include "SchemaDefs.h"
 
-#include <iprt/path.h>
 #include <iprt/dir.h>
+#include <iprt/ldr.h>
+#include <iprt/path.h>
+#include <iprt/string.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
@@ -87,7 +93,7 @@ HRESULT SystemProperties::init(VirtualBox *aParent)
     setDefaultHardDiskFormat(Utf8Str::Empty);
 
     setVRDEAuthLibrary(Utf8Str::Empty);
-    setDefaultVRDELibrary(Utf8Str::Empty);
+    setDefaultVRDEExtPack(Utf8Str::Empty);
 
     m->ulLogHistoryCount = 3;
 
@@ -738,56 +744,94 @@ STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary)(IN_BSTR aWebServ
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(DefaultVRDELibrary)(BSTR *aVRDELibrary)
+STDMETHODIMP SystemProperties::COMGETTER(DefaultVRDEExtPack)(BSTR *aExtPack)
 {
-    CheckComArgOutPointerValid(aVRDELibrary);
+    CheckComArgOutPointerValid(aExtPack);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Utf8Str strExtPack(m->strDefaultVRDEExtPack);
+        if (strExtPack.isNotEmpty())
+        {
+            if (strExtPack.equals(VBOXVRDP_KLUDGE_EXTPACK_NAME))
+                hrc = S_OK;
+            else
+#ifdef VBOX_WITH_EXTPACK
+                hrc = mParent->getExtPackManager()->checkVrdeExtPack(&strExtPack);
+#else
+                hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), strExtPack.c_str());
+#endif
+        }
+        else
+        {
+#ifdef VBOX_WITH_EXTPACK
+            hrc = mParent->getExtPackManager()->getDefaultVrdeExtPack(&strExtPack);
+#endif
+            if (strExtPack.isEmpty())
+            {
+                /*
+                 * Klugde - check if VBoxVRDP.dll/.so/.dylib is installed.
+                 * This is hardcoded uglyness, sorry.
+                 */
+                char szPath[RTPATH_MAX];
+                int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+                if (RT_SUCCESS(vrc))
+                    vrc = RTPathAppend(szPath, sizeof(szPath), "VBoxVRDP");
+                if (RT_SUCCESS(vrc))
+                    vrc = RTStrCat(szPath, sizeof(szPath), RTLdrGetSuff());
+                if (RT_SUCCESS(vrc) && RTFileExists(szPath))
+                {
+                    /* Illegal extpack name, so no conflict. */
+                    strExtPack = VBOXVRDP_KLUDGE_EXTPACK_NAME;
+                }
+            }
+        }
 
-    BOOL fFound = FALSE;
-    HRESULT rc = mParent->VRDEIsLibraryRegistered(Bstr(m->strDefaultVRDELibrary).raw(), &fFound);
-
-    if (FAILED(rc)|| !fFound)
-        return setError(E_FAIL, "The library is not registered\n");
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    m->strDefaultVRDELibrary.cloneTo(aVRDELibrary);
+        if (SUCCEEDED(hrc))
+            strExtPack.cloneTo(aExtPack);
+    }
 
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(DefaultVRDELibrary)(IN_BSTR aVRDELibrary)
+STDMETHODIMP SystemProperties::COMSETTER(DefaultVRDEExtPack)(IN_BSTR aExtPack)
 {
+    CheckComArgNotNull(aExtPack);
+    Utf8Str strExtPack(aExtPack);
+
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT rc;
-
-    Bstr bstrLibrary(aVRDELibrary);
-
-    if (!bstrLibrary.isEmpty())
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
     {
-        BOOL fFound = FALSE;
-        rc = mParent->VRDEIsLibraryRegistered(bstrLibrary.raw(), &fFound);
-
-        if (FAILED(rc) || !fFound)
-            return setError(E_FAIL, "The library is not registered\n");
+        if (strExtPack.isNotEmpty())
+        {
+            if (strExtPack.equals(VBOXVRDP_KLUDGE_EXTPACK_NAME))
+                hrc = S_OK;
+            else
+#ifdef VBOX_WITH_EXTPACK
+                hrc = mParent->getExtPackManager()->checkVrdeExtPack(&strExtPack);
+#else
+                hrc = setError(E_FAIL, tr("The extension pack '%s' does not exist"), strExtPack.c_str());
+#endif
+        }
+        if (SUCCEEDED(hrc))
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            hrc = setDefaultVRDEExtPack(aExtPack);
+            if (SUCCEEDED(hrc))
+            {
+                /* VirtualBox::saveSettings() needs the VirtualBox write lock. */
+                alock.release();
+                AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+                hrc = mParent->saveSettings();
+            }
+        }
     }
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    rc = setDefaultVRDELibrary(bstrLibrary);
-    alock.release();
-
-    if (SUCCEEDED(rc))
-    {
-        // VirtualBox::saveSettings() needs vbox write lock
-        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        rc = mParent->saveSettings();
-    }
-
-    return rc;
+    return hrc;
 }
 
 STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount)(ULONG *count)
@@ -858,7 +902,7 @@ HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
     rc = setWebServiceAuthLibrary(data.strWebServiceAuthLibrary);
     if (FAILED(rc)) return rc;
 
-    rc = setDefaultVRDELibrary(data.strDefaultVRDELibrary);
+    rc = setDefaultVRDEExtPack(data.strDefaultVRDEExtPack);
     if (FAILED(rc)) return rc;
 
     m->ulLogHistoryCount = data.ulLogHistoryCount;
@@ -1024,13 +1068,6 @@ HRESULT SystemProperties::setVRDEAuthLibrary(const Utf8Str &aPath)
     return S_OK;
 }
 
-HRESULT SystemProperties::setDefaultVRDELibrary(const Utf8Str &aPath)
-{
-    m->strDefaultVRDELibrary = aPath;
-
-    return S_OK;
-}
-
 HRESULT SystemProperties::setWebServiceAuthLibrary(const Utf8Str &aPath)
 {
     if (!aPath.isEmpty())
@@ -1040,3 +1077,11 @@ HRESULT SystemProperties::setWebServiceAuthLibrary(const Utf8Str &aPath)
 
     return S_OK;
 }
+
+HRESULT SystemProperties::setDefaultVRDEExtPack(const Utf8Str &aExtPack)
+{
+    m->strDefaultVRDEExtPack = aExtPack;
+
+    return S_OK;
+}
+

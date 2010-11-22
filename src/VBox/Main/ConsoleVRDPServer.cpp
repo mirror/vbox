@@ -20,15 +20,19 @@
 #include "DisplayImpl.h"
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
+#endif
 
+#include "Global.h"
 #include "AutoCaller.h"
 #include "Logging.h"
 
 #include <iprt/asm.h>
+#include <iprt/alloca.h>
 #include <iprt/ldr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
-#include <iprt/alloca.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/err.h>
@@ -501,7 +505,7 @@ STDMETHODIMP VRDPConsoleListener::OnMousePointerShapeChange(BOOL visible,
 // ConsoleVRDPServer
 ////////////////////////////////////////////////////////////////////////////////
 
-RTLDRMOD ConsoleVRDPServer::mVRDPLibrary;
+RTLDRMOD ConsoleVRDPServer::mVRDPLibrary = NIL_RTLDRMOD;
 
 PFNVRDECREATESERVER ConsoleVRDPServer::mpfnVRDECreateServer = NULL;
 
@@ -1222,58 +1226,69 @@ int ConsoleVRDPServer::Launch(void)
 {
     LogFlowThisFunc(("\n"));
 
-    int rc = VINF_SUCCESS;
-
-    /*
-     * Check that a VRDE library name is set.
-     */
-    Bstr library;
-    Utf8Str filename;
-
     IVRDEServer *server = mConsole->getVRDEServer();
-    Assert(server);
-
-    HRESULT hrc = server->COMGETTER(VRDELibrary)(library.asOutParam());
-    if (SUCCEEDED(hrc))
-    {
-        filename = library;
-    }
-
-    if (filename.isEmpty())
-    {
-        return VINF_NOT_SUPPORTED;
-    }
+    AssertReturn(server, VERR_INTERNAL_ERROR_2);
 
     /*
-     * Load the VRDE library and start the server, if it is enabled.
+     * Check if VRDE is enabled.
      */
-    BOOL fEnabled = FALSE;
+    BOOL fEnabled;
+    HRESULT hrc = server->COMGETTER(Enabled)(&fEnabled);
+    AssertComRCReturn(hrc, Global::vboxStatusCodeFromCOM(hrc));
+    if (!fEnabled)
+        return VINF_SUCCESS;
 
-    hrc = server->COMGETTER(Enabled)(&fEnabled);
-    AssertComRC(hrc);
+    /*
+     * Check that a VRDE extension pack name is set and resolve it into a
+     * library path.
+     */
+    Bstr bstrExtPack;
+    hrc = server->COMGETTER(VRDEExtPack)(bstrExtPack.asOutParam());
+    if (FAILED(hrc))
+        return Global::vboxStatusCodeFromCOM(hrc);
+    if (bstrExtPack.isEmpty())
+        return VINF_NOT_SUPPORTED;
 
-    if (SUCCEEDED(hrc) && fEnabled)
+    Utf8Str         strExtPack(bstrExtPack);
+    Utf8Str         strVrdeLibrary;
+    int             vrc = VINF_SUCCESS;
+    if (strExtPack.equals(VBOXVRDP_KLUDGE_EXTPACK_NAME))
+        strVrdeLibrary = "VBoxVRDP";
+    else
     {
-        rc = loadVRDPLibrary(filename.c_str());
-
-        if (RT_SUCCESS(rc))
+#ifdef VBOX_WITH_EXTPACK
+        ExtPackManager *pExtPackMgr = mConsole->getExtPackManager();
+        vrc = pExtPackMgr->getVrdeLibraryPathForExtPack(&strExtPack, &strVrdeLibrary);
+#else
+        vrc = VERR_FILE_NOT_FOUND;
+#endif
+    }
+    if (RT_SUCCESS(vrc))
+    {
+        /*
+         * Load the VRDE library and start the server, if it is enabled.
+         */
+        vrc = loadVRDPLibrary(strVrdeLibrary.c_str());
+        if (RT_SUCCESS(vrc))
         {
-            rc = mpfnVRDECreateServer(&mCallbacks.header, this, (VRDEINTERFACEHDR **)&mpEntryPoints, &mhServer);
-
-            if (RT_SUCCESS(rc))
+            vrc = mpfnVRDECreateServer(&mCallbacks.header, this, (VRDEINTERFACEHDR **)&mpEntryPoints, &mhServer);
+            if (RT_SUCCESS(vrc))
             {
 #ifdef VBOX_WITH_USB
                 remoteUSBThreadStart();
-#endif /* VBOX_WITH_USB */
+#endif
             }
-            else if (rc != VERR_NET_ADDRESS_IN_USE)
+            else
             {
-                LogRel(("VRDE: Could not start VRDP server rc = %Rrc\n", rc));
+                if (vrc != VERR_NET_ADDRESS_IN_USE)
+                    LogRel(("VRDE: Could not start VRDP server rc = %Rrc\n", vrc));
+                /* Don't unload the lib, because it prevents us trying again or
+                   because there may be other users? */
             }
         }
     }
 
-    return rc;
+    return vrc;
 }
 
 void ConsoleVRDPServer::EnableConnections(void)
@@ -2093,10 +2108,14 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
 {
     int rc = VINF_SUCCESS;
 
-    if (!mVRDPLibrary)
+    if (mVRDPLibrary == NIL_RTLDRMOD)
     {
-        rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &mVRDPLibrary);
-
+        char szErr[4096 + 512];
+        szErr[0] = '\0';
+        if (RTPathHavePath(pszLibraryName))
+            rc = SUPR3HardenedLdrLoadPlugIn(pszLibraryName, &mVRDPLibrary, szErr, sizeof(szErr));
+        else
+            rc = SUPR3HardenedLdrLoadAppPriv(pszLibraryName, &mVRDPLibrary);
         if (RT_SUCCESS(rc))
         {
             struct SymbolEntry
@@ -2107,41 +2126,41 @@ void ConsoleVRDPServer::QueryInfo(uint32_t index, void *pvBuffer, uint32_t cbBuf
 
             #define DEFSYMENTRY(a) { #a, (void**)&mpfn##a }
 
-            static const struct SymbolEntry symbols[] =
+            static const struct SymbolEntry s_aSymbols[] =
             {
                 DEFSYMENTRY(VRDECreateServer)
             };
 
             #undef DEFSYMENTRY
 
-            for (unsigned i = 0; i < RT_ELEMENTS(symbols); i++)
+            for (unsigned i = 0; i < RT_ELEMENTS(s_aSymbols); i++)
             {
-                rc = RTLdrGetSymbol(mVRDPLibrary, symbols[i].name, symbols[i].ppfn);
+                rc = RTLdrGetSymbol(mVRDPLibrary, s_aSymbols[i].name, s_aSymbols[i].ppfn);
 
                 if (RT_FAILURE(rc))
                 {
-                    LogRel(("VRDE: Error resolving symbol '%s', rc %Rrc.\n", symbols[i].name, rc));
+                    LogRel(("VRDE: Error resolving symbol '%s', rc %Rrc.\n", s_aSymbols[i].name, rc));
                     break;
                 }
             }
         }
         else
         {
-            if (rc != VERR_FILE_NOT_FOUND)
-            {
+            if (szErr[0])
+                LogRel(("VRDE: Error loading the library '%s': %s (%Rrc)\n", pszLibraryName, szErr, rc));
+            else
                 LogRel(("VRDE: Error loading the library '%s' rc = %Rrc.\n", pszLibraryName, rc));
-            }
 
-            mVRDPLibrary = NULL;
+            mVRDPLibrary = NIL_RTLDRMOD;
         }
     }
 
     if (RT_FAILURE(rc))
     {
-        if (mVRDPLibrary)
+        if (mVRDPLibrary != NIL_RTLDRMOD)
         {
             RTLdrClose(mVRDPLibrary);
-            mVRDPLibrary = NULL;
+            mVRDPLibrary = NIL_RTLDRMOD;
         }
     }
 

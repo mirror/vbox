@@ -605,13 +605,13 @@ int handleSetProperty(HandlerArg *a)
         else
             CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(a->argv[1]).raw()));
     }
-    else if (!strcmp(a->argv[0], "vrdelibrary"))
+    else if (!strcmp(a->argv[0], "vrdeextpack"))
     {
         /* disable? */
         if (!strcmp(a->argv[1], "null"))
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultVRDELibrary)(NULL));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultVRDEExtPack)(NULL));
         else
-            CHECK_ERROR(systemProperties, COMSETTER(DefaultVRDELibrary)(Bstr(a->argv[1]).raw()));
+            CHECK_ERROR(systemProperties, COMSETTER(DefaultVRDEExtPack)(Bstr(a->argv[1]).raw()));
     }
     else if (!strcmp(a->argv[0], "loghistorycount"))
     {
@@ -887,29 +887,6 @@ int handleVMStatistics(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
-int handleVRDE(HandlerArg *a)
-{
-    HRESULT rc = S_OK;
-
-    if (a->argc != 2)
-        return errorSyntax(USAGE_VRDE, "Incorrect number of parameters");
-
-    if (!strcmp(a->argv[0], "register"))
-    {
-        Bstr name = a->argv[1];
-        CHECK_ERROR(a->virtualBox, VRDERegisterLibrary(name.raw()));
-    }
-    else if (!strcmp(a->argv[0], "unregister"))
-    {
-        Bstr name = a->argv[1];
-        CHECK_ERROR(a->virtualBox, VRDEUnregisterLibrary(name.raw()));
-    }
-    else
-        return errorSyntax(USAGE_VRDE, "Invalid parameter");
-
-    return SUCCEEDED(rc) ? 0 : 1;
-}
-
 int handleExtPack(HandlerArg *a)
 {
     if (a->argc < 2)
@@ -974,6 +951,14 @@ int handleExtPack(HandlerArg *a)
         Bstr bstrName(pszName);
         CHECK_ERROR2_RET(ptrExtPackMgr, Uninstall(bstrName.raw(), fForced), RTEXITCODE_FAILURE);
         RTPrintf("Successfully uninstalled \"%s\".\n", pszName);
+    }
+    else if (!strcmp(a->argv[0], "cleanup"))
+    {
+        if (a->argc > 1)
+            return errorSyntax(USAGE_EXTPACK, "Too many parameters given to \"extpack cleanup\"");
+
+        CHECK_ERROR2_RET(ptrExtPackMgr, Cleanup(), RTEXITCODE_FAILURE);
+        RTPrintf("Successfully performed extension pack cleanup\n");
     }
     else
         return errorSyntax(USAGE_EXTPACK, "Unknown command \"%s\"", a->argv[0]);

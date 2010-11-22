@@ -1374,7 +1374,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="e03d6527-9b72-43b5-b87f-88f1033d3866"
+    uuid="d2de270c-1d4b-4c9e-843f-bbb9b47269ff"
     wsmap="managed"
   >
     <desc>
@@ -2178,51 +2178,6 @@
 
       <param name="result" type="boolean" dir="return">
         <desc>If firmware of this type and version is available.</desc>
-      </param>
-    </method>
-
-    <method name="VRDERegisterLibrary">
-      <desc>
-        Appends a VRDE library to this VirtualBox installation.
-
-        The library implements a VirtualBox Remote Desktop Extension (VRDE),
-        which is used to remotely connect to the virtual machines.
-
-        The system library extension (".DLL" or ".so") must be omitted.
-        The library must reside in the VirtualBox installation directory.
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>The library name.</desc>
-      </param>
-    </method>
-
-    <method name="VRDEUnregisterLibrary">
-      <desc>
-        Removes a VRDE library from this VirtualBox installation.
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>The library name.</desc>
-      </param>
-    </method>
-
-    <method name="VRDEListLibraries">
-      <desc>
-        List registered libraries.
-      </desc>
-      <param name="names" type="wstring" dir="return" safearray="yes">
-        <desc>Array of names of the libraries.</desc>
-      </param>
-    </method>
-
-    <method name="VRDEIsLibraryRegistered">
-      <desc>
-        Check if the library is registered.
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>The library name.</desc>
-      </param>
-      <param name="registered" type="boolean" dir="return">
-        <desc>Whether the library is registered.</desc>
       </param>
     </method>
 
@@ -7180,7 +7135,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="9a949843-b237-46d4-8fcf-c83dcd9121ef"
+     uuid="51c81048-b261-4fa2-a44e-fd756f0db589"
      wsmap="managed"
      >
     <desc>
@@ -7414,15 +7369,17 @@
       </desc>
     </attribute>
 
-    <attribute name="defaultVRDELibrary" type="wstring">
+    <attribute name="defaultVRDEExtPack" type="wstring">
       <desc>
-        Default VRDE library.
+        The name of the extension pack providing the default VRDE.
 
-        The default value of this property is an empty string, which means that the
-        VRDE is not available.
+        This attribute is for choosing between multiple extension packs
+        providing VRDE.  If only one is installed, it will automatically be the
+        default one.  The attribute value can be empty if no VRDE extension
+        pack is installed.
 
-        For details about VirtualBox Remote Desktop Extension and how to implement
-        it, please refer to the VirtualBox SDK.
+        For details about VirtualBox Remote Desktop Extension and how to
+        implement one, please refer to the VirtualBox SDK.
       </desc>
     </attribute>
 
@@ -12474,7 +12431,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IVRDEServer" extends="$unknown"
-     uuid="f68a6b34-6f09-4040-8de1-e8d746c4a9ea"
+     uuid="468ab3d3-4808-489e-a301-05d60e959fbc"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
@@ -12516,9 +12473,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="VRDELibrary" type="wstring">
+    <attribute name="VRDEExtPack" type="wstring">
       <desc>
-        VRDE library used by this VM. Overrides
+        The name of Extension Pack providing VRDE for this VM.  Overrides
         <link to="ISystemProperties::defaultVRDELibrary"/>.
       </desc>
     </attribute>
@@ -14116,7 +14073,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPack" extends="$unknown"
-    uuid="f6549e1d-82f0-40c0-a6ab-e36d237acb0c"
+    uuid="94564309-5966-419a-81cc-4aec0b6dbd4d"
     wsmap="suppress"
     >
     <desc>
@@ -14139,6 +14096,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="revision" type="unsigned long" readonly="yes">
       <desc>The extension pack internal revision number.</desc>
+    </attribute>
+    <attribute name="VRDEModule" type="wstring" readonly="yes">
+      <desc>The name of the VRDE module if the extension pack sports one.</desc>
     </attribute>
     <attribute name="plugIns" type="IExtPackPlugIn" safearray="yes" readonly="yes">
       <desc>Plug-ins provided by this extension pack.</desc>

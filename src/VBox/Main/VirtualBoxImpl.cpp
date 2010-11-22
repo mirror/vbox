@@ -2904,6 +2904,17 @@ SystemProperties* VirtualBox::getSystemProperties() const
     return m->pSystemProperties;
 }
 
+#ifdef VBOX_WITH_EXTPACK
+/**
+ * Getter that SystemProperties and others can use to talk to the extension
+ * pack manager.
+ */
+ExtPackManager* VirtualBox::getExtPackManager() const
+{
+    return m->ptrExtPackManager;
+}
+#endif
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 const ComObjPtr<PerformanceCollector>& VirtualBox::performanceCollector() const
 {
@@ -4577,137 +4588,6 @@ HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
     }
 
     return rc;
-}
-
-STDMETHODIMP VirtualBox::VRDERegisterLibrary(IN_BSTR aName)
-{
-    CheckComArgStrNotEmptyOrNull(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Utf8Str strName(aName);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* If the name already exists, there is nothing to do. */
-    settings::VRDELibrariesList::const_iterator it;
-
-    for (it = m->pMainConfigFile->llVRDELibraries.begin();
-         it != m->pMainConfigFile->llVRDELibraries.end();
-         ++it)
-    {
-        const Utf8Str &str = *it;
-        if (strName == str)
-        {
-            break;
-        }
-    }
-
-    if (it == m->pMainConfigFile->llVRDELibraries.end())
-    {
-        /* Not found, add it. */
-        m->pMainConfigFile->llVRDELibraries.push_back(strName);
-
-        /* Save settings on success. */
-        HRESULT rc = saveSettings();
-        if (FAILED(rc)) return rc;
-    }
-
-    return S_OK;
-}
-
-STDMETHODIMP VirtualBox::VRDEUnregisterLibrary(IN_BSTR aName)
-{
-    CheckComArgStrNotEmptyOrNull(aName);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Utf8Str strName(aName);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    settings::VRDELibrariesList::const_iterator it;
-
-    for (it = m->pMainConfigFile->llVRDELibraries.begin();
-         it != m->pMainConfigFile->llVRDELibraries.end();
-         ++it)
-    {
-        const Utf8Str &str = *it;
-        if (strName == str)
-        {
-            break;
-        }
-    }
-
-    if (it != m->pMainConfigFile->llVRDELibraries.end())
-    {
-        /* Found, remove it. */
-        m->pMainConfigFile->llVRDELibraries.remove(strName);
-
-        /* Save settings on success. */
-        HRESULT rc = saveSettings();
-        if (FAILED(rc)) return rc;
-    }
-
-    return S_OK;
-}
-
-STDMETHODIMP VirtualBox::VRDEListLibraries(ComSafeArrayOut(BSTR, aNames))
-{
-    using namespace settings;
-
-    if (ComSafeArrayOutIsNull(aNames))
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    com::SafeArray<BSTR> saNames(m->pMainConfigFile->llVRDELibraries.size());
-    int i = 0;
-    for (VRDELibrariesList::const_iterator it = m->pMainConfigFile->llVRDELibraries.begin();
-         it != m->pMainConfigFile->llVRDELibraries.end();
-         ++it, ++i)
-    {
-        const Utf8Str &strName = *it;
-        strName.cloneTo(&saNames[i]);
-    }
-    saNames.detachTo(ComSafeArrayOutArg(aNames));
-
-    return S_OK;
-}
-
-STDMETHODIMP VirtualBox::VRDEIsLibraryRegistered(IN_BSTR aName, BOOL *aRegistered)
-{
-    CheckComArgStrNotEmptyOrNull(aName);
-    CheckComArgOutPointerValid(aRegistered);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    Utf8Str strName(aName);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    settings::VRDELibrariesList::const_iterator it;
-
-    for (it = m->pMainConfigFile->llVRDELibraries.begin();
-         it != m->pMainConfigFile->llVRDELibraries.end();
-         ++it)
-    {
-        const Utf8Str &str = *it;
-        if (strName == str)
-        {
-            break;
-        }
-    }
-
-    *aRegistered = (it != m->pMainConfigFile->llVRDELibraries.end());
-
-    return S_OK;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

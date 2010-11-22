@@ -28,6 +28,29 @@
 
 
 /**
+ * Worker for VBoxExtPackLoadDesc that loads the plug-in descriptors.
+ *
+ * @returns Same as VBoxExtPackLoadDesc.
+ * @param   pVBoxExtPackElm
+ * @param   pcPlugIns           Where to return the number of plug-ins in the
+ *                              array.
+ * @param   paPlugIns           Where to return the plug-in descriptor array.
+ *                              (RTMemFree it even on failure)
+ */
+static iprt::MiniString *
+vboxExtPackLoadPlugInDescs(const xml::ElementNode *pVBoxExtPackElm,
+                           uint32_t *pcPlugIns, PVBOXEXTPACKPLUGINDESC *paPlugIns)
+{
+    *pcPlugIns = 0;
+    *paPlugIns = NULL;
+
+    /** @todo plug-ins */
+    NOREF(pVBoxExtPackElm);
+
+    return NULL;
+}
+
+/**
  * Reads the extension pack descriptor.
  *
  * @returns NULL on success, pointer to an error message on failure (caller
@@ -47,6 +70,7 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     a_pExtPackDesc->strVersion.setNull();
     a_pExtPackDesc->uRevision = 0;
     a_pExtPackDesc->strMainModule.setNull();
+    a_pExtPackDesc->strVrdeModule.setNull();
     a_pExtPackDesc->cPlugIns = 0;
     a_pExtPackDesc->paPlugIns = NULL;
 
@@ -97,7 +121,7 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
         return &(new iprt::MiniString("Unsupported format version: "))->append(strFormatVersion);
 
     /*
-     * Read and validate the name.
+     * Read and validate mandatory bits.
      */
     const xml::ElementNode *pNameElm = pVBoxExtPackElm->findChildElement("Name");
     if (!pNameElm)
@@ -134,8 +158,35 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     const char *pszMainModule = pMainModuleElm->getValue();
     if (!pszMainModule || *pszMainModule == '\0')
         return new iprt::MiniString("The 'MainModule' element is empty");
-    if (!VBoxExtPackIsValidMainModuleString(pszMainModule))
+    if (!VBoxExtPackIsValidModuleString(pszMainModule))
         return &(new iprt::MiniString("Invalid main module string: "))->append(pszMainModule);
+
+    /*
+     * The VRDE module, optional.
+     * Accept both none and empty as tokens of no VRDE module.
+     */
+    const char *pszVrdeModule = NULL;
+    const xml::ElementNode *pVrdeModuleElm = pVBoxExtPackElm->findChildElement("VRDEModule");
+    if (pVrdeModuleElm)
+    {
+        pszVrdeModule = pVrdeModuleElm->getValue();
+        if (!pszVrdeModule || *pszVrdeModule == '\0')
+            pszVrdeModule = NULL;
+        else if (!VBoxExtPackIsValidModuleString(pszVrdeModule))
+            return &(new iprt::MiniString("Invalid VRDE module string: "))->append(pszVrdeModule);
+    }
+
+    /*
+     * Parse plug-in descriptions.
+     */
+    uint32_t                cPlugIns  = 0;
+    PVBOXEXTPACKPLUGINDESC  paPlugIns = NULL;
+    iprt::MiniString *pstrRet = vboxExtPackLoadPlugInDescs(pVBoxExtPackElm, &cPlugIns, &paPlugIns);
+    if (pstrRet)
+    {
+        RTMemFree(paPlugIns);
+        return pstrRet;
+    }
 
     /*
      * Everything seems fine, fill in the return values and return successfully.
@@ -145,6 +196,9 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
     a_pExtPackDesc->strVersion      = pszVersion;
     a_pExtPackDesc->uRevision       = uRevision;
     a_pExtPackDesc->strMainModule   = pszMainModule;
+    a_pExtPackDesc->strVrdeModule   = pszVrdeModule;
+    a_pExtPackDesc->cPlugIns        = cPlugIns;
+    a_pExtPackDesc->paPlugIns       = paPlugIns;
 
     return NULL;
 }
@@ -153,7 +207,8 @@ iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_p
 /**
  * Frees all resources associated with a extension pack descriptor.
  *
- * @param   a_pExtPackDesc      The extension pack descriptor to free.
+ * @param   a_pExtPackDesc      The extension pack descriptor which members
+ *                              should be freed.
  */
 void VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
 {
@@ -165,6 +220,7 @@ void VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
     a_pExtPackDesc->strVersion.setNull();
     a_pExtPackDesc->uRevision = 0;
     a_pExtPackDesc->strMainModule.setNull();
+    a_pExtPackDesc->strVrdeModule.setNull();
     a_pExtPackDesc->cPlugIns = 0;
     RTMemFree(a_pExtPackDesc->paPlugIns);
     a_pExtPackDesc->paPlugIns = NULL;
@@ -291,22 +347,22 @@ bool VBoxExtPackIsValidVersionString(const char *pszVersion)
 }
 
 /**
- * Validates the extension pack main module string.
+ * Validates an extension pack module string.
  *
  * @returns true if valid, false if not.
- * @param   pszMainModule       The main module string to validate.
+ * @param   pszModule           The module string to validate.
  */
-bool VBoxExtPackIsValidMainModuleString(const char *pszMainModule)
+bool VBoxExtPackIsValidModuleString(const char *pszModule)
 {
-    if (!pszMainModule || *pszMainModule == '\0')
+    if (!pszModule || *pszModule == '\0')
         return false;
 
     /* Restricted charset, no extensions (dots). */
-    while (   RT_C_IS_ALNUM(*pszMainModule)
-           || *pszMainModule == '-'
-           || *pszMainModule == '_')
-        pszMainModule++;
+    while (   RT_C_IS_ALNUM(*pszModule)
+           || *pszModule == '-'
+           || *pszModule == '_')
+        pszModule++;
 
-    return *pszMainModule == '\0';
+    return *pszModule == '\0';
 }
 

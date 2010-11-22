@@ -71,6 +71,8 @@ typedef struct VBOXEXTPACKDESC
     uint32_t                uRevision;
     /** The name of the main module. */
     iprt::MiniString        strMainModule;
+    /** The name of the VRDE module, empty if none. */
+    iprt::MiniString        strVrdeModule;
     /** The number of plug-in descriptors. */
     uint32_t                cPlugIns;
     /** Pointer to an array of plug-in descriptors. */
@@ -88,7 +90,7 @@ iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
 void              VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
 bool    VBoxExtPackIsValidName(const char *pszName);
 bool    VBoxExtPackIsValidVersionString(const char *pszName);
-bool    VBoxExtPackIsValidMainModuleString(const char *pszMainModule);
+bool    VBoxExtPackIsValidModuleString(const char *pszModule);
 
 
 #endif

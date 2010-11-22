@@ -206,6 +206,9 @@ public:
                               IProgress *aProgress);
     VMMDev *getVMMDev() { return m_pVMMDev; }
     AudioSniffer *getAudioSniffer() { return mAudioSniffer; }
+#ifdef VBOX_WITH_EXTPACK
+    ExtPackManager *getExtPackManager();
+#endif
 
     int VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     void VRDPClientConnect(uint32_t u32ClientId);
@@ -599,7 +602,7 @@ private:
     const ComPtr<IMachine> mMachine;
     const ComPtr<IInternalMachineControl> mControl;
 
-    const ComPtr <IVRDEServer> mVRDEServer;
+    const ComPtr<IVRDEServer> mVRDEServer;
 
     ConsoleVRDPServer * const mConsoleVRDPServer;
 
