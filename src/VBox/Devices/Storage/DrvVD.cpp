@@ -1770,6 +1770,10 @@ static DECLCALLBACK(int) drvvdStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUse
     else
     {
         rc = PDMR3BlkCacheFlush(pThis->pBlkCache, pvUser);
+        if (rc == VINF_AIO_TASK_PENDING)
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        else if (rc == VINF_SUCCESS)
+            rc = VINF_VD_ASYNC_IO_FINISHED;
     }
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
