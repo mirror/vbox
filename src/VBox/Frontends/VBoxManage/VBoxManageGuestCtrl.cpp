@@ -280,6 +280,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
     /* Always use the actual command line as argv[0]. */
     args.push_back(Bstr(Utf8Cmd).raw());
 
+/** @todo r=bird: Use RTGetOpt here, no new code using strcmp-if-switching! */
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
     for (int i = 2; usageOK && i < a->argc; i++)
@@ -610,6 +611,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
  * @param   pszFileDest         Full qualified destination path.
  * @param   pList               Copy list used for insertion.
  */
+/** @todo r=bird: static? */
 int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
                                  PRTLISTNODE pList)
 {
@@ -651,6 +653,7 @@ int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileD
  *                              copy found.
  * @param   pList               Pointer to the object list to use.
  */
+/** @todo r=bird: static? */
 int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
                           const char *pszFilter, const char *pszDest,
                           uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
@@ -793,6 +796,7 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
  * @param   pcObjects           Where to store the count of objects to be copied.
  * @param   pList               Where to store the object list.
  */
+/** @todo r=bird: static? */
 int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
                  uint32_t *pcObjects, PRTLISTNODE pList)
 {
@@ -918,6 +922,7 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
 /**
  * Destroys a copy list.
  */
+/** @todo r=bird: static? */
 void ctrlCopyDestroy(PRTLISTNODE pList)
 {
     AssertPtr(pList);
@@ -954,6 +959,7 @@ void ctrlCopyDestroy(PRTLISTNODE pList)
  * @param   pszPassword     Password of user account.
  * @param   uFlags          Copy flags.
  */
+/** @todo r=bird: static? */
 int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDest,
                         const char *pszUserName, const char *pszPassword,
                         uint32_t uFlags)
@@ -1043,6 +1049,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
     bool fVerbose = false;
     bool fCopyRecursive = false;
     bool fDryRun = false;
+/** @todo r=bird: Use RTGetOpt here, no new code using strcmp-if-switching!  */
 
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
@@ -1217,6 +1224,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
     uint32_t uFlags = CreateDirectoryFlag_None;
     uint32_t uMode = 0;
     bool fVerbose = false;
+/** @todo r=bird: Use RTGetOpt here, no new code using strcmp-if-switching!  */
 
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
@@ -1252,6 +1260,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
         else if (   !strcmp(a->argv[i], "--mode")
                  || !strcmp(a->argv[i], "-m"))
         {
+            /** @todo r=bird: the mode is octal, isn't it? */
             if (i + 1 >= a->argc
                 || RTStrToUInt32Full(a->argv[i + 1], 10, &uMode) != VINF_SUCCESS)
                 usageOK = false;
@@ -1372,6 +1381,7 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
     Utf8Str Utf8Source;
     bool fVerbose = false;
 
+/** @todo r=bird: Use RTGetOpt here, no new code using strcmp-if-switching!  */
     /* Iterate through all possible commands (if available). */
     bool usageOK = true;
     for (int i = 1; usageOK && i < a->argc; i++)
