@@ -1340,64 +1340,65 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool
 {
     PHDABDLEDESC pBdle = &pState->stInBdle;
     uint32_t cbTransfered = 0;
-    while(   *pu32Avail
-          && pBdle->u32BdleCviPos < pBdle->u32BdleCviLen)
+    uint32_t cb2Copy = 0;
+    uint32_t cbBackendCopy = 0;
+
+    if (   !pBdle->u32BdleCviLen
+        || (*pu32Avail < hdaFifoWToSz(pState, 0)))
     {
-        uint32_t cb2Copy = 0;
-        uint32_t cbBackendCopy = 0;
-        bool fUnderFifoCleared = false;
-        if (   !pBdle->u32BdleCviLen
-            || (*pu32Avail < hdaFifoWToSz(pState, 0)))
-        {
-            *fStop = true;
-            return 0;
-        }
-        Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-        Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
-        cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
-        cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 0) + 1 - pBdle->cbUnderFifoW); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
-        Assert((*pu32Avail > 0));
-        cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* sanity check to avoid overriding sound backend buffer */
-        cb2Copy = RT_MIN(cb2Copy, u32CblLimit);
-        if (   !cb2Copy
-            || cb2Copy < pBdle->cbUnderFifoW)
-        {
-            *fStop = true;
-            return 0;
-        }
-
-        /*
-         * read from backend input line
-         */
-        cbBackendCopy = AUD_read (ISD0FMT_TO_AUDIO_SELECTOR(pState), pBdle->au8HdaBuffer, cb2Copy);
-        /*
-         * write on the HDA DMA
-         */
-        PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
-
-        Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */
-        *pu32Avail -= cb2Copy;
-        pBdle->u32BdleCviPos += RT_MIN(cb2Copy, cbBackendCopy);
-        if (pBdle->cbUnderFifoW + cbBackendCopy > hdaFifoWToSz(pState, 0))
-        {
-            Log(("hda:ra: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-            cbTransfered += cbBackendCopy + pBdle->cbUnderFifoW;
-            pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbBackendCopy);
-            Assert(!pBdle->cbUnderFifoW); /* we assume, we've read Under FIFO W fully */
-        }
-        else
-        {
-            Log(("hda:ra: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-            pBdle->cbUnderFifoW += RT_MIN(cbBackendCopy, cb2Copy);
-            Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 0)));
-            *fStop = true;
-            break;
-        }
-        Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-        if (   cbTransfered == (SDFIFOS(pState, 0) + 1)
-            || pBdle->u32BdleCviLen == pBdle->u32BdleCviPos)
-            break;
+        *fStop = true;
+        goto done;
     }
+
+    Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+    Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
+    cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
+    /* 
+     * we may increase the counter in range of [0, FIFOS(pState, 4) + 1] 
+     */
+    cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 0) + 1); 
+    Assert((*pu32Avail > 0));
+
+    /* sanity check to avoid overriding sound backend buffer */
+    cb2Copy = RT_MIN(cb2Copy, *pu32Avail); 
+    cb2Copy = RT_MIN(cb2Copy, u32CblLimit);
+
+    if (cb2Copy <= pBdle->cbUnderFifoW)
+    {
+        *fStop = true;
+        goto done;
+    }
+    cb2Copy -= pBdle->cbUnderFifoW;
+
+    /*
+     * read from backend input line
+     */
+    cbBackendCopy = AUD_read (ISD0FMT_TO_AUDIO_SELECTOR(pState), pBdle->au8HdaBuffer, cb2Copy);
+    /*
+     * write on the HDA DMA
+     */
+    PDMDevHlpPhysWrite(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer, cbBackendCopy);
+
+    Assert((cbBackendCopy == cb2Copy && (*pu32Avail) >= cb2Copy)); /* sanity */
+    *pu32Avail -= cb2Copy;
+    pBdle->u32BdleCviPos += RT_MIN(cb2Copy, cbBackendCopy);
+    if (pBdle->cbUnderFifoW + cbBackendCopy > hdaFifoWToSz(pState, 0))
+    {
+        Log(("hda:ra: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+        cbTransfered += cbBackendCopy + pBdle->cbUnderFifoW;
+        pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbBackendCopy);
+        Assert(!pBdle->cbUnderFifoW); /* we assume, we've read Under FIFO W fully */
+    }
+    else
+    {
+        Log(("hda:ra: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+        pBdle->cbUnderFifoW += RT_MIN(cbBackendCopy, cb2Copy);
+        Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 0)));
+        *fStop = true;
+        goto done;
+    }
+    Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+    done:
     Assert((cbTransfered <= (SDFIFOS(pState, 0) + 1)));
     Log(("hda:ra: cbTransfered: %d\n", cbTransfered));
     return cbTransfered;
