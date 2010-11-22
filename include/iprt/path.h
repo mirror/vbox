@@ -810,8 +810,10 @@ RTR3DECL(int) RTPathGetTimes(const char *pszPath, PRTTIMESPEC pAccessTime, PRTTI
  *
  * @returns iprt status code.
  * @param   pszPath     Path to the file system object.
- * @param   uid         The new file owner user id. Use -1 (or ~0) to leave this unchanged.
- * @param   gid         The new group id. Use -1 (or ~0) to leave this unchanged.
+ * @param   uid         The new file owner user id.  Pass NIL_RTUID to leave
+ *                      this unchanged.
+ * @param   gid         The new group id.  Pass NIL_RTGUID to leave this
+ *                      unchanged.
  */
 RTR3DECL(int) RTPathSetOwner(const char *pszPath, uint32_t uid, uint32_t gid);
 
@@ -820,8 +822,10 @@ RTR3DECL(int) RTPathSetOwner(const char *pszPath, uint32_t uid, uint32_t gid);
  *
  * @returns iprt status code.
  * @param   pszPath     Path to the file system object.
- * @param   uid         The new file owner user id. Use -1 (or ~0) to leave this unchanged.
- * @param   gid         The new group id. Use -1 (or ~0) to leave this unchanged.
+ * @param   uid         The new file owner user id.  Pass NIL_RTUID to leave
+ *                      this unchanged.
+ * @param   gid         The new group id.  Pass NIL_RTGID to leave this
+ *                      unchanged.
  * @param   fFlags      RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
  */
 RTR3DECL(int) RTPathSetOwnerEx(const char *pszPath, uint32_t uid, uint32_t gid, uint32_t fFlags);

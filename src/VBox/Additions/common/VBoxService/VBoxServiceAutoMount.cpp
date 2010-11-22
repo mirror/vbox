@@ -178,7 +178,7 @@ static int VBoxServiceAutoMountPrepareMountPoint(const char *pszMountPoint, cons
     int rc = RTDirCreateFullPath(pszMountPoint, fMode);
     if (RT_SUCCESS(rc))
     {
-        rc = RTPathSetOwnerEx(pszMountPoint, ~0 /* Owner, unchanged */, pOpts->gid, RTPATH_F_ON_LINK);
+        rc = RTPathSetOwnerEx(pszMountPoint, NIL_RTUID /* Owner, unchanged */, pOpts->gid, RTPATH_F_ON_LINK);
         if (RT_SUCCESS(rc))
         {
             rc = RTPathSetMode(pszMountPoint, fMode);
