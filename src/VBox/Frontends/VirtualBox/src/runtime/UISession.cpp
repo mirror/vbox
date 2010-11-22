@@ -371,7 +371,7 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     if (fResult)
     {
         vboxProblem().showModalProgressDialog(progressInstall, tr("Install"),
-                                              mainMachineWindow(), 0 /* No delay */);
+                                              mainMachineWindow(), 500 /* 500ms delay. */);
         if (progressInstall.GetCanceled())
             return;
 
@@ -381,13 +381,16 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
             /* If we got back a VBOX_E_NOT_SUPPORTED we don't complain (guest OS
              * simply isn't supported yet), so silently fall back to "old" .ISO
              * mounting method. */
-            if (rc != VBOX_E_NOT_SUPPORTED)
+            if (   !SUCCEEDED_WARNING(rc)
+                && rc != VBOX_E_NOT_SUPPORTED)
+            {
                 vboxProblem().cannotUpdateGuestAdditions(progressInstall, mainMachineWindow());
 
-            /* In every case we log the error message in the release log. */
-            QString strErr = progressInstall.GetErrorInfo().GetText();
-            if (!strErr.isEmpty())
-                LogRel(("%s\n", strErr.toLatin1().constData()));
+                /* Log the error message in the release log. */
+                QString strErr = progressInstall.GetErrorInfo().GetText();
+                if (!strErr.isEmpty())
+                    LogRel(("%s\n", strErr.toLatin1().constData()));
+            }
             fDoMount = true; /* Since automatic updating failed, fall back to .ISO mounting. */
         }
     }
