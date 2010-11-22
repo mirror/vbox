@@ -1030,6 +1030,9 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     bool fOn = RT_BOOL((u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)));
     int rc = VINF_SUCCESS;
     uint64_t u64BaseDMA = 0;
+    uint8_t u8Strm = 0;
+    PHDABDLEDESC pBdle = NULL;
+    uint32_t *pu32Lpib = 0;
     if(u32Value & HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST))
     {
         Log(("hda: guest has initiated hw stream reset\n"));
@@ -1039,38 +1042,9 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     }
     else if (HDA_IS_STREAM_IN_RESET(pState, offset))
     {
-        PHDABDLEDESC pBdle = NULL;
-        uint32_t *pu32Lpib = NULL;
-        uint8_t u8Strm = 0;
         Log(("hda: guest has initiated exit of stream reset\n"));
         pState->u8StreamsInReset &= ~HDA_STREAM_BITMASK(offset);
         HDA_REG_IND(pState, index) &= ~HDA_REG_FIELD_FLAG_MASK(SDCTL, SRST);
-        switch (index)
-        {
-            case ICH6_HDA_REG_SD0CTL:
-                pBdle = &pState->stInBdle;
-                pu32Lpib = &SDLPIB(pState, 0);
-                AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 0);
-                u8Strm = 0;
-                break;
-            case ICH6_HDA_REG_SD4CTL:
-                u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
-                fOn = fOn && u64BaseDMA;
-                AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 0);
-                pBdle = &pState->stOutBdle;
-                pu32Lpib = &SDLPIB(pState, 4);
-                u8Strm = 4;
-                break;
-            default:
-                Log(("Attempt to reset DMA state on unattached SDI(%s), ignored\n", s_ichIntelHDRegMap[index].abbrev));
-        }
-        if (   pBdle
-            && pu32Lpib)
-        {
-            memset(pBdle, 0, sizeof(HDABDLEDESC));
-            *pu32Lpib = 0;
-            hdaUpdatePosBuf(pState, u8Strm, 0);
-        }
     }
     /*
      * Stopping streams we postpone up to reset exit to let HDA complete the tasks
@@ -1078,22 +1052,35 @@ DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uin
     switch (index)
     {
         case ICH6_HDA_REG_SD0CTL:
-            if (fOn)
-                AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), 1);
+            u8Strm = 0;
+            pBdle = &pState->stInBdle;
+            pu32Lpib = &SDLPIB(pState, 0);
+            AUD_set_active_in(ISD0FMT_TO_AUDIO_SELECTOR(pState), fOn);
             Log(("hda: DMA SD0CTL switched %s\n", fOn ? "on" : " off"));
             break;
         case ICH6_HDA_REG_SD4CTL:
-            if (fOn)
-                SDSTS(pState, 4) &= ~(1<<5);
+            u8Strm = 4;
+            pBdle = &pState->stOutBdle;
+
+            pu32Lpib = &SDLPIB(pState, 4);
             u64BaseDMA = RT_MAKE_U64(SDBDPL(pState, 4), SDBDPU(pState, 4));
             fOn = fOn && u64BaseDMA;
             if (fOn)
-                AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), 1);
+                SDSTS(pState, 4) &= ~(1<<5);
+            AUD_set_active_out(OSD0FMT_TO_AUDIO_SELECTOR(pState), fOn);
             Log(("hda: DMA SD4CTL switched %s\n", fOn ? "on" : " off"));
             break;
         default:
             Log(("Attempt to modify DMA state on unattached SDI(%s), ignored\n", s_ichIntelHDRegMap[index].abbrev));
             break; 
+    }
+    if (   !fOn
+        && pBdle
+        && pu32Lpib)
+    {
+        memset(pBdle, 0, sizeof(HDABDLEDESC));
+        *pu32Lpib = 0;
+        hdaUpdatePosBuf(pState, u8Strm, 0);
     }
     rc = hdaRegWriteU24(pState, offset, index, u32Value);
     if (RT_FAILURE(rc))
@@ -1420,93 +1407,73 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, boo
 {
     PHDABDLEDESC pBdle = &pState->stOutBdle;
     uint32_t cbTransfered = 0;
+    uint32_t cb2Copy = 0; /* local byte counter (on local buffer) */
+    uint32_t cbBackendCopy = 0; /* local byte counter, how many bytes copied to backend */
+
+    Log(("hda:wa: CVI(cvi:%d, pos:%d, len:%d)\n", pBdle->u32BdleCvi, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+
     /*
-     * We're coping data from DMA using chuks of size FIFOS(pState, 4) + 1
+     * Amounts of bytes depends on current position in buffer (u32BdleCviLen-u32BdleCviPos)
      */
-    while(   *pu32Avail
-          && pBdle->u32BdleCviPos < pBdle->u32BdleCviLen)
+    if (pBdle->u32BdleCviLen)
     {
-        uint32_t cb2Copy = 0; /* local byte counter (on local buffer) */
-        uint32_t cbBackendCopy = 0; /* local byte counter, how many bytes copied to backend */
-        Log(("hda:wa: CVI(cvi:%d, pos:%d, len:%d)\n", pBdle->u32BdleCvi, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-        /* border check assert */
-        if (   (   !pBdle->u32BdleCviLen
-                && (pBdle->cbUnderFifoW < hdaFifoWToSz(pState, 4)))
-            ||  *pu32Avail < hdaFifoWToSz(pState, 4))
-        {
-            /* buffer length is 0, to little data on marked as "under FIFOW" to send to backed.*/
-            Log(("hda:wa: exits CVI(iAvail:%d, cbUnderFifoW:%d, cvi:%d, len:%d)\n", *pu32Avail, pBdle->u32BdleCviLen, pBdle->u32BdleCvi, pBdle->cbUnderFifoW));
-            *fStop = true;
-            return 0;
-        }
-        /*
-         * Amounts of bytes depends on current position in buffer (u32BdleCviLen-u32BdleCviPos)
-         */
-        if (pBdle->u32BdleCviLen)
-        {
-            Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
-            cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos; /* align copy buffer to size of trailing space in BDLE buffer */
-            cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 4) + 1); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
-            cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* align copying buffer size up to size of back end buffer */
-            cb2Copy = RT_MIN(cb2Copy, u32CblLimit); /* avoid LCBL overrun */
-        }
-        if (cb2Copy < pBdle->cbUnderFifoW)
-        {
-            Log(("hda:wa: amount of unreported bytes is less than room may be transfered  (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, cb2Copy));
-            *fStop = true;
-            break;
-        }
-        cb2Copy -= pBdle->cbUnderFifoW; /* force reserve "Unreported bits" */
-        
-        /*
-         * Copy from DMA to the corresponding hdaBuffer (if there exists some bytes from the previous not reported transfer we write to ''pBdle->cbUnderFifoW'' offset)
-         */
-        if (cb2Copy)
-            PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
-        /*
-         * Write to audio backend.
-         */
-        if (cb2Copy + pBdle->cbUnderFifoW >= hdaFifoWToSz(pState, 4))
-        {
-            /*
-             * We feed backend with new portion of fetched samples including not reported.
-             */
-            cbBackendCopy = AUD_write (OSD0FMT_TO_AUDIO_SELECTOR(pState), pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
-            Assert((cbBackendCopy));
-            /* Assertion!!! It was copied less than cbUnderFifoW 
-             * Probably we need to move the buffer, but it rather hard to imagine situation
-             * why it may happen.
-             */
-            Assert((cbBackendCopy == pBdle->cbUnderFifoW + cb2Copy)); /* we assume that we write whole buffer including not reported bytes */
-            if (   pBdle->cbUnderFifoW
-                && pBdle->cbUnderFifoW <= cbBackendCopy)
-                Log(("hda:wa: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-
-            pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbBackendCopy); 
-            pBdle->u32BdleCviPos += RT_MIN(cb2Copy, cbBackendCopy);
-            Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos && *pu32Avail >= cbBackendCopy)); /* sanity */
-            Assert((!pBdle->cbUnderFifoW)); /* Assert!!! Assumption failed */
-            *pu32Avail -= cbBackendCopy;
-            cbTransfered += cbBackendCopy; 
-        }
-        else
-        {
-            Log(("hda:wa: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-            pBdle->cbUnderFifoW += cb2Copy;
-            pBdle->u32BdleCviPos += cb2Copy;
-            Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 4)));
-            *fStop = true;
-            break;
-        }
-        Log(("hda:wa: CVI(pos:%d, len:%d, cbTransfered:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransfered));
-
-        Assert((cbTransfered <= (SDFIFOS(pState, 4) + 1)));
-        if (   cbTransfered == (SDFIFOS(pState, 4) + 1)
-            || pBdle->u32BdleCviLen == pBdle->u32BdleCviPos)
-            break;
+        Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
+        cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos; /* align copy buffer to size of trailing space in BDLE buffer */
+        cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 4) + 1); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
+        cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* align copying buffer size up to size of back end buffer */
+        cb2Copy = RT_MIN(cb2Copy, u32CblLimit); /* avoid LCBL overrun */
     }
+    if (cb2Copy <= pBdle->cbUnderFifoW)
+    {
+        Log(("hda:wa: amount of unreported bytes is less than room may be transfered  (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, cb2Copy));
+        *fStop = true;
+        goto done;
+    }
+    cb2Copy -= pBdle->cbUnderFifoW; /* force reserve "Unreported bits" */
+    
+    /*
+     * Copy from DMA to the corresponding hdaBuffer (if there exists some bytes from the previous not reported transfer we write to ''pBdle->cbUnderFifoW'' offset)
+     */
+    if (cb2Copy)
+        PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
+    /*
+     * Write to audio backend.
+     */
+    if (cb2Copy + pBdle->cbUnderFifoW >= hdaFifoWToSz(pState, 4))
+    {
+        /*
+         * We feed backend with new portion of fetched samples including not reported.
+         */
+        cbBackendCopy = AUD_write (OSD0FMT_TO_AUDIO_SELECTOR(pState), pBdle->au8HdaBuffer, cb2Copy + pBdle->cbUnderFifoW);
+        Assert((cbBackendCopy));
+        /* Assertion!!! It was copied less than cbUnderFifoW 
+         * Probably we need to move the buffer, but it rather hard to imagine situation
+         * why it may happen.
+         */
+        Assert((cbBackendCopy == pBdle->cbUnderFifoW + cb2Copy)); /* we assume that we write whole buffer including not reported bytes */
+        if (   pBdle->cbUnderFifoW
+            && pBdle->cbUnderFifoW <= cbBackendCopy)
+            Log(("hda:wa: CVI resetting cbUnderFifoW:%d(pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+
+        pBdle->cbUnderFifoW -= RT_MIN(pBdle->cbUnderFifoW, cbBackendCopy); 
+        pBdle->u32BdleCviPos += RT_MIN(cb2Copy, cbBackendCopy);
+        Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos && *pu32Avail >= cbBackendCopy)); /* sanity */
+        Assert((!pBdle->cbUnderFifoW)); /* Assert!!! Assumption failed */
+        *pu32Avail -= cbBackendCopy;
+        cbTransfered += cbBackendCopy; 
+    }
+    else
+    {
+        Log(("hda:wa: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
+        pBdle->cbUnderFifoW += cb2Copy;
+        pBdle->u32BdleCviPos += cb2Copy;
+        Assert((pBdle->cbUnderFifoW <= hdaFifoWToSz(pState, 4)));
+        goto done;
+    }
+
+    done:
     Assert((cbTransfered <= (SDFIFOS(pState, 4) + 1)));
-    Log(("hda:wa: cbTransfered: %d\n", cbTransfered));
+    Log(("hda:wa: CVI(pos:%d, len:%d, cbTransfered:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransfered));
     return cbTransfered;
 }
 
@@ -1613,9 +1580,9 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
             if (   !pBdle->cbUnderFifoW
                 && pBdle->fBdleCviIoc)
             {
+                *pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
                 *pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, BCIS);
                 hdaProcessInterrupt(pState);
-                *pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
             }
             if (*pu32Lpib == u32Cbl)
                 *pu32Lpib -= u32Cbl;
@@ -1628,10 +1595,8 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
                 if (pBdle->u32BdleCvi == pBdle->u32BdleMaxCvi + 1)
                     pBdle->u32BdleCvi = 0;
 
-                fetch_bd(pState, pBdle, u64BaseDMA);
             }
-            if (nBytes > (u32Fifow))
-                fStop = true;
+            fStop = true;
         }
     }
     *pu32Sts &= ~HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
