@@ -1201,9 +1201,11 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             }
             /* mark the socket for termination _after_ it was drained */
             so->so_close = 1;
-            /* No idea about Windows but on Posix, POLLHUP means that we can't send more */
+            /* No idea about Windows but on Posix, POLLHUP means that we can't send more.
+             * Actually in the specific error scenario, POLLERR is set as well. */
 #ifndef RT_OS_WINDOWS
-            sofcantsendmore(so);
+            if (CHECK_FD_SET(so, NetworkEvents, rderr))
+                sofcantsendmore(so);
 #endif
             CONTINUE(tcp);
         }
