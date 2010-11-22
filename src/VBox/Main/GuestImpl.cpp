@@ -55,7 +55,7 @@ struct Guest::TaskGuest
     {
         /** Update Guest Additions by directly copying the required installer
          *  off the .ISO file, transfer it to the guest and execute the installer
-         *  with system priviledges. */
+         *  with system privileges. */
         UpdateGuestAdditions = 100
     };
 
@@ -262,22 +262,28 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                         Bstr("").raw() /* Password */,
                                                         5 * 1000 /* Wait 5s for getting the process started. */,
                                                         &uPID, progressCat.asOutParam(), &vrc);
-                    if (   RT_FAILURE(vrc)
-                        || FAILED(rc))
+                    if (FAILED(rc))
                     {
+                        /* Errors which return VBOX_E_NOT_SUPPORTED can be safely skipped by the caller
+                         * to silently fall back to "normal" (old) .ISO mounting. */
+
+                        /* Due to a very limited COM error range we use vrc for a more detailed error
+                         * lookup to figure out what went wrong. */
                         switch (vrc)
                         {
-                            /* If we got back VERR_INVALID_PARAMETER we're running an old(er) Guest Additions version
-                             * (< 4.0) which does not support automatic updating and/or has not the internal tool "vbox_cat". */
-                            case VERR_INVALID_PARAMETER:
-                                rc = setError(VBOX_E_IPRT_ERROR,
-                                              tr("Currently installed Guest Additions don't support automatic updating, please update them manually"));
+                            /* Guest execution service is not (yet) ready. This basically means that either VBoxService
+                             * is not running (yet) or that the Guest Additions are too old (because VBoxService does not
+                             * support the guest execution feature in this version). */
+                            case VERR_NOT_FOUND:
+                                rc = setError(VBOX_E_NOT_SUPPORTED,
+                                              tr("Guest Additions seem not to be installed or are not ready to update yet"));
                                 break;
-                            /* Getting back a VERR_TIMEOUT basically means that either VBoxService on the guest does not run (anymore) or that
-                             * no Guest Additions (on a supported automatic updating OS) are installed at all. */
-                            case VERR_TIMEOUT:
-                                rc = setError(VBOX_E_IPRT_ERROR,
-                                              tr("Guest Additions seem not to be installed on the guest or are not responding, please update them manually"));
+
+                            /* Getting back a VERR_INVALID_PARAMETER indicates that the installed Guest Additions are supporting the guest
+                             * execution but not the built-in "vbox_cat" tool of VBoxService (< 4.0). */
+                            case VERR_INVALID_PARAMETER:
+                                rc = setError(VBOX_E_NOT_SUPPORTED,
+                                              tr("Installed Guest Additions do not support automatic updating"));
                                 break;
 
                             default:
@@ -1574,7 +1580,8 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
         int vrc = VINF_SUCCESS;
         Utf8Str Utf8Command(aCommand);
 
-        /* Adjust timeout */
+        /* Adjust timeout. If set to 0, we define
+         * an infinite timeout. */
         if (aTimeoutMS == 0)
             aTimeoutMS = UINT32_MAX;
 
@@ -1645,7 +1652,7 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
 
                     /*
                      * If the WaitForProcessStartOnly flag is set, we only want to define and wait for a timeout
-                     * until the process was started - the process itself then gets an infinit timeout for execution.
+                     * until the process was started - the process itself then gets an infinite timeout for execution.
                      * This is handy when we want to start a process inside a worker thread within a certain timeout
                      * but let the started process perform lengthly operations then.
                      */
@@ -1761,34 +1768,34 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                     if (RT_FAILURE(vrc))
                     {
                         if (vrc == VERR_FILE_NOT_FOUND) /* This is the most likely error. */
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The file '%s' was not found on guest"), Utf8Command.c_str());
+                            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                               tr("The file '%s' was not found on guest"), Utf8Command.c_str());
                         else if (vrc == VERR_PATH_NOT_FOUND)
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The path to file '%s' was not found on guest"), Utf8Command.c_str());
+                            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                               tr("The path to file '%s' was not found on guest"), Utf8Command.c_str());
                         else if (vrc == VERR_BAD_EXE_FORMAT)
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The file '%s' is not an executable format on guest"), Utf8Command.c_str());
+                            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                               tr("The file '%s' is not an executable format on guest"), Utf8Command.c_str());
                         else if (vrc == VERR_AUTHENTICATION_FAILURE)
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The specified user '%s' was not able to logon on guest"), Utf8UserName.c_str());
+                            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                               tr("The specified user '%s' was not able to logon on guest"), Utf8UserName.c_str());
                         else if (vrc == VERR_TIMEOUT)
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The guest did not respond within time (%ums)"), aTimeoutMS);
+                            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                               tr("The guest did not respond within time (%ums)"), aTimeoutMS);
                         else if (vrc == VERR_CANCELLED)
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("The execution operation was canceled"));
+                            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                               tr("The execution operation was canceled"));
                         else if (vrc == VERR_PERMISSION_DENIED)
-                            rc = setError(VBOX_E_IPRT_ERROR,
-                                          tr("Invalid user/password credentials"));
+                            rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                               tr("Invalid user/password credentials"));
                         else
                         {
                             if (pData && pData->u32Status == PROC_STS_ERROR)
-                                rc = setError(VBOX_E_IPRT_ERROR,
-                                              tr("Process could not be started: %Rrc"), pData->u32Flags);
+                                rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                                   tr("Process could not be started: %Rrc"), pData->u32Flags);
                             else
-                                rc = setError(E_UNEXPECTED,
-                                              tr("The service call failed with error %Rrc"), vrc);
+                                rc = setErrorNoLog(E_UNEXPECTED,
+                                                   tr("The service call failed with error %Rrc"), vrc);
                         }
                     }
                     else /* Execution went fine. */
@@ -1803,17 +1810,17 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
             else /* HGCM related error codes .*/
             {
                 if (vrc == VERR_INVALID_VM_HANDLE)
-                    rc = setError(VBOX_E_VM_ERROR,
-                                  tr("VMM device is not available (is the VM running?)"));
-                else if (vrc == VERR_TIMEOUT)
-                    rc = setError(VBOX_E_VM_ERROR,
-                                  tr("The guest execution service is not ready"));
+                    rc = setErrorNoLog(VBOX_E_VM_ERROR,
+                                       tr("VMM device is not available (is the VM running?)"));
+                else if (vrc == VERR_NOT_FOUND)
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The guest execution service is not ready"));
                 else if (vrc == VERR_HGCM_SERVICE_NOT_FOUND)
-                    rc = setError(VBOX_E_VM_ERROR,
-                                  tr("The guest execution service is not available"));
+                    rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                       tr("The guest execution service is not available"));
                 else /* HGCM call went wrong. */
-                    rc = setError(E_UNEXPECTED,
-                                  tr("The HGCM call failed with error %Rrc"), vrc);
+                    rc = setErrorNoLog(E_UNEXPECTED,
+                                       tr("The HGCM call failed with error %Rrc"), vrc);
             }
 
             for (unsigned i = 0; i < uNumArgs; i++)
