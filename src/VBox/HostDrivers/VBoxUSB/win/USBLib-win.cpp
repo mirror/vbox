@@ -55,8 +55,8 @@ typedef struct
     char    szDriverRegName[512];
 } USBDEV, *PUSBDEV;
 
-static PUSBDEV  pUSBDev = NULL;
-static uint32_t cMaxDevices = 0;
+static PUSBDEV  g_pUSBDev = NULL;
+static uint32_t g_cMaxDevices = 0;
 static uint32_t g_cUSBStateChange = 0;
 
 static HANDLE   g_hUSBMonitor = INVALID_HANDLE_VALUE;
@@ -84,7 +84,8 @@ bool ValidateUSBDevice(char *pszName)
     hOut = CreateFile(pszName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
                       OPEN_EXISTING, FILE_ATTRIBUTE_SYSTEM, NULL);
 
-    if (INVALID_HANDLE_VALUE == hOut) {
+    if (INVALID_HANDLE_VALUE == hOut)
+    {
         Log(( "USB: FAILED to open %s\n", pszName));
         goto failure;
     }
@@ -217,7 +218,7 @@ bool OpenUsbDevices(LPGUID  pGuid, uint32_t *pcNumDevices)
 
     int j = 0, i = 0;
 
-    while(true)
+    while (true)
     {
         // SetupDiEnumDeviceInterfaces() returns information about device interfaces
         // exposed by one or more devices. Each call returns information about one interface;
@@ -234,17 +235,17 @@ bool OpenUsbDevices(LPGUID  pGuid, uint32_t *pcNumDevices)
             if (OpenOneDevice (hardwareDeviceInfo, &deviceInfoData, &usbDev) == true)
             {
                 uint32_t z;
-                for (z=0;z<cMaxDevices;z++)
+                for (z = 0; z < g_cMaxDevices; z++)
                 {
-                    if (pUSBDev[z].szName[0] == 0)
+                    if (g_pUSBDev[z].szName[0] == 0)
                     {
-                        memcpy(&pUSBDev[z], &usbDev, sizeof(usbDev));
-                        Log(("Captured device %s\n", pUSBDev[z].szName));
+                        memcpy(&g_pUSBDev[z], &usbDev, sizeof(usbDev));
+                        Log(("Captured device %s\n", g_pUSBDev[z].szName));
                         j++;
                         break;
                     }
                 }
-                AssertMsg(z < cMaxDevices, ("z=%d cMaxDevices=%d\n", z, cMaxDevices));
+                AssertMsg(z < g_cMaxDevices, ("z=%d g_cMaxDevices=%d\n", z, g_cMaxDevices));
             }
         }
         else
@@ -278,22 +279,22 @@ bool OpenUsbDevices(LPGUID  pGuid, uint32_t *pcNumDevices)
  */
 static int usblibEnumDevices(uint32_t cNumNewDevices, uint32_t *pcNumDevices)
 {
-    if (pUSBDev)
-        RTMemFree(pUSBDev);
-    pUSBDev         = NULL;
-    cMaxDevices     = 0;
+    if (g_pUSBDev)
+        RTMemFree(g_pUSBDev);
+    g_pUSBDev         = NULL;
+    g_cMaxDevices     = 0;
     *pcNumDevices   = 0;
 
     if (cNumNewDevices == 0)
         return 0;   /* nothing to do */
 
-    pUSBDev = (PUSBDEV)RTMemAllocZ(cNumNewDevices*sizeof(USBDEV));
-    if (!pUSBDev)
+    g_pUSBDev = (PUSBDEV)RTMemAllocZ(cNumNewDevices*sizeof(USBDEV));
+    if (!g_pUSBDev)
     {
         AssertFailed();
         return VERR_NO_MEMORY;
     }
-    cMaxDevices = cNumNewDevices;
+    g_cMaxDevices = cNumNewDevices;
 
     if (OpenUsbDevices((LPGUID)&GUID_CLASS_VBOXUSB, pcNumDevices) == false)
     {
@@ -313,18 +314,18 @@ char  *usblibQueryDeviceName(uint32_t idxDev)
 {
     int j=0;
 
-    Assert(idxDev < cMaxDevices);
-    for(uint32_t i=0;i<cMaxDevices;i++)
+    Assert(idxDev < g_cMaxDevices);
+    for (uint32_t i=0; i<g_cMaxDevices; i++)
     {
-        if (pUSBDev[i].szName[0])
+        if (g_pUSBDev[i].szName[0])
         {
             if (j == idxDev)
-                return pUSBDev[i].szName;
+                return g_pUSBDev[i].szName;
             j++;
         }
     }
 
-    Log(("USB: usblibQueryHandle returned -1; cMaxDevices = %d\n", cMaxDevices));
+    Log(("USB: usblibQueryHandle returned -1; g_cMaxDevices = %d\n", g_cMaxDevices));
     return NULL;
 }
 
@@ -337,18 +338,18 @@ char  *usblibQueryDeviceRegPath(uint32_t idxDev)
 {
     int j=0;
 
-    Assert(idxDev < cMaxDevices);
-    for(uint32_t i=0;i<cMaxDevices;i++)
+    Assert(idxDev < g_cMaxDevices);
+    for (uint32_t i=0; i<g_cMaxDevices; i++)
     {
-        if (pUSBDev[i].szName[0])
+        if (g_pUSBDev[i].szName[0])
         {
             if (j == idxDev)
-                return pUSBDev[i].szDriverRegName;
+                return g_pUSBDev[i].szDriverRegName;
             j++;
         }
     }
 
-    Log(("USB: usblibQueryHandle returned -1; cMaxDevices = %d\n", cMaxDevices));
+    Log(("USB: usblibQueryHandle returned -1; g_cMaxDevices = %d\n", g_cMaxDevices));
     return NULL;
 }
 
@@ -981,7 +982,7 @@ EnumerateHubPorts (
     //
     // Port indices are 1 based, not 0 based.
     //
-    for (index=1; index <= NumPorts; index++)
+    for (index = 1; index <= NumPorts; index++)
     {
         ULONG nBytes;
 
@@ -1783,7 +1784,7 @@ GetConfigDescriptor (
     if (configDesc->wTotalLength != (nBytes - sizeof(USB_DESCRIPTOR_REQUEST)))
     {
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION %d != %d\n", configDesc->wTotalLength, (nBytes - sizeof(USB_DESCRIPTOR_REQUEST)));
+        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION %d != %d\n", configDesc->wTotalLength, (nBytes - sizeof(USB_DESCRIPTOR_REQUEST))));
 #else
         LogRel(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION %d != %d\n", configDesc->wTotalLength, (nBytes - sizeof(USB_DESCRIPTOR_REQUEST)) ));
 #endif
@@ -2205,7 +2206,7 @@ GetStringDescriptors (
 {
     ULONG i;
 
-    for (i=0; i<NumLanguageIDs; i++)
+    for (i = 0; i < NumLanguageIDs; i++)
     {
         StringDescNodeTail->Next = GetStringDescriptor(hHubDevice,
                                                        ConnectionIndex,
@@ -2702,26 +2703,24 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
  */
 USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
 {
-    DWORD cbReturned;
     USBSUP_GETNUMDEV numdev;
-    char *pszDevname = NULL;
     PUSBDEVICE pDevice = NULL;
     PUSBDEVICE pCaptured = NULL;
     PUSBDEVICE pList = NULL;
-    PUSBDEVICE pHostDevices = NULL;
-    uint32_t   cHostDevices = 0;
     Log(("usbLibGetDevices: enter\n"));
 
     if (g_hUSBMonitor == INVALID_HANDLE_VALUE)
         return VERR_NOT_SUPPORTED;
 
     /* 1: Enumerate all usb devices attached to the host */
+    PUSBDEVICE pHostDevices = NULL;
+    uint32_t   cHostDevices = 0;
     usbLibEnumerateHostControllers(&pHostDevices, &cHostDevices);
 #ifdef LOG_ENABLED
     Log(("usbLibGetDevices: Detected %d host devices\n", cHostDevices));
     pDevice = pHostDevices;
     int iDevice = 0;
-    while(pDevice)
+    while (pDevice)
     {
         iDevice++;
         Log(("Detected host device: #%d\n", iDevice));
@@ -2771,12 +2770,12 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
      * It's no problem to block here as we're in the async usb detection thread (not EMT)
      */
 
-    for (int i=0;i<100;i++)
+    for (int i = 0; i < 100; i++)
     {
         /*
          * Get the number of USB devices.
          */
-        cbReturned = 0;
+        DWORD cbReturned = 0;
         if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_GET_NUM_DEVICES, NULL, 0, &numdev, sizeof(numdev), &cbReturned, NULL))
         {
             AssertMsgFailed(("DeviceIoControl failed with %d\n", GetLastError()));
@@ -2789,7 +2788,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
 
         Log(("Monitor detected %d captured devices\n", numdev.cUSBDevices));
 
-        usblibEnumDevices(numdev.cUSBDevices, (uint32_t *)pcDevices);
+        usblibEnumDevices(numdev.cUSBDevices, pcDevices);
         Log(("usblibEnumDevices detected %d devices\n", *pcDevices));
 
         if (numdev.cUSBDevices == *pcDevices)
@@ -2816,13 +2815,13 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
         USBSUP_GETDEV dev = {0};
         HANDLE hDev;
 
-        pszDevname = usblibQueryDeviceName(i);
+        char *pszDevname = usblibQueryDeviceName(i);
         hDev = CreateFile(pszDevname, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
                           OPEN_EXISTING,  FILE_ATTRIBUTE_SYSTEM, NULL);
 
         if (hDev != INVALID_HANDLE_VALUE)
         {
-            cbReturned = 0;
+            DWORD cbReturned = 0;
             if (!DeviceIoControl(hDev, SUPUSB_IOCTL_GET_DEVICE, &dev, sizeof(dev), &dev, sizeof(dev), &cbReturned, NULL))
             {
                 int iErr = GetLastError();
@@ -2873,15 +2872,15 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
 
     /* 3: Add all host devices to array of captured devices; obviously making sure there are no duplicates */
     Assert(pHostDevices && pCaptured);
-    pList   = pCaptured;
-    for (uint32_t i=0;i<numdev.cUSBDevices;i++)
+    pList = pCaptured;
+    for (uint32_t i = 0; i < numdev.cUSBDevices; i++)
     {
         uint32_t j;
 
         pDevice = pHostDevices;
         Assert(pDevice);
 
-        for (j=0;j<cHostDevices;j++)
+        for (j = 0; j < cHostDevices; j++)
         {
             char *pszDeviceRegPath = usblibQueryDeviceRegPath(i);
 
@@ -2947,7 +2946,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
 #ifdef LOG_ENABLED
     pDevice = pHostDevices;
     iDevice = 0;
-    while(pDevice)
+    while (pDevice)
     {
         iDevice++;
         Log(("Detected device: #%d\n", iDevice));
