@@ -1298,6 +1298,7 @@ DECLCALLBACK(int)hdaRegWriteRIRBSTS(INTELHDLinkState* pState, uint32_t offset, u
     return hdaProcessInterrupt(pState);
 }
 
+#ifdef LOG_ENABLED
 static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64BaseDMA)
 {
     uint64_t addr;
@@ -1325,6 +1326,8 @@ static void dump_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64Ba
              i , counter));
     }
 }
+#endif
+
 static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64BaseDMA)
 {
     uint8_t  bdle[16];
@@ -1333,7 +1336,33 @@ static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64B
     pBdle->u64BdleCviAddr = *(uint64_t *)bdle;
     pBdle->u32BdleCviLen = *(uint32_t *)&bdle[8];
     pBdle->fBdleCviIoc = (*(uint32_t *)&bdle[12]) & 0x1;
+#ifdef LOG_ENABLED
     dump_bd(pState, pBdle, u64BaseDMA);
+#endif
+}
+
+static inline uint32_t hdaCalculateDMABufferLength(PHDABDLEDESC pBdle, uint32_t u32SoundBackendBufferBytesAvail, uint32_t u32Fifos, uint32_t u32CblLimit)
+{
+    uint32_t cb2Copy;
+    /*
+     * Amounts of bytes depends on current position in buffer (u32BdleCviLen-u32BdleCviPos)
+     */
+    Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
+    cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
+    /* 
+     * we may increase the counter in range of [0, FIFOS + 1] 
+     */
+    cb2Copy = RT_MIN(cb2Copy, u32Fifos + 1); 
+    Assert((u32SoundBackendBufferBytesAvail > 0));
+
+    /* sanity check to avoid overriding sound backend buffer */
+    cb2Copy = RT_MIN(cb2Copy, u32SoundBackendBufferBytesAvail); 
+    cb2Copy = RT_MIN(cb2Copy, u32CblLimit);
+
+    if (cb2Copy <= pBdle->cbUnderFifoW)
+        return 0;
+    cb2Copy -= pBdle->cbUnderFifoW; /* forcely reserve amount of ureported bytes to copy */
+    return cb2Copy;
 }
 
 static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool *fStop, uint32_t u32CblLimit)
@@ -1343,33 +1372,16 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool
     uint32_t cb2Copy = 0;
     uint32_t cbBackendCopy = 0;
 
-    if (   !pBdle->u32BdleCviLen
-        || (*pu32Avail < hdaFifoWToSz(pState, 0)))
-    {
-        *fStop = true;
-        goto done;
-    }
-
     Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
-    Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
-    cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos;
-    /* 
-     * we may increase the counter in range of [0, FIFOS(pState, 4) + 1] 
-     */
-    cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 0) + 1); 
-    Assert((*pu32Avail > 0));
 
-    /* sanity check to avoid overriding sound backend buffer */
-    cb2Copy = RT_MIN(cb2Copy, *pu32Avail); 
-    cb2Copy = RT_MIN(cb2Copy, u32CblLimit);
-
-    if (cb2Copy <= pBdle->cbUnderFifoW)
+    cb2Copy = hdaCalculateDMABufferLength(pBdle, *pu32Avail, SDFIFOS(pState, 0), u32CblLimit);
+    if (!cb2Copy)
     {
         *fStop = true;
-        goto done;
+        return 0;
     }
-    cb2Copy -= pBdle->cbUnderFifoW;
-
+        
+    
     /*
      * read from backend input line
      */
@@ -1397,10 +1409,9 @@ static uint32_t hdaReadAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, bool
         *fStop = true;
         goto done;
     }
-    Log(("hda:ra: CVI(pos:%d, len:%d)\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
     done:
     Assert((cbTransfered <= (SDFIFOS(pState, 0) + 1)));
-    Log(("hda:ra: cbTransfered: %d\n", cbTransfered));
+    Log(("hda:ra: CVI(pos:%d, len:%d) cbTransfered: %d\n", pBdle->u32BdleCviPos, pBdle->u32BdleCviLen, cbTransfered));
     return cbTransfered;
 }
 
@@ -1413,24 +1424,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, boo
 
     Log(("hda:wa: CVI(cvi:%d, pos:%d, len:%d)\n", pBdle->u32BdleCvi, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
 
-    /*
-     * Amounts of bytes depends on current position in buffer (u32BdleCviLen-u32BdleCviPos)
-     */
-    if (pBdle->u32BdleCviLen)
-    {
-        Assert((pBdle->u32BdleCviLen >= pBdle->u32BdleCviPos)); /* sanity */
-        cb2Copy = pBdle->u32BdleCviLen - pBdle->u32BdleCviPos; /* align copy buffer to size of trailing space in BDLE buffer */
-        cb2Copy = RT_MIN(cb2Copy, SDFIFOS(pState, 4) + 1); /* we may increase the counter in range of [0, FIFOS(pState, 4) + 1] */
-        cb2Copy = RT_MIN(cb2Copy, *pu32Avail); /* align copying buffer size up to size of back end buffer */
-        cb2Copy = RT_MIN(cb2Copy, u32CblLimit); /* avoid LCBL overrun */
-    }
-    if (cb2Copy <= pBdle->cbUnderFifoW)
-    {
-        Log(("hda:wa: amount of unreported bytes is less than room may be transfered  (cbUnderFifoW:%d < %d)\n", pBdle->cbUnderFifoW, cb2Copy));
-        *fStop = true;
-        goto done;
-    }
-    cb2Copy -= pBdle->cbUnderFifoW; /* force reserve "Unreported bits" */
+    cb2Copy = hdaCalculateDMABufferLength(pBdle, *pu32Avail, SDFIFOS(pState, 4), u32CblLimit);
     
     /*
      * Copy from DMA to the corresponding hdaBuffer (if there exists some bytes from the previous not reported transfer we write to ''pBdle->cbUnderFifoW'' offset)
@@ -1438,7 +1432,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, boo
     if (cb2Copy)
         PDMDevHlpPhysRead(ICH6_HDASTATE_2_DEVINS(pState), pBdle->u64BdleCviAddr + pBdle->u32BdleCviPos, pBdle->au8HdaBuffer + pBdle->cbUnderFifoW, cb2Copy);
     /*
-     * Write to audio backend.
+     * Write to audio backend. we should be sure whether we have enought bytes to copy to Audio backend.
      */
     if (cb2Copy + pBdle->cbUnderFifoW >= hdaFifoWToSz(pState, 4))
     {
@@ -1465,6 +1459,7 @@ static uint32_t hdaWriteAudio(INTELHDLinkState *pState, uint32_t *pu32Avail, boo
     }
     else
     {
+        /* Not enough bytes to be processed and reported, check luck on next enterence */
         Log(("hda:wa: CVI (cbUnderFifoW:%d, pos:%d, len:%d)\n", pBdle->cbUnderFifoW, pBdle->u32BdleCviPos, pBdle->u32BdleCviLen));
         pBdle->cbUnderFifoW += cb2Copy;
         pBdle->u32BdleCviPos += cb2Copy;
