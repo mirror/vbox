@@ -608,6 +608,7 @@ static int pdmBlkCacheRequestPassthrough(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ
     pIoXfer->cbXfer      = cbData;
     pIoXfer->enmXferDir  = enmXferDir;
     RTSgBufClone(&pIoXfer->SgBuf, pSgBuf);
+    RTSgBufAdvance(pSgBuf, cbData);
 
     return pdmBlkCacheEnqueue(pBlkCache, offStart, pIoXfer);
 }
