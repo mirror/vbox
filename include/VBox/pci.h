@@ -491,9 +491,11 @@ typedef FNPCICONFIGWRITE *PFNPCICONFIGWRITE;
 typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
 
 /** Fixed I/O region number for ROM. */
-#define PCI_ROM_SLOT 6
+#define PCI_ROM_SLOT    6
+#define VBOX_PCI_ROM_SLOT    6
 /** Max number of I/O regions. */
 #define PCI_NUM_REGIONS 7
+#define VBOX_PCI_NUM_REGIONS 7
 
 /*
  * Hack to include the PCIDEVICEINT structure at the right place
@@ -648,6 +650,17 @@ DECLINLINE(uint16_t) PCIDevGetCommand(PPCIDEVICE pPciDev)
 DECLINLINE(bool) PCIDevIsIntxDisabled(PPCIDEVICE pPciDev)
 {
     return (PCIDevGetCommand(pPciDev) & VBOX_PCI_COMMAND_INTX_DISABLE) != 0;
+}
+
+/**
+ * Gets the status config register.
+ *
+ * @returns status config register.
+ * @param   pPciDev         The PCI device.
+ */
+DECLINLINE(uint16_t) PCIDevGetStatus(PPCIDEVICE pPciDev)
+{
+    return PCIDevGetWord(pPciDev, VBOX_PCI_STATUS);
 }
 
 /**
