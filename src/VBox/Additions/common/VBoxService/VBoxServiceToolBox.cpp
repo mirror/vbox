@@ -353,7 +353,7 @@ int VBoxServiceToolboxMain(int argc, char **argv)
      *  and IPRT status code.  That doesn't cut it.  The RTEXITCODE part should
      *  be returned separately from the handled-or-unhandled bit.
      *
-     *  Also, please change VBoxServiceToolboxCat and VBoxServiceToolboxCat to
+     *  Also, please change VBoxServiceToolboxCat and VBoxServiceToolboxMkDir to
      *  return RTEXITCODE and use RTMsg* like RTZipTarCmd (and later
      *  RTZipGzipCmd). */
     int rc = VERR_NOT_FOUND;
@@ -367,7 +367,7 @@ int VBoxServiceToolboxMain(int argc, char **argv)
         else if (   !strcmp(argv[0], "mkdir")
                  || !strcmp(argv[0], "vbox_mkdir"))
         {
-            rc = VBoxServiceToolboxCat(argc, argv);
+            rc = VBoxServiceToolboxMkDir(argc, argv);
         }
     }
 
