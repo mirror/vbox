@@ -80,6 +80,12 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+void rtThreadNativeDestroy(PRTTHREADINT pThread)
+{
+    NOREF(pThread);
+}
+
+
 /**
  * Native thread main function.
  *

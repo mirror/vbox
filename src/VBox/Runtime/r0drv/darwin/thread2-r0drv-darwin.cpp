@@ -136,6 +136,12 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+void rtThreadNativeDestroy(PRTTHREADINT pThread)
+{
+    NOREF(pThread);
+}
+
+
 /**
  * Native kernel thread wrapper function.
  *

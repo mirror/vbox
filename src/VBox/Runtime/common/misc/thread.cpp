@@ -603,6 +603,7 @@ static void rtThreadDestroy(PRTTHREADINT pThread)
     if (hEvt2 != NIL_RTSEMEVENTMULTI)
         RTSemEventMultiDestroy(hEvt2);
 
+    rtThreadNativeDestroy(pThread);
     RTMemFree(pThread);
 }
 

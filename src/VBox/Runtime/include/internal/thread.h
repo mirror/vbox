@@ -158,6 +158,14 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 int rtThreadNativeAdopt(PRTTHREADINT pThread);
 
 /**
+ * Called from rtThreadDestroy so that the TLS entry and any native data in the
+ * thread structure can be cleared.
+ *
+ * @param   pThread         The thread structure.
+ */
+void rtThreadNativeDestroy(PRTTHREADINT pThread);
+
+/**
  * Sets the priority of the thread according to the thread type
  * and current process priority.
  *
@@ -185,23 +193,23 @@ void rtThreadNativeDetach(void);
 
 
 /* thread.cpp */
-int rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName);
-void rtThreadBlocking(PRTTHREADINT pThread, RTTHREADSTATE enmState, uint64_t u64Block,
-                      const char *pszFile, unsigned uLine, RTUINTPTR uId);
-void rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState);
-uint32_t rtThreadRelease(PRTTHREADINT pThread);
-void rtThreadTerminate(PRTTHREADINT pThread, int rc);
+int          rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName);
+void         rtThreadBlocking(PRTTHREADINT pThread, RTTHREADSTATE enmState, uint64_t u64Block,
+                              const char *pszFile, unsigned uLine, RTUINTPTR uId);
+void         rtThreadUnblocked(PRTTHREADINT pThread, RTTHREADSTATE enmCurState);
+uint32_t     rtThreadRelease(PRTTHREADINT pThread);
+void         rtThreadTerminate(PRTTHREADINT pThread, int rc);
 PRTTHREADINT rtThreadGetByNative(RTNATIVETHREAD NativeThread);
 PRTTHREADINT rtThreadGet(RTTHREAD Thread);
-int rtThreadInit(void);
-void rtThreadTerm(void);
-void rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
+int          rtThreadInit(void);
+void         rtThreadTerm(void);
+void         rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread);
 #ifdef IN_RING3
-int rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
+int          rtThreadDoSetProcPriority(RTPROCPRIORITY enmPriority);
 #endif /* !IN_RING0 */
 #ifdef IPRT_WITH_GENERIC_TLS
-void rtThreadClearTlsEntry(RTTLS iTls);
-void rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
+void         rtThreadClearTlsEntry(RTTLS iTls);
+void         rtThreadTlsDestruction(PRTTHREADINT pThread); /* in tls-generic.cpp */
 #endif
 
 #ifdef ___iprt_asm_h
