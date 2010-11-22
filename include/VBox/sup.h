@@ -892,9 +892,12 @@ SUPR3DECL(int) SUPR3LowFree(void *pv, size_t cPages);
  * @returns VBox status code.
  * @param   pszFilename     The path to the image file.
  * @param   pszModule       The module name. Max 32 bytes.
- * @param   ppvImageBase        Where to store the image address.
+ * @param   ppvImageBase    Where to store the image address.
+ * @param   pszErr          Where to return error message on failure.
+ * @param   cbErr           The size of the error buffer.
  */
-SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase);
+SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule,
+                               void **ppvImageBase, char *pszErr, size_t cbErr);
 
 /**
  * Load a module into R0 HC.
@@ -1050,6 +1053,20 @@ SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
  */
 SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod);
 
+/**
+ * Same as RTLdrLoad() but will verify the files it loads (hardened builds).
+ *
+ * This differs from SUPR3HardenedLdrLoad() in that it can load modules from
+ * extension packs and anything else safely installed on the system, provided
+ * they pass the hardening tests.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename     The full path to the module, with extension.
+ * @param   phLdrMod        Where to store the handle to the loaded module.
+ * @param   pszErr          Where to return error message on failure.
+ * @param   cbErr           The size of the error buffer.
+ */
+SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszErr, size_t cbErr);
 
 /**
  * Check if the host kernel can run in VMX root mode.
@@ -1057,7 +1074,6 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
  * @returns VINF_SUCCESS if supported, error code indicating why if not.
  */
 SUPR3DECL(int) SUPR3QueryVTxSupported(void);
-
 
 /**
  * Return VT-x/AMD-V capabilities.

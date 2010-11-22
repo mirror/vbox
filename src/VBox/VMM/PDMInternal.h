@@ -391,6 +391,10 @@ typedef struct PDMDEV
     uint32_t                        cInstances;
     /** Pointer to chain of instances (R3 Ptr). */
     PPDMDEVINSR3                    pInstances;
+    /** The search path for raw-mode context modules (';' as separator). */
+    char                           *pszRCSearchPath;
+    /** The search path for ring-0 context modules (';' as separator). */
+    char                           *pszR0SearchPath;
 } PDMDEV;
 
 
@@ -425,6 +429,10 @@ typedef struct PDMDRV
     uint32_t                        cInstances;
     /** The next instance number. */
     uint32_t                        iNextInstance;
+    /** The search path for raw-mode context modules (';' as separator). */
+    char                           *pszRCSearchPath;
+    /** The search path for ring-0 context modules (';' as separator). */
+    char                           *pszR0SearchPath;
 } PDMDRV;
 
 
@@ -1143,7 +1151,7 @@ PPDMDRV     pdmR3DrvLookup(PVM pVM, const char *pszName);
 
 int         pdmR3LdrInitU(PUVM pUVM);
 void        pdmR3LdrTermU(PUVM pUVM);
-char *      pdmR3FileR3(const char *pszFile, bool fShared = false);
+char       *pdmR3FileR3(const char *pszFile, bool fShared);
 int         pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName);
 
 void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);

@@ -307,7 +307,7 @@ int pdmR3UsbLoadModules(PVM pVM)
     if (fLoadBuiltin)
     {
         /* make filename */
-        char *pszFilename = pdmR3FileR3("VBoxDD", /* fShared = */ true);
+        char *pszFilename = pdmR3FileR3("VBoxDD", true /*fShared*/);
         if (!pszFilename)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3UsbLoad(pVM, &RegCB, pszFilename, "VBoxDD");
@@ -352,7 +352,7 @@ int pdmR3UsbLoadModules(PVM pVM)
         /* prepend path? */
         if (!RTPathHavePath(szFilename))
         {
-            char *psz = pdmR3FileR3(szFilename);
+            char *psz = pdmR3FileR3(szFilename, false /*fShared*/);
             if (!psz)
                 return VERR_NO_TMP_MEMORY;
             size_t cch = strlen(psz) + 1;

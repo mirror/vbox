@@ -1555,19 +1555,18 @@ SUPR3DECL(int) SUPR3HardenedVerifyPlugIn(const char *pszFilename, char *pszErr, 
 }
 
 
-SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase)
+SUPR3DECL(int) SUPR3LoadModule(const char *pszFilename, const char *pszModule, void **ppvImageBase, char *pszErr, size_t cbErr)
 {
-    int rc = VINF_SUCCESS;
-#ifdef VBOX_WITH_HARDENING
     /*
      * Check that the module can be trusted.
      */
-    rc = supR3HardenedVerifyFixedFile(pszFilename, false /* fFatal */);
-#endif
+    int rc = SUPR3HardenedVerifyPlugIn(pszFilename, pszErr, cbErr);
     if (RT_SUCCESS(rc))
+    {
         rc = supLoadModule(pszFilename, pszModule, NULL, ppvImageBase);
-    else
-        LogRel(("SUPR3LoadModule: Verification of \"%s\" failed, rc=%Rrc\n", rc));
+        if (RT_FAILURE(rc))
+            RTStrPrintf(pszErr, cbErr, "supLoadModule returned %Rrc", rc);
+    }
     return rc;
 }
 
@@ -2055,7 +2054,7 @@ SUPR3DECL(int) SUPR3GetSymbolR0(void *pvImageBase, const char *pszSymbol, void *
 SUPR3DECL(int) SUPR3LoadVMM(const char *pszFilename)
 {
     void *pvImageBase;
-    return SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase);
+    return SUPR3LoadModule(pszFilename, "VMMR0.r0", &pvImageBase, NULL, 0);
 }
 
 
@@ -2188,6 +2187,43 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
     rc = SUPR3HardenedLdrLoad(szPath, phLdrMod);
 
     LogFlow(("SUPR3HardenedLdrLoadAppPriv: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phLdrMod, char *pszErr, size_t cbErr)
+{
+    int rc;
+
+    /*
+     * Validate input.
+     */
+    AssertPtr(pszErr);
+    Assert(cbErr > 32);
+    AssertPtrReturn(phLdrMod, VERR_INVALID_PARAMETER);
+    *phLdrMod = NIL_RTLDRMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_PARAMETER);
+    AssertReturn(RTPathStartsWithRoot(pszFilename), VERR_INVALID_PARAMETER);
+
+#ifdef VBOX_WITH_HARDENING
+    /*
+     * Verify the image file.
+     */
+    rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, pszErr, cbErr);
+    if (RT_FAILURE(rc))
+    {
+        if (!pszErr || !cbErr)
+            LogRel(("supR3HardenedVerifyFile: Verification of \"%s\" failed, rc=%Rrc\n", pszFilename, rc));
+        return rc;
+    }
+#endif
+
+    /*
+     * Try load it.
+     */
+    rc = RTLdrLoad(pszFilename, phLdrMod);
+    if (RT_FAILURE(rc))
+        RTStrPrintf(pszErr, cbErr, "RTLdrLoad returned %Rrc", rc);
     return rc;
 }
 
