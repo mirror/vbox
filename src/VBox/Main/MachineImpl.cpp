@@ -5832,16 +5832,10 @@ void Machine::getLogFolder(Utf8Str &aLogFolder)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Utf8Str settingsDir;
-    if (isInOwnDir(&settingsDir))
-        /* Log folder is <Machines>/<VM_Name>/Logs */
-        aLogFolder = settingsDir;
-    else
-        /* Log folder is <Machines>/<VM_SnapshotFolder>/Logs */
-        calculateFullPath(mUserData->s.strSnapshotFolder, aLogFolder);
-
+    aLogFolder = mData->m_strConfigFileFull;    // path/to/machinesfolder/vmname/vmname.vbox
+    aLogFolder.stripFilename();                 // path/to/machinesfolder/vmname
     aLogFolder.append(RTPATH_DELIMITER);
-    aLogFolder.append("Logs");
+    aLogFolder.append("Logs");                  // path/to/machinesfolder/vmname/Logs
 }
 
 /**
