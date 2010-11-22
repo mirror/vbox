@@ -57,6 +57,9 @@ typedef struct PDMDRVREGCBINT
     uint32_t        u32[4];
     /** VM Handle. */
     PVM             pVM;
+    /** Pointer to the configuration node the registrations should be
+     * associated with.  Can be NULL. */
+    PCFGMNODE       pCfgNode;
 } PDMDRVREGCBINT, *PPDMDRVREGCBINT;
 typedef const PDMDRVREGCBINT *PCPDMDRVREGCBINT;
 
@@ -119,6 +122,7 @@ int pdmR3DrvInit(PVM pVM)
     RegCB.Core.u32Version   = PDM_DRVREG_CB_VERSION;
     RegCB.Core.pfnRegister  = pdmR3DrvRegister;
     RegCB.pVM               = pVM;
+    RegCB.pCfgNode          = NULL;
 
     /*
      * Load the builtin module
@@ -136,7 +140,7 @@ int pdmR3DrvInit(PVM pVM)
     if (fLoadBuiltin)
     {
         /* make filename */
-        char *pszFilename = pdmR3FileR3("VBoxDD", /*fShared=*/true);
+        char *pszFilename = pdmR3FileR3("VBoxDD", true /*fShared*/);
         if (!pszFilename)
             return VERR_NO_TMP_MEMORY;
         rc = pdmR3DrvLoad(pVM, &RegCB, pszFilename, "VBoxDD");
@@ -180,7 +184,7 @@ int pdmR3DrvInit(PVM pVM)
         /* prepend path? */
         if (!RTPathHavePath(szFilename))
         {
-            char *psz = pdmR3FileR3(szFilename);
+            char *psz = pdmR3FileR3(szFilename, false /*fShared*/);
             if (!psz)
                 return VERR_NO_TMP_MEMORY;
             size_t cch = strlen(psz) + 1;
@@ -197,6 +201,7 @@ int pdmR3DrvInit(PVM pVM)
         /*
          * Load the module and register it's drivers.
          */
+        RegCB.pCfgNode = pCur;
         rc = pdmR3DrvLoad(pVM, &RegCB, szFilename, szName);
         if (RT_FAILURE(rc))
             return rc;
@@ -321,22 +326,31 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
     /*
      * Allocate new driver structure and insert it into the list.
      */
+    int rc;
     pDrv = (PPDMDRV)MMR3HeapAlloc(pRegCB->pVM, MM_TAG_PDM_DRIVER, sizeof(*pDrv));
     if (pDrv)
     {
-        pDrv->pNext = NULL;
-        pDrv->cInstances = 0;
+        pDrv->pNext         = NULL;
+        pDrv->cInstances    = 0;
         pDrv->iNextInstance = 0;
-        pDrv->pReg = pReg;
-
-        if (pDrvPrev)
-            pDrvPrev->pNext = pDrv;
-        else
-            pRegCB->pVM->pdm.s.pDrvs = pDrv;
-        Log(("PDM: Registered driver '%s'\n", pReg->szName));
-        return VINF_SUCCESS;
+        pDrv->pReg          = pReg;
+        rc = CFGMR3QueryStringAllocDef(    pRegCB->pCfgNode, "RCSearchPath", &pDrv->pszRCSearchPath, NULL);
+        if (RT_SUCCESS(rc))
+            rc = CFGMR3QueryStringAllocDef(pRegCB->pCfgNode, "R0SearchPath", &pDrv->pszR0SearchPath, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            if (pDrvPrev)
+                pDrvPrev->pNext = pDrv;
+            else
+                pRegCB->pVM->pdm.s.pDrvs = pDrv;
+            Log(("PDM: Registered driver '%s'\n", pReg->szName));
+            return VINF_SUCCESS;
+        }
+        MMR3HeapFree(pDrv);
     }
-    return VERR_NO_MEMORY;
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
 }
 
 
@@ -1261,8 +1275,10 @@ static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetRCInterfaceSymbols(PPDMDRVINS pDrvIns
         && RTStrIStr(pszSymPrefix + 3, pDrvIns->pReg->szName) != NULL)
     {
         if (pDrvIns->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
-            rc = PDMR3LdrGetInterfaceSymbols(pDrvIns->Internal.s.pVMR3, pvInterface, cbInterface,
-                                             pDrvIns->pReg->szRCMod, pszSymPrefix, pszSymList,
+            rc = PDMR3LdrGetInterfaceSymbols(pDrvIns->Internal.s.pVMR3,
+                                             pvInterface, cbInterface,
+                                             pDrvIns->pReg->szRCMod, pDrvIns->Internal.s.pDrv->pszRCSearchPath,
+                                             pszSymPrefix, pszSymList,
                                              false /*fRing0OrRC*/);
         else
         {
@@ -1297,8 +1313,10 @@ static DECLCALLBACK(int) pdmR3DrvHlp_LdrGetR0InterfaceSymbols(PPDMDRVINS pDrvIns
         && RTStrIStr(pszSymPrefix + 3, pDrvIns->pReg->szName) != NULL)
     {
         if (pDrvIns->pReg->fFlags & PDM_DRVREG_FLAGS_R0)
-            rc = PDMR3LdrGetInterfaceSymbols(pDrvIns->Internal.s.pVMR3, pvInterface, cbInterface,
-                                             pDrvIns->pReg->szR0Mod, pszSymPrefix, pszSymList,
+            rc = PDMR3LdrGetInterfaceSymbols(pDrvIns->Internal.s.pVMR3,
+                                             pvInterface, cbInterface,
+                                             pDrvIns->pReg->szR0Mod, pDrvIns->Internal.s.pDrv->pszR0SearchPath,
+                                             pszSymPrefix, pszSymList,
                                              true /*fRing0OrRC*/);
         else
         {
@@ -1358,7 +1376,8 @@ static DECLCALLBACK(int) pdmR3DrvHlp_CallR0(PPDMDRVINS pDrvIns, uint32_t uOperat
             strcat(strcat(strcpy(szSymbol, "drvR0"),         pDrvIns->pReg->szName),         "ReqHandler");
             szSymbol[sizeof("drvR0") - 1] = RT_C_TO_UPPER(szSymbol[sizeof("drvR0") - 1]);
 
-            rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDrvIns->pReg->szR0Mod, szSymbol, &pfnReqHandlerR0);
+            rc = PDMR3LdrGetSymbolR0Lazy(pVM, pDrvIns->pReg->szR0Mod, pDrvIns->Internal.s.pDrv->pszR0SearchPath, szSymbol,
+                                         &pfnReqHandlerR0);
             if (RT_SUCCESS(rc))
                 pDrvIns->Internal.s.pfnReqHandlerR0 = pfnReqHandlerR0;
             else

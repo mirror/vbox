@@ -96,10 +96,10 @@ VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvA
 VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
 VMMR3DECL(int)  PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
 VMMR3DECL(int)  PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
-VMMR3DECL(int)  PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
+VMMR3DECL(int)  PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol, PRTR0PTR ppvValue);
 VMMR3DECL(int)  PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszName);
 VMMR3DECL(int)  PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-VMMR3DECL(int)  PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+VMMR3DECL(int)  PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol, PRTRCPTR pRCPtrValue);
 VMMR3DECL(int)  PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
                                          char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
                                          char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
@@ -108,9 +108,11 @@ VMMR3DECL(int)  PDMR3LdrQueryR0ModFromPC(PVM pVM, RTR0PTR uPC,
                                          char *pszModName,  size_t cchModName,  PRTR0PTR pMod,
                                          char *pszNearSym1, size_t cchNearSym1, PRTR0PTR pNearSym1,
                                          char *pszNearSym2, size_t cchNearSym2, PRTR0PTR pNearSym2);
-VMMR3DECL(int)  PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
-                                            const char *pszModule, const char *pszSymPrefix,
-                                            const char *pszSymList, bool fRing0OrRC);
+VMMR3DECL(int)  PDMR3LdrGetInterfaceSymbols(PVM pVM,
+                                            void *pvInterface, size_t cbInterface,
+                                            const char *pszModule, const char *pszSearchPath,
+                                            const char *pszSymPrefix, const char *pszSymList,
+                                            bool fRing0OrRC);
 
 VMMR3DECL(int)  PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
 VMMR3DECL(int)  PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);

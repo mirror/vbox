@@ -69,11 +69,12 @@ int main(int argc, char **argv)
         {
             case VINF_GETOPT_NOT_OPTION:
             {
+                char szErr[4096+1024];
                 void *pvImageBase;
-                rc = SUPR3LoadModule(ValueUnion.psz, RTPathFilename(ValueUnion.psz), &pvImageBase);
+                rc = SUPR3LoadModule(ValueUnion.psz, RTPathFilename(ValueUnion.psz), &pvImageBase, szErr, sizeof(szErr));
                 if (RT_FAILURE(rc))
                 {
-                    RTMsgError("%Rrc when attempting to load '%s'\n", rc, ValueUnion.psz);
+                    RTMsgError("%Rrc when attempting to load '%s': %s\n", rc, ValueUnion.psz, szErr);
                     return 1;
                 }
                 RTPrintf("Loaded '%s' at %p\n", ValueUnion.psz, pvImageBase);
