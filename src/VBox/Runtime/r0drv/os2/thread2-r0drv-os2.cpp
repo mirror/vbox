@@ -65,6 +65,12 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+void rtThreadNativeDestroy(PRTTHREADINT pThread)
+{
+    NOREF(pThread);
+}
+
+
 int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     NOREF(pNativeThread);

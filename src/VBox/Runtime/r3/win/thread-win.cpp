@@ -80,6 +80,13 @@ void rtThreadNativeDetach(void)
 }
 
 
+void rtThreadNativeDestroy(PRTTHREADINT pThread)
+{
+    if (pThread == (PRTTHREADINT)TlsGetValue(g_dwSelfTLS))
+        TlsSetValue(g_dwSelfTLS, NULL);
+}
+
+
 int rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     if (!TlsSetValue(g_dwSelfTLS, pThread))

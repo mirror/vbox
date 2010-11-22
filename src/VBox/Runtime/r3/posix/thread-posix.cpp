@@ -203,6 +203,13 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+void rtThreadNativeDestroy(PRTTHREADINT pThread)
+{
+    if (pThread == (PRTTHREADINT)pthread_getspecific(g_SelfKey))
+        pthread_setspecific(g_SelfKey, NULL);
+}
+
+
 /**
  * Wrapper which unpacks the params and calls thread function.
  */
@@ -242,7 +249,6 @@ static void *rtThreadNativeMain(void *pvArgs)
     Assert((uintptr_t)Self == (RTNATIVETHREAD)Self && (uintptr_t)Self != NIL_RTNATIVETHREAD);
     rc = rtThreadMain(pThread, (uintptr_t)Self, &pThread->szName[0]);
 
-    pthread_setspecific(g_SelfKey, NULL);
     pthread_exit((void *)rc);
     return (void *)rc;
 }

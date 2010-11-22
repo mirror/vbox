@@ -94,6 +94,13 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+void rtThreadNativeDestroy(PRTTHREADINT pThread)
+{
+    if (pThread == *g_ppCurThread)
+        *g_ppCurThread = NULL;
+}
+
+
 /**
  * Wrapper which unpacks the params and calls thread function.
  */
