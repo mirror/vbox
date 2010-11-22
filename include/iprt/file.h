@@ -762,8 +762,10 @@ RTR3DECL(int) RTFileGetMode(RTFILE File, uint32_t *pfMode);
  *
  * @returns iprt status code.
  * @param   File        Handle to the file.
- * @param   uid         The new file owner user id. Use -1 (or ~0) to leave this unchanged.
- * @param   gid         The new group id. Use -1 (or ~0) to leave this unchanged.
+ * @param   uid         The new file owner user id.  Pass NIL_RTUID to leave
+ *                      this unchanged.
+ * @param   gid         The new group id.  Pass NIL_RTGID to leave this
+ *                      unchanged.
  */
 RTR3DECL(int) RTFileSetOwner(RTFILE File, uint32_t uid, uint32_t gid);
 
