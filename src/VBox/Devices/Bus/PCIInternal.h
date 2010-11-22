@@ -23,8 +23,8 @@
  */
 typedef struct PCIIOREGION
 {
-    /** Current PCI mapping address.
-     * -1 means not mapped. Memory addresses are relative to pci_mem_base. */
+    /** Current PCI mapping address, 0xffffffff means not mapped. 
+        @todo: make address and size 64-bit. */
     uint32_t                        addr;
     uint32_t                        size;
     uint8_t                         type; /* PCIADDRESSSPACE */
@@ -72,7 +72,7 @@ typedef PFNPCIBRIDGECONFIGWRITE *PPFNPCIBRIDGECONFIGWRITE;
 struct PCIBus;
 
 enum {
-    /** Set if the specific device fun was requested by PDM.
+    /** Set if the specific device function was requested by PDM.
      * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
     PCIDEV_FLAG_REQUESTED_DEVFUNC  = 1<<0,
     /** Flag whether the device is a pci-to-pci bridge.
@@ -82,10 +82,10 @@ enum {
      * This is set prior to device registration.  */
     PCIDEV_FLAG_PCI_EXPRESS_DEVICE = 1<<2,
     /** Flag whether the device is capable of MSI.
-     * This one is set by analyzing device capabilities, or explicitly.  */
+     * This one is set by MsiInit().  */
     PCIDEV_FLAG_MSI_CAPABLE        = 1<<3,
     /** Flag whether the device is capable of MSI-X.
-     * This one is set by analyzing device capabilities.  */
+     * This one is set by MsixInit().  */
     PCIDEV_FLAG_MSIX_CAPABLE       = 1<<4
 };
 

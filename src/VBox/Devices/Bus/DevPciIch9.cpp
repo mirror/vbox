@@ -720,6 +720,8 @@ static void ich9pciUpdateMappings(PCIDevice* pDev)
         if (iRegionSize == 0)
             continue;
 
+        AssertMsg((pRegion->type & PCI_ADDRESS_SPACE_BAR64) == 0, ("64-bit BARs not yet implemented\n"));
+
         if (pRegion->type & PCI_ADDRESS_SPACE_IO)
         {
             /* port IO region */

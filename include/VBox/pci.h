@@ -56,7 +56,6 @@ typedef enum PCICONFIGCOMMAND
  */
 /** Note: There are all sorts of dirty dependencies on the values in the
  *  pci device. Be careful when changing this.
- *  @todo we should introduce 32 & 64 bits physical address types
  */
 typedef enum PCIADDRESSSPACE
 {
@@ -64,6 +63,10 @@ typedef enum PCIADDRESSSPACE
     PCI_ADDRESS_SPACE_MEM = 0x00,
     /** I/O space. */
     PCI_ADDRESS_SPACE_IO = 0x01,
+    /** 32-bit BAR. */
+    PCI_ADDRESS_SPACE_BAR32 = 0x00,
+    /** 64-bit BAR. */
+    PCI_ADDRESS_SPACE_BAR64 = 0x04,
     /** Prefetch memory. */
     PCI_ADDRESS_SPACE_MEM_PREFETCH = 0x08
 } PCIADDRESSSPACE;
