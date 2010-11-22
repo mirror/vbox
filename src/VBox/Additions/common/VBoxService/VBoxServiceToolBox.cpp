@@ -39,6 +39,12 @@
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
+/** @todo r=bird: Don't use VBoxServiceError here, just use RTMsg**.  */
+/** @todo r=bird: 'static' is a wonderful keyword, please use it as much as
+ *        possible like I've said in the coding guidelines.  Not only does it
+ *        help wrt to linking, but it also helps understanding what's
+ *        internal and external interfaces in a source file! */
+
 
 /**
  * Displays a help text to stdout.
@@ -123,6 +129,8 @@ int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
 }
 
 
+/** @todo r=bird: Again, function headers like this are uslesss and better left
+ *        out. */
 /**
  *
  *
@@ -144,6 +152,9 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
      RTGETOPTUNION ValueUnion;
      RTGETOPTSTATE GetState;
      RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+     /** @todo r=bird: Pass RTGETOPTINIT_FLAGS_OPTS_FIRST, our mkdir shall be
+      *        like the GNU one wrt to option (dash-something) and argument
+      *        order (dirs). */
 
      int rc = VINF_SUCCESS;
      bool fMakeParentDirs = false;
@@ -154,7 +165,7 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
 #ifdef RT_OS_WINDOWS
      RTFMODE fileMode = 0;
 #else
-     RTFMODE fileMode = S_IRWXU | S_IRWXG | S_IRWXO;
+     RTFMODE fileMode = S_IRWXU | S_IRWXG | S_IRWXO; /** @todo r=bird: We've got RTFS_ defines for these, they are x-platform.  Why 'file' when we're creating directories? */
 #endif
 
      while (   (ch = RTGetOpt(&GetState, &ValueUnion))
@@ -182,8 +193,18 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
                  rc = RTPathAbs(ValueUnion.psz, szDir, sizeof(szDir));
                  if (RT_FAILURE(rc))
                      VBoxServiceError("mkdir: Could not build absolute directory!\n");
+                 /** @todo r=bird: you can make multiple directories just by
+                  *  adding them to the mkdir command line:
+                  *     "mkdir foo/ foo/bar foo/bar/wiz"
+                  *  This will now only create foo/bar/wiz, which will fail
+                  *  because the two previous steps weren't executed.  It
+                  *  will also leak memory, but that's not important. (Also,
+                  *  I don't get why we need to call RTPathAbs here as nobody
+                  *  is going to change the current directory.) */
                  break;
              }
+             /** @todo r=bird: Missing handling of the standard options 'V' and
+              *        'h'. */
 
              default:
                  return RTGetOptPrintError(ch, &ValueUnion);
@@ -206,7 +227,7 @@ int VBoxServiceToolboxMkDir(int argc, char **argv)
               : RTDirCreate(szDir, fileMode);
 
          if (RT_SUCCESS(rc) && fVerbose)
-             VBoxServiceVerbose(0, "mkdir: Created directory '%s', mode 0x%RTfmode\n", szDir, fileMode);
+             VBoxServiceVerbose(0, "mkdir: Created directory '%s', mode 0x%RTfmode\n", szDir, fileMode); /** @todo r=bird: drop the 0x here, use %#RTfmode instead. */
          else if (RT_FAILURE(rc)) /** @todo Add a switch with more helpful error texts! */
          {
              PCRTSTATUSMSG pMsg = RTErrGet(rc);
@@ -238,7 +259,11 @@ int VBoxServiceToolboxCat(int argc, char **argv)
          { "--input",     'i', RTGETOPT_REQ_STRING },
          { "--output",    'o', RTGETOPT_REQ_STRING },
          { "--flags",     'f', RTGETOPT_REQ_STRING }
+     /** @todo r=bird: Missing options 'A', 'b', 'e', 'E', 'n', 's', 'T',
+      *        'u', 'v' as found on 'man cat' on a linux system. They must
+      *        not be implemented, just return an apologetic error message. */
      };
+
 
      int ch;
      RTGETOPTUNION ValueUnion;
@@ -249,9 +274,9 @@ int VBoxServiceToolboxCat(int argc, char **argv)
      RTFILE hInput = NIL_RTFILE;
 
      RTFILE hOutput = NIL_RTFILE;
-     uint32_t ofFlags =   RTFILE_O_CREATE_REPLACE /* Output file flags. */
-                        | RTFILE_O_WRITE
-                        | RTFILE_O_DENY_WRITE;
+     uint32_t fFlags = RTFILE_O_CREATE_REPLACE /* Output file flags. */
+                     | RTFILE_O_WRITE
+                     | RTFILE_O_DENY_WRITE;
 
      while (   (ch = RTGetOpt(&GetState, &ValueUnion))
             && RT_SUCCESS(rc))
@@ -259,10 +284,14 @@ int VBoxServiceToolboxCat(int argc, char **argv)
          /* For options that require an argument, ValueUnion has received the value. */
          switch (ch)
          {
+             /** @todo r=bird: You add a flag --no-content-indexed without a
+              * short form (use a #define CAT_OPT_NO_CONTENT_INDEXED 1000 for
+              * iShort). */
+
              case 'f':
                  /* Process flags; no fancy parsing here yet. */
                  if (RTStrIStr(ValueUnion.psz, "noindex"))
-                     ofFlags |= RTFILE_O_NOT_CONTENT_INDEXED;
+                     fFlags |= RTFILE_O_NOT_CONTENT_INDEXED;
                  else
                  {
                      VBoxServiceError("cat: Unknown flag set!\n");
@@ -271,11 +300,14 @@ int VBoxServiceToolboxCat(int argc, char **argv)
                  break;
 
              case 'o':
-                 rc = RTFileOpen(&hOutput, ValueUnion.psz, ofFlags);
+                 rc = RTFileOpen(&hOutput, ValueUnion.psz, fFlags);
                  if (RT_FAILURE(rc))
                      VBoxServiceError("cat: Could not create output file \"%s\"! rc=%Rrc\n",
                                       ValueUnion.psz, rc);
                  break;
+
+                 /** @todo r=bird: Again, there shall be no need for any -i
+                  *        options since all non-options are input files. */
 
              case 'i':
              case VINF_GETOPT_NOT_OPTION:
@@ -287,6 +319,9 @@ int VBoxServiceToolboxCat(int argc, char **argv)
                                       ValueUnion.psz, rc);
                  break;
              }
+
+             /** @todo r=bird: Missing handling of the standard options 'V' and
+              *        'h'. */
 
              default:
                  return RTGetOptPrintError(ch, &ValueUnion);
@@ -314,6 +349,13 @@ int VBoxServiceToolboxCat(int argc, char **argv)
  */
 int VBoxServiceToolboxMain(int argc, char **argv)
 {
+    /** @todo r=bird: The return type of this function is mixed; both RTEXITCODE
+     *  and IPRT status code.  That doesn't cut it.  The RTEXITCODE part should
+     *  be returned separately from the handled-or-unhandled bit.
+     *
+     *  Also, please change VBoxServiceToolboxCat and VBoxServiceToolboxCat to
+     *  return RTEXITCODE and use RTMsg* like RTZipTarCmd (and later
+     *  RTZipGzipCmd). */
     int rc = VERR_NOT_FOUND;
     if (argc > 0) /* Do we have at least a main command? */
     {
@@ -325,7 +367,7 @@ int VBoxServiceToolboxMain(int argc, char **argv)
         else if (   !strcmp(argv[0], "mkdir")
                  || !strcmp(argv[0], "vbox_mkdir"))
         {
-            rc = VBoxServiceToolboxMkDir(argc, argv);
+            rc = VBoxServiceToolboxCat(argc, argv);
         }
     }
 
