@@ -267,6 +267,38 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 
 
 /**
+ * Map some important or much used Windows error codes
+ * to our error codes.
+ *
+ * @return  Mapped IPRT status code.
+ * @param   dwError                         Windows error code to map to IPRT code.
+ */
+static int rtProcMapErrorCodes(DWORD dwError)
+{
+    int rc;
+    switch (dwError)
+    {
+        case ERROR_NOACCESS:
+        case ERROR_PRIVILEGE_NOT_HELD:
+            rc = VERR_PERMISSION_DENIED;
+            break;
+
+        case ERROR_PASSWORD_EXPIRED:
+        case ERROR_ACCOUNT_RESTRICTION: /* See: http://support.microsoft.com/kb/303846/ */
+        case ERROR_PASSWORD_RESTRICTION:
+            rc = VERR_AUTHENTICATION_FAILURE;
+            break;
+
+        default:
+            /* Could trigger a debug assertion! */
+            rc = RTErrConvertFromWin32(dwError);
+            break;
+    }
+    return rc;
+}
+
+
+/**
  * Get the process token (not the process handle like the name might indicate)
  * of the process indicated by @a dwPID if the @a pSID matches.
  *
@@ -504,7 +536,6 @@ static bool rtProcFindProcessByName(const char * const *papszNames, PSID pSID, P
  */
 static int rtProcUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain, HANDLE *phToken)
 {
-    int rc = VINF_SUCCESS;
     /** @todo Add domain support! */
     BOOL fRc = LogonUserW(pwszUser,
                           /*
@@ -520,8 +551,8 @@ static int rtProcUserLogon(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pw
                           LOGON32_PROVIDER_DEFAULT,
                           phToken);
     if (!fRc)
-        rc = RTErrConvertFromWin32(GetLastError());
-    return rc;
+        return rtProcMapErrorCodes(GetLastError());
+    return VINF_SUCCESS;
 }
 
 
@@ -903,27 +934,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
     if (   RT_SUCCESS(rc)
         && dwErr != NO_ERROR)
     {
-        /*
-         * Map some important or much used Windows error codes
-         * to our error codes.
-         */
-        switch (dwErr)
-        {
-            case ERROR_NOACCESS:
-            case ERROR_PRIVILEGE_NOT_HELD:
-                rc = VERR_PERMISSION_DENIED;
-                break;
-
-            case ERROR_PASSWORD_EXPIRED:
-            case ERROR_ACCOUNT_RESTRICTION: /* See: http://support.microsoft.com/kb/303846/ */
-                rc = VERR_AUTHENTICATION_FAILURE;
-                break;
-
-            default:
-                /* Could trigger a debug assertion! */
-                rc = RTErrConvertFromWin32(dwErr);
-                break;
-        }
+        rc = rtProcMapErrorCodes(dwErr);
     }
     return rc;
 }
