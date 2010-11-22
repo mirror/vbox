@@ -209,6 +209,13 @@ public:
      */
     bool isEmpty() const { return m_bstr == NULL || *m_bstr == 0; }
 
+    /**
+     * Returns true if the member string has a length of one or more.
+     *
+     * @returns true if not empty, false if empty (NULL or "").
+     */
+    bool isNotEmpty() const { return m_bstr != NULL && *m_bstr != 0; }
+
     size_t length() const { return isEmpty() ? 0 : ::RTUtf16Len((PRTUTF16)m_bstr); }
 
 #if defined(VBOX_WITH_XPCOM)
