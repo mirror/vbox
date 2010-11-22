@@ -5737,7 +5737,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif
 
     /* The LBF access handler - error handling is better here than in the map function.  */
-    rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pReg->szRCMod, "vgaGCLFBAccessHandler", &pThis->RCPtrLFBHandler);
+    rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pReg->szRCMod, NULL, "vgaGCLFBAccessHandler", &pThis->RCPtrLFBHandler);
     if (RT_FAILURE(rc))
     {
         AssertReleaseMsgFailed(("PDMR3LdrGetSymbolRC(, %s, \"vgaGCLFBAccessHandler\",) -> %Rrc\n", pDevIns->pReg->szRCMod, rc));
