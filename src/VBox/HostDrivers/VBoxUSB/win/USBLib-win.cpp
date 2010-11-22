@@ -2990,7 +2990,7 @@ failure:
         RTMemFree((void *)pDevice->pszSerialNumber);
         RTMemFree(pDevice);
 
-        pDevice = Next;
+        pDevice = pNext;
     }
 
     /* free captured devices */
