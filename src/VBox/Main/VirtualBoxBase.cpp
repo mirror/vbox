@@ -313,7 +313,8 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
     bool preserve = MultiResult::isMultiEnabled();
 
     if (aLogIt)
-        LogRel(("ERROR [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%s} aText={%s} aWarning=%RTbool, preserve=%RTbool\n",
+        LogRel(("%s [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%s} aText={%s}, preserve=%RTbool\n",
+                aWarning ? "WARNING" : "ERROR",
                 aResultCode,
                 aResultCode,
                 &aIID,
