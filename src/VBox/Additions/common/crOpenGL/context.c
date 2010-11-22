@@ -299,6 +299,12 @@ stubGetWindowInfo( Display *dpy, GLXDrawable drawable )
     crHashtableAdd(stub.windowTable, (unsigned int) hwnd, winInfo);
 #endif
     }
+#ifdef WINDOWS
+    else
+    {
+        winInfo->drawable = drawable;
+    }
+#endif
     return winInfo;
 }
 
