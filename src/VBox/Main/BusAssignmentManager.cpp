@@ -114,12 +114,12 @@ static const DeviceAssignmentRule aIch9Rules[] =
      *  must be multifunction, i.e. have header type 0x80. Our LPC device is.
      *  Alternative approach is to assign separate slot to each device.
      */
-    {"piix3ide",      0, 31, 1,  1},
-    {"ahci",          0, 31, 2,  1},
-    {"smbus",         0, 31, 3,  1},
-    {"usb-ohci",      0, 31, 4,  1},
-    {"usb-ehci",      0, 31, 5,  1},
-    {"thermal",       0, 31, 6,  1},
+    {"piix3ide",      0, 31, 1,  2},
+    {"ahci",          0, 31, 2,  2},
+    {"smbus",         0, 31, 3,  2},
+    {"usb-ohci",      0, 31, 4,  2},
+    {"usb-ehci",      0, 31, 5,  2},
+    {"thermal",       0, 31, 6,  2},
 
     /* to make sure rule never used before rules assigning devices on it */
     {"ich9pcibridge", 0, 24, 0,  10},
@@ -357,7 +357,7 @@ HRESULT BusAssignmentManager::State::autoAssign(const char* pszName, PciBusAddre
 
     AssertMsg(matchingRules.size() > 0, ("No rule for %s(%s)\n", pszName, pszAlias));
 
-    sort(matchingRules.begin(), matchingRules.end(), RuleComparator);
+    stable_sort(matchingRules.begin(), matchingRules.end(), RuleComparator);
 
     for (size_t iRule = 0; iRule < matchingRules.size(); iRule++)
     {
