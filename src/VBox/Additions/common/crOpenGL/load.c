@@ -733,13 +733,13 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         return;
     }
 
+    stub.spu->dispatch_table.VBoxPackSetInjectID(pWindow->u32ClientID);
+
     if (!stubSystemWindowExist(pWindow))
     {
         crWindowDestroy((GLint)pWindow->hWnd);
         return;
     }
-
-    stub.spu->dispatch_table.VBoxPackSetInjectID(pWindow->u32ClientID);
 
     if (!pWindow->mapped)
     {
