@@ -518,9 +518,9 @@ int main(int argc, char **argv)
          * Run toolbox code before all other stuff, especially before checking the global
          * mutex because VBoxService might spawn itself to execute some commands.
          */
-        rc = VBoxServiceToolboxMain(argc - 1, &argv[1]);
-        if (rc != VERR_NOT_FOUND) /* Internal tool found? Then bail out. */
-            return rc;
+        int iExitCode;
+        if (VBoxServiceToolboxMain(argc - 1, &argv[1], &iExitCode))
+            return iExitCode;
     }
 #endif
 
