@@ -725,7 +725,6 @@ endif # !win
 # The VBoxExtPackHelperApp.
 #
 ifdef VBOX_WITH_EXTPACK
-##ifeq ($(LOGNAME),bird)
  PROGRAMS += VBoxExtPackHelperApp
  VBoxExtPackHelperApp_TEMPLATE = VBoxR3SetUidToRoot
  VBoxExtPackHelperApp_SOURCES = \
@@ -733,7 +732,6 @@ ifdef VBOX_WITH_EXTPACK
 	ExtPackUtil.cpp
  VBoxExtPackHelperApp_LIBS = \
         $(LIB_RUNTIME)
-
 endif # VBOX_WITH_EXTPACK
 
 
