@@ -245,6 +245,9 @@ typedef struct {
 # ifndef CR_NEWWINTRACK
     HHOOK           hMessageHook;
 # endif
+# ifdef VBOX_WITH_WDDM
+    bool            bRunningUnderWDDM;
+# endif
 #endif
 
 #ifdef CR_NEWWINTRACK

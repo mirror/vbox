@@ -267,9 +267,14 @@ GLboolean stubUpdateWindowVisibileRegions(WindowInfo *pWindow)
     int iret;
 
     if (!pWindow) return GL_FALSE;
-    hwnd = WindowFromDC(pWindow->drawable);
+    hwnd = pWindow->hWnd;
     if (!hwnd) return GL_FALSE;
 
+    if (hwnd!=WindowFromDC(pWindow->drawable))
+    {
+        crWarning("Window(%i) DC is no longer valid", pWindow->spuWindow);
+        return GL_FALSE;
+    }
     
     hVisRgn = CreateRectRgn(0,0,0,0);
     iret = GetRandomRgn(pWindow->drawable, hVisRgn, SYSRGN);

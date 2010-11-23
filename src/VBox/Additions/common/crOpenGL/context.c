@@ -500,47 +500,43 @@ stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
                                              unsigned int *w, unsigned int *h )
 {
     RECT rect;
-    HWND hwnd;
 
-    if (!window->drawable) {
+    if (!window->drawable || !window->hWnd) {
         *w = *h = 0;
         return;
     }
 
-    hwnd = WindowFromDC( window->drawable );
+    if (window->hWnd!=WindowFromDC(window->drawable))
+    {
+        crWarning("Window(%i) DC is no longer valid", window->spuWindow);
+        return;
+    }
 
-    if (!hwnd) {
-        *w = 0;
-        *h = 0;
+    if (!GetClientRect(window->hWnd, &rect))
+    {
+        crWarning("GetClientRect failed for %p", window->hWnd);
+        *w = *h = 0;
+        return;
     }
-    else {
-        if (!GetClientRect(hwnd, &rect))
-        {
-            crWarning("GetClientRect failed for %p", hwnd);
-            *w = *h = 0;
-            return;
-        }
-        *w = rect.right - rect.left;
-        *h = rect.bottom - rect.top;
-        if (!ClientToScreen( hwnd, (LPPOINT) &rect ))
-        {
-            crWarning("ClientToScreen failed for %p", hwnd);
-            *w = *h = 0;
-            return;
-        }
-        *x = rect.left;
-        *y = rect.top;
+    *w = rect.right - rect.left;
+    *h = rect.bottom - rect.top;
+
+    if (!ClientToScreen( window->hWnd, (LPPOINT) &rect ))
+    {
+        crWarning("ClientToScreen failed for %p", window->hWnd);
+        *w = *h = 0;
+        return;
     }
+    *x = rect.left;
+    *y = rect.top;
 }
 
 static void
 GetWindowTitle( const WindowInfo *window, char *title )
 {
-    HWND hwnd;
     /* XXX - we don't handle recurseUp */
-    hwnd = WindowFromDC( window->drawable );
-    if (hwnd)
-        GetWindowText(hwnd, title, 100);
+    if (window->hWnd)
+        GetWindowText(window->hWnd, title, 100);
     else
         title[0] = 0;
 }
@@ -557,7 +553,13 @@ GetCursorPosition(WindowInfo *window, int pos[2])
     
     // apparently the "window" parameter passed to this 
     // function contains the native window information
-    HWND NATIVEhwnd = WindowFromDC( window->drawable ); 
+    HWND NATIVEhwnd = window->hWnd;
+
+    if (NATIVEhwnd!=WindowFromDC(window->drawable))
+    {
+        crWarning("Window(%i) DC is no longer valid", window->spuWindow);
+        return;
+    }
 
     // get the native window's height and width
     stubGetWindowGeometry(window, &x, &y, &NativeWidth, &NativeHeight);
@@ -1027,7 +1029,7 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
                     && context->currentDrawable->pOwner==context)
                 {
 #ifdef WINDOWS
-                        if (!WindowFromDC(context->currentDrawable->drawable))
+                        if (context->currentDrawable->hWnd!=WindowFromDC(context->currentDrawable->drawable))
                         {
                             crWindowDestroy((GLint)context->currentDrawable->hWnd);
                         }
