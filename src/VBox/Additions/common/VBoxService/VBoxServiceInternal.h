@@ -279,37 +279,37 @@ extern void         VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint);
 #endif
 
 #ifdef VBOXSERVICE_TOOLBOX
-extern int VBoxServiceToolboxMain(int argc, char **argv);
+extern bool         VBoxServiceToolboxMain(int argc, char **argv, int *piExitCode);
 #endif
 
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_GUEST_PROPS
-extern int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList);
-extern int VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
+extern int          VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList);
+extern int          VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-extern int  VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms);
-extern int  VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms);
-extern int  VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
-extern int  VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, uint32_t uFlags,
-                                          const char *pszArgs, uint32_t uNumArgs,
-                                          const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                          const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
-extern void VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pThread);
-extern void VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
-extern int  VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                                        uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
-extern int  VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
-                                                  uint8_t *pbData, uint32_t cbData, bool fPendingClose, uint32_t *pcbWritten);
+extern int          VBoxServiceControlExecHandleCmdStartProcess(uint32_t u32ClientId, uint32_t uNumParms);
+extern int          VBoxServiceControlExecHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms);
+extern int          VBoxServiceControlExecHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms);
+extern int          VBoxServiceControlExecProcess(uint32_t uContext, const char *pszCmd, uint32_t uFlags,
+                                                  const char *pszArgs, uint32_t uNumArgs,
+                                                  const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
+                                                  const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS);
+extern void         VBoxServiceControlExecDestroyThreadData(PVBOXSERVICECTRLTHREADDATAEXEC pThread);
+extern void         VBoxServiceControlExecDeletePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf);
+extern int          VBoxServiceControlExecReadPipeBufferContent(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                                                                uint8_t *pbBuffer, uint32_t cbBuffer, uint32_t *pcbToRead);
+extern int          VBoxServiceControlExecWritePipeBuffer(PVBOXSERVICECTRLEXECPIPEBUF pBuf,
+                                                          uint8_t *pbData, uint32_t cbData, bool fPendingClose, uint32_t *pcbWritten);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
 #ifdef VBOXSERVICE_MANAGEMENT
-extern uint32_t VBoxServiceBalloonQueryPages(uint32_t cbPage);
+extern uint32_t     VBoxServiceBalloonQueryPages(uint32_t cbPage);
 #endif
 #if defined(VBOX_WITH_PAGE_SHARING) && defined(RT_OS_WINDOWS)
-extern RTEXITCODE VBoxServicePageSharingInitFork(void);
+extern RTEXITCODE   VBoxServicePageSharingInitFork(void);
 #endif
 
 RT_C_DECLS_END
