@@ -503,7 +503,8 @@ HRESULT VirtualBox::init()
         rc = unconst(m->ptrExtPackManager).createObject();
         if (SUCCEEDED(rc))
             /** @todo Define drop zone location. */
-            rc = m->ptrExtPackManager->init(this, NULL /*a_pszDropZoneDir*/, false /*a_fCheckDropZone*/);
+            rc = m->ptrExtPackManager->init(this, NULL /*a_pszDropZoneDir*/, false /*a_fCheckDropZone*/,
+                                            VBOXEXTPACKCTX_PER_USER_DAEMON);
         if (FAILED(rc))
             throw rc;
 #endif
@@ -573,7 +574,10 @@ HRESULT VirtualBox::init()
 #ifdef VBOX_WITH_EXTPACK
     /* Let the extension packs have a go at things. */
     if (SUCCEEDED(rc))
+    {
+        lock.release();
         m->ptrExtPackManager->callAllVirtualBoxReadyHooks();
+    }
 #endif
 
     LogFlowThisFunc(("rc=%08X\n", rc));
@@ -1286,14 +1290,14 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
                        !!forceOverwrite);
     if (SUCCEEDED(rc))
     {
+        /* set the return value */
+        rc = machine.queryInterfaceTo(aMachine);
+        AssertComRC(rc);
+
 #ifdef VBOX_WITH_EXTPACK
         /* call the extension pack hooks */
         m->ptrExtPackManager->callAllVmCreatedHooks(machine);
 #endif
-
-        /* set the return value */
-        rc = machine.queryInterfaceTo(aMachine);
-        AssertComRC(rc);
     }
 
     LogFlowThisFuncLeave();

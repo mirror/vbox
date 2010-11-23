@@ -2334,34 +2334,98 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 }
             }
         }
+    }
+    catch (ConfigError &x)
+    {
+        // InsertConfig threw something:
+        return x.m_vrc;
+    }
 
-        /*
-         * CFGM overlay handling.
-         *
-         * Here we check the extra data entries for CFGM values
-         * and create the nodes and insert the values on the fly. Existing
-         * values will be removed and reinserted. CFGM is typed, so by default
-         * we will guess whether it's a string or an integer (byte arrays are
-         * not currently supported). It's possible to override this autodetection
-         * by adding "string:", "integer:" or "bytes:" (future).
-         *
-         * We first perform a run on global extra data, then on the machine
-         * extra data to support global settings with local overrides.
-         */
+#ifdef VBOX_WITH_EXTPACK
+    /*
+     * Call the extension pack hooks if everything went well thus far.
+     */
+    if (RT_SUCCESS(rc))
+    {
+        alock.release();
+        rc = pConsole->mptrExtPackManager->callAllVmConfigureVmmHooks(pConsole, pVM);
+        alock.acquire();
+    }
+#endif
+
+    /*
+     * Apply the CFGM overlay.
+     */
+    if (RT_SUCCESS(rc))
+        rc = pConsole->configCfgmOverlay(pVM, virtualBox, pMachine);
+
+#undef H
+
+    /*
+     * Register VM state change handler.
+     */
+    int rc2 = VMR3AtStateRegister(pVM, Console::vmstateChangeCallback, pConsole);
+    AssertRC(rc2);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    /*
+     * Register VM runtime error handler.
+     */
+    rc2 = VMR3AtRuntimeErrorRegister(pVM, Console::setVMRuntimeErrorCallback, pConsole);
+    AssertRC(rc2);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
+
+    LogFlowFunc(("vrc = %Rrc\n", rc));
+    LogFlowFuncLeave();
+
+    return rc;
+}
+
+/**
+ * Applies the CFGM overlay as specified by /VBoxInternal/XXX extra data
+ * values.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   pVirtualBox     Pointer to the IVirtualBox interface.
+ * @param   pMachine        Pointer to the IMachine interface.
+ */
+/* static */
+int Console::configCfgmOverlay(PVM pVM, IVirtualBox *pVirtualBox, IMachine *pMachine)
+{
+    /*
+     * CFGM overlay handling.
+     *
+     * Here we check the extra data entries for CFGM values
+     * and create the nodes and insert the values on the fly. Existing
+     * values will be removed and reinserted. CFGM is typed, so by default
+     * we will guess whether it's a string or an integer (byte arrays are
+     * not currently supported). It's possible to override this autodetection
+     * by adding "string:", "integer:" or "bytes:" (future).
+     *
+     * We first perform a run on global extra data, then on the machine
+     * extra data to support global settings with local overrides.
+     */
+    PCFGMNODE pRoot = CFGMR3GetRoot(pVM);
+    int       rc    = VINF_SUCCESS;
+    try
+    {
         /** @todo add support for removing nodes and byte blobs. */
-        SafeArray<BSTR> aGlobalExtraDataKeys;
-        SafeArray<BSTR> aMachineExtraDataKeys;
         /*
          * Get the next key
          */
-        if (FAILED(hrc = virtualBox->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys))))
-            AssertMsgFailed(("VirtualBox::GetExtraDataKeys failed with %Rrc\n", hrc));
+        SafeArray<BSTR> aGlobalExtraDataKeys;
+        SafeArray<BSTR> aMachineExtraDataKeys;
+        HRESULT hrc = pVirtualBox->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys));
+        AssertMsg(SUCCEEDED(hrc), ("VirtualBox::GetExtraDataKeys failed with %Rhrc\n", hrc));
 
         // remember the no. of global values so we can call the correct method below
         size_t cGlobalValues = aGlobalExtraDataKeys.size();
 
-        if (FAILED(hrc = pMachine->GetExtraDataKeys(ComSafeArrayAsOutParam(aMachineExtraDataKeys))))
-            AssertMsgFailed(("IMachine::GetExtraDataKeys failed with %Rrc\n", hrc));
+        hrc = pMachine->GetExtraDataKeys(ComSafeArrayAsOutParam(aMachineExtraDataKeys));
+        AssertMsg(SUCCEEDED(hrc), ("VirtualBox::GetExtraDataKeys failed with %Rhrc\n", hrc));
 
         // build a combined list from global keys...
         std::list<Utf8Str> llExtraDataKeys;
@@ -2391,8 +2455,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             Bstr bstrExtraDataValue;
             if (i2 < cGlobalValues)
                 // this is still one of the global values:
-                hrc = virtualBox->GetExtraData(Bstr(strKey).raw(),
-                                               bstrExtraDataValue.asOutParam());
+                hrc = pVirtualBox->GetExtraData(Bstr(strKey).raw(),
+                                                bstrExtraDataValue.asOutParam());
             else
                 hrc = pMachine->GetExtraData(Bstr(strKey).raw(),
                                              bstrExtraDataValue.asOutParam());
@@ -2404,6 +2468,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
              * Split the two and get the node, delete the value and create the node
              * if necessary.
              */
+            PCFGMNODE pNode;
             const char *pszCFGMValueName = strrchr(pszExtraDataKey, '/');
             if (pszCFGMValueName)
             {
@@ -2463,7 +2528,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     rc = CFGMR3InsertInteger(pNode, pszCFGMValueName, u64Value);
                 else
                     InsertConfigString(pNode, pszCFGMValueName, strCFGMValueUtf8);
-                AssertLogRelMsgRC(rc, ("failed to insert CFGM value '%s' to key '%s'\n", strCFGMValueUtf8.c_str(), pszExtraDataKey));
+                AssertLogRelMsgRCBreak(rc, ("failed to insert CFGM value '%s' to key '%s'\n", strCFGMValueUtf8.c_str(), pszExtraDataKey));
             }
         }
     }
@@ -2472,36 +2537,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         // InsertConfig threw something:
         return x.m_vrc;
     }
-
-#undef H
-
-#ifdef VBOX_WITH_EXTPACK
-    /*
-     * Call the extension pack hooks if everything went well thus far.
-     */
-    if (RT_SUCCESS(rc))
-        rc = pConsole->mptrExtPackManager->callAllVmConfigureVmmHooks(pConsole, pVM);
-#endif
-
-    /*
-     * Register VM state change handler.
-     */
-    int rc2 = VMR3AtStateRegister(pVM, Console::vmstateChangeCallback, pConsole);
-    AssertRC(rc2);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    /*
-     * Register VM runtime error handler.
-     */
-    rc2 = VMR3AtRuntimeErrorRegister(pVM, Console::setVMRuntimeErrorCallback, pConsole);
-    AssertRC(rc2);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    LogFlowFunc(("vrc = %Rrc\n", rc));
-    LogFlowFuncLeave();
-
     return rc;
 }
 
