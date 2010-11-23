@@ -5527,7 +5527,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine)
     if (machine.CanShowConsoleWindow())
         return VBoxGlobal::switchToMachine(machine);
 
-    KMachineState state = machine.GetState();
+    KMachineState state = machine.GetState(); NOREF(state);
     AssertMsg(   state == KMachineState_PoweredOff
               || state == KMachineState_Saved
               || state == KMachineState_Teleported
