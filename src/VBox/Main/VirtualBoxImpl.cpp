@@ -1403,6 +1403,11 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aNameOrId, IMachine **aMachine)
                 pMachineFound = pMachine2;
                 break;
             }
+            if (pMachine2->getSettingsFileFull() == strName)
+            {
+                pMachineFound = pMachine2;
+                break;
+            }
         }
 
         if (!pMachineFound)
