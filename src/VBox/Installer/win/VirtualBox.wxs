@@ -365,22 +365,22 @@
                         <Environment Id="EnvVBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
                             System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
                         <!-- Register file extensions. Note: Extension Id's *must not* be changed! -->
-                        <ProgId Id="ProgIdVirtualBox" Description="VirtualBox Machine Description" Icon="IconVirtualBox">
+                        <ProgId Id="ProgIdVirtualBox" Description="VirtualBox Machine Description" Icon="[#vbox]">
                             <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
                                 <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="ProgIdVirtualBoxExtPack" Description="VirtualBox Extension Pack" Icon="IconVirtualBox">
+                        <ProgId Id="ProgIdVirtualBoxExtPack" Description="VirtualBox Extension Pack" Icon="[#vbox]">
                             <Extension Id="vbox-extpack" ContentType="application/x-virtualbox-vbox-extpack">
                                 <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="ProgIdOVF" Description="Open Virtualization Format" Icon="IconVirtualBox">
+                        <ProgId Id="ProgIdOVF" Description="Open Virtualization Format" Icon="[#vbox]">
                             <Extension Id="ovf" ContentType="application/x-virtualbox-ovf">
                                 <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="ProgIdOVA" Description="Open Virtualization Format Archive" Icon="IconVirtualBox">
+                        <ProgId Id="ProgIdOVA" Description="Open Virtualization Format Archive" Icon="[#vbox]">
                             <Extension Id="ova" ContentType="application/x-virtualbox-ova">
                                 <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
