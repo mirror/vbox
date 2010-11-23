@@ -365,7 +365,7 @@
                         <Environment Id="EnvVBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
                             System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
                         <!-- Register file extensions. Note: Extension Id's *must not* be changed! -->
-                        <ProgId Id="ProgIdVirtualBox" Description="VirtualBox Virtual Machine" Icon="IconVirtualBox">
+                        <ProgId Id="ProgIdVirtualBox" Description="VirtualBox Machine Description" Icon="IconVirtualBox">
                             <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
                                 <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
