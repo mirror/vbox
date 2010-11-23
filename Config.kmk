@@ -3032,11 +3032,22 @@ TEMPLATE_VBOXR3HARDENEDLIB_LIBS = $(NO_SUCH_VARIABLE)
 
 #
 # Template for building set-uid-to-root helper programs.
-# These shall have not extra runpaths, esp. not origin ones.
+# In hardened builds, these may only contain absolute runpaths!
 #
 TEMPLATE_VBoxR3SetUidToRoot = Set-uid-to-root helper program.
 TEMPLATE_VBoxR3SetUidToRoot_EXTENDS = VBOXR3HARDENEDEXE
 TEMPLATE_VBoxR3SetUidToRoot_LIBS = $(NO_SUCH_VARIABLE)
+ifdef VBOX_WITH_RUNPATH
+ TEMPLATE_VBoxR3SetUidToRoot_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+endif
+ifndef VBOX_WITH_HARDENING
+ ifdef VBOX_WITH_RELATIVE_RUNPATH
+  TEMPLATE_VBoxR3SetUidToRoot_LDFLAGS += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)'
+ endif
+ ifdef VBOX_WITH_ORIGIN
+  TEMPLATE_VBoxR3SetUidToRoot_LDFLAGS.linux += $(VBOX_GCC_ORIGIN_OPT)
+ endif
+endif
 
 
 #

@@ -350,7 +350,7 @@ static RTEXITCODE DoInstall(int argc, char **argv)
         { "--tarball-fd",   'f',   RTGETOPT_REQ_UINT64 }
     };
     RTGETOPTSTATE   GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
 
@@ -415,7 +415,6 @@ static RTEXITCODE DoInstall(int argc, char **argv)
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
-        break;
     }
     if (!pszName)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing --name option");
@@ -461,7 +460,7 @@ static RTEXITCODE DoUninstall(int argc, char **argv)
         { "--name",         'n',   RTGETOPT_REQ_STRING }
     };
     RTGETOPTSTATE   GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
 
@@ -496,7 +495,6 @@ static RTEXITCODE DoUninstall(int argc, char **argv)
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
-        break;
     }
     if (!pszName)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing --name option");
@@ -559,7 +557,7 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
         { "--base-dir",     'b',   RTGETOPT_REQ_STRING },
     };
     RTGETOPTSTATE   GetState;
-    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /*fFlags*/);
+    int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
 
@@ -585,7 +583,6 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
         }
-        break;
     }
     if (!pszBaseDir)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing --base-dir option");
@@ -678,13 +675,13 @@ int main(int argc, char **argv)
                 return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No command specified");
 
             case CMD_INSTALL:
-                return DoInstall(argc, argv);
+                return DoInstall(  argc - GetState.iNext, argv + GetState.iNext);
 
             case CMD_UNINSTALL:
-                return DoUninstall(argc, argv);
+                return DoUninstall(argc - GetState.iNext, argv + GetState.iNext);
 
             case CMD_CLEANUP:
-                return DoCleanup(argc, argv);
+                return DoCleanup(  argc - GetState.iNext, argv + GetState.iNext);
 
             case 'h':
             case 'V':

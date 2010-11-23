@@ -54,9 +54,9 @@
  * is why it has to be a separate application.
  */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-# define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelper.exe"
+# define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelperApp.exe"
 #else
-# define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelper"
+# define VBOX_EXTPACK_HELPER_NAME       "VBoxExtPackHelperApp"
 #endif
 
 
@@ -1477,7 +1477,7 @@ STDMETHODIMP ExtPackManager::Uninstall(IN_BSTR a_bstrName, BOOL a_fForcedRemoval
                             if (!pExtPack)
                                 LogRel(("ExtPackManager: Successfully uninstalled extension pack '%s'.\n", strName.c_str()));
                             else
-                                hrc = setError(E_UNEXPECTED,
+                                hrc = setError(E_FAIL,
                                                tr("Uninstall extension pack '%s' failed under mysterious circumstances"),
                                                strName.c_str());
                         }
@@ -1682,7 +1682,7 @@ HRESULT ExtPackManager::runSetUidToRootHelper(const char *a_pszCommand, ...)
                 if (RT_SUCCESS(vrc))
                     hProcess = NIL_RTPROCESS;
                 else
-                    AssertLogRelMsgStmt(vrc != VERR_PROCESS_RUNNING, ("%Rrc\n", vrc), hProcess = NIL_RTPROCESS);
+                    AssertLogRelMsgStmt(vrc == VERR_PROCESS_RUNNING, ("%Rrc\n", vrc), hProcess = NIL_RTPROCESS);
             }
         } while (   hPipeR != NIL_RTPIPE
                  || hProcess != NIL_RTPROCESS);
@@ -1700,7 +1700,7 @@ HRESULT ExtPackManager::runSetUidToRootHelper(const char *a_pszCommand, ...)
         else if (ProcStatus.enmReason == RTPROCEXITREASON_NORMAL)
         {
             AssertMsg(ProcStatus.iStatus != 0, ("%s\n", pszStdErrBuf));
-            hrc = setError(E_UNEXPECTED, tr("The installer failed with exit code %d: %s"),
+            hrc = setError(E_FAIL, tr("The installer failed with exit code %d: %s"),
                            ProcStatus.iStatus, offStdErrBuf ? pszStdErrBuf : "");
         }
         else if (ProcStatus.enmReason == RTPROCEXITREASON_SIGNAL)

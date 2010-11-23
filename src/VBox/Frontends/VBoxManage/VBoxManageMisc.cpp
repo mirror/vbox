@@ -889,7 +889,7 @@ int handleVMStatistics(HandlerArg *a)
 
 int handleExtPack(HandlerArg *a)
 {
-    if (a->argc < 2)
+    if (a->argc < 1)
         return errorSyntax(USAGE_EXTPACK, "Incorrect number of parameters");
 
     ComObjPtr<IExtPackManager> ptrExtPackMgr;
