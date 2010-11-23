@@ -99,7 +99,7 @@ bool ValidateUSBDevice(char *pszName)
 
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_GET_VERSION, NULL, 0,&version, sizeof(version),  &cbReturned, NULL))
         {
-            Log(("DeviceIoControl SUPUSB_IOCTL_GET_VERSION failed with rc=%d\n", GetLastError()));
+            Log(("DeviceIoControl SUPUSB_IOCTL_GET_VERSION failed with LastError=%Rwa\n", GetLastError()));
             goto failure;
         }
 
@@ -111,7 +111,7 @@ bool ValidateUSBDevice(char *pszName)
         }
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_IS_OPERATIONAL, NULL, 0, NULL, NULL, &cbReturned, NULL))
         {
-            Log(("DeviceIoControl SUPUSB_IOCTL_IS_OPERATIONAL failed with rc=%d\n", GetLastError()));
+            Log(("DeviceIoControl SUPUSB_IOCTL_IS_OPERATIONAL failed with LastError=%Rwa\n", GetLastError()));
             goto failure;
         }
 
@@ -150,7 +150,7 @@ bool OpenOneDevice (HDEVINFO HardwareDeviceInfo,
     predictedLength = requiredLength;
 
     functionClassDeviceData = (PSP_DEVICE_INTERFACE_DETAIL_DATA) RTMemAllocZ(predictedLength);
-    if(NULL == functionClassDeviceData)
+    if (NULL == functionClassDeviceData)
     {
         return false;
     }
@@ -1692,9 +1692,9 @@ GetConfigDescriptor (
     if (!success)
     {
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with %d\n", GetLastError()));
+        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with LastError=%Rwa\n", GetLastError()));
 #else
-        LogRel(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with %d\n", GetLastError()));
+        LogRel(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with LastError=%Rwa\n", GetLastError()));
 #endif
         return NULL;
     }
@@ -1762,9 +1762,9 @@ GetConfigDescriptor (
     if (!success)
     {
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with %d\n", GetLastError()));
+        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with LastError=%Rwa\n", GetLastError()));
 #else
-        LogRel(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with %d\n", GetLastError()));
+        LogRel(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with LastError=%Rwa\n", GetLastError()));
 #endif
         RTMemFree(configDescReq);
         return NULL;
@@ -2119,9 +2119,9 @@ GetStringDescriptor (
     if (!success)
     {
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with %d\n", GetLastError()));
+        AssertMsgFailed(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with LastError=%Rwa\n", GetLastError()));
 #else
-        LogRel(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with %d\n", GetLastError()));
+        LogRel(("DeviceIoControl IOCTL_USB_GET_DESCRIPTOR_FROM_NODE_CONNECTION failed with LastError=%Rwa\n", GetLastError()));
 #endif
         return NULL;
     }
@@ -2489,7 +2489,7 @@ int usbMonStopService(void)
         else
         {
             DWORD LastError = GetLastError(); NOREF(LastError);
-            AssertMsgFailed(("OpenService failed LastError=%Rwa\n", LastError));
+            AssertMsgFailed(("OpenService failed with LastError=%Rwa\n", LastError));
         }
         CloseServiceHandle(hSMgr);
     }
@@ -2523,7 +2523,7 @@ USBLIB_DECL(int) USBLibInit(void)
         if (g_hUSBMonitor == INVALID_HANDLE_VALUE)
         {
             /* AssertFailed(); */
-            LogRel(("usbproxy: Unable to open monitor driver!! (rc=%d)\n", GetLastError()));
+            LogRel(("usbproxy: Unable to open monitor driver!! LastError=%Rwa\n", GetLastError()));
             rc = VERR_FILE_NOT_FOUND;
             goto failure;
         }
@@ -2535,7 +2535,7 @@ USBLIB_DECL(int) USBLibInit(void)
     cbReturned = 0;
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_GET_VERSION, NULL, 0,&version, sizeof(version),  &cbReturned, NULL))
     {
-        LogRel(("usbproxy: Unable to query filter version!! (rc=%d)\n", GetLastError()));
+        LogRel(("usbproxy: Unable to query filter version!! LastError=%Rwa\n", GetLastError()));
         rc = VERR_VERSION_MISMATCH;
         goto failure;
     }
@@ -2612,7 +2612,7 @@ USBLIB_DECL(int) USBLibCaptureDevice(uint16_t usVendorId, uint16_t usProductId, 
 
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_CAPTURE_DEVICE, &capture, sizeof(capture),  NULL, 0, &cbReturned, NULL))
     {
-        AssertMsgFailed(("DeviceIoControl failed with %d\n", GetLastError()));
+        AssertMsgFailed(("DeviceIoControl failed with LastError=%Rwa\n", GetLastError()));
         return RTErrConvertFromWin32(GetLastError());
     }
 
@@ -2643,7 +2643,7 @@ USBLIB_DECL(int) USBLibReleaseDevice(uint16_t usVendorId, uint16_t usProductId, 
 
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_RELEASE_DEVICE, &release, sizeof(release),  NULL, 0, &cbReturned, NULL))
     {
-        AssertMsgFailed(("DeviceIoControl failed with %d\n", GetLastError()));
+        AssertMsgFailed(("DeviceIoControl failed with LastError=%Rwa\n", GetLastError()));
         return RTErrConvertFromWin32(GetLastError());
     }
 
@@ -2666,7 +2666,7 @@ USBLIB_DECL(void *) USBLibAddFilter(PCUSBFILTER pFilter)
 
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_ADD_FILTER, (LPVOID)pFilter, sizeof(*pFilter), &add_out, sizeof(add_out), &cbReturned, NULL))
     {
-        AssertMsgFailed(("DeviceIoControl failed with %d\n", GetLastError()));
+        AssertMsgFailed(("DeviceIoControl failed with LastError=%Rwa\n", GetLastError()));
         return NULL;
     }
     if (RT_FAILURE(add_out.rc))
@@ -2690,7 +2690,7 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
 
     uId = (uintptr_t)pvId;
     if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_REMOVE_FILTER, &uId, sizeof(uId),  NULL, 0,&cbReturned, NULL))
-        AssertMsgFailed(("DeviceIoControl failed with %d\n", GetLastError()));
+        AssertMsgFailed(("DeviceIoControl failed with LastError=%Rwa\n", GetLastError()));
 }
 
 
@@ -2776,7 +2776,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
         DWORD cbReturned = 0;
         if (!DeviceIoControl(g_hUSBMonitor, SUPUSBFLT_IOCTL_GET_NUM_DEVICES, NULL, 0, &numdev, sizeof(numdev), &cbReturned, NULL))
         {
-            AssertMsgFailed(("DeviceIoControl failed with %d\n", GetLastError()));
+            AssertMsgFailed(("DeviceIoControl failed with LastError=%Rwa\n", GetLastError()));
             return RTErrConvertFromWin32(GetLastError());
         }
 
@@ -2826,9 +2826,9 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
             DWORD cbReturned = 0;
             if (!DeviceIoControl(hDev, SUPUSB_IOCTL_GET_DEVICE, &dev, sizeof(dev), &dev, sizeof(dev), &cbReturned, NULL))
             {
-                int iErr = GetLastError();
+                DWORD LastError = GetLastError();
                 /* ERROR_DEVICE_NOT_CONNECTED -> device was removed just now */
-                AssertMsg(iErr == ERROR_DEVICE_NOT_CONNECTED, ("DeviceIoControl %d failed with %d\n", i, iErr));
+                AssertMsg(LastError == ERROR_DEVICE_NOT_CONNECTED, ("DeviceIoControl %d failed with LastError=%Rwa\n", i, LastError));
                 Log(("SUPUSB_IOCTL_GET_DEVICE: DeviceIoControl %d no longer connected\n", i));
             }
             else
@@ -2855,7 +2855,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
             CloseHandle(hDev);
         }
         else
-            AssertMsgFailed(("Unexpected failure to open %s. lasterr=%d\n", pszDevname, GetLastError()));
+            AssertMsgFailed(("Unexpected failure to open %s. LastError=%Rwa\n", pszDevname, GetLastError()));
     }
 
     if (!cCaptured)
