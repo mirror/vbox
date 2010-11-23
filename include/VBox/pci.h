@@ -748,7 +748,7 @@ DECLINLINE(uint8_t) PCIDevGetHeaderType(PPCIDEVICE pPciDev)
 }
 
 /**
- * Sets the BIST (built-in self-test)config register.
+ * Sets the BIST (built-in self-test) config register.
  *
  * @param   pPciDev         The PCI device.
  * @param   u8Bist          The BIST value.
@@ -759,7 +759,7 @@ DECLINLINE(void) PCIDevSetBIST(PPCIDEVICE pPciDev, uint8_t u8Bist)
 }
 
 /**
- * Gets the BIST (built-in self-test)config register.
+ * Gets the BIST (built-in self-test) config register.
  *
  * @param   pPciDev         The PCI device.
  * @returns u8Bist          The BIST.
