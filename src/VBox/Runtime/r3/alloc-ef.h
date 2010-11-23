@@ -89,7 +89,7 @@
  * decommitted.
  * Requires RTALLOC_EFENCE_TRACE.
  */
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(DOXYGEN_RUNNING)
 # define RTALLOC_EFENCE_FREE_FILL       'f'
 #endif
 
