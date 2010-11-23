@@ -38,11 +38,13 @@
 #include <VBox/version.h>
 
 
+#ifdef IN_RT_R3
 /* Override RTAssertShouldPanic to prevent gdb process creation. */
 RTDECL(bool) RTAssertShouldPanic(void)
 {
     return true;
 }
+#endif
 
 
 /**
