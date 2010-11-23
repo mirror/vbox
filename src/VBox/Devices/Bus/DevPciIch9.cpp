@@ -506,6 +506,18 @@ DECLINLINE(int) ich9pciSlot2ApicIrq(uint8_t uSlot, int irq_num)
     return (irq_num + uSlot) & 7;
 }
 
+/* return the global irq number corresponding to a given device irq
+   pin. We could also use the bus number to have a more precise
+   mapping. This is the implementation note described in the PCI spec chapter 2.2.6 */
+DECLINLINE(int) ich9pciSlotGetPirq(uint8_t uBus, uint8_t uDevFn, int iIrqNum)
+{
+    int iSlotAddend = (uDevFn >> 3) - 1;
+    return (iIrqNum + iSlotAddend) & 3;
+}
+
+/* irqs corresponding to PCI irqs A-D */
+static const uint8_t aPciIrqs[4] = { 11, 9, 11, 9 };
+
 /* Add one more level up request on APIC input line */
 DECLINLINE(void) ich9pciApicLevelUp(PPCIGLOBALS pGlobals, int irq_num)
 {
@@ -1660,6 +1672,26 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
             }
             break;
         }
+    }
+
+    /* map the interrupt */
+    uint32_t iPin = ich9pciConfigRead(pGlobals, uBus, uDevFn, VBOX_PCI_INTERRUPT_PIN, 1);
+    if (iPin != 0)
+    {
+        uint8_t uBridgeDevFn = uDevFn;
+        iPin--;
+
+        /* We need to go up to the host bus to see which irq this device will assert there. */
+        while (cBridgeDepth != 0)
+        {
+            /* Get the pin the device would assert on the bridge. */
+            iPin = ((uBridgeDevFn >> 3) + iPin) & 3;
+            uBridgeDevFn = paBridgePositions[cBridgeDepth];
+            cBridgeDepth--;
+        }
+
+        int iIrq = aPciIrqs[ich9pciSlotGetPirq(uBus, uDevFn, iPin)];        
+        ich9pciConfigWrite(pGlobals, uBus, uDevFn, VBOX_PCI_INTERRUPT_LINE, iIrq, 1);
     }
 }
 
