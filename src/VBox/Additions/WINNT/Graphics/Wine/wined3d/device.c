@@ -5758,7 +5758,9 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, const
     const struct wined3d_gl_info *gl_info;
     struct wined3d_context *context;
     GLenum gl_filter;
+#ifndef VBOX_WITH_WDDM
     POINT offset = {0, 0};
+#endif
     RECT src_rect, dst_rect;
 
     TRACE("(%p) : src_surface %p, src_rect_in %p, dst_surface %p, dst_rect_in %p, filter %s (0x%08x)\n",
@@ -5807,10 +5809,11 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, const
 
         TRACE("Source surface %p is onscreen\n", src_surface);
 
+#ifndef VBOX_WITH_WDDM
         if(buffer == GL_FRONT) {
             RECT windowsize;
             UINT h;
-            
+
             ClientToScreen(context->win_handle, &offset);
             GetClientRect(context->win_handle, &windowsize);
             h = windowsize.bottom - windowsize.top;
@@ -5823,7 +5826,10 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, const
             src_rect.left -= offset.x; src_rect.right -=offset.x;
             src_rect.top =  offset.y + h - src_rect.top;
             src_rect.bottom =  offset.y + h - src_rect.bottom;
-        } else {
+        }
+        else
+#endif
+        {
             src_rect.top = ((IWineD3DSurfaceImpl *)src_surface)->currentDesc.Height - src_rect.top;
             src_rect.bottom = ((IWineD3DSurfaceImpl *)src_surface)->currentDesc.Height - src_rect.bottom;
         }
@@ -5850,6 +5856,7 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, const
 
         TRACE("Destination surface %p is onscreen\n", dst_surface);
 
+#ifndef VBOX_WITH_WDDM
         if(buffer == GL_FRONT) {
             RECT windowsize;
             UINT h;
@@ -5865,7 +5872,10 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, const
             dst_rect.left -= offset.x; dst_rect.right -=offset.x;
             dst_rect.top =  offset.y + h - dst_rect.top;
             dst_rect.bottom =  offset.y + h - dst_rect.bottom;
-        } else {
+        }
+        else
+#endif
+        {
             /* Screen coords = window coords, surface height = window height */
             dst_rect.top = ((IWineD3DSurfaceImpl *)dst_surface)->currentDesc.Height - dst_rect.top;
             dst_rect.bottom = ((IWineD3DSurfaceImpl *)dst_surface)->currentDesc.Height - dst_rect.bottom;
@@ -6914,7 +6924,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_AddSwapChain(IWineD3DDevice *iface, IWi
         ERR("Out of memory!\n");
         return E_OUTOFMEMORY;
     }
-    This->swapchains = (IWineD3DSwapChain *)pvNewBuf;
+    This->swapchains = (IWineD3DSwapChain **)pvNewBuf;
     This->swapchains[This->NumberOfSwapChains] = swapchain;
     ++This->NumberOfSwapChains;
     return WINED3D_OK;
