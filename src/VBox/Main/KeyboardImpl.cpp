@@ -155,41 +155,9 @@ void Keyboard::uninit()
  */
 STDMETHODIMP Keyboard::PutScancode(LONG scancode)
 {
-    HRESULT rc = S_OK;
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    CHECK_CONSOLE_DRV(mpDrv[0]);
-
-    PPDMIKEYBOARDPORT pUpPort = NULL;
-    for (int i = KEYBOARD_MAX_DEVICES - 1; i >= 0 ; --i)
-    {
-        if (mpDrv[i] && (mpDrv[i]->u32DevCaps & KEYBOARD_DEVCAP_ENABLED))
-        {
-            pUpPort = mpDrv[i]->pUpPort;
-            break;
-        }
-    }
-    /* No enabled keyboard - throw the input away. */
-    if (!pUpPort)
-        return rc;
-
-    int vrc = pUpPort->pfnPutEvent(pUpPort, (uint8_t)scancode);
-
-    if (RT_FAILURE(vrc))
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Could not send scan code 0x%08X to the virtual keyboard (%Rrc)"),
-                      scancode, vrc);
-
-    VBoxEventDesc evDesc;
     com::SafeArray<LONG> scancodes(1);
     scancodes[0] = scancode;
-    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboardEvent, ComSafeArrayAsInParam(scancodes));
-    evDesc.fire(0);
-    return rc;
+    return PutScancodes(ComSafeArrayAsInParam(scancodes), NULL);
 }
 
 /**
@@ -205,13 +173,13 @@ STDMETHODIMP Keyboard::PutScancode(LONG scancode)
 STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
                                     ULONG *codesStored)
 {
-    HRESULT rc = S_OK;
-
     if (ComSafeArrayInIsNull(scancodes))
         return E_INVALIDARG;
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    com::SafeArray<LONG> keys(ComSafeArrayInArg(scancodes));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -231,28 +199,33 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
     }
     /* No enabled keyboard - throw the input away. */
     if (!pUpPort)
-        return rc;
+    {
+        if (codesStored)
+            *codesStored = (uint32_t)keys.size();
+        return S_OK;
+    }
 
-    com::SafeArray<LONG> keys(ComSafeArrayInArg(scancodes));
     int vrc = VINF_SUCCESS;
 
-    for (uint32_t i = 0; (i < keys.size()) && RT_SUCCESS(vrc); i++)
-        vrc = pUpPort->pfnPutEvent(pUpPort, (uint8_t)keys[i]);
+    uint32_t sent;
+    for (sent = 0; (sent < keys.size()) && RT_SUCCESS(vrc); sent++)
+        vrc = pUpPort->pfnPutEvent(pUpPort, (uint8_t)keys[sent]);
+
+    if (codesStored)
+        *codesStored = sent;
+
+    /* Only signal the keys in the event which have been actually sent. */
+    keys.resize(sent);
+    VBoxEventDesc evDesc;
+    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboardEvent, ComSafeArrayAsInParam(keys));
+    evDesc.fire(0);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
                         tr("Could not send all scan codes to the virtual keyboard (%Rrc)"),
                         vrc);
 
-    /// @todo is it actually possible that not all scancodes can be transmitted?
-    if (codesStored)
-        *codesStored = (uint32_t)keys.size();
-
-    VBoxEventDesc evDesc;
-    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboardEvent, ComSafeArrayAsInParam(keys));
-    evDesc.fire(0);
-
-    return rc;
+    return S_OK;
 }
 
 /**
