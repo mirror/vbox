@@ -721,9 +721,6 @@ else # !win
 endif # !win
 
 
-endif # !VBOX_ONLY_SDK (the ifndef is far above)
-
-
 #
 # The VBoxExtPackHelperApp.
 #
@@ -738,6 +735,10 @@ ifdef VBOX_WITH_EXTPACK
         $(LIB_RUNTIME)
 
 endif # VBOX_WITH_EXTPACK
+
+
+endif # !VBOX_ONLY_SDK (the ifndef is far above)
+
 
 #
 # Installs com related thing(s) to bin.
