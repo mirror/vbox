@@ -141,7 +141,7 @@ static void stubCheckWindowState(WindowInfo *window, GLboolean bFlushOnChange)
 static bool stubSystemWindowExist(WindowInfo *pWindow)
 {
 #ifdef WINDOWS
-    if (!WindowFromDC(pWindow->drawable))
+    if (pWindow->hWnd!=WindowFromDC(pWindow->drawable))
     {
         return false;
     }
@@ -196,6 +196,11 @@ static void stubCheckWindowsState(void)
 
     if (!stub.currentContext)
         return;
+
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+    if (stub.bRunningUnderWDDM)
+        return;
+#endif
 
 #if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
     crLockMutex(&stub.mutex);
@@ -656,6 +661,9 @@ void stubSetDefaultConfigurationOptions(void)
         char name[1000];
         int i;
 
+# ifdef VBOX_WITH_WDDM
+        stub.bRunningUnderWDDM = false;
+# endif
         /* Apply viewport hack only if we're running under wine */
         if (NULL!=GetModuleHandle("wined3d.dll") || NULL != GetModuleHandle("wined3dwddm.dll"))
         {
@@ -724,6 +732,14 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
     {
         return;
     }
+
+    if (!stubSystemWindowExist(pWindow))
+    {
+        crWindowDestroy((GLint)pWindow->hWnd);
+        return;
+    }
+
+    stub.spu->dispatch_table.VBoxPackSetInjectID(pWindow->u32ClientID);
 
     if (!pWindow->mapped)
     {
@@ -840,6 +856,10 @@ static void stubSyncTrCheckWindowsCB(unsigned long key, void *data1, void *data2
         return;
     }
 
+#if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
+    if (stub.bRunningUnderWDDM)
+        return;
+#endif
     stubCheckWindowState(pWindow, GL_TRUE);
 }
 
@@ -883,6 +903,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     crDebug("running with VBoxDispD3D");
                     stub.trackWindowVisibleRgn = 0;
+                    stub.bRunningUnderWDDM = true;
                 }
             }
             else
@@ -931,6 +952,7 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
                     {
                         crWarning("VBoxDispMpTstCallbacks.pfnGetRegions failed with 0x%x", hr);
                     }
+                    crHashtableWalk(stub.windowTable, stubSyncTrCheckWindowsCB, NULL);
                 }
             }
             else
