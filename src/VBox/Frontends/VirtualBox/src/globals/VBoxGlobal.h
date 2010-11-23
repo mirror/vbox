@@ -149,6 +149,11 @@ public:
     bool brandingIsActive (bool aForce = false);
     QString brandingGetKey (QString aKey);
 
+    bool processArgs();
+
+    bool switchToMachine(CMachine &machine);
+    bool launchMachine(CMachine &machine);
+
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
     bool showStartVMErrors() const { return mShowStartVMErrors; }
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -158,6 +163,7 @@ public:
     bool trayIconInstall();
 #endif
     QString managedVMUuid() const { return vmUuid; }
+    QList<QUrl> &argUrlList() { return m_ArgUrlList; }
 
     VBoxDefs::RenderMode vmRenderMode() const { return vm_render_mode; }
     const char *vmRenderModeStr() const { return vm_render_mode_str; }
@@ -764,6 +770,7 @@ private:
     VBoxUpdateDlg *mUpdDlg;
 
     QString vmUuid;
+    QList<QUrl> m_ArgUrlList;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     bool mIsTrayMenu : 1; /*< Tray icon active/desired? */

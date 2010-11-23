@@ -163,6 +163,15 @@ if test "$my_default_prompt" != "Yes"; then
 fi
 
 #
+# Unregister has to be done before the files are removed.
+#
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
+if [ -e ${LSREGISTER} ]; then
+    ${LSREGISTER} -u /Applications/VirtualBox.app > /dev/null
+    ${LSREGISTER} -u /Applications/VirtualBox.app/Contents/Resources/vmstarter.app > /dev/null
+fi
+
+#
 # Display the sudo usage instructions and execute the command.
 #
 echo "The uninstallation processes requires administrative privileges"

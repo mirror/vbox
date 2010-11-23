@@ -13,6 +13,27 @@
     <key>CFBundleGetInfoString</key>            <string>@VBOX_PRODUCT@ Manager @VBOX_VERSION_STRING@, © 2007-@VBOX_C_YEAR@ @VBOX_VENDOR@</string>
     <key>CFBundleIconFile</key>                 <string>virtualbox</string>
     <key>CFBundleInfoDictionaryVersion</key>    <string>6.0</string>
-    <key>LSCanProvideIMVideoDataSource</key>    <true/>
+    <key>LSCanProvideIMVideoDataSource</key>    <false/>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+     <dict>
+      <key>CFBundleTypeName</key>               <string>VirtualBox Extension Pack</string>
+      <key>CFBundleTypeExtensions</key>         <array><string>vbox-extpack</string></array>
+      <key>CFBundleTypeRole</key>               <string>None</string>
+      <key>CFBundleTypeIconFile</key>           <string>virtualbox-vbox-extpack</string>
+     </dict>
+     <dict>
+      <key>CFBundleTypeName</key>               <string>Open Virtualization Format</string>
+      <key>CFBundleTypeExtensions</key>         <array><string>ovf</string></array>
+      <key>CFBundleTypeRole</key>               <string>Viewer</string>
+      <key>CFBundleTypeIconFile</key>           <string>virtualbox-ovf</string>
+     </dict>
+     <dict>
+      <key>CFBundleTypeName</key>               <string>Open Virtualization Format Archive</string>
+      <key>CFBundleTypeExtensions</key>         <array><string>ova</string></array>
+      <key>CFBundleTypeRole</key>               <string>Viewer</string>
+      <key>CFBundleTypeIconFile</key>           <string>virtualbox-ova</string>
+     </dict>
+    </array>
 </dict>
 </plist>

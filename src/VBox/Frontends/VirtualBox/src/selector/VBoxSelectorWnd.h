@@ -82,7 +82,7 @@ public slots:
 
     void showContextMenu(const QPoint &aPoint);
 
-    void sltUrlsDropped(QList<QUrl> list);
+    void sltOpenUrls(QList<QUrl> list = QList<QUrl>());
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     void trayIconActivated(QSystemTrayIcon::ActivationReason aReason);
@@ -104,9 +104,9 @@ protected:
     /* Events */
     bool event(QEvent *aEvent);
     void closeEvent(QCloseEvent *aEvent);
-//#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
-//    bool eventFilter(QObject *aObject, QEvent *aEvent);
-//#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
+#ifdef Q_WS_MAC
+    bool eventFilter(QObject *pObject, QEvent *pEvent);
+#endif /* Q_WS_MAC */
 
     void retranslateUi();
 

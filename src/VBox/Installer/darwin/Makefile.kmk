@@ -646,7 +646,8 @@ endif
 VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS = \
 	MacOS/VMMR0.r0 \
 	MacOS/VBoxDDR0.r0 \
-	MacOS/VBoxDD2R0.r0
+	MacOS/VBoxDD2R0.r0 \
+   	MacOS/vmstarter
 
 VBOX_DI_VBAPP_OTHER_BINS = \
 	MacOS/VMMGC.gc \
@@ -656,9 +657,15 @@ VBOX_DI_VBAPP_OTHER_BINS = \
 VBOX_DI_VBAPP_MISC_FILES = \
 	Resources/VirtualBoxVM.app/Contents/Info.plist \
 	Resources/VirtualBoxVM.app/Contents/PkgInfo \
+	Resources/vmstarter.app/Contents/Info.plist \
+	Resources/vmstarter.app/Contents/PkgInfo \
 	Info.plist \
 	PkgInfo \
 	Resources/virtualbox.icns \
+	Resources/virtualbox-vbox.icns \
+	Resources/virtualbox-vbox-extpack.icns \
+	Resources/virtualbox-ovf.icns \
+	Resources/virtualbox-ova.icns \
 	MacOS/components/VBoxXPCOMBase.xpt \
 	MacOS/components/VirtualBox_XPCOM.xpt
 ifdef VBOX_WITH_DOCS_PACKING
@@ -686,6 +693,8 @@ endif
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
 	Resources/VirtualBoxVM.app/Contents/Resources=>../../../Resources/ \
+	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
+	Resources/vmstarter.app/Contents/Resources=>../../../Resources/ \
 	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod))
 ifdef VBOX_WITH_COCOA_QT
 VBOX_DI_VBAPP_SYMLINKS += \
@@ -732,6 +741,9 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/*) \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/Resources/*) \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents/Resources/*.lproj/*) \
+		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/Resources/vmstarter.app/Contents/*) \
+		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/Resources/vmstarter.app/Contents/Resources/*) \
+		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/Resources/vmstarter.app/Contents/Resources/*.lproj/*) \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/Resources/*.lproj/*) \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/*) \
 		$$(wildcard $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/additions/*) \
@@ -765,6 +777,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app \
 		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app/Contents \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/vmstarter.app \
+		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/vmstarter.app/Contents \
 		$(if-expr defined(VBOX_WITH_PYTHON), \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/sdk \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/sdk/installer \

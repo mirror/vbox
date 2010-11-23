@@ -91,6 +91,8 @@ bool darwinIsApplicationCommand(ConstNativeNSEventRef pEvent);
 
 void darwinRetranslateAppMenu();
 
+QString darwinResolveAlias(const QString &strFile);
+
 RT_C_DECLS_END
 
 DECLINLINE(CGRect) darwinToCGRect(const QRect& aRect) { return CGRectMake(aRect.x(), aRect.y(), aRect.width(), aRect.height()); }

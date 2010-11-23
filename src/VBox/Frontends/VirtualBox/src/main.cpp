@@ -472,6 +472,10 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             if (!vboxGlobal().isValid())
                 break;
 
+
+            if (vboxGlobal().processArgs())
+                return 0;
+
 #ifndef VBOX_OSE
 #ifdef Q_WS_X11
             /* show the user license file */
