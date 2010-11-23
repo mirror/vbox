@@ -249,6 +249,7 @@ static void *rtThreadNativeMain(void *pvArgs)
     Assert((uintptr_t)Self == (RTNATIVETHREAD)Self && (uintptr_t)Self != NIL_RTNATIVETHREAD);
     rc = rtThreadMain(pThread, (uintptr_t)Self, &pThread->szName[0]);
 
+    pthread_setspecific(g_SelfKey, NULL);
     pthread_exit((void *)rc);
     return (void *)rc;
 }
