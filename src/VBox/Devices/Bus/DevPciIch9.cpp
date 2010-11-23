@@ -1625,7 +1625,8 @@ static void ich9pciBiosInitDevice(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uD
             {
                 uint32_t u32Address = ich9pciGetRegionReg(iRegion);
 
-                /* Calculate size. */
+                /* Calculate size - we write all 1s into the BAR, and then evaluate which bits
+                   are cleared. . */
                 uint8_t u8ResourceType = ich9pciConfigRead(pGlobals, uBus, uDevFn, u32Address, 1);
                 ich9pciConfigWrite(pGlobals, uBus, uDevFn, u32Address, UINT32_C(0xffffffff), 4);
                 uint32_t u32Size = ich9pciConfigRead(pGlobals, uBus, uDevFn, u32Address, 4);
@@ -1738,6 +1739,9 @@ DECLINLINE(void) ich9pciWriteBarByte(PCIDevice *aDev, int iRegion, int iOffset, 
 
     int iRegionSize = pRegion->size;
 
+    Log3(("ich9pciWriteBarByte: region=%d off=%d val=%x size=%d\n",
+         iRegion, iOffset, u8Val, iRegionSize));
+
     /* Region doesn't exist */
     if (iRegionSize == 0)
         return;
@@ -1745,16 +1749,21 @@ DECLINLINE(void) ich9pciWriteBarByte(PCIDevice *aDev, int iRegion, int iOffset, 
     uint32_t uAddr = ich9pciGetRegionReg(iRegion) + iOffset;
     /* Region size must be power of two */
     Assert((iRegionSize & (iRegionSize - 1)) == 0);
-    uint8_t uMask = ((iRegionSize - 1) >> (iOffset*8)) & 0xff;
+    uint8_t uMask = (((uint32_t)iRegionSize - 1) >> (iOffset*8) ) & 0xff;
 
     if (iOffset == 0)
     {
         uMask |= (pRegion->type & PCI_ADDRESS_SPACE_IO) ?
                 (1 << 2) - 1 /* 2 lowest bits for IO region */ :
                 (1 << 4) - 1 /* 4 lowest bits for memory region, also ROM enable bit for ROM region */;
+
     }
 
-    u8Val = (PCIDevGetByte(aDev, uAddr) & uMask) | (u8Val & ~uMask);
+    uint8_t u8Old = PCIDevGetByte(aDev, uAddr) & uMask;
+    u8Val = (u8Old & uMask) | (u8Val & ~uMask);
+
+    Log3(("ich9pciWriteBarByte: was %x writing %x\n", u8Old, u8Val));
+
     PCIDevSetByte(aDev, uAddr, u8Val);
 }
 /**
@@ -1797,6 +1806,7 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
 
     uint32_t addr = u32Address;
     bool fUpdateMappings = false;
+    bool fP2PBridge = false;
     for (uint32_t i = 0; i < len; i++)
     {
         bool fWritable = false;
@@ -1828,8 +1838,8 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
                         break;
                 }
                 break;
-            default:
             case 0x01: /* PCI-PCI bridge */
+                fP2PBridge = true;
                 switch (addr)
                 {
                     /* Read-only registers */
@@ -1847,8 +1857,12 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
                     default:
                         fWritable = true;
                         break;
-            }
-            break;
+                }
+                break;
+            default:
+                AssertMsgFailed(("Unknown header type %x\n", PCIDevGetHeaderType(aDev)));
+                fWritable = false;
+                break;
         }
 
         uint8_t u8Val = (uint8_t)val;
@@ -1885,13 +1899,20 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
             case VBOX_PCI_BASE_ADDRESS_4: case VBOX_PCI_BASE_ADDRESS_4+1: case VBOX_PCI_BASE_ADDRESS_4+2: case VBOX_PCI_BASE_ADDRESS_4+3:
             case VBOX_PCI_BASE_ADDRESS_5: case VBOX_PCI_BASE_ADDRESS_5+1: case VBOX_PCI_BASE_ADDRESS_5+2: case VBOX_PCI_BASE_ADDRESS_5+3:
             {
-                int iRegion = fRom ? VBOX_PCI_ROM_SLOT : (addr - VBOX_PCI_BASE_ADDRESS_0) >> 2;
-                int iOffset = addr & 0x3;
-                ich9pciWriteBarByte(aDev, iRegion, iOffset, u8Val);
-                fUpdateMappings = true;
+                /* We check that, as same PCI register numbers as BARs may mean different registers for bridges */
+                if (fP2PBridge)
+                    goto default_case;
+                else
+                {
+                    int iRegion = fRom ? VBOX_PCI_ROM_SLOT : (addr - VBOX_PCI_BASE_ADDRESS_0) >> 2;
+                    int iOffset = addr & 0x3;
+                    ich9pciWriteBarByte(aDev, iRegion, iOffset, u8Val);
+                    fUpdateMappings = true;
+                }
                 break;
             }
             default:
+            default_case:
                 if (fWritable)
                     PCIDevSetByte(aDev, addr, u8Val);
         }
