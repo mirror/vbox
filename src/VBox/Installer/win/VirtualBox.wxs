@@ -100,8 +100,11 @@
 
         </Upgrade>
 
-        <Icon Id="vendorvboxicon" src="$(env.VBOX_WINDOWS_ICON_FILE)" />
-        <Property Id="ARPPRODUCTICON">vendorvboxicon</Property>
+        <!-- The product's icon table. -->
+        <Icon Id="IconVirtualBox" SourceFile="$(env.VBOX_WINDOWS_ICON_FILE)" />
+
+        <!-- Global properties. -->
+        <Property Id="ARPPRODUCTICON">IconVirtualBox</Property>
         <Property Id="ARPURLINFOABOUT">http://www.virtualbox.org</Property>
         <Property Id="ARPURLUPDATEINFO">http://www.virtualbox.org</Property>
         <Property Id="INSTALLDESKTOPSHORTCUT" Value="1"></Property>
@@ -361,6 +364,27 @@
                         <!-- Set required environment variables. -->
                         <Environment Id="EnvVBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
                             System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
+                        <!-- Register file extensions. Note: Extension Id's *must not* be changed! -->
+                        <ProgId Id="ProgIdVirtualBox" Description="VirtualBox Virtual Machine" Icon="IconVirtualBox">
+                            <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
+                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                            </Extension>
+                        </ProgId>
+                        <ProgId Id="ProgIdVirtualBoxExtPack" Description="VirtualBox Extension Pack" Icon="IconVirtualBox">
+                            <Extension Id="vbox-extpack" ContentType="application/x-virtualbox-vbox-extpack">
+                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                            </Extension>
+                        </ProgId>
+                        <ProgId Id="ProgIdOVF" Description="Open Virtualization Format" Icon="IconVirtualBox">
+                            <Extension Id="ovf" ContentType="application/x-virtualbox-ovf">
+                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                            </Extension>
+                        </ProgId>
+                        <ProgId Id="ProgIdOVA" Description="Open Virtualization Format Archive" Icon="IconVirtualBox">
+                            <Extension Id="ova" ContentType="application/x-virtualbox-ova">
+                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                            </Extension>
+                        </ProgId>
                         <!-- The "Name" attribute must always be present. If the name is longer than 8.3 the additional "LongName"
                              attribute can be used. -->
                         <File Id="vbox" Name="vbox.exe" LongName="VirtualBox.exe" DiskId="1"  Vital="yes"
