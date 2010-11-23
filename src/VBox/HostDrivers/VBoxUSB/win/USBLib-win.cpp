@@ -2873,10 +2873,10 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
                             RTStrFree(pDevice->pszAltAddress);
                             pDevice->pszAltAddress = (char *)pDevice->pszAddress;
                             pDevice->pszAddress = RTStrDup(pszDevName);
+                            cCaptured++;
                         }
                         pDevice = pDevice->pNext;
                     }
-                    cCaptured++;
 
                     if (j == cHostDevices)
                     {
@@ -2888,7 +2888,7 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
                     }
                 }
                 else
-                    Log(("usbLibGetDevices: Cannot determinet the path to %s\n", pszDevName));
+                    Log(("usbLibGetDevices: Cannot determine the path to %s\n", pszDevName));
             }
             CloseHandle(hDev);
         }
