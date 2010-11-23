@@ -514,10 +514,20 @@ stubGetWindowGeometry( const WindowInfo *window, int *x, int *y,
         *h = 0;
     }
     else {
-        GetClientRect( hwnd, &rect );
+        if (!GetClientRect(hwnd, &rect))
+        {
+            crWarning("GetClientRect failed for %p", hwnd);
+            *w = *h = 0;
+            return;
+        }
         *w = rect.right - rect.left;
         *h = rect.bottom - rect.top;
-        ClientToScreen( hwnd, (LPPOINT) &rect );
+        if (!ClientToScreen( hwnd, (LPPOINT) &rect ))
+        {
+            crWarning("ClientToScreen failed for %p", hwnd);
+            *w = *h = 0;
+            return;
+        }
         *x = rect.left;
         *y = rect.top;
     }
