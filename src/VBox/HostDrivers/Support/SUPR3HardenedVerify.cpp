@@ -1390,10 +1390,10 @@ DECLHIDDEN(int) supR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, 
         Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = '\0';
         rc = supR3HardenedQueryFsObjectByPath(Info.szPath, &FsObjState, pszErr, cbErr);
         if (RT_SUCCESS(rc))
-            rc = supR3HardenedVerifyFsObject(&FsObjState,true /*fDir*/, fRelaxed, Info.szPath, pszErr, cbErr);
+            rc = supR3HardenedVerifyFsObject(&FsObjState, true /*fDir*/, fRelaxed, Info.szPath, pszErr, cbErr);
         if (RT_FAILURE(rc))
             return rc;
-        Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = iComponent + 1 == cComponents ? RTPATH_SLASH : '\0';
+        Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = iComponent + 1 != cComponents ? RTPATH_SLASH : '\0';
     }
 
     /*
@@ -1450,7 +1450,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFile(const char *pszFilename, RTHCUINTPTR hNa
             rc = supR3HardenedVerifyFsObject(&FsObjState, !fFinal /*fDir*/, fRelaxed, Info.szPath, pszErr, cbErr);
         if (RT_FAILURE(rc))
             return rc;
-        Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = fFinal ? RTPATH_SLASH : '\0';
+        Info.szPath[Info.aoffComponents[iComponent + 1] - 1] = !fFinal ? RTPATH_SLASH : '\0';
     }
 
     /*
