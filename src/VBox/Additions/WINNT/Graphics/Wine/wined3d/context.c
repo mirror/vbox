@@ -765,25 +765,28 @@ static void context_update_window(struct wined3d_context *context
 
     if (context->valid)
     {
+#ifndef VBOX_WITH_WDDM
         if (!ReleaseDC(context->win_handle, context->hdc))
         {
             ERR("Failed to release device context %p, last error %#x.\n",
                     context->hdc, GetLastError());
         }
+#endif
     }
     else context->valid = 1;
 
 #ifdef VBOX_WITH_WDDM
     context->win_handle = swapchain->win_handle;
     context->currentSwapchain = swapchain;
+    context->hdc = swapchain->hDC;
 #else
     context->win_handle = context->swapchain->win_handle;
-#endif
     if (!(context->hdc = GetDC(context->win_handle)))
     {
         ERR("Failed to get a device context for window %p.\n", context->win_handle);
         goto err;
     }
+#endif
 
     if (!context_set_pixel_format(context->gl_info, context->hdc, context->pixel_format))
     {
