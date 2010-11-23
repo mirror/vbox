@@ -4609,6 +4609,50 @@ bool VBoxGlobal::isDebuggerAutoShowStatisticsEnabled(CMachine &aMachine)
 // Private members
 ////////////////////////////////////////////////////////////////////////////////
 
+bool VBoxGlobal::processArgs()
+{
+    bool fResult = false;
+    QStringList args = qApp->arguments();
+    QList<QUrl> list;
+    for (int i = 1; i < args.size(); ++i)
+    {
+#ifdef Q_WS_MAC
+        QString strArg = ::darwinResolveAlias(args.at(i));
+#else /* Q_WS_MAC */
+        QString strArg = args.at(i);
+#endif /* !Q_WS_MAC */
+        if (   !strArg.isEmpty()
+            && !strArg.startsWith("-")
+            && QFile::exists(strArg))
+            list << QUrl(strArg);
+    }
+    if (!list.isEmpty())
+    {
+        for (int i = 0; i < list.size(); ++i)
+        {
+            const QString& strFile = list.at(i).toLocalFile();
+            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::VBoxFileExts))
+            {
+                CVirtualBox vbox = vboxGlobal().virtualBox();
+                CMachine machine = vbox.FindMachine(strFile);
+                if (!machine.isNull())
+                {
+                    fResult = true;
+                    launchMachine(machine);
+                    /* Remove from the arg list. */
+                    list.removeAll(strFile);
+                }
+            }
+        }
+    }
+    if (!list.isEmpty())
+    {
+        m_ArgUrlList = list;
+        QTimer::singleShot(0, &vboxGlobal().selectorWnd(), SLOT(sltOpenUrls()));
+    }
+    return fResult;
+}
+
 void VBoxGlobal::init()
 {
 #ifdef DEBUG
@@ -5366,3 +5410,171 @@ void VBoxSwitchMenu::processAboutToShow()
     mAction->setText (text);
 }
 
+bool VBoxGlobal::switchToMachine(CMachine &machine)
+{
+#ifdef Q_WS_MAC
+    ULONG64 id = machine.ShowConsoleWindow();
+#else
+    WId id = (WId) machine.ShowConsoleWindow();
+#endif
+    AssertWrapperOk(machine);
+    if (!machine.isOk())
+        return false;
+
+    /* winId = 0 it means the console window has already done everything
+     * necessary to implement the "show window" semantics. */
+    if (id == 0)
+        return true;
+
+#if defined (Q_WS_WIN32) || defined (Q_WS_X11)
+
+    return vboxGlobal().activateWindow(id, true);
+
+#elif defined (Q_WS_MAC)
+    /*
+     * This is just for the case were the other process cannot steal
+     * the focus from us. It will send us a PSN so we can try.
+     */
+    ProcessSerialNumber psn;
+    psn.highLongOfPSN = id >> 32;
+    psn.lowLongOfPSN = (UInt32)id;
+    OSErr rc = ::SetFrontProcess(&psn);
+    if (!rc)
+        Log(("GUI: %#RX64 couldn't do SetFrontProcess on itself, the selector (we) had to do it...\n", id));
+    else
+        Log(("GUI: Failed to bring %#RX64 to front. rc=%#x\n", id, rc));
+    return !rc;
+
+#endif
+
+    return false;
+
+    /// @todo Below is the old method of switching to the console window
+    //  based on the process ID of the console process. It should go away
+    //  after the new (callback-based) method is fully tested.
+#if 0
+
+    if (!canSwitchTo())
+        return false;
+
+#if defined (Q_WS_WIN32)
+
+    HWND hwnd = mWinId;
+
+    /* if there are blockers (modal and modeless dialogs, etc), find the
+     * topmost one */
+    HWND hwndAbove = NULL;
+    do
+    {
+        hwndAbove = GetNextWindow(hwnd, GW_HWNDPREV);
+        HWND hwndOwner;
+        if (hwndAbove != NULL &&
+            ((hwndOwner = GetWindow(hwndAbove, GW_OWNER)) == hwnd ||
+             hwndOwner  == hwndAbove))
+            hwnd = hwndAbove;
+        else
+            break;
+    }
+    while (1);
+
+    /* first, check that the primary window is visible */
+    if (IsIconic(mWinId))
+        ShowWindow(mWinId, SW_RESTORE);
+    else if (!IsWindowVisible(mWinId))
+        ShowWindow(mWinId, SW_SHOW);
+
+#if 0
+    LogFlowFunc(("mWinId=%08X hwnd=%08X\n", mWinId, hwnd));
+#endif
+
+    /* then, activate the topmost in the group */
+    AllowSetForegroundWindow(m_pid);
+    SetForegroundWindow(hwnd);
+
+    return true;
+
+#elif defined (Q_WS_X11)
+
+    return false;
+
+#elif defined (Q_WS_MAC)
+
+    ProcessSerialNumber psn;
+    OSStatus rc = ::GetProcessForPID(m_pid, &psn);
+    if (!rc)
+    {
+        rc = ::SetFrontProcess(&psn);
+
+        if (!rc)
+        {
+            ShowHideProcess(&psn, true);
+            return true;
+        }
+    }
+    return false;
+
+#else
+
+    return false;
+
+#endif
+
+#endif
+}
+
+bool VBoxGlobal::launchMachine(CMachine &machine)
+{
+    if (machine.CanShowConsoleWindow())
+        return VBoxGlobal::switchToMachine(machine);
+
+    KMachineState state = machine.GetState();
+    AssertMsg(   state == KMachineState_PoweredOff
+              || state == KMachineState_Saved
+              || state == KMachineState_Teleported
+              || state == KMachineState_Aborted
+              , ("Machine must be PoweredOff/Saved/Aborted (%d)", state));
+
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    CSession session;
+    session.createInstance(CLSID_Session);
+    if (session.isNull())
+    {
+        vboxProblem().cannotOpenSession(session);
+        return false;
+    }
+
+#if defined(Q_OS_WIN32)
+    /* allow the started VM process to make itself the foreground window */
+    AllowSetForegroundWindow(ASFW_ANY);
+#endif
+
+    QString env;
+#if defined(Q_WS_X11)
+    /* make sure the VM process will start on the same display as the Selector */
+    const char *display = RTEnvGet("DISPLAY");
+    if (display)
+        env.append(QString("DISPLAY=%1\n").arg(display));
+    const char *xauth = RTEnvGet("XAUTHORITY");
+    if (xauth)
+        env.append(QString("XAUTHORITY=%1\n").arg(xauth));
+#endif
+
+    CProgress progress = machine.LaunchVMProcess(session, "GUI/Qt", env);
+    if (   !vbox.isOk()
+        || progress.isNull())
+    {
+        vboxProblem().cannotOpenSession(vbox, machine);
+        return false;
+    }
+
+    /* Hide the "VM spawning" progress dialog */
+    /* I hope 1 minute will be enough to spawn any running VM silently, isn't it? */
+    int iSpawningDuration = 60000;
+    vboxProblem().showModalProgressDialog(progress, machine.GetName(), 0, iSpawningDuration);
+    if (progress.GetResultCode() != 0)
+        vboxProblem().cannotOpenSession(vbox, machine, progress);
+
+    session.UnlockMachine();
+
+    return true;
+}

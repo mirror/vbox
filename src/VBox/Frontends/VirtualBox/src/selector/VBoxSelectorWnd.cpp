@@ -95,9 +95,9 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
             this, SLOT(showViewContextMenu(const QPoint&)));
 
-#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
+#ifdef Q_WS_MAC
     qApp->installEventFilter(this);
-#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
+#endif /* Q_WS_MAC */
 
 #if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
     /* The application icon. On Win32, it's built-in to the executable. On Mac
@@ -129,7 +129,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
         ":/vm_new_32px.png", ":/new_16px.png"));
     mVmAddAction = new QAction(this);
     mVmAddAction->setIcon(UIIconPool::iconSet(
-        ":/vm_add_32px.png"));
+        ":/vm_add_16px.png"));
     mVmConfigAction = new QAction(this);
     mVmConfigAction->setIcon(UIIconPool::iconSetFull(
         QSize(32, 32), QSize(16, 16),
@@ -186,7 +186,7 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMListView = new UIVMListView(mVMModel);
     mVMListView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     connect(mVMListView, SIGNAL(sigUrlsDropped(QList<QUrl>)),
-            this, SLOT(sltUrlsDropped(QList<QUrl>)), Qt::QueuedConnection);
+            this, SLOT(sltOpenUrls(QList<QUrl>)), Qt::QueuedConnection);
 
     /* Make non-possible to activate list elements by single click,
      * this hack should disable the current possibility to do it if present */
@@ -539,7 +539,12 @@ void VBoxSelectorWnd::fileMediaMgr()
 
 void VBoxSelectorWnd::fileImportAppliance(const QString &strFile /* = "" */)
 {
-    UIImportApplianceWzd wzd(strFile, this);
+#ifdef Q_WS_MAC
+    QString strTmpFile = ::darwinResolveAlias(strFile);
+#else /* Q_WS_MAC */
+    QString strTmpFile = strFile;
+#endif /* !Q_WS_MAC */
+    UIImportApplianceWzd wzd(strTmpFile, this);
 
     wzd.exec();
 }
@@ -607,7 +612,11 @@ void VBoxSelectorWnd::vmNew()
 
 void VBoxSelectorWnd::vmAdd(const QString &strFile /* = "" */)
 {
+#ifdef Q_WS_MAC
+    QString strTmpFile = ::darwinResolveAlias(strFile);
+#else /* Q_WS_MAC */
     QString strTmpFile = strFile;
+#endif /* !Q_WS_MAC */
     /* Initialize variables: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     if (strTmpFile.isEmpty())
@@ -778,61 +787,8 @@ void VBoxSelectorWnd::vmStart(const QString &aUuid /* = QString::null */)
     AssertMsg(!vboxGlobal().isVMConsoleProcess(),
               ("Must NOT be a VM console process"));
 
-    /* just switch to the VM window if it already exists */
-    if (item->canSwitchTo())
-    {
-        item->switchTo();
-        return;
-    }
-
-    AssertMsg(   item->machineState() == KMachineState_PoweredOff
-              || item->machineState() == KMachineState_Saved
-              || item->machineState() == KMachineState_Teleported
-              || item->machineState() == KMachineState_Aborted
-              , ("Machine must be PoweredOff/Saved/Aborted (%d)", item->machineState()));
-
-    QString id = item->id();
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    CSession session;
-
-    session.createInstance(CLSID_Session);
-    if (session.isNull())
-    {
-        vboxProblem().cannotOpenSession(session);
-        return;
-    }
-
-#if defined(Q_OS_WIN32)
-    /* allow the started VM process to make itself the foreground window */
-    AllowSetForegroundWindow(ASFW_ANY);
-#endif
-
-    QString env;
-#if defined(Q_WS_X11)
-    /* make sure the VM process will start on the same display as the Selector */
-    const char *display = RTEnvGet("DISPLAY");
-    if (display)
-        env.append(QString("DISPLAY=%1\n").arg(display));
-    const char *xauth = RTEnvGet("XAUTHORITY");
-    if (xauth)
-        env.append(QString("XAUTHORITY=%1\n").arg(xauth));
-#endif
-
-    CProgress progress = item->machine().LaunchVMProcess(session, "GUI/Qt", env);
-    if (!vbox.isOk())
-    {
-        vboxProblem().cannotOpenSession(vbox, item->machine());
-        return;
-    }
-
-    /* Hide the "VM spawning" progress dialog */
-    /* I hope 1 minute will be enough to spawn any running VM silently, isn't it? */
-    int iSpawningDuration = 60000;
-    vboxProblem().showModalProgressDialog(progress, item->name(), this, iSpawningDuration);
-    if (progress.GetResultCode() != 0)
-        vboxProblem().cannotOpenSession(vbox, item->machine(), progress);
-
-    session.UnlockMachine();
+    CMachine machine = item->machine();
+    vboxGlobal().launchMachine(machine);
 }
 
 void VBoxSelectorWnd::vmDiscard(const QString &aUuid /* = QString::null */)
@@ -971,26 +927,45 @@ void VBoxSelectorWnd::showContextMenu(const QPoint &aPoint)
                 mVMCtxtMenu->exec(mVMListView->mapToGlobal(aPoint));
 }
 
-void VBoxSelectorWnd::sltUrlsDropped(QList<QUrl> list)
+
+void VBoxSelectorWnd::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
 {
     /* Make sure any pending D&D events are consumed. */
     qApp->processEvents();
+    if (list.isEmpty())
+    {
+        list = vboxGlobal().argUrlList();
+        vboxGlobal().argUrlList().clear();
+    }
     /* Check if we are can handle the dropped urls. */
     for (int i = 0; i < list.size(); ++i)
     {
-        QString file = list.at(i).toLocalFile();
-        if (!file.isEmpty())
+#ifdef Q_WS_MAC
+        QString strFile = ::darwinResolveAlias(list.at(i).toLocalFile());
+#else /* Q_WS_MAC */
+        QString strFile = list.at(i).toLocalFile();
+#endif /* !Q_WS_MAC */
+        if (   !strFile.isEmpty()
+            && QFile::exists(strFile))
         {
-            if (VBoxGlobal::hasAllowedExtension(file, VBoxDefs::VBoxFileExts))
+            if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::VBoxFileExts))
             {
-                /* VBox config files. Only one file at the time. */
-                vmAdd(file);
-                break;
+                /* VBox config files. */
+                CVirtualBox vbox = vboxGlobal().virtualBox();
+                CMachine machine = vbox.FindMachine(strFile);
+                if (!machine.isNull())
+                {
+                    CVirtualBox vbox = vboxGlobal().virtualBox();
+                    CMachine machine = vbox.FindMachine(strFile);
+                    if (!machine.isNull())
+                        vboxGlobal().launchMachine(machine);
+                }else
+                    vmAdd(strFile);
             }
-            else if (VBoxGlobal::hasAllowedExtension(file, VBoxDefs::OVFFileExts))
+            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::OVFFileExts))
             {
                 /* OVF/OVA. Only one file at the time. */
-                fileImportAppliance(file);
+                fileImportAppliance(strFile);
                 break;
             }
         }
@@ -1107,32 +1082,40 @@ void VBoxSelectorWnd::closeEvent(QCloseEvent *aEvent)
     QMainWindow::closeEvent(aEvent);
 }
 
-#if defined (Q_WS_MAC) && (QT_VERSION < 0x040402)
-bool VBoxSelectorWnd::eventFilter(QObject *aObject, QEvent *aEvent)
+#ifdef Q_WS_MAC
+bool VBoxSelectorWnd::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     if (!isActiveWindow())
-        return QIWithRetranslateUI2<QMainWindow>::eventFilter(aObject, aEvent);
+        return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
 
-    if (qobject_cast<QWidget*>(aObject) &&
-        qobject_cast<QWidget*>(aObject)->window() != this)
-        return QIWithRetranslateUI2<QMainWindow>::eventFilter(aObject, aEvent);
+    if (qobject_cast<QWidget*>(pObject) &&
+        qobject_cast<QWidget*>(pObject)->window() != this)
+        return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
 
-    switch (aEvent->type())
+    switch (pEvent->type())
     {
+        case QEvent::FileOpen:
+        {
+            sltOpenUrls(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->file());
+            break;
+        }
+# if (QT_VERSION < 0x040402)
         case QEvent::KeyPress:
-            {
-                /* Bug in Qt below 4.4.2. The key events are send to the current
-                 * window even if a menu is shown & has the focus. See
-                 * http://trolltech.com/developer/task-tracker/index_html?method=entry&id=214681. */
-                if (::darwinIsMenuOpen())
-                    return true;
-            }
+        {
+            /* Bug in Qt below 4.4.2. The key events are send to the current
+             * window even if a menu is shown & has the focus. See
+             * http://trolltech.com/developer/task-tracker/index_html?method=entry&id=214681. */
+            if (::darwinIsMenuOpen())
+                return true;
+            break;
+        }
+# endif
         default:
             break;
     }
-    return QIWithRetranslateUI2<QMainWindow>::eventFilter(aObject, aEvent);
+    return QIWithRetranslateUI2<QMainWindow>::eventFilter(pObject, pEvent);
 }
-#endif /* defined (Q_WS_MAC) && (QT_VERSION < 0x040402) */
+#endif /* Q_WS_MAC */
 
 /**
  *  Sets the strings of the subwidgets using the current

@@ -349,6 +349,34 @@ void darwinCreateContextMenuEvent(void *pvUser, int x, int y)
     qApp->postEvent(pWin, new QContextMenuEvent(QContextMenuEvent::Mouse, local, global));
 }
 
+QString darwinResolveAlias(const QString &strFile)
+{
+    OSErr err = noErr;
+    FSRef fileRef;
+    QString strTarget;
+    do
+    {
+        Boolean fDir;
+        if ((err = FSPathMakeRef((const UInt8*)strFile.toUtf8().constData(), &fileRef, &fDir)) != noErr)
+            break;
+        Boolean fAlias = FALSE;
+        if ((err = FSIsAliasFile(&fileRef, &fAlias, &fDir)) != noErr)
+            break;
+        if (fAlias == TRUE)
+        {
+            if ((err = FSResolveAliasFile(&fileRef, TRUE, &fAlias, &fDir)) != noErr)
+                break;
+            char pszPath[1024];
+            if ((err = FSRefMakePath(&fileRef, (UInt8*)pszPath, 1024)) != noErr)
+                break;
+            strTarget = QString::fromUtf8(pszPath);
+        }else
+            strTarget = strFile;
+    }while(0);
+
+    return strTarget;
+}
+
 /********************************************************************************
  *
  * Old carbon stuff. Have to converted soon!

@@ -854,7 +854,11 @@ VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
 	src/darwin/PkgInfo \
 	$(PATH_VirtualBox.app)/Info.plist \
-	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns
+	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox-extpack.icns=>Resources/virtualbox-vbox-extpack.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
+	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns
 
 $$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
@@ -881,6 +885,35 @@ VirtualBoxVM.app_SYMLINKS = \
 
 $$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		--output $@ $<
+
+PROGRAMS += vmstarter
+vmstarter_TEMPLATE = VBOXR3EXE
+vmstarter_SOURCES = src/darwin/vmstarter.mm
+vmstarter_LDFLAGS += -framework AppKit
+vmstarter_INST = $(INST_BIN)vmstarter
+
+INSTALLS += vmstarter.app
+vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents
+vmstarter.app_MODE = 644
+vmstarter.app_SOURCES = \
+	src/darwin/vmstarter-PkgInfo=>PkgInfo \
+	$(PATH_vmstarter.app)/vmstarter-Info.plist=>Info.plist
+vmstarter.app_SYMLINKS = \
+    MacOS=>../../../MacOS \
+    Resources=>../../../Resources
+
+$$(PATH_vmstarter.app)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+	$(call MSG_GENERATE,vmstarter.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \

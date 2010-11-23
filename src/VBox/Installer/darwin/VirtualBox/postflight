@@ -66,9 +66,9 @@ fi
 VBOXWEBSRV="${VBOX_INSTALL_PATH}/org.virtualbox.vboxwebsrv.plist"
 VBOXWEBSRV_TRG="${HOME}/Library/LaunchAgents"
 if [[ -e "${VBOXWEBSRV}" && -e "${VBOXWEBSRV_TRG}" ]]; then
-   echo "Installing vboxwebsrv launchd file to ${VBOXWEBSRV_TRG}"
-   ${CP} "${VBOXWEBSRV}" "${VBOXWEBSRV_TRG}/"
-   /usr/sbin/chown `/usr/bin/stat -f"%u" "${HOME}"` "${VBOXWEBSRV_TRG}/org.virtualbox.vboxwebsrv.plist"
+    echo "Installing vboxwebsrv launchd file to ${VBOXWEBSRV_TRG}"
+    ${CP} "${VBOXWEBSRV}" "${VBOXWEBSRV_TRG}/"
+    /usr/sbin/chown "${USER}" "${VBOXWEBSRV_TRG}/org.virtualbox.vboxwebsrv.plist"
 fi
 
 #
@@ -76,8 +76,18 @@ fi
 #
 DATAPATH="`/usr/bin/dirname "${0}"`/../../../../../.."
 if [ -d "${DATAPATH}/.custom" ]; then
-   echo  1>&2 "Copy ${DATAPATH}/.custom to ${VBOX_INSTALL_PATH}...";
-   ${CPDIR} "${DATAPATH}/.custom/"   "${VBOX_INSTALL_PATH}/custom"
+    echo  1>&2 "Copy ${DATAPATH}/.custom to ${VBOX_INSTALL_PATH}...";
+    ${CPDIR} "${DATAPATH}/.custom/"   "${VBOX_INSTALL_PATH}/custom"
+fi
+
+#
+# Register our file extensions
+#
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister
+if [ -e ${LSREGISTER} ]; then
+    echo "Register file extensions for $USER"
+    /usr/bin/sudo -u "${USER}" ${LSREGISTER} -f /Applications/VirtualBox.app
+    /usr/bin/sudo -u "${USER}" ${LSREGISTER} -f /Applications/VirtualBox.app/Contents/Resources/vmstarter.app
 fi
 
 exit 0;
