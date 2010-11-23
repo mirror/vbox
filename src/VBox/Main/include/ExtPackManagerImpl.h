@@ -47,7 +47,7 @@ public:
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     init(VirtualBox *a_pVirtualBox, const char *a_pszName, const char *a_pszParentDir);
+    HRESULT     init(VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const char *a_pszParentDir);
     void        uninit();
     /** @}  */
 
@@ -66,13 +66,14 @@ public:
 
     /** @name Internal interfaces used by ExtPackManager.
      * @{ */
-    void        callInstalledHook(IVirtualBox *a_pVirtualBox);
+    bool        callInstalledHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock);
     HRESULT     callUninstallHookAndClose(IVirtualBox *a_pVirtualBox, bool a_fForcedRemoval);
-    void        callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox);
-    void        callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine);
-    int         callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM);
-    int         callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM);
-    void        callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM);
+    bool        callVirtualBoxReadyHook(IVirtualBox *a_pVirtualBox, AutoWriteLock *a_pLock);
+    bool        callConsoleReadyHook(IConsole *a_pConsole, AutoWriteLock *a_pLock);
+    bool        callVmCreatedHook(IVirtualBox *a_pVirtualBox, IMachine *a_pMachine, AutoWriteLock *a_pLock);
+    bool        callVmConfigureVmmHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc);
+    bool        callVmPowerOnHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock, int *a_pvrc);
+    bool        callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock);
     HRESULT     checkVrde(void);
     HRESULT     getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary);
     bool        wantsToBeDefaultVrde(void) const;
@@ -93,6 +94,8 @@ protected:
     static DECLCALLBACK(int)    hlpFindModule(PCVBOXEXTPACKHLP pHlp, const char *pszName, const char *pszExt,
                                               VBOXEXTPACKMODKIND enmKind, char *pszFound, size_t cbFound, bool *pfNative);
     static DECLCALLBACK(int)    hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath);
+    static DECLCALLBACK(VBOXEXTPACKCTX) hlpGetContext(PCVBOXEXTPACKHLP pHlp);
+    static DECLCALLBACK(int)    hlpReservedN(PCVBOXEXTPACKHLP pHlp);
     /** @}  */
 
 private:
@@ -125,7 +128,8 @@ class ATL_NO_VTABLE ExtPackManager :
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     init(VirtualBox *a_pVirtualBox, const char *a_pszDropZonePath, bool a_fCheckDropZone);
+    HRESULT     init(VirtualBox *a_pVirtualBox, const char *a_pszDropZonePath, bool a_fCheckDropZone,
+                     VBOXEXTPACKCTX a_enmContext);
     void        uninit();
     /** @}  */
 
@@ -143,6 +147,7 @@ class ATL_NO_VTABLE ExtPackManager :
      * @{ */
     void        processDropZone(void);
     void        callAllVirtualBoxReadyHooks(void);
+    void        callAllConsoleReadyHooks(IConsole *a_pConsole);
     void        callAllVmCreatedHooks(IMachine *a_pMachine);
     int         callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM);
     int         callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM);

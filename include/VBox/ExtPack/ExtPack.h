@@ -61,6 +61,27 @@ typedef enum VBOXEXTPACKMODKIND
     VBOXEXTPACKMODKIND_32BIT_HACK = 0x7fffffff
 } VBOXEXTPACKMODKIND;
 
+/**
+ * Contexts returned by VBOXEXTPACKHLP::pfnGetContext.
+ */
+typedef enum VBOXEXTPACKCTX
+{
+    /** Zero is invalid as alwasy. */
+    VBOXEXTPACKCTX_INVALID = 0,
+    /** The per-user daemon process (VBoxSVC). */
+    VBOXEXTPACKCTX_PER_USER_DAEMON,
+    /** A VM process.
+     * @remarks This will also include the client processes in v4.0.  */
+    VBOXEXTPACKCTX_VM_PROCESS,
+    /** A API client process.
+     * @remarks This will not be returned by VirtualBox 4.0. */
+    VBOXEXTPACKCTX_CLIENT_PROCESS,
+    /** End of the valid values (exclusive). */
+    VBOXEXTPACKCTX_END,
+    /** The usual 32-bit type hack. */
+    VBOXEXTPACKCTX_32BIT_HACK = 0x7fffffff
+} VBOXEXTPACKCTX;
+
 
 /** Pointer to const helpers passed to the VBoxExtPackRegister() call. */
 typedef const struct VBOXEXTPACKHLP *PCVBOXEXTPACKHLP;
@@ -118,11 +139,31 @@ typedef struct VBOXEXTPACKHLP
      */
     DECLR3CALLBACKMEMBER(int, pfnGetFilePath,(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath));
 
+    /**
+     * Gets the context the extension pack is operating in.
+     *
+     * @returns The context.
+     * @retval  VBOXEXTPACKCTX_INVALID if @a pHlp is invalid.
+     *
+     * @param   pHlp            Pointer to this helper structure.
+     */
+    DECLR3CALLBACKMEMBER(VBOXEXTPACKCTX, pfnGetContext,(PCVBOXEXTPACKHLP pHlp));
+
+    DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved4,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved5,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved6,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved7,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved8,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+    DECLR3CALLBACKMEMBER(int, pfnReserved9,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
+
     /** End of structure marker (VBOXEXTPACKHLP_VERSION). */
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKHLP;
 /** Current version of the VBOXEXTPACKHLP structure.  */
-#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(1, 0)
+#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(0, 1)
 
 
 /** Pointer to the extension pack callback table. */
@@ -156,19 +197,33 @@ typedef struct VBOXEXTPACKREG
      * @returns VBox status code.
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
+     * @todo    This is currently called holding locks making pVirtualBox
+     *          relatively unusable.
      */
     DECLCALLBACKMEMBER(int, pfnUninstall)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
 
     /**
      * Hook for doing work after the VirtualBox object is ready.
      *
-     * This is called in the context of the per-user service (VBoxSVC).  There
-     * will not be any similar call from the VM process.
+     * This is called in the context of the per-user service (VBoxSVC).  The
+     * pfnConsoleReady method is the equivalent for the VM/client process.
      *
      * @param   pThis       Pointer to this structure.
      * @param   pVirtualBox The VirtualBox interface.
      */
     DECLCALLBACKMEMBER(void, pfnVirtualBoxReady)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox);
+
+    /**
+     * Hook for doing work after the Console object is ready.
+     *
+     * This is called in the context of the VM/client process.  The
+     * pfnVirtualBoxReady method is the equivalent for the per-user service
+     * (VBoxSVC).
+     *
+     * @param   pThis       Pointer to this structure.
+     * @param   pConsole    The Console interface.
+     */
+    DECLCALLBACKMEMBER(void, pfnConsoleReady)(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IConsole) *pConsole);
 
     /**
      * Hook for doing work before unloading.
@@ -247,7 +302,7 @@ typedef struct VBOXEXTPACKREG
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKREG;
 /** Current version of the VBOXEXTPACKREG structure.  */
-#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(1, 0)
+#define VBOXEXTPACKREG_VERSION        RT_MAKE_U32(0, 1)
 
 
 /**
@@ -273,6 +328,26 @@ typedef FNVBOXEXTPACKREGISTER *PFNVBOXEXTPACKREGISTER;
 /** The name of the main module entry point. */
 #define VBOX_EXTPACK_MAIN_MOD_ENTRY_POINT   "VBoxExtPackRegister"
 
+
+/**
+ * Checks if extension pack interface version is compatible.
+ *
+ * @returns true if the do, false if they don't.
+ * @param   u32Provider     The provider version.
+ * @param   u32User         The user version.
+ */
+#define VBOXEXTPACK_IS_VER_COMPAT(u32Provider, u32User) \
+    (    VBOXEXTPACK_IS_MAJOR_VER_EQUAL(u32Provider, u32User) \
+      && RT_LOWORD(u32Provider) >= RT_LOWORD(u32User) )
+
+/**
+ * Check if two extension pack interface versions has the same major version.
+ *
+ * @returns true if the do, false if they don't.
+ * @param   u32Ver1         The first version number.
+ * @param   u32Ver2         The second version number.
+ */
+#define VBOXEXTPACK_IS_MAJOR_VER_EQUAL(u32Ver1, u32Ver2)  (RT_HIWORD(u32Ver1) == RT_HIWORD(u32Ver2))
 
 #endif
 

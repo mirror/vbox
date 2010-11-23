@@ -531,7 +531,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
 #ifdef VBOX_WITH_EXTPACK
     unconst(mptrExtPackManager).createObject();
-    rc = mptrExtPackManager->init(NULL, NULL, false); /* Drop zone handling is VBoxSVC only. */
+    rc = mptrExtPackManager->init(NULL, NULL, false, VBOXEXTPACKCTX_VM_PROCESS); /* Drop zone handling is VBoxSVC only. */
     AssertComRCReturnRC(rc);
 #endif
 
@@ -582,6 +582,12 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
+
+#ifdef VBOX_WITH_EXTPACK
+    /* Let the extension packs have a go at things (hold no locks). */
+    if (SUCCEEDED(rc))
+        mptrExtPackManager->callAllConsoleReadyHooks(this);
+#endif
 
     LogFlowThisFuncLeave();
 
