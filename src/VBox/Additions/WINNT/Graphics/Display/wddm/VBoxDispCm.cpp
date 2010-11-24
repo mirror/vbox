@@ -223,7 +223,9 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
             HRESULT hr = vboxDispCmSessionCmdQueryData(pSession, pCmd, cbCmd);
             Assert(hr == S_OK || hr == S_FALSE);
             if (hr == S_OK || hr != S_FALSE)
+            {
                 return hr;
+            }
 
             pSession->bQueryMp = false;
         }
@@ -255,4 +257,21 @@ HRESULT vboxDispCmSessionCmdGet(PVBOXDISPCM_SESSION pSession, PVBOXDISPIFESCAPE_
 HRESULT vboxDispCmCmdGet(PVBOXDISPIFESCAPE_GETVBOXVIDEOCMCMD pCmd, uint32_t cbCmd, DWORD dwMilliseconds)
 {
     return vboxDispCmSessionCmdGet(&g_pVBoxCmMgr.Session, pCmd, cbCmd, dwMilliseconds);
+}
+
+void vboxDispCmLog(LPCSTR pszMsg)
+{
+    PVBOXDISPCM_SESSION pSession = &g_pVBoxCmMgr.Session;
+
+    EnterCriticalSection(&pSession->CritSect);
+    /* use any context for identifying the kernel CmSession. We're using the first one */
+    PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
+    Assert(pContext);
+    if (pContext)
+    {
+        PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
+        Assert(pDevice);
+        vboxVDbgMpPrint((pDevice, pszMsg));
+    }
+    LeaveCriticalSection(&pSession->CritSect);
 }

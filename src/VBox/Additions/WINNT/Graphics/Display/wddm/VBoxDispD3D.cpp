@@ -3595,7 +3595,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
                                       pDevice->aStreamSourceUm[0].cbStride);
             Assert(hr == S_OK);
 
-//            vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
+//            vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
         }
         else
         {
@@ -3630,7 +3630,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
                                                 pData->PrimitiveCount);
         Assert(hr == S_OK);
 
-//        vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitive\n"));
+//        vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitive\n"));
 #if 0
         IDirect3DVertexDeclaration9* pDecl;
         hr = pDevice9If->GetVertexDeclaration(&pDecl);
@@ -3996,7 +3996,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
 
             if (pDevice->aStreamSource[stream]->LockInfo.cLocks)
             {
-//                vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
+//                vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitiveUP\n"));
 
                 Assert(pLock->fFlags.MightDrawFromLocked && (pLock->fFlags.Discard || pLock->fFlags.NoOverwrite));
                 hr = pDevice9If->DrawPrimitiveUP(pData->PrimitiveType, pData->PrimitiveCount,
@@ -4008,7 +4008,7 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
             }
             else
             {
-//                vboxVDbgMpPrint((pDevice, __FUNCTION__": DrawPrimitive\n"));
+//                vboxVDbgMpPrintF((pDevice, __FUNCTION__": DrawPrimitive\n"));
 
                 hr = pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset/pDevice->StreamSourceInfo[stream].uiStride, pData->PrimitiveCount);
                 Assert(hr == S_OK);
@@ -8142,7 +8142,7 @@ VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char 
 {
     if (pPrefix)
     {
-        vboxVDbgMpPrint((pDevice, "%s", pPrefix));
+        vboxVDbgMpPrintF((pDevice, "%s", pPrefix));
     }
 
     D3DLOCKED_RECT Lr;
@@ -8160,11 +8160,11 @@ VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char 
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
 //        Assert(bpp == pAlloc->SurfDesc.bpp);
 //        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-        vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+        vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                 Lr.pBits, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
         if (pRect)
         {
-            vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
                     ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch));
         }
@@ -8175,7 +8175,7 @@ VOID vboxVDbgDoDumpAllocSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char 
     }
     if (pSuffix)
     {
-        vboxVDbgMpPrint((pDevice, "%s\n", pSuffix));
+        vboxVDbgMpPrintF((pDevice, "%s\n", pSuffix));
     }
 }
 
@@ -8183,7 +8183,7 @@ VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pP
 {
     if (pPrefix)
     {
-        vboxVDbgMpPrint((pDevice, "%s", pPrefix));
+        vboxVDbgMpPrintF((pDevice, "%s", pPrefix));
     }
 
     if (pRect)
@@ -8212,11 +8212,11 @@ VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pP
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
 //        Assert(bpp == pAlloc->SurfDesc.bpp);
 //        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-        vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+        vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                 LockData.pData, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch));
         if (pRect)
         {
-            vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
                     ((uint8_t*)LockData.pData) + (pRect->top * pAlloc->SurfDesc.pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, pAlloc->SurfDesc.pitch));
         }
@@ -8232,7 +8232,7 @@ VOID vboxVDbgDoDumpAllocData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pP
     }
     if (pSuffix)
     {
-        vboxVDbgMpPrint((pDevice, "%s\n", pSuffix));
+        vboxVDbgMpPrintF((pDevice, "%s\n", pSuffix));
     }
 }
 
@@ -8241,7 +8241,7 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
 {
     if (pPrefix)
     {
-        vboxVDbgMpPrint((pDevice, "%s", pPrefix));
+        vboxVDbgMpPrintF((pDevice, "%s", pPrefix));
     }
 
     Assert(pRc->cAllocations > iAlloc);
@@ -8271,11 +8271,11 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
 //        Assert(bpp == pAlloc->SurfDesc.bpp);
 //        Assert(pAlloc->SurfDesc.pitch == Lr.Pitch);
-        vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+        vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                 Lr.pBits, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, Lr.Pitch));
         if (pRect)
         {
-            vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
+            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">rect info</exec>\n",
                     ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch));
         }
@@ -8286,7 +8286,7 @@ VOID vboxVDbgDoDumpSurfData(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
     }
     if (pSuffix)
     {
-        vboxVDbgMpPrint((pDevice, "%s\n", pSuffix));
+        vboxVDbgMpPrintF((pDevice, "%s\n", pSuffix));
     }
 
     if (bReleaseSurf)
@@ -8306,7 +8306,7 @@ VOID vboxVDbgDoDumpSurfDataBySurf(const PVBOXWDDMDISP_DEVICE pDevice, IDirect3DS
         if (hr == S_OK)
         {
             UINT bpp = vboxWddmCalcBitsPerPixel((D3DDDIFORMAT)Desc.Format);
-            vboxVDbgMpPrint((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
+            vboxVDbgMpPrintF((pDevice, "<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>\n",
                     Lr.pBits, Desc.Width, Desc.Height, bpp, Lr.Pitch));
 
             Assert(0);
@@ -8327,7 +8327,7 @@ void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
     {
         PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc(pAlloc);
         Assert(pSwapchain);
-        bFrontBuf = (vboxWddmSwapchainGetBb(pSwapchain)->pAlloc == pAlloc);
+        bFrontBuf = (vboxWddmSwapchainGetFb(pSwapchain)->pAlloc == pAlloc);
     }
     vboxVDbgDoMpPrintF(pDevice, "%s D3DWidth(%d), width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
             pAlloc->D3DWidth, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,

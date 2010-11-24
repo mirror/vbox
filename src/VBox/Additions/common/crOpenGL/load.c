@@ -789,9 +789,15 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
             }
         }
     }
+    else if (!pRegions->pRegions->fFlags.bHide)
+    {
+        Assert(pRegions->pRegions->fFlags.bAddHiddenRects);
+        hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, 0);
+    }
     else
     {
-        hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, 0);
+        Assert(pRegions->pRegions->fFlags.bAddHiddenRects);
+        hNewRgn = CreateRectRgn(pWindow->x, pWindow->y, pWindow->x + pWindow->width, pWindow->y + pWindow->height);
     }
 
     if (hNewRgn!=INVALID_HANDLE_VALUE)

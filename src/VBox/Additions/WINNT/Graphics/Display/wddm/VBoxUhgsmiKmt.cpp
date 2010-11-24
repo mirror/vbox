@@ -418,7 +418,9 @@ static HRESULT vboxUhgsmiKmtEngineCreate(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, BOOL bD
             Assert(hr == S_OK);
             if (hr == S_OK)
             {
-                hr = vboxDispKmtCreateContext(&pHgsmi->Device, &pHgsmi->Context, bD3D);
+                hr = vboxDispKmtCreateContext(&pHgsmi->Device, &pHgsmi->Context,
+                        bD3D ? VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D : VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL,
+                                NULL, 0);
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
@@ -695,18 +697,21 @@ HRESULT vboxDispKmtDestroyDevice(PVBOXDISPKMT_DEVICE pDevice)
     return E_FAIL;
 }
 
-HRESULT vboxDispKmtCreateContext(PVBOXDISPKMT_DEVICE pDevice, PVBOXDISPKMT_CONTEXT pContext, BOOL bD3D)
+HRESULT vboxDispKmtCreateContext(PVBOXDISPKMT_DEVICE pDevice, PVBOXDISPKMT_CONTEXT pContext,
+                                    VBOXWDDM_CONTEXT_TYPE enmType, HANDLE hEvent, uint64_t u64UmInfo)
 {
     VBOXWDDM_CREATECONTEXT_INFO Info = {0};
     Info.u32IfVersion = 9;
-    Info.enmType = bD3D ? VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D : VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL;
+    Info.enmType = enmType;
+    Info.hUmEvent = (uint64_t)hEvent;
+    Info.u64UmInfo = u64UmInfo;
     D3DKMT_CREATECONTEXT ContextData = {0};
     ContextData.hDevice = pDevice->hDevice;
     ContextData.NodeOrdinal = 0;
     ContextData.EngineAffinity = 0;
     ContextData.pPrivateDriverData = &Info;
     ContextData.PrivateDriverDataSize = sizeof (Info);
-    ContextData.ClientHint = bD3D ? D3DKMT_CLIENTHINT_DX9 : D3DKMT_CLIENTHINT_OPENGL;
+    ContextData.ClientHint = enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL ? D3DKMT_CLIENTHINT_OPENGL : D3DKMT_CLIENTHINT_DX9;
     NTSTATUS Status = pDevice->pAdapter->pCallbacks->pfnD3DKMTCreateContext(&ContextData);
     Assert(!Status);
     if (!Status)
