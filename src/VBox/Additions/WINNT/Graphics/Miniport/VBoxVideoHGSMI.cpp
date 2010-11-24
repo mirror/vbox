@@ -31,68 +31,73 @@
 
 // #include "vboxioctl.h"
 
-void HGSMINotifyHostCmdComplete (PVBOXVIDEO_COMMON pCommon, HGSMIOFFSET offt)
+/** Send completion notification to the host for the command located at offset
+ * @a offt into the host command buffer. */
+void HGSMINotifyHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx, HGSMIOFFSET offt)
 {
-    VBoxHGSMIHostWrite(pCommon, offt);
+    VBoxVideoCmnPortWriteUlong(pCtx->port, offt);
 }
 
-void HGSMIClearIrq (PVBOXVIDEO_COMMON pCommon)
+/** Acknowlege an IRQ. */
+void HGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
-    VBoxHGSMIHostWrite(pCommon, HGSMIOFFSET_VOID);
+    VBoxVideoCmnPortWriteUlong(pCtx->port, HGSMIOFFSET_VOID);
 }
 
-static void HGSMIHostCmdComplete (PVBOXVIDEO_COMMON pCommon, void * pvMem)
+/** Inform the host that a command has been handled. */
+static void HGSMIHostCmdComplete(PHGSMIHOSTCOMMANDCONTEXT pCtx, void * pvMem)
 {
-    HGSMIOFFSET offMem = HGSMIPointerToOffset (&pCommon->areaHostHeap, HGSMIBufferHeaderFromData (pvMem));
+    HGSMIBUFFERHEADER *pHdr = HGSMIBufferHeaderFromData(pvMem);
+    HGSMIOFFSET offMem = HGSMIPointerToOffset(&pCtx->areaCtx, pHdr);
     Assert(offMem != HGSMIOFFSET_VOID);
     if(offMem != HGSMIOFFSET_VOID)
     {
-        HGSMINotifyHostCmdComplete (pCommon, offMem);
+        HGSMINotifyHostCmdComplete(pCtx, offMem);
     }
 }
 
-static void hgsmiHostCmdProcess(PVBOXVIDEO_COMMON pCommon, HGSMIOFFSET offBuffer)
+/** Submit an incoming host command to the appropriate handler. */
+static void hgsmiHostCmdProcess(PHGSMIHOSTCOMMANDCONTEXT pCtx,
+                                HGSMIOFFSET offBuffer)
 {
-    int rc = HGSMIBufferProcess (&pCommon->areaHostHeap,
-                                &pCommon->channels,
-                                offBuffer);
+    int rc = HGSMIBufferProcess(&pCtx->areaCtx, &pCtx->channels, offBuffer);
     Assert(!RT_FAILURE(rc));
     if(RT_FAILURE(rc))
     {
         /* failure means the command was not submitted to the handler for some reason
          * it's our responsibility to notify its completion in this case */
-        HGSMINotifyHostCmdComplete(pCommon, offBuffer);
+        HGSMINotifyHostCmdComplete(pCtx, offBuffer);
     }
     /* if the cmd succeeded it's responsibility of the callback to complete it */
 }
 
-static HGSMIOFFSET hgsmiGetHostBuffer (PVBOXVIDEO_COMMON pCommon)
+/** Get the next command from the host. */
+static HGSMIOFFSET hgsmiGetHostBuffer(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
-    return VBoxHGSMIHostRead(pCommon);
+    return VBoxVideoCmnPortReadUlong(pCtx->port);
 }
 
-static void hgsmiHostCommandQueryProcess (PVBOXVIDEO_COMMON pCommon)
+/** Get and handle the next command from the host. */
+static void hgsmiHostCommandQueryProcess(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
-    HGSMIOFFSET offset = hgsmiGetHostBuffer (pCommon);
-    Assert(offset != HGSMIOFFSET_VOID);
-    if(offset != HGSMIOFFSET_VOID)
-    {
-        hgsmiHostCmdProcess(pCommon, offset);
-    }
+    HGSMIOFFSET offset = hgsmiGetHostBuffer(pCtx);
+    AssertReturnVoid(offset != HGSMIOFFSET_VOID);
+    hgsmiHostCmdProcess(pCtx, offset);
 }
 
-void hgsmiProcessHostCommandQueue(PVBOXVIDEO_COMMON pCommon)
+/** Drain the host command queue. */
+void hgsmiProcessHostCommandQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx)
 {
-    while (pCommon->pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
+    while (pCtx->pfHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
     {
-        if (!ASMAtomicCmpXchgBool(&pCommon->bHostCmdProcessing, true, false))
+        if (!ASMAtomicCmpXchgBool(&pCtx->fHostCmdProcessing, true, false))
             return;
-        hgsmiHostCommandQueryProcess(pCommon);
-        ASMAtomicWriteBool(&pCommon->bHostCmdProcessing, false);
+        hgsmiHostCommandQueryProcess(pCtx);
+        ASMAtomicWriteBool(&pCtx->fHostCmdProcessing, false);
     }
 }
 
-/* Detect whether HGSMI is supported by the host. */
+/** Detect whether HGSMI is supported by the host. */
 bool VBoxHGSMIIsSupported (void)
 {
     uint16_t DispiId;
@@ -111,7 +116,7 @@ typedef FNHGSMICALLINIT *PFNHGSMICALLINIT;
 typedef int FNHGSMICALLFINALIZE (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData);
 typedef FNHGSMICALLFINALIZE *PFNHGSMICALLFINALIZE;
 
-void* vboxHGSMIBufferAlloc(PVBOXVIDEO_COMMON pCommon,
+void* vboxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                          HGSMISIZE cbData,
                          uint8_t u8Ch,
                          uint16_t u16Op)
@@ -119,27 +124,27 @@ void* vboxHGSMIBufferAlloc(PVBOXVIDEO_COMMON pCommon,
 #ifdef VBOX_WITH_WDDM
     /* @todo: add synchronization */
 #endif
-    return HGSMIHeapAlloc (&pCommon->hgsmiAdapterHeap, cbData, u8Ch, u16Op);
+    return HGSMIHeapAlloc (&pCtx->heapCtx, cbData, u8Ch, u16Op);
 }
 
-void vboxHGSMIBufferFree (PVBOXVIDEO_COMMON pCommon, void *pvBuffer)
+void vboxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx, void *pvBuffer)
 {
 #ifdef VBOX_WITH_WDDM
     /* @todo: add synchronization */
 #endif
-    HGSMIHeapFree (&pCommon->hgsmiAdapterHeap, pvBuffer);
+    HGSMIHeapFree (&pCtx->heapCtx, pvBuffer);
 }
 
-int vboxHGSMIBufferSubmit (PVBOXVIDEO_COMMON pCommon, void *pvBuffer)
+int vboxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx, void *pvBuffer)
 {
     /* Initialize the buffer and get the offset for port IO. */
-    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pCommon->hgsmiAdapterHeap, pvBuffer);
+    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pCtx->heapCtx, pvBuffer);
 
     Assert(offBuffer != HGSMIOFFSET_VOID);
     if (offBuffer != HGSMIOFFSET_VOID)
     {
         /* Submit the buffer to the host. */
-        VBoxHGSMIGuestWrite(pCommon, offBuffer);
+        VBoxVideoCmnPortWriteUlong(pCtx->port, offBuffer);
         return VINF_SUCCESS;
     }
 
@@ -157,7 +162,7 @@ static int vboxCallChannel (PVBOXVIDEO_COMMON pCommon,
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-    void *p = HGSMIHeapAlloc (&pCommon->hgsmiAdapterHeap, cbData, u8Ch, u16Op);
+    void *p = HGSMIHeapAlloc (&pCommon->guestCtx.heapCtx, cbData, u8Ch, u16Op);
 
     if (!p)
     {
@@ -173,14 +178,9 @@ static int vboxCallChannel (PVBOXVIDEO_COMMON pCommon,
 
         if (RT_SUCCESS (rc))
         {
-            /* Initialize the buffer and get the offset for port IO. */
-            HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pCommon->hgsmiAdapterHeap,
-                                                           p);
+            rc = vboxHGSMIBufferSubmit(&pCommon->guestCtx, p);
 
-            /* Submit the buffer to the host. */
-            VBoxHGSMIGuestWrite(pCommon, offBuffer);
-
-            if (pfnFinalize)
+            if (RT_SUCCESS(rc) && pfnFinalize)
             {
                 rc = pfnFinalize (pCommon, pvContext, p);
             }
@@ -192,7 +192,7 @@ static int vboxCallChannel (PVBOXVIDEO_COMMON pCommon,
         }
 
         /* Free the IO buffer. */
-        HGSMIHeapFree (&pCommon->hgsmiAdapterHeap, p);
+        HGSMIHeapFree (&pCommon->guestCtx.heapCtx, p);
     }
 
     return rc;
@@ -270,7 +270,7 @@ int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMI
 {
     int rc;
     /* Issue the screen info command. */
-    void *p = vboxHGSMIBufferAlloc (pCommon, sizeof(VBVAINFOVIEW) * u32Count,
+    void *p = vboxHGSMIBufferAlloc(&pCommon->guestCtx, sizeof(VBVAINFOVIEW) * u32Count,
                                     HGSMI_CH_VBVA, VBVA_INFO_VIEW);
     Assert(p);
     if (p)
@@ -278,8 +278,8 @@ int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMI
         VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
         rc = pfnFill(pvData, pInfo);
         if (RT_SUCCESS(rc))
-            vboxHGSMIBufferSubmit (pCommon, p);
-        vboxHGSMIBufferFree (pCommon, p);
+            vboxHGSMIBufferSubmit (&pCommon->guestCtx, p);
+        vboxHGSMIBufferFree (&pCommon->guestCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -402,8 +402,8 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     {
         /** @note (michael) moved this here as it is done unconditionally in both
          * driver branches.  Feel free to fix if that is ever changed. */
-        pCommon->IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-        pCommon->IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+        pCommon->hostCtx.port = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+        pCommon->guestCtx.port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 
         /* Map the adapter information. It will be needed for HGSMI IO. */
         /** @todo all callers of VBoxMapAdapterMemory expect it to use iprt
@@ -422,7 +422,7 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
         else
         {
             /* Setup a HGSMI heap within the adapter information area. */
-            rc = HGSMIHeapSetup (&pCommon->hgsmiAdapterHeap,
+            rc = HGSMIHeapSetup (&pCommon->guestCtx.heapCtx,
                                  pCommon->pvAdapterInformation,
                                  VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS),
                                  pCommon->cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
@@ -437,7 +437,7 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
             }
             else
             {
-                pCommon->pHostFlags = (HGSMIHOSTFLAGS*)(((uint8_t*)pCommon->pvAdapterInformation)
+                pCommon->hostCtx.pfHostFlags = (HGSMIHOSTFLAGS*)(((uint8_t*)pCommon->pvAdapterInformation)
                                                             + VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS));
             }
         }
@@ -496,7 +496,7 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
                                       - pCommon->cbMiniportHeap;
 
                 /* Init the host hap area. Buffers from the host will be placed there. */
-                HGSMIAreaInitialize (&pCommon->areaHostHeap,
+                HGSMIAreaInitialize (&pCommon->hostCtx.areaCtx,
                                      pCommon->pvMiniportHeap,
                                      pCommon->cbMiniportHeap,
                                      offBase);
@@ -549,14 +549,14 @@ static bool VBoxUnmapAdpInfoCallback(void *pvCommon)
 {
     PVBOXVIDEO_COMMON pCommon = (PVBOXVIDEO_COMMON)pvCommon;
 
-    pCommon->pHostFlags = NULL;
+    pCommon->hostCtx.pfHostFlags = NULL;
     return true;
 }
 
 void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon)
 {
     VBoxUnmapAdapterMemory(pCommon, &pCommon->pvMiniportHeap);
-    HGSMIHeapDestroy(&pCommon->hgsmiAdapterHeap);
+    HGSMIHeapDestroy(&pCommon->guestCtx.heapCtx);
 
     /* Unmap the adapter information needed for HGSMI IO. */
     VBoxSyncToVideoIRQ(pCommon, VBoxUnmapAdpInfoCallback, pCommon);
@@ -733,8 +733,8 @@ static VBVADISP_CHANNELCONTEXT* vboxVBVAFindHandlerInfo(VBVA_CHANNELCONTEXTS *pC
 
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd)
 {
-    PVBOXVIDEO_COMMON pCommon = (PVBOXVIDEO_COMMON)hHGSMI;
-    HGSMIHostCmdComplete (pCommon, pCmd);
+    PHGSMIHOSTCOMMANDCONTEXT pCtx = &((PVBOXVIDEO_COMMON)hHGSMI)->hostCtx;
+    HGSMIHostCmdComplete(pCtx, pCmd);
 }
 
 /** Reverses a NULL-terminated linked list of VBVAHOSTCMD structures. */
@@ -758,12 +758,12 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
     if(!ppCmd)
         return VERR_INVALID_PARAMETER;
 
-    PVBOXVIDEO_COMMON pCommon = (PVBOXVIDEO_COMMON)hHGSMI;
+    PHGSMIHOSTCOMMANDCONTEXT pCtx = &((PVBOXVIDEO_COMMON)hHGSMI)->hostCtx;
 
     /* pick up the host commands */
-    hgsmiProcessHostCommandQueue(pCommon);
+    hgsmiProcessHostCommandQueue(pCtx);
 
-    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&pCommon->channels, u8Channel);
+    HGSMICHANNEL *pChannel = HGSMIChannelFindById (&pCtx->channels, u8Channel);
     if(pChannel)
     {
         VBVA_CHANNELCONTEXTS * pContexts = (VBVA_CHANNELCONTEXTS *)pChannel->handler.pvHandler;
@@ -854,7 +854,7 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
 #else
                             Assert(!pCur->u.pNext);
 #endif
-                            HGSMIHostCmdComplete(pCallbacks->pCommon, pCur);
+                            HGSMIHostCmdComplete(&pCallbacks->pCommon->hostCtx, pCur);
 #if 0  /* pNext is NULL, and the other things have already been asserted */
                             pCur = pNext;
                             Assert(!pCur);
@@ -906,7 +906,7 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
         }
     }
     /* no handlers were found, need to complete the command here */
-    HGSMIHostCmdComplete(pCallbacks->pCommon, pvBuffer);
+    HGSMIHostCmdComplete(&pCallbacks->pCommon->hostCtx, pvBuffer);
     return VINF_SUCCESS;
 }
 
@@ -917,7 +917,7 @@ int vboxVBVAChannelDisplayEnable(PVBOXVIDEO_COMMON pCommon,
         uint8_t u8Channel)
 {
     VBVA_CHANNELCONTEXTS * pContexts;
-    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&pCommon->channels, u8Channel);
+    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&pCommon->hostCtx.channels, u8Channel);
     if(!pChannel)
     {
         int rc = vboxVBVACreateChannelContexts(pCommon, &pContexts);
@@ -947,7 +947,7 @@ int vboxVBVAChannelDisplayEnable(PVBOXVIDEO_COMMON pCommon,
             int rc = VINF_SUCCESS;
             if(!pChannel)
             {
-                rc = HGSMIChannelRegister (&pCommon->channels,
+                rc = HGSMIChannelRegister (&pCommon->hostCtx.channels,
                                            u8Channel,
                                            "VGA Miniport HGSMI channel",
                                            vboxVBVAChannelGenericHandler,
