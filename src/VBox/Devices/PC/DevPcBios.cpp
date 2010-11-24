@@ -1369,7 +1369,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         pThis->cbLanBoot = cbLanBootBinary;
 
-        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4,  RT_MAX(cbLanBootBinary, _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff)),
+        rc = PDMDevHlpROMRegister(pDevIns, VBOX_LANBOOT_SEG << 4,
+                                  RT_MAX(cbLanBootBinary, _64K - (VBOX_LANBOOT_SEG << 4 & 0xffff)),
                                   pu8LanBootBinary, cbLanBootBinary,
                                   PGMPHYS_ROM_FLAGS_SHADOWED, "Net Boot ROM");
         AssertRCReturn(rc, rc);
