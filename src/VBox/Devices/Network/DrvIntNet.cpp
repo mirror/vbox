@@ -1537,8 +1537,16 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     OpenReq.hIf = INTNET_HANDLE_INVALID;
     rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenReq, sizeof(OpenReq));
     if (RT_FAILURE(rc))
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                   N_("Failed to open/create the internal network '%s'"), pThis->szNetwork);
+    {
+         PDMDrvHlpVMSetRuntimeError (pDrvIns, 0 /*fFlags*/, "HostIfNotConnecting",
+                                     N_ ("Cannot connect to the network interface '%s'. The virtual "
+                                         "network card will appear to work but the guest will not "
+                                         "be able to connect. Please choose a different network in the "
+                                         "network settings"), OpenReq.szTrunk);
+
+        return VERR_PDM_NO_ATTACHED_DRIVER;
+    }
+
     AssertRelease(OpenReq.hIf != INTNET_HANDLE_INVALID);
     pThis->hIf = OpenReq.hIf;
     Log(("IntNet%d: hIf=%RX32 '%s'\n", pDrvIns->iInstance, pThis->hIf, pThis->szNetwork));
