@@ -632,6 +632,24 @@ DECLEXPORT(void) VBOXGLXTAG(glXDestroyContext)( Display *dpy, GLXContext ctx )
     stubDestroyContext( (unsigned long) ctx );
 }
 
+typedef struct _stubFindPixmapParms_t {
+    ContextInfo *pCtx;
+    GLX_Pixmap_t *pGlxPixmap;
+    GLXDrawable draw;
+} stubFindPixmapParms_t;
+
+static void stubFindPixmapCB(unsigned long key, void *data1, void *data2)
+{
+    ContextInfo *pCtx = (ContextInfo *) data1;
+    stubFindPixmapParms_t *pParms = (stubFindPixmapParms_t *) data2;
+    GLX_Pixmap_t *pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(pCtx->pGLXPixmapsHash, (unsigned int) pParms->draw);
+
+    if (pGlxPixmap)
+    {
+        pParms->pCtx = pCtx;
+        pParms->pGlxPixmap = pGlxPixmap;
+    }
+}
 
 DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable, GLXContext ctx )
 {
@@ -640,6 +658,27 @@ DECLEXPORT(Bool) VBOXGLXTAG(glXMakeCurrent)( Display *dpy, GLXDrawable drawable,
     Bool retVal;
 
     /*crDebug("glXMakeCurrent(%p, 0x%x, 0x%x)", (void *) dpy, (int) drawable, (int) ctx);*/
+
+    /*check if passed drawable is GLXPixmap and not X Window*/
+    if (drawable)
+    {
+        GLX_Pixmap_t *pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(stub.pGLXPixmapsHash, (unsigned int) drawable);
+
+        if (!pGlxPixmap)
+        {
+            stubFindPixmapParms_t parms;
+            parms.pGlxPixmap = NULL;
+            parms.draw = drawable;
+            crHashtableWalk(stub.contextTable, stubFindPixmapCB, &parms);
+            pGlxPixmap = parms.pGlxPixmap;
+        }
+
+        if (pGlxPixmap)
+        {
+            /*@todo*/
+            crWarning("Unimplemented glxMakeCurrent call with GLXPixmap passed, unexpected things might happen.");
+        }
+    }
 
     if (ctx && drawable) {
         context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) ctx);
@@ -1646,13 +1685,8 @@ VBOXGLXTAG(glXCreateWindow)(Display *dpy, GLXFBConfig config, Window win, ATTRIB
 {
     GLXFBConfig *realcfg;
     int nconfigs;
-    //XVisualInfo *vis;
-    (void) dpy;
     (void) config;
-    (void) win;
-    (void) attrib_list;
-    //crWarning("glXCreateWindow not implemented by Chromium");
-    //vis = VBOXGLXTAG(glXGetVisualFromFBConfig)(config);
+
     if (stub.wsInterface.glXGetFBConfigs)
     {
         realcfg = stub.wsInterface.glXGetFBConfigs(dpy, 0, &nconfigs);
@@ -1668,8 +1702,12 @@ VBOXGLXTAG(glXCreateWindow)(Display *dpy, GLXFBConfig config, Window win, ATTRIB
     }
     else
     {
-        crWarning("glXCreateWindow stub.wsInterface.glXChooseFBConfig==NULL");
-        return 0;
+        if (attrib_list && *attrib_list!=None)
+        {
+            crWarning("Non empty attrib list in glXCreateWindow");
+            return 0;
+        }
+        return (GLXWindow)win;
     }
 }
 
@@ -1682,59 +1720,64 @@ DECLEXPORT(void) VBOXGLXTAG(glXDestroyPbuffer)(Display *dpy, GLXPbuffer pbuf)
 
 DECLEXPORT(void) VBOXGLXTAG(glXDestroyPixmap)(Display *dpy, GLXPixmap pixmap)
 {
-    GLX_Pixmap_t *pGlxPixmap;
+    stubFindPixmapParms_t parms;
 
-    if (!stub.currentContext)
+    if (crHashtableSearch(stub.pGLXPixmapsHash, (unsigned int) pixmap))
     {
-        crWarning("glXDestroyPixmap failed, no current context");
+        /*it's valid but never used glxpixmap, so simple free stored ptr*/
+        crHashtableDelete(stub.pGLXPixmapsHash, (unsigned int) pixmap, crFree);
+        return;
+    }
+    else
+    {
+        /*it's either invalid glxpixmap or one which was already initialized, so it's stored in appropriate ctx hash*/
+        parms.pCtx = NULL;
+        parms.pGlxPixmap = NULL;
+        parms.draw = pixmap;
+        crHashtableWalk(stub.contextTable, stubFindPixmapCB, &parms);
+    }
+
+    if (!parms.pGlxPixmap)
+    {
+        crWarning("glXDestroyPixmap called for unknown glxpixmap 0x%x", (unsigned int) pixmap);
         return;
     }
 
-    pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(stub.currentContext->pGLXPixmapsHash, (unsigned int) pixmap);
-
-    if (pGlxPixmap)
+    XLOCK(dpy);
+    if (parms.pGlxPixmap->gc)
     {
-        XLOCK(dpy);
-        if (pGlxPixmap->gc)
-        {
-            XFreeGC(dpy, pGlxPixmap->gc);
-        }
-
-        if (pGlxPixmap->hShmPixmap>0)
-        {
-            XFreePixmap(dpy, pGlxPixmap->hShmPixmap);
-        }
-        XUNLOCK(dpy);
-
-        if (pGlxPixmap->hDamage>0)
-        {
-            //crDebug("Destroy: Damage for drawable 0x%x, handle 0x%x", (unsigned int) pixmap, (unsigned int) pGlxPixmap->damage);
-            XDamageDestroy(stub.currentContext->damageDpy, pGlxPixmap->hDamage);
-        }
-
-        if (pGlxPixmap->pDamageRegion)
-        {
-            XDestroyRegion(pGlxPixmap->pDamageRegion);
-        }
-
-        crHashtableDelete(stub.currentContext->pGLXPixmapsHash, (unsigned int) pixmap, crFree);
+        XFreeGC(dpy, parms.pGlxPixmap->gc);
     }
-    /*else
+
+    if (parms.pGlxPixmap->hShmPixmap>0)
     {
-        crWarning("glXDestroyPixmap called for unknown glxpixmap 0x%x", (unsigned int) pixmap);
-    }*/
+        XFreePixmap(dpy, parms.pGlxPixmap->hShmPixmap);
+    }
+    XUNLOCK(dpy);
+
+    if (parms.pGlxPixmap->hDamage>0)
+    {
+        //crDebug("Destroy: Damage for drawable 0x%x, handle 0x%x", (unsigned int) pixmap, (unsigned int) parms.pGlxPixmap->damage);
+        XDamageDestroy(parms.pCtx->damageDpy, parms.pGlxPixmap->hDamage);
+    }
+
+    if (parms.pGlxPixmap->pDamageRegion)
+    {
+        XDestroyRegion(parms.pGlxPixmap->pDamageRegion);
+    }
+
+    crHashtableDelete(parms.pCtx->pGLXPixmapsHash, (unsigned int) pixmap, crFree);
 }
 
 DECLEXPORT(void) VBOXGLXTAG(glXDestroyWindow)(Display *dpy, GLXWindow win)
 {
     (void) dpy;
     (void) win;
-    crWarning("glXDestroyWindow not implemented by Chromium");
+    /*crWarning("glXDestroyWindow not implemented by Chromium");*/
 }
 
 DECLEXPORT(GLXDrawable) VBOXGLXTAG(glXGetCurrentReadDrawable)(void)
 {
-    //crWarning("glXGetCurrentReadDrawable not implemented by Chromium");
     return currentReadDrawable;
 }
 
@@ -1992,11 +2035,6 @@ DECLEXPORT(XVisualInfo *) VBOXGLXTAG(glXGetVisualFromFBConfig)(Display *dpy, GLX
 
 DECLEXPORT(Bool) VBOXGLXTAG(glXMakeContextCurrent)(Display *display, GLXDrawable draw, GLXDrawable read, GLXContext ctx)
 {
-    (void) display;
-    (void) draw;
-    (void) read;
-    (void) ctx;
-    //crWarning("glXMakeContextCurrent not implemented by Chromium");
     currentReadDrawable = read;
     return VBOXGLXTAG(glXMakeCurrent)(display, draw, ctx);
 }
