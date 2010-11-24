@@ -124,6 +124,7 @@ void PACKSPU_APIENTRY packspu_Flush( void )
         int i;
 
         crLockMutex(&_PackMutex);
+
         /*Make sure we process commands in order they should appear, so flush thread being injected first*/
         for (i=0; i<MAX_THREADS; ++i)
         {
@@ -136,9 +137,13 @@ void PACKSPU_APIENTRY packspu_Flush( void )
                 break;
             }
         }
+
         if (i>=MAX_THREADS)
         {
-            crWarning("packspu: inject for invalid client id");
+            /*Thread we're supposed to inject commands for has been detached,
+              so there's nothing to sync with and we should just pass commands through our own connection.
+             */
+            thread->netServer.conn->u32InjectClientID=0;
         }
         crUnlockMutex(&_PackMutex);
 
@@ -435,7 +440,8 @@ void PACKSPU_APIENTRY packspu_VBoxPackSetInjectID(GLuint id)
     crLockMutex(&_PackMutex);
     {
         GET_THREAD(thread);
-        CRASSERT(thread && thread->netServer.conn && thread->netServer.conn->type==CR_VBOXHGCM);
+
+        CRASSERT(thread && thread->netServer.conn && thread->netServer.conn->type==CR_VBOXHGCM && thread->bInjectThread);
         thread->netServer.conn->u32InjectClientID = id;
     }
     crUnlockMutex(&_PackMutex);
