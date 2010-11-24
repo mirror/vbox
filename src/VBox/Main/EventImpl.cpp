@@ -1060,6 +1060,10 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
              */
             cbRc = record.obj()->process(aEvent, aWaitable, pit, alock);
 
+            /* Note that E_ABORT is used above to signal that a passive
+             * listener was unregistered due to not picking up its event.
+             * This overlaps with XPCOM specific use of E_ABORT to signal
+             * death of an active listener, but that's irrelevant here. */
             if (FAILED_DEAD_INTERFACE(cbRc) || (cbRc == E_ABORT))
             {
                 Listeners::iterator lit = m->mListeners.find(record.obj()->mListener);
