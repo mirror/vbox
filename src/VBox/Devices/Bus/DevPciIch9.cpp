@@ -2394,6 +2394,10 @@ static void ich9pciResetDevice(PPCIDEVICE pDev)
         PCIDevSetByte(pDev, VBOX_PCI_CACHE_LINE_SIZE, 0x0);
         PCIDevSetByte(pDev, VBOX_PCI_INTERRUPT_LINE,  0x0);
     }
+    else
+    {
+        /* @todo: reset devices behind the bridge too */
+    }
     /* Regions ? */
 }
 
@@ -2406,7 +2410,7 @@ static DECLCALLBACK(void) ich9pciReset(PPDMDEVINS pDevIns)
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     PPCIBUS     pBus     = &pGlobals->aPciBus;
 
-    /* Relocate RC pointers for the attached pci devices. */
+    /* PCI-specific reset for each device. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pBus->apDevices); i++)
     {
         if (pBus->apDevices[i])
