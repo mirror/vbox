@@ -153,6 +153,8 @@ typedef struct PDMBLKCACHEGLOBAL
     /** Number of times a buffer could be reused. */
     STAMCOUNTER       StatBuffersReused;
 #endif
+    /** Flag whether the VM was suspended becaus of an I/O error. */
+    volatile bool     fIoErrorVmSuspended;
 } PDMBLKCACHEGLOBAL;
 #ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(PDMBLKCACHEGLOBAL, cHits, sizeof(uint64_t));
