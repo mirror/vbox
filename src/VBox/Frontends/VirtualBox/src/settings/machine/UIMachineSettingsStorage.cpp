@@ -2474,7 +2474,8 @@ void UIMachineSettingsStorage::sltUnmountDevice()
 
 void UIMachineSettingsStorage::sltChooseExistingMedium()
 {
-    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this);
+	QString strMachineFolder(QFileInfo(m_machine.GetSettingsFilePath()).absolutePath());
+    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this, strMachineFolder);
     if (!strMediumId.isNull())
         m_pMediumIdHolder->setId(strMediumId);
 }
@@ -2806,6 +2807,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
     Assert(mStorageModel->data(index, StorageModel::R_IsController).toBool());
     Assert(mStorageModel->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
     QString strControllerName(mStorageModel->data(index, StorageModel::R_CtrName).toString());
+    QString strMachineFolder(QFileInfo(m_machine.GetSettingsFilePath()).absolutePath());
 
     QString strMediumId;
     switch (deviceType)
@@ -2816,14 +2818,14 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
             if (iAnswer == QIMessageBox::Yes)
                 strMediumId = getWithNewHDWizard();
             else if (iAnswer == QIMessageBox::No)
-                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_HardDisk, this);
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_HardDisk, this, strMachineFolder);
             break;
         }
         case KDeviceType_DVD:
         {
             int iAnswer = vboxProblem().askAboutOpticalAttachmentCreation(this, strControllerName);
             if (iAnswer == QIMessageBox::Yes)
-                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_DVD, this);
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_DVD, this, strMachineFolder);
             else if (iAnswer == QIMessageBox::No)
                 strMediumId = vboxGlobal().findMedium(strMediumId).id();
             break;
@@ -2832,7 +2834,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         {
             int iAnswer = vboxProblem().askAboutFloppyAttachmentCreation(this, strControllerName);
             if (iAnswer == QIMessageBox::Yes)
-                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_Floppy, this);
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_Floppy, this, strMachineFolder);
             else if (iAnswer == QIMessageBox::No)
                 strMediumId = vboxGlobal().findMedium(strMediumId).id();
             break;
