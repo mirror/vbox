@@ -3873,7 +3873,8 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
     PCFGMNODE pInst = CFGMR3GetChildF(CFGMR3GetRoot(pVM), "Devices/%s/%d/", pszDevice, uInstance);
     AssertRelease(pInst);
 
-    rcRet = pThis->configNetwork(pszDevice, uInstance, uLun, aNetworkAdapter, pCfg, pLunL0, pInst, true);
+    rcRet = pThis->configNetwork(pszDevice, uInstance, uLun, aNetworkAdapter, pCfg, pLunL0, pInst,
+                                 true /*fAttachDetach*/, false /*fIgnoreConnectFailure*/);
 
     /*
      * Resume the VM if necessary.
