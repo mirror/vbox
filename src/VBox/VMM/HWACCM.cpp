@@ -270,6 +270,8 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
 *******************************************************************************/
 static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static int hwaccmR3InitCPU(PVM pVM);
+static int hwaccmR3TermCPU(PVM pVM);
 
 
 /**
@@ -406,7 +408,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     rc = CFGMR3QueryU32Def(pHWVirtExt, "MaxResumeLoops", &pVM->hwaccm.s.cMaxResumeLoops, 0 /* set by R0 later */);
     AssertRC(rc);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -415,7 +417,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
+static int hwaccmR3InitCPU(PVM pVM)
 {
     LogFlow(("HWACCMR3InitCPU\n"));
 
@@ -624,6 +626,24 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
     }
 #endif
     return VINF_SUCCESS;
+}
+
+/**
+ * Called when a init phase has completed.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM.
+ * @param   enmWhat             The phase that completed.
+ */
+VMMR3_INT_DECL(int) HWACCMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
+{
+    switch (enmWhat)
+    {
+    case VMINITCOMPLETED_RING3:
+        return hwaccmR3InitCPU(pVM);
+    default:
+        return VINF_SUCCESS;
+    }
 }
 
 /**
@@ -1508,20 +1528,17 @@ VMMR3DECL(int) HWACCMR3Term(PVM pVM)
         PDMR3VMMDevHeapFree(pVM, pVM->hwaccm.s.vmx.pRealModeTSS);
         pVM->hwaccm.s.vmx.pRealModeTSS       = 0;
     }
-    HWACCMR3TermCPU(pVM);
+    hwaccmR3TermCPU(pVM);
     return 0;
 }
 
 /**
  * Terminates the per-VCPU HWACCM.
  *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) HWACCMR3TermCPU(PVM pVM)
+static int hwaccmR3TermCPU(PVM pVM)
 {
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {

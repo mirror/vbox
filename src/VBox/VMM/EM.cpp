@@ -404,19 +404,6 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
 
 
 /**
- * Initializes the per-VCPU EM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) EMR3InitCPU(PVM pVM)
-{
-    LogFlow(("EMR3InitCPU\n"));
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Applies relocations to data and code managed by this
  * component. This function will be called at init and
  * whenever the VMM need to relocate it self inside the GC.
@@ -487,19 +474,6 @@ VMMR3DECL(int) EMR3Term(PVM pVM)
     return VINF_SUCCESS;
 }
 
-/**
- * Terminates the per-VCPU EM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) EMR3TermCPU(PVM pVM)
-{
-    return 0;
-}
 
 /**
  * Execute state save operation.

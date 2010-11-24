@@ -1434,19 +1434,6 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
 
 
 /**
- * Initializes the per-VCPU PGM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) PGMR3InitCPU(PVM pVM)
-{
-    LogFlow(("PGMR3InitCPU\n"));
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Init paging.
  *
  * Since we need to check what mode the host is operating in before we can choose
@@ -2490,21 +2477,6 @@ VMMR3DECL(int) PGMR3Term(PVM pVM)
 
     PGMDeregisterStringFormatTypes();
     return PDMR3CritSectDelete(&pVM->pgm.s.CritSect);
-}
-
-
-/**
- * Terminates the per-VCPU PGM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) PGMR3TermCPU(PVM pVM)
-{
-    return 0;
 }
 
 

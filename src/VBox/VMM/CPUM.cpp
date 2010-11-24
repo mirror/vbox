@@ -239,19 +239,6 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
 
 
 /**
- * Initializes the per-VCPU CPUM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) CPUMR3InitCPU(PVM pVM)
-{
-    LogFlow(("CPUMR3InitCPU\n"));
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Detect the CPU vendor give n the
  *
  * @returns The vendor.
@@ -1022,22 +1009,6 @@ VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
  * @param   pVM         The VM to operate on.
  */
 VMMR3DECL(int) CPUMR3Term(PVM pVM)
-{
-    CPUMR3TermCPU(pVM);
-    return 0;
-}
-
-
-/**
- * Terminates the per-VCPU CPUM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
 {
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     for (VMCPUID i = 0; i < pVM->cCpus; i++)

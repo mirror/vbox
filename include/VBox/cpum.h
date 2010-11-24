@@ -401,10 +401,8 @@ VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
  */
 
 VMMR3DECL(int)          CPUMR3Init(PVM pVM);
-VMMR3DECL(int)          CPUMR3InitCPU(PVM pVM);
 VMMR3DECL(void)         CPUMR3Relocate(PVM pVM);
 VMMR3DECL(int)          CPUMR3Term(PVM pVM);
-VMMR3DECL(int)          CPUMR3TermCPU(PVM pVM);
 VMMR3DECL(void)         CPUMR3Reset(PVM pVM);
 VMMR3DECL(void)         CPUMR3ResetCpu(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMR3IsStateRestorePending(PVM pVM);
