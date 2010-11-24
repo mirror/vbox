@@ -30,16 +30,29 @@ VBoxRes.rc_DEPS += $(PATH_VBoxRes)/VBoxRes-icons.rc
 VBoxRes.rc_CLEAN = $(PATH_VBoxRes)/VBoxRes-icons.rc
 
 # The resource path.
-VBOX_RESOURCES_WIN := $(subst /,\\,$(PATH_ROOT))/src/VBox/Resources/win
+VBOX_RESOURCES_PATH_WIN := $(subst /,\\,$(PATH_ROOT))/src/VBox/Resources/win
 
 # Icon include file.
+# @todo Put this into Config.kmk?
+VBOX_WINDOWS_ICON_EXT_VBOX    := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-vbox.ico
+VBOX_WINDOWS_ICON_EXT_EXTPACK := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-vbox-extpack.ico
+VBOX_WINDOWS_ICON_EXT_OVA     := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-ova.ico
+VBOX_WINDOWS_ICON_EXT_OVF     := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-ovf.ico
+
+VBOX_RESOURCES_WIN := \
+	$(VBOX_WINDOWS_ICON_FILE) \
+	$(VBOX_WINDOWS_ICON_EXT_VBOX) \
+	$(VBOX_WINDOWS_ICON_EXT_EXTPACK) \
+	$(VBOX_WINDOWS_ICON_EXT_OVA) \
+	$(VBOX_WINDOWS_ICON_EXT_OVF)
+
 $$(PATH_VBoxRes)/VBoxRes-icons.rc: \
-		$$(VBOX_WINDOWS_ICON_FILE) $(MAKEFILE_CURRENT) | $$(dir $$@)
+		$$(VBOX_RESOURCES_WIN) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(RM) -f $@
 	$(APPEND) $@ 'IDI_VIRTUALBOX            ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
-	$(APPEND) $@ 'IDI_FILETYPE_VBOX         ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-vbox.ico"'
-	$(APPEND) $@ 'IDI_FILETYPE_VBOX_EXTPACK ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-vbox-extpack.ico"'
-	$(APPEND) $@ 'IDI_FILETYPE_VBOX_OVA 		ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-ova.ico"'
-	$(APPEND) $@ 'IDI_FILETYPE_VBOX_OVF 		ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-ovf.ico"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX         ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_EXT_VBOX))"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX_EXTPACK ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_EXT_EXTPACK))"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX_OVA 		ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_EXT_OVA))"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX_OVF 		ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_EXT_OVF))"'
 
 include	$(KBUILD_PATH)/subfooter.kmk
