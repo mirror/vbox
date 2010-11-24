@@ -355,6 +355,9 @@ static bool ataAsyncIOIsIdle(PAHCIATACONTROLLER pCtl, bool fStrict)
     int rc;
     bool fIdle;
 
+    if (pCtl->AsyncIORequestMutex == NIL_RTSEMMUTEX)
+        return true;
+
     rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
     AssertRC(rc);
     fIdle = pCtl->fRedoIdle;
@@ -5278,7 +5281,10 @@ int ataControllerSaveExec(PAHCIATACONTROLLER pCtl, PSSMHANDLE pSSM)
         SSMR3PutMem(pSSM, &pCtl->aIfs[j].abATAPISense, sizeof(pCtl->aIfs[j].abATAPISense));
         SSMR3PutU8(pSSM, pCtl->aIfs[j].cNotifiedMediaChange);
         SSMR3PutU32(pSSM, pCtl->aIfs[j].MediaEventStatus);
-        SSMR3PutMem(pSSM, pCtl->aIfs[j].pLed, sizeof(PDMLED));
+
+        PDMLED Led;
+        memset(&Led, 0, sizeof(PDMLED));
+        SSMR3PutMem(pSSM, &Led, sizeof(PDMLED));
         SSMR3PutU32(pSSM, pCtl->aIfs[j].cbIOBuffer);
         if (pCtl->aIfs[j].cbIOBuffer)
             SSMR3PutMem(pSSM, pCtl->aIfs[j].CTX_SUFF(pbIOBuffer), pCtl->aIfs[j].cbIOBuffer);
