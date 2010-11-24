@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2914,19 +2914,6 @@ USBLIB_DECL(int) USBLibGetDevices(PUSBDEVICE *ppDevices, uint32_t *pcDevices)
     return VINF_SUCCESS;
 }
 
-/**
- * Return all USB devices attached to the host
- *
- * @returns VBox status code
- * @param ppDevices         Receives pointer to list of devices
- * @param pcDevices         Number of USB devices in the list
- */
-USBLIB_DECL(int) usbLibGetHostDevices(PUSBDEVICE *ppDevices,  uint32_t *pcDevices)
-{
-    usbLibEnumerateHostControllers(ppDevices, pcDevices);
-
-    return VINF_SUCCESS;
-}
 
 /**
  * Check for USB device arrivals or removals
