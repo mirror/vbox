@@ -120,7 +120,7 @@ static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char 
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) VMMR3Init(PVM pVM)
+VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
 {
     LogFlow(("VMMR3Init\n"));
 
@@ -464,7 +464,7 @@ VMMR3DECL(int) VMMR3InitCPU(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) VMMR3InitR0(PVM pVM)
+VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
 {
     int    rc;
     PVMCPU pVCpu = VMMGetCpu(pVM);
@@ -526,7 +526,7 @@ VMMR3DECL(int) VMMR3InitR0(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) VMMR3InitRC(PVM pVM)
+VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
     Assert(pVCpu && pVCpu->idCpu == 0);
@@ -688,7 +688,7 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
  * @returns VINF_SUCCESS.
  * @param   pVM         The VM handle.
  */
-VMMR3DECL(int) VMMR3Term(PVM pVM)
+VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
     Assert(pVCpu && pVCpu->idCpu == 0);
@@ -770,7 +770,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) VMMR3TermCPU(PVM pVM)
+VMMR3_INT_DECL(int) VMMR3TermCPU(PVM pVM)
 {
     return VINF_SUCCESS;
 }
@@ -786,7 +786,7 @@ VMMR3DECL(int) VMMR3TermCPU(PVM pVM)
  * @param   pVM         The VM handle.
  * @param   offDelta    The relocation delta.
  */
-VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("VMMR3Relocate: offDelta=%RGv\n", offDelta));
 
@@ -837,7 +837,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * @returns VBox status code.
  * @param   pVM     The VM handle.
  */
-VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
+VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
 {
     /*
      * Simply clone the logger instance (for RC).
@@ -1074,7 +1074,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
  *
  * @remark  This has to work before VMMR3Relocate() is called.
  */
-VMMR3DECL(int) VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue)
+VMMR3_INT_DECL(int) VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
     if (!strcmp(pszSymbol, "g_Logger"))
     {
@@ -1103,7 +1103,7 @@ VMMR3DECL(int) VMMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrV
  *
  * @param   pVM             The VM handle.
  */
-VMMR3DECL(void) VMMR3YieldSuspend(PVM pVM)
+VMMR3_INT_DECL(void) VMMR3YieldSuspend(PVM pVM)
 {
     VMCPU_ASSERT_EMT(&pVM->aCpus[0]);
     if (!pVM->vmm.s.cYieldResumeMillies)
@@ -1125,7 +1125,7 @@ VMMR3DECL(void) VMMR3YieldSuspend(PVM pVM)
  *
  * @param   pVM             The VM handle.
  */
-VMMR3DECL(void) VMMR3YieldStop(PVM pVM)
+VMMR3_INT_DECL(void) VMMR3YieldStop(PVM pVM)
 {
     if (!pVM->vmm.s.cYieldResumeMillies)
         TMTimerStop(pVM->vmm.s.pYieldTimer);
@@ -1139,7 +1139,7 @@ VMMR3DECL(void) VMMR3YieldStop(PVM pVM)
  *
  * @param   pVM             The VM handle.
  */
-VMMR3DECL(void) VMMR3YieldResume(PVM pVM)
+VMMR3_INT_DECL(void) VMMR3YieldResume(PVM pVM)
 {
     if (pVM->vmm.s.cYieldResumeMillies)
     {
@@ -1195,7 +1195,7 @@ static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
  * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 {
     Log2(("VMMR3RawRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
@@ -1264,7 +1264,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
  * @param   pVM         VM handle.
  * @param   pVCpu       The VMCPU to operate on.
  */
-VMMR3DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(int) VMMR3HwAccRunGC(PVM pVM, PVMCPU pVCpu)
 {
     Log2(("VMMR3HwAccRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
@@ -1361,7 +1361,7 @@ DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
  * @param   idCpu       Virtual CPU to perform SIPI on
  * @param   uVector     SIPI vector
  */
-VMMR3DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
+VMMR3_INT_DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
 {
     AssertReturnVoid(idCpu < pVM->cCpus);
 
@@ -1375,7 +1375,7 @@ VMMR3DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
  * @param   pVM         The VM to operate on.
  * @param   idCpu       Virtual CPU to perform int IPI on
  */
-VMMR3DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
+VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
     AssertReturnVoid(idCpu < pVM->cCpus);
 
@@ -1440,7 +1440,8 @@ DECLCALLBACK(int) vmmR3SyncVCpu(PVM pVM)
  * @param   pfnHandler  Callback handler
  * @param   pvUser      User specified parameter
  *
- * @thread EMT
+ * @thread  EMT
+ * @todo    Remove this if not used again soon.
  */
 VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, void *pvUser)
 {
@@ -1681,7 +1682,7 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
  *
  * @thread  EMT
  */
-VMMR3DECL(int) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
+VMMR3_INT_DECL(int) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
 {
     return vmmR3EmtRendezvousCommon(pVM, pVCpu, false /* fIsCaller */, pVM->vmm.s.fRendezvousFlags,
                                     pVM->vmm.s.pfnRendezvous, pVM->vmm.s.pvRendezvousUser);
@@ -1833,7 +1834,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
  * @param   pvBuf           Where to store the data we've read.
  * @param   cbRead          The number of bytes to read.
  */
-VMMR3DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr, void *pvBuf, size_t cbRead)
+VMMR3_INT_DECL(int) VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR R0Addr, void *pvBuf, size_t cbRead)
 {
     PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
     AssertReturn(pVCpu, VERR_INVALID_PARAMETER);
