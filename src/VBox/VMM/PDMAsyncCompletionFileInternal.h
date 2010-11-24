@@ -541,6 +541,12 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     bool                                   fReadonly;
     /** Flag whether the host supports the async flush API. */
     bool                                   fAsyncFlushSupported;
+#ifdef DEBUG
+    /** Status code to inject for the next complete read. */
+    volatile int                           rcReqRead;
+    /** Status code to inject for the next complete write. */
+    volatile int                           rcReqWrite;
+#endif
     /** Flag whether a blocking event is pending and needs
      * processing by the I/O manager. */
     bool                                   fBlockingEventPending;
