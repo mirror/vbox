@@ -224,7 +224,7 @@ Function W2K_CopyFiles
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target arch in
-    ; Wow64 node (32-bit sub system). Note that $SYSDIR contains the the 32-bit
+    ; Wow64 node (32-bit sub system). Note that $SYSDIR contains the 32-bit
     ; path after calling EnableX64FSRedirection
     ${EnableX64FSRedirection}
     !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxOGLarrayspu.dll"       "$SYSDIR\VBoxOGLarrayspu.dll"       "$TEMP\VBoxOGL32"
