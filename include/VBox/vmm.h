@@ -199,9 +199,9 @@ VMMDECL(void)        VMMTrashVolatileXMMRegs(void);
  */
 VMMR3DECL(int)      VMMR3Init(PVM pVM);
 VMMR3DECL(int)      VMMR3InitCPU(PVM pVM);
-VMMR3DECL(int)      VMMR3InitFinalize(PVM pVM);
 VMMR3DECL(int)      VMMR3InitR0(PVM pVM);
 VMMR3DECL(int)      VMMR3InitRC(PVM pVM);
+VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3DECL(int)      VMMR3Term(PVM pVM);
 VMMR3DECL(int)      VMMR3TermCPU(PVM pVM);
 VMMR3DECL(void)     VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
