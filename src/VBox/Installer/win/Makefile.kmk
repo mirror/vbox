@@ -22,6 +22,7 @@ ifneq ($(KBUILD_HOST),win)
  $(error "The Windows installer can only be built on Windows!")
 endif
 
+
 #
 # Include Sub-Makefiles.
 #
@@ -40,6 +41,9 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
   include $(PATH_SUB_CURRENT)/AutoStartMenu/Makefile.kmk
  endif
 endif
+
+include $(PATH_SUB_CURRENT)/Resources/Makefile.kmk
+
 
 #
 # Globals and targets.
