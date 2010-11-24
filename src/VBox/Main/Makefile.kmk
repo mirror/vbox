@@ -643,6 +643,7 @@ VBoxC_SOURCES = \
 	VMMDevInterface.cpp \
 	EventImpl.cpp \
 	BusAssignmentManager.cpp \
+	PciDeviceAttachmentImpl.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	$(VBOX_XML_SCHEMADEFS_CPP) \
 	$(if $(VBOX_WITH_EXTPACK),ExtPackManagerImpl.cpp ExtPackUtil.cpp,)

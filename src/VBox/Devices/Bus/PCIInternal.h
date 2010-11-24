@@ -23,7 +23,7 @@
  */
 typedef struct PCIIOREGION
 {
-    /** Current PCI mapping address, 0xffffffff means not mapped. 
+    /** Current PCI mapping address, 0xffffffff means not mapped.
         @todo: make address and size 64-bit. */
     uint32_t                        addr;
     uint32_t                        size;

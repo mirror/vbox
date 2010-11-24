@@ -550,8 +550,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         u64McfgBase = _4G - cbRamHole;
     }
 
-    ComPtr<BusAssignmentManager> BusMgr =
-            BusAssignmentManager::getInstance(chipsetType);
+    BusAssignmentManager* BusMgr = pConsole->mBusMgr = BusAssignmentManager::createInstance(chipsetType);
 
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                        H();

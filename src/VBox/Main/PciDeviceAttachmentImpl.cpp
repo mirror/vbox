@@ -19,15 +19,28 @@
 
 #include "PciDeviceAttachmentImpl.h"
 #include "AutoCaller.h"
+#include "Global.h"
 #include "Logging.h"
 
 struct PciDeviceAttachment::Data
 {
-    Data()
-        : pMachine(NULL)
-    { }
+    Data(Machine      *aParent,
+         const Bstr   &aDevName,
+         LONG          aHostAddress,
+         LONG          aGuestAddress,
+         BOOL          afPhysical)
+        : pMachine(aParent),
+          HostAddress(aHostAddress), GuestAddress(aGuestAddress),
+          fPhysical(afPhysical)
+    {
+        DevName = aDevName;
+    }
 
     Machine * const pMachine;
+    Bstr            DevName;
+    LONG            HostAddress;
+    LONG            GuestAddress;
+    BOOL            fPhysical;
 };
 
 // constructor / destructor
@@ -49,14 +62,13 @@ void PciDeviceAttachment::FinalRelease()
 /////////////////////////////////////////////////////////////////////////////
 HRESULT PciDeviceAttachment::init(Machine      *aParent,
                                   const Bstr   &aDevName,
-                                  LONG          aHostAddess,
+                                  LONG          aHostAddress,
                                   LONG          aGuestAddress,
                                   BOOL          fPhysical)
 {
-    m = new Data();
-    //unconst(m->pMachine) = aParent;
+    m = new Data(aParent, aDevName, aHostAddress, aGuestAddress, fPhysical);
 
-    return S_OK;
+    return m != NULL ? S_OK : E_FAIL;
 }
 
 /**
@@ -64,35 +76,44 @@ HRESULT PciDeviceAttachment::init(Machine      *aParent,
  * Called from FinalRelease().
  */
 void PciDeviceAttachment::uninit()
-{    
-    //unconst(m->pMachine) = NULL;
-
-    delete m;
-    m = NULL;
+{
+    if (m)
+    {
+        delete m;
+        m = NULL;
+    }
 }
 
 // IPciDeviceAttachment properties
 /////////////////////////////////////////////////////////////////////////////
 
-#if 0
-STDMETHODIMP PciDeviceAttachment::COMGETTER(Name)(BSTR *)
+STDMETHODIMP PciDeviceAttachment::COMGETTER(Name)(BSTR * aName)
 {
-    return E_NOTIMPL;
+    CheckComArgOutPointerValid(aName);
+    m->DevName.cloneTo(aName);
+    return S_OK;
 }
 
-STDMETHODIMP PciDeviceAttachment::COMGETTER(PhysicalDevice)(BOOL *)
+STDMETHODIMP PciDeviceAttachment::COMGETTER(IsPhysicalDevice)(BOOL * aPhysical)
 {
-    return E_NOTIMPL;
+    CheckComArgOutPointerValid(aPhysical);
+    *aPhysical = m->fPhysical;
+    return S_OK;
 }
 
-STDMETHODIMP PciDeviceAttachment::COMGETTER(HostAddress)(LONG *)
+STDMETHODIMP PciDeviceAttachment::COMGETTER(HostAddress)(LONG * aHostAddress)
 {
-    return E_NOTIMPL;
+    *aHostAddress = m->HostAddress;
+    return S_OK;
 }
 
-STDMETHODIMP PciDeviceAttachment::COMGETTER(GuestAddress)(LONG *)
+STDMETHODIMP PciDeviceAttachment::COMGETTER(GuestAddress)(LONG * aGuestAddress)
 {
-    return E_NOTIMPL;
+    *aGuestAddress = m->GuestAddress;
+    return S_OK;
 }
 
+#ifdef VBOX_WITH_XPCOM
+NS_DECL_CLASSINFO(PciDeviceAttachment)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(PciDeviceAttachment, IPciDeviceAttachment)
 #endif

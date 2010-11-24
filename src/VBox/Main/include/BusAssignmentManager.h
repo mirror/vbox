@@ -85,6 +85,19 @@ struct PciBusAddress
     {
         return (iBus != -1) && (iDevice != -1) && (iFn != -1);
     }
+    
+    LONG asLong() const
+    {
+        Assert(valid());
+        return (iBus << 8) | (iDevice << 3) | iFn;
+    }
+
+    void fromLong(LONG value)
+    {
+        iBus = (value >> 8) & 0xff;
+        iDevice = (value & 0xff) >> 3;
+        iFn = (value & 7);
+    }
 };
 
 class BusAssignmentManager
@@ -96,10 +109,8 @@ private:
     BusAssignmentManager();
     virtual ~BusAssignmentManager();
 
-    static BusAssignmentManager* pInstance;
-
 public:
-    static BusAssignmentManager* getInstance(ChipsetType_T chipsetType);
+    static BusAssignmentManager* createInstance(ChipsetType_T chipsetType);
     virtual void AddRef();
     virtual void Release();
 
@@ -115,6 +126,7 @@ public:
         PciBusAddress Address;
         return findPciAddress(pszDevName, iInstance, Address);
     }
+    virtual void listAttachedPciDevices(ComSafeArrayOut(IPciDeviceAttachment*, aAttached));
 };
 
 #endif //  __BusAssignmentManager_h

@@ -5728,19 +5728,47 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeA
 }
 
 
-STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, IEventContext *eventContext, BOOL tryToUnbind)
+STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, IEventContext * /*eventContext*/, BOOL /*tryToUnbind*/)
 {
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ComObjPtr<PciDeviceAttachment> pda;
+    char name[32];
+
+    pda.createObject();
+    RTStrPrintf(name, sizeof(name), "host%02x:%02x.%x", (hostAddress>>8) & 0xff, (hostAddress & 0xf8) >> 3, hostAddress & 7);
+    Bstr bname(name);
+    pda.createObject();
+    pda->init(this, bname,  hostAddress, desiredGuestAddress, TRUE);
+
+    mPciDeviceAssignments.push_back(pda);
+    return S_OK;
+}
+
+STDMETHODIMP Machine::DetachHostPciDevice(LONG /*hostAddress*/)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     return E_NOTIMPL;
 }
 
-STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
+STDMETHODIMP Machine::COMGETTER(PciDeviceAssignments)(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments))
 {
-    return E_NOTIMPL;
-}
+    CheckComArgOutSafeArrayPointerValid(aAssignments);
 
-STDMETHODIMP Machine::COMGETTER(PciDeviceAttachments)(ComSafeArrayOut(IPciDeviceAttachment *, aAttachments))
-{
-    return E_NOTIMPL;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    SafeIfaceArray<IPciDeviceAttachment> assignments(mPciDeviceAssignments);
+    assignments.detachTo(ComSafeArrayOutArg(aAssignments));
+
+    return S_OK;
 }
 
 // public methods for internal purposes
