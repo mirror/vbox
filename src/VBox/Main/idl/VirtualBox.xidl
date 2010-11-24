@@ -3370,10 +3370,101 @@
       <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
     </const>
   </enum>
+  
+  <interface
+     name="IContext" extends="$unknown"
+     uuid="7563F4E7-1583-40F7-B4C4-C9BA02CB0AE3"
+     wsmap="managed"
+     >
+    <desc>
+      Placeholder class for event contexts.
+    </desc>
+  </interface>
+
+
+  <interface
+     name="IPciAddress" extends="$unknown"
+     uuid="D88B324F-DB19-4D3B-A1A9-BF5B127199A8"
+     wsmap="struct"
+     >
+
+    <desc>
+      Address on the PCI bus.
+    </desc>
+
+    <attribute name="bus" type="short">
+      <desc>
+        Bus number.
+      </desc>
+    </attribute>
+
+    <attribute name="device" type="short">
+      <desc>
+        Device number.
+      </desc>
+    </attribute>
+
+    <attribute name="devFunction" type="short">
+      <desc>
+        Device function number.
+      </desc>
+    </attribute>
+
+    <method name="asLong">
+      <desc>
+        Convert PCI address into long.
+      </desc>
+      <param name="result" type="long" dir="return" />
+    </method>
+    
+    <method name="fromLong">
+      <desc>
+        Make PCI address from long.
+      </desc>
+      <param name="number" type="long" dir="in" />
+    </method>
+  </interface>
+
+    <interface
+     name="IPciDeviceAttachment" extends="$unknown"
+     uuid="236C708B-8B4B-4500-B662-F0129B68D552"
+     wsmap="struct"
+     >
+
+    <desc>
+      Information about PCI attachements.
+    </desc>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        Device name.
+      </desc>
+    </attribute>
+    
+    <attribute name="physicalDevice" type="boolean" readonly="yes">
+      <desc>
+        If this is physical or virtual device.
+      </desc>
+    </attribute>
+
+    <attribute name="hostAddress" type="long" readonly="yes">
+      <desc>
+        Address of device on the host, applicable only to host devices.
+      </desc>
+    </attribute>
+
+    <attribute name="guestAddress" type="long" readonly="yes">
+      <desc>
+        Address of device on the guest.
+      </desc>
+    </attribute>
+
+  </interface>
+
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="7c05b1c3-c325-46cd-820d-47648d13b7f2"
+     uuid="6AEDC0FD-2AE8-4DBC-A659-DAD072383D29"
      wsmap="managed"
      >
     <desc>
@@ -3686,6 +3777,10 @@
 
     <attribute name="mediumAttachments" type="IMediumAttachment" readonly="yes" safearray="yes">
       <desc>Array of media attached to this machine.</desc>
+    </attribute>
+
+    <attribute name="pciDeviceAttachments" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
+      <desc>Array of PCI devices attached to this machine.</desc>
     </attribute>
 
     <attribute name="USBController" type="IUSBController" readonly="yes">
@@ -4522,6 +4617,74 @@
       <param name="attachment" type="IMediumAttachment" dir="return"/>
     </method>
 
+    <method name="attachHostPciDevice">
+      <desc>
+        Attaches host PCI device with the given (host) PCI address to the
+        PCI bus of the virtual machine. Please note, that this operation
+        is two phase, as real attachement will happen when VM will start,
+        and most information will be delivered as IHostPciDevicePlugEvent 
+        on IVirtualBox event source.
+        <note>
+          Not yet implemented.
+        </note>
+        
+        <see>IHostPciDevicePlugEvent</see>
+        
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state is not stopped (PCI hotplug not yet implemented).
+        </result>
+        <result name="VBOX_E_PDM_ERROR">
+          Virtual machine does not have a PCI controller allowing attachment of physical devices.
+        </result>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Hardware or host OS doesn't allow PCI device passthrought.
+        </result>
+      </desc>
+      <param name="hostAddress" type="long" dir="in">
+        <desc>Address of the host PCI device.</desc>
+      </param>
+      <param name="desiredGuestAddress" type="long" dir="in">
+        <desc>Desired position of this device on guest PCI bus.</desc>
+      </param>
+      <param name="eventContext" type="IContext" dir="in">
+        <desc>Context passed into IHostPciDevicePlugEvent event.</desc>
+      </param>
+      <param name="tryToUnbind" type="boolean" dir="in">
+        <desc>If VMM shall try to unbind existing drivers from the 
+        device before attaching it to the guest.</desc>
+      </param>
+    </method>
+    
+    <method name="detachHostPciDevice">
+      <desc>
+        Detach host PCI device from the virtual machine. 
+        Also HostPciDevicePlugEvent on IVirtualBox event source 
+        will be delivered.
+        
+        <note>
+          Not yet implemented.
+        </note>
+        
+        <see>IHostPciDevicePlugEvent</see>
+        
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state is not stopped (PCI hotplug not yet implemented).
+        </result>
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          This host device is not attached to this machine.
+        </result>
+        <result name="VBOX_E_PDM_ERROR">
+          Virtual machine does not have a PCI controller allowing attachment of physical devices.
+        </result>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Hardware or host OS doesn't allow PCI device passthrought.
+        </result>
+      </desc>
+      <param name="hostAddress" type="long" dir="in">
+        <desc>Address of the host PCI device.</desc>
+      </param>
+    </method>
+    
     <method name="getNetworkAdapter" const="yes">
       <desc>
         Returns the network adapter associated with the given slot.
@@ -14214,7 +14377,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
      name="VBoxEventType"
-     uuid="e085d0b1-05e6-4f40-a709-b7266fbdb236">
+     uuid="FA0D4183-CDCA-428E-A078-BBF5B69CA158">
 
     <desc>
       Type of an event.
@@ -14446,8 +14609,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="INATRedirectEvent">INATRedirectEvent</link>.
       </desc>
     </const>
+    <const name="OnHostPciDevicePlugEvent" value="67">
+      <desc>
+        See <link to="IHostPciDevicePlugEvent">IHostPciDevicePlugEvent</link>.
+      </desc>
+    </const>
+    
     <!-- Last event marker -->
-    <const name="Last" value="67">
+    <const name="Last" value="68">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -15682,6 +15851,50 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
          Guest port to redirect to.
        </desc>
      </attribute>
+  </interface>
+
+  <interface
+      name="IHostPciDevicePlugEvent" extends="IMachineEvent"
+      waitable="yes"
+      uuid="EDD4782B-DB74-43A0-B724-2BAA36F039CC"
+      wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlugEvent"
+    >
+   <desc>
+      Notification when host PCI device is plugged/unplugged.
+   </desc>
+   
+   <attribute name="plugged" type="boolean" readonly="yes">
+      <desc>
+        If device successfully plugged or unplugged.
+      </desc>
+   </attribute>
+
+   <attribute name="success" type="boolean" readonly="yes">
+      <desc>
+        If operation was successful, if false - 'message' attribute
+        may be of interest.
+      </desc>
+   </attribute>
+
+   <attribute name="attachment" type="IPciDeviceAttachment" readonly="yes">
+      <desc>
+        Attachment info.
+      </desc>
+   </attribute>
+
+   <attribute name="eventContext" type="IContext" readonly="yes">
+      <desc>
+        Context object, passed into attachHostPciDevice() and 
+        attachHostPciDevice().
+      </desc>
+   </attribute>
+
+   <attribute name="message" type="wstring" readonly="yes">
+      <desc>
+        Optional error message.
+      </desc>
+    </attribute>
+
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">

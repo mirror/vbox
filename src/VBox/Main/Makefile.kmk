@@ -288,6 +288,7 @@ VBoxSVC_SOURCES = \
 	xml/ovfreader.cpp \
 	VFSExplorerImpl.cpp \
 	MachineImpl.cpp \
+	PciDeviceAttachmentImpl.cpp \
 	SnapshotImpl.cpp \
 	MediumImpl.cpp \
 	MediumLock.cpp \

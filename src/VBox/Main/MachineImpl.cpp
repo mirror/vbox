@@ -5728,6 +5728,21 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeA
 }
 
 
+STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, IContext *eventContext, BOOL tryToUnbind)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Machine::DetachHostPciDevice(LONG hostAddress)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP Machine::COMGETTER(PciDeviceAttachments)(ComSafeArrayOut(IPciDeviceAttachment *, aAttachments))
+{
+    return E_NOTIMPL;
+}
+
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
