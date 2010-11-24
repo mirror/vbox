@@ -79,7 +79,7 @@ typedef struct DIRECTORYENTRY
 void usageGuestControl(PRTSTREAM pStrm)
 {
     RTStrmPrintf(pStrm,
-                 "VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
+                 "VBoxManage guestcontrol     exec[ute] <vmname>|<uuid>\n"
                  "                            <path to program>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--arguments \"<arguments>\"]\n"
@@ -89,12 +89,12 @@ void usageGuestControl(PRTSTREAM pStrm)
                  /** @todo Add a "--" parameter (has to be last parameter) to directly execute
                   *        stuff, e.g. "VBoxManage guestcontrol execute <VMName> --username <> ... -- /bin/rm -Rf /foo". */
                  "\n"
-                 "                            copyto <vmname>|<uuid>\n"
+                 "                            copyto|cp <vmname>|<uuid>\n"
                  "                            <source on host> <destination on guest>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--dryrun] [--recursive] [--verbose] [--flags <flags>]\n"
                  "\n"
-                 "                            createdirectory <vmname>|<uuid>\n"
+                 "                            createdir[ectory]|mkdir|md <vmname>|<uuid>\n"
                  "                            <directory to create on guest>\n"
                  "                            --username <name> --password <password>\n"
                  "                            [--parents] [--mode <mode>]\n"
@@ -263,7 +263,24 @@ static int handleCtrlExecProgram(HandlerArg *a)
     if (a->argc < 2) /* At least the command we want to execute in the guest should be present :-). */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
-    Utf8Str Utf8Cmd(a->argv[1]);
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--arguments",           'a',         RTGETOPT_REQ_STRING  },
+        { "--environment",         'e',         RTGETOPT_REQ_STRING  },
+        { "--flags",               'f',         RTGETOPT_REQ_STRING  },
+        { "--password",            'p',         RTGETOPT_REQ_STRING  },
+        { "--timeout",             't',         RTGETOPT_REQ_UINT32  },
+        { "--username",            'u',         RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING },
+        { "--wait-for",            'w',         RTGETOPT_REQ_STRING  }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+
+    Utf8Str Utf8Cmd;
     uint32_t uFlags = 0;
     /* Note: this uses IN_BSTR as it must be BSTR on COM and CBSTR on XPCOM */
     com::SafeArray<IN_BSTR> args;
@@ -277,26 +294,20 @@ static int handleCtrlExecProgram(HandlerArg *a)
     bool fVerbose = false;
     bool fTimeout = false;
 
-    /* Always use the actual command line as argv[0]. */
-    args.push_back(Bstr(Utf8Cmd).raw());
-
-/** @todo r=bird: Use RTGetOpt here, no new code using strcmp-if-switching! */
-    /* Iterate through all possible commands (if available). */
-    bool usageOK = true;
-    for (int i = 2; usageOK && i < a->argc; i++)
+    int vrc = VINF_SUCCESS;
+    bool fUsageOK = true;
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+           && RT_SUCCESS(vrc))
     {
-        if (   !strcmp(a->argv[i], "--arguments")
-            || !strcmp(a->argv[i], "--args")
-            || !strcmp(a->argv[i], "--arg"))
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
         {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
+            case 'a': /* Arguments */
             {
                 char **papszArg;
                 int cArgs;
 
-                int vrc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
+                vrc = RTGetOptArgvFromString(&papszArg, &cArgs, ValueUnion.psz, NULL);
                 if (RT_SUCCESS(vrc))
                 {
                     for (int j = 0; j < cArgs; j++)
@@ -304,20 +315,15 @@ static int handleCtrlExecProgram(HandlerArg *a)
 
                     RTGetOptArgvFree(papszArg);
                 }
-                ++i;
+                break;
             }
-        }
-        else if (   !strcmp(a->argv[i], "--environment")
-                 || !strcmp(a->argv[i], "--env"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
+
+            case 'e': /* Environment */
             {
                 char **papszArg;
                 int cArgs;
 
-                int vrc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
+                vrc = RTGetOptArgvFromString(&papszArg, &cArgs, ValueUnion.psz, NULL);
                 if (RT_SUCCESS(vrc))
                 {
                     for (int j = 0; j < cArgs; j++)
@@ -325,92 +331,71 @@ static int handleCtrlExecProgram(HandlerArg *a)
 
                     RTGetOptArgvFree(papszArg);
                 }
-                ++i;
+                break;
             }
-        }
-        else if (!strcmp(a->argv[i], "--flags"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
+
+            case 'f': /* Flags */
                 /** @todo Needs a bit better processing as soon as we have more flags. */
-                if (!strcmp(a->argv[i + 1], "ignoreorphanedprocesses"))
+                if (!RTStrICmp(ValueUnion.psz, "ignoreorphanedprocesses"))
                     uFlags |= ExecuteProcessFlag_IgnoreOrphanedProcesses;
                 else
-                    usageOK = false;
-                ++i;
-            }
-        }
-        else if (   !strcmp(a->argv[i], "--username")
-                 || !strcmp(a->argv[i], "--user"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
-                Utf8UserName = a->argv[i + 1];
-                ++i;
-            }
-        }
-        else if (   !strcmp(a->argv[i], "--password")
-                 || !strcmp(a->argv[i], "--pwd"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
-                Utf8Password = a->argv[i + 1];
-                ++i;
-            }
-        }
-        else if (!strcmp(a->argv[i], "--timeout"))
-        {
-            if (   i + 1 >= a->argc
-                || RTStrToUInt32Full(a->argv[i + 1], 10, &u32TimeoutMS) != VINF_SUCCESS
-                || u32TimeoutMS == 0)
-            {
-                usageOK = false;
-            }
-            else
-            {
+                    fUsageOK = false;
+                break;
+
+            case 'p': /* Password */
+                Utf8Password = ValueUnion.psz;
+                break;
+
+            case 't': /* Timeout */
+                u32TimeoutMS = ValueUnion.u32;
                 fTimeout = true;
-                ++i;
-            }
-        }
-        else if (!strcmp(a->argv[i], "--wait-for"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
+                break;
+
+            case 'u': /* User name */
+                Utf8UserName = ValueUnion.psz;
+                break;
+
+            case 'v': /* Verbose */
+                fVerbose = true;
+                break;
+
+            case 'w': /* Wait for ... */
             {
-                if (!strcmp(a->argv[i + 1], "exit"))
+                if (!RTStrICmp(ValueUnion.psz, "exit"))
                     fWaitForExit = true;
-                else if (!strcmp(a->argv[i + 1], "stdout"))
+                else if (!RTStrICmp(ValueUnion.psz, "stdout"))
                 {
                     fWaitForExit = true;
                     fWaitForStdOut = true;
                 }
-                else if (!strcmp(a->argv[i + 1], "stderr"))
+                else if (!RTStrICmp(ValueUnion.psz, "stderr"))
                 {
                     fWaitForExit = true;
                     fWaitForStdErr = true;
                 }
                 else
-                    usageOK = false;
-                ++i;
+                    fUsageOK = false;
+                break;
             }
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                /* The actual command we want to execute on the guest. */
+                Utf8Cmd = ValueUnion.psz;
+                break;
+            }
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
-        else if (!strcmp(a->argv[i], "--verbose"))
-            fVerbose = true;
-        /** @todo Add fancy piping stuff here. */
-        else
-            return errorSyntax(USAGE_GUESTCONTROL,
-                               "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
     }
 
-    if (!usageOK)
+    if (!fUsageOK)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    if (Utf8Cmd.isEmpty())
+        return errorSyntax(USAGE_GUESTCONTROL,
+                           "No command to execute specified!");
 
     if (Utf8UserName.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
@@ -418,7 +403,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
 
     HRESULT rc = S_OK;
     ComPtr<IGuest> guest;
-    int vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
+    vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
     if (RT_SUCCESS(vrc))
     {
         ComPtr<IProgress> progress;
@@ -611,9 +596,8 @@ static int handleCtrlExecProgram(HandlerArg *a)
  * @param   pszFileDest         Full qualified destination path.
  * @param   pList               Copy list used for insertion.
  */
-/** @todo r=bird: static? */
-int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
-                                 PRTLISTNODE pList)
+static int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
+                                        PRTLISTNODE pList)
 {
     AssertPtrReturn(pszFileSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFileDest, VERR_INVALID_POINTER);
@@ -653,10 +637,9 @@ int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileD
  *                              copy found.
  * @param   pList               Pointer to the object list to use.
  */
-/** @todo r=bird: static? */
-int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
-                          const char *pszFilter, const char *pszDest,
-                          uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
+static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
+                                 const char *pszFilter, const char *pszDest,
+                                 uint32_t uFlags, uint32_t *pcObjects, PRTLISTNODE pList)
 {
     AssertPtrReturn(pszRootDir, VERR_INVALID_POINTER);
     /* Sub directory is optional. */
@@ -796,9 +779,8 @@ int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
  * @param   pcObjects           Where to store the count of objects to be copied.
  * @param   pList               Where to store the object list.
  */
-/** @todo r=bird: static? */
-int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
-                 uint32_t *pcObjects, PRTLISTNODE pList)
+static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
+                        uint32_t *pcObjects, PRTLISTNODE pList)
 {
     AssertPtrReturn(pszSource, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDest, VERR_INVALID_PARAMETER);
@@ -922,8 +904,7 @@ int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFlags,
 /**
  * Destroys a copy list.
  */
-/** @todo r=bird: static? */
-void ctrlCopyDestroy(PRTLISTNODE pList)
+static void ctrlCopyDestroy(PRTLISTNODE pList)
 {
     AssertPtr(pList);
 
@@ -959,10 +940,9 @@ void ctrlCopyDestroy(PRTLISTNODE pList)
  * @param   pszPassword     Password of user account.
  * @param   uFlags          Copy flags.
  */
-/** @todo r=bird: static? */
-int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDest,
-                        const char *pszUserName, const char *pszPassword,
-                        uint32_t uFlags)
+static int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char *pszDest,
+                               const char *pszUserName, const char *pszPassword,
+                               uint32_t uFlags)
 {
     AssertPtrReturn(pszSource, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDest, VERR_INVALID_PARAMETER);
@@ -1041,80 +1021,99 @@ static int handleCtrlCopyTo(HandlerArg *a)
     if (a->argc < 3) /* At least the source + destination should be present :-). */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
-    Utf8Str Utf8Source(a->argv[1]);
-    Utf8Str Utf8Dest(a->argv[2]);
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--dryrun",              'd',         RTGETOPT_REQ_NOTHING },
+        //{ "--flags",               'f',         RTGETOPT_REQ_STRING  },
+        { "--follow",              'F',         RTGETOPT_REQ_NOTHING },
+        { "--password",            'p',         RTGETOPT_REQ_STRING  },
+        { "--recursive",           'R',         RTGETOPT_REQ_NOTHING },
+        { "--update",              'U',         RTGETOPT_REQ_NOTHING },
+        { "--username",            'u',         RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+
+    Utf8Str Utf8Source;
+    Utf8Str Utf8Dest;
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t uFlags = CopyFileFlag_None;
     bool fVerbose = false;
     bool fCopyRecursive = false;
     bool fDryRun = false;
-/** @todo r=bird: Use RTGetOpt here, no new code using strcmp-if-switching!  */
 
-    /* Iterate through all possible commands (if available). */
-    bool usageOK = true;
-    for (int i = 3; usageOK && i < a->argc; i++)
+    int vrc = VINF_SUCCESS;
+    uint32_t uNoOptionIdx = 0;
+    bool fUsageOK = true;
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+           && RT_SUCCESS(vrc))
     {
-        if (   !strcmp(a->argv[i], "--username")
-            || !strcmp(a->argv[i], "--user"))
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
         {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
-                Utf8UserName = a->argv[i + 1];
-                ++i;
-            }
-        }
-        else if (   !strcmp(a->argv[i], "--password")
-                 || !strcmp(a->argv[i], "--pwd"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
-                Utf8Password = a->argv[i + 1];
-                ++i;
-            }
-        }
-        else if (!strcmp(a->argv[i], "--dryrun"))
-        {
-            fDryRun = true;
-        }
-        else if (!strcmp(a->argv[i], "--flags"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
+            case 'd': /* Dry run */
+                fDryRun = true;
+                break;
+
+            case 'f': /* Flags */
                 /* Nothing to do here yet. */
-                ++i;
+                break;
+
+            case 'F': /* Follow symlinks */
+                uFlags |= CopyFileFlag_FollowLinks;
+                break;
+
+            case 'p': /* Password */
+                Utf8Password = ValueUnion.psz;
+                break;
+
+            case 'R': /* Recursive processing */
+                uFlags |= CopyFileFlag_Recursive;
+                break;
+
+            case 'U': /* Only update newer files */
+                uFlags |= CopyFileFlag_Update;
+                break;
+
+            case 'u': /* User name */
+                Utf8UserName = ValueUnion.psz;
+                break;
+
+            case 'v': /* Verbose */
+                fVerbose = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                /* Get the actual source + destination. */
+                switch (uNoOptionIdx)
+                {
+                    case 0:
+                        Utf8Source = ValueUnion.psz;
+                        break;
+
+                    case 1:
+                        Utf8Dest = ValueUnion.psz;
+                        break;
+
+                    default:
+                        break;
+                }
+                uNoOptionIdx++;
+                break;
             }
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
-        else if (   !strcmp(a->argv[i], "--recursive")
-                 || !strcmp(a->argv[i], "--r"))
-        {
-            uFlags |= CopyFileFlag_Recursive;
-        }
-        else if (   !strcmp(a->argv[i], "--update")
-                 || !strcmp(a->argv[i], "--u"))
-        {
-            uFlags |= CopyFileFlag_Update;
-        }
-        else if (   !strcmp(a->argv[i], "--follow")
-                 || !strcmp(a->argv[i], "--f"))
-        {
-            uFlags |= CopyFileFlag_FollowLinks;
-        }
-        /** @todo Add force flag for overwriting existing stuff. */
-        else if (!strcmp(a->argv[i], "--verbose"))
-            fVerbose = true;
-        else
-            return errorSyntax(USAGE_GUESTCONTROL,
-                               "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
     }
 
-    if (!usageOK)
+    if (!fUsageOK)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     if (Utf8Source.isEmpty())
@@ -1128,10 +1127,9 @@ static int handleCtrlCopyTo(HandlerArg *a)
     if (Utf8UserName.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name specified!");
-
     HRESULT rc = S_OK;
     ComPtr<IGuest> guest;
-    int vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
+    vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
     if (RT_SUCCESS(vrc))
     {
         if (fVerbose)
@@ -1260,9 +1258,8 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
         else if (   !strcmp(a->argv[i], "--mode")
                  || !strcmp(a->argv[i], "-m"))
         {
-            /** @todo r=bird: the mode is octal, isn't it? */
             if (i + 1 >= a->argc
-                || RTStrToUInt32Full(a->argv[i + 1], 10, &uMode) != VINF_SUCCESS)
+                || RTStrToUInt32Full(a->argv[i + 1], 8 /* Base, octal */, &uMode) != VINF_SUCCESS)
                 usageOK = false;
             else
             {
@@ -1503,7 +1500,8 @@ int handleGuestControl(HandlerArg *a)
     }
     else if (   !strcmp(a->argv[0], "createdirectory")
              || !strcmp(a->argv[0], "createdir")
-             || !strcmp(a->argv[0], "mkdir"))
+             || !strcmp(a->argv[0], "mkdir")
+             || !strcmp(a->argv[0], "md"))
     {
         return handleCtrlCreateDirectory(&arg);
     }
