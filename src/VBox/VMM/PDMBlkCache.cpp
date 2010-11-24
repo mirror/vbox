@@ -607,8 +607,11 @@ static int pdmBlkCacheRequestPassthrough(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEREQ
     pIoXfer->pReq        = pReq;
     pIoXfer->cbXfer      = cbData;
     pIoXfer->enmXferDir  = enmXferDir;
-    RTSgBufClone(&pIoXfer->SgBuf, pSgBuf);
-    RTSgBufAdvance(pSgBuf, cbData);
+    if (pSgBuf)
+    {
+        RTSgBufClone(&pIoXfer->SgBuf, pSgBuf);
+        RTSgBufAdvance(pSgBuf, cbData);
+    }
 
     return pdmBlkCacheEnqueue(pBlkCache, offStart, pIoXfer);
 }
@@ -1573,31 +1576,6 @@ static size_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
     {
         cbAligned = cb;
         cbInEntry = cb;
-#if 0
-        /*
-         * Align the size to a 4KB boundary.
-         * Memory size is aligned to a page boundary
-         * and memory is wasted if the size is rather small.
-         * (For example reads with a size of 512 bytes).
-         */
-        cbInEntry = cb;
-        cbAligned = RT_ALIGN_Z(cb + (off - offAligned), uAlignment);
-
-        /*
-         * Clip to file size if the original request doesn't
-         * exceed the file (not an appending write)
-         */
-        uint64_t cbReq = off + cb;
-        if (cbReq >= pEndpoint->cbFile)
-            cbAligned = cbReq - offAligned;
-        else
-            cbAligned = RT_MIN(pEndpoint->cbFile - offAligned, cbAligned);
-        if (pEntryAbove)
-        {
-            Assert(pEntryAbove->Core.Key >= off);
-            cbAligned = RT_MIN(cbAligned, pEntryAbove->Core.Key - offAligned);
-        }
-#endif
     }
 
     /* A few sanity checks */
@@ -2202,14 +2180,24 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
 VMMR3DECL(int) PDMR3BlkCacheFlush(PPDMBLKCACHE pBlkCache, void *pvUser)
 {
     int rc = VINF_SUCCESS;
+    PPDMBLKCACHEREQ pReq;
 
     LogFlowFunc((": pBlkCache=%#p{%s}\n", pBlkCache, pBlkCache->pszId));
 
     /* Commit dirty entries in the cache. */
     pdmBlkCacheCommit(pBlkCache);
 
+    /* Allocate new request structure. */
+    pReq = pdmBlkCacheReqAlloc(0, pvUser);
+    if (RT_UNLIKELY(!pReq))
+        return VERR_NO_MEMORY;
+
+    rc = pdmBlkCacheRequestPassthrough(pBlkCache, pReq, NULL, 0, 0,
+                                       PDMBLKCACHEXFERDIR_FLUSH);
+    AssertRC(rc);
+
     LogFlowFunc((": Leave rc=%Rrc\n", rc));
-    return rc;
+    return VINF_AIO_TASK_PENDING;
 }
 
 /**
