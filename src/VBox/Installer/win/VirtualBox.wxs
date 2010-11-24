@@ -364,25 +364,27 @@
                         <!-- Set required environment variables. -->
                         <Environment Id="EnvVBoxInstallDir" Action="set" Name="VBOX_INSTALL_PATH"
                             System="yes" Part="last" Permanent="no" Value="[INSTALLDIR]" />
-                        <!-- Register file extensions. Note: Extension Id's *must not* be changed! -->
-                        <ProgId Id="ProgIdVirtualBox" Description="VirtualBox Machine Description" Icon="[#vbox]">
+                        <!-- Register file extensions. Note: Extension Id's *must not* be changed! These specify the actual
+                             file extension to handle. Also, here would be the place to add more fancy DDE stuff later.
+                             Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h". -->
+                        <ProgId Id="VirtualBox.Shell.vbox" Description="VirtualBox Machine Description" Icon="[#vboxresdll]" IconIndex="-201">
                             <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
-                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="ProgIdVirtualBoxExtPack" Description="VirtualBox Extension Pack" Icon="[#vbox]">
+                        <ProgId Id="VirtualBox.Shell.vbox-extpack" Description="VirtualBox Extension Pack" Icon="[#vboxresdll]" IconIndex="-202">
                             <Extension Id="vbox-extpack" ContentType="application/x-virtualbox-vbox-extpack">
-                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="ProgIdOVF" Description="Open Virtualization Format" Icon="[#vbox]">
+                        <ProgId Id="VirtualBox.Shell.ovf" Description="Open Virtualization Format" Icon="[#vboxresdll]" IconIndex="-301">
                             <Extension Id="ovf" ContentType="application/x-virtualbox-ovf">
-                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
                         </ProgId>
-                        <ProgId Id="ProgIdOVA" Description="Open Virtualization Format Archive" Icon="[#vbox]">
+                        <ProgId Id="VirtualBox.Shell.ova" Description="Open Virtualization Format Archive" Icon="[#vboxresdll]" IconIndex="-302">
                             <Extension Id="ova" ContentType="application/x-virtualbox-ova">
-                                <Verb Id="open" Command="Open" Target="[#vbox]" Argument="%1" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="%1" />
                             </Extension>
                         </ProgId>
                         <!-- The "Name" attribute must always be present. If the name is longer than 8.3 the additional "LongName"
@@ -460,6 +462,11 @@
                               Source="$(env.PATH_OUT)\bin\VBoxAuth.dll" />
                         <File Id="vboxauthsimpledll" Name="VBoxASim.dll" LongName="VBoxAuthSimple.dll" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxAuthSimple.dll" />
+
+                        <!-- Include resource DLL (icons, ...). -->
+                        <File Id="vboxresdll" LongName="VBoxRes.dll" Name="VBoxRes.dll" DiskId="2" Vital="yes"
+                              Source="$(env.PATH_OUT)\bin\VBoxRes.dll" />
+
                         <File Id="vmmgc" Name="VMMGC.gc" DiskId="1"  Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VMMGC.gc" />
                         <File Id="vboxddgc" Name="VBoxDDGC.gc" DiskId="1"  Vital="yes"
@@ -535,7 +542,6 @@
                               Source="$(env.PATH_OUT)\bin\additions\VBoxGuestAdditions.iso" />
     <?endif ?>
 <?endif ?>
-
                         <!-- Include key for VBox version -->
                         <?include $(env.PATH_TARGET)\VBoxKey.wxi ?>
 
@@ -550,7 +556,6 @@
                         </Component>
                     </Directory> <!-- Qt accessible plugins -->
 <?endif?>
-
 
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
                     <!-- Python bindings -->
@@ -572,7 +577,6 @@
                     </Directory>
                     <!-- Python bindings -->
 <?endif?>
-
 
 <?if $(env.VBOX_WITH_CROGL) = "yes" ?>
                     <Component Id="VBoxCROpenGL" Guid="874A1297-835A-491D-8A9D-7E723BC29EE7" Win64="$(var.Property_Win64)">
