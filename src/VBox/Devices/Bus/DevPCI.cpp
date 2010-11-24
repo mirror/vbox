@@ -1982,6 +1982,14 @@ static DECLCALLBACK(void) pciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 
 
 /**
+ * @copydoc FNPDMDEVRESET
+ */
+static DECLCALLBACK(void) pciReset(PPDMDEVINS pDevIns)
+{
+    pciFakePCIBIOS(pDevIns);
+}
+
+/**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
@@ -2163,7 +2171,7 @@ const PDMDEVREG g_DevicePCI =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    pciReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
