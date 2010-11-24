@@ -153,6 +153,11 @@ DECLCALLBACK(HRESULT) vboxDispMpGetRegions(PVBOXDISPMP_REGIONS pRegions, DWORD d
     return hr;
 }
 
+static DECLCALLBACK(void) vboxDispMpLog(LPCSTR pszMsg)
+{
+    vboxDispCmLog(pszMsg);
+}
+
 VBOXDISPMP_DECL(HRESULT) VBoxDispMpGetCallbacks(uint32_t u32Version, PVBOXDISPMP_CALLBACKS pCallbacks)
 {
     Assert(u32Version == VBOXDISPMP_VERSION);
@@ -162,5 +167,6 @@ VBOXDISPMP_DECL(HRESULT) VBoxDispMpGetCallbacks(uint32_t u32Version, PVBOXDISPMP
     pCallbacks->pfnEnableEvents = vboxDispMpEnableEvents;
     pCallbacks->pfnDisableEvents = vboxDispMpDisableEvents;
     pCallbacks->pfnGetRegions = vboxDispMpGetRegions;
+    pCallbacks->pfnLog = vboxDispMpLog;
     return S_OK;
 }

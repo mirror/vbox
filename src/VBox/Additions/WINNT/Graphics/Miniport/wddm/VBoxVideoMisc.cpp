@@ -203,7 +203,15 @@ DECLINLINE(VOID) vboxWddmSwapchainRelease(PVBOXWDDM_SWAPCHAIN pSwapchain)
     uint32_t cRefs = ASMAtomicDecU32(&pSwapchain->cRefs);
     Assert(cRefs < UINT32_MAX/2);
     if (!cRefs)
+    {
+        Assert(pSwapchain->pContext);
+        if (pSwapchain->pContext)
+        {
+            NTSTATUS tmpStatus = vboxVdmaPostHideSwapchain(pSwapchain);
+            Assert(tmpStatus == STATUS_SUCCESS);
+        }
         vboxWddmMemFree(pSwapchain);
+    }
 }
 
 PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainRetainByAlloc(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAlloc)
@@ -312,7 +320,7 @@ static VOID vboxWddmSwapchainCtxRemoveLocked(PDEVICE_EXTENSION pDevExt, PVBOXWDD
     void * pTst = vboxWddmHTableRemove(&pContext->Swapchains, pSwapchain->hSwapchainKm);
     Assert(pTst == pSwapchain);
     RemoveEntryList(&pSwapchain->DevExtListEntry);
-    pSwapchain->pContext = NULL;
+//    pSwapchain->pContext = NULL;
     pSwapchain->hSwapchainKm = NULL;
     if (pSwapchain->pLastReportedRects)
     {

@@ -69,6 +69,7 @@
 
 #ifdef VBOXWDDMDISP_DEBUG_PRINT
 VOID vboxVDbgDoMpPrintF(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString, ...);
+VOID vboxVDbgDoMpPrint(const PVBOXWDDMDISP_DEVICE pDevice, LPCSTR szString);
 VOID vboxVDbgDoPrint(LPCSTR szString, ...);
 #endif
 
@@ -94,6 +95,10 @@ void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
     } while (0)
 #define vboxVDbgPrintR vboxVDbgPrint
 #define vboxVDbgMpPrint(_m) \
+    do { \
+        vboxVDbgDoMpPrint _m ; \
+    } while (0)
+#define vboxVDbgMpPrintF(_m) \
     do { \
         vboxVDbgDoMpPrintF _m ; \
     } while (0)
@@ -128,6 +133,7 @@ void vboxVDbgDoMpPrintAlloc(const PVBOXWDDMDISP_DEVICE pDevice, const char * pPr
 #endif
 #else
 #define vboxVDbgMpPrint(_m) do {} while (0)
+#define vboxVDbgMpPrintF(_m) do {} while (0)
 #define vboxVDbgMpPrintRect(_m) do {} while (0)
 #define vboxVDbgMpPrintAlloc(_m) do {} while (0)
 #define vboxVDbgDumpSurfData(_m) do {} while (0)

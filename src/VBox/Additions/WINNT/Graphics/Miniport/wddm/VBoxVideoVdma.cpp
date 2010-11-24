@@ -306,6 +306,26 @@ DECLINLINE(bool) vboxVdmaDirtyRectsIsCover(const RECT *paRects, uint32_t cRects,
     return true;
 }
 
+NTSTATUS vboxVdmaPostHideSwapchain(PVBOXWDDM_SWAPCHAIN pSwapchain)
+{
+    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    uint32_t cbCmdInternal = VBOXVIDEOCM_CMD_RECTS_INTERNAL_SIZE4CRECTS(0);
+    PVBOXVIDEOCM_CMD_RECTS_INTERNAL pCmdInternal =
+            (PVBOXVIDEOCM_CMD_RECTS_INTERNAL)vboxVideoCmCmdCreate(&pSwapchain->pContext->CmContext, cbCmdInternal);
+    Assert(pCmdInternal);
+    if (pCmdInternal)
+    {
+        pCmdInternal->hSwapchainUm = pSwapchain->hSwapchainUm;
+        pCmdInternal->Cmd.fFlags.Value = 0;
+        pCmdInternal->Cmd.fFlags.bAddHiddenRects = 1;
+        pCmdInternal->Cmd.fFlags.bHide = 1;
+        pCmdInternal->Cmd.RectsInfo.cRects = 0;
+        vboxVideoCmCmdSubmit(pCmdInternal, VBOXVIDEOCM_SUBMITSIZE_DEFAULT);
+        return STATUS_SUCCESS;
+    }
+    return STATUS_NO_MEMORY;
+}
+
 /**
  * @param pDevExt
  */
@@ -913,6 +933,14 @@ static VOID vboxVdmaGgWorkerThread(PVOID pvUser)
                             Status = vboxVdmaGgDmaCmdProcess(pDmaCmd);
                             Assert(Status == STATUS_SUCCESS);
                         } break;
+                        case VBOXVDMAPIPE_CMD_TYPE_RECTSINFO:
+                        {
+                            PVBOXVDMAPIPE_CMD_RECTSINFO pRects = (PVBOXVDMAPIPE_CMD_RECTSINFO)pDr;
+                            Status = vboxVdmaGgDirtyRectsProcess(pRects->pDevExt, pRects->pContext, pRects->pSwapchain, &pRects->ContextsRects);
+                            Assert(Status == STATUS_SUCCESS);
+                            vboxVdmaGgCmdDestroy(pDr);
+                            break;
+                        }
                         default:
                             AssertBreakpoint();
                     }

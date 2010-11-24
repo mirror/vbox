@@ -29,7 +29,7 @@
 
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 7
+#define VBOXVIDEOIF_VERSION 8
 
 /* create allocation func */
 typedef enum
@@ -213,7 +213,8 @@ typedef enum
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D,
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D,
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D,
-    VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL
+    VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL,
+    VBOXWDDM_CONTEXT_TYPE_CUSTOM_SESSION
 } VBOXWDDM_CONTEXT_TYPE;
 
 typedef struct VBOXWDDM_CREATECONTEXT_INFO
@@ -245,7 +246,10 @@ typedef struct VBOXWDDM_RECTS_FLAFS
             UINT bSetVisibleRects : 1;
             /* adds hidden regions */
             UINT bAddHiddenRects : 1;
-            UINT Reserved : 29;
+            /* hide entire window */
+            UINT bHide : 1;
+            /* reserved */
+            UINT Reserved : 28;
         };
         uint32_t Value;
     };
