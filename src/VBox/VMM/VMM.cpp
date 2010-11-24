@@ -446,19 +446,6 @@ static void vmmR3InitRegisterStats(PVM pVM)
 
 
 /**
- * Initializes the per-VCPU VMM.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3DECL(int) VMMR3InitCPU(PVM pVM)
-{
-    LogFlow(("VMMR3InitCPU\n"));
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Initializes the R0 VMM.
  *
  * @returns VBox status code.
@@ -758,21 +745,6 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
     }
 #endif
     return rc;
-}
-
-
-/**
- * Terminates the per-VCPU VMM.
- *
- * Termination means cleaning up and freeing all resources,
- * the VM it self is at this point powered off or suspended.
- *
- * @returns VBox status code.
- * @param   pVM         The VM to operate on.
- */
-VMMR3_INT_DECL(int) VMMR3TermCPU(PVM pVM)
-{
-    return VINF_SUCCESS;
 }
 
 

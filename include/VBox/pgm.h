@@ -447,14 +447,12 @@ VMMR0DECL(void)     PGMR0DynMapMigrateAutoSet(PVMCPU pVCpu);
  * @{
  */
 VMMR3DECL(int)      PGMR3Init(PVM pVM);
-VMMR3DECL(int)      PGMR3InitCPU(PVM pVM);
 VMMR3DECL(int)      PGMR3InitDynMap(PVM pVM);
 VMMR3DECL(int)      PGMR3InitFinalize(PVM pVM);
 VMMR3DECL(void)     PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(void)     PGMR3ResetUnpluggedCpu(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(void)     PGMR3Reset(PVM pVM);
 VMMR3DECL(int)      PGMR3Term(PVM pVM);
-VMMR3DECL(int)      PGMR3TermCPU(PVM pVM);
 VMMR3DECL(int)      PGMR3LockCall(PVM pVM);
 VMMR3DECL(int)      PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode);
 

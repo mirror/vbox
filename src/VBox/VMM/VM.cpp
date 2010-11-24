@@ -121,7 +121,6 @@ static PVMATDTOR    g_pVMAtDtorHead = NULL;
 static int                  vmR3CreateUVM(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods, PUVM *ppUVM);
 static int                  vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
 static int                  vmR3InitRing3(PVM pVM, PUVM pUVM);
-static int                  vmR3InitVMCpu(PVM pVM);
 static int                  vmR3InitRing0(PVM pVM);
 static int                  vmR3InitGC(PVM pVM);
 static int                  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
@@ -662,9 +661,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                 rc = vmR3InitRing3(pVM, pUVM);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = vmR3InitVMCpu(pVM);
-                    if (RT_SUCCESS(rc))
-                        rc = PGMR3FinalizeMappings(pVM);
+                    rc = PGMR3FinalizeMappings(pVM);
                     if (RT_SUCCESS(rc))
                     {
 
@@ -974,56 +971,6 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
 
 
 /**
- * Initializes all VM CPU components of the VM
- */
-static int vmR3InitVMCpu(PVM pVM)
-{
-    int rc = VINF_SUCCESS;
-    int rc2;
-
-    rc = CPUMR3InitCPU(pVM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = HWACCMR3InitCPU(pVM);
-        if (RT_SUCCESS(rc))
-        {
-            rc = PGMR3InitCPU(pVM);
-            if (RT_SUCCESS(rc))
-            {
-                rc = TMR3InitCPU(pVM);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = VMMR3InitCPU(pVM);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = EMR3InitCPU(pVM);
-                        if (RT_SUCCESS(rc))
-                        {
-                            LogFlow(("vmR3InitVMCpu: returns %Rrc\n", VINF_SUCCESS));
-                            return VINF_SUCCESS;
-                        }
-
-                        rc2 = VMMR3TermCPU(pVM);
-                        AssertRC(rc2);
-                    }
-                    rc2 = TMR3TermCPU(pVM);
-                    AssertRC(rc2);
-                }
-                rc2 = PGMR3TermCPU(pVM);
-                AssertRC(rc2);
-            }
-            rc2 = HWACCMR3TermCPU(pVM);
-            AssertRC(rc2);
-        }
-        rc2 = CPUMR3TermCPU(pVM);
-        AssertRC(rc2);
-    }
-    LogFlow(("vmR3InitVMCpu: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
  * Initializes all R0 components of the VM
  */
 static int vmR3InitRing0(PVM pVM)
@@ -1105,7 +1052,8 @@ static int vmR3InitGC(PVM pVM)
 static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
     int rc = VMMR3InitCompleted(pVM, enmWhat);
-
+    if (RT_SUCCESS(rc))
+        rc = HWACCMR3InitCompleted(pVM, enmWhat);
     return rc;
 }
 
@@ -4292,3 +4240,4 @@ VMMR3DECL(int) VMR3SetCpuExecutionCap(PVM pVM, unsigned ulCpuExecutionCap)
     pVM->uCpuExecutionCap = ulCpuExecutionCap;
     return VINF_SUCCESS;
 }
+

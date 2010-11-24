@@ -115,11 +115,10 @@ VMMR0DECL(void)         HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPt
  */
 VMMR3DECL(bool)         HWACCMR3IsEventPending(PVMCPU pVCpu);
 VMMR3DECL(int)          HWACCMR3Init(PVM pVM);
-VMMR3DECL(int)          HWACCMR3InitCPU(PVM pVM);
+VMMR3_INT_DECL(int)     HWACCMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3DECL(int)          HWACCMR3InitFinalizeR0(PVM pVM);
 VMMR3DECL(void)         HWACCMR3Relocate(PVM pVM);
 VMMR3DECL(int)          HWACCMR3Term(PVM pVM);
-VMMR3DECL(int)          HWACCMR3TermCPU(PVM pVM);
 VMMR3DECL(void)         HWACCMR3Reset(PVM pVM);
 VMMR3DECL(void)         HWACCMR3ResetCpu(PVMCPU pVCpu);
 VMMR3DECL(void)         HWACCMR3CheckError(PVM pVM, int iStatusCode);
