@@ -1624,6 +1624,12 @@ VMMR3DECL(void) PDMR3Resume(PVM pVM)
         pdmR3ThreadResumeAll(pVM);
 
     /*
+     * Resume the block cache.
+     */
+    if (RT_SUCCESS(rc))
+        pdmR3BlkCacheResume(pVM);
+
+    /*
      * On failure, clean up via PDMR3Suspend.
      */
     if (RT_FAILURE(rc))

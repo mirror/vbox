@@ -723,7 +723,7 @@ static void pdmBlkCacheCommitDirtyEntries(PPDMBLKCACHEGLOBAL pCache)
  *
  * @returns Flag whether the amount of dirty bytes in the cache exceeds the threshold
  * @param   pBlkCache    The endpoint cache the entry belongs to.
- * @param   pEntry            The entry to add.
+ * @param   pEntry       The entry to add.
  */
 static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY pEntry)
 {
@@ -747,7 +747,9 @@ static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY p
 
         uint32_t cbDirty = ASMAtomicAddU32(&pCache->cbDirty, pEntry->cbData);
 
-        fDirtyBytesExceeded = (cbDirty >= pCache->cbCommitDirtyThreshold);
+        /* Prevent committing if the VM was suspended. */
+        if (RT_LIKELY(!ASMAtomicReadBool(&pCache->fIoErrorVmSuspended)))
+            fDirtyBytesExceeded = (cbDirty >= pCache->cbCommitDirtyThreshold);
     }
 
     return fDirtyBytesExceeded;
@@ -762,7 +764,8 @@ static void pdmBlkCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUse
 
     LogFlowFunc(("Commit interval expired, commiting dirty entries\n"));
 
-    if (ASMAtomicReadU32(&pCache->cbDirty) > 0)
+    if (   ASMAtomicReadU32(&pCache->cbDirty) > 0
+        && !ASMAtomicReadBool(&pCache->fIoErrorVmSuspended))
         pdmBlkCacheCommitDirtyEntries(pCache);
 
     TMTimerSetMillies(pTimer, pCache->u32CommitTimeoutMs);
@@ -943,6 +946,22 @@ void pdmR3BlkCacheTerm(PVM pVM)
         RTMemFree(pBlkCacheGlobal);
         pVM->pUVM->pdm.s.pBlkCacheGlobal = NULL;
     }
+}
+
+int pdmR3BlkCacheResume(PVM pVM)
+{
+    PPDMBLKCACHEGLOBAL pBlkCacheGlobal = pVM->pUVM->pdm.s.pBlkCacheGlobal;
+
+    LogFlowFunc(("pVM=%#p\n", pVM));
+
+    if (   pBlkCacheGlobal
+        && ASMAtomicXchgBool(&pBlkCacheGlobal->fIoErrorVmSuspended, false))
+    {
+        /* The VM was suspended because of an I/O error, commit all dirty entries. */
+        pdmBlkCacheCommitDirtyEntries(pBlkCacheGlobal);
+    }
+
+    return VINF_SUCCESS;
 }
 
 static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pcszId)
@@ -2269,12 +2288,30 @@ static void pdmBlkCacheIoXferCompleteEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEI
             LogRel(("I/O cache: Error while writing entry at offset %llu (%u bytes) to medium \"%s\"\n",
                     pEntry->Core.Key, pEntry->cbData, pBlkCache->pszId));
 
-            int rc = VMSetRuntimeError(pCache->pVM, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "BLKCACHE_IOERR",
-                                       N_("The I/O cache encountered an error while updating data in medium \"%s\" (rc=%Rrc)."
-                                          "Make sure there is enough free space on the disk and that the disk is working properly."
-                                          "Operation can be resumed afterwards."),
-                                       pBlkCache->pszId, rcIoXfer);
-            AssertRC(rc);
+            if (!ASMAtomicXchgBool(&pCache->fIoErrorVmSuspended, true))
+            {
+                int rc = VMSetRuntimeError(pCache->pVM, VMSETRTERR_FLAGS_SUSPEND | VMSETRTERR_FLAGS_NO_WAIT, "BLKCACHE_IOERR",
+                                           N_("The I/O cache encountered an error while updating data in medium \"%s\" (rc=%Rrc). "
+                                              "Make sure there is enough free space on the disk and that the disk is working properly. "
+                                              "Operation can be resumed afterwards"),
+                                           pBlkCache->pszId, rcIoXfer);
+                AssertRC(rc);
+            }
+
+            /*
+             * The entry is still marked as dirty which prevents eviction.
+             * Add the waiters to the list again.
+             */
+            fDirty = true;
+
+            if (pComplete)
+            {
+                pEntry->pWaitingHead = pComplete;
+                while (pComplete->pNext)
+                    pComplete = pComplete->pNext;
+                pEntry->pWaitingTail = pComplete;
+                pComplete = NULL;
+            }
         }
         else
         {
