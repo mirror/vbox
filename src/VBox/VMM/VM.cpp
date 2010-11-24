@@ -912,8 +912,6 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                     if (RT_SUCCESS(rc))
                                                                         rc = TMR3InitFinalize(pVM);
                                                                     if (RT_SUCCESS(rc))
-                                                                        rc = VMMR3InitFinalize(pVM);
-                                                                    if (RT_SUCCESS(rc))
                                                                         rc = REMR3InitFinalize(pVM);
                                                                     if (RT_SUCCESS(rc))
                                                                         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
@@ -1099,14 +1097,16 @@ static int vmR3InitGC(PVM pVM)
 
 /**
  * Do init completed notifications.
- * This notifications can fail.
  *
+ * @returns VBox status code.
  * @param   pVM         The VM handle.
  * @param   enmWhat     What's completed.
  */
 static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 {
-    return VINF_SUCCESS;
+    int rc = VMMR3InitCompleted(pVM, enmWhat);
+
+    return rc;
 }
 
 

@@ -459,75 +459,6 @@ VMMR3DECL(int) VMMR3InitCPU(PVM pVM)
 
 
 /**
- * Ring-3 init finalizing.
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- */
-VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
-{
-    int rc;
-
-    /*
-     * Set page attributes to r/w for stack pages.
-     */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        rc = PGMMapSetPage(pVM, pVM->aCpus[idCpu].vmm.s.pbEMTStackRC, VMM_STACK_SIZE,
-                           X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-        AssertRCReturn(rc, rc);
-    }
-
-    /*
-     * Create the EMT yield timer.
-     */
-    rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, vmmR3YieldEMT, NULL, "EMT Yielder", &pVM->vmm.s.pYieldTimer);
-    AssertRCReturn(rc, rc);
-
-    rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
-    AssertRCReturn(rc, rc);
-
-#ifdef VBOX_WITH_NMI
-    /*
-     * Map the host APIC into GC - This is AMD/Intel + Host OS specific!
-     */
-    rc = PGMMap(pVM, pVM->vmm.s.GCPtrApicBase, 0xfee00000, PAGE_SIZE,
-                X86_PTE_P | X86_PTE_RW | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | X86_PTE_D);
-    AssertRCReturn(rc, rc);
-#endif
-
-#ifdef VBOX_STRICT_VMM_STACK
-    /*
-     * Setup the stack guard pages: Two inaccessible pages at each sides of the
-     * stack to catch over/under-flows.
-     */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        uint8_t *pbEMTStackR3 = pVM->aCpus[idCpu].vmm.s.pbEMTStackR3;
-
-        memset(pbEMTStackR3 - PAGE_SIZE, 0xcc, PAGE_SIZE);
-        MMR3HyperSetGuard(pVM, pbEMTStackR3 - PAGE_SIZE, PAGE_SIZE, true /*fSet*/);
-
-        memset(pbEMTStackR3 + VMM_STACK_SIZE, 0xcc, PAGE_SIZE);
-        MMR3HyperSetGuard(pVM, pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, true /*fSet*/);
-    }
-    pVM->vmm.s.fStackGuardsStationed = true;
-#endif
-
-    /*
-     * Disable the periodic preemption timers if we can use the VMX-preemption
-     * timer instead.
-     */
-    if (   pVM->vmm.s.fUsePeriodicPreemptionTimers
-        && HWACCMR3IsVmxPreemptionTimerUsed(pVM))
-        pVM->vmm.s.fUsePeriodicPreemptionTimers = false;
-    LogRel(("VMM: fUsePeriodicPreemptionTimers=%RTbool\n", pVM->vmm.s.fUsePeriodicPreemptionTimers));
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Initializes the R0 VMM.
  *
  * @returns VBox status code.
@@ -663,6 +594,90 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
         }
         AssertRC(rc);
     }
+    return rc;
+}
+
+
+/**
+ * Called when an init phase completes.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   enmWhat             Which init phase.
+ */
+VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
+{
+    int rc = VINF_SUCCESS;
+
+    switch (enmWhat)
+    {
+        case VMINITCOMPLETED_RING3:
+        {
+            /*
+             * Set page attributes to r/w for stack pages.
+             */
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            {
+                rc = PGMMapSetPage(pVM, pVM->aCpus[idCpu].vmm.s.pbEMTStackRC, VMM_STACK_SIZE,
+                                   X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
+                AssertRCReturn(rc, rc);
+            }
+
+            /*
+             * Create the EMT yield timer.
+             */
+            rc = TMR3TimerCreateInternal(pVM, TMCLOCK_REAL, vmmR3YieldEMT, NULL, "EMT Yielder", &pVM->vmm.s.pYieldTimer);
+            AssertRCReturn(rc, rc);
+
+            rc = TMTimerSetMillies(pVM->vmm.s.pYieldTimer, pVM->vmm.s.cYieldEveryMillies);
+            AssertRCReturn(rc, rc);
+
+#ifdef VBOX_WITH_NMI
+            /*
+             * Map the host APIC into GC - This is AMD/Intel + Host OS specific!
+             */
+            rc = PGMMap(pVM, pVM->vmm.s.GCPtrApicBase, 0xfee00000, PAGE_SIZE,
+                        X86_PTE_P | X86_PTE_RW | X86_PTE_PWT | X86_PTE_PCD | X86_PTE_A | X86_PTE_D);
+            AssertRCReturn(rc, rc);
+#endif
+
+#ifdef VBOX_STRICT_VMM_STACK
+            /*
+             * Setup the stack guard pages: Two inaccessible pages at each sides of the
+             * stack to catch over/under-flows.
+             */
+            for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            {
+                uint8_t *pbEMTStackR3 = pVM->aCpus[idCpu].vmm.s.pbEMTStackR3;
+
+                memset(pbEMTStackR3 - PAGE_SIZE, 0xcc, PAGE_SIZE);
+                MMR3HyperSetGuard(pVM, pbEMTStackR3 - PAGE_SIZE, PAGE_SIZE, true /*fSet*/);
+
+                memset(pbEMTStackR3 + VMM_STACK_SIZE, 0xcc, PAGE_SIZE);
+                MMR3HyperSetGuard(pVM, pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, true /*fSet*/);
+            }
+            pVM->vmm.s.fStackGuardsStationed = true;
+#endif
+            break;
+        }
+
+        case VMINITCOMPLETED_RING0:
+        {
+            /*
+             * Disable the periodic preemption timers if we can use the
+             * VMX-preemption timer instead.
+             */
+            if (   pVM->vmm.s.fUsePeriodicPreemptionTimers
+                && HWACCMR3IsVmxPreemptionTimerUsed(pVM))
+                pVM->vmm.s.fUsePeriodicPreemptionTimers = false;
+            LogRel(("VMM: fUsePeriodicPreemptionTimers=%RTbool\n", pVM->vmm.s.fUsePeriodicPreemptionTimers));
+            break;
+        }
+
+        default: /* shuts up gcc */
+            break;
+    }
+
     return rc;
 }
 
