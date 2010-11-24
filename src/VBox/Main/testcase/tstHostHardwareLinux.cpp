@@ -54,11 +54,13 @@ int doHotplugEvent(VBoxMainHotplugWaiter *waiter, RTMSINTERVAL cMillies)
     return rc;
 }
 
-void printDevices(PUSBDEVICE pDevices, const char *pcszAccess)
+void printDevices(PUSBDEVICE pDevices,
+                  const char *pcszDevices,
+                  const char *pcszMethod)
 {
     PUSBDEVICE pDevice = pDevices;
 
-    RTPrintf("Enumerating usb devices using %s\n", pcszAccess);
+    RTPrintf("Enumerating usb devices using %s at %s\n", pcszMethod, pcszDevices);
     while (pDevice)
     {
         RTPrintf("  Manufacturer: %s, product: %s, serial number string: %s\n",
@@ -117,23 +119,24 @@ int main()
             RTPrintf (", description: %s", it->mDescription.c_str());
         RTPrintf ("\n");
     }
+    PCUSBDEVTREELOCATION pcLocation = USBProxyLinuxGetDeviceRoot(false);
+    if (pcLocation && !pcLocation->fUseSysfs)
+    {
+        PUSBDEVICE pDevice = USBProxyLinuxGetDevices(pcLocation->szDevicesRoot,
+                                                     false);
+        printDevices(pDevice, pcLocation->szDevicesRoot, "usbfs");
+        freeDevices(pDevice);
+    }
 #ifdef VBOX_USB_WITH_SYSFS
-    PUSBDEVICE pDevice = USBProxyLinuxGetDevices(NULL);
-    printDevices(pDevice, "sysfs");
-    freeDevices(pDevice);
-    if (USBProxyLinuxCheckForUsbfs("/proc/bus/usb/devices"))
+    pcLocation = USBProxyLinuxGetDeviceRoot(true);
+    if (pcLocation && pcLocation->fUseSysfs)
     {
-        pDevice = USBProxyLinuxGetDevices("/proc/bus/usb");
-        printDevices(pDevice, "/proc/bus/usb");
+        PUSBDEVICE pDevice = USBProxyLinuxGetDevices(pcLocation->szDevicesRoot,
+                                                     true);
+        printDevices(pDevice, pcLocation->szDevicesRoot, "sysfs");
         freeDevices(pDevice);
     }
-    if (USBProxyLinuxCheckForUsbfs("/dev/bus/usb/devices"))
-    {
-        pDevice = USBProxyLinuxGetDevices("/dev/bus/usb");
-        printDevices(pDevice, "/dev/bus/usb");
-        freeDevices(pDevice);
-    }
-    VBoxMainHotplugWaiter waiter;
+    VBoxMainHotplugWaiter waiter(pcLocation->szDevicesRoot);
     RTPrintf ("Waiting for a hotplug event for five seconds...\n");
     doHotplugEvent(&waiter, 5000);
     RTPrintf ("Waiting for a hotplug event, Ctrl-C to abort...\n");

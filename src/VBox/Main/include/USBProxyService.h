@@ -203,8 +203,7 @@ class USBProxyServiceLinux
     : public USBProxyService
 {
 public:
-    USBProxyServiceLinux(Host *aHost,
-                         const char *aUsbfsRoot = "/proc/bus/usb");
+    USBProxyServiceLinux(Host *aHost);
     HRESULT init(void);
     ~USBProxyServiceLinux();
 
@@ -233,14 +232,14 @@ private:
     /** Pipe used to interrupt wait(), the write end. */
     RTFILE mWakeupPipeW;
     /** The root of usbfs. */
-    Utf8Str mUsbfsRoot;
+    Utf8Str mDevicesRoot;
     /** Whether we're using <mUsbfsRoot>/devices or /sys/whatever. */
     bool mUsingUsbfsDevices;
     /** Number of 500ms polls left to do. See usbDeterminState for details. */
     unsigned mUdevPolls;
 #  ifdef VBOX_USB_WITH_SYSFS
     /** Object used for polling for hotplug events from hal. */
-    VBoxMainHotplugWaiter mWaiter;
+    VBoxMainHotplugWaiter *mpWaiter;
 #  endif
 };
 # endif /* RT_OS_LINUX */
