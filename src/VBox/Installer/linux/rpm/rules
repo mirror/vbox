@@ -29,7 +29,7 @@ ifeq ($(shell if grep -q '^/usr/lib/virtualbox' /etc/permissions* 2>/dev/null; t
 $(error Fix /etc/permissions*)
 endif
 
-verpkg   := VirtualBox-3.2
+verpkg   := VirtualBox-4.0
 current  := $(shell pwd)
 vboxroot := $(shell cd ../../../../; pwd)
 pkgdir   := $(shell cd ../../../../..; pwd)

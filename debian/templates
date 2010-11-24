@@ -1,8 +1,8 @@
 Template: virtualbox/group-vboxusers
 Type: note
 Description: Creating group 'vboxusers'
- Users of VirtualBox must be members of that group. Host network interfaces
- will be assigned to that group.
+ Users of VirtualBox must be members of this group. Host network interfaces
+ will be assigned to this group.
 Description-de.UTF-8: Erzeuge Gruppe 'vboxusers'
  Nutzer von VirtualBox müssen Mitglied dieser Gruppe sein. Hostinterfaces
  werden dieser Gruppe zugewiesen.
@@ -11,9 +11,9 @@ Template: virtualbox/module-compilation-failed
 Type: note
 Description: Compilation of the kernel module FAILED!
  VirtualBox will not start until this problem is fixed. Please consult
- /var/log/vbox-install.log to find out why the kernel module does not compile.
- Most probably the kernel sources were not found. Install them (the package
- name is probably linux-headers-<version> whereby <version> can be determined
+ /var/log/vbox-install.log to find out why the kernel module didn't compile.
+ The kernel sources were probably not found. Install them (the package
+ name is probably linux-headers-<version> where <version> can be determined
  by 'uname -r') and execute
    
    /etc/init.d/vboxdrv setup
@@ -38,12 +38,12 @@ Description: Should the vboxdrv kernel module be compiled now?
  Unable to find a precompiled module for the current kernel!
  .
  Without a suitable kernel module you will not be able to start any VMs. It is
- strongly recommended to compile a kernel module now. The kernel headers and
- the tools to build kernel modules (gcc, make, binutils, ...) are required.
+ strongly recommended that you compile a kernel module now. This requires
+ kernel headers and the tools to build kernel modules (gcc, make, binutils, ...).
  However if you know that a suitable kernel module already exists at another
  location, you might want to override the default by setting
- KDIR=<full_path_to_vboxdrv_module> in /etc/default/virtualbox. The
- compilation can also be done later by executing
+ KDIR=<full_path_to_vboxdrv_module> in /etc/default/virtualbox. You can also
+ build the module later by executing
    
    /etc/init.d/vboxdrv setup
    
@@ -67,9 +67,9 @@ Template: virtualbox/delete-old-modules
 Type: boolean
 Default: true
 Description: Delete old vboxdrv kernel modules?
- Old vboxdrv kernel modules found. It is recommended to purge these modules as they
- might interfere with this version of VirtualBox. The module re-compilation
- can be forced later by executing
+ Old vboxdrv kernel modules found. You should remove these modules as they
+ might interfere with this version of VirtualBox. You can force re-compilation
+ of the module later by executing
    
    /etc/init.d/vboxdrv setup
    
@@ -98,8 +98,8 @@ Description-de.UTF-8: Alte Version gefunden
 Template: virtualbox/old-running
 Type: note
 Description: Running VMs found
- A copy of VirtualBox is currently running.  Please close it and try again. Please note
- that it can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to
+ VirtualBox is currently running. Please close it and try again. Please note that it
+ can take up to ten seconds for VirtualBox (in particular the VBoxSVC daemon) to
  finish running.
 Description-de.UTF-8: VirtualBox VMs werden ausgeführt
  Mindestens eine virtuelle Maschine wird noch ausgeführt. Bitte beenden Sie alle VMs und

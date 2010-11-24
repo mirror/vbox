@@ -39,7 +39,7 @@ export DH_COMPAT=4
 #  BLEEDING_EDGE=xyz
 
 package  := virtualbox
-verpkg   := virtualbox-3.2
+verpkg   := virtualbox-4.0
 current  := $(shell pwd)
 vboxroot := $(shell cd ../../../..; pwd)
 pkgdir   := $(shell cd ../../../../..; pwd)
