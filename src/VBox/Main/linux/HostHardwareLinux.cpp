@@ -1053,7 +1053,7 @@ static int readFilePaths(const char *pcszPath, VECTOR_PTR(char *) *pvecpchDevs,
 class hotplugNullImpl : public VBoxMainHotplugWaiterImpl
 {
 public:
-    hotplugNullImpl (void) {}
+    hotplugNullImpl(const char *) {}
     virtual ~hotplugNullImpl (void) {}
     /** @copydoc VBoxMainHotplugWaiter::Wait */
     virtual int Wait (RTMSINTERVAL)
@@ -1154,7 +1154,6 @@ static int iwGetFD(inotifyWatch *pSelf)
     return pSelf->mhInotify;
 }
 
-# define SYSFS_USB_DEVICE_PATH "/dev/bus/usb"
 # define SYSFS_WAKEUP_STRING "Wake up!"
 
 class hotplugInotifyImpl : public VBoxMainHotplugWaiterImpl
@@ -1168,6 +1167,8 @@ class hotplugInotifyImpl : public VBoxMainHotplugWaiterImpl
     /** Flag to mark that the Wait() method is currently being called, and to
      * ensure that it isn't called multiple times in parallel. */
     volatile uint32_t mfWaiting;
+    /** The root of the USB devices tree. */
+    const char *mpcszDevicesRoot;
     /** iprt result code from object initialisation.  Should be AssertReturn-ed
      * on at the start of all methods.  I went this way because I didn't want
      * to deal with exceptions. */
@@ -1191,7 +1192,7 @@ class hotplugInotifyImpl : public VBoxMainHotplugWaiterImpl
     /** Read the wakeup string from the wakeup pipe */
     int drainWakeupPipe(void);
 public:
-    hotplugInotifyImpl(void);
+    hotplugInotifyImpl(const char *pcszDevicesRoot);
     virtual ~hotplugInotifyImpl(void)
     {
         term();
@@ -1201,12 +1202,21 @@ public:
         term();
 #endif
     }
-    /** Are sysfs and inotify available on this system?  If so we expect that
+    /** Is inotify available and working on this system?  If so we expect that
      * this implementation will be usable. */
+    /** @todo test the "inotify in glibc but not in the kernel" case. */
     static bool Available(void)
     {
-        return (   RTDirExists(SYSFS_USB_DEVICE_PATH)
-                && dlsym(RTLD_DEFAULT, "inotify_init") != NULL);
+        int (*inotify_init)(void);
+
+        *(void **)(&inotify_init) = dlsym(RTLD_DEFAULT, "inotify_init");
+        if (!inotify_init)
+            return false;
+        int fd = inotify_init();
+        if (fd == -1)
+            return false;
+        close(fd);
+        return true;
     }
 
     virtual int getStatus(void)
@@ -1251,9 +1261,9 @@ static int pipeCreateSimple(int *phPipeRead, int *phPipeWrite)
     return VINF_SUCCESS;
 }
 
-hotplugInotifyImpl::hotplugInotifyImpl(void) :
+hotplugInotifyImpl::hotplugInotifyImpl(const char *pcszDevicesRoot) :
     mhWakeupPipeR(-1), mhWakeupPipeW(-1), mfWaiting(0),
-    mStatus(VERR_WRONG_ORDER)
+    mpcszDevicesRoot(pcszDevicesRoot), mStatus(VERR_WRONG_ORDER)
 {
 #  ifdef DEBUG
     /* Excercise the code path (term() on a not-fully-initialised object) as
@@ -1268,7 +1278,7 @@ hotplugInotifyImpl::hotplugInotifyImpl(void) :
     do {
         if (RT_FAILURE(rc = iwInit(&mWatches)))
             break;
-        if (RT_FAILURE(rc = iwAddWatch(&mWatches, SYSFS_USB_DEVICE_PATH)))
+        if (RT_FAILURE(rc = iwAddWatch(&mWatches, mpcszDevicesRoot)))
             break;
         if (RT_FAILURE(rc = pipeCreateSimple(&mhWakeupPipeR, &mhWakeupPipeW)))
             break;
@@ -1337,7 +1347,7 @@ int hotplugInotifyImpl::Wait(RTMSINTERVAL aMillies)
     do {
         struct pollfd pollFD[MAX_POLLID];
 
-        rc = readFilePaths(SYSFS_USB_DEVICE_PATH, &vecpchDevs, false);
+        rc = readFilePaths(mpcszDevicesRoot, &vecpchDevs, false);
         if (RT_SUCCESS(rc))
             VEC_FOR_EACH(&vecpchDevs, char *, ppszEntry)
                 if (RT_FAILURE(rc = iwAddWatch(&mWatches, *ppszEntry)))
@@ -1391,7 +1401,7 @@ void hotplugInotifyImpl::Interrupt(void)
 # endif /* VBOX_USB_WITH_INOTIFY */
 #endif  /* VBOX_USB_WTH_SYSFS */
 
-VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
+VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(const char *pcszDevicesRoot)
 {
     try
     {
@@ -1399,12 +1409,12 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter(void)
 # ifdef VBOX_USB_WITH_INOTIFY
         if (hotplugInotifyImpl::Available())
         {
-            mImpl = new hotplugInotifyImpl;
+            mImpl = new hotplugInotifyImpl(pcszDevicesRoot);
             return;
         }
 # endif /* VBOX_USB_WITH_INOTIFY */
 #endif  /* VBOX_USB_WITH_SYSFS */
-        mImpl = new hotplugNullImpl;
+        mImpl = new hotplugNullImpl(pcszDevicesRoot);
     }
     catch(std::bad_alloc &e)
     { }

@@ -135,7 +135,7 @@ class VBoxMainHotplugWaiter
     VBoxMainHotplugWaiterImpl *mImpl;
 public:
     /** Constructor.  Responsible for selecting the implementation. */
-    VBoxMainHotplugWaiter (void);
+    VBoxMainHotplugWaiter(const char *pcszDevicesRoot);
     /** Destructor. */
     ~VBoxMainHotplugWaiter (void)
     {

@@ -33,6 +33,7 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/string.h>
 #include "vector.h"
 
@@ -92,31 +93,15 @@ static const USBSUFF s_aIntervalSuff[] =
     { "",   0,    0,       0 }  /* term */
 };
 
-
-int USBProxyLinuxCheckForUsbfs(const char *pcszDevices)
+/**
+ * List of well-known USB device tree locations.
+ */
+static const USBDEVTREELOCATION s_aTreeLocations[] =
 {
-    int fd, rc = VINF_SUCCESS;
-
-    fd = open(pcszDevices, O_RDONLY, 00600);
-    if (fd >= 0)
-    {
-        /*
-         * Check that we're actually on the usbfs.
-         */
-        struct statfs StFS;
-        if (!fstatfs(fd, &StFS))
-        {
-            if (StFS.f_type != USBDEVICE_SUPER_MAGIC)
-                rc = VERR_NOT_FOUND;
-        }
-        else
-            rc = RTErrConvertFromErrno(errno);
-        close(fd);
-    }
-    else
-        rc = RTErrConvertFromErrno(errno);
-    return rc;
-}
+    { "/proc/bus/usb", false },
+    { "/dev/bus/usb",  false },
+    { "/dev/bus/usb",  true },
+};
 
 
 /**
@@ -869,7 +854,8 @@ static unsigned usbDeviceFromDevNum(dev_t devNum)
  * If a file @a pcszNode from /sys/bus/usb/devices is a device rather than an
  * interface add an element for the device to @a pvecDevInfo.
  */
-static int addIfDevice(const char *pcszNode,
+static int addIfDevice(const char *pcszDevicesRoot,
+                       const char *pcszNode,
                        VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo)
 {
     const char *pcszFile = strrchr(pcszNode, '/');
@@ -885,7 +871,8 @@ static int addIfDevice(const char *pcszNode,
     ssize_t cchDevPath;
     cchDevPath = RTLinuxFindDevicePath(devnum, RTFS_TYPE_DEV_CHAR,
                                        szDevPath, sizeof(szDevPath),
-                                       "/dev/bus/usb/%.3d/%.3d",
+                                       "%s/%.3d/%.3d",
+                                       pcszDevicesRoot,
                                        usbBusFromDevNum(devnum),
                                        usbDeviceFromDevNum(devnum));
     if (cchDevPath < 0)
@@ -1024,10 +1011,12 @@ static int readFilePaths(const char *pcszPath, VECTOR_PTR(char *) *pvecpchDevs)
  * Logic for USBSysfsEnumerateHostDevices.
  * @param pvecDevInfo  vector of device information structures to add device
  *                     information to
- * @param pvecpchDevs  empty scratch vector which will be freed by the caller
+ * @param pvecpchDevs  empty scratch vector which will be freed by the caller,
+ *                     to simplify exit logic
  */
-static int doSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
-                              VECTOR_PTR(char *) *pvecpchDevs)
+static int doSysfsEnumerateHostDevices(const char *pcszDevicesRoot,
+                                       VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
+                                       VECTOR_PTR(char *) *pvecpchDevs)
 {
     char **ppszEntry;
     USBDeviceInfo *pInfo;
@@ -1040,7 +1029,8 @@ static int doSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
     if (RT_FAILURE(rc))
         return rc;
     VEC_FOR_EACH(pvecpchDevs, char *, ppszEntry)
-        if (RT_FAILURE(rc = addIfDevice(*ppszEntry, pvecDevInfo)))
+        if (RT_FAILURE(rc = addIfDevice(pcszDevicesRoot, *ppszEntry,
+                                        pvecDevInfo)))
             return rc;
     VEC_FOR_EACH(pvecDevInfo, USBDeviceInfo, pInfo)
         VEC_FOR_EACH(pvecpchDevs, char *, ppszEntry)
@@ -1049,7 +1039,8 @@ static int doSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo,
     return VINF_SUCCESS;
 }
 
-static int USBSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo)
+static int USBSysfsEnumerateHostDevices(const char *pcszDevicesRoot,
+                                        VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo)
 {
     VECTOR_PTR(char *) vecpchDevs;
     int rc = VERR_NOT_IMPLEMENTED;
@@ -1057,7 +1048,8 @@ static int USBSysfsEnumerateHostDevices(VECTOR_OBJ(USBDeviceInfo) *pvecDevInfo)
     AssertReturn(VEC_SIZE_OBJ(pvecDevInfo) == 0, VERR_INVALID_PARAMETER);
     LogFlowFunc(("entered\n"));
     VEC_INIT_PTR(&vecpchDevs, char *, RTStrFree);
-    rc = doSysfsEnumerateHostDevices(pvecDevInfo, &vecpchDevs);
+    rc = doSysfsEnumerateHostDevices(pcszDevicesRoot, pvecDevInfo,
+                                     &vecpchDevs);
     VEC_CLEANUP_PTR(&vecpchDevs);
     LogFlowFunc(("rc=%Rrc\n", rc));
     return rc;
@@ -1349,7 +1341,7 @@ static void fillInDeviceFromSysfs(USBDEVICE *Dev, USBDeviceInfo *pInfo)
 /**
  * USBProxyService::getDevices() implementation for sysfs.
  */
-static PUSBDEVICE getDevicesFromSysfs(void)
+static PUSBDEVICE getDevicesFromSysfs(const char *pcszDevicesRoot)
 {
 #ifdef VBOX_USB_WITH_SYSFS
     /* Add each of the devices found to the chain. */
@@ -1360,7 +1352,7 @@ static PUSBDEVICE getDevicesFromSysfs(void)
     int rc;
 
     VEC_INIT_OBJ(&vecDevInfo, USBDeviceInfo, USBDevInfoCleanup);
-    rc = USBSysfsEnumerateHostDevices(&vecDevInfo);
+    rc = USBSysfsEnumerateHostDevices(pcszDevicesRoot, &vecDevInfo);
     if (RT_FAILURE(rc))
         return NULL;
     VEC_FOR_EACH(&vecDevInfo, USBDeviceInfo, pInfo)
@@ -1400,10 +1392,43 @@ static PUSBDEVICE getDevicesFromSysfs(void)
 #endif  /* !VBOX_USB_WITH_SYSFS */
 }
 
-PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszUsbfsRoot)
+PCUSBDEVTREELOCATION USBProxyLinuxGetDeviceRoot(bool fPreferSysfs)
 {
-    if (pcszUsbfsRoot)
-        return getDevicesFromUsbfs(pcszUsbfsRoot);
+    PCUSBDEVTREELOCATION pcBestUsbfs = NULL;
+    PCUSBDEVTREELOCATION pcBestSysfs = NULL;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aTreeLocations); ++i)
+        if (!s_aTreeLocations[i].fUseSysfs)
+        {
+            if (!pcBestUsbfs)
+            {
+                PUSBDEVICE pDevices;
+
+                pDevices = getDevicesFromUsbfs(s_aTreeLocations[i].szDevicesRoot);
+                if (pDevices)
+                {
+                    pcBestUsbfs = &s_aTreeLocations[i];
+                    deviceListFree(&pDevices);
+                }
+            }
+        }
+        else
+        {
+            if (   !pcBestSysfs
+                && RTPathExists(s_aTreeLocations[i].szDevicesRoot))
+                pcBestSysfs = &s_aTreeLocations[i];
+        }
+    if (pcBestUsbfs && !fPreferSysfs)
+        return pcBestUsbfs;
+    return pcBestSysfs;
+}
+
+
+PUSBDEVICE USBProxyLinuxGetDevices(const char *pcszDevicesRoot,
+                                   bool fUseSysfs)
+{
+    if (!fUseSysfs)
+        return getDevicesFromUsbfs(pcszDevicesRoot);
     else
-        return getDevicesFromSysfs();
+        return getDevicesFromSysfs(pcszDevicesRoot);
 }

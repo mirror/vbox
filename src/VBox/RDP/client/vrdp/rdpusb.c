@@ -62,9 +62,10 @@ static const struct
     { "/dev/bus/usb",  "/dev/bus/usb/devices" }
 };
 
-/** Location at which the Linux Usbfs filesystem was found.  NULL means not
- * found, in which case USB devices will be accessed through /dev and sysfs. */
-static const char *g_pcszUsbfsRoot = NULL;
+/** Location at which the USB device tree was found.  NULL means not
+ * found. */
+static const char *g_pcszDevicesRoot = NULL;
+static bool g_fUseSysfs = false;
 
 static PUSBDEVICE g_pUsbDevices = NULL;
 
@@ -251,7 +252,7 @@ static void *build_device_list (int *pLen)
     *pLen = 0;
     if (g_pUsbDevices)
         deviceListFree(&g_pUsbDevices);
-    g_pUsbDevices = USBProxyLinuxGetDevices(g_pcszUsbfsRoot);
+    g_pUsbDevices = USBProxyLinuxGetDevices(g_pcszDevicesRoot, g_fUseSysfs);
     if (!g_pUsbDevices)
         return NULL;
     pvDeviceList = buildWireListFromDevices(g_pUsbDevices, pLen);
@@ -851,23 +852,12 @@ rdpusb_check_fds(fd_set * rfds, fd_set * wfds)
 }
 
 
-/** Check for the Linux Usbfs filesystem in a couple of common locations. */
-static void checkUsbfsRoot(void)
-{
-    unsigned i;
-    for (i = 0; i < RT_ELEMENTS(g_usbfsPaths); ++i)
-        if (RT_SUCCESS(USBProxyLinuxCheckForUsbfs(g_usbfsPaths[i].pcszDevices)))
-        {
-            g_pcszUsbfsRoot = g_usbfsPaths[i].pcszRoot;
-            break;
-        }
-}
-
-
 RD_BOOL
 rdpusb_init(void)
 {
-	checkUsbfsRoot();
+	PCUSBDEVTREELOCATION pcLocation = USBProxyLinuxGetDeviceRoot(false);
+	g_fUseSysfs       = pcLocation->fUseSysfs;
+	g_pcszDevicesRoot = pcLocation->szDevicesRoot;
 	rdpusb_channel =
 		channel_register("vrdpusb", CHANNEL_OPTION_INITIALIZED | CHANNEL_OPTION_ENCRYPT_RDP,
 				 rdpusb_process);

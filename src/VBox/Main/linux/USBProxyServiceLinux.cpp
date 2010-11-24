@@ -54,44 +54,15 @@
 #include <linux/usbdevice_fs.h>
 
 
-/*******************************************************************************
-*   Structures and Typedefs                                                    *
-*******************************************************************************/
-/** Suffix translation. */
-typedef struct USBSUFF
-{
-    char        szSuff[4];
-    unsigned    cchSuff;
-    unsigned    uMul;
-    unsigned    uDiv;
-} USBSUFF, *PUSBSUFF;
-typedef const USBSUFF *PCUSBSUFF;
-
-
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/**
- * Suffixes for the endpoint polling interval.
- */
-static const USBSUFF s_aIntervalSuff[] =
-{
-    { "ms", 2,    1,       0 },
-    { "us", 2,    1,    1000 },
-    { "ns", 2,    1, 1000000 },
-    { "s",  1, 1000,       0 },
-    { "",   0,    0,       0 }  /* term */
-};
-
-
 /**
  * Initialize data members.
  */
-USBProxyServiceLinux::USBProxyServiceLinux(Host *aHost, const char *aUsbfsRoot /* = "/proc/bus/usb" */)
+USBProxyServiceLinux::USBProxyServiceLinux(Host *aHost)
     : USBProxyService(aHost), mFile(NIL_RTFILE), mWakeupPipeR(NIL_RTFILE),
-      mWakeupPipeW(NIL_RTFILE), mUsbfsRoot(aUsbfsRoot), mUsingUsbfsDevices(true /* see init */), mUdevPolls(0)
+      mWakeupPipeW(NIL_RTFILE), mUsingUsbfsDevices(true /* see init */),
+      mUdevPolls(0), mpWaiter(NULL)
 {
-    LogFlowThisFunc(("aHost=%p aUsbfsRoot=%p:{%s}\n", aHost, aUsbfsRoot, aUsbfsRoot));
+    LogFlowThisFunc(("aHost=%p:{%s}\n", aHost));
 }
 
 
@@ -117,9 +88,9 @@ HRESULT USBProxyServiceLinux::init(void)
      * will be presented to the user.
      */
 #ifdef VBOX_WITH_SYSFS_BY_DEFAULT
-    mUsingUsbfsDevices = false;
+    bool fUseSysfs = true;
 #else
-    mUsingUsbfsDevices = true;
+    bool fUseSysfs = false;
 #endif
     const char *pszUsbFromEnv = RTEnvGet("VBOX_USB");
     if (pszUsbFromEnv)
@@ -127,30 +98,31 @@ HRESULT USBProxyServiceLinux::init(void)
         if (!RTStrICmp(pszUsbFromEnv, "USBFS"))
         {
             LogRel(("Default USB access method set to \"usbfs\" from environment\n"));
-            mUsingUsbfsDevices = true;
+            fUseSysfs = false;
         }
         else if (!RTStrICmp(pszUsbFromEnv, "SYSFS"))
         {
             LogRel(("Default USB method set to \"sysfs\" from environment\n"));
-            mUsingUsbfsDevices = false;
+            fUseSysfs = true;
         }
         else
             LogRel(("Invalid VBOX_USB environment variable setting \"%s\"\n",
                     pszUsbFromEnv));
     }
-    int rc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
-    if (RT_FAILURE(rc))
+    PCUSBDEVTREELOCATION pcLocation = USBProxyLinuxGetDeviceRoot(fUseSysfs);
+    if (pcLocation)
     {
+        mUsingUsbfsDevices = !pcLocation->fUseSysfs;
+        mDevicesRoot = pcLocation->szDevicesRoot;
+        int rc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
         /* For the day when we have VBoxSVC release logging... */
-        LogRel(("Failed to initialise host USB using %s\n",
+        LogRel((RT_SUCCESS(rc) ? "Successfully initialised host USB using %s\n"
+                               : "Failed to initialise host USB using %s\n",
                 mUsingUsbfsDevices ? "USBFS" : "sysfs/hal"));
-        mUsingUsbfsDevices = !mUsingUsbfsDevices;
-        rc = mUsingUsbfsDevices ? initUsbfs() : initSysfs();
+        mLastError = rc;
     }
-    LogRel((RT_SUCCESS(rc) ? "Successfully initialised host USB using %s\n"
-                           : "Failed to initialise host USB using %s\n",
-            mUsingUsbfsDevices ? "USBFS" : "sysfs/hal"));
-    mLastError = rc;
+    else
+        mLastError = VERR_NOT_FOUND;
     return S_OK;
 }
 
@@ -168,57 +140,53 @@ int USBProxyServiceLinux::initUsbfs(void)
      * Open the devices file.
      */
     int rc;
-    char *pszDevices = RTPathJoinA(mUsbfsRoot.c_str(), "devices");
+    char *pszDevices = RTPathJoinA(mDevicesRoot.c_str(), "devices");
     if (pszDevices)
     {
-        rc = USBProxyLinuxCheckForUsbfs(pszDevices);
+        rc = RTFileOpen(&mFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileOpen(&mFile, pszDevices, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-            if (RT_SUCCESS(rc))
+            int pipes[2];
+            if (!pipe(pipes))
             {
-                int pipes[2];
-                if (!pipe(pipes))
+                /* Set close on exec (race here!) */
+                if (   fcntl(pipes[0], F_SETFD, FD_CLOEXEC) >= 0
+                    && fcntl(pipes[1], F_SETFD, FD_CLOEXEC) >= 0)
                 {
-                    /* Set close on exec (race here!) */
-                    if (   fcntl(pipes[0], F_SETFD, FD_CLOEXEC) >= 0
-                        && fcntl(pipes[1], F_SETFD, FD_CLOEXEC) >= 0)
+                    mWakeupPipeR = pipes[0];
+                    mWakeupPipeW = pipes[1];
+                    /*
+                     * Start the poller thread.
+                     */
+                    rc = start();
+                    if (RT_SUCCESS(rc))
                     {
-                        mWakeupPipeR = pipes[0];
-                        mWakeupPipeW = pipes[1];
-                        /*
-                         * Start the poller thread.
-                         */
-                        rc = start();
-                        if (RT_SUCCESS(rc))
-                        {
-                            RTStrFree(pszDevices);
-                            LogFlowThisFunc(("returns successfully - mWakeupPipeR/W=%d/%d\n",
-                                             mWakeupPipeR, mWakeupPipeW));
-                            return VINF_SUCCESS;
-                        }
+                        RTStrFree(pszDevices);
+                        LogFlowThisFunc(("returns successfully - mWakeupPipeR/W=%d/%d\n",
+                                         mWakeupPipeR, mWakeupPipeW));
+                        return VINF_SUCCESS;
+                    }
 
-                        RTFileClose(mWakeupPipeR);
-                        RTFileClose(mWakeupPipeW);
-                        mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
-                    }
-                    else
-                    {
-                        rc = RTErrConvertFromErrno(errno);
-                        Log(("USBProxyServiceLinux::USBProxyServiceLinux: fcntl failed, errno=%d\n", errno));
-                        close(pipes[0]);
-                        close(pipes[1]);
-                    }
+                    RTFileClose(mWakeupPipeR);
+                    RTFileClose(mWakeupPipeW);
+                    mWakeupPipeW = mWakeupPipeR = NIL_RTFILE;
                 }
                 else
                 {
                     rc = RTErrConvertFromErrno(errno);
-                    Log(("USBProxyServiceLinux::USBProxyServiceLinux: pipe failed, errno=%d\n", errno));
+                    Log(("USBProxyServiceLinux::USBProxyServiceLinux: fcntl failed, errno=%d\n", errno));
+                    close(pipes[0]);
+                    close(pipes[1]);
                 }
-                RTFileClose(mFile);
             }
-
+            else
+            {
+                rc = RTErrConvertFromErrno(errno);
+                Log(("USBProxyServiceLinux::USBProxyServiceLinux: pipe failed, errno=%d\n", errno));
+            }
+            RTFileClose(mFile);
         }
+
         RTStrFree(pszDevices);
     }
     else
@@ -242,7 +210,15 @@ int USBProxyServiceLinux::initSysfs(void)
     Assert(!mUsingUsbfsDevices);
 
 #ifdef VBOX_USB_WITH_SYSFS
-    int rc = mWaiter.getStatus();
+    try 
+    {
+        mpWaiter = new VBoxMainHotplugWaiter(mDevicesRoot.c_str());
+    }
+    catch(std::bad_alloc &e)
+    {
+        return VERR_NO_MEMORY;
+    }
+    int rc = mpWaiter->getStatus();
     if (RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_TRY_AGAIN)
         rc = start();
     else if (rc == VERR_NOT_SUPPORTED)
@@ -274,8 +250,10 @@ USBProxyServiceLinux::~USBProxyServiceLinux()
      * Free resources.
      */
     doUsbfsCleanupAsNeeded();
-
-    /* (No extra work for !mUsingUsbfsDevices.) */
+#ifdef VBOX_USB_WITH_SYSFS
+    if (mpWaiter)
+        delete mpWaiter;
+#endif
 }
 
 
@@ -416,7 +394,7 @@ int USBProxyServiceLinux::waitUsbfs(RTMSINTERVAL aMillies)
 int USBProxyServiceLinux::waitSysfs(RTMSINTERVAL aMillies)
 {
 #ifdef VBOX_USB_WITH_SYSFS
-    int rc = mWaiter.Wait(aMillies);
+    int rc = mpWaiter->Wait(aMillies);
     if (rc == VERR_TRY_AGAIN)
     {
         RTThreadYield();
@@ -435,7 +413,7 @@ int USBProxyServiceLinux::interruptWait(void)
     LogFlowFunc(("mUsingUsbfsDevices=%d\n", mUsingUsbfsDevices));
     if (!mUsingUsbfsDevices)
     {
-        mWaiter.Interrupt();
+        mpWaiter->Interrupt();
         LogFlowFunc(("Returning VINF_SUCCESS\n"));
         return VINF_SUCCESS;
     }
@@ -450,9 +428,5 @@ int USBProxyServiceLinux::interruptWait(void)
 
 PUSBDEVICE USBProxyServiceLinux::getDevices(void)
 {
-    if (mUsingUsbfsDevices)
-        return USBProxyLinuxGetDevices(mUsbfsRoot.c_str());
-    else
-        return USBProxyLinuxGetDevices(NULL);
+    return USBProxyLinuxGetDevices(mDevicesRoot.c_str(), !mUsingUsbfsDevices);
 }
-
