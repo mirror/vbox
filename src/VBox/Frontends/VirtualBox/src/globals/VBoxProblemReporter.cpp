@@ -1285,37 +1285,57 @@ int VBoxProblemReporter::confirmChangeAddControllerSlots (QWidget *aParent) cons
         tr ("Change", "hard disk"));
 }
 
-int VBoxProblemReporter::confirmRunNewHDWzdOrOFD (KDeviceType aDeviceType)
+int VBoxProblemReporter::askAboutHardDiskAttachmentCreation(QWidget *pParent,
+                                                            const QString &strControllerName)
 {
-    switch (aDeviceType)
-    {
-        case KDeviceType_HardDisk:
-            return message (QApplication::activeWindow(), Info,
-                            tr ("<p>There are no unused medium available for the newly "
-                                "created attachment.</p>"
-                                "<p>Press the <b>Create</b> button to start the <i>New "
-                                "Virtual Disk</i> wizard and create a new medium, "
-                                "or press the <b>Select</b> if you wish to open existing "
-                                "medium using file-open dialog.</p>"),
-                            0, /* aAutoConfirmId */
-                            QIMessageBox::Yes,
-                            QIMessageBox::No | QIMessageBox::Default,
-                            QIMessageBox::Cancel | QIMessageBox::Escape,
-                            tr ("&Create", "medium"),
-                            tr ("&Select", "medium"));
-        default:
-            return message (QApplication::activeWindow(), Info,
-                            tr ("<p>There are no unused medium available for the newly "
-                                "created attachment.</p>"
-                                "<p>Press the <b>Select</b> if you wish to open existing "
-                                "medium using file-open dialog.</p>"),
-                            0, /* aAutoConfirmId */
-                            QIMessageBox::No | QIMessageBox::Default,
-                            QIMessageBox::Cancel | QIMessageBox::Escape,
-                            0,
-                            tr ("&Select", "medium"));
-    }
-    return QIMessageBox::Cancel;
+    return message(pParent, Question,
+                   tr("<p>You are about to add a virtual hard disk to controller <b>%1</b>.</p>"
+                      "<p>Would you like to create a new, empty disk or select an existing one? "
+                      "You will be able to change the attached disk again at a later time "
+                      "if you wish using the button on the <b>Attributes</b> pane.</p>")
+                      .arg(strControllerName),
+                   0, /* aAutoConfirmId */
+                   QIMessageBox::Yes,
+                   QIMessageBox::No,
+                   QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+                   tr("Create &new disk", "add attachment routine"),
+                   tr("&Choose existing disk", "add attachment routine"));
+}
+
+int VBoxProblemReporter::askAboutOpticalAttachmentCreation(QWidget *pParent,
+                                                           const QString &strControllerName)
+{
+    return message(pParent, Question,
+                   tr("<p>You are about to add a new CD/DVD drive to controller <b>%1</b>.</p>"
+                      "<p>Would you like to choose a virtual CD/DVD disk to insert into the drive "
+                      "or to leave it empty for now? "
+                      "You will be able to change the disk inserted later or pass through a physical disk "
+                      "using the button on the <b>Attributes</b> pane or while the machine is running using the <b>Device</b> menu.</p>")
+                      .arg(strControllerName),
+                   0, /* aAutoConfirmId */
+                   QIMessageBox::Yes,
+                   QIMessageBox::No,
+                   QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+                   tr("&Choose disk", "add attachment routine"),
+                   tr("Leave &empty", "add attachment routine"));
+}
+
+int VBoxProblemReporter::askAboutFloppyAttachmentCreation(QWidget *pParent,
+                                                          const QString &strControllerName)
+{
+    return message(pParent, Question,
+                   tr("<p>You are about to add a new floppy drive to controller <b>%1</b>.</p>"
+                      "<p>Would you like to choose a virtual floppy disk to insert into the drive "
+                      "or to leave it empty for now? "
+                      "You will be able to change the disk inserted later or pass through a physical disk "
+                      "using the button on the <b>Attributes</b> pane or while the machine is running using the <b>Device</b> menu.</p>")
+                      .arg(strControllerName),
+                   0, /* aAutoConfirmId */
+                   QIMessageBox::Yes,
+                   QIMessageBox::No,
+                   QIMessageBox::Cancel | QIMessageBox::Default | QIMessageBox::Escape,
+                   tr("&Choose disk", "add attachment routine"),
+                   tr("Leave &empty", "add attachment routine"));
 }
 
 int VBoxProblemReporter::confirmRemovingOfLastDVDDevice() const

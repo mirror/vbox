@@ -259,7 +259,10 @@ public:
 
     int confirmDetachAddControllerSlots (QWidget *aParent) const;
     int confirmChangeAddControllerSlots (QWidget *aParent) const;
-    int confirmRunNewHDWzdOrOFD (KDeviceType aDeviceType);
+
+    int askAboutHardDiskAttachmentCreation(QWidget *pParent, const QString &strControllerName);
+    int askAboutOpticalAttachmentCreation(QWidget *pParent, const QString &strControllerName);
+    int askAboutFloppyAttachmentCreation(QWidget *pParent, const QString &strControllerName);
 
     int confirmRemovingOfLastDVDDevice() const;
 
