@@ -5728,7 +5728,7 @@ STDMETHODIMP Machine::ReadLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, ComSafeA
 }
 
 
-STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, IContext *eventContext, BOOL tryToUnbind)
+STDMETHODIMP Machine::AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, IEventContext *eventContext, BOOL tryToUnbind)
 {
     return E_NOTIMPL;
 }
