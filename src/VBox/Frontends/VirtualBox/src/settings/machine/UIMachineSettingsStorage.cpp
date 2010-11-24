@@ -2427,7 +2427,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             case VBoxDefs::MediumType_DVD:
             {
                 /* Add "Choose a virtual CD/DVD disk file" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a CD/DVD disk image..."));
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual CD/DVD disk file..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 /* Add "Eject current medium" action: */
@@ -2442,7 +2442,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             case VBoxDefs::MediumType_Floppy:
             {
                 /* Add "Choose a virtual floppy disk file" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a floppy disk image..."));
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual floppy disk file..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 /* Add "Eject current medium" action: */
