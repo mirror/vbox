@@ -459,7 +459,7 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
                     if (RT_SUCCESS(rc))
                     {
                         pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
-                        pDevExt->cbSession = cbSession;
+                        pDevExt->cbSession = (uint32_t)cbSession;
 
                         /*
                          * Fixup the absolute symbols.
@@ -3343,9 +3343,24 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
             {
                 PSUPGLOBALINFOPAGE pGipR0 = pDevExt->pGip;
                 uint64_t u64NanoTS;
+                uint32_t u32SystemResolution;
                 unsigned i;
 
                 LogFlow(("SUPR0GipMap: Resumes GIP updating\n"));
+
+                /*
+                 * Try bump up the system timer resolution.
+                 * The more interrupts the better...
+                 */
+                if (   RT_SUCCESS_NP(RTTimerRequestSystemGranularity(  976563 /* 1024 HZ */, &u32SystemResolution))
+                    || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 1000000 /* 1000 HZ */, &u32SystemResolution))
+                    || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 1953125 /*  512 HZ */, &u32SystemResolution))
+                    || RT_SUCCESS_NP(RTTimerRequestSystemGranularity( 2000000 /*  500 HZ */, &u32SystemResolution))
+                   )
+                {
+                    Assert(RTTimerGetSystemGranularity() <= u32SystemResolution);
+                    pDevExt->u32SystemTimerGranularityGrant = u32SystemResolution;
+                }
 
                 if (pGipR0->aCPUs[0].u32TransactionId != 2 /* not the first time */)
                 {
@@ -3449,6 +3464,12 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession)
 #ifndef DO_NOT_START_GIP
             rc = RTTimerStop(pDevExt->pGipTimer); AssertRC(rc); rc = VINF_SUCCESS;
 #endif
+
+            if (pDevExt->u32SystemTimerGranularityGrant)
+            {
+                int rc2 = RTTimerReleaseSystemGranularity(pDevExt->u32SystemTimerGranularityGrant); AssertRC(rc);
+                pDevExt->u32SystemTimerGranularityGrant = 0;
+            }
         }
     }
 
@@ -4866,32 +4887,6 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     pGip = (PSUPGLOBALINFOPAGE)RTR0MemObjAddress(pDevExt->GipMemObj); AssertPtr(pGip);
     HCPhysGip = RTR0MemObjGetPagePhysAddr(pDevExt->GipMemObj, 0); Assert(HCPhysGip != NIL_RTHCPHYS);
 
-#if 0 /** @todo Disabled this as we didn't used to do it before and causes unnecessary stress on laptops.
-       * It only applies to Windows and should probably revisited later, if possible made part of the
-       * timer code (return min granularity in RTTimerGetSystemGranularity and set it in RTTimerStart). */
-    /*
-     * Try bump up the system timer resolution.
-     * The more interrupts the better...
-     */
-    if (   RT_SUCCESS(RTTimerRequestSystemGranularity(  488281 /* 2048 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity(  500000 /* 2000 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity(  976563 /* 1024 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity( 1000000 /* 1000 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity( 1953125 /*  512 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity( 2000000 /*  500 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity( 3906250 /*  256 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity( 4000000 /*  250 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity( 7812500 /*  128 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity(10000000 /*  100 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity(15625000 /*   64 HZ */, &u32SystemResolution))
-        || RT_SUCCESS(RTTimerRequestSystemGranularity(31250000 /*   32 HZ */, &u32SystemResolution))
-       )
-    {
-        Assert(RTTimerGetSystemGranularity() <= u32SystemResolution);
-        pDevExt->u32SystemTimerGranularityGrant = u32SystemResolution;
-    }
-#endif
-
     /*
      * Find a reasonable update interval and initialize the structure.
      */
@@ -4982,7 +4977,8 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
     }
 
     /*
-     * Finally, release the system timer resolution request if one succeeded.
+     * Finally, make sure we've release the system timer resolution request
+     * if one actually succeeded and is still pending.
      */
     if (pDevExt->u32SystemTimerGranularityGrant)
     {
@@ -5285,7 +5281,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
             = pGip->aCPUs[i].au32TSCHistory[5]
             = pGip->aCPUs[i].au32TSCHistory[6]
             = pGip->aCPUs[i].au32TSCHistory[7]
-            = /*pGip->aCPUs[i].u64CpuHz*/ _4G / uUpdateHz;
+            = /*pGip->aCPUs[i].u64CpuHz*/ (uint32_t)(_4G / uUpdateHz);
     }
 
     /*
