@@ -3370,9 +3370,9 @@
       <desc>Delete all snapshots, detach all media and return all media for closing.</desc>
     </const>
   </enum>
-  
+
   <interface
-     name="IContext" extends="$unknown"
+     name="IEventContext" extends="$unknown"
      uuid="7563F4E7-1583-40F7-B4C4-C9BA02CB0AE3"
      wsmap="managed"
      >
@@ -3416,7 +3416,7 @@
       </desc>
       <param name="result" type="long" dir="return" />
     </method>
-    
+
     <method name="fromLong">
       <desc>
         Make PCI address from long.
@@ -3440,7 +3440,7 @@
         Device name.
       </desc>
     </attribute>
-    
+
     <attribute name="physicalDevice" type="boolean" readonly="yes">
       <desc>
         If this is physical or virtual device.
@@ -4622,14 +4622,14 @@
         Attaches host PCI device with the given (host) PCI address to the
         PCI bus of the virtual machine. Please note, that this operation
         is two phase, as real attachement will happen when VM will start,
-        and most information will be delivered as IHostPciDevicePlugEvent 
+        and most information will be delivered as IHostPciDevicePlugEvent
         on IVirtualBox event source.
         <note>
           Not yet implemented.
         </note>
-        
+
         <see>IHostPciDevicePlugEvent</see>
-        
+
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state is not stopped (PCI hotplug not yet implemented).
         </result>
@@ -4646,27 +4646,27 @@
       <param name="desiredGuestAddress" type="long" dir="in">
         <desc>Desired position of this device on guest PCI bus.</desc>
       </param>
-      <param name="eventContext" type="IContext" dir="in">
+      <param name="eventContext" type="IEventContext" dir="in">
         <desc>Context passed into IHostPciDevicePlugEvent event.</desc>
       </param>
       <param name="tryToUnbind" type="boolean" dir="in">
-        <desc>If VMM shall try to unbind existing drivers from the 
+        <desc>If VMM shall try to unbind existing drivers from the
         device before attaching it to the guest.</desc>
       </param>
     </method>
-    
+
     <method name="detachHostPciDevice">
       <desc>
-        Detach host PCI device from the virtual machine. 
-        Also HostPciDevicePlugEvent on IVirtualBox event source 
+        Detach host PCI device from the virtual machine.
+        Also HostPciDevicePlugEvent on IVirtualBox event source
         will be delivered.
-        
+
         <note>
           Not yet implemented.
         </note>
-        
+
         <see>IHostPciDevicePlugEvent</see>
-        
+
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state is not stopped (PCI hotplug not yet implemented).
         </result>
@@ -4684,7 +4684,7 @@
         <desc>Address of the host PCI device.</desc>
       </param>
     </method>
-    
+
     <method name="getNetworkAdapter" const="yes">
       <desc>
         Returns the network adapter associated with the given slot.
@@ -14614,7 +14614,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IHostPciDevicePlugEvent">IHostPciDevicePlugEvent</link>.
       </desc>
     </const>
-    
+
     <!-- Last event marker -->
     <const name="Last" value="68">
       <desc>
@@ -15862,7 +15862,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
    <desc>
       Notification when host PCI device is plugged/unplugged.
    </desc>
-   
+
    <attribute name="plugged" type="boolean" readonly="yes">
       <desc>
         If device successfully plugged or unplugged.
@@ -15882,9 +15882,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
    </attribute>
 
-   <attribute name="eventContext" type="IContext" readonly="yes">
+   <attribute name="eventContext" type="IEventContext" readonly="yes">
       <desc>
-        Context object, passed into attachHostPciDevice() and 
+        Context object, passed into attachHostPciDevice() and
         attachHostPciDevice().
       </desc>
    </attribute>
