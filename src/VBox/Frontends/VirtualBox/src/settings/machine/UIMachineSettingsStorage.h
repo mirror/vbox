@@ -38,6 +38,7 @@
 /* Local forwards */
 class AttachmentItem;
 class ControllerItem;
+class UIMediumIDHolder;
 
 /* Internal Types */
 typedef QList <StorageSlot> SlotsList;
@@ -109,8 +110,14 @@ public:
         FDAttachmentAddEn        = 35,
         FDAttachmentAddDis       = 36,
 
-        VMMEn                    = 37,
-        VMMDis                   = 38,
+        ChooseExistingEn         = 37,
+        ChooseExistingDis        = 38,
+        HDNewEn                  = 39,
+        HDNewDis                 = 40,
+        CDUnmountEnabled         = 41,
+        CDUnmountDisabled        = 42,
+        FDUnmountEnabled         = 43,
+        FDUnmountDisabled        = 44,
 
         MaxIndex
     };
@@ -312,8 +319,6 @@ public:
     SlotsList ctrAllSlots() const;
     SlotsList ctrUsedSlots() const;
     DeviceTypeList ctrDeviceTypeList() const;
-    QStringList ctrAllMediumIds (bool aShowDiffs) const;
-    QStringList ctrUsedMediumIds() const;
 
     void setAttachments(const QList<AbstractItem*> &attachments) { mAttachments = attachments; }
 
@@ -348,15 +353,12 @@ public:
     KDeviceType attDeviceType() const;
     DeviceTypeList attDeviceTypes() const;
     QString attMediumId() const;
-    QStringList attMediumIds (bool aFilter = true) const;
-    bool attIsShowDiffs() const;
     bool attIsHostDrive() const;
     bool attIsPassthrough() const;
 
     void setAttSlot (const StorageSlot &aAttSlot);
     void setAttDevice (KDeviceType aAttDeviceType);
     void setAttMediumId (const QString &aAttMediumId);
-    void setAttIsShowDiffs (bool aAttIsShowDiffs);
     void setAttIsPassthrough (bool aPassthrough);
 
     QString attSize() const;
@@ -489,7 +491,7 @@ public:
     QModelIndex addController (const QString &aCtrName, KStorageBus aBusType, KStorageControllerType aCtrType);
     void delController (const QUuid &aCtrId);
 
-    QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType);
+    QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, const QString &strMediumId);
     void delAttachment (const QUuid &aCtrId, const QUuid &aAttId);
 
     void setMachineId (const QString &aMachineId);
@@ -629,8 +631,11 @@ private slots:
     void getInformation();
     void setInformation();
 
-    void sltOpenMedium();
-    void sltNewMedium();
+    void sltPrepareOpenMediumMenu();
+    void sltCreateNewHardDisk();
+    void sltUnmountDevice();
+    void sltChooseExistingMedium();
+    void sltChooseHostDrive();
 
     void updateActionsState();
 
@@ -659,6 +664,9 @@ private:
 
     uint32_t deviceCount (KDeviceType aType) const;
 
+    void addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName);
+    void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
+
     QIWidgetValidator *mValidator;
 
     StorageModel *mStorageModel;
@@ -675,6 +683,8 @@ private:
     QAction *mAddHDAttAction;
     QAction *mAddCDAttAction;
     QAction *mAddFDAttAction;
+
+    UIMediumIDHolder *m_pMediumIdHolder;
 
     bool mIsLoadingInProgress;
     bool mIsPolished;

@@ -255,12 +255,9 @@
          </widget>
         </item>
         <item row="1" column="1" >
-         <widget class="QLabel" name="mLbSlot" >
-          <property name="text" >
-           <string>S&amp;lot:</string>
-          </property>
+         <widget class="QLabel" name="mLbMedium" >
           <property name="buddy" >
-           <cstring>mCbSlot</cstring>
+           <cstring>mTbOpen</cstring>
           </property>
           <property name="alignment" >
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -268,105 +265,48 @@
          </widget>
         </item>
         <item row="1" column="2" >
-         <widget class="QComboBox" name="mCbSlot" >
-          <property name="whatsThis" >
-           <string>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</string>
+         <layout class="QHBoxLayout" name="mLtContainer" >
+          <property name="leftMargin" >
+           <number>0</number>
           </property>
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
+          <property name="topMargin" >
+           <number>0</number>
+           </property>
+          <property name="rightMargin" >
+           <number>0</number>
           </property>
-         </widget>
-        </item>
-        <item row="2" column="1" >
-         <widget class="QLabel" name="mLbVdi" >
-          <property name="buddy" >
-           <cstring>mCbVdi</cstring>
+          <property name="bottomMargin" >
+           <number>0</number>
           </property>
-          <property name="alignment" >
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          <property name="spacing" >
+           <number>1</number>
           </property>
-         </widget>
+          <item>
+           <widget class="QComboBox" name="mCbSlot" >
+            <property name="whatsThis" >
+             <string>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</string>
+            </property>
+            <property name="sizePolicy" >
+             <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QIToolButton" name="mTbOpen" >
+            <property name="text" >
+             <string/>
+            </property>
+            <property name="autoRaise" >
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
         <item row="2" column="2" >
-         <widget class="QWidget" name="mWtContainer" >
-          <layout class="QHBoxLayout" name="mLtContainer" >
-           <property name="leftMargin" >
-            <number>0</number>
-           </property>
-           <property name="topMargin" >
-            <number>0</number>
-            </property>
-           <property name="rightMargin" >
-            <number>0</number>
-           </property>
-           <property name="bottomMargin" >
-            <number>0</number>
-           </property>
-           <property name="spacing" >
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="VBoxMediaComboBox" native="1" name="mCbVdi" >
-             <property name="whatsThis" >
-              <string>Selects the virtual disk image or the host drive used by this attachment.</string>
-             </property>
-             <property name="sizePolicy" >
-              <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QIToolButton" name="mTbOpen" >
-             <property name="text" >
-              <string/>
-             </property>
-             <property name="autoRaise" >
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QIToolButton" name="mTbNew" >
-             <property name="whatsThis" >
-              <string>Create hard disk image file using New Hard Disk wizard.</string>
-             </property>
-             <property name="toolTip" >
-              <string>Create hard disk image file</string>
-             </property>
-             <property name="text" >
-              <string/>
-             </property>
-             <property name="autoRaise" >
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="3" column="2" >
-         <widget class="QCheckBox" name="mCbShowDiffs">
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="whatsThis">
-           <string>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</string>
-          </property>
-          <property name="text">
-           <string>D&amp;ifferencing Disks</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2" >
          <widget class="QCheckBox" name="mCbPassthrough" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding" >
@@ -382,10 +322,50 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="0" colspan="3" >
+        <item row="3" column="0" colspan="3" >
          <widget class="QILabelSeparator" native="1" name="mLsInformation" >
           <property name="text" >
            <string>Information</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1" >
+         <widget class="QLabel" name="mLbHDFormat" >
+          <property name="text" >
+           <string>Type (Format):</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2" >
+         <widget class="QILabel" name="mLbHDFormatValue" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1" >
+         <widget class="QLabel" name="mLbCDFDType" >
+          <property name="text" >
+           <string>Type:</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2" >
+         <widget class="QILabel" name="mLbCDFDTypeValue" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
          </widget>
         </item>
@@ -470,26 +450,6 @@
          </widget>
         </item>
         <item row="10" column="1" >
-         <widget class="QLabel" name="mLbHDFormat" >
-          <property name="text" >
-           <string>Type (Format):</string>
-          </property>
-          <property name="alignment" >
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="2" >
-         <widget class="QILabel" name="mLbHDFormatValue" >
-          <property name="sizePolicy" >
-           <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="1" >
          <widget class="QLabel" name="mLbUsage" >
           <property name="text" >
            <string>Attached To:</string>
@@ -499,7 +459,7 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="2" >
+        <item row="10" column="2" >
          <widget class="QILabel" name="mLbUsageValue" >
           <property name="sizePolicy" >
            <sizepolicy vsizetype="Preferred" hsizetype="Ignored" >
@@ -509,7 +469,7 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="0" colspan="3" >
+        <item row="11" column="0" colspan="3" >
          <spacer name="mSp6" >
           <property name="orientation" >
            <enum>Qt::Vertical</enum>

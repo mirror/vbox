@@ -36,9 +36,6 @@
 #include <QTimer>
 #include <QCommonStyle>
 
-/* String Tags */
-const char *firstAvailableId = "first available";
-
 /* Type converters */
 VBoxDefs::MediumType typeToLocal (KDeviceType aType)
 {
@@ -132,8 +129,14 @@ PixmapPool::PixmapPool (QObject *aParent)
     mPool [FDAttachmentAddEn]        = QPixmap (":/fd_add_16px.png");
     mPool [FDAttachmentAddDis]       = QPixmap (":/fd_add_disabled_16px.png");
 
-    mPool [VMMEn]                    = QPixmap (":/select_file_16px.png");
-    mPool [VMMDis]                   = QPixmap (":/select_file_dis_16px.png");
+    mPool [ChooseExistingEn]         = QPixmap (":/select_file_16px.png");
+    mPool [ChooseExistingDis]        = QPixmap (":/select_file_dis_16px.png");
+    mPool [HDNewEn]                  = QPixmap (":/hd_new_16px.png");
+    mPool [HDNewDis]                 = QPixmap (":/hd_new_disabled_16px.png");
+    mPool [CDUnmountEnabled]         = QPixmap (":/cd_unmount_16px.png");
+    mPool [CDUnmountDisabled]        = QPixmap (":/cd_unmount_dis_16px.png");
+    mPool [FDUnmountEnabled]         = QPixmap (":/fd_unmount_16px.png");
+    mPool [FDUnmountDisabled]        = QPixmap (":/fd_unmount_dis_16px.png");
 }
 
 QPixmap PixmapPool::pixmap (PixmapType aType) const
@@ -405,6 +408,7 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     : AbstractItem (aParent)
     , mCtrName (aName)
     , mCtrType (0)
+    , mUseIoCache (false)
 {
     /* Check for proper parent type */
     AssertMsg (mParent->rtti() == AbstractItem::Type_RootItem, ("Incorrect parent type!\n"));
@@ -505,44 +509,6 @@ DeviceTypeList ControllerItem::ctrDeviceTypeList() const
      return mCtrType->deviceTypeList();
 }
 
-QStringList ControllerItem::ctrAllMediumIds (bool aShowDiffs) const
-{
-    QStringList allMediums;
-    foreach (const VBoxMedium &medium, vboxGlobal().currentMediaList())
-    {
-         foreach (const KDeviceType &deviceType, mCtrType->deviceTypeList())
-         {
-             if (medium.isNull() || medium.medium().GetDeviceType() == deviceType)
-             {
-                 /* In 'don't show diffs' mode we should only show hard-disks which are:
-                  * 1. Attached to 'current state' of this VM even if these are differencing disks.
-                  * 2. Not attached to this VM at all only if they are not differencing disks. */
-                 if (!aShowDiffs && medium.type() == VBoxDefs::MediumType_HardDisk)
-                 {
-                     if (medium.isAttachedInCurStateTo (parent()->machineId()) ||
-                         (!medium.medium().GetMachineIds().contains (parent()->machineId()) && !medium.parent()))
-                         allMediums << medium.id();
-                 }
-                 else allMediums << medium.id();
-                 break;
-             }
-         }
-    }
-    return allMediums;
-}
-
-QStringList ControllerItem::ctrUsedMediumIds() const
-{
-    QStringList usedImages;
-    for (int i = 0; i < mAttachments.size(); ++ i)
-    {
-        QString usedMediumId = static_cast <AttachmentItem*> (mAttachments [i])->attMediumId();
-        if (!vboxGlobal().findMedium (usedMediumId).isNull())
-            usedImages << usedMediumId;
-    }
-    return usedImages;
-}
-
 AbstractItem::ItemType ControllerItem::rtti() const
 {
     return Type_ControllerItem;
@@ -605,7 +571,6 @@ void ControllerItem::delChild (AbstractItem *aItem)
 AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     : AbstractItem (aParent)
     , mAttDeviceType (aDeviceType)
-    , mAttIsShowDiffs (false)
     , mAttIsHostDrive (false)
     , mAttIsPassthrough (false)
 {
@@ -615,11 +580,6 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     /* Select default slot */
     AssertMsg (!attSlots().isEmpty(), ("There should be at least one available slot!\n"));
     mAttSlot = attSlots() [0];
-
-    /* Try to select unique medium for HD and empty medium for CD/FD device */
-    QStringList freeMediumIds (attMediumIds());
-    if (freeMediumIds.size() > 0)
-        setAttMediumId (freeMediumIds [0]);
 }
 
 StorageSlot AttachmentItem::attSlot() const
@@ -656,37 +616,6 @@ QString AttachmentItem::attMediumId() const
     return mAttMediumId;
 }
 
-QStringList AttachmentItem::attMediumIds (bool aFilter) const
-{
-    ControllerItem *ctr = static_cast <ControllerItem*> (mParent);
-    QStringList allMediumIds;
-
-    /* Populate list of suitable medium ids */
-    foreach (QString mediumId, ctr->ctrAllMediumIds (mAttIsShowDiffs))
-    {
-        VBoxMedium medium = vboxGlobal().findMedium (mediumId);
-        if ((medium.isNull() && mAttDeviceType != KDeviceType_HardDisk) ||
-            (!medium.isNull() && medium.medium().GetDeviceType() == mAttDeviceType))
-            allMediumIds << mediumId;
-    }
-
-    if (aFilter)
-    {
-        /* Filter list from used medium ids */
-        QStringList usedMediumIds (ctr->ctrUsedMediumIds());
-        foreach (QString usedMediumId, usedMediumIds)
-            if (usedMediumId != mAttMediumId)
-                allMediumIds.removeAll (usedMediumId);
-    }
-
-    return allMediumIds;
-}
-
-bool AttachmentItem::attIsShowDiffs() const
-{
-    return mAttIsShowDiffs;
-}
-
 bool AttachmentItem::attIsHostDrive() const
 {
     return mAttIsHostDrive;
@@ -709,22 +638,8 @@ void AttachmentItem::setAttDevice (KDeviceType aAttDeviceType)
 
 void AttachmentItem::setAttMediumId (const QString &aAttMediumId)
 {
-    VBoxMedium medium;
-
-    /* Caching first available medium */
-    if (aAttMediumId == firstAvailableId && !attMediumIds (false).isEmpty())
-        medium = vboxGlobal().findMedium (attMediumIds (false) [0]);
-    /* Caching passed medium */
-    else if (!aAttMediumId.isEmpty())
-        medium = vboxGlobal().findMedium (aAttMediumId);
-
-    mAttMediumId = medium.id();
-    cache();
-}
-
-void AttachmentItem::setAttIsShowDiffs (bool aAttIsShowDiffs)
-{
-    mAttIsShowDiffs = aAttIsShowDiffs;
+    AssertMsg(!aAttMediumId.isEmpty(), ("Medium ID value can't be null/empty!\n"));
+    mAttMediumId = vboxGlobal().findMedium(aAttMediumId).id();
     cache();
 }
 
@@ -763,19 +678,39 @@ void AttachmentItem::cache()
     VBoxMedium medium = vboxGlobal().findMedium (mAttMediumId);
 
     /* Cache medium information */
-    mAttName = medium.name (!mAttIsShowDiffs);
-    mAttTip = medium.toolTipCheckRO (!mAttIsShowDiffs, mAttDeviceType != KDeviceType_HardDisk);
-    mAttPixmap = medium.iconCheckRO (!mAttIsShowDiffs);
+    mAttName = medium.name (true);
+    mAttTip = medium.toolTipCheckRO (true, mAttDeviceType != KDeviceType_HardDisk);
+    mAttPixmap = medium.iconCheckRO (true);
     mAttIsHostDrive = medium.isHostDrive();
 
     /* Cache additional information */
-    mAttSize = medium.size (!mAttIsShowDiffs);
-    mAttLogicalSize = medium.logicalSize (!mAttIsShowDiffs);
-    mAttLocation = medium.location (!mAttIsShowDiffs);
-    mAttFormat = medium.isNull() ? QString ("--") :
-        QString ("%1 (%2)").arg (medium.hardDiskType (!mAttIsShowDiffs))
-                           .arg (medium.hardDiskFormat (!mAttIsShowDiffs));
-    mAttUsage = medium.usage (!mAttIsShowDiffs);
+    mAttSize = medium.size (true);
+    mAttLogicalSize = medium.logicalSize (true);
+    mAttLocation = medium.location (true);
+    if (medium.isNull())
+    {
+        mAttFormat = QString("--");
+    }
+    else
+    {
+        switch (mAttDeviceType)
+        {
+            case KDeviceType_HardDisk:
+            {
+                mAttFormat = QString("%1 (%2)").arg(medium.hardDiskType(true)).arg(medium.hardDiskFormat(true));
+                break;
+            }
+            case KDeviceType_DVD:
+            case KDeviceType_Floppy:
+            {
+                mAttFormat = mAttIsHostDrive ? UIMachineSettingsStorage::tr("Host Drive") : UIMachineSettingsStorage::tr("Image");
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    mAttUsage = medium.usage (true);
 
     /* Fill empty attributes */
     if (mAttUsage.isEmpty())
@@ -1137,13 +1072,6 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     return static_cast <AttachmentItem*> (item)->attMediumId();
             return QString();
         }
-        case R_AttIsShowDiffs:
-        {
-            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
-                if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attIsShowDiffs();
-            return false;
-        }
         case R_AttIsHostDrive:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1349,17 +1277,6 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 }
             return false;
         }
-        case R_AttIsShowDiffs:
-        {
-            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
-                if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                {
-                    static_cast <AttachmentItem*> (item)->setAttIsShowDiffs (aValue.toBool());
-                    emit dataChanged (aIndex, aIndex);
-                    return true;
-                }
-            return false;
-        }
         case R_AttIsPassthrough:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1397,14 +1314,15 @@ void StorageModel::delController (const QUuid &aCtrId)
     }
 }
 
-QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType)
+QModelIndex StorageModel::addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType, const QString &strMediumId)
 {
     if (AbstractItem *parent = mRootItem->childById (aCtrId))
     {
         int parentPosition = mRootItem->posOfChild (parent);
         QModelIndex parentIndex = index (parentPosition, 0, root());
         beginInsertRows (parentIndex, parent->childCount(), parent->childCount());
-        new AttachmentItem (parent, aDeviceType);
+        AttachmentItem *pItem = new AttachmentItem (parent, aDeviceType);
+        pItem->setAttMediumId(strMediumId);
         endInsertRows();
         return index (parent->childCount() - 1, 0, parentIndex);
     }
@@ -1652,6 +1570,37 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
 }
 
 /**
+ * UI Medium ID Holder.
+ * Used for compliance with other storage page widgets
+ * which caching and holding corresponding information.
+ */
+class UIMediumIDHolder : public QObject
+{
+    Q_OBJECT;
+    
+public:
+
+    UIMediumIDHolder(QWidget *pParent) : QObject(pParent) {}
+
+    QString id() const { return m_strId; }
+    void setId(const QString &strId) { m_strId = strId; emit sigChanged(); }
+
+    VBoxDefs::MediumType type() const { return m_type; }
+    void setType(VBoxDefs::MediumType type) { m_type = type; }
+
+    bool isNull() const { return m_strId == VBoxMedium().id(); }
+
+signals:
+
+    void sigChanged();
+
+private:
+
+    QString m_strId;
+    VBoxDefs::MediumType m_type;
+};
+
+/**
  * QWidget class reimplementation.
  * Used as HD Settings widget.
  */
@@ -1662,6 +1611,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0)
     , mAddAttAction(0), mDelAttAction(0)
     , mAddHDAttAction(0), mAddCDAttAction(0), mAddFDAttAction(0)
+    , m_pMediumIdHolder(new UIMediumIDHolder(this))
     , mIsLoadingInProgress(0)
     , mIsPolished(false)
     , mDisableStaticControls(0)
@@ -1750,22 +1700,17 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mLtStorage->setSpacing (3);
 #endif /* Q_WS_MAC */
 
-    /* Vdi Combo */
-    mCbVdi->setNullItemPresent (true);
-    mCbVdi->refresh();
-
-    /* Vmm Button */
-    mTbOpen->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::VMMEn),
-                                        PixmapPool::pool()->pixmap (PixmapPool::VMMDis)));
-    mTbNew->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddEn),
-                                        PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddDis)));
+    /* Setup choose-medium button: */
+    QMenu *pOpenMediumMenu = new QMenu(this);
+    mTbOpen->setMenu(pOpenMediumMenu);
 
     /* Info Pane initialization */
+    mLbHDFormatValue->setFullSizeSelection (true);
+    mLbCDFDTypeValue->setFullSizeSelection (true);
     mLbHDVirtualSizeValue->setFullSizeSelection (true);
     mLbHDActualSizeValue->setFullSizeSelection (true);
     mLbSizeValue->setFullSizeSelection (true);
     mLbLocationValue->setFullSizeSelection (true);
-    mLbHDFormatValue->setFullSizeSelection (true);
     mLbUsageValue->setFullSizeSelection (true);
 
     /* Setup connections */
@@ -1807,10 +1752,9 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     connect (mCbType, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mCbSlot, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mCbIoCache, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
-    connect (mCbVdi, SIGNAL (activated (int)), this, SLOT (setInformation()));
-    connect (mTbOpen, SIGNAL (clicked (bool)), this, SLOT (sltOpenMedium()));
-    connect (mTbNew, SIGNAL (clicked (bool)), this, SLOT (sltNewMedium()));
-    connect (mCbShowDiffs, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
+    connect (m_pMediumIdHolder, SIGNAL (sigChanged()), this, SLOT (setInformation()));
+    connect (mTbOpen, SIGNAL (clicked (bool)), mTbOpen, SLOT (showMenu()));
+    connect (pOpenMediumMenu, SIGNAL (aboutToShow()), this, SLOT (sltPrepareOpenMediumMenu()));
     connect (mCbPassthrough, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
 
     /* Applying language settings */
@@ -1891,7 +1835,6 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
 void UIMachineSettingsStorage::getFromCache()
 {
     /* Apply internal variables data to QWidget(s): */
-    mCbVdi->setMachineId(m_cache.m_strMachineId);
     mStorageModel->setMachineId(m_cache.m_strMachineId);
     for (int iControllerIndex = 0; iControllerIndex < m_cache.m_items.size(); ++iControllerIndex)
     {
@@ -1906,13 +1849,12 @@ void UIMachineSettingsStorage::getFromCache()
         {
             /* Get iterated attachment: */
             const UIStorageAttachmentData &attachmentData = controllerData.m_items[iAttachmentIndex];
-            QModelIndex attachmentIndex = mStorageModel->addAttachment(controllerId, attachmentData.m_attachmentType);
+            QModelIndex attachmentIndex = mStorageModel->addAttachment(controllerId, attachmentData.m_attachmentType, attachmentData.m_strAttachmentMediumId);
             StorageSlot attachmentStorageSlot(controllerData.m_controllerBus,
                                               attachmentData.m_iAttachmentPort,
                                               attachmentData.m_iAttachmentDevice);
             mStorageModel->setData(attachmentIndex, QVariant::fromValue(attachmentStorageSlot), StorageModel::R_AttSlot);
             mStorageModel->setData(attachmentIndex, attachmentData.m_fAttachmentPassthrough, StorageModel::R_AttIsPassthrough);
-            mStorageModel->setData(attachmentIndex, attachmentData.m_strAttachmentMediumId, StorageModel::R_AttMediumId);
         }
     }
     /* Set the first controller as current if present */
@@ -2118,9 +2060,9 @@ void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
 #if 0
         /* Second column indent minimum width */
         QList <QLabel*> labelsList;
-        labelsList << mLbSlot << mLbVdi
+        labelsList << mLbMedium << mLbHDFormat << mLbCDFDType
                    << mLbHDVirtualSize << mLbHDActualSize << mLbSize
-                   << mLbLocation << mLbHDFormat << mLbUsage;
+                   << mLbLocation << mLbUsage;
         int maxWidth = 0;
         QFontMetrics metrics (font());
         foreach (QLabel *label, labelsList)
@@ -2165,7 +2107,7 @@ void UIMachineSettingsStorage::mediumRemoved (VBoxDefs::MediumType /* aType */, 
             QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
             if (attMediumId == aMediumId)
             {
-                mStorageModel->setData (attIndex, firstAvailableId, StorageModel::R_AttMediumId);
+                mStorageModel->setData (attIndex, VBoxMedium().id(), StorageModel::R_AttMediumId);
                 if (mValidator) mValidator->revalidate();
             }
         }
@@ -2344,54 +2286,54 @@ void UIMachineSettingsStorage::getInformation()
                 mCbSlot->setCurrentIndex (attSlotPos == -1 ? 0 : attSlotPos);
                 mCbSlot->setToolTip (mCbSlot->itemText (mCbSlot->currentIndex()));
 
-                /* Getting Show Diffs state */
-                bool isShowDiffs = mStorageModel->data (index, StorageModel::R_AttIsShowDiffs).toBool();
-                mCbShowDiffs->setChecked (isShowDiffs);
-
                 /* Getting Attachment Medium */
                 KDeviceType device = mStorageModel->data (index, StorageModel::R_AttDevice).value <KDeviceType>();
                 switch (device)
                 {
                     case KDeviceType_HardDisk:
-                        mLbVdi->setText(tr("Hard &Disk:"));
-                        mTbOpen->setWhatsThis(tr("Open hard disk image file using file-open dialog."));
-                        mTbOpen->setToolTip(tr("Open hard disk image file"));
-                        mTbNew->setVisible(true);
+                        mLbMedium->setText(tr("Hard &Disk:"));
+                        mTbOpen->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap(PixmapPool::HDAttachmentNormal)));
+                        mTbOpen->setWhatsThis(tr("Choose or create a virtual hard disk file. The virtual machine will see "
+                                                 "the data in the file as the contents of the virtual hard disk."));
+                        mTbOpen->setToolTip(tr("Set up the virtual hard disk"));
                         break;
                     case KDeviceType_DVD:
-                        mLbVdi->setText(tr("&CD/DVD Device:"));
-                        mTbOpen->setWhatsThis(tr("Open CD/DVD image file using file-open dialog."));
-                        mTbOpen->setToolTip(tr("Open CD/DVD image file"));
-                        mTbNew->setVisible(false);
+                        mLbMedium->setText(tr("CD/DVD &Drive:"));
+                        mTbOpen->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap(PixmapPool::CDAttachmentNormal)));
+                        mTbOpen->setWhatsThis(tr("Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. "
+                                                 "The virtual machine will see a disk inserted into the drive with the data "
+                                                 "in the file or on the disk in the physical drive as its contents."));
+                        mTbOpen->setToolTip(tr("Set up the virtual CD/DVD drive"));
                         break;
                     case KDeviceType_Floppy:
-                        mLbVdi->setText(tr("&Floppy Device:"));
-                        mTbOpen->setWhatsThis(tr("Open floppy image file using file-open dialog."));
-                        mTbOpen->setToolTip(tr("Open floppy image file"));
-                        mTbNew->setVisible(false);
+                        mLbMedium->setText(tr("Floppy &Drive:"));
+                        mTbOpen->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap(PixmapPool::FDAttachmentNormal)));
+                        mTbOpen->setWhatsThis(tr("Choose a virtual floppy disk or a physical drive to use with the virtual drive. "
+                                                 "The virtual machine will see a disk inserted into the drive with the data "
+                                                 "in the file or on the disk in the physical drive as its contents."));
+                        mTbOpen->setToolTip(tr("Set up the virtual floppy drive"));
                         break;
                     default:
                         break;
                 }
-                mCbVdi->setType (typeToLocal (device));
-                mCbVdi->setShowDiffs (isShowDiffs);
-                mCbVdi->setCurrentItem (mStorageModel->data (index, StorageModel::R_AttMediumId).toString());
-                mCbVdi->refresh();
+                m_pMediumIdHolder->setType(typeToLocal(device));
+                m_pMediumIdHolder->setId(mStorageModel->data(index, StorageModel::R_AttMediumId).toString());
 
                 /* Getting Passthrough state */
                 bool isHostDrive = mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool();
-                mCbPassthrough->setEnabled (isHostDrive);
+                mCbPassthrough->setVisible (device == KDeviceType_DVD && isHostDrive);
                 mCbPassthrough->setChecked (isHostDrive && mStorageModel->data (index, StorageModel::R_AttIsPassthrough).toBool());
 
                 /* Update optional widgets visibility */
                 updateAdditionalObjects (device);
 
                 /* Getting Other Information */
+                mLbHDFormatValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttFormat).toString()));
+                mLbCDFDTypeValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttFormat).toString()));
                 mLbHDVirtualSizeValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttLogicalSize).toString()));
                 mLbHDActualSizeValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttSize).toString()));
                 mLbSizeValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttSize).toString()));
                 mLbLocationValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttLocation).toString()));
-                mLbHDFormatValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttFormat).toString()));
                 mLbUsageValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttUsage).toString()));
 
                 /* Showing Attachment Page */
@@ -2442,10 +2384,8 @@ void UIMachineSettingsStorage::setInformation()
                 mTwStorageTree->setCurrentIndex(theSameIndexAtNewPosition);
             }
             /* Setting Attachment Medium */
-            else if (sdr == mCbVdi)
-                mStorageModel->setData (index, mCbVdi->id(), StorageModel::R_AttMediumId);
-            else if (sdr == mCbShowDiffs)
-                mStorageModel->setData (index, mCbShowDiffs->isChecked(), StorageModel::R_AttIsShowDiffs);
+            else if (sdr == m_pMediumIdHolder)
+                mStorageModel->setData (index, m_pMediumIdHolder->id(), StorageModel::R_AttMediumId);
             else if (sdr == mCbPassthrough)
             {
                 if (mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool())
@@ -2461,18 +2401,91 @@ void UIMachineSettingsStorage::setInformation()
     getInformation();
 }
 
-void UIMachineSettingsStorage::sltOpenMedium()
+void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
 {
-    QString id = vboxGlobal().openMediumWithFileOpenDialog(mCbVdi->type(), this);
-    if (!id.isNull())
-        mCbVdi->setCurrentItem(id);
+    /* This slot should be called only by open-medium menu: */
+    QMenu *pOpenMediumMenu = qobject_cast<QMenu*>(sender());
+    AssertMsg(pOpenMediumMenu, ("Can't access open-medium menu!\n"));
+    if (pOpenMediumMenu)
+    {
+        /* Eraze menu initially: */
+        pOpenMediumMenu->clear();
+        /* Depending on current medium type: */
+        switch (m_pMediumIdHolder->type())
+        {
+            case VBoxDefs::MediumType_HardDisk:
+            {
+                /* Add "Create a new virtual hard disk" action: */
+                QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create a new hard disk..."));
+                pCreateNewHardDisk->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap(PixmapPool::HDNewEn),
+                                                                PixmapPool::pool()->pixmap(PixmapPool::HDNewDis)));
+                connect(pCreateNewHardDisk, SIGNAL(triggered(bool)), this, SLOT(sltCreateNewHardDisk()));
+                /* Add "Choose a virtual hard disk file" action: */
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual hard disk file..."));
+                break;
+            }
+            case VBoxDefs::MediumType_DVD:
+            {
+                /* Add "Choose a virtual CD/DVD disk file" action: */
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a CD/DVD disk image..."));
+                /* Add "Choose a physical drive" actions: */
+                addChooseHostDriveActions(pOpenMediumMenu);
+                /* Add "Eject current medium" action: */
+                pOpenMediumMenu->addSeparator();
+                QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove disk from virtual drive"));
+                pEjectCurrentMedium->setEnabled(!m_pMediumIdHolder->isNull());
+                pEjectCurrentMedium->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap(PixmapPool::CDUnmountEnabled),
+                                                                 PixmapPool::pool()->pixmap(PixmapPool::CDUnmountDisabled)));
+                connect(pEjectCurrentMedium, SIGNAL(triggered(bool)), this, SLOT(sltUnmountDevice()));
+                break;
+            }
+            case VBoxDefs::MediumType_Floppy:
+            {
+                /* Add "Choose a virtual floppy disk file" action: */
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a floppy disk image..."));
+                /* Add "Choose a physical drive" actions: */
+                addChooseHostDriveActions(pOpenMediumMenu);
+                /* Add "Eject current medium" action: */
+                pOpenMediumMenu->addSeparator();
+                QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove disk from virtual drive"));
+                pEjectCurrentMedium->setEnabled(!m_pMediumIdHolder->isNull());
+                pEjectCurrentMedium->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap(PixmapPool::FDUnmountEnabled),
+                                                                 PixmapPool::pool()->pixmap(PixmapPool::FDUnmountDisabled)));
+                connect(pEjectCurrentMedium, SIGNAL(triggered(bool)), this, SLOT(sltUnmountDevice()));
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
-void UIMachineSettingsStorage::sltNewMedium()
+void UIMachineSettingsStorage::sltCreateNewHardDisk()
 {
-    QString id = getWithNewHDWizard();
-    if (!id.isNull())
-        mCbVdi->setCurrentItem (id);
+    QString strMediumId = getWithNewHDWizard();
+    if (!strMediumId.isNull())
+        m_pMediumIdHolder->setId(strMediumId);
+}
+
+void UIMachineSettingsStorage::sltUnmountDevice()
+{
+    m_pMediumIdHolder->setId(VBoxMedium().id());
+}
+
+void UIMachineSettingsStorage::sltChooseExistingMedium()
+{
+    QString strMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this);
+    if (!strMediumId.isNull())
+        m_pMediumIdHolder->setId(strMediumId);
+}
+
+void UIMachineSettingsStorage::sltChooseHostDrive()
+{
+    /* This slot should be called ONLY by choose-host-drive action: */
+    QAction *pChooseHostDriveAction = qobject_cast<QAction*>(sender());
+    AssertMsg(pChooseHostDriveAction, ("Can't access choose-host-drive action!\n"));
+    if (pChooseHostDriveAction)
+        m_pMediumIdHolder->setId(pChooseHostDriveAction->data().toString());
 }
 
 void UIMachineSettingsStorage::updateActionsState()
@@ -2522,19 +2535,6 @@ void UIMachineSettingsStorage::onRowInserted (const QModelIndex &aParent, int aP
             /* Expand parent if it is not expanded yet */
             if (!mTwStorageTree->isExpanded (aParent))
                 mTwStorageTree->setExpanded (aParent, true);
-
-            /* Check if no medium was selected for this attachment */
-            if (mStorageModel->data (index, StorageModel::R_AttMediumId).toString().isEmpty())
-            {
-                /* Ask the user for the method to select medium */
-                KDeviceType deviceType = mStorageModel->data (index, StorageModel::R_AttDevice).value <KDeviceType>();
-                int askResult = vboxProblem().confirmRunNewHDWzdOrOFD (deviceType);
-                QString mediumId = askResult == QIMessageBox::Yes ? getWithNewHDWizard() :
-                                   askResult == QIMessageBox::No ? vboxGlobal().openMediumWithFileOpenDialog(typeToLocal (deviceType), this) : QString();
-                if (mediumId.isNull())
-                    mediumId = firstAvailableId;
-                mStorageModel->setData (index, mediumId, StorageModel::R_AttMediumId);
-            }
             break;
         }
         default:
@@ -2800,16 +2800,53 @@ void UIMachineSettingsStorage::addControllerWrapper (const QString &aName, KStor
     emit storageChanged();
 }
 
-void UIMachineSettingsStorage::addAttachmentWrapper (KDeviceType aDevice)
+void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
 {
     QModelIndex index = mTwStorageTree->currentIndex();
-    Assert (mStorageModel->data (index, StorageModel::R_IsController).toBool());
-    Assert (mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
+    Assert(mStorageModel->data(index, StorageModel::R_IsController).toBool());
+    Assert(mStorageModel->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
+    QString strControllerName(mStorageModel->data(index, StorageModel::R_CtrName).toString());
 
-    mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDevice);
-    mStorageModel->sort();
-    emit storageChanged();
-    if (mValidator) mValidator->revalidate();
+    QString strMediumId;
+    switch (deviceType)
+    {
+        case KDeviceType_HardDisk:
+        {
+            int iAnswer = vboxProblem().askAboutHardDiskAttachmentCreation(this, strControllerName);
+            if (iAnswer == QIMessageBox::Yes)
+                strMediumId = getWithNewHDWizard();
+            else if (iAnswer == QIMessageBox::No)
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_HardDisk, this);
+            break;
+        }
+        case KDeviceType_DVD:
+        {
+            int iAnswer = vboxProblem().askAboutOpticalAttachmentCreation(this, strControllerName);
+            if (iAnswer == QIMessageBox::Yes)
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_DVD, this);
+            else if (iAnswer == QIMessageBox::No)
+                strMediumId = vboxGlobal().findMedium(strMediumId).id();
+            break;
+        }
+        case KDeviceType_Floppy:
+        {
+            int iAnswer = vboxProblem().askAboutFloppyAttachmentCreation(this, strControllerName);
+            if (iAnswer == QIMessageBox::Yes)
+                strMediumId = vboxGlobal().openMediumWithFileOpenDialog(VBoxDefs::MediumType_Floppy, this);
+            else if (iAnswer == QIMessageBox::No)
+                strMediumId = vboxGlobal().findMedium(strMediumId).id();
+            break;
+        }
+    }
+
+    if (!strMediumId.isEmpty())
+    {
+        mStorageModel->addAttachment(QUuid(mStorageModel->data(index, StorageModel::R_ItemId).toString()), deviceType, strMediumId);
+        mStorageModel->sort();
+        emit storageChanged();
+        if (mValidator)
+            mValidator->revalidate();
+    }
 }
 
 QString UIMachineSettingsStorage::getWithNewHDWizard()
@@ -2828,8 +2865,11 @@ QString UIMachineSettingsStorage::getWithNewHDWizard()
 
 void UIMachineSettingsStorage::updateAdditionalObjects (KDeviceType aType)
 {
-    mCbShowDiffs->setVisible (aType == KDeviceType_HardDisk);
-    mCbPassthrough->setVisible (aType == KDeviceType_DVD);
+    mLbHDFormat->setVisible (aType == KDeviceType_HardDisk);
+    mLbHDFormatValue->setVisible (aType == KDeviceType_HardDisk);
+
+    mLbCDFDType->setVisible (aType != KDeviceType_HardDisk);
+    mLbCDFDTypeValue->setVisible (aType != KDeviceType_HardDisk);
 
     mLbHDVirtualSize->setVisible (aType == KDeviceType_HardDisk);
     mLbHDVirtualSizeValue->setVisible (aType == KDeviceType_HardDisk);
@@ -2839,9 +2879,6 @@ void UIMachineSettingsStorage::updateAdditionalObjects (KDeviceType aType)
 
     mLbSize->setVisible (aType != KDeviceType_HardDisk);
     mLbSizeValue->setVisible (aType != KDeviceType_HardDisk);
-
-    mLbHDFormat->setVisible (aType == KDeviceType_HardDisk);
-    mLbHDFormatValue->setVisible (aType == KDeviceType_HardDisk);
 }
 
 QString UIMachineSettingsStorage::generateUniqueName (const QString &aTemplate) const
@@ -2881,4 +2918,30 @@ uint32_t UIMachineSettingsStorage::deviceCount (KDeviceType aType) const
 
     return cDevices;
 }
+
+void UIMachineSettingsStorage::addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName)
+{
+    QAction *pChooseExistingMedium = pOpenMediumMenu->addAction(strActionName);
+    pChooseExistingMedium->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap(PixmapPool::ChooseExistingEn),
+                                                       PixmapPool::pool()->pixmap(PixmapPool::ChooseExistingDis)));
+    connect(pChooseExistingMedium, SIGNAL(triggered(bool)), this, SLOT(sltChooseExistingMedium()));
+}
+
+void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
+{
+    const VBoxMediaList &mediums = vboxGlobal().currentMediaList();
+    VBoxMediaList::const_iterator it;
+    for (it = mediums.begin(); it != mediums.end(); ++it)
+    {
+        const VBoxMedium &medium = *it;
+        if (medium.isHostDrive() && m_pMediumIdHolder->type() == medium.type())
+        {
+            QAction *pHostDriveAction = pOpenMediumMenu->addAction(medium.name());
+            pHostDriveAction->setData(medium.id());
+            connect(pHostDriveAction, SIGNAL(triggered(bool)), this, SLOT(sltChooseHostDrive()));
+        }
+    }
+}
+
+#include "UIMachineSettingsStorage.moc"
 
