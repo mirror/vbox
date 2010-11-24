@@ -198,8 +198,8 @@ typedef struct X86CPUIDFEATECX
 {
     /** Bit 0 - SSE3 - Supports SSE3 or not. */
     unsigned    u1SSE3 : 1;
-    /** Reserved. */
-    unsigned    u1Reserved1 : 1;
+    /** Bit 1 - PCLMULQDQ. */
+    unsigned    u1PCLMULQDQ : 1;
     /** Bit 2 - DS Area 64-bit layout. */
     unsigned    u1DTE64 : 1;
     /** Bit 3 - MONITOR - Supports MONITOR/MWAIT. */
@@ -218,18 +218,20 @@ typedef struct X86CPUIDFEATECX
     unsigned    u1SSSE3 : 1;
     /** Bit 10 - CNTX-ID - L1 Context ID. */
     unsigned    u1CNTXID : 1;
-    /** Bit 11 - FMA. */
+    /** Bit 11 - Reserved. */
+    unsigned    u1Reserved1 : 1;
+    /** Bit 12 - FMA. */
     unsigned    u1FMA : 1;
-    /** Bit 12 - Reserved. */
-    unsigned    u1Reserved2 : 1;
     /** Bit 13 - CX16 - CMPXCHG16B. */
     unsigned    u1CX16 : 1;
     /** Bit 14 - xTPR Update Control. Processor supports changing IA32_MISC_ENABLES[bit 23]. */
     unsigned    u1TPRUpdate : 1;
     /** Bit 15 - PDCM - Perf/Debug Capability MSR. */
     unsigned    u1PDCM : 1;
-    /** Reserved. */
-    unsigned    u2Reserved3 : 2;
+    /** Bit 16 - Reserved. */
+    unsigned    u1Reserved2 : 1;
+    /** Bit 17 - PCID - Process-context identifiers. */
+    unsigned    u1PCID : 1;
     /** Bit 18 - Direct Cache Access. */
     unsigned    u1DCA : 1;
     /** Bit 19 - SSE4_1 - Supports SSE4_1 or not. */
@@ -242,16 +244,20 @@ typedef struct X86CPUIDFEATECX
     unsigned    u1MOVBE : 1;
     /** Bit 23 - POPCNT - Supports POPCNT. */
     unsigned    u1POPCNT : 1;
-    /** Bit 24 - Reserved. */
-    unsigned    u1Reserved4 : 1;
+    /** Bit 24 - TSC-Deadline. */
+    unsigned    u1TSCDEADLINE : 1;
     /** Bit 25 - AES. */
     unsigned    u1AES : 1;
     /** Bit 26 - XSAVE - Supports XSAVE. */
     unsigned    u1XSAVE : 1;
     /** Bit 27 - OSXSAVE - Supports OSXSAVE. */
     unsigned    u1OSXSAVE : 1;
-    /** Reserved. */
-    unsigned    u4Reserved5 : 4;
+    /** Bit 28 - AVX - Supports AVX instruction extensions. */
+    unsigned    u1AVX : 1;
+    /** Bit 29 - 30 - Reserved */
+    unsigned    u2Reserved3 : 2;
+    /** Reserved, always 0. */
+    unsigned    u1Reserved4 : 1;
 } X86CPUIDFEATECX;
 /** Pointer to CPUID Feature Information - ECX. */
 typedef X86CPUIDFEATECX *PX86CPUIDFEATECX;
@@ -382,6 +388,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_TPRUPDATE RT_BIT(14)
 /** ECX Bit 15 - PDCM - Perf/Debug Capability MSR. */
 #define X86_CPUID_FEATURE_ECX_PDCM      RT_BIT(15)
+/** ECX Bit 17 - PCID - Process-context identifiers. */
+#define X86_CPUID_FEATURE_ECX_PCID      RT_BIT(17)
 /** ECX Bit 18 - DCA - Direct Cache Access. */
 #define X86_CPUID_FEATURE_ECX_DCA       RT_BIT(18)
 /** ECX Bit 19 - SSE4_1 - Supports SSE4_1 or not. */
@@ -394,6 +402,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_MOVBE     RT_BIT(22)
 /** ECX Bit 23 - POPCNT instruction. */
 #define X86_CPUID_FEATURE_ECX_POPCNT    RT_BIT(23)
+/** ECX Bir 24 - TSC-Deadline. */
+#define X86_CPUID_FEATURE_ECX_TSCDEADL  RT_BIT(24)
 /** ECX Bit 25 - AES instructions. */
 #define X86_CPUID_FEATURE_ECX_AES       RT_BIT(25)
 /** ECX Bit 26 - XSAVE instruction. */
