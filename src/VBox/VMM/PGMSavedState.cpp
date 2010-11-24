@@ -2577,7 +2577,8 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 
     /*
      * We batch up pages that should be freed instead of calling GMM for
-     * each and every one of them.
+     * each and every one of them.  Note that we'll lose the pages in most
+     * failure paths - this should probably be addressed one day.
      */
     uint32_t            cPendingPages = 0;
     PGMMFREEPAGESREQ    pReq;
@@ -2644,12 +2645,22 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                             break;
                         AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
 
-                        /* Free it only if it's not part of a previously allocated large page. */
-                        if (PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE)
+                        /* If this is a ROM page, we must clear it and not try
+                           free it... */
+                        if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM
+                            || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM_SHADOW)
                         {
-                            /* Allocated before (prealloc), so free it now. */
+                            void *pvDstPage;
+                            rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage);
+                            AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
+                            ASMMemZeroPage(pvDstPage);
+                        }
+                        /* Free it only if it's not part of a previously
+                           allocated large page (no need to clear the page). */
+                        else if (PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE)
+                        {
                             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
-                            AssertRC(rc);
+                            AssertRCReturn(rc, rc);
                         }
                         break;
                     }
@@ -2992,7 +3003,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     if (pVM->pgm.s.cBalloonedPages)
     {
         rc = GMMR3BalloonedPages(pVM, GMMBALLOONACTION_INFLATE, pVM->pgm.s.cBalloonedPages);
-        AssertRC(rc);
+        AssertRCReturn(rc, rc);
     }
     return rc;
 }
