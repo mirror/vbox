@@ -2876,19 +2876,17 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->pDevIns = pDevIns;
 
     /* PCI vendor, just a free bogus value */
-    pThis->dev.config[0x00] = 0xee;
-    pThis->dev.config[0x01] = 0x80;
+    PCIDevSetVendorId(&pThis->dev, 0x80ee);
     /* device ID */
-    pThis->dev.config[0x02] = 0xfe;
-    pThis->dev.config[0x03] = 0xca;
+    PCIDevSetDeviceId(&pThis->dev, 0xcafe);
     /* class sub code (other type of system peripheral) */
-    pThis->dev.config[0x0a] = 0x80;
+    PCIDevSetClassSub(&pThis->dev, 0x80);
     /* class base code (base system peripheral) */
-    pThis->dev.config[0x0b] = 0x08;
+    PCIDevSetClassBase(&pThis->dev, 0x08);
     /* header type */
-    pThis->dev.config[0x0e] = 0x00;
+    PCIDevSetHeaderType(&pThis->dev, 0x00);
     /* interrupt on pin 0 */
-    pThis->dev.config[0x3d] = 0x01;
+    PCIDevSetInterruptPin(&pThis->dev, 0x01);
 
     /*
      * Interfaces
@@ -3043,7 +3041,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
     if (RT_FAILURE(rc))
         return rc;
-    if (pThis->dev.devfn == 32 || iInstance != 0)
+    if (pThis->dev.devfn != 32 || iInstance != 0)
         Log(("!!WARNING!!: pThis->dev.devfn=%d (ignore if testcase or no started by Main)\n", pThis->dev.devfn));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x20, PCI_ADDRESS_SPACE_IO, vmmdevIOPortRegionMap);
     if (RT_FAILURE(rc))

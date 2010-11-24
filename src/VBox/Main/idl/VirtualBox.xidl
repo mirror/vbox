@@ -3427,12 +3427,12 @@
 
     <interface
      name="IPciDeviceAttachment" extends="$unknown"
-     uuid="236C708B-8B4B-4500-B662-F0129B68D552"
+     uuid="91f33d6f-e621-4f70-a77e-15f0e3c714d5"
      wsmap="struct"
      >
 
     <desc>
-      Information about PCI attachements.
+      Information about PCI attachments.
     </desc>
 
     <attribute name="name" type="wstring" readonly="yes">
@@ -3441,7 +3441,7 @@
       </desc>
     </attribute>
 
-    <attribute name="physicalDevice" type="boolean" readonly="yes">
+    <attribute name="isPhysicalDevice" type="boolean" readonly="yes">
       <desc>
         If this is physical or virtual device.
       </desc>
@@ -3464,7 +3464,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="6AEDC0FD-2AE8-4DBC-A659-DAD072383D29"
+     uuid="711cbb73-75af-463c-af17-8b7860c01fe8"
      wsmap="managed"
      >
     <desc>
@@ -3779,10 +3779,6 @@
       <desc>Array of media attached to this machine.</desc>
     </attribute>
 
-    <attribute name="pciDeviceAttachments" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
-      <desc>Array of PCI devices attached to this machine.</desc>
-    </attribute>
-
     <attribute name="USBController" type="IUSBController" readonly="yes">
       <desc>
         Associated USB controller object.
@@ -4058,6 +4054,15 @@
     <attribute name="ioCacheSize" type="unsigned long">
       <desc>
         Maximum size of the I/O cache in MB.
+      </desc>
+    </attribute>
+
+    <attribute name="pciDeviceAssignments" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
+      <desc>Array of PCI devices assigned to this machine, to get list of all PCI devices
+            attached to the machine use IConsole::attachedPciDevices attribute, as
+            this attribute is intended to list only devices additional to what
+            described in virtual hardware config. Usually, this list keeps host's
+            physical devices assigned to the particular machine.
       </desc>
     </attribute>
 
@@ -4621,7 +4626,7 @@
       <desc>
         Attaches host PCI device with the given (host) PCI address to the
         PCI bus of the virtual machine. Please note, that this operation
-        is two phase, as real attachement will happen when VM will start,
+        is two phase, as real attachment will happen when VM will start,
         and most information will be delivered as IHostPciDevicePlugEvent
         on IVirtualBox event source.
         <note>
@@ -5948,7 +5953,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="3c4a453e-d27b-44a2-b59d-dda6e1835e57"
+     uuid="515e8e8d-f932-4d8e-9f32-79a52aead882"
      wsmap="managed"
      >
     <desc>
@@ -6073,6 +6078,10 @@
       <desc>
         Event source for console events.
       </desc>
+    </attribute>
+
+    <attribute name="attachedPciDevices" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
+      <desc>Array of PCI devices attached to this machine.</desc>
     </attribute>
 
     <method name="powerUp">
@@ -15878,7 +15887,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
    <attribute name="attachment" type="IPciDeviceAttachment" readonly="yes">
       <desc>
-        Attachment info.
+        Attachment info for this device.
       </desc>
    </attribute>
 

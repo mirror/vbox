@@ -1668,6 +1668,15 @@ public:
             Copy (it->second, Base::m.raw [i]);
 #endif
     }
+
+    void setElement(size_t iIdx, I* obj)
+    {
+#if defined (VBOX_WITH_XPCOM)
+        Copy (obj, Base::m.arr [iIdx]);
+#else
+        Copy (obj, Base::m.raw [iIdx]);
+#endif
+    }
 };
 
 } /* namespace com */

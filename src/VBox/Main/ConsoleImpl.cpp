@@ -63,6 +63,7 @@
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
+#include "BusAssignmentManager.h"
 
 // generated header
 #include "SchemaDefs.h"
@@ -433,6 +434,7 @@ Console::Console()
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
+    , mBusMgr(NULL)
     , mVMStateChangeCallbackDisabled(false)
     , mMachineState(MachineState_PoweredOff)
 {
@@ -653,6 +655,12 @@ void Console::uninit()
     {
         delete m_pVMMDev;
         unconst(m_pVMMDev) = NULL;
+    }
+
+    if (mBusMgr)
+    {
+        mBusMgr->Release();
+        mBusMgr = NULL;
     }
 
     mGlobalSharedFolders.clear();
@@ -1771,6 +1779,19 @@ STDMETHODIMP Console::COMGETTER(EventSource)(IEventSource ** aEventSource)
     return S_OK;
 }
 
+STDMETHODIMP Console::COMGETTER(AttachedPciDevices)(ComSafeArrayOut(IPciDeviceAttachment *, aAttachments))
+{
+    CheckComArgOutSafeArrayPointerValid(aAttachments);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+  
+    mBusMgr->listAttachedPciDevices(ComSafeArrayOutArg(aAttachments));
+
+    return S_OK;
+}
 
 // IConsole methods
 /////////////////////////////////////////////////////////////////////////////

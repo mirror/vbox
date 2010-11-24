@@ -22,6 +22,10 @@
 #include <iprt/string.h>
 
 #include <VBox/cfgm.h>
+#include <VBox/com/array.h>
+
+
+#include "PciDeviceAttachmentImpl.h"
 
 #include <map>
 #include <vector>
@@ -214,7 +218,7 @@ struct BusAssignmentManager::State
 {
     struct PciDeviceRecord
     {
-        char szDevName[16];
+        char szDevName[32];
 
         PciDeviceRecord(const char* pszName)
         {
@@ -257,6 +261,7 @@ struct BusAssignmentManager::State
 
     const char* findAlias(const char* pszName);
     void addMatchingRules(const char* pszName, PciRulesList& aList);
+    void listAttachedPciDevices(ComSafeArrayOut(IPciDeviceAttachment*, aAttached));
 };
 
 HRESULT BusAssignmentManager::State::init(ChipsetType_T chipsetType)
@@ -382,6 +387,24 @@ bool BusAssignmentManager::State::checkAvailable(PciBusAddress& Address)
     return (it == mPciMap.end());
 }
 
+
+void BusAssignmentManager::State::listAttachedPciDevices(ComSafeArrayOut(IPciDeviceAttachment*, aAttached))
+{
+    com::SafeIfaceArray<IPciDeviceAttachment> result(mPciMap.size());
+
+    size_t iIndex = 0;
+    ComObjPtr<PciDeviceAttachment> dev;
+    for (PciMap::const_iterator it = mPciMap.begin(); it !=  mPciMap.end(); ++it)
+    {
+        dev.createObject();
+        com::Bstr devname(it->second.szDevName);
+        dev->init(NULL, devname, -1, it->first.asLong(), FALSE);
+        result.setElement(iIndex++, dev);
+    }
+
+    result.detachTo(ComSafeArrayOutArg(aAttached));
+}
+
 BusAssignmentManager::BusAssignmentManager()
     : pState(NULL)
 {
@@ -398,20 +421,11 @@ BusAssignmentManager::~BusAssignmentManager()
     }
 }
 
-
-BusAssignmentManager* BusAssignmentManager::pInstance = NULL;
-
-BusAssignmentManager* BusAssignmentManager::getInstance(ChipsetType_T chipsetType)
+BusAssignmentManager* BusAssignmentManager::createInstance(ChipsetType_T chipsetType)
 {
-    if (pInstance == NULL)
-    {
-        pInstance = new BusAssignmentManager();
-        pInstance->pState->init(chipsetType);
-        Assert(pInstance);
-        return pInstance;
-    }
-
-    pInstance->AddRef();
+    BusAssignmentManager* pInstance = new BusAssignmentManager();
+    pInstance->pState->init(chipsetType);
+    Assert(pInstance);
     return pInstance;
 }
 
@@ -480,4 +494,9 @@ HRESULT BusAssignmentManager::assignPciDevice(const char* pszDevName, PCFGMNODE 
 bool BusAssignmentManager::findPciAddress(const char* pszDevName, int iInstance, PciBusAddress& Address)
 {
     return pState->findPciAddress(pszDevName, iInstance, Address);
+}
+
+void BusAssignmentManager::listAttachedPciDevices(ComSafeArrayOut(IPciDeviceAttachment*, aAttached))
+{
+    pState->listAttachedPciDevices(ComSafeArrayOutArg(aAttached));
 }
