@@ -119,7 +119,7 @@ VBOXVIDEOOFFSET vboxWddmValidatePrimary(PVBOXWDDM_ALLOCATION pAllocation)
 
 NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SURFACE_DESC pDesc, POINT * pVScreenPos, uint16_t fFlags)
 {
-    void *p = vboxHGSMIBufferAlloc (commonFromDeviceExt(pDevExt),
+    void *p = vboxHGSMIBufferAlloc (&commonFromDeviceExt(pDevExt)->guestCtx,
                                       sizeof (VBVAINFOSCREEN),
                                       HGSMI_CH_VBVA,
                                       VBVA_INFO_SCREEN);
@@ -138,9 +138,9 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PDEVICE_EXTENSION pDevExt, PVBO
         pScreen->u16BitsPerPixel = (uint16_t)pDesc->bpp;
         pScreen->u16Flags        = fFlags;
 
-        vboxHGSMIBufferSubmit (commonFromDeviceExt(pDevExt), p);
+        vboxHGSMIBufferSubmit (&commonFromDeviceExt(pDevExt)->guestCtx, p);
 
-        vboxHGSMIBufferFree (commonFromDeviceExt(pDevExt), p);
+        vboxHGSMIBufferFree (&commonFromDeviceExt(pDevExt)->guestCtx, p);
     }
 
     return STATUS_SUCCESS;
@@ -162,7 +162,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoView(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLO
         return STATUS_INVALID_PARAMETER;
 
     /* Issue the screen info command. */
-    void *p = vboxHGSMIBufferAlloc (commonFromDeviceExt(pDevExt),
+    void *p = vboxHGSMIBufferAlloc (&commonFromDeviceExt(pDevExt)->guestCtx,
                                       sizeof (VBVAINFOVIEW),
                                       HGSMI_CH_VBVA,
                                       VBVA_INFO_VIEW);
@@ -177,9 +177,9 @@ NTSTATUS vboxWddmGhDisplayPostInfoView(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLO
 
         pView->u32MaxScreenSize = pView->u32ViewSize;
 
-        vboxHGSMIBufferSubmit (commonFromDeviceExt(pDevExt), p);
+        vboxHGSMIBufferSubmit (&commonFromDeviceExt(pDevExt)->guestCtx, p);
 
-        vboxHGSMIBufferFree (commonFromDeviceExt(pDevExt), p);
+        vboxHGSMIBufferFree (&commonFromDeviceExt(pDevExt)->guestCtx, p);
     }
 
     return STATUS_SUCCESS;
@@ -280,8 +280,8 @@ HGSMIHEAP* vboxWddmHgsmiGetHeapFromCmdOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFF
     if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
         return &pDevExt->u.primary.Vdma.CmdHeap;
 #endif
-    if (HGSMIAreaContainsOffset(&commonFromDeviceExt(pDevExt)->hgsmiAdapterHeap.area, offCmd))
-        return &commonFromDeviceExt(pDevExt)->hgsmiAdapterHeap;
+    if (HGSMIAreaContainsOffset(&commonFromDeviceExt(pDevExt)->guestCtx.heapCtx.area, offCmd))
+        return &commonFromDeviceExt(pDevExt)->guestCtx.heapCtx;
     return NULL;
 }
 
@@ -300,7 +300,7 @@ VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PDEVICE_EXTENSION pDevE
     if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
         return VBOXWDDM_HGSMICMD_TYPE_DMACMD;
 #endif
-    if (HGSMIAreaContainsOffset(&commonFromDeviceExt(pDevExt)->hgsmiAdapterHeap.area, offCmd))
+    if (HGSMIAreaContainsOffset(&commonFromDeviceExt(pDevExt)->guestCtx.heapCtx.area, offCmd))
         return VBOXWDDM_HGSMICMD_TYPE_CTL;
     return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
 }
@@ -833,7 +833,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
     BOOLEAN bOur = FALSE;
     BOOLEAN bNeedDpc = FALSE;
-    if (commonFromDeviceExt(pDevExt)->pHostFlags) /* If HGSMI is enabled at all. */
+    if (commonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags) /* If HGSMI is enabled at all. */
     {
         VBOXSHGSMILIST CtlList;
 #ifdef VBOX_WITH_VDMA
@@ -849,14 +849,14 @@ BOOLEAN DxgkDdiInterruptRoutine(
         vboxSHGSMIListInit(&VhwaCmdList);
 #endif
 
-        uint32_t flags = commonFromDeviceExt(pDevExt)->pHostFlags->u32HostFlags;
+        uint32_t flags = commonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
         bOur = (flags & HGSMIHOSTFLAGS_IRQ);
         do
         {
             if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
             {
                 /* read the command offset */
-                HGSMIOFFSET offCmd = VBoxHGSMIGuestRead(commonFromDeviceExt(pDevExt));
+                HGSMIOFFSET offCmd = VBoxVideoCmnPortReadUlong(commonFromDeviceExt(pDevExt)->guestCtx.port);
                 Assert(offCmd != HGSMIOFFSET_VOID);
                 if (offCmd != HGSMIOFFSET_VOID)
                 {
@@ -873,7 +873,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
 #endif
                         case VBOXWDDM_HGSMICMD_TYPE_CTL:
                             pList = &CtlList;
-                            pHeap = &commonFromDeviceExt(pDevExt)->hgsmiAdapterHeap;
+                            pHeap = &commonFromDeviceExt(pDevExt)->guestCtx.heapCtx;
                             break;
                         default:
                             AssertBreakpoint();
@@ -919,7 +919,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
             else
                 break;
 
-            flags = commonFromDeviceExt(pDevExt)->pHostFlags->u32HostFlags;
+            flags = commonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
         } while (1);
 
         if (!vboxSHGSMIListIsEmpty(&CtlList))
@@ -952,12 +952,12 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
         if (bOur)
         {
-            HGSMIClearIrq (commonFromDeviceExt(pDevExt));
+            HGSMIClearIrq(&commonFromDeviceExt(pDevExt)->hostCtx);
 #ifdef DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
              * still this allows to check that the host flags are correctly cleared after the ISR */
-            Assert(commonFromDeviceExt(pDevExt)->pHostFlags);
-            uint32_t flags = commonFromDeviceExt(pDevExt)->pHostFlags->u32HostFlags;
+            Assert(commonFromDeviceExt(pDevExt)->HostCtx.pfHostFlags);
+            uint32_t flags = commonFromDeviceExt(pDevExt)->HostCtx.pfHostFlags->u32HostFlags;
             Assert(flags == 0);
 #endif
         }
@@ -1040,7 +1040,7 @@ VOID DxgkDdiDpcRoutine(
 
     if (!vboxSHGSMIListIsEmpty(&context.data.CtlList))
     {
-        int rc = VBoxSHGSMICommandPostprocessCompletion (&commonFromDeviceExt(pDevExt)->hgsmiAdapterHeap, &context.data.CtlList);
+        int rc = VBoxSHGSMICommandPostprocessCompletion (&commonFromDeviceExt(pDevExt)->guestCtx.heapCtx, &context.data.CtlList);
         AssertRC(rc);
     }
 #ifdef VBOX_WITH_VDMA

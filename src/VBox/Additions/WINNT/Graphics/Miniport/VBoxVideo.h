@@ -21,8 +21,7 @@
 
 //#include <iprt/thread.h>
 
-#include <VBox/HGSMI/HGSMI.h>
-#include <VBox/HGSMI/HGSMIChSetup.h>
+#include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
 #include "VBoxHGSMI.h"
 
@@ -68,29 +67,18 @@ typedef struct VBOXVIDEO_COMMON
     void *pvMiniportHeap;               /* The pointer to the miniport heap VRAM.
                                          * This is mapped by miniport separately.
                                          */
-    volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
-    volatile bool bHostCmdProcessing;
-
     void *pvAdapterInformation;         /* The pointer to the last 4K of VRAM.
                                          * This is mapped by miniport separately.
                                          */
 
     /** Host HGSMI capabilities the guest can handle */
     uint32_t fCaps;
-
-    bool bHGSMI;                        /* Whether HGSMI is enabled. */
-
-    HGSMIAREA areaHostHeap;             /* Host heap VRAM area. */
-
-    HGSMICHANNELINFO channels;
-
-    HGSMIHEAP hgsmiAdapterHeap;
-
-    /* The IO Port Number for host commands. */
-    RTIOPORT IOPortHost;
-
-    /* The IO Port Number for guest commands. */
-    RTIOPORT IOPortGuest;
+    /** Whether HGSMI is enabled. */
+    bool bHGSMI;
+    /** Context information needed to receive commands from the host. */
+    HGSMIHOSTCOMMANDCONTEXT hostCtx;
+    /** Context information needed to submit commands to the host. */
+    HGSMIGUESTCOMMANDCONTEXT guestCtx;
 } VBOXVIDEO_COMMON, *PVBOXVIDEO_COMMON;
 
 extern "C"
@@ -124,12 +112,12 @@ uint16_t VBoxVideoCmnPortReadUshort(RTIOPORT Port);
 /** Read a 32-bit value from an I/O port. */
 uint32_t VBoxVideoCmnPortReadUlong(RTIOPORT Port);
 
-void* vboxHGSMIBufferAlloc(PVBOXVIDEO_COMMON pCommon,
+void* vboxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                          HGSMISIZE cbData,
                          uint8_t u8Ch,
                          uint16_t u16Op);
-void vboxHGSMIBufferFree (PVBOXVIDEO_COMMON pCommon, void *pvBuffer);
-int vboxHGSMIBufferSubmit (PVBOXVIDEO_COMMON pCommon, void *pvBuffer);
+void vboxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx, void *pvBuffer);
+int vboxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx, void *pvBuffer);
 
 int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon,
                           void **ppv,
@@ -141,29 +129,6 @@ void VBoxUnmapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv);
 typedef bool(*PFNVIDEOIRQSYNC)(void *);
 bool VBoxSyncToVideoIRQ(PVBOXVIDEO_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync,
                         void *pvUser);
-
-/*
- * Host and Guest port IO helpers.
- */
-DECLINLINE(void) VBoxHGSMIHostWrite(PVBOXVIDEO_COMMON pCommon, uint32_t data)
-{
-    VBoxVideoCmnPortWriteUlong(pCommon->IOPortHost, data);
-}
-
-DECLINLINE(uint32_t) VBoxHGSMIHostRead(PVBOXVIDEO_COMMON pCommon)
-{
-    return VBoxVideoCmnPortReadUlong(pCommon->IOPortHost);
-}
-
-DECLINLINE(void) VBoxHGSMIGuestWrite(PVBOXVIDEO_COMMON pCommon, uint32_t data)
-{
-    VBoxVideoCmnPortWriteUlong(pCommon->IOPortGuest, data);
-}
-
-DECLINLINE(uint32_t) VBoxHGSMIGuestRead(PVBOXVIDEO_COMMON pCommon)
-{
-    return VBoxVideoCmnPortReadUlong(pCommon->IOPortGuest);
-}
 
 bool VBoxHGSMIIsSupported (void);
 
@@ -195,9 +160,9 @@ int vboxVBVAChannelDisplayEnable(PVBOXVIDEO_COMMON pCommon,
         int iDisplay, /* negative would mean this is a miniport handler */
         uint8_t u8Channel);
 
-void hgsmiProcessHostCommandQueue(PVBOXVIDEO_COMMON pCommon);
+void hgsmiProcessHostCommandQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx);
 
-void HGSMIClearIrq (PVBOXVIDEO_COMMON pCommon);
+void HGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx);
 
 } /* extern "C" */
 

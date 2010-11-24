@@ -3381,7 +3381,7 @@ static VOID VBoxVideoHGSMIDpc(
 {
     PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION)HwDeviceExtension;
 
-    hgsmiProcessHostCommandQueue(commonFromDeviceExt(PrimaryExtension));
+    hgsmiProcessHostCommandQueue(&commonFromDeviceExt(PrimaryExtension)->hostCtx);
 }
 
 BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
@@ -3390,9 +3390,9 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
     PDEVICE_EXTENSION PrimaryExtension = devExt->pPrimary;
     if (PrimaryExtension)
     {
-        if (commonFromDeviceExt(PrimaryExtension)->pHostFlags) /* If HGSMI is enabled at all. */
+        if (commonFromDeviceExt(PrimaryExtension)->hostCtx.pfHostFlags) /* If HGSMI is enabled at all. */
         {
-            uint32_t flags = commonFromDeviceExt(PrimaryExtension)->pHostFlags->u32HostFlags;
+            uint32_t flags = commonFromDeviceExt(PrimaryExtension)->hostCtx.pfHostFlags->u32HostFlags;
             if((flags & HGSMIHOSTFLAGS_IRQ) != 0)
             {
                 if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
@@ -3402,7 +3402,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
                     Assert(bResult);
                 }
                 /* clear the IRQ */
-                HGSMIClearIrq (commonFromDeviceExt(PrimaryExtension));
+                HGSMIClearIrq(&commonFromDeviceExt(PrimaryExtension)->hostCtx);
                 return TRUE;
             }
         }
@@ -3967,7 +3967,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             pInfo->u32DisplayInfoSize   = VBVA_DISPLAY_INFORMATION_SIZE;
             pInfo->u32MinVBVABufferSize = VBVA_MIN_BUFFER_SIZE;
 
-            pInfo->IOPortGuestCommand = commonFromDeviceExt(pDevExt)->IOPortGuest;
+            pInfo->IOPortGuestCommand = commonFromDeviceExt(pDevExt)->guestCtx.port;
 
             RequestPacket->StatusBlock->Information = sizeof(QUERYHGSMIRESULT);
             Result = TRUE;

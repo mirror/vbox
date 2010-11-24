@@ -44,7 +44,7 @@ DECLINLINE(void) vbvaVhwaCommandRelease(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD* 
     Assert(cRefs < UINT32_MAX / 2);
     if(!cRefs)
     {
-        vboxHGSMIBufferFree(commonFromDeviceExt(pDevExt), pCmd);
+        vboxHGSMIBufferFree(&commonFromDeviceExt(pDevExt)->guestCtx, pCmd);
     }
 }
 
@@ -60,7 +60,7 @@ void vboxVhwaCommandSubmitAsynch(PDEVICE_EXTENSION pDevExt, VBOXVHWACMD* pCmd, P
     pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
     vbvaVhwaCommandRetain(pDevExt, pCmd);
 
-    vboxHGSMIBufferSubmit(commonFromDeviceExt(pDevExt), pCmd);
+    vboxHGSMIBufferSubmit(&commonFromDeviceExt(pDevExt)->guestCtx, pCmd);
 
     if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH)
             || ((pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION)
@@ -99,7 +99,7 @@ VBOXVHWACMD* vboxVhwaCommandCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESE
                               HGSMI_CH_VBVA,
                               VBVA_VHWA_CMD);
 #else
-    VBOXVHWACMD* pHdr = (VBOXVHWACMD*)vboxHGSMIBufferAlloc(commonFromDeviceExt(pDevExt),
+    VBOXVHWACMD* pHdr = (VBOXVHWACMD*)vboxHGSMIBufferAlloc(&commonFromDeviceExt(pDevExt)->guestCtx,
                               cbCmd + VBOXVHWACMD_HEADSIZE(),
                               HGSMI_CH_VBVA,
                               VBVA_VHWA_CMD);
