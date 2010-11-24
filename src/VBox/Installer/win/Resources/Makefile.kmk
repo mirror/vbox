@@ -1,0 +1,45 @@
+# $Id$
+## @file
+# Sub-Makefile for VBoxRes.dll.
+#
+
+#
+# Copyright (C) 2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+DLLS += VBoxRes
+VBoxRes_TEMPLATE = VBOXR3STATIC
+VBoxRes_DEPS     = $(VBOX_SVN_REV_KMK)
+VBoxRes_SOURCES = \
+	VBoxRes.rc
+
+# The icon location is configurable.
+VBoxRes.rc_INCS += $(PATH_VBoxRes)
+VBoxRes.rc_DEPS += $(PATH_VBoxRes)/VBoxRes-icons.rc
+VBoxRes.rc_CLEAN = $(PATH_VBoxRes)/VBoxRes-icons.rc
+
+# The resource path.
+VBOX_RESOURCES_WIN := $(subst /,\\,$(PATH_ROOT))/src/VBox/Resources/win
+
+# Icon include file.
+$$(PATH_VBoxRes)/VBoxRes-icons.rc: \
+		$$(VBOX_WINDOWS_ICON_FILE) $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(RM) -f $@
+	$(APPEND) $@ 'IDI_VIRTUALBOX            ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX         ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-vbox.ico"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX_EXTPACK ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-vbox-extpack.ico"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX_OVA 		ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-ova.ico"'
+	$(APPEND) $@ 'IDI_FILETYPE_VBOX_OVF 		ICON DISCARDABLE "$(subst /,\\,$(VBOX_RESOURCES_WIN))\virtualbox-ovf.ico"'
+
+include	$(KBUILD_PATH)/subfooter.kmk
