@@ -193,34 +193,40 @@ Function W2K_CopyFiles
       ${If} $g_bWithWDDM == "true"
         SetOutPath "$INSTDIR"
         ; WDDM Video driver
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxVideoWddm.sys"         "$INSTDIR\VBoxVideoWddm.sys"         "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxVideoWddm.inf"         "$INSTDIR\VBoxVideoWddm.inf"         "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxDispD3D.dll"           "$INSTDIR\VBoxDispD3D.dll"           "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"         "$INSTDIR\VBoxVideoWddm.sys"         "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"         "$INSTDIR\VBoxVideoWddm.inf"         "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"           "$INSTDIR\VBoxDispD3D.dll"           "$TEMP\VBoxWDDM"
 
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLarrayspu.dll"       "$INSTDIR\VBoxOGLarrayspu.dll"       "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLcrutil.dll"         "$INSTDIR\VBoxOGLcrutil.dll"         "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLerrorspu.dll"       "$INSTDIR\VBoxOGLerrorspu.dll"       "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLpackspu.dll"        "$INSTDIR\VBoxOGLpackspu.dll"        "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLpassthroughspu.dll" "$INSTDIR\VBoxOGLpassthroughspu.dll" "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLfeedbackspu.dll"    "$INSTDIR\VBoxOGLfeedbackspu.dll"    "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGL.dll"               "$INSTDIR\VBoxOGL.dll"               "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"       "$INSTDIR\VBoxOGLarrayspu.dll"       "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"         "$INSTDIR\VBoxOGLcrutil.dll"         "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"       "$INSTDIR\VBoxOGLerrorspu.dll"       "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"        "$INSTDIR\VBoxOGLpackspu.dll"        "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll" "$INSTDIR\VBoxOGLpassthroughspu.dll" "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"    "$INSTDIR\VBoxOGLfeedbackspu.dll"    "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGL.dll"               "$INSTDIR\VBoxOGL.dll"               "$TEMP\VBoxWDDM"
 
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\libWine.dll"               "$INSTDIR\libWine.dll"               "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxD3D9wddm.dll"          "$INSTDIR\VBoxD3D9wddm.dll"          "$TEMP\VBoxWDDM"
-        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\wined3dwddm.dll"           "$INSTDIR\wined3dwddm.dll"           "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\libWine.dll"               "$INSTDIR\libWine.dll"               "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"          "$INSTDIR\VBoxD3D9wddm.dll"          "$TEMP\VBoxWDDM"
+        !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\wined3dwddm.dll"           "$INSTDIR\wined3dwddm.dll"           "$TEMP\VBoxWDDM"
 
         Goto doneCr
       ${EndIf}
     !endif ; $%BUILD_TARGET_ARCH% == "x86"
   !endif ; $%VBOX_WITH_WDDM% == "1"
   ; crOpenGL
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLarrayspu.dll"       "$g_strSystemDir\VBoxOGLarrayspu.dll"       "$TEMP\VBoxOGL"
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLcrutil.dll"         "$g_strSystemDir\VBoxOGLcrutil.dll"         "$TEMP\VBoxOGL"
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLerrorspu.dll"       "$g_strSystemDir\VBoxOGLerrorspu.dll"       "$TEMP\VBoxOGL"
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLpackspu.dll"        "$g_strSystemDir\VBoxOGLpackspu.dll"        "$TEMP\VBoxOGL"
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLpassthroughspu.dll" "$g_strSystemDir\VBoxOGLpassthroughspu.dll" "$TEMP\VBoxOGL"
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGLfeedbackspu.dll"    "$g_strSystemDir\VBoxOGLfeedbackspu.dll"    "$TEMP\VBoxOGL"
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\VBoxOGL.dll"               "$g_strSystemDir\VBoxOGL.dll"               "$TEMP\VBoxOGL"
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    !define LIBRARY_X64 ; Enable installation of 64-bit libraries
+  !endif
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLarrayspu.dll"       "$g_strSystemDir\VBoxOGLarrayspu.dll"       "$TEMP\VBoxOGL"
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"         "$g_strSystemDir\VBoxOGLcrutil.dll"         "$TEMP\VBoxOGL"
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"       "$g_strSystemDir\VBoxOGLerrorspu.dll"       "$TEMP\VBoxOGL"
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"        "$g_strSystemDir\VBoxOGLpackspu.dll"        "$TEMP\VBoxOGL"
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll" "$g_strSystemDir\VBoxOGLpassthroughspu.dll" "$TEMP\VBoxOGL"
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"    "$g_strSystemDir\VBoxOGLfeedbackspu.dll"    "$TEMP\VBoxOGL"
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_PROTECTED "$%PATH_OUT%\bin\additions\VBoxOGL.dll"               "$g_strSystemDir\VBoxOGL.dll"               "$TEMP\VBoxOGL"
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    !undef LIBRARY_X64 ; Disable installation of 64-bit libraries
+  !endif
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target arch in
