@@ -507,7 +507,8 @@ private:
 
     int configNetwork(const char *pszDevice, unsigned uInstance, unsigned uLun,
                       INetworkAdapter *aNetworkAdapter, PCFGMNODE pCfg,
-                      PCFGMNODE pLunL0, PCFGMNODE pInst, bool fAttachDetach);
+                      PCFGMNODE pLunL0, PCFGMNODE pInst,
+                      bool fAttachDetach, bool fIgnoreConnectFailure);
 
     static DECLCALLBACK(int) configGuestProperties(void *pvConsole);
     static DECLCALLBACK(int) configGuestControl(void *pvConsole);

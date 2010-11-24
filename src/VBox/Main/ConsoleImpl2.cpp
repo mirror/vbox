@@ -1673,6 +1673,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             /*
              * Configure the network card now
              */
+            bool fIgnoreConnectFailure = pConsole->mMachineState == MachineState_Restoring;
             rc = pConsole->configNetwork(pszAdapterName,
                                          ulInstance,
                                          0,
@@ -1680,7 +1681,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                          pCfg,
                                          pLunL0,
                                          pInst,
-                                         false /*fAttachDetach*/);
+                                         false /*fAttachDetach*/,
+                                         fIgnoreConnectFailure);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -3202,6 +3204,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
  *  @param   fAttachDetach       To determine if the network attachment should
  *                               be attached/detached after/before
  *                               configuration.
+ *  @param   fIgnoreConnectFailure
+ *                               True if connection failures should be ignored
+ *                               (makes only sense for bridged/host-only networks).
  *
  *  @note Locks this object for writing.
  */
@@ -3212,7 +3217,8 @@ int Console::configNetwork(const char *pszDevice,
                            PCFGMNODE pCfg,
                            PCFGMNODE pLunL0,
                            PCFGMNODE pInst,
-                           bool fAttachDetach)
+                           bool fAttachDetach,
+                           bool fIgnoreConnectFailure)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
@@ -3733,6 +3739,7 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigNode(pLunL0, "Config", &pCfg);
                 InsertConfigString(pCfg, "Trunk", pszTrunk);
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
+                InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure);
                 char szNetwork[INTNET_MAX_NETWORK_NAME];
                 RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
                 InsertConfigString(pCfg, "Network", szNetwork);
@@ -4050,6 +4057,7 @@ int Console::configNetwork(const char *pszDevice,
                 InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
                 InsertConfigString(pCfg, "Trunk", pszTrunk);
                 InsertConfigString(pCfg, "Network", szNetwork);
+                InsertConfigInteger(pCfg, "IgnoreConnectFailure", (uint64_t)fIgnoreConnectFailure);
                 networkName = Bstr(szNetwork);
                 trunkName   = Bstr(pszTrunk);
                 trunkType   = TRUNKTYPE_NETADP;

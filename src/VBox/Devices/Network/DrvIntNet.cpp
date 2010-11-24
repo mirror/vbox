@@ -1225,6 +1225,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 {
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     bool f;
+    bool fIgnoreConnectFailure;
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
@@ -1274,6 +1275,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
                               "IgnoreTrunkWirePromisc\0"
                               "QuietlyIgnoreTrunkWirePromisc\0"
                               "IgnoreTrunkHostPromisc\0"
+                              "IgnoreConnectFailure\0"
                               "QuietlyIgnoreTrunkHostPromisc\0"
                               "IsService\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
@@ -1437,6 +1439,17 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      *        connection in promiscuous mode. */
 
 
+    /** @cfgm{IgnoreConnectFailure, boolean, false}
+     * When set only raise a runtime error if we cannot connect to the internal
+     * network. */
+    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreConnectFailure", &fIgnoreConnectFailure, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                                N_("Configuration error: Failed to get the \"IgnoreConnectFailure\" value"));
+    if (f)
+        OpenReq.fFlags |= INTNET_OPEN_FLAGS_IGNORE_PROMISC;
+
+
     /** @cfgm{SharedMacOnWire, boolean, false}
      * Whether to shared the MAC address of the host interface when using the wire. When
      * attaching to a wireless NIC this option is usually a requirement.
@@ -1538,13 +1551,26 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     rc = PDMDrvHlpSUPCallVMMR0Ex(pDrvIns, VMMR0_DO_INTNET_OPEN, &OpenReq, sizeof(OpenReq));
     if (RT_FAILURE(rc))
     {
-         PDMDrvHlpVMSetRuntimeError (pDrvIns, 0 /*fFlags*/, "HostIfNotConnecting",
-                                     N_ ("Cannot connect to the network interface '%s'. The virtual "
-                                         "network card will appear to work but the guest will not "
-                                         "be able to connect. Please choose a different network in the "
-                                         "network settings"), OpenReq.szTrunk);
+        if (fIgnoreConnectFailure)
+        {
+            /*
+             * During VM restore it is fatal if the network is not available because the
+             * VM settings are locked and the user has no chance to fix network settings.
+             * Therefore don't abort but just raise a runtime warning.
+             */
+            PDMDrvHlpVMSetRuntimeError (pDrvIns, 0 /*fFlags*/, "HostIfNotConnecting",
+                                        N_ ("Cannot connect to the network interface '%s'. The virtual "
+                                            "network card will appear to work but the guest will not "
+                                            "be able to connect. Please choose a different network in the "
+                                            "network settings"), OpenReq.szTrunk);
 
-        return VERR_PDM_NO_ATTACHED_DRIVER;
+            return VERR_PDM_NO_ATTACHED_DRIVER;
+        }
+        else
+        {
+            return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
+                                       N_("Failed to open/create the internal network '%s'"), pThis->szNetwork);
+        }
     }
 
     AssertRelease(OpenReq.hIf != INTNET_HANDLE_INVALID);
