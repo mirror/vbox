@@ -1216,79 +1216,77 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
     if (a->argc < 2) /* At least the directory we want to create should be present :-). */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        //{ "--flags",               'f',         RTGETOPT_REQ_STRING  },
+        { "--mode",                'm',         RTGETOPT_REQ_UINT32  },
+        { "--parents",             'P',         RTGETOPT_REQ_NOTHING },
+        { "--password",            'p',         RTGETOPT_REQ_STRING  },
+        { "--username",            'u',         RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+
     Utf8Str Utf8Directory(a->argv[1]);
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t uFlags = CreateDirectoryFlag_None;
     uint32_t uMode = 0;
     bool fVerbose = false;
-/** @todo r=bird: Use RTGetOpt here, no new code using strcmp-if-switching!  */
 
-    /* Iterate through all possible commands (if available). */
-    bool usageOK = true;
-    for (int i = 3; usageOK && i < a->argc; i++)
+    int vrc = VINF_SUCCESS;
+    bool fUsageOK = true;
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+           && RT_SUCCESS(vrc))
     {
-        if (   !strcmp(a->argv[i], "--username")
-            || !strcmp(a->argv[i], "--user"))
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
         {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
-                Utf8UserName = a->argv[i + 1];
-                ++i;
-            }
-        }
-        else if (   !strcmp(a->argv[i], "--password")
-                 || !strcmp(a->argv[i], "--pwd"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
-                Utf8Password = a->argv[i + 1];
-                ++i;
-            }
-        }
-        else if (   !strcmp(a->argv[i], "--parents")
-                 || !strcmp(a->argv[i], "-p"))
-        {
-            uFlags |= CreateDirectoryFlag_Parents;
-        }
-        else if (   !strcmp(a->argv[i], "--mode")
-                 || !strcmp(a->argv[i], "-m"))
-        {
-            if (i + 1 >= a->argc
-                || RTStrToUInt32Full(a->argv[i + 1], 8 /* Base, octal */, &uMode) != VINF_SUCCESS)
-                usageOK = false;
-            else
-            {
-                ++i;
-            }
-        }
-        else if (!strcmp(a->argv[i], "--flags"))
-        {
-            if (i + 1 >= a->argc)
-                usageOK = false;
-            else
-            {
+            case 'f': /* Flags */
                 /* Nothing to do here yet. */
-                ++i;
+                break;
+
+            case 'm': /* Mode */
+                uMode = ValueUnion.u32;
+                break;
+
+            case 'P': /* Create parents */
+                uFlags |= CreateDirectoryFlag_Parents;
+                break;
+
+            case 'p': /* Password */
+                Utf8Password = ValueUnion.psz;
+                break;
+
+            case 'u': /* User name */
+                Utf8UserName = ValueUnion.psz;
+                break;
+
+            case 'v': /* Verbose */
+                fVerbose = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+            {
+                Utf8Directory = ValueUnion.psz;
+                break;
             }
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
-        else if (!strcmp(a->argv[i], "--verbose"))
-            fVerbose = true;
-        else
-            return errorSyntax(USAGE_GUESTCONTROL,
-                               "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
     }
 
-    if (!usageOK)
+    if (!fUsageOK)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     if (Utf8Directory.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
-                           "No directory specified!");
+                           "No directory to create specified!");
 
     if (Utf8UserName.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL,
@@ -1296,7 +1294,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
 
     HRESULT rc = S_OK;
     ComPtr<IGuest> guest;
-    int vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
+    vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
     if (RT_SUCCESS(vrc))
     {
         ComPtr<IProgress> progress;
@@ -1488,25 +1486,25 @@ int handleGuestControl(HandlerArg *a)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     /* switch (cmd) */
-    if (   !strcmp(a->argv[0], "exec")
-        || !strcmp(a->argv[0], "execute"))
+    if (   !RTStrICmp(a->argv[0], "exec")
+        || !RTStrICmp(a->argv[0], "execute"))
     {
         return handleCtrlExecProgram(&arg);
     }
-    else if (   !strcmp(a->argv[0], "copyto")
-             || !strcmp(a->argv[0], "cp"))
+    else if (   !RTStrICmp(a->argv[0], "copyto")
+             || !RTStrICmp(a->argv[0], "cp"))
     {
         return handleCtrlCopyTo(&arg);
     }
-    else if (   !strcmp(a->argv[0], "createdirectory")
-             || !strcmp(a->argv[0], "createdir")
-             || !strcmp(a->argv[0], "mkdir")
-             || !strcmp(a->argv[0], "md"))
+    else if (   !RTStrICmp(a->argv[0], "createdirectory")
+             || !RTStrICmp(a->argv[0], "createdir")
+             || !RTStrICmp(a->argv[0], "mkdir")
+             || !RTStrICmp(a->argv[0], "md"))
     {
         return handleCtrlCreateDirectory(&arg);
     }
-    else if (   !strcmp(a->argv[0], "updateadditions")
-             || !strcmp(a->argv[0], "updateadds"))
+    else if (   !RTStrICmp(a->argv[0], "updateadditions")
+             || !RTStrICmp(a->argv[0], "updateadds"))
     {
         return handleCtrlUpdateAdditions(&arg);
     }
