@@ -20,6 +20,9 @@
 !define PRODUCT_UNINST_KEY          "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY     "HKLM"
 
+; Needed for InstallLib macro: Install libraries in every case
+!define LIBRARY_IGNORE_VERSION
+
 VIProductVersion "${PRODUCT_VERSION}"
 VIAddVersionKey "FileVersion"       "$%VBOX_VERSION_STRING%"
 VIAddVersionKey "ProductName"       "${PRODUCT_NAME}"
@@ -754,7 +757,6 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
   ${EndIf}
 !endif
 
-  !define LIBRARY_IGNORE_VERSION ; Install in every case
   SetOverwrite on
 
   ${If} $g_strSystemDir == ''
