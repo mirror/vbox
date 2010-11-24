@@ -282,6 +282,21 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
         /* The first error will be returned. */
         if (RT_FAILURE(rc))
             ASMAtomicCmpXchgS32(&pTaskFile->rc, rc, VINF_SUCCESS);
+#ifdef DEBUG
+        else
+        {
+            PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pTaskFile->Core.pEndpoint;
+
+            /* Overwrite with injected error code. */
+            if (pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
+                rc = ASMAtomicXchgS32(&pEpFile->rcReqRead, VINF_SUCCESS);
+            else
+                rc = ASMAtomicXchgS32(&pEpFile->rcReqWrite, VINF_SUCCESS);
+
+            if (RT_FAILURE(rc))
+                ASMAtomicCmpXchgS32(&pTaskFile->rc, rc, VINF_SUCCESS);
+        }
+#endif
 
         if (!(uOld - pTask->DataSeg.cbSeg)
             && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
@@ -582,6 +597,99 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
     return rc;
 }
 
+#ifdef DEBUG
+/**
+ * Error inject callback.
+ *
+ * The argument parsing is quite ugly but it is only a development tool
+ * not compiled into a release build. Will improve some day.
+ */
+static DECLCALLBACK(void) pdmacEpFileErrorInject(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    bool fWrite;
+    int rcToInject = VINF_SUCCESS;
+    char *pszFilename = NULL;
+    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pvUser;
+
+    /* Syntax is "read|write <filename> <status code>" */
+    if (!RTStrNCmp(pszArgs, "read", 4))
+        fWrite = false;
+    else if (!RTStrNCmp(pszArgs, "write", 5))
+        fWrite = true;
+    else
+        return;
+
+    pszArgs += fWrite ? 5 : 4;
+
+    /* Skip white space. */
+    while (   *pszArgs == ' '
+           && *pszArgs != '\0')
+        pszArgs++;
+
+    if (pszArgs != '\0')
+    {
+        /* Extract the filename */
+        const char *pszPos = pszArgs;
+
+        /* ASSUMPTION: No white space in the filename. */
+        while (   *pszArgs != ' '
+               && *pszArgs != '\0')
+            pszArgs++;
+
+        if (*pszArgs != '\0')
+        {
+            size_t cchFilename = pszArgs - pszPos;
+            pszFilename = RTStrDupN(pszPos, cchFilename);
+            if (pszFilename)
+            {
+                /* Skip white space. */
+                while (   *pszArgs == ' '
+                       && *pszArgs != '\0')
+                    pszArgs++;
+
+                if (*pszArgs != '\0')
+                {
+                    /* Extract error number. */
+                    rcToInject = RTStrToInt32(pszArgs);
+                    if (rcToInject != 0)
+                    {
+                        /* Search for the matching endpoint. */
+                        RTCritSectEnter(&pEpClassFile->Core.CritSect);
+                        PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpClassFile->Core.pEndpointsHead;
+
+                        while (pEpFile)
+                        {
+                            if (!RTStrCmp(pszFilename, RTPathFilename(pEpFile->Core.pszUri)))
+                                break;
+                            pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpFile->Core.pNext;
+                        }
+
+                        if (pEpFile)
+                        {
+                            if (fWrite)
+                                ASMAtomicXchgS32(&pEpFile->rcReqWrite, rcToInject);
+                            else
+                                ASMAtomicXchgS32(&pEpFile->rcReqRead, rcToInject);
+
+                            pHlp->pfnPrintf(pHlp, "Injected %Rrc into '%s' for %s\n",
+                                            rcToInject, pszFilename, fWrite ? "write" : "read");
+                        }
+                        else
+                            pHlp->pfnPrintf(pHlp, "No file with name '%s' found\n", pszFilename);
+
+                        RTCritSectLeave(&pEpClassFile->Core.CritSect);
+                        RTStrFree(pszFilename);
+                        return;
+                    }
+                }
+                RTStrFree(pszFilename);
+            }
+        }
+    }
+    pHlp->pfnPrintf(pHlp, "Error parsing command line\n");
+}
+#endif
+
 static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNODE pCfgNode)
 {
     int rc = VINF_SUCCESS;
@@ -669,6 +777,17 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
         else
             LogRel(("AIOMgr: Cache was globally disabled\n"));
     }
+
+#ifdef DEBUG
+    /* Install the error injection handler. */
+    if (RT_SUCCESS(rc))
+    {
+        rc = DBGFR3InfoRegisterExternal(pClassGlobals->pVM, "injecterror",
+                                        "Inject an error into the async file I/O handling",
+                                        pdmacEpFileErrorInject, pEpClassFile);
+        AssertRC(rc);
+    }
+#endif
 
     return rc;
 }
