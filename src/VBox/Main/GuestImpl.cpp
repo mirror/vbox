@@ -416,7 +416,44 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                     &uPID, progressInstaller.asOutParam(), &vrc);
                 if (SUCCEEDED(rc))
                 {
-                    LogRel(("Executing Guest Additions update ...\n"));
+                    LogRel(("Guest Additions update is running ...\n"));
+                    while (SUCCEEDED(progressInstaller->COMGETTER(Completed(&fCompleted))))
+                    {
+                        /* Progress canceled by Main API? */
+                        if (   SUCCEEDED(progressInstaller->COMGETTER(Canceled(&fCanceled)))
+                            && fCanceled)
+                        {
+                            break;
+                        }
+                        if (fCompleted)
+                            break;
+                        RTThreadSleep(1);
+                    }
+
+                    ULONG uRetStatus, uRetExitCode, uRetFlags;
+                    rc = pGuest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                    if (SUCCEEDED(rc))
+                    {
+                        if (fCompleted)
+                        {
+                            if (uRetExitCode == 0)
+                                LogRel(("Guest Additions update successful!\n"));
+                            else
+                            {
+                                rc = setError(VBOX_E_IPRT_ERROR,
+                                              tr("Guest Additions update failed with exit code=%u (Status=%u, Flags=%u)"),
+                                              uRetExitCode, uRetStatus, uRetFlags);
+                            }
+                        }
+                        else if (fCanceled)
+                        {
+                            rc = setError(VBOX_E_IPRT_ERROR,
+                                          tr("Guest Additions update was canceled with exit code=%u (Status=%u, Flags=%u)"),
+                                          uRetExitCode, uRetStatus, uRetFlags);
+                        }
+                        else
+                            AssertMsgFailed(("Unknown Guest Additions update status!"));
+                    }
                 }
             }
         }
@@ -445,7 +482,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
     }
     else /* The task was canceled, set error code to prevent assertions. */
     {
-        LogRel(("Automatic Guest Additions update was canceled\n"));
+        LogRel(("Guest Additions update was canceled\n"));
         aTask->progress->notifyComplete(VBOX_E_IPRT_ERROR,
                                         COM_IIDOF(IGuest),
                                         Guest::getStaticComponentName(),
