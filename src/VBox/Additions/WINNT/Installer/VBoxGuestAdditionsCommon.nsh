@@ -310,7 +310,7 @@ Function ${un}IsUserAdmin
   UserInfo::GetAccountType
   Pop $0
   StrCmp $0 "Admin" is_admin 0
-    MessageBox MB_ICONSTOP $(VBOX_NOADMIN)
+    MessageBox MB_ICONSTOP $(VBOX_NOADMIN) /SD IDOK
     Abort
 
 is_admin:
