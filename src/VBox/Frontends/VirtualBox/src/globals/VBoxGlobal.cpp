@@ -4616,13 +4616,16 @@ bool VBoxGlobal::processArgs()
     QList<QUrl> list;
     for (int i = 1; i < args.size(); ++i)
     {
+        /* We break out after the first parameter, cause there could be
+           parameters with arguments (e.g. --comment comment). */
+        if (args.at(i).startsWith("-"))
+            break;
 #ifdef Q_WS_MAC
         QString strArg = ::darwinResolveAlias(args.at(i));
 #else /* Q_WS_MAC */
         QString strArg = args.at(i);
 #endif /* !Q_WS_MAC */
         if (   !strArg.isEmpty()
-            && !strArg.startsWith("-")
             && QFile::exists(strArg))
             list << QUrl::fromLocalFile(strArg);
     }
