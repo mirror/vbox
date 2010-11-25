@@ -2869,8 +2869,9 @@ typedef FNRTSTRSPACECALLBACK *PFNRTSTRSPACECALLBACK;
 
 /**
  * Destroys the string space.
- * The caller supplies a callback which will be called for each of
- * the string nodes in for freeing their memory and other resources.
+ *
+ * The caller supplies a callback which will be called for each of the string
+ * nodes in for freeing their memory and other resources.
  *
  * @returns 0 or what ever non-zero return value pfnCallback returned
  *          when aborting the destruction.
