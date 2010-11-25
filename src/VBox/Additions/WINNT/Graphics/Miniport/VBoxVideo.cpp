@@ -3193,7 +3193,7 @@ static VOID VBoxCreateDisplaysXPDM(PDEVICE_EXTENSION PrimaryExtension,
     {
         if (RT_SUCCESS(rc))
         {
-            rc = VBoxHGSMISendViewInfo (commonFromDeviceExt(PrimaryExtension),
+            rc = VBoxHGSMISendViewInfo(&commonFromDeviceExt(PrimaryExtension)->guestCtx,
                                    commonFromDeviceExt(PrimaryExtension)->cDisplays,
                                    vbvaInitInfoDisplay,
                                    (void *) PrimaryExtension);
