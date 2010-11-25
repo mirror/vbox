@@ -110,11 +110,6 @@ bool VBoxHGSMIIsSupported (void)
     return (DispiId == VBE_DISPI_ID_HGSMI);
 }
 
-typedef int FNHGSMICALLINIT (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData);
-typedef FNHGSMICALLINIT *PFNHGSMICALLINIT;
-
-typedef int FNHGSMICALLFINALIZE (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData);
-typedef FNHGSMICALLFINALIZE *PFNHGSMICALLFINALIZE;
 
 void* vboxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                          HGSMISIZE cbData,
@@ -151,135 +146,135 @@ int vboxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx, void *pvBuffer)
     return VERR_INVALID_PARAMETER;
 }
 
-static int vboxCallChannel (PVBOXVIDEO_COMMON pCommon,
-                         uint8_t u8Ch,
-                         uint16_t u16Op,
-                         HGSMISIZE cbData,
-                         PFNHGSMICALLINIT pfnInit,
-                         PFNHGSMICALLFINALIZE pfnFinalize,
-                         void *pvContext)
+
+static int vboxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32Index,
+                              uint32_t *pulValue)
 {
+    int rc = VINF_SUCCESS;
+    VBVACONF32 *p;
+    LogFunc(("u32Index = %d\n", u32Index));
+
+    /* Allocate the IO buffer. */
+    p = (VBVACONF32 *)HGSMIHeapAlloc(&pCtx->heapCtx,
+                                     sizeof(VBVACONF32), HGSMI_CH_VBVA,
+                                     VBVA_QUERY_CONF32);
+    if (p)
+    {
+        /* Prepare data to be sent to the host. */
+        p->u32Index = u32Index;
+        p->u32Value = 0;
+        rc = vboxHGSMIBufferSubmit(pCtx, p);
+        if (RT_SUCCESS(rc))
+        {
+            *pulValue = p->u32Value;
+            LogFunc(("u32Value = %d\n", p->u32Value));
+        }
+        /* Free the IO buffer. */
+        HGSMIHeapFree(&pCtx->heapCtx, p);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    LogFunc(("rc = %d\n", rc));
+    return rc;
+}
+
+
+static int vboxHGSMIBufferLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                   HGSMIOFFSET offLocation)
+{
+    HGSMIBUFFERLOCATION *p;
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-    void *p = HGSMIHeapAlloc (&pCommon->guestCtx.heapCtx, cbData, u8Ch, u16Op);
-
-    if (!p)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-    else
+    p = (HGSMIBUFFERLOCATION *)HGSMIHeapAlloc(&pCtx->heapCtx,
+                                              sizeof(HGSMIBUFFERLOCATION),
+                                              HGSMI_CH_HGSMI,
+                                              HGSMI_CC_HOST_FLAGS_LOCATION);
+    if (p)
     {
         /* Prepare data to be sent to the host. */
-        if (pfnInit)
-        {
-            rc = pfnInit (pCommon, pvContext, p);
-        }
-
-        if (RT_SUCCESS (rc))
-        {
-            rc = vboxHGSMIBufferSubmit(&pCommon->guestCtx, p);
-
-            if (RT_SUCCESS(rc) && pfnFinalize)
-            {
-                rc = pfnFinalize (pCommon, pvContext, p);
-            }
-        }
-        else
-        {
-            AssertFailed ();
-            rc = VERR_INTERNAL_ERROR;
-        }
-
+        p->offLocation = offLocation;
+        p->cbLocation  = sizeof(HGSMIHOSTFLAGS);
+        rc = vboxHGSMIBufferSubmit(pCtx, p);
         /* Free the IO buffer. */
-        HGSMIHeapFree (&pCommon->guestCtx.heapCtx, p);
+        HGSMIHeapFree (&pCtx->heapCtx, p);
     }
-
+    else
+        rc = VERR_NO_MEMORY;
     return rc;
 }
 
-static int vboxCallVBVA (PVBOXVIDEO_COMMON pCommon,
-                         uint16_t u16Op,
-                         HGSMISIZE cbData,
-                         PFNHGSMICALLINIT pfnInit,
-                         PFNHGSMICALLFINALIZE pfnFinalize,
-                         void *pvContext)
+
+static int vboxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                 uint32_t fCaps)
 {
-    return vboxCallChannel (pCommon,
-                            HGSMI_CH_VBVA,
-                            u16Op,
-                            cbData,
-                            pfnInit,
-                            pfnFinalize,
-                            pvContext);
-}
+    VBVACAPS *pCaps;
+    int rc = VINF_SUCCESS;
 
-typedef struct _QUERYCONFCTX
-{
-    uint32_t  u32Index;
-    uint32_t *pulValue;
-} QUERYCONFCTX;
+    /* Allocate the IO buffer. */
+    pCaps = (VBVACAPS *)HGSMIHeapAlloc(&pCtx->heapCtx,
+                                       sizeof(VBVACAPS), HGSMI_CH_VBVA,
+                                       VBVA_INFO_CAPS);
 
-static int vbvaInitQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
-{
-    QUERYCONFCTX *pCtx = (QUERYCONFCTX *)pvContext;
-    VBVACONF32 *p = (VBVACONF32 *)pvData;
-
-    p->u32Index = pCtx->u32Index;
-    p->u32Value = 0;
-
-    return VINF_SUCCESS;
-}
-
-static int vbvaFinalizeQueryConf (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
-{
-    QUERYCONFCTX *pCtx = (QUERYCONFCTX *)pvContext;
-    VBVACONF32 *p = (VBVACONF32 *)pvData;
-
-    if (pCtx->pulValue)
+    if (pCaps)
     {
-        *pCtx->pulValue = p->u32Value;
+        /* Prepare data to be sent to the host. */
+        pCaps->rc    = VERR_NOT_IMPLEMENTED;
+        pCaps->fCaps = fCaps;
+        rc = vboxHGSMIBufferSubmit(pCtx, pCaps);
+        if (RT_SUCCESS(rc))
+        {
+            AssertRC(pCaps->rc);
+            rc = pCaps->rc;
+        }
+        /* Free the IO buffer. */
+        HGSMIHeapFree(&pCtx->heapCtx, pCaps);
     }
-
-    Log(("VBoxVideo::vboxQueryConf: u32Value = %d\n", p->u32Value));
-    return VINF_SUCCESS;
-}
-
-static int vboxQueryConfHGSMI (PVBOXVIDEO_COMMON pCommon, uint32_t u32Index, uint32_t *pulValue)
-{
-    Log(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
-
-    QUERYCONFCTX context;
-
-    context.u32Index = u32Index;
-    context.pulValue = pulValue;
-
-    int rc = vboxCallVBVA (pCommon,
-                           VBVA_QUERY_CONF32,
-                           sizeof (VBVACONF32),
-                           vbvaInitQueryConf,
-                           vbvaFinalizeQueryConf,
-                           &context);
-
-    Log(("VBoxVideo::vboxQueryConf: rc = %d\n", rc));
-
+    else
+        rc = VERR_NO_MEMORY;
     return rc;
 }
 
-int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData)
+
+static int vboxVBVAInitInfoHeap(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                uint32_t u32HeapOffset, uint32_t u32HeapSize)
+{
+    VBVAINFOHEAP *p;
+    int rc = VINF_SUCCESS;
+
+    /* Allocate the IO buffer. */
+    p = (VBVAINFOHEAP *)HGSMIHeapAlloc(&pCtx->heapCtx,
+                                       sizeof (VBVAINFOHEAP), HGSMI_CH_VBVA,
+                                       VBVA_INFO_HEAP);
+    if (p)
+    {
+        /* Prepare data to be sent to the host. */
+        p->u32HeapOffset = u32HeapOffset;
+        p->u32HeapSize   = u32HeapSize;
+        rc = vboxHGSMIBufferSubmit(pCtx, p);
+        /* Free the IO buffer. */
+        HGSMIHeapFree(&pCtx->heapCtx, p);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    return rc;
+}
+
+
+int VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32Count,
+                          PFNHGSMIFILLVIEWINFO pfnFill, void *pvData)
 {
     int rc;
     /* Issue the screen info command. */
-    void *p = vboxHGSMIBufferAlloc(&pCommon->guestCtx, sizeof(VBVAINFOVIEW) * u32Count,
-                                    HGSMI_CH_VBVA, VBVA_INFO_VIEW);
-    Assert(p);
+    void *p = vboxHGSMIBufferAlloc(pCtx, sizeof(VBVAINFOVIEW) * u32Count,
+                                   HGSMI_CH_VBVA, VBVA_INFO_VIEW);
     if (p)
     {
         VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
         rc = pfnFill(pvData, pInfo);
         if (RT_SUCCESS(rc))
-            vboxHGSMIBufferSubmit (&pCommon->guestCtx, p);
-        vboxHGSMIBufferFree (&pCommon->guestCtx, p);
+            vboxHGSMIBufferSubmit (pCtx, p);
+        vboxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -287,86 +282,29 @@ int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMI
 }
 
 
-int vbvaInitInfoCaps (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
-{
-    VBVACAPS *pCaps = (VBVACAPS*)pvData;
-    pCaps->rc = VERR_NOT_IMPLEMENTED;
-    pCaps->fCaps = pCommon->fCaps;
-    return VINF_SUCCESS;
-}
-
-
-int vbvaFinalizeInfoCaps (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
-{
-    VBVACAPS *pCaps = (VBVACAPS*)pvData;
-    AssertRC(pCaps->rc);
-    return pCaps->rc;
-}
-
-static int vbvaInitInfoHeap (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
-{
-    NOREF (pvContext);
-    VBVAINFOHEAP *p = (VBVAINFOHEAP *)pvData;
-
-    p->u32HeapOffset = pCommon->cbVRAM
-                       - pCommon->cbMiniportHeap
-                       - VBVA_ADAPTER_INFORMATION_SIZE;
-    p->u32HeapSize = pCommon->cbMiniportHeap;
-
-    return VINF_SUCCESS;
-}
-
-static int hgsmiInitFlagsLocation (PVBOXVIDEO_COMMON pCommon, void *pvContext, void *pvData)
-{
-    NOREF (pvContext);
-    HGSMIBUFFERLOCATION *p = (HGSMIBUFFERLOCATION *)pvData;
-
-    p->offLocation = pCommon->cbVRAM - sizeof (HGSMIHOSTFLAGS);
-    p->cbLocation = sizeof (HGSMIHOSTFLAGS);
-
-    return VINF_SUCCESS;
-}
-
-
-static int vboxSetupAdapterInfoHGSMI (PVBOXVIDEO_COMMON pCommon)
+static int vboxSetupAdapterInfoHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                     HGSMIOFFSET offBufferLocation,
+                                     uint32_t fCaps, uint32_t u32HeapOffset,
+                                     uint32_t u32HeapSize)
 {
     Log(("VBoxVideo::vboxSetupAdapterInfo\n"));
 
     /* setup the flags first to ensure they are initialized by the time the host heap is ready */
-    int rc = vboxCallChannel(pCommon,
-            HGSMI_CH_HGSMI,
-            HGSMI_CC_HOST_FLAGS_LOCATION,
-                       sizeof (HGSMIBUFFERLOCATION),
-                       hgsmiInitFlagsLocation,
-                       NULL,
-                       NULL);
+    int rc = vboxHGSMIBufferLocation(pCtx, offBufferLocation);
     AssertRC(rc);
-    if (RT_SUCCESS(rc) && pCommon->fCaps)
+    if (RT_SUCCESS(rc) && fCaps)
     {
         /* Inform about caps */
-        rc = vboxCallVBVA (pCommon,
-                               VBVA_INFO_CAPS,
-                               sizeof (VBVACAPS),
-                               vbvaInitInfoCaps,
-                               vbvaFinalizeInfoCaps,
-                               NULL);
+        rc = vboxHGSMISendCapsInfo(pCtx, fCaps);
         AssertRC(rc);
     }
     if (RT_SUCCESS (rc))
     {
         /* Report the host heap location. */
-        rc = vboxCallVBVA (pCommon,
-                           VBVA_INFO_HEAP,
-                           sizeof (VBVAINFOHEAP),
-                           vbvaInitInfoHeap,
-                           NULL,
-                           NULL);
+        rc = vboxVBVAInitInfoHeap(pCtx, u32HeapOffset, u32HeapSize);
         AssertRC(rc);
     }
-
-
     Log(("VBoxVideo::vboxSetupAdapterInfo finished rc = %d\n", rc));
-
     return rc;
 }
 
@@ -392,7 +330,6 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
 
     memset(pCommon, 0, sizeof(*pCommon));
     pCommon->cbVRAM    = AdapterMemorySize;
-    pCommon->fCaps     = fCaps;
     pCommon->cDisplays = 1;
     pCommon->bHGSMI    = VBoxHGSMIIsSupported ();
     /* Why does this use VBoxVideoCmnMemZero?  The MSDN docs say that it should
@@ -448,7 +385,8 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     {
         /* The miniport heap is used for the host buffers. */
         uint32_t cbMiniportHeap = 0;
-        vboxQueryConfHGSMI (pCommon, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbMiniportHeap);
+        vboxQueryConfHGSMI(&pCommon->guestCtx, VBOX_VBVA_CONF32_HOST_HEAP_SIZE,
+                           &cbMiniportHeap);
 
         if (cbMiniportHeap != 0)
         {
@@ -515,7 +453,8 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     {
         /* Query the configured number of displays. */
         uint32_t cDisplays = 0;
-        vboxQueryConfHGSMI (pCommon, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
+        vboxQueryConfHGSMI(&pCommon->guestCtx, VBOX_VBVA_CONF32_MONITOR_COUNT,
+                           &cDisplays);
 
         Log(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
                  cDisplays));
@@ -531,7 +470,13 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     if (pCommon->bHGSMI)
     {
         /* Setup the information for the host. */
-        rc = vboxSetupAdapterInfoHGSMI (pCommon);
+        rc = vboxSetupAdapterInfoHGSMI(&pCommon->guestCtx,
+                                       pCommon->cbVRAM - sizeof(HGSMIHOSTFLAGS),
+                                       fCaps,
+                                         pCommon->cbVRAM
+                                       - pCommon->cbMiniportHeap
+                                       - VBVA_ADAPTER_INFORMATION_SIZE,
+                                       pCommon->cbMiniportHeap);
 
         if (RT_FAILURE(rc))
         {
@@ -563,112 +508,71 @@ void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon)
     VBoxUnmapAdapterMemory(pCommon, &pCommon->pvAdapterInformation);
 }
 
-/*
- * Send the pointer shape to the host.
- */
-typedef struct _MOUSEPOINTERSHAPECTX
+
+bool vboxUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                            uint32_t fFlags,
+                            uint32_t cHotX,
+                            uint32_t cHotY,
+                            uint32_t cWidth,
+                            uint32_t cHeight,
+                            uint8_t *pPixels,
+                            uint32_t cbLength)
 {
-    uint32_t fFlags;
-    uint32_t cHotX;
-    uint32_t cHotY;
-    uint32_t cWidth;
-    uint32_t cHeight;
-    uint32_t cbData;
-    uint8_t *pPixels;
-    int32_t  i32Result;
-} MOUSEPOINTERSHAPECTX;
-
-static int vbvaInitMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
-{
-    MOUSEPOINTERSHAPECTX *pCtx = (MOUSEPOINTERSHAPECTX *)pvContext;
-    VBVAMOUSEPOINTERSHAPE *p = (VBVAMOUSEPOINTERSHAPE *)pvData;
-
-    /* Will be updated by the host. */
-    p->i32Result = VINF_SUCCESS;
-
-    /* We have our custom flags in the field */
-    p->fu32Flags = pCtx->fFlags;
-
-    p->u32HotX   = pCtx->cHotX;
-    p->u32HotY   = pCtx->cHotY;
-    p->u32Width  = pCtx->cWidth;
-    p->u32Height = pCtx->cHeight;
-
-    if (p->fu32Flags & VBOX_MOUSE_POINTER_SHAPE)
-    {
-        /* If shape is supplied, then always create the pointer visible.
-         * See comments in 'vboxUpdatePointerShape'
-         */
-        p->fu32Flags |= VBOX_MOUSE_POINTER_VISIBLE;
-
-        /* Copy the actual pointer data. */
-        memcpy (p->au8Data, pCtx->pPixels, pCtx->cbData);
-    }
-
-    return VINF_SUCCESS;
-}
-
-static int vbvaFinalizeMousePointerShape (PVBOXVIDEO_COMMON, void *pvContext, void *pvData)
-{
-    MOUSEPOINTERSHAPECTX *pCtx = (MOUSEPOINTERSHAPECTX *)pvContext;
-    VBVAMOUSEPOINTERSHAPE *p = (VBVAMOUSEPOINTERSHAPE *)pvData;
-
-    pCtx->i32Result = p->i32Result;
-
-    return VINF_SUCCESS;
-}
-
-bool vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
-                             uint32_t fFlags,
-                             uint32_t cHotX,
-                             uint32_t cHotY,
-                             uint32_t cWidth,
-                             uint32_t cHeight,
-                             uint8_t *pPixels,
-                             uint32_t cbLength)
-{
+    VBVAMOUSEPOINTERSHAPE *p;
     uint32_t cbData = 0;
+    int rc = VINF_SUCCESS;
 
     if (fFlags & VBOX_MOUSE_POINTER_SHAPE)
     {
         /* Size of the pointer data: sizeof (AND mask) + sizeof (XOR_MASK) */
         cbData = ((((cWidth + 7) / 8) * cHeight + 3) & ~3)
                  + cWidth * 4 * cHeight;
+        /* If shape is supplied, then always create the pointer visible.
+         * See comments in 'vboxUpdatePointerShape'
+         */
+        fFlags |= VBOX_MOUSE_POINTER_VISIBLE;
     }
-
 #ifndef DEBUG_misha
-    Log(("vboxUpdatePointerShape: cbData %d, %dx%d\n",
-             cbData, cWidth, cHeight));
+    LogFunc(("cbData %d, %dx%d\n", cbData, cWidth, cHeight));
 #endif
-
     if (cbData > cbLength)
     {
-        Log(("vboxUpdatePointerShape: calculated pointer data size is too big (%d bytes, limit %d)\n",
+        LogFunc(("calculated pointer data size is too big (%d bytes, limit %d)\n",
                  cbData, cbLength));
         return false;
     }
-
-    MOUSEPOINTERSHAPECTX ctx;
-
-    ctx.fFlags    = fFlags;
-    ctx.cHotX     = cHotX;
-    ctx.cHotY     = cHotY;
-    ctx.cWidth    = cWidth;
-    ctx.cHeight   = cHeight;
-    ctx.pPixels   = pPixels;
-    ctx.cbData    = cbData;
-    ctx.i32Result = VERR_NOT_SUPPORTED;
-
-    int rc = vboxCallVBVA (pCommon, VBVA_MOUSE_POINTER_SHAPE,
-                           sizeof (VBVAMOUSEPOINTERSHAPE) + cbData,
-                           vbvaInitMousePointerShape,
-                           vbvaFinalizeMousePointerShape,
-                           &ctx);
+    /* Allocate the IO buffer. */
+    p = (VBVAMOUSEPOINTERSHAPE *)HGSMIHeapAlloc(&pCtx->heapCtx,
+                                                  sizeof(VBVAMOUSEPOINTERSHAPE)
+                                                + cbData,
+                                                HGSMI_CH_VBVA,
+                                                VBVA_MOUSE_POINTER_SHAPE);
+    if (p)
+    {
+        /* Prepare data to be sent to the host. */
+        /* Will be updated by the host. */
+        p->i32Result = VINF_SUCCESS;
+        /* We have our custom flags in the field */
+        p->fu32Flags = fFlags;
+        p->u32HotX   = cHotX;
+        p->u32HotY   = cHotY;
+        p->u32Width  = cWidth;
+        p->u32Height = cHeight;
+        if (p->fu32Flags & VBOX_MOUSE_POINTER_SHAPE)
+            /* Copy the actual pointer data. */
+            memcpy (p->au8Data, pPixels, cbData);
+        rc = vboxHGSMIBufferSubmit(pCtx, p);
+        if (RT_SUCCESS(rc))
+            rc = p->i32Result;
+        /* Free the IO buffer. */
+        HGSMIHeapFree(&pCtx->heapCtx, p);
+    }
+    else
+        rc = VERR_NO_MEMORY;
 #ifndef DEBUG_misha
-    Log(("VBoxVideo::vboxMousePointerShape: rc %d, i32Result = %d\n", rc, ctx.i32Result));
+    LogFunc(("rc %d\n", rc));
 #endif
-
-    return RT_SUCCESS(rc) && RT_SUCCESS(ctx.i32Result);
+    return RT_SUCCESS(rc);
 }
 
 #ifndef VBOX_WITH_WDDM

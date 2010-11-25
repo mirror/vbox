@@ -71,8 +71,6 @@ typedef struct VBOXVIDEO_COMMON
                                          * This is mapped by miniport separately.
                                          */
 
-    /** Host HGSMI capabilities the guest can handle */
-    uint32_t fCaps;
     /** Whether HGSMI is enabled. */
     bool bHGSMI;
     /** Context information needed to receive commands from the host. */
@@ -135,12 +133,12 @@ bool VBoxHGSMIIsSupported (void);
 typedef int FNHGSMIFILLVIEWINFO (void *pvData, VBVAINFOVIEW *pInfo);
 typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
 
-int VBoxHGSMISendViewInfo(PVBOXVIDEO_COMMON pCommon, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData);
+int VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData);
 
 void VBoxSetupDisplaysHGSMI (PVBOXVIDEO_COMMON pCommon,
                              uint32_t AdapterMemorySize, uint32_t fCaps);
 
-bool vboxUpdatePointerShape (PVBOXVIDEO_COMMON pCommon,
+bool vboxUpdatePointerShape (PHGSMIGUESTCOMMANDCONTEXT pCtx,
                              uint32_t fFlags,
                              uint32_t cHotX,
                              uint32_t cHotY,
