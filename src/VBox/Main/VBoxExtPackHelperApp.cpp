@@ -29,6 +29,7 @@
 #include <iprt/fs.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/manifest.h>
 #include <iprt/message.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -36,6 +37,8 @@
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/vfs.h>
+#include <iprt/zip.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -50,6 +53,7 @@ RTDECL(bool) RTAssertShouldPanic(void)
     return true;
 }
 #endif
+
 
 
 /**
@@ -76,6 +80,7 @@ static RTEXITCODE DoStandardOption(int ch)
                       "    install --base-dir <dir> --certificate-dir <dir> --name <name> \\\n"
                       "        --tarball <tarball> --tarball-fd <fd>\n"
                       "    uninstall --base-dir <dir> --name <name>\n"
+                      "    cleanup --base-dir <dir>\n"
                       , RTProcShortName());
             return RTEXITCODE_SUCCESS;
         }
@@ -135,6 +140,7 @@ static bool IsValidBaseDir(const char *pszBaseDir)
     return RTPathCompare(szCorrect, pszBaseDir) == 0;
 }
 
+
 /**
  * Cleans up a temporary extension pack directory.
  *
@@ -155,6 +161,52 @@ static RTEXITCODE RemoveExtPackDir(const char *pszDir, bool fTemporary)
                               "Failed to delete the %sextension pack directory: %Rrc ('%s')",
                               fTemporary ? "temporary " : "", rc, pszDir);
     return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Rewinds the tarball file handle and creates a gunzip | tar chain that
+ * results in a filesystem stream.
+ *
+ * @returns success or failure, message displayed on failure.
+ * @param   hTarballFile    The handle to the tarball file.
+ * @param   phTarFss        Where to return the filesystem stream handle.
+ */
+static RTEXITCODE OpenTarFss(RTFILE hTarballFile, PRTVFSFSSTREAM phTarFss)
+{
+    /*
+     * Rewind the file and set up a VFS chain for it.
+     */
+    int rc = RTFileSeek(hTarballFile, 0, RTFILE_SEEK_BEGIN, NULL);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed seeking to the start of the tarball: %Rrc\n", rc);
+
+    RTVFSIOSTREAM hTarballIos;
+    rc = RTVfsIoStrmFromRTFile(hTarballFile, RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN, true /*fLeaveOpen*/,
+                               &hTarballIos);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsIoStrmFromRTFile failed: %Rrc\n", rc);
+
+    RTVFSIOSTREAM hGunzipIos;
+    rc = RTZipGzipDecompressIoStream(hTarballIos, 0 /*fFlags*/, &hGunzipIos);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFSFSSTREAM hTarFss;
+        rc = RTZipTarFsStreamFromIoStream(hGunzipIos, 0 /*fFlags*/, &hTarFss);
+        if (RT_SUCCESS(rc))
+        {
+            RTVfsIoStrmRelease(hGunzipIos);
+            RTVfsIoStrmRelease(hTarballIos);
+            *phTarFss = hTarFss;
+            return RTEXITCODE_SUCCESS;
+        }
+        RTMsgError("RTZipTarFsStreamFromIoStream failed: %Rrc\n", rc);
+        RTVfsIoStrmRelease(hGunzipIos);
+    }
+    else
+        RTMsgError("RTZipGzipDecompressIoStream failed: %Rrc\n", rc);
+    RTVfsIoStrmRelease(hTarballIos);
+    return RTEXITCODE_FAILURE;
 }
 
 
@@ -182,12 +234,10 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
 }
 
 /**
- * Validates the extension pack.
+ * Validates the extension pack tarball prior to unpacking.
  *
  * Operations performed:
- *      - Manifest seal check.
- *      - Manifest check.
- *      - Recursive hardening check.
+ *      - Hardening checks.
  *      - XML validity check.
  *      - Name check (against XML).
  *
@@ -198,7 +248,7 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
  * @param   pszTarball          The name of the tarball in case we have to
  *                              complain about something.
  */
-static RTEXITCODE ValidateExtPack(const char *pszDir, const char *pszTarball, const char *pszName)
+static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTarball, const char *pszName)
 {
     /** @todo  */
     return RTEXITCODE_SUCCESS;
@@ -216,11 +266,48 @@ static RTEXITCODE ValidateExtPack(const char *pszDir, const char *pszTarball, co
  * @param   pszDirDst           Where to unpack it.
  * @param   pszTarball          The name of the tarball in case we have to
  *                              complain about something.
+ * @todo    Needs to take the previous verified manifest as input.
  */
 static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, const char *pszTarball)
 {
     /** @todo  */
     return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Validates the extension pack tarball prior to unpacking.
+ *
+ * Operations performed:
+ *      - Manifest check.
+ *      - Manifest seal check.
+ *      - Mandatory files.
+ *
+ * @returns The program exit code.
+ * @param   hTarballFile        The handle to open the @a pszTarball file.
+ * @param   pszTarball          The name of the tarball in case we have to
+ *                              complain about something.
+ *
+ * @todo    Should validate the XML and name.
+ * @todo    Needs to return a manifest.
+ */
+static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTarball)
+{
+    /*
+     * Open the tar.gz filesystem stream and set up an manifest in-memory file.
+     */
+    RTVFSFSSTREAM hTarFss;
+    RTEXITCODE rcExit = OpenTarFss(hTarballFile, &hTarFss);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    RTMANIFEST hManifest;
+    int rc = RTManifestCreate(0 /*fFlags*/, &hManifest);
+
+    /** @todo continue coding here! */
+    AssertRC(rc);
+
+    return RTEXITCODE_FAILURE;
 }
 
 
@@ -304,9 +391,11 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create temporary directory: %Rrc ('%s')", rc, szTmpPath);
 
-    RTEXITCODE rcExit = UnpackExtPack(hTarballFile, szTmpPath, pszTarball);
+    RTEXITCODE rcExit = ValidateExtPackTarball(hTarballFile, pszTarball);
     if (rcExit == RTEXITCODE_SUCCESS)
-        rcExit = ValidateExtPack(szTmpPath, pszTarball, pszName);
+        rcExit = UnpackExtPack(hTarballFile, szTmpPath, pszTarball);
+    if (rcExit == RTEXITCODE_SUCCESS)
+        rcExit = ValidateUnpackedExtPack(szTmpPath, pszTarball, pszName);
     if (rcExit == RTEXITCODE_SUCCESS)
         rcExit = SetExtPackPermissions(szTmpPath);
     if (rcExit == RTEXITCODE_SUCCESS)
