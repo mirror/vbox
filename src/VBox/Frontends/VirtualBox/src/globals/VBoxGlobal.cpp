@@ -2579,7 +2579,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
         case VBoxDefs::MediumType_HardDisk:
         {
             filters = vboxGlobal().HDDBackends();
-            strTitle = tr ("Select a hard disk image file");
+            strTitle = tr ("Choose a virtual hard disk file");
             allType = tr ("hard disk");
             type = KDeviceType_HardDisk;
             break;
@@ -2587,7 +2587,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
         case VBoxDefs::MediumType_DVD:
         {
             filters = vboxGlobal().DVDBackends();
-            strTitle = tr ("Select a CD/DVD-ROM disk image file");
+            strTitle = tr ("Choose a virtual CD/DVD disk file");
             allType = tr ("CD/DVD-ROM disk");
             type = KDeviceType_DVD;
             break;
@@ -2595,7 +2595,7 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(VBoxDefs::MediumType mediumType
         case VBoxDefs::MediumType_Floppy:
         {
             filters = vboxGlobal().FloppyBackends();
-            strTitle = tr ("Select a floppy disk image file");
+            strTitle = tr ("Choose a virtual floppy disk file");
             allType = tr ("floppy disk");
             type = KDeviceType_Floppy;
             break;
