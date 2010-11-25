@@ -832,6 +832,26 @@ static NTSTATUS vboxVdmaGgDmaCmdProcess(VBOXVDMAPIPE_CMD_DMACMD *pDmaCmd)
                     }
                     break;
                 }
+                case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
+                {
+                    if (pBlt->Hdr.fFlags.b2DRelated)
+                    {
+                        RECT OverlayUnionRect;
+                        vboxVhwaHlpOverlayDstRectUnion(pDevExt, pDstAlloc->SurfDesc.VidPnSourceId, &OverlayUnionRect);
+                        Assert(pBlt->Blt.DstRects.ContextRect.left == 0); /* <-| otherwise we would probably need to translate the UpdateRects to left;top first??*/
+                        Assert(pBlt->Blt.DstRects.ContextRect.top == 0); /* <--| */
+                        vboxVdmaDirtyRectsCalcIntersection(&OverlayUnionRect, &pBlt->Blt.DstRects.UpdateRects, &pBlt->Blt.DstRects.UpdateRects);
+                        if (pBlt->Blt.DstRects.UpdateRects.cRects)
+                        {
+                            vboxVdmaGgDmaBlt(pBlt);
+                        }
+                    }
+                    else
+                    {
+                        Assert(0);
+                    }
+                    break;
+                }
                 default:
                     Assert(0);
             }

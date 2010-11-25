@@ -2419,6 +2419,15 @@ DxgkDdiSubmitCommand(
                 case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
                 {
                     Assert(pSrcAlloc->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE);
+                    Assert(pContext->enmType == VBOXWDDM_CONTEXT_TYPE_SYSTEM);
+                    VBOXVDMAPIPE_FLAGS_DMACMD fBltFlags;
+                    fBltFlags.Value = 0;
+                    if (!vboxVhwaHlpOverlayListIsEmpty(pDevExt, pDstAlloc->SurfDesc.VidPnSourceId))
+                    {
+                        fBltFlags.b2DRelated = 1;
+                        Status = vboxWddmSubmitBltCmd(pDevExt, pContext, pSubmitCommand->SubmissionFenceId, pBlt, fBltFlags);
+                        bComplete = FALSE;
+                    }
                     break;
                 }
                 default:
