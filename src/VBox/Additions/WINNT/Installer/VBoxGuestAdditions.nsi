@@ -971,6 +971,8 @@ Function .onSelChange
       MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NO_SM) /SD IDOK
       Goto d3d_disable
     ${EndIf}
+  ${Else} ; D3D unselected again
+    StrCpy $g_bWithWDDM "false"
   ${EndIf}
   Goto exit
 
