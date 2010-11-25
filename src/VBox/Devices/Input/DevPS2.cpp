@@ -281,8 +281,6 @@ static const unsigned char ps2_raw_keycode[128] = {
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /* update irq and KBD_STAT_[MOUSE_]OBF */
-/* XXX: not generating the irqs if KBD_MODE_DISABLE_KBD is set may be
-   incorrect, but it avoids having to simulate exact delays */
 static void kbd_update_irq(KBDState *s)
 {
     KBDQueue *q = &s->queue;
@@ -318,7 +316,7 @@ static void kbd_update_irq(KBDState *s)
         }
         else
         {   /* KBD_STAT_OBF set but KBD_STAT_MOUSE_OBF isn't. */
-            if ((s->mode & KBD_MODE_KBD_INT) && !(s->mode & KBD_MODE_DISABLE_KBD))
+            if (s->mode & KBD_MODE_KBD_INT)
                 irq1_level = 1;
         }
     }
