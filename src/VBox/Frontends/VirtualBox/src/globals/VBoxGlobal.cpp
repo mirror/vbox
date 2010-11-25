@@ -4624,7 +4624,7 @@ bool VBoxGlobal::processArgs()
         if (   !strArg.isEmpty()
             && !strArg.startsWith("-")
             && QFile::exists(strArg))
-            list << QUrl(strArg);
+            list << QUrl::fromLocalFile(strArg);
     }
     if (!list.isEmpty())
     {
