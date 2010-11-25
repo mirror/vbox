@@ -23,10 +23,12 @@
 
 enum VBOXTRAYIPCMSGTYPE
 {
-    /** Asks the IPC thread to quit. */
-    VBOXTRAYIPCMSGTYPE_QUIT           = 10,
     /** Restarts VBoxTray. */
-    VBOXTRAYIPCMSGTYPE_RESTART        = 11,
+    VBOXTRAYIPCMSGTYPE_RESTART        = 10,
+
+    /** Asks the IPC thread to quit. */
+    VBOXTRAYIPCMSGTYPE_IPC_QUIT       = 50,
+
     /** Shows a balloon message in the tray area. */
     VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG = 100
 };
