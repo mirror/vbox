@@ -520,17 +520,10 @@
 <?endif?>
                         <!-- EFI firmware -->
 <?if $(env.VBOX_WITH_EFIFW_PACKING) = "yes" ?>
-    <?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
-                        <File Id="vboxefifd32" LongName="VBoxEFI32.fd" Name="efi32.fd" DiskId="2" Vital="yes"
+                        <File Id="vboxefifd32" LongName="VBoxEFI32.fd" Name="efi32.fd" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxEFI32.fd" />
-                        <File Id="vboxefifd64" LongName="VBoxEFI64.fd" Name="efi64.fd" DiskId="2" Vital="yes"
+                        <File Id="vboxefifd64" LongName="VBoxEFI64.fd" Name="efi64.fd" DiskId="$(var.Property_DiskIdCommon)" Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxEFI64.fd" />
-    <?else ?>
-                        <File Id="vboxefifd32" LongName="VBoxEFI32.fd" Name="efi32.fd" DiskId="1" Vital="yes"
-                              Source="$(env.PATH_OUT)\bin\VBoxEFI32.fd" />
-                        <File Id="vboxefifd64" LongName="VBoxEFI64.fd" Name="efi64.fd" DiskId="1" Vital="yes"
-                              Source="$(env.PATH_OUT)\bin\VBoxEFI64.fd" />
-    <?endif ?>
 <?endif?>
                         <!-- VBox guest additions -->
 <?if $(env.VBOX_WITH_ADDITIONS_PACKING) = "yes" ?>
