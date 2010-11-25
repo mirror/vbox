@@ -110,7 +110,7 @@ int VBoxIPCWriteMessage(PVBOXIPCCONTEXT pCtx, BYTE *pMessage, DWORD cbMessage)
 int VBoxIPCPostQuitMessage(PVBOXIPCCONTEXT pCtx)
 {
     VBOXTRAYIPCHEADER hdr;
-    hdr.ulMsg = VBOXTRAYIPCMSGTYPE_QUIT;
+    hdr.ulMsg = VBOXTRAYIPCMSGTYPE_IPC_QUIT;
     return VBoxIPCWriteMessage(pCtx, (BYTE*)&hdr, sizeof(hdr));
 }
 
@@ -264,14 +264,14 @@ unsigned __stdcall VBoxIPCThread(void *pInstance)
                 Log(("VBoxTray: VBoxIPCThread: Received message %ld ...\n", hdr.ulMsg));
                 switch (hdr.ulMsg)
                 {
-                    case VBOXTRAYIPCMSGTYPE_QUIT:
-                        fTerminate = true;
-                        break;
-
                     case VBOXTRAYIPCMSGTYPE_RESTART:
                         rc = VBoxIPCMsgRestart(pCtx, hdr.wParam, hdr.lParam);
                         if (RT_SUCCESS(rc))
                             fTerminate = true;
+                        break;
+
+                    case VBOXTRAYIPCMSGTYPE_IPC_QUIT:
+                        fTerminate = true;
                         break;
 
                     case VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG:
