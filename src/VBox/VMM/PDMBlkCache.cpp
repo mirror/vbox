@@ -1012,7 +1012,7 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
                     if (pBlkCache->pTree)
                     {
                         /* Arm the timer if this is the first endpoint. */
-                        if (   pBlkCacheGlobal->cRefs == 1
+                        if (   !pBlkCacheGlobal->cRefs
                             && pBlkCacheGlobal->u32CommitTimeoutMs > 0)
                             rc = TMTimerSetMillies(pBlkCacheGlobal->pTimerCommit, pBlkCacheGlobal->u32CommitTimeoutMs);
 
@@ -1207,6 +1207,14 @@ VMMR3DECL(void) PDMR3BlkCacheRelease(PPDMBLKCACHE pBlkCache)
 {
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
 
+    /*
+     * Commit all dirty entries now (they are waited on for completion during the
+     * destruction of the AVL tree below).
+     * The exception is if the VM was paused because of an I/O error before.
+     */
+    if (!ASMAtomicReadBool(&pCache->fIoErrorVmSuspended))
+        pdmBlkCacheCommit(pBlkCache);
+
     /* Make sure nobody is accessing the cache while we delete the tree. */
     pdmBlkCacheLockEnter(pCache);
     RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
@@ -1350,12 +1358,9 @@ static PPDMBLKCACHEENTRY pdmBlkCacheGetCacheEntryByOffset(PPDMBLKCACHE pBlkCache
  * @param   off               The offset.
  * @param   pEntryAbove       Where to store the pointer to the best fit entry above the
  *                            the given offset. NULL if not required.
- * @param   pEntryBelow       Where to store the pointer to the best fit entry below the
- *                            the given offset. NULL if not required.
  */
 static void pdmBlkCacheGetCacheBestFitEntryByOffset(PPDMBLKCACHE pBlkCache, uint64_t off,
-                                                    PPDMBLKCACHEENTRY *ppEntryAbove,
-                                                    PPDMBLKCACHEENTRY *ppEntryBelow)
+                                                    PPDMBLKCACHEENTRY *ppEntryAbove)
 {
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
 
@@ -1369,12 +1374,6 @@ static void pdmBlkCacheGetCacheBestFitEntryByOffset(PPDMBLKCACHE pBlkCache, uint
             pdmBlkCacheEntryRef(*ppEntryAbove);
     }
 
-    if (ppEntryBelow)
-    {
-        *ppEntryBelow = (PPDMBLKCACHEENTRY)RTAvlrU64GetBestFit(pBlkCache->pTree, off, false /*fAbove*/);
-        if (*ppEntryBelow)
-            pdmBlkCacheEntryRef(*ppEntryBelow);
-    }
     RTSemRWReleaseRead(pBlkCache->SemRWEntries);
 
     STAM_PROFILE_ADV_STOP(&pCache->StatTreeGet, Cache);
@@ -1516,7 +1515,7 @@ DECLINLINE(void) pdmBlkCacheEntryAddWaiter(PPDMBLKCACHEENTRY pEntry,
  */
 static int pdmBlkCacheEntryWaitersAdd(PPDMBLKCACHEENTRY pEntry,
                                       PPDMBLKCACHEREQ pReq,
-                                      PCRTSGBUF pSgBuf, uint64_t offDiff,
+                                      PRTSGBUF pSgBuf, uint64_t offDiff,
                                       size_t cbData, bool fWrite)
 {
     PPDMBLKCACHEWAITER pWaiter  = (PPDMBLKCACHEWAITER)RTMemAllocZ(sizeof(PDMBLKCACHEWAITER));
@@ -1529,6 +1528,7 @@ static int pdmBlkCacheEntryWaitersAdd(PPDMBLKCACHEENTRY pEntry,
     pWaiter->cbTransfer    = cbData;
     pWaiter->fWrite        = fWrite;
     RTSgBufClone(&pWaiter->SgBuf, pSgBuf);
+    RTSgBufAdvance(pSgBuf, cbData);
 
     pdmBlkCacheEntryAddWaiter(pEntry, pWaiter);
 
@@ -1559,19 +1559,11 @@ static size_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
     size_t cbInEntry = 0;
     uint64_t offAligned;
     PPDMBLKCACHEENTRY pEntryAbove = NULL;
-    PPDMBLKCACHEENTRY pEntryBelow = NULL;
 
     /* Get the best fit entries around the offset */
-    pdmBlkCacheGetCacheBestFitEntryByOffset(pBlkCache, off, &pEntryAbove, &pEntryBelow);
+    pdmBlkCacheGetCacheBestFitEntryByOffset(pBlkCache, off, &pEntryAbove);
 
     /* Log the info */
-    LogFlow(("%sest fit entry below off=%llu (BestFit=%llu BestFitEnd=%llu BestFitSize=%u)\n",
-             pEntryBelow ? "B" : "No b",
-             off,
-             pEntryBelow ? pEntryBelow->Core.Key : 0,
-             pEntryBelow ? pEntryBelow->Core.KeyLast : 0,
-             pEntryBelow ? pEntryBelow->cbData : 0));
-
     LogFlow(("%sest fit entry above off=%llu (BestFit=%llu BestFitEnd=%llu BestFitSize=%u)\n",
              pEntryAbove ? "B" : "No b",
              off,
@@ -1579,11 +1571,7 @@ static size_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
              pEntryAbove ? pEntryAbove->Core.KeyLast : 0,
              pEntryAbove ? pEntryAbove->cbData : 0));
 
-    /* Align the offset first. */
-    offAligned = off & ~(uint64_t)(512-1);
-    if (   pEntryBelow
-        && offAligned <= pEntryBelow->Core.KeyLast)
-        offAligned = pEntryBelow->Core.KeyLast;
+    offAligned = off;
 
     if (    pEntryAbove
         &&  off + cb > pEntryAbove->Core.Key)
@@ -1598,14 +1586,10 @@ static size_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
     }
 
     /* A few sanity checks */
-    AssertMsg(!pEntryBelow || pEntryBelow->Core.KeyLast < offAligned,
-              ("Aligned start offset intersects with another cache entry\n"));
     AssertMsg(!pEntryAbove || (offAligned + cbAligned) <= pEntryAbove->Core.Key,
               ("Aligned size intersects with another cache entry\n"));
     Assert(cbInEntry <= cbAligned);
 
-    if (pEntryBelow)
-        pdmBlkCacheEntryRelease(pEntryBelow);
     if (pEntryAbove)
         pdmBlkCacheEntryRelease(pEntryAbove);
 
@@ -1932,8 +1916,7 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
 #else
             /* Clip read size if necessary. */
             PPDMBLKCACHEENTRY pEntryAbove;
-            pdmBlkCacheGetCacheBestFitEntryByOffset(pBlkCache, off,
-                                                    &pEntryAbove, NULL);
+            pdmBlkCacheGetCacheBestFitEntryByOffset(pBlkCache, off, &pEntryAbove);
 
             if (pEntryAbove)
             {
@@ -2018,9 +2001,9 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
                 || (pEntry->pList == &pCache->LruFrequentlyUsed))
             {
                 /* Check if the entry is dirty. */
-                if(pdmBlkCacheEntryFlagIsSetClearAcquireLock(pBlkCache, pEntry,
-                                                             PDMBLKCACHE_ENTRY_IS_DIRTY,
-                                                             0))
+                if (pdmBlkCacheEntryFlagIsSetClearAcquireLock(pBlkCache, pEntry,
+                                                              PDMBLKCACHE_ENTRY_IS_DIRTY,
+                                                              0))
                 {
                     /* If it is already dirty but not in progress just update the data. */
                     if (!(pEntry->fFlags & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS))
@@ -2270,18 +2253,6 @@ static void pdmBlkCacheIoXferCompleteEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEI
          * The error is logged for now and the VM is paused.
          * If the user continues the entry is written again in the hope
          * the user fixed the problem and the next write succeeds.
-         */
-        /** @todo r=aeichner: This solution doesn't work
-         * The user will get the message but the VM will hang afterwards
-         * VMR3Suspend() returns when the VM is suspended but suspending
-         * the VM will reopen the images readonly in DrvVD. They are closed first
-         * which will close the endpoints. This will block EMT while the
-         * I/O manager processes the close request but the IO manager is stuck
-         * in the VMR3Suspend call and can't process the request.
-         * Another problem is that closing the VM means flushing the cache
-         * but the entry failed and will probably fail again.
-         * No idea so far how to solve this problem... but the user gets informed
-         * at least.
          */
         if (RT_FAILURE(rcIoXfer))
         {
