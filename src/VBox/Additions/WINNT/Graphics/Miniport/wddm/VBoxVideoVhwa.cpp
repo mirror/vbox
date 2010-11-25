@@ -1109,7 +1109,7 @@ int vboxVhwaHlpOverlayCreate(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOU
             /* ignore primary update failure */
             Status = STATUS_SUCCESS;
 #endif
-            rc = vboxVhwaHlpOverlayUpdate(pOverlay, pOverlayInfo, &DstRect);
+            rc = vboxVhwaHlpOverlayUpdate(pOverlay, pOverlayInfo, DstRect.right ? &DstRect : NULL);
             if (!RT_SUCCESS(rc))
             {
                 int tmpRc = vboxVhwaHlpOverlayDestroy(pOverlay);
