@@ -675,8 +675,10 @@ RT_C_DECLS_END
 #define VERR_PATH_NOT_FOUND                 (-103)
 /** Invalid (malformed) file/path name. */
 #define VERR_INVALID_NAME                   (-104)
-/** File/Device already exists. */
+/** The object in question already exists. */
 #define VERR_ALREADY_EXISTS                 (-105)
+/** The object in question already exists. */
+#define VWRN_ALREADY_EXISTS                 105
 /** Too many open files. */
 #define VERR_TOO_MANY_OPEN_FILES            (-106)
 /** Seek error. */
