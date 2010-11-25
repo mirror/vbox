@@ -1486,6 +1486,13 @@ typedef RTDBGMOD                                   *PRTDBGMOD;
 /** NIL debug module handle. */
 #define NIL_RTDBGMOD                                ((RTDBGMOD)0)
 
+/** Manifest handle. */
+typedef struct RTMANIFESTINT                       *RTMANIFEST;
+/** Pointer to a manifest handle. */
+typedef RTMANIFEST                                 *PRTMANIFEST;
+/** NIL manifest handle. */
+#define NIL_RTMANIFEST                              ((RTMANIFEST)~(uintptr_t)0)
+
 /** Memory pool handle. */
 typedef R3R0PTRTYPE(struct RTMEMPOOLINT *)          RTMEMPOOL;
 /** Pointer to a memory pool handle. */
