@@ -25,6 +25,7 @@
 #include <iprt/mem.h>
 #include <VBoxGuestInternal.h>
 
+
 typedef struct _VBOXIPCCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
@@ -34,6 +35,16 @@ typedef struct _VBOXIPCCONTEXT
 
 static VBOXIPCCONTEXT gCtx = {0};
 
+
+/**
+ * Reads an IPC message from a connected client, represented by the IPC
+ * context.
+ *
+ * @return  IPRT status code.
+ * @param   pCtx                    The IPC context.
+ * @param   pMessage                Buffer for receiving the message to be read.
+ * @param   cbMessage               Size (in bytes) of buffer for received message.
+ */
 int VBoxIPCReadMessage(PVBOXIPCCONTEXT pCtx, BYTE *pMessage, DWORD cbMessage)
 {
     int rc = VINF_SUCCESS;
@@ -56,6 +67,33 @@ int VBoxIPCReadMessage(PVBOXIPCCONTEXT pCtx, BYTE *pMessage, DWORD cbMessage)
     return rc;
 }
 
+/**
+ * Skips an IPC message by reading out the outstanding message
+ * body to discard it.
+ *
+ * @return  IPRT status code.
+ * @param   pCtx                    The IPC context.
+ * @param   pHdr                    The header of message to skip.
+ */
+int VBoxIPCSkipMessage(PVBOXIPCCONTEXT pCtx, PVBOXTRAYIPCHEADER pHdr)
+{
+    Assert(pHdr->cbBody);
+    BYTE *pbBuf = (BYTE*)RTMemAlloc(pHdr->cbBody);
+    if (!pbBuf)
+        return VERR_NO_MEMORY;
+    int rc = VBoxIPCReadMessage(pCtx, pbBuf, pHdr->cbBody);
+    RTMemFree(pbBuf);
+    return rc;
+}
+
+/**
+ * Writes an IPC message to the IPC context's client.
+ *
+ * @return  IPRT status code.
+ * @param   pCtx                    The IPC context.
+ * @param   pMessage                Pointer to message to send.
+ * @param   cbMessage               Size (in bytes) of message to send.
+ */
 int VBoxIPCWriteMessage(PVBOXIPCCONTEXT pCtx, BYTE *pMessage, DWORD cbMessage)
 {
     int rc = VINF_SUCCESS;
@@ -81,9 +119,9 @@ int VBoxIPCPostQuitMessage(PVBOXIPCCONTEXT pCtx)
  * message area in the Windows main taskbar.
  *
  * @return  IPRT status code.
- * @param   pCtx
- * @param   wParam
- * @param   lParam
+ * @param   pCtx                    IPC context of the caller.
+ * @param   wParam                  wParam of received IPC message.
+ * @param   lParam                  lParam of received IPC message.
  */
 int VBoxIPCMsgShowBalloonMsg(PVBOXIPCCONTEXT pCtx, UINT wParam, UINT lParam)
 {
@@ -92,12 +130,33 @@ int VBoxIPCMsgShowBalloonMsg(PVBOXIPCCONTEXT pCtx, UINT wParam, UINT lParam)
     if (RT_SUCCESS(rc))
     {
         hlpShowBalloonTip(gInstance, gToolWindow, ID_TRAYICON,
-                          msg.szBody, msg.szTitle,
+                          msg.szContent, msg.szTitle,
                           msg.ulShowMS, msg.ulType);
     }
     return rc;
 }
 
+/**
+ * Takes action to restart VBoxTray (this application).
+ *
+ * @return  IPRT status code.
+ * @param   pCtx                    IPC context of the caller.
+ * @param   wParam                  wParam of received IPC message.
+ * @param   lParam                  lParam of received IPC message.
+ */
+int VBoxIPCMsgRestart(PVBOXIPCCONTEXT pCtx, UINT wParam, UINT lParam)
+{
+    return 0;
+}
+
+/**
+ * Initializes the IPC communication.
+ *
+ * @return  IPRT status code.
+ * @param   pEnv                        The IPC service's environment.
+ * @param   ppInstance                  The instance pointer which refer to this object.
+ * @param   pfStartThread               Pointer to flag whether the IPC service can be started or not.
+ */
 int VBoxIPCInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
     Log(("VBoxTray: VBoxIPCInit\n"));
@@ -202,18 +261,29 @@ unsigned __stdcall VBoxIPCThread(void *pInstance)
 
             if (SUCCEEDED(dwErr))
             {
+                Log(("VBoxTray: VBoxIPCThread: Received message %ld ...\n", hdr.ulMsg));
                 switch (hdr.ulMsg)
                 {
-                    case VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG:
-                        rc = VBoxIPCMsgShowBalloonMsg(pCtx, hdr.wParam, hdr.lParam);
-                        break;
-
-                    /* Someone asked us to quit ... */
                     case VBOXTRAYIPCMSGTYPE_QUIT:
                         fTerminate = true;
                         break;
 
+                    case VBOXTRAYIPCMSGTYPE_RESTART:
+                        rc = VBoxIPCMsgRestart(pCtx, hdr.wParam, hdr.lParam);
+                        if (RT_SUCCESS(rc))
+                            fTerminate = true;
+                        break;
+
+                    case VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG:
+                        rc = VBoxIPCMsgShowBalloonMsg(pCtx, hdr.wParam, hdr.lParam);
+                        break;
+
                     default:
+                        /* Unknown message received, try to receive the body and
+                         * just skip it. */
+                        Log(("VBoxTray: VBoxIPCThread: Unknown message %ld, skipping ...\n", hdr.ulMsg));
+                        if (hdr.cbBody)
+                            rc = VBoxIPCSkipMessage(pCtx, &hdr);
                         break;
                 }
             }
@@ -226,10 +296,9 @@ unsigned __stdcall VBoxIPCThread(void *pInstance)
 
         /* Sleep a bit to not eat too much CPU in case the above call always fails. */
         if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
-        {
             fTerminate = true;
-            break;
-        }
+        if (fTerminate)
+            Log(("VBoxTray: VBoxIPCThread: Terminating ...\n"));
     } while (!fTerminate);
 
     Log(("VBoxTray: VBoxIPCThread exited\n"));
