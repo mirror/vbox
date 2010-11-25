@@ -42,7 +42,7 @@
    <item>
     <widget class="QILabel" name="m_pPage4Text1">
      <property name="text">
-      <string>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string>
+      <string>&lt;p&gt;Select a virtual hard disk to be used as the boot hard disk of the virtual machine. You can either create a new hard disk or select an existing one from the drop-down list or by pressing corresponding button (to invoke file-open window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -65,7 +65,7 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="m_pLayout2">
-      <item row="0" column="0" colspan="3">
+      <item row="0" column="0" colspan="2">
        <widget class="QRadioButton" name="m_pDiskCreate">
         <property name="text">
          <string>&amp;Create new hard disk</string>
@@ -75,7 +75,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="3">
+      <item row="1" column="0" colspan="2">
        <widget class="QRadioButton" name="m_pDiskPresent">
         <property name="text">
          <string>&amp;Use existing hard disk</string>
@@ -83,17 +83,31 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="VBoxMediaComboBox" name="m_pDiskSelector"/>
-      </item>
-      <item row="2" column="2">
-       <widget class="QToolButton" name="m_pVMMButton">
-        <property name="autoRaise">
-         <bool>true</bool>
+       <layout class="QHBoxLayout" name="m_pLayout3">
+        <property name="spacing" >
+         <number>1</number>
         </property>
-        <property name="toolTip">
-         <string>Select a hard disk image file</string>
-        </property>
-       </widget>
+        <item>
+         <widget class="VBoxMediaComboBox" name="m_pDiskSelector">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="m_pVMMButton">
+          <property name="autoRaise">
+           <bool>true</bool>
+          </property>
+          <property name="toolTip">
+           <string>Choose a virtual hard disk file...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
