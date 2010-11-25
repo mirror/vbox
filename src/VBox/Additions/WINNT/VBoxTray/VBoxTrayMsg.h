@@ -25,7 +25,9 @@ enum VBOXTRAYIPCMSGTYPE
 {
     /** Asks the IPC thread to quit. */
     VBOXTRAYIPCMSGTYPE_QUIT           = 10,
-    /** TODO */
+    /** Restarts VBoxTray. */
+    VBOXTRAYIPCMSGTYPE_RESTART        = 11,
+    /** Shows a balloon message in the tray area. */
     VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG = 100
 };
 
@@ -34,6 +36,9 @@ typedef struct _VBOXTRAYIPCHEADER
 {
     /** Message type. */
     ULONG ulMsg;
+    /** Size of message body
+     *  (without this header). */
+    ULONG cbBody;
     /** User-supplied wParam. */
     ULONG wParam;
     /** User-supplied lParam. */
@@ -42,9 +47,9 @@ typedef struct _VBOXTRAYIPCHEADER
 
 typedef struct _VBOXTRAYIPCMSG_SHOWBALLOONMSG
 {
-    /** Message body. */
-    TCHAR    szBody[256];
-    /** Message body. */
+    /** Message content. */
+    TCHAR    szContent[256];
+    /** Message title. */
     TCHAR    szTitle[64];
     /** Message type. */
     ULONG    ulType;

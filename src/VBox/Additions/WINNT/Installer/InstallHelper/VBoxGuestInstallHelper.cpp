@@ -145,9 +145,10 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
 
     VBOXTRAYIPCHEADER hdr;
     hdr.ulMsg = VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG;
+    hdr.cbBody = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG);
 
     VBOXTRAYIPCMSG_SHOWBALLOONMSG msg;
-    HRESULT hr = VBoxPopString(msg.szBody, sizeof(msg.szBody) / sizeof(TCHAR));
+    HRESULT hr = VBoxPopString(msg.szContent, sizeof(msg.szContent) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
         hr = VBoxPopString(msg.szTitle, sizeof(msg.szTitle) / sizeof(TCHAR));
     if (SUCCEEDED(hr))
