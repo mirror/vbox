@@ -393,7 +393,7 @@ void *crPackAlloc( unsigned int size )
 	else 
 	{
 		/* Okay, it didn't fit.  Maybe it will after we flush. */
-		CR_UNLOCK_PACKER_CONTEXT(pc)
+		CR_UNLOCK_PACKER_CONTEXT(pc);
 		pc->Flush( pc->flush_arg );
 		CR_LOCK_PACKER_CONTEXT(pc);
 		if ( crPackCanHoldOpcode( pc, 1, size ) )
