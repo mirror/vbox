@@ -2671,14 +2671,14 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay)
     unsigned uScreenId;
     for (uScreenId = 0; uScreenId < pDisplay->mcMonitors; uScreenId++)
     {
-        if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+        DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
+
+        if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
         {
             pDisplay->mpDrv->pUpPort->pfnUpdateDisplayAll(pDisplay->mpDrv->pUpPort);
         }
         else
         {
-            DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[uScreenId];
-
             if (!pFBInfo->pFramebuffer.isNull())
             {
                 /* Render complete VRAM screen to the framebuffer.
@@ -3679,7 +3679,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
         if (pFBInfo->fDefaultFormat)
         {
             /* Make sure that framebuffer contains the same image as the guest VRAM. */
-            if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+            if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN && !pFBInfo->pFramebuffer.isNull())
             {
                 pDrv->pUpPort->pfnUpdateDisplayRect (pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
             }
