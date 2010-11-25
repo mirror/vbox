@@ -34,10 +34,19 @@ VBOX_RESOURCES_PATH_WIN := $(subst /,\\,$(PATH_ROOT))/src/VBox/Resources/win
 
 # Icon include file.
 # @todo Put this into Config.kmk?
-VBOX_WINDOWS_ICON_EXT_VBOX    := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-vbox.ico
-VBOX_WINDOWS_ICON_EXT_EXTPACK := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-vbox-extpack.ico
-VBOX_WINDOWS_ICON_EXT_OVA     := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-ova.ico
-VBOX_WINDOWS_ICON_EXT_OVF     := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-ovf.ico
+ifdef VBOX_OSE
+  # Hack: rc.exe on OSE build boxes don't support Vista icons; so
+  # use a special icon version (without the 256x256 size) instead.
+  VBOX_WINDOWS_ICON_EXT_VBOX    := $(VBOX_RESOURCES_PATH_WIN)/OSE/virtualbox-vbox.ico
+  VBOX_WINDOWS_ICON_EXT_EXTPACK := $(VBOX_RESOURCES_PATH_WIN)/OSE/virtualbox-vbox-extpack.ico
+  VBOX_WINDOWS_ICON_EXT_OVA     := $(VBOX_RESOURCES_PATH_WIN)/OSE/virtualbox-ova.ico
+  VBOX_WINDOWS_ICON_EXT_OVF     := $(VBOX_RESOURCES_PATH_WIN)/OSE/virtualbox-ovf.ico
+else
+  VBOX_WINDOWS_ICON_EXT_VBOX    := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-vbox.ico
+  VBOX_WINDOWS_ICON_EXT_EXTPACK := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-vbox-extpack.ico
+  VBOX_WINDOWS_ICON_EXT_OVA     := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-ova.ico
+  VBOX_WINDOWS_ICON_EXT_OVF     := $(VBOX_RESOURCES_PATH_WIN)/virtualbox-ovf.ico
+endif
 
 VBOX_RESOURCES_WIN := \
 	$(VBOX_WINDOWS_ICON_FILE) \
