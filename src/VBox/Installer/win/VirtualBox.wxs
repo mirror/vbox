@@ -206,7 +206,7 @@
 
         <Media Id="1" Cabinet="product.cab" EmbedCab="yes" />
 <?if $(env.VBOX_WITH_COMBINED_PACKAGE) = "yes" ?>
-        <Media Id="2" Cabinet="common.cab" EmbedCab="no" CompressionLevel="mszip" />
+        <Media Id="2" Cabinet="common.cab" EmbedCab="no" CompressionLevel="high" />
 <?endif ?>
 
         <!-- Here comes the file/directory list. -->
