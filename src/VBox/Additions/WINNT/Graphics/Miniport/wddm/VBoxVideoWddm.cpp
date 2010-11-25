@@ -956,8 +956,8 @@ BOOLEAN DxgkDdiInterruptRoutine(
 #ifdef DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
              * still this allows to check that the host flags are correctly cleared after the ISR */
-            Assert(commonFromDeviceExt(pDevExt)->HostCtx.pfHostFlags);
-            uint32_t flags = commonFromDeviceExt(pDevExt)->HostCtx.pfHostFlags->u32HostFlags;
+            Assert(commonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags);
+            uint32_t flags = commonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
             Assert(flags == 0);
 #endif
         }

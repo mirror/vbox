@@ -949,12 +949,14 @@ Function .onSelChange
   SectionGetFlags ${SEC03} $0
   ${If} $0 == ${SF_SELECTED}
 
+!if $%VBOX_WITH_WDDM% == "1"
     ; If we're able to use the WDDM driver just use it instead of the replaced
     ; D3D components below
     ${If} $g_bCapWDDM == "true"
       StrCpy $g_bWithWDDM "true"
       Goto exit
     ${EndIf}
+!endif
 
     ${If} $g_bForceInstall != "true"
       ; Do not install on < XP

@@ -447,12 +447,14 @@ Function ${un}CheckForWDDMCapability
   ; Note: This is done early at startup of the installer, so
   ;       DetailPrint and friends won't work here!
 
-!if $%BUILD_TARGET_ARCH% == "x86"
+!if $%VBOX_WITH_WDDM% == "1"
+ !if $%BUILD_TARGET_ARCH% == "x86"
   ; If we're on a 32-bit Windows Vista / 7 we can use the WDDM driver
   ${If} $g_strWinVersion == "Vista"
   ${OrIf} $g_strWinVersion == "7"
     StrCpy $g_bCapWDDM "true"
   ${EndIf}
+ !endif
 !endif
 
 FunctionEnd
