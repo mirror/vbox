@@ -369,22 +369,22 @@
                              Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h". -->
                         <ProgId Id="VirtualBox.Shell.vbox" Description="VirtualBox Machine Description" Icon="[#vboxresdll]" IconIndex="-201">
                             <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="\"%1\"" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
                         <ProgId Id="VirtualBox.Shell.vbox-extpack" Description="VirtualBox Extension Pack" Icon="[#vboxresdll]" IconIndex="-202">
                             <Extension Id="vbox-extpack" ContentType="application/x-virtualbox-vbox-extpack">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="\"%1\"" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
                         <ProgId Id="VirtualBox.Shell.ovf" Description="Open Virtualization Format" Icon="[#vboxresdll]" IconIndex="-301">
                             <Extension Id="ovf" ContentType="application/x-virtualbox-ovf">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="\"%1\"" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
                         <ProgId Id="VirtualBox.Shell.ova" Description="Open Virtualization Format Archive" Icon="[#vboxresdll]" IconIndex="-302">
                             <Extension Id="ova" ContentType="application/x-virtualbox-ova">
-                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="\"%1\"" />
+                                <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
                             </Extension>
                         </ProgId>
                         <!-- The "Name" attribute must always be present. If the name is longer than 8.3 the additional "LongName"

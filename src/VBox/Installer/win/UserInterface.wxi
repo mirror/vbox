@@ -650,7 +650,7 @@
             <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes">
                 <Text>{\DlgVerdanaBold13}$(loc.ResumeDlg_Header)</Text>
             </Control>
-			<Control Id="Description" Type="Text" X="135" Y="70" Width="220" Height="30" Transparent="yes" NoPrefix="yes">
+            <Control Id="Description" Type="Text" X="135" Y="70" Width="220" Height="30" Transparent="yes" NoPrefix="yes">
                 <Text>$(loc.ResumeDlg_Desc)</Text>
             </Control>
             <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
