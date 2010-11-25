@@ -1173,6 +1173,16 @@
  */
 #define RT_ELEMENTS(aArray)                     ( sizeof(aArray) / sizeof((aArray)[0]) )
 
+/**
+ * Checks if the value is a power of two.
+ *
+ * @returns true if power of two, false if not.
+ * @param   uVal                The value to test.
+ * @remarks 0 is a power of two.
+ * @see     VERR_NOT_POWER_OF_TWO
+ */
+#define RT_IS_POWER_OF_TWO(uVal)                ( ((uVal) & ((uVal) - 1)) == 0)
+
 #ifdef RT_OS_OS2
 /* Undefine RT_MAX since there is an unfortunate clash with the max
    resource type define in os2.h. */
