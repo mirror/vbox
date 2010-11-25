@@ -6266,7 +6266,7 @@ bool Machine::checkForSpawnFailure()
     /* the process was already unexpectedly terminated, we just need to set an
      * error and finalize session spawning */
     rc = setError(E_FAIL,
-                  tr("The virtual machine '%ls' has terminated unexpectedly during startup"),
+                  tr("The virtual machine '%s' has terminated unexpectedly during startup"),
                   getName().c_str());
 #else
 
