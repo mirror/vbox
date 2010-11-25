@@ -282,14 +282,137 @@ int VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32Count,
 }
 
 
-static int vboxSetupAdapterInfoHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                     HGSMIOFFSET offBufferLocation,
-                                     uint32_t fCaps, uint32_t u32HeapOffset,
-                                     uint32_t u32HeapSize)
+/**
+ * Get the information needed to map the basic communication structures in
+ * device memory into our address space.
+ *
+ * @param  cbVRAM               how much video RAM is allocated to the device
+ * @param  poffVRAMBaseMapping  where to save the offset from the start of the
+ *                              device VRAM of the whole area to map 
+ * @param  pcbMapping           where to save the mapping size
+ * @param  poffGuestHeapMemory  where to save the offset into the mapped area
+ *                              of the guest heap backing memory
+ * @param  pcbGuestHeapMemory   where to save the size of the guest heap
+ *                              backing memory
+ * @param  poffHostFlags        where to save the offset into the mapped area
+ *                              of the host flags
+ */
+void vboxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
+                                 uint32_t *poffVRAMBaseMapping,
+                                 uint32_t *pcbMapping,
+                                 uint32_t *poffGuestHeapMemory,
+                                 uint32_t *pcbGuestHeapMemory,
+                                 uint32_t *poffHostFlags)
+{
+    AssertPtrReturnVoid(poffVRAMBaseMapping);
+    AssertPtrReturnVoid(pcbMapping);
+    AssertPtrReturnVoid(poffGuestHeapMemory);
+    AssertPtrReturnVoid(pcbGuestHeapMemory);
+    AssertPtrReturnVoid(poffHostFlags);
+    *poffVRAMBaseMapping = cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE;
+    *pcbMapping = VBVA_ADAPTER_INFORMATION_SIZE;
+    *poffGuestHeapMemory = 0;
+    *pcbGuestHeapMemory = VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS);
+    *poffHostFlags = VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS);
+}
+
+
+/**
+ * Set up the HGSMI guest-to-host command context.
+ * @returns iprt status value
+ * @param  pCtx                    the context to set up
+ * @param  pvGuestHeapMemory       a pointer to the mapped backing memory for
+ *                                 the guest heap
+ * @param  cbGuestHeapMemory       the size of the backing memory area
+ * @param  offVRAMGuestHeapMemory  the offset of the memory pointed to by
+ *                                 @a pvGuestHeapMemory within the video RAM
+ */
+int vboxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                               void *pvGuestHeapMemory,
+                               uint32_t cbGuestHeapMemory,
+                               uint32_t offVRAMGuestHeapMemory)
+{
+    /** @todo should we be using a fixed ISA port value here? */
+    pCtx->port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+    return HGSMIHeapSetup(&pCtx->heapCtx, pvGuestHeapMemory,
+                          cbGuestHeapMemory, offVRAMGuestHeapMemory,
+                          false /*fOffsetBased*/);
+}
+
+
+/**
+ * Get the information needed to map the area used by the host to send back
+ * requests.
+ *
+ * @param  pCtx                the guest context used to query the host
+ * @param  cbVRAM              how much video RAM is allocated to the device
+ * @param  offVRAMBaseMapping  the offset of the basic communication structures
+ *                             into the guest's VRAM
+ * @param  poffVRAMHostArea    where to store the offset of the host area into
+ *                             the guest's VRAM
+ * @param  pcbHostArea         where to store the size of the host area
+ */
+void vboxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                 uint32_t cbVRAM, uint32_t offVRAMBaseMapping,
+                                 uint32_t *poffVRAMHostArea,
+                                 uint32_t *pcbHostArea)
+{
+    uint32_t offVRAMHostArea = offVRAMBaseMapping, cbHostArea = 0;
+
+    AssertPtrReturnVoid(poffVRAMHostArea);
+    AssertPtrReturnVoid(pcbHostArea);
+    vboxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbHostArea);
+    if (cbHostArea != 0)
+    {
+        uint32_t cbHostAreaMaxSize = cbVRAM / 4;
+        /** @todo what is the idea of this? */
+        if (cbHostAreaMaxSize >= VBVA_ADAPTER_INFORMATION_SIZE)
+        {
+            cbHostAreaMaxSize -= VBVA_ADAPTER_INFORMATION_SIZE;
+        }
+        if (cbHostArea > cbHostAreaMaxSize)
+        {
+            cbHostArea = cbHostAreaMaxSize;
+        }
+        /* Round up to 4096 bytes. */
+        cbHostArea = (cbHostArea + 0xFFF) & ~0xFFF;
+        offVRAMHostArea = offVRAMBaseMapping - cbHostArea;
+    }
+
+    *pcbHostArea = cbHostArea;
+    *poffVRAMHostArea = offVRAMHostArea;
+    LogFunc(("offVRAMHostArea = 0x%08X, cbHostArea = 0x%08X\n",
+             offVRAMHostArea, cbHostArea));
+}
+
+
+/** Initialise the host context structure. */
+void vboxHGSMISetupHostContext(PHGSMIHOSTCOMMANDCONTEXT pCtx,
+                               void *pvBaseMapping, uint32_t offHostFlags,
+                               void *pvHostAreaMapping,
+                               uint32_t offVRAMHostArea, uint32_t cbHostArea)
+{
+    uint8_t *pu8HostFlags = ((uint8_t *)pvBaseMapping) + offHostFlags;
+    pCtx->pfHostFlags = (HGSMIHOSTFLAGS *)pu8HostFlags;
+    /** @todo should we really be using a fixed ISA port value here? */
+    pCtx->port        = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+    HGSMIAreaInitialize(&pCtx->areaCtx, pvHostAreaMapping, cbHostArea,
+                         offVRAMHostArea);
+}
+
+
+/**
+ * Mirror the information in the host context structure to the host.
+ */
+static int vboxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                    HGSMIOFFSET offBufferLocation,
+                                    uint32_t fCaps, uint32_t u32HeapOffset,
+                                    uint32_t u32HeapSize)
 {
     Log(("VBoxVideo::vboxSetupAdapterInfo\n"));
 
-    /* setup the flags first to ensure they are initialized by the time the host heap is ready */
+    /* setup the flags first to ensure they are initialized by the time the
+     * host heap is ready */
     int rc = vboxHGSMIBufferLocation(pCtx, offBufferLocation);
     AssertRC(rc);
     if (RT_SUCCESS(rc) && fCaps)
@@ -310,6 +433,23 @@ static int vboxSetupAdapterInfoHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 
 
 /**
+ * Returns the count of virtual monitors attached to the guest.  Returns
+ * 1 on failure.
+ */
+unsigned vboxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
+{
+    /* Query the configured number of displays. */
+    uint32_t cDisplays = 0;
+    vboxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
+    LogFunc(("cDisplays = %d\n", cDisplays));
+    if (cDisplays == 0 || cDisplays > VBOX_VIDEO_MAX_SCREENS)
+        /* Host reported some bad value. Continue in the 1 screen mode. */
+        cDisplays = 1;
+    return cDisplays;
+}
+
+
+/**
  * Helper function to register secondary displays (DualView). Note that this will not
  * be available on pre-XP versions, and some editions on XP will fail because they are
  * intentionally crippled.
@@ -325,7 +465,8 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
      * ones (failure == rc < 0) anyway.  This needs to be fully reviewed and
      * fixed. */
     int rc = VINF_SUCCESS;
-
+    uint32_t offVRAMBaseMapping, cbMapping, offGuestHeapMemory, cbGuestHeapMemory,
+             offHostFlags, offVRAMHostArea, cbHostArea;
     Log(("VBoxVideo::VBoxSetupDisplays: pCommon = %p\n", pCommon));
 
     memset(pCommon, 0, sizeof(*pCommon));
@@ -337,18 +478,15 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
     // VBoxVideoCmnMemZero(&pCommon->areaHostHeap, sizeof(HGSMIAREA));
     if (pCommon->bHGSMI)
     {
-        /** @note (michael) moved this here as it is done unconditionally in both
-         * driver branches.  Feel free to fix if that is ever changed. */
-        pCommon->hostCtx.port = (RTIOPORT)VGA_PORT_HGSMI_HOST;
-        pCommon->guestCtx.port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+        vboxHGSMIGetBaseMappingInfo(pCommon->cbVRAM, &offVRAMBaseMapping,
+                                    &cbMapping, &offGuestHeapMemory,
+                                    &cbGuestHeapMemory, &offHostFlags);
 
         /* Map the adapter information. It will be needed for HGSMI IO. */
         /** @todo all callers of VBoxMapAdapterMemory expect it to use iprt
          * error codes, but it doesn't. */
         rc = VBoxMapAdapterMemory (pCommon, &pCommon->pvAdapterInformation,
-                                   AdapterMemorySize - VBVA_ADAPTER_INFORMATION_SIZE,
-                                   VBVA_ADAPTER_INFORMATION_SIZE
-                                  );
+                                   offVRAMBaseMapping, cbMapping);
         if (RT_FAILURE(rc))
         {
             Log(("VBoxVideo::VBoxSetupDisplays: VBoxMapAdapterMemory pvAdapterInfoirrmation failed rc = %d\n",
@@ -358,12 +496,12 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
         }
         else
         {
-            /* Setup a HGSMI heap within the adapter information area. */
-            rc = HGSMIHeapSetup (&pCommon->guestCtx.heapCtx,
-                                 pCommon->pvAdapterInformation,
-                                 VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS),
-                                 pCommon->cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE,
-                                 false /*fOffsetBased*/);
+            /* Setup an HGSMI heap within the adapter information area. */
+            rc = vboxHGSMISetupGuestContext(&pCommon->guestCtx,
+                                            pCommon->pvAdapterInformation,
+                                            cbGuestHeapMemory,
+                                              offVRAMBaseMapping
+                                            + offGuestHeapMemory);
 
             if (RT_FAILURE(rc))
             {
@@ -372,42 +510,17 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
 
                 pCommon->bHGSMI = false;
             }
-            else
-            {
-                pCommon->hostCtx.pfHostFlags = (HGSMIHOSTFLAGS*)(((uint8_t*)pCommon->pvAdapterInformation)
-                                                            + VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS));
-            }
         }
     }
 
     /* Setup the host heap and the adapter memory. */
     if (pCommon->bHGSMI)
     {
-        /* The miniport heap is used for the host buffers. */
-        uint32_t cbMiniportHeap = 0;
-        vboxQueryConfHGSMI(&pCommon->guestCtx, VBOX_VBVA_CONF32_HOST_HEAP_SIZE,
-                           &cbMiniportHeap);
-
-        if (cbMiniportHeap != 0)
+        vboxHGSMIGetHostAreaMapping(&pCommon->guestCtx, pCommon->cbVRAM,
+                                    offVRAMBaseMapping, &offVRAMHostArea,
+                                    &cbHostArea);
+        if (cbHostArea)
         {
-            /* Do not allow too big heap. No more than 25% of VRAM is allowed. */
-            uint32_t cbMiniportHeapMaxSize = AdapterMemorySize / 4;
-
-            if (cbMiniportHeapMaxSize >= VBVA_ADAPTER_INFORMATION_SIZE)
-            {
-                cbMiniportHeapMaxSize -= VBVA_ADAPTER_INFORMATION_SIZE;
-            }
-
-            if (cbMiniportHeap > cbMiniportHeapMaxSize)
-            {
-                cbMiniportHeap = cbMiniportHeapMaxSize;
-            }
-
-            /* Round up to 4096 bytes. */
-            pCommon->cbMiniportHeap = (cbMiniportHeap + 0xFFF) & ~0xFFF;
-
-            Log(("VBoxVideo::VBoxSetupDisplays: cbMiniportHeap = 0x%08X, pCommon->cbMiniportHeap = 0x%08X, cbMiniportHeapMaxSize = 0x%08X\n",
-                     cbMiniportHeap, pCommon->cbMiniportHeap, cbMiniportHeapMaxSize));
 
             /* Map the heap region.
              *
@@ -415,12 +528,9 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
              *       The miniport driver is responsible for reading FIFO and notifying
              *       display drivers.
              */
+            pCommon->cbMiniportHeap = cbHostArea;
             rc = VBoxMapAdapterMemory (pCommon, &pCommon->pvMiniportHeap,
-                                       pCommon->cbVRAM
-                                       - VBVA_ADAPTER_INFORMATION_SIZE
-                                       - pCommon->cbMiniportHeap,
-                                       pCommon->cbMiniportHeap
-                                      );
+                                       offVRAMHostArea, cbHostArea);
             if (RT_FAILURE(rc))
             {
                 pCommon->pvMiniportHeap = NULL;
@@ -428,17 +538,11 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
                 pCommon->bHGSMI = false;
             }
             else
-            {
-                HGSMIOFFSET offBase = pCommon->cbVRAM
-                                      - VBVA_ADAPTER_INFORMATION_SIZE
-                                      - pCommon->cbMiniportHeap;
-
-                /* Init the host hap area. Buffers from the host will be placed there. */
-                HGSMIAreaInitialize (&pCommon->hostCtx.areaCtx,
-                                     pCommon->pvMiniportHeap,
-                                     pCommon->cbMiniportHeap,
-                                     offBase);
-            }
+                vboxHGSMISetupHostContext(&pCommon->hostCtx,
+                                          pCommon->pvAdapterInformation,
+                                          offHostFlags,
+                                          pCommon->pvMiniportHeap,
+                                          offVRAMHostArea, cbHostArea);
         }
         else
         {
@@ -448,41 +552,24 @@ void VBoxSetupDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon,
         }
     }
 
-    /* Check whether the guest supports multimonitors. */
-    if (pCommon->bHGSMI)
-    {
-        /* Query the configured number of displays. */
-        uint32_t cDisplays = 0;
-        vboxQueryConfHGSMI(&pCommon->guestCtx, VBOX_VBVA_CONF32_MONITOR_COUNT,
-                           &cDisplays);
-
-        Log(("VBoxVideo::VBoxSetupDisplays: cDisplays = %d\n",
-                 cDisplays));
-
-        if (cDisplays == 0 || cDisplays > VBOX_VIDEO_MAX_SCREENS)
-        {
-            /* Host reported some bad value. Continue in the 1 screen mode. */
-            cDisplays = 1;
-        }
-        pCommon->cDisplays = cDisplays;
-    }
-
     if (pCommon->bHGSMI)
     {
         /* Setup the information for the host. */
-        rc = vboxSetupAdapterInfoHGSMI(&pCommon->guestCtx,
-                                       pCommon->cbVRAM - sizeof(HGSMIHOSTFLAGS),
-                                       fCaps,
-                                         pCommon->cbVRAM
-                                       - pCommon->cbMiniportHeap
-                                       - VBVA_ADAPTER_INFORMATION_SIZE,
-                                       pCommon->cbMiniportHeap);
+        rc = vboxHGSMISendHostCtxInfo(&pCommon->guestCtx,
+                                      offVRAMBaseMapping + offHostFlags,
+                                      fCaps, offVRAMHostArea,
+                                      pCommon->cbMiniportHeap);
 
         if (RT_FAILURE(rc))
         {
             pCommon->bHGSMI = false;
         }
     }
+
+    /* Check whether the guest supports multimonitors. */
+    if (pCommon->bHGSMI)
+        /* Query the configured number of displays. */
+        pCommon->cDisplays = vboxHGSMIGetMonitorCount(&pCommon->guestCtx);
 
     if (!pCommon->bHGSMI)
         VBoxFreeDisplaysHGSMI(pCommon);
