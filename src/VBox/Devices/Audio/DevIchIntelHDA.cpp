@@ -1344,6 +1344,14 @@ static void fetch_bd(INTELHDLinkState *pState, PHDABDLEDESC pBdle, uint64_t u64B
 static inline uint32_t hdaCalculateTransferBufferLength(PHDABDLEDESC pBdle, uint32_t u32SoundBackendBufferBytesAvail, uint32_t u32Fifos, uint32_t u32CblLimit)
 {
     uint32_t cb2Copy;
+    if (u32SoundBackendBufferBytesAvail <= u32Fifos + 1)
+    {
+        /* Some platform offers buffer not multiplied on SDnFIFOS+1 value
+         * so to avoid situation when the rest of the backend buffer is less
+         * of SDnFIFOW value, we'll wait for next iteration with fresh buffer.
+         */
+        return 0;
+    }
     /*
      * Amounts of bytes depends on current position in buffer (u32BdleCviLen-u32BdleCviPos)
      */
@@ -1574,6 +1582,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         *pu32Sts |= HDA_REG_FIELD_FLAG_MASK(SDSTS, FIFORDY);
         Assert((avail >= 0 && (u32Cbl >= (*pu32Lpib)))); /* sanity */
         uint32_t u32CblLimit = u32Cbl - (*pu32Lpib);
+        Assert((u32CblLimit > hdaFifoWToSz(pState, u8Strm)));
         Log(("hda: CBL=%d, LPIB=%d\n", u32Cbl, *pu32Lpib));
         switch (src)
         {
