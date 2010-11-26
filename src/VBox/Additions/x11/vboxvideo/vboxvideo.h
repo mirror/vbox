@@ -245,9 +245,5 @@ extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
 extern void VBOXDRIUpdateStride(ScrnInfoPtr pScrn, VBOXPtr pVBox);
 extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
 
-/* Xinerama stuff */
-#define VBOXRAMA_MAJOR_VERSION 1
-#define VBOXRAMA_MINOR_VERSION 0
-
 #endif /* _VBOXVIDEO_H_ */
 
