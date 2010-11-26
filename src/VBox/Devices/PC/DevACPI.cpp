@@ -1653,7 +1653,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 
                 case SYSTEM_INFO_INDEX_PCI_BASE:
                     /** @todo: couldn't MCFG be in 64-bit range? */
-                    Assert(s->u64PciConfigMMioAddress< 0xffffffff);
+                    Assert(s->u64PciConfigMMioAddress < 0xffffffff);
                     *pu32 = (uint32_t)s->u64PciConfigMMioAddress;
                     break;
 
@@ -2211,8 +2211,8 @@ static int acpiPlantTables(ACPIState *s)
     RTGCPHYS32 GCPhysCur, GCPhysRsdt, GCPhysXsdt, GCPhysFadtAcpi1, GCPhysFadtAcpi2, GCPhysFacs, GCPhysDsdt;
     RTGCPHYS32 GCPhysHpet = 0, GCPhysApic = 0, GCPhysSsdt = 0, GCPhysMcfg = 0;
     uint32_t   addend = 0;
-    RTGCPHYS32 aGCPhysRsdt[4];
-    RTGCPHYS32 aGCPhysXsdt[4];
+    RTGCPHYS32 aGCPhysRsdt[8];
+    RTGCPHYS32 aGCPhysXsdt[8];
     uint32_t   cAddr, iMadt = 0, iHpet = 0, iSsdt = 0, iMcfg = 0;
     size_t     cbRsdt = sizeof(ACPITBLHEADER);
     size_t     cbXsdt = sizeof(ACPITBLHEADER);
@@ -2228,6 +2228,9 @@ static int acpiPlantTables(ACPIState *s)
         iMcfg = cAddr++;        /* MCFG */
 
     iSsdt = cAddr++;            /* SSDT */
+
+    Assert(cAddr < RT_ELEMENTS(aGCPhysRsdt));
+    Assert(cAddr < RT_ELEMENTS(aGCPhysXsdt));
 
     cbRsdt += cAddr*sizeof(uint32_t);  /* each entry: 32 bits phys. address. */
     cbXsdt += cAddr*sizeof(uint64_t);  /* each entry: 64 bits phys. address. */
