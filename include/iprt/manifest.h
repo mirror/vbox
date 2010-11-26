@@ -95,19 +95,30 @@ RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst);
 /**
  * Compares two manifests for equality.
  *
- * @returns true if equals, false if not.
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if equal.
+ * @retval  VERR_NOT_EQUAL if not equal.
+ *
  * @param   hManifest1          The first manifest.
  * @param   hManifest2          The second manifest.
  * @param   papszIgnoreEntries  Entries to ignore.  Ends with a NULL entry.
  * @param   papszIgnoreAttrs    Attributes to ignore.  Ends with a NULL entry.
+ * @param   pszEntry            Where to store the name of the mismatching
+ *                              entry, or as much of the name as there is room
+ *                              for.  This is always set.  Optional.
+ * @param   cbEntry             The size of the buffer pointed to by @a
+ *                              pszEntry.
  */
 RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, const char * const *papszIgnoreEntries,
-                               const char * const *papszIgnoreAttr);
+                               const char * const *papszIgnoreAttr, char *pszEntry, size_t cbEntry);
 
 /**
  * Compares two manifests for equality.
  *
- * @returns true if equals, false if not.
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if equal.
+ * @retval  VERR_NOT_EQUAL if not equal.
+ *
  * @param   hManifest1          The first manifest.
  * @param   hManifest2          The second manifest.
  */

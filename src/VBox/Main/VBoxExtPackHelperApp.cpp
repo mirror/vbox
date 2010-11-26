@@ -235,6 +235,64 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
 
 
 /**
+ * Verifies the manifest and its signature.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   hOurManifest    The manifest we compiled.
+ * @param   hManifestFile   The manifest file in the extension pack.
+ * @param   hSignatureFile  The manifest signature file.
+ */
+static RTEXITCODE VerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSFILE hManifestFile, RTVFSFILE hSignatureFile)
+{
+    /*
+     * Read the manifest from the extension pack.
+     */
+    RTMANIFEST hTheirManifest;
+    int rc = RTManifestCreate(0 /*fFlags*/, &hTheirManifest);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestCreate failed: %Rrc", rc);
+
+    RTEXITCODE    rcExit;
+    RTVFSIOSTREAM hVfsIos = RTVfsFileToIoStream(hManifestFile);
+    rc = RTManifestReadStandard(hTheirManifest, hVfsIos);
+    RTVfsIoStrmRelease(hVfsIos);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Compare the manifests.
+         */
+        static const char *s_apszIgnoreEntries[] =
+        {
+            VBOX_EXTPACK_MANIFEST_NAME,
+            VBOX_EXTPACK_SIGNATURE_NAME,
+            "./" VBOX_EXTPACK_MANIFEST_NAME,
+            "./" VBOX_EXTPACK_SIGNATURE_NAME,
+            NULL
+        };
+        char szEntry[RTPATH_MAX];
+        rc = RTManifestEqualsEx(hOurManifest, hTheirManifest, &s_apszIgnoreEntries[0], NULL, szEntry, sizeof(szEntry));
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Validate the manifest file signature.
+             */
+            /** @todo implement signature stuff */
+
+        }
+        else if (rc == VERR_NOT_EQUAL && szEntry[0])
+            RTMsgError("Manifest mismatch: '%s'", szEntry);
+        else
+            RTMsgError("RTManifestEqualsEx failed: %Rrc", rc);
+    }
+    else
+        RTMsgError("Error parsing '%s': %Rrc", VBOX_EXTPACK_MANIFEST_NAME);
+
+    RTManifestRelease(hTheirManifest);
+    return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+
+/**
  * Validates a name in an extension pack.
  *
  * We restrict the charset to try make sure the extension pack can be unpacked
@@ -439,16 +497,16 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTar
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-    RTMANIFEST hManifest;
-    int rc = RTManifestCreate(0 /*fFlags*/, &hManifest);
+    RTMANIFEST hOurManifest;
+    int rc = RTManifestCreate(0 /*fFlags*/, &hOurManifest);
     if (RT_SUCCESS(rc))
     {
         /*
-         * Process the tarball.
+         * Process the tarball (would be nice to move this to a function).
          */
         RTVFSFILE hXmlFile      = NIL_RTVFSFILE;
         RTVFSFILE hManifestFile = NIL_RTVFSFILE;
-        RTVFSFILE hSignFile     = NIL_RTVFSFILE;
+        RTVFSFILE hSignatureFile= NIL_RTVFSFILE;
         for (;;)
         {
             /*
@@ -481,7 +539,7 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTar
                 else if (!strcmp(pszAdjName, VBOX_EXTPACK_MANIFEST_NAME))
                     phVfsFile = &hManifestFile;
                 else if (!strcmp(pszAdjName, VBOX_EXTPACK_SIGNATURE_NAME))
-                    phVfsFile = &hSignFile;
+                    phVfsFile = &hSignatureFile;
                 else
                     phVfsFile = NULL;
                 if (phVfsFile)
@@ -541,7 +599,7 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTar
                     || enmType == RTVFSOBJTYPE_IO_STREAM))
             {
                 RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                rc = RTManifestEntryAddIoStream(hManifest, hVfsIos, pszName, RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256);
+                rc = RTManifestEntryAddIoStream(hOurManifest, hVfsIos, pszName, RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256);
                 if (RT_FAILURE(rc))
                     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEntryAddIoStream failed on '%s': %Rrc", pszName, rc);
                 RTVfsIoStrmRelease(hVfsIos);
@@ -566,13 +624,21 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTar
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Mandator file '%s' is missing", VBOX_EXTPACK_DESCRIPTION_NAME);
             if (hManifestFile == NIL_RTVFSFILE)
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Mandator file '%s' is missing", VBOX_EXTPACK_MANIFEST_NAME);
-            if (hSignFile == NIL_RTVFSFILE)
+            if (hSignatureFile == NIL_RTVFSFILE)
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Mandator file '%s' is missing", VBOX_EXTPACK_SIGNATURE_NAME);
         }
 
+        /*
+         * Check the manifest and it's signature.
+         */
+        if (rcExit == RTEXITCODE_SUCCESS)
+            rcExit = VerifyManifestAndSignature(hOurManifest, hManifestFile, hSignatureFile);
 
+        RTManifestRelease(hOurManifest);   /** @todo return this and use it during unpacking */
 
-        RTManifestRelease(hManifest);   /** @todo return this and use it during unpacking */
+        RTVfsFileRelease(hXmlFile);
+        RTVfsFileRelease(hManifestFile);
+        RTVfsFileRelease(hSignatureFile);
     }
     RTVfsFsStrmRelease(hTarFss);
 
