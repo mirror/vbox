@@ -629,6 +629,7 @@ VBoxC_SOURCES = \
 	RemoteUSBDeviceImpl.cpp \
 	VirtualBoxBase.cpp \
 	VirtualBoxErrorInfoImpl.cpp \
+	VirtualBoxClientImpl.cpp \
 	ProgressImpl.cpp \
 	SharedFolderImpl.cpp \
 	SessionImpl.cpp \
