@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="installation">
   <title>Installation details</title>
 
@@ -72,9 +72,9 @@
 
             <glossdef>
               <para>This package contains Python scripting support for the
-              VirtualBox API (see <xref linkend="VirtualBoxAPI" />). To get this
-              feature installed an already working Python installation on the
-              system is required.</para>
+              VirtualBox API (see <xref linkend="VirtualBoxAPI" />). To get
+              this feature installed an already working Python installation on
+              the system is required.</para>
             </glossdef>
           </glossentry>
         </glosslist></para>
@@ -96,19 +96,19 @@
       on the extracted .MSI files. This will install VirtualBox only for the
       current user.</para>
 
-      <para>To not install certain features of VirtualBox there is an <computeroutput>ADDLOCAL</computeroutput>
-      parameter that can be specified additionally to explicitly name the features
-      to be installed. The following features are available:
-
-        <glosslist>
+      <para>To not install certain features of VirtualBox there is an
+      <computeroutput>ADDLOCAL</computeroutput> parameter that can be
+      specified additionally to explicitly name the features to be installed.
+      The following features are available: <glosslist>
           <glossentry>
             <glossterm>VBoxApplication</glossterm>
 
             <glossdef>
-              <para>Main binaries of VirtualBox.
-                <note>This feature never can be absent,
-                since it contains the minimum set of files to have working VirtualBox installation!</note>
-              </para>
+              <para>Main binaries of VirtualBox.<note>
+                  <para>This feature never can be absent, since it contains
+                  the minimum set of files to have working VirtualBox
+                  installation!</para>
+                </note></para>
             </glossdef>
           </glossentry>
 
@@ -124,7 +124,8 @@
             <glossterm>VBoxNetwork</glossterm>
 
             <glossdef>
-              <para>All networking support; includes the VBoxNetworkFlt and VBoxNetworkAdp features (see below).</para>
+              <para>All networking support; includes the VBoxNetworkFlt and
+              VBoxNetworkAdp features (see below).</para>
             </glossdef>
           </glossentry>
 
@@ -151,12 +152,9 @@
               <para>Python support.</para>
             </glossdef>
           </glossentry>
-        </glosslist>
-
-      To only install USB support along with the main binaries, do a:
-      <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
+        </glosslist> To only install USB support along with the main binaries,
+      do a: <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
       or <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ADDLOCAL=VBoxApplication,VBoxUSB</screen></para>
-
     </sect2>
 
     <sect2>
@@ -401,9 +399,9 @@ Then paxctl -pemrxs VBoxHeadless to disable all protections. TODO: Figure out wh
         <title>Installing VirtualBox from a Debian/Ubuntu package</title>
 
         <para>First, download the appropriate package for your distribution.
-        The following examples assume that you are installing to a 32-bit Ubuntu
-        Karmic system. Use <computeroutput>dpkg</computeroutput> to install the
-        Debian package:</para>
+        The following examples assume that you are installing to a 32-bit
+        Ubuntu Karmic system. Use <computeroutput>dpkg</computeroutput> to
+        install the Debian package:</para>
 
         <screen>sudo dpkg -i VirtualBox-3.2_$VBOX_VERSION_STRING_Ubuntu_karmic_i386.deb</screen>
 
@@ -652,30 +650,34 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
         <para>These default settings can be applied with <screen>debconf-set-selections vboxconf</screen>
         prior to the installation of the VirtualBox Debian package.</para>
 
-        <para>In addition there are some common configuration options that can be set prior to
-        the installation, described in <xref linkend="linux_install_opts" />.</para>
+        <para>In addition there are some common configuration options that can
+        be set prior to the installation, described in <xref
+        linkend="linux_install_opts" />.</para>
       </sect3>
 
       <sect3>
         <title>Automatic installation of .rpm packages</title>
 
         <para>The .rpm format does not provide a configuration system
-        comparable to the debconf system. See <xref linkend="linux_install_opts" />
-        for how to set some common installation options provided by VirtualBox.</para>
+        comparable to the debconf system. See <xref
+        linkend="linux_install_opts" /> for how to set some common
+        installation options provided by VirtualBox.</para>
       </sect3>
 
       <sect3>
         <title id="linux_install_opts">Automatic installation options</title>
-        <para>To configure the installation process of our .deb and .rpm packages, a file
-        <computeroutput>/etc/default/virtualbox</computeroutput> is interpreted.
-        The automatic generation of the udev rule can be prevented by the following setting:
-        <screen>INSTALL_NO_UDEV=1</screen> The creation of the group vboxusers can be prevented
-        by <screen>INSTALL_NO_GROUP=1</screen> If the line <screen>INSTALL_NO_VBOXDRV=1</screen>
-        is specified, the package installer will not try to build the
-        <computeroutput>vboxdrv</computeroutput> kernel module if no module according to the
-        current kernel was found.</para>
-      </sect3>
 
+        <para>To configure the installation process of our .deb and .rpm
+        packages, a file
+        <computeroutput>/etc/default/virtualbox</computeroutput> is
+        interpreted. The automatic generation of the udev rule can be
+        prevented by the following setting: <screen>INSTALL_NO_UDEV=1</screen>
+        The creation of the group vboxusers can be prevented by <screen>INSTALL_NO_GROUP=1</screen>
+        If the line <screen>INSTALL_NO_VBOXDRV=1</screen> is specified, the
+        package installer will not try to build the
+        <computeroutput>vboxdrv</computeroutput> kernel module if no module
+        according to the current kernel was found.</para>
+      </sect3>
     </sect2>
 
     <sect2 id="startingvboxonlinux">
