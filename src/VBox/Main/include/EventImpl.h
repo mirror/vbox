@@ -19,7 +19,7 @@
 #define ____H_EVENTIMPL
 
 #include "VirtualBoxBase.h"
-#include <iprt/asm.h>
+
 
 class ATL_NO_VTABLE VBoxEvent :
     public VirtualBoxBase,
@@ -45,13 +45,13 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable);
+    HRESULT init(IEventSource *aSource, VBoxEventType_T aType, BOOL aWaitable);
     void uninit();
 
     // IEvent properties
-    STDMETHOD(COMGETTER(Type)) (VBoxEventType_T *aType);
-    STDMETHOD(COMGETTER(Source)) (IEventSource * *aSource);
-    STDMETHOD(COMGETTER(Waitable)) (BOOL *aWaitable);
+    STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType);
+    STDMETHOD(COMGETTER(Source))(IEventSource * *aSource);
+    STDMETHOD(COMGETTER(Waitable))(BOOL *aWaitable);
 
     // IEvent methods
     STDMETHOD(SetProcessed)();
@@ -88,19 +88,19 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (IEventSource *aSource, VBoxEventType_T aType);
+    HRESULT init(IEventSource *aSource, VBoxEventType_T aType);
     void uninit();
 
     // IEvent properties
-    STDMETHOD(COMGETTER(Type)) (VBoxEventType_T *aType)
+    STDMETHOD(COMGETTER(Type))(VBoxEventType_T *aType)
     {
         return VBoxEvent::COMGETTER(Type)(aType);
     }
-    STDMETHOD(COMGETTER(Source)) (IEventSource * *aSource)
+    STDMETHOD(COMGETTER(Source))(IEventSource * *aSource)
     {
         return VBoxEvent::COMGETTER(Source)(aSource);
     }
-    STDMETHOD(COMGETTER(Waitable)) (BOOL *aWaitable)
+    STDMETHOD(COMGETTER(Waitable))(BOOL *aWaitable)
     {
         return VBoxEvent::COMGETTER(Waitable)(aWaitable);
     }
@@ -144,31 +144,27 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR (EventSource)
+    DECLARE_EMPTY_CTOR_DTOR(EventSource)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (IUnknown * aParent);
+    HRESULT init(IUnknown *aParent);
     void uninit();
 
     // IEventSource methods
-    STDMETHOD(CreateListener)(IEventListener ** aListener);
-    STDMETHOD(CreateAggregator)(ComSafeArrayIn(IEventSource*, aSubordinates),
-                                IEventSource **               aAggregator);
-    STDMETHOD(RegisterListener)(IEventListener * aListener,
+    STDMETHOD(CreateListener)(IEventListener **aListener);
+    STDMETHOD(CreateAggregator)(ComSafeArrayIn(IEventSource *, aSubordinates),
+                                IEventSource **aAggregator);
+    STDMETHOD(RegisterListener)(IEventListener *aListener,
                                 ComSafeArrayIn(VBoxEventType_T, aInterested),
-                                BOOL             aActive);
-    STDMETHOD(UnregisterListener)(IEventListener * aListener);
-    STDMETHOD(FireEvent)(IEvent * aEvent,
-                         LONG     aTimeout,
-                         BOOL     *aProcessed);
-    STDMETHOD(GetEvent)(IEventListener * aListener,
-                        LONG      aTimeout,
-                        IEvent  * *aEvent);
-    STDMETHOD(EventProcessed)(IEventListener * aListener,
-                              IEvent *         aEvent);
+                                BOOL aActive);
+    STDMETHOD(UnregisterListener)(IEventListener *aListener);
+    STDMETHOD(FireEvent)(IEvent *aEvent, LONG aTimeout, BOOL *aProcessed);
+    STDMETHOD(GetEvent)(IEventListener *aListener, LONG aTimeout,
+                        IEvent **aEvent);
+    STDMETHOD(EventProcessed)(IEventListener *aListener, IEvent *aEvent);
 
 private:
     struct Data;
@@ -181,52 +177,52 @@ private:
 class VBoxEventDesc
 {
 public:
- VBoxEventDesc()
- : mEvent(0), mEventSource(0)
- {}
- ~VBoxEventDesc()
- {}
+    VBoxEventDesc() : mEvent(0), mEventSource(0)
+    {}
 
- /**
-  * This function to be used with some care, as arguments order must match attribute declaration order
-  * event class and its superclasses up to IEvent. If unsure, consult implementation in
-  * generated VBoxEvents.cpp.
-  */
- HRESULT init(IEventSource* aSource, VBoxEventType_T aType, ...);
+    ~VBoxEventDesc()
+    {}
 
- /**
-  * Function similar to the above, but assumes that init() for this type already called once,
-  * so no need to allocate memory, and only reinit fields. Assumes event is subtype of
-  * IReusableEvent, asserts otherwise.
-  */
- HRESULT reinit(VBoxEventType_T aType, ...);
+    /**
+     * This function to be used with some care, as arguments order must match
+     * attribute declaration order event class and its superclasses up to
+     * IEvent. If unsure, consult implementation in generated VBoxEvents.cpp.
+     */
+    HRESULT init(IEventSource* aSource, VBoxEventType_T aType, ...);
 
- void uninit()
- {
-     mEvent.setNull();
-     mEventSource.setNull();
- }
+    /**
+    * Function similar to the above, but assumes that init() for this type
+    * already called once, so no need to allocate memory, and only reinit
+    * fields. Assumes event is subtype of IReusableEvent, asserts otherwise.
+    */
+    HRESULT reinit(VBoxEventType_T aType, ...);
 
- void getEvent(IEvent ** aEvent)
- {
-     mEvent.queryInterfaceTo(aEvent);
- }
+    void uninit()
+    {
+        mEvent.setNull();
+        mEventSource.setNull();
+    }
 
- BOOL fire(LONG aTimeout)
- {
-     if (mEventSource && mEvent)
-     {
-         BOOL fDelivered = FALSE;
-         int rc = mEventSource->FireEvent(mEvent, aTimeout, &fDelivered);
-         AssertRCReturn(rc, FALSE);
-         return fDelivered;
-     }
-     return FALSE;
- }
+    void getEvent(IEvent **aEvent)
+    {
+        mEvent.queryInterfaceTo(aEvent);
+    }
+
+    BOOL fire(LONG aTimeout)
+    {
+        if (mEventSource && mEvent)
+        {
+            BOOL fDelivered = FALSE;
+            int rc = mEventSource->FireEvent(mEvent, aTimeout, &fDelivered);
+            AssertRCReturn(rc, FALSE);
+            return fDelivered;
+        }
+        return FALSE;
+    }
 
 private:
- ComPtr<IEvent>        mEvent;
- ComPtr<IEventSource>  mEventSource;
+    ComPtr<IEvent>          mEvent;
+    ComPtr<IEventSource>    mEventSource;
 };
 
 #endif // ____H_EVENTIMPL
