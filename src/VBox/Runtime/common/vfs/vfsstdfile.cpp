@@ -163,7 +163,7 @@ static DECLCALLBACK(int) rtVfsStdFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
                 rc = RTFileReadAt(pThis->hFile, off, pvSeg, cbSeg, pcbRead ? &cbReadSeg : NULL);
             if (RT_FAILURE(rc))
                 break;
-            if (off < 0)
+            if (off >= 0)
                 off += cbReadSeg;
             cbRead  += cbReadSeg;
             if ((pcbRead && cbReadSeg != cbSeg) || rc != VINF_SUCCESS)
