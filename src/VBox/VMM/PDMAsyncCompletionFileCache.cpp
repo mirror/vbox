@@ -646,9 +646,9 @@ static void pdmacFileCacheEndpointCommit(PPDMACFILEENDPOINTCACHE pEndpointCache)
 
     if (!RTListIsEmpty(&ListDirtyNotCommitted))
     {
-        PPDMACFILECACHEENTRY pEntry = RTListNodeGetFirst(&ListDirtyNotCommitted,
-                                                         PDMACFILECACHEENTRY,
-                                                         NodeNotCommitted);
+        PPDMACFILECACHEENTRY pEntry = RTListGetFirst(&ListDirtyNotCommitted,
+                                                     PDMACFILECACHEENTRY,
+                                                     NodeNotCommitted);
 
         while (!RTListNodeIsLast(&ListDirtyNotCommitted, &pEntry->NodeNotCommitted))
         {
@@ -689,9 +689,9 @@ static void pdmacFileCacheCommitDirtyEntries(PPDMACFILECACHEGLOBAL pCache)
         pdmacFileCacheLockEnter(pCache);
         Assert(!RTListIsEmpty(&pCache->ListEndpoints));
 
-        PPDMACFILEENDPOINTCACHE pEndpointCache = RTListNodeGetFirst(&pCache->ListEndpoints,
-                                                                    PDMACFILEENDPOINTCACHE,
-                                                                    NodeCacheEndpoint);
+        PPDMACFILEENDPOINTCACHE pEndpointCache = RTListGetFirst(&pCache->ListEndpoints,
+                                                                PDMACFILEENDPOINTCACHE,
+                                                                NodeCacheEndpoint);
         AssertPtr(pEndpointCache);
 
         while (!RTListNodeIsLast(&pCache->ListEndpoints, &pEndpointCache->NodeCacheEndpoint))

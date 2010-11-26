@@ -1226,7 +1226,7 @@ static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
         do
         {
             int rc;
-            PVDIOCTXDEFERRED pDeferred = RTListNodeGetFirst(&ListTmp, VDIOCTXDEFERRED, NodeDeferred);
+            PVDIOCTXDEFERRED pDeferred = RTListGetFirst(&ListTmp, VDIOCTXDEFERRED, NodeDeferred);
             PVDIOCTX pIoCtxWait = pDeferred->pIoCtx;
 
             AssertPtr(pIoCtxWait);
@@ -2523,7 +2523,7 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                     /* Process the list. */
                     do
                     {
-                        PVDIOCTXDEFERRED pDeferred = RTListNodeGetFirst(&ListTmp, VDIOCTXDEFERRED, NodeDeferred);
+                        PVDIOCTXDEFERRED pDeferred = RTListGetFirst(&ListTmp, VDIOCTXDEFERRED, NodeDeferred);
                         PVDIOCTX pIoCtxWait = pDeferred->pIoCtx;
 
                         AssertPtr(pIoCtxWait);
@@ -2657,7 +2657,7 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
     {
         int rc = VINF_SUCCESS;
         bool fContinue = true;
-        PVDIOCTXDEFERRED pDeferred = RTListNodeGetFirst(&ListIoCtxWaiting, VDIOCTXDEFERRED, NodeDeferred);
+        PVDIOCTXDEFERRED pDeferred = RTListGetFirst(&ListIoCtxWaiting, VDIOCTXDEFERRED, NodeDeferred);
         PVDIOCTX pIoCtx = pDeferred->pIoCtx;
         RTListNodeRemove(&pDeferred->NodeDeferred);
 

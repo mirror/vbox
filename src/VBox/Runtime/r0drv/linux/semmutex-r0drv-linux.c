@@ -354,7 +354,7 @@ RTDECL(int) RTSemMutexRelease(RTSEMMUTEX hMtx)
             /* anyone to wake up? */
             if (!RTListIsEmpty(&pThis->WaiterList))
             {
-                PRTSEMMUTEXLNXWAITER pWaiter = RTListNodeGetFirst(&pThis->WaiterList, RTSEMMUTEXLNXWAITER, ListEntry);
+                PRTSEMMUTEXLNXWAITER pWaiter = RTListGetFirst(&pThis->WaiterList, RTSEMMUTEXLNXWAITER, ListEntry);
                 pWaiter->enmReason = RTSEMMUTEXLNXWAITER_WAKEUP;
                 wake_up_process(pWaiter->pTask);
             }

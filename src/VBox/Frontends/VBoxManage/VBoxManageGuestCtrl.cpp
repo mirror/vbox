@@ -909,7 +909,7 @@ static void ctrlCopyDestroy(PRTLISTNODE pList)
     AssertPtr(pList);
 
     /* Destroy file list. */
-    PDIRECTORYENTRY pNode = RTListNodeGetFirst(pList, DIRECTORYENTRY, Node);
+    PDIRECTORYENTRY pNode = RTListGetFirst(pList, DIRECTORYENTRY, Node);
     while (pNode)
     {
         PDIRECTORYENTRY pNext = RTListNodeGetNext(&pNode->Node, DIRECTORYENTRY, Node);

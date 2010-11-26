@@ -1765,7 +1765,7 @@ static VOID vboxWddmSwapchainDestroy(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP
 
 static VOID vboxWddmSwapchainDestroyAll(PVBOXWDDMDISP_DEVICE pDevice)
 {
-    PVBOXWDDMDISP_SWAPCHAIN pCur = RTListNodeGetFirst(&pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
+    PVBOXWDDMDISP_SWAPCHAIN pCur = RTListGetFirst(&pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
     while (pCur)
     {
         PVBOXWDDMDISP_SWAPCHAIN pNext = NULL;
@@ -2028,7 +2028,7 @@ static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE 
     if (!pSwapchain)
     {
         /* first search for the swapchain the alloc might be added to */
-        PVBOXWDDMDISP_SWAPCHAIN pCur = RTListNodeGetFirst(&pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
+        PVBOXWDDMDISP_SWAPCHAIN pCur = RTListGetFirst(&pDevice->SwapchainList, VBOXWDDMDISP_SWAPCHAIN, ListEntry);
         while (pCur)
         {
             PVBOXWDDMDISP_RENDERTGT pRt = vboxWddmSwapchainGetBb(pCur);
@@ -6041,7 +6041,7 @@ static HRESULT vboxWddmNotifySharedChange(PVBOXWDDMDISP_DEVICE pDevice)
 
         EnterCriticalSection(&pDevice->DirtyAllocListLock);
 
-        PVBOXWDDMDISP_ALLOCATION pAlloc = RTListNodeGetFirst(&pDevice->DirtyAllocList, VBOXWDDMDISP_ALLOCATION, DirtyAllocListEntry);
+        PVBOXWDDMDISP_ALLOCATION pAlloc = RTListGetFirst(&pDevice->DirtyAllocList, VBOXWDDMDISP_ALLOCATION, DirtyAllocListEntry);
         if (pAlloc)
         {
             HRESULT tmpHr = vboxWddmNSCAddAlloc(&NscAdd, pAlloc, TRUE);

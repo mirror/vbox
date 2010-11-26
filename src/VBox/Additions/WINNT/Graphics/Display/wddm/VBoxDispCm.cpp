@@ -179,7 +179,7 @@ static HRESULT vboxDispCmSessionCmdQueryData(PVBOXDISPCM_SESSION pSession, PVBOX
     /* lock to ensure the context is not destroyed */
     EnterCriticalSection(&pSession->CritSect);
     /* use any context for identifying the kernel CmSession. We're using the first one */
-    PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
+    PVBOXWDDMDISP_CONTEXT pContext = RTListGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
     if (pContext)
     {
         PVBOXWDDMDISP_DEVICE pDevice = pContext->pDevice;
@@ -265,7 +265,7 @@ void vboxDispCmLog(LPCSTR pszMsg)
 
     EnterCriticalSection(&pSession->CritSect);
     /* use any context for identifying the kernel CmSession. We're using the first one */
-    PVBOXWDDMDISP_CONTEXT pContext = RTListNodeGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
+    PVBOXWDDMDISP_CONTEXT pContext = RTListGetFirst(&pSession->CtxList, VBOXWDDMDISP_CONTEXT, ListNode);
     Assert(pContext);
     if (pContext)
     {
