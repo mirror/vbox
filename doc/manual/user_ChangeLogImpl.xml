@@ -124,6 +124,14 @@
       </listitem>
 
       <listitem>
+        <para>VRDP: fixed rare crash in multimonitor configuration</para>
+      </listitem>
+
+      <listitem>
+        <para>Display: fixed occasional guest resize crash</para>
+      </listitem>
+
+      <listitem>
         <para>SATA: allow to attach CD/DVD-ROM drives including passthrough
           (bug #7058)</para>
       </listitem>
