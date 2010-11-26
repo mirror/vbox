@@ -44,7 +44,7 @@
  */
 static void rtIsoFsDestroyPathCache(PRTISOFSFILE pFile)
 {
-    PRTISOFSPATHTABLEENTRY pNode = RTListNodeGetFirst(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
+    PRTISOFSPATHTABLEENTRY pNode = RTListGetFirst(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
     while (pNode)
     {
         PRTISOFSPATHTABLEENTRY pNext = RTListNodeGetNext(&pNode->Node, RTISOFSPATHTABLEENTRY, Node);
@@ -119,7 +119,7 @@ static int rtIsoFsGetParentPathSub(PRTLISTNODE pList, PRTISOFSPATHTABLEENTRY pNo
     {
         uint16_t idx = 1;
         /* Get the parent of our current node (pNode) */
-        PRTISOFSPATHTABLEENTRY pNodeParent = RTListNodeGetFirst(pList, RTISOFSPATHTABLEENTRY, Node);
+        PRTISOFSPATHTABLEENTRY pNodeParent = RTListGetFirst(pList, RTISOFSPATHTABLEENTRY, Node);
         while (idx++ < pNode->header.parent_index)
             pNodeParent =  RTListNodeGetNext(&pNodeParent->Node, RTISOFSPATHTABLEENTRY, Node);
         /* Construct intermediate path (parent + current path). */
@@ -201,7 +201,7 @@ static int rtIsoFsUpdatePathCache(PRTISOFSFILE pFile)
     }
 
     /* Transform path names into full paths. This is a bit ugly right now. */
-    PRTISOFSPATHTABLEENTRY pNode = RTListNodeGetLast(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
+    PRTISOFSPATHTABLEENTRY pNode = RTListGetLast(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
     while (   pNode
            && !RTListNodeIsFirst(&pFile->listPaths, &pNode->Node)
            && RT_SUCCESS(rc))
@@ -415,7 +415,7 @@ static int rtIsoFsResolvePath(PRTISOFSFILE pFile, const char *pszPath, uint32_t 
         PRTISOFSPATHTABLEENTRY pNode;
         if (!RTStrCmp(pszTemp, ".")) /* Root directory? Use first node! */
         {
-            pNode = RTListNodeGetFirst(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
+            pNode = RTListGetFirst(&pFile->listPaths, RTISOFSPATHTABLEENTRY, Node);
             if (pNode)
                 bFound = true;
         }

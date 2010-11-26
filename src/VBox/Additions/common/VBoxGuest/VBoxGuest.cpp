@@ -829,7 +829,7 @@ static void VBoxGuestDeleteWaitList(PRTLISTNODE pList)
     while (!RTListIsEmpty(pList))
     {
         int             rc2;
-        PVBOXGUESTWAIT  pWait = RTListNodeGetFirst(pList, VBOXGUESTWAIT, ListNode);
+        PVBOXGUESTWAIT  pWait = RTListGetFirst(pList, VBOXGUESTWAIT, ListNode);
         RTListNodeRemove(&pWait->ListNode);
 
         rc2 = RTSemEventMultiDestroy(pWait->Event); AssertRC(rc2);
@@ -994,13 +994,13 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
     /*
      * Allocate it one way or the other.
      */
-    PVBOXGUESTWAIT pWait = RTListNodeGetFirst(&pDevExt->FreeList, VBOXGUESTWAIT, ListNode);
+    PVBOXGUESTWAIT pWait = RTListGetFirst(&pDevExt->FreeList, VBOXGUESTWAIT, ListNode);
     if (pWait)
     {
         RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
         RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
 
-        pWait = RTListNodeGetFirst(&pDevExt->FreeList, VBOXGUESTWAIT, ListNode);
+        pWait = RTListGetFirst(&pDevExt->FreeList, VBOXGUESTWAIT, ListNode);
         if (pWait)
             RTListNodeRemove(&pWait->ListNode);
 
@@ -1112,7 +1112,7 @@ void VBoxGuestWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt)
         for (;;)
         {
             int            rc;
-            PVBOXGUESTWAIT pWait = RTListNodeGetFirst(&pDevExt->WakeUpList, VBOXGUESTWAIT, ListNode);
+            PVBOXGUESTWAIT pWait = RTListGetFirst(&pDevExt->WakeUpList, VBOXGUESTWAIT, ListNode);
             if (!pWait)
                 break;
             pWait->fPendingWakeUp = true;

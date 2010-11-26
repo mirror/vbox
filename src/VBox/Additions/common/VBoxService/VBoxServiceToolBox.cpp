@@ -107,13 +107,13 @@ static int VBoxServiceToolboxErrorSyntax(const char *pszFormat, ...)
 static void VBoxServiceToolboxPathBufDestroy(PRTLISTNODE pList)
 {
     AssertPtr(pList);
-    PVBOXSERVICETOOLBOXPATHENTRY pNode = RTListNodeGetFirst(pList, VBOXSERVICETOOLBOXPATHENTRY, Node);
+    /** @todo use RTListForEachSafe */
+    PVBOXSERVICETOOLBOXPATHENTRY pNode = RTListGetFirst(pList, VBOXSERVICETOOLBOXPATHENTRY, Node);
     while (pNode)
     {
         PVBOXSERVICETOOLBOXPATHENTRY pNext = RTListNodeIsLast(pList, &pNode->Node)
-                                                              ? NULL :
-                                                                RTListNodeGetNext(&pNode->Node,
-                                                                                  VBOXSERVICETOOLBOXPATHENTRY, Node);
+                                           ? NULL
+                                           : RTListNodeGetNext(&pNode->Node, VBOXSERVICETOOLBOXPATHENTRY, Node);
         RTListNodeRemove(&pNode->Node);
 
         RTStrFree(pNode->pszName);

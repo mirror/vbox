@@ -96,6 +96,28 @@ DECLINLINE(void) RTListPrepend(PRTLISTNODE pList, PRTLISTNODE pNode)
 }
 
 /**
+ * Inserts a node after the specified one.
+ *
+ * @param   pCurNode            The current node.
+ * @param   pNewNode            The node to insert.
+ */
+DECLINLINE(void) RTListNodeInsertAfter(PRTLISTNODE pCurNode, PRTLISTNODE pNewNode)
+{
+    RTListPrepend(pCurNode, pNewNode);
+}
+
+/**
+ * Inserts a node before the specified one.
+ *
+ * @param   pCurNode            The current node.
+ * @param   pNewNode            The node to insert.
+ */
+DECLINLINE(void) RTListNodeInsertBefore(PRTLISTNODE pCurNode, PRTLISTNODE pNewNode)
+{
+    RTListAppend(pCurNode, pNewNode);
+}
+
+/**
  * Remove a node from a list.
  *
  * @param   pNode               The node to remove.
@@ -196,7 +218,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
  * @param   Type                Structure the list node is a member of.
  * @param   Member              The list node member.
  */
-#define RTListNodeGetFirst(pList, Type, Member) \
+#define RTListGetFirst(pList, Type, Member) \
     (!RTListIsEmpty(pList) ? RTListNodeGetNext(pList, Type, Member) : NULL)
 
 /**
@@ -209,8 +231,34 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
  * @param   Type                Structure the list node is a member of.
  * @param   Member              The list node member.
  */
-#define RTListNodeGetLast(pList, Type, Member) \
+#define RTListGetLast(pList, Type, Member) \
     (!RTListIsEmpty(pList) ? RTListNodeGetPrev(pList, Type, Member) : NULL)
+
+/**
+ * Returns the next node in the list or NULL if the end has been reached.
+ *
+ * @returns The next node or NULL.
+ *
+ * @param   pList               The list @a pCurNode is linked on.
+ * @param   pCurNode            The current node, of type @a Type.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
+ */
+#define RTListGetNext(pList, pCurNode, Type, Member) \
+    ( (pCurNode)->Member.pNext != (pList) ? RT_FROM_MEMBER((pCurNode)->Member.pNext, Type, Member) : NULL )
+
+/**
+ * Returns the previous node in the list or NULL if the start has been reached.
+ *
+ * @returns The previous node or NULL.
+ *
+ * @param   pList               The list @a pCurNode is linked on.
+ * @param   pCurNode            The current node, of type @a Type.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
+ */
+#define RTListGetPrev(pList, pCurNode, Type, Member) \
+    ( (pCurNode)->Member.pPrev != (pList) ? RT_FROM_MEMBER((pCurNode)->Member.pPrev, Type, Member) : NULL )
 
 /**
  * Enumerate the list in head to tail order.
