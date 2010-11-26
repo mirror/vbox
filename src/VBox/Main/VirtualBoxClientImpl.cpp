@@ -216,7 +216,7 @@ DECLCALLBACK(int) VirtualBoxClient::SVCWatcherThread(RTTHREAD ThreadSelf,
                 rc = pV->COMGETTER(Revision)(&rev);
                 if (FAILED_DEAD_INTERFACE(rc))
                 {
-                    LogRel(("VirtualBoxClient: detected unresponsive VBoxSVC (rc=%Rhrc)", rc));
+                    LogRel(("VirtualBoxClient: detected unresponsive VBoxSVC (rc=%Rhrc)\n", rc));
                     fireVBoxSVCUnavailableEvent(pThis->mData.m_pEventSource);
 
                     /* Throw away the VirtualBox reference, it's no longer
