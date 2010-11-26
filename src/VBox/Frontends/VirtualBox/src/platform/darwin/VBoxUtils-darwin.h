@@ -77,7 +77,6 @@ bool darwinIsToolbarVisible(NativeNSWindowRef pWindow);
 bool darwinIsWindowMaximized(NativeNSWindowRef pWindow);
 void darwinMinaturizeWindow(NativeNSWindowRef pWindow);
 
-bool darwinShowFileInFinder(NativeNSStringRef pstrFile);
 bool darwinOpenFile(NativeNSStringRef pstrFile);
 
 float darwinSmallFontSize();
@@ -196,7 +195,6 @@ bool darwinIsToolbarVisible(QToolBar *pToolBar);
 bool darwinIsWindowMaximized(QWidget *pWidget);
 void darwinMinaturizeWindow(QWidget *pWidget);
 
-bool darwinShowFileInFinder(const QString &strFile);
 bool darwinOpenFile(const QString &strFile);
 
 QString darwinSystemLanguage(void);
