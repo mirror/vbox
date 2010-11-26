@@ -46,6 +46,14 @@
 #include <VBox/version.h>
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The maximum entry name length.
+ * Play short and safe. */
+#define VBOX_EXTPACK_MAX_ENTRY_NAME_LENGTH      128
+
+
 #ifdef IN_RT_R3
 /* Override RTAssertShouldPanic to prevent gdb process creation. */
 RTDECL(bool) RTAssertShouldPanic(void)
@@ -340,6 +348,13 @@ static RTEXITCODE ValidateNameInExtPack(const char *pszName)
             pszErr = "Double dot sequence are not allowed";
             break;
         }
+
+        /* Keep the tree shallow or the hardening checks will fail. */
+        if (psz - pszName > VBOX_EXTPACK_MAX_ENTRY_NAME_LENGTH)
+        {
+            pszErr = "Too long";
+            break;
+        }
     }
 
     if (pszErr)
@@ -466,8 +481,103 @@ static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTar
  */
 static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, const char *pszTarball)
 {
-    /** @todo  */
-    return RTEXITCODE_SUCCESS;
+    /*
+     * Set up the destination path and directory.
+     */
+    char szDstPath[RTPATH_MAX];
+    int rc = RTPathAbs(pszDirDst, szDstPath, sizeof(szDstPath) - VBOX_EXTPACK_MAX_ENTRY_NAME_LENGTH - 2);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs('%s',,) failed: %Rrc", pszDirDst, rc);
+    size_t offDstPath = RTPathStripTrailingSlash(szDstPath);
+
+    rc = RTDirCreate(szDstPath, 0700);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirCreate('%s',0700) failed: %Rrc", szDstPath, rc);
+    szDstPath[offDstPath++] = '/';
+    szDstPath[offDstPath]   = '\0';
+
+    /*
+     * Open the tar.gz filesystem stream and set up an manifest in-memory file.
+     */
+    RTVFSFSSTREAM hTarFss;
+    RTEXITCODE rcExit = OpenTarFss(hTarballFile, &hTarFss);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+
+    RTMANIFEST hUnpackManifest;
+    rc = RTManifestCreate(0 /*fFlags*/, &hUnpackManifest);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Process the tarball (would be nice to move this to a function).
+         */
+        for (;;)
+        {
+            /*
+             * Get the next stream object.
+             */
+            char           *pszName;
+            RTVFSOBJ        hVfsObj;
+            RTVFSOBJTYPE    enmType;
+            rc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
+            if (RT_FAILURE(rc))
+            {
+                if (rc != VERR_EOF)
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsFsStrmNext failed: %Rrc", rc);
+                break;
+            }
+
+            /*
+             * Check the type & name validity then unpack it.
+             */
+            rcExit = ValidateMemberOfExtPack(pszName, enmType, hVfsObj);
+            if (rcExit == RTEXITCODE_SUCCESS)
+            {
+                szDstPath[offDstPath] = '\0';
+                rc = RTStrCopy(&szDstPath[offDstPath], sizeof(szDstPath) - offDstPath, pszName);
+                if (RT_SUCCESS(rc))
+                {
+                    if (   enmType == RTVFSOBJTYPE_FILE
+                        || enmType == RTVFSOBJTYPE_IO_STREAM)
+                    {
+                        RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                        /// @todo rc = RTManifestEntryAddIoStream(hOurManifest, hVfsIos, pszName, RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256);
+                        // if (RT_FAILURE(rc))
+                        //     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEntryAddIoStream failed on '%s': %Rrc", pszName, rc);
+                        RTVfsIoStrmRelease(hVfsIos);
+                    }
+                    else
+                    {
+                        rc = RTDirCreate(szDstPath, 0755);
+                        if (RT_FAILURE(rc))
+                            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create directory '%s': %Rrc", pszName, rc);
+                    }
+                }
+                else
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Name is too long: '%s' (%Rrc)", pszName, rc);
+            }
+
+            /*
+             * Clean up and break out on failure.
+             */
+            RTVfsObjRelease(hVfsObj);
+            RTStrFree(pszName);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
+        }
+
+        /*
+         * Check that what we just extracted matches the already verified
+         * manifest.
+         */
+        //if (rcExit == RTEXITCODE_SUCCESS)
+        /// @todo
+
+        RTManifestRelease(hUnpackManifest);
+    }
+    RTVfsFsStrmRelease(hTarFss);
+
+    return rcExit;
 }
 
 
