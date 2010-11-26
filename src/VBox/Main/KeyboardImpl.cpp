@@ -20,7 +20,6 @@
 
 #include "AutoCaller.h"
 #include "Logging.h"
-#include "VBoxEvents.h"
 
 #include <VBox/com/array.h>
 #include <VBox/pdmdrv.h>
@@ -219,9 +218,9 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
     com::SafeArray<LONG> keysSent(sent);
     memcpy(keysSent.raw(), keys.raw(), sent*sizeof(LONG));
 
-    VBoxEventDesc evDesc; 
-    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboard, ComSafeArrayAsInParam(keys)); 
-    evDesc.fire(0); 
+    VBoxEventDesc evDesc;
+    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboard, ComSafeArrayAsInParam(keys));
+    evDesc.fire(0);
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,
