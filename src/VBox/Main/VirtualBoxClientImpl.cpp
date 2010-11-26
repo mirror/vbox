@@ -34,8 +34,6 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(VirtualBoxClient)
-
 HRESULT VirtualBoxClient::FinalConstruct()
 {
     return init();
