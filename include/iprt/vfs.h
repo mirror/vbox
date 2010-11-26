@@ -710,6 +710,27 @@ RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
 /** @} */
 
 
+/** @defgroup grp_vfs_file          VFS Miscellaneous
+ * @{
+ */
+
+/**
+ * Memorizes the I/O stream as a file backed by memory.
+ *
+ * @returns VBox status code.
+ *
+ * @param   hVfsIos         The VFS I/O stream to memorize.  This will be read
+ *                          to the end on success, on failure its position is
+ *                          undefined.
+ * @param   fFlags          A combination of RTFILE_O_READ and RTFILE_O_WRITE.
+ * @param   phVfsFile       Where to return the handle to the memory file on
+ *                          success.
+ */
+RTDECL(int) RTVfsMemorizeIoStreamAsFile(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, PRTVFSFILE phVfsFile);
+
+/** @}  */
+
+
 /** @defgroup grp_rt_vfs_chain  VFS Chains
  *
  * VFS chains is for doing pipe like things with VFS objects from the command
