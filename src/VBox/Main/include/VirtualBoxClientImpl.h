@@ -50,8 +50,6 @@ public:
         COM_INTERFACE_ENTRY(IVirtualBoxClient)
     END_COM_MAP()
 
-    DECLARE_EMPTY_CTOR_DTOR(VirtualBoxClient)
-
     HRESULT FinalConstruct();
     void FinalRelease();
 
