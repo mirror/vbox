@@ -22,6 +22,7 @@
 
 /* Qt includes */
 #include <QDir>
+#include <QCoreApplication>
 
 /* System includes */
 #include <shlobj.h>
