@@ -14386,7 +14386,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
      name="VBoxEventType"
-     uuid="FA0D4183-CDCA-428E-A078-BBF5B69CA158">
+     uuid="BA0F90B2-3F41-4222-840D-EDD5055476A8">
 
     <desc>
       Type of an event.
@@ -14603,22 +14603,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ICPUExecutionCapChangedEvent">ICPUExecutionCapChangedEvent</link>.
       </desc>
     </const>
-    <const name="OnGuestKeyboardEvent" value="64">
+    <const name="OnGuestKeyboard" value="64">
       <desc>
         See <link to="IGuestKeyboardEvent">IGuestKeyboardEvent</link>.
       </desc>
     </const>
-    <const name="OnGuestMouseEvent" value="65">
+    <const name="OnGuestMouse" value="65">
       <desc>
         See <link to="IGuestMouseEvent">IGuestMouseEvent</link>.
       </desc>
     </const>
-    <const name="OnNATRedirectEvent" value="66">
+    <const name="OnNATRedirect" value="66">
       <desc>
         See <link to="INATRedirectEvent">INATRedirectEvent</link>.
       </desc>
     </const>
-    <const name="OnHostPciDevicePlugEvent" value="67">
+    <const name="OnHostPciDevicePlug" value="67">
       <desc>
         See <link to="IHostPciDevicePlugEvent">IHostPciDevicePlugEvent</link>.
       </desc>
@@ -15393,7 +15393,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IGuestKeyboardEvent" extends="IEvent"
     uuid="88394258-7006-40d4-b339-472ee3801844"
-    wsmap="managed" autogen="VBoxEvent" id="OnGuestKeyboardEvent"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestKeyboard"
     >
    <desc>
       Notification when guest keyboard event happens.
@@ -15408,7 +15408,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IGuestMouseEvent" extends="IReusableEvent"
     uuid="1f85d35c-c524-40ff-8e98-307000df0992"
-    wsmap="managed" autogen="VBoxEvent" id="OnGuestMouseEvent"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestMouse"
     >
    <desc>
       Notification when guest mouse event happens.
@@ -15815,7 +15815,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="INATRedirectEvent" extends="IMachineEvent"
     uuid="57DE97D7-3CBB-42A0-888F-610D5832D16B"
-    wsmap="managed" autogen="VBoxEvent" id="OnNATRedirectEvent"
+    wsmap="managed" autogen="VBoxEvent" id="OnNATRedirect"
     >
    <desc>
       Notification when NAT redirect rule added or removed.
@@ -15866,7 +15866,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       name="IHostPciDevicePlugEvent" extends="IMachineEvent"
       waitable="yes"
       uuid="EDD4782B-DB74-43A0-B724-2BAA36F039CC"
-      wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlugEvent"
+      wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlug"
     >
    <desc>
       Notification when host PCI device is plugged/unplugged.

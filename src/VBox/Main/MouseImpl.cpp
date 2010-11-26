@@ -22,6 +22,7 @@
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
+#include "VBoxEvents.h"
 #include "Logging.h"
 
 #include <VBox/pdmdrv.h>
@@ -111,7 +112,7 @@ HRESULT Mouse::init (Console *parent)
     unconst(mEventSource).createObject();
     HRESULT rc = mEventSource->init(static_cast<IMouse*>(this));
     AssertComRCReturnRC(rc);
-    mMouseEvent.init(mEventSource, VBoxEventType_OnGuestMouseEvent,
+    mMouseEvent.init(mEventSource, VBoxEventType_OnGuestMouse,
                      0, 0, 0, 0, 0);
 #endif
 
@@ -432,7 +433,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
     rc = reportRelEventToMouseDev(dx, dy, dz, dw, fButtons);
 
 #ifndef VBOXBFE_WITHOUT_COM
-    mMouseEvent.reinit(VBoxEventType_OnGuestMouseEvent, false, dx, dy, dz, dw, fButtons);
+    mMouseEvent.reinit(VBoxEventType_OnGuestMouse, false, dx, dy, dz, dw, fButtons);
     mMouseEvent.fire(0);
 #endif
 
@@ -514,7 +515,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
                                 & VMMDEV_MOUSE_GUEST_USES_EVENT));
 
 #ifndef VBOXBFE_WITHOUT_COM
-    mMouseEvent.reinit(VBoxEventType_OnGuestMouseEvent, true, x, y, dz, dw, fButtons);
+    mMouseEvent.reinit(VBoxEventType_OnGuestMouse, true, x, y, dz, dw, fButtons);
     mMouseEvent.fire(0);
 #endif
 

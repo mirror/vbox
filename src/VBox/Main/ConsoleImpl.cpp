@@ -67,7 +67,7 @@
 
 // generated header
 #include "SchemaDefs.h"
-
+#include "VBoxEvents.h"
 #include "AutoCaller.h"
 #include "Logging.h"
 
@@ -272,7 +272,7 @@ public:
     {
         switch(aType)
         {
-            case VBoxEventType_OnNATRedirectEvent:
+            case VBoxEventType_OnNATRedirect:
             {
                 Bstr id;
                 ComPtr<IMachine> m = mConsole->machine();
@@ -371,51 +371,6 @@ public:
        /* nothing */
     }
 };
-
-
-#define PREP_ARGS0()
-#define PREP_ARGS1(a1)                       a1
-#define PREP_ARGS2(a1,a2)                    a1, a2
-#define PREP_ARGS3(a1,a2,a3)                 a1, a2, a3
-#define PREP_ARGS4(a1,a2,a3,a4)              a1, a2, a3, a4
-#define PREP_ARGS5(a1,a2,a3,a4,a5)           a1, a2, a3, a4, a5
-#define PREP_ARGS6(a1,a2,a3,a4,a5,a6)        a1, a2, a3, a4, a5, a6
-#define PREP_ARGS7(a1,a2,a3,a4,a5,a6,a7)     a1, a2, a3, a4, a5, a6, a7
-#define PREP_ARGS8(a1,a2,a3,a4,a5,a6,a7,a8)  a1, a2, a3, a4, a5, a6, a7, a8
-
-/**
- * Macro for firing appropriate event.
- *
- * @param   Event               Event, like OnKeyboardLedsChanged.
- * @param   InvokeCb            Callbacks invocation code
- * @param   PreprEvent          Event preparation code
- * @param   Args                Number of callback arguments
- */
-#define CONSOLE_DO_CALLBACKS_GEN(Event, Args, MaybeComma) \
-    do \
-    { \
-        VBoxEventDesc evDesc; \
-        evDesc.init(mEventSource, VBoxEventType_##Event MaybeComma Args);     \
-        evDesc.fire(/* don't wait for delivery */ 0); \
-    } while (0)
-
-#define COMMA ,
-#define NO_COMMA
-/* Actual invocation macros for different number of parameters */
-#define CONSOLE_DO_CALLBACKS0(CallbackMethod)                           \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod,  PREP_ARGS0(), NO_COMMA)
-#define CONSOLE_DO_CALLBACKS1(CallbackMethod,Arg1)                      \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS1(Arg1), COMMA)
-#define CONSOLE_DO_CALLBACKS2(CallbackMethod,Arg1,Arg2)                 \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS2(Arg1,Arg2),COMMA)
-#define CONSOLE_DO_CALLBACKS3(CallbackMethod,Arg1,Arg2,Arg3)            \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS3(Arg1,Arg2,Arg3), COMMA)
-#define CONSOLE_DO_CALLBACKS4(CallbackMethod,Arg1,Arg2,Arg3,Arg4)       \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS4(Arg1,Arg2,Arg3,Arg4), COMMA)
-#define CONSOLE_DO_CALLBACKS7(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7) \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS7(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7), COMMA)
-#define CONSOLE_DO_CALLBACKS8(CallbackMethod,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8) \
-    CONSOLE_DO_CALLBACKS_GEN(CallbackMethod, PREP_ARGS8(Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8), COMMA)
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -576,7 +531,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
         AssertComRC(rc);
         mVmListner = new VmEventListenerImpl(this);
         com::SafeArray <VBoxEventType_T> eventTypes;
-        eventTypes.push_back(VBoxEventType_OnNATRedirectEvent);
+        eventTypes.push_back(VBoxEventType_OnNATRedirect);
         rc = es->RegisterListener(mVmListner, ComSafeArrayAsInParam(eventTypes), true);
         AssertComRC(rc);
     }
@@ -2932,7 +2887,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BO
     mSharedFolders.insert(std::make_pair(aName, sharedFolder));
 
     /* notify console callbacks after the folder is added to the list */
-    CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Session);
+    fireSharedFolderChangedEvent(mEventSource, Scope_Session);
 
     return rc;
 }
@@ -2993,7 +2948,7 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
     mSharedFolders.erase(aName);
 
     /* notify console callbacks after the folder is removed to the list */
-    CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Session);
+    fireSharedFolderChangedEvent(mEventSource, Scope_Session);
 
     return rc;
 }
@@ -3634,7 +3589,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnNetworkAdapterChanged, aNetworkAdapter);
+        fireNetworkAdapterChangedEvent(mEventSource, aNetworkAdapter);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3934,7 +3889,7 @@ HRESULT Console::onSerialPortChange(ISerialPort *aSerialPort)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnSerialPortChanged, aSerialPort);
+        fireSerialPortChangedEvent(mEventSource, aSerialPort);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -3968,7 +3923,7 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnParallelPortChanged, aParallelPort);
+        fireParallelPortChangedEvent(mEventSource, aParallelPort);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4002,7 +3957,7 @@ HRESULT Console::onStorageControllerChange()
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS0(OnStorageControllerChanged);
+        fireStorageControllerChangedEvent(mEventSource);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4036,7 +3991,7 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnMediumChanged, aMediumAttachment);
+        fireMediumChangedEvent(mEventSource, aMediumAttachment);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4067,7 +4022,7 @@ HRESULT Console::onCPUChange(ULONG aCPU, BOOL aRemove)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS2(OnCPUChanged, aCPU, aRemove);
+        fireCPUChangedEvent(mEventSource, aCPU, aRemove);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4110,7 +4065,7 @@ HRESULT Console::onCPUExecutionCapChange(ULONG aExecutionCap)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS1(OnCPUExecutionCapChanged, aExecutionCap);
+        fireCPUExecutionCapChangedEvent(mEventSource, aExecutionCap);
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4170,7 +4125,7 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS0(OnVRDEServerChanged);
+        fireVRDEServerChangedEvent(mEventSource);
 
     return rc;
 }
@@ -4185,7 +4140,7 @@ void Console::onVRDEServerInfoChange()
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CONSOLE_DO_CALLBACKS0(OnVRDEServerInfoChanged);
+    fireVRDEServerInfoChangedEvent(mEventSource);
 }
 
 
@@ -4225,7 +4180,7 @@ HRESULT Console::onUSBControllerChange()
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-        CONSOLE_DO_CALLBACKS0(OnUSBControllerChanged);
+        fireUSBControllerChangedEvent(mEventSource);
 
     return rc;
 }
@@ -4249,10 +4204,7 @@ HRESULT Console::onSharedFolderChange(BOOL aGlobal)
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
     {
-        if (aGlobal)
-            CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Global);
-        else
-            CONSOLE_DO_CALLBACKS1(OnSharedFolderChanged, Scope_Machine);
+        fireSharedFolderChangedEvent(mEventSource, aGlobal ? (Scope_T)Scope_Global : (Scope_T)Scope_Machine);
     }
 
     return rc;
@@ -4908,16 +4860,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
         mCallbackData.mpsc.shape.resize(0);
     mCallbackData.mpsc.valid = true;
 
-    /**
-     * Although looks stupid, this is result of fact that safearrays params in XPCOM
-     * passed as separate pointer and length arguments.
-     * @todo: better solution
-     */
-#ifdef RT_OS_WINDOWS
-    CONSOLE_DO_CALLBACKS7(OnMousePointerShapeChanged, fVisible, fAlpha, xHot, yHot, width, height, pShape);
-#else
-    CONSOLE_DO_CALLBACKS8(OnMousePointerShapeChanged, fVisible, fAlpha, xHot, yHot, width, height, pShapeSize, pShape);
-#endif
+    fireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape));
 
 #if 0
     LogFlowThisFuncLeave();
@@ -4944,7 +4887,7 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelati
     mCallbackData.mcc.needsHostCursor = needsHostCursor;
     mCallbackData.mcc.valid = true;
 
-    CONSOLE_DO_CALLBACKS3(OnMouseCapabilityChanged, supportsAbsolute, supportsRelative, needsHostCursor);
+    fireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, needsHostCursor);
 }
 
 /**
@@ -4956,7 +4899,7 @@ void Console::onStateChange(MachineState_T machineState)
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CONSOLE_DO_CALLBACKS1(OnStateChanged, machineState);
+    fireStateChangedEvent(mEventSource, machineState);
 }
 
 /**
@@ -4968,7 +4911,7 @@ void Console::onAdditionsStateChange()
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CONSOLE_DO_CALLBACKS0(OnAdditionsStateChanged);
+    fireAdditionsStateChangedEvent(mEventSource);
 }
 
 /**
@@ -5004,7 +4947,7 @@ void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLo
     mCallbackData.klc.scrollLock = fScrollLock;
     mCallbackData.klc.valid = true;
 
-    CONSOLE_DO_CALLBACKS3(OnKeyboardLedsChanged, fNumLock, fCapsLock, fScrollLock);
+    fireKeyboardLedsChangedEvent(mEventSource, fNumLock, fCapsLock, fScrollLock);
 }
 
 /**
@@ -5017,7 +4960,7 @@ void Console::onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CONSOLE_DO_CALLBACKS3(OnUSBDeviceStateChanged, aDevice, aAttached, aError);
+    fireUSBDeviceStateChangedEvent(mEventSource, aDevice, aAttached, aError);
 }
 
 /**
@@ -5029,7 +4972,7 @@ void Console::onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    CONSOLE_DO_CALLBACKS3(OnRuntimeError, aFatal, aErrorID, aMessage);
+    fireRuntimeErrorEvent(mEventSource, aFatal, aErrorID, aMessage);
 }
 
 /**
