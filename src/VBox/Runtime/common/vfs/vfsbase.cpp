@@ -396,6 +396,8 @@ static void rtVfsLockDestroy(RTVFSLOCKINTERNAL *pThis)
 RTDECL(uint32_t) RTVfsLockRelease(RTVFSLOCK hLock)
 {
     RTVFSLOCKINTERNAL *pThis = hLock;
+    if (pThis == NIL_RTVFSLOCK)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->enmType > RTVFSLOCKTYPE_INVALID && pThis->enmType < RTVFSLOCKTYPE_END, UINT32_MAX);
 
@@ -874,6 +876,8 @@ DECLINLINE(uint32_t) rtVfsObjRelease(RTVFSOBJINTERNAL *pThis)
 RTDECL(uint32_t) RTVfsObjRelease(RTVFSOBJ hVfsObj)
 {
     RTVFSOBJINTERNAL *pThis = hVfsObj;
+    if (pThis == NIL_RTVFSOBJ)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, UINT32_MAX);
     return rtVfsObjRelease(pThis);
@@ -1645,6 +1649,8 @@ RTDECL(uint32_t)    RTVfsFsStrmRetain(RTVFSFSSTREAM hVfsFss)
 RTDECL(uint32_t)    RTVfsFsStrmRelease(RTVFSFSSTREAM hVfsFss)
 {
     RTVFSFSSTREAMINTERNAL *pThis = hVfsFss;
+    if (pThis == NIL_RTVFSFSSTREAM)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSFSSTREAM_MAGIC, UINT32_MAX);
     return rtVfsObjRelease(&pThis->Base);
@@ -1701,6 +1707,8 @@ RTDECL(uint32_t)    RTVfsDirRetain(RTVFSDIR hVfsDir)
 RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir)
 {
     RTVFSDIRINTERNAL *pThis = hVfsDir;
+    if (pThis == NIL_RTVFSDIR)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, UINT32_MAX);
     return rtVfsObjRelease(&pThis->Base);
@@ -1770,6 +1778,8 @@ RTDECL(uint32_t)    RTVfsSymlinkRetain(RTVFSSYMLINK hVfsSym)
 RTDECL(uint32_t)    RTVfsSymlinkRelease(RTVFSSYMLINK hVfsSym)
 {
     RTVFSSYMLINKINTERNAL *pThis = hVfsSym;
+    if (pThis == NIL_RTVFSSYMLINK)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSSYMLINK_MAGIC, UINT32_MAX);
     return rtVfsObjRelease(&pThis->Base);
@@ -1913,6 +1923,8 @@ RTDECL(uint32_t)    RTVfsIoStrmRetain(RTVFSIOSTREAM hVfsIos)
 RTDECL(uint32_t)    RTVfsIoStrmRelease(RTVFSIOSTREAM hVfsIos)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
+    if (pThis == NIL_RTVFSIOSTREAM)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, UINT32_MAX);
     return rtVfsObjRelease(&pThis->Base);
@@ -2350,6 +2362,8 @@ RTDECL(uint32_t)    RTVfsFileRetain(RTVFSFILE hVfsFile)
 RTDECL(uint32_t)    RTVfsFileRelease(RTVFSFILE hVfsFile)
 {
     RTVFSFILEINTERNAL *pThis = hVfsFile;
+    if (pThis == NIL_RTVFSFILE)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, UINT32_MAX);
     return rtVfsObjRelease(&pThis->Stream.Base);
