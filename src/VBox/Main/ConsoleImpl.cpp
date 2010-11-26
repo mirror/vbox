@@ -320,55 +320,6 @@ typedef ListenerImpl<VmEventListener, Console*> VmEventListenerImpl;
 
 VBOX_LISTENER_DECLARE(VmEventListenerImpl)
 
-// ConsoleCallbackRegistration
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Registered IConsoleCallback, used by Console::CallbackList and
- * Console::mCallbacks.
- *
- * In addition to keeping the interface pointer this also keeps track of the
- * methods that asked to not be called again.  The latter is for reducing
- * unnecessary IPC.
- */
-class ConsoleCallbackRegistration
-{
-public:
-    /** Callback bit indexes (for bmDisabled). */
-    typedef enum
-    {
-        kOnMousePointerShapeChanged = 0,
-        kOnMouseCapabilityChanged,
-        kOnKeyboardLedsChanged,
-        kOnStateChanged,
-        kOnAdditionsStateChanged,
-        kOnNetworkAdapterChanged,
-        kOnSerialPortChanged,
-        kOnParallelPortChanged,
-        kOnStorageControllerChanged,
-        kOnMediumChanged,
-        kOnCPUChanged,
-        kOnCPUExecutionCapChanged,
-        kOnVRDEServerChanged,
-        kOnVRDEServerInfoChanged,
-        kOnUSBControllerChanged,
-        kOnUSBDeviceStateChanged,
-        kOnSharedFolderChanged,
-        kOnRuntimeError,
-        kOnCanShowWindow,
-        kOnShowWindow
-    } CallbackBit;
-
-    ConsoleCallbackRegistration()
-    {
-        /* nothing */
-    }
-
-    ~ConsoleCallbackRegistration()
-    {
-       /* nothing */
-    }
-};
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -4142,7 +4093,6 @@ void Console::onVRDEServerInfoChange()
 }
 
 
-
 /**
  * Called by IInternalSessionControl::OnUSBControllerChange().
  *
@@ -4851,7 +4801,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     bool wasValid = mCallbackData.mpsc.valid;
     mCallbackData.mpsc.valid = false;
 
-    com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
+    com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
     if (aShape.size() != 0)
         mCallbackData.mpsc.shape.initFrom(aShape);
     else
