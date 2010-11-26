@@ -37,6 +37,7 @@
 #include "UIToolBar.h"
 #include "VBoxVMLogViewer.h"
 #include "QIFileDialog.h"
+#include "UIDesktopServices.h"
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
 # include "VBoxTrayIcon.h"
@@ -52,6 +53,7 @@
 #include <QDesktopWidget>
 #include <QMenuBar>
 #include <QResizeEvent>
+#include <QDesktopServices>
 
 #include <iprt/buildconfig.h>
 #include <VBox/version.h>
@@ -166,6 +168,16 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
         QSize(32, 32), QSize(16, 16),
         ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
         ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
+    mVmOpenInFileManagerAction = new QAction(this);
+//    mVmOpenInFileManagerAction>setIcon(UIIconPool::iconSetFull(
+//        QSize(32, 32), QSize(16, 16),
+//        ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
+//        ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
+    mVmCreateShortcut = new QAction(this);
+//    mVmCreateShortcut->setIcon(UIIconPool::iconSetFull(
+//        QSize(32, 32), QSize(16, 16),
+//        ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
+//        ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
 
     mHelpActions.setup(this);
 
@@ -284,6 +296,9 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMMenu->addSeparator();
     mVMMenu->addAction(mVmRefreshAction);
     mVMMenu->addAction(mVmShowLogsAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction(mVmOpenInFileManagerAction);
+    mVMMenu->addAction(mVmCreateShortcut);
 
 #ifdef Q_WS_MAC
     menuBar()->addMenu(UIWindowMenuManager::instance(this)->createMenu(this));
@@ -299,6 +314,9 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction(mVmRefreshAction);
     mVMCtxtMenu->addAction(mVmShowLogsAction);
+    mVMCtxtMenu->addSeparator();
+    mVMCtxtMenu->addAction(mVmOpenInFileManagerAction);
+    mVMCtxtMenu->addAction(mVmCreateShortcut);
 
     /* Make sure every status bar hint from the context menu is cleared when
      * the menu is closed. */
@@ -423,6 +441,8 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(mVmPauseAction, SIGNAL(toggled(bool)), this, SLOT(vmPause(bool)));
     connect(mVmRefreshAction, SIGNAL(triggered()), this, SLOT(vmRefresh()));
     connect(mVmShowLogsAction, SIGNAL(triggered()), this, SLOT(vmShowLogs()));
+    connect(mVmOpenInFileManagerAction, SIGNAL(triggered()), this, SLOT(vmOpenInFileManager()));
+    connect(mVmCreateShortcut, SIGNAL(triggered()), this, SLOT(vmCreateShortcut()));
 
     connect(mVMListView, SIGNAL(currentChanged()),
             this, SLOT(vmListViewCurrentChanged()));
@@ -885,6 +905,28 @@ void VBoxSelectorWnd::vmShowLogs(const QString &aUuid /* = QString::null */)
     VBoxVMLogViewer::createLogViewer(this, machine);
 }
 
+void VBoxSelectorWnd::vmOpenInFileManager(const QString &aUuid /* = QString::null */)
+{
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+                       mVMModel->itemById(aUuid);
+
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+
+    CMachine machine = item->machine();
+    UIDesktopServices::openInFileManager(machine.GetSettingsFilePath());
+}
+
+void VBoxSelectorWnd::vmCreateShortcut(const QString &aUuid /* = QString::null */)
+{
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+                       mVMModel->itemById(aUuid);
+
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+
+    CMachine machine = item->machine();
+    UIDesktopServices::createMachineShortcut(machine.GetSettingsFilePath(), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), machine.GetName(), machine.GetId());
+}
+
 void VBoxSelectorWnd::refreshVMList()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1223,6 +1265,23 @@ void VBoxSelectorWnd::retranslateUi()
     mVmShowLogsAction->setShortcut(QKeySequence("Ctrl+L"));
     mVmShowLogsAction->setStatusTip(
         tr("Show the log files of the selected virtual machine"));
+
+#if defined(Q_WS_MAC)
+    mVmOpenInFileManagerAction->setText(tr("Show in Finder"));
+    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Description file in Finder."));
+    mVmCreateShortcut->setText(tr("Create Alias on Desktop"));
+    mVmCreateShortcut->setStatusTip(tr("Creates an Alias file to the VirtualBox Machine Description file on your Desktop."));
+#elif defined(Q_WS_WIN)
+    mVmOpenInFileManagerAction->setText(tr("Show in Explorer"));
+    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Description file in Explorer."));
+    mVmCreateShortcut->setText(tr("Create Shortcut on Desktop"));
+    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Description file on your Desktop."));
+#else
+    mVmOpenInFileManagerAction->setText(tr("Show in File Manager"));
+    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Description file in the File Manager"));
+    mVmCreateShortcut->setText(tr("Create Shortcut on Desktop"));
+    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Description file on your Desktop."));
+#endif
 
     mHelpActions.retranslateUi();
 

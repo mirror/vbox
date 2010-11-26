@@ -76,6 +76,8 @@ public slots:
     void vmPause(bool, const QString & = QString::null);
     void vmRefresh(const QString & = QString::null);
     void vmShowLogs(const QString & = QString::null);
+    void vmOpenInFileManager(const QString &aUuid = QString::null);
+    void vmCreateShortcut(const QString &aUuid = QString::null);
 
     void refreshVMList();
     void refreshVMItem(const QString &aID, bool aDetails, bool aSnapshots, bool aDescription);
@@ -168,6 +170,8 @@ private:
     QAction *mVmPauseAction;
     QAction *mVmRefreshAction;
     QAction *mVmShowLogsAction;
+    QAction *mVmOpenInFileManagerAction;
+    QAction *mVmCreateShortcut;
 
     VBoxHelpActions mHelpActions;
 
