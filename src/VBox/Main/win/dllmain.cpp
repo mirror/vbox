@@ -19,6 +19,7 @@
 #include "VBox/com/defs.h"
 
 #include <SessionImpl.h>
+#include <VirtualBoxClientImpl.h>
 
 #include <atlbase.h>
 #include <atlcom.h>
@@ -29,6 +30,7 @@ CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_Session, Session)
+    OBJECT_ENTRY(CLSID_VirtualBoxClient, VirtualBoxClient)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

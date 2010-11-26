@@ -128,66 +128,66 @@
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS1_CI(_class, _interface)                 \
-   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
-   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
-   NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI(_class, _interface)                 \
-   NS_IMPL_CI_INTERFACE_GETTER1(_class, _interface)
+  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
+  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
+  NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI(_class, _interface)                  \
+  NS_IMPL_CI_INTERFACE_GETTER1(_class, _interface)
 #endif
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS2_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS2_CI(_class, _i1, _i2)                   \
-   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
-   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
-   NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI(_class, _i1, _i2)                   \
-   NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
+  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
+  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
+  NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI(_class, _i1, _i2)                    \
+  NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
 #endif
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS3_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS3_CI(_class, _i1, _i2, _i3)              \
-   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
-   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
-   NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI(_class, _i1, _i2, _i3)              \
-   NS_IMPL_CI_INTERFACE_GETTER3(_class, _i1, _i2, _i3)
+  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
+  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
+  NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI(_class, _i1, _i2, _i3)               \
+  NS_IMPL_CI_INTERFACE_GETTER3(_class, _i1, _i2, _i3)
 #endif
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS4_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS4_CI(_class, _i1, _i2, _i3, _i4)         \
-   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
-   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
-   NS_IMPL_THREADSAFE_QUERY_INTERFACE4_CI(_class, _i1, _i2, _i3, _i4)         \
-   NS_IMPL_CI_INTERFACE_GETTER4(_class, _i1, _i2, _i3, _i4)
+  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
+  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
+  NS_IMPL_THREADSAFE_QUERY_INTERFACE4_CI(_class, _i1, _i2, _i3, _i4)          \
+  NS_IMPL_CI_INTERFACE_GETTER4(_class, _i1, _i2, _i3, _i4)
 #endif
 
 #ifndef NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI
 # define NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI(_class, _i1, _ic1)             \
-   NS_INTERFACE_MAP_BEGIN(_class)                                             \
+  NS_INTERFACE_MAP_BEGIN(_class)                                              \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i1, _ic1)                               \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, _ic1)                       \
     NS_IMPL_QUERY_CLASSINFO(_class)                                           \
-   NS_INTERFACE_MAP_END
+  NS_INTERFACE_MAP_END
 #endif
 
 #ifndef NS_IMPL_QUERY_INTERFACE2_AMBIGUOUS_CI
 # define NS_IMPL_QUERY_INTERFACE2_AMBIGUOUS_CI(_class, _i1, _ic1,             \
                                                _i2, _ic2)                     \
-   NS_INTERFACE_MAP_BEGIN(_class)                                             \
+  NS_INTERFACE_MAP_BEGIN(_class)                                              \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i1, _ic1)                               \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i2, _ic2)                               \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, _ic1)                       \
     NS_IMPL_QUERY_CLASSINFO(_class)                                           \
-   NS_INTERFACE_MAP_END
+  NS_INTERFACE_MAP_END
 #endif
 
 #ifndef NS_IMPL_QUERY_INTERFACE3_AMBIGUOUS_CI
 # define NS_IMPL_QUERY_INTERFACE3_AMBIGUOUS_CI(_class, _i1, _ic1,             \
                                                _i2, _ic2, _i3, _ic3)          \
-   NS_INTERFACE_MAP_BEGIN(_class)                                             \
+  NS_INTERFACE_MAP_BEGIN(_class)                                              \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i1, _ic1)                               \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i2, _ic2)                               \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i3, _ic3)                               \
     NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, _ic1)                       \
     NS_IMPL_QUERY_CLASSINFO(_class)                                           \
-   NS_INTERFACE_MAP_END
+  NS_INTERFACE_MAP_END
 #endif
 
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_AMBIGUOUS_CI NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI
@@ -196,42 +196,42 @@
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_AMBIGUOUS_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS1_AMBIGUOUS_CI(_class, _i1, _ic1)        \
-   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
-   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
-   NS_IMPL_THREADSAFE_QUERY_INTERFACE1_AMBIGUOUS_CI(_class, _i1, _ic1)        \
-   NS_IMPL_CI_INTERFACE_GETTER1(_class, _i1)
+  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
+  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
+  NS_IMPL_THREADSAFE_QUERY_INTERFACE1_AMBIGUOUS_CI(_class, _i1, _ic1)         \
+  NS_IMPL_CI_INTERFACE_GETTER1(_class, _i1)
 #endif
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(_class, _i1, _ic1,        \
                                                      _i2, _ic2)               \
-   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
-   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
-   NS_IMPL_THREADSAFE_QUERY_INTERFACE2_AMBIGUOUS_CI(_class, _i1, _ic1,        \
-                                                    _i2, _ic2)                \
-   NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
+  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
+  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
+  NS_IMPL_THREADSAFE_QUERY_INTERFACE2_AMBIGUOUS_CI(_class, _i1, _ic1,         \
+                                                   _i2, _ic2)                 \
+  NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
 #endif
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS3_AMBIGUOUS_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS3_AMBIGUOUS_CI(_class, _i1, _ic1,        \
                                                      _i2, _ic2, _i3, _ic3)    \
-   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
-   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
-   NS_IMPL_THREADSAFE_QUERY_INTERFACE3_AMBIGUOUS_CI(_class, _i1, _ic1,        \
-                                                    _i2, _ic2, _i3, _ic3)     \
-   NS_IMPL_CI_INTERFACE_GETTER3(_class, _i1, _i2, _i3)
+  NS_IMPL_THREADSAFE_ADDREF(_class)                                           \
+  NS_IMPL_THREADSAFE_RELEASE(_class)                                          \
+  NS_IMPL_THREADSAFE_QUERY_INTERFACE3_AMBIGUOUS_CI(_class, _i1, _ic1,         \
+                                                   _i2, _ic2, _i3, _ic3)      \
+  NS_IMPL_CI_INTERFACE_GETTER3(_class, _i1, _i2, _i3)
 #endif
 
   </cpp>
 </if>
 
 <library
-   name="VirtualBox"
-   uuid="46137EEC-703B-4fe5-AFD4-7C9BBBBA0259"
-   version="1.3"
-   desc="VirtualBox Type Library"
-   appUuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
-   supportsErrorInfo="yes"
+  name="VirtualBox"
+  uuid="46137EEC-703B-4fe5-AFD4-7C9BBBBA0259"
+  version="1.3"
+  desc="VirtualBox Type Library"
+  appUuid="819B4D85-9CEE-493C-B6FC-64FFE759B3C9"
+  supportsErrorInfo="yes"
 >
 
 
@@ -384,12 +384,14 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enum name="SettingsVersion"
-        uuid="52bd6f5f-1adb-4493-975d-581a9c4b803f"
+  <enum
+    name="SettingsVersion"
+    uuid="52bd6f5f-1adb-4493-975d-581a9c4b803f"
     >
-    <desc>Settings version of VirtualBox settings files. This is written to
-          the "version" attribute of the root "VirtualBox" element in the settings
-          file XML and indicates which VirtualBox version wrote the file.
+    <desc>
+      Settings version of VirtualBox settings files. This is written to
+      the "version" attribute of the root "VirtualBox" element in the settings
+      file XML and indicates which VirtualBox version wrote the file.
     </desc>
 
     <const name="Null"    value="0">
@@ -410,7 +412,7 @@
     <const name="v1_3"     value="5">
       <desc>Settings version "1.3", written by VirtualBox 2.0.12.</desc>
       <!--
-            Machine XML: Capitalization of Uart, Lpt elements and many attributes changed.
+          Machine XML: Capitalization of Uart, Lpt elements and many attributes changed.
       -->
     </const>
     <const name="v1_4"     value="6">
@@ -422,54 +424,61 @@
     </const>
     <const name="v1_5"     value="7">
       <desc>Intermediate settings version, understood by VirtualBox 2.1.x.</desc>
-      <!-- 2008-09-04: 2.0.0 released
-           2008-11-20: settings version 1.5 introduced
-           2008-12-17: 2.1.0 released
-           Machine changes:
-              guest OS identifiers changed;
-              Machine/Hardware/Display/MonitorCount renamed to monitorCount;
-              Machine/Hardware/Display/Accelerate3D renamed to accelerate3D;
-              Machine/Hardware/CPU/CPUCount/@count changed to CPU/@count
+      <!--
+          2008-09-04: 2.0.0 released
+          2008-11-20: settings version 1.5 introduced
+          2008-12-17: 2.1.0 released
+          Machine changes:
+            guest OS identifiers changed;
+            Machine/Hardware/Display/MonitorCount renamed to monitorCount;
+            Machine/Hardware/Display/Accelerate3D renamed to accelerate3D;
+            Machine/Hardware/CPU/CPUCount/@count changed to CPU/@count
       -->
     </const>
     <const name="v1_6"     value="8">
       <desc>Settings version "1.6", written by VirtualBox 2.1.4 (at least).</desc>
-      <!-- 2008-12-17: 2.1.0 released
-           2008-12-19: settings version 1.6 introduced (is in 2.1 branch)
-           2009-04-08: 2.2.0 released
-           Machine changes: remove all Machine/Hardware/Network/Adapter/HostInterface[@TAPSetup or @TAPTerminate]/ attributes (done)
+      <!--
+          2008-12-17: 2.1.0 released
+          2008-12-19: settings version 1.6 introduced (is in 2.1 branch)
+          2009-04-08: 2.2.0 released
+          Machine changes: remove all Machine/Hardware/Network/Adapter/HostInterface[@TAPSetup or @TAPTerminate]/ attributes (done)
       -->
     </const>
     <const name="v1_7"     value="9">
       <desc>Settings version "1.7", written by VirtualBox 2.2.x and 3.0.x.</desc>
-      <!-- 2008-12-17: 2.1.0 released
-           2009-03-11: settings version 1.7 introduced (is in 2.2 branch)
-           2009-04-08: 2.2.0 released
-           VirtualBox.xml additions: NetserviceRegistry with DHCPServers (done)
-           Machine changes: HardDiskAttachments is now StorageControllers (done)
+      <!--
+          2008-12-17: 2.1.0 released
+          2009-03-11: settings version 1.7 introduced (is in 2.2 branch)
+          2009-04-08: 2.2.0 released
+          VirtualBox.xml additions: NetserviceRegistry with DHCPServers (done)
+          Machine changes: HardDiskAttachments is now StorageControllers (done)
       -->
     </const>
     <const name="v1_8"     value="10">
       <desc>Intermediate settings version "1.8", understood by VirtualBox 3.1.x.</desc>
-      <!-- Machine additions: Display/@accelerate2DVideo (done)
+      <!--
+          Machine additions: Display/@accelerate2DVideo (done)
       -->
     </const>
     <const name="v1_9"     value="11">
       <desc>Settings version "1.9", written by VirtualBox 3.1.x.</desc>
-      <!-- The big storage controller / DVD / Floppy rework (done)
-           -->
+      <!--
+          The big storage controller / DVD / Floppy rework (done)
+      -->
     </const>
     <const name="v1_10"     value="12">
       <desc>Settings version "1.10", written by VirtualBox 3.2.x.</desc>
-      <!-- Machine changes: RTC localOrUTC (done)
-           CPU hot-plug support
-           -->
+      <!--
+          Machine changes: RTC localOrUTC (done)
+          CPU hot-plug support
+      -->
     </const>
     <const name="v1_11"     value="13">
       <desc>Settings version "1.11", written by VirtualBox 4.0.x.</desc>
-      <!-- Machine changes: HD Audio controller, per-machine disk registries,
-           /@format attribute for DVD and floppy images.
-           -->
+      <!--
+          Machine changes: HD Audio controller, per-machine disk registries,
+          /@format attribute for DVD and floppy images.
+      -->
     </const>
     <const name="Future"     value="99999">
       <desc>Settings version greater than "1.11", written by a future VirtualBox version.</desc>
@@ -477,21 +486,21 @@
   </enum>
 
   <enum
-       name="AccessMode"
-       uuid="1da0007c-ddf7-4be8-bcac-d84a1558785f"
-       >
-      <desc>
-          Access mode for opening files.
-      </desc>
+    name="AccessMode"
+    uuid="1da0007c-ddf7-4be8-bcac-d84a1558785f"
+    >
+    <desc>
+      Access mode for opening files.
+    </desc>
 
-      <const name="ReadOnly"   value="1"/>
-      <const name="ReadWrite"  value="2"/>
+    <const name="ReadOnly"   value="1"/>
+    <const name="ReadWrite"  value="2"/>
   </enum>
 
   <enum
     name="MachineState"
     uuid="ec6c6a9e-113d-4ff4-b44f-0b69f21c97fe"
-  >
+    >
     <desc>
       Virtual machine execution state.
 
@@ -795,7 +804,7 @@
   <enum
     name="SessionState"
     uuid="cf2700c0-ea4b-47ae-9725-7810114b94d8"
-  >
+    >
     <desc>
       Session state. This enumeration represents possible values of
       <link to="IMachine::sessionState"/> and <link to="ISession::state"/>
@@ -844,7 +853,7 @@
   <enum
     name="CPUPropertyType"
     uuid="24d356a6-2f45-4abd-b977-1cbe9c4701f5"
-  >
+    >
     <desc>
       Virtual CPU property type. This enumeration represents possible values of the
       IMachine get- and setCPUProperty methods.
@@ -871,7 +880,7 @@
   <enum
     name="HWVirtExPropertyType"
     uuid="ce81dfdd-d2b8-4a90-bbea-40ee8b7ffcee"
-  >
+    >
     <desc>
       Hardware virtualization property type. This enumeration represents possible values
       for the <link to="IMachine::getHWVirtExProperty"/> and
@@ -917,9 +926,9 @@
   </enum>
 
   <enum
-   name="FaultToleranceState"
-   uuid="5124f7ec-6b67-493c-9dee-ee45a44114e1"
-  >
+    name="FaultToleranceState"
+    uuid="5124f7ec-6b67-493c-9dee-ee45a44114e1"
+    >
     <desc>
       Used with <link to="IMachine::faultToleranceState" />.
     </desc>
@@ -935,9 +944,9 @@
   </enum>
 
   <enum
-   name="LockType"
-   uuid="138b53f8-db4b-47c5-b32b-4ef52f769413"
-  >
+    name="LockType"
+    uuid="138b53f8-db4b-47c5-b32b-4ef52f769413"
+    >
     <desc>
       Used with <link to="IMachine::lockMachine" />.
     </desc>
@@ -952,7 +961,7 @@
   <enum
     name="SessionType"
     uuid="A13C02CB-0C2C-421E-8317-AC0E8AAA153A"
-  >
+    >
     <desc>
       Session type. This enumeration represents possible values of the
       <link to="ISession::type"/> attribute.
@@ -984,7 +993,7 @@
   <enum
     name="DeviceType"
     uuid="6d9420f7-0b56-4636-99f9-7346f1b01e57"
-  >
+    >
     <desc>
       Device type.
     </desc>
@@ -1017,7 +1026,7 @@
   <enum
     name="DeviceActivity"
     uuid="6FC8AEAA-130A-4eb5-8954-3F921422D707"
-  >
+    >
     <desc>
       Device activity for <link to="IConsole::getDeviceActivity"/>.
     </desc>
@@ -1031,9 +1040,9 @@
   <enum
     name="ClipboardMode"
     uuid="33364716-4008-4701-8f14-be0fa3d62950"
-  >
+    >
     <desc>
-     Host-Guest clipboard interchange mode.
+      Host-Guest clipboard interchange mode.
     </desc>
 
     <const name="Disabled"          value="0"/>
@@ -1045,7 +1054,7 @@
   <enum
     name="Scope"
     uuid="7c91096e-499e-4eca-9f9b-9001438d7855"
-  >
+    >
     <desc>
       Scope of the operation.
 
@@ -1061,7 +1070,7 @@
   <enum
     name="BIOSBootMenuMode"
     uuid="ae4fb9f7-29d2-45b4-b2c7-d579603135d5"
-  >
+    >
     <desc>
       BIOS boot menu mode.
     </desc>
@@ -1074,7 +1083,7 @@
   <enum
     name="ProcessorFeature"
     uuid="64c38e6b-8bcf-45ad-ac03-9b406287c5bf"
-  >
+    >
     <desc>
       CPU features.
     </desc>
@@ -1085,10 +1094,10 @@
     <const name="NestedPaging"    value="3"/>
   </enum>
 
-   <enum
+  <enum
     name="FirmwareType"
     uuid="b903f264-c230-483e-ac74-2b37ce60d371"
-   >
+    >
     <desc>
       Firmware type.
     </desc>
@@ -1109,10 +1118,10 @@
     </const>
   </enum>
 
-   <enum
+  <enum
     name="PointingHidType"
     uuid="0d3c17a2-821a-4b2e-ae41-890c6c60aa97"
-   >
+    >
     <desc>
       Type of pointing device used in a virtual machine.
     </desc>
@@ -1134,10 +1143,10 @@
     </const>
   </enum>
 
-   <enum
+  <enum
     name="KeyboardHidType"
     uuid="5a5b0996-3a3e-44bb-9019-56979812cbcc"
-   >
+    >
     <desc>
       Type of keyboard device used in a virtual machine.
     </desc>
@@ -1162,11 +1171,11 @@
   -->
 
   <interface
-     name="IVirtualBoxErrorInfo" extends="$errorinfo"
-     uuid="e053d3c0-f493-491b-a735-3a9f0b1feed4"
-     supportsErrorInfo="no"
-     wsmap="managed"
-     >
+    name="IVirtualBoxErrorInfo" extends="$errorinfo"
+    uuid="e053d3c0-f493-491b-a735-3a9f0b1feed4"
+    supportsErrorInfo="no"
+    wsmap="managed"
+    >
     <desc>
       The IVirtualBoxErrorInfo interface represents extended error information.
 
@@ -1265,7 +1274,7 @@
     name="IDHCPServer" extends="$unknown"
     uuid="6cfe387c-74fb-4ca7-bff6-973bec8af7a3"
     wsmap="managed"
-  >
+    >
     <desc>
       The IDHCPServer interface represents the vbox dhcp server configuration.
 
@@ -1376,7 +1385,7 @@
     name="IVirtualBox" extends="$unknown"
     uuid="d2de270c-1d4b-4c9e-843f-bbb9b47269ff"
     wsmap="managed"
-  >
+    >
     <desc>
       The IVirtualBox interface represents the main interface exposed by the
       product that provides virtual machine management.
@@ -2191,7 +2200,7 @@
   <enum
     name="VFSType"
     uuid="813999ba-b949-48a8-9230-aadc6285e2f2"
-  >
+    >
     <desc>
       Virtual file systems supported by VFSExplorer.
     </desc>
@@ -2205,7 +2214,7 @@
   <enum
     name="VFSFileType"
     uuid="714333cd-44e2-415f-a245-d378fa9b1242"
-  >
+    >
     <desc>
       File types known by VFSExplorer.
     </desc>
@@ -2222,10 +2231,10 @@
   </enum>
 
   <interface
-     name="IVFSExplorer" extends="$unknown"
-     uuid="003d7f92-d38e-487f-b790-8c5e8631cb2f"
-     wsmap="managed"
-     >
+    name="IVFSExplorer" extends="$unknown"
+    uuid="003d7f92-d38e-487f-b790-8c5e8631cb2f"
+    wsmap="managed"
+    >
     <desc>
       The VFSExplorer interface unifies access to different file system
       types. This includes local file systems as well remote file systems like
@@ -2326,10 +2335,10 @@
   -->
 
   <interface
-     name="IAppliance" extends="$unknown"
-     uuid="7b148032-4124-4f46-b56a-b48ac1273f5a"
-     wsmap="managed"
-     >
+    name="IAppliance" extends="$unknown"
+    uuid="7b148032-4124-4f46-b56a-b48ac1273f5a"
+    wsmap="managed"
+    >
     <desc>
         Represents a platform-independent appliance in OVF format. An instance of this is returned
         by <link to="IVirtualBox::createAppliance" />, which can then be used to import and export
@@ -2587,7 +2596,7 @@
   <enum
     name="VirtualSystemDescriptionType"
     uuid="c0f8f135-3a1d-417d-afa6-b38b95a91f90"
-  >
+    >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
 
@@ -2620,7 +2629,7 @@
   <enum
     name="VirtualSystemDescriptionValueType"
     uuid="56d9403f-3425-4118-9919-36f2a9b8c77c"
-  >
+    >
     <desc>Used with <link to="IVirtualSystemDescription::getValuesByType" /> to describe the value
     type to fetch.</desc>
 
@@ -2632,10 +2641,10 @@
   </enum>
 
   <interface
-     name="IVirtualSystemDescription" extends="$unknown"
-     uuid="d7525e6c-531a-4c51-8e04-41235083a3d8"
-     wsmap="managed"
-     >
+    name="IVirtualSystemDescription" extends="$unknown"
+    uuid="d7525e6c-531a-4c51-8e04-41235083a3d8"
+    wsmap="managed"
+    >
 
     <desc>Represents one virtual system (machine) in an appliance. This interface is used in
       the <link to="IAppliance::virtualSystemDescriptions" /> array. After
@@ -2738,8 +2747,8 @@
         no longer exported. For SATA and SCSI controllers, the channel can range from 0-29.
       </li>
       <li>
-         "CDROM": a virtual CD-ROM drive. The matching item in @a aExtraConfigValue[] contains the same
-         attachment information as with "HardDiskImage" items.
+        "CDROM": a virtual CD-ROM drive. The matching item in @a aExtraConfigValue[] contains the same
+        attachment information as with "HardDiskImage" items.
       </li>
       <li>
         "CDROM": a virtual floppy drive. The matching item in @a aExtraConfigValue[] contains the same
@@ -2896,11 +2905,11 @@
   -->
 
   <interface
-     name="IInternalMachineControl" extends="$unknown"
-     uuid="476126af-e223-4490-a8a0-b1f1575be013"
-     internal="yes"
-     wsmap="suppress"
-     >
+    name="IInternalMachineControl" extends="$unknown"
+    uuid="476126af-e223-4490-a8a0-b1f1575be013"
+    internal="yes"
+    wsmap="suppress"
+    >
     <method name="setRemoveSavedStateFile">
       <desc>
         Updates the flag whether the saved state file is removed on a
@@ -3292,10 +3301,10 @@
   </interface>
 
   <interface
-     name="IBIOSSettings" extends="$unknown"
-     uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
-     wsmap="managed"
-     >
+    name="IBIOSSettings" extends="$unknown"
+    uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
+    wsmap="managed"
+    >
     <desc>
         The IBIOSSettings interface represents BIOS settings of the virtual
         machine. This is used only in the <link to="IMachine::BIOSSettings" /> attribute.
@@ -3353,8 +3362,10 @@
 
   </interface>
 
-  <enum name="CleanupMode"
-        uuid="67897c50-7cca-47a9-83f6-ce8fd8eb5441">
+  <enum
+    name="CleanupMode"
+    uuid="67897c50-7cca-47a9-83f6-ce8fd8eb5441"
+    >
     <desc>Cleanup mode, used with <link to="IMachine::unregister" />.
     </desc>
     <const name="UnregisterOnly"                  value="1">
@@ -3372,10 +3383,10 @@
   </enum>
 
   <interface
-     name="IEventContext" extends="$unknown"
-     uuid="7563F4E7-1583-40F7-B4C4-C9BA02CB0AE3"
-     wsmap="managed"
-     >
+    name="IEventContext" extends="$unknown"
+    uuid="7563F4E7-1583-40F7-B4C4-C9BA02CB0AE3"
+    wsmap="managed"
+    >
     <desc>
       Placeholder class for event contexts.
     </desc>
@@ -3383,10 +3394,10 @@
 
 
   <interface
-     name="IPciAddress" extends="$unknown"
-     uuid="D88B324F-DB19-4D3B-A1A9-BF5B127199A8"
-     wsmap="struct"
-     >
+    name="IPciAddress" extends="$unknown"
+    uuid="D88B324F-DB19-4D3B-A1A9-BF5B127199A8"
+    wsmap="struct"
+    >
 
     <desc>
       Address on the PCI bus.
@@ -3425,11 +3436,11 @@
     </method>
   </interface>
 
-    <interface
-     name="IPciDeviceAttachment" extends="$unknown"
-     uuid="91f33d6f-e621-4f70-a77e-15f0e3c714d5"
-     wsmap="struct"
-     >
+  <interface
+    name="IPciDeviceAttachment" extends="$unknown"
+    uuid="91f33d6f-e621-4f70-a77e-15f0e3c714d5"
+    wsmap="struct"
+    >
 
     <desc>
       Information about PCI attachments.
@@ -3463,10 +3474,10 @@
 
 
   <interface
-     name="IMachine" extends="$unknown"
-     uuid="711cbb73-75af-463c-af17-8b7860c01fe8"
-     wsmap="managed"
-     >
+    name="IMachine" extends="$unknown"
+    uuid="711cbb73-75af-463c-af17-8b7860c01fe8"
+    wsmap="managed"
+    >
     <desc>
       The IMachine interface represents a virtual machine, or guest, created
       in VirtualBox.
@@ -3657,11 +3668,11 @@
     </attribute>
 
     <attribute name="CPUExecutionCap" type="unsigned long">
-       <desc>
-         Means to limit the number of CPU cycles a guest can use. The unit
-         is percentage of host CPU cycles per second. The valid range
-         is 1 - 100. 100 (the default) implies no limit.
-       </desc>
+      <desc>
+        Means to limit the number of CPU cycles a guest can use. The unit
+        is percentage of host CPU cycles per second. The valid range
+        is 1 - 100. 100 (the default) implies no limit.
+      </desc>
     </attribute>
 
       <attribute name="memorySize" type="unsigned long">
@@ -3711,7 +3722,7 @@
 
     <attribute name="firmwareType" type="FirmwareType">
       <desc>Type of firmware (such as legacy BIOS or EFI), used for initial
-       bootstrap in this VM.</desc>
+        bootstrap in this VM.</desc>
     </attribute>
 
     <attribute name="pointingHidType" type="PointingHidType">
@@ -4758,7 +4769,7 @@
       <param name="storageController" type="IStorageController" dir="return"/>
     </method>
 
-   <method name="removeStorageController">
+    <method name="removeStorageController">
       <desc>
         Removes a storage controller from the machine.
 
@@ -5844,14 +5855,14 @@
   -->
 
   <interface
-     name="IVRDEServerInfo" extends="$unknown"
-     uuid="714434a1-58c3-4aab-9049-7652c5df113b"
-     wsmap="struct"
-     >
-     <desc>
-        Contains information about the remote desktop (VRDE) server capabilities and status.
-        This is used in the <link to="IConsole::VRDEServerInfo" /> attribute.
-     </desc>
+    name="IVRDEServerInfo" extends="$unknown"
+    uuid="714434a1-58c3-4aab-9049-7652c5df113b"
+    wsmap="struct"
+    >
+    <desc>
+      Contains information about the remote desktop (VRDE) server capabilities and status.
+      This is used in the <link to="IConsole::VRDEServerInfo" /> attribute.
+    </desc>
 
     <attribute name="active" type="boolean" readonly="yes">
       <desc>
@@ -5952,10 +5963,10 @@
   </interface>
 
   <interface
-     name="IConsole" extends="$unknown"
-     uuid="515e8e8d-f932-4d8e-9f32-79a52aead882"
-     wsmap="managed"
-     >
+    name="IConsole" extends="$unknown"
+    uuid="515e8e8d-f932-4d8e-9f32-79a52aead882"
+    wsmap="managed"
+    >
     <desc>
       The IConsole interface represents an interface to control virtual
       machine execution.
@@ -6694,7 +6705,7 @@
   <enum
     name="HostNetworkInterfaceMediumType"
     uuid="1aa54aaf-2497-45a2-bfb1-8eb225e93d5b"
-  >
+    >
     <desc>
       Type of encapsulation. Ethernet encapsulation includes both wired and
       wireless Ethernet connections.
@@ -6726,7 +6737,7 @@
   <enum
     name="HostNetworkInterfaceStatus"
     uuid="CC474A69-2710-434B-8D99-C38E5D5A6F41"
-  >
+    >
     <desc>
       Current status of the interface.
       <see>IHostNetworkInterface</see>
@@ -6752,7 +6763,7 @@
   <enum
     name="HostNetworkInterfaceType"
     uuid="67431b00-9946-48a2-bc02-b25c5919f4f3"
-  >
+    >
     <desc>
       Network interface type.
     </desc>
@@ -6761,10 +6772,10 @@
   </enum>
 
   <interface
-     name="IHostNetworkInterface" extends="$unknown"
-     uuid="ce6fae58-7642-4102-b5db-c9005c2320a8"
-     wsmap="managed"
-     >
+    name="IHostNetworkInterface" extends="$unknown"
+    uuid="ce6fae58-7642-4102-b5db-c9005c2320a8"
+    wsmap="managed"
+    >
     <desc>
       Represents one of host's network interfaces. IP V6 address and network
       mask are strings of 32 hexdecimal digits grouped by four. Groups are
@@ -6862,10 +6873,10 @@
   </interface>
 
   <interface
-     name="IHost" extends="$unknown"
-     uuid="35b004f4-7806-4009-bfa8-d1308adba7e5"
-     wsmap="managed"
-     >
+    name="IHost" extends="$unknown"
+    uuid="35b004f4-7806-4009-bfa8-d1308adba7e5"
+    wsmap="managed"
+    >
     <desc>
       The IHost interface represents the physical machine that this VirtualBox
       installation runs on.
@@ -7305,11 +7316,11 @@
   -->
 
   <interface
-     name="ISystemProperties"
-     extends="$unknown"
-     uuid="51c81048-b261-4fa2-a44e-fd756f0db589"
-     wsmap="managed"
-     >
+    name="ISystemProperties"
+    extends="$unknown"
+    uuid="51c81048-b261-4fa2-a44e-fd756f0db589"
+    wsmap="managed"
+    >
     <desc>
       The ISystemProperties interface represents global properties of the given
       VirtualBox installation.
@@ -7558,7 +7569,7 @@
     <attribute name="LogHistoryCount" type="unsigned long">
       <desc>
         This value specifies how many old release log files are kept.
-       </desc>
+      </desc>
     </attribute>
 
     <attribute name="defaultAudioDriver" type="AudioDriverType" readonly="yes">
@@ -7660,7 +7671,7 @@
     name="IGuestOSType" extends="$unknown"
     uuid="432c1546-1354-4abf-bf08-878a32a373f5"
     wsmap="struct"
-  >
+    >
     <desc>
     </desc>
 
@@ -7736,7 +7747,7 @@
       <desc>Returns @c true if using USB Human Interface Devices, such as keyboard and mouse recommended.</desc>
     </attribute>
 
-     <attribute name="recommendedHpet" type="boolean" readonly="yes">
+    <attribute name="recommendedHpet" type="boolean" readonly="yes">
       <desc>Returns @c true if using HPET is recommended for this OS type.</desc>
     </attribute>
 
@@ -7748,20 +7759,20 @@
       <desc>Returns @c true if the RTC of this VM should be set to UTC</desc>
     </attribute>
 
-     <attribute name="recommendedChipset" type="ChipsetType" readonly="yes">
+    <attribute name="recommendedChipset" type="ChipsetType" readonly="yes">
       <desc>Recommended chipset type.</desc>
-     </attribute>
+    </attribute>
 
-     <attribute name="recommendedAudioController" type="AudioControllerType" readonly="yes">
+    <attribute name="recommendedAudioController" type="AudioControllerType" readonly="yes">
       <desc>Recommended audio type.</desc>
-     </attribute>
+    </attribute>
 
   </interface>
 
   <enum
     name="AdditionsRunLevelType"
     uuid="a25417ee-a9dd-4f5b-b0dc-377860087754"
-  >
+    >
     <desc>
       Guest Additions run level type.
     </desc>
@@ -7800,7 +7811,7 @@
   <enum
     name="ExecuteProcessFlag"
     uuid="3258e8a5-ba0c-43d5-86b5-cf91405fddc0"
-  >
+    >
     <desc>
       Guest process execution flags.
     </desc>
@@ -7822,7 +7833,7 @@
   <enum
     name="ProcessInputFlag"
     uuid="5d38c1dd-2604-4ddf-92e5-0c0cdd3bdbd5"
-  >
+    >
     <desc>
       Guest process input flags.
     </desc>
@@ -7838,7 +7849,7 @@
   <enum
     name="CopyFileFlag"
     uuid="23f79fdf-738a-493d-b80b-42d607c9b916"
-  >
+    >
     <desc>
       Host/Guest copy flags.
     </desc>
@@ -7878,10 +7889,10 @@
   </enum>
 
   <interface
-     name="IGuest" extends="$unknown"
-     uuid="1039b0cc-9bc1-4c6d-8d12-864aa48aa5b9"
-     wsmap="managed"
-     >
+    name="IGuest" extends="$unknown"
+    uuid="1039b0cc-9bc1-4c6d-8d12-864aa48aa5b9"
+    wsmap="managed"
+    >
     <desc>
       The IGuest interface represents information about the operating system
       running inside the virtual machine. Used in
@@ -7946,43 +7957,43 @@
 
     <method name="internalGetStatistics">
       <desc>
-         Internal method; do not use as it might change at any time
+        Internal method; do not use as it might change at any time
       </desc>
       <param name="cpuUser" type="unsigned long" dir="out">
-         <desc>Percentage of processor time spent in user mode as seen by the guest</desc>
+        <desc>Percentage of processor time spent in user mode as seen by the guest</desc>
       </param>
       <param name="cpuKernel" type="unsigned long" dir="out">
-         <desc>Percentage of processor time spent in kernel mode as seen by the guest</desc>
+        <desc>Percentage of processor time spent in kernel mode as seen by the guest</desc>
       </param>
       <param name="cpuIdle" type="unsigned long" dir="out">
-         <desc>Percentage of processor time spent idling as seen by the guest</desc>
+        <desc>Percentage of processor time spent idling as seen by the guest</desc>
       </param>
       <param name="memTotal" type="unsigned long" dir="out">
-         <desc>Total amount of physical guest RAM</desc>
+        <desc>Total amount of physical guest RAM</desc>
       </param>
       <param name="memFree" type="unsigned long" dir="out">
-         <desc>Free amount of physical guest RAM</desc>
+        <desc>Free amount of physical guest RAM</desc>
       </param>
       <param name="memBalloon" type="unsigned long" dir="out">
-         <desc>Amount of ballooned physical guest RAM</desc>
+        <desc>Amount of ballooned physical guest RAM</desc>
       </param>
       <param name="memShared" type="unsigned long" dir="out">
         <desc>Amount of shared physical guest RAM</desc>
       </param>
       <param name="memCache" type="unsigned long" dir="out">
-         <desc>Total amount of guest (disk) cache memory</desc>
+        <desc>Total amount of guest (disk) cache memory</desc>
       </param>
       <param name="pagedTotal" type="unsigned long" dir="out">
-         <desc>Total amount of space in the page file</desc>
+        <desc>Total amount of space in the page file</desc>
       </param>
       <param name="memAllocTotal" type="unsigned long" dir="out">
-         <desc>Total amount of memory allocated by the hypervisor</desc>
+        <desc>Total amount of memory allocated by the hypervisor</desc>
       </param>
       <param name="memFreeTotal" type="unsigned long" dir="out">
-         <desc>Total amount of free memory available in the hypervisor</desc>
+        <desc>Total amount of free memory available in the hypervisor</desc>
       </param>
       <param name="memBalloonTotal" type="unsigned long" dir="out">
-         <desc>Total amount of memory ballooned by the hypervisor</desc>
+        <desc>Total amount of memory ballooned by the hypervisor</desc>
       </param>
       <param name="memSharedTotal" type="unsigned long" dir="out">
         <desc>Total amount of shared memory in the hypervisor</desc>
@@ -8316,10 +8327,10 @@
   -->
 
   <interface
-     name="IProgress" extends="$unknown"
-     uuid="A163C98F-8635-4AA8-B770-A9941737F3EF"
-     wsmap="managed"
-     >
+    name="IProgress" extends="$unknown"
+    uuid="A163C98F-8635-4AA8-B770-A9941737F3EF"
+    wsmap="managed"
+    >
     <desc>
         The IProgress interface is used to track and control
         asynchronous tasks within VirtualBox.
@@ -8535,10 +8546,10 @@
   -->
 
   <interface
-     name="ISnapshot" extends="$unknown"
-     uuid="1a2d0551-58a4-4107-857e-ef414fc42ffc"
-     wsmap="managed"
-     >
+    name="ISnapshot" extends="$unknown"
+    uuid="1a2d0551-58a4-4107-857e-ef414fc42ffc"
+    wsmap="managed"
+    >
     <desc>
       The ISnapshot interface represents a snapshot of the virtual
       machine.
@@ -8681,7 +8692,7 @@
   <enum
     name="MediumState"
     uuid="ef41e980-e012-43cd-9dea-479d4ef14d13"
-  >
+    >
     <desc>
       Virtual medium state.
       <see>IMedium</see>
@@ -8735,7 +8746,7 @@
   <enum
     name="MediumType"
     uuid="19388a99-8e70-4bd4-9a95-90cbc513ef6d"
-   >
+    >
     <desc>
       Virtual medium type.
       <see>IMedium</see>
@@ -8776,7 +8787,7 @@
   <enum
     name="MediumVariant"
     uuid="584ea502-143b-4ab0-ad14-d1028fdf0316"
-   >
+    >
     <desc>
       Virtual medium image variant. More than one flag may be set.
       <see>IMedium</see>
@@ -8819,7 +8830,7 @@
     name="IMediumAttachment" extends="$unknown"
     uuid="c29452cc-ca72-404b-9261-cfc514f1e412"
     wsmap="struct"
-  >
+    >
     <desc>
       The IMediumAttachment interface links storage media to virtual machines.
       For each medium (<link to="IMedium"/>) which has been attached to a
@@ -8872,8 +8883,8 @@
 
     <attribute name="bandwidthLimit" type="unsigned long">
       <desc>
-         Maximum throughput allowed for this medium attachment, in units of 1 mbps.
-         A zero value means uncapped/unlimited.
+        Maximum throughput allowed for this medium attachment, in units of 1 mbps.
+        A zero value means uncapped/unlimited.
       </desc>
     </attribute>
 
@@ -8883,7 +8894,7 @@
     name="IMedium" extends="$unknown"
     uuid="bfcf5b8c-5155-4f24-9414-9457054b16db"
     wsmap="managed"
-  >
+    >
     <desc>
       The IMedium interface represents virtual storage for a machine's
       hard disks, CD/DVD or floppy drives. It will typically represent
@@ -10283,7 +10294,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="DataType"
     uuid="d90ea51e-a3f1-4a01-beb1-c1723c0d3ba7"
-  >
+    >
     <const name="Int32" value="0"/>
     <const name="Int8" value="1"/>
     <const name="String" value="2"/>
@@ -10292,7 +10303,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="DataFlags"
     uuid="86884dcf-1d6b-4f1b-b4bf-f5aa44959d60"
-  >
+    >
     <const name="None" value="0x00"/>
     <const name="Mandatory" value="0x01"/>
     <const name="Expert" value="0x02"/>
@@ -10303,9 +10314,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="MediumFormatCapabilities"
     uuid="7342ba79-7ce0-4d94-8f86-5ed5a185d9bd"
-  >
+    >
     <desc>
-       Medium format capability flags.
+      Medium format capability flags.
     </desc>
 
     <const name="Uuid" value="0x01">
@@ -10379,10 +10390,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IMediumFormat" extends="$unknown"
-     uuid="4e9a873f-0599-434a-8345-619ef3fb3111"
-     wsmap="managed"
-     >
+    name="IMediumFormat" extends="$unknown"
+    uuid="4e9a873f-0599-434a-8345-619ef3fb3111"
+    wsmap="managed"
+    >
     <desc>
         The IMediumFormat interface represents a medium format.
 
@@ -10500,10 +10511,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IKeyboard" extends="$unknown"
-     uuid="f6916ec5-a881-4237-898f-7de58cf88672"
-     wsmap="managed"
-     >
+    name="IKeyboard" extends="$unknown"
+    uuid="f6916ec5-a881-4237-898f-7de58cf88672"
+    wsmap="managed"
+    >
     <desc>
       The IKeyboard interface represents the virtual machine's keyboard. Used
       in <link to="IConsole::keyboard"/>.
@@ -10564,7 +10575,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="MouseButtonState"
     uuid="9ee094b8-b28a-4d56-a166-973cb588d7f8"
-  >
+    >
     <desc>
       Mouse button state.
     </desc>
@@ -10580,10 +10591,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IMouse" extends="$unknown"
-     uuid="05044a52-7811-4f00-ae3a-0ab7ff707b10"
-     wsmap="managed"
-     >
+    name="IMouse" extends="$unknown"
+    uuid="05044a52-7811-4f00-ae3a-0ab7ff707b10"
+    wsmap="managed"
+    >
     <desc>
       The IMouse interface represents the virtual machine's mouse. Used in
       <link to="IConsole::mouse"/>.
@@ -10763,7 +10774,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="FramebufferPixelFormat"
     uuid="7acfd5ed-29e3-45e3-8136-73c9224f3d2d"
-  >
+    >
     <desc>
       Format of the video memory buffer. Constants represented by this enum can
       be used to test for particular values of <link
@@ -10788,10 +10799,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IFramebuffer" extends="$unknown"
-     uuid="b7ed347a-5765-40a0-ae1c-f543eb4ddeaf"
-     wsmap="suppress"
-     >
+    name="IFramebuffer" extends="$unknown"
+    uuid="b7ed347a-5765-40a0-ae1c-f543eb4ddeaf"
+    wsmap="suppress"
+    >
     <attribute name="address" type="octet" mod="ptr" readonly="yes">
       <desc>Address of the start byte of the frame buffer.</desc>
     </attribute>
@@ -11117,10 +11128,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IFramebufferOverlay" extends="IFramebuffer"
-     uuid="0bcc1c7e-e415-47d2-bfdb-e4c705fb0f47"
-     wsmap="suppress"
-     >
+    name="IFramebufferOverlay" extends="IFramebuffer"
+    uuid="0bcc1c7e-e415-47d2-bfdb-e4c705fb0f47"
+    wsmap="suppress"
+    >
     <desc>
       The IFramebufferOverlay interface represents an alpha blended overlay
       for displaying status icons above an IFramebuffer.  It is always created
@@ -11163,10 +11174,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IDisplay" extends="$unknown"
-     uuid="09EED313-CD56-4D06-BD56-FAC0F716B5DD"
-     wsmap="managed"
-     >
+    name="IDisplay" extends="$unknown"
+    uuid="09EED313-CD56-4D06-BD56-FAC0F716B5DD"
+    wsmap="managed"
+    >
     <desc>
       The IDisplay interface represents the virtual machine's display.
 
@@ -11433,7 +11444,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="NetworkAttachmentType"
     uuid="44bce1ee-99f7-4e8e-89fc-80597fd9eeaf"
-  >
+    >
     <desc>
       Network attachment type.
     </desc>
@@ -11451,7 +11462,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="NetworkAdapterType"
     uuid="3c2281e4-d952-4e87-8c7d-24379cb6a81c"
-  >
+    >
     <desc>
       Network adapter type.
     </desc>
@@ -11480,10 +11491,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="INetworkAdapter" extends="$unknown"
-     uuid="9bf58a46-c3f7-4f31-80fa-dde9a5dc0b7b"
-     wsmap="managed"
-     >
+    name="INetworkAdapter" extends="$unknown"
+    uuid="9bf58a46-c3f7-4f31-80fa-dde9a5dc0b7b"
+    wsmap="managed"
+    >
     <desc>
         Represents a virtual network adapter that is attached to a virtual machine.
         Each virtual machine has a fixed number of network adapter slots with one
@@ -11649,7 +11660,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="PortMode"
     uuid="533b5fe3-0185-4197-86a7-17e37dd39d76"
-  >
+    >
     <desc>
       The PortMode enumeration represents possible communication modes for
       the virtual serial port device.
@@ -11670,10 +11681,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="ISerialPort" extends="$unknown"
-     uuid="937f6970-5103-4745-b78e-d28dcf1479a8"
-     wsmap="managed"
-     >
+    name="ISerialPort" extends="$unknown"
+    uuid="937f6970-5103-4745-b78e-d28dcf1479a8"
+    wsmap="managed"
+    >
 
     <desc>
       The ISerialPort interface represents the virtual serial port device.
@@ -11699,7 +11710,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <see>IMachine::getSerialPort</see>
     </desc>
 
-     <attribute name="slot" type="unsigned long" readonly="yes">
+    <attribute name="slot" type="unsigned long" readonly="yes">
       <desc>
         Slot number this serial port is plugged into. Corresponds to
         the value you pass to <link to="IMachine::getSerialPort"/>
@@ -11758,10 +11769,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IParallelPort" extends="$unknown"
-     uuid="0c925f06-dd10-4b77-8de8-294d738c3214"
-     wsmap="managed"
-     >
+    name="IParallelPort" extends="$unknown"
+    uuid="0c925f06-dd10-4b77-8de8-294d738c3214"
+    wsmap="managed"
+    >
 
     <desc>
       The IParallelPort interface represents the virtual parallel port device.
@@ -11778,7 +11789,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <see>IMachine::getParallelPort</see>
     </desc>
 
-     <attribute name="slot" type="unsigned long" readonly="yes">
+    <attribute name="slot" type="unsigned long" readonly="yes">
       <desc>
         Slot number this parallel port is plugged into. Corresponds to
         the value you pass to <link to="IMachine::getParallelPort"/>
@@ -11818,10 +11829,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IMachineDebugger" extends="$unknown"
-     uuid="b0b2a2dd-0627-4502-91c2-ddc5e77609e0"
-     wsmap="suppress"
-     >
+    name="IMachineDebugger" extends="$unknown"
+    uuid="b0b2a2dd-0627-4502-91c2-ddc5e77609e0"
+    wsmap="suppress"
+    >
     <method name="resetStats">
       <desc>
         Reset VM statistics.
@@ -11937,10 +11948,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IUSBController" extends="$unknown"
-     uuid="6fdcccc5-abd3-4fec-9387-2ad3914fc4a8"
-     wsmap="managed"
-     >
+    name="IUSBController" extends="$unknown"
+    uuid="6fdcccc5-abd3-4fec-9387-2ad3914fc4a8"
+    wsmap="managed"
+    >
     <attribute name="enabled" type="boolean">
       <desc>
         Flag whether the USB controller is present in the
@@ -12095,10 +12106,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IUSBDevice" extends="$unknown"
-     uuid="f8967b0b-4483-400f-92b5-8b675d98a85b"
-     wsmap="managed"
-     >
+    name="IUSBDevice" extends="$unknown"
+    uuid="f8967b0b-4483-400f-92b5-8b675d98a85b"
+    wsmap="managed"
+    >
     <desc>
       The IUSBDevice interface represents a virtual USB device attached to the
       virtual machine.
@@ -12184,10 +12195,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IUSBDeviceFilter" extends="$unknown"
-     uuid="d6831fb4-1a94-4c2c-96ef-8d0d6192066d"
-     wsmap="managed"
-     >
+    name="IUSBDeviceFilter" extends="$unknown"
+    uuid="d6831fb4-1a94-4c2c-96ef-8d0d6192066d"
+    wsmap="managed"
+    >
     <desc>
       The IUSBDeviceFilter interface represents an USB device filter used
       to perform actions on a group of USB devices.
@@ -12337,11 +12348,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="maskedInterfaces" type="unsigned long">
       <desc>
-       This is an advanced option for hiding one or more USB interfaces
-       from the guest. The value is a bit mask where the bits that are set
-       means the corresponding USB interface should be hidden, masked off
-       if you like.
-       This feature only works on Linux hosts.
+        This is an advanced option for hiding one or more USB interfaces
+        from the guest. The value is a bit mask where the bits that are set
+        means the corresponding USB interface should be hidden, masked off
+        if you like.
+        This feature only works on Linux hosts.
       </desc>
     </attribute>
 
@@ -12354,9 +12365,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <enum
-     name="USBDeviceState"
-     uuid="b99a2e65-67fb-4882-82fd-f3e5e8193ab4"
-     >
+    name="USBDeviceState"
+    uuid="b99a2e65-67fb-4882-82fd-f3e5e8193ab4"
+    >
     <desc>
       USB device state. This enumeration represents all possible states
       of the USB device physically attached to the host computer regarding
@@ -12429,10 +12440,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IHostUSBDevice" extends="IUSBDevice"
-     uuid="173b4b44-d268-4334-a00d-b6521c9a740a"
-     wsmap="managed"
-     >
+    name="IHostUSBDevice" extends="IUSBDevice"
+    uuid="173b4b44-d268-4334-a00d-b6521c9a740a"
+    wsmap="managed"
+    >
     <desc>
       The IHostUSBDevice interface represents a physical USB device attached
       to the host computer.
@@ -12463,7 +12474,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="USBDeviceFilterAction"
     uuid="cbc30a49-2f4e-43b5-9da6-121320475933"
-  >
+    >
     <desc>
       Actions for host USB device filters.
       <see>IHostUSBDeviceFilter, USBDeviceState</see>
@@ -12481,10 +12492,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"
-     uuid="4cc70246-d74a-400f-8222-3900489c0374"
-     wsmap="managed"
-     >
+    name="IHostUSBDeviceFilter" extends="IUSBDeviceFilter"
+    uuid="4cc70246-d74a-400f-8222-3900489c0374"
+    wsmap="managed"
+    >
     <desc>
       The IHostUSBDeviceFilter interface represents a global filter for a
       physical USB device used by the host computer. Used indirectly in
@@ -12520,7 +12531,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="AudioDriverType"
     uuid="4bcc3d73-c2fe-40db-b72f-0c2ca9d68496"
-  >
+    >
     <desc>
       Host audio driver type.
     </desc>
@@ -12557,7 +12568,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="AudioControllerType"
     uuid="7afd395c-42c3-444e-8788-3ce80292f36c"
-  >
+    >
     <desc>
       Virtual audio controller type.
     </desc>
@@ -12568,10 +12579,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IAudioAdapter" extends="$unknown"
-     uuid="921873db-5f3f-4b69-91f9-7be9e535a2cb"
-     wsmap="managed"
-     >
+    name="IAudioAdapter" extends="$unknown"
+    uuid="921873db-5f3f-4b69-91f9-7be9e535a2cb"
+    wsmap="managed"
+    >
     <desc>
         The IAudioAdapter interface represents the virtual audio adapter of
         the virtual machine. Used in <link to="IMachine::audioAdapter"/>.
@@ -12600,7 +12611,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="AuthType"
     uuid="7eef6ef6-98c2-4dc2-ab35-10d2b292028d"
-  >
+    >
     <desc>
       VirtualBox authentication type.
     </desc>
@@ -12618,10 +12629,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IVRDEServer" extends="$unknown"
-     uuid="468ab3d3-4808-489e-a301-05d60e959fbc"
-     wsmap="managed"
-     >
+    name="IVRDEServer" extends="$unknown"
+    uuid="468ab3d3-4808-489e-a301-05d60e959fbc"
+    wsmap="managed"
+    >
     <attribute name="enabled" type="boolean">
       <desc>VRDE server status.</desc>
     </attribute>
@@ -12709,10 +12720,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="ISharedFolder" extends="$unknown"
-     uuid="8388da11-b559-4574-a5b7-2bd7acd5cef8"
-     wsmap="struct"
-     >
+    name="ISharedFolder" extends="$unknown"
+    uuid="8388da11-b559-4574-a5b7-2bd7acd5cef8"
+    wsmap="struct"
+    >
     <desc>
       The ISharedFolder interface represents a folder in the host computer's
       file system accessible from the guest OS running inside a virtual
@@ -12815,11 +12826,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IInternalSessionControl" extends="$unknown"
-     uuid="06ef98a7-f7c0-45ba-bf99-9aca7a4d5530"
-     internal="yes"
-     wsmap="suppress"
-     >
+    name="IInternalSessionControl" extends="$unknown"
+    uuid="06ef98a7-f7c0-45ba-bf99-9aca7a4d5530"
+    internal="yes"
+    wsmap="suppress"
+    >
     <method name="getPID">
       <desc>PID of the process that has created this Session object.
       </desc>
@@ -12998,10 +13009,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="onCPUExecutionCapChange">
       <desc>
-         Notification when the CPU execution cap changes.
+        Notification when the CPU execution cap changes.
       </desc>
       <param name="executionCap" type="unsigned long" dir="in">
-         <desc>The new CPU execution cap value. (1-100)</desc>
+        <desc>The new CPU execution cap value. (1-100)</desc>
       </param>
     </method>
 
@@ -13237,10 +13248,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISession" extends="$unknown"
-     uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
-     wsmap="managed"
-     >
+    name="ISession" extends="$unknown"
+    uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
+    wsmap="managed"
+    >
     <desc>
       The ISession interface represents a client process and allows for locking
       virtual machines (represented by IMachine objects) to prevent conflicting
@@ -13357,7 +13368,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="StorageBus"
     uuid="eee67ab3-668d-4ef5-91e0-7025fe4a0d7a"
-  >
+    >
     <desc>
       The bus type of the storage controller (IDE, SATA, SCSI, SAS or Floppy);
       see <link to="IStorageController::bus" />.
@@ -13375,7 +13386,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="StorageControllerType"
     uuid="8a412b8a-f43e-4456-bd37-b474f0879a58"
-  >
+    >
     <desc>
       The exact variant of storage controller hardware presented
       to the guest; see <link to="IStorageController::controllerType" />.
@@ -13413,7 +13424,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <enum
     name="ChipsetType"
     uuid="8b4096a8-a7c3-4d3b-bbb1-05a0a51ec394"
-  >
+    >
     <desc>
       Type of emulated chipset (mostly southbridge).
     </desc>
@@ -13433,7 +13444,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IStorageController" extends="$unknown"
     uuid="a1556333-09b6-46d9-bfb7-fc239b7fbe1e"
     wsmap="managed"
-  >
+    >
     <desc>
         Represents a storage controller that is attached to a virtual machine
         (<link to="IMachine" />). Just as drives (hard disks, DVDs, FDs) are
@@ -13454,7 +13465,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
 
     <attribute name="name" type="wstring" readonly="yes">
-     <desc>
+      <desc>
         Name of the storage controller, as originally specified with
         <link to="IMachine::addStorageController" />. This then uniquely
         identifies this controller with other method calls such as
@@ -13580,12 +13591,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IManagedObjectRef" extends="$unknown"
-     uuid="9474d09d-2313-46de-b568-a42b8718e8ed"
-     internal="yes"
-     wsmap="managed"
-     wscpp="hardcoded"
-     >
+    name="IManagedObjectRef" extends="$unknown"
+    uuid="9474d09d-2313-46de-b568-a42b8718e8ed"
+    internal="yes"
+    wsmap="managed"
+    wscpp="hardcoded"
+    >
     <desc>
       Managed object reference.
 
@@ -13630,12 +13641,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
 
   <interface
-     name="IWebsessionManager" extends="$unknown"
-     uuid="dea1b4c7-2de3-418a-850d-7868617f7733"
-     internal="yes"
-     wsmap="global"
-     wscpp="hardcoded"
-     >
+    name="IWebsessionManager" extends="$unknown"
+    uuid="dea1b4c7-2de3-418a-850d-7868617f7733"
+    internal="yes"
+    wsmap="global"
+    wscpp="hardcoded"
+    >
     <desc>
       Websession manager. This provides essential services
       to webservice clients.
@@ -13684,7 +13695,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="IPerformanceMetric" extends="$unknown"
     uuid="2a1a60ae-9345-4019-ad53-d34ba41cbfe9" wsmap="managed"
-  >
+    >
     <desc>
       The IPerformanceMetric interface represents parameters of the given
       performance metric.
@@ -13747,7 +13758,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IPerformanceCollector" extends="$unknown"
     uuid="e22e1acb-ac4a-43bb-a31c-17321659b0c6"
     wsmap="managed"
-  >
+    >
     <desc>
       The IPerformanceCollector interface represents a service that collects
       and stores performance metrics data.
@@ -14050,27 +14061,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
       <param name="returnUnits" type="wstring" dir="out" safearray="yes">
-         <desc>
-           Units of measurement for each returned metric.
-         </desc>
-       </param>
-       <param name="returnScales" type="unsigned long" dir="out" safearray="yes">
-         <desc>
-           Divisor that should be applied to return values in order to get
-           floating point values. For example:
-           <tt>(double)returnData[returnDataIndices[0]+i] / returnScales[0]</tt>
-           will retrieve the floating point value of i-th sample of the first
-           metric.
-         </desc>
-       </param>
-       <param name="returnSequenceNumbers" type="unsigned long" dir="out" safearray="yes">
-         <desc>
-           Sequence numbers of the first elements of value sequences of
-           particular metrics returned in @c returnData. For aggregate metrics
-           it is the sequence number of the sample the aggregate started
-           calculation from.
-         </desc>
-       </param>
+        <desc>
+          Units of measurement for each returned metric.
+        </desc>
+      </param>
+      <param name="returnScales" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          Divisor that should be applied to return values in order to get
+          floating point values. For example:
+          <tt>(double)returnData[returnDataIndices[0]+i] / returnScales[0]</tt>
+          will retrieve the floating point value of i-th sample of the first
+          metric.
+        </desc>
+      </param>
+      <param name="returnSequenceNumbers" type="unsigned long" dir="out" safearray="yes">
+        <desc>
+          Sequence numbers of the first elements of value sequences of
+          particular metrics returned in @c returnData. For aggregate metrics
+          it is the sequence number of the sample the aggregate started
+          calculation from.
+        </desc>
+      </param>
       <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes">
         <desc>
           Indices of the first elements of value sequences of particular
@@ -14091,24 +14102,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
   </interface>
- <enum
-  name="NATAliasMode"
-  uuid="67772168-50d9-11df-9669-7fb714ee4fa1">
-  <desc></desc>
-  <const name="AliasLog" value="0x1">
+
+  <enum
+    name="NATAliasMode"
+    uuid="67772168-50d9-11df-9669-7fb714ee4fa1"
+    >
     <desc></desc>
-  </const>
-  <const name="AliasProxyOnly" value="0x02">
-    <desc></desc>
-  </const>
-  <const name="AliasUseSamePorts" value="0x04">
-    <desc></desc>
-  </const>
- </enum>
+    <const name="AliasLog" value="0x1">
+      <desc></desc>
+    </const>
+    <const name="AliasProxyOnly" value="0x02">
+      <desc></desc>
+    </const>
+    <const name="AliasUseSamePorts" value="0x04">
+      <desc></desc>
+    </const>
+  </enum>
+
   <enum
     name="NATProtocol"
     uuid="e90164be-eb03-11de-94af-fff9b1c1b19f"
-  >
+    >
     <desc>Protocol definitions used with NAT port-forwarding rules.</desc>
     <const name="UDP" value="0">
         <desc>Port-forwarding uses UDP protocol.</desc>
@@ -14119,13 +14133,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="INATEngine" extends="$unknown"
-     uuid="4b286616-eb03-11de-b0fb-1701eca42246"
-     wsmap="managed"
-     >
-     <desc>Interface for managing a NAT engine which is used with a virtual machine. This
-       allows for changing NAT behavior such as port-forwarding rules. This interface is
-       used in the <link to="INetworkAdapter::natDriver" /> attribute.</desc>
+    name="INATEngine" extends="$unknown"
+    uuid="4b286616-eb03-11de-b0fb-1701eca42246"
+    wsmap="managed"
+    >
+    <desc>Interface for managing a NAT engine which is used with a virtual machine. This
+      allows for changing NAT behavior such as port-forwarding rules. This interface is
+      used in the <link to="INetworkAdapter::natDriver" /> attribute.</desc>
     <attribute name="network" type="wstring">
       <desc>The network attribute of the NAT engine (the same value is used with built-in
         DHCP server to fill corresponding fields of DHCP leases).</desc>
@@ -14397,12 +14411,52 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
+  // IVirtualBoxClient
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="IVirtualBoxClient" extends="$unknown"
+    uuid="5fe0bd48-1181-40d1-991f-3b02f269a823"
+    wsmap="suppress"
+    >
+    <desc>
+      Convenience interface for client applications. Treat this as a
+      singleton, i.e. never create more than one instance of this interface.
+
+      At the moment only available for clients of the local API (not usable
+      via the webservice). Once the session logic is redesigned this might
+      change.
+    </desc>
+
+    <attribute name="virtualBox" type="IVirtualBox" readonly="yes">
+      <desc>
+        Reference to the server-side API root object.
+      </desc>
+    </attribute>
+
+    <attribute name="session" type="ISession" readonly="yes">
+      <desc>
+        Create a new session object and return the reference to it.
+      </desc>
+    </attribute>
+
+    <attribute name="eventSource" type="IEventSource" readonly="yes">
+      <desc>
+        Event source for VirtualBoxClient events.
+      </desc>
+    </attribute>
+
+  </interface>
+
+  <!--
   // Events
   /////////////////////////////////////////////////////////////////////////
   -->
   <enum
-     name="VBoxEventType"
-     uuid="BA0F90B2-3F41-4222-840D-EDD5055476A8">
+    name="VBoxEventType"
+    uuid="BA0F90B2-3F41-4222-840D-EDD5055476A8"
+    >
 
     <desc>
       Type of an event.
@@ -14473,7 +14527,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IExtraDataChangedEvent">IExtraDataChangedEvent</link>.
       </desc>
     </const>
-     <const name="OnExtraDataCanChange" value="35">
+    <const name="OnExtraDataCanChange" value="35">
       <desc>
         See <link to="IExtraDataCanChangeEvent">IExtraDataCanChangeEvent</link>.
       </desc>
@@ -14639,9 +14693,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IHostPciDevicePlugEvent">IHostPciDevicePlugEvent</link>.
       </desc>
     </const>
+    <const name="OnVBoxSVCUnavailable" value="68">
+      <desc>
+        See <link to="IVBoxSVCUnavailableEvent">IVBoxSVCUnavailableEvent</link>.
+      </desc>
+    </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="68">
+    <const name="Last" value="69">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -14650,10 +14709,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IEventSource" extends="$unknown"
-     uuid="9b6e1aee-35f3-4f4d-b5bb-ed0ecefd8538"
-     wsmap="managed"
-     >
+    name="IEventSource" extends="$unknown"
+    uuid="9b6e1aee-35f3-4f4d-b5bb-ed0ecefd8538"
+    wsmap="managed"
+    >
     <desc>
       Event source. Generally, any object which could generate events can be an event source,
       or aggregate one. To simplify using one-way protocols such as webservices running on top of HTTP(S),
@@ -14789,10 +14848,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IEventListener" extends="$unknown"
-     uuid="67099191-32e7-4f6c-85ee-422304c71b90"
-     wsmap="managed"
-     >
+    name="IEventListener" extends="$unknown"
+    uuid="67099191-32e7-4f6c-85ee-422304c71b90"
+    wsmap="managed"
+    >
     <desc>
       Event listener. An event listener can work in either active or passive mode, depending on the way
       it was registered.
@@ -14812,10 +14871,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IEvent" extends="$unknown"
-     uuid="0ca2adba-8f30-401b-a8cd-fe31dbe839c0"
-     wsmap="managed"
-     >
+    name="IEvent" extends="$unknown"
+    uuid="0ca2adba-8f30-401b-a8cd-fe31dbe839c0"
+    wsmap="managed"
+    >
     <desc>
       Abstract parent interface for VirtualBox events. Actual events will typically implement
       a more specific interface which derives from this (see below).
@@ -14938,11 +14997,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
 
-   <interface
-      name="IReusableEvent" extends="IEvent"
-      uuid="69bfb134-80f6-4266-8e20-16371f68fa25"
-      wsmap="managed"
-      >
+  <interface
+    name="IReusableEvent" extends="IEvent"
+    uuid="69bfb134-80f6-4266-8e20-16371f68fa25"
+    wsmap="managed"
+    >
     <desc>Base abstract interface for all reusable events.</desc>
 
     <attribute name="generation" readonly="yes" type="unsigned long">
@@ -14958,10 +15017,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IMachineEvent" extends="IEvent"
-      uuid="92ed7b1a-0d96-40ed-ae46-a564d484325e"
-      wsmap="managed" id="MachineEvent"
-      >
+    name="IMachineEvent" extends="IEvent"
+    uuid="92ed7b1a-0d96-40ed-ae46-a564d484325e"
+    wsmap="managed" id="MachineEvent"
+    >
     <desc>Base abstract interface for all machine events.</desc>
 
     <attribute name="machineId" readonly="yes" type="uuid" mod="string">
@@ -14971,10 +15030,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IMachineStateChangedEvent" extends="IMachineEvent"
-      uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
-      wsmap="managed" autogen="VBoxEvent" id="OnMachineStateChanged"
-      >
+    name="IMachineStateChangedEvent" extends="IMachineEvent"
+    uuid="5748F794-48DF-438D-85EB-98FFD70D18C9"
+    wsmap="managed" autogen="VBoxEvent" id="OnMachineStateChanged"
+    >
     <desc>Machine state change event.</desc>
 
     <attribute name="state" readonly="yes" type="MachineState">
@@ -14983,20 +15042,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IMachineDataChangedEvent" extends="IMachineEvent"
-      uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
-      wsmap="managed" autogen="VBoxEvent" id="OnMachineDataChanged"
-      >
+    name="IMachineDataChangedEvent" extends="IMachineEvent"
+    uuid="6AA70A6C-0DCA-4810-8C5C-457B278E3D49"
+    wsmap="managed" autogen="VBoxEvent" id="OnMachineDataChanged"
+    >
     <desc>
       Any of the settings of the given machine has changed.
     </desc>
   </interface>
 
   <interface
-      name="IMediumRegisteredEvent" extends="IEvent"
-      uuid="53fac49a-b7f1-4a5a-a4ef-a11dd9c2a458"
-      wsmap="managed" autogen="VBoxEvent" id="OnMediumRegistered"
-      >
+    name="IMediumRegisteredEvent" extends="IEvent"
+    uuid="53fac49a-b7f1-4a5a-a4ef-a11dd9c2a458"
+    wsmap="managed" autogen="VBoxEvent" id="OnMediumRegistered"
+    >
     <desc>
       The given medium was registered or unregistered
       within this VirtualBox installation.
@@ -15019,10 +15078,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IMachineRegisteredEvent" extends="IMachineEvent"
-      uuid="c354a762-3ff2-4f2e-8f09-07382ee25088"
-      wsmap="managed" autogen="VBoxEvent" id="OnMachineRegistered"
-      >
+    name="IMachineRegisteredEvent" extends="IMachineEvent"
+    uuid="c354a762-3ff2-4f2e-8f09-07382ee25088"
+    wsmap="managed" autogen="VBoxEvent" id="OnMachineRegistered"
+    >
     <desc>
       The given machine was registered or unregistered
       within this VirtualBox installation.
@@ -15037,10 +15096,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="ISessionStateChangedEvent" extends="IMachineEvent"
-      uuid="714a3eef-799a-4489-86cd-fe8e45b2ff8e"
-      wsmap="managed" autogen="VBoxEvent" id="OnSessionStateChanged"
-      >
+    name="ISessionStateChangedEvent" extends="IMachineEvent"
+    uuid="714a3eef-799a-4489-86cd-fe8e45b2ff8e"
+    wsmap="managed" autogen="VBoxEvent" id="OnSessionStateChanged"
+    >
     <desc>
       The state of the session for the given machine was changed.
       <see>IMachine::sessionState</see>
@@ -15054,10 +15113,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IGuestPropertyChangedEvent" extends="IMachineEvent"
-      uuid="3f63597a-26f1-4edb-8dd2-6bddd0912368"
-      wsmap="managed" autogen="VBoxEvent" id="OnGuestPropertyChanged"
-      >
+    name="IGuestPropertyChangedEvent" extends="IMachineEvent"
+    uuid="3f63597a-26f1-4edb-8dd2-6bddd0912368"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestPropertyChanged"
+    >
     <desc>
       Notification when a guest property has changed.
     </desc>
@@ -15074,7 +15133,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-     <attribute name="flags" readonly="yes" type="wstring">
+    <attribute name="flags" readonly="yes" type="wstring">
       <desc>
         The new property flags.
       </desc>
@@ -15083,10 +15142,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="ISnapshotEvent" extends="IMachineEvent"
-      uuid="21637b0e-34b8-42d3-acfb-7e96daf77c22"
-      wsmap="managed" id="SnapshotEvent"
-      >
+    name="ISnapshotEvent" extends="IMachineEvent"
+    uuid="21637b0e-34b8-42d3-acfb-7e96daf77c22"
+    wsmap="managed" id="SnapshotEvent"
+    >
     <desc>Base interface for all snapshot events.</desc>
 
     <attribute name="snapshotId" readonly="yes" type="uuid" mod="string">
@@ -15096,10 +15155,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISnapshotTakenEvent" extends="ISnapshotEvent"
-     uuid="d27c0b3d-6038-422c-b45e-6d4a0503d9f1"
-     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotTaken"
-     >
+    name="ISnapshotTakenEvent" extends="ISnapshotEvent"
+    uuid="d27c0b3d-6038-422c-b45e-6d4a0503d9f1"
+    wsmap="managed" autogen="VBoxEvent" id="OnSnapshotTaken"
+    >
     <desc>
       A new snapshot of the machine has been taken.
       <see>ISnapshot</see>
@@ -15107,10 +15166,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISnapshotDeletedEvent" extends="ISnapshotEvent"
-     uuid="c48f3401-4a9e-43f4-b7a7-54bd285e22f4"
-     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotDeleted"
-     >
+    name="ISnapshotDeletedEvent" extends="ISnapshotEvent"
+    uuid="c48f3401-4a9e-43f4-b7a7-54bd285e22f4"
+    wsmap="managed" autogen="VBoxEvent" id="OnSnapshotDeleted"
+    >
     <desc>
       Snapshot of the given machine has been deleted.
 
@@ -15125,10 +15184,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISnapshotChangedEvent" extends="ISnapshotEvent"
-     uuid="07541941-8079-447a-a33e-47a69c7980db"
-     wsmap="managed" autogen="VBoxEvent" id="OnSnapshotChanged"
-     >
+    name="ISnapshotChangedEvent" extends="ISnapshotEvent"
+    uuid="07541941-8079-447a-a33e-47a69c7980db"
+    wsmap="managed" autogen="VBoxEvent" id="OnSnapshotChanged"
+    >
     <desc>
       Snapshot properties (name and/or description) have been changed.
       <see>ISnapshot</see>
@@ -15136,10 +15195,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IMousePointerShapeChangedEvent" extends="IEvent"
-     uuid="a6dcf6e8-416b-4181-8c4a-45ec95177aef"
-     wsmap="managed" autogen="VBoxEvent" id="OnMousePointerShapeChanged"
-     >
+    name="IMousePointerShapeChangedEvent" extends="IEvent"
+    uuid="a6dcf6e8-416b-4181-8c4a-45ec95177aef"
+    wsmap="managed" autogen="VBoxEvent" id="OnMousePointerShapeChanged"
+    >
     <desc>
       Notification when the guest mouse pointer shape has
       changed. The new shape data is given.
@@ -15167,12 +15226,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="width" type="unsigned long" readonly="yes">
       <desc>
-       Width of the pointer shape in pixels.
+        Width of the pointer shape in pixels.
       </desc>
     </attribute>
     <attribute name="height" type="unsigned long" readonly="yes">
       <desc>
-       Height of the pointer shape in pixels.
+        Height of the pointer shape in pixels.
       </desc>
     </attribute>
     <attribute name="shape" type="octet" safearray="yes" readonly="yes">
@@ -15209,10 +15268,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IMouseCapabilityChangedEvent" extends="IEvent"
-     uuid="d633ad48-820c-4207-b46c-6bd3596640d5"
-     wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChanged"
-     >
+    name="IMouseCapabilityChangedEvent" extends="IEvent"
+    uuid="d633ad48-820c-4207-b46c-6bd3596640d5"
+    wsmap="managed" autogen="VBoxEvent" id="OnMouseCapabilityChanged"
+    >
     <desc>
       Notification when the mouse capabilities reported by the
       guest have changed. The new capabilities are passed.
@@ -15235,10 +15294,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IKeyboardLedsChangedEvent" extends="IEvent"
-     uuid="6DDEF35E-4737-457B-99FC-BC52C851A44F"
-     wsmap="managed" autogen="VBoxEvent" id="OnKeyboardLedsChanged"
-     >
+    name="IKeyboardLedsChangedEvent" extends="IEvent"
+    uuid="6DDEF35E-4737-457B-99FC-BC52C851A44F"
+    wsmap="managed" autogen="VBoxEvent" id="OnKeyboardLedsChanged"
+    >
     <desc>
       Notification when the guest OS executes the KBD_CMD_SET_LEDS command
       to alter the state of the keyboard LEDs.
@@ -15261,10 +15320,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IStateChangedEvent" extends="IEvent"
-     uuid="4376693C-CF37-453B-9289-3B0F521CAF27"
-     wsmap="managed" autogen="VBoxEvent" id="OnStateChanged"
-     >
+    name="IStateChangedEvent" extends="IEvent"
+    uuid="4376693C-CF37-453B-9289-3B0F521CAF27"
+    wsmap="managed" autogen="VBoxEvent" id="OnStateChanged"
+    >
     <desc>
       Notification when the execution state of the machine has changed.
       The new state is given.
@@ -15277,10 +15336,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IAdditionsStateChangedEvent" extends="IEvent"
-     uuid="D70F7915-DA7C-44C8-A7AC-9F173490446A"
-     wsmap="managed" autogen="VBoxEvent" id="OnAdditionsStateChanged"
-     >
+    name="IAdditionsStateChangedEvent" extends="IEvent"
+    uuid="D70F7915-DA7C-44C8-A7AC-9F173490446A"
+    wsmap="managed" autogen="VBoxEvent" id="OnAdditionsStateChanged"
+    >
     <desc>
       Notification when a Guest Additions property changes.
       Interested callees should query IGuest attributes to
@@ -15289,10 +15348,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="INetworkAdapterChangedEvent" extends="IEvent"
-     uuid="08889892-1EC6-4883-801D-77F56CFD0103"
-     wsmap="managed" autogen="VBoxEvent" id="OnNetworkAdapterChanged"
-     >
+    name="INetworkAdapterChangedEvent" extends="IEvent"
+    uuid="08889892-1EC6-4883-801D-77F56CFD0103"
+    wsmap="managed" autogen="VBoxEvent" id="OnNetworkAdapterChanged"
+    >
     <desc>
       Notification when a property of one of the
       virtual <link to="IMachine::getNetworkAdapter">network adapters</link>
@@ -15307,10 +15366,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISerialPortChangedEvent" extends="IEvent"
-     uuid="3BA329DC-659C-488B-835C-4ECA7AE71C6C"
-     wsmap="managed" autogen="VBoxEvent" id="OnSerialPortChanged"
-     >
+    name="ISerialPortChangedEvent" extends="IEvent"
+    uuid="3BA329DC-659C-488B-835C-4ECA7AE71C6C"
+    wsmap="managed" autogen="VBoxEvent" id="OnSerialPortChanged"
+    >
     <desc>
       Notification when a property of one of the
       virtual <link to="IMachine::getSerialPort">serial ports</link> changes.
@@ -15325,10 +15384,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IParallelPortChangedEvent" extends="IEvent"
-     uuid="813C99FC-9849-4F47-813E-24A75DC85615"
-     wsmap="managed" autogen="VBoxEvent" id="OnParallelPortChanged"
-     >
+    name="IParallelPortChangedEvent" extends="IEvent"
+    uuid="813C99FC-9849-4F47-813E-24A75DC85615"
+    wsmap="managed" autogen="VBoxEvent" id="OnParallelPortChanged"
+    >
     <desc>
       Notification when a property of one of the
       virtual <link to="IMachine::getParallelPort">parallel ports</link>
@@ -15343,10 +15402,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IStorageControllerChangedEvent" extends="IEvent"
-     uuid="715212BF-DA59-426E-8230-3831FAA52C56"
-     wsmap="managed" autogen="VBoxEvent" id="OnStorageControllerChanged"
-     >
+    name="IStorageControllerChangedEvent" extends="IEvent"
+    uuid="715212BF-DA59-426E-8230-3831FAA52C56"
+    wsmap="managed" autogen="VBoxEvent" id="OnStorageControllerChanged"
+    >
     <desc>
       Notification when a
       <link to="IMachine::mediumAttachments">medium attachment</link>
@@ -15355,10 +15414,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IMediumChangedEvent" extends="IEvent"
-     uuid="0FE2DA40-5637-472A-9736-72019EABD7DE"
-     wsmap="managed" autogen="VBoxEvent" id="OnMediumChanged"
-     >
+    name="IMediumChangedEvent" extends="IEvent"
+    uuid="0FE2DA40-5637-472A-9736-72019EABD7DE"
+    wsmap="managed" autogen="VBoxEvent" id="OnMediumChanged"
+    >
     <desc>
       Notification when a
       <link to="IMachine::mediumAttachments">medium attachment</link>
@@ -15372,10 +15431,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ICPUChangedEvent" extends="IEvent"
-     uuid="D0F0BECC-EE17-4D17-A8CC-383B0EB55E9D"
-     wsmap="managed" autogen="VBoxEvent" id="OnCPUChanged"
-     >
+    name="ICPUChangedEvent" extends="IEvent"
+    uuid="D0F0BECC-EE17-4D17-A8CC-383B0EB55E9D"
+    wsmap="managed" autogen="VBoxEvent" id="OnCPUChanged"
+    >
     <desc>
       Notification when a CPU changes.
     </desc>
@@ -15396,14 +15455,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="dfa7e4f5-b4a4-44ce-85a8-127ac5eb59dc"
     wsmap="managed" autogen="VBoxEvent" id="OnCPUExecutionCapChanged"
     >
-   <desc>
+    <desc>
       Notification when the CPU execution cap changes.
-   </desc>
-     <attribute name="executionCap" type="unsigned long" readonly="yes">
-       <desc>
-         The new CPU execution cap value. (1-100)
-       </desc>
-     </attribute>
+    </desc>
+    <attribute name="executionCap" type="unsigned long" readonly="yes">
+      <desc>
+        The new CPU execution cap value. (1-100)
+      </desc>
+    </attribute>
   </interface>
 
   <interface
@@ -15411,14 +15470,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="88394258-7006-40d4-b339-472ee3801844"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestKeyboard"
     >
-   <desc>
+    <desc>
       Notification when guest keyboard event happens.
-   </desc>
-     <attribute name="scancodes"  type="long" safearray="yes" readonly="yes">
-       <desc>
-         Array of scancodes.
-       </desc>
-     </attribute>
+    </desc>
+    <attribute name="scancodes"  type="long" safearray="yes" readonly="yes">
+      <desc>
+        Array of scancodes.
+      </desc>
+    </attribute>
   </interface>
 
   <interface
@@ -15426,54 +15485,54 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="1f85d35c-c524-40ff-8e98-307000df0992"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestMouse"
     >
-   <desc>
+    <desc>
       Notification when guest mouse event happens.
-   </desc>
+    </desc>
 
-   <attribute name="absolute" type="boolean" readonly="yes">
-     <desc>
-       If this event is relative or absolute.
-     </desc>
-   </attribute>
+    <attribute name="absolute" type="boolean" readonly="yes">
+      <desc>
+        If this event is relative or absolute.
+      </desc>
+    </attribute>
 
-   <attribute name="x" type="long" readonly="yes">
-     <desc>
-       New X position, or X delta.
-     </desc>
-   </attribute>
+    <attribute name="x" type="long" readonly="yes">
+      <desc>
+        New X position, or X delta.
+      </desc>
+    </attribute>
 
-   <attribute name="y" type="long" readonly="yes">
-     <desc>
-       New Y position, or Y delta.
-     </desc>
-   </attribute>
+    <attribute name="y" type="long" readonly="yes">
+      <desc>
+        New Y position, or Y delta.
+      </desc>
+    </attribute>
 
-   <attribute name="z" type="long" readonly="yes">
-     <desc>
-       Z delta.
-     </desc>
-   </attribute>
+    <attribute name="z" type="long" readonly="yes">
+      <desc>
+        Z delta.
+      </desc>
+    </attribute>
 
-   <attribute name="w" type="long" readonly="yes">
-     <desc>
-       W delta.
-     </desc>
-   </attribute>
+    <attribute name="w" type="long" readonly="yes">
+      <desc>
+        W delta.
+      </desc>
+    </attribute>
 
-   <attribute name="buttons" type="long" readonly="yes">
-     <desc>
-       Button state bitmask.
-     </desc>
-   </attribute>
+    <attribute name="buttons" type="long" readonly="yes">
+      <desc>
+        Button state bitmask.
+      </desc>
+    </attribute>
 
-   </interface>
+  </interface>
 
 
-   <interface
-     name="IVRDEServerChangedEvent" extends="IEvent"
-     uuid="a06fd66a-3188-4c8c-8756-1395e8cb691c"
-     wsmap="managed" autogen="VBoxEvent" id="OnVRDEServerChanged"
-     >
+  <interface
+    name="IVRDEServerChangedEvent" extends="IEvent"
+    uuid="a06fd66a-3188-4c8c-8756-1395e8cb691c"
+    wsmap="managed" autogen="VBoxEvent" id="OnVRDEServerChanged"
+    >
     <desc>
       Notification when a property of the
       <link to="IMachine::VRDEServer">VRDE server</link> changes.
@@ -15482,11 +15541,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </desc>
   </interface>
 
-   <interface
-     name="IVRDEServerInfoChangedEvent" extends="IEvent"
-     uuid="dd6a1080-e1b7-4339-a549-f0878115596e"
-     wsmap="managed" autogen="VBoxEvent" id="OnVRDEServerInfoChanged"
-     >
+  <interface
+    name="IVRDEServerInfoChangedEvent" extends="IEvent"
+    uuid="dd6a1080-e1b7-4339-a549-f0878115596e"
+    wsmap="managed" autogen="VBoxEvent" id="OnVRDEServerInfoChanged"
+    >
     <desc>
       Notification when the status of the VRDE server changes. Interested callees
       should use <link to="IConsole::VRDEServerInfo">IVRDEServerInfo</link>
@@ -15495,10 +15554,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IUSBControllerChangedEvent" extends="IEvent"
-     uuid="93BADC0C-61D9-4940-A084-E6BB29AF3D83"
-     wsmap="managed" autogen="VBoxEvent" id="OnUSBControllerChanged"
-     >
+    name="IUSBControllerChangedEvent" extends="IEvent"
+    uuid="93BADC0C-61D9-4940-A084-E6BB29AF3D83"
+    wsmap="managed" autogen="VBoxEvent" id="OnUSBControllerChanged"
+    >
     <desc>
       Notification when a property of the virtual
       <link to="IMachine::USBController">USB controller</link> changes.
@@ -15508,10 +15567,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="IUSBDeviceStateChangedEvent" extends="IEvent"
-     uuid="806da61b-6679-422a-b629-51b06b0c6d93"
-     wsmap="managed" autogen="VBoxEvent" id="OnUSBDeviceStateChanged"
-     >
+    name="IUSBDeviceStateChangedEvent" extends="IEvent"
+    uuid="806da61b-6679-422a-b629-51b06b0c6d93"
+    wsmap="managed" autogen="VBoxEvent" id="OnUSBDeviceStateChanged"
+    >
     <desc>
       Notification when a USB device is attached to or detached from
       the virtual USB controller.
@@ -15548,11 +15607,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
   </interface>
 
-   <interface
-     name="ISharedFolderChangedEvent" extends="IEvent"
-     uuid="B66349B5-3534-4239-B2DE-8E1535D94C0B"
-     wsmap="managed" autogen="VBoxEvent" id="OnSharedFolderChanged"
-     >
+  <interface
+    name="ISharedFolderChangedEvent" extends="IEvent"
+    uuid="B66349B5-3534-4239-B2DE-8E1535D94C0B"
+    wsmap="managed" autogen="VBoxEvent" id="OnSharedFolderChanged"
+    >
     <desc>
       Notification when a shared folder is added or removed.
       The @a scope argument defines one of three scopes:
@@ -15572,11 +15631,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
   </interface>
 
-   <interface
-     name="IRuntimeErrorEvent" extends="IEvent"
-     uuid="883DD18B-0721-4CDE-867C-1A82ABAF914C"
-     wsmap="managed" autogen="VBoxEvent" id="OnRuntimeError"
-     >
+  <interface
+    name="IRuntimeErrorEvent" extends="IEvent"
+    uuid="883DD18B-0721-4CDE-867C-1A82ABAF914C"
+    wsmap="managed" autogen="VBoxEvent" id="OnRuntimeError"
+    >
     <desc>
       Notification when an error happens during the virtual
       machine execution.
@@ -15637,7 +15696,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Error identifier.
       </desc>
     </attribute>
-     <attribute name="message" type="wstring" readonly="yes">
+    <attribute name="message" type="wstring" readonly="yes">
       <desc>
         Optional error message.
       </desc>
@@ -15645,12 +15704,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
 
-   <interface
-     name="IEventSourceChangedEvent" extends="IEvent"
-     uuid="e7932cb8-f6d4-4ab6-9cbf-558eb8959a6a"
-     waitable="yes"
-     wsmap="managed" autogen="VBoxEvent" id="OnEventSourceChanged"
-     >
+  <interface
+    name="IEventSourceChangedEvent" extends="IEvent"
+    uuid="e7932cb8-f6d4-4ab6-9cbf-558eb8959a6a"
+    waitable="yes"
+    wsmap="managed" autogen="VBoxEvent" id="OnEventSourceChanged"
+    >
     <desc>
       Notification when an event source state changes (listener added or removed).
     </desc>
@@ -15669,10 +15728,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IExtraDataChangedEvent" extends="IEvent"
-      uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"
-      wsmap="managed" autogen="VBoxEvent" id="OnExtraDataChanged"
-      >
+    name="IExtraDataChangedEvent" extends="IEvent"
+    uuid="024F00CE-6E0B-492A-A8D0-968472A94DC7"
+    wsmap="managed" autogen="VBoxEvent" id="OnExtraDataChanged"
+    >
     <desc>
       Notification when machine specific or global extra data
       has changed.
@@ -15696,10 +15755,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IVetoEvent" extends="IEvent"
-      uuid="9a1a4130-69fe-472f-ac10-c6fa25d75007"
-      wsmap="managed"
-      >
+    name="IVetoEvent" extends="IEvent"
+    uuid="9a1a4130-69fe-472f-ac10-c6fa25d75007"
+    wsmap="managed"
+    >
     <desc>Base abstract interface for veto events.</desc>
 
     <method name="addVeto">
@@ -15738,11 +15797,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IExtraDataCanChangeEvent" extends="IVetoEvent"
-      uuid="245d88bd-800a-40f8-87a6-170d02249a55"
-      wsmap="managed" autogen="VBoxEvent" id="OnExtraDataCanChange"
-      waitable="true"
-      >
+    name="IExtraDataCanChangeEvent" extends="IVetoEvent"
+    uuid="245d88bd-800a-40f8-87a6-170d02249a55"
+    wsmap="managed" autogen="VBoxEvent" id="OnExtraDataCanChange"
+    waitable="true"
+    >
     <desc>
       Notification when someone tries to change extra data for
       either the given machine or (if @c null) global extra data.
@@ -15767,11 +15826,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="ICanShowWindowEvent" extends="IVetoEvent"
-      uuid="adf292b0-92c9-4a77-9d35-e058b39fe0b9"
-      wsmap="managed" autogen="VBoxEvent" id="OnCanShowWindow"
-      waitable="true"
-      >
+    name="ICanShowWindowEvent" extends="IVetoEvent"
+    uuid="adf292b0-92c9-4a77-9d35-e058b39fe0b9"
+    wsmap="managed" autogen="VBoxEvent" id="OnCanShowWindow"
+    waitable="true"
+    >
     <desc>
       Notification when a call to
       <link to="IMachine::canShowConsoleWindow"/> is made by a
@@ -15786,44 +15845,44 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-      name="IShowWindowEvent" extends="IEvent"
-      uuid="B0A0904D-2F05-4D28-855F-488F96BAD2B2"
-      wsmap="managed" autogen="VBoxEvent" id="OnShowWindow"
-      waitable="true"
-      >
+    name="IShowWindowEvent" extends="IEvent"
+    uuid="B0A0904D-2F05-4D28-855F-488F96BAD2B2"
+    wsmap="managed" autogen="VBoxEvent" id="OnShowWindow"
+    waitable="true"
+    >
     <desc>
-       Notification when a call to
-        <link to="IMachine::showConsoleWindow"/>
-        requests the console window to be activated and brought to
-        foreground on the desktop of the host PC.
+      Notification when a call to
+      <link to="IMachine::showConsoleWindow"/>
+      requests the console window to be activated and brought to
+      foreground on the desktop of the host PC.
 
-        This notification should cause the VM console process to
-        perform the requested action as described above. If it is
-        impossible to do it at a time of this notification, this
-        method should return a failure.
+      This notification should cause the VM console process to
+      perform the requested action as described above. If it is
+      impossible to do it at a time of this notification, this
+      method should return a failure.
 
-        Note that many modern window managers on many platforms
-        implement some sort of focus stealing prevention logic, so
-        that it may be impossible to activate a window without the
-        help of the currently active application (which is supposedly
-        an initiator of this notification). In this case, this method
-        must return a non-zero identifier that represents the
-        top-level window of the VM console process. The caller, if it
-        represents a currently active process, is responsible to use
-        this identifier (in a platform-dependent manner) to perform
-        actual window activation.
+      Note that many modern window managers on many platforms
+      implement some sort of focus stealing prevention logic, so
+      that it may be impossible to activate a window without the
+      help of the currently active application (which is supposedly
+      an initiator of this notification). In this case, this method
+      must return a non-zero identifier that represents the
+      top-level window of the VM console process. The caller, if it
+      represents a currently active process, is responsible to use
+      this identifier (in a platform-dependent manner) to perform
+      actual window activation.
 
-        This method must set @a winId to zero if it has performed all
-        actions necessary to complete the request and the console
-        window is now active and in foreground, to indicate that no
-        further action is required on the caller's side.
+      This method must set @a winId to zero if it has performed all
+      actions necessary to complete the request and the console
+      window is now active and in foreground, to indicate that no
+      further action is required on the caller's side.
     </desc>
     <attribute name="winId" type="long long">
       <desc>
-         Platform-dependent identifier of the top-level VM console
-          window, or zero if this method has performed all actions
-          necessary to implement the <i>show window</i> semantics for
-          the given platform and/or this VirtualBox front-end.
+        Platform-dependent identifier of the top-level VM console
+        window, or zero if this method has performed all actions
+        necessary to implement the <i>show window</i> semantics for
+        the given platform and/or this VirtualBox front-end.
       </desc>
     </attribute>
   </interface>
@@ -15833,93 +15892,104 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     uuid="57DE97D7-3CBB-42A0-888F-610D5832D16B"
     wsmap="managed" autogen="VBoxEvent" id="OnNATRedirect"
     >
-   <desc>
+    <desc>
       Notification when NAT redirect rule added or removed.
-   </desc>
-     <attribute name="slot"  type="unsigned long" readonly="yes">
-       <desc>
-         Adapter which NAT attached to.
-       </desc>
-     </attribute>
-     <attribute name="remove"  type="boolean" readonly="yes">
-       <desc>
-         Whether rule remove or add.
-       </desc>
-     </attribute>
-     <attribute name="name"  type="wstring" readonly="yes">
-       <desc>
-         Name of the rule.
-       </desc>
-     </attribute>
-     <attribute name="proto"  type="NATProtocol" readonly="yes">
-       <desc>
-         Protocol (TCP or UDP) of the redirect rule.
-       </desc>
-     </attribute>
-     <attribute name="hostIp"  type="wstring" readonly="yes">
-       <desc>
-         Host ip address to bind socket on.
-       </desc>
-     </attribute>
-     <attribute name="hostPort"  type="long" readonly="yes">
-       <desc>
-         Host port to bind socket on.
-       </desc>
-     </attribute>
-     <attribute name="guestIp"  type="wstring" readonly="yes">
-       <desc>
-         Guest ip address to redirect to.
-       </desc>
-     </attribute>
-     <attribute name="guestPort"  type="long" readonly="yes">
-       <desc>
-         Guest port to redirect to.
-       </desc>
-     </attribute>
+    </desc>
+    <attribute name="slot"  type="unsigned long" readonly="yes">
+      <desc>
+        Adapter which NAT attached to.
+      </desc>
+    </attribute>
+    <attribute name="remove"  type="boolean" readonly="yes">
+      <desc>
+        Whether rule remove or add.
+      </desc>
+    </attribute>
+    <attribute name="name"  type="wstring" readonly="yes">
+      <desc>
+        Name of the rule.
+      </desc>
+    </attribute>
+    <attribute name="proto"  type="NATProtocol" readonly="yes">
+      <desc>
+        Protocol (TCP or UDP) of the redirect rule.
+      </desc>
+    </attribute>
+    <attribute name="hostIp"  type="wstring" readonly="yes">
+      <desc>
+        Host ip address to bind socket on.
+      </desc>
+    </attribute>
+    <attribute name="hostPort"  type="long" readonly="yes">
+      <desc>
+        Host port to bind socket on.
+      </desc>
+    </attribute>
+    <attribute name="guestIp"  type="wstring" readonly="yes">
+      <desc>
+        Guest ip address to redirect to.
+      </desc>
+    </attribute>
+    <attribute name="guestPort"  type="long" readonly="yes">
+      <desc>
+        Guest port to redirect to.
+      </desc>
+    </attribute>
   </interface>
 
   <interface
-      name="IHostPciDevicePlugEvent" extends="IMachineEvent"
-      waitable="yes"
-      uuid="EDD4782B-DB74-43A0-B724-2BAA36F039CC"
-      wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlug"
+    name="IHostPciDevicePlugEvent" extends="IMachineEvent"
+    waitable="yes"
+    uuid="EDD4782B-DB74-43A0-B724-2BAA36F039CC"
+    wsmap="managed" autogen="VBoxEvent" id="OnHostPciDevicePlug"
     >
-   <desc>
+    <desc>
       Notification when host PCI device is plugged/unplugged.
-   </desc>
+    </desc>
 
-   <attribute name="plugged" type="boolean" readonly="yes">
+    <attribute name="plugged" type="boolean" readonly="yes">
       <desc>
         If device successfully plugged or unplugged.
       </desc>
-   </attribute>
+    </attribute>
 
-   <attribute name="success" type="boolean" readonly="yes">
+    <attribute name="success" type="boolean" readonly="yes">
       <desc>
         If operation was successful, if false - 'message' attribute
         may be of interest.
       </desc>
-   </attribute>
+    </attribute>
 
-   <attribute name="attachment" type="IPciDeviceAttachment" readonly="yes">
+    <attribute name="attachment" type="IPciDeviceAttachment" readonly="yes">
       <desc>
         Attachment info for this device.
       </desc>
-   </attribute>
+    </attribute>
 
-   <attribute name="eventContext" type="IEventContext" readonly="yes">
+    <attribute name="eventContext" type="IEventContext" readonly="yes">
       <desc>
         Context object, passed into attachHostPciDevice() and
         attachHostPciDevice().
       </desc>
-   </attribute>
+    </attribute>
 
-   <attribute name="message" type="wstring" readonly="yes">
+    <attribute name="message" type="wstring" readonly="yes">
       <desc>
         Optional error message.
       </desc>
     </attribute>
 
+  </interface>
+
+  <interface
+    name="IVBoxSVCUnavailableEvent" extends="IEvent"
+    uuid="99f6b352-f5c1-4d15-9c32-939158da8983"
+    wsmap="managed" autogen="VBoxEvent" id="OnVBoxSVCUnavailable"
+    >
+    <desc>
+      Notification when VBoxSVC becomes unavailable (due to a crash or similar
+      unexpected circumstances).
+    </desc>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">
@@ -15930,6 +16000,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </module>
 
   <module name="VBoxC" context="InprocServer" threadingModel="Free">
+    <class name="VirtualBoxClient" uuid="dd3fc71d-26c0-4fe1-bf6f-67f633265bba"
+           namespace="virtualbox.org">
+      <interface name="IVirtualBoxClient" default="yes"/>
+    </class>
+
     <class name="Session" uuid="3C02F46D-C9D2-4F11-A384-53F0CF917214"
            namespace="virtualbox.org">
       <interface name="ISession" default="yes"/>
