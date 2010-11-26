@@ -38,6 +38,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 #include "internal/file.h"
 #include "internal/fs.h"
