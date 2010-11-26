@@ -177,6 +177,10 @@ typedef struct DEVPCBIOS
     uint16_t        au16NetBootDev[NET_BOOT_DEVS];
     /** Number of logical CPUs in guest */
     uint16_t        cCpus;
+    uint32_t        u32McfgBase;
+    uint32_t        cbMcfgLength;
+    uint16_t        iVarNum;
+    uint16_t        iVarPos;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 
@@ -231,15 +235,8 @@ static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
     Assert(off < 256);
     Assert(u32Val < 256);
 
-#if 1
     int rc = PDMDevHlpCMOSWrite(pDevIns, off, u32Val);
     AssertRC(rc);
-#else
-    PVM pVM = PDMDevHlpGetVM(pDevIns);
-    IOMIOPortWrite(pVM, 0x70, off, 1);
-    IOMIOPortWrite(pVM, 0x71, u32Val, 1);
-    IOMIOPortWrite(pVM, 0x70, 0, 1);
-#endif
 }
 
 /* -=-=-=-=-=-=- based on code from pc.c -=-=-=-=-=-=- */
@@ -640,6 +637,31 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
+static uint8_t pcbiosReadVar(PDEVPCBIOS pThis)
+{
+    uint32_t u32Val = 0, u32Size = 4;
+    switch (pThis->iVarNum)
+    {
+        case 1:
+            u32Val = pThis->u32McfgBase;
+            u32Size = 4;
+            break;
+        case 2:
+            u32Val = pThis->cbMcfgLength;
+            u32Size = 4;
+            break;
+        default:
+            AssertMsgFailed(("Unknown variable: %d\n", pThis->iVarNum));
+    }
+    uint32_t iPos = pThis->iVarPos++;
+    if (pThis->iVarPos >= u32Size)
+            pThis->iVarPos = 0;
+
+    Log(("Read pos %d of var %d: %x\n",
+         iPos, pThis->iVarNum, (u32Val >> (iPos*8)) & 0xff));
+
+    return (u32Val >> (iPos*8)) & 0xff;
+}
 
 /**
  * Port I/O Handler for IN operations.
@@ -654,11 +676,14 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    NOREF(pDevIns);
-    NOREF(pvUser);
-    NOREF(Port);
-    NOREF(pu32);
-    NOREF(cb);
+    if (cb == 1 && Port == 0x402)
+    {
+        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+        uint8_t u8Val = pcbiosReadVar(pThis);
+        *(uint8_t*)pu32 = u8Val;
+        return VINF_SUCCESS;
+    }
+
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -724,6 +749,14 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
             pThis->szMsg[pThis->iMsg] = (char )u32;
             pThis->szMsg[++pThis->iMsg] = '\0';
         }
+        return VINF_SUCCESS;
+    }
+
+    if (cb == 2 && Port == 0x402)
+    {
+        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+        pThis->iVarNum = u32;
+        pThis->iVarPos = 0;
         return VINF_SUCCESS;
     }
 
@@ -940,6 +973,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "UUID\0"
                               "IOAPIC\0"
                               "NumCPUs\0"
+                              "McfgBase\0"
+                              "McfgLength\0"
                               "DmiBIOSVendor\0"
                               "DmiBIOSVersion\0"
                               "DmiBIOSReleaseDate\0"
@@ -985,6 +1020,16 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
+
+    rc = CFGMR3QueryU32Def(pCfg, "McfgBase", &pThis->u32McfgBase, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"\" as integer failed"));
+    rc = CFGMR3QueryU32Def(pCfg, "McfgLength", &pThis->cbMcfgLength, 0);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"McfgLength\" as integer failed"));
+
 
     LogRel(("[SMP] BIOS with %u CPUs\n", pThis->cCpus));
 

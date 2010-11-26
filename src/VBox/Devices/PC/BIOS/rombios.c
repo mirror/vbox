@@ -4644,6 +4644,19 @@ void set_e820_range(ES, DI, start, end, extra_start, extra_end, type)
     write_word(ES, DI+18, 0x0);
 }
 
+Bit32u readBiosVar(varNum)
+    Bit16u varNum;
+{
+    int iPort = 0x402;
+    Bit32u result = 0;
+
+    outw(iPort, varNum);
+    result = (inb(iPort) << 24) | (inb(iPort) <<  16) |
+             (inb(iPort) << 8) | (inb(iPort) << 0);
+    BX_INFO("var %d is %x\n", varNum, result);
+    return result;
+}
+
   void
 int15_function32(regs, ES, DS, FLAGS)
   pushad_regs_t regs; // REGS pushed via pushad
@@ -4653,6 +4666,7 @@ int15_function32(regs, ES, DS, FLAGS)
   Bit32u  extra_lowbits_memory_size=0;
   Bit16u  CX,DX;
   Bit8u   extra_highbits_memory_size=0;
+  Bit32u  mcfgStart, mcfgSize;
 
 BX_DEBUG_INT15("int15 AX=%04x\n",regs.u.r16.ax);
 
@@ -4746,6 +4760,9 @@ ASM_END
                 extra_highbits_memory_size = inb_cmos(0x5d);
 #endif /* !VBOX */
 
+                mcfgStart = readBiosVar(1);
+                mcfgSize  = readBiosVar(2);
+
                 switch(regs.u.r16.bx)
                 {
                     case 0:
@@ -4811,28 +4828,27 @@ ASM_END
 #endif
                         set_e820_range(ES, regs.u.r16.di,
                                        0xfffc0000L, 0x00000000L, 0, 0, 2);
-                        /* Temporary disabled MCFG code */
-#if 0
-                        regs.u.r32.ebx = 6;
+                        if (mcfgStart > 0)
+                            regs.u.r32.ebx = 6;
+                        else
+                        {
+                            if (extra_highbits_memory_size || extra_lowbits_memory_size)
+                                regs.u.r32.ebx = 7;
+                            else
+                                regs.u.r32.ebx = 0;
+                        }
                         break;
                      case 6:
-                        /* PCI MMIO config space */
+                        /* PCI MMIO config space (MCFG) */
                         set_e820_range(ES, regs.u.r16.di,
-                                       0xd0000000L, 0xe0000000L, 0, 0, 2);
+                                       mcfgStart, mcfgSize, 0, 0, 2);
+
                         if (extra_highbits_memory_size || extra_lowbits_memory_size)
                             regs.u.r32.ebx = 7;
                         else
                             regs.u.r32.ebx = 0;
                         break;
                     case 7:
-#else
-                        if (extra_highbits_memory_size || extra_lowbits_memory_size)
-                            regs.u.r32.ebx = 6;
-                        else
-                            regs.u.r32.ebx = 0;
-                        break;
-                    case 6:
-#endif
 #ifdef VBOX /* Don't succeeded if no memory above 4 GB.  */
                         /* Mapping of memory above 4 GB if present.
                            Note: set_e820_range needs do no borrowing in the

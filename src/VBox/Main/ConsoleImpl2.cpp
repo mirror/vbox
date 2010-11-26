@@ -1142,6 +1142,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
             InsertConfigBytes(pBiosCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigNode(pBiosCfg,     "NetBoot", &pNetBootCfg);
+            InsertConfigInteger(pBiosCfg,  "McfgBase",   u64McfgBase);
+            InsertConfigInteger(pBiosCfg,  "McfgLength", u32McfgLength);
 
             DeviceType_T bootDevice;
             if (SchemaDefs::MaxBootPosition > 9)
