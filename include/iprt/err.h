@@ -456,6 +456,8 @@ RT_C_DECLS_END
 /** The request function is not implemented. */
 #define VERR_NOT_IMPLEMENTED                (-12)
 
+/** Not equal. */
+#define VERR_NOT_EQUAL                      (-18)
 /** The specified path does not point at a symbolic link. */
 #define VERR_NOT_SYMLINK                    (-19)
 /** Failed to allocate temporary memory. */

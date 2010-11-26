@@ -221,38 +221,35 @@ RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst)
 }
 
 
-/**
- * Compares two manifests for equality.
- *
- * @returns true if equals, false if not.
- * @param   hManifest1          The first manifest.
- * @param   hManifest2          The second manifest.
- * @param   papszIgnoreEntries  Entries to ignore.  Ends with a NULL entry.
- * @param   papszIgnoreAttrs    Attributes to ignore.  Ends with a NULL entry.
- */
 RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, const char * const *papszIgnoreEntries,
-                               const char * const *papszIgnoreAttr)
+                               const char * const *papszIgnoreAttr, char *pszEntry, size_t cbEntry)
 {
+    /*
+     * Validate input.
+     */
+    AssertPtrNullReturn(pszEntry, VERR_INVALID_POINTER);
+    if (pszEntry && cbEntry)
+        *pszEntry = '\0';
     RTMANIFESTINT *pThis1 = hManifest1;
     RTMANIFESTINT *pThis2 = hManifest1;
     if (pThis1 != NIL_RTMANIFEST)
     {
-        AssertPtrReturn(pThis1, false);
-        AssertReturn(pThis1->u32Magic == RTMANIFEST_MAGIC, false);
+        AssertPtrReturn(pThis1, VERR_INVALID_HANDLE);
+        AssertReturn(pThis1->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
     }
     if (pThis2 != NIL_RTMANIFEST)
     {
-        AssertPtrReturn(pThis2, false);
-        AssertReturn(pThis2->u32Magic == RTMANIFEST_MAGIC, false);
+        AssertPtrReturn(pThis2, VERR_INVALID_HANDLE);
+        AssertReturn(pThis2->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
     }
 
     /*
      * The simple cases.
      */
     if (pThis1 == pThis2)
-        return true;
+        return VINF_SUCCESS;
     if (pThis1 == NIL_RTMANIFEST || pThis2 == NIL_RTMANIFEST)
-        return false;
+        return VERR_NOT_EQUAL;
 
     /*
      *
@@ -265,16 +262,9 @@ RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, con
 }
 
 
-/**
- * Compares two manifests for equality.
- *
- * @returns true if equals, false if not.
- * @param   hManifest1          The first manifest.
- * @param   hManifest2          The second manifest.
- */
 RTDECL(int) RTManifestEquals(RTMANIFEST hManifest1, RTMANIFEST hManifest2)
 {
-    return RTManifestEqualsEx(hManifest1, hManifest2, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttrs*/);
+    return RTManifestEqualsEx(hManifest1, hManifest2, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttrs*/, NULL, 0);
 }
 
 
