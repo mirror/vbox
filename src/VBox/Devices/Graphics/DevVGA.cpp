@@ -2880,7 +2880,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
     {
         switch (Port)
         {
-            case 0x3b0: /* Host */
+            case VGA_PORT_HGSMI_HOST: /* Host */
             {
 #if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM)
                 if(u32 == HGSMIOFFSET_VOID)
@@ -2895,7 +2895,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
                 }
             } break;
 
-            case 0x3d0: /* Guest */
+            case VGA_PORT_HGSMI_GUEST: /* Guest */
             {
                 HGSMIGuestWrite(s->pHGSMI, u32);
             } break;
@@ -2945,11 +2945,11 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIRead(PPDMDEVINS pDevIns, void *pvUser, 
     {
         switch (Port)
         {
-            case 0x3b0: /* Host */
+            case VGA_PORT_HGSMI_HOST: /* Host */
             {
                 *pu32 = HGSMIHostRead(s->pHGSMI);
             } break;
-            case 0x3d0: /* Guest */
+            case VGA_PORT_HGSMI_GUEST: /* Guest */
             {
                 *pu32 = HGSMIGuestRead(s->pHGSMI);
             } break;
@@ -5813,10 +5813,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 #ifdef VBOX_WITH_HGSMI
     /* Use reserved VGA IO ports for HGSMI. */
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x3b0,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3b0 (HGSMI host)");
+    rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_HOST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3b0 (HGSMI host)");
     if (RT_FAILURE(rc))
         return rc;
-    rc = PDMDevHlpIOPortRegister(pDevIns,  0x3d0,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3d0 (HGSMI guest)");
+    rc = PDMDevHlpIOPortRegister(pDevIns,  VGA_PORT_HGSMI_GUEST,  4, NULL, vgaR3IOPortHGSMIWrite, vgaR3IOPortHGSMIRead, NULL, NULL, "VGA - 3d0 (HGSMI guest)");
     if (RT_FAILURE(rc))
         return rc;
 #endif /* VBOX_WITH_HGSMI */
