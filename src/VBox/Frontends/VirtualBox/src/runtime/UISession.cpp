@@ -363,9 +363,14 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
 
     CGuest guest = session().GetConsole().GetGuest();
 #ifdef DEBUG_andy
-    CProgress progressInstall = guest.UpdateGuestAdditions("c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso", 0);
+    CProgress progressInstall = guest.UpdateGuestAdditions("c:\\Downloads\\VBoxGuestAdditions_3.2.8.iso",
+                                                           AdditionsUpdateFlag_WaitForUpdateStartOnly);
 #else
-    CProgress progressInstall = guest.UpdateGuestAdditions(strSource, 0 /* Flags, not used. */);
+    /* Since we are going to show a modal progress dialog we don't want to wait for the whole
+     * update progress being complete - the user might need to interact with the VM to confirm (WHQL)
+     * popups - instead we only wait until the actual update process was started. */
+    CProgress progressInstall = guest.UpdateGuestAdditions(strSource,
+                                                           AdditionsUpdateFlag_WaitForUpdateStartOnly);
 #endif
     bool fResult = guest.isOk();
     if (fResult)

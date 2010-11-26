@@ -1449,7 +1449,7 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(Utf8Source).raw(),
-                                                    0 /* Flags, not used. */,
+                                                    AdditionsUpdateFlag_None,
                                                     progress.asOutParam()));
             if (FAILED(rc))
                 vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));

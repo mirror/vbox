@@ -7766,17 +7766,34 @@
       Guest Additions run level type.
     </desc>
 
-    <const name="None"     value="0">
+    <const name="None"                    value="0">
       <desc>Guest Additions are not loaded.</desc>
     </const>
-    <const name="System"   value="1">
+    <const name="System"                  value="1">
       <desc>Guest drivers are loaded.</desc>
     </const>
-    <const name="Userland" value="2">
+    <const name="Userland"                value="2">
       <desc>Common components (such as application services) are loaded.</desc>
     </const>
-    <const name="Desktop"  value="3">
+    <const name="Desktop"                 value="3">
       <desc>Per-user desktop components are loaded.</desc>
+    </const>
+  </enum>
+
+  <enum
+    name="AdditionsUpdateFlag"
+    uuid="726a818d-18d6-4389-94e8-3e9e6826171a"
+  >
+    <desc>
+      Guest Additions update flags.
+    </desc>
+
+    <const name="None"                    value="0">
+      <desc>No flag set.</desc>
+    </const>
+    <const name="WaitForUpdateStartOnly"  value="1">
+      <desc>Only wait for the update process being started and do not
+        wait while peforming the actual update.</desc>
     </const>
   </enum>
 
@@ -8185,7 +8202,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Copy flags.
+          Copy flags. Not used at the moment and must be set to 0.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -8282,8 +8299,7 @@
       </param>
       <param name="flags" type="unsigned long" dir="in">
         <desc>
-          Additional flags for update process. Not used at the moment and
-          must be set to 0.
+          Flags for Guest Additions update.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
