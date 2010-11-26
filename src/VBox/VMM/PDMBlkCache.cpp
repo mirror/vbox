@@ -63,9 +63,15 @@
 # define PDMACFILECACHE_EP_IS_SEMRW_READ_OWNER(pEpCache) do { } while(0)
 #endif
 
+#define PDM_BLK_CACHE_SAVED_STATE_VERSION 1
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+
+static PPDMBLKCACHEENTRY pdmBlkCacheEntryAlloc(PPDMBLKCACHE pBlkCache,
+                                               uint64_t off, size_t cbData, uint8_t *pbBuffer);
+static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY pEntry);
 
 /**
  * Decrement the reference counter of the given cache entry.
@@ -751,6 +757,23 @@ static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY p
     return fDirtyBytesExceeded;
 }
 
+static PPDMBLKCACHE pdmR3BlkCacheFindById(PPDMBLKCACHEGLOBAL pBlkCacheGlobal, const char *pcszId)
+{
+    bool fFound = false;
+    PPDMBLKCACHE pBlkCache = NULL;
+
+    RTListForEach(&pBlkCacheGlobal->ListUsers, pBlkCache, PDMBLKCACHE, NodeCacheUser)
+    {
+        if (!RTStrCmp(pBlkCache->pszId, pcszId))
+        {
+            fFound = true;
+            break;
+        }
+    }
+
+    return fFound ?  pBlkCache : NULL;
+}
+
 /**
  * Commit timer callback.
  */
@@ -766,6 +789,178 @@ static void pdmBlkCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUse
 
     TMTimerSetMillies(pTimer, pCache->u32CommitTimeoutMs);
     LogFlowFunc(("Entries committed, going to sleep\n"));
+}
+
+static DECLCALLBACK(int) pdmR3BlkCacheSaveExec(PVM pVM, PSSMHANDLE pSSM)
+{
+    PPDMBLKCACHEGLOBAL pBlkCacheGlobal = pVM->pUVM->pdm.s.pBlkCacheGlobal;
+
+    AssertPtr(pBlkCacheGlobal);
+
+    pdmBlkCacheLockEnter(pBlkCacheGlobal);
+
+    SSMR3PutU32(pSSM, pBlkCacheGlobal->cRefs);
+
+    /* Go through the list and save all dirty entries. */
+    PPDMBLKCACHE pBlkCache;
+    RTListForEach(&pBlkCacheGlobal->ListUsers, pBlkCache, PDMBLKCACHE, NodeCacheUser)
+    {
+        uint32_t cEntries = 0;
+        PPDMBLKCACHEENTRY pEntry;
+
+        RTSemRWRequestRead(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
+        SSMR3PutU32(pSSM, strlen(pBlkCache->pszId));
+        SSMR3PutStrZ(pSSM, pBlkCache->pszId);
+
+        /* Count the number of entries to safe. */
+        RTListForEach(&pBlkCache->ListDirtyNotCommitted, pEntry, PDMBLKCACHEENTRY, NodeNotCommitted)
+        {
+            cEntries++;
+        }
+
+        SSMR3PutU32(pSSM, cEntries);
+
+        /* Walk the list of all dirty entries and save them. */
+        RTListForEach(&pBlkCache->ListDirtyNotCommitted, pEntry, PDMBLKCACHEENTRY, NodeNotCommitted)
+        {
+            /* A few sanity checks. */
+            AssertMsg(!pEntry->cRefs, ("The entry is still referenced\n"));
+            AssertMsg(pEntry->fFlags & PDMBLKCACHE_ENTRY_IS_DIRTY, ("Entry is not dirty\n"));
+            AssertMsg(!(pEntry->fFlags & ~PDMBLKCACHE_ENTRY_IS_DIRTY), ("Invalid flags set\n"));
+            AssertMsg(!pEntry->pWaitingHead && !pEntry->pWaitingTail, ("There are waiting requests\n"));
+            AssertMsg(   pEntry->pList == &pBlkCacheGlobal->LruRecentlyUsedIn
+                      || pEntry->pList == &pBlkCacheGlobal->LruFrequentlyUsed,
+                      ("Invalid list\n"));
+            AssertMsg(pEntry->cbData == pEntry->Core.KeyLast - pEntry->Core.Key + 1,
+                      ("Size and range do not match\n"));
+
+            /* Save */
+            SSMR3PutU64(pSSM, pEntry->Core.Key);
+            SSMR3PutU32(pSSM, pEntry->cbData);
+            SSMR3PutMem(pSSM, pEntry->pbData, pEntry->cbData);
+        }
+
+        RTSemRWReleaseRead(pBlkCache->SemRWEntries);
+    }
+
+    pdmBlkCacheLockLeave(pBlkCacheGlobal);
+
+    /* Terminator */
+    return SSMR3PutU32(pSSM, UINT32_MAX);
+}
+
+static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t cRefs;
+    PPDMBLKCACHEGLOBAL pBlkCacheGlobal = pVM->pUVM->pdm.s.pBlkCacheGlobal;
+
+    AssertPtr(pBlkCacheGlobal);
+
+    pdmBlkCacheLockEnter(pBlkCacheGlobal);
+
+    if (uVersion != PDM_BLK_CACHE_SAVED_STATE_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    SSMR3GetU32(pSSM, &cRefs);
+
+    if (cRefs == pBlkCacheGlobal->cRefs)
+    {
+        char *pszId = NULL;
+
+        while (   cRefs > 0
+               && RT_SUCCESS(rc))
+        {
+            PPDMBLKCACHE pBlkCache = NULL;
+            uint32_t cbId = 0;
+
+            SSMR3GetU32(pSSM, &cbId);
+            Assert(cbId > 0);
+
+            cbId++; /* Include terminator */
+            pszId = (char *)RTMemAllocZ(cbId * sizeof(char));
+            if (!pszId)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+
+            rc = SSMR3GetStrZ(pSSM, pszId, cbId);
+            AssertRC(rc);
+
+            /* Search for the block cache with the provided id. */
+            pBlkCache = pdmR3BlkCacheFindById(pBlkCacheGlobal, pszId);
+            if (!pBlkCache)
+            {
+                rc = SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                      N_("The VM is missing a block device. Please make sure the source and target VMs have compatible storage configurations"));
+                break;
+            }
+
+            RTStrFree(pszId);
+            pszId = NULL;
+
+            /* Get the entries */
+            uint32_t cEntries;
+            SSMR3GetU32(pSSM, &cEntries);
+
+            while (cEntries > 0)
+            {
+                PPDMBLKCACHEENTRY pEntry;
+                uint64_t off;
+                uint32_t cbEntry;
+
+                SSMR3GetU64(pSSM, &off);
+                SSMR3GetU32(pSSM, &cbEntry);
+
+                pEntry = pdmBlkCacheEntryAlloc(pBlkCache, off, cbEntry, NULL);
+                if (!pEntry)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+
+                rc = SSMR3GetMem(pSSM, pEntry->pbData, cbEntry);
+                if (RT_FAILURE(rc))
+                {
+                    RTMemFree(pEntry->pbData);
+                    RTMemFree(pEntry);
+                    break;
+                }
+
+                /* Insert into the tree. */
+                bool fInserted = RTAvlrU64Insert(pBlkCache->pTree, &pEntry->Core);
+                Assert(fInserted);
+
+                /* Add to the dirty list. */
+                pdmBlkCacheAddDirtyEntry(pBlkCache, pEntry);
+                pdmBlkCacheEntryAddToList(&pBlkCacheGlobal->LruRecentlyUsedIn, pEntry);
+                pdmBlkCacheAdd(pBlkCacheGlobal, cbEntry);
+                pdmBlkCacheEntryRelease(pEntry);
+                cEntries--;
+            }
+
+            cRefs--;
+        }
+
+        if (pszId)
+            RTStrFree(pszId);
+    }
+    else
+        rc = SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                              N_("The VM is missing a block device. Please make sure the source and target VMs have compatible storage configurations"));
+
+    pdmBlkCacheLockLeave(pBlkCacheGlobal);
+
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t u32 = 0;
+        rc = SSMR3GetU32(pSSM, &u32);
+        if (RT_SUCCESS(rc))
+            AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+    }
+
+    return rc;
 }
 
 int pdmR3BlkCacheInit(PVM pVM)
@@ -905,11 +1100,19 @@ int pdmR3BlkCacheInit(PVM pVM)
 
         if (RT_SUCCESS(rc))
         {
-            LogRel(("BlkCache: Cache successfully initialised. Cache size is %u bytes\n", pBlkCacheGlobal->cbMax));
-            LogRel(("BlkCache: Cache commit interval is %u ms\n", pBlkCacheGlobal->u32CommitTimeoutMs));
-            LogRel(("BlkCache: Cache commit threshold is %u bytes\n", pBlkCacheGlobal->cbCommitDirtyThreshold));
-            pUVM->pdm.s.pBlkCacheGlobal = pBlkCacheGlobal;
-            return VINF_SUCCESS;
+            /* Register saved state handler. */
+            rc = SSMR3RegisterInternal(pVM, "pdmblkcache", 0, PDM_BLK_CACHE_SAVED_STATE_VERSION, pBlkCacheGlobal->cbMax,
+                                       NULL, NULL, NULL,
+                                       NULL, pdmR3BlkCacheSaveExec, NULL,
+                                       NULL, pdmR3BlkCacheLoadExec, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("BlkCache: Cache successfully initialised. Cache size is %u bytes\n", pBlkCacheGlobal->cbMax));
+                LogRel(("BlkCache: Cache commit interval is %u ms\n", pBlkCacheGlobal->u32CommitTimeoutMs));
+                LogRel(("BlkCache: Cache commit threshold is %u bytes\n", pBlkCacheGlobal->cbCommitDirtyThreshold));
+                pUVM->pdm.s.pBlkCacheGlobal = pBlkCacheGlobal;
+                return VINF_SUCCESS;
+            }
         }
 
         RTCritSectDelete(&pBlkCacheGlobal->CritSect);
@@ -964,7 +1167,6 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
 {
     int rc = VINF_SUCCESS;
     PPDMBLKCACHE pBlkCache = NULL;
-    bool fAlreadyExists = false;
     PPDMBLKCACHEGLOBAL pBlkCacheGlobal = pVM->pUVM->pdm.s.pBlkCacheGlobal;
 
     if (!pBlkCacheGlobal)
@@ -976,16 +1178,9 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
      */
     pdmBlkCacheLockEnter(pBlkCacheGlobal);
 
-    RTListForEach(&pBlkCacheGlobal->ListUsers, pBlkCache, PDMBLKCACHE, NodeCacheUser)
-    {
-        if (!RTStrCmp(pBlkCache->pszId, pcszId))
-        {
-            fAlreadyExists = true;
-            break;
-        }
-    }
+    pBlkCache = pdmR3BlkCacheFindById(pBlkCacheGlobal, pcszId);
 
-    if (!fAlreadyExists)
+    if (!pBlkCache)
     {
         pBlkCache = (PPDMBLKCACHE)RTMemAllocZ(sizeof(PDMBLKCACHE));
 
@@ -1161,7 +1356,7 @@ static int pdmBlkCacheEntryDestroy(PAVLRU64NODECORE pNode, void *pvUser)
     PPDMBLKCACHEGLOBAL pCache = (PPDMBLKCACHEGLOBAL)pvUser;
     PPDMBLKCACHE pBlkCache = pEntry->pBlkCache;
 
-    while (ASMAtomicReadU32(&pEntry->fFlags) & (PDMBLKCACHE_ENTRY_IO_IN_PROGRESS | PDMBLKCACHE_ENTRY_IS_DIRTY))
+    while (ASMAtomicReadU32(&pEntry->fFlags) & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS)
     {
         /* Leave the locks to let the I/O thread make progress but reference the entry to prevent eviction. */
         pdmBlkCacheEntryRef(pEntry);
@@ -1176,7 +1371,7 @@ static int pdmBlkCacheEntryDestroy(PAVLRU64NODECORE pNode, void *pvUser)
         pdmBlkCacheEntryRelease(pEntry);
     }
 
-    AssertMsg(!(pEntry->fFlags & (PDMBLKCACHE_ENTRY_IO_IN_PROGRESS | PDMBLKCACHE_ENTRY_IS_DIRTY)),
+    AssertMsg(!(pEntry->fFlags & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS),
                 ("Entry is dirty and/or still in progress fFlags=%#x\n", pEntry->fFlags));
 
     bool fUpdateCache =    pEntry->pList == &pCache->LruFrequentlyUsed
@@ -2269,6 +2464,7 @@ static void pdmBlkCacheIoXferCompleteEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEI
              * The entry is still marked as dirty which prevents eviction.
              * Add the waiters to the list again.
              */
+            pEntry->fFlags &= ~PDMBLKCACHE_ENTRY_IS_DIRTY; /* Clear so it gets added to the list again. */
             fDirty = true;
 
             if (pComplete)
