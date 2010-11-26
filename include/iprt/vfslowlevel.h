@@ -619,8 +619,8 @@ typedef struct RTVFSIOSTREAMOPS
     RTVFSOBJOPS             Obj;
     /** The structure version (RTVFSIOSTREAMOPS_VERSION). */
     uint32_t                uVersion;
-    /** Reserved field, MBZ. */
-    uint32_t                fReserved;
+    /** Feature field. */
+    uint32_t                fFeatures;
 
     /**
      * Reads from the file/stream.
@@ -721,6 +721,14 @@ typedef RTVFSIOSTREAMOPS const *PCRTVFSIOSTREAMOPS;
 
 /** The RTVFSIOSTREAMOPS structure version. */
 #define RTVFSIOSTREAMOPS_VERSION    RT_MAKE_U32_FROM_U8(0xff,0x6f,1,0)
+
+/** @name RTVFSIOSTREAMOPS::fFeatures
+ * @{ */
+/** No scatter gather lists, thank you. */
+#define RTVFSIOSTREAMOPS_FEAT_NO_SG         RT_BIT_32(0)
+/** Mask of the valid I/O stream feature flags. */
+#define RTVFSIOSTREAMOPS_FEAT_VALID_MASK    UINT32_C(0x00000001)
+/** @}  */
 
 
 /**
@@ -898,6 +906,39 @@ RTDECL(int) RTVfsParsePathA(const char *pszPath, const char *pszCwd, PRTVFSPARSE
  * @param   pPath               The parsed path buffer to free.  NULL is fine.
  */
 RTDECL(void) RTVfsParsePathFree(PRTVFSPARSEDPATH pPath);
+
+/**
+ * Dummy implementation of RTVFSIOSTREAMOPS::pfnPollOne.
+ *
+ * This handles the case where there is no chance any events my be raised and
+ * all that is required is to wait according to the parameters.
+ *
+ * @returns IPRT status code.
+ * @param   pvThis      The implementation specific file data.
+ * @param   fEvents     The events to poll for (RTPOLL_EVT_XXX).
+ * @param   cMillies    How long to wait for event to eventuate.
+ * @param   fIntr       Whether the wait is interruptible and can return
+ *                      VERR_INTERRUPTED (@c true) or if this condition
+ *                      should be hidden from the caller (@c false).
+ * @param   pfRetEvents Where to return the event mask.
+ * @sa      RTVFSIOSTREAMOPS::pfnPollOne, RTPollSetAdd, RTPoll, RTPollNoResume.
+ */
+RTDECL(int) RTVfsUtilDummyPollOne(uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr, uint32_t *pfRetEvents);
+
+/**
+ * Pumps data from one I/O stream to another.
+ *
+ * The data is read in chunks from @a hVfsIosSrc and written to @a hVfsIosDst
+ * until @hVfsIosSrc indicates end of stream.
+ *
+ * @returns IPRT status code
+ *
+ * @param   hVfsIosSrc  The input stream.
+ * @param   hVfsIosDst  The output stream.
+ * @param   cbBufHint   Hints at a good temporary buffer size, pass 0 if
+ *                      clueless.
+ */
+RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsIosDst, size_t cbBufHint);
 
 /** @}  */
 
