@@ -20,6 +20,8 @@
 
 #ifdef VBE_NEW_DYN_LIST
 
+#include <VBox/Hardware/VBoxVideoVBE.h>
+
 /* VBE Mode Numbers */
 #define VBE_MODE_VESA_DEFINED                            0x0100
 #define VBE_MODE_REFRESH_RATE_USE_CRTC                   0x0800
@@ -120,8 +122,6 @@
 
 /* Video memory */
 #define VGAMEM_GRAPH                                     0xA000
-#define VBE_DISPI_BANK_SIZE_KB                           64
-#define VBE_DISPI_LFB_PHYSICAL_ADDRESS                   0xE0000000
 
 /*
  * This one is for compactly storing a list of mode info blocks
