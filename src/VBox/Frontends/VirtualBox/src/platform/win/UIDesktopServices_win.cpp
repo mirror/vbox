@@ -63,7 +63,7 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
         pPPF->Release();
     if (pShl)
         pShl->Release();
-    return SUCCEDDED(rc);
+    return SUCCEEDED(rc);
 }
 
 bool UIDesktopServices::openInFileManager(const QString &strFile)
