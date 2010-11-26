@@ -218,7 +218,10 @@ STDMETHODIMP Keyboard::PutScancodes(ComSafeArrayIn(LONG, scancodes),
     /* Only signal the keys in the event which have been actually sent. */
     com::SafeArray<LONG> keysSent(sent);
     memcpy(keysSent.raw(), keys.raw(), sent*sizeof(LONG));
-    fireGuestKeyboardEvent(mEventSource, ComSafeArrayAsInParam(keys));
+
+    VBoxEventDesc evDesc; 
+    evDesc.init(mEventSource, VBoxEventType_OnGuestKeyboard, ComSafeArrayAsInParam(keys)); 
+    evDesc.fire(0); 
 
     if (RT_FAILURE(vrc))
         return setError(VBOX_E_IPRT_ERROR,

@@ -22,7 +22,6 @@
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
-#include "VBoxEvents.h"
 #include "Logging.h"
 
 #include <VBox/pdmdrv.h>
