@@ -375,7 +375,7 @@ public:
 
 #define PREP_ARGS0()
 #define PREP_ARGS1(a1)                       a1
-#define PREP_ARGS2(a1,a2)                    a2, a2
+#define PREP_ARGS2(a1,a2)                    a1, a2
 #define PREP_ARGS3(a1,a2,a3)                 a1, a2, a3
 #define PREP_ARGS4(a1,a2,a3,a4)              a1, a2, a3, a4
 #define PREP_ARGS5(a1,a2,a3,a4,a5)           a1, a2, a3, a4, a5
@@ -1787,7 +1787,7 @@ STDMETHODIMP Console::COMGETTER(AttachedPciDevices)(ComSafeArrayOut(IPciDeviceAt
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-  
+
     mBusMgr->listAttachedPciDevices(ComSafeArrayOutArg(aAttachments));
 
     return S_OK;
