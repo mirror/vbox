@@ -2412,9 +2412,10 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
 
     Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, Address, cb));
 
-    if (Address == 0x3c && u32Value == 0xff)
+
+    if (Address == VBOX_PCI_INTERRUPT_LINE)
     {
-        Log(("acpi: ignore bogus interrupt line settings\n"));
+        Log(("acpi: ignore interrupt line settings: %x, we'll use hardcoded value %x\n", u32Value, PCIDevGetInterruptLine(pPciDev)));
         return;
     }
 
@@ -2842,10 +2843,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     PCIDevSetBIST(dev, 0x00);
 
     PCIDevSetInterruptLine(dev, SCI_INT);
-
-#if 0
-    dev->config[0x3d] = 0x01;    /* interrupt pin */
-#endif
+    PCIDevSetInterruptPin (dev, 0x01);
 
     dev->config[0x40] = 0x01; /* PM base address, this bit marks it as IO range, not PA */
 
