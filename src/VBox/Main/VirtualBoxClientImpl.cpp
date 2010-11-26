@@ -77,7 +77,7 @@ HRESULT VirtualBoxClient::init()
     mData.m_ThreadWatcher = NIL_RTTHREAD;
     int vrc = RTSemEventCreate(&mData.m_SemEvWatcher);
     AssertRC(vrc);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         vrc = RTThreadCreate(&mData.m_ThreadWatcher, SVCWatcherThread,
                              this, 0, RTTHREADTYPE_INFREQUENT_POLLER,
