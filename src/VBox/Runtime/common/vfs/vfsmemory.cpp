@@ -658,7 +658,7 @@ static DECLCALLBACK(int) rtVfsMemFile_Seek(void *pvThis, RTFOFF offSeek, unsigne
             || offNew > RTFOFF_MAX)
             offNew = RTFOFF_MAX;
     }
-    else if ((uint64_t)-offSeek < offNew)
+    else if ((uint64_t)-offSeek < offWrt)
         offNew = offWrt + offSeek;
     else
         offNew = 0;
