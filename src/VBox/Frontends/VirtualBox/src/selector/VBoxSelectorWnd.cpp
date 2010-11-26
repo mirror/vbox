@@ -1268,19 +1268,19 @@ void VBoxSelectorWnd::retranslateUi()
 
 #if defined(Q_WS_MAC)
     mVmOpenInFileManagerAction->setText(tr("Show in Finder"));
-    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Description file in Finder."));
+    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Definition file in Finder."));
     mVmCreateShortcut->setText(tr("Create Alias on Desktop"));
-    mVmCreateShortcut->setStatusTip(tr("Creates an Alias file to the VirtualBox Machine Description file on your Desktop."));
+    mVmCreateShortcut->setStatusTip(tr("Creates an Alias file to the VirtualBox Machine Definition file on your Desktop."));
 #elif defined(Q_WS_WIN)
     mVmOpenInFileManagerAction->setText(tr("Show in Explorer"));
-    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Description file in Explorer."));
+    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Definition file in Explorer."));
     mVmCreateShortcut->setText(tr("Create Shortcut on Desktop"));
-    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Description file on your Desktop."));
+    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
 #else
     mVmOpenInFileManagerAction->setText(tr("Show in File Manager"));
-    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Description file in the File Manager"));
+    mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Definition file in the File Manager"));
     mVmCreateShortcut->setText(tr("Create Shortcut on Desktop"));
-    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Description file on your Desktop."));
+    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
 #endif
 
     mHelpActions.retranslateUi();
