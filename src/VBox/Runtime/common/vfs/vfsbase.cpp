@@ -100,7 +100,7 @@
     do { \
         RTVFSOBJ_ASSERT_OPS(&(pIoStreamOps)->Obj, a_enmType); \
         Assert((pIoStreamOps)->uVersion == RTVFSIOSTREAMOPS_VERSION); \
-        Assert(!(pIoStreamOps)->fReserved); \
+        Assert(!((pIoStreamOps)->fFeatures & ~RTVFSIOSTREAMOPS_FEAT_VALID_MASK)); \
         AssertPtr((pIoStreamOps)->pfnRead); \
         AssertPtr((pIoStreamOps)->pfnWrite); \
         AssertPtr((pIoStreamOps)->pfnFlush); \
@@ -1508,6 +1508,73 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
 }
 
 
+RTDECL(int) RTVfsUtilDummyPollOne(uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr, uint32_t *pfRetEvents)
+{
+    int rc;
+    if (fIntr)
+        rc = RTThreadSleep(cMillies);
+    else
+    {
+        uint64_t uMsStart = RTTimeMilliTS();
+        do
+            rc = RTThreadSleep(cMillies);
+        while (   rc == VERR_INTERRUPTED
+               && !fIntr
+               && RTTimeMilliTS() - uMsStart < cMillies);
+        if (rc == VERR_INTERRUPTED)
+            rc = VERR_TIMEOUT;
+    }
+
+    *pfRetEvents = 0;
+    return rc;
+}
+
+
+RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsIosDst, size_t cbBufHint)
+{
+    /*
+     * Allocate a temporary buffer.
+     */
+    size_t cbBuf = cbBufHint;
+    if (!cbBuf)
+        cbBuf = _64K;
+    else if (cbBuf < _4K)
+        cbBuf = _4K;
+    else if (cbBuf > _1M)
+        cbBuf = _1M;
+
+    void *pvBuf = RTMemTmpAlloc(cbBuf);
+    if (!pvBuf)
+    {
+        cbBuf = _4K;
+        pvBuf = RTMemTmpAlloc(cbBuf);
+        if (!pvBuf)
+            return VERR_NO_TMP_MEMORY;
+    }
+
+    /*
+     * Pump loop.
+     */
+    int rc;
+    for (;;)
+    {
+        size_t cbRead;
+        rc = RTVfsIoStrmRead(hVfsIosSrc, pvBuf, cbBuf, true /*fBlocking*/, &cbRead);
+        if (RT_FAILURE(rc))
+            break;
+        if (rc == VINF_EOF && cbRead == 0)
+            break;
+
+        rc = RTVfsIoStrmWrite(hVfsIosDst, pvBuf, cbRead, true /*fBlocking*/, NULL /*cbWritten*/);
+        if (RT_FAILURE(rc))
+            break;
+    }
+
+    RTMemTmpFree(pvBuf);
+    return rc;
+}
+
+
 
 
 
@@ -1798,7 +1865,7 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
     AssertPtr(pIoStreamOps);
     AssertReturn(pIoStreamOps->uVersion   == RTVFSIOSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
     AssertReturn(pIoStreamOps->uEndMarker == RTVFSIOSTREAMOPS_VERSION, VERR_VERSION_MISMATCH);
-    Assert(!pIoStreamOps->fReserved);
+    Assert(!(pIoStreamOps->fFeatures & ~RTVFSIOSTREAMOPS_FEAT_VALID_MASK));
     RTVFSIOSTREAM_ASSERT_OPS(pIoStreamOps, RTVFSOBJTYPE_IO_STREAM);
     Assert(cbInstance > 0);
     Assert(fOpen & RTFILE_O_ACCESS_MASK);
@@ -1886,6 +1953,7 @@ RTDECL(int) RTVfsIoStrmRead(RTVFSIOSTREAM hVfsIos, void *pvBuf, size_t cbToRead,
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(fBlocking || pcbRead, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->fFlags & RTFILE_O_READ, VERR_ACCESS_DENIED);
 
     RTSGSEG Seg = { pvBuf, cbToRead };
     RTSGBUF SgBuf;
@@ -1907,6 +1975,7 @@ RTDECL(int) RTVfsIoStrmWrite(RTVFSIOSTREAM hVfsIos, const void *pvBuf, size_t cb
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_ACCESS_DENIED);
 
     RTSGSEG Seg = { (void *)pvBuf, cbToWrite };
     RTSGBUF SgBuf;
@@ -1929,9 +1998,34 @@ RTDECL(int) RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBlo
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
     AssertPtr(pSgBuf);
     AssertReturn(fBlocking || pcbRead, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->fFlags & RTFILE_O_READ, VERR_ACCESS_DENIED);
 
     RTVfsLockAcquireWrite(pThis->Base.hLock);
-    int rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
+    int rc;
+    if (!(pThis->pOps->fFeatures & RTVFSIOSTREAMOPS_FEAT_NO_SG))
+        rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbRead);
+    else
+    {
+        size_t cbRead = 0;
+        rc = VINF_SUCCESS;
+
+        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        {
+            RTSGBUF SgBuf;
+            RTSgBufInit(&SgBuf, &pSgBuf->paSegs[iSeg], 1);
+
+            size_t cbReadSeg = pcbRead ? 0 : pSgBuf->paSegs[iSeg].cbSeg;
+            rc = pThis->pOps->pfnRead(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbRead ? &cbReadSeg : NULL);
+            if (RT_FAILURE(rc))
+                break;
+            cbRead += cbReadSeg;
+            if ((pcbRead && cbReadSeg != SgBuf.paSegs[0].cbSeg) || rc != VINF_SUCCESS)
+                break;
+        }
+
+        if (pcbRead)
+            *pcbRead = cbRead;
+    }
     RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
@@ -1947,9 +2041,37 @@ RTDECL(int) RTVfsIoStrmSgWrite(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, bool fBl
     AssertReturn(pThis->uMagic == RTVFSIOSTREAM_MAGIC, VERR_INVALID_HANDLE);
     AssertPtr(pSgBuf);
     AssertReturn(fBlocking || pcbWritten, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->fFlags & RTFILE_O_WRITE, VERR_ACCESS_DENIED);
 
     RTVfsLockAcquireWrite(pThis->Base.hLock);
-    int rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
+    int rc;
+    if (!(pThis->pOps->fFeatures & RTVFSIOSTREAMOPS_FEAT_NO_SG))
+        rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, pSgBuf, fBlocking, pcbWritten);
+    else
+    {
+        size_t cbWritten = 0;
+        rc = VINF_SUCCESS;
+
+        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        {
+            RTSGBUF SgBuf;
+            RTSgBufInit(&SgBuf, &pSgBuf->paSegs[iSeg], 1);
+
+            size_t cbWrittenSeg = 0;
+            rc = pThis->pOps->pfnWrite(pThis->Base.pvThis, -1 /*off*/, &SgBuf, fBlocking, pcbWritten ? &cbWrittenSeg : NULL);
+            if (RT_FAILURE(rc))
+                break;
+            if (pcbWritten)
+            {
+                cbWritten += cbWrittenSeg;
+                if (cbWrittenSeg != SgBuf.paSegs[0].cbSeg)
+                    break;
+            }
+        }
+
+        if (pcbWritten)
+            *pcbWritten = cbWritten;
+    }
     RTVfsLockReleaseWrite(pThis->Base.hLock);
     return rc;
 }
@@ -2010,6 +2132,15 @@ RTDECL(int) RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
     {
         RTVfsLockAcquireWrite(pThis->Base.hLock);
         rc = pThis->pOps->pfnSkip(pThis->Base.pvThis, cb);
+        RTVfsLockReleaseWrite(pThis->Base.hLock);
+    }
+    else if (pThis->pOps->Obj.enmType == RTVFSOBJTYPE_FILE)
+    {
+        RTVFSFILEINTERNAL *pThisFile = RT_FROM_MEMBER(pThis, RTVFSFILEINTERNAL, Stream);
+        RTFOFF             offIgnored;
+
+        RTVfsLockAcquireWrite(pThis->Base.hLock);
+        rc = pThisFile->pOps->pfnSeek(pThis->Base.pvThis, cb, RTFILE_SEEK_CURRENT, &offIgnored);
         RTVfsLockReleaseWrite(pThis->Base.hLock);
     }
     else
