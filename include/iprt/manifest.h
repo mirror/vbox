@@ -211,7 +211,8 @@ RTDECL(int) RTManifestEntryRemove(RTMANIFEST hManifest, const char *pszEntry);
  *                              (Must be positioned at the start to get
  *                              the expected results.)
  * @param   pszEntry            The entry name.
- * @param   fAttrs              The attributes to create for this stream.
+ * @param   fAttrs              The attributes to create for this stream.  See
+ *                              RTMANIFEST_ATTR_XXX.
  */
 RTDECL(int) RTManifestEntryAddIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, const char *pszEntry, uint32_t fAttrs);
 

@@ -233,6 +233,144 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
     return RTEXITCODE_SUCCESS;
 }
 
+
+/**
+ * Validates a name in an extension pack.
+ *
+ * We restrict the charset to try make sure the extension pack can be unpacked
+ * on all file systems.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   pszName             The name to validate.
+ */
+static RTEXITCODE ValidateNameInExtPack(const char *pszName)
+{
+    if (RTPathStartsWithRoot(pszName))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "'%s': starts with root spec", pszName);
+
+    const char *pszErr = NULL;
+    const char *psz = pszName;
+    int ch;
+    while ((ch = *psz) != '\0')
+    {
+        /* Character set restrictions. */
+        if (ch < 0 || ch >= 128)
+        {
+            pszErr = "Only 7-bit ASCII allowed";
+            break;
+        }
+        if (ch <= 31 || ch == 127)
+        {
+            pszErr = "No control characters are not allowed";
+            break;
+        }
+        if (ch == '\\')
+        {
+            pszErr = "Only backward slashes are not allowed";
+            break;
+        }
+        if (strchr("'\":;*?|[]<>(){}", ch))
+        {
+            pszErr = "The characters ', \", :, ;, *, ?, |, [, ], <, >, (, ), { and } are not allowed";
+            break;
+        }
+
+        /* Take the simple way out and ban all ".." sequences. */
+        if (   ch     == '.'
+            && psz[1] == '.')
+        {
+            pszErr = "Double dot sequence are not allowed";
+            break;
+        }
+    }
+
+    if (pszErr)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Bad member name '%s' (pos %zu): %s", pszName, (size_t)(psz - pszName), pszErr);
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Validates a file in an extension pack.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   pszName             The name of the file.
+ * @param   hVfsObj             The VFS object.
+ */
+static RTEXITCODE ValidateFileInExtPack(const char *pszName, RTVFSOBJ hVfsObj)
+{
+    RTEXITCODE rcExit = ValidateNameInExtPack(pszName);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        RTFSOBJINFO ObjInfo;
+        int rc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (ObjInfo.cbObject >= 9*_1G64)
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "'%s': too large (%'RU64 bytes)",
+                                        pszName, (uint64_t)ObjInfo.cbObject);
+            if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                        "The alleged file '%s' has a mode mask saying differently (%RTfmode)",
+                                        pszName, ObjInfo.Attr.fMode);
+        }
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszName, rc);
+    }
+    return rcExit;
+}
+
+
+/**
+ * Validates a directory in an extension pack.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   pszName             The name of the directory.
+ * @param   hVfsObj             The VFS object.
+ */
+static RTEXITCODE ValidateDirInExtPack(const char *pszName, RTVFSOBJ hVfsObj)
+{
+    RTEXITCODE rcExit = ValidateNameInExtPack(pszName);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        RTFSOBJINFO ObjInfo;
+        int rc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (!RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                        "The alleged directory '%s' has a mode mask saying differently (%RTfmode)",
+                                        pszName, ObjInfo.Attr.fMode);
+        }
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszName, rc);
+    }
+    return rcExit;
+}
+
+/**
+ * Validates a member of an extension pack.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   pszName             The name of the directory.
+ * @param   enmType             The object type.
+ * @param   hVfsObj             The VFS object.
+ */
+static RTEXITCODE ValidateMemberOfExtPack(const char *pszName, RTVFSOBJTYPE enmType, RTVFSOBJ hVfsObj)
+{
+    RTEXITCODE rcExit;
+    if (   enmType == RTVFSOBJTYPE_FILE
+        || enmType == RTVFSOBJTYPE_IO_STREAM)
+        rcExit = ValidateFileInExtPack(pszName, hVfsObj);
+    else if (   enmType == RTVFSOBJTYPE_DIR
+             || enmType == RTVFSOBJTYPE_BASE)
+        rcExit = ValidateDirInExtPack(pszName, hVfsObj);
+    else
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "'%s' is not a file or directory (enmType=%d)", pszName, enmType);
+    return rcExit;
+}
+
+
 /**
  * Validates the extension pack tarball prior to unpacking.
  *
@@ -303,11 +441,142 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTar
 
     RTMANIFEST hManifest;
     int rc = RTManifestCreate(0 /*fFlags*/, &hManifest);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Process the tarball.
+         */
+        RTVFSFILE hXmlFile      = NIL_RTVFSFILE;
+        RTVFSFILE hManifestFile = NIL_RTVFSFILE;
+        RTVFSFILE hSignFile     = NIL_RTVFSFILE;
+        for (;;)
+        {
+            /*
+             * Get the next stream object.
+             */
+            char           *pszName;
+            RTVFSOBJ        hVfsObj;
+            RTVFSOBJTYPE    enmType;
+            rc = RTVfsFsStrmNext(hTarFss, &pszName, &enmType, &hVfsObj);
+            if (RT_FAILURE(rc))
+            {
+                if (rc != VERR_EOF)
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsFsStrmNext failed: %Rrc", rc);
+                break;
+            }
 
-    /** @todo continue coding here! */
-    AssertRC(rc);
+            /*
+             * Check the type & name validity.
+             */
+            rcExit = ValidateMemberOfExtPack(pszName, enmType, hVfsObj);
+            if (rcExit == RTEXITCODE_SUCCESS)
+            {
+                /*
+                 * Check if this is one of the standard files.
+                 */
+                const char *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
+                PRTVFSFILE  phVfsFile;
+                if (!strcmp(pszAdjName, VBOX_EXTPACK_DESCRIPTION_NAME))
+                    phVfsFile = &hXmlFile;
+                else if (!strcmp(pszAdjName, VBOX_EXTPACK_MANIFEST_NAME))
+                    phVfsFile = &hManifestFile;
+                else if (!strcmp(pszAdjName, VBOX_EXTPACK_SIGNATURE_NAME))
+                    phVfsFile = &hSignFile;
+                else
+                    phVfsFile = NULL;
+                if (phVfsFile)
+                {
+                    /*
+                     * Make sure it's a file and that it isn't too large.
+                     */
+                    if (*phVfsFile != NIL_RTVFSFILE)
+                        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "There can only be one '%s'", pszAdjName);
+                    else if (enmType != RTVFSOBJTYPE_IO_STREAM && enmType != RTVFSOBJTYPE_FILE)
+                        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Standard member '%s' is not a file", pszAdjName);
+                    else
+                    {
+                        RTFSOBJINFO ObjInfo;
+                        rc = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (!RTFS_IS_FILE(ObjInfo.Attr.fMode))
+                                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Standard member '%s' is not a file", pszAdjName);
+                            else if (ObjInfo.cbObject >= _1M)
+                                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                                        "Standard member '%s' is too large: %'RU64 bytes (max 1 MB)",
+                                                        pszAdjName, (uint64_t)ObjInfo.cbObject);
+                            else
+                            {
+                                /*
+                                 * Make an in memory copy of the stream.
+                                 */
+                                RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                                rc = RTVfsMemorizeIoStreamAsFile(hVfsIos, RTFILE_O_READ, phVfsFile);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    /*
+                                     * To simplify the code below, replace
+                                     * hVfsObj with the memorized file.
+                                     */
+                                    RTVfsObjRelease(hVfsObj);
+                                    hVfsObj = RTVfsObjFromFile(*phVfsFile);
+                                }
+                                else
+                                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                                            "RTVfsMemorizeIoStreamAsFile failed on '%s': %Rrc", pszName, rc);
+                                RTVfsIoStrmRelease(hVfsIos);
+                            }
+                        }
+                        else
+                            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszName, rc);
+                    }
+                }
+            }
 
-    return RTEXITCODE_FAILURE;
+            /*
+             * Add any I/O stream to the manifest
+             */
+            if (   rcExit == RTEXITCODE_SUCCESS
+                && (   enmType == RTVFSOBJTYPE_FILE
+                    || enmType == RTVFSOBJTYPE_IO_STREAM))
+            {
+                RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
+                rc = RTManifestEntryAddIoStream(hManifest, hVfsIos, pszName, RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256);
+                if (RT_FAILURE(rc))
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEntryAddIoStream failed on '%s': %Rrc", pszName, rc);
+                RTVfsIoStrmRelease(hVfsIos);
+            }
+
+            /*
+             * Clean up and break out on failure.
+             */
+            RTVfsObjRelease(hVfsObj);
+            RTStrFree(pszName);
+            if (rcExit != RTEXITCODE_SUCCESS)
+                break;
+        }
+
+        /*
+         * If we've successfully processed the tarball, verify that the
+         * mandatory files are present.
+         */
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            if (hXmlFile == NIL_RTVFSFILE)
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Mandator file '%s' is missing", VBOX_EXTPACK_DESCRIPTION_NAME);
+            if (hManifestFile == NIL_RTVFSFILE)
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Mandator file '%s' is missing", VBOX_EXTPACK_MANIFEST_NAME);
+            if (hSignFile == NIL_RTVFSFILE)
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Mandator file '%s' is missing", VBOX_EXTPACK_SIGNATURE_NAME);
+        }
+
+
+
+        RTManifestRelease(hManifest);   /** @todo return this and use it during unpacking */
+    }
+    RTVfsFsStrmRelease(hTarFss);
+
+    return rcExit;
 }
 
 
