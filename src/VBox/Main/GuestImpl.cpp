@@ -78,6 +78,7 @@ struct Guest::TaskGuest
 
     /* Task data. */
     Utf8Str strSource;
+    ULONG uFlags;
 };
 
 int Guest::TaskGuest::startThread()
@@ -416,6 +417,11 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
                                                     &uPID, progressInstaller.asOutParam(), &vrc);
                 if (SUCCEEDED(rc))
                 {
+                    /* If the caller does not want to wait for out guest update process to end,
+                     * complete the progress object now so that the caller can do other work. */
+                    if (aTask->uFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
+                        aTask->progress->notifyComplete(S_OK);
+
                     LogRel(("Guest Additions update is running ...\n"));
                     while (SUCCEEDED(progressInstaller->COMGETTER(Completed(&fCompleted))))
                     {
@@ -465,7 +471,9 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
 
     /* Clean up */
     aTask->rc = rc;
-    aTask->progress->SetCurrentOperationProgress(99);
+    if (SUCCEEDED(   aTask->progress->COMGETTER(Completed(&fCompleted)))
+                  && !fCompleted)
+        aTask->progress->SetCurrentOperationProgress(99);
 
     if (   SUCCEEDED(aTask->progress->COMGETTER(Canceled(&fCanceled)))
         && !fCanceled)
@@ -478,15 +486,19 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
             /* No data to assign yet. */
         }
 
-        aTask->progress->notifyComplete(rc);
+        if (SUCCEEDED(   aTask->progress->COMGETTER(Completed(&fCompleted)))
+                      && !fCompleted)
+            aTask->progress->notifyComplete(rc);
     }
     else /* The task was canceled, set error code to prevent assertions. */
     {
         LogRel(("Guest Additions update was canceled\n"));
-        aTask->progress->notifyComplete(VBOX_E_IPRT_ERROR,
-                                        COM_IIDOF(IGuest),
-                                        Guest::getStaticComponentName(),
-                                        "Automatic Guest Additions update was canceled");
+        if (SUCCEEDED(   aTask->progress->COMGETTER(Completed(&fCompleted)))
+                      && !fCompleted)
+            aTask->progress->notifyComplete(VBOX_E_IPRT_ERROR,
+                                            COM_IIDOF(IGuest),
+                                            Guest::getStaticComponentName(),
+                                            "Automatic Guest Additions update was canceled");
     }
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
@@ -2333,16 +2345,8 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* Validate flags. */
-    if (aFlags != CopyFileFlag_None)
-    {
-        if (   !(aFlags & CopyFileFlag_Recursive)
-            && !(aFlags & CopyFileFlag_Update)
-            && !(aFlags & CopyFileFlag_FollowLinks))
-        {
-            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
-        }
-    }
+    if (aFlags != 0) /* Flags are not supported at the moment. */
+        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
 
     HRESULT rc = S_OK;
 
@@ -2626,11 +2630,15 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgOutPointerValid(aProgress);
 
-    if (aFlags != 0) /* Flags are not supported at the moment. */
-        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Validate flags. */
+    if (aFlags)
+    {
+        if (!(aFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
+            return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), aFlags);
+    }
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2655,6 +2663,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ULONG aFlags, IProgres
         /* Assign data - in that case aSource is the full path
          * to the Guest Additions .ISO we want to mount. */
         task->strSource = (Utf8Str(aSource));
+        task->uFlags = aFlags;
 
         rc = task->startThread();
         if (FAILED(rc)) throw rc;
