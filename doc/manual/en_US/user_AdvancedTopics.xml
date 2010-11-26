@@ -297,11 +297,12 @@ VBoxManage controlvm "Windows 2000" savestate</screen></para>
       the registry, create the following key: <screen>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\GinaDLL</screen>
       with a value of <computeroutput>VBoxGINA.dll</computeroutput>.</para>
 
-      <para><note>
-          The VirtualBox GINA is implemented as a wrapper around the standard Windows
-          GINA (<computeroutput>MSGINA.DLL</computeroutput>),
-          therefore it will most likely not work correctly with 3rd party GINA modules. 
-        </note></para>
+      <note>
+        <para>The VirtualBox GINA module is implemented as a wrapper around
+        the standard Windows GINA module
+        (<computeroutput>MSGINA.DLL</computeroutput>). As a result, it will
+        most likely not work correctly with 3rd party GINA modules.</para>
+      </note>
 
       <para>To manually install the VirtualBox credential module, extract the
       Guest Additions (see <xref linkend="windows-guest-file-extraction" />)
@@ -621,8 +622,8 @@ vga = 864</screen>
 
       <para>As described in <xref linkend="vbox-auth" />, VirtualBox supports
       arbitrary external modules to perform authentication. When the
-      authentication method is set to "external" for a
-      particular VM, VirtualBox calls the library that was specified with
+      authentication method is set to "external" for a particular VM,
+      VirtualBox calls the library that was specified with
       <computeroutput>VBoxManage setproperty vrdeauthlibrary</computeroutput>.
       This library will be loaded by the VM process on demand, i.e. when the
       first RDP connection is made by an external client.</para>
@@ -951,7 +952,9 @@ VBoxManage setextradata "VM name"
       </note></para>
 
     <para>The old sequence of configuring a serial port used the following 6
-      commands:</para><screen>VBoxManage setextradata "VM name"
+    commands:</para>
+
+    <screen>VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/Config/IRQ" 4
 VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/Config/IOBase" 0x3f8
@@ -963,8 +966,9 @@ VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/LUN#0/AttachedDriver/Config/Location" "\\.\pipe\vboxCOM1"
 VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/serial/0/LUN#0/AttachedDriver/Config/IsServer" 1</screen>
-    <para>This sets up a serial port in the guest with the default
-    settings for COM1 (IRQ 4, I/O address 0x3f8) and the
+
+    <para>This sets up a serial port in the guest with the default settings
+    for COM1 (IRQ 4, I/O address 0x3f8) and the
     <computeroutput>Location</computeroutput> setting assumes that this
     configuration is used on a Windows host, because the Windows named pipe
     syntax is used. Keep in mind that on Windows hosts a named pipe must
@@ -1287,13 +1291,14 @@ VBoxManage setextradata "VM name"
           </glossentry>
 
           <glossentry>
-            <glossterm><computeroutput>--timesync-set-on-restore 0|1</computeroutput></glossterm>
+            <glossterm><computeroutput>--timesync-set-on-restore
+            0|1</computeroutput></glossterm>
 
             <glossdef>
               <para>Set the time after the VM was restored from a saved state
-                when passing 1 as parameter (default). Disable by passing 0.
-                In the latter case, the time will be adjusted smoothly which
-                can take a long time.</para>
+              when passing 1 as parameter (default). Disable by passing 0. In
+              the latter case, the time will be adjusted smoothly which can
+              take a long time.</para>
             </glossdef>
           </glossentry>
         </glosslist></para>

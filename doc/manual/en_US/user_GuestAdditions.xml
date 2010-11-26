@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter>
   <title id="guestadditions">Guest Additions</title>
 
@@ -206,10 +206,10 @@
 
         <para>In the "Devices" menu in the virtual machine's menu bar,
         VirtualBox has a handy menu item named "Install Guest Additions",
-        which either allows to upgrade already installed Guest Additions
-        (only Windows Guest Additions 4.0 and later) automatically or
-        mounts the Guest Additions ISO file inside your virtual machine
-        to perform a manual update.</para>
+        which either allows to upgrade already installed Guest Additions (only
+        Windows Guest Additions 4.0 and later) automatically or mounts the
+        Guest Additions ISO file inside your virtual machine to perform a
+        manual update.</para>
 
         <para>In case of a manual update, a Windows guest should then
         automatically start the Guest Additions installer, which allows to
@@ -441,9 +441,9 @@
 
       <para>Note that some Linux distributions already come with VirtualBox
       Guest Additions or a part thereof. You may keep the distribution's
-      version of the Guest Additions but often, these are not up to date
-      and limited in functionality. Therefore, you can choose the install
-      the Guest Additions that come with VirtualBox, overriding the already
+      version of the Guest Additions but often, these are not up to date and
+      limited in functionality. Therefore, you can choose the install the
+      Guest Additions that come with VirtualBox, overriding the already
       installed version. The VirtualBox Linux Guest Additions installer tries
       to detect existing installation and replace them but depending on how
       the distribution integrates the Guest Additions, they may require some
@@ -471,12 +471,12 @@
             on a Linux host system, as described there.</para>
 
             <para>Again, as with Linux hosts, we recommend using DKMS for
-            Linux guests as well. If it is not installed, use this
-            command for Ubuntu/Debian systems:<screen>sudo apt-get install dkms</screen>
+            Linux guests as well. If it is not installed, use this command for
+            Ubuntu/Debian systems:<screen>sudo apt-get install dkms</screen>
             or for Fedora systems: <screen>yum install dkms</screen></para>
 
-            <para>Make sure to nstall DKMS <emphasis>before</emphasis> installing the
-            Linux Guest Additions.</para>
+            <para>Make sure to nstall DKMS <emphasis>before</emphasis>
+            installing the Linux Guest Additions.</para>
           </listitem>
 
           <listitem>
@@ -501,193 +501,232 @@
 
         <para>For your convenience, the following step-by-step instructions
         have been verified to work for freshly installed copies of the most
-        popular Linux distributions. After these preparational steps, you
-        can execute the VirtualBox Guest Additions installer as described
+        popular Linux distributions. After these preparational steps, you can
+        execute the VirtualBox Guest Additions installer as described
         above.</para>
 
-        <sect4><title>Ubuntu 10.04 ("Lucid Lynx")</title><para>
-        <orderedlist>
-          <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
-            <screen>apt-get update</screen>
-            followed by
-            <screen>apt-get upgrade</screen></para>
-          </listitem>
-          <listitem>
-            <para>Install DKMS using
-            <screen>apt-get install dkms</screen></para>
-          </listitem>
-          <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates and then proceed as described above.</para>
-          </listitem>
-        </orderedlist></para></sect4>
+        <sect4>
+          <title>Ubuntu 10.04 ("Lucid Lynx")</title>
 
-        <sect4><title>Fedora 13 ("Goddard")</title><para>
-        <orderedlist>
-          <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
-            <screen>yum update</screen></para>
-          </listitem>
-          <listitem>
-            <para>Install DKMS and the GNU C compiler using
-            <screen>yum install dkms</screen>
-            followed by
-            <screen>yum install gcc</screen></para>
-          </listitem>
-          <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates and then proceed as described above.</para>
-          </listitem>
-        </orderedlist></para></sect4>
+          <para><orderedlist>
+              <listitem>
+                <para>In order to update your system to the latest version of
+                the packets, open a terminal and as root, execute <screen>apt-get update</screen>
+                followed by <screen>apt-get upgrade</screen></para>
+              </listitem>
 
-        <sect4><title>openSUSE 11.2</title><para>
-        <orderedlist>
-          <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
-            <screen>zypper update</screen></para>
-          </listitem>
-          <listitem>
-            <para>Install the make tool and the GNU C compiler using
-            <screen>zypper install make gcc</screen></para>
-          </listitem>
-          <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates.</para>
-          </listitem>
-          <listitem>
-            <para>Find out which kernel you are running using
-            <screen>uname -a</screen>
-            An example would be <computeroutput>2.6.31.12-0.2-default</computeroutput>
-            which refers to the "default" kernel. Then install the correct kernel
-            development package. In the above example this would be
-            <screen>zypper install kernel-default-devel</screen></para>
-          </listitem>
-          <listitem>
-            <para>Make sure that your running kernel
-            (<computeroutput>uname -a</computeroutput>) and the kernel packages
-            you have installed (<computeroutput>rpm -qa kernel\*</computeroutput>)
-            have the exact same version number. Proceed with the installation as described
-            above.</para>
-          </listitem>
-        </orderedlist></para></sect4>
+              <listitem>
+                <para>Install DKMS using <screen>apt-get install dkms</screen></para>
+              </listitem>
 
-        <sect4><title>SuSE Linux Enterprise Desktop (SLED) 11</title><para>
-        <orderedlist>
-          <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
-            <screen>zypper update</screen></para>
-          </listitem>
-          <listitem>
-            <para>Install the GNU C compiler using
-            <screen>zypper install gcc</screen></para>
-          </listitem>
-          <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates.</para>
-          </listitem>
-          <listitem>
-            <para>Find out which kernel you are running using
-            <screen>uname -a</screen>
-            An example would be <computeroutput>2.6.27.19-5.1-default</computeroutput>
-            which refers to the "default" kernel. Then install the correct kernel
-            development package. In the above example this would be
-            <screen>zypper install kernel-syms kernel-source</screen></para>
-          </listitem>
-          <listitem>
-            <para>Make sure that your running kernel
-            (<computeroutput>uname -a</computeroutput>) and the kernel packages
-            you have installed (<computeroutput>rpm -qa kernel\*</computeroutput>)
-            have the exact same version number. Proceed with the installation as described
-            above.</para>
-          </listitem>
-        </orderedlist></para></sect4>
+              <listitem>
+                <para>Reboot your guest system in order to activate the
+                updates and then proceed as described above.</para>
+              </listitem>
+            </orderedlist></para>
+        </sect4>
 
-        <sect4><title>Mandrake 2010</title><para>
-        <orderedlist>
-          <listitem>
-            <para>Mandrake ships with the VirtualBox Guest Additions which
-            will be replaced if you follow these steps.</para>
-          </listitem>
-          <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root and execute
-            <screen>urpmi --auto-update</screen></para>
-          </listitem>
-          <listitem><para>Reboot your system in order to activate the updates.</para>
-          </listitem>
-          <listitem><para>Install DKMS using
-            <screen>urpmi dkms</screen>
-            and make sure the choose the correct kernel-devel package when asked
-            by the installer (use <computeroutput>uname -a</computeroutput> to compare).</para>
-          </listitem>
-        </orderedlist></para></sect4>
+        <sect4>
+          <title>Fedora 13 ("Goddard")</title>
 
-        <sect4><title>CentOS 5.5, Red Hat Enterprise Linux 5.5 and Oracle Enterprise
-            Linux 5.5</title><para>
-        <orderedlist>
-          <listitem>
-            <para>Add <computeroutput>divider=10</computeroutput> to the kernel boot options
-            in <computeroutput>/etc/grub.conf</computeroutput> to reduce the idle CPU load.</para>
-          </listitem>
-          <listitem>
-            <para>To update your system to the latest version
-            of the packets, open a terminal and as root, execute
-            <screen>yum update</screen></para>
-          </listitem>
-          <listitem>
-            <para>Install the GNU C compiler and the kernel development packages using
-            <screen>yum install gcc</screen>
-            followed by
-            <screen>yum install kernel-devel</screen></para>
-          </listitem>
-          <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates and then proceed as described above.</para>
-          </listitem>
-          <listitem>
-            <para>Note that OpenGL support is not available unless you update to a later Linux kernel.</para>
-            <para>In case Oracle Enterprise Linux does not find the required packages, you either have to
-            install them from a different source (e.g. DVD) or use Oracle's public Yum server located at
-            <ulink url="http://public-yum.oracle.com/">http://public-yum.oracle.com</ulink>.</para>
-          </listitem>
-        </orderedlist></para></sect4>
+          <para><orderedlist>
+              <listitem>
+                <para>In order to update your system to the latest version of
+                the packets, open a terminal and as root, execute <screen>yum update</screen></para>
+              </listitem>
 
-        <sect4><title>Debian 5 ("Lenny")</title><para>
-        <orderedlist>
-          <listitem>
-            <para>In order to update your system to the latest version
-            of the packets, open a terminal and as root, execute
-            <screen>apt-get update</screen>
-            followed by
-            <screen>apt-get upgrade</screen></para>
-          </listitem>
-          <listitem>
-            <para>Install the make tool and the GNU C compiler using
-            <screen>apt-get install make gcc</screen></para>
-          </listitem>
-          <listitem>
-            <para>Reboot your guest system in order to activate the
-            updates.</para>
-          </listitem>
-          <listitem>
-            <para>Determine the exact version of your kernel using
-            <computeroutput>uname -a</computeroutput> and install the correct version
-            of the linux-headers package, e.g. using
-            <screen>apt-get install linux-headers-2.6.26-2-686</screen></para>
+              <listitem>
+                <para>Install DKMS and the GNU C compiler using <screen>yum install dkms</screen>
+                followed by <screen>yum install gcc</screen></para>
+              </listitem>
 
-          <listitem>
-            <para>Note that OpenGL support is not available unless you update to a later Linux kernel.</para>
-          </listitem>
-          </listitem>
-        </orderedlist></para></sect4>
-        </sect3>
+              <listitem>
+                <para>Reboot your guest system in order to activate the
+                updates and then proceed as described above.</para>
+              </listitem>
+            </orderedlist></para>
+        </sect4>
 
-        <sect3><title>Manual setup of selected guest services</title>
+        <sect4>
+          <title>openSUSE 11.2</title>
+
+          <para><orderedlist>
+              <listitem>
+                <para>In order to update your system to the latest version of
+                the packets, open a terminal and as root, execute <screen>zypper update</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Install the make tool and the GNU C compiler using
+                <screen>zypper install make gcc</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Reboot your guest system in order to activate the
+                updates.</para>
+              </listitem>
+
+              <listitem>
+                <para>Find out which kernel you are running using <screen>uname -a</screen>
+                An example would be
+                <computeroutput>2.6.31.12-0.2-default</computeroutput> which
+                refers to the "default" kernel. Then install the correct
+                kernel development package. In the above example this would be
+                <screen>zypper install kernel-default-devel</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Make sure that your running kernel
+                (<computeroutput>uname -a</computeroutput>) and the kernel
+                packages you have installed (<computeroutput>rpm -qa
+                kernel\*</computeroutput>) have the exact same version number.
+                Proceed with the installation as described above.</para>
+              </listitem>
+            </orderedlist></para>
+        </sect4>
+
+        <sect4>
+          <title>SuSE Linux Enterprise Desktop (SLED) 11</title>
+
+          <para><orderedlist>
+              <listitem>
+                <para>In order to update your system to the latest version of
+                the packets, open a terminal and as root, execute <screen>zypper update</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Install the GNU C compiler using <screen>zypper install gcc</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Reboot your guest system in order to activate the
+                updates.</para>
+              </listitem>
+
+              <listitem>
+                <para>Find out which kernel you are running using <screen>uname -a</screen>
+                An example would be
+                <computeroutput>2.6.27.19-5.1-default</computeroutput> which
+                refers to the "default" kernel. Then install the correct
+                kernel development package. In the above example this would be
+                <screen>zypper install kernel-syms kernel-source</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Make sure that your running kernel
+                (<computeroutput>uname -a</computeroutput>) and the kernel
+                packages you have installed (<computeroutput>rpm -qa
+                kernel\*</computeroutput>) have the exact same version number.
+                Proceed with the installation as described above.</para>
+              </listitem>
+            </orderedlist></para>
+        </sect4>
+
+        <sect4>
+          <title>Mandrake 2010</title>
+
+          <para><orderedlist>
+              <listitem>
+                <para>Mandrake ships with the VirtualBox Guest Additions which
+                will be replaced if you follow these steps.</para>
+              </listitem>
+
+              <listitem>
+                <para>In order to update your system to the latest version of
+                the packets, open a terminal and as root and execute <screen>urpmi --auto-update</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Reboot your system in order to activate the
+                updates.</para>
+              </listitem>
+
+              <listitem>
+                <para>Install DKMS using <screen>urpmi dkms</screen> and make
+                sure the choose the correct kernel-devel package when asked by
+                the installer (use <computeroutput>uname -a</computeroutput>
+                to compare).</para>
+              </listitem>
+            </orderedlist></para>
+        </sect4>
+
+        <sect4>
+          <title>CentOS 5.5, Red Hat Enterprise Linux 5.5 and Oracle
+          Enterprise Linux 5.5</title>
+
+          <para><orderedlist>
+              <listitem>
+                <para>Add <computeroutput>divider=10</computeroutput> to the
+                kernel boot options in
+                <computeroutput>/etc/grub.conf</computeroutput> to reduce the
+                idle CPU load.</para>
+              </listitem>
+
+              <listitem>
+                <para>To update your system to the latest version of the
+                packets, open a terminal and as root, execute <screen>yum update</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Install the GNU C compiler and the kernel development
+                packages using <screen>yum install gcc</screen> followed by
+                <screen>yum install kernel-devel</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Reboot your guest system in order to activate the
+                updates and then proceed as described above.</para>
+              </listitem>
+
+              <listitem>
+                <para>Note that OpenGL support is not available unless you
+                update to a later Linux kernel.</para>
+
+                <para>In case Oracle Enterprise Linux does not find the
+                required packages, you either have to install them from a
+                different source (e.g. DVD) or use Oracle's public Yum server
+                located at <ulink
+                url="http://public-yum.oracle.com/">http://public-yum.oracle.com</ulink>.</para>
+              </listitem>
+            </orderedlist></para>
+        </sect4>
+
+        <sect4>
+          <title>Debian 5 ("Lenny")</title>
+
+          <para><orderedlist>
+              <listitem>
+                <para>In order to update your system to the latest version of
+                the packets, open a terminal and as root, execute <screen>apt-get update</screen>
+                followed by <screen>apt-get upgrade</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Install the make tool and the GNU C compiler using
+                <screen>apt-get install make gcc</screen></para>
+              </listitem>
+
+              <listitem>
+                <para>Reboot your guest system in order to activate the
+                updates.</para>
+              </listitem>
+
+              <listitem>
+                <para>Determine the exact version of your kernel using
+                <computeroutput>uname -a</computeroutput> and install the
+                correct version of the linux-headers package, e.g. using
+                <screen>apt-get install linux-headers-2.6.26-2-686</screen></para>
+
+                <para>Note that OpenGL support is not available unless you
+                update to a later Linux kernel.</para>
+              </listitem>
+            </orderedlist></para>
+        </sect4>
+      </sect3>
+
+      <sect3>
+        <title>Manual setup of selected guest services</title>
+
         <para>The VirtualBox Guest Additions contain several different
         drivers. If for any reason you do not wish to set them all up, you can
         install the Guest Additions using the following command:</para>
@@ -700,10 +739,10 @@
         <para>After this, you will need to at least compile the kernel modules
         by running the command <screen>  /usr/lib/VBoxGuestAdditions/vboxadd setup</screen>
         as root (you will need to replace <emphasis>lib</emphasis> by
-        <emphasis>lib64</emphasis>
-        on some 64bit guests), and on older guests without the udev service
-        you will need to add the <emphasis>vboxadd</emphasis> service to the
-        default runlevel to ensure that the modules get loaded.</para>
+        <emphasis>lib64</emphasis> on some 64bit guests), and on older guests
+        without the udev service you will need to add the
+        <emphasis>vboxadd</emphasis> service to the default runlevel to ensure
+        that the modules get loaded.</para>
 
         <para>To setup the time synchronization service, run the command
         <screen>  /usr/lib/VBoxGuestAdditions/vboxadd-service setup</screen>
@@ -776,27 +815,26 @@ EndSection</screen>
         <title>Uninstalling the Linux Guest Additions</title>
 
         <para>If you have a version of the Guest Additions installed on your
-        virtual machine and wish to remove it without installing new ones,
-        you can do so by inserting the Guest Additions CD image into the
-        virtual CD-ROM drive as described above and running the installer for
-        the current Guest Additions with the "uninstall" parameter from the
-        path that the CD image is mounted on in the guest:
-        <screen>sh ./VBoxLinuxAdditions-x86.run uninstall</screen>
-        <para>(substituting <computeroutput>VBoxLinuxAdditions-amd64</computeroutput>
-          on a 64-bit guest).  While this will normally work
-        without issues, you may need to do some manual clean up of the guest
-        (particularly of the XFree86Config or xorg.conf file) in some cases,
-        particularly if the Additions version installed or the guest
-        operating system were very old, or if you made your own changes to
-        the Guest Additions setup after you installed them.</para>
-       </para>
-       <para>
-         Starting with version 3.1.0, you can uninstall the Additions
-         by invoking
-         <screen>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING/uninstall.sh</screen>
-         substituting <computeroutput>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING</computeroutput>
-         with the Guest Additions installation directory.
-       </para>
+        virtual machine and wish to remove it without installing new ones, you
+        can do so by inserting the Guest Additions CD image into the virtual
+        CD-ROM drive as described above and running the installer for the
+        current Guest Additions with the "uninstall" parameter from the path
+        that the CD image is mounted on in the guest: <screen>sh ./VBoxLinuxAdditions-x86.run uninstall</screen></para>
+
+        <para>With a 64-bit guest, use
+        <computeroutput>VBoxLinuxAdditions-amd64</computeroutput> instead.
+        While this will normally work without issues, you may need to do some
+        manual cleanup of the guest (particularly of the XFree86Config or
+        xorg.conf file) in some cases, particularly if the Additions version
+        installed or the guest operating system were very old, or if you made
+        your own changes to the Guest Additions setup after you installed
+        them.</para>
+
+        <para>Starting with version 3.1.0, you can uninstall the Additions by
+        invoking <screen>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING/uninstall.sh</screen>Please
+        replace
+        <computeroutput>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING</computeroutput>
+        with the correct Guest Additions installation directory.</para>
       </sect3>
     </sect2>
 
@@ -978,62 +1016,62 @@ EndSection</screen>
     <sect2 id="sf_mount_manual">
       <title>Manual mounting</title>
 
-        <para>You can mount the shared folder from inside a VM the same way
-        as you would mount an ordinary network share:</para>
+      <para>You can mount the shared folder from inside a VM the same way as
+      you would mount an ordinary network share:</para>
 
-        <para><itemizedlist>
-        <listitem>
-          <para>In a Windows guest, starting with VirtualBox 1.5.0, shared
-          folders are browseable and are therefore visible in Windows
-          Explorer. So, to attach the host's shared folder to your Windows
-          guest, open Windows Explorer and look for it under "My Networking
-          Places" -&gt; "Entire Network" -&gt; "VirtualBox Shared Folders". By
-          right-clicking on a shared folder and selecting "Map network drive"
-          from the menu that pops up, you can assign a drive letter to that
-          shared folder.</para>
+      <para><itemizedlist>
+          <listitem>
+            <para>In a Windows guest, starting with VirtualBox 1.5.0, shared
+            folders are browseable and are therefore visible in Windows
+            Explorer. So, to attach the host's shared folder to your Windows
+            guest, open Windows Explorer and look for it under "My Networking
+            Places" -&gt; "Entire Network" -&gt; "VirtualBox Shared Folders".
+            By right-clicking on a shared folder and selecting "Map network
+            drive" from the menu that pops up, you can assign a drive letter
+            to that shared folder.</para>
 
-          <para>Alternatively, on the Windows command line, use the
-          following:</para>
+            <para>Alternatively, on the Windows command line, use the
+            following:</para>
 
-          <screen>net use x: \\vboxsvr\sharename</screen>
+            <screen>net use x: \\vboxsvr\sharename</screen>
 
-          <para>While <computeroutput>vboxsvr</computeroutput> is a fixed name
-          (note that <computeroutput>vboxsrv</computeroutput> would also
-          work), replace "x:" with the drive letter that you want to use for
-          the share, and <computeroutput>sharename</computeroutput> with the
-          share name specified with
-          <computeroutput>VBoxManage</computeroutput>.</para>
-        </listitem>
+            <para>While <computeroutput>vboxsvr</computeroutput> is a fixed
+            name (note that <computeroutput>vboxsrv</computeroutput> would
+            also work), replace "x:" with the drive letter that you want to
+            use for the share, and <computeroutput>sharename</computeroutput>
+            with the share name specified with
+            <computeroutput>VBoxManage</computeroutput>.</para>
+          </listitem>
 
-        <listitem>
-          <para>In a Linux guest, use the following command:</para>
+          <listitem>
+            <para>In a Linux guest, use the following command:</para>
 
-          <screen>mount -t vboxsf [-o OPTIONS] sharename mountpoint</screen>
+            <screen>mount -t vboxsf [-o OPTIONS] sharename mountpoint</screen>
 
-          <para>To mount a shared folder during boot, add the following entry
-          to /etc/fstab:</para>
+            <para>To mount a shared folder during boot, add the following
+            entry to /etc/fstab:</para>
 
-          <screen>sharename   mountpoint   vboxsf   defaults  0   0</screen>
-        </listitem>
+            <screen>sharename   mountpoint   vboxsf   defaults  0   0</screen>
+          </listitem>
 
-        <listitem>
-          <para>In a Solaris guest, use the following command:</para>
+          <listitem>
+            <para>In a Solaris guest, use the following command:</para>
 
-          <screen>mount -F vboxfs [-o OPTIONS] sharename mountpoint</screen>
+            <screen>mount -F vboxfs [-o OPTIONS] sharename mountpoint</screen>
 
-          <para>Replace <computeroutput>sharename</computeroutput> (use
-          lowercase) with the share name specified with
-          <computeroutput>VBoxManage</computeroutput> or the GUI, and
-          <computeroutput>mountpoint</computeroutput> with the path where you
-          want the share to be mounted on the guest (e.g.
-          <computeroutput>/mnt/share</computeroutput>). The usual mount rules
-          apply, that is, create this directory first if it does not exist
-          yet.</para>
+            <para>Replace <computeroutput>sharename</computeroutput> (use
+            lowercase) with the share name specified with
+            <computeroutput>VBoxManage</computeroutput> or the GUI, and
+            <computeroutput>mountpoint</computeroutput> with the path where
+            you want the share to be mounted on the guest (e.g.
+            <computeroutput>/mnt/share</computeroutput>). The usual mount
+            rules apply, that is, create this directory first if it does not
+            exist yet.</para>
 
-          <para>Here is an example of mounting the shared folder for the user
-          "jack" on OpenSolaris:</para>
+            <para>Here is an example of mounting the shared folder for the
+            user "jack" on OpenSolaris:</para>
 
-          <screen>$ id
+            <screen>$ id
 uid=5000(jack) gid=1(other)
 $ mkdir /export/home/jack/mount
 $ pfexec mount -F vboxfs -o uid=5000,gid=1 jackshare /export/home/jack/mount
@@ -1041,67 +1079,74 @@ $ cd ~/mount
 $ ls
 sharedfile1.mp3 sharedfile2.txt
 $</screen>
-          <para>Beyond the standard options supplied by the
-          <computeroutput>mount</computeroutput> command, the following are
-          available:</para>
 
-          <screen>iocharset CHARSET</screen>
+            <para>Beyond the standard options supplied by the
+            <computeroutput>mount</computeroutput> command, the following are
+            available:</para>
 
-          <para>to set the character set used for I/O operations (utf8 by
-          default) and</para>
+            <screen>iocharset CHARSET</screen>
 
-          <screen>convertcp CHARSET</screen>
+            <para>to set the character set used for I/O operations (utf8 by
+            default) and</para>
 
-          <para>to specify the character set used for the shared folder name
-          (utf8 by default).</para>
+            <screen>convertcp CHARSET</screen>
 
-          <para>The generic mount options (documented in the mount manual
-          page) apply also. Especially useful are the options
-          <computeroutput>uid</computeroutput>,
-          <computeroutput>gid</computeroutput> and
-          <computeroutput>mode</computeroutput>, as they allow access by
-          normal users (in read/write mode, depending on the settings) even if
-          root has mounted the filesystem.</para>
-        </listitem>
-      </itemizedlist></para>
+            <para>to specify the character set used for the shared folder name
+            (utf8 by default).</para>
+
+            <para>The generic mount options (documented in the mount manual
+            page) apply also. Especially useful are the options
+            <computeroutput>uid</computeroutput>,
+            <computeroutput>gid</computeroutput> and
+            <computeroutput>mode</computeroutput>, as they allow access by
+            normal users (in read/write mode, depending on the settings) even
+            if root has mounted the filesystem.</para>
+          </listitem>
+        </itemizedlist></para>
     </sect2>
 
     <sect2 id="sf_mount_auto">
       <title>Automatic mounting</title>
 
-      <para>Starting with version 3.3.0, VirtualBox supports automatic mounting
-      support for shared folders. The installed Guest Additions will then take
-      care of all shared folders which are marked as being auto-mounted as soon
-      as a user is logged in to the guest OS. This makes it more convenient
-      instead of mounting shared folders manually described in <xref
-      linkend="sf_mount_manual" />.</para>
+      <para>Starting with version 3.3.0, VirtualBox supports automatic
+      mounting support for shared folders. The installed Guest Additions will
+      then take care of all shared folders which are marked as being
+      auto-mounted as soon as a user is logged in to the guest OS. This makes
+      it more convenient instead of mounting shared folders manually described
+      in <xref linkend="sf_mount_manual" />.</para>
+
       <note>
         <para>Auto-mounting currently is only supported on Windows, Linux and
         Solaris guests.</para>
       </note>
 
-      <para>On Windows guests an auto-mounted shared folder will be represented by an own
-      drive letter (e.g. <computeroutput>E:</computeroutput>), depending on the
-      remaining free drive letters of the system.</para>
+      <para>On Windows guests an auto-mounted shared folder will be
+      represented by an own drive letter (e.g.
+      <computeroutput>E:</computeroutput>), depending on the remaining free
+      drive letters of the system.</para>
 
-      <para>On Linux and Solaris guests auto-mounted shared folders get mounted into
-      the <computeroutput>/media</computeroutput> directory, along with the prefix
-      <computeroutput>sf_</computeroutput>, so the shared folder <computeroutput>myfiles</computeroutput>
-      would be mounted to <computeroutput>/media/sf_myfiles</computeroutput> on Linux
-      and <computeroutput>/mnt/sf_myfiles</computeroutput> on Solaris.</para>
+      <para>On Linux and Solaris guests auto-mounted shared folders get
+      mounted into the <computeroutput>/media</computeroutput> directory,
+      along with the prefix <computeroutput>sf_</computeroutput>, so the
+      shared folder <computeroutput>myfiles</computeroutput> would be mounted
+      to <computeroutput>/media/sf_myfiles</computeroutput> on Linux and
+      <computeroutput>/mnt/sf_myfiles</computeroutput> on Solaris.</para>
 
-      <para>To change the prefix <computeroutput>sf_</computeroutput> of a given
-      virtual machine, set the value of its <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
-      guest property to another value; see <xref linkend="guestadd-guestprops" /> for details.</para>
+      <para>To change the prefix <computeroutput>sf_</computeroutput> of a
+      given virtual machine, set the value of its
+      <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
+      guest property to another value; see <xref
+      linkend="guestadd-guestprops" /> for details.</para>
 
-      <para>To get a user full access to the auto-mounted shared folders on the guest
-      this user needs to be part of the newly create group "vboxsf", which is created by the
-      VirtualBox Guest Additions installer. Without being in that group read-only access
-      is provided.</para>
+      <para>To get a user full access to the auto-mounted shared folders on
+      the guest this user needs to be part of the newly create group "vboxsf",
+      which is created by the VirtualBox Guest Additions installer. Without
+      being in that group read-only access is provided.</para>
 
-      <para>To get changes applied, for example by adding new or deleting auto-mounted
-      shared folders while a VM is running, the guest OS needs to be rebooted. However,
-      this does not affect <xref linkend="sf_mount_manual" />.</para>
+      <para>To get changes applied, for example by adding new or deleting
+      auto-mounted shared folders while a VM is running, the guest OS needs to
+      be rebooted. However, this does not affect <xref
+      linkend="sf_mount_manual" />.</para>
     </sect2>
   </sect1>
 
@@ -1409,20 +1454,20 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     <para>For this to work, the application needs to be installed inside the
     guest; no additional software needs to be installed on the host.
     Additionally, text mode output (to stdout and stderr) can be shown on the
-    host for further processing along with options to specify user
-    credentials and a timeout value (in milliseconds) to limit time the
-    application is able to run.</para>
+    host for further processing along with options to specify user credentials
+    and a timeout value (in milliseconds) to limit time the application is
+    able to run.</para>
 
     <para>This feature can be used to automate deployment of software within
     the guest.</para>
 
-    <para>Starting with version 4.0, the Guest Additions for Windows
-    allow for automatic updating (only already installed Guest Additions 4.0
-    or later).</para>
+    <para>Starting with version 4.0, the Guest Additions for Windows allow for
+    automatic updating (only already installed Guest Additions 4.0 or
+    later).</para>
 
-    <para>To use these feature, use the VirtualBox command line or the GUI. See
-    <xref linkend="mountingadditionsiso" /> or <xref linkend="vboxmanage-guestcontrol" />
-    for details.</para>
+    <para>To use these feature, use the VirtualBox command line or the GUI.
+    See <xref linkend="mountingadditionsiso" /> or <xref
+    linkend="vboxmanage-guestcontrol" /> for details.</para>
   </sect1>
 
   <sect1 id="guestadd-balloon">
@@ -1488,55 +1533,58 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
   <sect1 id="guestadd-pagefusion">
     <title>Page Fusion</title>
 
-    <para>Page Fusion is a novel technique to further improve VM density on the host,
-    i.e. a way of overcommitting resources. It was first introduced with VirtualBox 3.2
-    and is currently limited to VMs running Windows 2000 and later. In a typical scenario,
-    dozens, up to hundreds of very similar VMs are consolidated on a powerful host
-    computer and the level of consolidation is most often limited by the amount of RAM
-    that can be installed in a system at reasonable cost. Often, due to RAM exhaustion,
-    additional VMs cannot be started even though the host's CPUs still provide capacity.
-    To circumvent this restriction, hypervisors can benefit from the fact that often, VMs
-    are very similar (e.g. multiple VMs running Windows XP Service Pack 2) and therefore
-    contain a number of identical RAM cells. The hypervisor can look for such duplicate
-    data in memory, eliminate the redundancy (deduplication) and thereby free additional
-    memory.</para>
+    <para>Page Fusion is a novel technique to further improve VM density on
+    the host, i.e. a way of overcommitting resources. It was first introduced
+    with VirtualBox 3.2 and is currently limited to VMs running Windows 2000
+    and later. In a typical scenario, dozens, up to hundreds of very similar
+    VMs are consolidated on a powerful host computer and the level of
+    consolidation is most often limited by the amount of RAM that can be
+    installed in a system at reasonable cost. Often, due to RAM exhaustion,
+    additional VMs cannot be started even though the host's CPUs still provide
+    capacity. To circumvent this restriction, hypervisors can benefit from the
+    fact that often, VMs are very similar (e.g. multiple VMs running Windows
+    XP Service Pack 2) and therefore contain a number of identical RAM cells.
+    The hypervisor can look for such duplicate data in memory, eliminate the
+    redundancy (deduplication) and thereby free additional memory.</para>
 
-    <para>Traditional hypervisors use a technique often called "page sharing" or
-    "same page merging" where they go through all memory and compute checksums (hashes)
-    for each memory page. Then, they look for pages with identical hashes and compare
-    the content of the pages (if two pages produce the same hash, it is very likely that
-    the pages are identical in content). Identical pages get eliminated so that all VMs
-    point to the same page as long as none of the VMs tries to modify the page. If such
-    a page gets modified, the previously eliminated duplicates get allocated again. All
-    this is fully transparent to the virtual machine. However, the classical algorithm
-    has several drawbacks. First of all, it takes rather long to scan the complete
-    memory (esp. when the system is not idling) so the additional memory only becomes
-    available after some time (this can be hours or even days!). Also, the whole page
-    sharing algorithm generally consumes significant CPU resources and increases the
-    virtualization overhead by 10-20%.</para>
+    <para>Traditional hypervisors use a technique often called "page sharing"
+    or "same page merging" where they go through all memory and compute
+    checksums (hashes) for each memory page. Then, they look for pages with
+    identical hashes and compare the content of the pages (if two pages
+    produce the same hash, it is very likely that the pages are identical in
+    content). Identical pages get eliminated so that all VMs point to the same
+    page as long as none of the VMs tries to modify the page. If such a page
+    gets modified, the previously eliminated duplicates get allocated again.
+    All this is fully transparent to the virtual machine. However, the
+    classical algorithm has several drawbacks. First of all, it takes rather
+    long to scan the complete memory (esp. when the system is not idling) so
+    the additional memory only becomes available after some time (this can be
+    hours or even days!). Also, the whole page sharing algorithm generally
+    consumes significant CPU resources and increases the virtualization
+    overhead by 10-20%.</para>
 
-    <para>Page Fusion in VirtualBox uses the VirtualBox Guest Additions to identify
-    memory cells that are most likely identical across VMs and therefore achieves
-    most of the possible savings of page sharing almost immediately and with almost no
-    overhead. Page Fusion is also much less likely to be tricked by identical memory
-    that it will eliminate just to learn seconds later that the memory will now change
-    and having to perform a highly expensive and often service disrupting reallocation.
-    </para>
+    <para>Page Fusion in VirtualBox uses the VirtualBox Guest Additions to
+    identify memory cells that are most likely identical across VMs and
+    therefore achieves most of the possible savings of page sharing almost
+    immediately and with almost no overhead. Page Fusion is also much less
+    likely to be tricked by identical memory that it will eliminate just to
+    learn seconds later that the memory will now change and having to perform
+    a highly expensive and often service disrupting reallocation.</para>
 
-    <para>Page Fusion can be enabled for a VM using:
-    <screen>VBoxManage modifyvm "VM name" --pagefusion on</screen>
-    </para>
+    <para>Page Fusion can be enabled for a VM using: <screen>VBoxManage modifyvm "VM name" --pagefusion on</screen></para>
 
     <para>You can observe Page Fusion operation using some metrics.
-    <computeroutput>RAM/VMM/Shared</computeroutput> shows the total amount of fused
-    pages whereas the per VM metric <computeroutput>Guest/RAM/Usage/Shared</computeroutput>
-    will return the amount of fused memory for a given VM. Please refer to
-    <xref linkend="metrics" /> for information on how to query metrics.</para>
+    <computeroutput>RAM/VMM/Shared</computeroutput> shows the total amount of
+    fused pages whereas the per VM metric
+    <computeroutput>Guest/RAM/Usage/Shared</computeroutput> will return the
+    amount of fused memory for a given VM. Please refer to <xref
+    linkend="metrics" /> for information on how to query metrics.</para>
 
     <para><note>
-      <para>VirtualBox supports Page Fusion only on 64-bit host operating systems.
-      Mac OS X hosts are currently not supported. Page Fusion is only available for
-      Windows 2000 and later guests with current Guest Additions.</para>
-    </note></para>
+        <para>VirtualBox supports Page Fusion only on 64-bit host operating
+        systems. Mac OS X hosts are currently not supported. Page Fusion is
+        only available for Windows 2000 and later guests with current Guest
+        Additions.</para>
+      </note></para>
   </sect1>
 </chapter>

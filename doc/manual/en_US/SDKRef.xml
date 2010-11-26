@@ -1924,8 +1924,8 @@ program: program.o VBoxXPCOMCGlue.o
       global VirtualBox object (see <xref linkend="IVirtualBox"
       xreflabel="IVirtualBox" />), from which all other functionality of the
       API is derived. With the OOWS for JAX-WS, this is returned from the
-      <xref linkend="???" xreflabel="IWebsessionManager::logon()" />
-      call.</para>
+      <xref linkend="IWebsessionManager__logon"
+      xreflabel="IWebsessionManager::logon()" /> call.</para>
 
       <para>To enumerate virtual machines, one would look at the "machines"
       array attribute in the VirtualBox object (see <xref
@@ -2102,14 +2102,14 @@ es.unregisterListener(listener); </screen></para>
       languages, local Java bindings and remote web services as they do not
       support callbacks. The new mechanism with events and event listeners
       works with all of these.</para>
-      <para>To simplify developement of application using events, 
-      concept of event aggregator was introduced. Essentially it's
-      mechanism to aggregate multiple event sources into single one,
-      and then work with this single aggregated event source instead of
-      original sources. As an example, one can evaluate demo recorder
-      in VirtualBox Python shell, shipped with SDK - it records mouse 
-      and keyboard events, represented as separate event sources.
-      Code is essentially like this:<screen>
+
+      <para>To simplify developement of application using events, concept of
+      event aggregator was introduced. Essentially it's mechanism to aggregate
+      multiple event sources into single one, and then work with this single
+      aggregated event source instead of original sources. As an example, one
+      can evaluate demo recorder in VirtualBox Python shell, shipped with SDK
+      - it records mouse and keyboard events, represented as separate event
+      sources. Code is essentially like this:<screen>
           listener = console.eventSource.createListener()
           agg = console.eventSource.createAggregator([console.keyboard.eventSource, console.mouse.eventSource])
           agg.registerListener(listener, [ctx['global'].constants.VBoxEventType_Any], False)
@@ -2118,10 +2118,9 @@ es.unregisterListener(listener); </screen></para>
           while  time.time() &lt; end:
               ev = agg.getEvent(listener, 1000)
               processEent(ev)
-          agg.unregisterListener(listener)</screen>
-         Without using aggregators consumer have to poll on both 
-         sources, or start multiple threads to block on those sources.
-      </para>
+          agg.unregisterListener(listener)</screen> Without using aggregators
+      consumer have to poll on both sources, or start multiple threads to
+      block on those sources.</para>
     </sect1>
   </chapter>
 
@@ -3045,31 +3044,25 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
               </listitem>
 
               <listitem>
-                 RDPWebClient.isRDPWebControlById(ElementId) 
+                <programlisting>RDPWebClient.isRDPWebControlById(ElementId)</programlisting>
 
                 <para>Returns true if the given id refers to a RDPWeb Flash
                 element.</para>
-
-                 
               </listitem>
 
               <listitem>
-                 RDPWebClient.isRDPWebControlByElement(Element) 
+                <programlisting>RDPWebClient.isRDPWebControlByElement(Element)</programlisting>
 
                 <para>Returns true if the given element is a RDPWeb Flash
                 element.</para>
-
-                 
               </listitem>
 
               <listitem>
-                 RDPWebClient.getFlashById(ElementId) 
+                <programlisting>RDPWebClient.getFlashById(ElementId)</programlisting>
 
                 <para>Returns an element, which is referenced by the given id.
                 This function will try to resolve any element, event if it is
                 not a Flash movie.</para>
-
-                 
               </listitem>
             </itemizedlist></para>
         </sect3>
