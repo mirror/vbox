@@ -369,7 +369,7 @@ static PRTVFSMEMEXTENT rtVfsMemFile_AllocExtent(PRTVFSMEMFILE pThis, uint64_t of
             pThis->cbExtent = RTVFSMEM_MAX_EXTENT_SIZE;
         else if (!RTListIsEmpty(&pThis->ExtentHead))
         {
-            size_t cbNextExtent = pThis->cbExtent;
+            uint32_t cbNextExtent = pThis->cbExtent;
             if (RT_IS_POWER_OF_TWO(cbNextExtent))
                 cbNextExtent *= 2;
             else
