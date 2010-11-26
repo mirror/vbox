@@ -21,38 +21,15 @@
 
 //#include <iprt/thread.h>
 
+#include <VBox/Hardware/VBoxVideoVBE.h>
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
 #include "VBoxHGSMI.h"
 
-#define VBE_DISPI_IOPORT_INDEX          0x01CE
-#define VBE_DISPI_IOPORT_DATA           0x01CF
-#define VBE_DISPI_INDEX_ID              0x0
-#define VBE_DISPI_INDEX_XRES            0x1
-#define VBE_DISPI_INDEX_YRES            0x2
-#define VBE_DISPI_INDEX_BPP             0x3
-#define VBE_DISPI_INDEX_ENABLE          0x4
-#define VBE_DISPI_INDEX_VIRT_WIDTH      0x6
-#define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
-#define VBE_DISPI_INDEX_X_OFFSET        0x8
-#define VBE_DISPI_INDEX_Y_OFFSET        0x9
-#define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
-
-#define VBE_DISPI_ID2                   0xB0C2
-/* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_VBOX_VIDEO. */
-#define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
-#define VBE_DISPI_ID_HGSMI              0xBE01
-#define VBE_DISPI_ID_ANYX               0xBE02
-#define VBE_DISPI_DISABLED              0x00
-#define VBE_DISPI_ENABLED               0x01
-#define VBE_DISPI_LFB_ENABLED           0x40
-#define VBE_DISPI_LFB_PHYSICAL_ADDRESS  0xE0000000
+/* This looks absolutely unnecessary to me, but harmless. */
 #define VBE_DISPI_TOTAL_VIDEO_MEMORY_MB 4
 #define VBE_DISPI_TOTAL_VIDEO_MEMORY_KB         (VBE_DISPI_TOTAL_VIDEO_MEMORY_MB * 1024)
 #define VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES      (VBE_DISPI_TOTAL_VIDEO_MEMORY_KB * 1024)
-
-#define VGA_PORT_HGSMI_HOST  0x3b0
-#define VGA_PORT_HGSMI_GUEST 0x3d0
 
 typedef struct VBOXVIDEO_COMMON
 {
