@@ -190,6 +190,7 @@ VBOX_XML_SCHEMADEFS_H   = $(PATH_TARGET)/Main/SchemaDefs.h
 VBOX_XML_SCHEMADEFS_CPP = $(PATH_TARGET)/Main/SchemaDefs.cpp
 VBOX_XML_SCHEMADEFS_XSL = $(VBOX_PATH_MAIN_SRC)/xml/SchemaDefs.xsl
 
+VBOX_AUTOGEN_EVENT_H  = $(PATH_TARGET)/Main/VBoxEvents.h
 VBOX_AUTOGEN_EVENT_CPP  = $(PATH_TARGET)/Main/VBoxEvents.cpp
 
 testschemadefs: $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
@@ -271,7 +272,8 @@ VBoxSVC_LIBS.solaris = \
 
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
-	$(VBOX_XML_SCHEMADEFS_H)
+	$(VBOX_XML_SCHEMADEFS_H) \
+	$(VBOX_AUTOGEN_EVENT_H)
 
 VBoxSVC_SOURCES = \
 	Global.cpp \
@@ -470,11 +472,15 @@ OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 #
 # Generate some event stuff for VBoxSVC and VBoxC.
 #
+$(VBOX_AUTOGEN_EVENT_H): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
+	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEventHeader -o $@ $< $(VBOX_XIDL_FILE)
+
 $(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FILE) | $$(dir $$@)
 	$(call MSG_TOOL,xsltproc,autogen events,$<,$@)
 	$(QUIET)$(VBOX_XSLTPROC) --stringparam G_kind VBoxEvent -o $@ $< $(VBOX_XIDL_FILE)
 
-OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_CPP)
+OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_H) $(VBOX_AUTOGEN_EVENT_CPP)
 
 
 #
@@ -611,9 +617,10 @@ ifdef VBOX_WITH_NETFLT
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
 
-VBoxC_INTERMEDIATES = \
-	$(VBOX_MAIN_PREREQS) \
-	$(VBOX_XML_SCHEMADEFS_H)
+VBoxC_INTERMEDIATES =            \
+	$(VBOX_MAIN_PREREQS)     \
+	$(VBOX_XML_SCHEMADEFS_H) \
+	$(VBOX_AUTOGEN_EVENT_H)
 
 VBoxC_SOURCES = \
 	Global.cpp \

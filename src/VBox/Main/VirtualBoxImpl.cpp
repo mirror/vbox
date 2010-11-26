@@ -66,6 +66,7 @@
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 #include "EventImpl.h"
+#include "VBoxEvents.h"
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
@@ -2493,10 +2494,8 @@ void VirtualBox::onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool 
                                NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
                                IN_BSTR aGuestIp, uint16_t aGuestPort)
 {
-    VBoxEventDesc evDesc;
-    evDesc.init(m->pEventSource, VBoxEventType_OnNATRedirectEvent, aMachineId.toUtf16().raw(), ulSlot, fRemove, aName, aProto, aHostIp,
-                aHostPort, aGuestIp, aGuestPort);
-    evDesc.fire(0);
+    fireNATRedirectEvent(m->pEventSource, aMachineId.toUtf16().raw(), ulSlot, fRemove, aName, aProto, aHostIp,
+                         aHostPort, aGuestIp, aGuestPort);
 }
 
 /**
@@ -4418,7 +4417,6 @@ void *VirtualBox::CallbackEvent::handler()
         mVirtualBox = NULL;
         return NULL;
     }
-
 
     {
         VBoxEventDesc evDesc;

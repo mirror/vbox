@@ -322,11 +322,11 @@ def monitorSource(ctx, es, active, dur):
                      print "pointer shape event - empty shape"
                  else:
                      print "pointer shape event: w=%d h=%d shape len=%d" %(psev.width, psev.height, len(shape))
-         elif type == ctx['global'].constants.VBoxEventType_OnGuestMouseEvent:
+         elif type == ctx['global'].constants.VBoxEventType_OnGuestMouse:
              mev = ctx['global'].queryInterface(ev, 'IGuestMouseEvent')
              if mev:
                  printMouseEvent(ctx, mev)
-         elif type == ctx['global'].constants.VBoxEventType_OnGuestKeyboardEvent:
+         elif type == ctx['global'].constants.VBoxEventType_OnGuestKeyboard:
              kev = ctx['global'].queryInterface(ev, 'IGuestKeyboardEvent')
              if kev:
                  printKbdEvent(ctx, kev)
@@ -391,12 +391,12 @@ def recordDemo(ctx, console, file, dur):
     def handleEventImpl(ev):
          type = ev.type
          #print "got event: %s %s" %(str(type), asEnumElem(ctx, 'VBoxEventType', type))
-         if type == ctx['global'].constants.VBoxEventType_OnGuestMouseEvent:
+         if type == ctx['global'].constants.VBoxEventType_OnGuestMouse:
              mev = ctx['global'].queryInterface(ev, 'IGuestMouseEvent')
              if mev:
                  l = "%d: m %d %d %d %d %d %d\n" %(stamp(), mev.absolute, mev.x, mev.y, mev.z, mev.w, mev.buttons)
                  demo.write(l)
-         elif type == ctx['global'].constants.VBoxEventType_OnGuestKeyboardEvent:
+         elif type == ctx['global'].constants.VBoxEventType_OnGuestKeyboard:
              kev = ctx['global'].queryInterface(ev, 'IGuestKeyboardEvent')
              if kev:
                  l = "%d: k %s\n" %(stamp(), str(ctx['global'].getArray(kev, 'scancodes')))
