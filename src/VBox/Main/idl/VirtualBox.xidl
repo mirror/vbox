@@ -15918,11 +15918,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
            namespace="virtualbox.org">
       <interface name="ISession" default="yes"/>
     </class>
-
-    <class name="Console" uuid="577230FF-164F-4CAC-8548-312D8275A4A7"
-           namespace="virtualbox.org">
-      <interface name="IConsole" default="yes"/>
-    </class>
   </module>
 
 </library>

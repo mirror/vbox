@@ -260,7 +260,6 @@ class VmEventListener {
 public:
     VmEventListener(Console *aConsole)
     {
-        mfNoLoggedInUsers = true;
         mConsole = aConsole;
     }
 
@@ -314,7 +313,6 @@ public:
         return S_OK;
     }
 private:
-    bool mfNoLoggedInUsers;
     Console *mConsole;
 };
 

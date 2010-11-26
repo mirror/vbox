@@ -625,7 +625,6 @@ VBoxC_INTERMEDIATES =            \
 VBoxC_SOURCES = \
 	Global.cpp \
 	Logging.cpp \
-	VBoxDll.cpp \
 	USBDeviceImpl.cpp \
 	RemoteUSBDeviceImpl.cpp \
 	VirtualBoxBase.cpp \
