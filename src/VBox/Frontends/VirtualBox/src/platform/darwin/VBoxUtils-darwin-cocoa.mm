@@ -298,11 +298,6 @@ bool darwinIsWindowMaximized(NativeNSWindowRef pWindow)
     return fResult;
 }
 
-bool darwinShowFileInFinder(NativeNSStringRef pstrFile)
-{
-    return [[NSWorkspace sharedWorkspace] selectFile:pstrFile inFileViewerRootedAtPath:@""];
-}
-
 bool darwinOpenFile(NativeNSStringRef pstrFile)
 {
     return [[NSWorkspace sharedWorkspace] openFile:pstrFile];

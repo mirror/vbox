@@ -136,11 +136,6 @@ void darwinMinaturizeWindow(QWidget *pWidget)
     return ::darwinMinaturizeWindow(::darwinToNativeWindow(pWidget));
 }
 
-bool darwinShowFileInFinder(const QString& strFile)
-{
-    return ::darwinShowFileInFinder(darwinToNativeString(strFile.toUtf8().constData()));
-}
-
 bool darwinOpenFile(const QString& strFile)
 {
     return ::darwinOpenFile(darwinToNativeString(strFile.toUtf8().constData()));
@@ -376,6 +371,7 @@ QString darwinResolveAlias(const QString &strFile)
 
     return strTarget;
 }
+
 
 /********************************************************************************
  *

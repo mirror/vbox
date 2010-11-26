@@ -165,6 +165,10 @@ endif
 VBOX_GUI_INC_DIRS = \
 	./src \
 	./src/globals \
+	./src/platform \
+	./src/platform/x11 \
+	./src/platform/darwin \
+	./src/platform/win \
 	./src/extensions \
 	./src/settings \
 	./src/settings/global \
@@ -175,8 +179,6 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
 	./src/widgets \
-	./src/X11 \
-	./src/darwin \
 	./src/selector \
 	./src/runtime \
 	./src/runtime/fullscreen \
@@ -371,7 +373,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/runtime/seamless/UIMachineWindowSeamless.h
 
 VirtualBox_QT_MOCHDRS.darwin += \
-    src/darwin/UIWindowMenuManager.h
+    src/platform/darwin/UIWindowMenuManager.h
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
@@ -389,7 +391,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIMachineMenuBar.cpp
 
 VirtualBox_QT_MOCSRCS.darwin += \
-    src/darwin/UIWindowMenuManager.cpp
+    src/platform/darwin/UIWindowMenuManager.cpp
 VirtualBox_QT_MOCSRCS.win += \
 	src/extensions/QIFileDialog.cpp
 
@@ -544,9 +546,9 @@ VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp
 VirtualBox_SOURCES.darwin += \
 	src/runtime/UIFrameBufferQuartz2D.cpp \
-	src/darwin/UIAbstractDockIconPreview.cpp \
-	src/darwin/UIWindowMenuManager.cpp \
-	src/darwin/UICocoaDockIconPreview.mm
+	src/platform/darwin/UIAbstractDockIconPreview.cpp \
+	src/platform/darwin/UIWindowMenuManager.cpp \
+	src/platform/darwin/UICocoaDockIconPreview.mm
 
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  ifndef VBOX_OSE
@@ -560,8 +562,9 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # X11
  	src/VBoxLicenseViewer.cpp
  endif
  VirtualBox_SOURCES += \
- 	src/X11/XKeyboard-new.cpp \
- 	src/X11/VBoxX11Helper.cpp
+ 	src/platform/x11/XKeyboard-new.cpp \
+ 	src/platform/x11/VBoxX11Helper.cpp \
+ 	src/platform/x11/UIDesktopServices_x11.cpp
 else
  VirtualBox_VBOX_EXTRA_NLS_SOURCES += \
  	src/VBoxLicenseViewer.h \
@@ -574,26 +577,25 @@ ifdef VBOX_WITH_REGISTRATION
 endif
 
 VirtualBox_SOURCES.win += \
-	src/win/VirtualBox.rc
+	src/platform/win/VirtualBox.rc \
+	src/platform/win/UIDesktopServices_win.cpp
 
+VirtualBox_DEFS.darwin += VBOX_DARWIN_USE_NATIVE_CONTROLS
 VirtualBox_SOURCES.darwin += \
-	src/darwin/DarwinKeyboard.cpp \
-	src/darwin/VBoxUtils-darwin.cpp
+	src/platform/darwin/DarwinKeyboard.cpp \
+	src/platform/darwin/CocoaEventHelper.mm \
+	src/platform/darwin/UICocoaApplication.mm \
+	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
+	src/platform/darwin/VBoxUtils-darwin.cpp \
+	src/platform/darwin/UICocoaSpecialControls.mm \
+	src/platform/darwin/UIDesktopServices_darwin.cpp \
+	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm
+VirtualBox_QT_MOCHDRS.darwin += \
+	src/platform/darwin/UICocoaSpecialControls.h
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
- 	src/darwin/VBoxIChatTheaterWrapper.m
-endif
-
-ifdef VBOX_WITH_COCOA_QT
- VirtualBox_DEFS += VBOX_DARWIN_USE_NATIVE_CONTROLS
- VirtualBox_SOURCES.darwin += \
- 	src/darwin/CocoaEventHelper.mm \
- 	src/darwin/UICocoaApplication.mm \
- 	src/darwin/VBoxUtils-darwin-cocoa.mm \
- 	src/darwin/UICocoaSpecialControls.mm
- VirtualBox_QT_MOCHDRS.darwin += \
- 	src/darwin/UICocoaSpecialControls.h
+ 	src/platform/darwin/VBoxIChatTheaterWrapper.m
 endif
 
 ifdef VBOX_GUI_WITH_SYSTRAY
@@ -825,9 +827,9 @@ ifeq ($(KBUILD_TARGET),win)
 # On Windows we'll have to generate/edit part of the resource file.
 # The IDI_ICON1 name is Qt specific.
 #
-src/win/VirtualBox.rc_INCS  = $(PATH_VirtualBox)
-src/win/VirtualBox.rc_DEPS  = $(PATH_VirtualBox)/VirtualBox-icon.rc
-src/win/VirtualBox.rc_CLEAN = $(PATH_VirtualBox)/VirtualBox-icon.rc
+src/platform/win/VirtualBox.rc_INCS  = $(PATH_VirtualBox)
+src/platform/win/VirtualBox.rc_DEPS  = $(PATH_VirtualBox)/VirtualBox-icon.rc
+src/platform/win/VirtualBox.rc_CLEAN = $(PATH_VirtualBox)/VirtualBox-icon.rc
 
 $$(PATH_VirtualBox)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(APPEND) -t $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'
@@ -853,7 +855,7 @@ INSTALLS += VirtualBox.app
 VirtualBox.app_INST = $(INST_VIRTUALBOX)Contents/
 VirtualBox.app_MODE = 644
 VirtualBox.app_SOURCES = \
-	src/darwin/PkgInfo \
+	src/platform/darwin/PkgInfo \
 	$(PATH_VirtualBox.app)/Info.plist \
 	$(VBOX_MACOSX_ICON_FILE)=>Resources/virtualbox.icns \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-vbox.icns=>Resources/virtualbox-vbox.icns \
@@ -861,7 +863,7 @@ VirtualBox.app_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ovf.icns=>Resources/virtualbox-ovf.icns \
 	$(PATH_ROOT)/src/VBox/Resources/darwin/virtualbox-ova.icns=>Resources/virtualbox-ova.icns
 
-$$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+$$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBox.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -878,13 +880,13 @@ INSTALLS += VirtualBoxVM.app
 VirtualBoxVM.app_INST = $(VirtualBox.app_INST)Resources/VirtualBoxVM.app/Contents/
 VirtualBoxVM.app_MODE = 644
 VirtualBoxVM.app_SOURCES = \
-	src/darwin/VM-PkgInfo=>PkgInfo \
+	src/platform/darwin/VM-PkgInfo=>PkgInfo \
 	$(PATH_VirtualBoxVM.app)/VM-Info.plist=>Info.plist
 VirtualBoxVM.app_SYMLINKS = \
 	MacOS=>../../../MacOS/ \
 	Resources=>../../../Resources/
 
-$$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+$$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/VM-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,VirtualBoxVM.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -899,7 +901,7 @@ $$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.
 
 PROGRAMS += vmstarter
 vmstarter_TEMPLATE = VBOXR3EXE
-vmstarter_SOURCES = src/darwin/vmstarter.mm
+vmstarter_SOURCES = src/platform/darwin/vmstarter.mm
 vmstarter_LDFLAGS += -framework AppKit
 vmstarter_INST = $(INST_BIN)vmstarter
 
@@ -907,13 +909,13 @@ INSTALLS += vmstarter.app
 vmstarter.app_INST = $(VirtualBox.app_INST)Resources/vmstarter.app/Contents
 vmstarter.app_MODE = 644
 vmstarter.app_SOURCES = \
-	src/darwin/vmstarter-PkgInfo=>PkgInfo \
+	src/platform/darwin/vmstarter-PkgInfo=>PkgInfo \
 	$(PATH_vmstarter.app)/vmstarter-Info.plist=>Info.plist
 vmstarter.app_SYMLINKS = \
     MacOS=>../../../MacOS \
     Resources=>../../../Resources
 
-$$(PATH_vmstarter.app)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
+$$(PATH_vmstarter.app)/vmstarter-Info.plist: $(PATH_SUB_CURRENT)/src/platform/darwin/vmstarter-Info.plist $(VBOX_VERSION_MK) | $$(@D)/
 	$(call MSG_GENERATE,vmstarter.app,$<,$@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(SED) \
@@ -954,10 +956,10 @@ tstDarwinKeyboard_TEMPLATE = VBOXR3TSTEXE
 tstDarwinKeyboard_DEFS.x86 = USE_HID_FOR_MODIFIERS
 tstDarwinKeyboard_INCS = include
 tstDarwinKeyboard_SOURCES = \
-	src/darwin/tstDarwinKeyboard.cpp \
-	src/darwin/DarwinKeyboard.cpp
+	src/platform/darwin/tstDarwinKeyboard.cpp \
+	src/platform/darwin/DarwinKeyboard.cpp
 tstDarwinKeyboard_SOURCES.amd64 = \
- 	src/darwin/CocoaEventHelper.mm
+ 	src/platform/darwin/CocoaEventHelper.mm
 tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
 tstDarwinKeyboard_LIBS = \
 	$(LIB_RUNTIME)
