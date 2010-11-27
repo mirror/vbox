@@ -2139,6 +2139,23 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) buslogicQueryDeviceLocation(PPDMISCSIPORT pInterface, const char **ppcszController,
+                                                     uint32_t *piInstance, uint32_t *piLUN)
+{
+    PBUSLOGICDEVICE pBusLogicDevice = PDMISCSIPORT_2_PBUSLOGICDEVICE(pInterface);
+    PPDMDEVINS pDevIns = pBusLogicDevice->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
+
+    *ppcszController = pDevIns->pReg->szName;
+    *piInstance = pDevIns->iInstance;
+    *piLUN = pBusLogicDevice->iLUN;
+
+    return VINF_SUCCESS;
+}
+
 static int buslogicDeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE pTaskState)
 {
     int rc = VINF_SUCCESS;
@@ -3071,6 +3088,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         pDevice->Led.u32Magic = PDMLED_MAGIC;
         pDevice->IBase.pfnQueryInterface           = buslogicDeviceQueryInterface;
         pDevice->ISCSIPort.pfnSCSIRequestCompleted = buslogicDeviceSCSIRequestCompleted;
+        pDevice->ISCSIPort.pfnQueryDeviceLocation  = buslogicQueryDeviceLocation;
         pDevice->ILed.pfnQueryStatusLed            = buslogicDeviceQueryStatusLed;
 
         /* Attach SCSI driver. */

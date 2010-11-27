@@ -127,6 +127,8 @@ typedef struct VBOXDISK
     PVBOXHDD           pDisk;
     /** The media interface. */
     PDMIMEDIA          IMedia;
+    /** Media port. */
+    PPDMIMEDIAPORT     pDrvMediaPort;
     /** Pointer to the driver instance. */
     PPDMDRVINS         pDrvIns;
     /** Flag whether suspend has changed image open mode to read only. */
@@ -2096,6 +2098,11 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     /* List of images is empty now. */
     pThis->pImages = NULL;
 
+    pThis->pDrvMediaPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAPORT);
+    if (!pThis->pDrvMediaPort)
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
+                                N_("No media port interface above"));
+
     /* Try to attach async media port interface above.*/
     pThis->pDrvMediaAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMEDIAASYNCPORT);
 
@@ -2626,31 +2633,51 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
     /* Create the block cache if enabled. */
     if (   fUseBlockCache
+        && !pThis->fShareable
         && RT_SUCCESS(rc))
     {
-        /* Create a unique ID from the UUID of the last image in the chain. */
-        char achUuid[RTUUID_STR_LENGTH + 1];
-        RTUUID Uuid;
+        /*
+         * We need a unique ID for the block cache (to identify the owner of data
+         * blocks in a saved state). UUIDs are not really suitable because
+         * there are image formats which don't support them. Furthermore it is
+         * possible that a new diff image was attached after a saved state
+         * which changes the UUID.
+         * However the device "name + device instance + LUN" triple the disk is
+         * attached to is always constant for saved states.
+         */
+        char *pszId = NULL;
+        uint32_t iInstance, iLUN;
+        const char *pcszController;
 
-        /** @todo: Images without UUIDs. */
-        rc = VDGetUuid(pThis->pDisk, VDGetCount(pThis->pDisk) - 1, &Uuid);
-        AssertRC(rc);
-
-        memset(achUuid, 0, sizeof(achUuid));
-        rc = RTUuidToStr(&Uuid, achUuid, RTUUID_STR_LENGTH);
-        AssertRC(rc);
-
-        rc = PDMDrvHlpBlkCacheRetain(pDrvIns, &pThis->pBlkCache,
-                                     drvvdBlkCacheXferComplete,
-                                     drvvdBlkCacheXferEnqueue,
-                                     achUuid);
-        if (rc == VERR_NOT_SUPPORTED)
-        {
-            LogRel(("VD: Block cache is not supported\n"));
-            rc = VINF_SUCCESS;
-        }
+        rc = pThis->pDrvMediaPort->pfnQueryDeviceLocation(pThis->pDrvMediaPort, &pcszController,
+                                                          &iInstance, &iLUN);
+        if (RT_FAILURE(rc))
+            rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
+                                  N_("DrvVD: Configuration error: Could not query device data"));
         else
-            AssertRC(rc);
+        {
+            int cbStr = RTStrAPrintf(&pszId, "%s-%d-%d", pcszController, iInstance, iLUN);
+
+            if (cbStr > 0)
+            {
+                rc = PDMDrvHlpBlkCacheRetain(pDrvIns, &pThis->pBlkCache,
+                                             drvvdBlkCacheXferComplete,
+                                             drvvdBlkCacheXferEnqueue,
+                                             pszId);
+                if (rc == VERR_NOT_SUPPORTED)
+                {
+                    LogRel(("VD: Block cache is not supported\n"));
+                    rc = VINF_SUCCESS;
+                }
+                else
+                    AssertRC(rc);
+
+                RTStrFree(pszId);
+            }
+            else
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
+                                      N_("DrvVD: Out of memory when creating block cache"));
+        }
     }
 
     /*

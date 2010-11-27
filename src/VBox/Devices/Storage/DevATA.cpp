@@ -505,6 +505,7 @@ typedef struct PCIATAState
 #define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTX_SUFF(pDevIns) )
 #define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTX_SUFF(pDevIns) )
 #define PDMIBASE_2_ATASTATE(pInterface)        ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IBase)) )
+#define PDMIBLOCKPORT_2_ATASTATE(pInterface)   ( (ATADevState *)((uintptr_t)(pInterface) - RT_OFFSETOF(ATADevState, IPort)) )
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 /*******************************************************************************
@@ -5371,6 +5372,28 @@ static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, const char 
     return NULL;
 }
 
+
+/* -=-=-=-=-=- ATADevState::IPort  -=-=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIBLOCKPORT,pfnQueryDeviceLocation}
+ */
+static DECLCALLBACK(int) ataR3QueryDeviceLocation(PPDMIBLOCKPORT pInterface, const char **ppcszController,
+                                                  uint32_t *piInstance, uint32_t *piLUN)
+{
+    ATADevState *pIf = PDMIBLOCKPORT_2_ATASTATE(pInterface);
+    PPDMDEVINS pDevIns = pIf->CTX_SUFF(pDevIns);
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
+
+    *ppcszController = pDevIns->pReg->szName;
+    *piInstance = pDevIns->iInstance;
+    *piLUN = pIf->iLUN;
+
+    return VINF_SUCCESS;
+}
 #endif /* IN_RING3 */
 
 
@@ -6736,6 +6759,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
             pIf->IBase.pfnQueryInterface       = ataQueryInterface;
             pIf->IMountNotify.pfnMountNotify   = ataMountNotify;
             pIf->IMountNotify.pfnUnmountNotify = ataUnmountNotify;
+            pIf->IPort.pfnQueryDeviceLocation  = ataR3QueryDeviceLocation;
             pIf->Led.u32Magic                  = PDMLED_MAGIC;
         }
     }

@@ -889,6 +889,7 @@ RT_C_DECLS_END
 #define PDMIMOUNT_2_PAHCIPORT(pInterface)        ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IMount)) )
 #define PDMIMOUNTNOTIFY_2_PAHCIPORT(pInterface)  ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IMountNotify)) )
 #define PDMIBASE_2_PAHCIPORT(pInterface)         ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IBase)) )
+#define PDMIBLOCKPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCIPort, IPort)) )
 #define PDMIBASE_2_PAHCI(pInterface)             ( (PAHCI)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCI, IBase)) )
 #define PDMILEDPORTS_2_PAHCI(pInterface)         ( (PAHCI)((uintptr_t)(pInterface) - RT_OFFSETOF(AHCI, ILeds)) )
 
@@ -2415,6 +2416,23 @@ static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, const
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKASYNCPORT, &pAhciPort->IPortAsync);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pAhciPort->IMountNotify);
     return NULL;
+}
+
+static DECLCALLBACK(int) ahciR3PortQueryDeviceLocation(PPDMIBLOCKPORT pInterface, const char **ppcszController,
+                                                       uint32_t *piInstance, uint32_t *piLUN)
+{
+    PAHCIPort pAhciPort = PDMIBLOCKPORT_2_PAHCIPORT(pInterface);
+    PPDMDEVINS pDevIns = pAhciPort->CTX_SUFF(pDevIns);
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
+
+    *ppcszController = pDevIns->pReg->szName;
+    *piInstance = pDevIns->iInstance;
+    *piLUN = pAhciPort->iLUN;
+
+    return VINF_SUCCESS;
 }
 
 #ifdef DEBUG
@@ -7927,6 +7945,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
          */
         pAhciPort->IBase.pfnQueryInterface           = ahciR3PortQueryInterface;
         pAhciPort->IPortAsync.pfnTransferCompleteNotify  = ahciTransferCompleteNotify;
+        pAhciPort->IPort.pfnQueryDeviceLocation          = ahciR3PortQueryDeviceLocation;
         pAhciPort->IMountNotify.pfnMountNotify       = ahciMountNotify;
         pAhciPort->IMountNotify.pfnUnmountNotify     = ahciUnmountNotify;
         pAhciPort->fAsyncIOThreadIdle                = true;

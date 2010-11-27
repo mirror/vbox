@@ -2180,6 +2180,23 @@ static DECLCALLBACK(int) lsilogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(int) lsilogicQueryDeviceLocation(PPDMISCSIPORT pInterface, const char **ppcszController,
+                                                     uint32_t *piInstance, uint32_t *piLUN)
+{
+    PLSILOGICDEVICE pLsiLogicDevice = PDMISCSIPORT_2_PLSILOGICDEVICE(pInterface);
+    PPDMDEVINS pDevIns = pLsiLogicDevice->CTX_SUFF(pLsiLogic)->CTX_SUFF(pDevIns);
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
+
+    *ppcszController = pDevIns->pReg->szName;
+    *piInstance = pDevIns->iInstance;
+    *piLUN = pLsiLogicDevice->iLUN;
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Return the configuration page header and data
  * which matches the given page type and number.
@@ -5175,6 +5192,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         pDevice->Led.u32Magic                      = PDMLED_MAGIC;
         pDevice->IBase.pfnQueryInterface           = lsilogicDeviceQueryInterface;
         pDevice->ISCSIPort.pfnSCSIRequestCompleted = lsilogicDeviceSCSIRequestCompleted;
+        pDevice->ISCSIPort.pfnQueryDeviceLocation  = lsilogicQueryDeviceLocation;
         pDevice->ILed.pfnQueryStatusLed            = lsilogicDeviceQueryStatusLed;
 
         RTStrPrintf(szName, sizeof(szName), "Device%d", i);

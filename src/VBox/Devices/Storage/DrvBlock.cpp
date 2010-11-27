@@ -100,6 +100,8 @@ typedef struct DRVBLOCK
     PDMIBLOCKBIOS           IBlockBios;
     /** Our mountable interface. */
     PDMIMOUNT               IMount;
+    /** Our media port interface. */
+    PDMIMEDIAPORT           IMediaPort;
 
     /** Pointer to the async media driver below us.
      * This is NULL if the media is not mounted. */
@@ -697,6 +699,24 @@ static DECLCALLBACK(bool) drvblockIsLocked(PPDMIMOUNT pInterface)
 }
 
 
+
+/* -=-=-=-=- IMediaPort -=-=-=-=- */
+
+/** Makes a PDRVBLOCK out of a PPDMIMEDIAPORT. */
+#define PDMIMEDIAPORT_2_DRVBLOCK(pInterface)    ( (PDRVBLOCK((uintptr_t)pInterface - RT_OFFSETOF(DRVBLOCK, IMediaPort))) )
+
+/**
+ * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation}
+ */
+static DECLCALLBACK(int) drvblockQueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
+                                                     uint32_t *piInstance, uint32_t *piLUN)
+{
+    PDRVBLOCK pThis = PDMIMEDIAPORT_2_DRVBLOCK(pInterface);
+
+    return pThis->pDrvBlockPort->pfnQueryDeviceLocation(pThis->pDrvBlockPort, ppcszController,
+                                                        piInstance, piLUN);
+}
+
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -713,6 +733,7 @@ static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, const 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, pThis->fMountable ? &pThis->IMount : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKASYNC, pThis->pDrvMediaAsync ? &pThis->IBlockAsync : NULL);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, pThis->pDrvBlockAsyncPort ? &pThis->IMediaAsyncPort : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT, &pThis->IMediaPort);
     return NULL;
 }
 
@@ -803,6 +824,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
 
     /* IMediaAsyncPort. */
     pThis->IMediaAsyncPort.pfnTransferCompleteNotify  = drvblockAsyncTransferCompleteNotify;
+
+    /* IMediaPort */
+    pThis->IMediaPort.pfnQueryDeviceLocation = drvblockQueryDeviceLocation;
 
     /*
      * Get the IBlockPort & IMountNotify interfaces of the above driver/device.
