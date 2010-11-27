@@ -26,6 +26,8 @@
 #include <VBox/vm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/dbg.h>
+#include <VBox/uvm.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -45,6 +47,34 @@
 #endif
 
 #include "PDMAsyncCompletionFileInternal.h"
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifdef VBOX_WITH_DEBUGGER
+static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs, PDBGCVAR pResult);
+#endif
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef VBOX_WITH_DEBUGGER
+static const DBGCVARDESC g_aInjectErrorArgs[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "direction",    "write/read." },
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "filename",     "Filename." },
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "errcode",      "IPRT error code." },
+};
+
+/** Command descriptors. */
+static const DBGCCMD g_aCmds[] =
+{
+    /* pszCmd,       cArgsMin, cArgsMax, paArgDesc,                cArgDescs,    pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
+    { "injecterror",        3, 3,        &g_aInjectErrorArgs[0],           3,           NULL,             0,     pdmacEpFileErrorInject,        "",   "Inject error into I/O subsystem." },
+};
+#endif
 
 /**
  * Frees a task.
@@ -597,96 +627,67 @@ static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
     return rc;
 }
 
-#ifdef DEBUG
+#ifdef VBOX_WITH_DEBUGGER
 /**
  * Error inject callback.
- *
- * The argument parsing is quite ugly but it is only a development tool
- * not compiled into a release build. Will improve some day.
  */
-static DECLCALLBACK(void) pdmacEpFileErrorInject(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+static DECLCALLBACK(int) pdmacEpFileErrorInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR pArgs, unsigned cArgs, PDBGCVAR pResult)
 {
     bool fWrite;
-    int rcToInject = VINF_SUCCESS;
-    char *pszFilename = NULL;
-    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pvUser;
+    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile;
+
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return DBGCCmdHlpPrintf(pCmdHlp, "error: The command requires a VM to be selected.\n");
+    if (    cArgs != 3
+        ||  pArgs[0].enmType != DBGCVAR_TYPE_STRING
+        ||  pArgs[1].enmType != DBGCVAR_TYPE_STRING
+        ||  pArgs[2].enmType != DBGCVAR_TYPE_STRING)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: parser error, invalid arguments.\n");
+
+    pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pVM->pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
 
     /* Syntax is "read|write <filename> <status code>" */
-    if (!RTStrNCmp(pszArgs, "read", 4))
+    if (!RTStrCmp(pArgs[0].u.pszString, "read"))
         fWrite = false;
-    else if (!RTStrNCmp(pszArgs, "write", 5))
+    else if (!RTStrCmp(pArgs[0].u.pszString, "write"))
         fWrite = true;
     else
-        return;
-
-    pszArgs += fWrite ? 5 : 4;
-
-    /* Skip white space. */
-    while (   *pszArgs == ' '
-           && *pszArgs != '\0')
-        pszArgs++;
-
-    if (pszArgs != '\0')
     {
-        /* Extract the filename */
-        const char *pszPos = pszArgs;
-
-        /* ASSUMPTION: No white space in the filename. */
-        while (   *pszArgs != ' '
-               && *pszArgs != '\0')
-            pszArgs++;
-
-        if (*pszArgs != '\0')
-        {
-            size_t cchFilename = pszArgs - pszPos;
-            pszFilename = RTStrDupN(pszPos, cchFilename);
-            if (pszFilename)
-            {
-                /* Skip white space. */
-                while (   *pszArgs == ' '
-                       && *pszArgs != '\0')
-                    pszArgs++;
-
-                if (*pszArgs != '\0')
-                {
-                    /* Extract error number. */
-                    rcToInject = RTStrToInt32(pszArgs);
-                    if (rcToInject != 0)
-                    {
-                        /* Search for the matching endpoint. */
-                        RTCritSectEnter(&pEpClassFile->Core.CritSect);
-                        PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpClassFile->Core.pEndpointsHead;
-
-                        while (pEpFile)
-                        {
-                            if (!RTStrCmp(pszFilename, RTPathFilename(pEpFile->Core.pszUri)))
-                                break;
-                            pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpFile->Core.pNext;
-                        }
-
-                        if (pEpFile)
-                        {
-                            if (fWrite)
-                                ASMAtomicXchgS32(&pEpFile->rcReqWrite, rcToInject);
-                            else
-                                ASMAtomicXchgS32(&pEpFile->rcReqRead, rcToInject);
-
-                            pHlp->pfnPrintf(pHlp, "Injected %Rrc into '%s' for %s\n",
-                                            rcToInject, pszFilename, fWrite ? "write" : "read");
-                        }
-                        else
-                            pHlp->pfnPrintf(pHlp, "No file with name '%s' found\n", pszFilename);
-
-                        RTCritSectLeave(&pEpClassFile->Core.CritSect);
-                        RTStrFree(pszFilename);
-                        return;
-                    }
-                }
-                RTStrFree(pszFilename);
-            }
-        }
+        DBGCCmdHlpPrintf(pCmdHlp, "error: invalid transefr direction '%s'.\n", pArgs[0].u.pszString);
+        return VINF_SUCCESS;
     }
-    pHlp->pfnPrintf(pHlp, "Error parsing command line\n");
+
+    /* Search for the matching endpoint. */
+    RTCritSectEnter(&pEpClassFile->Core.CritSect);
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpClassFile->Core.pEndpointsHead;
+
+    while (pEpFile)
+    {
+        if (!RTStrCmp(pArgs[1].u.pszString, RTPathFilename(pEpFile->Core.pszUri)))
+            break;
+        pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEpFile->Core.pNext;
+    }
+
+    if (pEpFile)
+    {
+        int rcToInject = RTStrToInt32(pArgs[2].u.pszString);
+
+        if (fWrite)
+            ASMAtomicXchgS32(&pEpFile->rcReqWrite, rcToInject);
+        else
+            ASMAtomicXchgS32(&pEpFile->rcReqRead, rcToInject);
+
+            DBGCCmdHlpPrintf(pCmdHlp, "Injected %Rrc into '%s' for %s\n",
+                             rcToInject, pArgs[1].u.pszString, pArgs[0].u.pszString);
+    }
+    else
+        DBGCCmdHlpPrintf(pCmdHlp, "No file with name '%s' found\n", NULL, pArgs[1].u.pszString);
+
+    RTCritSectLeave(&pEpClassFile->Core.CritSect);
+    return VINF_SUCCESS;
 }
 #endif
 
@@ -778,13 +779,11 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
             LogRel(("AIOMgr: Cache was globally disabled\n"));
     }
 
-#ifdef DEBUG
+#ifdef VBOX_WITH_DEBUGGER
     /* Install the error injection handler. */
     if (RT_SUCCESS(rc))
     {
-        rc = DBGFR3InfoRegisterExternal(pClassGlobals->pVM, "injecterror",
-                                        "Inject an error into the async file I/O handling",
-                                        pdmacEpFileErrorInject, pEpClassFile);
+        rc = DBGCRegisterCommands(&g_aCmds[0], 1);
         AssertRC(rc);
     }
 #endif
