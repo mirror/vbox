@@ -107,9 +107,11 @@ typedef struct DRVSCSI
 } DRVSCSI, *PDRVSCSI;
 
 /** Converts a pointer to DRVSCSI::ISCSIConnector to a PDRVSCSI. */
-#define PDMISCSICONNECTOR_2_DRVSCSI(pInterface) ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, ISCSIConnector)) )
+#define PDMISCSICONNECTOR_2_DRVSCSI(pInterface)  ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, ISCSIConnector)) )
 /** Converts a pointer to DRVSCSI::IPortAsync to a PDRVSCSI. */
 #define PDMIBLOCKASYNCPORT_2_DRVSCSI(pInterface) ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, IPortAsync)) )
+/** Converts a pointer to DRVSCSI::IPort to a PDRVSCSI. */
+#define PDMIBLOCKPORT_2_DRVSCSI(pInterface)      ( (PDRVSCSI)((uintptr_t)pInterface - RT_OFFSETOF(DRVSCSI, IPort)) )
 
 static bool drvscsiIsRedoPossible(int rc)
 {
@@ -557,6 +559,15 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
     return NULL;
 }
 
+static DECLCALLBACK(int) drvscsiQueryDeviceLocation(PPDMIBLOCKPORT pInterface, const char **ppcszController,
+                                                    uint32_t *piInstance, uint32_t *piLUN)
+{
+    PDRVSCSI pThis = PDMIBLOCKPORT_2_DRVSCSI(pInterface);
+
+    return pThis->pDevScsiPort->pfnQueryDeviceLocation(pThis->pDevScsiPort, ppcszController,
+                                                       piInstance, piLUN);
+}
+
 /**
  * Worker for drvscsiReset, drvscsiSuspend and drvscsiPowerOff.
  *
@@ -735,6 +746,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     pDrvIns->IBase.pfnQueryInterface         = drvscsiQueryInterface;
 
+    pThis->IPort.pfnQueryDeviceLocation         = drvscsiQueryDeviceLocation;
     pThis->IPortAsync.pfnTransferCompleteNotify = drvscsiTransferCompleteNotify;
 
     /*

@@ -837,15 +837,29 @@ typedef struct PDMIDISPLAYCONNECTOR
 #define PDMIDISPLAYCONNECTOR_IID                "c7a1b36d-8dfc-421d-b71f-3a0eeaf733e6"
 
 
+/** Pointer to a block port interface. */
+typedef struct PDMIBLOCKPORT *PPDMIBLOCKPORT;
 /**
  * Block notify interface (down).
  * Pair with PDMIBLOCK.
  */
-typedef PDMIDUMMY PDMIBLOCKPORT;
+typedef struct PDMIBLOCKPORT
+{
+    /**
+     * Returns the storage controller name, instance and LUN of the attached medium.
+     *
+     * @returns VBox status.
+     * @param   pInterface      Pointer to this interface.
+     * @param   ppcszController Where to store the name of the storage controller.
+     * @param   piInstance      Where to store the instance number of the controller.
+     * @param   piLUN           Where to store the LUN of the attached device.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryDeviceLocation, (PPDMIBLOCKPORT pInterface, const char **ppcszController,
+                                                       uint32_t *piInstance, uint32_t *piLUN));
+
+} PDMIBLOCKPORT;
 /** PDMIBLOCKPORT interface ID. */
-#define PDMIBLOCKPORT_IID                 "e87fa1ab-92d5-4100-8712-fe2a0c042faf"
-/** Pointer to a block notify interface (dummy). */
-typedef PDMIBLOCKPORT *PPDMIBLOCKPORT;
+#define PDMIBLOCKPORT_IID                 "bbbed4cf-0862-4ffd-b60c-f7a65ef8e8ff"
 
 
 /**
@@ -1129,6 +1143,29 @@ typedef struct PDMMEDIAGEOMETRY
 typedef PDMMEDIAGEOMETRY *PPDMMEDIAGEOMETRY;
 /** Pointer to constant media geometry structure. */
 typedef const PDMMEDIAGEOMETRY *PCPDMMEDIAGEOMETRY;
+
+/** Pointer to a media port interface. */
+typedef struct PDMIMEDIAPORT *PPDMIMEDIAPORT;
+/**
+ * Media port interface (down).
+ */
+typedef struct PDMIMEDIAPORT
+{
+    /**
+     * Returns the storage controller name, instance and LUN of the attached medium.
+     *
+     * @returns VBox status.
+     * @param   pInterface      Pointer to this interface.
+     * @param   ppcszController Where to store the name of the storage controller.
+     * @param   piInstance      Where to store the instance number of the controller.
+     * @param   piLUN           Where to store the LUN of the attached device.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryDeviceLocation, (PPDMIMEDIAPORT pInterface, const char **ppcszController,
+                                                       uint32_t *piInstance, uint32_t *piLUN));
+
+} PDMIMEDIAPORT;
+/** PDMIMEDIAPORT interface ID. */
+#define PDMIMEDIAPORT_IID                           "9f7e8c9e-6d35-4453-bbef-1f78033174d6"
 
 /** Pointer to a media interface. */
 typedef struct PDMIMEDIA *PPDMIMEDIA;
@@ -2685,9 +2722,21 @@ typedef struct PDMISCSIPORT
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestCompleted, (PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest,
                                                          int rcCompletion, bool fRedo, int rcReq));
 
+    /**
+     * Returns the storage controller name, instance and LUN of the attached medium.
+     *
+     * @returns VBox status.
+     * @param   pInterface      Pointer to this interface.
+     * @param   ppcszController Where to store the name of the storage controller.
+     * @param   piInstance      Where to store the instance number of the controller.
+     * @param   piLUN           Where to store the LUN of the attached device.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryDeviceLocation, (PPDMISCSIPORT pInterface, const char **ppcszController,
+                                                       uint32_t *piInstance, uint32_t *piLUN));
+
 } PDMISCSIPORT;
 /** PDMISCSIPORT interface ID. */
-#define PDMISCSIPORT_IID                        "9d185b3b-1051-41f6-83ad-2a2a23f04e40"
+#define PDMISCSIPORT_IID                        "05d9fc3b-e38c-4b30-8344-a323feebcfe5"
 
 
 /** Pointer to a SCSI connector interface. */
