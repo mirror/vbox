@@ -3400,6 +3400,7 @@ DECLCALLBACK(int) Console::changeRemovableMedium(Console *pConsole,
                                              enmBus,
                                              fUseHostIOCache,
                                              false /* fSetupMerge */,
+                                             false /* fBuiltinIoCache */,
                                              0 /* uMergeSource */,
                                              0 /* uMergeTarget */,
                                              aMediumAtt,
@@ -4554,6 +4555,9 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
             return setInvalidMachineStateError();
     }
 
+    BOOL fBuiltinIoCache;
+    rc = mMachine->COMGETTER(IoCacheEnabled)(&fBuiltinIoCache);
+    AssertComRC(rc);
     SafeIfaceArray<IStorageController> ctrls;
     rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
     AssertComRC(rc);
@@ -4629,13 +4633,14 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     vrc = VMR3ReqCallWait(pVM,
                           VMCPUID_ANY,
                           (PFNRT)reconfigureMediumAttachment,
-                          12,
+                          13,
                           this,
                           pVM,
                           pcszDevice,
                           uInstance,
                           enmBus,
                           fUseHostIOCache,
+                          fBuiltinIoCache,
                           true /* fSetupMerge */,
                           aSourceIdx,
                           aTargetIdx,
@@ -4704,13 +4709,14 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     vrc = VMR3ReqCallWait(pVM,
                           VMCPUID_ANY,
                           (PFNRT)reconfigureMediumAttachment,
-                          12,
+                          13,
                           this,
                           pVM,
                           pcszDevice,
                           uInstance,
                           enmBus,
                           fUseHostIOCache,
+                          fBuiltinIoCache,
                           false /* fSetupMerge */,
                           0 /* uMergeSource */,
                           0 /* uMergeTarget */,
@@ -7893,6 +7899,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
                                                        unsigned uInstance,
                                                        StorageBus_T enmBus,
                                                        bool fUseHostIOCache,
+                                                       bool fBuiltinIoCache,
                                                        bool fSetupMerge,
                                                        unsigned uMergeSource,
                                                        unsigned uMergeTarget,
@@ -7927,6 +7934,7 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
                                           uInstance,
                                           enmBus,
                                           fUseHostIOCache,
+                                          fBuiltinIoCache,
                                           fSetupMerge,
                                           uMergeSource,
                                           uMergeTarget,
@@ -8104,6 +8112,11 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
                 const char *pcszDevice = Console::convertControllerTypeToDev(enmController);
 
+                BOOL fBuiltinIoCache;
+                rc = that->mMachine->COMGETTER(IoCacheEnabled)(&fBuiltinIoCache);
+                if (FAILED(rc))
+                    throw rc;
+
                 /*
                  * don't leave the lock since reconfigureMediumAttachment
                  * isn't going to need the Console lock.
@@ -8111,13 +8124,14 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 vrc = VMR3ReqCallWait(that->mpVM,
                                       VMCPUID_ANY,
                                       (PFNRT)reconfigureMediumAttachment,
-                                      12,
+                                      13,
                                       that,
                                       that->mpVM,
                                       pcszDevice,
                                       lInstance,
                                       enmBus,
                                       fUseHostIOCache,
+                                      fBuiltinIoCache,
                                       false /* fSetupMerge */,
                                       0 /* uMergeSource */,
                                       0 /* uMergeTarget */,

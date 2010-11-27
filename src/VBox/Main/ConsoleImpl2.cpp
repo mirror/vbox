@@ -795,22 +795,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
 
         /*
-         * I/O settings (cache, max bandwidth, ...).
+         * Block cache settings.
          */
-        PCFGMNODE pPDMAc;
-        PCFGMNODE pPDMAcFile;
-        InsertConfigNode(pPDM, "AsyncCompletion", &pPDMAc);
-        InsertConfigNode(pPDMAc, "File", &pPDMAcFile);
-
-        /* Builtin I/O cache */
-        BOOL fIoCache = true;
-        hrc = pMachine->COMGETTER(IoCacheEnabled)(&fIoCache);                               H();
-        InsertConfigInteger(pPDMAcFile, "CacheEnabled", fIoCache);
+        PCFGMNODE pPDMBlkCache;
+        InsertConfigNode(pPDM, "BlkCache", &pPDMBlkCache);
 
         /* I/O cache size */
         ULONG ioCacheSize = 5;
         hrc = pMachine->COMGETTER(IoCacheSize)(&ioCacheSize);                               H();
-        InsertConfigInteger(pPDMAcFile, "CacheSize", ioCacheSize * _1M);
+        InsertConfigInteger(pPDMBlkCache, "CacheSize", ioCacheSize * _1M);
 
         /*
          * Devices
@@ -1463,6 +1456,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             hrc = pMachine->GetMediumAttachmentsOfController(controllerName.raw(),
                                                             ComSafeArrayAsOutParam(atts)); H();
 
+            /* Builtin I/O cache - per device setting. */
+            BOOL fBuiltinIoCache = true;
+            hrc = pMachine->COMGETTER(IoCacheEnabled)(&fBuiltinIoCache);                                  H();
+
+
             for (size_t j = 0; j < atts.size(); ++j)
             {
                 rc = pConsole->configMediumAttachment(pCtlInst,
@@ -1470,6 +1468,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                                       ulInstance,
                                                       enmBus,
                                                       !!fUseHostIOCache,
+                                                      !!fBuiltinIoCache,
                                                       false /* fSetupMerge */,
                                                       0 /* uMergeSource */,
                                                       0 /* uMergeTarget */,
@@ -2580,6 +2579,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                                     unsigned uInstance,
                                     StorageBus_T enmBus,
                                     bool fUseHostIOCache,
+                                    bool fBuiltinIoCache,
                                     bool fSetupMerge,
                                     unsigned uMergeSource,
                                     unsigned uMergeTarget,
@@ -2851,6 +2851,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                         !!fPassthrough,
                         lType,
                         fUseHostIOCache,
+                        fBuiltinIoCache,
                         fSetupMerge,
                         uMergeSource,
                         uMergeTarget,
@@ -2890,6 +2891,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                           bool fPassthrough,
                           DeviceType_T enmType,
                           bool fUseHostIOCache,
+                          bool fBuiltinIoCache,
                           bool fSetupMerge,
                           unsigned uMergeSource,
                           unsigned uMergeTarget,
@@ -3058,6 +3060,8 @@ int Console::configMedium(PCFGMNODE pLunL0,
                 if (!fUseHostIOCache)
                 {
                     InsertConfigInteger(pCfg, "UseNewIo", 1);
+                    if (fBuiltinIoCache)
+                        InsertConfigInteger(pCfg, "BlockCache", 1);
                 }
 
                 if (fSetupMerge)
