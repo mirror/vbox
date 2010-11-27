@@ -69,31 +69,6 @@ void *VBoxVideoCmnMemAllocDriver(PVBOXVIDEO_COMMON pCommon, size_t cb);
 /** Free memory allocated by @a VBoxVideoCmnMemAllocDriver */
 void VBoxVideoCmnMemFreeDriver(PVBOXVIDEO_COMMON pCommon, void *pv);
 
-/** Write an 8-bit value to an I/O port. */
-void VBoxVideoCmnPortWriteUchar(RTIOPORT Port, uint8_t Value);
-
-/** Write a 16-bit value to an I/O port. */
-void VBoxVideoCmnPortWriteUshort(RTIOPORT Port, uint16_t Value);
-
-/** Write a 32-bit value to an I/O port. */
-void VBoxVideoCmnPortWriteUlong(RTIOPORT Port, uint32_t Value);
-
-/** Read an 8-bit value from an I/O port. */
-uint8_t VBoxVideoCmnPortReadUchar(RTIOPORT Port);
-
-/** Read a 16-bit value from an I/O port. */
-uint16_t VBoxVideoCmnPortReadUshort(RTIOPORT Port);
-
-/** Read a 32-bit value from an I/O port. */
-uint32_t VBoxVideoCmnPortReadUlong(RTIOPORT Port);
-
-void* vboxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                         HGSMISIZE cbData,
-                         uint8_t u8Ch,
-                         uint16_t u16Op);
-void vboxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx, void *pvBuffer);
-int vboxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx, void *pvBuffer);
-
 int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon,
                           void **ppv,
                           uint32_t ulOffset,
@@ -105,24 +80,8 @@ typedef bool(*PFNVIDEOIRQSYNC)(void *);
 bool VBoxSyncToVideoIRQ(PVBOXVIDEO_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync,
                         void *pvUser);
 
-bool VBoxHGSMIIsSupported (void);
-
-typedef int FNHGSMIFILLVIEWINFO (void *pvData, VBVAINFOVIEW *pInfo);
-typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
-
-int VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32Count, PFNHGSMIFILLVIEWINFO pfnFill, void *pvData);
-
 void VBoxSetupDisplaysHGSMI (PVBOXVIDEO_COMMON pCommon,
                              uint32_t AdapterMemorySize, uint32_t fCaps);
-
-bool vboxUpdatePointerShape (PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                             uint32_t fFlags,
-                             uint32_t cHotX,
-                             uint32_t cHotY,
-                             uint32_t cWidth,
-                             uint32_t cHeight,
-                             uint8_t *pPixels,
-                             uint32_t cbLength);
 
 void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon);
 #ifndef VBOX_WITH_WDDM
@@ -134,10 +93,6 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
 int vboxVBVAChannelDisplayEnable(PVBOXVIDEO_COMMON pCommon,
         int iDisplay, /* negative would mean this is a miniport handler */
         uint8_t u8Channel);
-
-void hgsmiProcessHostCommandQueue(PHGSMIHOSTCOMMANDCONTEXT pCtx);
-
-void HGSMIClearIrq(PHGSMIHOSTCOMMANDCONTEXT pCtx);
 
 } /* extern "C" */
 

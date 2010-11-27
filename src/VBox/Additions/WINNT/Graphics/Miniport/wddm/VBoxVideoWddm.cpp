@@ -119,7 +119,7 @@ VBOXVIDEOOFFSET vboxWddmValidatePrimary(PVBOXWDDM_ALLOCATION pAllocation)
 
 NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SURFACE_DESC pDesc, POINT * pVScreenPos, uint16_t fFlags)
 {
-    void *p = vboxHGSMIBufferAlloc (&commonFromDeviceExt(pDevExt)->guestCtx,
+    void *p = VBoxHGSMIBufferAlloc (&commonFromDeviceExt(pDevExt)->guestCtx,
                                       sizeof (VBVAINFOSCREEN),
                                       HGSMI_CH_VBVA,
                                       VBVA_INFO_SCREEN);
@@ -138,9 +138,9 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreenBySDesc (PDEVICE_EXTENSION pDevExt, PVBO
         pScreen->u16BitsPerPixel = (uint16_t)pDesc->bpp;
         pScreen->u16Flags        = fFlags;
 
-        vboxHGSMIBufferSubmit (&commonFromDeviceExt(pDevExt)->guestCtx, p);
+        VBoxHGSMIBufferSubmit (&commonFromDeviceExt(pDevExt)->guestCtx, p);
 
-        vboxHGSMIBufferFree (&commonFromDeviceExt(pDevExt)->guestCtx, p);
+        VBoxHGSMIBufferFree (&commonFromDeviceExt(pDevExt)->guestCtx, p);
     }
 
     return STATUS_SUCCESS;
@@ -162,7 +162,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoView(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLO
         return STATUS_INVALID_PARAMETER;
 
     /* Issue the screen info command. */
-    void *p = vboxHGSMIBufferAlloc (&commonFromDeviceExt(pDevExt)->guestCtx,
+    void *p = VBoxHGSMIBufferAlloc (&commonFromDeviceExt(pDevExt)->guestCtx,
                                       sizeof (VBVAINFOVIEW),
                                       HGSMI_CH_VBVA,
                                       VBVA_INFO_VIEW);
@@ -177,9 +177,9 @@ NTSTATUS vboxWddmGhDisplayPostInfoView(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLO
 
         pView->u32MaxScreenSize = pView->u32ViewSize;
 
-        vboxHGSMIBufferSubmit (&commonFromDeviceExt(pDevExt)->guestCtx, p);
+        VBoxHGSMIBufferSubmit (&commonFromDeviceExt(pDevExt)->guestCtx, p);
 
-        vboxHGSMIBufferFree (&commonFromDeviceExt(pDevExt)->guestCtx, p);
+        VBoxHGSMIBufferFree (&commonFromDeviceExt(pDevExt)->guestCtx, p);
     }
 
     return STATUS_SUCCESS;
@@ -952,7 +952,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
         if (bOur)
         {
-            HGSMIClearIrq(&commonFromDeviceExt(pDevExt)->hostCtx);
+            VBoxHGSMIClearIrq(&commonFromDeviceExt(pDevExt)->hostCtx);
 #ifdef DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
              * still this allows to check that the host flags are correctly cleared after the ISR */

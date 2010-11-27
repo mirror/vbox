@@ -260,14 +260,15 @@ static inline bool vboxUpdatePointerShapeWrap(PVBOXVIDEO_COMMON pCommon,
                                               PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                               uint32_t cbLength)
 {
-    return vboxUpdatePointerShape(&pCommon->guestCtx,
-                                  pointerAttr->Enable & 0x0000FFFF,
-                                  (pointerAttr->Enable >> 16) & 0xFF,
-                                  (pointerAttr->Enable >> 24) & 0xFF,
-                                  pointerAttr->Width,
-                                  pointerAttr->Height,
-                                  pointerAttr->Pixels,
-                                  cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES));
+    return VBoxHGSMIUpdatePointerShape(&pCommon->guestCtx,
+                                       pointerAttr->Enable & 0x0000FFFF,
+                                       (pointerAttr->Enable >> 16) & 0xFF,
+                                       (pointerAttr->Enable >> 24) & 0xFF,
+                                       pointerAttr->Width,
+                                       pointerAttr->Height,
+                                       pointerAttr->Pixels,
+                                         cbLength
+                                       - sizeof(VIDEO_POINTER_ATTRIBUTES));
 }
 
 #ifndef VBOX_WITH_WDDM

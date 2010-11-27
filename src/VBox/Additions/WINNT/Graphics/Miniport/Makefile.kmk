@@ -30,7 +30,7 @@ VBoxVideo_TEMPLATE    = VBOXGUESTR0
 ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxVideo_NOINST     = true
 endif
-VBoxVideo_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_8BPP_MODES
+VBoxVideo_DEFS        = VBOX_XPDM_MINIPORT LOG_TO_BACKDOOR VBOX_WITH_8BPP_MODES
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxVideo_DEFS      += VBOX_WITH_VIDEOHWACCEL
 endif
@@ -44,7 +44,8 @@ VBoxVideo_SOURCES     = \
 	Helper.cpp \
 	VBoxVideo.def \
 	VBoxVideo.rc \
-	VBoxVideoHGSMI.cpp
+	VBoxVideoHGSMI.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp
 VBoxVideo_LIBS.x86    = \
 	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib
 VBoxVideo_LIBS        = \
@@ -98,6 +99,7 @@ ifdef VBOX_WITH_WDDM
  VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry
  VBoxVideoWddm_SOURCES     = \
  	VBoxVideoHGSMI.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
  	VBoxVideo.cpp \
     Helper.cpp \
  	wddm/VBoxVideoWddm.cpp \
