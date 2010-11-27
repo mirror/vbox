@@ -541,7 +541,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     bool                                   fReadonly;
     /** Flag whether the host supports the async flush API. */
     bool                                   fAsyncFlushSupported;
-#ifdef DEBUG
+#ifdef VBOX_WITH_DEBUGGER
     /** Status code to inject for the next complete read. */
     volatile int                           rcReqRead;
     /** Status code to inject for the next complete write. */
