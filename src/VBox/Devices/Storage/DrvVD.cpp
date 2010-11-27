@@ -371,8 +371,10 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
 
                     fFlags |= PDMACEP_FILE_FLAGS_DONT_LOCK;
                 }
+#if 0
                 else
                     fFlags |= PDMACEP_FILE_FLAGS_CACHING;
+#endif
                 rc = PDMR3AsyncCompletionEpCreateForFile(&pStorageBackend->pEndpoint,
                                                          pszLocation, fFlags,
                                                          pStorageBackend->pTemplate);
