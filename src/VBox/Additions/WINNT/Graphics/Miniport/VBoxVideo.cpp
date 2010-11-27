@@ -2840,60 +2840,6 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 
 #endif
 
-void VBoxVideoCmnPortWriteUchar(RTIOPORT Port, uint8_t Value)
-{
-#ifndef VBOX_WITH_WDDM
-    VideoPortWritePortUchar((PUCHAR)Port,Value);
-#else
-    WRITE_PORT_UCHAR((PUCHAR)Port,Value);
-#endif
-}
-
-void VBoxVideoCmnPortWriteUshort(RTIOPORT Port, uint16_t Value)
-{
-#ifndef VBOX_WITH_WDDM
-    VideoPortWritePortUshort((PUSHORT)Port,Value);
-#else
-    WRITE_PORT_USHORT((PUSHORT)Port,Value);
-#endif
-}
-
-void VBoxVideoCmnPortWriteUlong(RTIOPORT Port, uint32_t Value)
-{
-#ifndef VBOX_WITH_WDDM
-    VideoPortWritePortUlong((PULONG)Port,Value);
-#else
-    WRITE_PORT_ULONG((PULONG)Port,Value);
-#endif
-}
-
-uint8_t VBoxVideoCmnPortReadUchar(RTIOPORT Port)
-{
-#ifndef VBOX_WITH_WDDM
-    return VideoPortReadPortUchar((PUCHAR)Port);
-#else
-    return READ_PORT_UCHAR((PUCHAR)Port);
-#endif
-}
-
-uint16_t VBoxVideoCmnPortReadUshort(RTIOPORT Port)
-{
-#ifndef VBOX_WITH_WDDM
-    return VideoPortReadPortUshort((PUSHORT)Port);
-#else
-    return READ_PORT_USHORT((PUSHORT)Port);
-#endif
-}
-
-uint32_t VBoxVideoCmnPortReadUlong(RTIOPORT Port)
-{
-#ifndef VBOX_WITH_WDDM
-    return VideoPortReadPortUlong((PULONG)Port);
-#else
-    return READ_PORT_ULONG((PULONG)Port);
-#endif
-}
-
 int VBoxMapAdapterMemory (PVBOXVIDEO_COMMON pCommon, void **ppv, uint32_t ulOffset, uint32_t ulSize)
 {
     PDEVICE_EXTENSION PrimaryExtension = commonToPrimaryExt(pCommon);
@@ -3086,7 +3032,7 @@ void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt)
 }
 
 #ifndef VBOX_WITH_WDDM
-static int vbvaInitInfoDisplay (void *pvData, VBVAINFOVIEW *p)
+DECLCALLBACK(int) vbvaInitInfoDisplay (void *pvData, PVBVAINFOVIEW p)
 {
     PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION) pvData;
 
@@ -3381,7 +3327,7 @@ static VOID VBoxVideoHGSMIDpc(
 {
     PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION)HwDeviceExtension;
 
-    hgsmiProcessHostCommandQueue(&commonFromDeviceExt(PrimaryExtension)->hostCtx);
+    VBoxHGSMIProcessHostQueue(&commonFromDeviceExt(PrimaryExtension)->hostCtx);
 }
 
 BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
@@ -3402,7 +3348,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
                     Assert(bResult);
                 }
                 /* clear the IRQ */
-                HGSMIClearIrq(&commonFromDeviceExt(PrimaryExtension)->hostCtx);
+                VBoxHGSMIClearIrq(&commonFromDeviceExt(PrimaryExtension)->hostCtx);
                 return TRUE;
             }
         }
