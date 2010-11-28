@@ -100,34 +100,34 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
     return FALSE;
 }
 
-#define VBVA_OPERATION(__psoDest, __fn, __a) do {                      \
-    if (bIsScreenSurface(__psoDest))                                   \
-    {                                                                  \
-        PPDEV ppdev = (PPDEV)__psoDest->dhpdev;                        \
-                                                                       \
-        if (   ppdev->bHGSMISupported                                  \
+#define VBVA_OPERATION(__psoDest, __fn, __a) do {                            \
+    if (bIsScreenSurface(__psoDest))                                         \
+    {                                                                        \
+        PPDEV ppdev = (PPDEV)__psoDest->dhpdev;                              \
+                                                                             \
+        if (   ppdev->bHGSMISupported                                        \
             && VBoxVBVABufferBeginUpdate(&ppdev->vbvaCtx, &ppdev->guestCtx)) \
-        {                                                              \
-            vbva##__fn __a;                                            \
-                                                                       \
-            if (  ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents                \
-                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)            \
-            {                                                          \
-                vrdpReset (ppdev);                                     \
-                                                                       \
-                ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &=               \
-                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;   \
-            }                                                          \
-                                                                       \
-            if (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents                  \
-                & VBVA_F_MODE_VRDP)                                    \
-            {                                                          \
-                vrdp##__fn __a;                                        \
-            }                                                          \
-                                                                       \
-            VBoxVBVABufferEndUpdate(&ppdev->vbvaCtx);                             \
-        }                                                              \
-    }                                                                  \
+        {                                                                    \
+            vbva##__fn __a;                                                  \
+                                                                             \
+            if (  ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents              \
+                & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)                  \
+            {                                                                \
+                vrdpReset (ppdev);                                           \
+                                                                             \
+                ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &=             \
+                          ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;         \
+            }                                                                \
+                                                                             \
+            if (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents                \
+                & VBVA_F_MODE_VRDP)                                          \
+            {                                                                \
+                vrdp##__fn __a;                                              \
+            }                                                                \
+                                                                             \
+            VBoxVBVABufferEndUpdate(&ppdev->vbvaCtx);                        \
+        }                                                                    \
+    }                                                                        \
 } while (0)
 
 //#undef VBVA_OPERATION
