@@ -48,7 +48,7 @@ RT_C_DECLS_BEGIN
  * Structure grouping the context needed for submitting commands to the host
  * via HGSMI 
  */
-typedef struct _HGSMIGUESTCOMMANDCONTEXT
+typedef struct HGSMIGUESTCOMMANDCONTEXT
 {
     /** Information about the memory heap located in VRAM from which data
      * structures to be sent to the host are allocated. */
@@ -63,7 +63,7 @@ typedef struct _HGSMIGUESTCOMMANDCONTEXT
  * Structure grouping the context needed for receiving commands from the host
  * via HGSMI 
  */
-typedef struct _HGSMIHOSTCOMMANDCONTEXT
+typedef struct HGSMIHOSTCOMMANDCONTEXT
 {
     /** Information about the memory area located in VRAM in which the host
      * places data structures to be read by the guest. */
@@ -84,6 +84,31 @@ typedef struct _HGSMIHOSTCOMMANDCONTEXT
      * IRQ acknowlegement). */
     RTIOPORT port;
 } HGSMIHOSTCOMMANDCONTEXT, *PHGSMIHOSTCOMMANDCONTEXT;
+
+
+typedef struct VBVARECORD VBVARECORD, *PVBVARECORD;
+typedef struct _VBVABUFFER VBVABUFFER, *PVBVABUFFER;
+
+/**
+ * Structure grouping the context needed for sending graphics acceleration
+ * information to the host via VBVA.  Each screen has its own VBVA buffer.
+ */
+typedef struct VBVABUFFERCONTEXT
+{
+    /** Offset of the buffer in the VRAM section for the screen */
+    uint32_t    offVRAMBuffer;
+    /** Length of the buffer in bytes */
+    uint32_t    cbBuffer;
+    /** This flag is set if we wrote to the buffer faster than the host could
+     * read it. */
+    bool        fHwBufferOverflow;
+    /** The VBVA record that we are currently preparing for the host, NULL if
+     * none. */
+    VBVARECORD *pRecord;
+    /** Pointer to the VBVA buffer mapped into the current address space.  Will
+     * be NULL if VBVA is not enabled. */
+    VBVABUFFER *pVBVA;
+} VBVABUFFERCONTEXT, *PVBVABUFFERCONTEXT;
 
 /** @name Helper functions
  * @{ */
@@ -227,6 +252,32 @@ RTDECL(bool)     VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t cHeight,
                                              uint8_t *pPixels,
                                              uint32_t cbLength);
+
+/** @}  */
+
+/** @name VBVA APIs
+ * @{ */
+RTDECL(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
+                            PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+                            VBVABUFFER *pVBVA);
+RTDECL(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
+                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
+RTDECL(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
+                                       PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
+RTDECL(void) VBoxVBVABufferEndUpdate(PVBVABUFFERCONTEXT pCtx);
+RTDECL(bool) VBoxVBVAWrite(PVBVABUFFERCONTEXT pCtx,
+                           PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+                           const void *pv, uint32_t cb);
+RTDECL(bool) VBoxVBVAOrderSupported(PVBVABUFFERCONTEXT pCtx, unsigned code);
+RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                         uint32_t cDisplay,
+                                         int32_t  cOriginX,
+                                         int32_t  cOriginY,
+                                         uint32_t offStart,
+                                         uint32_t cbPitch,
+                                         uint32_t cWidth,
+                                         uint32_t cHeight,
+                                         uint16_t cBPP);
 
 /** @}  */
 

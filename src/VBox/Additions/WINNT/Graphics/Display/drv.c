@@ -105,26 +105,27 @@ BOOL bIsScreenSurface (SURFOBJ *pso)
     {                                                                  \
         PPDEV ppdev = (PPDEV)__psoDest->dhpdev;                        \
                                                                        \
-        if (ppdev->bHGSMISupported && vboxHwBufferBeginUpdate (ppdev)) \
+        if (   ppdev->bHGSMISupported                                  \
+            && VBoxVBVABufferBeginUpdate(&ppdev->vbvaCtx, &ppdev->guestCtx)) \
         {                                                              \
             vbva##__fn __a;                                            \
                                                                        \
-            if (  ppdev->pVBVA->hostFlags.u32HostEvents                \
+            if (  ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents                \
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)            \
             {                                                          \
                 vrdpReset (ppdev);                                     \
                                                                        \
-                ppdev->pVBVA->hostFlags.u32HostEvents &=               \
+                ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &=               \
                           ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;   \
             }                                                          \
                                                                        \
-            if (ppdev->pVBVA->hostFlags.u32HostEvents                  \
+            if (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents                  \
                 & VBVA_F_MODE_VRDP)                                    \
             {                                                          \
                 vrdp##__fn __a;                                        \
             }                                                          \
                                                                        \
-            vboxHwBufferEndUpdate (ppdev);                             \
+            VBoxVBVABufferEndUpdate(&ppdev->vbvaCtx);                             \
         }                                                              \
     }                                                                  \
 } while (0)
@@ -321,8 +322,8 @@ BOOL APIENTRY DrvCopyBits(
 
         DISPDBG((1, "offscreen->screen\n"));
 
-        if (   ppdev->pVBVA
-            && (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
+        if (   ppdev->vbvaCtx.pVBVA
+            && (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
         {
             if (   (psoSrc->fjBitmap & BMF_DONTCACHE) != 0
                 || psoSrc->iUniq == 0)
@@ -728,19 +729,19 @@ BOOL APIENTRY DrvRealizeBrush(
     {
         PPDEV ppdev = (PPDEV)psoTarget->dhpdev;
 
-        if (   ppdev->pVBVA
-            && (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
+        if (   ppdev->vbvaCtx.pVBVA
+            && (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_ENABLED))
         {
-            if (ppdev->pVBVA->hostFlags.u32HostEvents
+            if (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
             {
                 vrdpReset (ppdev);
 
-                ppdev->pVBVA->hostFlags.u32HostEvents &=
+                ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &=
                     ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
             }
 
-            if (ppdev->pVBVA->hostFlags.u32HostEvents
+            if (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents
                 & VBVA_F_MODE_VRDP)
             {
                 bRc = vrdpRealizeBrush (pbo, psoTarget, psoPattern, psoMask, pxlo, iHatch);

@@ -350,7 +350,7 @@ void vboxReportDirtyRect (PPDEV ppdev, RECTL *pRectOrig)
         hdr.w = (uint16_t)(rect.right - rect.left);
         hdr.h = (uint16_t)(rect.bottom - rect.top);
 
-        vboxWrite (ppdev, &hdr, sizeof(hdr));
+        VBoxVBVAWrite(&ppdev->vbvaCtx, &ppdev->guestCtx, &hdr, sizeof(hdr));
     }
 
     return;

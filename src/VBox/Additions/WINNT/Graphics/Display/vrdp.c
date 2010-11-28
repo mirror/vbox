@@ -364,7 +364,7 @@ static uint32_t vrdpColor2RGB (SURFOBJ *pso, uint32_t color)
 
 __inline BOOL vrdpWriteHdr (PPDEV ppdev, uint32_t u32Op)
 {
-    return vboxWrite (ppdev, &u32Op, sizeof (u32Op));
+    return VBoxVBVAWrite(&ppdev->vbvaCtx, &ppdev->guestCtx, &u32Op, sizeof (u32Op));
 }
 
 static BOOL vrdpWriteBits (PPDEV ppdev, uint8_t *pu8Bits, int lDelta, int32_t x, int32_t y, uint32_t cWidth, uint32_t cHeight, int bytesPerPixel)
@@ -380,13 +380,13 @@ static BOOL vrdpWriteBits (PPDEV ppdev, uint8_t *pu8Bits, int lDelta, int32_t x,
     bits.cHeight = (uint16_t)cHeight;
     bits.cbPixel = (uint8_t)bytesPerPixel;
 
-    bRc = vboxWrite (ppdev, &bits, sizeof (bits));
+    bRc = VBoxVBVAWrite(&ppdev->vbvaCtx, &ppdev->guestCtx, &bits, sizeof (bits));
 
     if (bRc)
     {
         while (cHeight--)
         {
-            bRc = vboxWrite (ppdev, pu8Bits, cWidth * bytesPerPixel);
+            bRc = VBoxVBVAWrite(&ppdev->vbvaCtx, &ppdev->guestCtx, pu8Bits, cWidth * bytesPerPixel);
 
             if (!bRc)
             {
@@ -502,7 +502,7 @@ static BOOL vrdpReportOrder (PPDEV ppdev,
 
     if (bRc)
     {
-        vboxWrite (ppdev, pOrder, cbOrder);
+        VBoxVBVAWrite(&ppdev->vbvaCtx, &ppdev->guestCtx, pOrder, cbOrder);
     }
 
     return bRc;
@@ -1433,7 +1433,7 @@ void vrdpStrokePath(
     }
     else if (ppo->fl & PO_ELLIPSE)
     {
-        if (vboxOrderSupported (ppdev, VRDE_ORDER_ELLIPSE))
+        if (VBoxVBVAOrderSupported (&ppdev->vbvaCtx, VRDE_ORDER_ELLIPSE))
         {
             VRDEORDERELLIPSE order;
 

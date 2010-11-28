@@ -220,7 +220,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         /* Setup HGSMI heap in the display information area. The area has some space reserved for
          * HGSMI event flags in the beginning.
          */
-        int rc = HGSMIHeapSetup (&ppdev->hgsmiDisplayHeap,
+        int rc = HGSMIHeapSetup (&ppdev->guestCtx.heapCtx,
                                  (uint8_t *)ppdev->pjScreen + ppdev->layout.offDisplayInformation + sizeof (HGSMIHOSTFLAGS),
                                  ppdev->layout.cbDisplayInformation - sizeof (HGSMIHOSTFLAGS),
                                  info.areaDisplay.offBase + ppdev->layout.offDisplayInformation + sizeof (HGSMIHOSTFLAGS),
@@ -238,9 +238,13 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         }
         else
         {
-            ppdev->IOPortGuestCommand = info.IOPortGuestCommand;
+            ppdev->guestCtx.port = info.IOPortGuestCommand;
         }
     }
+    /* Update buffer layout in VBVA context information.  Shouldn't this get
+     * zeroed if initialising the HGSMI heap fails? */
+    ppdev->vbvaCtx.offVRAMBuffer = ppdev->layout.offVBVABuffer;
+    ppdev->vbvaCtx.cbBuffer = ppdev->layout.cbVBVABuffer;
 
     DISPDBG((0, "vboxInitVBoxVideo:\n"
                 "    cbVRAM = 0x%X\n"
@@ -404,7 +408,10 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         if (ppdev->bHGSMISupported)
         {
             /* Enable VBVA for this video mode. */
-            ppdev->bHGSMISupported = vboxVbvaEnable (ppdev);
+            VBVABUFFER *pVBVA = (VBVABUFFER *)((uint8_t *)ppdev->pjScreen + ppdev->layout.offVBVABuffer);
+            ppdev->bHGSMISupported = VBoxVBVAEnable(&ppdev->vbvaCtx,
+                                                    &ppdev->guestCtx,
+                                                    pVBVA);
             LogRel(("VBoxDisp[%d]: VBVA %senabled\n", ppdev->iDevice, ppdev->bHGSMISupported? "": "not "));
         }
     }
@@ -413,7 +420,10 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
 
     /* Inform the host about this screen layout. */
     DISPDBG((1, "bInitSURF: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
-    VBoxProcessDisplayInfo (ppdev);
+    if (ppdev->bHGSMISupported)
+    {
+        VBoxProcessDisplayInfo (ppdev);
+    }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* tells we can process host commands */
