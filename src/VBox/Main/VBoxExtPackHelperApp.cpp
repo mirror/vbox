@@ -517,26 +517,39 @@ static RTEXITCODE UnpackExtPackFile(const char *pszName, const char *pszDstFilen
             rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, (uint32_t)RT_MIN(ObjInfo.cbObject, _1G));
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Set the mode mask.
-                 */
-                ObjInfo.Attr.fMode &= ~(RTFS_UNIX_IWOTH | RTFS_UNIX_IWGRP);
-                rc = RTFileSetMode(hFile, ObjInfo.Attr.fMode);
-                /** @todo Windows needs to do more here, I think. */
+                rc = RTManifestPtIosAddEntryNow(hVfsIosDst);
                 if (RT_SUCCESS(rc))
                 {
-                    return RTEXITCODE_SUCCESS;
+                    RTVfsIoStrmRelease(hVfsIosDst);
+                    hVfsIosDst = NIL_RTVFSIOSTREAM;
+
+                    /*
+                     * Set the mode mask.
+                     */
+                    ObjInfo.Attr.fMode &= ~(RTFS_UNIX_IWOTH | RTFS_UNIX_IWGRP);
+                    rc = RTFileSetMode(hFile, ObjInfo.Attr.fMode);
+                    /** @todo Windows needs to do more here, I think. */
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTFileClose(hFile);
+                        return RTEXITCODE_SUCCESS;
+                    }
+
+                    RTMsgError("Failed to set the mode of '%s' to %RTfmode: %Rrc", pszDstFilename, ObjInfo.Attr.fMode, rc);
                 }
-                RTMsgError("Failed to set the mode of '%s' to %RTfmode: %Rrc", pszDstFilename, ObjInfo.Attr.fMode, rc);
+                else
+                    RTMsgError("RTManifestPtIosAddEntryNow failed for '%s': %Rrc", pszDstFilename, rc);
             }
             else
                 RTMsgError("RTVfsUtilPumpIoStreams failed for '%s': %Rrc", pszDstFilename, rc);
+            RTVfsIoStrmRelease(hVfsIosDst);
         }
         else
             RTMsgError("RTManifestEntryAddPassthruIoStream failed: %Rrc", rc);
     }
     else
         RTMsgError("RTVfsIoStrmFromRTFile failed: %Rrc", rc);
+    RTFileClose(hFile);
     return RTEXITCODE_FAILURE;
 }
 
