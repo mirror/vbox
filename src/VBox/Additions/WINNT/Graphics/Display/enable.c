@@ -125,13 +125,13 @@ ULONG APIENTRY DrvEscape(SURFOBJ *pso, ULONG iEsc, ULONG cjIn, PVOID pvIn, ULONG
     {
         ULONG ret = 0;
 
-        if (ppdev && ppdev->pVBVA)
+        if (ppdev && ppdev->vbvaCtx.pVBVA)
         {
-            if (ppdev->pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_VRDP)
+            if (ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents & VBVA_F_MODE_VRDP)
             {
                 ret = 1;
             }
-            DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> %d (%x)\n", ret, ppdev->pVBVA->hostFlags.u32HostEvents));
+            DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> %d (%x)\n", ret, ppdev->vbvaCtx.pVBVA->hostFlags.u32HostEvents));
         }
         else
             DISPDBG((0, "VBOXESC_ISVRDPACTIVE -> 0\n"));
@@ -908,7 +908,11 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
 #endif
 
         /* Free the driver's VBVA resources. */
-        vboxVbvaDisable ((PPDEV) dhpdev);
+        if (ppdev->bHGSMISupported)
+        {
+            PPDEV ppdev = (PPDEV) dhpdev;
+            VBoxVBVADisable(&ppdev->vbvaCtx, &ppdev->guestCtx);
+        }
 
         //
         // We must give up the display.

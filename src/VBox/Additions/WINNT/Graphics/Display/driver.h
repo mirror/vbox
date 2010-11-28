@@ -35,6 +35,7 @@
 
 #include "../Miniport/vboxioctl.h"
 
+#include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
 #ifdef VBOX_WITH_VIDEOHWACCEL
 #include <iprt/asm.h>
@@ -167,8 +168,6 @@ struct  _PDEV
     BOOL    bSupportDCI;                // Does the miniport support DCI?
     FLONG   flHooks;
 
-    BOOL             fHwBufferOverflow;
-    VBVARECORD       *pRecord;
     VRDPBC           cache;
 
     ULONG cSSB;                 // Number of active saved screen bits records in the following array.
@@ -191,14 +190,12 @@ struct  _PDEV
 #endif /* VBOX_WITH_DDRAW */
 
     BOOLEAN bHGSMISupported;
-    HGSMIHEAP hgsmiDisplayHeap;
-    VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
+    HGSMIGUESTCOMMANDCONTEXT guestCtx;
+    VBVABUFFERCONTEXT vbvaCtx;
 
     HVBOXVIDEOHGSMI hMpHGSMI; /* context handler passed to miniport HGSMI callbacks */
     PFNVBOXVIDEOHGSMICOMPLETION pfnHGSMICommandComplete; /* called to complete the command we receive from the miniport */
     PFNVBOXVIDEOHGSMICOMMANDS   pfnHGSMIRequestCommands; /* called to requests the commands posted to us from the host */
-
-    RTIOPORT IOPortGuestCommand;
 
     PVOID pVideoPortContext;
     VBOXVIDEOPORTPROCS VideoPortProcs;
@@ -260,16 +257,6 @@ typedef struct _VRDPCLIPRECTS
     CLIPRECTS rects;  /* Rectangles to update. */
 } VRDPCLIPRECTS;
 
-
-BOOL vboxVbvaEnable (PPDEV ppdev);
-void vboxVbvaDisable (PPDEV ppdev);
-
-BOOL vboxHwBufferBeginUpdate (PPDEV ppdev);
-void vboxHwBufferEndUpdate (PPDEV ppdev);
-
-BOOL vboxWrite (PPDEV ppdev, const void *pv, uint32_t cb);
-
-BOOL vboxOrderSupported (PPDEV ppdev, unsigned code);
 
 void VBoxProcessDisplayInfo(PPDEV ppdev);
 void VBoxUpdateDisplayInfo (PPDEV ppdev);

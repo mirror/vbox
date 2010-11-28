@@ -46,6 +46,7 @@ VBoxDisp_SOURCES     = \
 	vrdpbmp.c \
 	vrdptext.c \
 	vbox.c \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
 	VBoxDisp.def \
 	VBoxDisp.rc
 

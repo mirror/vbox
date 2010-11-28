@@ -1175,26 +1175,26 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 //        vboxVHWACommandCheckHostCmds(pDev);
         if(!!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
                 && pDesc->UpdatedMemRegion.bValid
-                && vboxHwBufferBeginUpdate (pDev))
+                && VBoxVBVABufferBeginUpdate(&pDev->vbvaCtx, &pDev->guestCtx))
         {
             vbvaReportDirtyRect (pDev, &pDesc->UpdatedMemRegion.Rect);
 
-            if (  pDev->pVBVA->hostFlags.u32HostEvents
+            if (  pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
             {
                 vrdpReset (pDev);
 
-                pDev->pVBVA->hostFlags.u32HostEvents &=
+                pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &=
                           ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
             }
 
-            if (pDev->pVBVA->hostFlags.u32HostEvents
+            if (pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents
                 & VBVA_F_MODE_VRDP)
             {
                 vrdpReportDirtyRect (pDev, &pDesc->UpdatedMemRegion.Rect);
             }
 
-            vboxHwBufferEndUpdate (pDev);
+            VBoxVBVABufferEndUpdate(&pDev->vbvaCtx);
 
             lpUnlock->ddRVal = DD_OK;
         }
@@ -1244,26 +1244,27 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
     {
         DISPDBG((0, "%d,%d %dx%d\n", pDev->ddLock.rArea.left, pDev->ddLock.rArea.top, pDev->ddLock.rArea.right - pDev->ddLock.rArea.left, pDev->ddLock.rArea.bottom - pDev->ddLock.rArea.top));
 
-        if (pDev->bHGSMISupported && vboxHwBufferBeginUpdate (pDev))
+        if (   pDev->bHGSMISupported
+            && VBoxVBVABufferBeginUpdate(&pDev->vbvaCtx, &pDev->guestCtx))
         {
             vbvaReportDirtyRect (pDev, &pDev->ddLock.rArea);
 
-            if (  pDev->pVBVA->hostFlags.u32HostEvents
+            if (  pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents
                 & VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET)
             {
                 vrdpReset (pDev);
 
-                pDev->pVBVA->hostFlags.u32HostEvents &=
+                pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents &=
                           ~VBOX_VIDEO_INFO_HOST_EVENTS_F_VRDP_RESET;
             }
 
-            if (pDev->pVBVA->hostFlags.u32HostEvents
+            if (pDev->vbvaCtx.pVBVA->hostFlags.u32HostEvents
                 & VBVA_F_MODE_VRDP)
             {
                 vrdpReportDirtyRect (pDev, &pDev->ddLock.rArea);
             }
 
-            vboxHwBufferEndUpdate (pDev);
+            VBoxVBVABufferEndUpdate(&pDev->vbvaCtx);
         }
 
         pDev->ddLock.bLocked = FALSE;

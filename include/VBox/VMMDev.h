@@ -1916,7 +1916,7 @@ typedef struct VBVACMDHDR
 /**
  * VBVA record.
  */
-typedef struct
+typedef struct VBVARECORD
 {
     /** The length of the record. Changed by guest. */
     uint32_t cbRecord;
