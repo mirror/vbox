@@ -710,7 +710,7 @@ RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
 /** @} */
 
 
-/** @defgroup grp_vfs_file          VFS Miscellaneous
+/** @defgroup grp_vfs_misc          VFS Miscellaneous
  * @{
  */
 
@@ -727,6 +727,22 @@ RTDECL(int)         RTVfsFileGetMaxSizeEx(RTVFSFILE hVfsFile, PRTFOFF pcbMax);
  *                          success.
  */
 RTDECL(int) RTVfsMemorizeIoStreamAsFile(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, PRTVFSFILE phVfsFile);
+
+
+/**
+ * Pumps data from one I/O stream to another.
+ *
+ * The data is read in chunks from @a hVfsIosSrc and written to @a hVfsIosDst
+ * until @hVfsIosSrc indicates end of stream.
+ *
+ * @returns IPRT status code
+ *
+ * @param   hVfsIosSrc  The input stream.
+ * @param   hVfsIosDst  The output stream.
+ * @param   cbBufHint   Hints at a good temporary buffer size, pass 0 if
+ *                      clueless.
+ */
+RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsIosDst, size_t cbBufHint);
 
 /** @}  */
 

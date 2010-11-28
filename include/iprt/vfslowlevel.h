@@ -752,6 +752,18 @@ RTDECL(int) RTVfsNewIoStream(PCRTVFSIOSTREAMOPS pIoStreamOps, size_t cbInstance,
 
 
 /**
+ * Gets the private data of an I/O stream.
+ *
+ * @returns Pointer to the private data.  NULL if the handle is invalid in some
+ *          way.
+ * @param   hVfsIos             The I/O stream handle.
+ * @param   pIoStreamOps        The I/O stream operations.  This servers as a
+ *                              sort of password.
+ */
+RTDECL(void *) RTVfsIoStreamToPrivate(RTVFSIOSTREAM hVfsIos, PCRTVFSIOSTREAMOPS pIoStreamOps);
+
+
+/**
  * The file operations.
  *
  * @extends RTVFSIOSTREAMOPS
@@ -924,21 +936,6 @@ RTDECL(void) RTVfsParsePathFree(PRTVFSPARSEDPATH pPath);
  * @sa      RTVFSIOSTREAMOPS::pfnPollOne, RTPollSetAdd, RTPoll, RTPollNoResume.
  */
 RTDECL(int) RTVfsUtilDummyPollOne(uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr, uint32_t *pfRetEvents);
-
-/**
- * Pumps data from one I/O stream to another.
- *
- * The data is read in chunks from @a hVfsIosSrc and written to @a hVfsIosDst
- * until @hVfsIosSrc indicates end of stream.
- *
- * @returns IPRT status code
- *
- * @param   hVfsIosSrc  The input stream.
- * @param   hVfsIosDst  The output stream.
- * @param   cbBufHint   Hints at a good temporary buffer size, pass 0 if
- *                      clueless.
- */
-RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsIosDst, size_t cbBufHint);
 
 /** @}  */
 
