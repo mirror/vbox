@@ -1576,6 +1576,14 @@ RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsI
     }
 
     RTMemTmpFree(pvBuf);
+
+    /*
+     * Flush the destination stream on success to make sure we've caught
+     * errors caused by buffering delays.
+     */
+    if (RT_SUCCESS(rc))
+        rc = RTVfsIoStrmFlush(hVfsIosDst);
+
     return rc;
 }
 
