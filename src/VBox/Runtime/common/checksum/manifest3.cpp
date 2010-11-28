@@ -34,11 +34,13 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/md5.h>
 #include <iprt/mem.h>
 #include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
+#include <iprt/vfslowlevel.h>
 
 
 /*******************************************************************************
@@ -77,6 +79,29 @@ typedef struct RTMANIFESTHASHES
 } RTMANIFESTHASHES;
 /** Pointer to a the hashes for a stream. */
 typedef RTMANIFESTHASHES *PRTMANIFESTHASHES;
+
+
+/**
+ * The internal data of a manifest passthru I/O stream.
+ */
+typedef struct RTMANIFESTPTIOS
+{
+    /** The stream we're reading from or writing to. */
+    RTVFSIOSTREAM       hVfsIos;
+    /** The hashes.  */
+    PRTMANIFESTHASHES   pHashes;
+    /** Whether we're reading or writing. */
+    bool                fReadOrWrite;
+    /** Whether we've already added the entry to the manifest. */
+    bool                fAddedEntry;
+    /** The entry name. */
+    char               *pszEntry;
+    /** The manifest to add the entry to. */
+    RTMANIFEST          hManifest;
+} RTMANIFESTPTIOS;
+/** Pointer to a the internal data of a manifest passthru I/O stream. */
+typedef RTMANIFESTPTIOS *PRTMANIFESTPTIOS;
+
 
 
 /**
@@ -213,6 +238,243 @@ static int rtManifestHashesSetAttrs(PRTMANIFESTHASHES pHashes, RTMANIFEST hManif
 static void rtManifestHashesDestroy(PRTMANIFESTHASHES pHashes)
 {
     RTMemTmpFree(pHashes);
+}
+
+
+
+/*
+ *
+ *   M a n i f e s t   p a s s t h r u   I / O    s t r e a m
+ *   M a n i f e s t   p a s s t h r u   I / O    s t r e a m
+ *   M a n i f e s t   p a s s t h r u   I / O    s t r e a m
+ *
+ */
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnClose}
+ */
+static DECLCALLBACK(int) rtManifestPtIos_Close(void *pvThis)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
+
+    int rc = VINF_SUCCESS;
+    if (!pThis->fAddedEntry)
+    {
+        rtManifestHashesFinal(pThis->pHashes);
+        rc = rtManifestHashesSetAttrs(pThis->pHashes, pThis->hManifest, pThis->pszEntry);
+    }
+
+    RTVfsIoStrmRelease(pThis->hVfsIos);
+    pThis->hVfsIos = NIL_RTVFSIOSTREAM;
+    rtManifestHashesDestroy(pThis->pHashes);
+    pThis->pHashes = NULL;
+    RTStrFree(pThis->pszEntry);
+    pThis->pszEntry = NULL;
+    RTManifestRelease(pThis->hManifest);
+    pThis->hManifest = NIL_RTMANIFEST;
+
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJOPS,pfnQueryInfo}
+ */
+static DECLCALLBACK(int) rtManifestPtIos_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttr)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
+    return RTVfsIoStrmQueryInfo(pThis->hVfsIos, pObjInfo, enmAddAttr);
+}
+
+/**
+ * Updates the hashes with a scather/gather buffer.
+ *
+ * @param   pThis               The passthru I/O stream instance data.
+ * @param   pSgBuf              The scather/gather buffer.
+ * @param   cbLeft              The number of bytes to take from the buffer.
+ */
+static void rtManifestPtIos_UpdateHashes(PRTMANIFESTPTIOS pThis, PCRTSGBUF pSgBuf, size_t cbLeft)
+{
+    for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+    {
+        size_t cbSeg = pSgBuf->paSegs[iSeg].cbSeg;
+        if (cbSeg > cbLeft)
+            cbSeg = cbLeft;
+        rtManifestHashesUpdate(pThis->pHashes, pSgBuf->paSegs[iSeg].pvSeg, cbSeg);
+        cbLeft -= cbSeg;
+        if (!cbLeft)
+            break;
+    }
+}
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
+ */
+static DECLCALLBACK(int) rtManifestPtIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
+    int rc = RTVfsIoStrmSgRead(pThis->hVfsIos, pSgBuf, fBlocking, pcbRead);
+    if (RT_SUCCESS(rc))
+        rtManifestPtIos_UpdateHashes(pThis, pSgBuf, pcbRead ? *pcbRead : ~(size_t)0);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnWrite}
+ */
+static DECLCALLBACK(int) rtManifestPtIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
+    int rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, pSgBuf, fBlocking, pcbWritten);
+    if (RT_SUCCESS(rc))
+        rtManifestPtIos_UpdateHashes(pThis, pSgBuf, pcbWritten ? *pcbWritten : ~(size_t)0);
+    return rc;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnFlush}
+ */
+static DECLCALLBACK(int) rtManifestPtIos_Flush(void *pvThis)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
+    return RTVfsIoStrmFlush(pThis->hVfsIos);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
+ */
+static DECLCALLBACK(int) rtManifestPtIos_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                                                 uint32_t *pfRetEvents)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
+    return RTVfsIoStrmPoll(pThis->hVfsIos, fEvents, cMillies, fIntr, pfRetEvents);
+}
+
+
+/**
+ * @interface_method_impl{RTVFSIOSTREAMOPS,pfnTell}
+ */
+static DECLCALLBACK(int) rtManifestPtIos_Tell(void *pvThis, PRTFOFF poffActual)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)pvThis;
+    RTFOFF off = RTVfsIoStrmTell(pThis->hVfsIos);
+    if (off < 0)
+        return (int)off;
+    *poffActual = off;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * The manifest passthru I/O stream vtable.
+ */
+static RTVFSIOSTREAMOPS g_rtManifestPassthruIosOps =
+{
+    { /* Obj */
+        RTVFSOBJOPS_VERSION,
+        RTVFSOBJTYPE_IO_STREAM,
+        "manifest passthru I/O stream",
+        rtManifestPtIos_Close,
+        rtManifestPtIos_QueryInfo,
+        RTVFSOBJOPS_VERSION
+    },
+    RTVFSIOSTREAMOPS_VERSION,
+    0,
+    rtManifestPtIos_Read,
+    rtManifestPtIos_Write,
+    rtManifestPtIos_Flush,
+    rtManifestPtIos_PollOne,
+    rtManifestPtIos_Tell,
+    NULL /* Skip */,
+    NULL /* ZeroFill */,
+    RTVFSIOSTREAMOPS_VERSION,
+};
+
+
+
+/**
+ * Add an entry for an I/O stream using a passthru stream.
+ *
+ * The passthru I/O stream will hash all the data read from or written to the
+ * stream and automatically add an entry to the manifest with the desired
+ * attributes when it is released.  Alternatively one can call
+ * RTManifestPtIosAddEntryNow() to have more control over exactly when this
+ * action is performed and which status it yields.
+ *
+ * @returns IPRT status code.
+ * @param   hManifest           The manifest to add the entry to.
+ * @param   hVfsIos             The I/O stream to pass thru to/from.
+ * @param   pszEntry            The entry name.
+ * @param   fAttrs              The attributes to create for this stream.
+ * @param   fReadOrWrite        Whether it's a read or write I/O stream.
+ * @param   phVfsIosPassthru    Where to return the new handle.
+ */
+RTDECL(int) RTManifestEntryAddPassthruIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, const char *pszEntry,
+                                               uint32_t fAttrs, bool fReadOrWrite, PRTVFSIOSTREAM phVfsIosPassthru)
+{
+    /*
+     * Validate input.
+     */
+    AssertReturn(fAttrs < RTMANIFEST_ATTR_END, VERR_INVALID_PARAMETER);
+    AssertPtr(pszEntry);
+    AssertPtr(phVfsIosPassthru);
+    uint32_t cRefs = RTManifestRetain(hManifest);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+    cRefs = RTVfsIoStrmRetain(hVfsIos);
+    AssertReturnStmt(cRefs != UINT32_MAX, VERR_INVALID_HANDLE, RTManifestRelease(hManifest));
+
+    /*
+     * Create an instace of the passthru I/O stream.
+     */
+    PRTMANIFESTPTIOS pThis;
+    RTVFSIOSTREAM    hVfsPtIos;
+    int rc = RTVfsNewIoStream(&g_rtManifestPassthruIosOps, sizeof(*pThis), fReadOrWrite ? RTFILE_O_READ : RTFILE_O_WRITE,
+                              NIL_RTVFS, NIL_RTVFSLOCK, &hVfsPtIos, (void **)&pThis);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hVfsIos          = hVfsIos;
+        pThis->pHashes          = rtManifestHashesCreate(fAttrs);
+        pThis->hManifest        = hManifest;
+        pThis->fReadOrWrite     = fReadOrWrite;
+        pThis->fAddedEntry      = false;
+        pThis->pszEntry         = RTStrDup(pszEntry);
+        if (pThis->pszEntry && pThis->pHashes)
+        {
+            *phVfsIosPassthru = hVfsPtIos;
+            return VINF_SUCCESS;
+        }
+
+        RTVfsIoStrmRelease(hVfsPtIos);
+    }
+    else
+    {
+        RTVfsIoStrmRelease(hVfsIos);
+        RTManifestRelease(hManifest);
+    }
+    return rc;
+}
+
+
+/**
+ * Adds the entry to the manifest right now.
+ *
+ * @returns IPRT status code.
+ * @param   hVfsPtIos           The manifest passthru I/O stream returned by
+ *                              RTManifestEntryAddPassthruIoStream().
+ */
+RTDECL(int) RTManifestPtIosAddEntryNow(RTVFSIOSTREAM hVfsPtIos)
+{
+    PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)RTVfsIoStreamToPrivate(hVfsPtIos, &g_rtManifestPassthruIosOps);
+    AssertReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->fAddedEntry, VERR_WRONG_ORDER);
+
+    pThis->fAddedEntry = true;
+    rtManifestHashesFinal(pThis->pHashes);
+    return rtManifestHashesSetAttrs(pThis->pHashes, pThis->hManifest, pThis->pszEntry);
 }
 
 

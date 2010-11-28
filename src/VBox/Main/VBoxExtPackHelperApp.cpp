@@ -467,6 +467,81 @@ static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTar
 
 
 /**
+ * Unpacks a file from an extension pack tarball.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   pszName         The name in the tarball.
+ * @param   pszDstFilename  The name of the unpacked file.
+ * @param   hVfsIosSrc      The source stream for the file.
+ * @param   hUnpackManifest The manifest to add the file digest to.
+ */
+static RTEXITCODE UnpackExtPackFile(const char *pszName, const char *pszDstFilename,
+                                    RTVFSIOSTREAM hVfsIosSrc, RTMANIFEST hUnpackManifest)
+{
+    /*
+     * Query the object info, we'll need it for buffer sizing as well as
+     * setting the file mode.
+     */
+    RTFSOBJINFO ObjInfo;
+    int rc = RTVfsIoStrmQueryInfo(hVfsIosSrc, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsIoStrmQueryInfo failed with %Rrc on '%s'", rc, pszDstFilename);
+
+    /*
+     * Create the file.
+     */
+    uint32_t fFlags = RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE | (0600 << RTFILE_O_CREATE_MODE_SHIFT);
+    RTFILE   hFile;
+    rc = RTFileOpen(&hFile, pszDstFilename, fFlags);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create '%s': %Rrc", pszDstFilename, rc);
+
+    /*
+     * Create a I/O stream for the destination file, stack a manifest entry
+     * creator on top of it.
+     */
+    RTVFSIOSTREAM hVfsIosDst2;
+    rc = RTVfsIoStrmFromRTFile(hFile, fFlags, true /*fLeaveOpen*/, &hVfsIosDst2);
+    if (RT_SUCCESS(rc))
+    {
+        RTVFSIOSTREAM hVfsIosDst;
+        rc = RTManifestEntryAddPassthruIoStream(hUnpackManifest, hVfsIosDst2, pszName,
+                                                RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256,
+                                                false /*fReadOrWrite*/, &hVfsIosDst);
+        RTVfsIoStrmRelease(hVfsIosDst2);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Pump the data thru.
+             */
+            rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, (uint32_t)RT_MIN(ObjInfo.cbObject, _1G));
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Set the mode mask.
+                 */
+                ObjInfo.Attr.fMode &= ~(RTFS_UNIX_IWOTH | RTFS_UNIX_IWGRP);
+                rc = RTFileSetMode(hFile, ObjInfo.Attr.fMode);
+                /** @todo Windows needs to do more here, I think. */
+                if (RT_SUCCESS(rc))
+                {
+                    return RTEXITCODE_SUCCESS;
+                }
+                RTMsgError("Failed to set the mode of '%s' to %RTfmode: %Rrc", pszDstFilename, ObjInfo.Attr.fMode, rc);
+            }
+            else
+                RTMsgError("RTVfsUtilPumpIoStreams failed for '%s': %Rrc", pszDstFilename, rc);
+        }
+        else
+            RTMsgError("RTManifestEntryAddPassthruIoStream failed: %Rrc", rc);
+    }
+    else
+        RTMsgError("RTVfsIoStrmFromRTFile failed: %Rrc", rc);
+    return RTEXITCODE_FAILURE;
+}
+
+
+/**
  * Unpacks the extension pack into the specified directory.
  *
  * This will apply ownership and permission changes to all the content, the
@@ -541,9 +616,7 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, cons
                         || enmType == RTVFSOBJTYPE_IO_STREAM)
                     {
                         RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                        /// @todo rc = RTManifestEntryAddIoStream(hOurManifest, hVfsIos, pszName, RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256);
-                        // if (RT_FAILURE(rc))
-                        //     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEntryAddIoStream failed on '%s': %Rrc", pszName, rc);
+                        rcExit = UnpackExtPackFile(pszName, szDstPath, hVfsIos, hUnpackManifest);
                         RTVfsIoStrmRelease(hVfsIos);
                     }
                     else
