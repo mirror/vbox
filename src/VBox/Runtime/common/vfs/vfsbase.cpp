@@ -946,7 +946,8 @@ RTDECL(RTVFSIOSTREAM)   RTVfsObjToIoStream(RTVFSOBJ hVfsObj)
         AssertPtrReturn(pThis, NIL_RTVFSIOSTREAM);
         AssertReturn(pThis->uMagic == RTVFSOBJ_MAGIC, NIL_RTVFSIOSTREAM);
 
-        if (pThis->pOps->enmType == RTVFSOBJTYPE_IO_STREAM)
+        if (   pThis->pOps->enmType == RTVFSOBJTYPE_IO_STREAM
+            || pThis->pOps->enmType == RTVFSOBJTYPE_FILE)
         {
             rtVfsObjRetainVoid(pThis);
             return RT_FROM_MEMBER(pThis, RTVFSIOSTREAMINTERNAL, Base);
