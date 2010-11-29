@@ -3973,6 +3973,7 @@ TEMPLATE_VBoxAdvBldProg_LIBS.solaris = \
 	kstat \
 	rt \
 	socket \
+	nsl \
 	$(TEMPLATE_VBOXBLDPROG_LIBS.solaris)
 
 
