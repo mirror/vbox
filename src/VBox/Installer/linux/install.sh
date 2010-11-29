@@ -422,9 +422,13 @@ if [ "$ACTION" = "install" ]; then
         # Write udev rules
         echo "KERNEL=${udev_fix}\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"$VBOXDRV_GRP\", MODE=\"$VBOXDRV_MODE\"" \
           > /etc/udev/rules.d/10-vboxdrv.rules
-        echo "SUBSYSTEM=${udev_fix}\"usb_device\", GROUP=\"$VBOXUSB_GRP\", MODE=\"$VBOXUSB_MODE\"" \
+        echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"add\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}\"" \
           >> /etc/udev/rules.d/10-vboxdrv.rules
-        echo "SUBSYSTEM=${udev_fix}\"usb\", ENV{DEVTYPE}==\"usb_device\", GROUP=\"$VBOXUSB_GRP\", MODE=\"$VBOXUSB_MODE\"" \
+        echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh \$major \$minor \$attr{bDeviceClass}\"" \
+          >> /etc/udev/rules.d/10-vboxdrv.rules
+        echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"remove\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\"" \
+          >> /etc/udev/rules.d/10-vboxdrv.rules
+        echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\"" \
           >> /etc/udev/rules.d/10-vboxdrv.rules
     fi
     # Remove old udev description file
@@ -432,13 +436,16 @@ if [ "$ACTION" = "install" ]; then
         rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
     fi
 
-    # Push the permissions to the USB device nodes.  One of these should match.
-    # Rather nasty to use udevadm trigger for this, but I don't know of any
-    # better way.
-    udevadm trigger --subsystem-match=usb > /dev/null 2>&1
-    udevtrigger --subsystem-match=usb > /dev/null 2>&1
-    udevtrigger --subsystem-match=usb_device > /dev/null 2>&1
-    udevplug -Busb > /dev/null 2>&1
+    # Build our device tree
+    for i in /sys/bus/usb/devices/*; do
+        if test -r "$i/dev"; then
+            dev="`cat "$i/dev" 2> /dev/null`"
+            major="`expr "$dev" : '\(.*\):' 2> /dev/null`"
+            minor="`expr "$dev" : '.*:\(.*\)' 2> /dev/null`"
+            class="`cat $i/bDeviceClass 2> /dev/null`"
+            sh "$INSTALLATION_DIR/VBoxCreateUSBNode.sh" "$major" "$minor" "$class" 2>/dev/null
+        fi
+    done
 
     # Write the configuration. Do this before we call /etc/init.d/vboxdrv setup!
     echo "# VirtualBox installation directory" > $CONFIG_DIR/$CONFIG
