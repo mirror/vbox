@@ -61,9 +61,9 @@
 
             <glossdef>
               <para>This package contains extra networking drivers for your
-              Windows host that VirtualBox needs to support Host Interface
-              Networking (to make your VM's virtual network cards accessible
-              from other machines on your physical network).</para>
+              Windows host that VirtualBox needs to support Bridged Networking
+              (to make your VM's virtual network cards accessible from other
+              machines on your physical network).</para>
             </glossdef>
           </glossentry>
 
@@ -72,9 +72,12 @@
 
             <glossdef>
               <para>This package contains Python scripting support for the
-              VirtualBox API (see <xref linkend="VirtualBoxAPI" />). To get
-              this feature installed an already working Python installation on
-              the system is required.</para>
+              VirtualBox API (see <xref linkend="VirtualBoxAPI" />). For this
+              to work, an already working Windows Python installation on the
+              system is required.<footnote>
+                  <para>See, for example, <ulink
+                  url="http://www.python.org/download/windows/">http://www.python.org/download/windows/</ulink>.</para>
+                </footnote></para>
             </glossdef>
           </glossentry>
         </glosslist></para>
@@ -84,8 +87,8 @@
       warnings as otherwise VirtualBox might not function correctly after
       installation.</para>
 
-      <para>The installer will create a "VirtualBox" group in the programs
-      startup folder which allows you to launch the application and access its
+      <para>The installer will create a "VirtualBox" group in the Windows
+      "Start" menu which allows you to launch the application and access its
       documentation.</para>
 
       <para>With standard settings, VirtualBox will be installed for all users
@@ -96,18 +99,18 @@
       on the extracted .MSI files. This will install VirtualBox only for the
       current user.</para>
 
-      <para>To not install certain features of VirtualBox there is an
-      <computeroutput>ADDLOCAL</computeroutput> parameter that can be
-      specified additionally to explicitly name the features to be installed.
-      The following features are available: <glosslist>
+      <para>If you do not want to install all features of VirtualBox, you can
+      set the optional <computeroutput>ADDLOCAL</computeroutput> parameter to
+      explicitly name the features to be installed. The following features are
+      available: <glosslist>
           <glossentry>
             <glossterm>VBoxApplication</glossterm>
 
             <glossdef>
               <para>Main binaries of VirtualBox.<note>
-                  <para>This feature never can be absent, since it contains
-                  the minimum set of files to have working VirtualBox
-                  installation!</para>
+                  <para>This feature must not be absent since it contains the
+                  minimum set of files to have working VirtualBox
+                  installation.</para>
                 </note></para>
             </glossdef>
           </glossentry>
@@ -152,17 +155,18 @@
               <para>Python support.</para>
             </glossdef>
           </glossentry>
-        </glosslist> To only install USB support along with the main binaries,
-      do a: <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
+        </glosslist>For example, to only install USB support along with the
+      main binaries, do a: <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
       or <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ADDLOCAL=VBoxApplication,VBoxUSB</screen></para>
     </sect2>
 
     <sect2>
       <title>Uninstallation</title>
 
-      <para>As we use the Microsoft Installer, VirtualBox can be safely
-      uninstalled at any time by choosing the program entry in the "Add/Remove
-      Programs" applet in the Windows Control Panel.</para>
+      <para>As VirtualBox uses the standard Microsoft Windows installer,
+      VirtualBox can be safely uninstalled at any time by choosing the program
+      entry in the "Add/Remove Programs" applet in the Windows Control
+      Panel.</para>
     </sect2>
 
     <sect2>
@@ -179,8 +183,9 @@
     <sect2>
       <title>Performing the installation</title>
 
-      <para>For Mac OS X hosts, VirtualBox ships in a disk image (dmg) file.
-      Perform the following steps: <orderedlist>
+      <para>For Mac OS X hosts, VirtualBox ships in a disk image
+      (<computeroutput>dmg</computeroutput>) file. Perform the following
+      steps: <orderedlist>
           <listitem>
             <para>Double-click on that file to have its contents
             mounted.</para>
@@ -251,8 +256,8 @@
       <note>
         <para>To be precise, these packages are only required if you want to
         run the VirtualBox graphical user interfaces. In particular,
-        <computeroutput>VirtualBox</computeroutput>, our main graphical user
-        interface, requires both Qt and SDL;
+        <computeroutput>VirtualBox</computeroutput>, the graphical VirtualBox
+        manager, requires both Qt and SDL;
         <computeroutput>VBoxSDL</computeroutput>, our simplified GUI, requires
         only SDL. By contrast, if you only want to run the headless VRDP
         server that comes with VirtualBox, neither Qt nor SDL are
@@ -265,9 +270,8 @@
 
       <para>VirtualBox uses a special kernel module to perform physical memory
       allocation and to gain control of the processor for guest system
-      execution. Without this kernel module, you will still be able to work
-      with virtual machines in the configuration interface, but you will not
-      be able to start any virtual machines.</para>
+      execution. Without this kernel module, you can still use the VirtualBox
+      manager to configure virtual machines, but they will not start.</para>
 
       <para>The VirtualBox kernel module is automatically installed on your
       system when you install VirtualBox. To maintain it with future kernel
@@ -278,8 +282,8 @@
           <para>See <ulink
           url="http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support">http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support</ulink>
           for an introduction.</para>
-        </footnote>. This framework helps to build kernel modules and to deal
-      with kernel upgrades.</para>
+        </footnote>. This framework helps with building and upgrading kernel
+      modules.</para>
 
       <para>If DKMS is not already installed, execute one of the following:
       <itemizedlist>
@@ -358,33 +362,13 @@
           </listitem>
 
           <listitem>
-            <para>The kernel of your Linux host got updated. In that case, the
-            kernel module will need to be reinstalled by executing (as
-            root):</para>
+            <para>The kernel of your Linux host was updated and DKMS is not
+            installed. In that case, the kernel module will need to be
+            reinstalled by executing (as root):</para>
 
             <screen>/etc/init.d/vboxdrv setup</screen>
           </listitem>
         </orderedlist></para>
-    </sect2>
-
-    <sect2>
-      <title>USB and advanced networking support</title>
-
-      <para>In order to use VirtualBox's USB support, the user account under
-      which you intend to run VirtualBox must have read and write access to
-      the USB filesystem (<computeroutput>usbfs</computeroutput>).</para>
-
-      <para>In addition, access to
-      <computeroutput>/dev/net/tun</computeroutput> will be required if you
-      want to use Host Interface Networking, which is described in detail in
-      <xref linkend="network_bridged" />.</para>
-
-      <!--TODO Write a couple of notes about hardened kernels. If PaX is installed, VBox presently doesn't start. I tried with a
-gentoo hardened kernel that had PaX enabled, and VBoxHeadless failed with really funny VERR_NO_MEMORY messages. Discussing
-it with Knut revealed that PaX might be the problem, and running paxctl to disable these protections actually
-helped. For reference:
-First run paxctl -C VBoxVDRP to have the executable modified to support PaX flags in the first place.
-Then paxctl -pemrxs VBoxHeadless to disable all protections. TODO: Figure out which ones are really needed.-->
     </sect2>
 
     <sect2>
@@ -408,18 +392,6 @@ Then paxctl -pemrxs VBoxHeadless to disable all protections. TODO: Figure out wh
         <para>You will be asked to accept the VirtualBox Personal Use and
         Evaluation License. Unless you answer "yes" here, the installation
         will be aborted.</para>
-
-        <para>The group <computeroutput>vboxusers</computeroutput> will be
-        created during installation. Note that a user who is going to run
-        VirtualBox must be member of that group. A user can be made member of
-        the group <computeroutput>vboxusers</computeroutput> through the GUI
-        user/group management or at the command line with</para>
-
-        <screen>sudo usermod -a -G vboxusers username</screen>
-
-        <para>Also note that adding an active user to that group will require
-        that user to log out and back in again. This should be done manually
-        after successful installation of the package.</para>
 
         <para>The installer will also search for a VirtualBox kernel module
         suitable for your kernel. The package includes pre-compiled modules
@@ -680,6 +652,23 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
       </sect3>
     </sect2>
 
+    <sect2>
+      <title>The vboxusers group</title>
+
+      <para>The Linux installers create the system user group
+      <computeroutput>vboxusers</computeroutput> during installation. Any
+      system user who is going to run VirtualBox must be member of that group.
+      A user can be made member of the group
+      <computeroutput>vboxusers</computeroutput> through the GUI user/group
+      management or at the command line with</para>
+
+      <screen>sudo usermod -a -G vboxusers username</screen>
+
+      <para>Note that adding an active user to that group will require that
+      user to log out and back in again. This should be done manually after
+      successful installation of the package.</para>
+    </sect2>
+
     <sect2 id="startingvboxonlinux">
       <title>Starting VirtualBox on Linux</title>
 
@@ -721,7 +710,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>The first line
   <sect1>
     <title id="install-solaris-host">Installing on Solaris hosts</title>
 
-    <para>For the various versions of Solaris that we support as host
+    <para>For the specific versions of Solaris that we support as host
     operating systems, please refer to <xref
     linkend="hostossupport" />.</para>
 
