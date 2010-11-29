@@ -22,12 +22,12 @@ include $(KBUILD_PATH)/subheader.kmk
 # Sub-makefiles / Sub-directories.
 #
 ifdef VBOX_SINGLE_MAKEFILE
- if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_TESTSUITE)
+ if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_TESTSUITE)
   include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/src/Makefile.kmk
 else
- if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_TESTSUITE)
+ if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_TESTSUITE)
   SUBDIRS = doc/manual
  endif
  SUBDIRS += src
@@ -49,7 +49,10 @@ OTHER_CLEAN += \
 	$(PATH_OUT)/GCCConfig.kmk
 
 
-if !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_TESTSUITE) && !defined(VBOX_ONLY_DOCS) # -> line 412b ;-)
+if  !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && !defined(VBOX_ONLY_TESTSUITE) # -> line 418b ;-)
 
 ifndef VBOX_OSE
  #
@@ -412,7 +415,7 @@ ifn1of ($(KBUILD_TARGET), l4 linux win)
 
 endif
 
-endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
 
 
 ifdef VBOX_ONLY_DOCS
@@ -841,6 +844,186 @@ additions-packing:
 	additions-build-linux.x86 \
 	additions-build-linux.x86.combined \
 	additions-packing
+
+
+#
+# Build the extension packs, all of them.
+#
+# This is tailored (hardcoded) for the extension pack build box.
+#
+# The fetching must be done in serial fashion, while the building should be
+# more flexible wrt to -jN.
+#
+extpacks-fetch:
+	+ $(KMK) -C tools fetch VBOX_ONLY_EXTPACKS=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin   VBOX_ONLY_EXTPACKS=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin   VBOX_ONLY_EXTPACKS=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=amd64 BUILD_TARGET=freebsd  VBOX_ONLY_EXTPACKS=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=x86   BUILD_TARGET=freebsd  VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux    VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux    VBOX_ONLY_EXTPACKS=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2      VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=amd64 BUILD_TARGET=solaris  VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86   BUILD_TARGET=solaris  VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     BUILD_TARGET_ARCH=amd64 BUILD_TARGET=win	     VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86   BUILD_TARGET=win	     VBOX_ONLY_EXTPACKS=1
+
+
+extpacks-build: \
+	extpacks-build-solaris.amd64 \
+	extpacks-build-solaris.x86 \
+	extpacks-build-linux.x86 \
+	extpacks-build-linux.amd64 \
+	extpacks-build-win.x86 \
+	extpacks-build-win.amd64
+#	extpacks-build-darwin.x86
+#	extpacks-build-darwin.amd64
+#	extpacks-build-freebsd.x86
+#	extpacks-build-freebsd.amd64
+#	extpacks-build-os2.x86
+
+VBOX_EXTPACKS_BUILD.amd64 = VBOX_ONLY_EXTPACKS=1 \
+	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
+	KBUILD_TARGET_ARCH=amd64 BUILD_TARGET_ARCH=amd64 \
+	VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+VBOX_EXTPACKS_BUILD.x86 = VBOX_ONLY_EXTPACKS=1 \
+	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
+	KBUILD_TARGET_ARCH=x86 BUILD_TARGET_ARCH=x86 \
+	VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+# Automatically determine the extpack build subdir name. Used for figuring out
+# directory names inside the extension pack building VMs.
+VBOX_EXTPACKS_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
+
+# When building in parallel on a Windows host, make sure we finish the host
+# bit before kicking off any UNIX guest or we'll run into file sharing issues.
+ifeq ($(KBUILD_TARGET),win)
+VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST = extpacks-build-win.x86 extpacks-build-win.amd64
+else
+VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST =
+endif
+
+extpacks-build-win.amd64:
+ifeq ($(KBUILD_TARGET),win)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building Windows/amd64 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+endif
+
+extpacks-build-win.x86:
+ifeq ($(KBUILD_TARGET),win)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) packing
+else
+	$(call MSG_L1,Building Windows/x86 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+endif
+
+ifeq ($(KBUILD_TARGET),solaris)
+extpacks-build-solaris.amd64:
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+
+extpacks-build-solaris.x86: extpacks-build-solaris.amd64
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+
+else
+# Serialize 32-bit and 64-bit ASSUMING the same VM builds both.
+extpacks-build-solaris.rsync-into-vm: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude FetchDir --exclude tinderclient.log --exclude win.amd64 --exclude win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+
+extpacks-build-solaris.build-it: extpacks-build-solaris.rsync-into-vm
+	$(call MSG_L1,Building Solaris/amd64 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+	$(call MSG_L1,Building Solaris/x86 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+
+extpacks-build-solaris.rsync-out-of-vm: extpacks-build-solaris.build-it
+	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
+	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+
+.NOTPARALLEL: extpacks-build-solaris.rsync-out-of-vm extpacks-build-solaris.rsync-into-vm
+.PHONY:       extpacks-build-solaris.rsync-out-of-vm extpacks-build-solaris.rsync-into-vm extpacks-build-solaris.build-it
+
+extpacks-build-solaris.amd64: extpacks-build-solaris.rsync-out-of-vm
+extpacks-build-solaris.x86: extpacks-build-solaris.rsync-out-of-vm
+endif
+
+extpacks-build-os2.x86:
+#ifeq ($(KBUILD_TARGET),os2)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+#else
+#	$(VBOX_KMK_TIME) ssh vbox@192.168.27.3 " cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) "
+#endif
+
+extpacks-build-linux.amd64:   $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building Linux/amd64 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.12 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+endif
+
+extpacks-build-linux.x86:   $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building Linux/x86 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.2 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+endif
+
+extpacks-build-freebsd.amd64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building FreeBSD/amd64 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.14 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+endif
+
+extpacks-build-freebsd.x86: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.x86)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building FreeBSD/x86 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+endif
+
+extpacks-build-darwin.amd64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building Darwin/amd64 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.15 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+endif
+
+extpacks-build-darwin.x86: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building Darwin/x86 extension packs)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+endif
+
+
+VBOX_WITH_EXTPACK_OS_ARCHS ?= linux.amd64 linux.x86 solaris.amd64 solaris.x86 win.amd64 win.x86
+# +++  darwin.amd64 darwin.x86 freebsd.amd64 freebsd.x86 os2.x86
+extpacks-packing:
+	+ $(KMK) VBOX_ONLY_EXTPACKS=1 packing
+
+.PHONY: \
+	extpacks-build-win.x86 \
+	extpacks-build-win.amd64 \
+	extpacks-build-solaris.amd64 \
+	extpacks-build-solaris.x86 \
+	extpacks-build-os2.x86 \
+	extpacks-build-linux.amd64 \
+	extpacks-build-linux.x86 \
+	extpacks-build-freebsd.amd64 \
+	extpacks-build-freebsd.x86 \
+	extpacks-build-darwin.amd64 \
+	extpacks-build-darwin.x86 \
+	extpacks-packing
 
 
 #
