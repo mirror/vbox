@@ -734,6 +734,7 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    int rc = VINF_SUCCESS;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     LogFlowFunc(("pDrvIns=%#p pCfg=%#p\n", pDrvIns, pCfg));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
@@ -749,10 +750,26 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->IPort.pfnQueryDeviceLocation         = drvscsiQueryDeviceLocation;
     pThis->IPortAsync.pfnTransferCompleteNotify = drvscsiTransferCompleteNotify;
 
+    /* Query the SCSI port interface above. */
+    pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
+    AssertMsgReturn(pThis->pDevScsiPort, ("Missing SCSI port interface above\n"), VERR_PDM_MISSING_INTERFACE);
+
+    /* Query the optional LED interface above. */
+    pThis->pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
+    if (pThis->pLedPort != NULL)
+    {
+        /* Get The Led. */
+        rc = pThis->pLedPort->pfnQueryStatusLed(pThis->pLedPort, 0, &pThis->pLed);
+        if (RT_FAILURE(rc))
+            pThis->pLed = &pThis->Led;
+    }
+    else
+        pThis->pLed = &pThis->Led;
+
     /*
      * Try attach driver below and query it's block interface.
      */
-    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
+    rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
     AssertMsgReturn(RT_SUCCESS(rc), ("Attaching driver below failed rc=%Rrc\n", rc), rc);
 
     /*
@@ -771,23 +788,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
         return VERR_PDM_MISSING_INTERFACE;
     }
 
-    /* Query the SCSI port interface above. */
-    pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
-    AssertMsgReturn(pThis->pDevScsiPort, ("Missing SCSI port interface above\n"), VERR_PDM_MISSING_INTERFACE);
-
     pThis->pDrvMount = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMOUNT);
-
-    /* Query the optional LED interface above. */
-    pThis->pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
-    if (pThis->pLedPort != NULL)
-    {
-        /* Get The Led. */
-        rc = pThis->pLedPort->pfnQueryStatusLed(pThis->pLedPort, 0, &pThis->pLed);
-        if (RT_FAILURE(rc))
-            pThis->pLed = &pThis->Led;
-    }
-    else
-        pThis->pLed = &pThis->Led;
 
     /* Try to get the optional async block interface. */
     pThis->pDrvBlockAsync = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBLOCKASYNC);
