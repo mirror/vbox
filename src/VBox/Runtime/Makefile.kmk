@@ -57,7 +57,9 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  #
  # Normal build.
  #
- include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ ifndef VBOX_ONLY_EXTPACKS
+  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ endif
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
  BLDPROGS += uniread

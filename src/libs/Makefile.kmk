@@ -32,13 +32,13 @@ if  !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_TESTSUITE) \
 endif
 
 # PNG support (for screenshots).
-if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_TESTSUITE) \
+if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_TESTSUITE) \
  && "$(SDK_VBOX_LIBPNG_INCS)" == "$(PATH_ROOT)/src/libs/libpng-1.2.8"
  include $(PATH_SUB_CURRENT)/libpng-1.2.8/Makefile.kmk
 endif # !VBOX_ONLY_DOCS
 
 # Libcurl for inet access
-if defined(VBOX_WITH_LIBCURL) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_TESTSUITE) \
+if defined(VBOX_WITH_LIBCURL) && !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_TESTSUITE) \
  && "$(SDK_VBOX_LIBCURL_INCS)" == "$(PATH_ROOT)/src/libs/curl-7.19.4/include"
  include $(PATH_SUB_CURRENT)/curl-7.19.4/Makefile.kmk
 endif
@@ -55,8 +55,7 @@ if !defined(VBOX_ONLY_SDK) \
 endif
 
 # libjpeg for VRDP video redirection
-if defined(VBOX_WITH_VRDP) && defined(VBOX_WITH_VRDP_VIDEO_CHANNEL) \
- && !defined(VBOX_ONLY_EXTPACKS)
+if defined(VBOX_WITH_VRDP) && defined(VBOX_WITH_VRDP_VIDEO_CHANNEL)
  include $(PATH_SUB_CURRENT)/jpeg-8a/Makefile.kmk
 endif
 
@@ -80,8 +79,7 @@ if defined(VBOX_WITH_MAIN) \
  endif
 endif
 
-if  !defined(VBOX_ONLY_EXTPACKS) \
- && !defined(VBOX_ONLY_TESTSUITE)
+if !defined(VBOX_ONLY_TESTSUITE)
  ifeq ($(SDK_VBOX_LIBXML2_INCS),$(PATH_ROOT)/src/libs/libxml2-2.6.30/include)
   include $(PATH_SUB_CURRENT)/libxml2-2.6.30/Makefile.kmk
  endif

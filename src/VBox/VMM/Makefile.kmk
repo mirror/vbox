@@ -239,16 +239,6 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 #endif
 
 
-
-#
-# SSMStandalone.lib/a for linking with VBoxSVC and other executables.
-#
-LIBRARIES += SSMStandalone
-SSMStandalone_TEMPLATE  = VBOXR3EXE
-SSMStandalone_DEFS      = IN_VMM_R3 IN_VMM_STATIC SSM_STANDALONE
-SSMStandalone_SOURCES   = SSM.cpp
-
-
 if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
 
  #
@@ -322,7 +312,7 @@ if1of ($(VBOX_LDR_FMT), pe lx)
 endif # R0: pe + lx
 
 
-ifdef VBOX_WITH_RAW_MODE
+if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  #
  # VMMGC.gc
  #
@@ -416,115 +406,130 @@ ifdef VBOX_WITH_RAW_MODE
  VMMGC_SOURCES += VMMGC/VMMGC99.asm
 
  VMMGC/VMMGCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMGCDeps.cpp to .c
-endif # VBOX_WITH_RAW_MODE
+endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
 
 
-#
-# VMMR0.r0
-#
-SYSMODS += VMMR0
-VMMR0_TEMPLATE  = VBoxR0
-VMMR0_SYSSUFF   = .r0
+ifndef VBOX_ONLY_EXTPACKS
+ #
+ # VMMR0.r0
+ #
+ SYSMODS += VMMR0
+ VMMR0_TEMPLATE  = VBoxR0
+ VMMR0_SYSSUFF   = .r0
 
-VMMR0_DEFS      = IN_VMM_R0 IN_RT_R0 IN_DIS DIS_CORE_ONLY IN_GVMM_R0 IN_GMM_R0 IN_INTNET_R0 \
-	$(VMM_COMMON_DEFS) RTASSERT_HAVE_SHOULD_PANIC
-## @todo eliminate IN_GVMM_R0 IN_GMM_R0
-ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
- VMMR0_DEFS    += VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-endif
-VMMR0_DEFS.darwin = VMM_R0_SWITCH_STACK
-VMMR0_DEFS.darwin.x86 = \
-	VBOX_WITH_2X_4GB_ADDR_SPACE   VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 \
-	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
-VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
+ VMMR0_DEFS      = IN_VMM_R0 IN_RT_R0 IN_DIS DIS_CORE_ONLY IN_GVMM_R0 IN_GMM_R0 IN_INTNET_R0 \
+ 	$(VMM_COMMON_DEFS) RTASSERT_HAVE_SHOULD_PANIC
+ ## @todo eliminate IN_GVMM_R0 IN_GMM_R0
+ ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+  VMMR0_DEFS    += VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+ endif
+ VMMR0_DEFS.darwin = VMM_R0_SWITCH_STACK
+ VMMR0_DEFS.darwin.x86 = \
+ 	VBOX_WITH_2X_4GB_ADDR_SPACE   VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 \
+ 	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
+ VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
 
-ifeq ($(VBOX_LDR_FMT),elf)
- VMMR0_LDFLAGS  = -e VMMR0EntryEx
-endif
-VMMR0_INCS      = \
-	. \
-	PATM
+ ifeq ($(VBOX_LDR_FMT),elf)
+  VMMR0_LDFLAGS  = -e VMMR0EntryEx
+ endif
+ VMMR0_INCS      = \
+ 	. \
+ 	PATM
 
-VMMR0_SOURCES   = \
-	VMMR0/CPUMR0.cpp \
-	VMMR0/CPUMR0A.asm \
-	VMMR0/GMMR0.cpp \
-	VMMR0/GVMMR0.cpp \
-	VMMR0/HWACCMR0.cpp \
-	VMMR0/HWACCMR0A.asm \
-	VMMR0/HWSVMR0.cpp \
-	VMMR0/HWVMXR0.cpp \
-	VMMR0/PDMR0Device.cpp \
-	VMMR0/PDMR0Driver.cpp \
-	VMMR0/PGMR0.cpp \
-	VMMR0/PGMR0SharedPage.cpp \
-	VMMR0/TRPMR0.cpp \
-	VMMR0/TRPMR0A.asm \
-	VMMR0/VMMR0.cpp \
-	VMMRZ/DBGFRZ.cpp \
-	VMMRZ/VMMRZ.cpp \
-	VMMAll/CPUMAllA.asm \
-	VMMAll/CPUMAllRegs.cpp \
-	VMMAll/CPUMStack.cpp \
-	VMMAll/DBGFAll.cpp \
-	VMMAll/EMAll.cpp \
-	VMMAll/EMAllA.asm \
-	VMMAll/FTMAll.cpp \
-	VMMAll/HWACCMAll.cpp \
-	VMMAll/IOMAll.cpp \
-	VMMAll/IOMAllMMIO.cpp \
-	VMMAll/MMAll.cpp \
-	VMMAll/MMAllHyper.cpp \
-	VMMAll/MMAllPagePool.cpp \
-	VMMAll/PDMAll.cpp \
-	VMMAll/PDMAllCritSect.cpp \
-	VMMAll/PDMAllQueue.cpp \
-	VMMAll/PGMAll.cpp \
-	VMMAll/PGMAllHandler.cpp \
-	VMMAll/PGMAllMap.cpp \
-	VMMAll/PGMAllPhys.cpp \
-	VMMAll/PGMAllPool.cpp \
-	VMMAll/REMAll.cpp \
-	VMMAll/SELMAll.cpp \
-	VMMAll/TMAll.cpp \
-	VMMAll/TMAllCpu.cpp \
-	VMMAll/TMAllReal.cpp \
-	VMMAll/TMAllVirtual.cpp \
-	VMMAll/TRPMAll.cpp \
-	VMMAll/VMAll.cpp \
-	VMMAll/VMMAll.cpp \
-	VMMAll/VMMAllA.asm
-ifeq ($(VBOX_LDR_FMT),pe)
- VMMR0_SOURCES += VMMR0/VMMR0.def
-endif
-ifeq ($(VBOX_LDR_FMT),lx)
- VMMR0_SOURCES += $(PATH_VMMR0Imp)/VMMR0.def
-endif
-VMMR0_SOURCES.amd64 = \
-	VMMR0/VMMR0JmpA-amd64.asm
-VMMR0_SOURCES.x86 = \
-	VMMR0/VMMR0JmpA-x86.asm
-VMMR0_SOURCES.darwin.x86 = \
-	VMMRZ/PGMRZDynMap.cpp
+ VMMR0_SOURCES   = \
+ 	VMMR0/CPUMR0.cpp \
+ 	VMMR0/CPUMR0A.asm \
+ 	VMMR0/GMMR0.cpp \
+ 	VMMR0/GVMMR0.cpp \
+ 	VMMR0/HWACCMR0.cpp \
+ 	VMMR0/HWACCMR0A.asm \
+ 	VMMR0/HWSVMR0.cpp \
+ 	VMMR0/HWVMXR0.cpp \
+ 	VMMR0/PDMR0Device.cpp \
+ 	VMMR0/PDMR0Driver.cpp \
+ 	VMMR0/PGMR0.cpp \
+ 	VMMR0/PGMR0SharedPage.cpp \
+ 	VMMR0/TRPMR0.cpp \
+ 	VMMR0/TRPMR0A.asm \
+ 	VMMR0/VMMR0.cpp \
+ 	VMMRZ/DBGFRZ.cpp \
+ 	VMMRZ/VMMRZ.cpp \
+ 	VMMAll/CPUMAllA.asm \
+ 	VMMAll/CPUMAllRegs.cpp \
+ 	VMMAll/CPUMStack.cpp \
+ 	VMMAll/DBGFAll.cpp \
+ 	VMMAll/EMAll.cpp \
+ 	VMMAll/EMAllA.asm \
+ 	VMMAll/FTMAll.cpp \
+ 	VMMAll/HWACCMAll.cpp \
+ 	VMMAll/IOMAll.cpp \
+ 	VMMAll/IOMAllMMIO.cpp \
+ 	VMMAll/MMAll.cpp \
+ 	VMMAll/MMAllHyper.cpp \
+ 	VMMAll/MMAllPagePool.cpp \
+ 	VMMAll/PDMAll.cpp \
+ 	VMMAll/PDMAllCritSect.cpp \
+ 	VMMAll/PDMAllQueue.cpp \
+ 	VMMAll/PGMAll.cpp \
+ 	VMMAll/PGMAllHandler.cpp \
+ 	VMMAll/PGMAllMap.cpp \
+ 	VMMAll/PGMAllPhys.cpp \
+ 	VMMAll/PGMAllPool.cpp \
+ 	VMMAll/REMAll.cpp \
+ 	VMMAll/SELMAll.cpp \
+ 	VMMAll/TMAll.cpp \
+ 	VMMAll/TMAllCpu.cpp \
+ 	VMMAll/TMAllReal.cpp \
+ 	VMMAll/TMAllVirtual.cpp \
+ 	VMMAll/TRPMAll.cpp \
+ 	VMMAll/VMAll.cpp \
+ 	VMMAll/VMMAll.cpp \
+ 	VMMAll/VMMAllA.asm
+ ifeq ($(VBOX_LDR_FMT),pe)
+  VMMR0_SOURCES += VMMR0/VMMR0.def
+ endif
+ ifeq ($(VBOX_LDR_FMT),lx)
+  VMMR0_SOURCES += $(PATH_VMMR0Imp)/VMMR0.def
+ endif
+ VMMR0_SOURCES.amd64 = \
+ 	VMMR0/VMMR0JmpA-amd64.asm
+ VMMR0_SOURCES.x86 = \
+ 	VMMR0/VMMR0JmpA-x86.asm
+ VMMR0_SOURCES.darwin.x86 = \
+ 	VMMRZ/PGMRZDynMap.cpp
 
-# disable annoying warnings about array subscript above array bounds in aPages[]
-PGMPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
-VMMAll/PGMAllPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
+ VMMR0_LIBS = \
+ 	$(PATH_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB)
+ ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
+  VMMR0_LIBS += \
+  	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ endif
+endif # !VBOX_ONLY_EXTPACKS
 
 
-VMMR0_LIBS = \
-	$(PATH_LIB)/ServicesR0$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB)
-ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
- VMMR0_LIBS += \
- 	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
-endif
+ifndef VBOX_ONLY_EXTPACKS
+ #
+ # SSMStandalone.lib/a for linking with VBoxSVC and other executables.
+ #
+ LIBRARIES += SSMStandalone
+ SSMStandalone_TEMPLATE = VBOXR3EXE
+ SSMStandalone_DEFS     = IN_VMM_R3 IN_VMM_STATIC SSM_STANDALONE
+ SSMStandalone_SOURCES  = SSM.cpp
+endif # !VBOX_ONLY_EXTPACKS
+
 
 #
 # For vmmGetSvnRev.
 #
 VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+#
+# Disable annoying warnings about array subscript above array bounds in aPages[]
+#
+PGMPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
+VMMAll/PGMAllPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
