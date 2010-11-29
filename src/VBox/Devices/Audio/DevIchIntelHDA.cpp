@@ -650,6 +650,7 @@ static void inline hdaUpdatePosBuf(INTELHDLinkState *pState, PHDASTREAMTRANSFERD
 }
 static uint32_t inline hdaFifoWToSz(INTELHDLinkState *pState, PHDASTREAMTRANSFERDESC pStreamDesc)
 {
+#if 0
     switch(HDA_STREAM_REG2(pState, FIFOW, pStreamDesc->u8Strm))
     {
         case HDA_SDFIFOW_8B: return 8;
@@ -658,6 +659,7 @@ static uint32_t inline hdaFifoWToSz(INTELHDLinkState *pState, PHDASTREAMTRANSFER
         default:
             AssertMsgFailed(("hda: unsupported value (%x) in SDFIFOW(,%d)\n", HDA_REG_IND(pState, pStreamDesc->u8Strm), pStreamDesc->u8Strm));
     }
+#endif
     return 0;
 } 
 
@@ -1700,7 +1702,7 @@ DECLCALLBACK(void) hdaTransfer(CODECState *pCodecState, ENMSOUNDSOURCE src, int 
         
         /* Process end of buffer condition. */
         hdaStreamCounterUpdate(pState, pBdle, &stStreamDesc, nBytes);
-        fStop = !hdaDoNextTransferCycle(pState, pBdle, &stStreamDesc);
+        fStop = !fStop ? !hdaDoNextTransferCycle(pState, pBdle, &stStreamDesc) : fStop;
     }
 }
 
@@ -1909,7 +1911,7 @@ static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
  * @remark  The original sources didn't install a reset handler, but it seems to
  *          make sense to me so we'll do it.
  */
-static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
+static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     GCAP(&pThis->hda) = 0x4401; /* see 6.2.1 */
@@ -1937,6 +1939,7 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
     else
         pThis->hda.pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->hda.cbRirbBuf);
 
+#if 0
     /* According to ICH6 datasheet, 0x40000 is default value for stream descriptor register 23:20
      * bits are reserved for stream number 18.2.33 */
     SDCTL(&pThis->hda, 0) = 0x40000;
@@ -1961,6 +1964,26 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns)
 
     SDFIFOW(&pThis->hda, 0) = HDA_SDFIFOW_8B;
     SDFIFOW(&pThis->hda, 4) = HDA_SDFIFOW_32B;
+#endif
+    HDABDLEDESC stEmptyBdle;
+    for(uint8_t u8Strm = 0; u8Strm < 8; ++u8Strm)
+    {
+        HDASTREAMTRANSFERDESC stStreamDesc;
+        PHDABDLEDESC pBdle = NULL;
+        if (u8Strm == 0)
+            pBdle = &pThis->hda.stInBdle;
+        else if(u8Strm == 4)
+            pBdle = &pThis->hda.stOutBdle;
+        else
+        {
+            memset(&stEmptyBdle, 0, sizeof(HDABDLEDESC));
+            pBdle = &stEmptyBdle;
+        }
+        hdaInitTransferDescriptor(&pThis->hda, pBdle, u8Strm, &stStreamDesc);
+        /* hdaStreamReset prevents changing SRST bit, so we zerro it here forcely. */
+        HDA_STREAM_REG2(&pThis->hda, CTL, u8Strm) = 0; 
+        hdaStreamReset(&pThis->hda, pBdle, &stStreamDesc, u8Strm);
+    }
 
     /* emulateion of codec "wake up" HDA spec (5.5.1 and 6.5)*/
     STATESTS(&pThis->hda) = 0x1;
