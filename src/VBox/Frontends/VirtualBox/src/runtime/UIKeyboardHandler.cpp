@@ -134,6 +134,10 @@ void UIKeyboardHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineW
 /* Cleanup listened objects: */
 void UIKeyboardHandler::cleanupListener(ulong uIndex)
 {
+    /* Check if we should release keyboard first: */
+    if (uIndex == m_iKeyboardCaptureViewIndex)
+        releaseKeyboard();
+
     /* If window still registered: */
     if (m_windows.contains(uIndex))
     {

@@ -116,6 +116,10 @@ void UIMouseHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineWind
 /* Cleanup listener for particular machine-window: */
 void UIMouseHandler::cleanupListener(ulong uIndex)
 {
+    /* Check if we should release mouse first: */
+    if (uIndex == m_iMouseCaptureViewIndex)
+        releaseMouse();
+
     /* If that window still registered: */
     if (m_windows.contains(uIndex))
     {
