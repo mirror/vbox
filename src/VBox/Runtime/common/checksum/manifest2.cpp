@@ -675,6 +675,26 @@ RTDECL(int) RTManifestEntryRemove(RTMANIFEST hManifest, const char *pszEntry)
 }
 
 
+#if 0
+static int rtManifestReadLine(RTVFSIOSTREAM hVfsIos, char *pszLine, size_t cbLine)
+{
+    /* This is horribly slow right now, but it's not a biggy as the input is
+       usually cached in memory somewhere... */
+    *pszLine = '\0';
+    while (cbLine > 1)
+    {
+        int rc = RTVfsIoStrmRead(hVfsIos, pszLine, 1, true /*fBLocking*/, NULL);
+        if (RT_FAILURE(rc))
+        {
+            *pszLine = '\0';
+            return rc == VERR_EOF ? VINF_EOF : rc;
+        }
+    }
+    return rc;
+}
+#endif
+
+
 /**
  * Reads in a "standard" manifest.
  *
