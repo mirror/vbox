@@ -2037,6 +2037,7 @@ sub CheckForSsl(strOptSsl)
    strPathSsl = UnixSlashes(PathAbs(strPathSsl))
    CfgPrint "SDK_VBOX_OPENSSL_INCS := " & strPathSsl & "/include"
    CfgPrint "SDK_VBOX_OPENSSL_LIBS := " & strPathSsl & "/lib/ssleay32.lib" & " " & strPathSsl & "/lib/libeay32.lib"
+   CfgPrint "SDK_VBOX_BLD_OPENSSL_LIBS := " & strPathSsl & "/lib/ssleay32.lib" & " " & strPathSsl & "/lib/libeay32.lib"
 
    PrintResult "openssl", strPathSsl
 end sub

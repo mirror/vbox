@@ -61,7 +61,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
  BLDPROGS += uniread
- LIBRARIES += RuntimeR3 RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
+ LIBRARIES += RuntimeR3 RuntimeBldProg RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
  LIBRARIES.win += RuntimeR0Stub
  ifdef VBOX_WITH_RAW_MODE
   LIBRARIES += RuntimeRC
@@ -184,7 +184,7 @@ endif
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
 RuntimeR3_TEMPLATE      = VBoxR3Static
-RuntimeR3_SDKS          = VBOX_LIBXML2 VBOX_BOOST
+RuntimeR3_SDKS          = VBOX_LIBXML2 VBOX_OPENSSL VBOX_BOOST ## @todo why is BOOST and XML2 here? r3/xml.cpp is not in this lib...
 RuntimeR3_SDKS.win      = WINPSDK $(VBOX_WINDDK)
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
@@ -233,6 +233,17 @@ RuntimeR3_SOURCES       = \
 	common/checksum/md5str.cpp \
 	common/checksum/ipv4.cpp \
 	common/checksum/ipv6.cpp \
+	common/checksum/manifest.cpp \
+	common/checksum/manifest2.cpp \
+	common/checksum/manifest3.cpp \
+	common/checksum/manifest-file.cpp \
+	common/checksum/RTSha1Digest.cpp \
+	common/checksum/sha1.cpp \
+	common/checksum/sha1str.cpp \
+	common/checksum/sha256.cpp \
+	common/checksum/sha256str.cpp \
+	common/checksum/sha512.cpp \
+	common/checksum/sha512str.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
 	common/dbg/dbgmod.cpp \
@@ -912,6 +923,19 @@ RuntimeR3L4_SOURCES = \
 
 
 #
+# RuntimeBldProg - Static Runtime for build programs.
+#
+# Note! This is a bit of hacky since kBuild doesn't support building libraries
+#       for build programs.
+#
+RuntimeBldProg_TEMPLATE         := VBOXBLDPROG
+RuntimeBldProg_EXTENDS          := RuntimeR3
+RuntimeBldProg_BLD_TRG          := $(KBUILD_HOST)
+RuntimeBldProg_BLD_TRG_ARCH     := $(KBUILD_HOST_ARCH)
+RuntimeBldProg_BLD_TRG_CPU      := $(KBUILD_HOST_CPU)
+
+
+#
 # RuntimeGuestR3 - Guest Additions Runtime (static/exe).
 # (The KBUILD_HOST inheritance here is for l4 cross building the linux
 # additions, while .x86 is for cross building x86 while targeting amd64.)
@@ -1107,21 +1131,9 @@ endif
 VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
-	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES))
-VBoxRT_SOURCES                += \
 	r3/xml.cpp \
-	common/checksum/RTSha1Digest.cpp \
-	common/checksum/crc32-zlib.cpp \
-	common/checksum/manifest.cpp \
-	common/checksum/manifest2.cpp \
-	common/checksum/manifest3.cpp \
-	common/checksum/manifest-file.cpp \
-	common/checksum/sha1.cpp \
-	common/checksum/sha1str.cpp \
-	common/checksum/sha256.cpp \
-	common/checksum/sha256str.cpp \
-	common/checksum/sha512.cpp \
-	common/checksum/sha512str.cpp
+	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES)) \
+	common/checksum/crc32-zlib.cpp
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += common/misc/s3.cpp
 endif
@@ -1912,7 +1924,7 @@ define def_errmsgwin_deps
  $(lib)_common/err/errmsgxpcom.cpp_INCS = $(IPRT_OUT_DIR)
  $(lib)_common/err/errmsgxpcom.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 endef
-$(foreach lib,RuntimeR3 VBoxRT RuntimeLnxHostR3,$(eval $(def_errmsgwin_deps)))
+$(foreach lib,RuntimeR3 RuntimeBldProg VBoxRT RuntimeLnxHostR3,$(eval $(def_errmsgwin_deps)))
 
 
 #

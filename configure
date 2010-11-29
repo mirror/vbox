@@ -850,6 +850,7 @@ EOF
       if test_execute nofatal; then
         cnf_append "SDK_VBOX_OPENSSL_INCS" "`strip_I "$INCCRYPTO"`"
         cnf_append "SDK_VBOX_OPENSSL_LIBS" "`strip_l "$LIBCRYPTO"`"
+        cnf_append "SDK_VBOX_BLD_OPENSSL_LIBS" "`strip_l "$LIBCRYPTO"`"
       fi
     fi
   fi

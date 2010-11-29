@@ -2180,6 +2180,10 @@ if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_OPENSSL_ALL = 1
 endif
 
+SDK_VBOX_BLD_OPENSSL      = .
+SDK_VBOX_BLD_OPENSSL_EXTENDS = VBOX_OPENSSL
+SDK_VBOX_BLD_OPENSSL_LIBS ?= $(PATH_LIB)/VBoxBldProg-libcrypto$(VBOX_SUFF_LIB)
+
 VBOX_WITH_LIBCURL = 1
 SDK_VBOX_LIBCURL       = .
 SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.19.4/include
@@ -3861,7 +3865,7 @@ TEMPLATE_VBOXBLDPROG_CFLAGS.sparc64      = -m64
 TEMPLATE_VBOXBLDPROG_CFLAGS.release      = -O2 -fno-omit-frame-pointer -fno-strict-aliasing
 TEMPLATE_VBOXBLDPROG_CFLAGS.profile      = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.profile)
 TEMPLATE_VBOXBLDPROG_CFLAGS.kprofile     = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.kprofile)
-TEMPLATE_VBOXBLDPROG_CXXFLAGS            = -g -pipe $(VBOX_GCC_PEDANTIC_CXX)
+TEMPLATE_VBOXBLDPROG_CXXFLAGS            = -g -pipe $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC_Wno-variadic-macros)
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.x86        = -m32
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.sparc32    = -m32
 TEMPLATE_VBOXBLDPROG_CXXFLAGS.amd64      = -m64
@@ -3934,6 +3938,32 @@ $(warning Warning: VBOX Build: Target $(KBUILD_HOST) is not officially supported
  endif
 
 endif # !win
+
+
+#
+# Advanced build programs using IPRT, openssl and worse stuff.
+#
+TEMPLATE_VBoxAdvBldProg = Advanced VBox Build Program
+TEMPLATE_VBoxAdvBldProg_EXTENDS = VBOXBLDPROG
+TEMPLATE_VBoxAdvBldProg_SDKS    = $(TEMPLATE_VBOXBLDPROG_SDKS) VBOX_BLD_OPENSSL
+TEMPLATE_VBoxAdvBldProg_DEFS    = $(TEMPLATE_VBOXBLDPROG_DEFS) IN_RT_R3
+TEMPLATE_VBoxAdvBldProg_LIBS    = \
+	$(PATH_LIB)/RuntimeBldProg$(VBOX_SUFF_LIB) \
+	$(TEMPLATE_VBOXBLDPROG_LIBS)
+TEMPLATE_VBoxAdvBldProg_LIBS.darwin = \
+	iconv \
+	$(TEMPLATE_VBOXBLDPROG_LIBS.darwin)
+TEMPLATE_VBoxAdvBldProg_LIBS.freebsd = \
+	iconv \
+	rt \
+	$(TEMPLATE_VBOXBLDPROG_LIBS.freebsd)
+TEMPLATE_VBoxAdvBldProg_LIBS.linux = \
+	crypt \
+	$(TEMPLATE_VBOXBLDPROG_LIBS.linux)
+TEMPLATE_VBoxAdvBldProg_LIBS.solaris = \
+	kstat \
+	contract \
+	$(TEMPLATE_VBOXBLDPROG_LIBS.solaris)
 
 
 #
