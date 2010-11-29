@@ -28,6 +28,7 @@
 #include "UIMouseHandler.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
 #include "UIMachineView.h"
 #include "UIFrameBuffer.h"
 
@@ -79,45 +80,61 @@ void UIMouseHandler::destroy(UIMouseHandler *pMouseHandler)
     delete pMouseHandler;
 }
 
-/* Registers new machine-view: */
-void UIMouseHandler::addMachineView(ulong uViewIndex, UIMachineView *pMachineView)
+/* Prepare listener for particular machine-window: */
+void UIMouseHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineWindow)
 {
+    /* If that window is NOT registered yet: */
+    if (!m_windows.contains(uIndex))
+    {
+        /* Register machine-window: */
+        m_windows.insert(uIndex, pMachineWindow->machineWindow());
+        /* Install event-filter for machine-window: */
+        m_windows[uIndex]->installEventFilter(this);
+    }
+
     /* If that view is NOT registered yet: */
-    if (!m_views.contains(uViewIndex))
+    if (!m_views.contains(uIndex))
     {
         /* Register machine-view: */
-        m_views.insert(uViewIndex, pMachineView);
+        m_views.insert(uIndex, pMachineWindow->machineView());
         /* Install event-filter for machine-view: */
-        m_views[uViewIndex]->installEventFilter(this);
+        m_views[uIndex]->installEventFilter(this);
         /* Make machine-view notify mouse-handler about resizeHintDone(): */
-        connect(m_views[uViewIndex], SIGNAL(resizeHintDone()), this, SLOT(sltMousePointerShapeChanged()));
+        connect(m_views[uIndex], SIGNAL(resizeHintDone()), this, SLOT(sltMousePointerShapeChanged()));
     }
 
     /* If that viewport is NOT registered yet: */
-    if (!m_viewports.contains(uViewIndex))
+    if (!m_viewports.contains(uIndex))
     {
         /* Register machine-view-viewport: */
-        m_viewports.insert(uViewIndex, pMachineView->viewport());
+        m_viewports.insert(uIndex, pMachineWindow->machineView()->viewport());
         /* Install event-filter for machine-view-viewport: */
-        m_viewports[uViewIndex]->installEventFilter(this);
+        m_viewports[uIndex]->installEventFilter(this);
     }
 }
 
-/* Remove registered machine-view: */
-void UIMouseHandler::delMachineView(ulong uViewIndex)
+/* Cleanup listener for particular machine-window: */
+void UIMouseHandler::cleanupListener(ulong uIndex)
 {
-    /* If that view is registered yet: */
-    if (m_views.contains(uViewIndex))
+    /* If that window still registered: */
+    if (m_windows.contains(uIndex))
     {
-        /* Unregister machine-view: */
-        m_views.remove(uViewIndex);
+        /* Unregister machine-window: */
+        m_windows.remove(uIndex);
     }
 
-    /* If that viewport is registered yet: */
-    if (m_viewports.contains(uViewIndex))
+    /* If that view still registered: */
+    if (m_views.contains(uIndex))
+    {
+        /* Unregister machine-view: */
+        m_views.remove(uIndex);
+    }
+
+    /* If that viewport still registered: */
+    if (m_viewports.contains(uIndex))
     {
         /* Unregister machine-view-viewport: */
-        m_viewports.remove(uViewIndex);
+        m_viewports.remove(uIndex);
     }
 }
 
@@ -426,7 +443,52 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
     /* If that object is of QWidget type: */
     if (QWidget *pWatchedWidget = qobject_cast<QWidget*>(pWatched))
     {
-        /* If it's a machine-view-viewport: */
+        /* Check if that widget is in windows list: */
+        if (m_windows.values().contains(pWatchedWidget))
+        {
+#ifdef Q_WS_WIN
+            /* Handle window events: */
+            switch (pEvent->type())
+            {
+                case QEvent::Move:
+                {
+                    /* Update mouse clipping if window was moved
+                     * by Operating System desktop manager: */
+                    updateMouseCursorClipping();
+                    break;
+                }
+                default:
+                    break;
+            }
+#endif /* Q_WS_WIN */
+        }
+
+        else
+
+        /* Check if that widget is of UIMachineView type: */
+        if (UIMachineView *pWatchedMachineView = qobject_cast<UIMachineView*>(pWatchedWidget))
+        {
+            /* Check if that widget is in views list: */
+            if (m_views.values().contains(pWatchedMachineView))
+            {
+                /* Handle view events: */
+                switch (pEvent->type())
+                {
+                    case QEvent::FocusOut:
+                    {
+                        /* Release the mouse: */
+                        releaseMouse();
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        }
+
+        else
+
+        /* Check if that widget is in viewports list: */
         if (m_viewports.values().contains(pWatchedWidget))
         {
             /* Get current watched widget screen id: */
@@ -544,23 +606,6 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
 #endif /* Q_WS_WIN */
                 default:
                     break;
-            }
-        }
-        /* If no => check if that widget is of UIMachineView type: */
-        else if (UIMachineView *pWatchedMachineView = qobject_cast<UIMachineView*>(pWatchedWidget))
-        {
-            /* If it's a machine-view itself => handle machine-view events: */
-            if (m_views.values().contains(pWatchedMachineView))
-            {
-                switch (pEvent->type())
-                {
-                    case QEvent::FocusOut:
-                        /* Just release the mouse: */
-                        releaseMouse();
-                        break;
-                    default:
-                        break;
-                }
             }
         }
     }
