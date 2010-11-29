@@ -19,12 +19,25 @@
 #define __VBoxFBOverlayCommon_h__
 
 #if defined(DEBUG_misha)
+DECLINLINE(VOID) vboxDbgPrintF(LPCSTR szString, ...)
+{
+    char szBuffer[4096] = {0};
+    va_list pArgList;
+    va_start(pArgList, szString);
+    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
+    va_end(pArgList);
+
+    OutputDebugStringA(szBuffer);
+}
+
 # include "iprt/stream.h"
 # define VBOXQGLLOG(_m) RTPrintf _m
 # define VBOXQGLLOGREL(_m) do { RTPrintf _m ; LogRel( _m ); } while(0)
+# define VBOXQGLDBGPRINT(_m) vboxDbgPrintF _m
 #else
 # define VBOXQGLLOG(_m)    do {}while(0)
 # define VBOXQGLLOGREL(_m) LogRel( _m )
+# define VBOXQGLDBGPRINT(_m) do {}while(0)
 #endif
 #define VBOXQGLLOG_ENTER(_m) do {}while(0)
 //do{VBOXQGLLOG(("==>[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)

@@ -321,6 +321,13 @@ void VBoxVHWAHandleTable::doRemove(uint32_t h)
 
 static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBoxVHWAColorFormat & aFormat, class VBoxVHWAGlProgramMngr * pMgr, VBOXVHWAIMG_TYPE flags)
 {
+    bool bCanLinearNonFBO = false;
+    if (!aFormat.fourcc())
+    {
+        flags &= ~VBOXVHWAIMG_FBO;
+        bCanLinearNonFBO = true;
+    }
+
     const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(NULL);
     if((flags & VBOXVHWAIMG_PBO) && !info.getGlInfo().isPBOSupported())
         flags &= ~VBOXVHWAIMG_PBO;
@@ -336,21 +343,29 @@ static VBoxVHWATextureImage* vboxVHWAImageCreate(const QRect & aRect, const VBox
     if(flags & VBOXVHWAIMG_PBOIMG)
         flags &= ~VBOXVHWAIMG_PBO;
 
-    if(flags & VBOXVHWAIMG_PBOIMG)
+    if(flags & VBOXVHWAIMG_FBO)
     {
-        if(flags & VBOXVHWAIMG_FBO)
+        if(flags & VBOXVHWAIMG_PBOIMG)
         {
             VBOXQGLLOG(("FBO PBO Image\n"));
             return new VBoxVHWATextureImageFBO<VBoxVHWATextureImagePBO>(aRect, aFormat, pMgr, flags);
         }
-        VBOXQGLLOG(("PBO Image\n"));
-        return new VBoxVHWATextureImagePBO(aRect, aFormat, pMgr, flags);
-    }
-    if(flags & VBOXVHWAIMG_FBO)
-    {
         VBOXQGLLOG(("FBO Generic Image\n"));
         return new VBoxVHWATextureImageFBO<VBoxVHWATextureImage>(aRect, aFormat, pMgr, flags);
     }
+
+    if (!bCanLinearNonFBO)
+    {
+        VBOXQGLLOG(("Disabling Linear stretching\n"));
+        flags &= ~VBOXVHWAIMG_LINEAR;
+    }
+
+    if(flags & VBOXVHWAIMG_PBOIMG)
+    {
+        VBOXQGLLOG(("PBO Image\n"));
+        return new VBoxVHWATextureImagePBO(aRect, aFormat, pMgr, flags);
+    }
+
     VBOXQGLLOG(("Generic Image\n"));
     return new VBoxVHWATextureImage(aRect, aFormat, pMgr, flags);
 }
@@ -1468,6 +1483,29 @@ VBoxVHWATexture::VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat 
     mTexRect = QRect(0,0,wdt,hgt);
 }
 
+#ifdef DEBUG_misha
+void VBoxVHWATexture::dbgDump()
+{
+#if 0
+    bind();
+    GLvoid *pvBuf = malloc(4 * mRect.width() * mRect.height());
+    VBOXQGL_CHECKERR(
+        glGetTexImage(texTarget(),
+            0, /*GLint level*/
+            mColorFormat.format(),
+            mColorFormat.type(),
+            pvBuf);
+    );
+    VBOXQGLDBGPRINT(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d\">texture info</exec>\n",
+            pvBuf, mRect.width(), mRect.height()));
+    Assert(0);
+
+    free(pvBuf);
+#endif
+}
+#endif
+
+
 void VBoxVHWATexture::initParams()
 {
     GLenum tt = texTarget();
@@ -2300,7 +2338,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
         VBOXVHWAIMG_TYPE fFlags = 0;
         if(!bNoPBO)
         {
-            fFlags |= VBOXVHWAIMG_PBO | VBOXVHWAIMG_PBOIMG;
+            fFlags |= VBOXVHWAIMG_PBO | VBOXVHWAIMG_PBOIMG | VBOXVHWAIMG_LINEAR;
             if(mSettings->isStretchLinearEnabled())
                 fFlags |= VBOXVHWAIMG_FBO;
         }
@@ -3811,7 +3849,7 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
 #ifdef VBOXVHWA_USE_TEXGROUP
             0,
 #endif
-            0);
+            0 /* VBOXVHWAIMG_TYPE fFlags */);
     pDisplay->init(NULL, bUsesGuestVram ? size.VRAM() : NULL);
     mDisplay.setVGA(pDisplay);
 //    VBOXQGLLOG(("\n\n*******\n\n     viewport size is: (%d):(%d)\n\n*******\n\n", size().width(), size().height()));
@@ -5467,23 +5505,22 @@ int VBoxVHWATextureImage::initDisplay(VBoxVHWATextureImage *pDst,
             || mpDst != pDst
             || *pDstRect != mDstRect
             || *pSrcRect != mSrcRect
-            || !!(pDstRect) != !!(mpDstCKey)
+            || !!(pDstCKey) != !!(mpDstCKey)
             || !!(pSrcCKey) != !!(mpSrcCKey)
-            || mbNotIntersected != bNotIntersected)
+            || mbNotIntersected != bNotIntersected
+            || mpProgram != calcProgram(pDst, pDstCKey, pSrcCKey, bNotIntersected))
     {
         return createSetDisplay(pDst, pDstRect, pSrcRect,
                 pDstCKey, pSrcCKey, bNotIntersected);
 
     }
-    else if((pDstCKey && mpDstCKey && *pDstCKey == *mpDstCKey)
-            || (pSrcCKey && mpSrcCKey && *pSrcCKey == *mpSrcCKey))
+    else if((pDstCKey && mpDstCKey && *pDstCKey != *mpDstCKey)
+            || (pSrcCKey && mpSrcCKey && *pSrcCKey != *mpSrcCKey))
     {
         Assert(mpProgram);
         updateSetCKeys(pDstCKey, pSrcCKey);
         return VINF_SUCCESS;
     }
-    mVisibleDisplay = 0;
-    mpProgram = 0;
     return VINF_SUCCESS;
 }
 
@@ -5680,8 +5717,20 @@ void VBoxVHWATextureImage::display(VBoxVHWATextureImage *pDst, const QRect * pDs
 
 void VBoxVHWATextureImage::display()
 {
+#ifdef DEBUG_misha
+    if (mpDst)
+    {
+        dbgDump();
+    }
+
+    static bool bDisplayOn = true;
+#endif
     Assert(mVisibleDisplay);
-    if(mVisibleDisplay)
+    if(mVisibleDisplay
+#ifdef DEBUG_misha
+            && bDisplayOn
+#endif
+            )
     {
         if(mpProgram)
             mpProgram->start();
@@ -5699,6 +5748,16 @@ void VBoxVHWATextureImage::display()
                 mpDstCKey, mpSrcCKey, mbNotIntersected);
     }
 }
+
+#ifdef DEBUG_misha
+void VBoxVHWATextureImage::dbgDump()
+{
+    for (uint32_t i = 0; i < mcTex; ++i)
+    {
+        mpTex[i]->dbgDump();
+    }
+}
+#endif
 
 int VBoxVHWATextureImage::setCKey (VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst)
 {
