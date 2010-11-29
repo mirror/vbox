@@ -85,7 +85,7 @@ static RTEXITCODE DoStandardOption(int ch)
                       "\n"
                       "Usage: %s <command> [options]\n"
                       "Commands:\n"
-                      "    install --base-dir <dir> --certificate-dir <dir> --name <name> \\\n"
+                      "    install --base-dir <dir> --cert-dir <dir> --name <name> \\\n"
                       "        --tarball <tarball> --tarball-fd <fd>\n"
                       "    uninstall --base-dir <dir> --name <name>\n"
                       "    cleanup --base-dir <dir>\n"
@@ -230,6 +230,7 @@ static RTEXITCODE OpenTarFss(RTFILE hTarballFile, PRTVFSFSSTREAM phTarFss)
  */
 static RTEXITCODE SetExtPackPermissions(const char *pszDir)
 {
+    RTMsgInfo("Setting permissions...");
 #if !defined(RT_OS_WINDOWS)
      int rc = RTPathSetMode(pszDir, 0755);
      if (RT_FAILURE(rc))
@@ -238,6 +239,20 @@ static RTEXITCODE SetExtPackPermissions(const char *pszDir)
         /** @todo  */
 #endif
 
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Verifies the manifest and its signature.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   hManifestFile   The xml from the extension pack.
+ * @param   pszExtPackName  The expected extension pack name.
+ */
+static RTEXITCODE VerifyXml(RTVFSFILE hXmlFile, const char *pszExtPackName)
+{
+    /** @todo implement XML verification. */
     return RTEXITCODE_SUCCESS;
 }
 
@@ -293,7 +308,7 @@ static RTEXITCODE VerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSFILE 
             RTMsgError("RTManifestEqualsEx failed: %Rrc", rc);
     }
     else
-        RTMsgError("Error parsing '%s': %Rrc", VBOX_EXTPACK_MANIFEST_NAME);
+        RTMsgError("Error parsing '%s': %Rrc", VBOX_EXTPACK_MANIFEST_NAME, rc);
 
     RTManifestRelease(hTheirManifest);
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
@@ -355,6 +370,9 @@ static RTEXITCODE ValidateNameInExtPack(const char *pszName)
             pszErr = "Too long";
             break;
         }
+
+        /* advance */
+        psz++;
     }
 
     if (pszErr)
@@ -449,19 +467,39 @@ static RTEXITCODE ValidateMemberOfExtPack(const char *pszName, RTVFSOBJTYPE enmT
  *
  * Operations performed:
  *      - Hardening checks.
- *      - XML validity check.
- *      - Name check (against XML).
  *
  * @returns The program exit code.
  * @param   pszDir              The directory where the extension pack has been
  *                              unpacked.
- * @param   pszName             The expected extension pack name.
+ * @param   pszExtPackName      The expected extension pack name.
  * @param   pszTarball          The name of the tarball in case we have to
  *                              complain about something.
  */
-static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTarball, const char *pszName)
+static RTEXITCODE ValidateUnpackedExtPack(const char *pszDir, const char *pszTarball, const char *pszExtPackName)
 {
-    /** @todo  */
+    RTMsgInfo("Validating unpacked extension pack...");
+
+    char szErr[4096+1024];
+    int rc = SUPR3HardenedVerifyDir(pszDir, true /*fRecursive*/, true /*fCheckFiles*/, szErr, sizeof(szErr));
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Hardening check failed with %Rrc: %s", rc, szErr);
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Unpacks a directory from an extension pack tarball.
+ *
+ * @returns Program exit code, failure with message.
+ * @param   pszDstDirName   The name of the unpacked directory.
+ * @param   hVfsObj         The source object for the directory.
+ */
+static RTEXITCODE UnpackExtPackDir(const char *pszDstDirName, RTVFSOBJ hVfsObj)
+{
+    int rc = RTDirCreate(pszDstDirName, 0755);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create directory '%s': %Rrc", pszDstDirName, rc);
+    /** @todo Ownership tricks on windows? */
     return RTEXITCODE_SUCCESS;
 }
 
@@ -563,12 +601,15 @@ static RTEXITCODE UnpackExtPackFile(const char *pszName, const char *pszDstFilen
  * @returns The program exit code.
  * @param   hTarballFile        The tarball to unpack.
  * @param   pszDirDst           Where to unpack it.
+ * @param   hValidManifest      The manifest we've validated.
  * @param   pszTarball          The name of the tarball in case we have to
  *                              complain about something.
- * @todo    Needs to take the previous verified manifest as input.
  */
-static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, const char *pszTarball)
+static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMANIFEST hValidManifest,
+                                const char *pszTarball)
 {
+    RTMsgInfo("Unpacking extension pack into '%s'...", pszDirDst);
+
     /*
      * Set up the destination path and directory.
      */
@@ -633,11 +674,7 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, cons
                         RTVfsIoStrmRelease(hVfsIos);
                     }
                     else
-                    {
-                        rc = RTDirCreate(szDstPath, 0755);
-                        if (RT_FAILURE(rc))
-                            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create directory '%s': %Rrc", pszName, rc);
-                    }
+                        rcExit = UnpackExtPackDir(szDstPath, hVfsObj);
                 }
                 else
                     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Name is too long: '%s' (%Rrc)", pszName, rc);
@@ -656,8 +693,18 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, cons
          * Check that what we just extracted matches the already verified
          * manifest.
          */
-        //if (rcExit == RTEXITCODE_SUCCESS)
-        /// @todo
+        if (rcExit == RTEXITCODE_SUCCESS)
+        {
+            char szEntry[RTPATH_MAX];
+            rc = RTManifestEqualsEx(hUnpackManifest, hValidManifest, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttr*/,
+                                    szEntry, sizeof(szEntry));
+            if (RT_SUCCESS(rc))
+                rc = RTEXITCODE_SUCCESS;
+            else if (rc == VERR_NOT_EQUAL && szEntry[0])
+                RTMsgError("Manifest mismatch: '%s'", szEntry);
+            else
+                RTMsgError("RTManifestEqualsEx failed: %Rrc", rc);
+        }
 
         RTManifestRelease(hUnpackManifest);
     }
@@ -667,24 +714,33 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, cons
 }
 
 
+
 /**
  * Validates the extension pack tarball prior to unpacking.
  *
  * Operations performed:
+ *      - Mandatory files.
  *      - Manifest check.
  *      - Manifest seal check.
- *      - Mandatory files.
+ *      - XML check, match name.
  *
  * @returns The program exit code.
  * @param   hTarballFile        The handle to open the @a pszTarball file.
+ * @param   pszExtPackName      The name of the extension pack name.
  * @param   pszTarball          The name of the tarball in case we have to
  *                              complain about something.
+ * @param   phValidManifest     Where to return the handle to fully validated
+ *                              the manifest for the extension pack.  This
+ *                              includes all files.
  *
- * @todo    Should validate the XML and name.
- * @todo    Needs to return a manifest.
+ * @todo    This function is a bit too long and should be split up if possible.
  */
-static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTarball)
+static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExtPackName, const char *pszTarball,
+                                         PRTMANIFEST phValidManifest)
 {
+    *phValidManifest = NIL_RTMANIFEST;
+    RTMsgInfo("Validating extension pack '%s' ('%s')...", pszTarball, pszExtPackName);
+
     /*
      * Open the tar.gz filesystem stream and set up an manifest in-memory file.
      */
@@ -830,7 +886,19 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszTar
         if (rcExit == RTEXITCODE_SUCCESS)
             rcExit = VerifyManifestAndSignature(hOurManifest, hManifestFile, hSignatureFile);
 
-        RTManifestRelease(hOurManifest);   /** @todo return this and use it during unpacking */
+        /*
+         * Check the XML.
+         */
+        if (rcExit == RTEXITCODE_SUCCESS)
+            rcExit = VerifyXml(hXmlFile, pszExtPackName);
+
+        /*
+         * Release objects and stuff.
+         */
+        if (rcExit == RTEXITCODE_SUCCESS)
+            *phValidManifest = hOurManifest;
+        else
+            RTManifestRelease(hOurManifest);
 
         RTVfsFileRelease(hXmlFile);
         RTVfsFileRelease(hManifestFile);
@@ -922,13 +990,16 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create temporary directory: %Rrc ('%s')", rc, szTmpPath);
 
-    RTEXITCODE rcExit = ValidateExtPackTarball(hTarballFile, pszTarball);
+    RTMANIFEST hValidManifest = NIL_RTMANIFEST;
+    RTEXITCODE rcExit = ValidateExtPackTarball(hTarballFile, pszName, pszTarball, &hValidManifest);
     if (rcExit == RTEXITCODE_SUCCESS)
-        rcExit = UnpackExtPack(hTarballFile, szTmpPath, pszTarball);
+        rcExit = UnpackExtPack(hTarballFile, szTmpPath, hValidManifest, pszTarball);
     if (rcExit == RTEXITCODE_SUCCESS)
         rcExit = ValidateUnpackedExtPack(szTmpPath, pszTarball, pszName);
     if (rcExit == RTEXITCODE_SUCCESS)
         rcExit = SetExtPackPermissions(szTmpPath);
+    RTManifestRelease(hValidManifest);
+
     if (rcExit == RTEXITCODE_SUCCESS)
     {
         rc = RTDirRename(szTmpPath, szFinalPath, RTPATHRENAME_FLAGS_NO_REPLACE);
