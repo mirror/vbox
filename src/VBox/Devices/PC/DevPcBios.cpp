@@ -179,8 +179,6 @@ typedef struct DEVPCBIOS
     uint16_t        cCpus;
     uint32_t        u32McfgBase;
     uint32_t        cbMcfgLength;
-    uint16_t        iVarNum;
-    uint16_t        iVarPos;
 } DEVPCBIOS, *PDEVPCBIOS;
 
 
@@ -637,32 +635,6 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-static uint8_t pcbiosReadVar(PDEVPCBIOS pThis)
-{
-    uint32_t u32Val = 0, u32Size = 4;
-    switch (pThis->iVarNum)
-    {
-        case 1:
-            u32Val = pThis->u32McfgBase;
-            u32Size = 4;
-            break;
-        case 2:
-            u32Val = pThis->cbMcfgLength;
-            u32Size = 4;
-            break;
-        default:
-            AssertMsgFailed(("Unknown variable: %d\n", pThis->iVarNum));
-    }
-    uint32_t iPos = pThis->iVarPos++;
-    if (pThis->iVarPos >= u32Size)
-            pThis->iVarPos = 0;
-
-    Log(("Read pos %d of var %d: %x\n",
-         iPos, pThis->iVarNum, (u32Val >> (iPos*8)) & 0xff));
-
-    return (u32Val >> (iPos*8)) & 0xff;
-}
-
 /**
  * Port I/O Handler for IN operations.
  *
@@ -676,14 +648,6 @@ static uint8_t pcbiosReadVar(PDEVPCBIOS pThis)
  */
 static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    if (cb == 1 && Port == 0x402)
-    {
-        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
-        uint8_t u8Val = pcbiosReadVar(pThis);
-        *(uint8_t*)pu32 = u8Val;
-        return VINF_SUCCESS;
-    }
-
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -749,14 +713,6 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
             pThis->szMsg[pThis->iMsg] = (char )u32;
             pThis->szMsg[++pThis->iMsg] = '\0';
         }
-        return VINF_SUCCESS;
-    }
-
-    if (cb == 2 && Port == 0x402)
-    {
-        PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
-        pThis->iVarNum = u32;
-        pThis->iVarPos = 0;
         return VINF_SUCCESS;
     }
 
