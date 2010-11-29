@@ -2129,13 +2129,38 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent)
         if (pPciDev != NULL)
         {
             printIndent(pHlp, iIndent);
-            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %04x-%04x%s%s\n",
+            pHlp->pfnPrintf(pHlp, "%02x:%02x:%02x %s: %04x-%04x%s%s",
                             pBus->iBus, (iDev >> 3) & 0xff, iDev & 0x7,
                             pPciDev->name,
                             PCIDevGetVendorId(pPciDev), PCIDevGetDeviceId(pPciDev),
                             PCIIsMsiCapable(pPciDev)  ? " MSI" : "",
                             PCIIsMsixCapable(pPciDev) ? " MSI-X" : ""
                             );
+            if (PCIDevGetInterruptPin(pPciDev) != 0)
+                pHlp->pfnPrintf(pHlp, " IRQ%d", PCIDevGetInterruptLine(pPciDev));
+
+            pHlp->pfnPrintf(pHlp, "\n");
+
+            int iCmd = PCIDevGetCommand(pPciDev);
+            if ((iCmd & (VBOX_PCI_COMMAND_IO | VBOX_PCI_COMMAND_MEMORY)) != 0)
+            {
+                for (int iRegion = 0; iRegion < PCI_NUM_REGIONS; iRegion++)
+                {
+                    PCIIORegion* pRegion = &pPciDev->Int.s.aIORegions[iRegion];
+                    int32_t  iRegionSize = pRegion->size;
+
+                    if (iRegionSize == 0)
+                        continue;
+
+                    uint32_t u32Addr = ich9pciConfigReadDev(pPciDev, ich9pciGetRegionReg(iRegion), 4);
+                    const char * szDesc =
+                            (pRegion->type & PCI_ADDRESS_SPACE_IO) ?
+                            "IO" : "MMIO";
+                    printIndent(pHlp, iIndent + 2);
+                    pHlp->pfnPrintf(pHlp, "  %s region #%d: %x..%x\n",
+                                    szDesc, iRegion, u32Addr, u32Addr+iRegionSize);
+                }
+            }
         }
     }
 
