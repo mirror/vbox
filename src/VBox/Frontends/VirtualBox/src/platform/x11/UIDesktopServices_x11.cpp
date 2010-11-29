@@ -62,6 +62,6 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
 bool UIDesktopServices::openInFileManager(const QString &strFile)
 {
     QFileInfo fi(strFile);
-    return QDesktopServices::openUrl(QUrl::fromLocalFile(QDir::toNativeSeparators(fi.absolutePath())));
+    return QDesktopServices::openUrl(QUrl("file://" + QDir::toNativeSeparators(fi.absolutePath()), QUrl::TolerantMode));
 }
 
