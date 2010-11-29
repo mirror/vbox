@@ -104,6 +104,18 @@ typedef struct RTMANIFESTINT
 /** The value of RTMANIFESTINT::u32Magic. */
 #define RTMANIFEST_MAGIC    UINT32_C(0x99998866)
 
+/**
+ * Argument package passed to rtManifestWriteStdAttr by rtManifestWriteStdEntry
+ * and RTManifestWriteStandard.
+ */
+typedef struct RTMANIFESTWRITESTDATTR
+{
+    /** The entry name. */
+    const char     *pszEntry;
+    /** The output I/O stream. */
+    RTVFSIOSTREAM   hVfsIos;
+} RTMANIFESTWRITESTDATTR;
+
 
 /**
  * Creates an empty manifest.
@@ -741,9 +753,19 @@ static int rtManifestReadLine(RTVFSIOSTREAM hVfsIos, char *pszLine, size_t cbLin
 
 RTDECL(int) RTManifestReadStandardEx(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, char *pszErr, size_t cbErr)
 {
+    /*
+     * Validate input.
+     */
+    AssertPtrNull(pszErr);
     if (pszErr && cbErr)
         *pszErr = '\0';
+    RTMANIFESTINT *pThis = hManifest;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
 
+    /*
+     * Process the stream line by line.
+     */
     uint32_t iLine = 0;
     for (;;)
     {
@@ -900,8 +922,47 @@ RTDECL(int) RTManifestReadStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos)
 }
 
 
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Writes RTMANIFESTATTR.}
+ */
+static DECLCALLBACK(int) rtManifestWriteStdAttr(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTATTR         pAttr = RT_FROM_MEMBER(pStr, RTMANIFESTATTR, StrCore);
+    RTMANIFESTWRITESTDATTR *pArgs = (RTMANIFESTWRITESTDATTR *)pvUser;
+    char    szLine[RTPATH_MAX + RTSHA512_DIGEST_LEN + 32];
+    size_t  cchLine = RTStrPrintf(szLine, sizeof(szLine), "%s (%s) = %s\n", pAttr->szName, pArgs->pszEntry, pAttr->pszValue);
+    if (cchLine >= sizeof(szLine) - 1)
+        return VERR_BUFFER_OVERFLOW;
+    return RTVfsIoStrmWrite(pArgs->hVfsIos, szLine, cchLine, true /*fBlocking*/, NULL);
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Writes RTMANIFESTENTRY.}
+ */
+static DECLCALLBACK(int) rtManifestWriteStdEntry(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTENTRY pEntry = RT_FROM_MEMBER(pStr, RTMANIFESTENTRY, StrCore);
+
+    RTMANIFESTWRITESTDATTR Args;
+    Args.hVfsIos  = (RTVFSIOSTREAM)pvUser;
+    Args.pszEntry = pStr->pszString;
+    return RTStrSpaceEnumerate(&pEntry->Attributes, rtManifestWriteStdAttr, &Args);
+}
+
+
 RTDECL(int) RTManifestWriteStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTMANIFESTINT *pThis = hManifest;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
+
+    RTMANIFESTWRITESTDATTR Args;
+    Args.hVfsIos  = hVfsIos;
+    Args.pszEntry = "main";
+    int rc = RTStrSpaceEnumerate(&pThis->Attributes, rtManifestWriteStdAttr, &Args);
+    if (RT_SUCCESS(rc))
+        rc = RTStrSpaceEnumerate(&pThis->Entries, rtManifestWriteStdEntry, hVfsIos);
+    return rc;
 }
 
