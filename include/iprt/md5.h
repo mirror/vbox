@@ -37,8 +37,11 @@
 #define RTMD5_HASH_SIZE     16
 /** @deprecated Use RTMD5_HASH_SIZE. */
 #define RTMD5HASHSIZE       RTMD5_HASH_SIZE
-/** Size of a MD5 hash. */
-#define RTMD5_STRING_LEN    32
+/** The length of a MD5 digest string. The terminator is not included. */
+#define RTMD5_DIGEST_LEN    32
+/** Size of a MD5 hash.
+ * @deprecated Use RTMD5_DIGEST_LEN  */
+#define RTMD5_STRING_LEN    RTMD5_DIGEST_LEN
 
 /**
  * MD5 hash algorithm context.

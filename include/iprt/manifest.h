@@ -269,6 +269,22 @@ RTDECL(int) RTManifestEntryAddIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsI
 RTDECL(int) RTManifestReadStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos);
 
 /**
+ * Reads in a "standard" manifest.
+ *
+ * This reads the format used by OVF, the distinfo in FreeBSD ports, and
+ * others.
+ *
+ * @returns IPRT status code.
+ * @param   hManifest           The handle to the manifest where to add the
+ *                              manifest that's read in.
+ * @param   hVfsIos             The I/O stream to read the manifest from.
+ * @param   pszErr              Where to return extended error info on failure.
+ *                              Optional.
+ * @param   cbErr               The size of the buffer @a pszErr points to.
+ */
+RTDECL(int) RTManifestReadStandardEx(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, char *pszErr, size_t cbErr);
+
+/**
  * Writes a "standard" manifest.
  *
  * This writes the format used by OVF, the distinfo in FreeBSD ports, and
