@@ -155,15 +155,22 @@ void UIMouseHandler::captureMouse(ulong uScreenId)
 
         /* Memorize the host position where the cursor was captured: */
         m_capturedMousePos = QCursor::pos();
+
+        /* Acquiring visible viewport rectangle in global coodrinates: */
+        QRect visibleRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
+        QPoint visibleRectanglePos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_viewports[m_iMouseCaptureViewIndex]->pos());
+        visibleRectangle.translate(visibleRectanglePos);
+        visibleRectangle = visibleRectangle.intersected(QApplication::desktop()->availableGeometry());
+
 #ifdef Q_WS_WIN
         /* Move the mouse to the center of the visible area: */
-        m_lastMousePos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_views[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect().center());
+        m_lastMousePos = visibleRectangle.center();
         QCursor::setPos(m_lastMousePos);
         /* Update mouse clipping: */
         updateMouseCursorClipping();
 #elif defined (Q_WS_MAC)
         /* Move the mouse to the center of the visible area: */
-        m_lastMousePos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_views[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect().center());
+        m_lastMousePos = visibleRectangle.center();
         QCursor::setPos(m_lastMousePos);
         /* Grab all mouse events: */
         m_viewports[m_iMouseCaptureViewIndex]->grabMouse();
@@ -706,18 +713,32 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
         /* Bringing mouse to the opposite side to simulate the endless moving: */
 
 # ifdef Q_WS_WIN
-        int iWe = m_viewports[uScreenId]->width() - 1;
-        int iHe = m_viewports[uScreenId]->height() - 1;
-        QPoint p = relativePos;
-        if (relativePos.x() == 0)
-            p.setX(iWe - 1);
-        else if (relativePos.x() == iWe)
-            p.setX(1);
-        if (relativePos.y() == 0 )
-            p.setY(iHe - 1);
-        else if (relativePos.y() == iHe)
-            p.setY(1);
+        /* Acquiring visible viewport rectangle in local coordinates: */
+        QRect viewportRectangle = m_viewports[uScreenId]->visibleRegion().boundingRect();
+        QPoint viewportRectangleGlobalPos = m_views[uScreenId]->mapToGlobal(m_viewports[uScreenId]->pos());
+        /* Shift viewport rectangle to global position to bound by available geometry: */
+        viewportRectangle.translate(viewportRectangleGlobalPos);
+        /* Acquiring viewport rectangle cropped by available geometry: */
+        viewportRectangle = viewportRectangle.intersected(QApplication::desktop()->availableGeometry());
+        /* Shift remaining viewport rectangle to local position as relative position is in local coordinates: */
+        viewportRectangle.translate(-viewportRectangleGlobalPos);
 
+        /* Get boundaries: */
+        int ix1 = viewportRectangle.left() + 1;
+        int iy1 = viewportRectangle.top() + 1;
+        int ix2 = viewportRectangle.right() - 1;
+        int iy2 = viewportRectangle.bottom() - 1;
+
+        /* Simulate infinite movement: */
+        QPoint p = relativePos;
+        if (relativePos.x() == ix1)
+            p.setX(ix2 - 1);
+        else if (relativePos.x() == ix2)
+            p.setX(ix1 + 1);
+        if (relativePos.y() == iy1)
+            p.setY(iy2 - 1);
+        else if (relativePos.y() == iy2)
+            p.setY(iy1 + 1);
         if (p != relativePos)
         {
             m_lastMousePos = m_viewports[uScreenId]->mapToGlobal(p);
@@ -869,16 +890,19 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
  * we do not really grab the mouse in case of capturing it: */
 void UIMouseHandler::updateMouseCursorClipping()
 {
-    /* Check if such viewport is registered: */
-    if (!m_viewports.contains(m_iMouseCaptureViewIndex))
+    /* Check if such view && viewport are registered: */
+    if (!m_views.contains(m_iMouseCaptureViewIndex) || !m_viewports.contains(m_iMouseCaptureViewIndex))
         return;
 
     if (uisession()->isMouseCaptured())
     {
-        QWidget *pMachineViewViewport = m_viewports[m_iMouseCaptureViewIndex];
-        QRect r = pMachineViewViewport->rect();
-        r.moveTopLeft(pMachineViewViewport->mapToGlobal(QPoint(0, 0)));
-        RECT rect = { r.left(), r.top(), r.right() + 1, r.bottom() + 1 };
+        /* Acquiring visible viewport rectangle: */
+        QRect viewportRectangle = m_viewports[m_iMouseCaptureViewIndex]->visibleRegion().boundingRect();
+        QPoint viewportRectangleGlobalPos = m_views[m_iMouseCaptureViewIndex]->mapToGlobal(m_viewports[m_iMouseCaptureViewIndex]->pos());
+        viewportRectangle.translate(viewportRectangleGlobalPos);
+        viewportRectangle = viewportRectangle.intersected(QApplication::desktop()->availableGeometry());
+        /* Prepare clipping area: */
+        RECT rect = { viewportRectangle.left() + 1, viewportRectangle.top() + 1, viewportRectangle.right(), viewportRectangle.bottom() };
         ::ClipCursor(&rect);
     }
     else
