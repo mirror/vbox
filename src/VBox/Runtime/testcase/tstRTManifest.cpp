@@ -34,12 +34,16 @@
 #include <iprt/mem.h>
 #include <iprt/test.h>
 
+
+
+
 /**
  * Basic API checks.
  */
 static void tst1(void)
 {
-    void *pvBuf = NULL;
+    RTTestISub("Manifest creation");
+
     size_t cbSize = 0;
     size_t iFailed = 0;
 
@@ -47,36 +51,48 @@ static void tst1(void)
      * test1.txt = "This is a test text."
      * test2.txt = "Another test text."
      */
-    RTMANIFESTTEST paFiles[] = { { "test1.txt", "794a8cc644b318ae6461aeea62915e399e441e8" }, { "test2.txt", "f17393902ee94c1e8bbd4bf417cdc70051feca00" } };
-    const char pcszTestPattern[] = "SHA1 (test1.txt)= 794a8cc644b318ae6461aeea62915e399e441e8\nSHA1 (test2.txt)= f17393902ee94c1e8bbd4bf417cdc70051feca00\n";
+    static RTMANIFESTTEST /*const*/ s_aFiles[] = /** @todo API misdesign, this should be const. */
+    {
+        { "test1.txt", "794a8cc644b318ae6461aeea62915e399e441e8"  },
+        { "test2.txt", "f17393902ee94c1e8bbd4bf417cdc70051feca00" }
+    };
+    static const char s_szTestPattern[] =
+        "SHA1 (test1.txt)= 794a8cc644b318ae6461aeea62915e399e441e8\n"
+        "SHA1 (test2.txt)= f17393902ee94c1e8bbd4bf417cdc70051feca00\n"
+    ;
 
-    RTTestISub("Manifest creation");
-    RTTESTI_CHECK_RC_RETV(RTManifestWriteFilesBuf(&pvBuf, &cbSize, paFiles, 2), VINF_SUCCESS);
+    void *pvBuf = NULL;
+    RTTESTI_CHECK_RC_RETV(RTManifestWriteFilesBuf(&pvBuf, &cbSize, s_aFiles, 2), VINF_SUCCESS);
+
     /* Check returned memory size */
-    RTTESTI_CHECK_RETV(cbSize == strlen(pcszTestPattern));
+    RTTESTI_CHECK_RETV(cbSize == strlen(s_szTestPattern));
+
     /* Check for correct manifest file content */
-    RTTESTI_CHECK(memcmp(pvBuf, pcszTestPattern, cbSize) == 0);
+    RTTESTI_CHECK(memcmp(pvBuf, s_szTestPattern, cbSize) == 0);
 
     RTTestISub("Manifest verify");
-    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, paFiles, 2, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, s_aFiles, 2, 0), VINF_SUCCESS);
+
     /* To little files to check */
-    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, paFiles, 1, 0), VERR_MANIFEST_FILE_MISMATCH);
+    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, s_aFiles, 1, 0), VERR_MANIFEST_FILE_MISMATCH);
+
     /* Make the digest type invalid */
     ((char*)pvBuf)[0] = 'L';
-    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, paFiles, 2, 0), VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE);
+    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, s_aFiles, 2, 0), VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE);
     ((char*)pvBuf)[0] = 'S'; /* Restore */
+
     /* Make the file name invalid */
     ((char*)pvBuf)[8] = 'z';
-    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, paFiles, 2, 0), VERR_MANIFEST_FILE_MISMATCH);
+    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, s_aFiles, 2, 0), VERR_MANIFEST_FILE_MISMATCH);
     ((char*)pvBuf)[8] = 's'; /* Restore */
+
     /* Make the second digest invalid */
     ((char*)pvBuf)[99] = '0';
-    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, paFiles, 2, &iFailed), VERR_MANIFEST_DIGEST_MISMATCH);
+    RTTESTI_CHECK_RC(RTManifestVerifyFilesBuf(pvBuf, cbSize, s_aFiles, 2, &iFailed), VERR_MANIFEST_DIGEST_MISMATCH);
     RTTESTI_CHECK(iFailed == 1);
 
     /* Cleanup */
-    if (pvBuf)
-        RTMemFree(pvBuf);
+    RTMemFree(pvBuf);
 }
 
 

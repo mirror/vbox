@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - GZIP Testcase Utility.
+ * IPRT - GZIP Utility.
  */
 
 /*

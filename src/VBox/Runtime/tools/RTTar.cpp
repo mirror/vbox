@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - TAR Testcase Utility.
+ * IPRT - TAR Utility.
  */
 
 /*
@@ -41,5 +41,4 @@ int main(int argc, char **argv)
         return RTMsgInitFailure(rc);
     return RTZipTarCmd(argc, argv);
 }
-
 

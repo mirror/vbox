@@ -58,6 +58,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  # Normal build.
  #
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 
  BLDPROGS += uniread
  LIBRARIES += RuntimeR3 RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC

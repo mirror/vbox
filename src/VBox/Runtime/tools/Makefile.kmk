@@ -1,0 +1,52 @@
+# $Id$
+## @file
+# Sub-Makefile for the IPRT tools.
+#
+
+#
+# Copyright (C) 2006-2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# The contents of this file may alternatively be used under the terms
+# of the Common Development and Distribution License Version 1.0
+# (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+# VirtualBox OSE distribution, in which case the provisions of the
+# CDDL are applicable instead of those of the GPL.
+#
+# You may elect to license modified versions of this file under the
+# terms and conditions of either the GPL or the CDDL or both.
+#
+
+SUB_DEPTH = ../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+# RTManifest is a tool for creating and verifying manifest files.
+PROGRAMS += RTManifest
+RTManifest_TEMPLATE = VBOXR3TSTEXE
+RTManifest_SOURCES = RTManifest.cpp
+
+# RTLdrFlt is similar to c++filt, except that it's for VMMR0.r0 stacks.
+PROGRAMS += RTLdrFlt
+RTLdrFlt_TEMPLATE = VBOXR3TSTEXE
+RTLdrFlt_SOURCES = RTLdrFlt.cpp
+
+# RTGzip - our gzip clone (for testing the gzip/gunzip streaming code)
+PROGRAMS += RTGzip
+RTGzip_TEMPLATE = VBOXR3TSTEXE
+RTGzip_SOURCES = RTGzip.cpp
+
+# RTTar - our tar clone (for testing the tar/gzip/gunzip streaming code)
+PROGRAMS += RTTar
+RTTar_TEMPLATE = VBOXR3TSTEXE
+RTTar_SOURCES = RTTar.cpp
+
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
