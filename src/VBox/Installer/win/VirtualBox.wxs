@@ -367,7 +367,7 @@
                         <!-- Register file extensions. Note: Extension Id's *must not* be changed! These specify the actual
                              file extension to handle. Also, here would be the place to add more fancy DDE stuff later.
                              Important: The IDs in "IconIndex" *must* be matching "Resources\resource.h". -->
-                        <ProgId Id="VirtualBox.Shell.vbox" Description="VirtualBox Machine Description" Icon="[#vboxresdll]" IconIndex="-201">
+                        <ProgId Id="VirtualBox.Shell.vbox" Description="VirtualBox Machine Definition" Icon="[#vboxresdll]" IconIndex="-201">
                             <Extension Id="vbox" ContentType="application/x-virtualbox-vbox">
                                 <Verb Id="open" Sequence="1" Command="Open" Target="[#vbox]" Argument="&quot;%1&quot;" />
                             </Extension>

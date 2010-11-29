@@ -17,7 +17,7 @@
     <key>CFBundleDocumentTypes</key>
     <array>
      <dict>
-      <key>CFBundleTypeName</key>               <string>VirtualBox Machine Description</string>
+      <key>CFBundleTypeName</key>               <string>VirtualBox Machine Definition</string>
       <key>CFBundleTypeExtensions</key>         <array><string>vbox</string></array>
       <key>CFBundleTypeRole</key>               <string>Editor</string>
       <key>LSHandlerRank</key>                  <string>Owner</string>
