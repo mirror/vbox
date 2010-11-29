@@ -32,6 +32,10 @@ PROGRAMS += RTManifest
 RTManifest_TEMPLATE = VBOXR3TSTEXE
 RTManifest_SOURCES = RTManifest.cpp
 
+BLDPROGS += bldRTManifest
+bldRTManifest_TEMPLATE = VBoxAdvBldProg
+bldRTManifest_SOURCES  = RTManifest.cpp
+
 # RTLdrFlt is similar to c++filt, except that it's for VMMR0.r0 stacks.
 PROGRAMS += RTLdrFlt
 RTLdrFlt_TEMPLATE = VBOXR3TSTEXE
