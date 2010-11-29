@@ -23,10 +23,16 @@ ifdef VBOX_SINGLE_MAKEFILE
 if defined(VBOX_ONLY_ADDITIONS)
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
 
-else if defined(VBOX_ONLY_DOCS) || defined(VBOX_WITH_EXTPACKS) || defined(VBOX_ONLY_SDK)
+else if defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+
+else if defined(VBOX_ONLY_EXTPACKS)
+ include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
 
 else if defined(VBOX_ONLY_TESTSUITE)
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
