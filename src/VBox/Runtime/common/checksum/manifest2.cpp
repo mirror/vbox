@@ -33,8 +33,12 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/param.h>
+#include <iprt/md5.h>
+#include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 
@@ -675,7 +679,17 @@ RTDECL(int) RTManifestEntryRemove(RTMANIFEST hManifest, const char *pszEntry)
 }
 
 
-#if 0
+/**
+ * Reads a line from a VFS I/O stream.
+ *
+ * @todo    Replace this with a buffered I/O stream layer.
+ *
+ * @returns IPRT status code.  VERR_EOF when trying to read beyond the stream
+ *          end.
+ * @param   hVfsIos             The I/O stream to read from.
+ * @param   pszLine             Where to store what we've read.
+ * @param   cbLine              The number of bytes to read.
+ */
 static int rtManifestReadLine(RTVFSIOSTREAM hVfsIos, char *pszLine, size_t cbLine)
 {
     /* This is horribly slow right now, but it's not a biggy as the input is
@@ -683,46 +697,209 @@ static int rtManifestReadLine(RTVFSIOSTREAM hVfsIos, char *pszLine, size_t cbLin
     *pszLine = '\0';
     while (cbLine > 1)
     {
-        int rc = RTVfsIoStrmRead(hVfsIos, pszLine, 1, true /*fBLocking*/, NULL);
+        char ch;
+        int rc = RTVfsIoStrmRead(hVfsIos, &ch, 1, true /*fBLocking*/, NULL);
+        if (RT_FAILURE(rc))
+            return rc == VERR_EOF ? VINF_EOF : rc;
+
+        /* \r\n */
+        if (ch == '\r')
+        {
+            if (cbLine <= 2)
+            {
+                pszLine[0] = ch;
+                pszLine[1] = '\0';
+                return VINF_BUFFER_OVERFLOW;
+            }
+
+            rc = RTVfsIoStrmRead(hVfsIos, &ch, 1, true /*fBLocking*/, NULL);
+            if (RT_SUCCESS(rc) && ch == '\n')
+                return VINF_SUCCESS;
+            pszLine[0] = '\r';
+            pszLine[1] = ch;
+            pszLine[2] = '\0';
+            if (RT_FAILURE(rc))
+                return rc == VERR_EOF ? VINF_EOF : rc;
+        }
+
+        /* \n */
+        if (ch == '\n')
+            return VINF_SUCCESS;
+
+        /* add character. */
+        pszLine[0] = ch;
+        pszLine[1] = '\0';
+
+        /* advance */
+        pszLine++;
+        cbLine--;
+    }
+
+    return VINF_BUFFER_OVERFLOW;
+}
+
+
+RTDECL(int) RTManifestReadStandardEx(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos, char *pszErr, size_t cbErr)
+{
+    if (pszErr && cbErr)
+        *pszErr = '\0';
+
+    uint32_t iLine = 0;
+    for (;;)
+    {
+        /*
+         * Read a line from the input stream.
+         */
+        iLine++;
+        char szLine[RTPATH_MAX + RTSHA512_DIGEST_LEN + 32];
+        int rc = rtManifestReadLine(hVfsIos, szLine, sizeof(szLine));
         if (RT_FAILURE(rc))
         {
-            *pszLine = '\0';
-            return rc == VERR_EOF ? VINF_EOF : rc;
+            if (rc == VERR_EOF)
+                return VINF_SUCCESS;
+            RTStrPrintf(pszErr, cbErr, "Error reading line #u: %Rrc", iLine, rc);
+            return rc;
+        }
+        if (rc != VINF_SUCCESS)
+        {
+            RTStrPrintf(pszErr, cbErr, "Line number %u is too long", iLine);
+            return VERR_OUT_OF_RANGE;
+        }
+
+        /*
+         * Strip it and skip if empty.
+         */
+        char *psz = RTStrStrip(szLine);
+        if (!*psz)
+            continue;
+
+        /*
+         * Read the attribute name.
+         */
+        const char * const pszAttr = psz;
+        do
+            psz++;
+        while (!RT_C_IS_BLANK(*psz) && *psz);
+        if (*psz)
+            *psz++ = '\0';
+
+        /*
+         * The entry name is enclosed in parenthesis and followed by a '='.
+         */
+        psz = RTStrStripL(psz);
+        if (*psz != '(')
+        {
+            RTStrPrintf(pszErr, cbErr, "Expected '(' after %zu on line %u", psz - szLine, iLine);
+            return VERR_PARSE_ERROR;
+        }
+        const char * const pszName = ++psz;
+        while (*psz)
+        {
+            if (*psz == ')')
+            {
+                char *psz2 = RTStrStripL(psz + 1);
+                if (*psz2 == '=')
+                {
+                    *psz = '\0';
+                    psz = psz2;
+                    break;
+                }
+            }
+            psz++;
+        }
+
+        if (*psz != '=')
+        {
+            RTStrPrintf(pszErr, cbErr, "Expected ')=' at %zu on line %u", psz - szLine, iLine);
+            return VERR_PARSE_ERROR;
+        }
+
+        /*
+         * The value.
+         */
+        psz = RTStrStrip(psz + 1);
+        const char * const pszValue = psz;
+        if (!*psz)
+        {
+            RTStrPrintf(pszErr, cbErr, "Expected value at %zu on line %u", psz - szLine, iLine);
+            return VERR_PARSE_ERROR;
+        }
+
+        /*
+         * Detect attribute type and sanity check the value.
+         */
+        uint32_t fType = RTMANIFEST_ATTR_UNKNOWN;
+        static const struct
+        {
+            const char *pszAttr;
+            uint32_t    fType;
+            unsigned    cBits;
+            unsigned    uBase;
+        } s_aDecAttrs[] =
+        {
+            { "SIZE", RTMANIFEST_ATTR_SIZE, 64,  10}
+        };
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aDecAttrs); i++)
+            if (!strcmp(s_aDecAttrs[i].pszAttr, pszAttr))
+            {
+                fType = s_aDecAttrs[i].fType;
+                rc = RTStrToUInt64Full(pszValue, s_aDecAttrs[i].uBase, NULL);
+                if (rc != VINF_SUCCESS)
+                {
+                    RTStrPrintf(pszErr, cbErr, "Malformed value ('%s') at %zu on line %u: %Rrc", pszValue, psz - szLine, iLine, rc);
+                    return VERR_PARSE_ERROR;
+                }
+                break;
+            }
+
+        if (fType == RTMANIFEST_ATTR_UNKNOWN)
+        {
+            static const struct
+            {
+                const char *pszAttr;
+                uint32_t    fType;
+                unsigned    cchHex;
+            } s_aHexAttrs[] =
+            {
+                { "MD5",        RTMANIFEST_ATTR_MD5,        RTMD5_DIGEST_LEN    },
+                { "SHA1",       RTMANIFEST_ATTR_SHA1,       RTSHA1_DIGEST_LEN   },
+                { "SHA256",     RTMANIFEST_ATTR_SHA256,     RTSHA256_DIGEST_LEN },
+                { "SHA512",     RTMANIFEST_ATTR_SHA512,     RTSHA512_DIGEST_LEN }
+            };
+            for (unsigned i = 0; i < RT_ELEMENTS(s_aHexAttrs); i++)
+                if (!strcmp(s_aHexAttrs[i].pszAttr, pszAttr))
+                {
+                    fType = s_aHexAttrs[i].fType;
+                    for (unsigned off = 0; off < s_aHexAttrs[i].cchHex; off++)
+                        if (!RT_C_IS_XDIGIT(pszAttr[off]))
+                        {
+                            RTStrPrintf(pszErr, cbErr, "Expected hex digit at %zu on line %u (value '%s', pos %u)",
+                                        pszValue - szLine + off, iLine, pszValue, off);
+                            return VERR_PARSE_ERROR;
+                        }
+                    break;
+                }
+        }
+
+        /*
+         * Finally, add it.
+         */
+        rc = RTManifestEntrySetAttr(hManifest, pszName, pszAttr, pszValue, fType);
+        if (RT_FAILURE(rc))
+        {
+            RTStrPrintf(pszErr, cbErr, "RTManifestEntrySetAttr(,'%s','%s', '%s', %#x) failed on line %u: %Rrc",
+                        pszName, pszAttr, pszValue, fType, iLine, rc);
+            return rc;
         }
     }
-    return rc;
 }
-#endif
 
-
-/**
- * Reads in a "standard" manifest.
- *
- * This reads the format used by OVF, the distinfo in FreeBSD ports, and
- * others.
- *
- * @returns IPRT status code.
- * @param   hManifest           The handle to the manifest where to add the
- *                              manifest that's read in.
- * @param   hVfsIos             The I/O stream to read the manifest from.
- */
 RTDECL(int) RTManifestReadStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos)
 {
-    return VERR_NOT_IMPLEMENTED;
+    return RTManifestReadStandardEx(hManifest, hVfsIos, NULL, 0);
 }
 
 
-/**
- * Writes a "standard" manifest.
- *
- * This writes the format used by OVF, the distinfo in FreeBSD ports, and
- * others.
- *
- * @returns IPRT status code.
- * @param   hManifest           The handle to the manifest where to add the
- *                              manifest that's read in.
- * @param   hVfsIos             The I/O stream to read the manifest from.
- */
 RTDECL(int) RTManifestWriteStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos)
 {
     return VERR_NOT_IMPLEMENTED;
