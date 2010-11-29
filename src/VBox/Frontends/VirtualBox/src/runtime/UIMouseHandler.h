@@ -34,6 +34,7 @@ class QWidget;
 class CSession;
 class UISession;
 class UIMachineLogic;
+class UIMachineWindow;
 class UIMachineView;
 #ifdef Q_WS_X11
 typedef union  _XEvent XEvent;
@@ -50,9 +51,9 @@ public:
     static UIMouseHandler* create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType);
     static void destroy(UIMouseHandler *pMouseHandler);
 
-    /* Registers/Remove new machine-view: */
-    void addMachineView(ulong uViewIndex, UIMachineView *pMachineView);
-    void delMachineView(ulong uViewIndex);
+    /* Prepare/cleanup listener for particular machine-window: */
+    void prepareListener(ulong uIndex, UIMachineWindow *pMachineWindow);
+    void cleanupListener(ulong uIndex);
 
     /* Commands to capture/release mouse: */
     void captureMouse(ulong uScreenId);
@@ -121,6 +122,8 @@ protected:
     /* Machine logic parent: */
     UIMachineLogic *m_pMachineLogic;
 
+    /* Registered machine-windows(s): */
+    QMap<ulong, QWidget*> m_windows;
     /* Registered machine-view(s): */
     QMap<ulong, UIMachineView*> m_views;
     /* Registered machine-view-viewport(s): */
