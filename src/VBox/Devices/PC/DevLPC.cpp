@@ -242,26 +242,51 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     PCIDevSetStatus           (&pThis->dev, 0x0200); /* PCI_status_devsel_medium */
 
     /** @todo: rewrite using PCI accessors */
-    pThis->dev.config[0x40] = 0x01;
-    pThis->dev.config[0x41] = 0x0b;
+    /* See p. 427 of ICH9 specification for register description */
 
+    /* 40h - 43h PMBASE 40-43 ACPI Base Address */
+    pThis->dev.config[0x40] = 0x01; /* IO space */
+    pThis->dev.config[0x41] = 0x80; /* base address / 128, see DevACPI.cpp */
+
+    /* 44h       ACPI_CNTL    ACPI Control */
+    pThis->dev.config[0x40] = 0x00 | (1<<7); /* SCI is IRQ9, ACPI enabled */
+    /* 48h–4Bh   GPIOBASE     GPIO Base Address */
+
+    /* 4C        GC           GPIO Control */
     pThis->dev.config[0x4c] = 0x4d;
+    /* ???? */
     pThis->dev.config[0x4e] = 0x03;
     pThis->dev.config[0x4f] = 0x00;
 
-    pThis->dev.config[0x60] = 0x0a; /* PCI A -> IRQ 10 */
-    pThis->dev.config[0x61] = 0x0a; /* PCI B -> IRQ 10 */
+    /* 60h–63h PIRQ[n]_ROUT PIRQ[A–D] Routing Control */
+    pThis->dev.config[0x60] = 0x0b; /* PCI A -> IRQ 11 */
+    pThis->dev.config[0x61] = 0x09; /* PCI B -> IRQ 9  */
     pThis->dev.config[0x62] = 0x0b; /* PCI C -> IRQ 11 */
-    pThis->dev.config[0x63] = 0x0b; /* PCI D -> IRQ 11 */
+    pThis->dev.config[0x63] = 0x09; /* PCI D -> IRQ 9  */
 
-    pThis->dev.config[0x69] = 0x02;
+    /* 64h SIRQ_CNTL Serial IRQ Control 10h R/W, RO */
+    pThis->dev.config[0x64] = 0x10;
+
+    /*68h–6Bh PIRQ[n]_ROUT PIRQ[E–H] Routing Control  */
+    pThis->dev.config[0x68] = 0x80;
+    pThis->dev.config[0x69] = 0x80;
+    pThis->dev.config[0x6A] = 0x80;
+    pThis->dev.config[0x6B] = 0x80;
+
+    /* 6C–6Dh     LPC_IBDF  IOxAPIC Bus:Device:Function   00F8h     R/W */
     pThis->dev.config[0x70] = 0x80;
     pThis->dev.config[0x76] = 0x0c;
     pThis->dev.config[0x77] = 0x0c;
     pThis->dev.config[0x78] = 0x02;
     pThis->dev.config[0x79] = 0x00;
-    pThis->dev.config[0x80] = 0x00;
-    pThis->dev.config[0x82] = 0x00;
+    /* 80h        LPC_I/O_DEC I/O Decode Ranges           0000h     R/W */
+    /* 82h–83h    LPC_EN   LPC I/F Enables                0000h     R/W */
+    /* 84h–87h    GEN1_DEC   LPC I/F Generic Decode Range 1 00000000h   R/W */
+    /* 88h–8Bh    GEN2_DEC LPC I/F Generic Decode Range 2 00000000h R/W */
+    /* 8Ch–8Eh    GEN3_DEC LPC I/F Generic Decode Range 3 00000000h R/W */
+    /* 90h–93h    GEN4_DEC LPC I/F Generic Decode Range 4 00000000h R/W */
+
+    /* A0h–CFh    Power Management */
     pThis->dev.config[0xa0] = 0x08;
     pThis->dev.config[0xa2] = 0x00;
     pThis->dev.config[0xa3] = 0x00;
@@ -275,8 +300,16 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->dev.config[0xac] = 0x00;
     pThis->dev.config[0xae] = 0x00;
 
+    /* D0h–D3h   FWH_SEL1  Firmware Hub Select 1  */
+    /* D4h–D5h   FWH_SEL2  Firmware Hub Select 2 */
+    /* D8h–D9h   FWH_DEC_EN1 Firmware Hub Decode Enable 1 */
+    /* DCh       BIOS_CNTL BIOS Control */
+    /* E0h-E1h   FDCAP     Feature Detection Capability ID   */
+    /* E2h       FDLEN     Feature Detection Capability Length */
+    /* E3h       FDVER     Feature Detection Version  */
+    /* E4h-EBh   FDVCT     Feature Vector Description */
 
-    /* We need to allow direct config reading from this address */
+    /* F0h-F3h RCBA Root Complex Base Address */
     pThis->dev.config[0xf0] = (uint8_t)(RCBA_BASE | 1); /* enabled */
     pThis->dev.config[0xf1] = (uint8_t)(RCBA_BASE >> 8);
     pThis->dev.config[0xf2] = (uint8_t)(RCBA_BASE >> 16);
