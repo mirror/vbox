@@ -142,8 +142,9 @@ public:
         return messageOkCancel (aParent, aType, aMessage, QString::null,
                                 aAutoConfirmId, aOkText, aCancelText); }
 
-    bool showModalProgressDialog (CProgress &aProgress, const QString &aTitle,
-                                  QWidget *aParent, int aMinDuration = 2000);
+    bool showModalProgressDialog(CProgress &progress, const QString &strTitle,
+                                 const QString &strImage = "", QWidget *pParent = 0,
+                                 bool fSheetOnDarwin = false, int cMinDuration = 2000);
 
     QWidget* mainWindowShown() const;
     QWidget* mainMachineWindowShown() const;

@@ -535,7 +535,7 @@ void VBoxSnapshotsWgt::restoreSnapshot()
     if (console.isOk())
     {
         /* Show the progress dialog */
-        vboxProblem().showModalProgressDialog (progress, mMachine.GetName(),
+        vboxProblem().showModalProgressDialog (progress, mMachine.GetName(), "",
                                                vboxProblem().mainWindowShown());
 
         if (progress.GetResultCode() != 0)
@@ -581,7 +581,7 @@ void VBoxSnapshotsWgt::deleteSnapshot()
     if (console.isOk())
     {
         /* Show the progress dialog */
-        vboxProblem().showModalProgressDialog (progress, mMachine.GetName(),
+        vboxProblem().showModalProgressDialog (progress, mMachine.GetName(), "",
                                                vboxProblem().mainWindowShown());
 
         if (progress.GetResultCode() != 0)
@@ -652,7 +652,7 @@ void VBoxSnapshotsWgt::takeSnapshot()
         if (console.isOk())
         {
             /* Show the progress dialog */
-            vboxProblem().showModalProgressDialog (progress, mMachine.GetName(),
+            vboxProblem().showModalProgressDialog (progress, mMachine.GetName(), "",
                                                    vboxProblem().mainWindowShown());
 
             if (progress.GetResultCode() != 0)
