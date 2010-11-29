@@ -65,6 +65,7 @@ linux-bin_INST = bin/
 linux-bin_MODE = a+rx,u+w
 linux-bin_SOURCES = \
         VBoxSysInfo.sh \
+        VBoxCreateUSBNode.sh \
 	VBox.sh=>VBox.sh \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
 
@@ -144,6 +145,7 @@ VBOX_LNX_NO_STRIP = \
 	  components/VirtualBox_XPCOM.xpt) \
 	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
 	VBoxSysInfo.sh \
+	VBoxCreateUSBNode.sh \
 	VBox.sh \
 	VBox.png
 

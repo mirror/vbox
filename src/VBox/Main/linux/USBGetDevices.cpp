@@ -100,6 +100,7 @@ static const USBDEVTREELOCATION s_aTreeLocations[] =
 {
     { "/proc/bus/usb", false },
     { "/dev/bus/usb",  false },
+    { "/dev/vboxusb",  true },
     { "/dev/bus/usb",  true },
 };
 
