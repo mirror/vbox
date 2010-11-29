@@ -565,26 +565,5 @@ ntGetTimerResolution_SDKS.win = WINPSDK W2K3DDK VBOX_NTDLL
 
 endif # VBOX_WITH_TESTCASES
 
-
-#
-# Various useful tools
-#
-
-# RTLdrFlt is similar to c++filt, except that it's for VMMR0.r0 stacks.
-PROGRAMS += RTLdrFlt
-RTLdrFlt_TEMPLATE = VBOXR3TSTEXE
-RTLdrFlt_SOURCES = RTLdrFlt.cpp
-
-# RTGzip - our gzip clone (for testing the gzip/gunzip streaming code)
-PROGRAMS += RTGzip
-RTGzip_TEMPLATE = VBOXR3TSTEXE
-RTGzip_SOURCES = RTGzip.cpp
-
-# RTTar - our tar clone (for testing the tar/gzip/gunzip streaming code)
-PROGRAMS += RTTar
-RTTar_TEMPLATE = VBOXR3TSTEXE
-RTTar_SOURCES = RTTar.cpp
-
-
 include	$(KBUILD_PATH)/subfooter.kmk
 

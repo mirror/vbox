@@ -712,7 +712,7 @@ static int rtManifestReadLine(RTVFSIOSTREAM hVfsIos, char *pszLine, size_t cbLin
         char ch;
         int rc = RTVfsIoStrmRead(hVfsIos, &ch, 1, true /*fBLocking*/, NULL);
         if (RT_FAILURE(rc))
-            return rc == VERR_EOF ? VINF_EOF : rc;
+            return rc;
 
         /* \r\n */
         if (ch == '\r')
@@ -893,7 +893,7 @@ RTDECL(int) RTManifestReadStandardEx(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos
                 {
                     fType = s_aHexAttrs[i].fType;
                     for (unsigned off = 0; off < s_aHexAttrs[i].cchHex; off++)
-                        if (!RT_C_IS_XDIGIT(pszAttr[off]))
+                        if (!RT_C_IS_XDIGIT(pszValue[off]))
                         {
                             RTStrPrintf(pszErr, cbErr, "Expected hex digit at %zu on line %u (value '%s', pos %u)",
                                         pszValue - szLine + off, iLine, pszValue, off);
