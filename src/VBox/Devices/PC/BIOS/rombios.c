@@ -4644,24 +4644,6 @@ void set_e820_range(ES, DI, start, end, extra_start, extra_end, type)
     write_word(ES, DI+18, 0x0);
 }
 
-Bit32u readBiosVar(varNum)
-    Bit16u varNum;
-{
-    int i, iPort = 0x402;
-    Bit32u result = 0;
-    Bit8u bits[4];
-
-    outw(iPort, varNum);
-
-    for (i=0; i<4; i++)
-        bits[i] = inb(iPort);
-
-    result = (((Bit32u)bits[3]) << 24) | (((Bit32u)bits[2]) <<  16) |
-             (((Bit32u)bits[1]) <<  8) | (((Bit32u)bits[0]) <<  0);
-
-    return result;
-}
-
   void
 int15_function32(regs, ES, DS, FLAGS)
   pushad_regs_t regs; // REGS pushed via pushad
@@ -4765,8 +4747,8 @@ ASM_END
                 extra_highbits_memory_size = inb_cmos(0x5d);
 #endif /* !VBOX */
 
-                mcfgStart = readBiosVar(1);
-                mcfgSize  = readBiosVar(2);
+                mcfgStart = 0;
+                mcfgSize  = 0;
 
                 switch(regs.u.r16.bx)
                 {
