@@ -85,8 +85,8 @@ void VBoxSetupDisplaysHGSMI (PVBOXVIDEO_COMMON pCommon,
 
 void VBoxFreeDisplaysHGSMI(PVBOXVIDEO_COMMON pCommon);
 #ifndef VBOX_WITH_WDDM
-DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
-DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, uint32_t iDisplay, struct _VBVAHOSTCMD ** ppCmd);
+DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct VBVAHOSTCMD * pCmd);
+DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, uint32_t iDisplay, struct VBVAHOSTCMD ** ppCmd);
 #endif
 
 
