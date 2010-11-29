@@ -36,7 +36,9 @@ ifndef VBOX_ONLY_DOCS
   LIBRARIES += SUPR0
  endif
 endif
-if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
+if  !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && !defined(VBOX_ONLY_TESTSUITE)
  ifdef VBOX_WITH_SUPSVC
   PROGRAMS += VBoxSupSvc
  endif
@@ -65,7 +67,7 @@ if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
  ifeq ($(KBUILD_TARGET),freebsd)
   include $(PATH_SUB_CURRENT)/freebsd/files_vboxdrv
  endif
-endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
+endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
 
 
 #
@@ -164,7 +166,9 @@ SUPR0IdcClient_SOURCES = \
 	SUPR0IdcClientStubs.c
 
 
-if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
+if  !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && !defined(VBOX_ONLY_TESTSUITE)
 
 #
 # VBoxDrv.sys - The Windows driver.
@@ -458,6 +462,6 @@ endif # solaris
 SUPDrv.c_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 
-endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
+endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
 include $(KBUILD_PATH)/subfooter.kmk
 

@@ -1006,10 +1006,11 @@ else
 endif
 
 
-VBOX_WITH_EXTPACK_OS_ARCHS ?= linux.amd64 linux.x86 solaris.amd64 solaris.x86 win.amd64 win.x86
-# +++  darwin.amd64 darwin.x86 freebsd.amd64 freebsd.x86 os2.x86
 extpacks-packing:
-	+ $(KMK) VBOX_ONLY_EXTPACKS=1 packing
+	+ $(KMK) VBOX_ONLY_EXTPACKS=1 \
+		VBOX_WITH_EXTPACK_OS_ARCHS="linux.amd64 linux.x86 solaris.amd64 solaris.x86 win.amd64 win.x86" \
+		packing
+# +++  darwin.amd64 darwin.x86 freebsd.amd64 freebsd.x86 os2.x86 ^^^
 
 .PHONY: \
 	extpacks-build-win.x86 \

@@ -29,7 +29,10 @@ biossums_SOURCES = biossums.c
 filesplitter_TEMPLATE = VBOXBLDPROG
 filesplitter_SOURCES = filesplitter.cpp
 
-if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_DOCS)
+if  !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && !defined(VBOX_ONLY_SDK)
  PROGRAMS += scm
  scm_TEMPLATE = VBOXR3EXE
  scm_SOURCES = scm.cpp
@@ -38,3 +41,4 @@ if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONL
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
+
