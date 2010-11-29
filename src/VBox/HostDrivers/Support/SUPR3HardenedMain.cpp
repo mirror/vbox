@@ -648,37 +648,38 @@ static void supR3HardenedMainGrabCapabilites(void)
 
 # elif defined(RT_OS_SOLARIS)
     /*
-     * Add net_icmpaccess privilege to permitted, effective and inheritable
-     * privileges before dropping root privileges. Skip this hacky code for
-     * real root, as it removes lots of privileges due to the harcoded set.
+     * Add net_icmpaccess privilege to permitted and effective privilege set
+     * before dropping root privileges. Leave inheritable privilege set
+     * untouched as we don't want to pass any additional privileges to
+     * subprocesses (think of VBoxSVC).
      */
-    if (getuid() != 0)
+    priv_set_t *pPrivSet = priv_allocset();
+    if (pPrivSet)
     {
-        priv_set_t *pPrivSet = priv_str_to_set("basic", ",", NULL);
-        if (pPrivSet)
+        priv_emptyset(pPrivSet);
+        /* The inheritable privilege set contains the privileges the process
+         * would have received if it weren't marked as suid root. */
+        int rc = getppriv(PRIV_SET, PRIV_INHERITABLE, pPrivSet);
+        if (!rc)
         {
             priv_addset(pPrivSet, PRIV_NET_ICMPACCESS);
-            int rc = setppriv(PRIV_SET, PRIV_INHERITABLE, pPrivSet);
+            rc = setppriv(PRIV_SET, PRIV_PERMITTED, pPrivSet);
             if (!rc)
             {
-                rc = setppriv(PRIV_SET, PRIV_PERMITTED, pPrivSet);
-                if (!rc)
-                {
-                    rc = setppriv(PRIV_SET, PRIV_EFFECTIVE, pPrivSet);
-                    if (rc)
-                        supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set effective privilege set.\n");
-                }
-                else
-                    supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set permitted privilege set.\n");
+                rc = setppriv(PRIV_SET, PRIV_EFFECTIVE, pPrivSet);
+                if (rc)
+                    supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set effective privilege set.\n");
             }
             else
-                supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set inheritable privilege set.\n");
-
-            priv_freeset(pPrivSet);
+                supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to set permitted privilege set.\n");
         }
         else
-            supR3HardenedError(-1, false, "SUPR3HardenedMain: failed to get basic privilege set.\n");
+            supR3HardenedError(rc, false, "SUPR3HardenedMain: failed to get inheritable privilege set.\n");
+
+        priv_freeset(pPrivSet);
     }
+    else
+        supR3HardenedError(-1, false, "SUPR3HardenedMain: failed to allocate privilege set.\n");
 # endif
 }
 
