@@ -3287,7 +3287,8 @@ int pgmR3PhysRomReset(PVM pVM)
                 /* clear all the shadow pages. */
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
                 {
-                    Assert(!PGM_PAGE_IS_ZERO(&pRom->aPages[iPage].Shadow));
+                    if (PGM_PAGE_IS_ZERO(&pRom->aPages[iPage].Shadow))
+                        continue;
                     Assert(!PGM_PAGE_IS_BALLOONED(&pRom->aPages[iPage].Shadow));
                     void *pvDstPage;
                     const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
