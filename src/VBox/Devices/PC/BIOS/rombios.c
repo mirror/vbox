@@ -4647,13 +4647,18 @@ void set_e820_range(ES, DI, start, end, extra_start, extra_end, type)
 Bit32u readBiosVar(varNum)
     Bit16u varNum;
 {
-    int iPort = 0x402;
+    int i, iPort = 0x402;
     Bit32u result = 0;
+    Bit8u bits[4];
 
     outw(iPort, varNum);
-    result = (inb(iPort) << 24) | (inb(iPort) <<  16) |
-             (inb(iPort) << 8) | (inb(iPort) << 0);
-    BX_INFO("var %d is %x\n", varNum, result);
+
+    for (i=0; i<4; i++)
+        bits[i] = inb(iPort);
+
+    result = (((Bit32u)bits[3]) << 24) | (((Bit32u)bits[2]) <<  16) |
+             (((Bit32u)bits[1]) <<  8) | (((Bit32u)bits[0]) <<  0);
+
     return result;
 }
 
@@ -4828,7 +4833,7 @@ ASM_END
 #endif
                         set_e820_range(ES, regs.u.r16.di,
                                        0xfffc0000L, 0x00000000L, 0, 0, 2);
-                        if (mcfgStart > 0)
+                        if (mcfgStart != 0)
                             regs.u.r32.ebx = 6;
                         else
                         {
@@ -4841,7 +4846,7 @@ ASM_END
                      case 6:
                         /* PCI MMIO config space (MCFG) */
                         set_e820_range(ES, regs.u.r16.di,
-                                       mcfgStart, mcfgSize, 0, 0, 2);
+                                       mcfgStart, mcfgStart + mcfgSize, 0, 0, 2);
 
                         if (extra_highbits_memory_size || extra_lowbits_memory_size)
                             regs.u.r32.ebx = 7;
