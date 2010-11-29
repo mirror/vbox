@@ -23,16 +23,16 @@ ifdef VBOX_SINGLE_MAKEFILE
 if defined(VBOX_ONLY_ADDITIONS)
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
 
-else if defined(VBOX_ONLY_TESTSUITE)
- include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
-
-else if defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)
+else if defined(VBOX_ONLY_DOCS) || defined(VBOX_WITH_EXTPACKS) || defined(VBOX_ONLY_SDK)
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
 
-else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
+else if defined(VBOX_ONLY_TESTSUITE)
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+
+else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK && !VBOX_ONLY_TESTSUITE
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
@@ -48,7 +48,7 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS && !VBOX
  ifdef VBOX_WITH_TESTCASES
   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  endif
-endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK && !VBOX_ONLY_TESTSUITE
 
 else  # !VBOX_SINGLE_MAKEFILE
 DEPTH  = ..
