@@ -3955,18 +3955,24 @@ TEMPLATE_VBoxAdvBldProg_LIBS    = \
 	$(PATH_LIB)/RuntimeBldProg$(VBOX_SUFF_LIB) \
 	$(TEMPLATE_VBOXBLDPROG_LIBS)
 TEMPLATE_VBoxAdvBldProg_LIBS.darwin = \
+	$(TEMPLATE_VBOXBLDPROG_LIBS) \
 	iconv \
 	$(TEMPLATE_VBOXBLDPROG_LIBS.darwin)
 TEMPLATE_VBoxAdvBldProg_LIBS.freebsd = \
+	$(TEMPLATE_VBOXBLDPROG_LIBS) \
 	iconv \
 	rt \
 	$(TEMPLATE_VBOXBLDPROG_LIBS.freebsd)
 TEMPLATE_VBoxAdvBldProg_LIBS.linux = \
+	$(TEMPLATE_VBOXBLDPROG_LIBS) \
 	crypt \
 	$(TEMPLATE_VBOXBLDPROG_LIBS.linux)
 TEMPLATE_VBoxAdvBldProg_LIBS.solaris = \
-	kstat \
+	$(TEMPLATE_VBOXBLDPROG_LIBS) \
 	contract \
+	kstat \
+	rt \
+	socket \
 	$(TEMPLATE_VBOXBLDPROG_LIBS.solaris)
 
 
