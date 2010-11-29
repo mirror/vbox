@@ -167,7 +167,7 @@ static VBoxVHWAInfo g_VBoxVHWASupportInfo;
 static bool g_bVBoxVHWAChecked = false;
 static bool g_bVBoxVHWASupported = false;
 
-static struct _VBOXVHWACMD * vhwaHHCmdCreate(VBOXVHWACMD_TYPE type, size_t size)
+static struct VBOXVHWACMD * vhwaHHCmdCreate(VBOXVHWACMD_TYPE type, size_t size)
 {
     char *buf = (char*)malloc(VBOXVHWACMD_SIZE_FROMBODYSIZE(size));
     memset(buf, 0, size);
@@ -2129,7 +2129,7 @@ int VBoxVHWAImage::reset(VHWACommandList * pCmdList)
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-int VBoxVHWAImage::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
+int VBoxVHWAImage::vhwaSurfaceCanCreate(struct VBOXVHWACMD_SURF_CANCREATE *pCmd)
 {
     VBOXQGLLOG_ENTER(("\n"));
 
@@ -2227,7 +2227,7 @@ int VBoxVHWAImage::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd
     return VINF_SUCCESS;
 }
 
-int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
+int VBoxVHWAImage::vhwaSurfaceCreate (struct VBOXVHWACMD_SURF_CREATE *pCmd)
 {
     VBOXQGLLOG_ENTER (("\n"));
 
@@ -2475,7 +2475,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 }
 
 #ifdef VBOX_WITH_WDDM
-int VBoxVHWAImage::vhwaSurfaceGetInfo(struct _VBOXVHWACMD_SURF_GETINFO *pCmd)
+int VBoxVHWAImage::vhwaSurfaceGetInfo(struct VBOXVHWACMD_SURF_GETINFO *pCmd)
 {
     VBoxVHWAColorFormat format;
     Assert(!format.isValid());
@@ -2503,7 +2503,7 @@ int VBoxVHWAImage::vhwaSurfaceGetInfo(struct _VBOXVHWACMD_SURF_GETINFO *pCmd)
     return VERR_INVALID_PARAMETER;
 }
 #endif
-int VBoxVHWAImage::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
+int VBoxVHWAImage::vhwaSurfaceDestroy(struct VBOXVHWACMD_SURF_DESTROY *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
     VBoxVHWASurfList *pList = pSurf->getComplexList();
@@ -2580,7 +2580,7 @@ int VBoxVHWAImage::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
                  (_pr)->right - (_pr)->left,        \
                  (_pr)->bottom - (_pr)->top)
 
-int VBoxVHWAImage::vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd)
+int VBoxVHWAImage::vhwaSurfaceLock(struct VBOXVHWACMD_SURF_LOCK *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
     VBOXQGLLOG_ENTER(("pSurf (0x%x)\n",pSurf));
@@ -2593,7 +2593,7 @@ int VBoxVHWAImage::vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd)
     return pSurf->lock(NULL, pCmd->u.in.flags);
 }
 
-int VBoxVHWAImage::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
+int VBoxVHWAImage::vhwaSurfaceUnlock(struct VBOXVHWACMD_SURF_UNLOCK *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
 #ifdef DEBUG_misha
@@ -2634,13 +2634,13 @@ int VBoxVHWAImage::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
     return pSurf->unlock();
 }
 
-int VBoxVHWAImage::vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd)
+int VBoxVHWAImage::vhwaSurfaceBlt(struct VBOXVHWACMD_SURF_BLT *pCmd)
 {
     Q_UNUSED(pCmd);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxVHWAImage::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
+int VBoxVHWAImage::vhwaSurfaceFlip(struct VBOXVHWACMD_SURF_FLIP *pCmd)
 {
     VBoxVHWASurfaceBase *pTargSurf = handle2Surface(pCmd->u.in.hTargSurf);
     VBoxVHWASurfaceBase *pCurrSurf = handle2Surface(pCmd->u.in.hCurrSurf);
@@ -2664,13 +2664,13 @@ int VBoxVHWAImage::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
     return VINF_SUCCESS;
 }
 
-int VBoxVHWAImage::vhwaSurfaceColorFill(struct _VBOXVHWACMD_SURF_COLORFILL *pCmd)
+int VBoxVHWAImage::vhwaSurfaceColorFill(struct VBOXVHWACMD_SURF_COLORFILL *pCmd)
 {
     NOREF(pCmd);
     return VERR_NOT_IMPLEMENTED;
 }
 
-void VBoxVHWAImage::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd)
+void VBoxVHWAImage::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd)
 {
     if(pCmd->u.in.flags & VBOXVHWA_OVER_KEYDEST)
     {
@@ -2750,7 +2750,7 @@ void VBoxVHWAImage::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VB
     }
 }
 
-int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd)
+int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd)
 {
     VBoxVHWASurfaceBase *pSrcSurf = handle2Surface(pCmd->u.in.hSrcSurf);
     VBoxVHWASurfList *pList = pSrcSurf->getComplexList();
@@ -2817,7 +2817,7 @@ int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPD
     return VINF_SUCCESS;
 }
 
-int VBoxVHWAImage::vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION *pCmd)
+int VBoxVHWAImage::vhwaSurfaceOverlaySetPosition(struct VBOXVHWACMD_SURF_OVERLAY_SETPOSITION *pCmd)
 {
     VBoxVHWASurfaceBase *pDstSurf = handle2Surface(pCmd->u.in.hDstSurf);
     VBoxVHWASurfaceBase *pSrcSurf = handle2Surface(pCmd->u.in.hSrcSurf);
@@ -2858,7 +2858,7 @@ int VBoxVHWAImage::vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLA
     return VINF_SUCCESS;
 }
 
-int VBoxVHWAImage::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *pCmd)
+int VBoxVHWAImage::vhwaSurfaceColorkeySet(struct VBOXVHWACMD_SURF_COLORKEY_SET *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
 
@@ -2893,7 +2893,7 @@ int VBoxVHWAImage::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET 
     return VINF_SUCCESS;
 }
 
-int VBoxVHWAImage::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
+int VBoxVHWAImage::vhwaQueryInfo1(struct VBOXVHWACMD_QUERYINFO1 *pCmd)
 {
     VBOXQGLLOG_ENTER(("\n"));
     bool bEnabled = false;
@@ -2996,7 +2996,7 @@ int VBoxVHWAImage::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
     return VINF_SUCCESS;
 }
 
-int VBoxVHWAImage::vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd)
+int VBoxVHWAImage::vhwaQueryInfo2(struct VBOXVHWACMD_QUERYINFO2 *pCmd)
 {
     VBOXQGLLOG_ENTER(("\n"));
 
@@ -3506,7 +3506,7 @@ int VBoxVHWAImage::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * p
     return rc;
 }
 
-int VBoxVHWAImage::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
+int VBoxVHWAImage::vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd)
 {
 //    PVM pVM = (PVM)pCmd->pVM;
 //    uint32_t intsId = 0; /* @todo: set the proper id */
@@ -4233,7 +4233,7 @@ int VBoxQGLOverlay::reset()
 #ifdef VBOX_WITH_VIDEOHWACCEL
             case VBOXVHWA_PIPECMD_VHWA:
                 {
-                    struct _VBOXVHWACMD * pCmd = pCur->vhwaCmd();
+                    struct VBOXVHWACMD * pCmd = pCur->vhwaCmd();
                     pCmd->rc = VERR_INVALID_STATE;
                     display.CompleteVHWACommand((BYTE*)pCmd);
                 }
@@ -4285,7 +4285,7 @@ int VBoxQGLOverlay::resetGl()
     return VINF_SUCCESS;
 }
 
-int VBoxQGLOverlay::onVHWACommand(struct _VBOXVHWACMD * pCmd)
+int VBoxQGLOverlay::onVHWACommand(struct VBOXVHWACMD * pCmd)
 {
     uint32_t flags = 0;
     switch(pCmd->enmCmd)
@@ -4611,7 +4611,7 @@ void VBoxQGLOverlay::addMainDirtyRect(const QRect & aRect)
     }
 }
 
-int VBoxQGLOverlay::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
+int VBoxQGLOverlay::vhwaSurfaceUnlock(struct VBOXVHWACMD_SURF_UNLOCK *pCmd)
 {
     int rc = mOverlayImage.vhwaSurfaceUnlock(pCmd);
     VBoxVHWASurfaceBase * pVGA = mOverlayImage.vgaSurface();
@@ -4626,7 +4626,7 @@ int VBoxQGLOverlay::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
 
 void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
 {
-    struct _VBOXVHWACMD * pCmd = (struct _VBOXVHWACMD *)cmd;
+    struct VBOXVHWACMD * pCmd = (struct VBOXVHWACMD *)cmd;
     switch(pCmd->enmCmd)
     {
         case VBOXVHWACMD_TYPE_SURF_CANCREATE:
@@ -4830,7 +4830,7 @@ void VBoxQGLOverlay::vhwaSaveExec(struct SSMHANDLE * pSSM)
     mCmdPipe.saveExec(pSSM, mOverlayImage.vramBase());
 }
 
-int VBoxQGLOverlay::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
+int VBoxQGLOverlay::vhwaConstruct(struct VBOXVHWACMD_HH_CONSTRUCT *pCmd)
 {
     PVM pVM = (PVM)pCmd->pVM;
     uint32_t intsId = m_id;
