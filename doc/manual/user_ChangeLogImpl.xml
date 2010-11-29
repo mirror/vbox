@@ -159,16 +159,16 @@
 
       <listitem>
         <para>OVF/OVA: creation of the manifest file on export is optional
-         now</para>
+          now</para>
       </listitem>
 
       <listitem>
         <para>OVF/OVA: allow overwriting the target disk format on
-         import</para>
+          import</para>
       </listitem>
 
       <listitem>
-        <para>OVF/OVA: fixed export of VM's with iSCSI disks</para>
+        <para>OVF/OVA: fixed export of VMs with iSCSI disks</para>
       </listitem>
 
       <listitem>
@@ -176,11 +176,31 @@
       </listitem>
 
       <listitem>
-        <para>GUI: add configuration dialog for port forwarding in NAT mode</para>
+        <para>GUI: add the possibility to sort the guest VM list</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: add the possibility to delete all harddisk attached to an
+          VM, when this VM is deleted (bug #5511)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: built-in creation of desktop file shortcuts to start VMs on
+          double click (bug #2322)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: add configuration dialog for port forwarding in NAT mode
+          (bug #1657)</para>
       </listitem>
 
       <listitem>
         <para>GUI: show the guest window content on save and restore</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: DMG image support for the virtual CD/DVD (bug
+          #6760)</para>
       </listitem>
 
     </itemizedlist>
