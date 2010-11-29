@@ -1416,6 +1416,9 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
 
         /* enable the show log item for the selected vm */
         mVmShowLogsAction->setEnabled(true);
+        /* Enable the shell interaction features. */
+        mVmOpenInFileManagerAction->setEnabled(true);
+        mVmCreateShortcut->setEnabled(true);
     }
     else
     {
@@ -1470,6 +1473,9 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
 
         /* disable the show log item for the selected vm */
         mVmShowLogsAction->setEnabled(false);
+        /* Disable the shell interaction features. */
+        mVmOpenInFileManagerAction->setEnabled(false);
+        mVmCreateShortcut->setEnabled(false);
     }
 }
 
