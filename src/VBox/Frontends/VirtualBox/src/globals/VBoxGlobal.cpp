@@ -5573,7 +5573,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine)
     /* Hide the "VM spawning" progress dialog */
     /* I hope 1 minute will be enough to spawn any running VM silently, isn't it? */
     int iSpawningDuration = 60000;
-    vboxProblem().showModalProgressDialog(progress, machine.GetName(), 0, iSpawningDuration);
+    vboxProblem().showModalProgressDialog(progress, machine.GetName(), "", 0, false, iSpawningDuration);
     if (progress.GetResultCode() != 0)
         vboxProblem().cannotOpenSession(vbox, machine, progress);
 

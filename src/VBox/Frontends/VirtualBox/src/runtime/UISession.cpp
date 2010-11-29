@@ -202,9 +202,9 @@ void UISession::powerUp()
 
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
-        vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow(), 0);
+        vboxProblem().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", mainMachineWindow(), true, 0);
     else
-        vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow());
+        vboxProblem().showModalProgressDialog(progress, machine.GetName(), "", mainMachineWindow());
 
     /* Check for a progress failure: */
     if (progress.GetResultCode() != 0)
@@ -257,7 +257,7 @@ void UISession::powerUp()
                 if (uimachine()->machineLogic())
                     uimachine()->machineLogic()->setPreventAutoClose(true);
                 /* Show the power down progress dialog */
-                vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow());
+                vboxProblem().showModalProgressDialog(progress, machine.GetName(), "", mainMachineWindow());
                 if (progress.GetResultCode() != 0)
                     vboxProblem().cannotStopMachine(progress);
                 /* Allow further auto-closing: */
@@ -375,8 +375,8 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     bool fResult = guest.isOk();
     if (fResult)
     {
-        vboxProblem().showModalProgressDialog(progressInstall, tr("Install"),
-                                              mainMachineWindow(), 500 /* 500ms delay. */);
+        vboxProblem().showModalProgressDialog(progressInstall, tr("Install"), "",
+                                              mainMachineWindow(), false, 500 /* 500ms delay. */);
         if (progressInstall.GetCanceled())
             return;
 
@@ -1008,11 +1008,11 @@ void UISession::preparePowerUp()
     const CMachine &machine = session().GetMachine();
     /* Check if we are in teleportation waiting mode. In that case no first run
      * wizard is necessary. */
-    KMachineState state = machine.GetState();
+    m_machineState = machine.GetState();
     if (   isFirstTimeStarted()
-        && !((   state == KMachineState_PoweredOff
-              || state == KMachineState_Aborted
-              || state == KMachineState_Teleported)
+        && !((   m_machineState == KMachineState_PoweredOff
+              || m_machineState == KMachineState_Aborted
+              || m_machineState == KMachineState_Teleported)
              && machine.GetTeleporterEnabled()))
     {
         UIFirstRunWzd wzd(mainMachineWindow(), session().GetMachine());

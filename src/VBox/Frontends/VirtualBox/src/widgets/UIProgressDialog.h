@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxProgressDialog class declaration
+ * UIProgressDialog class declaration
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxProgressDialog_h__
-#define __VBoxProgressDialog_h__
+#ifndef __UIProgressDialog_h__
+#define __UIProgressDialog_h__
 
 /* Qt includes */
 #include "QIDialog.h"
@@ -40,47 +40,53 @@ class QProgressBar;
  *
  * @note The CProgress instance is passed as a non-const reference to the
  *       constructor (to memorize COM errors if they happen), and therefore must
- *       not be destroyed before the created VBoxProgressDialog instance is
+ *       not be destroyed before the created UIProgressDialog instance is
  *       destroyed.
  */
-class VBoxProgressDialog: protected QIDialog
+class UIProgressDialog: protected QIDialog
 {
     Q_OBJECT;
 
 public:
-    VBoxProgressDialog (CProgress &aProgress, const QString &aTitle,
-                        int aMinDuration = 2000, QWidget *aParent = 0);
 
-    int run (int aRefreshInterval);
-    bool cancelEnabled() const { return mCancelEnabled; }
+    UIProgressDialog(CProgress &progress, const QString &strTitle,
+                     QPixmap *pImage = 0, bool fSheetOnDarwin = false,
+                     int cMinDuration = 2000, QWidget *pParent = 0);
+
+    int run(int aRefreshInterval);
+    bool cancelEnabled() const { return m_fCancelEnabled; }
 
 protected:
+
     virtual void retranslateUi();
 
     virtual void reject();
 
-    virtual void timerEvent (QTimerEvent *aEvent);
-    virtual void closeEvent (QCloseEvent *aEvent);
+    virtual void timerEvent(QTimerEvent *pEvent);
+    virtual void closeEvent(QCloseEvent *pEvent);
 
 private slots:
+
     void showDialog();
     void cancelOperation();
 
 private:
-    /* Private member vars */
-    CProgress &mProgress;
-    QILabel *mLabel;
-    QILabel *mETA;
-    QString mCancelText;
-    QProgressBar *mProgressBar;
-    UIMiniCancelButton *mCancelBtn;
-    bool mCancelEnabled;
-    const ulong mOpCount;
-    ulong mCurOp;
-    bool mEnded;
 
-    static const char *sOpDescTpl;
+    /* Private member vars */
+    CProgress &m_progress;
+    QILabel *m_pImageLbl;
+    QILabel *m_pDescriptionLbl;
+    QILabel *m_pEtaLbl;
+    QString m_strCancel;
+    QProgressBar *m_progressBar;
+    UIMiniCancelButton *m_pCancelBtn;
+    bool m_fCancelEnabled;
+    const ulong m_cOperations;
+    ulong m_iCurrentOperation;
+    bool m_fEnded;
+
+    static const char *m_spcszOpDescTpl;
 };
 
-#endif /* __VBoxProgressDialog_h__ */
+#endif /* __UIProgressDialog_h__ */
 
