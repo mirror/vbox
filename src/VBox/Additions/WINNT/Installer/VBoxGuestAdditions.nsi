@@ -114,7 +114,7 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 
   ; Set branding text which appears on the horizontal line at the bottom
 !ifdef _DEBUG
-  BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING% ($%VBOX_SVN_REV%) - Debug Build"
+  BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING% (r$%VBOX_SVN_REV%) - Debug Build"
 !else
   BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING%"
 !endif
@@ -676,9 +676,9 @@ success:
   WriteRegStr HKLM "${PRODUCT_INSTALL_KEY}" "Revision" "$%VBOX_SVN_REV%"
   WriteRegStr HKLM "${PRODUCT_INSTALL_KEY}" "InstallDir" "$INSTDIR"
 
-!ifndef _DEBUG
-  SetRebootFlag true  ; This will show a reboot page at end of installation
-!endif
+  ; Set the reboot flag to tell the finish page that is should
+  ; default to the "reboot now" entry
+  SetRebootFlag true
 
 exit:
 
