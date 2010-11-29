@@ -39,13 +39,13 @@
 #define LOGVBVABUFFER(a) do {} while(0)
 #endif
 
-typedef struct _VBVAPARTIALRECORD
+typedef struct VBVAPARTIALRECORD
 {
     uint8_t *pu8;
     uint32_t cb;
 } VBVAPARTIALRECORD;
 
-typedef struct _VBVAVIEW
+typedef struct VBVAVIEW
 {
     VBVAINFOVIEW    view;
     VBVAINFOSCREEN  screen;
@@ -69,7 +69,7 @@ typedef struct VBVAMOUSESHAPEINFO
 } VBVAMOUSESHAPEINFO;
 
 /* @todo saved state: save and restore VBVACONTEXT */
-typedef struct _VBVACONTEXT
+typedef struct VBVACONTEXT
 {
     uint32_t cViews;
     VBVAVIEW aViews[64 /* @todo SchemaDefs::MaxGuestMonitors*/];

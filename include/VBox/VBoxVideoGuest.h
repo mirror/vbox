@@ -86,9 +86,6 @@ typedef struct HGSMIHOSTCOMMANDCONTEXT
 } HGSMIHOSTCOMMANDCONTEXT, *PHGSMIHOSTCOMMANDCONTEXT;
 
 
-typedef struct VBVARECORD VBVARECORD, *PVBVARECORD;
-typedef struct _VBVABUFFER VBVABUFFER, *PVBVABUFFER;
-
 /**
  * Structure grouping the context needed for sending graphics acceleration
  * information to the host via VBVA.  Each screen has its own VBVA buffer.
@@ -104,10 +101,10 @@ typedef struct VBVABUFFERCONTEXT
     bool        fHwBufferOverflow;
     /** The VBVA record that we are currently preparing for the host, NULL if
      * none. */
-    VBVARECORD *pRecord;
+    struct VBVARECORD *pRecord;
     /** Pointer to the VBVA buffer mapped into the current address space.  Will
      * be NULL if VBVA is not enabled. */
-    VBVABUFFER *pVBVA;
+    struct VBVABUFFER *pVBVA;
 } VBVABUFFERCONTEXT, *PVBVABUFFERCONTEXT;
 
 /** @name Helper functions
@@ -259,7 +256,7 @@ RTDECL(bool)     VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @{ */
 RTDECL(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                            VBVABUFFER *pVBVA);
+                            struct VBVABUFFER *pVBVA);
 RTDECL(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
                              PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
 RTDECL(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
