@@ -185,6 +185,7 @@ public:
     uint32_t lower() const {return mLower; }
 
     bool operator==(const VBoxVHWAColorKey & other) const { return mUpper == other.mUpper && mLower == other.mLower; }
+    bool operator!=(const VBoxVHWAColorKey & other) const { return !(*this == other); }
 private:
     uint32_t mUpper;
     uint32_t mLower;
@@ -317,6 +318,9 @@ public:
     int toYTex(int y) {return y/mColorFormat.heightCompression();}
     ulong memSize(){ return mBytesPerLine * mRect.height(); }
     uint32_t bytesPerLine() {return mBytesPerLine; }
+#ifdef DEBUG_misha
+    void dbgDump();
+#endif
 
 protected:
     virtual void doUpdate(uchar * pAddress, const QRect * pRect);
@@ -524,6 +528,11 @@ public:
     const VBoxVHWAColorKey* dstCKey() { return mpDstCKey; }
     const VBoxVHWAColorKey* srcCKey() { return mpSrcCKey; }
     bool notIntersectedMode() { return mbNotIntersected; }
+
+#ifdef DEBUG_misha
+    void dbgDump();
+#endif
+
 protected:
     static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst);
 
@@ -1713,8 +1722,8 @@ class VBoxVHWATextureImageFBO : public T
 {
 public:
     VBoxVHWATextureImageFBO(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :
-            T(size, format, aMgr, flags & (~VBOXVHWAIMG_FBO)),
-            mFBOTex(size, VBoxVHWAColorFormat(32, 0xff0000, 0xff00, 0xff), aMgr, (flags & (~VBOXVHWAIMG_FBO)) | VBOXVHWAIMG_LINEAR),
+            T(size, format, aMgr, flags & (~(VBOXVHWAIMG_FBO | VBOXVHWAIMG_LINEAR))),
+            mFBOTex(size, VBoxVHWAColorFormat(32, 0xff0000, 0xff00, 0xff), aMgr, (flags & (~VBOXVHWAIMG_FBO))),
             mpvFBOTexMem(NULL)
     {
     }
