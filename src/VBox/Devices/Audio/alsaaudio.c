@@ -663,6 +663,18 @@ static int alsa_recover (snd_pcm_t *handle)
     return 0;
 }
 
+static int alsa_resume (snd_pcm_t *handle)
+{
+    int err = snd_pcm_resume (handle);
+    if (err < 0) {
+#ifndef VBOX
+        alsa_logerr (err, "Failed to resume handle %p\n", handle);
+#endif
+        return -1;
+    }
+    return 0;
+}
+
 static snd_pcm_sframes_t alsa_get_avail (snd_pcm_t *handle)
 {
     snd_pcm_sframes_t avail;
@@ -737,6 +749,22 @@ static int alsa_run_out (HWVoiceOut *hw)
                     }
                     if (conf.verbose) {
                         dolog ("Recovering from playback xrun\n");
+                    }
+                    continue;
+
+                case -ESTRPIPE:
+                    /* stream is suspended and waiting for an
+                       application recovery */
+                    if (alsa_resume (alsa->handle)) {
+#ifndef VBOX
+                        alsa_logerr (written, "Failed to write %d frames\n", len);
+#else
+                        LogRel(("ALSA: Failed to resume output stream\n"));
+#endif
+                        goto exit;
+                    }
+                    if (conf.verbose) {
+                        dolog ("Resuming suspended output stream\n");
                     }
                     continue;
 
@@ -952,8 +980,33 @@ static int alsa_run_in (HWVoiceIn *hw)
         return 0;
     }
 
-    if (!avail && (snd_pcm_state (alsa->handle) == SND_PCM_STATE_PREPARED)) {
-        avail = hw->samples;
+    if (!avail) {
+        snd_pcm_state_t state;
+        state = snd_pcm_state (alsa->handle);
+        switch (state) {
+            case SND_PCM_STATE_PREPARED:
+                avail = hw->samples;
+                break;
+            case SND_PCM_STATE_SUSPENDED:
+                /* stream is suspended and waiting for an application recovery */
+                if (alsa_resume (alsa->handle)) {
+#ifndef VBOX
+                    dolog ("Failed to resume suspended input stream\n");
+#else
+                    LogRel(("ALSA: Failed to resume input stream\n"));
+#endif
+                    return 0;
+                }
+                if (conf.verbose) {
+                    dolog ("Resuming suspended input stream\n");
+                }
+                break;
+            default:
+                if (conf.verbose) {
+                    dolog ("No frames available and ALSA state is %d\n", state);
+                }
+                return 0;
+        }
     }
 
     decr = audio_MIN (dead, avail);
