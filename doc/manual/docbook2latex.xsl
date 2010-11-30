@@ -413,9 +413,9 @@
   </xsl:template>
 
   <xsl:template match="tgroup">
-    <xsl:text>&#x0a;&#x0a;\begin{center}&#x0a;\begin{tabulary}{.9\textwidth}[]{|L|L|}&#x0a;\hline&#x0a;</xsl:text>
+    <xsl:text>&#x0a;&#x0a;{\small\begin{center}&#x0a;\begin{tabulary}{.9\textwidth}[]{|L|L|L|}&#x0a;\hline&#x0a;</xsl:text>
     <xsl:apply-templates />
-    <xsl:text>&#x0a;\end{tabulary}&#x0a;\end{center}&#x0a;</xsl:text>
+    <xsl:text>&#x0a;\end{tabulary}&#x0a;\end{center}}&#x0a;</xsl:text>
   </xsl:template>
 
   <xsl:template match="row">

@@ -2019,22 +2019,13 @@ All rights reserved.
 Value: 2006.01.01</screen>
   </sect1>
 
-  <sect1>
+  <sect1 id="vboxmanage-setproperty">
     <title>VBoxManage setproperty</title>
 
     <para>This command is used to change global settings which affect the
     entire VirtualBox installation. Some of these correspond to the settings
     in the "Global settings" dialog in the graphical user interface. The
     following properties are available:<glosslist>
-        <glossentry>
-          <glossterm>hdfolder</glossterm>
-
-          <glossdef>
-            <para>This specifies the default folder that is used to keep disk
-            image files (.vdi, .vmdk, .vhd).</para>
-          </glossdef>
-        </glossentry>
-
         <glossentry>
           <glossterm>machinefolder</glossterm>
 
@@ -2412,10 +2403,10 @@ Value: 2006.01.01</screen>
     <para>The following subcommands are available (where
     <computeroutput>&lt;vm&gt;</computeroutput>, in each case, can either be a
     VM name or a VM UUID, as with the other VBoxManage commands):<itemizedlist>
-      <listitem>
-        <para><computeroutput>execute</computeroutput>, which
-          allows for executing a program/script (process) which is already installed
-          and runnable on the guest. This command only works while a VM is up and
+        <listitem>
+          <para><computeroutput>execute</computeroutput>, which allows for
+          executing a program/script (process) which is already installed and
+          runnable on the guest. This command only works while a VM is up and
           running and has the following syntax:</para>
 
           <screen>VBoxManage guestcontrol execute &lt;vmname&gt;|&lt;uuid&gt;
@@ -2427,156 +2418,157 @@ Value: 2006.01.01</screen>
             [--verbose] [--wait-for exit,stdout,stderr||]</screen>
 
           <para>where the parameters mean: <glosslist>
-            <glossentry>
-              <glossterm>uuid|vmname</glossterm>
+              <glossentry>
+                <glossterm>uuid|vmname</glossterm>
 
-              <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-            <glossterm>path to program</glossterm>
+              <glossentry>
+                <glossterm>path to program</glossterm>
 
-              <glossdef>
-                <para>Absolute path and process name of process to execute in the
-                guest, e.g.
-                <computeroutput>C:\Windows\System32\calc.exe</computeroutput></para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Absolute path and process name of process to execute
+                  in the guest, e.g.
+                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput></para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--arguments "&lt;arguments&gt;"</glossterm>
+              <glossentry>
+                <glossterm>--arguments "&lt;arguments&gt;"</glossterm>
 
-              <glossdef>
-                <para>One or more arguments to pass to the process being
-                executed.</para>
+                <glossdef>
+                  <para>One or more arguments to pass to the process being
+                  executed.</para>
 
-                <para>Arguments containing spaces must be enclosed in quotation
-                marks. More than one <computeroutput>--arguments</computeroutput>
-                at a time can be specified to keep the command line tidy.</para>
-              </glossdef>
-            </glossentry>
+                  <para>Arguments containing spaces must be enclosed in
+                  quotation marks. More than one
+                  <computeroutput>--arguments</computeroutput> at a time can
+                  be specified to keep the command line tidy.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--environment "&lt;NAME&gt;=&lt;VALUE&gt;"</glossterm>
+              <glossentry>
+                <glossterm>--environment
+                "&lt;NAME&gt;=&lt;VALUE&gt;"</glossterm>
 
-              <glossdef>
-                <para>One or more environment variables to be set or unset.</para>
+                <glossdef>
+                  <para>One or more environment variables to be set or
+                  unset.</para>
 
-                <para>By default, the new process in the guest will be created
-                with the the standard environment of the guest OS. This option
-                allows for modifying that environment. To set/modify a variable, a
-                pair of <computeroutput>NAME=VALUE</computeroutput> must be
-                specified; to unset a certain variable, the name with no value
-                must set, e.g. <computeroutput>NAME=</computeroutput>.</para>
+                  <para>By default, the new process in the guest will be
+                  created with the the standard environment of the guest OS.
+                  This option allows for modifying that environment. To
+                  set/modify a variable, a pair of
+                  <computeroutput>NAME=VALUE</computeroutput> must be
+                  specified; to unset a certain variable, the name with no
+                  value must set, e.g.
+                  <computeroutput>NAME=</computeroutput>.</para>
 
-                <para>Arguments containing spaces must be enclosed in quotation
-                marks. More than one
-                <computeroutput>--environment</computeroutput> at a time can be
-                specified to keep the command line tidy.</para>
-              </glossdef>
-            </glossentry>
+                  <para>Arguments containing spaces must be enclosed in
+                  quotation marks. More than one
+                  <computeroutput>--environment</computeroutput> at a time can
+                  be specified to keep the command line tidy.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--flags &lt;flags&gt;</glossterm>
+              <glossentry>
+                <glossterm>--flags &lt;flags&gt;</glossterm>
 
-              <glossdef>
-                <para>Additional flags to set. This is not used at the
-                moment.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Additional flags to set. This is not used at the
+                  moment.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--timeout &lt;msec&gt;</glossterm>
+              <glossentry>
+                <glossterm>--timeout &lt;msec&gt;</glossterm>
 
-              <glossdef>
-                <para>Value (in milliseconds) that specifies the time how long the
-                started process is allowed to run and how long VBoxManage waits
-                for getting output from that process. If no timeout is specified,
-                VBoxManage will wait forever until the started process ends or an
-                error occured.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Value (in milliseconds) that specifies the time how
+                  long the started process is allowed to run and how long
+                  VBoxManage waits for getting output from that process. If no
+                  timeout is specified, VBoxManage will wait forever until the
+                  started process ends or an error occured.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--username &lt;name&gt;</glossterm>
+              <glossentry>
+                <glossterm>--username &lt;name&gt;</glossterm>
 
-              <glossdef>
-                <para>Name of the user the process should run under. This user
-                must exist on the guest OS.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Name of the user the process should run under. This
+                  user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--password &lt;password&gt;</glossterm>
+              <glossentry>
+                <glossterm>--password &lt;password&gt;</glossterm>
 
-              <glossdef>
-                <para>Password of the user account specified with
-                <computeroutput>--username</computeroutput>. If not given, an
-                empty password is assumed.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--verbose</glossterm>
+              <glossentry>
+                <glossterm>--verbose</glossterm>
 
-              <glossdef>
-                <para>Tells VBoxManage to be more verbose during the
-                execution.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose during the
+                  execution.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--wait-for &lt;action&gt;</glossterm>
+              <glossentry>
+                <glossterm>--wait-for &lt;action&gt;</glossterm>
 
-              <glossdef>
-                <para>Tells VBoxManage to wait for a certain action to happen and
-                react to it. The following actions are available: <glosslist>
-                    <glossentry>
-                      <glossterm>exit</glossterm>
+                <glossdef>
+                  <para>Tells VBoxManage to wait for a certain action to
+                  happen and react to it. The following actions are available:
+                  <glosslist>
+                      <glossentry>
+                        <glossterm>exit</glossterm>
 
-                      <glossdef>
-                        <para>Waits until the process ends and outputs its exit
-                        code along with the exit reason/flags.</para>
-                      </glossdef>
-                    </glossentry>
+                        <glossdef>
+                          <para>Waits until the process ends and outputs its
+                          exit code along with the exit reason/flags.</para>
+                        </glossdef>
+                      </glossentry>
 
-                    <glossentry>
-                      <glossterm>stdout or stderr</glossterm>
+                      <glossentry>
+                        <glossterm>stdout or stderr</glossterm>
 
-                      <glossdef>
-                        <para>Waits until the process ends and outputs its exit
-                        code along with the exit reason/flags. After that
-                        VBoxManage retrieves the output collected from the guest
-                        process's stdout and stderr.</para>
-                      </glossdef>
-                    </glossentry>
-                  </glosslist></para>
-              </glossdef>
-            </glossentry>
-          </glosslist>
-        </para>
+                        <glossdef>
+                          <para>Waits until the process ends and outputs its
+                          exit code along with the exit reason/flags. After
+                          that VBoxManage retrieves the output collected from
+                          the guest process's stdout and stderr.</para>
+                        </glossdef>
+                      </glossentry>
+                    </glosslist></para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
 
-        <para>
-          <note>
-            <para>On Windows there are certain limitations for graphical
+          <para><note>
+              <para>On Windows there are certain limitations for graphical
               applications; please see <xref linkend="KnownIssues" /> for more
-              information.
-            </para>
-          </note>
-          Examples: <screen>VBoxManage --nologo guestcontrol execute "My VM" "/bin/ls" --arguments "-l /usr"
+              information.</para>
+            </note> Examples: <screen>VBoxManage --nologo guestcontrol execute "My VM" "/bin/ls" --arguments "-l /usr"
           --username foo --password bar --wait-for stdout</screen> <screen>VBoxManage --nologo guestcontrol execute "My VM" "c:\\windows\\system32\\ipconfig.exe"
           --username foo --password bar --wait-for stdout</screen> Note that
-          the double backslashes in the second example are only required on Unix
-          hosts.
-        </para>
-      </listitem>
+          the double backslashes in the second example are only required on
+          Unix hosts.</para>
+        </listitem>
 
-      <listitem>
-        <para><computeroutput>copyto</computeroutput>, which
-          allows copying files from the host to the guest
-          (only with installed Guest Additions 4.0 and later).</para>
+        <listitem>
+          <para><computeroutput>copyto</computeroutput>, which allows copying
+          files from the host to the guest (only with installed Guest
+          Additions 4.0 and later).</para>
 
           <screen>VBoxManage copyto &lt;vmname&gt;|&lt;uuid&gt;
             &lt;source on host&gt; &lt;destination on guest&gt;
@@ -2584,134 +2576,129 @@ Value: 2006.01.01</screen>
             [--dryrun] [--recursive] [--verbose] [--flags &lt;flags&gt;]</screen>
 
           <para>where the parameters mean: <glosslist>
-            <glossentry>
-              <glossterm>uuid|vmname</glossterm>
+              <glossentry>
+                <glossterm>uuid|vmname</glossterm>
 
-              <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-            <glossterm>source on host</glossterm>
+              <glossentry>
+                <glossterm>source on host</glossterm>
 
-              <glossdef>
-                <para>Absolute path of source file(s) on host to copy over to
-                the guest, e.g.
-                <computeroutput>C:\Windows\System32\calc.exe</computeroutput>. This also
-                can be a wildcard expression, e.g.
-                <computeroutput>C:\Windows\System32\*.dll</computeroutput>
-                </para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Absolute path of source file(s) on host to copy over
+                  to the guest, e.g.
+                  <computeroutput>C:\Windows\System32\calc.exe</computeroutput>.
+                  This also can be a wildcard expression, e.g.
+                  <computeroutput>C:\Windows\System32\*.dll</computeroutput></para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-            <glossterm>destination on guest</glossterm>
+              <glossentry>
+                <glossterm>destination on guest</glossterm>
 
-              <glossdef>
-                <para>Absolute destination path on the guest, e.g.
-                <computeroutput>C:\Temp</computeroutput></para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Absolute destination path on the guest, e.g.
+                  <computeroutput>C:\Temp</computeroutput></para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--username &lt;name&gt;</glossterm>
+              <glossentry>
+                <glossterm>--username &lt;name&gt;</glossterm>
 
-              <glossdef>
-                <para>Name of the user the copy process should run under. This user
-                must exist on the guest OS.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Name of the user the copy process should run under.
+                  This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--password &lt;password&gt;</glossterm>
+              <glossentry>
+                <glossterm>--password &lt;password&gt;</glossterm>
 
-              <glossdef>
-                <para>Password of the user account specified with
-                <computeroutput>--username</computeroutput>. If not given, an
-                empty password is assumed.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--dryrun</glossterm>
+              <glossentry>
+                <glossterm>--dryrun</glossterm>
 
-              <glossdef>
-                <para>Tells VBoxManage to only perform a dry run instead of
-                really copying files to the guest.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Tells VBoxManage to only perform a dry run instead of
+                  really copying files to the guest.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--recursive</glossterm>
+              <glossentry>
+                <glossterm>--recursive</glossterm>
 
-              <glossdef>
-                <para>Recursively copies files/directories.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Recursively copies files/directories.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--verbose</glossterm>
+              <glossentry>
+                <glossterm>--verbose</glossterm>
 
-              <glossdef>
-                <para>Tells VBoxManage to be more verbose during the
-                copy operation.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose during the copy
+                  operation.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--flags &lt;flags&gt;</glossterm>
+              <glossentry>
+                <glossterm>--flags &lt;flags&gt;</glossterm>
 
-              <glossdef>
-                <para>Additional flags to set. This is not used at the
-                moment.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Additional flags to set. This is not used at the
+                  moment.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
 
-            </glosslist>
-          </para>
-      </listitem>
-
-      <listitem>
-        <para><computeroutput>updateadditions</computeroutput>, which
-          allows for updating an already installed Guest Additions version on
-          the guest (only already installed Guest Additions 4.0 and later).</para>
+        <listitem>
+          <para><computeroutput>updateadditions</computeroutput>, which allows
+          for updating an already installed Guest Additions version on the
+          guest (only already installed Guest Additions 4.0 and later).</para>
 
           <screen>VBoxManage guestcontrol updateadditions &lt;vmname&gt;|&lt;uuid&gt;
             [--source "&lt;guest additions .ISO file to use&gt;"] [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
-            <glossentry>
-              <glossterm>uuid|vmname</glossterm>
+              <glossentry>
+                <glossterm>uuid|vmname</glossterm>
 
-              <glossdef>
-                <para>The VM UUID or VM name. Mandatory.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--source "&lt;guest additions .ISO file to use&gt;"</glossterm>
+              <glossentry>
+                <glossterm>--source "&lt;guest additions .ISO file to
+                use&gt;"</glossterm>
 
-              <glossdef>
-                <para>Full path to an alternative VirtualBox Guest Additions .ISO file to use
-                for the Guest Additions update.</para>
-              </glossdef>
-            </glossentry>
+                <glossdef>
+                  <para>Full path to an alternative VirtualBox Guest Additions
+                  .ISO file to use for the Guest Additions update.</para>
+                </glossdef>
+              </glossentry>
 
-            <glossentry>
-              <glossterm>--verbose</glossterm>
+              <glossentry>
+                <glossterm>--verbose</glossterm>
 
-              <glossdef>
-                <para>Tells VBoxManage to be more verbose during the
-                update.</para>
-              </glossdef>
-            </glossentry>
-
-            </glosslist>
-          </para>
-      </listitem>
-
-    </itemizedlist></para>
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose during the
+                  update.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+      </itemizedlist></para>
   </sect1>
 
   <sect1 id="vboxmanage-dhcpserver">

@@ -15,17 +15,16 @@
   VirtualBox with the image of a CD-ROM in an ISO file, VirtualBox can present
   this image to a guest system as if it were a physical CD-ROM. Similarly, you
   can give a guest system access to the real network via its virtual network
-  card, and, if you choose, give the host system, other guests, or computers
-  on the Internet access to the guest system.</para>
+  card, and, if you so choose, give the host system, other guests, or
+  computers on the Internet access to the guest system.</para>
 
   <sect1>
     <title id="guestossupport">Supported guest operating systems</title>
 
     <para>Since VirtualBox is designed to provide a generic virtualization
     environment for x86 systems, it may run operating systems of any kind,
-    even those that are not officially supported. However, our focus is to
-    optimize the product's performance for a select list of guest
-    systems:</para>
+    even those not listed here. However, the focus is to optimize VirtualBox
+    for the following guest systems:</para>
 
     <para><glosslist>
         <glossentry>
@@ -158,7 +157,7 @@
             <emphasis role="bold">both license and technical
             restrictions</emphasis> that limit its use to certain hardware and
             usage scenarios. It is important that you understand and obey
-            these restrictions. </para>
+            these restrictions.</para>
 
             <para>In particular, for most versions of Mac OS X Server, Apple
             prohibits installing them on non-Apple hardware. Also, only the
@@ -261,7 +260,7 @@
           <para><emphasis role="bold">Input devices.</emphasis> By default,
           VirtualBox emulates a standard PS/2 keyboard and mouse. These
           devices are supported by almost all past and present operating
-          systems. </para>
+          systems.</para>
 
           <para>In addition, VirtualBox can provide virtual USB input devices
           to avoid having to capture mouse and keyboard, as described in <xref
@@ -786,7 +785,7 @@
         <listitem>
           <para>For virtual hard disks, a drop-down list appears on the right,
           listing all the hard disk images that VirtualBox currently knows
-          about. </para>
+          about.</para>
 
           <para>The folder icon next to the drop-down allow you to select a
           different disk image using a standard file dialog.</para>
