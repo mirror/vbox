@@ -2679,6 +2679,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pThis->guestInfo.osType));
         if (pThis->pDrv)
             pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
+/** @todo Missing pfnUpdateGuestInfo2 */
     }
     if (pThis->pDrv)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
