@@ -1132,32 +1132,42 @@ void vboxguestwinUnmapVMMDevMemory(PVBOXGUESTDEVEXT pDevExt)
 
 VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer)
 {
+    VBOXOSTYPE enmOsType;
     switch (winVer)
     {
         case WINNT4:
-            return VBOXOSTYPE_WinNT4;
+            enmOsType = VBOXOSTYPE_WinNT4;
+            break;
 
         case WIN2K:
-            return VBOXOSTYPE_Win2k;
+            enmOsType = VBOXOSTYPE_Win2k;
+            break;
 
         case WINXP:
-            return VBOXOSTYPE_WinXP;
+            enmOsType = VBOXOSTYPE_WinXP;
+            break;
 
         case WIN2K3:
-            return VBOXOSTYPE_Win2k3;
+            enmOsType = VBOXOSTYPE_Win2k3;
+            break;
 
         case WINVISTA:
-            return VBOXOSTYPE_WinVista;
+            enmOsType = VBOXOSTYPE_WinVista;
+            break;
 
         case WIN7:
-            return VBOXOSTYPE_Win7;
+            enmOsType = VBOXOSTYPE_Win7;
+            break;
 
         default:
+            /* We don't know, therefore NT family. */
+            enmOsType = VBOXOSTYPE_WinNT;
             break;
     }
-
-    /* We don't know, therefore NT family. */
-    return VBOXOSTYPE_WinNT;
+#if ARCH_BITS == 64
+    enmOsType += VBOXOSTYPE_x64;
+#endif
+    return enmOsType;
 }
 
 

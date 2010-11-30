@@ -305,8 +305,12 @@ static int VBoxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                 /*
                                  * Call the common device extension initializer.
                                  */
-                                rc = VBoxGuestInitDevExt(&g_DevExt, g_uIOPortBase, g_pMMIOBase,
-                                                         g_cbMMIO, VBOXOSTYPE_Solaris,
+                                rc = VBoxGuestInitDevExt(&g_DevExt, g_uIOPortBase, g_pMMIOBase, g_cbMMIO,
+#if ARCH_BITS == 64
+                                                         VBOXOSTYPE_Solaris_x64,
+#else
+                                                         VBOXOSTYPE_Solaris,
+#endif
                                                          VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
                                 if (RT_SUCCESS(rc))
                                 {
