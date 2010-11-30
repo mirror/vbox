@@ -22,10 +22,10 @@
       <computeroutput>.vbox</computeroutput> file extension) and its disk
       images.</para>
 
-      <para>By default, this "machine folder" is placed in a shared folder
+      <para>By default, this "machine folder" is placed in a common folder
       called "VirtualBox VMs", which VirtualBox creates in the current system
-      user's home directory, as per the conventions of the host operating
-      system:</para>
+      user's home directory. The location of this home directory depends on
+      the conventions of the host operating system:</para>
 
       <itemizedlist>
         <listitem>
@@ -189,9 +189,9 @@
             <row>
               <entry></entry>
 
-              <entry>Before 4.0</entry>
+              <entry><emphasis role="bold">Before 4.0</emphasis></entry>
 
-              <entry>4.0 or above</entry>
+              <entry><emphasis role="bold">4.0 or above</emphasis></entry>
             </row>
 
             <row>
