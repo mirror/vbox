@@ -1010,6 +1010,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
             <Info>Guest Operating System</Info>
             <Description>Linux 2.6.x</Description>
         </OperatingSystemSection> */
+    VirtualSystemDescriptionEntry *pvsdeOS = llOS.front();
     xml::ElementNode *pelmOperatingSystemSection;
     if (enFormat == OVF_0_9)
     {
@@ -1019,11 +1020,15 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     else
         pelmOperatingSystemSection = pelmVirtualSystem->createChild("OperatingSystemSection");
 
-    pelmOperatingSystemSection->setAttribute("ovf:id", llOS.front()->strOvf);
+    pelmOperatingSystemSection->setAttribute("ovf:id", pvsdeOS->strOvf);
     pelmOperatingSystemSection->createChild("Info")->addContent("The kind of installed guest operating system");
     Utf8Str strOSDesc;
-    convertCIMOSType2VBoxOSType(strOSDesc, (ovf::CIMOSType_T)llOS.front()->strOvf.toInt32(), "");
+    convertCIMOSType2VBoxOSType(strOSDesc, (ovf::CIMOSType_T)pvsdeOS->strOvf.toInt32(), "");
     pelmOperatingSystemSection->createChild("Description")->addContent(strOSDesc);
+    // add the VirtualBox ostype in a custom tag in a different namespace
+    xml::ElementNode *pelmVBoxOSType = pelmOperatingSystemSection->createChild("vbox:OSType");
+    pelmVBoxOSType->setAttribute("ovf:required", "false");
+    pelmVBoxOSType->addContent(pvsdeOS->strVboxCurrent);
 
     // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
     xml::ElementNode *pelmVirtualHardwareSection;
