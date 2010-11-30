@@ -74,6 +74,7 @@ linux-misc_INST = bin/
 linux-misc_MODE = a+r,u+w
 linux-misc_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png \
+	$(PATH_ROOT)/src/VBox/Installer/linux/virtualbox.xml \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
 	$(if $(VBOX_WITH_QTGUI),$(PATH_linux-misc)/virtualbox.desktop,)
 linux-misc_CLEAN = $(PATH_linux-misc)/virtualbox.desktop
@@ -86,6 +87,10 @@ else
 	$(QUIET)$(SED) -e "s+\$$VBOX_DOC_PATH+/opt/VirtualBox+" --output $@ $<
 endif
 
+INSTALLS += linux-icons
+linux-icons_INST = bin/icons
+linux-icons_MODE = a+r,u+w
+linux-icons_SOURCES = $(VBOX_MIME_ICONS)
 
 
 #
@@ -159,10 +164,12 @@ ifdef VBOX_WITH_QTGUI
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so)
  VBOX_LNX_NO_STRIP += \
 	virtualbox.desktop \
+	virtualbox.xml \
 	$(VBOX_LICENSE_FILES) \
  	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/lib*VBox*)),) \
 	$(if $(VBOX_WITH_QT4_SUN),accessible/libqtaccessiblewidgets.so,) \
- 	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm)
+ 	$(foreach f,$(VBOX_APPROVED_GUI_LANGUAGES),nls/VirtualBox_$(f).qm nls/qt_$(f).qm) \
+	icons
 endif
 
 # Guest Additions
@@ -253,6 +260,12 @@ ifdef VBOX_WITH_EFIFW_PACKING
 	VBoxEFI32.fd \
 	VBoxEFI64.fd
 endif
+
+VBOX_MIME_ICONS = \
+	$(addprefix $(PATH_ROOT)/src/VBox/Resources/other/,\
+	    $(foreach f,ova ovf vbox vbox-extpack, \
+	        $(foreach s,16 20 24 32 48 64 72 96 128 256,\
+		    virtualbox-$(f)-$(s)px.png=>$(s)x$(s)/virtualbox-$(f).png)))
 
 #
 # All the bin files that goes into the archives.
