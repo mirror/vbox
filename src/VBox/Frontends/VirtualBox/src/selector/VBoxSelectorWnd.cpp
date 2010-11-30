@@ -169,15 +169,11 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
         ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
         ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
     mVmOpenInFileManagerAction = new QAction(this);
-//    mVmOpenInFileManagerAction>setIcon(UIIconPool::iconSetFull(
-//        QSize(32, 32), QSize(16, 16),
-//        ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
-//        ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
+    mVmOpenInFileManagerAction->setIcon(UIIconPool::iconSet(
+        ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png"));
     mVmCreateShortcut = new QAction(this);
-//    mVmCreateShortcut->setIcon(UIIconPool::iconSetFull(
-//        QSize(32, 32), QSize(16, 16),
-//        ":/vm_show_logs_32px.png", ":/show_logs_16px.png",
-//        ":/vm_show_logs_disabled_32px.png", ":/show_logs_disabled_16px.png"));
+    mVmCreateShortcut->setIcon(UIIconPool::iconSet(
+        ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png"));
 
     mHelpActions.setup(this);
 
