@@ -24,17 +24,9 @@
 //#include <iprt/thread.h>
 //#include <iprt/stream.h>
 
-#ifndef Q_WS_WIN
-NS_DECL_CLASSINFO(UIMainEventListener)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIMainEventListener, IEventListener)
-#endif
-
 UIMainEventListener::UIMainEventListener(QObject * /* pParent */)
 //  : QObject(pParent) /* Todo: Not sure if pParent should delete this. Especially on Win there is ref counting implemented. */
   : QObject()
-#ifdef Q_WS_WIN
-  , m_refcnt(0)
-#endif /* Q_WS_WIN */
 {
     /* For queued events we have to extra register our enums/interface classes
      * (Q_DECLARE_METATYPE isn't sufficient).
@@ -54,7 +46,7 @@ UIMainEventListener::UIMainEventListener(QObject * /* pParent */)
  * @todo: instead of double wrapping of events into signals maybe it
  * make sense to use passive listeners, and peek up events in main thread.
  */
-STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
+STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent *pEvent)
 {
     CEvent event(pEvent);
 //    RTPrintf("Event received: %d (%RTthrd)\n", event.GetType(), RTThreadSelf());
@@ -221,3 +213,4 @@ STDMETHODIMP UIMainEventListener::HandleEvent(IEvent *pEvent)
     }
     return S_OK;
 }
+

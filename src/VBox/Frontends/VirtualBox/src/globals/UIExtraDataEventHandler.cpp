@@ -251,7 +251,7 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
 {
 //    RTPrintf("Self add: %RTthrd\n", RTThreadSelf());
     const CVirtualBox &vbox = vboxGlobal().virtualBox();
-    UIMainEventListener *pListener = new UIMainEventListener(this);
+    UIMainEventListenerImpl *pListener = new UIMainEventListenerImpl(this);
     m_mainEventListener = CEventListener(pListener);
     QVector<KVBoxEventType> events;
     events
@@ -263,12 +263,12 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
 
     /* This is a vetoable event, so we have to respond to the event and have to
      * use a direct connection therefor. */
-    connect(pListener, SIGNAL(sigExtraDataCanChange(QString, QString, QString, bool&, QString&)),
+    connect(pListener->getWrapped(), SIGNAL(sigExtraDataCanChange(QString, QString, QString, bool&, QString&)),
             m_pHandler, SLOT(sltExtraDataCanChange(QString, QString, QString, bool&, QString&)),
             Qt::DirectConnection);
 
     /* Use a direct connection to the helper class. */
-    connect(pListener, SIGNAL(sigExtraDataChange(QString, QString, QString)),
+    connect(pListener->getWrapped(), SIGNAL(sigExtraDataChange(QString, QString, QString)),
             m_pHandler, SLOT(sltExtraDataChange(QString, QString, QString)),
             Qt::DirectConnection);
 
