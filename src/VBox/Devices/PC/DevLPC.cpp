@@ -238,6 +238,7 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     PCIDevSetHeaderType       (&pThis->dev, 0x80); /* normal, multifunction device (so that other devices can be its functions) */
     PCIDevSetSubSystemVendorId(&pThis->dev, 0x8086);
     PCIDevSetSubSystemId      (&pThis->dev, 0x7270);
+    PCIDevSetInterruptPin     (&pThis->dev, 0x00); /* The LPC device itself generates no interrupts */
     PCIDevSetStatus           (&pThis->dev, 0x0200); /* PCI_status_devsel_medium */
 
     /** @todo: rewrite using PCI accessors */
