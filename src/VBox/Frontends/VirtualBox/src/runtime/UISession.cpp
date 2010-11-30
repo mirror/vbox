@@ -375,8 +375,8 @@ void UISession::sltInstallGuestAdditionsFrom(const QString &strSource)
     bool fResult = guest.isOk();
     if (fResult)
     {
-        vboxProblem().showModalProgressDialog(progressInstall, tr("Install"), "",
-                                              mainMachineWindow(), false, 500 /* 500ms delay. */);
+        vboxProblem().showModalProgressDialog(progressInstall, tr("Install"), ":/progress_install_guest_additions_90px.png",
+                                              mainMachineWindow(), true, 500 /* 500ms delay. */);
         if (progressInstall.GetCanceled())
             return;
 

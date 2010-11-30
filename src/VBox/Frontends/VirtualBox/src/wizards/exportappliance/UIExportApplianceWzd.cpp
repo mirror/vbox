@@ -653,7 +653,7 @@ bool UIExportApplianceWzdPage4::exportVMs(CAppliance &appliance)
     if (fResult)
     {
         /* Show some progress, so the user know whats going on */
-        vboxProblem().showModalProgressDialog(progress, tr("Exporting Appliance ..."), "", this);
+        vboxProblem().showModalProgressDialog(progress, tr("Exporting Appliance ..."), ":/progress_export_90px.png", this, true);
         if (progress.GetCanceled())
             return false;
         if (!progress.isOk() || progress.GetResultCode() != 0)
