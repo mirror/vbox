@@ -188,8 +188,8 @@ RTDECL(int) RTManifestCreate(uint32_t fFlags, PRTMANIFEST phManifest)
     pThis->cEntries     = 0;
     pThis->SelfEntry.StrCore.pszString = "main";
     pThis->SelfEntry.StrCore.cchString = 4;
-    pThis->SelfEntry.Attributes        = 0;
-    pThis->SelfEntry.cAttributes       = NULL;
+    pThis->SelfEntry.Attributes        = NULL;
+    pThis->SelfEntry.cAttributes       = 0;
     pThis->SelfEntry.fVisited          = false;
     pThis->SelfEntry.szName[0]         = '\0';
 
