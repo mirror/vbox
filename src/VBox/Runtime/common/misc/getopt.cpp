@@ -206,11 +206,10 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
             if ((pOpt->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
             {
                 /*
-                 * A value is required with the argument. We're trying to be very
+                 * A value is required with the argument. We're trying to be
                  * understanding here and will permit any of the following:
                  *      --long12:value,  --long12=value, --long12 value,
                  *      --long:value,    --long=value,   --long value,
-                 *      --long: value,   --long= value
                  *
                  * If the option is index, then all trailing chars must be
                  * digits.  For error reporting reasons we also match where
@@ -573,19 +572,15 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             /*
              * Find the argument value.
              *
-             * A value is required with the argument. We're trying to be very
+             * A value is required with the argument. We're trying to be
              * understanding here and will permit any of the following:
-             *      -svalue, -s:value, -s=value,
-             *      -s value, -s: value, -s= value
+             *      -svalue, -s value, -s:value and -s=value
              * (Ditto for long options.)
              */
             const char *pszValue;
             if (fShort)
             {
-                if (    pszArgThis[2] == '\0'
-                    ||  (  pszArgThis[3] == '\0'
-                         && (   pszArgThis[2] == ':'
-                             || pszArgThis[2] == '=')) )
+                if (pszArgThis[2] == '\0')
                 {
                     if (iThis + 1 >= pState->argc)
                         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
@@ -635,8 +630,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 }
                 else
                 {
-                    if (    pszArgThis[cchLong]     == '\0'
-                        ||  pszArgThis[cchLong + 1] == '\0')
+                    if (pszArgThis[cchLong] == '\0')
                     {
                         if (iThis + 1 >= pState->argc)
                             return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2009 Oracle Corporation
+ * Copyright (C) 2007-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -110,19 +110,24 @@ int main()
     const char *argv2[] =
     {
         "-s",               "string1",
-        "--optwithstring",  "string2",
+        "-sstring2",
+        "-s:string3",
+        "-s=string4",
+        "-s:",
+        "-s=",
+        "--optwithstring",  "string5",
+        "--optwithstring:string6",
+        "--optwithstring=string7",
+        "--optwithstring:",
+        "--optwithstring=",
 
         "-i",               "-42",
         "-i:-42",
         "-i=-42",
-        "-i:",              "-42",
-        "-i=",              "-42",
 
         "--optwithint",     "42",
         "--optwithint:42",
         "--optwithint=42",
-        "--optwithint:",    "42",
-        "--optwithint=",    "42",
 
         "-v",
         "--verbose",
@@ -133,7 +138,7 @@ int main()
         "-startvm",         "myvm",
 
         "nodash",
-        "nodashval",        "string3",
+        "nodashval",        "string9",
 
         "filename1",
         "-q",
@@ -146,12 +151,14 @@ int main()
         "-m08:0:27:00:ab:f3",
         "--mac:1:::::c",
 
-        "--strindex786",    "string4",
-        "--strindex786:string5",
-        "--strindex786=string6",
-        "strindex687",      "string7",
-        "strindex687:string8",
-        "strindex687=string9",
+        "--strindex786",    "string10",
+        "--strindex786:string11",
+        "--strindex786=string12",
+        "strindex687",      "string13",
+        "strindex687:string14",
+        "strindex687=string15",
+        "strindex688:",
+        "strindex689=",
         "--intindex137",    "1000",
         "--macindex138",    "08:0:27:00:ab:f3",
         "--indexnovalue1",
@@ -190,8 +197,35 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string1"));
     CHECK(GetState.uIndex == UINT32_MAX);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string2"));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string3"));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string4"));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 2);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string5"));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string6"));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string7"));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 's', 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
     CHECK(GetState.uIndex == UINT32_MAX);
 
     /* -i */
@@ -201,10 +235,6 @@ int main()
     CHECK(Val.i32 == -42);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == -42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
-    CHECK(Val.i32 == -42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
-    CHECK(Val.i32 == -42);
 
     /* --optwithint */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
@@ -212,10 +242,6 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == 42);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
-    CHECK(Val.i32 == 42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
-    CHECK(Val.i32 == 42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
     CHECK(Val.i32 == 42);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'v', 1);
@@ -238,7 +264,7 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 387, 1);
     CHECK_pDef(s_aOpts2, 7);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 388, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string3"));
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string9"));
 
     /* non-option, option, non-option  */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1);
@@ -281,28 +307,36 @@ int main()
     /* string with indexed argument */
     RTTestSub(hTest, "RTGetOpt - Option w/ Index");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string4"));
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string10"));
     CHECK(GetState.uIndex == 786);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string5"));
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string11"));
     CHECK(GetState.uIndex == 786);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string6"));
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string12"));
     CHECK(GetState.uIndex == 786);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 2);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string7"));
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string13"));
     CHECK(GetState.uIndex == 687);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string8"));
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string14"));
     CHECK(GetState.uIndex == 687);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
-    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string9"));
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string15"));
     CHECK(GetState.uIndex == 687);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(GetState.uIndex == 688);
+
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 1);
+    CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, ""));
+    CHECK(GetState.uIndex == 689);
 
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 401, 2);
     CHECK(Val.i32 == 1000);
@@ -415,8 +449,8 @@ int main()
         "foo5",
         "foo6",
         "foo7",
-        "-i:",              "-42",
-        "-i=",              "-42",
+        "-i:-42",
+        "-i=-42",
         "foo8",
         "--twovalues",       "firstvalue", "secondvalue",
         "foo9",
@@ -448,9 +482,9 @@ int main()
     CHECK(Val.i32 == -42);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == -42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == -42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == -42);
 
     /* --twovalues */
@@ -501,8 +535,8 @@ int main()
         "foo5",
         "foo6",
         "foo7",
-        "-i:",              "-42",
-        "-i=",              "-42",
+        "-i:-42",
+        "-i=-42",
         "foo8",
         "--twovalues",       "firstvalue", "secondvalue",
         "foo9",
@@ -532,9 +566,9 @@ int main()
     CHECK(Val.i32 == -42);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == -42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == -42);
-    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
     CHECK(Val.i32 == -42);
 
     /* --twovalues */
