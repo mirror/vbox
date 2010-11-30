@@ -1144,6 +1144,8 @@ bool VBoxSelectorWnd::eventFilter(QObject *pObject, QEvent *pEvent)
         case QEvent::FileOpen:
         {
             sltOpenUrls(QList<QUrl>() << static_cast<QFileOpenEvent*>(pEvent)->file());
+            pEvent->accept();
+            return true;
             break;
         }
 # if (QT_VERSION < 0x040402)
