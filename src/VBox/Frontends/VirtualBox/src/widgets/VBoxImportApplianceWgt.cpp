@@ -48,6 +48,7 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
     bool fResult = false;
     if (!aFile.isEmpty())
     {
+        CProgress progress;
         CVirtualBox vbox = vboxGlobal().virtualBox();
         /* Create a appliance object */
         mAppliance = new CAppliance(vbox.CreateAppliance());
@@ -55,60 +56,63 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
         if (fResult)
         {
             /* Read the appliance */
-            CProgress progress = mAppliance->Read (aFile);
+            progress = mAppliance->Read (aFile);
             fResult = mAppliance->isOk();
             if (fResult)
             {
                 /* Show some progress, so the user know whats going on */
                 vboxProblem().showModalProgressDialog (progress, tr ("Reading Appliance ..."), "", this);
                 if (!progress.isOk() || progress.GetResultCode() != 0)
+                    fResult = false;
+                else
                 {
-                    vboxProblem().cannotImportAppliance (progress, mAppliance, this);
-                    return false;
-                }
-                /* Now we have to interpret that stuff */
-                mAppliance->Interpret();
-                fResult = mAppliance->isOk();
-                if (fResult)
-                {
-                    if (mModel)
-                        delete mModel;
-
-                    QVector<CVirtualSystemDescription> vsds = mAppliance->GetVirtualSystemDescriptions();
-
-                    mModel = new VirtualSystemModel (vsds, this);
-
-                    ImportSortProxyModel *proxy = new ImportSortProxyModel (this);
-                    proxy->setSourceModel (mModel);
-                    proxy->sort (DescriptionSection, Qt::DescendingOrder);
-
-                    VirtualSystemDelegate *delegate = new VirtualSystemDelegate (proxy, this);
-
-                    /* Set our own model */
-                    mTvSettings->setModel (proxy);
-                    /* Set our own delegate */
-                    mTvSettings->setItemDelegate (delegate);
-                    /* For now we hide the original column. This data is displayed as tooltip
-                       also. */
-                    mTvSettings->setColumnHidden (OriginalValueSection, true);
-                    mTvSettings->expandAll();
-
-                    /* Check for warnings & if there are one display them. */
-                    bool fWarningsEnabled = false;
-                    QVector<QString> warnings = mAppliance->GetWarnings();
-                    if (warnings.size() > 0)
+                    /* Now we have to interpret that stuff */
+                    mAppliance->Interpret();
+                    fResult = mAppliance->isOk();
+                    if (fResult)
                     {
-                        foreach (const QString& text, warnings)
-                            mWarningTextEdit->append ("- " + text);
-                        fWarningsEnabled = true;
+                        if (mModel)
+                            delete mModel;
+
+                        QVector<CVirtualSystemDescription> vsds = mAppliance->GetVirtualSystemDescriptions();
+
+                        mModel = new VirtualSystemModel (vsds, this);
+
+                        ImportSortProxyModel *proxy = new ImportSortProxyModel (this);
+                        proxy->setSourceModel (mModel);
+                        proxy->sort (DescriptionSection, Qt::DescendingOrder);
+
+                        VirtualSystemDelegate *delegate = new VirtualSystemDelegate (proxy, this);
+
+                        /* Set our own model */
+                        mTvSettings->setModel (proxy);
+                        /* Set our own delegate */
+                        mTvSettings->setItemDelegate (delegate);
+                        /* For now we hide the original column. This data is displayed as tooltip
+                           also. */
+                        mTvSettings->setColumnHidden (OriginalValueSection, true);
+                        mTvSettings->expandAll();
+
+                        /* Check for warnings & if there are one display them. */
+                        bool fWarningsEnabled = false;
+                        QVector<QString> warnings = mAppliance->GetWarnings();
+                        if (warnings.size() > 0)
+                        {
+                            foreach (const QString& text, warnings)
+                                mWarningTextEdit->append ("- " + text);
+                            fWarningsEnabled = true;
+                        }
+                        mWarningWidget->setShown (fWarningsEnabled);
                     }
-                    mWarningWidget->setShown (fWarningsEnabled);
                 }
             }
         }
         if (!fResult)
         {
-            vboxProblem().cannotImportAppliance (mAppliance, this);
+            if (progress.isNull())
+                vboxProblem().cannotImportAppliance(mAppliance, this);
+            else
+                vboxProblem().cannotImportAppliance(progress, mAppliance, this);
             /* Delete the appliance in a case of an error */
             delete mAppliance;
             mAppliance = NULL;
