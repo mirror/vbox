@@ -203,6 +203,11 @@
           #6760)</para>
       </listitem>
 
+      <listitem>
+        <para>Linux host USB support: introduced a less invasive way of
+           accessing raw USB devices (bugs #1093, #5345, #7759)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
