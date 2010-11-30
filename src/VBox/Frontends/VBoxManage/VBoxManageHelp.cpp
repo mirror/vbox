@@ -574,8 +574,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_SETPROPERTY)
     {
         RTStrmPrintf(pStrm,
-                     "VBoxManage setproperty      hdfolder default|<folder> |\n"
-                     "                            machinefolder default|<folder> |\n"
+                     "VBoxManage setproperty      machinefolder default|<folder> |\n"
                      "                            vrdeauthlibrary default|<library> |\n"
                      "                            websrvauthlibrary default|null|<library> |\n"
                      "                            vrdeextpack null|<library> |\n"
