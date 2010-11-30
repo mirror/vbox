@@ -144,7 +144,7 @@
 
       <para>In addition to the files of the virtual machines, VirtualBox
       maintains global configuration data. On Windows, Linux and Solaris, this
-      is <computeroutput>$HOME/.VirtualBox</computeroutput> (which makes it
+      is in <computeroutput>$HOME/.VirtualBox</computeroutput> (which makes it
       hidden on Linux and Solaris), whereas on a Mac this resides in
       <computeroutput>$HOME/Library/VirtualBox</computeroutput>.</para>
 
@@ -152,7 +152,10 @@
       necessary. Optionally, you can supply an alternate configuration
       directory by setting the
       <computeroutput><literal>VBOX_USER_HOME</literal></computeroutput>
-      environment variable.</para>
+      environment variable. (Since the global
+      <computeroutput>VirtualBox.xml</computeroutput> settings file points to
+      all other configuration files, this allows for switching between several
+      VirtualBox configurations entirely.)</para>
 
       <para>Most importantly, in this directory, VirtualBox stores its global
       settings file, another XML file called
@@ -170,8 +173,8 @@
       its own media registry.</para>
 
       <para>Also before VirtualBox 4.0, the default "Machines" folder and the
-      default "HardDisks" folder were subdirectories of the VirtualBox
-      configuration directory (e.g.
+      default "HardDisks" folder resided under the VirtualBox configuration
+      directory (e.g.
       <computeroutput>$HOME/.VirtualBox/Machines</computeroutput> on Linux).
       If you are upgrading from a VirtualBox version before 4.0, files in
       these directories are not automatically moved in order not to break
