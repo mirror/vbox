@@ -68,22 +68,21 @@ RTR3DECL(int) RTTlsFree(RTTLS iTls)
 {
     if (iTls == NIL_RTTLS)
         return VINF_SUCCESS;
-    if (TlsFree(iTls))
+    if (TlsFree((DWORD)iTls))
         return VINF_SUCCESS;
     return RTErrConvertFromWin32(GetLastError());
-
 }
 
 
 RTR3DECL(void *) RTTlsGet(RTTLS iTls)
 {
-    return TlsGetValue(iTls);
+    return TlsGetValue((DWORD)iTls);
 }
 
 
 RTR3DECL(int) RTTlsGetEx(RTTLS iTls, void **ppvValue)
 {
-    void *pv = TlsGetValue(iTls);
+    void *pv = TlsGetValue((DWORD)iTls);
     if (pv)
     {
         *ppvValue = pv;
@@ -98,7 +97,7 @@ RTR3DECL(int) RTTlsGetEx(RTTLS iTls, void **ppvValue)
 
 RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue)
 {
-    if (TlsSetValue(iTls, pvValue))
+    if (TlsSetValue((DWORD)iTls, pvValue))
         return VINF_SUCCESS;
     return RTErrConvertFromWin32(GetLastError());
 }

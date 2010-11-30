@@ -304,7 +304,8 @@ static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThread, void *pvUser)
                 cNanoSeconds = pThis->u64NextTS - u64NanoTS;
 
             /* block. */
-            int rc = RTSemEventWait(pThis->hEvent, cNanoSeconds < 1000000 ? 1 : cNanoSeconds / 1000000);
+            int rc = RTSemEventWait(pThis->hEvent,
+                                    (RTMSINTERVAL)(cNanoSeconds < 1000000 ? 1 : cNanoSeconds / 1000000));
             if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
             {
                 AssertRC(rc);

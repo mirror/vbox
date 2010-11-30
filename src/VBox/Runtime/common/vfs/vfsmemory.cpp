@@ -325,7 +325,7 @@ static DECLCALLBACK(int) rtVfsMemFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
                 || offUnsigned + cbLeftToRead <= pNext->off)
                 cbThisRead = cbLeftToRead;
             else
-                cbThisRead = pNext->off - offUnsigned;
+                cbThisRead = (size_t)(pNext->off - offUnsigned);
 
             RT_BZERO(pbDst, cbThisRead);
 
@@ -401,7 +401,7 @@ static PRTVFSMEMEXTENT rtVfsMemFile_AllocExtent(PRTVFSMEMFILE pThis, uint64_t of
     {
         uint64_t cbMaxExtent = pNext->off - offExtent;
         if (cbMaxExtent < cbExtent)
-            cbExtent = cbMaxExtent;
+            cbExtent = (uint32_t)cbMaxExtent;
     }
 
     /*
@@ -489,7 +489,7 @@ static DECLCALLBACK(int) rtVfsMemFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
         /*
          * Copy the source data into the current extent.
          */
-        uint32_t const  offDst      = offUnsigned - pExtent->off;
+        uint32_t const  offDst      = (uint32_t)(offUnsigned - pExtent->off);
         uint32_t        cbThisWrite = pExtent->cb - offDst;
         if (cbThisWrite > cbLeftToWrite)
             cbThisWrite = (uint32_t)cbLeftToWrite;
@@ -682,7 +682,8 @@ static DECLCALLBACK(int) rtVfsMemFile_Seek(void *pvThis, RTFOFF offSeek, unsigne
 static DECLCALLBACK(int) rtVfsMemFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 {
     PRTVFSMEMFILE pThis = (PRTVFSMEMFILE)pvThis;
-    return pThis->Base.ObjInfo.cbObject;
+    *pcbFile = pThis->Base.ObjInfo.cbObject;
+    return VINF_SUCCESS;
 }
 
 

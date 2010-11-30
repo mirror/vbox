@@ -606,8 +606,8 @@ RTDECL(int)         RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos);
  * @param   pfRetEvents     Where to return the event mask.
  * @sa      RTPollSetAdd, RTPoll, RTPollNoResume.
  */
-RTDECL(RTFOFF)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                    uint32_t *pfRetEvents);
+RTDECL(int)      RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                                 uint32_t *pfRetEvents);
 /**
  * Tells the current I/O stream position.
  *
