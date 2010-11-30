@@ -74,6 +74,8 @@ public:
 
     UIImportApplianceWzd(const QString &strFile = "", QWidget *pParent = 0);
 
+    bool isValid() const;
+
 protected:
 
     void retranslateUi();

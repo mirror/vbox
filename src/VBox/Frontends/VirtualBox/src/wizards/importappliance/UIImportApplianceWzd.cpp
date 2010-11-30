@@ -139,6 +139,15 @@ UIImportApplianceWzd::UIImportApplianceWzd(const QString &strFile /* = "" */, QW
     connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
 }
 
+bool UIImportApplianceWzd::isValid() const
+{
+    bool fResult = false;
+    if (VBoxImportApplianceWgt *applianceWidget = field("applianceWidget").value<ImportAppliancePointer>())
+        fResult = applianceWidget->isValid();
+
+    return fResult;
+}
+
 void UIImportApplianceWzd::retranslateUi()
 {
     /* Wizard title */

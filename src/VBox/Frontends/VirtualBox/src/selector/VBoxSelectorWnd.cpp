@@ -566,7 +566,9 @@ void VBoxSelectorWnd::fileImportAppliance(const QString &strFile /* = "" */)
 #endif /* !Q_WS_MAC */
     UIImportApplianceWzd wzd(strTmpFile, this);
 
-    wzd.exec();
+    if (   strFile.isEmpty()
+        || wzd.isValid())
+        wzd.exec();
 }
 
 void VBoxSelectorWnd::fileExportAppliance()
