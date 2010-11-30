@@ -1742,7 +1742,7 @@ typedef FNRTPROGRESS *PFNRTPROGRESS;
 
 
 /**
- * Rectangle data type.
+ * Rectangle data type, double point.
  */
 typedef struct RTRECT
 {
@@ -1755,10 +1755,34 @@ typedef struct RTRECT
     /** bottom Y coordinate. (exclusive) */
     int32_t     yBottom;
 } RTRECT;
-/** Pointer to a rectangle. */
+/** Pointer to a double point rectangle. */
 typedef RTRECT *PRTRECT;
-/** Pointer to a const rectangle. */
+/** Pointer to a const double point rectangle. */
 typedef const RTRECT *PCRTRECT;
+
+
+/**
+ * Rectangle data type, point + size.
+ */
+typedef struct RTRECT2
+{
+    /** X coordinate.
+     * Unless stated otherwise, this is the top left corner. */
+    int32_t     x;
+    /** Y coordinate.
+     * Unless stated otherwise, this is the top left corner.  */
+    int32_t     y;
+    /** The width.
+     * Unless stated otherwise, this is to the right of (x,y).  */
+    uint32_t    cx;
+    /** The height.
+     * Unless stated otherwise, this is down from (x,y).  */
+    uint32_t    cy;
+} RTRECT2;
+/** Pointer to a point + size rectangle. */
+typedef RTRECT2 *PRTRECT2;
+/** Pointer to a const point + size rectangle. */
+typedef const RTRECT2 *PCRTRECT2;
 
 
 /**
