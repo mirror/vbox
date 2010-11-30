@@ -915,7 +915,6 @@ endif
 extpacks-build-win.x86:
 ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) packing
 else
 	$(call MSG_L1,Building Windows/x86 extension packs)
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.x86) all"
