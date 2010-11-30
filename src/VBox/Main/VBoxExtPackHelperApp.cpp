@@ -611,17 +611,13 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
     RTMsgInfo("Unpacking extension pack into '%s'...", pszDirDst);
 
     /*
-     * Set up the destination path and directory.
+     * Set up the destination path.
      */
     char szDstPath[RTPATH_MAX];
     int rc = RTPathAbs(pszDirDst, szDstPath, sizeof(szDstPath) - VBOX_EXTPACK_MAX_ENTRY_NAME_LENGTH - 2);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs('%s',,) failed: %Rrc", pszDirDst, rc);
     size_t offDstPath = RTPathStripTrailingSlash(szDstPath);
-
-    rc = RTDirCreate(szDstPath, 0700);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirCreate('%s',0700) failed: %Rrc", szDstPath, rc);
     szDstPath[offDstPath++] = '/';
     szDstPath[offDstPath]   = '\0';
 
@@ -673,7 +669,7 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
                         rcExit = UnpackExtPackFile(pszName, szDstPath, hVfsIos, hUnpackManifest);
                         RTVfsIoStrmRelease(hVfsIos);
                     }
-                    else
+                    else if (strcmp(".", pszName) && strcmp("./", pszName))
                         rcExit = UnpackExtPackDir(szDstPath, hVfsObj);
                 }
                 else
@@ -986,6 +982,7 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
      * Create the temporary directory and prepare the extension pack within it.
      * If all checks out correctly, rename it to the final directory.
      */
+    RTDirCreate(pszBaseDir, 0755);
     rc = RTDirCreate(szTmpPath, 0700);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create temporary directory: %Rrc ('%s')", rc, szTmpPath);

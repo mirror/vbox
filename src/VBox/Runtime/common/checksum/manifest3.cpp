@@ -470,7 +470,7 @@ RTDECL(int) RTManifestPtIosAddEntryNow(RTVFSIOSTREAM hVfsPtIos)
 {
     PRTMANIFESTPTIOS pThis = (PRTMANIFESTPTIOS)RTVfsIoStreamToPrivate(hVfsPtIos, &g_rtManifestPassthruIosOps);
     AssertReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->fAddedEntry, VERR_WRONG_ORDER);
+    AssertReturn(!pThis->fAddedEntry, VERR_WRONG_ORDER);
 
     pThis->fAddedEntry = true;
     rtManifestHashesFinal(pThis->pHashes);
