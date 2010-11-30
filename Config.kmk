@@ -107,6 +107,7 @@ endif
 INST_EXTPACK          = $(INST_BIN)ExtensionPacks/
 INST_EXTPACK_CERTS    = $(INST_BIN)ExtPackCertificates/
 INST_EXTPACK_PUEL     = $(INST_EXTPACK)Puel/
+INST_PACKAGES         = packages/
 
 PATH_BIN              = $(patsubst %/,%,$(PATH_INS)/$(INST_BIN))
 PATH_DLL              = $(patsubst %/,%,$(PATH_INS)/$(INST_DLL))
@@ -119,7 +120,8 @@ VBOX_PATH_TESTSUITE   = $(patsubst %/,%,$(PATH_INS)/$(INST_TESTSUITE))
 VBOX_PATH_ADDITIONS   = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS))
 VBOX_PATH_ADDITIONS_ISO = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_ISO))
 VBOX_PATH_ADDITIONS_LIB = $(patsubst %/,%,$(PATH_INS)/$(INST_ADDITIONS_LIB))
-VBOX_PATH_EXTPACK_PUEL  = $(patsubst %/,%,$(PATH_INS)/$(INST_EXTPACK_PUEL))
+VBOX_PATH_EXTPACK_PUEL= $(patsubst %/,%,$(PATH_INS)/$(INST_EXTPACK_PUEL))
+VBOX_PATH_PACKAGES    = $(patsubst %/,%,$(PATH_INS)/$(INST_PACKAGES))
 
 
 # Delete targets on failure.
@@ -1569,6 +1571,9 @@ VBOX_BIN2C     ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 
 # biossums (set BIOS checksums)
 VBOX_BIOSSUMS  ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
+
+# RTManifest (extension pack manifest utility)
+VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
 
 # filesplitter (splits java files)
 VBOX_FILESPLIT ?= $(PATH_OBJ)/filesplitter/filesplitter$(HOSTSUFF_EXE)
