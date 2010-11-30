@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,8 +66,9 @@ DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 }
 #endif /* VBOX_SECURELABEL */
 
-static SDL_Surface *gWMIcon;                    /**< the application icon */
-static RTNATIVETHREAD gSdlNativeThread;         /**< the SDL thread */
+static bool gfSdlInitialized = false;           /**< if SDL was initialized */
+static SDL_Surface *gWMIcon = NULL;             /**< the application icon */
+static RTNATIVETHREAD gSdlNativeThread = NIL_RTNATIVETHREAD; /**< the SDL thread */
 
 //
 // Constructor / destructor
@@ -184,6 +185,7 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
         RTPrintf("SDL Error: '%s'\n", SDL_GetError());
         return false;
     }
+    gfSdlInitialized = true;
 
     const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
     Assert(videoInfo);
@@ -239,12 +241,15 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
  */
 void VBoxSDLFB::uninit()
 {
-    AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
-    SDL_QuitSubSystem(SDL_INIT_VIDEO);
-    if (gWMIcon)
+    if (gfSdlInitialized)
     {
-        SDL_FreeSurface(gWMIcon);
-        gWMIcon = NULL;
+        AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        if (gWMIcon)
+        {
+            SDL_FreeSurface(gWMIcon);
+            gWMIcon = NULL;
+        }
     }
 }
 
