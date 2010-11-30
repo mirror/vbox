@@ -312,7 +312,7 @@ static RTEXITCODE VerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSFILE 
             RTMsgError("Manifest mismatch: %s", szError);
         else
             RTMsgError("RTManifestEqualsEx failed: %Rrc", rc);
-#if 1
+#if 0
         RTVFSIOSTREAM hVfsIosStdOut = NIL_RTVFSIOSTREAM;
         RTVfsIoStrmFromStdHandle(RTHANDLESTD_OUTPUT, RTFILE_O_WRITE, true, &hVfsIosStdOut);
         RTVfsIoStrmWrite(hVfsIosStdOut, "Our:\n", sizeof("Our:\n") - 1, true, NULL);
@@ -685,7 +685,7 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
                         RTVfsIoStrmRelease(hVfsIos);
                     }
                     else if (*pszAdjName && strcmp(pszAdjName, "."))
-                        rcExit = UnpackExtPackDir(pszAdjName, hVfsObj);
+                        rcExit = UnpackExtPackDir(szDstPath, hVfsObj);
                 }
                 else
                     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Name is too long: '%s' (%Rrc)", pszAdjName, rc);
@@ -712,11 +712,18 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
             if (RT_SUCCESS(rc))
                 rc = RTEXITCODE_SUCCESS;
             else if (rc == VERR_NOT_EQUAL && szError[0])
-                RTMsgError("Manifest mismatch: %s", szError);
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Manifest mismatch: %s", szError);
             else
-                RTMsgError("RTManifestEqualsEx failed: %Rrc", rc);
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEqualsEx failed: %Rrc", rc);
         }
-
+#if 0
+        RTVFSIOSTREAM hVfsIosStdOut = NIL_RTVFSIOSTREAM;
+        RTVfsIoStrmFromStdHandle(RTHANDLESTD_OUTPUT, RTFILE_O_WRITE, true, &hVfsIosStdOut);
+        RTVfsIoStrmWrite(hVfsIosStdOut, "Unpack:\n", sizeof("Unpack:\n") - 1, true, NULL);
+        RTManifestWriteStandard(hUnpackManifest, hVfsIosStdOut);
+        RTVfsIoStrmWrite(hVfsIosStdOut, "Valid:\n", sizeof("Valid:\n") - 1, true, NULL);
+        RTManifestWriteStandard(hValidManifest, hVfsIosStdOut);
+#endif
         RTManifestRelease(hUnpackManifest);
     }
     RTVfsFsStrmRelease(hTarFss);

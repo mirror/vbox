@@ -527,7 +527,7 @@ RTDECL(int) RTManifestEntryAddIoStream(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsI
             if (   (rc == VINF_EOF && cbRead == 0)
                 || RT_FAILURE(rc))
                 break;
-            rtManifestHashesUpdate(pHashes, pvBuf, cbBuf);
+            rtManifestHashesUpdate(pHashes, pvBuf, cbRead);
         }
         if (RT_SUCCESS(rc))
         {
