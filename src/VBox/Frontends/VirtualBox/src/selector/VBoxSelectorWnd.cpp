@@ -1008,6 +1008,13 @@ void VBoxSelectorWnd::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
                 fileImportAppliance(strFile);
                 break;
             }
+            else if (VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::VBoxExtPackFileExts))
+            {
+                CExtPackManager extPackManager = vboxGlobal().virtualBox().GetExtensionPackManager();
+                extPackManager.Install(strFile);
+                if (!extPackManager.isOk())
+                    vboxProblem().cannotInstallExtPack(strFile, extPackManager, this);
+            }
         }
     }
 }

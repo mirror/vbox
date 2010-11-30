@@ -2409,6 +2409,14 @@ void VBoxProblemReporter::cannotUpdateGuestAdditions (const CProgress &aProgress
              formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
+void VBoxProblemReporter::cannotInstallExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent /* = 0 */)
+{
+    message (pParent ? pParent : mainWindowShown(),
+             Error,
+             tr("Failed to install the Extension Pack <b>%1</b>.").arg(strFilename),
+             formatErrorInfo(extPackManager));
+}
+
 void VBoxProblemReporter::warnAboutIncorrectPort (QWidget *pParent) const
 {
     message(pParent, Error,
