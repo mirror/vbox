@@ -370,7 +370,15 @@ void UIExportApplianceWzdPage3::initializePage()
     switch (storageType)
     {
         case Filesystem:
-            m_pPage4Text1->setText(tr("Please choose a filename to export the OVF to."));
+        {
+            m_pPage4Text1->setText(tr("Please choose a filename to export the "
+                                      "OVF/OVA to. If you use an <i>ova</i> file name "
+                                      "extension, then all the files will be "
+                                      "combined into one Open Virtualization "
+                                      "Format Archive. If you use an <i>ovf</i> "
+                                      "extension, several files will be written "
+                                      "separately. Other extensions are not "
+                                      "allowed."));
             m_pTxUsername->setVisible(false);
             m_pLeUsername->setVisible(false);
             m_pTxPassword->setVisible(false);
@@ -383,7 +391,9 @@ void UIExportApplianceWzdPage3::initializePage()
             m_pFileSelector->setChooserVisible(true);
             m_pFileSelector->setFocus();
             break;
+        }
         case SunCloud:
+        {
             m_pPage4Text1->setText(tr("Please complete the additional fields like the username, password "
                                       "and the bucket, and provide a filename for the OVF target."));
             m_pTxUsername->setVisible(true);
@@ -399,7 +409,9 @@ void UIExportApplianceWzdPage3::initializePage()
             m_pFileSelector->setChooserVisible(false);
             m_pLeUsername->setFocus();
             break;
+        }
         case S3:
+        {
             m_pPage4Text1->setText(tr("Please complete the additional fields like the username, password, "
                                       "hostname and the bucket, and provide a filename for the OVF target."));
             m_pTxUsername->setVisible(true);
@@ -414,6 +426,7 @@ void UIExportApplianceWzdPage3::initializePage()
             m_pFileSelector->setChooserVisible(false);
             m_pLeUsername->setFocus();
             break;
+        }
     }
 
     if (!m_pFileSelector->path().isEmpty())
