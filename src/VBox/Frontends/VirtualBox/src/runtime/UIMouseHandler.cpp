@@ -117,7 +117,7 @@ void UIMouseHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineWind
 void UIMouseHandler::cleanupListener(ulong uIndex)
 {
     /* Check if we should release mouse first: */
-    if (uIndex == m_iMouseCaptureViewIndex)
+    if ((int)uIndex == m_iMouseCaptureViewIndex)
         releaseMouse();
 
     /* If that window still registered: */
