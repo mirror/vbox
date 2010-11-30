@@ -1144,19 +1144,35 @@ VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer)
             break;
 
         case WINXP:
+#if ARCH_BITS == 64
+            enmOsType = VBOXOSTYPE_WinXP_x64;
+#else
             enmOsType = VBOXOSTYPE_WinXP;
+#endif
             break;
 
         case WIN2K3:
+#if ARCH_BITS == 64
+            enmOsType = VBOXOSTYPE_Win2k3_x64;
+#else
             enmOsType = VBOXOSTYPE_Win2k3;
+#endif
             break;
 
         case WINVISTA:
+#if ARCH_BITS == 64
+            enmOsType = VBOXOSTYPE_WinVista_x64;
+#else
             enmOsType = VBOXOSTYPE_WinVista;
+#endif
             break;
 
         case WIN7:
+#if ARCH_BITS == 64
+            enmOsType = VBOXOSTYPE_Win7_x64;
+#else
             enmOsType = VBOXOSTYPE_Win7;
+#endif
             break;
 
         default:
@@ -1164,9 +1180,6 @@ VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer)
             enmOsType = VBOXOSTYPE_WinNT;
             break;
     }
-#if ARCH_BITS == 64
-    enmOsType += VBOXOSTYPE_x64;
-#endif
     return enmOsType;
 }
 
