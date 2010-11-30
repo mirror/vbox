@@ -89,5 +89,6 @@ const char* VBoxDefs::GUI_DbgAutoShow = "GUI/Dbg/AutoShow";
 #endif
 
 QStringList VBoxDefs::VBoxFileExts = QStringList() << "xml" << "vbox";
+QStringList VBoxDefs::VBoxExtPackFileExts = QStringList() << "vbox-extpack";
 QStringList VBoxDefs::OVFFileExts = QStringList() << "ovf" << "ova";
 

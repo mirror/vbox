@@ -19,7 +19,8 @@
      <dict>
       <key>CFBundleTypeName</key>               <string>VirtualBox Extension Pack</string>
       <key>CFBundleTypeExtensions</key>         <array><string>vbox-extpack</string></array>
-      <key>CFBundleTypeRole</key>               <string>None</string>
+      <key>CFBundleTypeRole</key>               <string>Viewer</string>
+      <key>LSHandlerRank</key>                  <string>Owner</string>
       <key>CFBundleTypeIconFile</key>           <string>virtualbox-vbox-extpack</string>
      </dict>
      <dict>

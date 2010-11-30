@@ -166,6 +166,7 @@ struct VBoxDefs
 #endif
 
     static QStringList VBoxFileExts;
+    static QStringList VBoxExtPackFileExts;
     static QStringList OVFFileExts;
 };
 

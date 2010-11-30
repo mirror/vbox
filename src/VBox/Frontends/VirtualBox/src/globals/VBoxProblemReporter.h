@@ -382,6 +382,8 @@ public:
 
     void cannotUpdateGuestAdditions (const CProgress &aProgress, QWidget *aParent /* = NULL */) const;
 
+    void cannotInstallExtPack(const QString &strFilename, const CExtPackManager &extPackManager, QWidget *pParent = 0);
+
     void warnAboutIncorrectPort(QWidget *pParent) const;
     bool confirmCancelingPortForwardingDialog(QWidget *pParent) const;
 
