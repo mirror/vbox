@@ -701,7 +701,20 @@ RTDECL(RTFOFF)      RTVfsFilePoll(RTVFSFILE hVfsFile, uint32_t fEvents, RTMSINTE
                                   uint32_t *pfRetEvents);
 RTDECL(RTFOFF)      RTVfsFileTell(RTVFSFILE hVfsFile);
 
+/**
+ * Changes the current read/write position of a file.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hVfsFile        The VFS file handle.
+ * @param   offSeek         The seek offset.
+ * @param   uMethod         The seek emthod.
+ * @param   poffActual      Where to optionally return the new file offset.
+ *
+ * @sa      RTFileSeek
+ */
 RTDECL(int)         RTVfsFileSeek(RTVFSFILE hVfsFile, RTFOFF offSeek, uint32_t uMethod, uint64_t *poffActual);
+
 RTDECL(int)         RTVfsFileSetSize(RTVFSFILE hVfsFile, uint64_t cbSize);
 RTDECL(int)         RTVfsFileGetSize(RTVFSFILE hVfsFile, uint64_t *pcbSize);
 RTDECL(RTFOFF)      RTVfsFileGetMaxSize(RTVFSFILE hVfsFile);

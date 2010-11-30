@@ -268,7 +268,11 @@ static DECLCALLBACK(int) rtVfsMemFile_Read(void *pvThis, RTFOFF off, PCRTSGBUF p
         *pcbRead = cbLeftToRead = (size_t)((uint64_t)pThis->Base.ObjInfo.cbObject - offUnsigned);
     }
     else
-        *pcbRead = cbLeftToRead = pSgBuf->paSegs[0].cbSeg;
+    {
+        cbLeftToRead = pSgBuf->paSegs[0].cbSeg;
+        if (pcbRead)
+            *pcbRead = cbLeftToRead;
+    }
 
     /*
      * Ok, we've got a valid stretch within the file.  Do the reading.
@@ -766,6 +770,9 @@ RTDECL(int) RTVfsMemorizeIoStreamAsFile(RTVFSIOSTREAM hVfsIos, uint32_t fFlags, 
             RTVfsIoStrmRelease(hVfsIosDst);
             if (RT_SUCCESS(rc))
             {
+                pThis->pCurExt   = RTListGetFirst(&pThis->ExtentHead, RTVFSMEMEXTENT, Entry);
+                pThis->offCurPos = 0;
+
                 if (!(fFlags & RTFILE_O_WRITE))
                 {
                     /** @todo clear RTFILE_O_WRITE from the resulting. */

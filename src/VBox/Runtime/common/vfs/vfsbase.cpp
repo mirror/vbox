@@ -2400,3 +2400,27 @@ RTDECL(RTVFSIOSTREAM) RTVfsFileToIoStream(RTVFSFILE hVfsFile)
     return &pThis->Stream;
 }
 
+
+RTDECL(int) RTVfsFileSeek(RTVFSFILE hVfsFile, RTFOFF offSeek, uint32_t uMethod, uint64_t *poffActual)
+{
+    RTVFSFILEINTERNAL *pThis = hVfsFile;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->uMagic == RTVFSFILE_MAGIC, VERR_INVALID_HANDLE);
+
+    AssertReturn(   uMethod == RTFILE_SEEK_BEGIN
+                 || uMethod == RTFILE_SEEK_CURRENT
+                 || uMethod == RTFILE_SEEK_END, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(poffActual, VERR_INVALID_POINTER);
+
+    RTFOFF offActual = 0;
+    RTVfsLockAcquireWrite(pThis->Stream.Base.hLock);
+    int rc = pThis->pOps->pfnSeek(pThis->Stream.Base.pvThis, offSeek, uMethod, &offActual);
+    RTVfsLockReleaseWrite(pThis->Stream.Base.hLock);
+    if (RT_SUCCESS(rc) && poffActual)
+    {
+        Assert(offActual >= 0);
+        *poffActual = offActual;
+    }
+
+    return rc;
+}

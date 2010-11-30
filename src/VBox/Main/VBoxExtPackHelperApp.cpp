@@ -270,8 +270,12 @@ static RTEXITCODE VerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSFILE 
     /*
      * Read the manifest from the extension pack.
      */
+    int rc = RTVfsFileSeek(hManifestFile, 0, RTFILE_SEEK_BEGIN, NULL);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsFileSeek failed: %Rrc", rc);
+
     RTMANIFEST hTheirManifest;
-    int rc = RTManifestCreate(0 /*fFlags*/, &hTheirManifest);
+    rc = RTManifestCreate(0 /*fFlags*/, &hTheirManifest);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestCreate failed: %Rrc", rc);
 
@@ -292,8 +296,10 @@ static RTEXITCODE VerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSFILE 
             "./" VBOX_EXTPACK_SIGNATURE_NAME,
             NULL
         };
-        char szEntry[RTPATH_MAX];
-        rc = RTManifestEqualsEx(hOurManifest, hTheirManifest, &s_apszIgnoreEntries[0], NULL, szEntry, sizeof(szEntry));
+        char szError[RTPATH_MAX];
+        rc = RTManifestEqualsEx(hOurManifest, hTheirManifest, &s_apszIgnoreEntries[0], NULL,
+                                RTMANIFEST_EQUALS_IGN_MISSING_ATTRS /*fFlags*/,
+                                szError, sizeof(szError));
         if (RT_SUCCESS(rc))
         {
             /*
@@ -302,10 +308,18 @@ static RTEXITCODE VerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSFILE 
             /** @todo implement signature stuff */
 
         }
-        else if (rc == VERR_NOT_EQUAL && szEntry[0])
-            RTMsgError("Manifest mismatch: '%s'", szEntry);
+        else if (rc == VERR_NOT_EQUAL && szError[0])
+            RTMsgError("Manifest mismatch: %s", szError);
         else
             RTMsgError("RTManifestEqualsEx failed: %Rrc", rc);
+#if 1
+        RTVFSIOSTREAM hVfsIosStdOut = NIL_RTVFSIOSTREAM;
+        RTVfsIoStrmFromStdHandle(RTHANDLESTD_OUTPUT, RTFILE_O_WRITE, true, &hVfsIosStdOut);
+        RTVfsIoStrmWrite(hVfsIosStdOut, "Our:\n", sizeof("Our:\n") - 1, true, NULL);
+        RTManifestWriteStandard(hOurManifest, hVfsIosStdOut);
+        RTVfsIoStrmWrite(hVfsIosStdOut, "Their:\n", sizeof("Their:\n") - 1, true, NULL);
+        RTManifestWriteStandard(hTheirManifest, hVfsIosStdOut);
+#endif
     }
     else
         RTMsgError("Error parsing '%s': %Rrc", VBOX_EXTPACK_MANIFEST_NAME, rc);
@@ -651,6 +665,7 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
                     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsFsStrmNext failed: %Rrc", rc);
                 break;
             }
+            const char     *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
 
             /*
              * Check the type & name validity then unpack it.
@@ -659,21 +674,21 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
             if (rcExit == RTEXITCODE_SUCCESS)
             {
                 szDstPath[offDstPath] = '\0';
-                rc = RTStrCopy(&szDstPath[offDstPath], sizeof(szDstPath) - offDstPath, pszName);
+                rc = RTStrCopy(&szDstPath[offDstPath], sizeof(szDstPath) - offDstPath, pszAdjName);
                 if (RT_SUCCESS(rc))
                 {
                     if (   enmType == RTVFSOBJTYPE_FILE
                         || enmType == RTVFSOBJTYPE_IO_STREAM)
                     {
                         RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                        rcExit = UnpackExtPackFile(pszName, szDstPath, hVfsIos, hUnpackManifest);
+                        rcExit = UnpackExtPackFile(pszAdjName, szDstPath, hVfsIos, hUnpackManifest);
                         RTVfsIoStrmRelease(hVfsIos);
                     }
-                    else if (strcmp(".", pszName) && strcmp("./", pszName))
-                        rcExit = UnpackExtPackDir(szDstPath, hVfsObj);
+                    else if (*pszAdjName && strcmp(pszAdjName, "."))
+                        rcExit = UnpackExtPackDir(pszAdjName, hVfsObj);
                 }
                 else
-                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Name is too long: '%s' (%Rrc)", pszName, rc);
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Name is too long: '%s' (%Rrc)", pszAdjName, rc);
             }
 
             /*
@@ -691,13 +706,13 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
          */
         if (rcExit == RTEXITCODE_SUCCESS)
         {
-            char szEntry[RTPATH_MAX];
+            char szError[RTPATH_MAX];
             rc = RTManifestEqualsEx(hUnpackManifest, hValidManifest, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttr*/,
-                                    szEntry, sizeof(szEntry));
+                                    0 /*fFlags*/, szError, sizeof(szError));
             if (RT_SUCCESS(rc))
                 rc = RTEXITCODE_SUCCESS;
-            else if (rc == VERR_NOT_EQUAL && szEntry[0])
-                RTMsgError("Manifest mismatch: '%s'", szEntry);
+            else if (rc == VERR_NOT_EQUAL && szError[0])
+                RTMsgError("Manifest mismatch: %s", szError);
             else
                 RTMsgError("RTManifestEqualsEx failed: %Rrc", rc);
         }
@@ -770,6 +785,7 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExt
                     rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsFsStrmNext failed: %Rrc", rc);
                 break;
             }
+            const char     *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
 
             /*
              * Check the type & name validity.
@@ -780,7 +796,6 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExt
                 /*
                  * Check if this is one of the standard files.
                  */
-                const char *pszAdjName = pszName[0] == '.' && pszName[1] == '/' ? &pszName[2] : pszName;
                 PRTVFSFILE  phVfsFile;
                 if (!strcmp(pszAdjName, VBOX_EXTPACK_DESCRIPTION_NAME))
                     phVfsFile = &hXmlFile;
@@ -847,9 +862,9 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExt
                     || enmType == RTVFSOBJTYPE_IO_STREAM))
             {
                 RTVFSIOSTREAM hVfsIos = RTVfsObjToIoStream(hVfsObj);
-                rc = RTManifestEntryAddIoStream(hOurManifest, hVfsIos, pszName, RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256);
+                rc = RTManifestEntryAddIoStream(hOurManifest, hVfsIos, pszAdjName, RTMANIFEST_ATTR_SIZE | RTMANIFEST_ATTR_SHA256);
                 if (RT_FAILURE(rc))
-                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEntryAddIoStream failed on '%s': %Rrc", pszName, rc);
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTManifestEntryAddIoStream failed on '%s': %Rrc", pszAdjName, rc);
                 RTVfsIoStrmRelease(hVfsIos);
             }
 
