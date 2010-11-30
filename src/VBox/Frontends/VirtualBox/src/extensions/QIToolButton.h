@@ -31,7 +31,7 @@ public:
       : QToolButton (aParent)
     {
 #ifdef Q_WS_MAC
-        setStyleSheet ("QToolButton { border: 0px none black; }");
+        setStyleSheet ("QToolButton { border: 0px none black; margin: 2px 4px 0px 4px; } QToolButton::menu-indicator {image: none;}");
 #endif /* Q_WS_MAC */
     }
 };
