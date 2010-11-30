@@ -77,6 +77,17 @@ typedef uint32_t VRDEAUDIOFORMAT;
 /** Decode number of bytes per sample. */
 #define VRDE_AUDIO_FMT_BYTES_PER_SAMPLE(a) ((VRDE_AUDIO_FMT_BITS_PER_SAMPLE(a) + 7) / 8)
 
+
+/*
+ * Audio input.
+ */
+
+/* Audion notifications. */
+#define VRDE_AUDIOIN_BEGIN     1
+#define VRDE_AUDIOIN_DATA      2
+#define VRDE_AUDIOIN_END       3
+
+
 /*
  * Remote USB protocol.
  */
@@ -566,6 +577,7 @@ typedef struct _VRDEUSBREQNEGOTIATERET_2
 /** The version of the VRDE server interface. */
 #define VRDE_INTERFACE_VERSION_1 (1)
 #define VRDE_INTERFACE_VERSION_2 (2)
+#define VRDE_INTERFACE_VERSION_3 (3)
 
 /** The header that does not change when the interface changes. */
 typedef struct _VRDEINTERFACEHDR
@@ -933,6 +945,107 @@ typedef struct _VRDEENTRYPOINTS_2
                                              const char *pszCookie));
 } VRDEENTRYPOINTS_2;
 
+/** The VRDE server entry points. Interface version 3.
+ *  A new entry point VRDE has been added relative to version 2.
+ */
+typedef struct _VRDEENTRYPOINTS_3
+{
+    /* The header. */
+    VRDEINTERFACEHDR header;
+
+    /*
+     * Same as version 2.
+     */
+
+    DECLR3CALLBACKMEMBER(void, VRDEDestroy,(HVRDESERVER hServer));
+
+    DECLR3CALLBACKMEMBER(int, VRDEEnableConnections,(HVRDESERVER hServer,
+                                                   bool fEnable));
+
+    DECLR3CALLBACKMEMBER(void, VRDEDisconnect,(HVRDESERVER hServer,
+                                             uint32_t u32ClientId,
+                                             bool fReconnect));
+
+    DECLR3CALLBACKMEMBER(void, VRDEResize,(HVRDESERVER hServer));
+
+    DECLR3CALLBACKMEMBER(void, VRDEUpdate,(HVRDESERVER hServer,
+                                         unsigned uScreenId,
+                                         void *pvUpdate,
+                                         uint32_t cbUpdate));
+
+    DECLR3CALLBACKMEMBER(void, VRDEColorPointer,(HVRDESERVER hServer,
+                                               const VRDECOLORPOINTER *pPointer));
+
+    DECLR3CALLBACKMEMBER(void, VRDEHidePointer,(HVRDESERVER hServer));
+
+    DECLR3CALLBACKMEMBER(void, VRDEAudioSamples,(HVRDESERVER hServer,
+                                               const void *pvSamples,
+                                               uint32_t cSamples,
+                                               VRDEAUDIOFORMAT format));
+
+    DECLR3CALLBACKMEMBER(void, VRDEAudioVolume,(HVRDESERVER hServer,
+                                              uint16_t u16Left,
+                                              uint16_t u16Right));
+
+    DECLR3CALLBACKMEMBER(void, VRDEUSBRequest,(HVRDESERVER hServer,
+                                             uint32_t u32ClientId,
+                                             void *pvParm,
+                                             uint32_t cbParm));
+
+    DECLR3CALLBACKMEMBER(void, VRDEClipboard,(HVRDESERVER hServer,
+                                            uint32_t u32Function,
+                                            uint32_t u32Format,
+                                            void *pvData,
+                                            uint32_t cbData,
+                                            uint32_t *pcbActualRead));
+
+    DECLR3CALLBACKMEMBER(void, VRDEQueryInfo,(HVRDESERVER hServer,
+                                            uint32_t index,
+                                            void *pvBuffer,
+                                            uint32_t cbBuffer,
+                                            uint32_t *pcbOut));
+
+    DECLR3CALLBACKMEMBER(void, VRDERedirect,(HVRDESERVER hServer,
+                                             uint32_t u32ClientId,
+                                             const char *pszServer,
+                                             const char *pszUser,
+                                             const char *pszDomain,
+                                             const char *pszPassword,
+                                             uint32_t u32SessionId,
+                                             const char *pszCookie));
+
+    /*
+     * New for version 3.
+     */
+
+    /**
+     * Audio input open request.
+     *
+     * @param hServer      Handle of VRDE server instance.
+     * @param u32ClientId  An identifier that allows the server to find the corresponding client.
+     * @param pvCtx        To be used in VRDECallbackAudioIn.
+     * @param audioFormat  Requested format of audio data.
+     *
+     * @note Initialized to NULL when the VRDECallbackAudioIn callback is NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDEAudioInOpen,(HVRDESERVER hServer,
+                                                void *pvCtx,
+                                                uint32_t u32ClientId,
+                                                VRDEAUDIOFORMAT audioFormat));
+
+    /**
+     * Audio input close request.
+     *
+     * @param hServer      Handle of VRDE server instance.
+     * @param u32ClientId  An identifier that allows the server to find the corresponding client.
+     *
+     * @note Initialized to NULL when the VRDECallbackAudioIn callback is NULL.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDEAudioInClose,(HVRDESERVER hServer,
+                                                 uint32_t u32ClientId));
+} VRDEENTRYPOINTS_3;
+
+
 #define VRDE_QP_NETWORK_PORT      (1)
 #define VRDE_QP_NETWORK_ADDRESS   (2)
 #define VRDE_QP_NUMBER_MONITORS   (3)
@@ -1173,6 +1286,96 @@ typedef struct _VRDECALLBACKS_1
 
 /* Callbacks are the same for the version 1 and version 2 interfaces. */
 typedef VRDECALLBACKS_1 VRDECALLBACKS_2;
+
+/** The VRDE server callbacks. Interface version 3. */
+typedef struct _VRDECALLBACKS_3
+{
+    /* The header. */
+    VRDEINTERFACEHDR header;
+
+    /*
+     * Same as in version 2.
+     */
+    DECLR3CALLBACKMEMBER(int, VRDECallbackProperty,(void *pvCallback,
+                                                    uint32_t index,
+                                                    void *pvBuffer,
+                                                    uint32_t cbBuffer,
+                                                    uint32_t *pcbOut));
+
+    DECLR3CALLBACKMEMBER(int, VRDECallbackClientLogon,(void *pvCallback,
+                                                     uint32_t u32ClientId,
+                                                     const char *pszUser,
+                                                     const char *pszPassword,
+                                                     const char *pszDomain));
+
+    DECLR3CALLBACKMEMBER(void, VRDECallbackClientConnect,(void *pvCallback,
+                                                        uint32_t u32ClientId));
+
+    DECLR3CALLBACKMEMBER(void, VRDECallbackClientDisconnect,(void *pvCallback,
+                                                           uint32_t u32ClientId,
+                                                           uint32_t fu32Intercepted));
+    DECLR3CALLBACKMEMBER(int, VRDECallbackIntercept,(void *pvCallback,
+                                                   uint32_t u32ClientId,
+                                                   uint32_t fu32Intercept,
+                                                   void **ppvIntercept));
+
+    DECLR3CALLBACKMEMBER(int, VRDECallbackUSB,(void *pvCallback,
+                                             void *pvIntercept,
+                                             uint32_t u32ClientId,
+                                             uint8_t u8Code,
+                                             const void *pvRet,
+                                             uint32_t cbRet));
+
+    DECLR3CALLBACKMEMBER(int, VRDECallbackClipboard,(void *pvCallback,
+                                                   void *pvIntercept,
+                                                   uint32_t u32ClientId,
+                                                   uint32_t u32Function,
+                                                   uint32_t u32Format,
+                                                   const void *pvData,
+                                                   uint32_t cbData));
+
+    DECLR3CALLBACKMEMBER(bool, VRDECallbackFramebufferQuery,(void *pvCallback,
+                                                           unsigned uScreenId,
+                                                           VRDEFRAMEBUFFERINFO *pInfo));
+
+    DECLR3CALLBACKMEMBER(void, VRDECallbackFramebufferLock,(void *pvCallback,
+                                                          unsigned uScreenId));
+
+    DECLR3CALLBACKMEMBER(void, VRDECallbackFramebufferUnlock,(void *pvCallback,
+                                                            unsigned uScreenId));
+
+    DECLR3CALLBACKMEMBER(void, VRDECallbackInput,(void *pvCallback,
+                                                int type,
+                                                const void *pvInput,
+                                                unsigned cbInput));
+
+    DECLR3CALLBACKMEMBER(void, VRDECallbackVideoModeHint,(void *pvCallback,
+                                                        unsigned cWidth,
+                                                        unsigned cHeight,
+                                                        unsigned cBitsPerPixel,
+                                                        unsigned uScreenId));
+
+    /*
+     * New for version 3.
+     */
+
+    /**
+     * Called by the server when something happens with audio input.
+     *
+     * @param pvCallback   The callback specific pointer.
+     * @param pvCtx        The value passed in VRDEAudioInOpen.
+     * @param u32ClientId  Identifies the client that sent the reply.
+     * @param u32Event     The event code VRDE_AUDIOIN_*.
+     * @param pvData       Points to data received from the client.
+     * @param cbData       Size of the data in bytes.
+     */
+    DECLR3CALLBACKMEMBER(void, VRDECallbackAudioIn,(void *pvCallback,
+                                                    void *pvCtx,
+                                                    uint32_t u32ClientId,
+                                                    uint32_t u32Event,
+                                                    const void *pvData,
+                                                    uint32_t cbData));
+} VRDECALLBACKS_3;
 
 /**
  * Create a new VRDE server instance. The instance is fully functional but refuses
