@@ -1770,8 +1770,8 @@ Virtual system 0:
     <screen>VBoxManage clonehd         &lt;uuid&gt;|&lt;filename&gt; &lt;outputfile&gt;
                            [--format VDI|VMDK|VHD|RAW|&lt;other&gt;]
                            [--variant Standard,Fixed,Split2G,Stream,ESX]
-                           [--type normal|writethrough|immutable]
-                           [--remember]</screen>
+                           [--type normal|writethrough|immutable|shareable]
+                           [--remember] [--existing]</screen>
 
     <para>where the parameters mean:<glosslist>
         <glossentry>
@@ -1809,6 +1809,19 @@ Virtual system 0:
           <glossdef>
             <para>Keep the destination image registered after it was
             successfully written.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>existing</glossterm>
+
+          <glossdef>
+            <para>Perform the clone operation to an already existing
+            destination medium. Only the portion of the source medium which
+            fits into the destination medium is copied. This means if the
+            destination medium is smaller than the source only a part of it
+            is copied, and if the destination medium is larger than the source
+            the remaining part of the destination medium is unchanged.</para>
           </glossdef>
         </glossentry>
       </glosslist> <note>

@@ -3471,6 +3471,61 @@ DECLINLINE(int) vdMessageWrapper(PVBOXHDD pDisk, const char *pszFormat, ...)
 
 
 /**
+ * internal: adjust PCHS geometry
+ */
+static void vdFixupPCHSGeometry(PVDGEOMETRY pPCHS, uint64_t cbSize)
+{
+    /* Fix broken PCHS geometry. Can happen for two reasons: either the backend
+     * mixes up PCHS and LCHS, or the application used to create the source
+     * image has put garbage in it. Additionally, if the PCHS geometry covers
+     * more than the image size, set it back to the default. */
+    if (   pPCHS->cHeads > 16
+        || pPCHS->cSectors > 63
+        || pPCHS->cCylinders == 0
+        || (uint64_t)pPCHS->cHeads * pPCHS->cSectors * pPCHS->cCylinders * 512 > cbSize)
+    {
+        Assert(!(RT_MIN(cbSize / 512 / 16 / 63, 16383) - (uint32_t)RT_MIN(cbSize / 512 / 16 / 63, 16383)));
+        pPCHS->cCylinders = (uint32_t)RT_MIN(cbSize / 512 / 16 / 63, 16383);
+        pPCHS->cHeads = 16;
+        pPCHS->cSectors = 63;
+    }
+}
+
+/**
+ * internal: adjust PCHS geometry
+ */
+static void vdFixupLCHSGeometry(PVDGEOMETRY pLCHS, uint64_t cbSize)
+{
+    /* Fix broken LCHS geometry. Can happen for two reasons: either the backend
+     * mixes up PCHS and LCHS, or the application used to create the source
+     * image has put garbage in it. The fix in this case is to clear the LCHS
+     * geometry to trigger autodetection when it is used next. If the geometry
+     * already says "please autodetect" (cylinders=0) keep it. */
+    if (   (   pLCHS->cHeads > 255
+            || pLCHS->cHeads == 0
+            || pLCHS->cSectors > 63
+            || pLCHS->cSectors == 0)
+        && pLCHS->cCylinders != 0)
+    {
+        pLCHS->cCylinders = 0;
+        pLCHS->cHeads = 0;
+        pLCHS->cSectors = 0;
+    }
+    /* Always recompute the number of cylinders stored in the LCHS
+     * geometry if it isn't set to "autotedetect" at the moment.
+     * This is very useful if the destination image size is
+     * larger or smaller than the source image size. Do not modify
+     * the number of heads and sectors. Windows guests hate it. */
+    if (   pLCHS->cCylinders != 0
+        && pLCHS->cHeads != 0 /* paranoia */
+        && pLCHS->cSectors != 0 /* paranoia */)
+    {
+        Assert(!(RT_MIN(cbSize / 512 / pLCHS->cHeads / pLCHS->cSectors, 1024) - (uint32_t)RT_MIN(cbSize / 512 / pLCHS->cHeads / pLCHS->cSectors, 1024)));
+        pLCHS->cCylinders = (uint32_t)RT_MIN(cbSize / 512 / pLCHS->cHeads / pLCHS->cSectors, 1024);
+    }
+}
+
+/**
  * Initializes HDD backends.
  *
  * @returns VBox status code.
@@ -5735,20 +5790,8 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 if (!RTStrICmp(pszBackend, "RAW"))
                     uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
-                /* Fix broken PCHS geometry. Can happen for two reasons: either
-                 * the backend mixes up PCHS and LCHS, or the application used
-                 * to create the source image has put garbage in it. */
-                /** @todo double-check if the VHD backend correctly handles
-                 * PCHS and LCHS geometry. also reconsider our current paranoia
-                 * level when it comes to geometry settings here and in the
-                 * backends. */
-                if (PCHSGeometryFrom.cHeads > 16 || PCHSGeometryFrom.cSectors > 63)
-                {
-                    Assert(RT_MIN(cbSize / 512 / 16 / 63, 16383) - (uint32_t)RT_MIN(cbSize / 512 / 16 / 63, 16383));
-                    PCHSGeometryFrom.cCylinders = (uint32_t)RT_MIN(cbSize / 512 / 16 / 63, 16383);
-                    PCHSGeometryFrom.cHeads = 16;
-                    PCHSGeometryFrom.cSectors = 63;
-                }
+                vdFixupPCHSGeometry(&PCHSGeometryFrom, cbSize);
+                vdFixupLCHSGeometry(&LCHSGeometryFrom, cbSize);
 
                 rc = VDCreateBase(pDiskTo, pszBackend, pszFilename, cbSize,
                                   uImageFlags, szComment,
@@ -5786,6 +5829,13 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
             if (cbSize == 0)
                 cbSize = RT_MIN(cbSizeFrom, cbSizeTo);
+
+            vdFixupPCHSGeometry(&PCHSGeometryFrom, cbSize);
+            vdFixupLCHSGeometry(&LCHSGeometryFrom, cbSize);
+
+            /* Update the geometry in the destination image. */
+            pImageTo->Backend->pfnSetPCHSGeometry(pImageTo->pBackendData, &PCHSGeometryFrom);
+            pImageTo->Backend->pfnSetLCHSGeometry(pImageTo->pBackendData, &LCHSGeometryFrom);
         }
 
         rc2 = vdThreadFinishWrite(pDiskTo);
