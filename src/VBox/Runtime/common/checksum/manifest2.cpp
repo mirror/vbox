@@ -61,6 +61,8 @@ typedef struct RTMANIFESTATTR
     char               *pszValue;
     /** The attribute type if applicable, RTMANIFEST_ATTR_UNKNOWN if not. */
     uint32_t            fType;
+    /** Whether it was visited by the equals operation or not. */
+    bool                fVisited;
     /** The normalized property name that StrCore::pszString points at. */
     char                szName[1];
 } RTMANIFESTATTR;
@@ -78,6 +80,10 @@ typedef struct RTMANIFESTENTRY
     /** The entry attributes (hashes, checksums, size, etc) -
      *  RTMANIFESTATTR. */
     RTSTRSPACE          Attributes;
+    /** The number of attributes. */
+    uint32_t            cAttributes;
+    /** Whether it was visited by the equals operation or not. */
+    bool                fVisited;
     /** The normalized entry name that StrCore::pszString points at. */
     char                szName[1];
 } RTMANIFESTENTRY;
@@ -94,11 +100,13 @@ typedef struct RTMANIFESTINT
     uint32_t            u32Magic;
     /** The number of references to this manifest. */
     uint32_t volatile   cRefs;
-    /** Manifest attributes - RTMANIFESTATTR. */
-    RTSTRSPACE          Attributes;
     /** String space of the entries covered by this manifest -
      *  RTMANIFESTENTRY. */
     RTSTRSPACE          Entries;
+    /** The number of entries. */
+    uint32_t            cEntries;
+    /** The entry for the manifest itself. */
+    RTMANIFESTENTRY     SelfEntry;
 } RTMANIFESTINT;
 
 /** The value of RTMANIFESTINT::u32Magic. */
@@ -115,6 +123,47 @@ typedef struct RTMANIFESTWRITESTDATTR
     /** The output I/O stream. */
     RTVFSIOSTREAM   hVfsIos;
 } RTMANIFESTWRITESTDATTR;
+
+
+/**
+ * Argument package used by RTManifestEqualsEx to pass it's arguments to the
+ * enumeration callback functions.
+ */
+typedef struct RTMANIFESTEQUALS
+{
+    /** Name of entries to ignore. */
+    const char * const *papszIgnoreEntries;
+    /** Name of attributes to ignore. */
+    const char * const *papszIgnoreAttr;
+    /** Flags governing the comparision. */
+    uint32_t            fFlags;
+    /** Where to return an error message (++) on failure.  Can be NULL. */
+    char               *pszError;
+    /** The size of the buffer pszError points to.  Can be 0. */
+    size_t              cbError;
+
+    /** Pointer to the 2nd manifest. */
+    RTMANIFESTINT      *pThis2;
+
+    /** The number of ignored entries from the 1st manifest. */
+    uint32_t            cIgnoredEntries2;
+    /** The number of entries processed from the 2nd manifest. */
+    uint32_t            cEntries2;
+
+    /** The number of ignored attributes from the 1st manifest. */
+    uint32_t            cIgnoredAttributes1;
+    /** The number of ignored attributes from the 1st manifest. */
+    uint32_t            cIgnoredAttributes2;
+    /** The number of attributes processed from the 2nd manifest. */
+    uint32_t            cAttributes2;
+    /** Pointer to the string space to get matching attributes from. */
+    PRTSTRSPACE         pAttributes2;
+    /** The name of the current entry.
+     * Points to an empty string it's the manifest attributes. */
+    const char         *pszCurEntry;
+} RTMANIFESTEQUALS;
+/** Pointer to an RTManifestEqualEx argument packet. */
+typedef RTMANIFESTEQUALS *PRTMANIFESTEQUALS;
 
 
 /**
@@ -135,8 +184,14 @@ RTDECL(int) RTManifestCreate(uint32_t fFlags, PRTMANIFEST phManifest)
 
     pThis->u32Magic     = RTMANIFEST_MAGIC;
     pThis->cRefs        = 1;
-    pThis->Attributes   = NULL;
     pThis->Entries      = NULL;
+    pThis->cEntries     = 0;
+    pThis->SelfEntry.StrCore.pszString = "main";
+    pThis->SelfEntry.StrCore.cchString = 4;
+    pThis->SelfEntry.Attributes        = 0;
+    pThis->SelfEntry.cAttributes       = NULL;
+    pThis->SelfEntry.fVisited          = false;
+    pThis->SelfEntry.szName[0]         = '\0';
 
     *phManifest = pThis;
     return VINF_SUCCESS;
@@ -207,8 +262,8 @@ RTDECL(uint32_t) RTManifestRelease(RTMANIFEST hManifest)
     if (!cRefs)
     {
         ASMAtomicWriteU32(&pThis->u32Magic, ~RTMANIFEST_MAGIC);
-        RTStrSpaceDestroy(&pThis->Attributes, rtManifestDestroyAttribute, pThis);
-        RTStrSpaceDestroy(&pThis->Entries,    rtManifestDestroyEntry,     pThis);
+        RTStrSpaceDestroy(&pThis->Entries, rtManifestDestroyEntry,pThis);
+        RTStrSpaceDestroy(&pThis->SelfEntry.Attributes, rtManifestDestroyAttribute, pThis);
         RTMemFree(pThis);
     }
 
@@ -237,17 +292,277 @@ RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst)
 }
 
 
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ */
+static DECLCALLBACK(int) rtManifestAttributeClearVisited(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTATTR pAttr = RT_FROM_MEMBER(pStr, RTMANIFESTATTR, StrCore);
+    pAttr->fVisited = false;
+    return 0;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ */
+static DECLCALLBACK(int) rtManifestEntryClearVisited(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTENTRY pEntry = RT_FROM_MEMBER(pStr, RTMANIFESTENTRY, StrCore);
+    RTStrSpaceEnumerate(&pEntry->Attributes, rtManifestAttributeClearVisited, NULL);
+    pEntry->fVisited = false;
+    return 0;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Finds the first missing.}
+ */
+static DECLCALLBACK(int) rtManifestAttributeFindMissing2(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTEQUALS pEquals = (PRTMANIFESTEQUALS)pvUser;
+    PRTMANIFESTATTR   pAttr   = RT_FROM_MEMBER(pStr, RTMANIFESTATTR, StrCore);
+
+    /*
+     * Already visited?
+     */
+    if (pAttr->fVisited)
+        return 0;
+
+    /*
+     * Ignore this entry?
+     */
+    char const * const *ppsz = pEquals->papszIgnoreAttr;
+    if (ppsz)
+    {
+        while (*ppsz)
+        {
+            if (!strcmp(*ppsz, pAttr->szName))
+                return 0;
+            ppsz++;
+        }
+    }
+
+    /*
+     * Gotcha!
+     */
+    if (*pEquals->pszCurEntry)
+        RTStrPrintf(pEquals->pszError, pEquals->cbError,
+                    "Attribute '%s' on '%s' was not found in the 1st manifest",
+                    pAttr->szName, pEquals->pszCurEntry);
+    else
+        RTStrPrintf(pEquals->pszError, pEquals->cbError, "Attribute '%s' was not found in the 1st manifest", pAttr->szName);
+    return VERR_NOT_EQUAL;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Finds the first missing.}
+ */
+static DECLCALLBACK(int) rtManifestEntryFindMissing2(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTEQUALS pEquals = (PRTMANIFESTEQUALS)pvUser;
+    PRTMANIFESTENTRY  pEntry  = RT_FROM_MEMBER(pStr, RTMANIFESTENTRY, StrCore);
+
+    /*
+     * Already visited?
+     */
+    if (pEntry->fVisited)
+        return 0;
+
+    /*
+     * Ignore this entry?
+     */
+    char const * const *ppsz = pEquals->papszIgnoreEntries;
+    if (ppsz)
+    {
+        while (*ppsz)
+        {
+            if (!strcmp(*ppsz, pEntry->StrCore.pszString))
+                return 0;
+            ppsz++;
+        }
+    }
+
+    /*
+     * Gotcha!
+     */
+    RTStrPrintf(pEquals->pszError, pEquals->cbError, "'%s' was not found in the 1st manifest", pEntry->StrCore.pszString);
+    return VERR_NOT_EQUAL;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Compares attributes.}
+ */
+static DECLCALLBACK(int) rtManifestAttributeCompare(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTEQUALS pEquals = (PRTMANIFESTEQUALS)pvUser;
+    PRTMANIFESTATTR   pAttr1  = RT_FROM_MEMBER(pStr, RTMANIFESTATTR, StrCore);
+    PRTMANIFESTATTR   pAttr2;
+
+    Assert(!pAttr1->fVisited);
+    pAttr1->fVisited = true;
+
+    /*
+     * Ignore this entry?
+     */
+    char const * const *ppsz = pEquals->papszIgnoreAttr;
+    if (ppsz)
+    {
+        while (*ppsz)
+        {
+            if (!strcmp(*ppsz, pAttr1->szName))
+            {
+                pAttr2 = (PRTMANIFESTATTR)RTStrSpaceGet(pEquals->pAttributes2, pAttr1->szName);
+                if (pAttr2)
+                {
+                    Assert(!pAttr2->fVisited);
+                    pAttr2->fVisited = true;
+                    pEquals->cIgnoredAttributes2++;
+                }
+                pEquals->cIgnoredAttributes1++;
+                return 0;
+            }
+            ppsz++;
+        }
+    }
+
+    /*
+     * Find the matching attribute.
+     */
+    pAttr2 = (PRTMANIFESTATTR)RTStrSpaceGet(pEquals->pAttributes2, pAttr1->szName);
+    if (!pAttr2)
+    {
+        if (pEquals->fFlags & RTMANIFEST_EQUALS_IGN_MISSING_ATTRS)
+            return 0;
+
+        if (*pEquals->pszCurEntry)
+            RTStrPrintf(pEquals->pszError, pEquals->cbError,
+                        "Attribute '%s' on '%s' was not found in the 2nd manifest",
+                        pAttr1->szName, pEquals->pszCurEntry);
+        else
+            RTStrPrintf(pEquals->pszError, pEquals->cbError, "Attribute '%s' was not found in the 2nd manifest", pAttr1->szName);
+        return VERR_NOT_EQUAL;
+    }
+
+    Assert(!pAttr2->fVisited);
+    pAttr2->fVisited = true;
+    pEquals->cAttributes2++;
+
+    /*
+     * Compare them.
+     */
+    if (strcmp(pAttr1->pszValue, pAttr2->pszValue))
+    {
+        if (*pEquals->pszCurEntry)
+            RTStrPrintf(pEquals->pszError, pEquals->cbError,
+                        "Attribute '%s' on '%s' does not match ('%s' vs. '%s')",
+                        pAttr1->szName, pEquals->pszCurEntry, pAttr1->pszValue, pAttr2->pszValue);
+        else
+            RTStrPrintf(pEquals->pszError, pEquals->cbError,
+                        "Attribute '%s' does not match ('%s' vs. '%s')",
+                        pAttr1->szName, pAttr1->pszValue, pAttr2->pszValue);
+        return VERR_NOT_EQUAL;
+    }
+
+    return 0;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ */
+DECLINLINE (int) rtManifestEntryCompare2(PRTMANIFESTEQUALS pEquals, PRTMANIFESTENTRY pEntry1, PRTMANIFESTENTRY pEntry2)
+{
+    /*
+     * Compare the attributes.  It's a bit ugly with all this counting, but
+     * how else to efficiently implement RTMANIFEST_EQUALS_IGN_MISSING_ATTRS?
+     */
+    pEquals->cIgnoredAttributes1 = 0;
+    pEquals->cIgnoredAttributes2 = 0;
+    pEquals->cAttributes2        = 0;
+    pEquals->pszCurEntry         = &pEntry2->szName[0];
+    pEquals->pAttributes2        = &pEntry2->Attributes;
+    int rc = RTStrSpaceEnumerate(&pEntry1->Attributes, rtManifestAttributeCompare, pEquals);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Check that we matched all that is required.
+         */
+        if (   pEquals->cAttributes2 + pEquals->cIgnoredAttributes2 != pEntry2->cAttributes
+            && (  !(pEquals->fFlags & RTMANIFEST_EQUALS_IGN_MISSING_ATTRS)
+                || pEquals->cIgnoredAttributes1 == pEntry1->cAttributes))
+            rc = RTStrSpaceEnumerate(&pEntry2->Attributes, rtManifestAttributeFindMissing2, pEquals);
+    }
+    return rc;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Prepare equals operation.}
+ */
+static DECLCALLBACK(int) rtManifestEntryCompare(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTEQUALS pEquals = (PRTMANIFESTEQUALS)pvUser;
+    PRTMANIFESTENTRY  pEntry1 = RT_FROM_MEMBER(pStr, RTMANIFESTENTRY, StrCore);
+    PRTMANIFESTENTRY  pEntry2;
+
+    /*
+     * Ignore this entry.
+     */
+    char const * const *ppsz = pEquals->papszIgnoreEntries;
+    if (ppsz)
+    {
+        while (*ppsz)
+        {
+            if (!strcmp(*ppsz, pStr->pszString))
+            {
+                pEntry2 = (PRTMANIFESTENTRY)RTStrSpaceGet(&pEquals->pThis2->Entries, pStr->pszString);
+                if (pEntry2)
+                {
+                    pEntry2->fVisited = true;
+                    pEquals->cIgnoredEntries2++;
+                }
+                pEntry1->fVisited = true;
+                return 0;
+            }
+            ppsz++;
+        }
+    }
+
+    /*
+     * Try find the entry in the other manifest.
+     */
+    pEntry2 = (PRTMANIFESTENTRY)RTStrSpaceGet(&pEquals->pThis2->Entries, pEntry1->StrCore.pszString);
+    if (!pEntry2)
+    {
+        RTStrPrintf(pEquals->pszError, pEquals->cbError, "'%s' not found in the 2nd manifest", pEntry1->StrCore.pszString);
+        return VERR_NOT_EQUAL;
+    }
+
+    Assert(!pEntry1->fVisited);
+    Assert(!pEntry2->fVisited);
+    pEntry1->fVisited = true;
+    pEntry2->fVisited = true;
+    pEquals->cEntries2++;
+
+    return rtManifestEntryCompare2(pEquals, pEntry1, pEntry2);
+}
+
+
+
 RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, const char * const *papszIgnoreEntries,
-                               const char * const *papszIgnoreAttr, char *pszEntry, size_t cbEntry)
+                               const char * const *papszIgnoreAttr, uint32_t fFlags, char *pszError, size_t cbError)
 {
     /*
      * Validate input.
      */
-    AssertPtrNullReturn(pszEntry, VERR_INVALID_POINTER);
-    if (pszEntry && cbEntry)
-        *pszEntry = '\0';
+    AssertPtrNullReturn(pszError, VERR_INVALID_POINTER);
+    if (pszError && cbError)
+        *pszError = '\0';
     RTMANIFESTINT *pThis1 = hManifest1;
-    RTMANIFESTINT *pThis2 = hManifest1;
+    RTMANIFESTINT *pThis2 = hManifest2;
     if (pThis1 != NIL_RTMANIFEST)
     {
         AssertPtrReturn(pThis1, VERR_INVALID_HANDLE);
@@ -258,6 +573,7 @@ RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, con
         AssertPtrReturn(pThis2, VERR_INVALID_HANDLE);
         AssertReturn(pThis2->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
     }
+    AssertReturn(!(fFlags & ~(RTMANIFEST_EQUALS_IGN_MISSING_ATTRS)), VERR_INVALID_PARAMETER);
 
     /*
      * The simple cases.
@@ -268,19 +584,51 @@ RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, con
         return VERR_NOT_EQUAL;
 
     /*
-     *
+     * Since we have to use callback style enumeration, we have to mark the
+     * entries and attributes to make sure we've covered them all.
      */
+    RTStrSpaceEnumerate(&pThis1->Entries, rtManifestEntryClearVisited, NULL);
+    RTStrSpaceEnumerate(&pThis2->Entries, rtManifestEntryClearVisited, NULL);
+    RTStrSpaceEnumerate(&pThis1->SelfEntry.Attributes, rtManifestAttributeClearVisited, NULL);
+    RTStrSpaceEnumerate(&pThis2->SelfEntry.Attributes, rtManifestAttributeClearVisited, NULL);
 
+    RTMANIFESTEQUALS Equals;
+    Equals.pThis2               = pThis2;
+    Equals.fFlags               = fFlags;
+    Equals.papszIgnoreEntries   = papszIgnoreEntries;
+    Equals.papszIgnoreAttr      = papszIgnoreAttr;
+    Equals.pszError             = pszError;
+    Equals.cbError              = cbError;
 
-    /** @todo implement comparing. */
+    Equals.cIgnoredEntries2     = 0;
+    Equals.cEntries2            = 0;
+    Equals.cIgnoredAttributes1  = 0;
+    Equals.cIgnoredAttributes2  = 0;
+    Equals.cAttributes2         = 0;
+    Equals.pAttributes2         = NULL;
+    Equals.pszCurEntry          = NULL;
 
-    return VERR_NOT_IMPLEMENTED;
+    int rc = rtManifestEntryCompare2(&Equals, &pThis1->SelfEntry, &pThis2->SelfEntry);
+    if (RT_SUCCESS(rc))
+        rc = RTStrSpaceEnumerate(&pThis1->Entries, rtManifestEntryCompare, &Equals);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Did we cover all entries of the 2nd manifest?
+         */
+        if (Equals.cEntries2 + Equals.cIgnoredEntries2 != pThis2->cEntries)
+            rc = RTStrSpaceEnumerate(&pThis1->Entries, rtManifestEntryFindMissing2, &Equals);
+    }
+
+    return rc;
 }
 
 
 RTDECL(int) RTManifestEquals(RTMANIFEST hManifest1, RTMANIFEST hManifest2)
 {
-    return RTManifestEqualsEx(hManifest1, hManifest2, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttrs*/, NULL, 0);
+    return RTManifestEqualsEx(hManifest1, hManifest2,
+                              NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttrs*/,
+                              0 /*fFlags*/, NULL, 0);
 }
 
 
@@ -288,12 +636,12 @@ RTDECL(int) RTManifestEquals(RTMANIFEST hManifest1, RTMANIFEST hManifest2)
  * Worker common to RTManifestSetAttr and RTManifestEntrySetAttr.
  *
  * @returns IPRT status code.
- * @param   pAttributes         The attribute container.
+ * @param   pEntry              Pointer to the entry.
  * @param   pszAttr             The name of the attribute to add.
  * @param   pszValue            The value string.
  * @param   fType               The attribute type type.
  */
-static int rtManifestSetAttrWorker(PRTSTRSPACE pAttributes, const char *pszAttr, const char *pszValue, uint32_t fType)
+static int rtManifestSetAttrWorker(PRTMANIFESTENTRY pEntry, const char *pszAttr, const char *pszValue, uint32_t fType)
 {
     char *pszValueCopy;
     int rc = RTStrDupEx(&pszValueCopy, pszValue);
@@ -304,7 +652,7 @@ static int rtManifestSetAttrWorker(PRTSTRSPACE pAttributes, const char *pszAttr,
      * Does the attribute exist already?
      */
     AssertCompileMemberOffset(RTMANIFESTATTR, StrCore, 0);
-    PRTMANIFESTATTR pAttr = (PRTMANIFESTATTR)RTStrSpaceGet(pAttributes, pszAttr);
+    PRTMANIFESTATTR pAttr = (PRTMANIFESTATTR)RTStrSpaceGet(&pEntry->Attributes, pszAttr);
     if (pAttr)
     {
         RTStrFree(pAttr->pszValue);
@@ -325,13 +673,14 @@ static int rtManifestSetAttrWorker(PRTSTRSPACE pAttributes, const char *pszAttr,
         pAttr->StrCore.cchString = cbName - 1;
         pAttr->pszValue = pszValueCopy;
         pAttr->fType    = fType;
-        if (RT_UNLIKELY(!RTStrSpaceInsert(pAttributes, &pAttr->StrCore)))
+        if (RT_UNLIKELY(!RTStrSpaceInsert(&pEntry->Attributes, &pAttr->StrCore)))
         {
             AssertFailed();
             RTStrFree(pszValueCopy);
             RTMemFree(pAttr);
             return VERR_INTERNAL_ERROR_4;
         }
+        pEntry->cAttributes++;
     }
 
     return VINF_SUCCESS;
@@ -358,7 +707,7 @@ RTDECL(int) RTManifestSetAttr(RTMANIFEST hManifest, const char *pszAttr, const c
     AssertPtr(pszValue);
     AssertReturn(RT_IS_POWER_OF_TWO(fType) && fType < RTMANIFEST_ATTR_END, VERR_INVALID_PARAMETER);
 
-    return rtManifestSetAttrWorker(&pThis->Attributes, pszAttr, pszValue, fType);
+    return rtManifestSetAttrWorker(&pThis->SelfEntry, pszAttr, pszValue, fType);
 }
 
 
@@ -366,14 +715,15 @@ RTDECL(int) RTManifestSetAttr(RTMANIFEST hManifest, const char *pszAttr, const c
  * Worker common to RTManifestUnsetAttr and RTManifestEntryUnsetAttr.
  *
  * @returns IPRT status code.
- * @param   pAttributes         The attribute container.
+ * @param   pEntry              Pointer to the entry.
  * @param   pszAttr             The name of the attribute to remove.
  */
-static int rtManifestUnsetAttrWorker(PRTSTRSPACE pAttributes, const char *pszAttr)
+static int rtManifestUnsetAttrWorker(PRTMANIFESTENTRY pEntry, const char *pszAttr)
 {
-    PRTSTRSPACECORE pStrCore = RTStrSpaceRemove(pAttributes, pszAttr);
+    PRTSTRSPACECORE pStrCore = RTStrSpaceRemove(&pEntry->Attributes, pszAttr);
     if (!pStrCore)
         return VWRN_NOT_FOUND;
+    pEntry->cAttributes--;
     rtManifestDestroyAttribute(pStrCore, NULL);
     return VINF_SUCCESS;
 }
@@ -395,7 +745,7 @@ RTDECL(int) RTManifestUnsetAttr(RTMANIFEST hManifest, const char *pszAttr)
     AssertReturn(pThis->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
     AssertPtr(pszAttr);
 
-    return rtManifestUnsetAttrWorker(&pThis->Attributes, pszAttr);
+    return rtManifestUnsetAttrWorker(&pThis->SelfEntry, pszAttr);
 }
 
 
@@ -419,22 +769,24 @@ static int rtManifestValidateNameEntry(const char *pszEntry, bool *pfNeedNormali
         RTUNICP uc;
         rc = RTStrGetCpEx(&pszCur, &uc);
         if (RT_FAILURE(rc))
-            break;
+            return rc;
         if (!uc)
             break;
         if (uc == '\\')
             fNeedNormalization = true;
         else if (uc < 32 || uc == ':' || uc == '(' || uc == ')')
-        {
-            rc = VERR_INVALID_NAME;
-            break;
-        }
+            return VERR_INVALID_NAME;
     }
 
     if (pfNeedNormalization)
         *pfNeedNormalization = fNeedNormalization;
+
+    size_t cchEntry = pszCur - pszEntry - 1;
+    if (!cchEntry)
+        rc = VERR_INVALID_NAME;
     if (pcchEntry)
-        *pcchEntry = pszCur - pszEntry - 1;
+        *pcchEntry = cchEntry;
+
     return rc;
 }
 
@@ -546,11 +898,12 @@ RTDECL(int) RTManifestEntrySetAttr(RTMANIFEST hManifest, const char *pszEntry, c
             RTMemFree(pEntry);
             return VERR_INTERNAL_ERROR_4;
         }
+        pThis->cEntries++;
     }
     else if (RT_FAILURE(rc))
         return rc;
 
-    return rtManifestSetAttrWorker(&pEntry->Attributes, pszAttr, pszValue, fType);
+    return rtManifestSetAttrWorker(pEntry, pszAttr, pszValue, fType);
 }
 
 
@@ -583,7 +936,7 @@ RTDECL(int) RTManifestEntryUnsetAttr(RTMANIFEST hManifest, const char *pszEntry,
     PRTMANIFESTENTRY pEntry;
     rc = rtManifestGetEntry(pThis, pszEntry, fNeedNormalization, cchEntry, &pEntry);
     if (RT_SUCCESS(rc))
-        rc = rtManifestUnsetAttrWorker(&pEntry->Attributes, pszAttr);
+        rc = rtManifestUnsetAttrWorker(pEntry, pszAttr);
     return rc;
 }
 
@@ -639,7 +992,10 @@ RTDECL(int) RTManifestEntryAdd(RTMANIFEST hManifest, const char *pszEntry)
                 rtManifestNormalizeEntry(pEntry->szName);
 
             if (RTStrSpaceInsert(&pThis->Entries, &pEntry->StrCore))
+            {
+                pThis->cEntries++;
                 rc = VINF_SUCCESS;
+            }
             else
             {
                 RTMemFree(pEntry);
@@ -684,6 +1040,7 @@ RTDECL(int) RTManifestEntryRemove(RTMANIFEST hManifest, const char *pszEntry)
     {
         PRTSTRSPACECORE pStrCore = RTStrSpaceRemove(&pThis->Entries, pEntry->StrCore.pszString);
         AssertReturn(pStrCore, VERR_INTERNAL_ERROR_3);
+        pThis->cEntries--;
         rtManifestDestroyEntry(pStrCore, pThis);
     }
 
@@ -960,7 +1317,7 @@ RTDECL(int) RTManifestWriteStandard(RTMANIFEST hManifest, RTVFSIOSTREAM hVfsIos)
     RTMANIFESTWRITESTDATTR Args;
     Args.hVfsIos  = hVfsIos;
     Args.pszEntry = "main";
-    int rc = RTStrSpaceEnumerate(&pThis->Attributes, rtManifestWriteStdAttr, &Args);
+    int rc = RTStrSpaceEnumerate(&pThis->SelfEntry.Attributes, rtManifestWriteStdAttr, &Args);
     if (RT_SUCCESS(rc))
         rc = RTStrSpaceEnumerate(&pThis->Entries, rtManifestWriteStdEntry, hVfsIos);
     return rc;

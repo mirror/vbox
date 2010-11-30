@@ -103,14 +103,26 @@ RTDECL(int) RTManifestDup(RTMANIFEST hManifestSrc, PRTMANIFEST phManifestDst);
  * @param   hManifest2          The second manifest.
  * @param   papszIgnoreEntries  Entries to ignore.  Ends with a NULL entry.
  * @param   papszIgnoreAttrs    Attributes to ignore.  Ends with a NULL entry.
- * @param   pszEntry            Where to store the name of the mismatching
+ * @param   fFlags              A combination of RTMANIFEST_EQUALS_XXX values.
+ * @param   pszError            Where to store the name of the mismatching
  *                              entry, or as much of the name as there is room
  *                              for.  This is always set.  Optional.
- * @param   cbEntry             The size of the buffer pointed to by @a
- *                              pszEntry.
+ * @param   cbError             The size of the buffer pointed to by @a
+ *                              pszError.
  */
 RTDECL(int) RTManifestEqualsEx(RTMANIFEST hManifest1, RTMANIFEST hManifest2, const char * const *papszIgnoreEntries,
-                               const char * const *papszIgnoreAttr, char *pszEntry, size_t cbEntry);
+                               const char * const *papszIgnoreAttr, uint32_t fFlags, char *pszError, size_t cbError);
+
+/** @defgroup RTMANIFEST_EQUALS_XXX     RTManifestEqualsEx flags
+ * @{ */
+/** Ignore missing attributes if there is one or more to compare. */
+#define RTMANIFEST_EQUALS_IGN_MISSING_ATTRS         RT_BIT_32(0)
+/** Ignore attributes missing in the 1st manifest.
+ * @todo implement this  */
+#define RTMANIFEST_EQUALS_IGN_MISSING_ATTRS_1ST     RT_BIT_32(1)
+/** Mask of valid flags. */
+#define RTMANIFEST_EQUALS_VALID_MASK                UINT32_C(0x00000003)
+/** @}  */
 
 /**
  * Compares two manifests for equality.
