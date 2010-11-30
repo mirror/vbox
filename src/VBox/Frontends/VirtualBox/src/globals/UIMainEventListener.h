@@ -22,6 +22,9 @@
 /* Local includes */
 #include "COMDefs.h"
 
+/* VBox includes */
+#include <VBox/com/listeners.h>
+
 /* Note: On a first look this may seems a little bit complicated.
  * There are two reasons to use a separate class here which handles the events
  * and forward them to the public class as signals. The first one is that on
@@ -34,31 +37,14 @@
  * consumer. Qt will create a event for us, place it in the main GUI event
  * queue and deliver it later on. */
 
-class UIMainEventListener: public QObject , VBOX_SCRIPTABLE_IMPL(IEventListener)
+class UIMainEventListener: public QObject
 {
     Q_OBJECT;
 
 public:
-    NS_DECL_ISUPPORTS
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IEventListener)
-
     UIMainEventListener(QObject *pParent);
 
-#ifdef Q_WS_WIN
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement(&m_refcnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&m_refcnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif /* Q_WS_WIN */
-
-    STDMETHOD(HandleEvent)(IEvent *pEvent);
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *pEvent);
 
 signals:
     /* All VirtualBox Signals */
@@ -83,13 +69,10 @@ signals:
     void sigRuntimeError(bool fFatal, QString strId, QString strMessage);
     void sigCanShowWindow(bool &fVeto, QString &strReason); /* use Qt::DirectConnection */
     void sigShowWindow(LONG64 &winId); /* use Qt::DirectConnection */
-
-#ifdef Q_WS_WIN
-private:
-    /* Private member vars */
-    long m_refcnt;
-#endif /* Q_WS_WIN */
 };
+
+/* Wrap the IListener interface around our implementation class. */
+typedef ListenerImpl<UIMainEventListener, QObject*> UIMainEventListenerImpl;
 
 #endif /* !__UIMainEventListener_h__ */
 

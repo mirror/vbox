@@ -58,7 +58,7 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     Assert(pSession);
 
 //    RTPrintf("Self add: %RTthrd\n", RTThreadSelf());
-    UIMainEventListener *pListener = new UIMainEventListener(this);
+    UIMainEventListenerImpl *pListener = new UIMainEventListenerImpl(this);
     m_mainEventListener = CEventListener(pListener);
     QVector<KVBoxEventType> events;
     events
@@ -80,59 +80,59 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
     console.GetEventSource().RegisterListener(m_mainEventListener, events, TRUE);
     AssertWrapperOk(console);
 
-    connect(pListener, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
+    connect(pListener->getWrapped(), SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
             this, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigMouseCapabilityChange(bool, bool, bool)),
+    connect(pListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool)),
             this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
+    connect(pListener->getWrapped(), SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
             this, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigStateChange(KMachineState)),
+    connect(pListener->getWrapped(), SIGNAL(sigStateChange(KMachineState)),
             this, SIGNAL(sigStateChange(KMachineState)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigAdditionsChange()),
+    connect(pListener->getWrapped(), SIGNAL(sigAdditionsChange()),
             this, SIGNAL(sigAdditionsChange()),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
+    connect(pListener->getWrapped(), SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
             this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigMediumChange(CMediumAttachment)),
+    connect(pListener->getWrapped(), SIGNAL(sigMediumChange(CMediumAttachment)),
             this, SIGNAL(sigMediumChange(CMediumAttachment)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigUSBControllerChange()),
+    connect(pListener->getWrapped(), SIGNAL(sigUSBControllerChange()),
             this, SIGNAL(sigUSBControllerChange()),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
+    connect(pListener->getWrapped(), SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
             this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigSharedFolderChange()),
+    connect(pListener->getWrapped(), SIGNAL(sigSharedFolderChange()),
             this, SIGNAL(sigSharedFolderChange()),
             Qt::QueuedConnection);
 
-    connect(pListener, SIGNAL(sigRuntimeError(bool, QString, QString)),
+    connect(pListener->getWrapped(), SIGNAL(sigRuntimeError(bool, QString, QString)),
             this, SIGNAL(sigRuntimeError(bool, QString, QString)),
             Qt::QueuedConnection);
 
     /* This is a vetoable event, so we have to respond to the event and have to
      * use a direct connection therefor. */
-    connect(pListener, SIGNAL(sigCanShowWindow(bool&, QString&)),
+    connect(pListener->getWrapped(), SIGNAL(sigCanShowWindow(bool&, QString&)),
             this, SLOT(sltCanShowWindow(bool&, QString&)),
             Qt::DirectConnection);
 
     /* This returns a winId, so we have to respond to the event and have to use
      * a direct connection therefor. */
-    connect(pListener, SIGNAL(sigShowWindow(LONG64&)),
+    connect(pListener->getWrapped(), SIGNAL(sigShowWindow(LONG64&)),
             this, SLOT(sltShowWindow(LONG64&)),
             Qt::DirectConnection);
 }
