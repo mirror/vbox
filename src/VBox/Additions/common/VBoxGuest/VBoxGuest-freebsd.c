@@ -547,7 +547,12 @@ static int VBoxGuestFreeBSDAttach(device_t pDevice)
              */
             rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase,
                                      pState->pMMIOBase, pState->VMMDevMemSize,
-                                     VBOXOSTYPE_FreeBSD, VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+#if ARCH_BITS == 64
+                                     VBOXOSTYPE_FreeBSD_x64,
+#else
+                                     VBOXOSTYPE_FreeBSD,
+#endif
+                                     VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_SUCCESS(rc))
             {
                 /*
