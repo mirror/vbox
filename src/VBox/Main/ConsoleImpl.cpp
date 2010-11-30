@@ -235,7 +235,7 @@ struct VMPowerUpTask : public VMProgressTask
     FaultToleranceState_T mEnmFaultToleranceState;
 
     /* array of progress objects for hard disk reset operations */
-    typedef std::list< ComPtr<IProgress> > ProgressList;
+    typedef std::list<ComPtr<IProgress> > ProgressList;
     ProgressList hardDiskProgresses;
 };
 
@@ -274,33 +274,32 @@ public:
             case VBoxEventType_OnNATRedirect:
             {
                 Bstr id;
-                ComPtr<IMachine> m = mConsole->machine();
-                ComPtr<INetworkAdapter> adapter;
-                ComPtr<INATRedirectEvent> nrev = aEvent;
+                ComPtr<IMachine> pMachine = mConsole->machine();
+                ComPtr<INATRedirectEvent> pNREv = aEvent;
                 HRESULT rc = E_FAIL;
-                Assert(nrev);
+                Assert(pNREv);
 
                 Bstr interestedId;
-                rc = m->COMGETTER(Id)(interestedId.asOutParam());
+                rc = pMachine->COMGETTER(Id)(interestedId.asOutParam());
                 AssertComRC(rc);
-                rc = nrev->COMGETTER(MachineId)(id.asOutParam());
+                rc = pNREv->COMGETTER(MachineId)(id.asOutParam());
                 AssertComRC(rc);
                 if (id != interestedId)
                     break;
                 /* now we can operate with redirects */
                 NATProtocol_T proto;
-                nrev->COMGETTER(Proto)(&proto);
+                pNREv->COMGETTER(Proto)(&proto);
                 BOOL fRemove;
-                nrev->COMGETTER(Remove)(&fRemove);
+                pNREv->COMGETTER(Remove)(&fRemove);
                 bool fUdp = (proto == NATProtocol_UDP);
                 Bstr hostIp, guestIp;
                 LONG hostPort, guestPort;
-                nrev->COMGETTER(HostIp)(hostIp.asOutParam());
-                nrev->COMGETTER(HostPort)(&hostPort);
-                nrev->COMGETTER(GuestIp)(guestIp.asOutParam());
-                nrev->COMGETTER(GuestPort)(&guestPort);
+                pNREv->COMGETTER(HostIp)(hostIp.asOutParam());
+                pNREv->COMGETTER(HostPort)(&hostPort);
+                pNREv->COMGETTER(GuestIp)(guestIp.asOutParam());
+                pNREv->COMGETTER(GuestPort)(&guestPort);
                 ULONG ulSlot;
-                rc = nrev->COMGETTER(Slot)(&ulSlot);
+                rc = pNREv->COMGETTER(Slot)(&ulSlot);
                 AssertComRC(rc);
                 if (FAILED(rc))
                     break;
@@ -471,17 +470,17 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
     /* VirtualBox events registration. */
     {
-        ComPtr<IVirtualBox> virtualbox;
-        rc = aMachine->COMGETTER(Parent)(virtualbox.asOutParam());
+        ComPtr<IVirtualBox> pVirtualBox;
+        rc = aMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
         AssertComRC(rc);
 
-        ComPtr<IEventSource> es;
-        rc = virtualbox->COMGETTER(EventSource)(es.asOutParam());
+        ComPtr<IEventSource> pES;
+        rc = pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
         AssertComRC(rc);
         mVmListner = new VmEventListenerImpl(this);
-        com::SafeArray <VBoxEventType_T> eventTypes;
+        com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnNATRedirect);
-        rc = es->RegisterListener(mVmListner, ComSafeArrayAsInParam(eventTypes), true);
+        rc = pES->RegisterListener(mVmListner, ComSafeArrayAsInParam(eventTypes), true);
         AssertComRC(rc);
     }
 
@@ -519,13 +518,20 @@ void Console::uninit()
     LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
     if (mVmListner)
     {
-        ComPtr<IEventSource> es;
-        ComPtr<IVirtualBox> virtualBox;
-        mMachine->COMGETTER(Parent)(virtualBox.asOutParam());
-        HRESULT rc = virtualBox->COMGETTER(EventSource)(es.asOutParam());
+        ComPtr<IEventSource> pES;
+        ComPtr<IVirtualBox> pVirtualBox;
+        HRESULT rc = mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
         AssertComRC(rc);
-        rc = es->UnregisterListener(mVmListner);
-        AssertComRC(rc);
+        if (SUCCEEDED(rc) && !pVirtualBox.isNull())
+        {
+            rc = pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
+            AssertComRC(rc);
+            if (!pES.isNull())
+            {
+                rc = pES->UnregisterListener(mVmListner);
+                AssertComRC(rc);
+            }
+        }
         mVmListner->Release();
     }
 
@@ -1231,25 +1237,25 @@ Console::saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
          it != that->mSharedFolders.end();
          ++ it)
     {
-        ComObjPtr<SharedFolder> folder = (*it).second;
+        ComObjPtr<SharedFolder> pSharedFolder = (*it).second;
         // don't lock the folder because methods we access are const
 
-        Utf8Str name = folder->getName();
+        Utf8Str name = pSharedFolder->getName();
         vrc = SSMR3PutU32(pSSM, (uint32_t)name.length() + 1 /* term. 0 */);
         AssertRC(vrc);
         vrc = SSMR3PutStrZ(pSSM, name.c_str());
         AssertRC(vrc);
 
-        Utf8Str hostPath = folder->getHostPath();
+        Utf8Str hostPath = pSharedFolder->getHostPath();
         vrc = SSMR3PutU32(pSSM, (uint32_t)hostPath.length() + 1 /* term. 0 */);
         AssertRC(vrc);
         vrc = SSMR3PutStrZ(pSSM, hostPath.c_str());
         AssertRC(vrc);
 
-        vrc = SSMR3PutBool(pSSM, !!folder->isWritable());
+        vrc = SSMR3PutBool(pSSM, !!pSharedFolder->isWritable());
         AssertRC(vrc);
 
-        vrc = SSMR3PutBool(pSSM, !!folder->isAutoMounted());
+        vrc = SSMR3PutBool(pSSM, !!pSharedFolder->isAutoMounted());
         AssertRC(vrc);
     }
 
@@ -1340,13 +1346,13 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
         if (u32Version > 0x00010000) // ???
             SSMR3GetBool(pSSM, &autoMount);
 
-        ComObjPtr<SharedFolder> sharedFolder;
-        sharedFolder.createObject();
-        HRESULT rc = sharedFolder->init(this, name.raw(), hostPath.raw(),
-                                        writable, autoMount);
+        ComObjPtr<SharedFolder> pSharedFolder;
+        pSharedFolder.createObject();
+        HRESULT rc = pSharedFolder->init(this, name.raw(), hostPath.raw(),
+                                         writable, autoMount);
         AssertComRCReturn(rc, VERR_INTERNAL_ERROR);
 
-        mSharedFolders.insert(std::make_pair(name, sharedFolder));
+        mSharedFolders.insert(std::make_pair(name, pSharedFolder));
     }
 
     return VINF_SUCCESS;
@@ -1378,11 +1384,11 @@ DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
     Bstr name(pCBData->pcszName);
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
-    ComObjPtr<Console> ptrConsole = reinterpret_cast<Console *>(pvExtension);
-    HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name.raw(),
-                                                          value.raw(),
-                                                          pCBData->u64Timestamp,
-                                                          flags.raw());
+    ComObjPtr<Console> pConsole = reinterpret_cast<Console *>(pvExtension);
+    HRESULT hrc = pConsole->mControl->PushGuestProperty(name.raw(),
+                                                        value.raw(),
+                                                        pCBData->u64Timestamp,
+                                                        flags.raw());
     if (SUCCEEDED(hrc))
         rc = VINF_SUCCESS;
     else
@@ -1776,14 +1782,14 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
     LogFlowThisFunc(("Initiating SHUTDOWN request...\n"));
 
     /* create an IProgress object to track progress of this operation */
-    ComObjPtr<Progress> progress;
-    progress.createObject();
-    progress->init(static_cast<IConsole *>(this),
-                   Bstr(tr("Stopping virtual machine")).raw(),
-                   FALSE /* aCancelable */);
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    pProgress->init(static_cast<IConsole *>(this),
+                    Bstr(tr("Stopping virtual machine")).raw(),
+                    FALSE /* aCancelable */);
 
     /* setup task object and thread to carry out the operation asynchronously */
-    std::auto_ptr<VMProgressTask> task(new VMProgressTask(this, progress, true /* aUsesVMPtr */));
+    std::auto_ptr<VMProgressTask> task(new VMProgressTask(this, pProgress, true /* aUsesVMPtr */));
     AssertReturn(task->isOk(), E_FAIL);
 
     int vrc = RTThreadCreate(NULL, Console::powerDownThread,
@@ -1800,7 +1806,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
     setMachineState(MachineState_Stopping);
 
     /* pass the progress to the caller */
-    progress.queryInterfaceTo(aProgress);
+    pProgress.queryInterfaceTo(aProgress);
 
     LogFlowThisFuncLeave();
 
@@ -2391,7 +2397,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
         setMachineStateLocally(MachineState_Saving);
 
         /* create a task object early to ensure mpVM protection is successful */
-        std::auto_ptr <VMSaveTask> task(new VMSaveTask(this, NULL, pProgress));
+        std::auto_ptr<VMSaveTask> task(new VMSaveTask(this, NULL, pProgress));
         rc = task->rc();
         /*
          * If we fail here it means a PowerDown() call happened on another
@@ -2652,20 +2658,20 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Find it. */
-    ComObjPtr<OUSBDevice> device;
+    ComObjPtr<OUSBDevice> pUSBDevice;
     USBDeviceList::iterator it = mUSBDevices.begin();
     Guid uuid(aId);
     while (it != mUSBDevices.end())
     {
         if ((*it)->id() == uuid)
         {
-            device = *it;
+            pUSBDevice = *it;
             break;
         }
         ++ it;
     }
 
-    if (!device)
+    if (!pUSBDevice)
         return setError(E_INVALIDARG,
             tr("USB device with UUID {%RTuuid} is not attached to this machine"),
             Guid(aId).raw());
@@ -2721,10 +2727,10 @@ STDMETHODIMP Console::FindUSBDeviceByAddress(IN_BSTR aAddress, IUSBDevice **aDev
         if (FAILED(rc)) return rc;
         if (address == aAddress)
         {
-            ComObjPtr<OUSBDevice> found;
-            found.createObject();
-            found->init(devsvec[i]);
-            return found.queryInterfaceTo(aDevice);
+            ComObjPtr<OUSBDevice> pUSBDevice;
+            pUSBDevice.createObject();
+            pUSBDevice->init(devsvec[i]);
+            return pUSBDevice.queryInterfaceTo(aDevice);
         }
     }
 
@@ -2756,10 +2762,10 @@ STDMETHODIMP Console::FindUSBDeviceById(IN_BSTR aId, IUSBDevice **aDevice)
         if (FAILED(rc)) return rc;
         if (id == aId)
         {
-            ComObjPtr<OUSBDevice> found;
-            found.createObject();
-            found->init(devsvec[i]);
-            return found.queryInterfaceTo(aDevice);
+            ComObjPtr<OUSBDevice> pUSBDevice;
+            pUSBDevice.createObject();
+            pUSBDevice->init(devsvec[i]);
+            return pUSBDevice.queryInterfaceTo(aDevice);
         }
     }
 
@@ -2797,15 +2803,15 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BO
             tr("Cannot create a transient shared folder on the machine while it is changing the state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
-    ComObjPtr<SharedFolder> sharedFolder;
-    HRESULT rc = findSharedFolder(aName, sharedFolder, false /* aSetError */);
+    ComObjPtr<SharedFolder> pSharedFolder;
+    HRESULT rc = findSharedFolder(aName, pSharedFolder, false /* aSetError */);
     if (SUCCEEDED(rc))
         return setError(VBOX_E_FILE_ERROR,
             tr("Shared folder named '%ls' already exists"),
             aName);
 
-    sharedFolder.createObject();
-    rc = sharedFolder->init(this, aName, aHostPath, aWritable, aAutoMount);
+    pSharedFolder.createObject();
+    rc = pSharedFolder->init(this, aName, aHostPath, aWritable, aAutoMount);
     if (FAILED(rc)) return rc;
 
     /* protect mpVM (if not NULL) */
@@ -2833,7 +2839,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BO
         if (FAILED(rc)) return rc;
     }
 
-    mSharedFolders.insert(std::make_pair(aName, sharedFolder));
+    mSharedFolders.insert(std::make_pair(aName, pSharedFolder));
 
     /* notify console callbacks after the folder is added to the list */
     fireSharedFolderChangedEvent(mEventSource, Scope_Session);
@@ -2864,8 +2870,8 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
             tr("Cannot remove a transient shared folder from the machine while it is changing the state (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
 
-    ComObjPtr<SharedFolder> sharedFolder;
-    HRESULT rc = findSharedFolder(aName, sharedFolder, true /* aSetError */);
+    ComObjPtr<SharedFolder> pSharedFolder;
+    HRESULT rc = findSharedFolder(aName, pSharedFolder, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
     /* protect mpVM (if not NULL) */
@@ -3223,7 +3229,7 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
     Bstr attCtrlName;
     rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
     AssertComRC(rc);
-    ComPtr<IStorageController> ctrl;
+    ComPtr<IStorageController> pStorageController;
     for (size_t i = 0; i < ctrls.size(); ++i)
     {
         Bstr ctrlName;
@@ -3231,27 +3237,27 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
         AssertComRC(rc);
         if (attCtrlName == ctrlName)
         {
-            ctrl = ctrls[i];
+            pStorageController = ctrls[i];
             break;
         }
     }
-    if (ctrl.isNull())
+    if (pStorageController.isNull())
         return setError(E_FAIL,
                         tr("Could not find storage controller '%ls'"), attCtrlName.raw());
 
     StorageControllerType_T enmCtrlType;
-    rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
+    rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
     pszDevice = convertControllerTypeToDev(enmCtrlType);
 
     StorageBus_T enmBus;
-    rc = ctrl->COMGETTER(Bus)(&enmBus);
+    rc = pStorageController->COMGETTER(Bus)(&enmBus);
     AssertComRC(rc);
     ULONG uInstance;
-    rc = ctrl->COMGETTER(Instance)(&uInstance);
+    rc = pStorageController->COMGETTER(Instance)(&uInstance);
     AssertComRC(rc);
     BOOL fUseHostIOCache;
-    rc = ctrl->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
+    rc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
     AssertComRC(rc);
 
     /* protect mpVM */
@@ -3526,7 +3532,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
                             {
                                 vrc = pINetCfg->pfnSetLinkState(pINetCfg, PDMNETWORKLINKSTATE_UP);
                                 ComAssertRC(vrc);
-                            }
+                    }
                         }
                     }
                 }
@@ -3570,10 +3576,10 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
         AutoVMCaller autoVMCaller(this);
         if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
 
-        ComPtr<INetworkAdapter> aNetworkAdapter;
-        rc = machine()->GetNetworkAdapter(ulInstance, aNetworkAdapter.asOutParam());
+        ComPtr<INetworkAdapter> pNetworkAdapter;
+        rc = machine()->GetNetworkAdapter(ulInstance, pNetworkAdapter.asOutParam());
         if (   FAILED(rc)
-            || aNetworkAdapter.isNull())
+            || pNetworkAdapter.isNull())
             goto done;
 
         /*
@@ -3581,7 +3587,7 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
          * the link state.
          */
         NetworkAdapterType_T adapterType;
-        rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
+        rc = pNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
         AssertComRC(rc);
         if (FAILED(rc))
         {
@@ -3599,7 +3605,7 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
             goto done;
         }
         NetworkAttachmentType_T attachmentType;
-        vrc = aNetworkAdapter->COMGETTER(AttachmentType)(&attachmentType);
+        vrc = pNetworkAdapter->COMGETTER(AttachmentType)(&attachmentType);
 
         if (   RT_FAILURE(vrc)
             || attachmentType != NetworkAttachmentType_NAT)
@@ -4216,12 +4222,12 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
         /* take the current error info */
         com::ErrorInfoKeeper eik;
         /* the error must be a VirtualBoxErrorInfo instance */
-        ComPtr<IVirtualBoxErrorInfo> error = eik.takeError();
-        Assert(!error.isNull());
-        if (!error.isNull())
+        ComPtr<IVirtualBoxErrorInfo> pError = eik.takeError();
+        Assert(!pError.isNull());
+        if (!pError.isNull())
         {
             /* notify callbacks about the error */
-            onUSBDeviceStateChange(aDevice, true /* aAttached */, error);
+            onUSBDeviceStateChange(aDevice, true /* aAttached */, pError);
         }
     }
 
@@ -4251,21 +4257,21 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Find the device. */
-    ComObjPtr<OUSBDevice> device;
+    ComObjPtr<OUSBDevice> pUSBDevice;
     USBDeviceList::iterator it = mUSBDevices.begin();
     while (it != mUSBDevices.end())
     {
         LogFlowThisFunc(("it={%RTuuid}\n", (*it)->id().raw()));
         if ((*it)->id() == Uuid)
         {
-            device = *it;
+            pUSBDevice = *it;
             break;
         }
         ++ it;
     }
 
 
-    if (device.isNull())
+    if (pUSBDevice.isNull())
     {
         LogFlowThisFunc(("USB device not found.\n"));
 
@@ -4289,7 +4295,7 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
     if (aError != NULL)
     {
         /* notify callback about an error */
-        onUSBDeviceStateChange(device, false /* aAttached */, aError);
+        onUSBDeviceStateChange(pUSBDevice, false /* aAttached */, aError);
         return S_OK;
     }
 
@@ -4300,12 +4306,12 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
         /* take the current error info */
         com::ErrorInfoKeeper eik;
         /* the error must be a VirtualBoxErrorInfo instance */
-        ComPtr<IVirtualBoxErrorInfo> error = eik.takeError();
-        Assert(!error.isNull());
-        if (!error.isNull())
+        ComPtr<IVirtualBoxErrorInfo> pError = eik.takeError();
+        Assert(!pError.isNull());
+        if (!pError.isNull())
         {
             /* notify callbacks about the error */
-            onUSBDeviceStateChange(device, false /* aAttached */, error);
+            onUSBDeviceStateChange(pUSBDevice, false /* aAttached */, pError);
         }
     }
 
@@ -4580,7 +4586,7 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     Bstr attCtrlName;
     rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
     AssertComRC(rc);
-    ComPtr<IStorageController> ctrl;
+    ComPtr<IStorageController> pStorageController;
     for (size_t i = 0; i < ctrls.size(); ++i)
     {
         Bstr ctrlName;
@@ -4588,28 +4594,28 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         AssertComRC(rc);
         if (attCtrlName == ctrlName)
         {
-            ctrl = ctrls[i];
+            pStorageController = ctrls[i];
             break;
         }
     }
-    if (ctrl.isNull())
+    if (pStorageController.isNull())
         return setError(E_FAIL,
                         tr("Could not find storage controller '%ls'"),
                         attCtrlName.raw());
 
     StorageControllerType_T enmCtrlType;
-    rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
+    rc = pStorageController->COMGETTER(ControllerType)(&enmCtrlType);
     AssertComRC(rc);
     const char *pcszDevice = convertControllerTypeToDev(enmCtrlType);
 
     StorageBus_T enmBus;
-    rc = ctrl->COMGETTER(Bus)(&enmBus);
+    rc = pStorageController->COMGETTER(Bus)(&enmBus);
     AssertComRC(rc);
     ULONG uInstance;
-    rc = ctrl->COMGETTER(Instance)(&uInstance);
+    rc = pStorageController->COMGETTER(Instance)(&uInstance);
     AssertComRC(rc);
     BOOL fUseHostIOCache;
-    rc = ctrl->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
+    rc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
     AssertComRC(rc);
 
     unsigned uLUN;
@@ -4953,14 +4959,14 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
         //Assert(fDelivered);
         if (fDelivered)
         {
-            ComPtr<IEvent> aEvent;
-            evDesc.getEvent(aEvent.asOutParam());
+            ComPtr<IEvent> pEvent;
+            evDesc.getEvent(pEvent.asOutParam());
             // bit clumsy
-            ComPtr<ICanShowWindowEvent> aCanShowEvent = aEvent;
-            if (aCanShowEvent)
+            ComPtr<ICanShowWindowEvent> pCanShowEvent = pEvent;
+            if (pCanShowEvent)
             {
                 BOOL fVetoed = FALSE;
-                aCanShowEvent->IsVetoed(&fVetoed);
+                pCanShowEvent->IsVetoed(&fVetoed);
                 *aCanShow = !fVetoed;
             }
             else
@@ -4979,13 +4985,13 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
         //Assert(fDelivered);
         if (fDelivered)
         {
-            ComPtr<IEvent> aEvent;
-            evDesc.getEvent(aEvent.asOutParam());
-            ComPtr<IShowWindowEvent> aShowEvent = aEvent;
+            ComPtr<IEvent> pEvent;
+            evDesc.getEvent(pEvent.asOutParam());
+            ComPtr<IShowWindowEvent> pShowEvent = pEvent;
             LONG64 aEvWinId = 0;
-            if (aShowEvent)
+            if (pShowEvent)
             {
-                aShowEvent->COMGETTER(WinId)(&aEvWinId);
+                pShowEvent->COMGETTER(WinId)(&aEvWinId);
                 if ((aEvWinId != 0) && (*aWinId == 0))
                     *aWinId = aEvWinId;
             }
@@ -5108,12 +5114,12 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
      * Rename .(n-1) to .(n), .(n-2) to .(n-1), ..., and the last log file to .1
      * Overwrite target files in case they exist.
      */
-    ComPtr<IVirtualBox> virtualBox;
-    aMachine->COMGETTER(Parent)(virtualBox.asOutParam());
-    ComPtr<ISystemProperties> systemProperties;
-    virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+    ComPtr<IVirtualBox> pVirtualBox;
+    aMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+    ComPtr<ISystemProperties> pSystemProperties;
+    pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
     ULONG cHistoryFiles = 3;
-    systemProperties->COMGETTER(LogHistoryCount)(&cHistoryFiles);
+    pSystemProperties->COMGETTER(LogHistoryCount)(&cHistoryFiles);
     if (cHistoryFiles)
     {
         for (int i = cHistoryFiles-1; i >= 0; i--)
@@ -5182,12 +5188,12 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
             RTLogRelLogger(loggerRelease, 0, ~0U, "DMI Product Version: %s\n", szTmp);
 
-        ComPtr<IHost> host;
-        virtualBox->COMGETTER(Host)(host.asOutParam());
+        ComPtr<IHost> pHost;
+        pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
         ULONG cMbHostRam = 0;
         ULONG cMbHostRamAvail = 0;
-        host->COMGETTER(MemorySize)(&cMbHostRam);
-        host->COMGETTER(MemoryAvailable)(&cMbHostRamAvail);
+        pHost->COMGETTER(MemorySize)(&cMbHostRam);
+        pHost->COMGETTER(MemoryAvailable)(&cMbHostRamAvail);
         RTLogRelLogger(loggerRelease, 0, ~0U, "Host RAM: %uMB RAM, available: %uMB\n",
                        cMbHostRam, cMbHostRamAvail);
 
@@ -5264,15 +5270,15 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
          slot < SchemaDefs::NetworkAdapterCount;
          ++slot)
     {
-        ComPtr<INetworkAdapter> adapter;
-        mMachine->GetNetworkAdapter(slot, adapter.asOutParam());
+        ComPtr<INetworkAdapter> pNetworkAdapter;
+        mMachine->GetNetworkAdapter(slot, pNetworkAdapter.asOutParam());
         BOOL enabled = FALSE;
-        adapter->COMGETTER(Enabled)(&enabled);
+        pNetworkAdapter->COMGETTER(Enabled)(&enabled);
         if (!enabled)
             continue;
 
         NetworkAttachmentType_T netattach;
-        adapter->COMGETTER(AttachmentType)(&netattach);
+        pNetworkAdapter->COMGETTER(AttachmentType)(&netattach);
         switch (netattach)
         {
             case NetworkAttachmentType_Bridged:
@@ -5280,19 +5286,19 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 #ifdef RT_OS_WINDOWS
                 /* a valid host interface must have been set */
                 Bstr hostif;
-                adapter->COMGETTER(HostInterface)(hostif.asOutParam());
+                pNetworkAdapter->COMGETTER(HostInterface)(hostif.asOutParam());
                 if (hostif.isEmpty())
                 {
                     return setError(VBOX_E_HOST_ERROR,
                         tr("VM cannot start because host interface networking requires a host interface name to be set"));
                 }
-                ComPtr<IVirtualBox> virtualBox;
-                mMachine->COMGETTER(Parent)(virtualBox.asOutParam());
-                ComPtr<IHost> host;
-                virtualBox->COMGETTER(Host)(host.asOutParam());
-                ComPtr<IHostNetworkInterface> hostInterface;
-                if (!SUCCEEDED(host->FindHostNetworkInterfaceByName(hostif.raw(),
-                                                                    hostInterface.asOutParam())))
+                ComPtr<IVirtualBox> pVirtualBox;
+                mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+                ComPtr<IHost> pHost;
+                pVirtualBox->COMGETTER(Host)(pHost.asOutParam());
+                ComPtr<IHostNetworkInterface> pHostInterface;
+                if (!SUCCEEDED(pHost->FindHostNetworkInterfaceByName(hostif.raw(),
+                                                                     pHostInterface.asOutParam())))
                 {
                     return setError(VBOX_E_HOST_ERROR,
                         tr("VM cannot start because the host interface '%ls' does not exist"),
@@ -5367,8 +5373,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     BOOL fFaultToleranceSyncEnabled = (enmFaultToleranceState == FaultToleranceState_Standby);
 
     /* create a progress object to track progress of this operation */
-    ComObjPtr<Progress> powerupProgress;
-    powerupProgress.createObject();
+    ComObjPtr<Progress> pPowerupProgress;
+    pPowerupProgress.createObject();
     Bstr progressDesc;
     if (mMachineState == MachineState_Saved)
         progressDesc = tr("Restoring virtual machine");
@@ -5380,29 +5386,29 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         progressDesc = tr("Starting virtual machine");
     if (    mMachineState == MachineState_Saved
         ||  (!fTeleporterEnabled && !fFaultToleranceSyncEnabled))
-        rc = powerupProgress->init(static_cast<IConsole *>(this),
-                                   progressDesc.raw(),
-                                   FALSE /* aCancelable */);
+        rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                    progressDesc.raw(),
+                                    FALSE /* aCancelable */);
     else
     if (fTeleporterEnabled)
-        rc = powerupProgress->init(static_cast<IConsole *>(this),
-                                   progressDesc.raw(),
-                                   TRUE /* aCancelable */,
-                                   3    /* cOperations */,
-                                   10   /* ulTotalOperationsWeight */,
-                                   Bstr(tr("Teleporting virtual machine")).raw(),
-                                   1    /* ulFirstOperationWeight */,
-                                   NULL);
+        rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                    progressDesc.raw(),
+                                    TRUE /* aCancelable */,
+                                    3    /* cOperations */,
+                                    10   /* ulTotalOperationsWeight */,
+                                    Bstr(tr("Teleporting virtual machine")).raw(),
+                                    1    /* ulFirstOperationWeight */,
+                                    NULL);
     else
     if (fFaultToleranceSyncEnabled)
-        rc = powerupProgress->init(static_cast<IConsole *>(this),
-                                   progressDesc.raw(),
-                                   TRUE /* aCancelable */,
-                                   3    /* cOperations */,
-                                   10   /* ulTotalOperationsWeight */,
-                                   Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
-                                   1    /* ulFirstOperationWeight */,
-                                   NULL);
+        rc = pPowerupProgress->init(static_cast<IConsole *>(this),
+                                    progressDesc.raw(),
+                                    TRUE /* aCancelable */,
+                                    3    /* cOperations */,
+                                    10   /* ulTotalOperationsWeight */,
+                                    Bstr(tr("Fault Tolerance syncing of remote virtual machine")).raw(),
+                                    1    /* ulFirstOperationWeight */,
+                                    NULL);
 
     if (FAILED(rc))
         return rc;
@@ -5410,7 +5416,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     /* Tell VBoxSVC and Machine about the progress object so they can combine
        proxy it to any openRemoteSession caller. */
     LogFlowThisFunc(("Calling BeginPowerUp...\n"));
-    rc = mControl->BeginPowerUp(powerupProgress);
+    rc = mControl->BeginPowerUp(pPowerupProgress);
     if (FAILED(rc))
     {
         LogFlowThisFunc(("BeginPowerUp failed\n"));
@@ -5419,7 +5425,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     LogFlowThisFunc(("Checking if canceled...\n"));
     BOOL fCanceled;
-    rc = powerupProgress->COMGETTER(Canceled)(&fCanceled);
+    rc = pPowerupProgress->COMGETTER(Canceled)(&fCanceled);
     if (FAILED(rc))
         return rc;
     if (fCanceled)
@@ -5432,7 +5438,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     /* setup task object and thread to carry out the operation
      * asynchronously */
 
-    std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, powerupProgress));
+    std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, pPowerupProgress));
     ComAssertComRCRetRC(task->rc());
 
     task->mConfigConstructor = configConstructor;
@@ -5479,23 +5485,23 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
             /** @todo later applies to floppies as well */
             if (devType == DeviceType_HardDisk)
             {
-                ComPtr<IMedium> medium;
-                rc = atts[i]->COMGETTER(Medium)(medium.asOutParam());
+                ComPtr<IMedium> pMedium;
+                rc = atts[i]->COMGETTER(Medium)(pMedium.asOutParam());
                 if (FAILED(rc)) return rc;
 
                 /* needs autoreset? */
                 BOOL autoReset = FALSE;
-                rc = medium->COMGETTER(AutoReset)(&autoReset);
+                rc = pMedium->COMGETTER(AutoReset)(&autoReset);
                 if (FAILED(rc)) return rc;
 
                 if (autoReset)
                 {
-                    ComPtr<IProgress> resetProgress;
-                    rc = medium->Reset(resetProgress.asOutParam());
+                    ComPtr<IProgress> pResetProgress;
+                    rc = pMedium->Reset(pResetProgress.asOutParam());
                     if (FAILED(rc)) return rc;
 
                     /* save for later use on the powerup thread */
-                    task->hardDiskProgresses.push_back(resetProgress);
+                    task->hardDiskProgresses.push_back(pResetProgress);
                 }
             }
         }
@@ -5563,20 +5569,20 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         {
             /* there are no other operations to track, return the powerup
              * progress only */
-            powerupProgress.queryInterfaceTo(aProgress);
+            pPowerupProgress.queryInterfaceTo(aProgress);
         }
         else
         {
             /* create a combined progress object */
-            ComObjPtr<CombinedProgress> progress;
-            progress.createObject();
+            ComObjPtr<CombinedProgress> pProgress;
+            pProgress.createObject();
             VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
-            progresses.push_back(ComPtr<IProgress> (powerupProgress));
-            rc = progress->init(static_cast<IConsole *>(this),
-                                progressDesc.raw(), progresses.begin(),
-                                progresses.end());
+            progresses.push_back(ComPtr<IProgress> (pPowerupProgress));
+            rc = pProgress->init(static_cast<IConsole *>(this),
+                                 progressDesc.raw(), progresses.begin(),
+                                 progresses.end());
             AssertComRCReturnRC(rc);
-            progress.queryInterfaceTo(aProgress);
+            pProgress.queryInterfaceTo(aProgress);
         }
     }
 
@@ -6037,20 +6043,20 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
 
         for (size_t i = 0; i < folders.size(); ++i)
         {
-            ComPtr<ISharedFolder> folder = folders[i];
+            ComPtr<ISharedFolder> pSharedFolder = folders[i];
 
             Bstr name;
             Bstr hostPath;
             BOOL writable;
             BOOL autoMount;
 
-            rc = folder->COMGETTER(Name)(name.asOutParam());
+            rc = pSharedFolder->COMGETTER(Name)(name.asOutParam());
             if (FAILED(rc)) break;
-            rc = folder->COMGETTER(HostPath)(hostPath.asOutParam());
+            rc = pSharedFolder->COMGETTER(HostPath)(hostPath.asOutParam());
             if (FAILED(rc)) break;
-            rc = folder->COMGETTER(Writable)(&writable);
+            rc = pSharedFolder->COMGETTER(Writable)(&writable);
             if (FAILED(rc)) break;
-            rc = folder->COMGETTER(AutoMount)(&autoMount);
+            rc = pSharedFolder->COMGETTER(AutoMount)(&autoMount);
             if (FAILED(rc)) break;
 
             mMachineSharedFolders.insert(std::make_pair(name, SharedFolderData(hostPath, writable, autoMount)));
@@ -6712,17 +6718,17 @@ Console::usbAttachCallback(Console *that, IUSBDevice *aHostDevice, PCRTUUID aUui
     if (RT_SUCCESS(vrc))
     {
         /* Create a OUSBDevice and add it to the device list */
-        ComObjPtr<OUSBDevice> device;
-        device.createObject();
-        hrc = device->init(aHostDevice);
+        ComObjPtr<OUSBDevice> pUSBDevice;
+        pUSBDevice.createObject();
+        hrc = pUSBDevice->init(aHostDevice);
         AssertComRC(hrc);
 
         AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
-        that->mUSBDevices.push_back(device);
-        LogFlowFunc(("Attached device {%RTuuid}\n", device->id().raw()));
+        that->mUSBDevices.push_back(pUSBDevice);
+        LogFlowFunc(("Attached device {%RTuuid}\n", pUSBDevice->id().raw()));
 
         /* notify callbacks */
-        that->onUSBDeviceStateChange(device, true /* aAttached */, NULL);
+        that->onUSBDeviceStateChange(pUSBDevice, true /* aAttached */, NULL);
     }
 
     LogFlowFunc(("vrc=%Rrc\n", vrc));
@@ -6785,7 +6791,7 @@ Console::usbDetachCallback(Console *that, USBDeviceList::iterator *aIt, PCRTUUID
     LogFlowFunc(("that={%p}\n", that));
 
     AssertReturn(that && aUuid, VERR_INVALID_PARAMETER);
-    ComObjPtr<OUSBDevice> device = **aIt;
+    ComObjPtr<OUSBDevice> pUSBDevice = **aIt;
 
     /*
      * If that was a remote device, release the backend pointer.
@@ -6811,10 +6817,10 @@ Console::usbDetachCallback(Console *that, USBDeviceList::iterator *aIt, PCRTUUID
 
         /* Remove the device from the collection */
         that->mUSBDevices.erase(*aIt);
-        LogFlowFunc(("Detached device {%RTuuid}\n", device->id().raw()));
+        LogFlowFunc(("Detached device {%RTuuid}\n", pUSBDevice->id().raw()));
 
         /* notify callbacks */
-        that->onUSBDeviceStateChange(device, false /* aAttached */, NULL);
+        that->onUSBDeviceStateChange(pUSBDevice, false /* aAttached */, NULL);
     }
 
     LogFlowFunc(("vrc=%Rrc\n", vrc));
@@ -7080,21 +7086,21 @@ HRESULT Console::powerDownHostInterfaces()
     HRESULT rc;
     for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; slot ++)
     {
-        ComPtr<INetworkAdapter> networkAdapter;
-        rc = mMachine->GetNetworkAdapter(slot, networkAdapter.asOutParam());
+        ComPtr<INetworkAdapter> pNetworkAdapter;
+        rc = mMachine->GetNetworkAdapter(slot, pNetworkAdapter.asOutParam());
         if (FAILED(rc)) break;
 
         BOOL enabled = FALSE;
-        networkAdapter->COMGETTER(Enabled)(&enabled);
+        pNetworkAdapter->COMGETTER(Enabled)(&enabled);
         if (!enabled)
             continue;
 
         NetworkAttachmentType_T attachment;
-        networkAdapter->COMGETTER(AttachmentType)(&attachment);
+        pNetworkAdapter->COMGETTER(AttachmentType)(&attachment);
         if (attachment == NetworkAttachmentType_Bridged)
         {
 #if defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)
-            HRESULT rc2 = detachFromTapInterface(networkAdapter);
+            HRESULT rc2 = detachFromTapInterface(pNetworkAdapter);
             if (FAILED(rc2) && SUCCEEDED(rc))
                 rc = rc2;
 #endif
@@ -7318,17 +7324,17 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
                     e->idVendor, e->idProduct, e->oProduct? (char *)e + e->oProduct: ""));
 
             /* Create the device object and add the new device to list. */
-            ComObjPtr<RemoteUSBDevice> device;
-            device.createObject();
-            device->init(u32ClientId, e);
+            ComObjPtr<RemoteUSBDevice> pUSBDevice;
+            pUSBDevice.createObject();
+            pUSBDevice->init(u32ClientId, e);
 
-            mRemoteUSBDevices.push_back(device);
+            mRemoteUSBDevices.push_back(pUSBDevice);
 
             /* Check if the device is ok for current USB filters. */
             BOOL fMatched = FALSE;
             ULONG fMaskedIfs = 0;
 
-            HRESULT hrc = mControl->RunUSBDeviceFilters(device, &fMatched, &fMaskedIfs);
+            HRESULT hrc = mControl->RunUSBDeviceFilters(pUSBDevice, &fMatched, &fMaskedIfs);
 
             AssertComRC(hrc);
 
@@ -7336,14 +7342,14 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
 
             if (fMatched)
             {
-                hrc = onUSBDeviceAttach(device, NULL, fMaskedIfs);
+                hrc = onUSBDeviceAttach(pUSBDevice, NULL, fMaskedIfs);
 
                 /// @todo (r=dmik) warning reporting subsystem
 
                 if (hrc == S_OK)
                 {
                     LogFlowThisFunc(("Device attached\n"));
-                    device->captured(true);
+                    pUSBDevice->captured(true);
                 }
             }
         }
@@ -7365,42 +7371,42 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
      */
     for (;;)
     {
-        ComObjPtr<RemoteUSBDevice> device;
+        ComObjPtr<RemoteUSBDevice> pUSBDevice;
 
         RemoteUSBDeviceList::iterator it = mRemoteUSBDevices.begin();
         while (it != mRemoteUSBDevices.end())
         {
             if ((*it)->dirty())
             {
-                device = *it;
+                pUSBDevice = *it;
                 break;
             }
 
             ++ it;
         }
 
-        if (!device)
+        if (!pUSBDevice)
         {
             break;
         }
 
         USHORT vendorId = 0;
-        device->COMGETTER(VendorId)(&vendorId);
+        pUSBDevice->COMGETTER(VendorId)(&vendorId);
 
         USHORT productId = 0;
-        device->COMGETTER(ProductId)(&productId);
+        pUSBDevice->COMGETTER(ProductId)(&productId);
 
         Bstr product;
-        device->COMGETTER(Product)(product.asOutParam());
+        pUSBDevice->COMGETTER(Product)(product.asOutParam());
 
         LogRel(("Remote USB: ---- Vendor %04X. Product %04X. Name = [%ls].\n",
                 vendorId, productId, product.raw()));
 
         /* Detach the device from VM. */
-        if (device->captured())
+        if (pUSBDevice->captured())
         {
             Bstr uuid;
-            device->COMGETTER(Id)(uuid.asOutParam());
+            pUSBDevice->COMGETTER(Id)(uuid.asOutParam());
             onUSBDeviceDetach(uuid.raw(), NULL);
         }
 
@@ -7462,16 +7468,16 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
                 "BU", "IL", "DI", "D", VBOX_VERSION_STRING, RTBldCfgRevision(), "BU", "IL", "DI", "D");
 
-    ComObjPtr<Console> console = task->mConsole;
+    ComObjPtr<Console> pConsole = task->mConsole;
 
     /* Note: no need to use addCaller() because VMPowerUpTask does that */
 
     /* The lock is also used as a signal from the task initiator (which
      * releases it only after RTThreadCreate()) that we can start the job */
-    AutoWriteLock alock(console COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(pConsole COMMA_LOCKVAL_SRC_POS);
 
     /* sanity */
-    Assert(console->mpVM == NULL);
+    Assert(pConsole->mpVM == NULL);
 
     try
     {
@@ -7479,10 +7485,10 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         // once for the console, for the pathological case that the same console
         // object is used to power up a VM twice. VirtualBox 4.0: we now do that
         // here instead of the Console constructor (see Console::init())
-        if (!console->m_pVMMDev)
+        if (!pConsole->m_pVMMDev)
         {
-            console->m_pVMMDev = new VMMDev(console);
-            AssertReturn(console->m_pVMMDev, E_FAIL);
+            pConsole->m_pVMMDev = new VMMDev(pConsole);
+            AssertReturn(pConsole->m_pVMMDev, E_FAIL);
         }
 
         /* wait for auto reset ops to complete so that we can successfully lock
@@ -7506,14 +7512,14 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         if (    !task->mTeleporterEnabled
             &&  task->mEnmFaultToleranceState != FaultToleranceState_Standby)
         {
-            rc = console->mControl->LockMedia();
+            rc = pConsole->mControl->LockMedia();
             if (FAILED(rc)) throw rc;
         }
 
         /* Create the VRDP server. In case of headless operation, this will
          * also create the framebuffer, required at VM creation.
          */
-        ConsoleVRDPServer *server = console->consoleVRDPServer();
+        ConsoleVRDPServer *server = pConsole->consoleVRDPServer();
         Assert(server);
 
         /* Does VRDP server call Console from the other thread?
@@ -7527,7 +7533,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         {
             Utf8Str errMsg;
             Bstr bstr;
-            console->mVRDEServer->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
+            pConsole->mVRDEServer->GetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.asOutParam());
             Utf8Str ports = bstr;
             errMsg = Utf8StrFmt(tr("VirtualBox Remote Desktop Extension server can't bind to the port: %s"),
                                 ports.c_str());
@@ -7560,7 +7566,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             throw setErrorStatic(E_FAIL, errMsg.c_str());
         }
 
-        ComPtr<IMachine> pMachine = console->machine();
+        ComPtr<IMachine> pMachine = pConsole->machine();
         ULONG cCpus = 1;
         pMachine->COMGETTER(CPUCount)(&cCpus);
 
@@ -7575,17 +7581,17 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         alock.leave();
 
         vrc = VMR3Create(cCpus,
-                         console->mpVmm2UserMethods,
+                         pConsole->mpVmm2UserMethods,
                          Console::genericVMSetErrorCallback,
                          &task->mErrorMsg,
                          task->mConfigConstructor,
-                         static_cast<Console *>(console),
+                         static_cast<Console *>(pConsole),
                          &pVM);
 
         alock.enter();
 
         /* Enable client connections to the server. */
-        console->consoleVRDPServer()->EnableConnections();
+        pConsole->consoleVRDPServer()->EnableConnections();
 
         if (RT_SUCCESS(vrc))
         {
@@ -7598,10 +7604,10 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                                             NULL, NULL, NULL,
                                             NULL, saveStateFileExec, NULL,
                                             NULL, loadStateFileExec, NULL,
-                                            static_cast<Console *>(console));
+                                            static_cast<Console *>(pConsole));
                 AssertRCBreak(vrc);
 
-                vrc = static_cast<Console *>(console)->getDisplay()->registerSSM(pVM);
+                vrc = static_cast<Console *>(pConsole)->getDisplay()->registerSSM(pVM);
                 AssertRC(vrc);
                 if (RT_FAILURE(vrc))
                     break;
@@ -7609,14 +7615,14 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 /*
                  * Synchronize debugger settings
                  */
-                MachineDebugger *machineDebugger = console->getMachineDebugger();
+                MachineDebugger *machineDebugger = pConsole->getMachineDebugger();
                 if (machineDebugger)
                     machineDebugger->flushQueuedSettings();
 
                 /*
                  * Shared Folders
                  */
-                if (console->m_pVMMDev->isShFlActive())
+                if (pConsole->m_pVMMDev->isShFlActive())
                 {
                     /* Does the code below call Console from the other thread?
                      * Not sure, so leave the lock just in case. */
@@ -7626,7 +7632,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                          it != task->mSharedFolders.end();
                          ++it)
                     {
-                        rc = console->createSharedFolder((*it).first.raw(),
+                        rc = pConsole->createSharedFolder((*it).first.raw(),
                                                          (*it).second);
                         if (FAILED(rc)) break;
                     }
@@ -7639,7 +7645,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 /*
                  * Capture USB devices.
                  */
-                rc = console->captureUSBDevices(pVM);
+                rc = pConsole->captureUSBDevices(pVM);
                 if (FAILED(rc)) break;
 
                 /* leave the lock before a lengthy operation */
@@ -7660,12 +7666,12 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     {
                         if (task->mStartPaused)
                             /* done */
-                            console->setMachineState(MachineState_Paused);
+                            pConsole->setMachineState(MachineState_Paused);
                         else
                         {
                             /* Start/Resume the VM execution */
 #ifdef VBOX_WITH_EXTPACK
-                            vrc = console->mptrExtPackManager->callAllVmPowerOnHooks(console, pVM);
+                            vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                             if (RT_SUCCESS(vrc))
                                 vrc = VMR3Resume(pVM);
@@ -7678,7 +7684,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     {
                         int vrc2 = VMR3PowerOff(pVM); AssertLogRelRC(vrc2);
 #ifdef VBOX_WITH_EXTPACK
-                        console->mptrExtPackManager->callAllVmPowerOffHooks(console, pVM);
+                        pConsole->mptrExtPackManager->callAllVmPowerOffHooks(pConsole, pVM);
 #endif
                     }
                 }
@@ -7686,14 +7692,14 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 {
                     /* -> ConsoleImplTeleporter.cpp */
                     bool fPowerOffOnFailure;
-                    rc = console->teleporterTrg(pVM, pMachine, &task->mErrorMsg, task->mStartPaused,
-                                                task->mProgress, &fPowerOffOnFailure);
+                    rc = pConsole->teleporterTrg(pVM, pMachine, &task->mErrorMsg, task->mStartPaused,
+                                                 task->mProgress, &fPowerOffOnFailure);
                     if (FAILED(rc) && fPowerOffOnFailure)
                     {
                         ErrorInfoKeeper eik;
                         int vrc2 = VMR3PowerOff(pVM); AssertLogRelRC(vrc2);
 #ifdef VBOX_WITH_EXTPACK
-                        console->mptrExtPackManager->callAllVmPowerOffHooks(console, pVM);
+                        pConsole->mptrExtPackManager->callAllVmPowerOffHooks(pConsole, pVM);
 #endif
                     }
                 }
@@ -7726,7 +7732,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
                             /* Power on the FT enabled VM. */
 #ifdef VBOX_WITH_EXTPACK
-                            vrc = console->mptrExtPackManager->callAllVmPowerOnHooks(console, pVM);
+                            vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                             if (RT_SUCCESS(vrc))
                                 vrc = FTMR3PowerOn(pVM,
@@ -7744,12 +7750,12 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 }
                 else if (task->mStartPaused)
                     /* done */
-                    console->setMachineState(MachineState_Paused);
+                    pConsole->setMachineState(MachineState_Paused);
                 else
                 {
                     /* Power on the VM (i.e. start executing) */
 #ifdef VBOX_WITH_EXTPACK
-                    vrc = console->mptrExtPackManager->callAllVmPowerOnHooks(console, pVM);
+                    vrc = pConsole->mptrExtPackManager->callAllVmPowerOnHooks(pConsole, pVM);
 #endif
                     if (RT_SUCCESS(vrc))
                         vrc = VMR3PowerOn(pVM);
@@ -7769,7 +7775,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
                 /* powerDown() will call VMR3Destroy() and do all necessary
                  * cleanup (VRDP, USB devices) */
-                HRESULT rc2 = console->powerDown();
+                HRESULT rc2 = pConsole->powerDown();
                 AssertComRC(rc2);
             }
             else
@@ -7790,7 +7796,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             /*
              * If VMR3Create() failed it has released the VM memory.
              */
-            console->mpVM = NULL;
+            pConsole->mpVM = NULL;
         }
 
         if (SUCCEEDED(rc) && RT_FAILURE(vrc))
@@ -7819,9 +7825,9 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     }
     catch (HRESULT aRC) { rc = aRC; }
 
-    if (   console->mMachineState == MachineState_Starting
-        || console->mMachineState == MachineState_Restoring
-        || console->mMachineState == MachineState_TeleportingIn
+    if (   pConsole->mMachineState == MachineState_Starting
+        || pConsole->mMachineState == MachineState_Restoring
+        || pConsole->mMachineState == MachineState_TeleportingIn
        )
     {
         /* We are still in the Starting/Restoring state. This means one of:
@@ -7837,9 +7843,9 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
-        Assert(console->mpVM == NULL);
+        Assert(pConsole->mpVM == NULL);
         vmstateChangeCallback(NULL, VMSTATE_TERMINATED, VMSTATE_CREATING,
-                              console);
+                              pConsole);
     }
 
     /*
@@ -7863,7 +7869,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     }
 
     /* Notify VBoxSVC and any waiting openRemoteSession progress object. */
-    console->mControl->EndPowerUp(rc);
+    pConsole->mControl->EndPowerUp(rc);
 
 #if defined(RT_OS_WINDOWS)
     /* uninitialize COM */
@@ -8076,7 +8082,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                 i < atts.size();
                 ++i)
             {
-                ComPtr<IStorageController> controller;
+                ComPtr<IStorageController> pStorageController;
                 Bstr controllerName;
                 ULONG lInstance;
                 StorageControllerType_T enmController;
@@ -8093,20 +8099,20 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                     throw rc;
 
                 rc = that->mMachine->GetStorageControllerByName(controllerName.raw(),
-                                                                controller.asOutParam());
+                                                                pStorageController.asOutParam());
                 if (FAILED(rc))
                     throw rc;
 
-                rc = controller->COMGETTER(ControllerType)(&enmController);
+                rc = pStorageController->COMGETTER(ControllerType)(&enmController);
                 if (FAILED(rc))
                     throw rc;
-                rc = controller->COMGETTER(Instance)(&lInstance);
+                rc = pStorageController->COMGETTER(Instance)(&lInstance);
                 if (FAILED(rc))
                     throw rc;
-                rc = controller->COMGETTER(Bus)(&enmBus);
+                rc = pStorageController->COMGETTER(Bus)(&enmBus);
                 if (FAILED(rc))
                     throw rc;
-                rc = controller->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
+                rc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
                 if (FAILED(rc))
                     throw rc;
 
