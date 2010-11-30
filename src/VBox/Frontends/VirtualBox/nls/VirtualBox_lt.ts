@@ -1673,7 +1673,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Rodo kelią iki numatytojo virtualios mašinos aplanko. Šis aplankas naudojamas, jei kuriant naują virtualią mašiną nenurodomas joks kitas.</translation>
@@ -1739,7 +1739,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language
@@ -1798,7 +1798,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network
@@ -1953,7 +1953,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>Tik prie pagr. kompiuterio prisijungiančio tinklo detalės</translation>
@@ -2049,7 +2049,7 @@ IPv6.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Pasirinkus, programa karts nuo karto prisijungs prie VirtualBox svetainės ir tikrins, ar yra naujesnių VirtualBox versijų.</translation>
@@ -4539,7 +4539,7 @@ IPv6.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>A few seconds remaining</source>
         <translation>Liko kelios sekundės</translation>
@@ -5311,7 +5311,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Jei pasirinkta, virtuali garso plokštė bus prijungta prie virtualios mašinos. Plokštė bendraus su pagrindiniu kompiuteriu per nurodytą tvarkyklę.</translation>
@@ -5338,7 +5338,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>vaizdo atminčiai paskyrėte mažiau kaip &lt;b&gt;%1&lt;/b&gt;. Pastarasis dydis yra mažiausias amtinties kiekis, kurio reikia mašinai pereiti į viso ekrano arbą integruotą darbastalio veikseną.</translation>
@@ -5516,7 +5516,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Rodo kelią, kur bus saugomos šios virtualios mašinos momentinių būvių kopijos. Atminkite, kad būvių kopijos gali užimti daug vietos.</translation>
@@ -5591,7 +5591,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>Jei pažymėta, bus rodomi diskų vediniai, kurie prijunti prie lizdų, o ne jų pamatiniai standieji diskai (t. y. netiesioginiai prijungimai); bus leidžiama tiksliai prijungti pamatinių standžiųjų diskų vedinius (pvz., būvių kopijas). Šią parinktį naudokite tik jei norite sudėtingos standžiųjų diskų konfigūracijos.</translation>
@@ -5830,7 +5830,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation>Jei pažymėta, virtualioje mašinoje bus įtaisoma tinklo plokštė.</translation>
@@ -5911,7 +5911,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports
@@ -5960,7 +5960,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Pasirinktas prievado numeris kartojasi</translation>
@@ -5975,7 +5975,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>Adds a new shared folder definition.</source>
         <translation>Prideda naują bendrąjį aplanką.</translation>
@@ -6042,7 +6042,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Pridėti bendrąjį elementą</translation>
@@ -6081,7 +6081,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports
@@ -6146,7 +6146,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Pasirinktas prievado numeris kartojasi</translation>
@@ -6161,7 +6161,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>virtualiai mašinai paskyrėte daugiau kaip &lt;b&gt;%1%&lt;/b&gt; savo kompiuterio atminties (&lt;b&gt;%2&lt;/b&gt;). Nepakankamai atminties lieka Jūsų pagrindinei operacinei sistemai. Parinkite mažesnį atminties kiekį svečio sistemai.</translation>
@@ -6324,7 +6324,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Pridėti tuščią filtrą</translation>
@@ -6409,7 +6409,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote

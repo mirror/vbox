@@ -2637,7 +2637,7 @@ Virtualization Stuff LED</comment>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>បង្ហាញ​ផ្លូវ​ទៅ​កាន់​ថត​ម៉ាស៊ីន​និម្មិត​លំនាំដើម ។ ថត​នេះ​ត្រូវ​បាន​ប្រើ ប្រសិនបើ​មិន​បានបញ្ជាក់ជាក់លាក់​ទេ នៅពេល​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
@@ -2711,7 +2711,7 @@ Virtualization Stuff LED</comment>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -2766,7 +2766,7 @@ Virtualization Stuff LED</comment>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>
@@ -3000,7 +3000,7 @@ creating/removing host-only network</comment>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>សេច​ក្តី​លម្អិត​បណ្តាញ​​ម៉ាស៊ីន​</translation>
@@ -3095,7 +3095,7 @@ creating/removing host-only network</comment>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>នៅពេល​បាន​គូសធីក កម្មវិធី​នឹង​តភ្ជាប់​ទៅ​កាន់តំបន់បណ្ដាញ VirtualBox តាម​កាល​កំណត់ ហើយ​ពិនិត្យ​មើល​ថាតើ​មានកំណែ VirtualBox ដែរឬទេ ។</translation>
@@ -6062,7 +6062,7 @@ medium</comment>
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>A few seconds remaining</source>
         <translation>នៅ​សល់​ពីរ​ ​បី​​វិនាទី​</translation>
@@ -6946,7 +6946,7 @@ details report (VRDP server port)</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>នៅពេល​បាន​គូស​ធីក កាត​អូឌីយ៉ូ PCI និម្មិត​នៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត ​ដែល​ប្រើ​កម្មវិធី​បញ្ជា​ដែល​បានបញ្ជាក់​ទាក់ទង​ទៅ​កាត​អូឌីយ៉ូ​របស់​ម៉ាស៊ីន ។</translation>
@@ -6973,7 +6973,7 @@ details report (VRDP server port)</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>អ្នកបានផ្ដល់​សតិវីដេអូតិច​ជាង &lt;b&gt;%1&lt;/b&gt; ដែល​ជា​ចំនួន​អប្បបរមាដែលបានទាមទារ​ដើម្បី​ប្ដូរ​ម៉ាស៊ីន​និម្មិត​ទៅរបៀប​​ពេញអេក្រង់ ឬ​ពង្រីក ។</translation>
@@ -7151,7 +7151,7 @@ details report (VRDP server port)</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>បង្ហាញ​ផ្លូវ​ដែល​រូបថត​របស់ម៉ាស៊ីន​និម្មិត​នេះ​នឹង​ត្រូ​វបានផ្ទុក ។ ចំណាំ​ថា រូបថត​អាចចាប់យក​​ទំហំ​ថាស​ជា​ច្រើន​​យ៉ាង​ស្ងៀវស្ងាត់​ ។</translation>
@@ -7226,7 +7226,7 @@ details report (VRDP server port)</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>ប្រសិនបើ​បានគូសធីគ វា​នឹង​បង្ហាញ​ថាសរឹង​ផ្សេងៗ​ដែល​បានភ្ជាប់​ទៅ​រន្ធ​ជំនួស​ឲ្យ​ថាសរឹង​មូលដ្ឋាន​​របស់​ពួកវា (បង្ហាញតែ​ក្នុងករណី​ដែល​មានការ​ភ្ជាប់​ដោយ​ប្រយោល​ប៉ុណ្ណោះ) ហើយ​នឹង​អនុញ្ញាត​ឲ្យ​ភ្ជាប់​ថាសរឹង​ផ្សេងៗ​ផងដែរ ។ គូស​ធីក​តែ​ក្នុងករណី​ដែល​អ្នក​ត្រូវការ​ការ​រៀបចំ​ថាសរឹង​ស្មុគស្មាញ​ប៉ុណ្ណោះ ។</translation>
@@ -7465,7 +7465,7 @@ details report (VRDP server port)</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation>នៅពេល​គូស​ធីក ដោត​អាដាប់ទ័រ​បណ្ដាញ​និម្មិត​ទៅ​ក្នុងម៉ាស៊ីន​នកម្មិត ។</translation>
@@ -7552,7 +7552,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -7600,7 +7600,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>បាន​ជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
@@ -7615,7 +7615,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>Adds a new shared folder definition.</source>
         <translation>បន្ថែម​កា​រកំណត់​ថត​ដែលបានចែករំលែកថ្មី ។</translation>
@@ -7682,7 +7682,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>បន្ថែម​ការ​ចែករំលែក</translation>
@@ -7721,7 +7721,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -7785,7 +7785,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>បានជ្រើស​លេខ​ច្រក​ស្ទួន</translation>
@@ -7800,7 +7800,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>អ្នកបាន​ផ្ដល់សតិ​កុំព្យូទ័ររបស់​អ្នក​ច្រើនជាង &lt;b&gt;%1%&lt;/b&gt; (&lt;b&gt;%2&lt;/b&gt;) ដល់​ម៉ាស៊ីន​និម្មិត ។ មិនមាន​សតិ​គ្រប់គ្រាន់​នៅ​សល់​សម្រាប់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​របស់​អ្នក​ទេ ។ សូម​ជ្រើស​​ចំនួន​សតិ​តូច​ជាង​​នេះ ។</translation>
@@ -7979,7 +7979,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>បន្ថែម​តម្រង​ទទេ</translation>
@@ -8063,7 +8063,7 @@ network adapter name</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

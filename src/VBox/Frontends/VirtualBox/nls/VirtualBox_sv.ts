@@ -3125,7 +3125,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visar sökvägen till standard-VDI-mappen. Den här mappen används, om inte uttryckligen angiven, när befintliga eller nya virtuella hårddiskar läggs till eller skapas.</translation>
@@ -3203,7 +3203,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -3258,7 +3258,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -3403,7 +3403,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>Detaljer för endast-värd-nätverk</translation>
@@ -3498,7 +3498,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>När kryssad kommer programmet att med jämna mellanrum ansluta till VIrtualBox webbplats och kontrollera huruvida det finns en ny version av VirtualBox tillgänglig.</translation>
@@ -6274,7 +6274,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
         <translation>&amp;Avbryt</translation>
@@ -7352,7 +7352,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>När kryssad kommer det virtuella PCI-ljudkortet att anslutas i den virtuella maskinen som använder den angivna drivrutinen för att kommunicera med värdljudkortet.</translation>
@@ -7438,7 +7438,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>du har tilldelat mindre än &lt;b&gt;%1&lt;/b&gt; för grafikminnet, vilket är den minsta mängd som krävs för att växla den virtuella maskinen till helskärmsläge eller sömlöst läge.</translation>
@@ -7683,7 +7683,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
@@ -7926,7 +7926,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">Ingen hårddisk har valts för &lt;i&gt;%1&lt;/i&gt;</translation>
@@ -8237,7 +8237,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Välj TAP-konfigurationsprogram</translation>
@@ -8436,7 +8436,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation type="obsolete">inget bryggat nätverkskort har valts</translation>
@@ -8527,7 +8527,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetworkPage</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Inget värdnätverksgränssnitt har valts</translation>
@@ -8538,7 +8538,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>
@@ -8600,7 +8600,7 @@ parallel ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Dublett av portnummer har valts </translation>
@@ -8615,7 +8615,7 @@ parallel ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">&amp;Lägg till en ny mappdelning</translation>
@@ -8694,7 +8694,7 @@ parallel ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Lägg till utdelning</translation>
@@ -8733,7 +8733,7 @@ parallel ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>
@@ -8815,7 +8815,7 @@ serial ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Dublett av portnummer har valts </translation>
@@ -8830,7 +8830,7 @@ serial ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>du har tilldelat mer än &lt;b&gt;%1%&lt;/b&gt; av din dators minne (&lt;b&gt;%2&lt;/b&gt;) till den virtuella maskinen. Det finns inte tillräckligt mycket minne kvar för ditt värdoperativsystem. Välj en mindre mängd minne.</translation>
@@ -9008,7 +9008,7 @@ serial ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Lägg till tomt filter</translation>
@@ -9092,7 +9092,7 @@ serial ports</comment>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

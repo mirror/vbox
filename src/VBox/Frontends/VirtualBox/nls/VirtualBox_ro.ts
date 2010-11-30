@@ -3744,7 +3744,7 @@ Versiunea %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Afișează calea către directorul VDI implicit. Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creați noi sau adăugați discuri hard virtuale existente.</translation>
@@ -3823,7 +3823,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -3882,7 +3882,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -4027,7 +4027,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>Detalii rețea doar-gazdă</translation>
@@ -4122,7 +4122,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Când este selectat, aplicația se va conecta periodic la website-ul VirtualBox și va verifica dacă sunt disponibile versiuni mai noi ale VirtualBox.</translation>
@@ -7549,7 +7549,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
         <translation>&amp;Renunță</translation>
@@ -9654,7 +9654,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Când este bifat, placa de sunet PCI virtuală este conectată la mașina virtuală care folosește driverul specificat pentru a comunica cu placa de sunet a gazdei.</translation>
@@ -9736,7 +9736,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>ați asociat mașinii virtuale mai puțin de &lt;b&gt;%1&lt;/b&gt; memorie video, care este minimul necesar pentru a comuta în modul pe tot ecranul sau transparent.</translation>
@@ -11018,7 +11018,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MO&lt;/qt&gt;</translation>
@@ -11241,7 +11241,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">Nici un disc fix nu este selectat pentru &lt;i&gt;%1&lt;/i&gt;</translation>
@@ -11540,7 +11540,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Selectați aplicația de instalare TAP</translation>
@@ -11702,7 +11702,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Afișează numele rețelei interne selectată pentru această placă de rețea.</translation>
@@ -11733,7 +11733,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetworkPage</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Nici o interfață gazdă nu este selectată</translation>
@@ -11744,7 +11744,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -11800,7 +11800,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Număr port duplicat selectat </translation>
@@ -11815,7 +11815,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">&amp;Adaugă un nou director partajat</translation>
@@ -11894,7 +11894,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Adaugă partajare</translation>
@@ -11933,7 +11933,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -12009,7 +12009,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Număr port duplicat selectat </translation>
@@ -12024,7 +12024,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>ați asociat mașinii virtuale mai mult de &lt;b&gt;%1%&lt;/b&gt; din memoria computerului dvs (&lt;b&gt;%2&lt;/b&gt;). Memoria rămasă pentru sistemul de operare gazdă este insuficientă. Vă rugăm selectați o cantitate mai mică.</translation>
@@ -12198,7 +12198,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Adaugă filtru gol</translation>
@@ -12282,7 +12282,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

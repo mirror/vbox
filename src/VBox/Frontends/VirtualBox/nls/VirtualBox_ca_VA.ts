@@ -3634,7 +3634,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Mostra la ruta cap a la carpeta de fitxers VDI predeterminada. S&apos;usa esta carpeta, si no se n&apos;especifica explícitament una altra, quan s&apos;afig o es crea un disc virtual.</translation>
@@ -3712,7 +3712,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -3767,7 +3767,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -3912,7 +3912,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>Detalls de xarxa de només l&apos;amfitrió</translation>
@@ -4007,7 +4007,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Quan estiga marcat, l&apos;aplicació es connectarà periòdicament al web del VirtualBox per comprovar si hi ha noves versions disponibles.</translation>
@@ -7396,7 +7396,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
         <translation>&amp;Cancel·la</translation>
@@ -9270,7 +9270,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Quan estiga marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual, la qual farà servir un controlador específic per comunicar-s&apos;amb la tarjeta de so de l&apos;amfitrió.</translation>
@@ -9356,7 +9356,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>heu assignat menys de l&apos;&lt;b&gt;%1&lt;/b&gt; per a la memòria de vídeo, que és el mínim necessari per arrencar el sistema client en mode de pantalla completa o fluid.</translation>
@@ -10455,7 +10455,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation type="obsolete">heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Seleccineu un percentatge menor.</translation>
@@ -10698,7 +10698,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">No s&apos;ha seleccionat cap disc dur per &lt;i&gt;%1&lt;/i&gt;</translation>
@@ -11009,7 +11009,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation>no hi ha cap adaptador de xarxa en pont seleccionat</translation>
@@ -11208,7 +11208,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation type="obsolete">no hi ha cap adaptador de xarxa en pont seleccionat</translation>
@@ -11299,7 +11299,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetworkPage</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">No s&apos;ha seleccionat cap interfície de xarxa</translation>
@@ -11310,7 +11310,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -11366,7 +11366,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>S&apos;ha seleccionat un número de port duplicat</translation>
@@ -11381,7 +11381,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">&amp;Afig una nova carpeta compartida</translation>
@@ -11460,7 +11460,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Afig una compartició</translation>
@@ -11499,7 +11499,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -11575,7 +11575,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>S&apos;ha seleccionat un número de port duplicat</translation>
@@ -11590,7 +11590,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>heu assignat més d&apos;un &lt;b&gt;%1%&lt;/b&gt; de la memòria del vostre ordinador (&lt;b&gt;%2&lt;/b&gt;) a la màquina virtual. No heu deixat suficient memòria al sistema amfitrió. Seleccineu un percentatge menor.</translation>
@@ -11768,7 +11768,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Afig un filtre buit</translation>
@@ -11852,7 +11852,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

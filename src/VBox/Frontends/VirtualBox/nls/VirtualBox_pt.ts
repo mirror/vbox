@@ -3308,7 +3308,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Mostra a localização para a pasta predefinida VDI. Esta pasta é sempre usada para adicionar discos rígidos virtuais novos ou existentes, a não ser que seja definida outra quando estes são criados.</translation>
@@ -3378,7 +3378,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -3433,7 +3433,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -3578,7 +3578,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation type="unfinished"></translation>
@@ -3673,7 +3673,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Quando seleccionado, a aplicação ligar-se-á periódicamente ao sítio web do VirtualBox para verificar se existe uma nova versão disponível.</translation>
@@ -7016,7 +7016,7 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>A few seconds remaining</source>
         <translation type="unfinished"></translation>
@@ -8821,7 +8821,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Quando seleccionado, a placa de som PCI virtual é ligada à máquina virtual que usa o controlador especificado para comunicar com a placa de som do hospedeiro.</translation>
@@ -8907,7 +8907,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="unfinished"></translation>
@@ -10102,7 +10102,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
@@ -10317,7 +10317,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">Nenhum disco rígido seleccionado para  &lt;i&gt;%1&lt;/i&gt;</translation>
@@ -10604,7 +10604,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Seleccione a aplicação de configuração TAP</translation>
@@ -10762,7 +10762,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Mostra o nome da rede interna seleccionada para este adaptador.</translation>
@@ -10781,7 +10781,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetworkPage</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Nenhum interface de rede do hospedeiro foi seleccionado</translation>
@@ -10792,7 +10792,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -10848,7 +10848,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Está seleccionado um número de porta duplicado</translation>
@@ -10863,7 +10863,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">&amp;Adicionar uma Nova Pasta Partilhada</translation>
@@ -10942,7 +10942,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Adicionar Partilha</translation>
@@ -10981,7 +10981,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -11057,7 +11057,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Está seleccionado um número de porta duplicado</translation>
@@ -11072,7 +11072,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation type="unfinished"></translation>
@@ -11237,7 +11237,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Adicionar Filtro Vazio</translation>
@@ -11321,7 +11321,7 @@ USB seleccionado ligado à máquina.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

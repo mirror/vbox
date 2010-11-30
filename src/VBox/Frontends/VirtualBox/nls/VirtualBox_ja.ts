@@ -4359,64 +4359,64 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="177"/>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">デフォルトのVDIフォルダのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.cpp" line="93"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.cpp" line="93"/>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>デフォルトの仮想マシン フォルダのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.cpp" line="97"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.cpp" line="97"/>
         <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリのパスを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="33"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="33"/>
         <source>Default &amp;Hard Disk Folder:</source>
         <translation>デフォルト ハードディスク フォルダ(&amp;H):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="56"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="56"/>
         <source>Default &amp;Machine Folder:</source>
         <translation>デフォルト 仮想マシン フォルダ(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="86"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="86"/>
         <source>V&amp;RDP Authentication Library:</source>
         <translation>VRDP認証ライブラリ(&amp;R):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.cpp" line="89"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.cpp" line="89"/>
         <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation>デフォルトのハードディスク フォルダのパスを表示します。既存ディスクを追加するか、または新規仮想ハードディスク作成時に保存先を明示的に指定しない場合、このフォルダが使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="116"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="116"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
         <translation>アプリケーションはシステムトレイのコンテキストメニューにアイコンを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="119"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="119"/>
         <source>&amp;Show System Tray Icon</source>
         <translation>システムトレイアイコンを表示(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="119"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="119"/>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
         <translation type="obsolete">仮想マシンのウィンドウをドックアイコンにリアルタイムでプレビューします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="119"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="119"/>
         <source>&amp;Dock Icon Realtime Preview</source>
         <translation type="obsolete">ドックアイコンのリアルタイムプレビュー(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="142"/>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="142"/>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>フルスクリーンモード時にドックとメニューバーを自動的に表示(&amp;A)</translation>
     </message>
@@ -4455,427 +4455,427 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.cpp" line="89"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="89"/>
         <source> (built-in)</source>
         <comment>Language</comment>
         <translation>(内蔵)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.cpp" line="115"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="115"/>
         <source>&lt;unavailable&gt;</source>
         <comment>Language</comment>
         <translation>&lt;利用不可&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.cpp" line="116"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="116"/>
         <source>&lt;unknown&gt;</source>
         <comment>Author(s)</comment>
         <translation>&lt;不明&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.cpp" line="129"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="129"/>
         <source>Default</source>
         <comment>Language</comment>
         <translation>デフォルト</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.cpp" line="320"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="320"/>
         <source>Language:</source>
         <translation>言語:</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.ui" line="45"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.ui" line="45"/>
         <source>&amp;Interface Language:</source>
         <translation>インターフェース言語:</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.ui" line="83"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.ui" line="83"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
         <translation>利用できるユーザーインターフェース言語の一覧です。有効な言語は&lt;b&gt;太字&lt;/b&gt;で示されます。システムのデフォルト言語に戻すには&lt;i&gt;デフォルト&lt;/i&gt;を選択してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.ui" line="90"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.ui" line="90"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.ui" line="95"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.ui" line="95"/>
         <source>Id</source>
         <translation>Id</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.ui" line="100"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.ui" line="100"/>
         <source>Language</source>
         <translation>言語</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.ui" line="105"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.ui" line="105"/>
         <source>Author</source>
         <translation>作者</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsLanguage.cpp" line="322"/>
+        <location filename="../src/settings/global/UIGlobalSettingsLanguage.cpp" line="322"/>
         <source>Author(s):</source>
         <translation>作者:</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="57"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="57"/>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
         <translation>%1 ネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="127"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="127"/>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
         <translation>ホスト IPv4 アドレス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="134"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="134"/>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
         <translation>ホスト IPv4 ネットワーク マスク&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="143"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="143"/>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
         <translation>ホスト IPv6 アドレス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="155"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="155"/>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
         <translation>DHCP サーバー アドレス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="161"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="161"/>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
         <translation>DHCP サーバー ネットワーク マスク&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="167"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="167"/>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
         <translation>DHCP アドレス下限値&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="173"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="173"/>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
         <translation>DHCP アドレス上限値&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="190"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="190"/>
         <source>Adapter</source>
         <translation>アダプタ</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="191"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="191"/>
         <source>Automatically configured</source>
         <comment>interface</comment>
         <translation>自動構成</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="192"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="192"/>
         <source>Manually configured</source>
         <comment>interface</comment>
         <translation>手動構成</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="198"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="198"/>
         <source>IPv4 Address</source>
         <translation>IPv4 アドレス</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="228"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="228"/>
         <source>Not set</source>
         <comment>address</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="201"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="201"/>
         <source>IPv4 Network Mask</source>
         <translation>IPv4 ネットワーク マスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="231"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="231"/>
         <source>Not set</source>
         <comment>mask</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="208"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="208"/>
         <source>IPv6 Address</source>
         <translation>IPv6 アドレス</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="211"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="211"/>
         <source>IPv6 Network Mask Length</source>
         <translation>IPv6 ネットワーク マスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="212"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="212"/>
         <source>Not set</source>
         <comment>length</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="219"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="219"/>
         <source>DHCP Server</source>
         <translation>DHCP サーバー</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="220"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="220"/>
         <source>Enabled</source>
         <comment>server</comment>
         <translation>有効</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="221"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="221"/>
         <source>Disabled</source>
         <comment>server</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="227"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="227"/>
         <source>Address</source>
         <translation>アドレス</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="230"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="230"/>
         <source>Network Mask</source>
         <translation>ネットワーク マスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="233"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="233"/>
         <source>Lower Bound</source>
         <translation>下限</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="237"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="237"/>
         <source>Not set</source>
         <comment>bound</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="236"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="236"/>
         <source>Upper Bound</source>
         <translation>上限</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="375"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="375"/>
         <source>&amp;Add host-only network</source>
         <translation>ホストオンリー ネットワークを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="376"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="376"/>
         <source>&amp;Remove host-only network</source>
         <translation>ホストオンリー ネットワークを除去(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="377"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="377"/>
         <source>&amp;Edit host-only network</source>
         <translation>ホストオンリー ネットワークを編集(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.cpp" line="445"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="445"/>
         <source>Performing</source>
         <comment>creating/removing host-only network</comment>
         <translation>動作</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.ui" line="46"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.ui" line="46"/>
         <source>&amp;Host-only Networks:</source>
         <translation>ホストオンリー ネットワーク(&amp;H):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.ui" line="68"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.ui" line="68"/>
         <source>Lists all available host-only networks.</source>
         <translation>利用可能なホストオンリー ネットワークをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetwork.ui" line="75"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.ui" line="75"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="26"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="26"/>
         <source>Host-only Network Details</source>
         <translation>ホストオンリー ネットワーク詳細</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="42"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="42"/>
         <source>&amp;Adapter</source>
         <translation>アダプタ(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="48"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="48"/>
         <source>Manual &amp;Configuration</source>
         <translation>手動構成(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="54"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="54"/>
         <source>Use manual configuration for this host-only network adapter.</source>
         <translation>このホストオンリー ネットワーク アダプタを手動で構成します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="61"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="61"/>
         <source>&amp;IPv4 Address:</source>
         <translation>IPv4 アドレス(I):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="80"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="80"/>
         <source>Displays the host IPv4 address for this adapter.</source>
         <translation>このアダプタのホスト IPv4 アドレスを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="87"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="87"/>
         <source>IPv4 Network &amp;Mask:</source>
         <translation>IPv4 ネットワーク マスク(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="106"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="106"/>
         <source>Displays the host IPv4 network mask for this adapter.</source>
         <translation>このアダプタのホスト IPv4 ネットワーク マスクを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="113"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="113"/>
         <source>I&amp;Pv6 Address:</source>
         <translation>IPv6 アドレス(P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="132"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="132"/>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation>IPv6がサポートされるとき、このアダプタのホスト IPv6 アドレスを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="139"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="139"/>
         <source>IPv6 Network Mask &amp;Length:</source>
         <translation>IPv6 ネットワーク マスク長(&amp;L):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="158"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="158"/>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation>IPv6がサポートされるとき、このアダプタのホスト IPv6 ネットワーク マスクのプリフィックス長を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="179"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="179"/>
         <source>&amp;DHCP Server</source>
         <translation>DHCP サーバー(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="185"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="185"/>
         <source>&amp;Enable Server</source>
         <translation>サーバーを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="188"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="188"/>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
         <translation>仮想マシンの起動時にDHCP サーバーを有効化するかどうかを示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="195"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="195"/>
         <source>Server Add&amp;ress:</source>
         <translation>サーバー アドレス(&amp;R):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="214"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="214"/>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるIPアドレスを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="221"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="221"/>
         <source>Server &amp;Mask:</source>
         <translation>サーバー マスク(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="240"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="240"/>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるネットワーク マスクを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="247"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="247"/>
         <source>&amp;Lower Address Bound:</source>
         <translation>アドレス下限(&amp;L):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="266"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="266"/>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるアドレスの下限値を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="273"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="273"/>
         <source>&amp;Upper Address Bound:</source>
         <translation>アドレス上限(&amp;U):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsNetworkDetails.ui" line="292"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetails.ui" line="292"/>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>ホストオンリー アダプタにDHCP サーバーによって割り当てられるアドレスの上限値を表示します。</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="41"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="41"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>定期的にVirtualBoxウェブサイトに接続して、VirtualBoxの新しいバージョンが利用可能であるかどうか確認します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="44"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="44"/>
         <source>&amp;Check for updates</source>
         <translation>アップデートを確認(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="86"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="86"/>
         <source>&amp;Once per:</source>
         <translation>頻度(&amp;O):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="99"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="99"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
         <translation>アップデートを確認する頻度を指定します。 注：アップデートを確認しない場合は、上のチェックボックスをオフにしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="125"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="125"/>
         <source>Next Check:</source>
         <translation>次回の確認:</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="151"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="151"/>
         <source>Check for:</source>
         <translation>確認:</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="161"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="161"/>
         <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxの安定版のみ通知します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="164"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="164"/>
         <source>&amp;Stable release versions</source>
         <translation>安定版のみ(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="171"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="171"/>
         <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxのすべてのリリース版に関して通知します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="174"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="174"/>
         <source>&amp;All new releases</source>
         <translation>すべてのリリース版(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="181"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="181"/>
         <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBoxのすべてのリリース版とプレリリース版に関して通知します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="184"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="184"/>
         <source>All new releases and &amp;pre-releases</source>
         <translation>すべてのリリース版とプレリリース版(&amp;P)</translation>
     </message>
@@ -4883,7 +4883,7 @@ Version %1</source>
 <context>
     <name>VBoxGlobal</name>
     <message>
-        <location filename="../src/settings/global/VBoxGLSettingsUpdate.ui" line="184"/>
+        <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="184"/>
         <source>Differencing</source>
         <comment>hard disk</comment>
         <translation type="obsolete">差分</translation>
@@ -5792,43 +5792,43 @@ Version %1</source>
         <translation type="obsolete">内部ネットワーク, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="245"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="245"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation>アダプタ %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="245"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="245"/>
         <source>&lt;br&gt;&lt;nobr&gt;Type&amp;nbsp;(Format):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;タイプ&amp;nbsp;(形式):&amp;nbsp;&amp;nbsp;%2&amp;nbsp;(%3)&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="245"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="245"/>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;割り当て:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="245"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="245"/>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;i&gt;未割り当て&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="245"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="245"/>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;アクセス可否を確認中...&lt;/i&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="245"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="245"/>
         <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;メディアのアクセス可否の確認に失敗しました。&lt;br&gt;%1.</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="245"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="245"/>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;このハードディスクの割り当ては、新規作成された差分ハードディスクの使用により、間接的に実行されます。</translation>
@@ -8787,105 +8787,105 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>&amp;Cancel</source>
         <translation>キャンセル(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>Time remaining: %1</source>
         <translation type="obsolete">残り時間: %1</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>%1 days, %2 hours remaining</source>
         <translation type="obsolete">残り時間 %1日と %2時間</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>%1 days, %2 minutes remaining</source>
         <translation type="obsolete">残り時間 %1日と %2分</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>%1 days remaining</source>
         <translation type="obsolete">残り時間 %1日</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>1 day, %1 hours remaining</source>
         <translation type="obsolete">残り時間 1日と %1時間</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>1 day, %1 minutes remaining</source>
         <translation type="obsolete">残り時間 1日と %1分</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>1 day remaining</source>
         <translation type="obsolete">残り時間 1日</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>%1 hours, %2 minutes remaining</source>
         <translation type="obsolete">残り時間 %1時間と %2分</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>1 hour, %1 minutes remaining</source>
         <translation type="obsolete">残り時間 1時間と %1分</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>1 hour remaining</source>
         <translation type="obsolete">残り時間 1時間</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>%1 minutes remaining</source>
         <translation type="obsolete">残り時間 %1分</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>1 minute, %2 seconds remaining</source>
         <translation type="obsolete">残り時間 1分と %2秒</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>1 minute remaining</source>
         <translation type="obsolete">残り時間 1分</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="116"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="116"/>
         <source>%1 seconds remaining</source>
         <translation type="obsolete">残り時間 %1秒</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="244"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="244"/>
         <source>A few seconds remaining</source>
         <translation>残り時間 数秒</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="113"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="113"/>
         <source>Canceling...</source>
         <translation>キャンセル...</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="117"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="117"/>
         <source>Cancel the current operation</source>
         <translation>現在の操作をキャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="214"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="214"/>
         <source>%1, %2 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1, %2&quot;</comment>
         <translation>残り時間:%1, %2</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>%1 remaining</source>
         <comment>You may wish to translate this more like &quot;Time remaining: %1&quot;</comment>
         <translation>残り時間:%1</translation>
@@ -8894,147 +8894,147 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 <context>
     <name>VBoxRegistrationDlg</name>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>VirtualBox Registration Dialog</source>
         <translation type="obsolete">VirtualBox 登録ダイアログ</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;Name</source>
         <translation type="obsolete">名前(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Enter your full name using Latin characters.</source>
         <translation type="obsolete">フルネームを英字で入力してください。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;E-mail</source>
         <translation type="obsolete">メールアドレス(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Enter your e-mail address. Please use a valid address here.</source>
         <translation type="obsolete">メールアドレスを入力してください。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;Please do not use this information to contact me</source>
         <translation type="obsolete">情報メール不要(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Welcome to the VirtualBox Registration Form!</source>
         <translation type="obsolete">ようこそ VirtualBox 登録フォームへ！</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;Confirm</source>
         <translation type="obsolete">確認(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Connection timed out.</source>
         <translation type="obsolete">接続がタイムアウトになりました。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Could not locate the registration form on the server (response: %1).</source>
         <translation type="obsolete">サーバー上に登録フォームが見つかりませんでした(応答: %1)。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Could not perform connection handshake.</source>
         <translation type="obsolete">接続を確立できませんでした。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;登録フォームに入力し、あなたが VirtualBox を使用していることを我々に知らせてください。VirtualBox のニュースと更新情報をお知らせします(任意)。&lt;/p&gt;&lt;p&gt;フルネーム(英字)とメールアドレスを下のフィールドに入力してください。注：Sun Microsystems は、この情報を製品使用の統計を収集し、VirtualBox ニュースレターを送信するためだけに使用します。Sun Microsystems が個人情報を第三者に渡すことはありません。個人情報の扱いに関する詳細情報は、VirtualBox マニュアルの&quot;&lt;b&gt;Privacy Policy&lt;/b&gt;&quot; セクションまたは VirtualBox webサイトの&quot;&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;&quot;ページを参照してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
         <translation type="obsolete">Sun Microsystems からの情報メールを受け取りたくない場合、チェックボックスをオンにしてください。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>C&amp;onfirm</source>
         <translation type="obsolete">確認(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Select Country/Territory</source>
         <translation type="obsolete">国/地域を選択</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;登録フォームに入力し、あなたが VirtualBox を使用していることを我々に知らせてください。VirtualBox のニュースと更新情報をお知らせします(任意)。&lt;/p&gt;&lt;p&gt;フルネーム(英字)とメールアドレスを下のフィールドに入力してください。注：Sun Microsystems は、この情報を製品使用の統計を収集し、VirtualBox ニュースレターを送信するためだけに使用します。Sun Microsystems が個人情報を第三者に渡すことはありません。個人情報の扱いに関する詳細情報は、VirtualBox マニュアルの&quot;&lt;b&gt;Privacy Policy&lt;/b&gt;&quot; セクションまたは VirtualBox webサイトの&quot;&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt;&quot;ページを参照してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>I &amp;already have a Sun Online account:</source>
         <translation type="obsolete">Sun オンライン アカウントに登録済みです(&amp;H):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;E-mail:</source>
         <translation type="obsolete">メールアドレス:</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;Password:</source>
         <translation type="obsolete">パスワード:</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>I &amp;would like to create a new Sun Online account:</source>
         <translation type="obsolete">Sun オンライン アカウントを作成して登録します(&amp;W):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;First Name:</source>
         <translation type="obsolete">名前(&amp;F):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;Last Name:</source>
         <translation type="obsolete">姓(&amp;L):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;Company:</source>
         <translation type="obsolete">会社(&amp;C):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Co&amp;untry:</source>
         <translation type="obsolete">国/地域(&amp;U):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>E-&amp;mail:</source>
         <translation type="obsolete">メールアドレス(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>P&amp;assword:</source>
         <translation type="obsolete">パスワード(&amp;A):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>Co&amp;nfirm Password:</source>
         <translation type="obsolete">パスワード確認(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxProgressDialog.cpp" line="215"/>
+        <location filename="../src/widgets/UIProgressDialog.cpp" line="215"/>
         <source>&amp;Register</source>
         <translation type="obsolete">登録(R)</translation>
     </message>
@@ -10983,34 +10983,34 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="29"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="29"/>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="32"/>
         <source>Enable &amp;Audio</source>
         <translation>オーディオを有効化(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="73"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="73"/>
         <source>Host Audio &amp;Driver:</source>
         <translation>ホスト オーディオ ドライバ(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="86"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="86"/>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
         <translation>オーディオ出力ドライバを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="93"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="93"/>
         <source>Audio &amp;Controller:</source>
         <translation>オーディオ コントローラ(&amp;C):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation>仮想サウンドカードのタイプを選択します。 この値により、VirtualBoxは異なったオーディオ ハードウェアを仮想マシンに提供します。</translation>
     </message>
@@ -11018,200 +11018,200 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxVMSettingsCD</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Host CD/DVD drive is not selected</source>
         <translation type="obsolete">ホスト CD/DVDドライブが選択されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">CD/DVDイメージファイルが選択されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
         <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">CD/DVD ドライブのマウント(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">指定したCD/DVDドライブを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">ホスト CD/DVDドライブ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Enable &amp;Passthrough</source>
         <translation type="obsolete">パススルーを有効化(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">指定したCD/DVDイメージを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">ISO イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">仮想ディスクマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsAudio.ui" line="106"/>
+        <location filename="../src/settings/vm/UIMachineSettingsAudio.ui" line="106"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">仮想メディアマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.cpp" line="221"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.cpp" line="221"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.cpp" line="329"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.cpp" line="329"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.cpp" line="277"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.cpp" line="277"/>
         <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="31"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="31"/>
         <source>&amp;Video</source>
         <translation>ビデオ(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="52"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="52"/>
         <source>Video &amp;Memory:</source>
         <translation>ビデオメモリ(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="130"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="130"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation>仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="143"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="143"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="152"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="152"/>
         <source>Mo&amp;nitor Count:</source>
         <translation>ディスプレイ数(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="236"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="236"/>
         <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
         <translation>仮想マシンに割り当てる仮想ディスプレイの数を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="248"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="248"/>
         <source>Extended Features:</source>
         <translation>拡張機能:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="264"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="264"/>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation>仮想マシンはホストマシンの3Dグラフィックス機能を利用します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="267"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="267"/>
         <source>Enable &amp;3D Acceleration</source>
         <translation>3Dアクセラレーションを有効化(&amp;3)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="307"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="307"/>
         <source>&amp;Remote Display</source>
         <translation>リモートディスプレイ(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="328"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="328"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation>仮想マシンのリモートデスクトッププロトコル(RDP)サーバ機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="331"/>
         <source>&amp;Enable Server</source>
         <translation>サーバーを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="369"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="369"/>
         <source>Server &amp;Port:</source>
         <translation>サーバーのポート番号(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="369"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="369"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">VRDPサーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="389"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="389"/>
         <source>Authentication &amp;Method:</source>
         <translation>認証方式(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="408"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="408"/>
         <source>Defines the VRDP authentication method.</source>
         <translation>VRDPの認証方式を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="415"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="415"/>
         <source>Authentication &amp;Timeout:</source>
         <translation>認証タイムアウト値(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="428"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="428"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation>ゲスト認証のタイムアウト値をミリ秒単位で指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.cpp" line="234"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.cpp" line="234"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
         <translation>HD Videoを効率よく再生するために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="280"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="280"/>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
         <translation>仮想マシンはホストマシンのビデオ アクセラレーション機能を利用します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="283"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="283"/>
         <source>Enable &amp;2D Video Acceleration</source>
         <translation>2Dビデオ アクセラレーションを有効化(&amp;2)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
         <translation>VRDPサーバーのポート番号です。RDP標準のポート番号(3389)を選択するために&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定できます。</translation>
     </message>
@@ -11219,701 +11219,701 @@ value.&lt;/qt&gt;</source>
 <context>
     <name>VBoxVMSettingsDlg</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Category</source>
         <translation type="obsolete">カテゴリ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>[id]</source>
         <translation type="obsolete">[id]</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>[link]</source>
         <translation type="obsolete">[link]</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>[name]</source>
         <translation type="obsolete">[name]</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>VBoxVMSettingsDlg</source>
         <translation type="obsolete">VBoxVMSettingsDlg</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;i&gt;.</source>
         <translation type="obsolete">&lt;i&gt;左側のリストから設定のカテゴリを選択し、設定項目をマウスオーバーして詳細な情報を参照してください&lt;i&gt;。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> General </source>
         <translation type="obsolete">一般</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Hard Disks </source>
         <translation type="obsolete">ハードディスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Floppy </source>
         <translation type="obsolete">フロッピー</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> CD/DVD-ROM </source>
         <translation type="obsolete">CD/DVD-ROM</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Audio </source>
         <translation type="obsolete">オーディオ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Network </source>
         <translation type="obsolete">ネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> USB </source>
         <translation type="obsolete"> USB </translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Remote Display </source>
         <translation type="obsolete">リモートディスプレイ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Shared Folders </source>
         <translation type="obsolete">共有フォルダ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Identification</source>
         <translation type="obsolete">ID(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Name</source>
         <translation type="obsolete">名前(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Displays the name of the virtual machine.</source>
         <translation type="obsolete">仮想マシンの名前を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>OS &amp;Type</source>
         <translation type="obsolete">OSタイプ(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">メインメモリのサイズ(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>MB</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">ビデオメモリのサイズ(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Basic</source>
         <translation type="obsolete">基本(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Select</source>
         <translation type="obsolete">選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Selects the snapshot folder path.</source>
         <translation type="obsolete">スナップショットの保存先フォルダのパスを選択します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Reset</source>
         <translation type="obsolete">リセット</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Extended Features</source>
         <translation type="obsolete">拡張機能</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">ACPIを有効化(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">IO APICを有効化(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Boo&amp;t Order</source>
         <translation type="obsolete">起動順序(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Advanced</source>
         <translation type="obsolete">高度(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Description</source>
         <translation type="obsolete">コメント(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Mount Floppy Drive</source>
         <translation type="obsolete">フロッピードライブのマウント(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Host Floppy &amp;Drive</source>
         <translation type="obsolete">ホスト フロッピードライブ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Mounts the specified host Floppy drive to the virtual Floppy drive.</source>
         <translation type="obsolete">指定したホスト フロッピードライブを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Mounts the specified Floppy image to the virtual Floppy drive.</source>
         <translation type="obsolete">指定したフロッピーイメージを仮想フロッピードライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Mount CD/DVD Drive</source>
         <translation type="obsolete">CD/DVD ドライブのマウント(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Host CD/DVD &amp;Drive</source>
         <translation type="obsolete">ホスト CD/DVDドライブ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
         <translation type="obsolete">指定したCD/DVDドライブを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;ISO Image File</source>
         <translation type="obsolete">ISO イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Mounts the specified CD/DVD image to the virtual CD/DVD drive.</source>
         <translation type="obsolete">指定したCD/DVDイメージを仮想CD/DVDドライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Enable Audio</source>
         <translation type="obsolete">オーディオを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Host Audio &amp;Driver</source>
         <translation type="obsolete">ホスト オーディオ ドライバ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Enable &amp;USB Controller</source>
         <translation type="obsolete">USB コントローラを有効化(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>USB Device &amp;Filters</source>
         <translation type="obsolete">USB デバイス フィルタ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Ins</source>
         <translation type="obsolete">Ins</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Alt+Ins</source>
         <translation type="obsolete">Alt+Ins</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Del</source>
         <translation type="obsolete">Del</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Ctrl+Up</source>
         <translation type="obsolete">Ctrl+Up</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Ctrl+Down</source>
         <translation type="obsolete">Ctrl+Down</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">VRDPサーバを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">VRDPの認証方式を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">ゲスト認証のタイムアウト値をミリ秒単位で指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Help</source>
         <translation type="obsolete">ヘルプ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>F1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Displays the dialog help.</source>
         <translation type="obsolete">ダイアログのヘルプを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Invalid settings detected</source>
         <translation type="obsolete">無効な設定が見つかりました</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;OK</source>
         <translation type="obsolete">OK(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Accepts (saves) changes and closes the dialog.</source>
         <translation type="obsolete">変更を保存してダイアログを閉じます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Cancel</source>
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Cancels changes and closes the dialog.</source>
         <translation type="obsolete">変更を破棄してダイアログを閉じます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
         <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, mounts the specified media to the Floppy drive of the virtual machine.</source>
         <translation type="obsolete">指定したメディアを仮想マシンのフロッピードライブにマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation type="obsolete">指定されたドライバを使用してホストのオーディオカードと通信する仮想PCIオーディオカードを仮想マシンに接続します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">仮想マシンのリモートデスクトッププロトコル(RDP)サーバ機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;not attached&gt;</source>
         <comment>hard disk</comment>
         <translation type="obsolete">&lt;割り当てられていません&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> - Settings</source>
         <translation type="obsolete">- 設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation type="obsolete">新規フィルタ %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Shared Clipboard</source>
         <translation type="obsolete">クリップボードの共有(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>S&amp;napshot Folder</source>
         <translation type="obsolete">スナップショットの保存先(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください！&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;qt&gt;When checked, the virtual machine will support
 the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">スナップショットの保存先フォルダのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">仮想マシンのコメントを表示します。コメントはインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Lists host Floppy drives available to mount to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホスト フロッピードライブをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Invokes the Virtual Disk Manager to select a Floppy image to mount.</source>
         <translation type="obsolete">仮想ディスクマネージャを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Invokes the Virtual Disk Manager to select a CD/DVD image to mount.</source>
         <translation type="obsolete">仮想ディスクマネージャを起動し、選択したCD/DVDイメージをマウントします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;オーディオ出力ドライバを選択します。&lt;b&gt;Null Audio Driver&lt;/b&gt;はゲストOSからオーディオカードとして認識されますが、デバイスへのすべてのアクセスは無視されます。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation type="obsolete">この仮想マシンの仮想USB コントローラを有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Adapter %1</source>
         <comment>network</comment>
         <translation type="obsolete">アダプタ %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">ホスト インターフェース(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">利用可能なホスト インターフェースをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">新規ホスト インターフェースを追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">選択したホスト インターフェースを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;No suitable interfaces&gt;</source>
         <translation type="obsolete">&lt;適切なインターフェースがありません&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Add</source>
         <translation type="obsolete">追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Remove</source>
         <translation type="obsolete">除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">VirtualBox ホスト インターフェース %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;選択したホスト インターフェース&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を除去しますか？&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt; このインターフェースは複数の仮想マシンの1つ以上のネットワーク アタプタで使用中かもしれません。除去すると、他のインターフェース名を選ぶか、別の割り当て方法を正しく設定するまでそれらのアダプタは動作しません。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Serial Ports </source>
         <translation type="obsolete">シリアルポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>#serialPorts</source>
         <translation type="obsolete">#serialPorts</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">VT-x/AMD-Vを有効化(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V. The grayed checkbox state means that this setting is determined by the value of the global setting.</source>
         <translation type="obsolete">仮想マシンはIntel VT-x/AMD-VのようなホストCPUの仮想化支援機能を使用します。チェックボックスがグレイのときはグローバル設定の指定値が使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Other &amp;Settings</source>
         <translation type="obsolete">その他の設定(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Remember Media Mounted at Runtime</source>
         <translation type="obsolete">実行中にマウントしたメディアを記録(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation type="obsolete">仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>O&amp;ther</source>
         <translation type="obsolete">その他(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Enable Passthrough</source>
         <translation type="obsolete">パススルーを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation type="obsolete">ホストに接続されたCD/DVDライターを使用可能にするため、ゲストOSのATAPIコマンドを直接ホスト ドライブに送ります。注：仮想マシンから音楽CDへの書き込みはサポートされていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Server Port </source>
         <translation type="obsolete">サーバーのポート番号</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Authentication &amp;Method </source>
         <translation type="obsolete">認証方法(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Authentication &amp;Timeout </source>
         <translation type="obsolete">認証タイムアウト値(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VRDPサーバ ポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>CD/DVD image file is not selected</source>
         <translation type="obsolete">CD/DVDイメージファイルが選択されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Floppy image file is not selected</source>
         <translation type="obsolete">フロッピーイメージファイルが選択されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Incorrect host network interface is selected</source>
         <translation type="obsolete">選択したホスト ネットワーク インターフェースが不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Duplicate port number selected </source>
         <translation type="obsolete">選択したポート番号はすでに使用されている</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Duplicate port path entered </source>
         <translation type="obsolete">指定したポート パスはすでに使用されている</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>%1 on the &lt;b&gt;%2&lt;/b&gt; page.</source>
         <translation type="obsolete">&lt;b&gt;%2&lt;/b&gt;ページの%1。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation type="obsolete">ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>00</source>
         <translation type="obsolete">00</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>01</source>
         <translation type="obsolete">01</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>02</source>
         <translation type="obsolete">02</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>03</source>
         <translation type="obsolete">03</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>04</source>
         <translation type="obsolete">04</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>05</source>
         <translation type="obsolete">05</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>08</source>
         <translation type="obsolete">08</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>10</source>
         <translation type="obsolete">10</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>09</source>
         <translation type="obsolete">09</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>06</source>
         <translation type="obsolete">06</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source> Parallel Ports </source>
         <translation type="obsolete">パラレルポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>07</source>
         <translation type="obsolete">07</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>#parallelPorts</source>
         <translation type="obsolete">#parallelPorts</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">PAE/NXを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;qt&gt;When
                                                           checked, the Physical
                                                           Address Extension
@@ -11925,37 +11925,37 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&lt;qt&gt;ホストCPUの物理アドレス拡張機能(PAE)を仮想マシンで有効にします。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;IDE Controller Type</source>
         <translation type="obsolete">IDE コントローラ タイプ(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Audio &amp;Controller</source>
         <translation type="obsolete">オーディオ コントローラ(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
         <translation type="obsolete">仮想サウンドカードのタイプを選択します。 この値により、VirtualBoxは異なったオーディオ ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Enable USB &amp;2.0 Controller</source>
         <translation type="obsolete">USB 2.0 コントローラを有効化(&amp;2)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation type="obsolete">仮想マシンの仮想USB EHCI コントローラを有効にします。USB EHCI コントローラはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>
                                               &lt;qt&gt;Lists all USB filters of
                                               this machine. The checkbox to the
@@ -11970,17 +11970,17 @@ makes the guest see an audio card, however every access to it will be ignored.&l
 USBフィルタを追加または除去するにはコンテキストメニューか右側のボタンを使用してください。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Add Empty Filter</source>
         <translation type="obsolete">空のフィルタを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Add Empty Filter</source>
         <translation type="obsolete">空のフィルタを追加する(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>
               &lt;qt&gt;Adds a new USB filter with all fields initially set to
               empty strings. Note that such a filter will match any attached USB
@@ -11989,17 +11989,17 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSB デバイスに適合します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Add Filter From Device</source>
         <translation type="obsolete">デバイスからフィルタを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>A&amp;dd Filter From Device</source>
         <translation type="obsolete">デバイスからフィルタを追加する(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&lt;qt&gt;Adds a new USB filter with all fields set to the
               values of the selected USB device attached to the host
               PC.&lt;/qt&gt;
@@ -12007,74 +12007,74 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">&lt;qt&gt;選択したホストマシンのUSB デバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Remove Filter</source>
         <translation type="obsolete">フィルタを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Remove Filter</source>
         <translation type="obsolete">フィルタを除去する(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>
               &lt;qt&gt;Removes the highlighted USB filter.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを除去します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Move Filter Up</source>
         <translation type="obsolete">フィルタを上に移動</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>&amp;Move Filter Up</source>
         <translation type="obsolete">フィルタを上に移動する(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter up.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを上に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Move Filter Down</source>
         <translation type="obsolete">フィルタを下に移動</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>M&amp;ove Filter Down</source>
         <translation type="obsolete">フィルタを下に移動(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>
               &lt;qt&gt;Moves the highlighted USB filter down.&lt;/qt&gt;
             </source>
         <translation type="obsolete">&lt;qt&gt;ハイライト表示されたUSBフィルタを下に移動します。&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">内部ネットワーク名が設定されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Port path not specified </source>
         <translation type="obsolete">ポート パスが指定されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation type="obsolete">ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsDisplay.ui" line="382"/>
+        <location filename="../src/settings/vm/UIMachineSettingsDisplay.ui" line="382"/>
         <source>USBActionGroup</source>
         <translation type="obsolete">USBActionGroup</translation>
     </message>
@@ -12248,682 +12248,682 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <location filename="../src/settings/VBoxSettingsDialogSpecific.cpp" line="560"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.cpp" line="164"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.cpp" line="164"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="33"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="33"/>
         <source>&amp;Basic</source>
         <translation>基本(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="33"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="33"/>
         <source>Identification</source>
         <translation type="obsolete">詳細</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="48"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="48"/>
         <source>&amp;Name:</source>
         <translation>名前(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>Displays the name of the virtual machine.</source>
         <translation>仮想マシンの名前を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>OS &amp;Type:</source>
         <translation type="obsolete">OSタイプ(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">メインメモリのサイズ(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>MB</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">ビデオメモリのサイズ(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="61"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">仮想マシンに割り当てるビデオメモリのサイズを指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>&amp;Advanced</source>
         <translation>高度(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Boo&amp;t Order:</source>
         <translation type="obsolete">起動順序(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">起動デバイスの優先順序を指定します。チェックボックスを使い各デバイスを有効または無効にできます。項目を上または下に移動してデバイスの順序を変更してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>[device]</source>
         <translation type="obsolete">[デバイス]</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">上に移動(Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">選択した起動デバイスを上に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">下に移動(Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">選択した起動デバイスを下に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Extended Features:</source>
         <translation type="obsolete">拡張機能:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">ACPIを有効化(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">IO APICを有効化(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
         <translation type="obsolete">仮想マシンでホストCPUの仮想化支援機能(Intel VT-xまたはAMD-V)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">VT-x/AMD-Vを有効化(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
         <translation type="obsolete">仮想マシンでホストCPUのPAE(物理アドレス拡張機能)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="88"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="88"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">PAE/NXを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="126"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="126"/>
         <source>&amp;Shared Clipboard:</source>
         <translation>クリップボードの共有(&amp;S):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="145"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="145"/>
         <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="145"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="145"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="145"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="145"/>
         <source>&amp;IDE Controller Type:</source>
         <translation type="obsolete">IDE コントローラ タイプ(&amp;I):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="103"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="103"/>
         <source>S&amp;napshot Folder:</source>
         <translation>スナップショットの保存先(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="259"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="259"/>
         <source>&amp;Description</source>
         <translation>説明(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="268"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="268"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>仮想マシンの説明を表示します。これインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="268"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="268"/>
         <source>&amp;Other</source>
         <translation type="obsolete">その他(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
         <translation>仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>&amp;Remember Mounted Media</source>
         <translation type="obsolete">マウントしたメディアを記録(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>Runtime:</source>
         <translation type="obsolete">実行時:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation type="obsolete">実メモリ(&lt;b&gt;%1&lt;/b)の&lt;b&gt;75%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">実メモリ(&lt;b&gt;%1&lt;/b)の&lt;b&gt;50%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">仮想マシンをフルスクリーンまたはシームレスモードに切り換えるために必要な値(%1)より少ないビデオメモリが仮想マシンに割り当てられました。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">仮想マシンはホストマシンの3Dグラフィックス機能を利用します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>Enable &amp;3D Acceleration</source>
         <translation type="obsolete">3Dアクセラレーションを有効化(&amp;3)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation type="obsolete">実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1%&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSに十分なメモリが残されていません。自己の責任で続行してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>there is a 64 bits guest OS type assigned for this VM, which requires virtualization feature (VT-x/AMD-V) to be enabled too, else your guest will fail to detect a 64 bits CPU and will not be able to boot, so this feature will be enabled automatically when you&apos;ll accept VM Settings by pressing OK button.</source>
         <translation type="obsolete">64ビット ゲストOSタイプを指定した仮想マシンは、仮想化支援機能(VT-x/AMD-V)を有効化する必要があります。そうでなければゲストOSは64ビットCPUを検出できず、起動できません。このため[OK]ボタンを押して仮想マシン設定を保存するとき、仮想化支援機能を自動的に有効化します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
         <translation type="obsolete">仮想マシンでホストCPUのネステッドページング(Intel VT-xまたはAMD-V)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="181"/>
         <source>Enable Nested Pa&amp;ging</source>
         <translation type="obsolete">ネステッドページングを有効化(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="165"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="165"/>
         <source>Removable Media:</source>
         <translation>リムーバブル メディア:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="184"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="184"/>
         <source>&amp;Remember Runtime Changes</source>
         <translation>実行時に変更したメディアを記録(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="194"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="194"/>
         <source>Mini ToolBar:</source>
         <translation>ミニ ツールバー:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="210"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="210"/>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
         <translation>フルスクリーンモードまたはシームレスモード時にミニ ツールバーを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="213"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="213"/>
         <source>Show In &amp;Fullscreen/Seamless</source>
         <translation>フルスクリーン/シームレスモード時に表示(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="229"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="229"/>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
         <translation>ミニ ツールバーを画面の上部に表示します。デフォルトの設定では画面の下部に表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>Show At &amp;Top Of Screen</source>
         <translation>画面の上部に表示(&amp;T)</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete"> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt;はすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられている</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>&amp;Add Attachment</source>
         <translation type="obsolete">割り当てを追加する(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>&amp;Remove Attachment</source>
         <translation type="obsolete">割り当てを除去する(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>&amp;Select Hard Disk</source>
         <translation type="obsolete">ハードディスクを選択する(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>Adds a new hard disk attachment.</source>
         <translation type="obsolete">新規ハードディスクの割り当てを追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>Removes the highlighted hard disk attachment.</source>
         <translation type="obsolete">ハイライト表示されたハードディスクの割り当てを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>Invokes the Virtual Disk Manager to select a hard disk to attach to the currently highlighted slot.</source>
         <translation type="obsolete">仮想ディスクマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
         <translation type="obsolete">仮想SATA コントローラを有効にします。注：仮想SATA コントローラが無効な場合、SATAポートにハードディスクを割り当てできません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">SATA コントローラを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>&amp;Attachments</source>
         <translation type="obsolete">割り当て(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
         <translation type="obsolete">この仮想マシンに割り当てられたすべてのハードディスクをリスト表示します。ハイライト表示された項目をマウスクリックするか、&lt;tt&gt;[スペース]&lt;/tt&gt;キーを使用して、ドロップダウンリストから使用するハードディスクを選択してください。コンテキストメニューか右のボタンを使って、ハードディスクの割り当ての追加または除去が行えます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsGeneral.ui" line="232"/>
+        <location filename="../src/settings/vm/UIMachineSettingsGeneral.ui" line="232"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
         <translation type="obsolete">仮想メディアマネージャを起動し、ハードディスクを現在ハイライト表示されたスロットに割り当てます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="331"/>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation>実際のベースハードディスクの代わりにスロットに割り当てられた差分ハードディスクを表示します(間接的な割り当て時)。 高度なハードディスク設定が必要な場合のみ、オンにしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="331"/>
         <source>&amp;Show Differencing Hard Disks</source>
         <translation type="obsolete">差分ハードディスクを表示(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="331"/>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
         <translation type="obsolete">この仮想マシンの追加の仮想コントローラ(SATAまたはSCSI)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="331"/>
         <source>&amp;Enable Additional Controller</source>
         <translation type="obsolete">追加のコントローラを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="331"/>
         <source>IDE &amp;Controller Type</source>
         <translation type="obsolete">IDE コントローラ タイプ(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="331"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">仮想IDE コントローラのタイプを定義します。この値により、VirtualBoxは異なった仮想IDEハードウェア デバイスをゲストOSに提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="584"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="584"/>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Bus:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Type:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;バス:&amp;nbsp;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;タイプ:&amp;nbsp;&amp;nbsp;%3&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="939"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="939"/>
         <source>&lt;nobr&gt;Expand/Collapse&amp;nbsp;Item&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;項目を展開する/折り畳む&amp;nbsp;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="942"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="942"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;Hard&amp;nbsp;Disk&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;ハードディスク&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="945"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="945"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;CD/DVD&amp;nbsp;Device&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;CD/DVD&amp;nbsp;デバイス&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="948"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="948"/>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Device&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;フロッピー&amp;nbsp;デバイス&amp;nbsp;の追加&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1902"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1902"/>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
         <translation> &lt;i&gt;%1&lt;/i&gt;のためのハードディスクが選択されていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1908"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1908"/>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
         <translation>&lt;i&gt;%1&lt;/i&gt;が使用するメディアはすでに&lt;i&gt;%2&lt;/i&gt;に割り当てられています。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1928"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1928"/>
         <source>Add Controller</source>
         <translation>コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1929"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1929"/>
         <source>Add IDE Controller</source>
         <translation>IDE コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1930"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1930"/>
         <source>Add SATA Controller</source>
         <translation>SATA コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1931"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1931"/>
         <source>Add SCSI Controller</source>
         <translation>SCSI コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1932"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1932"/>
         <source>Add SAS Controller</source>
         <translation>SAS コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1933"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1933"/>
         <source>Add Floppy Controller</source>
         <translation>フロッピー コントローラを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1934"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1934"/>
         <source>Remove Controller</source>
         <translation>コントローラを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1935"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1935"/>
         <source>Add Attachment</source>
         <translation>割り当ての追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1936"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1936"/>
         <source>Add Hard Disk</source>
         <translation>ハードディスクを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1937"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1937"/>
         <source>Add CD/DVD Device</source>
         <translation>CD/DVD デバイスを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1938"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1938"/>
         <source>Add Floppy Device</source>
         <translation>フロッピー デバイスを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1939"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1939"/>
         <source>Remove Attachment</source>
         <translation>割り当てを除去</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1941"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1941"/>
         <source>Adds a new controller to the end of the Storage Tree.</source>
         <translation>新しいコントローラをストレージ ツリーの最後に追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1942"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1942"/>
         <source>Removes the controller highlighted in the Storage Tree.</source>
         <translation>ハイライト表示されたストレージ ツリーのコントローラを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1943"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1943"/>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
         <translation>現在選択されているコントローラを親として新たな割り当てをストレージ ツリーに追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="1945"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="1945"/>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
         <translation>ハイライト表示されたストレージ ツリーの割り当てを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2041"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2041"/>
         <source>IDE Controller</source>
         <translation>IDE コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2046"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2046"/>
         <source>SATA Controller</source>
         <translation>SATA コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2051"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2051"/>
         <source>SCSI Controller</source>
         <translation>SCSI コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2056"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2056"/>
         <source>Floppy Controller</source>
         <translation>フロッピー コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2061"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2061"/>
         <source>SAS Controller</source>
         <translation>SAS コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2209"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2209"/>
         <source>Hard &amp;Disk:</source>
         <translation>ハードディスク(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2212"/>
         <source>&amp;CD/DVD Device:</source>
         <translation>CD/DVD デバイス(&amp;C):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.cpp" line="2215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.cpp" line="2215"/>
         <source>&amp;Floppy Device:</source>
         <translation>フロッピー デバイス(&amp;F):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="51"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="51"/>
         <source>&amp;Storage Tree</source>
         <translation>ストレージ ツリー(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="69"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="69"/>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
         <translation>この仮想マシンのすべてのストレージ コントローラと仮想イメージ、割り当てられたホスト デバイスを含みます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="357"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="357"/>
         <source>Information</source>
         <translation>情報</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="122"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="122"/>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
         <translation>ストレージ ツリーは異なった種類の複数のコントローラを含むことができます。この仮想マシンにはコントローラがありません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="253"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="253"/>
         <source>Attributes</source>
         <translation>属性</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="168"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="168"/>
         <source>&amp;Name:</source>
         <translation>名前(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="181"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="181"/>
         <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
         <translation>ストレージ ツリーで選択されているストレージ コントローラの名前を変更します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="188"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="188"/>
         <source>&amp;Type:</source>
         <translation>タイプ(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="201"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="201"/>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
         <translation>ストレージ ツリーで選択されているストレージ コントローラのサブタイプを選択します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="214"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="214"/>
         <source>Allows to use host I/O caching capabilities.</source>
         <translation>ホストのI/O キャッシュ機能を使用します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="217"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="217"/>
         <source>Use host I/O cache</source>
         <translation>ホストのI/O キャッシュを使う</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="260"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="260"/>
         <source>S&amp;lot:</source>
         <translation>スロット(&amp;L):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="273"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="273"/>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
         <translation>この割り当てで使用するストレージ コントローラのスロットを選択します。利用できるスロットはコントローラのタイプと、それを利用する他の割り当てに依存します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="296"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="296"/>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
         <translation>この割り当てで使用する仮想ディスクイメージまたはホスト デバイスを選択します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="309"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="309"/>
         <source>Opens the Virtual Media Manager to select a virtual image for this attachment.</source>
         <translation>選択したイメージファイルを割り当てるため、仮想メディアマネージャを開きます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="312"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="312"/>
         <source>Open Virtual Media Manager</source>
         <translation>仮想メディアマネージャを開く</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="334"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="334"/>
         <source>D&amp;ifferencing Disks</source>
         <translation>差分ディスク(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="347"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="347"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
         <translation>仮想マシン内でホストに接続されたCD/DVDライターを使用可能にするため、ATAPIコマンドを直接ホスト デバイスに送信します。 注：仮想マシン内でオーディオCDの書き込みはサポートされていません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="350"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="350"/>
         <source>&amp;Passthrough</source>
         <translation>パススルー(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="364"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="364"/>
         <source>Virtual Size:</source>
         <translation>仮想的なサイズ:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="384"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="384"/>
         <source>Actual Size:</source>
         <translation>実際のサイズ:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="404"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="404"/>
         <source>Size:</source>
         <translation>サイズ:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="424"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="424"/>
         <source>Location:</source>
         <translation>場所:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="444"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="444"/>
         <source>Type (Format):</source>
         <translation>タイプ(形式):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsHD.ui" line="464"/>
+        <location filename="../src/settings/vm/UIMachineSettingsStorage.ui" line="464"/>
         <source>Attached To:</source>
         <translation>割り当て:</translation>
     </message>
@@ -12939,7 +12939,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="75"/>
         <source>Select TAP setup application</source>
@@ -12951,1157 +12951,1157 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation type="obsolete">TAP終了アプリケーションを選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="29"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="29"/>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation>仮想ネットワーク アダプタを仮想マシンに接続します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="32"/>
         <source>&amp;Enable Network Adapter</source>
         <translation>ネットワーク アダプタを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="32"/>
         <source>A&amp;dapter Type:</source>
         <translation type="obsolete">アダプタ タイプ(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="165"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="165"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
         <translation>仮想ネットワークアダプタのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="64"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="64"/>
         <source>&amp;Attached to:</source>
         <translation>割り当て(&amp;A):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="83"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="83"/>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation>仮想アダプタをホストOSの実際のネットワークに割り当てる方式を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="83"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="83"/>
         <source>&amp;Network Name:</source>
         <translation type="obsolete">ネットワーク名(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="83"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="83"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="83"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="83"/>
         <source>&amp;MAC Address:</source>
         <translation type="obsolete">MACアドレス(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="191"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="191"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="198"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="198"/>
         <source>Generates a new random MAC address.</source>
         <translation>MACアドレスをランダムに生成します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="198"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="198"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">生成(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation>仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">接続(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>&amp;Interface Name:</source>
         <translation type="obsolete">インターフェース名(&amp;I):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">TAPインターフェース名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>&amp;Setup Application:</source>
         <translation type="obsolete">設定アプリケーション(&amp;S):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース設定時に実行するコマンドを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">設定アプリケーションを選択します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>&amp;Terminate Application:</source>
         <translation type="obsolete">終了アプリケーション(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース終了時に実行するコマンドを表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">終了アプリケーションを選択します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">ホスト インターフェースの設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Adapter</source>
         <comment>network</comment>
         <translation type="obsolete">アダプタ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Not selected</source>
         <comment>adapter</comment>
         <translation type="obsolete">未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Network</source>
         <comment>internal</comment>
         <translation type="obsolete">ネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Not selected</source>
         <comment>network</comment>
         <translation type="obsolete">未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>MAC Address</source>
         <translation type="obsolete">MACアドレス</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Not selected</source>
         <comment>address</comment>
         <translation type="obsolete">未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Cable</source>
         <translation type="obsolete">ケーブル</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Connected</source>
         <comment>cable</comment>
         <translation type="obsolete">接続</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="212"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="212"/>
         <source>Not connected</source>
         <comment>cable</comment>
         <translation type="obsolete">未接続</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="146"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="146"/>
         <source>Adapter &amp;Type:</source>
         <translation>アダプタ タイプ(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="146"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="146"/>
         <source>Open extended settings dialog for current attachment type.</source>
         <translation type="obsolete">現在の割り当てタイプのための拡張設定ダイアログを開きます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="199"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="199"/>
         <source>no bridged network adapter is selected</source>
         <translation>ブリッジ ネットワーク アダプタが未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="206"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="206"/>
         <source>no internal network name is specified</source>
         <translation>内部ネットワーク名が未指定</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="213"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="213"/>
         <source>no host-only network adapter is selected</source>
         <translation>ホストオンリー ネットワーク アダプタが未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="377"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="377"/>
         <source>Not selected</source>
         <comment>network adapter name</comment>
         <translation>未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.cpp" line="377"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.cpp" line="377"/>
         <source>Open additional options dialog for current attachment type.</source>
         <translation type="obsolete">現在の割り当てタイプのための追加オプションダイアログを開きます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="90"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="90"/>
         <source>&amp;Name:</source>
         <translation>名前(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="109"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="109"/>
         <source>Selects the name of the network adapter for &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; attachments and the name of the network &lt;b&gt;Internal Network&lt;/b&gt; attachments.</source>
         <translation>&lt;b&gt;ブリッジ アダプタ&lt;/b&gt;または&lt;b&gt;ホストオンリー アダプタ&lt;/b&gt;を割り当てた場合は使用するネットワーク アダプタの名前を選択します。&lt;b&gt;内部ネットワーク&lt;/b&gt;を割り当てた場合は内部ネットワークの名前を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="134"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="134"/>
         <source>A&amp;dvanced</source>
         <translation>高度(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="137"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="137"/>
         <source>Shows or hides additional network adapter options.</source>
         <translation>ネットワーク アダプタの高度なオプションの表示/非表示を切り替えます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="172"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="172"/>
         <source>&amp;Mac Address:</source>
         <translation>MACアドレス(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>&amp;Cable connected</source>
         <translation>ケーブル接続(&amp;C)</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>no bridged network adapter is selected</source>
         <translation type="obsolete">ブリッジ ネットワーク アダプタが未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>no internal network name is specified</source>
         <translation type="obsolete">内部ネットワーク名が未指定</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>no host-only adapter is selected</source>
         <translation type="obsolete">ホストオンリー アダプタが未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Basic Details</source>
         <translation type="obsolete">詳細情報</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Bridged Network Details</source>
         <translation type="obsolete">ブリッジ ネットワーク詳細</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Internal Network Details</source>
         <translation type="obsolete">内部ネットワーク詳細</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Host-only Network Details</source>
         <translation type="obsolete">ホストオンリー ネットワーク詳細</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Not selected</source>
         <translation type="obsolete">未選択</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Host Settings</source>
         <translation type="obsolete">ホスト設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>&amp;Bridged Network Adapter:</source>
         <translation type="obsolete">ブリッジ ネットワーク アダプタ(&amp;B):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Displays the name of the host network adapter selected for bridged networking.</source>
         <translation type="obsolete">ブリッジ ネットワーク用に選択したホスト ネットワークアダプタ名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Internal &amp;Network:</source>
         <translation type="obsolete">内部ネットワーク(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">このアダプタ用に選択した内部ネットワーク名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Host-only &amp;Network Adapter:</source>
         <translation type="obsolete">ホストオンリー ネットワークアダプタ(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
         <translation type="obsolete">ホストオンリー ネットワーク用に選択したVirtualBox ネットワークアダプタ名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Guest Settings</source>
         <translation type="obsolete">ゲスト設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Guest &amp;MAC Address:</source>
         <translation type="obsolete">ゲストMACアドレス:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">このアダプタのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">MACアドレスをランダムに生成します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>&amp;Cable connected</source>
         <translation type="obsolete">ケーブル接続(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">仮想マシンの起動時に仮想ネットワークケーブルを接続するかどうかを示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Additional Options</source>
         <translation type="obsolete">追加オプション</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetworkPage</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>No host network interface is selected</source>
         <translation type="obsolete">ホスト インターフェースが選択されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsNetwork.ui" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsNetwork.ui" line="215"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">内部ネットワーク名が設定されていない</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.cpp" line="110"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.cpp" line="110"/>
         <source>Port %1</source>
         <comment>parallel ports</comment>
         <translation>ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="29"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="29"/>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
         <translation>仮想マシンのパラレルポートを有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="32"/>
         <source>&amp;Enable Parallel Port</source>
         <translation>パラレルポートを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="73"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="73"/>
         <source>Port &amp;Number:</source>
         <translation>ポート番号(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="86"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="86"/>
         <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>パラレルポート番号を表示します。 標準のパラレルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="93"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="93"/>
         <source>&amp;IRQ:</source>
         <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="93"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="93"/>
         <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="116"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="116"/>
         <source>I/O Po&amp;rt:</source>
         <translation>I/Oポート(&amp;R):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="116"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="116"/>
         <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="139"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="139"/>
         <source>Port &amp;Path:</source>
         <translation>ポート パス(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="152"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="152"/>
         <source>Displays the host parallel device name.</source>
         <translation>ホストのパラレル デバイス名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="109"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="109"/>
         <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
         <translation>このパラレルポートのIRQ番号を表示します。この値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;の範囲の整数でなければなりません。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.ui" line="132"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.ui" line="132"/>
         <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.cpp" line="220"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.cpp" line="220"/>
         <source>Duplicate port number selected </source>
         <translation>選択したポート番号はすでに使用されている</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.cpp" line="236"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.cpp" line="236"/>
         <source>Port path not specified </source>
         <translation>ポート パスが指定されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.cpp" line="237"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.cpp" line="237"/>
         <source>Duplicate port path entered </source>
         <translation>指定したポート パスはすでに使用されている</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.cpp" line="237"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.cpp" line="237"/>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">新規共有フォルダを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.cpp" line="237"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.cpp" line="237"/>
         <source>&amp;Edit Selected Shared Folder</source>
         <translation type="obsolete">選択した共有フォルダを編集(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsParallel.cpp" line="237"/>
+        <location filename="../src/settings/vm/UIMachineSettingsParallel.cpp" line="237"/>
         <source>&amp;Remove Selected Shared Folder</source>
         <translation type="obsolete">選択した共有フォルダを除去(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="340"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="340"/>
         <source>Adds a new shared folder definition.</source>
         <translation>新規共有フォルダを追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="341"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="341"/>
         <source>Edits the selected shared folder definition.</source>
         <translation>選択した共有フォルダの設定を編集します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="342"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="342"/>
         <source>Removes the selected shared folder definition.</source>
         <translation>選択した共有フォルダの設定を除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="222"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="222"/>
         <source> Machine Folders</source>
         <translation>共有フォルダ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="228"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="228"/>
         <source> Transient Folders</source>
         <translation>一時的な共有フォルダ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="344"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="344"/>
         <source>Full</source>
         <translation>完全</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="345"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="345"/>
         <source>Read-only</source>
         <translation>読み込み専用</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.ui" line="59"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.ui" line="59"/>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
         <translation>この仮想マシンでアクセス可能なすべての共有フォルダをリスト表示します。DOS/WIndows系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxsvr¥share&lt;/tt&gt; コマンドを使用してください。&lt;i&gt;share&lt;/i&gt;はアクセスしたいフォルダの名前です。 LinuxゲストOSからアクセスする場合は &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; コマンドを使用してください。本機能を使用するには Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.ui" line="69"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.ui" line="69"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.ui" line="74"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.ui" line="74"/>
         <source>Path</source>
         <translation>パス</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.ui" line="79"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.ui" line="79"/>
         <source>Access</source>
         <translation>アクセス権</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="215"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="215"/>
         <source> Global Folders</source>
         <translation>グローバルフォルダ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="329"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="329"/>
         <source>&amp;Add Shared Folder</source>
         <translation>共有フォルダを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="330"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="330"/>
         <source>&amp;Edit Shared Folder</source>
         <translation>共有フォルダを編集(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.cpp" line="331"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.cpp" line="331"/>
         <source>&amp;Remove Shared Folder</source>
         <translation>共有フォルダを除去(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSF.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSF.ui" line="32"/>
         <source>&amp;Folders List</source>
         <translation>フォルダ リスト(&amp;F)</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.cpp" line="117"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.cpp" line="117"/>
         <source>Add Share</source>
         <translation>共有フォルダの追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.cpp" line="120"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.cpp" line="120"/>
         <source>Edit Share</source>
         <translation>設定の編集</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.ui" line="26"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.ui" line="26"/>
         <source>Dialog</source>
         <translation>ダイアログ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.ui" line="32"/>
         <source>Folder Path:</source>
         <translation>フォルダのパス:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.ui" line="45"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.ui" line="45"/>
         <source>Folder Name:</source>
         <translation>フォルダ名:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.ui" line="55"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.ui" line="55"/>
         <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>ゲストOSで使用される共有フォルダ名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.ui" line="62"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.ui" line="62"/>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
         <translation>ゲストOSから指定された共有フォルダへの書き込みを禁止します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.ui" line="65"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.ui" line="65"/>
         <source>&amp;Read-only</source>
         <translation>読み込み専用(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSFDetails.ui" line="72"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSFDetails.ui" line="72"/>
         <source>&amp;Make Permanent</source>
         <translation>永続化する(&amp;M)</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.cpp" line="128"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.cpp" line="128"/>
         <source>Port %1</source>
         <comment>serial ports</comment>
         <translation>ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="29"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="29"/>
         <source>When checked, enables the given serial port of the virtual machine.</source>
         <translation>仮想マシンのシリアルポートを有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="32"/>
         <source>&amp;Enable Serial Port</source>
         <translation>シリアルポートを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="73"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="73"/>
         <source>Port &amp;Number:</source>
         <translation>ポート番号(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="86"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="86"/>
         <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>シリアルポート番号を表示します。 標準のシリアルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="93"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="93"/>
         <source>&amp;IRQ:</source>
         <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="93"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="93"/>
         <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
         <translation type="obsolete">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="116"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="116"/>
         <source>I/O Po&amp;rt:</source>
         <translation>I/Oポート(&amp;R):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="116"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="116"/>
         <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="139"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="139"/>
         <source>Port &amp;Mode:</source>
         <translation>ポート モード(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="152"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="152"/>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
         <translation>このシリアルポートの動作モードを指定します。 &lt;b&gt;[切断]&lt;/b&gt;を選択すると、ゲストOSはシリアルポートを検出しますが、それを操作することはできません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="172"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="172"/>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
         <translation>オンの場合、仮想マシンの起動時に &lt;b&gt;[ポート パス]&lt;/b&gt;フィールドで指定されたパイプが作成されます。そうでなければ仮想マシンは既存のパイプを使用します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="175"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="175"/>
         <source>&amp;Create Pipe</source>
         <translation>パイプ作成(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="175"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="175"/>
         <source>Port &amp;Path:</source>
         <translation type="obsolete">ポート パス(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="195"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="195"/>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>ポートが&lt;b&gt;[ホスト パイプ]&lt;/b&gt;モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが&lt;b&gt;[ホスト デバイス]&lt;/b&gt;モードで動作しているとき、ホスト シリアル デバイス名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="182"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="182"/>
         <source>Port/File &amp;Path:</source>
         <translation>ポート/ファイル パス(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="109"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="109"/>
         <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
         <translation>このシリアルポートのIRQ番号を表示します。この値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;の範囲の整数でなければなりません。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.ui" line="132"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.ui" line="132"/>
         <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.cpp" line="263"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.cpp" line="263"/>
         <source>Duplicate port number selected </source>
         <translation>選択したポート番号はすでに使用されている</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.cpp" line="285"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.cpp" line="285"/>
         <source>Port path not specified </source>
         <translation>ポート パスが指定されていない</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSerial.cpp" line="286"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSerial.cpp" line="286"/>
         <source>Duplicate port path entered </source>
         <translation>指定したポート パスはすでに使用されている</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="283"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="283"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSが十分なメモリを使用できません。割り当てメモリを減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="293"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="293"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
         <translation>実メモリ(&lt;b&gt;%2&lt;/b)の&lt;b&gt;%1％&lt;/b&gt;を超えるメモリが仮想マシンに割り当てられました。 ホストOSに十分なメモリが残されていません。自己の責任で続行してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="306"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="306"/>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
         <translation>性能上の理由から、仮想マシンに割り当てるCPU数はホストマシンの物理CPU数(&lt;b&gt;%1&lt;/b&gt;)の2倍を超えてはなりません。仮想CPUの数を減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="315"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="315"/>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
         <translation>ホストマシンの物理CPU数 (&lt;b&gt;%1&lt;/b&gt;)より多いCPUが仮想マシンに割り当てられました。これは仮想マシンの性能を低下させます。仮想CPUの数を減らしてください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="327"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="327"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>2個以上のCPUが仮想マシンに割り当てられました。IO APICが無効な場合、これは動作しません。[OK]ボタンを押すと自動的にIO APICが有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="338"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="338"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation>2個以上のCPUが仮想マシンに割り当てられました。仮想化支援機能(VT-x/AMD-V)が無効な場合、これは動作しません。[OK]ボタンを押すと自動的に仮想化支援機能が有効化されます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="393"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="393"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="396"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="396"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
         <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="396"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="396"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="34"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="34"/>
         <source>&amp;Motherboard</source>
         <translation>マザーボード(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="46"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="46"/>
         <source>Base &amp;Memory:</source>
         <translation>メインメモリ(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="130"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="130"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation>仮想マシンに割り当てるメインメモリのサイズを指定します。割り当て量が多すぎると仮想マシンは起動しないかもしれません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="143"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="143"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="158"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="158"/>
         <source>&amp;Boot Order:</source>
         <translation>起動順序(&amp;B):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="182"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="182"/>
         <source>Defines the boot device order. Use the checkboxes on the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation>起動デバイスの優先順序を指定します。チェックボックスを使い各デバイスを有効または無効にできます。項目を上または下に移動してデバイスの順序を変更してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="246"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="246"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation>下に移動(Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="249"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="249"/>
         <source>Moves the selected boot device down.</source>
         <translation>選択した起動デバイスを下に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="366"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="366"/>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
         <translation>絶対座標指定のデバイス(USB タブレット)をサポートします。オフの場合は標準的なPS/2マウスをエミュレートします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="369"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="369"/>
         <source>Enable &amp;absolute pointing device</source>
         <translation>絶対座標指定のデバイスを有効化(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="493"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="493"/>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
         <translation>仮想マシンに割り当てるCPUの数を指定します。複数の仮想CPUを使用するにはホストマシンの仮想化支援機能が必要です。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="220"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="220"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation>上に移動(Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="223"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="223"/>
         <source>Moves the selected boot device up.</source>
         <translation>選択した起動デバイスを上に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="500"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="500"/>
         <source>Extended Features:</source>
         <translation>拡張機能:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="500"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="500"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">仮想マシンでACPI(Advanced Configuration and Power Management Interface)サポートを有効にします。&lt;b&gt;注：&lt;/b&gt; Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="500"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="500"/>
         <source>Enable &amp;ACPI</source>
         <translation type="obsolete">ACPIを有効化(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="318"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="318"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation>仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="321"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="321"/>
         <source>Enable &amp;IO APIC</source>
         <translation>IO APICを有効化(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="350"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="350"/>
         <source>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
         <translation>ハードウェアクロック(RTC)が報告する時刻を協定世界時(UTC)に設定します。オフの場合はローカルタイム(ホスト時刻)を使用します。通常UnixはハードウェアクロックをUTCとして扱います。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="353"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="353"/>
         <source>Hardware clock in &amp;UTC time</source>
         <translation>ハードウェアクロックをUTCにする(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="390"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="390"/>
         <source>&amp;Processor</source>
         <translation>プロセッサ(&amp;P)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="402"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="402"/>
         <source>&amp;Processor(s):</source>
         <translation>プロセッサ数(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="402"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="402"/>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
         <translation type="obsolete">仮想マシンに割り当てるCPUの数を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="516"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="516"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
         <translation>仮想マシンでホストCPUのPAE(物理アドレス拡張機能)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="519"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="519"/>
         <source>Enable PA&amp;E/NX</source>
         <translation>PAE/NXを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="540"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="540"/>
         <source>Acce&amp;leration</source>
         <translation>アクセラレーション(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="546"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="546"/>
         <source>Hardware Virtualization:</source>
         <translation>仮想化支援機能:</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="559"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="559"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
         <translation>仮想マシンでホストCPUの仮想化支援機能(Intel VT-xまたはAMD-V)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="562"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="562"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation>VT-x/AMD-Vを有効化(&amp;V)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="578"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="578"/>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
         <translation>仮想マシンでホストCPUのネステッドページング(Intel VT-x/EPTまたはAMD-V/RVI)を有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="581"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="581"/>
         <source>Enable Nested Pa&amp;ging</source>
         <translation>ネステッドページングを有効化(&amp;G)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.cpp" line="397"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.cpp" line="397"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is host cpu count * 2 for now</comment>
         <translation>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="334"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="334"/>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
         <translation>一部のOSが起動に必要とするExtended Firmware Interface(EFI)を有効化します。本オプションが有効な場合、EFIに対応していないOSは起動できません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsSystem.ui" line="337"/>
+        <location filename="../src/settings/vm/UIMachineSettingsSystem.ui" line="337"/>
         <source>Enable &amp;EFI (special OSes only)</source>
         <translation>EFIを有効化(一部のOSのみ)(&amp;E)</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="248"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="248"/>
         <source>&amp;Add Empty Filter</source>
         <translation>空のフィルタを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="249"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="249"/>
         <source>A&amp;dd Filter From Device</source>
         <translation>デバイスからフィルタを追加する(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="250"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="250"/>
         <source>&amp;Edit Filter</source>
         <translation>フィルタを編集する(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="251"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="251"/>
         <source>&amp;Remove Filter</source>
         <translation>フィルタを除去する(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="252"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="252"/>
         <source>&amp;Move Filter Up</source>
         <translation>フィルタを上に移動する(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="253"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="253"/>
         <source>M&amp;ove Filter Down</source>
         <translation>フィルタを下に移動(&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="268"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="268"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
         <translation>すべてのフィールドが空の新規USBフィルタを追加します。注：このフィルタはすべての接続されたUSB デバイスに適合します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="272"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="272"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
         <translation>ホストマシンに接続された、選択したUSB デバイスの値をすべてのフィールドに設定した新規USBフィルタを追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="275"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="275"/>
         <source>Edits the selected USB filter.</source>
         <translation>選択したUSBフィルタを編集します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="276"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="276"/>
         <source>Removes the selected USB filter.</source>
         <translation>選択したUSBフィルタを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="277"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="277"/>
         <source>Moves the selected USB filter up.</source>
         <translation>選択したUSBフィルタを上に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="278"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="278"/>
         <source>Moves the selected USB filter down.</source>
         <translation>選択したUSBフィルタを下に移動します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.cpp" line="280"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.cpp" line="280"/>
         <source>New Filter %1</source>
         <comment>usb</comment>
         <translation>新規フィルタ %1</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.ui" line="29"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.ui" line="29"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
         <translation>この仮想マシンの仮想USB コントローラを有効にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.ui" line="32"/>
         <source>Enable &amp;USB Controller</source>
         <translation>USB コントローラを有効化(&amp;U)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.ui" line="73"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.ui" line="73"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
         <translation>仮想マシンの仮想USB EHCI コントローラを有効にします。USB EHCI コントローラはUSB 2.0 サポートを提供します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.ui" line="76"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.ui" line="76"/>
         <source>Enable USB 2.0 (E&amp;HCI) Controller</source>
         <translation>USB 2.0 (EHCI)コントローラを有効化(&amp;H)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.ui" line="83"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.ui" line="83"/>
         <source>USB Device &amp;Filters</source>
         <translation>USB デバイス フィルタ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.ui" line="114"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.ui" line="114"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
         <translation>仮想マシンのすべてのUSBフィルタをリスト表示します。左のチェックボックスは、特定のフィルタが可能にされるかどうかを定義します。 USBフィルタを追加するか、または除去する場合はコンテキストメニューかボタンを使用してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSB.ui" line="121"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSB.ui" line="121"/>
         <source>[filter]</source>
         <translation>[フィルター]</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.cpp" line="59"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.cpp" line="59"/>
         <source>Any</source>
         <comment>remote</comment>
         <translation>任意</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.cpp" line="60"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.cpp" line="60"/>
         <source>Yes</source>
         <comment>remote</comment>
         <translation>はい</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.cpp" line="61"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.cpp" line="61"/>
         <source>No</source>
         <comment>remote</comment>
         <translation>いいえ</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="38"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="38"/>
         <source>&amp;Name:</source>
         <translation>名前(&amp;N):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="51"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="51"/>
         <source>Displays the filter name.</source>
         <translation>フィルタ名を表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="58"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="58"/>
         <source>&amp;Vendor ID:</source>
         <translation>ベンダID(&amp;V):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="71"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="71"/>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
         <translation>ベンダIDフィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="78"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="78"/>
         <source>&amp;Product ID:</source>
         <translation>プロダクトID(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="91"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="91"/>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
         <translation>プロダクトIDフィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;XXXX&lt;/tt&gt;で、&lt;tt&gt;X&lt;/tt&gt;は16進数です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="98"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="98"/>
         <source>&amp;Revision:</source>
         <translation>リビジョン(&amp;R):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="111"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="111"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
         <translation>リビジョン番号フィルタを定義します。&lt;i&gt;完全一致&lt;/i&gt;する文字列の形式は&lt;tt&gt;IIFF&lt;/tt&gt;で、&lt;tt&gt;I&lt;/tt&gt;は10進数で整数部、&lt;tt&gt;F&lt;/tt&gt;は10進数で小数部です。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="118"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="118"/>
         <source>&amp;Manufacturer:</source>
         <translation>メーカー(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="131"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="131"/>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation>&lt;i&gt;完全一致&lt;/i&gt;するメーカー フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="138"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="138"/>
         <source>Pro&amp;duct:</source>
         <translation>製品名(&amp;D):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="151"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="151"/>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation>&lt;i&gt;完全一致&lt;/i&gt;する製品名フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="158"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="158"/>
         <source>&amp;Serial No.:</source>
         <translation>シリアル No.(&amp;S):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="171"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="171"/>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation>&lt;i&gt;完全一致&lt;/i&gt;するシリアル番号フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="178"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="178"/>
         <source>Por&amp;t:</source>
         <translation>ポート(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="191"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="191"/>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
         <translation>&lt;i&gt;完全一致&lt;/i&gt;するホストUSBポート フィルタを定義します。空の文字列はすべての値と一致します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="198"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="198"/>
         <source>R&amp;emote:</source>
         <translation>リモート(&amp;E):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="217"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="217"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
         <translation>ローカルに接続されたUSB デバイスにこのフィルタを適用するかどうかを定義します。ホストマシン(&lt;i&gt;いいえ&lt;/i&gt;)、VRDPクライアントのコンピュータ(&lt;i&gt;はい&lt;/i&gt;)、両方((&lt;i&gt;任意&lt;/i&gt;))。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="224"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="224"/>
         <source>&amp;Action:</source>
         <translation>動作(&amp;A):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="243"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="243"/>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
         <translation>一致するデバイスが接続されたとき、ホストマシンが実行する動作を定義します:ホストOSに譲る(&lt;i&gt;無視&lt;/i&gt;) 、仮想マシンで使用するために捕捉(&lt;i&gt;保持&lt;/i&gt;)。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>USB Filter Details</source>
         <translation>USBフィルタ詳細</translation>
     </message>
@@ -14109,42 +14109,42 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
 <context>
     <name>VBoxVMSettingsVRDP</name>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">仮想マシンのリモートデスクトッププロトコル(RDP)サーバー機能を有効にします。リモートクライアントが標準的なRDPクライアントを使用して実行中の仮想マシンに接続し、操作することを可能にします。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">VRDPサーバーを有効化(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>Server &amp;Port:</source>
         <translation type="obsolete">サーバーのポート番号(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">VRDPサーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>Authentication &amp;Method:</source>
         <translation type="obsolete">認証方式(&amp;M):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">VRDPの認証方式を指定します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>Authentication &amp;Timeout:</source>
         <translation type="obsolete">認証タイムアウト値(&amp;T):</translation>
     </message>
     <message>
-        <location filename="../src/settings/vm/VBoxVMSettingsUSBFilterDetails.ui" line="32"/>
+        <location filename="../src/settings/vm/UIMachineSettingsUSBFilterDetails.ui" line="32"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">ゲスト認証のタイムアウト値をミリ秒単位で指定します。</translation>
     </message>

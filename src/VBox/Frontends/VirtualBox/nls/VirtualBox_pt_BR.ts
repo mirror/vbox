@@ -3812,7 +3812,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Mostra o caminho para a pasta padrão de arquivos VDI. Esta pasta será sempre utilizada para acrescentar discos rígidos virtuais novos ou existentes, a não ser que seja definida especificamente outra pasta na máquina virtual.</translation>
@@ -3891,7 +3891,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -3946,7 +3946,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -4091,7 +4091,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>Detalhes de Rede Exclusiva de Hospedeiro (host-only)</translation>
@@ -4186,7 +4186,7 @@ Versão %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Quando selecionado, a aplicação irá conectar periodicamente ao site do VirtualBox e verificar se uma nova versão do VirtualBox está disponível.</translation>
@@ -7624,7 +7624,7 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
         <translation>&amp;Cancelar</translation>
@@ -9634,7 +9634,7 @@ qualquer valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Quando selecionado, a placa de som PCI virtual é conectada à máquina virtual que utiliza o driver especificado para se comunicar com a placa de som no hospedeiro.</translation>
@@ -9720,7 +9720,7 @@ qualquer valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>você configurou menos de &lt;b&gt;%1&lt;/b&gt; para a memória de vídeo, que é o mínimo necessário para permitir que a máquina virtual possa trocar entre modo de tela cheia ou seamless.</translation>
@@ -10920,7 +10920,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
@@ -11163,7 +11163,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">Nenhum disco rígido foi selecionado para &lt;i&gt;%1&lt;/i&gt;</translation>
@@ -11475,7 +11475,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Selecione a aplicação de configuração da interface TAP</translation>
@@ -11674,7 +11674,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation type="obsolete">nenhuma placa de rede em modo bridge foi selecionada</translation>
@@ -11765,7 +11765,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetworkPage</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Nenhuma interface de rede do hospedeiro foi selecionada</translation>
@@ -11776,7 +11776,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -11832,7 +11832,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Um número de porta duplicado foi selecionado </translation>
@@ -11847,7 +11847,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">&amp;Acrescentar Nova Pasta Compartilhada</translation>
@@ -11926,7 +11926,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Acrescentar Compartilhamento</translation>
@@ -11965,7 +11965,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -12041,7 +12041,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Um número de porta duplicado foi selecionado </translation>
@@ -12056,7 +12056,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>você configurou mais de &lt;b&gt;%1%&lt;/b&gt; da memória de seu computador (&lt;b&gt;%2&lt;/b&gt;) para esta máquina virtual. Desta forma, não haverá memória suficiente para o sistema operacional nativo. Por favor escolha um valor menor.</translation>
@@ -12234,7 +12234,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Acrescentar Filtro Vazio</translation>
@@ -12318,7 +12318,7 @@ faz com que o convidado veja uma placa de som, mas todos os acessos a ela serão
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>
