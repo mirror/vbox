@@ -4320,7 +4320,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_11)
     {
         // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance,
-        // per-machine media registries and VRDE.
+        // per-machine media registries, VRDE and JRockitVE.
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
              || hardwareMachine.ulCpuExecutionCap != 100
              || machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
@@ -4331,6 +4331,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              || mediaRegistry.llDvdImages.size()
              || mediaRegistry.llFloppyImages.size()
              || !hardwareMachine.vrdeSettings.strVrdeExtPack.isEmpty()
+             || machineUserData.strOsType == "JRockitVE"
            )
             m->sv = SettingsVersion_v1_11;
     }
