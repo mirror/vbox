@@ -217,7 +217,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
                                      * into the return buffer.
                                      */
                                     char *pszValue;
-                                    rc = RTUtf16ToUtf8((PCRTUTF16)Var.bstrVal, &pszValue);
+                                    rc = RTUtf16ToUtf8(Var.bstrVal, &pszValue);
                                     if (RT_SUCCESS(rc))
                                     {
                                         rc = RTStrCopy(pszBuf, cbBuf, pszValue);
