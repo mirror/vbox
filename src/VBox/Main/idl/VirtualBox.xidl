@@ -14335,7 +14335,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackManager" extends="$unknown"
-    uuid="ba1fbfca-53f1-471c-b5a1-416386f0f52b"
+    uuid="bc386406-2637-454b-8d55-021f9e20445a"
     wsmap="suppress"
     >
     <desc>
@@ -14371,7 +14371,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="path" type="wstring" dir="in">
         <desc>The path of the extension pack tarball.</desc>
       </param>
-      <param name="name" type="wstring" dir="out">
+      <param name="name" type="wstring" dir="return">
         <desc>The name of the installed extension pack.</desc>
       </param>
     </method>
