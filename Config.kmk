@@ -2232,6 +2232,8 @@ SDK_VBOX_BOOST_INCS  ?= $(PATH_ROOT)/src/libs/boost-1.37.0
 #
 SDK_VBOX_NTDLL = Requires $(VBOX_WINDDK)
 SDK_VBOX_NTDLL_LIBS ?= $(PATH_SDK_$(VBOX_WINDDK)_LIB)/ntdll.lib
+SDK_VBOX_NTDLL_LIBS.x86 ?= $(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/ntdll.lib
+SDK_VBOX_NTDLL_LIBS.amd64 ?= $(PATH_SDK_$(VBOX_WINDDK)_LIB.amd64)/ntdll.lib
 ifeq ($(KBUILD_TARGET),win)
  include $(KBUILD_PATH)/sdks/$(VBOX_WINDDK).kmk
 endif
