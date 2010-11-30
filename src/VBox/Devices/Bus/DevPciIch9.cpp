@@ -2153,9 +2153,19 @@ static void ich9pciBusInfo(PPCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent)
                         continue;
 
                     uint32_t u32Addr = ich9pciConfigReadDev(pPciDev, ich9pciGetRegionReg(iRegion), 4);
-                    const char * szDesc =
-                            (pRegion->type & PCI_ADDRESS_SPACE_IO) ?
-                            "IO" : "MMIO";
+                    const char * szDesc;
+
+                    if (pRegion->type & PCI_ADDRESS_SPACE_IO)
+                    {
+                        szDesc = "IO";
+                        u32Addr &= ~0x3;
+                    }
+                    else
+                    {
+                        szDesc = "MMIO";
+                        u32Addr &= ~0xf;
+                    }
+
                     printIndent(pHlp, iIndent + 2);
                     pHlp->pfnPrintf(pHlp, "  %s region #%d: %x..%x\n",
                                     szDesc, iRegion, u32Addr, u32Addr+iRegionSize);
