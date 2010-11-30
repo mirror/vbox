@@ -162,14 +162,19 @@ STDMETHODIMP Appliance::Interpret()
             if (vsysThis.pelmVboxMachine)
                 pNewDesc->importVboxMachineXML(*vsysThis.pelmVboxMachine);
 
-            /* Guest OS type */
+            // Guest OS type
+            // This is taken from one of three places, in this order:
             Utf8Str strOsTypeVBox;
-            Utf8Str strCIMOSType = Utf8StrFmt("%RU32", (uint32_t)vsysThis.cimos);
-            /* If there is a vbox.xml, we always prefer the ostype settings
-             * from there, cause OVF doesn't know all types VBox know. */
+            Utf8StrFmt strCIMOSType("%RU32", (uint32_t)vsysThis.cimos);
+            // 1) If there is a <vbox:Machine>, then use the type from there.
             if (   vsysThis.pelmVboxMachine
-                && pNewDesc->m->pConfig->machineUserData.strOsType.isNotEmpty())
+                && pNewDesc->m->pConfig->machineUserData.strOsType.isNotEmpty()
+               )
                 strOsTypeVBox = pNewDesc->m->pConfig->machineUserData.strOsType;
+            // 2) Otherwise, if there is OperatingSystemSection/vbox:OSType, use that one.
+            else if (vsysThis.strTypeVbox.isNotEmpty())      // OVFReader has found vbox:OSType
+                strOsTypeVBox = vsysThis.strTypeVbox;
+            // 3) Otherwise, make a best guess what the vbox type is from the OVF (CIM) OS type.
             else
                 convertCIMOSType2VBoxOSType(strOsTypeVBox, vsysThis.cimos, vsysThis.strCimosDesc);
             pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
@@ -179,7 +184,7 @@ STDMETHODIMP Appliance::Interpret()
 
             /* VM name */
             Utf8Str nameVBox;
-            /* If there is a vbox.xml, we always prefer the setting from there. */
+            /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   vsysThis.pelmVboxMachine
                 && pNewDesc->m->pConfig->machineUserData.strName.isNotEmpty())
                 nameVBox = pNewDesc->m->pConfig->machineUserData.strName;
@@ -260,7 +265,7 @@ STDMETHODIMP Appliance::Interpret()
 
             /* CPU count */
             ULONG cpuCountVBox;
-            /* If there is a vbox.xml, we always prefer the setting from there. */
+            /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   vsysThis.pelmVboxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.cCPUs)
                 cpuCountVBox = pNewDesc->m->pConfig->hardwareMachine.cCPUs;
@@ -282,7 +287,7 @@ STDMETHODIMP Appliance::Interpret()
 
             /* RAM */
             uint64_t ullMemSizeVBox;
-            /* If there is a vbox.xml, we always prefer the setting from there. */
+            /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   vsysThis.pelmVboxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB)
                 ullMemSizeVBox = pNewDesc->m->pConfig->hardwareMachine.ulMemorySizeMB;
@@ -316,7 +321,7 @@ STDMETHODIMP Appliance::Interpret()
             /* Audio */
             Utf8Str strSoundCard;
             Utf8Str strSoundCardOrig;
-            /* If there is a vbox.xml, we always prefer the setting from there. */
+            /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   vsysThis.pelmVboxMachine
                 && pNewDesc->m->pConfig->hardwareMachine.audioAdapter.fEnabled)
                 strSoundCard = Utf8StrFmt("%RU32", (uint32_t)pNewDesc->m->pConfig->hardwareMachine.audioAdapter.controllerType);
@@ -335,7 +340,7 @@ STDMETHODIMP Appliance::Interpret()
 
 #ifdef VBOX_WITH_USB
             /* USB Controller */
-            /* If there is a vbox.xml, we always prefer the setting from there. */
+            /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   (   vsysThis.pelmVboxMachine
                     && pNewDesc->m->pConfig->hardwareMachine.usbController.fEnabled)
                 || vsysThis.fHasUsbController)
@@ -343,7 +348,7 @@ STDMETHODIMP Appliance::Interpret()
 #endif /* VBOX_WITH_USB */
 
             /* Network Controller */
-            /* If there is a vbox.xml, we always prefer the setting from there. */
+            /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (vsysThis.pelmVboxMachine)
             {
                 const settings::NetworkAdaptersList &llNetworkAdapters = pNewDesc->m->pConfig->hardwareMachine.llNetworkAdapters;
@@ -447,7 +452,7 @@ STDMETHODIMP Appliance::Interpret()
                 }
             }
 
-            /* If there is a vbox.xml, we always prefer the setting from there. */
+            /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             bool fFloppy = false;
             bool fDVD = false;
             if (vsysThis.pelmVboxMachine)

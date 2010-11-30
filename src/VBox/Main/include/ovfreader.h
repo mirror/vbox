@@ -324,6 +324,8 @@ struct VirtualSystem
 
     CIMOSType_T         cimos;
     iprt::MiniString    strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
+    iprt::MiniString    strTypeVbox;            // optional type from @vbox:ostype attribute (VirtualBox 4.0 or higher)
+
     iprt::MiniString    strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
                                                 // VMware Workstation 6.5 is "vmx-07"
 
@@ -360,7 +362,8 @@ struct VirtualSystem
                         *pelmVboxMachine;
 
     VirtualSystem()
-        : ullMemorySize(0),
+        : cimos(CIMOSType_CIMOS_Unknown),
+          ullMemorySize(0),
           cCPUs(1),
           fHasFloppyDrive(false),
           fHasCdromDrive(false),

@@ -774,6 +774,11 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
             const xml::ElementNode *pelmCIMOSDescription;
             if ((pelmCIMOSDescription = pelmThis->findChildElement("Description")))
                 vsys.strCimosDesc = pelmCIMOSDescription->getValue();
+
+            const xml::ElementNode *pelmVBoxOSType;
+            if ((pelmVBoxOSType = pelmThis->findChildElement("vbox",            // namespace
+                                                             "OSType")))        // element name
+                vsys.strTypeVbox = pelmVBoxOSType->getValue();
         }
         else if (    (!strcmp(pcszElemName, "AnnotationSection"))
                   || (!strcmp(pcszTypeAttr, "ovf:AnnotationSection_Type"))
