@@ -48,11 +48,11 @@
 
       <para>For simplicity, we will abbreviate this as
       <computeroutput>$HOME</computeroutput> below. Using that convention, the
-      shared folder for all virtual machines is
+      common folder for all virtual machines is
       <computeroutput>$HOME/VirtualBox VMs</computeroutput>.</para>
 
-      <para>As an example, if you have created a virtual machine called
-      "Example VM", you will find that VirtualBox has created<orderedlist>
+      <para>As an example, when you create a virtual machine called "Example
+      VM", you will find that VirtualBox creates<orderedlist>
           <listitem>
             <para>the folder <computeroutput>$HOME/VirtualBox VMs/Example
             VM/</computeroutput> and, in that folder, </para>
@@ -82,7 +82,8 @@
       <para>You can change the default machine folder by selecting
       "Preferences" from the "File" menu in the VirtualBox main window. Then,
       in the window that pops up, click on the "General" tab. Alternatively,
-      use VBoxManage setproperty machinefolder; see <xref
+      use <computeroutput>VBoxManage setproperty
+      machinefolder</computeroutput>; see <xref
       linkend="vboxmanage-setproperty" />.</para>
     </sect2>
 
@@ -96,15 +97,15 @@
       <para>Before version 4.0, VirtualBox separated the machine settings
       files from virtual disk images. The machine settings files had an
       <computeroutput>.xml</computeroutput> file extension and resided in a
-      folder called "Machines" under the VirtualBox configuration directory
-      (see the next section). So, for example, on Linux, this was the hidden
-      <computeroutput>$HOME/.VirtualBox/Machines</computeroutput> directory.
-      The default hard disks folder was called "HardDisks" and resided in the
-      <computeroutput>.VirtualBox</computeroutput> folder as well, but that
-      could be changed by the user in the global preferences. (The concept of
-      a "default hard disk folder" has been abandoned with VirtualBox 4.0,
-      since disk images now reside in each machine's folder by
-      default.)</para>
+      folder called "Machines" under the global VirtualBox configuration
+      directory (see the next section). So, for example, on Linux, this was
+      the hidden <computeroutput>$HOME/.VirtualBox/Machines</computeroutput>
+      directory. The default hard disks folder was called "HardDisks" and
+      resided in the <computeroutput>.VirtualBox</computeroutput> folder as
+      well. Both locations could be changed by the user in the global
+      preferences. (The concept of a "default hard disk folder" has been
+      abandoned with VirtualBox 4.0, since disk images now reside in each
+      machine's folder by default.)</para>
 
       <para>The old layout had several severe disadvantages.<orderedlist>
           <listitem>
@@ -148,7 +149,7 @@
       hidden on Linux and Solaris), whereas on a Mac this resides in
       <computeroutput>$HOME/Library/VirtualBox</computeroutput>.</para>
 
-      <para>VirtualBox creates this configuration directory automatically, if
+      <para>VirtualBox creates this configuration directory automatically if
       necessary. Optionally, you can supply an alternate configuration
       directory by setting the
       <computeroutput><literal>VBOX_USER_HOME</literal></computeroutput>
@@ -1496,7 +1497,7 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
   </sect1>
 
   <sect1 id="solariscodedumper">
-    <title>Configuring VirtualBox CoreDumper on Solaris hosts</title>
+    <title>Configuring the VirtualBox CoreDumper on Solaris hosts</title>
 
     <para>VirtualBox is capable of producing its own core files when things go
     wrong and for more extensive debugging. Currently this is only available
@@ -1546,11 +1547,11 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
   </sect1>
 
   <sect1 id="guitweaks">
-    <title>Locking down the GUI</title>
+    <title>Locking down the VirtualBox manager GUI</title>
 
     <para>There are several advanced customization settings for locking down
-    the GUI, that is, removing some features that the user should not
-    see.<screen>VBoxManage setextradata global GUI/Customizations OPTION[,OPTION...]</screen></para>
+    the VirtualBox manager, that is, removing some features that the user
+    should not see.<screen>VBoxManage setextradata global GUI/Customizations OPTION[,OPTION...]</screen></para>
 
     <para>where <computeroutput>OPTION</computeroutput> is one of the
     following keywords:<glosslist>
@@ -1558,7 +1559,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           <glossterm><computeroutput>noSelector</computeroutput></glossterm>
 
           <glossdef>
-            <para>Don't allow to start the VM selector GUI. Trying to do so
+            <para>Don't allow to start the VirtualBox manager. Trying to do so
             will show a window containing a proper error message.</para>
           </glossdef>
         </glossentry>
@@ -1567,7 +1568,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           <glossterm><computeroutput>noMenuBar</computeroutput></glossterm>
 
           <glossdef>
-            <para>The VM windows will not contain a menu bar.</para>
+            <para>VM windows will not contain a menu bar.</para>
           </glossdef>
         </glossentry>
 
@@ -1575,19 +1576,19 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           <glossterm><computeroutput>noStatusBar</computeroutput></glossterm>
 
           <glossdef>
-            <para>The VM windows will not contain a status bar.</para>
+            <para>VM windows will not contain a status bar.</para>
           </glossdef>
         </glossentry>
       </glosslist></para>
 
     <para>To disable any GUI customization do <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
 
-    <para>To disable all host key combinations, open the global settings and
+    <para>To disable all host key combinations, open the preferences and
     change the host key to <emphasis>None</emphasis>. This might be useful
     when using VirtualBox in a kiosk mode.</para>
 
-    <para>Furthermore, you can disallow certain actions when terminating a VM
-    from the GUI. To disallow specific actions, type:</para>
+    <para>Furthermore, you can disallow certain actions when terminating a VM.
+    To disallow specific actions, type:</para>
 
     <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
 
@@ -1597,8 +1598,8 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           <glossterm><computeroutput>SaveState</computeroutput></glossterm>
 
           <glossdef>
-            <para>Don't allow the user to save the VM state plus terminate the
-            VM.</para>
+            <para>Don't allow the user to save the VM state when terminating
+            the VM.</para>
           </glossdef>
         </glossentry>
 
@@ -1607,7 +1608,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
           <glossdef>
             <para>Don't allow the user to shutdown the VM by sending the ACPI
-            power off event to the guest.</para>
+            power-off event to the guest.</para>
           </glossdef>
         </glossentry>
 
@@ -1629,23 +1630,25 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         </glossentry>
       </glosslist></para>
 
-    <para>Combinations of all of these options are allowed. If all options are
-    specified, the VM cannot be shut down from the GUI.</para>
+    <para>Any combination of the above is allowed. If all options are
+    specified, the VM cannot be shut down at all.</para>
   </sect1>
 
   <sect1 id="vboxwebsrv-daemon">
-    <title>Starting <computeroutput>vboxwebsrv</computeroutput>
-    automatically</title>
+    <title>Starting the VirtualBox web service automatically</title>
 
-    <para><computeroutput>vboxwebsrv</computeroutput> is used for controlling
-    VirtualBox remotely. As the client base using this interface is growing,
-    we added start scripts for the various operation systems we support. The
-    following describes how to use them. <itemizedlist>
+    <para>The VirtualBox web service
+    (<computeroutput>vboxwebsrv</computeroutput>) is used for controlling
+    VirtualBox remotely. It is documented in detail in the VirtualBox Software
+    Development Kit (SDK); please see <xref linkend="VirtualBoxAPI" />. As the
+    client base using this interface is growing, we added start scripts for
+    the various operation systems we support. The following describes how to
+    use them. <itemizedlist>
         <listitem>
           <para>On Mac OS X, launchd is used. An example configuration file
           can be found in
           <computeroutput>$HOME/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</computeroutput>.
-          It has to be enabled by changing the
+          It can be enabled by changing the
           <computeroutput>Disabled</computeroutput> key from
           <computeroutput>true</computeroutput> to
           <computeroutput>false</computeroutput>. To manually start the
