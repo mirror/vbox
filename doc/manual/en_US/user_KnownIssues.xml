@@ -40,25 +40,25 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Direct 3D support in Windows
-      guests.</emphasis> For this to work, the Guest Additions must be
-      installed in Windows "safe mode". Press F8 when the Windows guest is
-      booting and select "Safe mode", then install the Guest Additions.
-      Otherwise Windows' file protection mechanism will interfere with the
-      replacement DLLs installed by VirtualBox and keep restoring the original
-      Windows system DLLs.</para>
+      <para>For <emphasis role="bold">Direct3D support in Windows
+      guests</emphasis> to work, the Guest Additions must be installed in
+      Windows "safe mode". Press F8 when the Windows guest is booting and
+      select "Safe mode", then install the Guest Additions. Otherwise Windows'
+      file protection mechanism will interfere with the replacement DLLs
+      installed by VirtualBox and keep restoring the original Windows system
+      DLLs.</para>
     </listitem>
 
     <listitem>
       <para><emphasis role="bold">Guest control.</emphasis> On Windows guests,
-      a process lauched via the guest control execute support is only able to
-      display a graphical user interface if the user account it is started
-      under, is currently logged in and has a desktop session. Otherwise, the
-      process will not be able to display its user interface.</para>
+      a process lauched via the guest control execute support will not be able
+      to display a graphical user interface <emphasis>unless</emphasis> the
+      user account under which it is running is currently logged in and has a
+      desktop session.</para>
 
-      <para>Also, for using accounts without or with an empty password
-      specified, the group policy needs to be changed on the guest. To do so,
-      open the group policy editor on the command line by typing
+      <para>Also, to use accounts without or with an empty password, the
+      guest's group policy must be changed. To do so, open the group policy
+      editor on the command line by typing
       <computeroutput>gpedit.msc</computeroutput>, open the key
       <emphasis>Computer Configuration\Windows Settings\Security
       Settings\Local Policies\Security Options</emphasis> and change the value
@@ -67,16 +67,8 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Guest multi-monitor support.</emphasis> This
-      feature is currently only supported with Windows guests.</para>
-    </listitem>
-
-    <listitem>
-      <para><emphasis role="bold">Deleting the only snapshot with a running VM
-      is not implemented.</emphasis> Trying to perform this operation will
-      result in an error message. This feature will be added in one of the
-      next maintenance releases. It is possible to delete the only snapshot
-      when the VM is not running, e.g. in "poweroff" or "saved" state.</para>
+      <para><emphasis role="bold">Guest multi-monitor support</emphasis> is
+      currently only supported with Windows guests.</para>
     </listitem>
 
     <listitem>
@@ -99,16 +91,6 @@
 
     <listitem>
       <para><emphasis role="bold">OVF import/export:</emphasis><itemizedlist>
-          <listitem>
-            <para>When importing an OVF that was previously exported by
-            VirtualBox 3.2 or higher which contains a complete VirtualBox
-            machine configuration in the &lt;vbox:Machine&gt; element, some of
-            the import customizations that can be specified (in either the GUI
-            or on the VBoxManage command line) are presently ignored. In
-            particular, customizations of the imported storage configuration
-            are ignored. This will be fixed in the next release.</para>
-          </listitem>
-
           <listitem>
             <para>OVF localization (multiple languages in one OVF file) is not
             yet supported.</para>
@@ -139,9 +121,7 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Mac OS X hosts.</emphasis> The following
-      restrictions apply (all of which will be resolved in future
-      versions):<itemizedlist>
+      <para><emphasis role="bold">Mac OS X hosts:</emphasis><itemizedlist>
           <listitem>
             <para>The numlock emulation has not yet been implemented.</para>
           </listitem>
@@ -163,7 +143,7 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Mac OS X Server guests.</emphasis>
+      <para><emphasis role="bold">Mac OS X Server guests:</emphasis>
       <itemizedlist>
           <listitem>
             <para>Mac OS X Server guests can only run on a certain host
@@ -214,8 +194,7 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Solaris hosts.</emphasis> The following
-      restrictions apply for OpenSolaris and Solaris 10:<itemizedlist>
+      <para><emphasis role="bold">Solaris hosts:</emphasis> <itemizedlist>
           <listitem>
             <para>There is no support for USB devices connected to Solaris 10
             hosts.</para>

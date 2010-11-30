@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="TechnicalBackground">
   <title>Technical background</title>
 
@@ -39,10 +39,10 @@
           <para>The GUI process, <computeroutput>VirtualBox</computeroutput>,
           a client application based on the cross-platform Qt library. When
           started without the <computeroutput>--startvm</computeroutput>
-          option, this application acts as the VirtualBox main window,
-          displaying the VMs and their settings. It then communicates settings
-          and state changes to <computeroutput>VBoxSVC</computeroutput> and
-          also reflects changes effected through other means, e.g.,
+          option, this application acts as the VirtualBox manager, displaying
+          the VMs and their settings. It then communicates settings and state
+          changes to <computeroutput>VBoxSVC</computeroutput> and also
+          reflects changes effected through other means, e.g.,
           <computeroutput>VBoxManage</computeroutput>.</para>
         </listitem>
 
@@ -63,17 +63,17 @@
     state.</para>
 
     <para>The VirtualBox GUI application is only one of several available
-    front-ends (clients). The complete list shipped with VirtualBox
+    front ends (clients). The complete list shipped with VirtualBox
     is:<orderedlist>
         <listitem>
-          <para><computeroutput>VirtualBox</computeroutput>, the Qt GUI front
-          end mentioned earlier.</para>
+          <para><computeroutput>VirtualBox</computeroutput>, the Qt front end
+          implementing the manager and running VMs;</para>
         </listitem>
 
         <listitem>
           <para><computeroutput>VBoxManage</computeroutput>, a less
-          user-friendly but more powerful alternative to the GUI described in
-          <xref linkend="vboxmanage" />.</para>
+          user-friendly but more powerful alternative, described in <xref
+          linkend="vboxmanage" />.</para>
         </listitem>
 
         <listitem>

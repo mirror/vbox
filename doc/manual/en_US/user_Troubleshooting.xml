@@ -101,9 +101,10 @@
       information about the VM configuration and runtime events. The log file
       is called <computeroutput><literal>VBox.log</literal></computeroutput>
       and resides in the VM log file folder. Typically this will be a
-      directory like this:<screen>$HOME/.VirtualBox/Machines/{machinename}/Logs</screen>When
-      starting a VM, the configuration file of the last run will be renamed to
-      <computeroutput>.1</computeroutput>, up to
+      directory like this:<screen>$HOME/VirtualBox VMs/{machinename}/Logs</screen></para>
+
+      <para>When starting a VM, the configuration file of the last run will be
+      renamed to <computeroutput>.1</computeroutput>, up to
       <computeroutput>.3</computeroutput>. Sometimes when there is a problem,
       it is useful to have a look at the logs. Also when requesting support
       for VirtualBox, supplying the corresponding log file is
@@ -120,9 +121,9 @@
       (CFGM), detailed information about the host CPU type and supported
       features, whether hardware virtualization is enabled, information about
       VT-x/AMD-V setup, state transitions (creating, running, paused,
-      stopping, etc.), guest BIOS messages, guest Additions messages, device
-      specific log entries and at the end of execution, final guest state and
-      condensed statistics.</para>
+      stopping, etc.), guest BIOS messages, Guest Additions messages,
+      device-specific log entries and, at the end of execution, final guest
+      state and condensed statistics.</para>
 
       <para>In case of crashes, it is very important to collect <emphasis
       role="bold">crash dumps</emphasis>. This is true for both host and guest
@@ -144,25 +145,24 @@
       the VirtualBox website<footnote>
           <para><ulink
           url="http://www.virtualbox.org/wiki/Network_tips">http://www.virtualbox.org/wiki/Network_tips</ulink>.</para>
-        </footnote> for information on enabling this capture. Note that the
-      trace files created by VirtualBox are in .pcap format and can be easily
-      analyzed with Wireshark.</para>
+        </footnote> for information on enabling this capture. The trace files
+      created by VirtualBox are in <computeroutput>.pcap</computeroutput>
+      format and can be easily analyzed with Wireshark.</para>
     </sect2>
 
     <sect2>
       <title>The built-in VM debugger</title>
 
       <para>VirtualBox includes a built-in VM debugger, which advanced users
-      may find useful. This debugger allows the user to examine, and to some
-      extent, control, the VM state.<note>
+      may find useful. This debugger allows for examining and, to some extent,
+      controlling the VM state.<warning>
           <para>Use the VM debugger at your own risk. There is no support for
           it, and the following documentation is only made available for
           advanced users with a very high level of familiarity with the
           x86/AMD64 machine instruction set, as well as detailed knowledge of
           the PC architecture. A degree of familiarity with the internals of
-          the guest OS in question is not required, but may be very
-          helpful.</para>
-        </note></para>
+          the guest OS in question may also be very helpful.</para>
+        </warning></para>
 
       <para>The VM debugger is available in all regular production versions of
       VirtualBox, but it is disabled by default because the average user will
@@ -180,13 +180,12 @@
 
       <para>The debugger can be enabled in three ways:<itemizedlist>
           <listitem>
-            <para>Start the <computeroutput>VirtualBox</computeroutput>
-            process with a <computeroutput>--dbg</computeroutput>,
+            <para>Start the VM directly using <computeroutput>VirtualBox
+            --startvm</computeroutput>, with an additional
+            <computeroutput>--dbg</computeroutput>,
             <computeroutput>--debug</computeroutput>, or
             <computeroutput>--debug-command-line</computeroutput> argument.
-            See the VirtualBox usage help for details. Note that these
-            arguments are only useful when a VM is started immediately, using
-            the <computeroutput>--startvm</computeroutput> argument.</para>
+            See the VirtualBox usage help for details.</para>
           </listitem>
 
           <listitem>
@@ -895,15 +894,9 @@ VirtualBox</screen>
       (<computeroutput>vboxdrv</computeroutput>) refuses to load, i.e. you get
       an "Error inserting vboxdrv: Invalid argument", check (as root) the
       output of the <computeroutput>dmesg</computeroutput> command to find out
-      why the load failed. The most common reasons are:</para>
-
-      <itemizedlist>
-        <listitem>
-          <para>The kernel disagrees about the version of the gcc used to
-          compile the module. Make sure that you use the same compiler as used
-          to build the kernel.</para>
-        </listitem>
-      </itemizedlist>
+      why the load failed. Most probably the kernel disagrees with the version
+      of the gcc used to compile the module. Make sure that you use the same
+      compiler as used to build the kernel.</para>
     </sect2>
 
     <sect2>

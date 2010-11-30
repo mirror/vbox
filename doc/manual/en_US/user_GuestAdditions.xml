@@ -1243,10 +1243,9 @@ $</screen>
                 VirtualBox needs to replace Windows system files in the
                 virtual machine. As a result, the Guest Additions installation
                 program offers Direct 3D acceleration as an option that must
-                be explicitly enabled.</para>
-
-                <para>Also, you must install the Guest Additions in "Safe
-                Mode"; see <xref linkend="KnownIssues" /> for details.</para>
+                be explicitly enabled. Also, you must install the Guest
+                Additions in "Safe Mode"; see <xref linkend="KnownIssues" />
+                for details.</para>
               </note></para>
           </listitem>
 
@@ -1256,7 +1255,7 @@ $</screen>
             enabled</emphasis> in the VM settings (see <xref
             linkend="generalsettings" />).<note>
                 <para>Enabling 3D acceleration may expose security holes to
-                malicious software running the guest. The third-party code
+                malicious software running in the guest. The third-party code
                 that VirtualBox uses for this purpose (Chromium) is not
                 hardened enough to prevent every risky 3D operation on the
                 host.</para>
@@ -1271,8 +1270,9 @@ $</screen>
       hardware acceleration. When an application in the guest then requests
       hardware acceleration through the OpenGL or Direct3D programming
       interfaces, these are sent to the host through a special communication
-      tunnel implemented by VirtualBox, and then the host performs the
-      requested 3D operation via the host's programming interfaces.</para>
+      tunnel implemented by VirtualBox, and then the <emphasis>host</emphasis>
+      performs the requested 3D operation via the host's programming
+      interfaces.</para>
     </sect2>
 
     <sect2 id="guestadd-2d">
