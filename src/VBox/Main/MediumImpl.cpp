@@ -193,10 +193,19 @@ public:
           mMedium(aMedium),
           mMediumCaller(aMedium),
           mThread(NIL_RTTHREAD),
-          mProgress(aProgress)
+          mProgress(aProgress),
+          mVirtualBoxCaller(NULL)
     {
         AssertReturnVoidStmt(aMedium, mRC = E_FAIL);
         mRC = mMediumCaller.rc();
+        if (FAILED(mRC))
+            return;
+
+        /* Get strong VirtualBox reference, see below. */
+        VirtualBox *pVirtualBox = aMedium->m->pVirtualBox;
+        mVirtualBox = pVirtualBox;
+        mVirtualBoxCaller.attach(pVirtualBox);
+        mRC = mVirtualBoxCaller.rc();
         if (FAILED(mRC))
             return;
 
@@ -252,6 +261,14 @@ private:
 
     VDINTERFACE mVDIfProgress;
     VDINTERFACEPROGRESS mVDIfCallsProgress;
+
+    /* Must have a strong VirtualBox reference during a task otherwise the
+     * reference count might drop to 0 while a task is still running. This
+     * would result in weird behavior, including deadlocks due to uninit and
+     * locking order issues. The deadlock often is not detectable because the
+     * uninit uses event semaphores which sabotages deadlock detection. */
+    ComObjPtr<VirtualBox> mVirtualBox;
+    AutoCaller mVirtualBoxCaller;
 };
 
 class Medium::CreateBaseTask : public Medium::Task
