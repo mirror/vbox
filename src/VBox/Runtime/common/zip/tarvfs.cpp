@@ -1120,7 +1120,8 @@ static DECLCALLBACK(int) rtZipTarFssIos_PollOne(void *pvThis, uint32_t fEvents, 
 static DECLCALLBACK(int) rtZipTarFssIos_Tell(void *pvThis, PRTFOFF poffActual)
 {
     PRTZIPTARIOSTREAM pThis = (PRTZIPTARIOSTREAM)pvThis;
-    return pThis->offFile;
+    *poffActual = pThis->offFile;
+    return VINF_SUCCESS;
 }
 
 
@@ -1396,7 +1397,7 @@ static DECLCALLBACK(int) rtZipTarFss_Next(void *pvThis, char **ppszName, RTVFSOB
             pIosData->BaseObj.ObjInfo   = Info;
             pIosData->cbFile            = Info.cbObject;
             pIosData->offFile           = 0;
-            pIosData->cbPadding         = Info.cbAllocated - Info.cbObject;
+            pIosData->cbPadding         = (uint32_t)(Info.cbAllocated - Info.cbObject);
             pIosData->fEndOfStream      = false;
             pIosData->hVfsIos           = pThis->hVfsIos;
             RTVfsIoStrmRetain(pThis->hVfsIos);

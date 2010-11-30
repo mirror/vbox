@@ -957,6 +957,8 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
+    int const fdMax = (int)pThis->hNative + 1;
+    AssertReturn(fdMax - 1 == pThis->hNative, VERR_INTERNAL_ERROR_5);
 
     /*
      * Set up the file descriptor sets and do the select.
@@ -969,13 +971,13 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rc = select(pThis->hNative + 1, &fdsetR, NULL, &fdsetE, NULL);
+        rc = select(fdMax, &fdsetR, NULL, &fdsetE, NULL);
     else
     {
         struct timeval timeout;
         timeout.tv_sec = cMillies / 1000;
         timeout.tv_usec = (cMillies % 1000) * 1000;
-        rc = select(pThis->hNative + 1, &fdsetR, NULL, &fdsetE, &timeout);
+        rc = select(fdMax, &fdsetR, NULL, &fdsetE, &timeout);
     }
     if (rc > 0)
         rc = VINF_SUCCESS;
@@ -1000,6 +1002,8 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
     AssertPtrReturn(pfEvents, VERR_INVALID_PARAMETER);
     AssertReturn(!(fEvents & ~RTSOCKET_EVT_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
+    int const fdMax = (int)pThis->hNative + 1;
+    AssertReturn(fdMax - 1 == pThis->hNative, VERR_INTERNAL_ERROR_5);
 
     *pfEvents = 0;
 
@@ -1022,13 +1026,13 @@ RTDECL(int) RTSocketSelectOneEx(RTSOCKET hSocket, uint32_t fEvents, uint32_t *pf
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT)
-        rc = select(pThis->hNative + 1, &fdsetR, &fdsetW, &fdsetE, NULL);
+        rc = select(fdMax, &fdsetR, &fdsetW, &fdsetE, NULL);
     else
     {
         struct timeval timeout;
         timeout.tv_sec = cMillies / 1000;
         timeout.tv_usec = (cMillies % 1000) * 1000;
-        rc = select(pThis->hNative + 1, &fdsetR, &fdsetW, &fdsetE, &timeout);
+        rc = select(fdMax, &fdsetR, &fdsetW, &fdsetE, &timeout);
     }
     if (rc > 0)
     {

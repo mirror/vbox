@@ -3750,8 +3750,8 @@ DECLINLINE(void) rtLockValidatorRecSharedFreeOwner(PRTLOCKVALRECSHRDOWN pEntry)
             uintptr_t iEntry = pEntry - &pThread->LockValidator.aShrdOwners[0];
             AssertReleaseReturnVoid(iEntry < RT_ELEMENTS(pThread->LockValidator.aShrdOwners));
 
-            Assert(!ASMBitTest(&pThread->LockValidator.bmFreeShrdOwners, iEntry));
-            ASMAtomicBitSet(&pThread->LockValidator.bmFreeShrdOwners, iEntry);
+            Assert(!ASMBitTest(&pThread->LockValidator.bmFreeShrdOwners, (int32_t)iEntry));
+            ASMAtomicBitSet(&pThread->LockValidator.bmFreeShrdOwners, (int32_t)iEntry);
 
             rtThreadRelease(pThread);
         }

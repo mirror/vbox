@@ -195,7 +195,7 @@ static int rtThreadGetCurrentProcessorNumber(void)
 RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask)
 {
     Assert((DWORD_PTR)u64Mask == u64Mask || u64Mask == ~(uint64_t)0);
-    DWORD dwRet = SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR)u64Mask);
+    DWORD_PTR dwRet = SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR)u64Mask);
     if (dwRet)
         return VINF_SUCCESS;
 
@@ -215,10 +215,10 @@ RTR3DECL(uint64_t) RTThreadGetAffinity(void)
     if (GetProcessAffinityMask(GetCurrentProcess(), &dwProcAff, &dwIgnored))
     {
         HANDLE hThread = GetCurrentThread();
-        DWORD dwRet = SetThreadAffinityMask(hThread, dwProcAff);
+        DWORD_PTR dwRet = SetThreadAffinityMask(hThread, dwProcAff);
         if (dwRet)
         {
-            DWORD dwSet = SetThreadAffinityMask(hThread, dwRet);
+            DWORD_PTR dwSet = SetThreadAffinityMask(hThread, dwRet);
             Assert(dwSet == dwProcAff); NOREF(dwRet);
             return dwRet;
         }

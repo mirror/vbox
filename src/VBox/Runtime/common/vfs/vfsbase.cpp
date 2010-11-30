@@ -2123,8 +2123,8 @@ RTDECL(int) RTVfsIoStrmFlush(RTVFSIOSTREAM hVfsIos)
 }
 
 
-RTDECL(RTFOFF) RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                               uint32_t *pfRetEvents)
+RTDECL(int) RTVfsIoStrmPoll(RTVFSIOSTREAM hVfsIos, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
+                            uint32_t *pfRetEvents)
 {
     RTVFSIOSTREAMINTERNAL *pThis = hVfsIos;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -2184,7 +2184,7 @@ RTDECL(int) RTVfsIoStrmSkip(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
             rc = VINF_SUCCESS;
             while (cb > 0)
             {
-                size_t cbToRead = RT_MIN(cb, _64K);
+                size_t cbToRead = (size_t)RT_MIN(cb, _64K);
                 RTVfsLockAcquireWrite(pThis->Base.hLock);
                 rc = RTVfsIoStrmRead(hVfsIos, pvBuf, cbToRead, true /*fBlocking*/, NULL);
                 RTVfsLockReleaseWrite(pThis->Base.hLock);
@@ -2223,7 +2223,7 @@ RTDECL(int) RTVfsIoStrmZeroFill(RTVFSIOSTREAM hVfsIos, RTFOFF cb)
             rc = VINF_SUCCESS;
             while (cb > 0)
             {
-                size_t cbToWrite = RT_MIN(cb, _64K);
+                size_t cbToWrite = (size_t)RT_MIN(cb, _64K);
                 RTVfsLockAcquireWrite(pThis->Base.hLock);
                 rc = RTVfsIoStrmWrite(hVfsIos, pvBuf, cbToWrite, true /*fBlocking*/, NULL);
                 RTVfsLockReleaseWrite(pThis->Base.hLock);
