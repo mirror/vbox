@@ -95,6 +95,7 @@ rm -f \
   /usr/bin/virtualbox \
   /usr/share/pixmaps/VBox.png \
   /usr/share/applications/virtualbox.desktop \
+  /usr/share/mime/packages/virtualbox.xml \
   /usr/bin/rdesktop-vrdp \
   /usr/bin/virtualbox \
   /usr/bin/vboxmanage \
@@ -157,3 +158,4 @@ if [ -z "$VBOX_NO_UNINSTALL_MESSAGE" ]; then
     info "VirtualBox $INSTALL_VER$INSTALL_REV has been removed successfully."
     log "Successfully $INSTALL_VER$INSTALL_REV removed VirtualBox."
 fi
+update-mime-database /usr/share/mime >/dev/null 2>&1

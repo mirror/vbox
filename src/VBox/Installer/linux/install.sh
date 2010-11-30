@@ -385,6 +385,7 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
     ln -sf $INSTALLATION_DIR/VBox.png /usr/share/pixmaps/VBox.png
     ln -sf $INSTALLATION_DIR/virtualbox.desktop /usr/share/applications/virtualbox.desktop
+    ln -sf $INSTALLATION_DIR/virtualbox.xml /usr/share/mime/packages/virtualbox.xml
     ln -sf $INSTALLATION_DIR/rdesktop-vrdp /usr/bin/rdesktop-vrdp
     ln -sf $INSTALLATION_DIR/src/vboxhost /usr/src/vboxhost-_VERSION_
 
@@ -393,6 +394,26 @@ if [ "$ACTION" = "install" ]; then
     ln -sf VBoxManage /usr/bin/vboxmanage > /dev/null 2>&1
     ln -sf VBoxSDL /usr/bin/vboxsdl > /dev/null 2>&1
     ln -sf VBoxHeadless /usr/bin/vboxheadless > /dev/null 2>&1
+
+    # Icons
+    cur=`pwd`
+    cd $INSTALLATION_DIR/icons
+    for i in *; do
+        cd $i
+        if [ -d /usr/share/icons/hicolor/$i ]; then
+            for j in *; do
+                if [ -d /usr/share/icons/hicolor/$i/mimetypes ]; then
+                    ln -s $INSTALLATION_DIR/icons/$i/$j /usr/share/icons/hicolor/$i/mimetypes/$j
+                    echo /usr/share/icons/hicolor/$i/mimetypes/$j >> $CONFIG_DIR/$CONFIG_FILES
+                fi
+            done
+        fi
+        cd -
+    done
+    cd $cur
+
+    # Update the MIME database
+    update-mime-database /usr/share/mime 2>/dev/null
 
     # If Python is available, install Python bindings
     if [ -n "$PYTHON" ]; then
