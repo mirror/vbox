@@ -203,6 +203,7 @@
     <xsd:enumeration value="QNX"/>
     <xsd:enumeration value="MacOS"/>
     <xsd:enumeration value="MacOS_64"/>
+    <xsd:enumeration value="JRockitVE"/>
   </xsd:restriction>
 </xsd:simpleType>
 

@@ -14732,9 +14732,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="createAggregator">
       <desc>
-        Creates a aggregator event source, collecting events from multiple sources.
-        This way single listener can listen for events coming from multiple sources,
-        using single blocking getEvent() of this aggregator.
+        Creates an aggregator event source, collecting events from multiple sources.
+        This way a single listener can listen for events coming from multiple sources,
+        using a single blocking getEvent() on the returned aggregator.
       </desc>
       <param name="subordinates" type="IEventSource" dir="in" safearray="yes">
         <desc>
