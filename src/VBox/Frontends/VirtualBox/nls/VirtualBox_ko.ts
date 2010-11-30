@@ -2836,7 +2836,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>기본값으로 선택된 가상 머신 폴더를 표시합니다. 새 가상 머신을 만들 때 폴더를 지정하지 않으면 이 폴더를 사용합니다.</translation>
@@ -2910,7 +2910,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -2965,7 +2965,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -3110,7 +3110,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>호스트 전용 네트워크 정보</translation>
@@ -3205,7 +3205,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>선택하면 주기적으로 VirtualBox 웹 사이트에 연결하여 새 버전이 있는가를 검사합니다.</translation>
@@ -5740,7 +5740,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
         <translation>취소(&amp;C)</translation>
@@ -6693,7 +6693,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>선택하면 지정한 드라이버를 사용하여 호스트 오디오 카드와 통신하는 가상 PCI 오디오 카드를 가상 머신에 설치합니다.</translation>
@@ -6775,7 +6775,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>가상 머신을 전체 화면이나 심리스 모드로 전환하려면 가상 머신에 &lt;b&gt;%1&lt;/b&gt; 이상의 비디오 메모리를 할당해야 합니다.</translation>
@@ -7008,7 +7008,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
@@ -7235,7 +7235,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt;의 하드디스크가 선택되지 않았습니다</translation>
@@ -7534,7 +7534,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation>선택하면 가상 네트워크 어댑터를 가상 머신에 설치합니다.</translation>
@@ -7665,7 +7665,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation type="obsolete">브리지 네트워크 어댑터가 선택되지 않았음</translation>
@@ -7756,7 +7756,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -7812,7 +7812,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>포트 번호가 중복됩니다</translation>
@@ -7827,7 +7827,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">새 공유 폴더 추가하기(&amp;A)</translation>
@@ -7906,7 +7906,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>공유 추가</translation>
@@ -7945,7 +7945,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -8021,7 +8021,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>포트 번호가 중복됩니다</translation>
@@ -8036,7 +8036,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>컴퓨터 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
@@ -8214,7 +8214,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>빈 필터 추가하기(&amp;A)</translation>
@@ -8298,7 +8298,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

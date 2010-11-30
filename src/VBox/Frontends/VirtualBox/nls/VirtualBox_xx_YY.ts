@@ -1638,7 +1638,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="unfinished"></translation>
@@ -1704,7 +1704,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -1759,7 +1759,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -1904,7 +1904,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation type="unfinished"></translation>
@@ -1999,7 +1999,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation type="unfinished"></translation>
@@ -4259,7 +4259,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>A few seconds remaining</source>
         <translation type="unfinished"></translation>
@@ -5005,7 +5005,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation type="unfinished"></translation>
@@ -5032,7 +5032,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="unfinished"></translation>
@@ -5210,7 +5210,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="unfinished"></translation>
@@ -5285,7 +5285,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
         <translation type="unfinished"></translation>
@@ -5524,7 +5524,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation type="unfinished"></translation>
@@ -5604,7 +5604,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -5652,7 +5652,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation type="unfinished"></translation>
@@ -5667,7 +5667,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>Adds a new shared folder definition.</source>
         <translation type="unfinished"></translation>
@@ -5734,7 +5734,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation type="unfinished"></translation>
@@ -5773,7 +5773,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -5837,7 +5837,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation type="unfinished"></translation>
@@ -5852,7 +5852,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation type="unfinished"></translation>
@@ -6013,7 +6013,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation type="unfinished"></translation>
@@ -6097,7 +6097,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

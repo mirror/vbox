@@ -2805,7 +2805,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Показва пътя до папката по подразбиране за виртуалните машини. Тази папка се използва, ако не е специално указана друга, когато се създават виртуални машини.</translation>
@@ -2879,7 +2879,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -2934,7 +2934,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -3079,7 +3079,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>Детайли на мрежа само-хост</translation>
@@ -3174,7 +3174,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Когато е избрано, програмата периодично ще се свързва към сайта на VirtualBox и ще проверява дали е налична нова версия на VirtualBox.</translation>
@@ -5691,7 +5691,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
         <translation>&amp;Отказ</translation>
@@ -6725,7 +6725,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Когато е избрано, виртуалната PCI звукова карта се свързва към виртуалната машина, която използва указания драйвер за комуникация с реалната звукова карта.</translation>
@@ -6807,7 +6807,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>Задали сте по-малко от &lt;b&gt;%1&lt;/b&gt; за видео памет, което е минималното количество, нужно за превключването на виртуалната машина на цял екран или в безрамков режим.</translation>
@@ -7040,7 +7040,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;МБ&lt;/qt&gt;</translation>
@@ -7267,7 +7267,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">Не е избран твърд диск за &lt;i&gt;%1&lt;/i&gt;</translation>
@@ -7566,7 +7566,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
         <translation>Когато е избрано, включва този виртуален мрежов адаптер към виртуалната машина.</translation>
@@ -7650,7 +7650,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>Guest &amp;MAC Address:</source>
         <translation type="obsolete">Виртуален &amp;MAC адрес:</translation>
@@ -7677,7 +7677,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -7733,7 +7733,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Избран е повтарящ се номер на порт</translation>
@@ -7748,7 +7748,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">&amp;Добавяне на нова споделена папка</translation>
@@ -7827,7 +7827,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Добавяне на споделена папка</translation>
@@ -7866,7 +7866,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -7942,7 +7942,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>Избран е повтарящ се номер на порт</translation>
@@ -7957,7 +7957,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>Задали сте повече от &lt;b&gt;%1&lt;/b&gt; от паметта на компютъра (&lt;b&gt;%2&lt;/b&gt;) за виртуалната машина. Не остава достатъчно памет за реалната операционна система. Моля, изберете по-малко количество.</translation>
@@ -8135,7 +8135,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Добавяне на празен филтър</translation>
@@ -8219,7 +8219,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>

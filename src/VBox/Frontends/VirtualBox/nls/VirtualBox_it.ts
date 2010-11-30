@@ -3707,7 +3707,7 @@ Versione %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsGeneral</name>
+    <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visualizza il percorso della cartella predefinita per le VDI. Questa cartella viene utilizzata, se non diversamente specificato, quando vengono aggiunti o creati hard disk virtuali.</translation>
@@ -3785,7 +3785,7 @@ Versione %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsLanguage</name>
+    <name>UIGlobalSettingsLanguage</name>
     <message>
         <source> (built-in)</source>
         <comment>Language</comment>
@@ -3840,7 +3840,7 @@ Versione %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetwork</name>
+    <name>UIGlobalSettingsNetwork</name>
     <message>
         <source>%1 network</source>
         <comment>&lt;adapter name&gt; network</comment>
@@ -3985,7 +3985,7 @@ Versione %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsNetworkDetails</name>
+    <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
         <translation>Dettagli rete solo-host</translation>
@@ -4080,7 +4080,7 @@ Versione %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxGLSettingsUpdate</name>
+    <name>UIGlobalSettingsUpdate</name>
     <message>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
         <translation>Se marcata, l&apos;applicazione si collegherà periodicamente al sito web di VirtualBox e verificherà la disponibilità di una nuova versione di VirtualBox.</translation>
@@ -7513,7 +7513,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxProgressDialog</name>
+    <name>UIProgressDialog</name>
     <message>
         <source>&amp;Cancel</source>
         <translation>A&amp;nnulla</translation>
@@ -9484,7 +9484,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsAudio</name>
+    <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
         <translation>Se marcata, la scheda audio PCI virtuale viene collegata alla macchina virtuale che sfrutta il driver specificato per comunicare con la scheda audio dell&apos;host.</translation>
@@ -9570,7 +9570,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsDisplay</name>
+    <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation>hai assegnato meno di &lt;b&gt;%1&lt;/b&gt; alla memoria video che è il minimo richiesto per passare alla modalità a schermo intero o a quella trasparente.</translation>
@@ -10769,7 +10769,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsGeneral</name>
+    <name>UIMachineSettingsGeneral</name>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
@@ -11008,7 +11008,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsHD</name>
+    <name>UIMachineSettingsStorage</name>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;</source>
         <translation type="obsolete">Nessun disco fisso selezionato per &lt;i&gt;%1&lt;/i&gt;</translation>
@@ -11315,7 +11315,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetwork</name>
+    <name>UIMachineSettingsNetwork</name>
     <message>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Seleziona l&apos;applicazione d&apos;installazione del TAP</translation>
@@ -11514,7 +11514,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkDetails</name>
+    <name>UIMachineSettingsNetworkDetails</name>
     <message>
         <source>no bridged network adapter is selected</source>
         <translation type="obsolete">non è selezionata alcuna scheda di rete con bridge</translation>
@@ -11605,7 +11605,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsNetworkPage</name>
+    <name>UIMachineSettingsNetworkPage</name>
     <message>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Non è stata selezionata alcuna interfaccia di rete dell&apos;host</translation>
@@ -11616,7 +11616,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallel</name>
+    <name>UIMachineSettingsParallel</name>
     <message>
         <source>Port %1</source>
         <comment>parallel ports</comment>
@@ -11672,7 +11672,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsParallelPage</name>
+    <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>È stato selezionato un numero di porta duplicato </translation>
@@ -11687,7 +11687,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSF</name>
+    <name>UIMachineSettingsSF</name>
     <message>
         <source>&amp;Add New Shared Folder</source>
         <translation type="obsolete">&amp;Aggiungi nuova cartella condivisa</translation>
@@ -11766,7 +11766,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSFDetails</name>
+    <name>UIMachineSettingsSFDetails</name>
     <message>
         <source>Add Share</source>
         <translation>Aggiungi condivisione</translation>
@@ -11805,7 +11805,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerial</name>
+    <name>UIMachineSettingsSerial</name>
     <message>
         <source>Port %1</source>
         <comment>serial ports</comment>
@@ -11881,7 +11881,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSerialPage</name>
+    <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
         <translation>È stato selezionato un numero di porta duplicato </translation>
@@ -11896,7 +11896,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsSystem</name>
+    <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation>hai assegnato più di &lt;b&gt;%1%&lt;/b&gt; della memoria del computer (&lt;b&gt;%2&lt;/b&gt;) alla macchina virtuale. Non è rimasta memoria sufficiente per il sistema operativo host. Seleziona una quantità minore.</translation>
@@ -12074,7 +12074,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSB</name>
+    <name>UIMachineSettingsUSB</name>
     <message>
         <source>&amp;Add Empty Filter</source>
         <translation>&amp;Aggiungi un filtro vuoto</translation>
@@ -12158,7 +12158,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
     </message>
 </context>
 <context>
-    <name>VBoxVMSettingsUSBFilterDetails</name>
+    <name>UIMachineSettingsUSBFilterDetails</name>
     <message>
         <source>Any</source>
         <comment>remote</comment>
