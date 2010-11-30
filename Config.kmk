@@ -712,6 +712,7 @@ ifdef VBOX_ONLY_EXTPACKS
  VBOX_WITH_DEBUGGER =
  VBOX_WITH_ADDITIONS =
  VBOX_WITH_VBOXDRV =
+ VBOX_WITH_TESTCASES =
 endif
 
 # VBOX_QUICK can be used by core developers to speed to the build
