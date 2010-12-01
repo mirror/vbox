@@ -186,9 +186,15 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
         if (fIsWindows)
         {
             if (osType.contains("64", Utf8Str::CaseInsensitive))
+            {
+                LogRel(("Automatic update of Windows guest (64-bit) selected\n"));
                 installerImage = "VBOXWINDOWSADDITIONS_AMD64.EXE";
+            }
             else
+            {
+                LogRel(("Automatic update of Windows guest (32-bit) selected\n"));
                 installerImage = "VBOXWINDOWSADDITIONS_X86.EXE";
+            }
             /* Since the installers are located in the root directory,
              * no further path processing needs to be done (yet). */
         }
@@ -498,7 +504,7 @@ HRESULT Guest::taskUpdateGuestAdditions(TaskGuest *aTask)
             aTask->progress->notifyComplete(VBOX_E_IPRT_ERROR,
                                             COM_IIDOF(IGuest),
                                             Guest::getStaticComponentName(),
-                                            "Automatic Guest Additions update was canceled");
+                                            Guest::tr("Automatic Guest Additions update was canceled"));
     }
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
@@ -615,7 +621,7 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    // redirect the call to IMachine if no additions are installed
+    /* Redirect the call to IMachine if no additions are installed. */
     if (mData.mAdditionsVersion.isEmpty())
         return mParent->machine()->COMGETTER(OSTypeId)(aOSTypeId);
 
@@ -2544,8 +2550,13 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
         }
     }
 
-    HRESULT rc = S_OK;
+    /**
+     * @todo We return a progress object because we maybe later want to
+     *       process more than one directory (or somewhat lengthly operations)
+     *       that require having a progress object provided to the caller.
+     */
 
+    HRESULT rc = S_OK;
     try
     {
         Utf8Str Utf8Directory(aDirectory);
@@ -2558,12 +2569,12 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
         /*
          * Prepare tool command line.
          */
-        args.push_back(Bstr(VBOXSERVICE_TOOL_CAT).raw()); /* The actual (internal) tool to use (as argv[0]). */
+        args.push_back(Bstr(VBOXSERVICE_TOOL_MKDIR).raw()); /* The actual (internal) tool to use (as argv[0]). */
         if (aFlags & CreateDirectoryFlag_Parents)
-            args.push_back(Bstr("--parents").raw());      /* We also want to create the parent directories. */
+            args.push_back(Bstr("--parents").raw());        /* We also want to create the parent directories. */
         if (aMode > 0)
         {
-            args.push_back(Bstr("--mode").raw());         /* Set the creation mode. */
+            args.push_back(Bstr("--mode").raw());           /* Set the creation mode. */
 
             char szMode[16];
             if (RTStrPrintf(szMode, sizeof(szMode), "%o", aMode))
@@ -2576,18 +2587,18 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
         /*
          * Execute guest process.
          */
-        ComPtr<IProgress> execProgress;
+        ComPtr<IProgress> progressExec;
         ULONG uPID;
         if (SUCCEEDED(rc))
         {
-            rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_CAT).raw(),
+            rc = ExecuteProcess(Bstr(VBOXSERVICE_TOOL_MKDIR).raw(),
                                 ExecuteProcessFlag_None,
                                 ComSafeArrayAsInParam(args),
                                 ComSafeArrayAsInParam(env),
                                 Bstr(Utf8UserName).raw(),
                                 Bstr(Utf8Password).raw(),
                                 5 * 1000 /* Wait 5s for getting the process started. */,
-                                &uPID, execProgress.asOutParam());
+                                &uPID, progressExec.asOutParam());
         }
 
         if (SUCCEEDED(rc))
@@ -2596,22 +2607,52 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
             BOOL fCompleted = FALSE;
             BOOL fCanceled = FALSE;
 
-            while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
+            while (   SUCCEEDED(progressExec->COMGETTER(Completed(&fCompleted)))
                    && !fCompleted)
             {
                 /* Progress canceled by Main API? */
-                if (   SUCCEEDED(execProgress->COMGETTER(Canceled(&fCanceled)))
+                if (   SUCCEEDED(progressExec->COMGETTER(Canceled(&fCanceled)))
                     && fCanceled)
                 {
                     break;
                 }
             }
 
+            ComObjPtr<Progress> progressCreate;
+            rc = progressCreate.createObject();
             if (SUCCEEDED(rc))
             {
-                /* Return the progress to the caller. */
-                execProgress.queryInterfaceTo(aProgress);
+                rc = progressCreate->init(static_cast<IGuest*>(this),
+                                          Bstr(tr("Creating directory")).raw(),
+                                          TRUE);
             }
+            if (FAILED(rc)) return rc;
+
+            if (fCompleted)
+            {
+                ULONG uRetStatus, uRetExitCode, uRetFlags;
+                if (SUCCEEDED(rc))
+                {
+                    rc = GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &uRetStatus);
+                    if (uRetExitCode == 0)
+                    {
+                        progressCreate->notifyComplete(S_OK);
+                    }
+                    else
+                        progressCreate->notifyComplete(VBOX_E_IPRT_ERROR,
+                                                       COM_IIDOF(IGuest),
+                                                       Guest::getStaticComponentName(),
+                                                       Guest::tr("Error while creating directory"));
+                }
+            }
+            else
+                progressCreate->notifyComplete(VBOX_E_IPRT_ERROR,
+                                               COM_IIDOF(IGuest),
+                                               Guest::getStaticComponentName(),
+                                               Guest::tr("Error while executing creation command"));
+
+            /* Return the progress to the caller. */
+            progressCreate.queryInterfaceTo(aProgress);
         }
     }
     catch (std::bad_alloc &)
@@ -2764,7 +2805,7 @@ void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aR
     if (!aVersionName.isEmpty())
         /*
          * aVersionName could be "x.y.z_BETA1_FOOBAR", so append revision manually to
-         * become "x.y.z_BETA1_FOOBARr12345".
+         * become "x.y.z_BETA1_FOOBAR r12345".
          */
         mData.mAdditionsVersion = BstrFmt("%ls r%ls", aVersionName.raw(), aRevision.raw());
     else /* aAdditionsVersion is in x.y.zr12345 format. */
