@@ -39,6 +39,7 @@
 #include <iprt/stream.h>
 #include <iprt/vfs.h>
 #include <iprt/zip.h>
+#include <iprt/cpp/ministring.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -938,9 +939,11 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExt
  * @param   hTarballFile        The handle to open the @a pszTarball file.
  * @param   hTarballFileOpt     The tarball file handle (optional).
  * @param   pszName             The extension pack name.
+ * @param   pszMangledName      The mangled extension pack name.
  */
 static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, const char *pszTarball,
-                             RTFILE hTarballFile, RTFILE hTarballFileOpt, const char *pszName)
+                             RTFILE hTarballFile, RTFILE hTarballFileOpt,
+                             const char *pszName, const char *pszMangledName)
 {
     /*
      * Do some basic validation of the tarball file.
@@ -967,13 +970,13 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
      * Construct the paths to the two directories we'll be using.
      */
     char szFinalPath[RTPATH_MAX];
-    rc = RTPathJoin(szFinalPath, sizeof(szFinalPath), pszBaseDir, pszName);
+    rc = RTPathJoin(szFinalPath, sizeof(szFinalPath), pszBaseDir, pszMangledName);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE,
                               "Failed to construct the path to the final extension pack directory: %Rrc", rc);
 
     char szTmpPath[RTPATH_MAX];
-    rc = RTPathJoin(szTmpPath, sizeof(szTmpPath) - 64, pszBaseDir, pszName);
+    rc = RTPathJoin(szTmpPath, sizeof(szTmpPath) - 64, pszBaseDir, pszMangledName);
     if (RT_SUCCESS(rc))
     {
         size_t cchTmpPath = strlen(szTmpPath);
@@ -1145,13 +1148,23 @@ static RTEXITCODE DoInstall(int argc, char **argv)
     /*
      * Ok, down to business.
      */
-    RTFILE hTarballFile;
-    rc = RTFileOpen(&hTarballFile, pszTarball, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open the extension pack tarball: %Rrc ('%s')", rc, pszTarball);
+    iprt::MiniString *pstrMangledName = VBoxExtPackMangleName(pszName);
+    if (!pstrMangledName)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to mangle name ('%s)", pszName);
 
-    RTEXITCODE rcExit = DoInstall2(pszBaseDir, pszCertDir, pszTarball, hTarballFile, hTarballFileOpt, pszName);
-    RTFileClose(hTarballFile);
+    RTEXITCODE  rcExit;
+    RTFILE      hTarballFile;
+    rc = RTFileOpen(&hTarballFile, pszTarball, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        rcExit = DoInstall2(pszBaseDir, pszCertDir, pszTarball, hTarballFile, hTarballFileOpt,
+                            pszName, pstrMangledName->c_str());
+        RTFileClose(hTarballFile);
+    }
+    else
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open the extension pack tarball: %Rrc ('%s')", rc, pszTarball);
+
+    delete pstrMangledName;
     return rcExit;
 }
 
@@ -1219,11 +1232,20 @@ static RTEXITCODE DoUninstall(int argc, char **argv)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing --base-dir option");
 
     /*
+     * Mangle the name so we can construct the directory names.
+     */
+    iprt::MiniString *pstrMangledName = VBoxExtPackMangleName(pszName);
+    if (!pstrMangledName)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to mangle name ('%s)", pszName);
+    iprt::MiniString strMangledName(*pstrMangledName);
+    delete pstrMangledName;
+
+    /*
      * Ok, down to business.
      */
     /* Check that it exists. */
     char szExtPackDir[RTPATH_MAX];
-    rc = RTPathJoin(szExtPackDir, sizeof(szExtPackDir), pszBaseDir, pszName);
+    rc = RTPathJoin(szExtPackDir, sizeof(szExtPackDir), pszBaseDir, strMangledName.c_str());
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to construct extension pack path: %Rrc", rc);
 
@@ -1236,7 +1258,7 @@ static RTEXITCODE DoUninstall(int argc, char **argv)
     /* Rename the extension pack directory before deleting it to prevent new
        VM processes from picking it up. */
     char szExtPackUnInstDir[RTPATH_MAX];
-    rc = RTPathJoin(szExtPackUnInstDir, sizeof(szExtPackUnInstDir), pszBaseDir, pszName);
+    rc = RTPathJoin(szExtPackUnInstDir, sizeof(szExtPackUnInstDir), pszBaseDir, strMangledName.c_str());
     if (RT_SUCCESS(rc))
         rc = RTStrCat(szExtPackUnInstDir, sizeof(szExtPackUnInstDir), "-_-uninst");
     if (RT_FAILURE(rc))
@@ -1324,24 +1346,49 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTDirReadEx returns %Rrc", rc);
             break;
         }
+
+        /*
+         * Only directories which conform with our mangling and temporary
+         * install/uninstall naming scheme are candidates for cleaning.
+         */
         if (   RTFS_IS_DIRECTORY(Entry.Info.Attr.fMode)
             && strcmp(Entry.szName, ".")  != 0
-            && strcmp(Entry.szName, "..") != 0
-            && !VBoxExtPackIsValidName(Entry.szName) )
+            && strcmp(Entry.szName, "..") != 0)
         {
-            char szPath[RTPATH_MAX];
-            rc = RTPathJoin(szPath, sizeof(szPath), pszBaseDir, Entry.szName);
-            if (RT_SUCCESS(rc))
+            bool fTemporary = false;
+            bool fCandidate = VBoxExtPackIsValidMangledName(Entry.szName);
+            if (!fCandidate)
             {
-                RTEXITCODE rcExit2 = RemoveExtPackDir(szPath, true /*fTemporary*/);
-                if (rcExit2 == RTEXITCODE_SUCCESS)
-                    RTMsgInfo("Successfully removed '%s'.", Entry.szName);
-                else if (rcExit == RTEXITCODE_SUCCESS)
-                    rcExit = rcExit2;
+                char *pszMarker = strstr(Entry.szName, "-_-");
+                if (   pszMarker
+                    && (   !strcmp(pszMarker, "-_-uninst")
+                        || !strncmp(pszMarker, "-_-inst", sizeof("-_-inst") - 1)))
+                {
+                    *pszMarker = '\0';
+                    fCandidate = VBoxExtPackIsValidMangledName(Entry.szName);
+                    *pszMarker = '-';
+                    fTemporary = true;
+                }
             }
-            else
-                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathJoin failed with %Rrc for '%s'", rc, Entry.szName);
-            cCleaned++;
+            if (fCandidate)
+            {
+                /*
+                 * Recursive delete, safe.
+                 */
+                char szPath[RTPATH_MAX];
+                rc = RTPathJoin(szPath, sizeof(szPath), pszBaseDir, Entry.szName);
+                if (RT_SUCCESS(rc))
+                {
+                    RTEXITCODE rcExit2 = RemoveExtPackDir(szPath, fTemporary);
+                    if (rcExit2 == RTEXITCODE_SUCCESS)
+                        RTMsgInfo("Successfully removed '%s'.", Entry.szName);
+                    else if (rcExit == RTEXITCODE_SUCCESS)
+                        rcExit = rcExit2;
+                }
+                else
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathJoin failed with %Rrc for '%s'", rc, Entry.szName);
+                cCleaned++;
+            }
         }
     }
     RTDirClose(pDir);

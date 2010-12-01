@@ -47,7 +47,7 @@ public:
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     init(VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const char *a_pszParentDir);
+    HRESULT     initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const char *a_pszDir);
     void        uninit();
     /** @}  */
 

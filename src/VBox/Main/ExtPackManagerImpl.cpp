@@ -134,7 +134,7 @@ DEFINE_EMPTY_CTOR_DTOR(ExtPack)
 /**
  * Called by ComObjPtr::createObject when creating the object.
  *
- * Just initialize the basic object state, do the rest in init().
+ * Just initialize the basic object state, do the rest in initWithDir().
  *
  * @returns S_OK.
  */
@@ -152,9 +152,9 @@ HRESULT ExtPack::FinalConstruct()
  * @param   a_pszName       The name of the extension pack.  This is also the
  *                          name of the subdirector under @a a_pszParentDir
  *                          where the extension pack is installed.
- * @param   a_pszParentDir  The parent directory.
+ * @param   a_pszDir        The extension pack directory name.
  */
-HRESULT ExtPack::init(VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const char *a_pszParentDir)
+HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const char *a_pszDir)
 {
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -182,18 +182,14 @@ HRESULT ExtPack::init(VBOXEXTPACKCTX a_enmContext, const char *a_pszName, const 
     };
 
     /*
-     * Figure out where we live and allocate + initialize our private data.
+     * Allocate + initialize our private data.
      */
-    char szDir[RTPATH_MAX];
-    int vrc = RTPathJoin(szDir, sizeof(szDir), a_pszParentDir, a_pszName);
-    AssertLogRelRCReturn(vrc, E_FAIL);
-
     m = new Data;
     m->Desc.strName                 = a_pszName;
     RT_ZERO(m->ObjInfoDesc);
     m->fUsable                      = false;
     m->strWhyUnusable               = tr("ExtPack::init failed");
-    m->strExtPackPath               = szDir;
+    m->strExtPackPath               = a_pszDir;
     RT_ZERO(m->ObjInfoExtPack);
     m->strMainModPath.setNull();
     RT_ZERO(m->ObjInfoMainMod);
@@ -1216,20 +1212,36 @@ HRESULT ExtPackManager::init(VirtualBox *a_pVirtualBox, const char *a_pszDropZon
             if (   RTFS_IS_DIRECTORY(Entry.Info.Attr.fMode)
                 && strcmp(Entry.szName, ".")  != 0
                 && strcmp(Entry.szName, "..") != 0
-                && VBoxExtPackIsValidName(Entry.szName) )
+                && VBoxExtPackIsValidMangledName(Entry.szName) )
             {
                 /*
                  * All directories are extensions, the shall be nothing but
                  * extensions in this subdirectory.
                  */
-                ComObjPtr<ExtPack> NewExtPack;
-                HRESULT hrc2 = NewExtPack.createObject();
-                if (SUCCEEDED(hrc2))
-                    hrc2 = NewExtPack->init(a_enmContext, Entry.szName, szBaseDir);
-                if (SUCCEEDED(hrc2))
-                    m->llInstalledExtPacks.push_back(NewExtPack);
-                else if (SUCCEEDED(rc))
-                    hrc = hrc2;
+                char szExtPackDir[RTPATH_MAX];
+                vrc = RTPathJoin(szExtPackDir, sizeof(szExtPackDir), m->strBaseDir.c_str(), Entry.szName);
+                AssertLogRelRC(vrc);
+                if (RT_SUCCESS(vrc))
+                {
+                    iprt::MiniString *pstrName = VBoxExtPackUnmangleName(Entry.szName, RTSTR_MAX);
+                    AssertLogRel(pstrName);
+                    if (pstrName)
+                    {
+                        ComObjPtr<ExtPack> NewExtPack;
+                        HRESULT hrc2 = NewExtPack.createObject();
+                        if (SUCCEEDED(hrc2))
+                            hrc2 = NewExtPack->initWithDir(a_enmContext, pstrName->c_str(), szExtPackDir);
+                        delete pstrName;
+                        if (SUCCEEDED(hrc2))
+                            m->llInstalledExtPacks.push_back(NewExtPack);
+                        else if (SUCCEEDED(rc))
+                            hrc = hrc2;
+                    }
+                    else
+                        hrc = E_UNEXPECTED;
+                }
+                else
+                    hrc = E_UNEXPECTED;
             }
         }
         RTDirClose(pDir);
@@ -1341,8 +1353,10 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                 {
                     /*
                      * Derive the name of the extension pack from the file
-                     * name.  Certain restrictions are here placed on the
-                     * tarball name.
+                     * name, saving us the trouble of having to unpack it and
+                     * parse its XML to figure it out.   While this restricts
+                     * the filename a bit, it also forces it to be clearer, so
+                     * it shouldn't really be a problem.
                      */
                     iprt::MiniString *pStrName = VBoxExtPackExtractNameFromTarballPath(strTarball.c_str());
                     if (pStrName)
@@ -1371,6 +1385,7 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                                                         "--tarball",    strTarball.c_str(),
                                                         "--tarball-fd", &szTarballFd[0],
                                                         NULL);
+                            RTFileClose(hFile); hFile = NIL_RTFILE;
                             if (SUCCEEDED(hrc))
                             {
                                 hrc = refreshExtPack(pStrName->c_str(), true /*a_fUnsuableIsError*/, &pExtPack);
@@ -1378,6 +1393,11 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                                 {
                                     LogRel(("ExtPackManager: Successfully installed extension pack '%s'.\n", pStrName->c_str()));
                                     pExtPack->callInstalledHook(m->pVirtualBox, &autoLock);
+
+                                    /*
+                                     * Finally, return the name.
+                                     */
+                                    hrc = pExtPack->COMGETTER(Name)(a_pbstrName);
                                 }
                             }
                             else
@@ -1743,7 +1763,7 @@ ExtPack *ExtPackManager::findExtPack(const char *a_pszName)
         ExtPack::Data *pExtPackData = (*it)->m;
         if (   pExtPackData
             && pExtPackData->Desc.strName.length() == cchName
-            && pExtPackData->Desc.strName.compare(a_pszName, iprt::MiniString::CaseInsensitive) == 0)
+            && pExtPackData->Desc.strName.equalsIgnoreCase(a_pszName))
             return (*it);
     }
     return NULL;
@@ -1767,7 +1787,7 @@ void ExtPackManager::removeExtPack(const char *a_pszName)
         ExtPack::Data *pExtPackData = (*it)->m;
         if (   pExtPackData
             && pExtPackData->Desc.strName.length() == cchName
-            && pExtPackData->Desc.strName.compare(a_pszName, iprt::MiniString::CaseInsensitive) == 0)
+            && pExtPackData->Desc.strName.equalsIgnoreCase(a_pszName))
         {
             m->llInstalledExtPacks.erase(it);
             return;
@@ -1821,10 +1841,10 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
     {
         /*
          * Does the dir exist?  Make some special effort to deal with case
-         * sensitivie file systems (a_pszName is case insensitive).
+         * sensitivie file systems (a_pszName is case insensitive and mangled).
          */
         char szDir[RTPATH_MAX];
-        int vrc = RTPathJoin(szDir, sizeof(szDir), m->strBaseDir.c_str(), a_pszName);
+        int vrc = VBoxExtPackCalcDir(szDir, sizeof(szDir), m->strBaseDir.c_str(), a_pszName);
         AssertLogRelRCReturn(vrc, E_FAIL);
 
         RTDIRENTRYEX    Entry;
@@ -1837,6 +1857,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
             vrc = RTDirOpen(&pDir, m->strBaseDir.c_str());
             if (RT_SUCCESS(vrc))
             {
+                const char *pszMangledName = RTPathFilename(szDir);
                 for (;;)
                 {
                     vrc = RTDirReadEx(pDir, &Entry, NULL /*pcbDirEntry*/, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
@@ -1846,7 +1867,7 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
                         break;
                     }
                     if (   RTFS_IS_DIRECTORY(Entry.Info.Attr.fMode)
-                        && !RTStrICmp(Entry.szName, a_pszName))
+                        && !RTStrICmp(Entry.szName, pszMangledName))
                     {
                         /*
                          * The installed extension pack has a uses different case.
@@ -1867,19 +1888,19 @@ HRESULT ExtPackManager::refreshExtPack(const char *a_pszName, bool a_fUnsuableIs
             /*
              * We've got something, create a new extension pack object for it.
              */
-            ComObjPtr<ExtPack> NewExtPack;
-            hrc = NewExtPack.createObject();
+            ComObjPtr<ExtPack> ptrNewExtPack;
+            hrc = ptrNewExtPack.createObject();
             if (SUCCEEDED(hrc))
-                hrc = NewExtPack->init(m->enmContext, a_pszName, m->strBaseDir.c_str());
+                hrc = ptrNewExtPack->initWithDir(m->enmContext, a_pszName, szDir);
             if (SUCCEEDED(hrc))
             {
-                m->llInstalledExtPacks.push_back(NewExtPack);
-                if (NewExtPack->m->fUsable)
+                m->llInstalledExtPacks.push_back(ptrNewExtPack);
+                if (ptrNewExtPack->m->fUsable)
                     LogRel(("ExtPackManager: Found extension pack '%s'.\n", a_pszName));
                 else
                     LogRel(("ExtPackManager: Found bad extension pack '%s': %s\n",
-                            a_pszName, NewExtPack->m->strWhyUnusable.c_str() ));
-                pExtPack = NewExtPack;
+                            a_pszName, ptrNewExtPack->m->strWhyUnusable.c_str() ));
+                pExtPack = ptrNewExtPack;
             }
         }
         else

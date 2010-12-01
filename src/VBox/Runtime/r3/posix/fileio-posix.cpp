@@ -346,6 +346,8 @@ RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess)
 
 RTR3DECL(int)  RTFileClose(RTFILE File)
 {
+    if (File == NIL_RTFILE)
+        return VINF_SUCCESS;
     if (close((int)File) == 0)
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);
