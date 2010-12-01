@@ -292,6 +292,7 @@ struct VRDESettings
     bool            fEnabled;
     AuthType_T      authType;
     uint32_t        ulAuthTimeout;
+    com::Utf8Str    strAuthLibrary;
     bool            fAllowMultiConnection,
                     fReuseSingleConnection,
                     fVideoChannel;

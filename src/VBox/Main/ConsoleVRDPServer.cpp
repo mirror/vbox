@@ -1489,18 +1489,8 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
     if (!mAuthLibrary)
     {
         /* Load the external authentication library. */
-
-        ComPtr<IMachine> machine;
-        mConsole->COMGETTER(Machine)(machine.asOutParam());
-
-        ComPtr<IVirtualBox> virtualBox;
-        machine->COMGETTER(Parent)(virtualBox.asOutParam());
-
-        ComPtr<ISystemProperties> systemProperties;
-        virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-
         Bstr authLibrary;
-        systemProperties->COMGETTER(VRDEAuthLibrary)(authLibrary.asOutParam());
+        mConsole->getVRDEServer()->COMGETTER(AuthLibrary)(authLibrary.asOutParam());
 
         Utf8Str filename = authLibrary;
 

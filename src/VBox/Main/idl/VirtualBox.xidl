@@ -12630,7 +12630,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVRDEServer" extends="$unknown"
-    uuid="468ab3d3-4808-489e-a301-05d60e959fbc"
+    uuid="444e5d4a-ecd9-4c38-af95-a2fbfd69b486"
     wsmap="managed"
     >
     <attribute name="enabled" type="boolean">
@@ -12676,6 +12676,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         The name of Extension Pack providing VRDE for this VM.  Overrides
         <link to="ISystemProperties::defaultVRDEExtPack"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="AuthLibrary" type="wstring">
+      <desc>
+        Library used for authentication of RDP clients by this VM. Overrides
+        <link to="ISystemProperties::VRDEAuthLibrary"/>.
       </desc>
     </attribute>
 

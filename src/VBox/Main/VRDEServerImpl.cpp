@@ -86,6 +86,7 @@ HRESULT VRDEServer::init (Machine *aParent)
 
     mData->mAuthType             = AuthType_Null;
     mData->mAuthTimeout          = 0;
+    mData->mAuthLibrary.setNull();
     mData->mEnabled              = FALSE;
     mData->mAllowMultiConnection = FALSE;
     mData->mReuseSingleConnection = FALSE;
@@ -205,6 +206,7 @@ HRESULT VRDEServer::loadSettings(const settings::VRDESettings &data)
     mData->mEnabled = data.fEnabled;
     mData->mAuthType = data.authType;
     mData->mAuthTimeout = data.ulAuthTimeout;
+    mData->mAuthLibrary = data.strAuthLibrary;
     mData->mAllowMultiConnection = data.fAllowMultiConnection;
     mData->mReuseSingleConnection = data.fReuseSingleConnection;
     mData->mVideoChannel = data.fVideoChannel;
@@ -231,6 +233,7 @@ HRESULT VRDEServer::saveSettings(settings::VRDESettings &data)
 
     data.fEnabled = !!mData->mEnabled;
     data.authType = mData->mAuthType;
+    data.strAuthLibrary = mData->mAuthLibrary;
     data.ulAuthTimeout = mData->mAuthTimeout;
     data.fAllowMultiConnection = !!mData->mAllowMultiConnection;
     data.fReuseSingleConnection = !!mData->mReuseSingleConnection;
@@ -569,6 +572,68 @@ STDMETHODIMP VRDEServer::COMSETTER(AuthTimeout) (ULONG aTimeout)
 #if 0
         mParent->onVRDEServerChange();
 #endif
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP VRDEServer::COMGETTER(AuthLibrary) (BSTR *aLibrary)
+{
+    CheckComArgOutPointerValid(aLibrary);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    Bstr bstrLibrary;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    bstrLibrary = mData->mAuthLibrary;
+    alock.release();
+
+    if (bstrLibrary.isEmpty())
+    {
+        /* Get the global setting. */
+        ComPtr<ISystemProperties> systemProperties;
+        HRESULT hrc = mParent->getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
+
+        if (SUCCEEDED(hrc))
+            hrc = systemProperties->COMGETTER(VRDEAuthLibrary)(bstrLibrary.asOutParam());
+
+        if (FAILED(hrc))
+            return setError(hrc, "failed to query the library setting\n");
+    }
+
+    bstrLibrary.cloneTo(aLibrary);
+
+    return S_OK;
+}
+
+STDMETHODIMP VRDEServer::COMSETTER(AuthLibrary) (IN_BSTR aLibrary)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(mParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    Bstr bstrLibrary(aLibrary);
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mData->mAuthLibrary != bstrLibrary)
+    {
+        mData.backup();
+        mData->mAuthLibrary = bstrLibrary;
+
+        /* leave the lock before informing callbacks */
+        alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);
+        mParent->setModified(Machine::IsModified_VRDEServer);
+        mlock.release();
+
+        mParent->onVRDEServerChange(/* aRestart */ TRUE);
     }
 
     return S_OK;
