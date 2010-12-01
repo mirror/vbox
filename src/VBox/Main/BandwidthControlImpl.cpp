@@ -476,7 +476,7 @@ STDMETHODIMP BandwidthControl::DeleteBandwidthGroup(IN_BSTR aName)
     return S_OK;
 }
 
-STDMETHODIMP BandwidthControl::GetNumGroups(ULONG *aGroups)
+STDMETHODIMP BandwidthControl::COMGETTER(NumGroups)(ULONG *aGroups)
 {
     CheckComArgNotNull(aGroups);
 
