@@ -196,6 +196,36 @@ FunctionEnd
 !insertmacro WriteLogVBoxTray ""
 !insertmacro WriteLogVBoxTray "un."
 
+!macro CheckArchitecture un
+Function ${un}CheckArchitecture
+
+  Push $0
+
+  System::Call "kernel32::GetCurrentProcess() i .s"
+  System::Call "kernel32::IsWow64Process(i s, *i .r0)"
+  ; R0 now contains 1 if we're a 64-bit process, or 0 if not
+
+!if $%BUILD_TARGET_ARCH% == "amd64"
+  IntCmp $0 0 wrong_platform
+!else ; 32-bit
+  IntCmp $0 1 wrong_platform
+!endif
+
+  Push 0
+  Goto exit
+
+wrong_platform:
+
+  Push 1
+  Goto exit
+
+exit:
+
+FunctionEnd
+!macroend
+!insertmacro CheckArchitecture ""
+!insertmacro CheckArchitecture "un."
+
 !macro GetWindowsVer un
 Function ${un}GetWindowsVer
 
@@ -231,8 +261,6 @@ exit:
 
 FunctionEnd
 !macroend
-
-; Insert function as an installer and uninstaller function
 !insertmacro GetWindowsVer ""
 !insertmacro GetWindowsVer "un."
 
@@ -298,29 +326,8 @@ exit:
 
 FunctionEnd
 !macroend
-
-; Insert function as an installer and uninstaller function
 !insertmacro GetAdditionsVersion ""
 !insertmacro GetAdditionsVersion "un."
-
-!macro IsUserAdmin un
-Function ${un}IsUserAdmin
-
-  ; Check if current user has admin rights
-  UserInfo::GetAccountType
-  Pop $0
-  StrCmp $0 "Admin" is_admin 0
-    MessageBox MB_ICONSTOP $(VBOX_NOADMIN) /SD IDOK
-    Abort
-
-is_admin:
-
-FunctionEnd
-!macroend
-
-; Insert function as an installer and uninstaller function
-!insertmacro IsUserAdmin ""
-!insertmacro IsUserAdmin "un."
 
 !macro StopVBoxService un
 Function ${un}StopVBoxService
@@ -380,8 +387,6 @@ exit:
 
 FunctionEnd
 !macroend
-
-; Insert function as an installer and uninstaller function
 !insertmacro StopVBoxService ""
 !insertmacro StopVBoxService "un."
 
@@ -415,8 +420,6 @@ exit:
 
 FunctionEnd
 !macroend
-
-; Insert function as an installer and uninstaller function
 !insertmacro StopVBoxTray ""
 !insertmacro StopVBoxTray "un."
 
@@ -436,43 +439,43 @@ Function ${un}AbortShutdown
 
 FunctionEnd
 !macroend
-
-; Insert function as an installer and uninstaller function
 !insertmacro AbortShutdown ""
 !insertmacro AbortShutdown "un."
 
 !macro CheckForWDDMCapability un
 Function ${un}CheckForWDDMCapability
 
-  ; Note: This is done early at startup of the installer, so
-  ;       DetailPrint and friends won't work here!
-
 !if $%VBOX_WITH_WDDM% == "1"
- !if $%BUILD_TARGET_ARCH% == "x86"
-  ; If we're on a 32-bit Windows Vista / 7 we can use the WDDM driver
-  ${If} $g_strWinVersion == "Vista"
-  ${OrIf} $g_strWinVersion == "7"
-    StrCpy $g_bCapWDDM "true"
-  ${EndIf}
- !endif
+  !if $%BUILD_TARGET_ARCH% == "x86"
+    ; If we're on a 32-bit Windows Vista / 7 we can use the WDDM driver
+    ${If} $g_strWinVersion == "Vista"
+    ${OrIf} $g_strWinVersion == "7"
+      StrCpy $g_bCapWDDM "true"
+    ${EndIf}
+  !endif
 !endif
 
 FunctionEnd
 !macroend
-
-; Insert function as an installer and uninstaller function
 !insertmacro CheckForWDDMCapability ""
 !insertmacro CheckForWDDMCapability "un."
 
 !macro CheckForCapabilities un
 Function ${un}CheckForCapabilities
 
-    Call ${un}CheckForWDDMCapability
+  Push $0
+
+  ; Retrieve system mode and store result in
+  System::Call 'user32::GetSystemMetrics(i ${SM_CLEANBOOT}) i .r0'
+  StrCpy $g_iSystemMode $0
+
+  ; Check whether this OS is capable of handling WDDM drivers
+  Call ${un}CheckForWDDMCapability
+
+  Pop $0
 
 FunctionEnd
 !macroend
-
-; Insert function as an installer and uninstaller function
 !insertmacro CheckForCapabilities ""
 !insertmacro CheckForCapabilities "un."
 
