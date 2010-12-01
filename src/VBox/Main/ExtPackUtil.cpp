@@ -244,27 +244,37 @@ iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball)
     /*
      * Skip ahead to the filename part and count the number of characters
      * that matches the criteria for a extension pack name.
+     *
+     * Trick: '_' == ' ' - filenames with spaces cause trouble.
      */
     const char *pszSrc = RTPathFilename(pszTarball);
     if (!pszSrc)
         return NULL;
 
     size_t off = 0;
-    while (RT_C_IS_ALNUM(pszSrc[off]) || pszSrc[off] == ' ')
+    while (RT_C_IS_ALNUM(pszSrc[off]) || pszSrc[off] == ' ' || pszSrc[off] == '_')
         off++;
 
     /*
      * Check min and max name limits.
      */
-    if (   off > VBOX_EXTPACK_NAME_MIN_LEN
+    if (   off > VBOX_EXTPACK_NAME_MAX_LEN
         || off < VBOX_EXTPACK_NAME_MIN_LEN)
         return NULL;
 
     /*
-     * Make a duplicate of the name and return it.
+     * Replace underscores, duplicate the string and return it.
+     * (Unforuntately, iprt::ministring does not offer simple search & replace.)
      */
-    iprt::MiniString *pStrRet = new iprt::MiniString(pszSrc, off);
-    Assert(VBoxExtPackIsValidName(pStrRet->c_str()));
+    char szTmp[VBOX_EXTPACK_NAME_MAX_LEN + 1];
+    memcpy(szTmp, pszSrc, off);
+    szTmp[off] = '\0';
+    char *psz = szTmp;
+    while ((psz = strchr(psz, '_')) != NULL)
+        *psz++ = ' ';
+    Assert(VBoxExtPackIsValidName(szTmp));
+
+    iprt::MiniString *pStrRet = new iprt::MiniString(szTmp, off);
     return pStrRet;
 }
 
