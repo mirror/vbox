@@ -171,25 +171,29 @@ static const char *ctrlExecGetStatus(ULONG uStatus)
     }
 }
 
-static int ctrlPrintError(ComPtr<IUnknown> object, const GUID &aIID)
+static int ctrlPrintError(com::ErrorInfo &errorInfo)
 {
-    com::ErrorInfo info(object, aIID);
-    if (   info.isFullAvailable()
-        || info.isBasicAvailable())
+    if (   errorInfo.isFullAvailable()
+        || errorInfo.isBasicAvailable())
     {
         /* If we got a VBOX_E_IPRT error we handle the error in a more gentle way
          * because it contains more accurate info about what went wrong. */
-        if (info.getResultCode() == VBOX_E_IPRT_ERROR)
-            RTMsgError("%ls.", info.getText().raw());
+        if (errorInfo.getResultCode() == VBOX_E_IPRT_ERROR)
+            RTMsgError("%ls.", errorInfo.getText().raw());
         else
         {
             RTMsgError("Error details:");
-            GluePrintErrorInfo(info);
+            GluePrintErrorInfo(errorInfo);
         }
         return VERR_GENERAL_FAILURE; /** @todo */
     }
     AssertMsgFailedReturn(("Object has indicated no error!?\n"),
                           VERR_INVALID_PARAMETER);
+}
+
+static int ctrlPrintProgressError(ComPtr<IProgress> progress)
+{
+    return ctrlPrintError(com::ProgressErrorInfo(progress));
 }
 
 /**
@@ -429,7 +433,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                                    &uPID, progress.asOutParam());
         if (FAILED(rc))
         {
-            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+            vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
         }
         else
         {
@@ -485,7 +489,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                                                      u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
                         if (FAILED(rc))
                         {
-                            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+                            vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
 
                             cbOutputData = 0;
                             fCompleted = true; /* rc contains a failure, so we'll go into aborted state down below. */
@@ -559,11 +563,11 @@ static int handleCtrlExecProgram(HandlerArg *a)
                 else if (   fCompleted
                          && SUCCEEDED(rc))
                 {
-                    LONG iRc = false;
+                    LONG iRc;
                     CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
                     if (FAILED(iRc))
                     {
-                        vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
+                        vrc = ctrlPrintProgressError(progress);
                     }
                     else if (fVerbose)
                     {
@@ -589,30 +593,35 @@ static int handleCtrlExecProgram(HandlerArg *a)
 }
 
 /**
- * Appends a new to-copy object to a copy list.
+ * Appends a new file/directory entry to a given list.
  *
  * @return  IPRT status code.
- * @param   pszFileSource       Full qualified source path of file to copy.
- * @param   pszFileDest         Full qualified destination path.
+ * @param   pszFileSource       Full qualified source path of file to copy (optional).
+ * @param   pszFileDest         Full qualified destination path (optional).
  * @param   pList               Copy list used for insertion.
  */
-static int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
-                                        PRTLISTNODE pList)
+static int ctrlDirectoryEntryAppend(const char *pszFileSource, const char *pszFileDest,
+                                    PRTLISTNODE pList)
 {
-    AssertPtrReturn(pszFileSource, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszFileDest, VERR_INVALID_POINTER);
     AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertReturn(pszFileSource || pszFileDest, VERR_INVALID_PARAMETER);
 
     PDIRECTORYENTRY pNode = (PDIRECTORYENTRY)RTMemAlloc(sizeof(DIRECTORYENTRY));
     if (pNode == NULL)
         return VERR_NO_MEMORY;
 
-    pNode->pszSourcePath = RTStrDup(pszFileSource);
-    pNode->pszDestPath = RTStrDup(pszFileDest);
-    if (   !pNode->pszSourcePath
-        || !pNode->pszDestPath)
+    pNode->pszSourcePath = NULL;
+    pNode->pszDestPath = NULL;
+
+    if (pszFileSource)
     {
-        return VERR_NO_MEMORY;
+        pNode->pszSourcePath = RTStrDup(pszFileSource);
+        AssertPtrReturn(pNode->pszSourcePath, VERR_NO_MEMORY);
+    }
+    if (pszFileDest)
+    {
+        pNode->pszDestPath = RTStrDup(pszFileDest);
+        AssertPtrReturn(pNode->pszDestPath, VERR_NO_MEMORY);
     }
 
     pNode->Node.pPrev = NULL;
@@ -620,6 +629,37 @@ static int ctrlCopyDirectoryEntryAppend(const char *pszFileSource, const char *p
     RTListAppend(pList, &pNode->Node);
     return VINF_SUCCESS;
 }
+
+/**
+ * Destroys a directory list.
+ *
+ * @param   pList               Pointer to list to destroy.
+ */
+static void ctrlDirectoryListDestroy(PRTLISTNODE pList)
+{
+    AssertPtr(pList);
+
+    /* Destroy file list. */
+    PDIRECTORYENTRY pNode = RTListGetFirst(pList, DIRECTORYENTRY, Node);
+    while (pNode)
+    {
+        PDIRECTORYENTRY pNext = RTListNodeGetNext(&pNode->Node, DIRECTORYENTRY, Node);
+        bool fLast = RTListNodeIsLast(pList, &pNode->Node);
+
+        if (pNode->pszSourcePath)
+            RTStrFree(pNode->pszSourcePath);
+        if (pNode->pszDestPath)
+            RTStrFree(pNode->pszDestPath);
+        RTListNodeRemove(&pNode->Node);
+        RTMemFree(pNode);
+
+        if (fLast)
+            break;
+
+        pNode = pNext;
+    }
+}
+
 
 /**
  * Reads a specified directory (recursively) based on the copy flags
@@ -742,7 +782,7 @@ static int ctrlCopyDirectoryRead(const char *pszRootDir, const char *pszSubDir,
 
                         if (RT_SUCCESS(rc))
                         {
-                            rc = ctrlCopyDirectoryEntryAppend(pszFileSource, pszFileDest, pList);
+                            rc = ctrlDirectoryEntryAppend(pszFileSource, pszFileDest, pList);
                             if (RT_SUCCESS(rc))
                                 *pcObjects = *pcObjects + 1;
                         }
@@ -818,7 +858,7 @@ static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFl
                 if (RT_SUCCESS(rc))
                 {
                     RTListInit(pList);
-                    rc = ctrlCopyDirectoryEntryAppend(pszSourceAbs, pszDestAbs, pList);
+                    rc = ctrlDirectoryEntryAppend(pszSourceAbs, pszDestAbs, pList);
                     *pcObjects = 1;
                 }
                 RTStrFree(pszDestAbs);
@@ -902,34 +942,6 @@ static int ctrlCopyInit(const char *pszSource, const char *pszDest, uint32_t uFl
 }
 
 /**
- * Destroys a copy list.
- */
-static void ctrlCopyDestroy(PRTLISTNODE pList)
-{
-    AssertPtr(pList);
-
-    /* Destroy file list. */
-    PDIRECTORYENTRY pNode = RTListGetFirst(pList, DIRECTORYENTRY, Node);
-    while (pNode)
-    {
-        PDIRECTORYENTRY pNext = RTListNodeGetNext(&pNode->Node, DIRECTORYENTRY, Node);
-        bool fLast = RTListNodeIsLast(pList, &pNode->Node);
-
-        if (pNode->pszSourcePath)
-            RTStrFree(pNode->pszSourcePath);
-        if (pNode->pszDestPath)
-            RTStrFree(pNode->pszDestPath);
-        RTListNodeRemove(&pNode->Node);
-        RTMemFree(pNode);
-
-        if (fLast)
-            break;
-
-        pNode = pNext;
-    }
-}
-
-/**
  * Copys a file from host to the guest.
  *
  * @return  IPRT status code.
@@ -956,7 +968,7 @@ static int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char
                                      uFlags, progress.asOutParam());
     if (FAILED(rc))
     {
-        vrc = ctrlPrintError(pGuest, COM_IIDOF(IGuest));
+        vrc = ctrlPrintError(com::ErrorInfo(pGuest, COM_IIDOF(IGuest)));
     }
     else
     {
@@ -1003,10 +1015,10 @@ static int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char
         else if (   fCompleted
                  && SUCCEEDED(rc))
         {
-            LONG iRc = false;
+            LONG iRc;
             CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
             if (FAILED(iRc))
-                vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
+                vrc = ctrlPrintProgressError(progress);
         }
     }
     return vrc;
@@ -1105,6 +1117,11 @@ static int handleCtrlCopyTo(HandlerArg *a)
                         break;
                 }
                 uNoOptionIdx++;
+                if (uNoOptionIdx == UINT32_MAX)
+                {
+                    RTMsgError("Too many files specified! Aborting.\n");
+                    vrc = VERR_TOO_MUCH_DATA;
+                }
                 break;
             }
 
@@ -1193,7 +1210,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                                                     progressDir.asOutParam());
                     RTStrFree(pszDestPath);
                     if (FAILED(rc))
-                        vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+                        vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
                     else
                     {
                         if (fVerbose)
@@ -1216,7 +1233,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                 if (RT_SUCCESS(vrc) && fVerbose)
                     RTPrintf("Copy operation successful!\n");
             }
-            ctrlCopyDestroy(&listToCopy);
+            ctrlDirectoryListDestroy(&listToCopy);
         }
         ctrlUninitVM(a);
     }
@@ -1250,12 +1267,15 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
 
-    Utf8Str Utf8Directory(a->argv[1]);
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t uFlags = CreateDirectoryFlag_None;
     uint32_t uMode = 0;
     bool fVerbose = false;
+
+    RTLISTNODE listDirs;
+    uint32_t uNumDirs = 0;
+    RTListInit(&listDirs);
 
     int vrc = VINF_SUCCESS;
     bool fUsageOK = true;
@@ -1291,7 +1311,18 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
 
             case VINF_GETOPT_NOT_OPTION:
             {
-                Utf8Directory = ValueUnion.psz;
+                vrc = ctrlDirectoryEntryAppend(NULL,              /* No source given */
+                                               ValueUnion.psz,    /* Destination */
+                                               &listDirs);
+                if (RT_SUCCESS(vrc))
+                {
+                    uNumDirs++;
+                    if (uNumDirs == UINT32_MAX)
+                    {
+                        RTMsgError("Too many directories specified! Aborting.\n");
+                        vrc = VERR_TOO_MUCH_DATA;
+                    }
+                }
                 break;
             }
 
@@ -1303,7 +1334,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
     if (!fUsageOK)
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
-    if (Utf8Directory.isEmpty())
+    if (!uNumDirs)
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No directory to create specified!");
 
@@ -1316,67 +1347,37 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
     vrc = ctrlInitVM(a, a->argv[0] /* VM Name */, &guest);
     if (RT_SUCCESS(vrc))
     {
-        ComPtr<IProgress> progress;
-        rc = guest->CreateDirectory(Bstr(Utf8Directory).raw(),
-                                    Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
-                                    uMode, uFlags, progress.asOutParam());
-        if (FAILED(rc))
-            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
-        else
+        if (fVerbose && uNumDirs > 1)
+            RTPrintf("Creating %ld directories ...\n", uNumDirs);
+
+        PDIRECTORYENTRY pNode;
+        RTListForEach(&listDirs, pNode, DIRECTORYENTRY, Node)
         {
-            /* Setup signal handling if cancelable. */
-            ASSERT(progress);
-            bool fCanceledAlready = false;
-            BOOL fCancelable;
-            rc = progress->COMGETTER(Cancelable)(&fCancelable);
+            if (fVerbose)
+                RTPrintf("Creating directory \"%s\" ...\n", pNode->pszDestPath);
+
+            ComPtr<IProgress> progress;
+            rc = guest->CreateDirectory(Bstr(pNode->pszDestPath).raw(),
+                                        Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
+                                        uMode, uFlags, progress.asOutParam());
             if (FAILED(rc))
-                fCancelable = FALSE;
-            if (fCancelable)
-                ctrlSignalHandlerInstall();
-
-            /* Wait for process to exit ... */
-            BOOL fCompleted = FALSE;
-            BOOL fCanceled = FALSE;
-            while (   SUCCEEDED(progress->COMGETTER(Completed(&fCompleted)))
-                   && !fCompleted)
+                vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
+            else
             {
-                /* Process async cancelation */
-                if (g_fGuestCtrlCanceled && !fCanceledAlready)
-                {
-                    rc = progress->Cancel();
-                    if (SUCCEEDED(rc))
-                        fCanceledAlready = TRUE;
-                    else
-                        g_fGuestCtrlCanceled = false;
-                }
-
-                /* Progress canceled by Main API? */
-                if (   SUCCEEDED(progress->COMGETTER(Canceled(&fCanceled)))
-                    && fCanceled)
-                {
-                    break;
-                }
-            }
-
-            /* Undo signal handling. */
-            if (fCancelable)
-                ctrlSignalHandlerUninstall();
-
-            if (fCanceled)
-            {
-                //RTPrintf("Copy operation canceled!\n");
-            }
-            else if (   fCompleted
-                     && SUCCEEDED(rc))
-            {
-                LONG iRc = false;
+                LONG iRc;
                 CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
                 if (FAILED(iRc))
-                    vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
+                {
+                      vrc = ctrlPrintProgressError(progress);
+                      break;
+                }
+                else if (fVerbose)
+                    RTPrintf("Directory created: %s\n", pNode->pszDestPath);
             }
         }
         ctrlUninitVM(a);
     }
+    ctrlDirectoryListDestroy(&listDirs);
 
     if (RT_FAILURE(vrc))
         rc = VBOX_E_IPRT_ERROR;
@@ -1471,12 +1472,12 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
                                                     AdditionsUpdateFlag_None,
                                                     progress.asOutParam()));
             if (FAILED(rc))
-                vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+                vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
             else
             {
                 rc = showProgress(progress);
                 if (FAILED(rc))
-                    vrc = ctrlPrintError(progress, COM_IIDOF(IProgress));
+                    vrc = ctrlPrintProgressError(progress);
                 else if (fVerbose)
                     RTPrintf("Guest Additions installer successfully copied and started.\n");
             }
