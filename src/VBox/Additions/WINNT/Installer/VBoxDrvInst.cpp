@@ -263,7 +263,7 @@ void FreeAPICalls ()
 
 bool GetErrorMsg (DWORD a_dwLastError, _TCHAR* a_pszMsg, DWORD a_dwBufSize)
 {
-    if (::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, a_dwLastError, 0, a_pszMsg, a_dwBufSize, NULL) == 0)
+    if (::FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, a_dwLastError, 0, a_pszMsg, a_dwBufSize / sizeof(TCHAR), NULL) == 0)
     {
         _stprintf(a_pszMsg, _T("Unknown error!\n"), a_dwLastError);
         return false;
