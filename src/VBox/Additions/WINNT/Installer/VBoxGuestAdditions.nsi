@@ -439,8 +439,9 @@ begin:
 sun_check:
 
   ; Check for old "Sun VirtualBox Guest Additions"
+  ; - before rebranding to Oracle
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Sun VirtualBox Guest Additions" "UninstallString"
-  StrCmp $0 "" sun_xvm_check     ; If string is empty, Sun additions are probably not installed (anymore)
+  StrCmp $0 "" sun_xvm_check ; If string is empty, Sun additions are probably not installed (anymore)
 
   MessageBox MB_YESNO $(VBOX_SUN_FOUND) /SD IDYES IDYES sun_uninstall
     Pop $2
@@ -456,9 +457,10 @@ sun_uninstall:
 
 sun_xvm_check:
 
-  ; Check for old "innotek" Guest Additions" before rebranding to "Sun"
+  ; Check for old "Sun xVM VirtualBox Guest Additions"
+  ; - before getting rid of the "xVM" namespace
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Sun xVM VirtualBox Guest Additions" "UninstallString"
-  StrCmp $0 "" innotek_check     ; If string is empty, Sun xVM additions are probably not installed (anymore)
+  StrCmp $0 "" innotek_check ; If string is empty, Sun xVM additions are probably not installed (anymore)
 
   MessageBox MB_YESNO $(VBOX_SUN_FOUND) /SD IDYES IDYES sun_xvm_uninstall
     Pop $2
@@ -476,7 +478,7 @@ innotek_check:
 
   ; Check for old "innotek" Guest Additions" before rebranding to "Sun"
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\innotek VirtualBox Guest Additions" "UninstallString"
-  StrCmp $0 "" exit     ; If string is empty, Guest Additions are probably not installed (anymore)
+  StrCmp $0 "" exit ; If string is empty, innotek Guest Additions are probably not installed (anymore)
 
   MessageBox MB_YESNO $(VBOX_INNOTEK_FOUND) /SD IDYES IDYES innotek_uninstall
     Pop $2
@@ -499,34 +501,6 @@ exit:
   Pop $2
   Pop $1
   Pop $0
-
-FunctionEnd
-
-Function CheckArchitecture
-
-  System::Call "kernel32::GetCurrentProcess() i .s"
-  System::Call "kernel32::IsWow64Process(i s, *i .r0)"
-  DetailPrint "Running on 64bit: $0"
-
-!if $%BUILD_TARGET_ARCH% == "amd64"   ; 64-bit
-  IntCmp $0 0 not_32bit_platform
-!else   ; 32-bit
-  IntCmp $0 1 not_64bit_platform
-!endif
-
-  Goto exit
-
-not_32bit_platform:
-
-  MessageBox MB_ICONSTOP $(VBOX_NOTICE_ARCH_AMD64) /SD IDOK
-  Quit
-
-not_64bit_platform:
-
-  MessageBox MB_ICONSTOP $(VBOX_NOTICE_ARCH_X86) /SD IDOK
-  Quit
-
-exit:
 
 FunctionEnd
 
@@ -583,6 +557,10 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
 
   SectionIn RO ; Section cannot be unselected (read-only)
 
+  Push "${PRODUCT_NAME} update started, please wait ..."
+  Push 0 ; Message type = info
+  Call WriteLogVBoxTray
+
   SetOutPath "$INSTDIR"
   SetOverwrite on
 
@@ -629,16 +607,17 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
   Goto notsupported
 
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
-nt4:      ; Windows NT4
+nt4: ; Windows NT4
 
   Call GetServicePack
   Pop $R0   ; Major version
   Pop $R1   ; Minor version
 
   ; At least Service Pack 6 installed?
-  StrCmp $R0 "6" +3
+  ${If} $R0 <> "6"
     MessageBox MB_YESNO $(VBOX_NT4_NO_SP6) /SD IDYES IDYES +2
     Quit
+  ${EndIf}
 
   ; Copy some common files ...
   Call Common_CopyFiles
@@ -1019,6 +998,7 @@ Function .onInit
 
   ; Init values
   StrCpy $g_iSystemMode "0"
+  StrCpy $g_strCurUser "<None>"
   StrCpy $g_strAddVerMaj "0"
   StrCpy $g_strAddVerMin "0"
   StrCpy $g_strAddVerBuild "0"
@@ -1049,14 +1029,29 @@ Function .onInit
   SetErrorLevel 0
   ClearErrors
 
-!ifndef UNINSTALLER_ONLY
+!ifdef UNINSTALLER_ONLY
+
+  ;
+  ; If UNINSTALLER_ONLY is defined, we're only interested in uninst.exe
+  ; so we can sign it
+  ;
+  ; Note that the Quit causes the exit status to be 2 instead of 0
+  ;
+  WriteUninstaller "$%PATH_TARGET%\uninst.exe"
+  Quit
+
+!else
 
   ; Handle command line
   Call HandleCommandLine
 
-  Push "${PRODUCT_NAME} update started, please wait ..."
-  Push 0 ; Message type = info
-  Call WriteLogVBoxTray
+  ; Check if there's already another instance of the installer is running -
+  ; important for preventing NT4 to spawn the installer twice
+  System::Call 'kernel32::CreateMutexA(i 0, i 0, t "VBoxGuestInstaller") ?e'
+  Pop $0
+  ${If} $0 != 0
+    Quit
+  ${EndIf}
 
   ; Retrieve Windows version and store result in $g_strWinVersion
   Call GetWindowsVer
@@ -1064,21 +1059,46 @@ Function .onInit
   ; Retrieve capabilities
   Call CheckForCapabilities
 
-  ; Retrieve system mode and store result in
-  System::Call 'user32::GetSystemMetrics(i ${SM_CLEANBOOT}) i .r0'
-  StrCpy $g_iSystemMode $0
-  DetailPrint "System mode: $g_iSystemMode"
-
   ; Get user Name
   AccessControl::GetCurrentUserName
   Pop $g_strCurUser
   DetailPrint "Current user: $g_strCurUser"
 
-  ; Only uninstall?
-  StrCmp $g_bUninstall "true" uninstall
+  ; Only extract files? This action can be called even from non-Admin users
+  ; and non-compatible architectures
+  ${If} $g_bOnlyExtract == "true"
+    Call ExtractFiles
+    MessageBox MB_OK|MB_ICONINFORMATION $(VBOX_EXTRACTION_COMPLETE) /SD IDOK
+    Quit
+  ${EndIf}
 
-  ; Only extract files?
-  StrCmp $g_bOnlyExtract "true" extract_files
+  ; Check for correct architecture
+  Call CheckArchitecture
+  Pop $0
+  ${If} $0 <> 0 ; Wrong architecture? Tell the world
+!if $%BUILD_TARGET_ARCH% == "amd64"
+    MessageBox MB_ICONSTOP $(VBOX_NOTICE_ARCH_AMD64) /SD IDOK
+!else
+    MessageBox MB_ICONSTOP $(VBOX_NOTICE_ARCH_X86) /SD IDOK
+!endif
+    Abort
+  ${EndIf}
+
+  ; Has the user who calls us admin rights?
+  UserInfo::GetAccountType
+  Pop $0
+  ${If} $0 != "Admin"
+    MessageBox MB_ICONSTOP $(VBOX_NOADMIN) /SD IDOK
+    Abort
+  ${EndIf}
+
+  ; Only uninstall?
+  ${If} $g_bUninstall == "true"
+    Call Uninstall_Innotek
+    Call Uninstall
+    MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_UNINST_SUCCESS) /SD IDOK
+    Quit
+  ${EndIf}
 
   ; Set section bits
   ${If} $g_bWithAutoLogon == "true" ; Auto-logon support
@@ -1096,18 +1116,6 @@ Function .onInit
     !insertmacro MUI_LANGDLL_DISPLAY
   !endif
 !endif
-
-  ; Do some checks before we actually start ...
-  Call IsUserAdmin
-
-  ; Check if there's already another instance of the installer is running -
-  ; important for preventing NT4 to spawn the installer twice
-  System::Call 'kernel32::CreateMutexA(i 0, i 0, t "VBoxGuestInstaller") ?e'
-  Pop $R0
-  StrCmp $R0 0 +1 exit
-
-  ; Check for correct architecture
-  Call CheckArchitecture
 
   ; Because this NSIS installer is always built in 32-bit mode, we have to
   ; do some tricks for the Windows paths for checking for old additions
@@ -1129,39 +1137,7 @@ Function .onInit
   SetRegView 32
 !endif
 
-  Goto done
-
-uninstall:
-
-  Call Uninstall_Innotek
-  Call Uninstall
-  MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_UNINST_SUCCESS) /SD IDOK
-  Goto exit
-
-extract_files:
-
-  Call ExtractFiles
-  MessageBox MB_OK|MB_ICONINFORMATION $(VBOX_EXTRACTION_COMPLETE) /SD IDOK
-  Goto exit
-
-!else ; UNINSTALLER_ONLY
-
-  ;
-  ; If UNINSTALLER_ONLY is defined, we're only interested in uninst.exe
-  ; so we can sign it
-  ;
-  ; Note that the Quit causes the exit status to be 2 instead of 0
-  ;
-  WriteUninstaller "$%PATH_TARGET%\uninst.exe"
-  Goto exit
-
 !endif ; UNINSTALLER_ONLY
-
-exit:    ; Abort installer for some reason
-
-  Quit
-
-done:
 
 FunctionEnd
 
@@ -1181,7 +1157,13 @@ FunctionEnd
 
 Function un.onInit
 
-  Call un.IsUserAdmin
+  ; Has the user who calls us admin rights?
+  UserInfo::GetAccountType
+  Pop $0
+  ${If} $0 != "Admin"
+    MessageBox MB_ICONSTOP $(VBOX_NOADMIN) /SD IDOK
+    Abort
+  ${EndIf}
 
   MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 $(VBOX_UNINST_CONFIRM) /SD IDYES IDYES proceed
   Quit
