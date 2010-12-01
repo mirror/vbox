@@ -609,6 +609,7 @@ public:
 
     /* public static stuff */
 
+    static bool shouldWarnAboutToLowVRAM(const CMachine *pMachine = 0);
     static bool isDOSType (const QString &aOSTypeId);
 
     static QString languageId();

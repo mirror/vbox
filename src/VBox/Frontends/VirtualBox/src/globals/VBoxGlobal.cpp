@@ -3687,6 +3687,21 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
     return QString ("%1 %2").arg (number).arg (Suffixes [suffix]);
 }
 
+/* static */
+bool VBoxGlobal::shouldWarnAboutToLowVRAM(const CMachine *pMachine /* = 0 */)
+{
+    static QStringList osList = QStringList()
+        << "Other" << "DOS" << "Netware" << "L4" << "QNX" << "JRockitVE";
+
+    bool fResult = true;
+    if (   pMachine
+        && !pMachine->isNull()
+        && osList.contains(pMachine->GetOSTypeId()))
+        fResult = false;
+
+    return fResult;
+}
+
 /**
  *  Returns the required video memory in bytes for the current desktop
  *  resolution at maximum possible screen depth in bpp.

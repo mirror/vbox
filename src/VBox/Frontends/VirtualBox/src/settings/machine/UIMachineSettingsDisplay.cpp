@@ -273,12 +273,13 @@ bool UIMachineSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitl
 {
     /* Video RAM amount test */
     quint64 needBytes = VBoxGlobal::requiredVideoMemory (&m_machine, mSlMonitors->value());
-    if ((quint64) mSlMemory->value() * _1M < needBytes)
+    if (   vboxGlobal().shouldWarnAboutToLowVRAM(&m_machine)
+        && (quint64)mSlMemory->value() * _1M < needBytes)
     {
         aWarning = tr (
-            "you have assigned less than <b>%1</b> of video memory which is "
-            "the minimum amount required to switch the virtual machine to "
-            "fullscreen or seamless mode.")
+                       "you have assigned less than <b>%1</b> of video memory which is "
+                       "the minimum amount required to switch the virtual machine to "
+                       "fullscreen or seamless mode.")
             .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
     }
 #ifdef VBOX_WITH_VIDEOHWACCEL
