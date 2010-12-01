@@ -333,7 +333,7 @@ if [ "$ACTION" = "install" ]; then
     # XXX SELinux: allow text relocation entries
     if [ -x /usr/bin/chcon ]; then
         chcon -t texrel_shlib_t $INSTALLATION_DIR/VBox* > /dev/null 2>&1
-        chcon -t texrel_shlib_t $INSTALLATION_DIR/VRDPAuth.so > /dev/null 2>&1
+        chcon -t texrel_shlib_t $INSTALLATION_DIR/VBoxAuth.so > /dev/null 2>&1
         chcon -t texrel_shlib_t $INSTALLATION_DIR/VirtualBox.so > /dev/null 2>&1
         chcon -t texrel_shlib_t $INSTALLATION_DIR/components/VBox*.so > /dev/null 2>&1
         chcon -t java_exec_t    $INSTALLATION_DIR/VirtualBox > /dev/null 2>&1

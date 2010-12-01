@@ -25,7 +25,7 @@
 
 #include <Windows.h>
 
-#include <VBox/VRDPAuth.h>
+#include <VBox/VBoxAuth.h>
 
 static void dprintf(const char *fmt, ...)
 {

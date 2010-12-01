@@ -22,7 +22,7 @@
 
 #include "VirtualBoxBase.h"
 
-#include <VBox/VRDPAuth.h>
+#include <VBox/VBoxAuth.h>
 #include <VBox/settings.h>
 
 class ATL_NO_VTABLE VRDEServer :

@@ -24,7 +24,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/EventQueue.h>
-#include <VBox/VRDPAuth.h>
+#include <VBox/VBoxAuth.h>
 #include <VBox/version.h>
 
 #include <iprt/buildconfig.h>

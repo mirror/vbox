@@ -786,7 +786,7 @@ vga = 864</screen>
       <para>An authentication library is required to implement exactly one
       entry point:</para>
 
-      <screen>#include "VRDPAuth.h"
+      <screen>#include "VBoxAuth.h"
 
 /**
  * Authentication library entry point. Decides whether to allow
@@ -806,16 +806,17 @@ vga = 864</screen>
  *
  * Return code:
  *
- *   VRDPAuthAccessDenied    Client access has been denied.
- *   VRDPAuthAccessGranted   Client has the right to use the
- *                           virtual machine.
- *   VRDPAuthDelegateToGuest Guest operating system must
- *                           authenticate the client and the
- *                           library must be called again with
- *                           the result of the guest
- *                           authentication.
+ *   AuthResultAccessDenied    Client access has been denied.
+ *   AuthResultAccessGranted   Client has the right to use the
+ *                             virtual machine.
+ *   AuthResultDelegateToGuest Guest operating system must
+ *                             authenticate the client and the
+ *                             library must be called again with
+ *                             the result of the guest
+ *                             authentication.
  */
-VRDPAuthResult VRDPAUTHCALL VRDPAuth2(
+AuthResult AUTHCALL AuthEntry(
+    const char *szCaller,
     PVRDPAUTHUUID pUuid,
     VRDPAuthGuestJudgement guestJudgement,
     const char *szUser,
@@ -825,7 +826,7 @@ VRDPAuthResult VRDPAUTHCALL VRDPAuth2(
     unsigned clientId)
 {
     /* process request against your authentication source of choice */
-    return VRDPAuthAccessGranted;
+    return AuthResultAccessGranted;
 }</screen>
 
       <para>A note regarding the UUID implementation of the first argument:
@@ -852,9 +853,9 @@ VRDPAuthResult VRDPAUTHCALL VRDPAuth2(
 
       <para>The second arguments contains information about the guest
       authentication status. For the first call, it is always set to
-      <computeroutput>VRDPAuthGuestNotAsked</computeroutput>. In case the
+      <computeroutput>AuthGuestNotAsked</computeroutput>. In case the
       function returns
-      <computeroutput>VRDPAuthDelegateToGuest</computeroutput>, a guest
+      <computeroutput>AuthResultDelegateToGuest</computeroutput>, a guest
       authentication will be attempted and another call to the method is made
       with its result. This can be either granted / denied or no judgement
       (the guest component chose for whatever reason to not make a decision).

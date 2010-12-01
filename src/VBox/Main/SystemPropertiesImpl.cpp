@@ -1063,7 +1063,7 @@ HRESULT SystemProperties::setVRDEAuthLibrary(const Utf8Str &aPath)
     if (!aPath.isEmpty())
         m->strVRDEAuthLibrary = aPath;
     else
-        m->strVRDEAuthLibrary = "VRDPAuth";
+        m->strVRDEAuthLibrary = "VBoxAuth";
 
     return S_OK;
 }
@@ -1073,7 +1073,7 @@ HRESULT SystemProperties::setWebServiceAuthLibrary(const Utf8Str &aPath)
     if (!aPath.isEmpty())
         m->strWebServiceAuthLibrary = aPath;
     else
-        m->strWebServiceAuthLibrary = "VRDPAuth";
+        m->strWebServiceAuthLibrary = "VBoxAuth";
 
     return S_OK;
 }

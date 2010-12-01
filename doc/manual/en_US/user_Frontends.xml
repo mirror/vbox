@@ -387,7 +387,7 @@
             VBoxAuthSimple, issue
             <computeroutput>VBoxManage setproperty vrdeauthlibrary "VBoxAuthSimple"</computeroutput>.
             To enable the library for a VM, switch authentication to external using
-            <computeroutput>VBoxManage modifyvm "VM name" --vrdpauthtype external</computeroutput>.
+            <computeroutput>VBoxManage modifyvm "VM name" --vrdeauthtype external</computeroutput>.
             Last but not least, you have to configure users and passwords. Here is an example
             for the user "john" with the password "secret":
             <computeroutput>VBoxManage internalcommands passwordhash "secret"</computeroutput>

@@ -23,8 +23,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef ___VBox_vrdpauth_h
-#define ___VBox_vrdpauth_h
+#ifndef ___VBox_vboxauth_h
+#define ___VBox_vboxauth_h
 
 /* The following 2 enums are 32 bits values.*/
 typedef enum AuthResult

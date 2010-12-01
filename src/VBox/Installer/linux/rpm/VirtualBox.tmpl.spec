@@ -247,7 +247,7 @@ udevplug -Busb > /dev/null 2>&1
 if [ -x /usr/bin/chcon ]; then
   chcon -t texrel_shlib_t /usr/lib/virtualbox/*VBox* > /dev/null 2>&1
   chcon -t texrel_shlib_t /usr/lib/virtualbox/VirtualBox.so > /dev/null 2>&1
-  chcon -t texrel_shlib_t /usr/lib/virtualbox/VRDPAuth.so > /dev/null 2>&1
+  chcon -t texrel_shlib_t /usr/lib/virtualbox/VBoxAuth.so > /dev/null 2>&1
   chcon -t texrel_shlib_t /usr/lib/virtualbox/components/VBox*.so > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/VirtualBox > /dev/null 2>&1
   chcon -t java_exec_t    /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1

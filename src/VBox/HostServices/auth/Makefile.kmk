@@ -53,7 +53,7 @@ VBoxAuth-samples_SOURCES.win = winlogon/winlogon.cpp
 INSTALLS += VBoxAuth-sdkhdr
 VBoxAuth-sdkhdr_INST = $(INST_SDK)/bindings/auth/include/
 VBoxAuth-sdkhdr_MODE = a+r,u+w
-VBoxAuth-sdkhdr_SOURCES = $(PATH_ROOT)/include/VBox/VRDPAuth.h=>VRDPAuth.h
+VBoxAuth-sdkhdr_SOURCES = $(PATH_ROOT)/include/VBox/VBoxAuth.h=>VBoxAuth.h
 
 
 include $(KBUILD_PATH)/subfooter.kmk
