@@ -309,6 +309,24 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
 
             int vkey = pMsg->wParam;
 
+            int flags = 0;
+            if (pMsg->lParam & 0x1000000)
+                flags |= KeyExtended;
+            if (!(pMsg->lParam & 0x80000000))
+                flags |= KeyPressed;
+
+            /* Check for special Korean keys. Based on the keyboard layout selected 
+             * on the host, the scancode in lParam might be 0x71/0x72 or 0xF1/0xF2.
+             * In either case, we must deliver 0xF1/0xF2 scancode to the guest when
+             * the key is pressed and nothing when it's released.
+             */
+            if (scan == 0x71 || scan == 0x72)
+            {
+                scan |= 0x80;
+                flags = KeyPressed;     /* Because a release would be ignored. */
+                vkey  = VK_PROCESSKEY;  /* In case it was 0xFF */
+            }
+
             /* When one of the SHIFT keys is held and one of the cursor movement
              * keys is pressed, Windows duplicates SHIFT press/release messages,
              * but with the virtual key code set to 0xFF. These virtual keys are also
@@ -318,12 +336,6 @@ bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
                 fResult = true;
                 break;
             }
-
-            int flags = 0;
-            if (pMsg->lParam & 0x1000000)
-                flags |= KeyExtended;
-            if (!(pMsg->lParam & 0x80000000))
-                flags |= KeyPressed;
 
             switch (vkey)
             {
