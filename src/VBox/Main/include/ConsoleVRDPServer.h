@@ -89,9 +89,9 @@ public:
 
     void Stop (void);
 
-    VRDPAuthResult Authenticate (const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
-                                 const char *pszUser, const char *pszPassword, const char *pszDomain,
-                                 uint32_t u32ClientId);
+    AuthResult Authenticate (const Guid &uuid, AuthGuestJudgement guestJudgement,
+                             const char *pszUser, const char *pszPassword, const char *pszDomain,
+                             uint32_t u32ClientId);
 
     void AuthDisconnect (const Guid &uuid, uint32_t u32ClientId);
 
@@ -208,8 +208,9 @@ private:
      * Authenticate method and unloaded at the object destructor.
      */
     RTLDRMOD mAuthLibrary;
-    PVRDPAUTHENTRY mpfnAuthEntry;
-    PVRDPAUTHENTRY2 mpfnAuthEntry2;
+    PAUTHENTRY mpfnAuthEntry;
+    PAUTHENTRY2 mpfnAuthEntry2;
+    PAUTHENTRY3 mpfnAuthEntry3;
 };
 
 

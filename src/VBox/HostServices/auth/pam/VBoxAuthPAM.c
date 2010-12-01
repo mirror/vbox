@@ -146,7 +146,7 @@ static SymMap symmap[] =
     { NULL,                          NULL }
 };
 
-static int vrdpauth_pam_init(void)
+static int auth_pam_init(void)
 {
     SymMap *iter;
 
@@ -154,7 +154,7 @@ static int vrdpauth_pam_init(void)
 
     if (!gpvLibPam)
     {
-        debug_printf("vrdpauth_pam_init: dlopen %s failed\n", VRDP_PAM_LIB);
+        debug_printf("auth_pam_init: dlopen %s failed\n", VRDP_PAM_LIB);
         return PAM_SYSTEM_ERR;
     }
 
@@ -166,7 +166,7 @@ static int vrdpauth_pam_init(void)
 
         if (pv == NULL)
         {
-            debug_printf("vrdpauth_pam_init: dlsym %s failed\n", iter->pszName);
+            debug_printf("auth_pam_init: dlsym %s failed\n", iter->pszName);
 
             dlclose(gpvLibPam);
             gpvLibPam = NULL;
@@ -182,7 +182,7 @@ static int vrdpauth_pam_init(void)
     return PAM_SUCCESS;
 }
 
-static void vrdpauth_pam_close(void)
+static void auth_pam_close(void)
 {
     if (gpvLibPam)
     {
@@ -193,18 +193,18 @@ static void vrdpauth_pam_close(void)
     return;
 }
 #else
-static int vrdpauth_pam_init(void)
+static int auth_pam_init(void)
 {
     return PAM_SUCCESS;
 }
 
-static void vrdpauth_pam_close(void)
+static void auth_pam_close(void)
 {
     return;
 }
 #endif /* VRDP_PAM_DLLOAD */
 
-static const char *vrdpauth_get_pam_service (void)
+static const char *auth_get_pam_service (void)
 {
     const char *service = getenv (VRDP_AUTH_PAM_SERVICE_NAME_ENV);
 
@@ -272,7 +272,7 @@ static int conv (int num_msg, const struct pam_message **msg,
     return PAM_SUCCESS;
 }
 
-/* The VRDPAuth entry point must be visible. */
+/* The entry point must be visible. */
 #if defined(_MSC_VER) || defined(__OS2__)
 # define DECLEXPORT(type)       __declspec(dllexport) type
 #else
@@ -284,18 +284,18 @@ static int conv (int num_msg, const struct pam_message **msg,
 #endif
 
 /* prototype to prevent gcc warning */
-DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
-                                                  VRDPAuthGuestJudgement guestJudgement,
-                                                  const char *szUser,
-                                                  const char *szPassword,
-                                                  const char *szDomain);
-DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
-                                                  VRDPAuthGuestJudgement guestJudgement,
-                                                  const char *szUser,
-                                                  const char *szPassword,
-                                                  const char *szDomain)
+DECLEXPORT(AuthResult) AUTHCALL VRDPAuth (PAUTHUUID pUuid,
+                                          AuthGuestJudgement guestJudgement,
+                                          const char *szUser,
+                                          const char *szPassword,
+                                          const char *szDomain);
+DECLEXPORT(AuthResult) AUTHCALL VRDPAuth (PAUTHUUID pUuid,
+                                          AuthGuestJudgement guestJudgement,
+                                          const char *szUser,
+                                          const char *szPassword,
+                                          const char *szDomain)
 {
-    VRDPAuthResult result = VRDPAuthAccessDenied;
+    AuthResult result = AuthResultAccessDenied;
 
     int rc;
 
@@ -312,13 +312,13 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
     pam_conversation.conv        = conv;
     pam_conversation.appdata_ptr = &ctx;
 
-    rc = vrdpauth_pam_init ();
+    rc = auth_pam_init ();
 
     if (rc == PAM_SUCCESS)
     {
         debug_printf("init ok\n");
 
-        rc = fn_pam_start(vrdpauth_get_pam_service (), szUser, &pam_conversation, &pam_handle);
+        rc = fn_pam_start(auth_get_pam_service (), szUser, &pam_conversation, &pam_handle);
 
         if (rc == PAM_SUCCESS)
         {
@@ -343,7 +343,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
                 {
                     debug_printf("access granted\n");
 
-                    result = VRDPAuthAccessGranted;
+                    result = AuthResultAccessGranted;
                 }
                 else
                 {
@@ -362,17 +362,17 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
             debug_printf("pam_start failed %d\n", rc);
         }
 
-        vrdpauth_pam_close ();
+        auth_pam_close ();
 
-        debug_printf("vrdpauth_pam_close completed\n");
+        debug_printf("auth_pam_close completed\n");
     }
     else
     {
-        debug_printf("vrdpauth_pam_init failed %d\n", rc);
+        debug_printf("auth_pam_init failed %d\n", rc);
     }
 
     return result;
 }
 
 /* Verify the function prototype. */
-static PVRDPAUTHENTRY gpfnAuthEntry = VRDPAuth;
+static PAUTHENTRY gpfnAuthEntry = VRDPAuth;

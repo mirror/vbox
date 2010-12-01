@@ -18,7 +18,7 @@
  */
 
 /* If defined, debug messages will be written to the specified file. */
-// #define VRDPAUTH_DEBUG_FILE_NAME "\\VRDPAuth.log"
+// #define AUTH_DEBUG_FILE_NAME "\\VBoxAuth.log"
 
 #include <stdio.h>
 #include <string.h>
@@ -29,6 +29,7 @@
 
 static void dprintf(const char *fmt, ...)
 {
+#ifdef AUTH_DEBUG_FILE_NAME
    va_list va;
 
    va_start(va, fmt);
@@ -39,26 +40,31 @@ static void dprintf(const char *fmt, ...)
 
    OutputDebugStringA(buffer);
 
-#ifdef VRDPAUTH_DEBUG_FILE_NAME
-   FILE *f = fopen (VRDPAUTH_DEBUG_FILE_NAME, "ab");
-   fprintf (f, "%s", buffer);
-   fclose (f);
-#endif
+   FILE *f = fopen (AUTH_DEBUG_FILE_NAME, "ab");
+   if (f)
+   {
+       fprintf (f, "%s", buffer);
+       fclose (f);
+   }
 
    va_end (va);
+#endif
 }
 
 extern "C"
 #if defined(_MSC_VER)
 __declspec(dllexport)
 #endif
-VRDPAuthResult VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
-                                      VRDPAuthGuestJudgement guestJudgement,
-                                      const char *szUser,
-                                      const char *szPassword,
-                                      const char *szDomain)
+AuthResult AUTHCALL AuthEntry (const char *szCaller,
+                               PAUTHUUID pUuid,
+                               AuthGuestJudgement guestJudgement,
+                               const char *szUser,
+                               const char *szPassword,
+                               const char *szDomain,
+                               int fLogon,
+                               unsigned clientId)
 {
-    VRDPAuthResult result = VRDPAuthAccessDenied;
+    AuthResult result = AuthResultAccessDenied;
 
     LPTSTR lpszUsername = (char *)szUser;
     LPTSTR lpszDomain   = (char *)szDomain;
@@ -85,7 +91,7 @@ VRDPAuthResult VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
     {
         dprintf("LogonUser success. hToken = %p\n", hToken);
 
-        result = VRDPAuthAccessGranted;
+        result = AuthResultAccessGranted;
 
         CloseHandle (hToken);
     }
@@ -98,4 +104,4 @@ VRDPAuthResult VRDPAUTHCALL VRDPAuth (PVRDPAUTHUUID pUuid,
 }
 
 /* Verify the function prototype. */
-static PVRDPAUTHENTRY gpfnAuthEntry = VRDPAuth;
+static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;
