@@ -55,7 +55,7 @@
    <item row="1" column="2">
     <layout class="QHBoxLayout" name="m_pLayout1">
      <property name="spacing">
-      <number>1</number>
+      <number>3</number>
      </property>
      <property name="margin">
       <number>0</number>
