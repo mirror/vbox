@@ -845,7 +845,6 @@ NTSTATUS vboxguestwinShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 NTSTATUS vboxguestwinNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 {
     Log(("VBoxGuest::vboxguestwinGuestNotSupportedStub\n"));
-    pDevObj = pDevObj;
 
     pIrp->IoStatus.Information = 0;
     pIrp->IoStatus.Status = STATUS_NOT_SUPPORTED;
