@@ -191,9 +191,17 @@ static int ctrlPrintError(com::ErrorInfo &errorInfo)
                           VERR_INVALID_PARAMETER);
 }
 
+static int ctrlPrintError(IUnknown *pObj, const GUID &aIID)
+{
+    com::ErrorInfo ErrInfo(pObj, aIID);
+    return ctrlPrintError(ErrInfo);
+}
+
+
 static int ctrlPrintProgressError(ComPtr<IProgress> progress)
 {
-    return ctrlPrintError(com::ProgressErrorInfo(progress));
+    com::ProgressErrorInfo ErrInfo(progress);
+    return ctrlPrintError(ErrInfo);
 }
 
 /**
@@ -432,9 +440,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                                    Bstr(Utf8Password).raw(), u32TimeoutMS,
                                    &uPID, progress.asOutParam());
         if (FAILED(rc))
-        {
-            vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
-        }
+            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
         else
         {
             if (fVerbose)
@@ -489,7 +495,7 @@ static int handleCtrlExecProgram(HandlerArg *a)
                                                      u32TimeoutMS, _64K, ComSafeArrayAsOutParam(aOutputData));
                         if (FAILED(rc))
                         {
-                            vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
+                            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
 
                             cbOutputData = 0;
                             fCompleted = true; /* rc contains a failure, so we'll go into aborted state down below. */
@@ -967,9 +973,7 @@ static int ctrlCopyFileToGuest(IGuest *pGuest, const char *pszSource, const char
                                      Bstr(pszUserName).raw(), Bstr(pszPassword).raw(),
                                      uFlags, progress.asOutParam());
     if (FAILED(rc))
-    {
-        vrc = ctrlPrintError(com::ErrorInfo(pGuest, COM_IIDOF(IGuest)));
-    }
+        vrc = ctrlPrintError(pGuest, COM_IIDOF(IGuest));
     else
     {
         /* Setup signal handling if cancelable. */
@@ -1210,7 +1214,7 @@ static int handleCtrlCopyTo(HandlerArg *a)
                                                     progressDir.asOutParam());
                     RTStrFree(pszDestPath);
                     if (FAILED(rc))
-                        vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
+                        vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
                     else
                     {
                         if (fVerbose)
@@ -1361,7 +1365,7 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                                         Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
                                         uMode, uFlags, progress.asOutParam());
             if (FAILED(rc))
-                vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
+                vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
             else
             {
                 LONG iRc;
@@ -1472,7 +1476,7 @@ static int handleCtrlUpdateAdditions(HandlerArg *a)
                                                     AdditionsUpdateFlag_None,
                                                     progress.asOutParam()));
             if (FAILED(rc))
-                vrc = ctrlPrintError(com::ErrorInfo(guest, COM_IIDOF(IGuest)));
+                vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
             else
             {
                 rc = showProgress(progress);
