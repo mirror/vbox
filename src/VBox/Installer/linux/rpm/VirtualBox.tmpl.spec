@@ -97,12 +97,12 @@ mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/share/virtualbox
 cd icons
   for i in *; do
     install -d $RPM_BUILD_ROOT/usr/share/icons/hicolor/$i/mimetypes
-    mv $i/* $(prefix)/usr/share/icons/hicolor/$i/mimetypes
+    mv $i/* $RPM_BUILD_ROOT/usr/share/icons/hicolor/$i/mimetypes
     rmdir $i
   done
 cd -
 rmdir icons
-mv virtualbox.xml /usr/share/mime/packages
+mv virtualbox.xml $RPM_BUILD_ROOT/usr/share/mime/packages
 for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless vboxwebsrv webtest; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
