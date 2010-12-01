@@ -1040,12 +1040,6 @@ VirtualBox</screen>
       relies on to retrieve valid information about your host's USB devices.
       The rest of this section only applies to those older systems.</para>
 
-      <note>
-        <para>The current rdesktop-vrdp implementation does not support
-        accessing USB devices through the
-        <computeroutput>sysfs</computeroutput>!</para>
-      </note>
-
       <para>As <computeroutput>usbfs</computeroutput> is a virtual filesystem,
       a <computeroutput>chmod</computeroutput> on
       <computeroutput>/proc/bus/usb</computeroutput> has no effect. The
