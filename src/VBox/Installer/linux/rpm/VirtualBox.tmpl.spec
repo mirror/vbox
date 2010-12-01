@@ -67,16 +67,10 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/src
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/applications
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/pixmaps
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/icons/hicolor
-cd icons
-  for i in *; do
-    install -d -g 0 -o 0 $RPM_BUILD_ROOT/usr/share/icons/hicolor/$i/mimetypes
-    mv $i/* $(prefix)/usr/share/icons/hicolor/$i/mimetypes
-    rmdir $i
-  done
-cd -
 install -m 755 -d $RPM_BUILD_ROOT%{_defaultdocdir}/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/lib/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/virtualbox
+install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
 mv VBoxEFI32.fd $RPM_BUILD_ROOT/usr/lib/virtualbox || true
 mv VBoxEFI64.fd $RPM_BUILD_ROOT/usr/lib/virtualbox || true
 mv *.gc $RPM_BUILD_ROOT/usr/lib/virtualbox
@@ -100,6 +94,15 @@ cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBox.sh $RPM_BUILD_ROOT/usr/bin/VBox
 mv VBoxSysInfo.sh $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/share/virtualbox
+cd icons
+  for i in *; do
+    install -d -g 0 -o 0 $RPM_BUILD_ROOT/usr/share/icons/hicolor/$i/mimetypes
+    mv $i/* $(prefix)/usr/share/icons/hicolor/$i/mimetypes
+    rmdir $i
+  done
+cd -
+rmdir icons
+mv virtualbox.xml /usr/share/mime/packages
 for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless vboxwebsrv webtest; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
@@ -258,13 +261,6 @@ for i in /sys/bus/usb/devices/*; do
     sh ${usb_createnode} "$major" "$minor" "$class" ${usb_group} 2>/dev/null
   fi
 done
-# Push the permissions to the USB device nodes.  One of these should match.
-# Rather nasty to use udevadm trigger for this, but I don't know of any
-# better way.
-udevadm trigger --subsystem-match=usb > /dev/null 2>&1
-udevtrigger --subsystem-match=usb > /dev/null 2>&1
-udevtrigger --subsystem-match=usb_device > /dev/null 2>&1
-udevplug -Busb > /dev/null 2>&1
 
 # XXX SELinux: allow text relocation entries
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
@@ -301,6 +297,9 @@ fi
 %{update_desktop_database}
 %update_menus
 %endif
+update-mime-database /usr/share/mime &> /dev/null || :
+touch --no-create /usr/share/icons/hicolor
+gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
 
 # Disable module compilation with INSTALL_NO_VBOXDRV=1 in /etc/default/virtualbox
 BUILD_MODULES=0
@@ -408,6 +407,9 @@ fi
 %{clean_desktop_database}
 %clean_menus
 %endif
+update-mime-database /usr/share/mime &> /dev/null || :
+touch --no-create /usr/share/icons/hicolor
+gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
 
 
 %clean
@@ -432,6 +434,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/src/vbox*
 /usr/lib/virtualbox
 /usr/share/applications
+/usr/share/icons
+/usr/share/mime/packages
 /usr/share/pixmaps
 /usr/share/virtualbox
-/usr/share/icons
