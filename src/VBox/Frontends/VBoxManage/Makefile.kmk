@@ -49,7 +49,8 @@ else # !VBOX_ONLY_DOCS
  	VBoxManageModifyVM.cpp \
  	VBoxManageSnapshot.cpp \
  	VBoxManageStorageController.cpp \
- 	VBoxManageUSB.cpp
+ 	VBoxManageUSB.cpp \
+ 	VBoxManageBandwidthControl.cpp
 endif # !VBOX_ONLY_DOCS
 
 VBoxManage_DEFS      += \

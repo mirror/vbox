@@ -50,6 +50,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--medium",         'm', RTGETOPT_REQ_STRING },
     { "--type",           't', RTGETOPT_REQ_STRING },
     { "--passthrough",    'h', RTGETOPT_REQ_STRING },
+    { "--bandwidthgroup", 'b', RTGETOPT_REQ_STRING },
     { "--forceunmount",   'f', RTGETOPT_REQ_NOTHING },
 };
 
@@ -64,6 +65,7 @@ int handleStorageAttach(HandlerArg *a)
     const char *pszType = NULL;
     const char *pszMedium = NULL;
     const char *pszPassThrough = NULL;
+    const char *pszBandwidthGroup = NULL;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     ComPtr<IMachine> machine;
@@ -131,6 +133,15 @@ int handleStorageAttach(HandlerArg *a)
                 break;
             }
 
+            case 'b':   // bandwidthgroup <name>
+            {
+                if (ValueUnion.psz)
+                    pszBandwidthGroup = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
             case 'f':   // force unmount medium during runtime
             {
                 fForceUnmount = true;
@@ -184,6 +195,12 @@ int handleStorageAttach(HandlerArg *a)
     if (fRunTime && pszPassThrough)
     {
         errorArgument("Drive passthrough state can't be changed while the VM is running\n");
+        goto leave;
+    }
+
+    if (fRunTime && pszBandwidthGroup)
+    {
+        errorArgument("Bandwidth group can't be changed while the VM is running\n");
         goto leave;
     }
 
@@ -622,6 +639,36 @@ int handleStorageAttach(HandlerArg *a)
         {
             errorArgument("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
             rc = E_FAIL;
+        }
+    }
+
+    if (   pszBandwidthGroup
+        && !fRunTime
+        && SUCCEEDED(rc))
+    {
+
+        if (!RTStrICmp(pszBandwidthGroup, "none"))
+        {
+            /* Just remove the bandwidth gorup. */
+            CHECK_ERROR(machine, SetBandwidthGroupForDevice(Bstr(pszCtl).raw(),
+                                                            port, device, NULL));
+        }
+        else
+        {
+            ComPtr<IBandwidthControl> bwCtrl;
+            ComPtr<IBandwidthGroup> bwGroup;
+
+            CHECK_ERROR(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()));
+
+            if (SUCCEEDED(rc))
+            {
+                CHECK_ERROR(bwCtrl, GetBandwidthGroup(Bstr(pszBandwidthGroup).raw(), bwGroup.asOutParam()));
+                if (SUCCEEDED(rc))
+                {
+                    CHECK_ERROR(machine, SetBandwidthGroupForDevice(Bstr(pszCtl).raw(),
+                                                                    port, device, bwGroup));
+                }
+            }
         }
     }
 

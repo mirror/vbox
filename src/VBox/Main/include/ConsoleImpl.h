@@ -190,6 +190,7 @@ public:
     HRESULT onSharedFolderChange(BOOL aGlobal);
     HRESULT onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aError, ULONG aMaskedIfs);
     HRESULT onUSBDeviceDetach(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
+    HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
     HRESULT getGuestProperty(IN_BSTR aKey, BSTR *aValue, LONG64 *aTimestamp, BSTR *aFlags);
     HRESULT setGuestProperty(IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
     HRESULT enumerateGuestProperties(IN_BSTR aPatterns,
@@ -481,6 +482,7 @@ private:
                      bool fSetupMerge,
                      unsigned uMergeSource,
                      unsigned uMergeTarget,
+                     const char *pcszBwGroup,
                      IMedium *pMedium,
                      MachineState_T aMachineState,
                      HRESULT *phrc);

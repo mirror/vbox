@@ -18,8 +18,10 @@
 #include "MediumAttachmentImpl.h"
 #include "MachineImpl.h"
 #include "MediumImpl.h"
+#include "BandwidthGroupImpl.h"
 #include "Global.h"
 
+#include "AutoStateDep.h"
 #include "AutoCaller.h"
 #include "Logging.h"
 
@@ -38,11 +40,11 @@ struct BackupableMediumAttachmentData
           lDevice(0),
           type(DeviceType_Null),
           fPassthrough(false),
-          fImplicit(false),
-          mBandwidthLimit(0)
+          fImplicit(false)
     { }
 
     ComObjPtr<Medium>   pMedium;
+    ComObjPtr<BandwidthGroup> pBwGroup;
     /* Since MediumAttachment is not a first class citizen when it
      * comes to managing settings, having a reference to the storage
      * controller will not work - when settings are changed it will point
@@ -54,7 +56,6 @@ struct BackupableMediumAttachmentData
     const DeviceType_T  type;
     bool                fPassthrough;
     bool                fImplicit;
-    ULONG               mBandwidthLimit;
 };
 
 struct MediumAttachment::Data
@@ -107,7 +108,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                LONG aDevice,
                                DeviceType_T aType,
                                bool aPassthrough,
-                               ULONG aBandwidthLimit)
+                               BandwidthGroup *aBandwidthGroup)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aPassthrough=%d\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aPassthrough));
@@ -125,6 +126,9 @@ HRESULT MediumAttachment::init(Machine *aParent,
 
     m->bd.allocate();
     m->bd->pMedium = aMedium;
+    if (aBandwidthGroup)
+        aBandwidthGroup->reference();
+    m->bd->pBwGroup = aBandwidthGroup;
     unconst(m->bd->bstrControllerName) = aControllerName;
     unconst(m->bd->lPort)   = aPort;
     unconst(m->bd->lDevice) = aDevice;
@@ -134,8 +138,6 @@ HRESULT MediumAttachment::init(Machine *aParent,
     /* Newly created attachments never have an implicitly created medium
      * associated with them. Implicit diff image creation happens later. */
     m->bd->fImplicit = false;
-
-    m->bd->mBandwidthLimit = aBandwidthLimit;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -277,35 +279,17 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
     return S_OK;
 }
 
-STDMETHODIMP MediumAttachment::COMGETTER(BandwidthLimit) (ULONG *aLimit)
+STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGroup)
 {
-    CheckComArgOutPointerValid(aLimit);
+    CheckComArgOutPointerValid(aBwGroup);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aLimit = m->bd->mBandwidthLimit;
-    return S_OK;
-}
+    m->bd->pBwGroup.queryInterfaceTo(aBwGroup);
 
-STDMETHODIMP MediumAttachment::COMSETTER(BandwidthLimit) (ULONG aLimit)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine doesn't need to be mutable */
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (aLimit != m->bd->mBandwidthLimit)
-    {
-        m->bd.backup();
-        m->bd->mBandwidthLimit = aLimit;
-
-        /* todo: not all storage attachments will support this. */
-    }
     return S_OK;
 }
 
@@ -387,6 +371,11 @@ bool MediumAttachment::getPassthrough() const
     return m->bd->fPassthrough;
 }
 
+const ComObjPtr<BandwidthGroup>& MediumAttachment::getBandwidthGroup() const
+{
+    return m->bd->pBwGroup;
+}
+
 bool MediumAttachment::matches(CBSTR aControllerName, LONG aPort, LONG aDevice)
 {
     return (    aControllerName == m->bd->bstrControllerName
@@ -414,5 +403,20 @@ void MediumAttachment::updatePassthrough(bool aPassthrough)
 
     m->bd.backup();
     m->bd->fPassthrough = aPassthrough;
+}
+
+void MediumAttachment::updateBandwidthGroup(const ComObjPtr<BandwidthGroup> &aBandwidthGroup)
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    m->bd.backup();
+    if (!aBandwidthGroup.isNull())
+        aBandwidthGroup->reference();
+
+    if (!m->bd->pBwGroup.isNull())
+    {
+        m->bd->pBwGroup->release();
+    }
+    m->bd->pBwGroup = aBandwidthGroup;
 }
 

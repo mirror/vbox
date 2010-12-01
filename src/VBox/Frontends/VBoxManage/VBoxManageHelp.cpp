@@ -463,6 +463,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--medium none|emptydrive|\n"
                      "                                      <uuid>|<filename>|host:<drive>]\n"
                      "                            [--passthrough on|off]\n"
+                     "                            [--bandwidthgroup <name>]\n"
                      "                            [--forceunmount]\n"
                      "\n");
     }
@@ -480,6 +481,17 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--hostiocache on|off]\n"
                      "                            [--bootable on|off]\n"
                      "                            [--remove]\n"
+                     "\n");
+    }
+
+    if (u64Cmd & USAGE_BANDWIDTHCONTROL)
+    {
+        RTStrmPrintf(pStrm,
+                     "VBoxManage bandwidthctl     <uuid|vmname>\n"
+                     "                            --name <name>\n"
+                     "                            [--add disk|network]\n"
+                     "                            [--limit <megabytes per second>\n"
+                     "                            [--delete]\n"
                      "\n");
     }
 

@@ -96,6 +96,7 @@
 #include <VBox/ftm.h>
 #include <VBox/ssm.h>
 #include <VBox/version.h>
+#include <VBox/pdmasynccompletion.h>
 #ifdef VBOX_WITH_USB
 # include <VBox/pdmusb.h>
 #endif
@@ -4320,6 +4321,61 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
 #else   /* !VBOX_WITH_USB */
     return E_FAIL;
 #endif  /* !VBOX_WITH_USB */
+}
+
+/**
+ * Called by IInternalSessionControl::OnBandwidthGroupChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    /* don't trigger the CPU priority change if the VM isn't running */
+    if (mpVM)
+    {
+        /* protect mpVM */
+        AutoVMCaller autoVMCaller(this);
+        if (FAILED(autoVMCaller.rc())) return autoVMCaller.rc();
+
+        if (   mMachineState == MachineState_Running
+            || mMachineState == MachineState_Teleporting
+            || mMachineState == MachineState_LiveSnapshotting
+            )
+        {
+            /* No need to call in the EMT thread. */
+            ULONG cMax;
+            Bstr strName;
+            rc = aBandwidthGroup->COMGETTER(Name)(strName.asOutParam());
+            if (SUCCEEDED(rc))
+                rc = aBandwidthGroup->COMGETTER(MaxMbPerSec)(&cMax);
+
+            if (SUCCEEDED(rc))
+            {
+                int vrc;
+                vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(mpVM, Utf8Str(strName).c_str(),
+                                                             cMax * _1M);
+                AssertRC(vrc);
+            }
+        }
+        else
+            rc = setInvalidMachineStateError();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+        fireBandwidthGroupChangedEvent(mEventSource, aBandwidthGroup);
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
 }
 
 /**

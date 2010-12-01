@@ -1032,6 +1032,9 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
         mParallelPorts[slot]->initCopy(this, mPeer->mParallelPorts[slot]);
     }
 
+    unconst(mBandwidthControl).createObject();
+    mBandwidthControl->initCopy(this, mPeer->mBandwidthControl);
+
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
@@ -1122,6 +1125,9 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
         unconst(mParallelPorts[slot]).createObject();
         mParallelPorts[slot]->init(this, slot);
     }
+
+    unconst(mBandwidthControl).createObject();
+    mBandwidthControl->init(this);
 
     /* load hardware and harddisk settings */
 

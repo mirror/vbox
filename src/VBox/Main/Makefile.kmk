@@ -318,6 +318,8 @@ VBoxSVC_SOURCES = \
 	DisplayUtils.cpp \
 	DisplayPNGUtil.cpp \
 	DisplayResampleImage.cpp \
+	BandwidthControlImpl.cpp \
+	BandwidthGroupImpl.cpp \
 	$(VBOX_AUTOGEN_EVENT_CPP) \
 	VRDEServerImpl.cpp \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \

@@ -48,6 +48,7 @@
 #include "StorageControllerImpl.h"
 #include "DisplayImpl.h"
 #include "DisplayUtils.h"
+#include "BandwidthControlImpl.h"
 
 #ifdef VBOX_WITH_USB
 # include "USBProxyService.h"
@@ -3656,7 +3657,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           aDevice,
                           aType,
                           fIndirect,
-                          0 /* No bandwidth limit */);
+                          NULL);
     if (FAILED(rc)) return rc;
 
     if (associate && !medium.isNull())
@@ -3783,6 +3784,54 @@ STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControlle
 
     return S_OK;
 }
+
+STDMETHODIMP Machine::SetBandwidthGroupForDevice(IN_BSTR aControllerName, LONG aControllerPort,
+                                                 LONG aDevice, IBandwidthGroup *aBandwidthGroup)
+{
+    CheckComArgStrNotEmptyOrNull(aControllerName);
+
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
+                     aControllerName, aControllerPort, aDevice));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
+
+    if (Global::IsOnlineOrTransient(mData->mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
+
+    MediumAttachment *pAttach = findAttachment(mMediaData->mAttachments,
+                                               aControllerName,
+                                               aControllerPort,
+                                               aDevice);
+    if (!pAttach)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
+                        aDevice, aControllerPort, aControllerName);
+
+
+    setModified(IsModified_Storage);
+    mMediaData.backup();
+
+    ComObjPtr<BandwidthGroup> group = static_cast<BandwidthGroup*>(aBandwidthGroup);
+    if (aBandwidthGroup && group.isNull())
+        return setError(E_INVALIDARG, "The given bandwidth group pointer is invalid");
+
+    AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+
+    pAttach->updateBandwidthGroup(group);
+
+    return S_OK;
+}
+
 
 STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                   LONG aControllerPort,
@@ -5771,6 +5820,18 @@ STDMETHODIMP Machine::COMGETTER(PciDeviceAssignments)(ComSafeArrayOut(IPciDevice
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(BandwidthControl)(IBandwidthControl **aBandwidthControl)
+{
+    CheckComArgOutPointerValid(aBandwidthControl);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    mBandwidthControl.queryInterfaceTo(aBandwidthControl);
+
+    return S_OK;
+}
+
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -6627,6 +6688,10 @@ HRESULT Machine::initDataAndChildObjects()
         mNetworkAdapters[slot]->init(this, slot);
     }
 
+    /* create the bandwidth control */
+    unconst(mBandwidthControl).createObject();
+    mBandwidthControl->init(this);
+
     return S_OK;
 }
 
@@ -6647,6 +6712,11 @@ void Machine::uninitDataAndChildObjects()
                            || autoCaller.state() == Limited);
 
     /* tell all our other child objects we've been uninitialized */
+    if (mBandwidthControl)
+    {
+        mBandwidthControl->uninit();
+        unconst(mBandwidthControl).setNull();
+    }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
     {
@@ -7269,6 +7339,10 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mIoCacheEnabled = data.ioSettings.fIoCacheEnabled;
         mHWData->mIoCacheSize = data.ioSettings.ulIoCacheSize;
 
+        // Bandwidth control
+        rc = mBandwidthControl->loadSettings(data.ioSettings);
+        if (FAILED(rc)) return rc;
+
 #ifdef VBOX_WITH_GUEST_PROPS
         /* Guest properties (optional) */
         for (settings::GuestPropertiesList::const_iterator it = data.llGuestProperties.begin();
@@ -7503,6 +7577,21 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         if (FAILED(rc))
             break;
 
+        /* Bandwidth groups are loaded at this point. */
+        ComObjPtr<BandwidthGroup> pBwGroup;
+
+        if (!dev.strBwGroup.isEmpty())
+        {
+            rc = mBandwidthControl->getBandwidthGroupByName(dev.strBwGroup, pBwGroup, false /* aSetError */);
+            if (FAILED(rc))
+                return setError(E_FAIL,
+                                tr("Device '%s' with unknown bandwidth group '%s' is attached to the virtual machine '%s' ('%s')"),
+                                medium->getLocationFull().c_str(),
+                                dev.strBwGroup.c_str(),
+                                mUserData->s.strName.c_str(),
+                                mData->m_strConfigFileFull.c_str());
+        }
+
         const Bstr controllerName = aStorageController->getName();
         ComObjPtr<MediumAttachment> pAttachment;
         pAttachment.createObject();
@@ -7513,7 +7602,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.lDevice,
                                dev.deviceType,
                                dev.fPassThrough,
-                               dev.ulBandwidthLimit);
+                               pBwGroup);
         if (FAILED(rc)) break;
 
         /* associate the medium with this machine and snapshot */
@@ -8299,6 +8388,10 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.ioSettings.fIoCacheEnabled = !!mHWData->mIoCacheEnabled;
         data.ioSettings.ulIoCacheSize = mHWData->mIoCacheSize;
 
+        /* BandwidthControl (required) */
+        rc = mBandwidthControl->saveSettings(data.ioSettings);
+        if (FAILED(rc)) throw rc;
+
         // guest properties
         data.llGuestProperties.clear();
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -8416,6 +8509,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
 
         MediumAttachment *pAttach = *it;
         Medium *pMedium = pAttach->getMedium();
+        BandwidthGroup *pBwGroup = pAttach->getBandwidthGroup();
 
         dev.deviceType = pAttach->getType();
         dev.lPort = pAttach->getPort();
@@ -8427,6 +8521,11 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
             else
                 dev.uuid = pMedium->getId();
             dev.fPassThrough = pAttach->getPassthrough();
+        }
+
+        if (pBwGroup)
+        {
+            dev.strBwGroup = pBwGroup->getName();
         }
 
         data.llAttachedDevices.push_back(dev);
@@ -8702,7 +8801,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                   pAtt->getDevice(),
                                   DeviceType_HardDisk,
                                   true /* aImplicit */,
-                                  0 /* No bandwidth limit */);
+                                  pAtt->getBandwidthGroup());
             if (FAILED(rc)) throw rc;
 
             rc = lockedMediaMap->ReplaceKey(pAtt, attachment);
@@ -9368,6 +9467,9 @@ void Machine::rollback(bool aNotify)
     if (mUSBController && (mData->flModifications & IsModified_USB))
         mUSBController->rollback();
 
+    if (mBandwidthControl && (mData->flModifications & IsModified_BandwidthControl))
+        mBandwidthControl->rollback();
+
     ComPtr<INetworkAdapter> networkAdapters[RT_ELEMENTS(mNetworkAdapters)];
     ComPtr<ISerialPort> serialPorts[RT_ELEMENTS(mSerialPorts)];
     ComPtr<IParallelPort> parallelPorts[RT_ELEMENTS(mParallelPorts)];
@@ -9427,6 +9529,11 @@ void Machine::rollback(bool aNotify)
 
         if (flModifications & IsModified_Storage)
             that->onStorageControllerChange();
+
+#if 0
+        if (flModifications & IsModified_BandwidthControl)
+            that->onBandwidthControlChange();
+#endif
     }
 }
 
@@ -9462,6 +9569,7 @@ void Machine::commit()
     mVRDEServer->commit();
     mAudioAdapter->commit();
     mUSBController->commit();
+    mBandwidthControl->commit();
 
     for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
         mNetworkAdapters[slot]->commit();
@@ -9592,6 +9700,7 @@ void Machine::copyFrom(Machine *aThat)
     mVRDEServer->copyFrom(aThat->mVRDEServer);
     mAudioAdapter->copyFrom(aThat->mAudioAdapter);
     mUSBController->copyFrom(aThat->mUSBController);
+    mBandwidthControl->copyFrom(aThat->mBandwidthControl);
 
     /* create private copies of all controllers */
     mStorageControllers.backup();
@@ -9944,6 +10053,10 @@ HRESULT SessionMachine::init(Machine *aMachine)
         unconst(mNetworkAdapters[slot]).createObject();
         mNetworkAdapters[slot]->init(this, aMachine->mNetworkAdapters[slot]);
     }
+
+    /* create another bandwidth control object that will be mutable */
+    unconst(mBandwidthControl).createObject();
+    mBandwidthControl->init(this, aMachine->mBandwidthControl);
 
     /* default is to delete saved state on Saved -> PoweredOff transition */
     mRemoveSavedState = true;
@@ -11199,6 +11312,29 @@ HRESULT SessionMachine::onSharedFolderChange()
         return S_OK;
 
     return directControl->OnSharedFolderChange(FALSE /* aGlobal */);
+}
+
+/**
+ *  @note Locks this object for reading.
+ */
+HRESULT SessionMachine::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnBandwidthGroupChange(aBandwidthGroup);
 }
 
 /**
