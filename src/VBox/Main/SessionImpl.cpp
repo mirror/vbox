@@ -705,6 +705,20 @@ STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
     return mConsole->onShowWindow(aCheck, aCanShow, aWinId);
 }
 
+STDMETHODIMP Session::OnBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->onBandwidthGroupChange(aBandwidthGroup);
+}
+
 STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
                                           BOOL aIsSetter, BSTR *aRetValue, LONG64 *aRetTimestamp, BSTR *aRetFlags)
 {

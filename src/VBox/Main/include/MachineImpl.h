@@ -31,6 +31,7 @@
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
+#include "BandwidthControlImpl.h"
 #include "VBox/settings.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "Performance.h"
@@ -467,6 +468,8 @@ public:
                             LONG aDevice, DeviceType_T aType, IMedium *aMedium);
     STDMETHOD(DetachDevice)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice);
     STDMETHOD(PassthroughDevice)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice, BOOL aPassthrough);
+    STDMETHOD(SetBandwidthGroupForDevice)(IN_BSTR aControllerName, LONG aControllerPort,
+                                          LONG aDevice, IBandwidthGroup *aBandwidthGroup);
     STDMETHOD(MountMedium)(IN_BSTR aControllerName, LONG aControllerPort,
                            LONG aDevice, IMedium *aMedium, BOOL aForce);
     STDMETHOD(GetMedium)(IN_BSTR aControllerName, LONG aControllerPort, LONG aDevice,
@@ -522,6 +525,7 @@ public:
     STDMETHOD(AttachHostPciDevice(LONG hostAddress, LONG desiredGuestAddress, IEventContext *eventContext, BOOL tryToUnbind));
     STDMETHOD(DetachHostPciDevice(LONG hostAddress));
     STDMETHOD(COMGETTER(PciDeviceAssignments))(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments));
+    STDMETHOD(COMGETTER(BandwidthControl))(IBandwidthControl **aBandwidthControl);
     // public methods only for internal purposes
 
     virtual bool isSnapshotMachine() const
@@ -609,7 +613,8 @@ public:
         IsModified_USB                  = 0x0100,
         IsModified_BIOS                 = 0x0200,
         IsModified_SharedFolders        = 0x0400,
-        IsModified_Snapshots            = 0x0800
+        IsModified_Snapshots            = 0x0800,
+        IsModified_BandwidthControl     = 0x1000
     };
 
     void setModified(uint32_t fl);
@@ -627,6 +632,7 @@ public:
     virtual HRESULT onCPUExecutionCapChange(ULONG /* aExecutionCap */) { return S_OK; }
     virtual HRESULT onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
+    virtual HRESULT onBandwidthGroupChange(IBandwidthGroup */* aBandwidthGroup */) { return S_OK; }
 
     HRESULT saveRegistryEntry(settings::MachineRegistryEntry &data);
 
@@ -859,6 +865,7 @@ protected:
     const ComObjPtr<USBController>  mUSBController;
     const ComObjPtr<BIOSSettings>   mBIOSSettings;
     const ComObjPtr<NetworkAdapter> mNetworkAdapters[SchemaDefs::NetworkAdapterCount];
+    const ComObjPtr<BandwidthControl> mBandwidthControl;
 
     typedef std::list< ComObjPtr<StorageController> > StorageControllerList;
     Backupable<StorageControllerList> mStorageControllers;
@@ -979,6 +986,7 @@ public:
     HRESULT onUSBDeviceDetach(IN_BSTR aId,
                               IVirtualBoxErrorInfo *aError);
     HRESULT onSharedFolderChange();
+    HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
 
     bool hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 

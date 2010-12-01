@@ -1633,6 +1633,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fPageFusionEnabled        == h.fPageFusionEnabled)
                   && (llGuestProperties         == h.llGuestProperties)
                   && (strNotificationPatterns   == h.strNotificationPatterns)
+                  && (ioSettings                == h.ioSettings)
                 )
             );
 }
@@ -1651,7 +1652,7 @@ bool AttachedDevice::operator==(const AttachedDevice &a) const
                   && (lDevice                   == a.lDevice)
                   && (uuid                      == a.uuid)
                   && (strHostDriveSrc           == a.strHostDriveSrc)
-                  && (ulBandwidthLimit          == a.ulBandwidthLimit)
+                  && (strBwGroup                == a.strBwGroup)
                 )
            );
 }
@@ -2655,12 +2656,41 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             readGuestProperties(*pelmHwChild, hw);
         else if (pelmHwChild->nameEquals("IO"))
         {
+            const xml::ElementNode *pelmBwGroups;
             const xml::ElementNode *pelmIoChild;
 
             if ((pelmIoChild = pelmHwChild->findChildElement("IoCache")))
             {
                 pelmIoChild->getAttributeValue("enabled", hw.ioSettings.fIoCacheEnabled);
                 pelmIoChild->getAttributeValue("size", hw.ioSettings.ulIoCacheSize);
+            }
+
+            if ((pelmBwGroups = pelmHwChild->findChildElement("BandwidthGroups")))
+            {
+                xml::NodesLoop nl2(*pelmBwGroups, "BandwidthGroup");
+                const xml::ElementNode *pelmBandwidthGroup;
+                while ((pelmBandwidthGroup = nl2.forAllNodes()))
+                {
+                    BandwidthGroup gr;
+                    Utf8Str strTemp;
+
+                    pelmBandwidthGroup->getAttributeValue("name", gr.strName);
+
+                    if (pelmBandwidthGroup->getAttributeValue("type", strTemp))
+                    {
+                        if (strTemp == "Disk")
+                            gr.enmType = BandwidthGroupType_Disk;
+                        else if (strTemp == "Network")
+                            gr.enmType = BandwidthGroupType_Network;
+                        else
+                            throw ConfigFileError(this, pelmBandwidthGroup, N_("Invalid value '%s' in BandwidthGroup/@type attribute"), strTemp.c_str());
+                    }
+                    else
+                        throw ConfigFileError(this, pelmBandwidthGroup, N_("Missing BandwidthGroup/@type attribute"));
+
+                    pelmBandwidthGroup->getAttributeValue("maxMbPerSec", gr.cMaxMbPerSec);
+                    hw.ioSettings.llBandwidthGroups.push_back(gr);
+                }
             }
         }
     }
@@ -2877,7 +2907,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
                 if (!pelmAttached->getAttributeValue("device", att.lDevice))
                     throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/@device attribute is missing"));
 
-                pelmAttached->getAttributeValue("bandwidthLimit", att.ulBandwidthLimit);
+                pelmAttached->getAttributeValue("bandwidthGroup", att.strBwGroup);
                 sctl.llAttachedDevices.push_back(att);
             }
         }
@@ -3759,12 +3789,31 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     {
         xml::ElementNode *pelmIo = pelmHardware->createChild("IO");
         xml::ElementNode *pelmIoCache;
-        xml::ElementNode *pelmIoBandwidth;
 
         pelmIoCache = pelmIo->createChild("IoCache");
         pelmIoCache->setAttribute("enabled", hw.ioSettings.fIoCacheEnabled);
         pelmIoCache->setAttribute("size", hw.ioSettings.ulIoCacheSize);
-        pelmIoBandwidth = pelmIo->createChild("IoBandwidth");
+
+        if (m->sv >= SettingsVersion_v1_11)
+        {
+            xml::ElementNode *pelmBandwidthGroups = pelmIo->createChild("BandwidthGroups");
+            for (BandwidthGroupList::const_iterator it = hw.ioSettings.llBandwidthGroups.begin();
+                 it != hw.ioSettings.llBandwidthGroups.end();
+                 ++it)
+            {
+                const BandwidthGroup &gr = *it;
+                const char *pcszType;
+                xml::ElementNode *pelmThis = pelmBandwidthGroups->createChild("BandwidthGroup");
+                pelmThis->setAttribute("name", gr.strName);
+                switch (gr.enmType)
+                {
+                    case BandwidthGroupType_Network: pcszType = "Network"; break;
+                    default: /* BandwidthGrouptype_Disk */ pcszType = "Disk"; break;
+                }
+                pelmThis->setAttribute("type", pcszType);
+                pelmThis->setAttribute("maxMbPerSec", gr.cMaxMbPerSec);
+            }
+        }
     }
 
     xml::ElementNode *pelmGuest = pelmHardware->createChild("Guest");
@@ -4006,8 +4055,8 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             pelmDevice->setAttribute("port", att.lPort);
             pelmDevice->setAttribute("device", att.lDevice);
 
-            if (att.ulBandwidthLimit)
-                pelmDevice->setAttribute("bandwidthLimit", att.ulBandwidthLimit);
+            if (att.strBwGroup.length())
+                pelmDevice->setAttribute("bandwidthGroup", att.strBwGroup);
 
             // attached image, if any
             if (    !att.uuid.isEmpty()
@@ -4324,7 +4373,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_11)
     {
         // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance,
-        // per-machine media registries, VRDE and JRockitVE.
+        // per-machine media registries, VRDE, JRockitVE and bandwidth gorups.
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
              || hardwareMachine.ulCpuExecutionCap != 100
              || machineUserData.enmFaultToleranceState != FaultToleranceState_Inactive
@@ -4337,6 +4386,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              || !hardwareMachine.vrdeSettings.strVrdeExtPack.isEmpty()
              || !hardwareMachine.vrdeSettings.strAuthLibrary.isEmpty()
              || machineUserData.strOsType == "JRockitVE"
+             || hardwareMachine.ioSettings.llBandwidthGroups.size()
            )
             m->sv = SettingsVersion_v1_11;
     }
@@ -4436,7 +4486,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
                 // Bandwidth limitations are new in VirtualBox 4.0 (1.11)
                 if (    (m->sv < SettingsVersion_v1_11)
-                     && (att.ulBandwidthLimit != 0)
+                     && (att.strBwGroup.length() != 0)
                    )
                 {
                     m->sv = SettingsVersion_v1_11;

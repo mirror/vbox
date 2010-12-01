@@ -806,6 +806,43 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         InsertConfigInteger(pPDMBlkCache, "CacheSize", ioCacheSize * _1M);
 
         /*
+         * Bandwidth groups.
+         */
+        PCFGMNODE pAc;
+        PCFGMNODE pAcFile;
+        PCFGMNODE pAcFileBwGroups;
+        ComPtr<IBandwidthControl> bwCtrl;
+        com::SafeIfaceArray<IBandwidthGroup> bwGroups;
+
+        hrc = pMachine->COMGETTER(BandwidthControl)(bwCtrl.asOutParam());                   H();
+
+        hrc = bwCtrl->GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups));              H();
+
+        InsertConfigNode(pPDM, "AsyncCompletion", &pAc);
+        InsertConfigNode(pAc,  "File", &pAcFile);
+        InsertConfigNode(pAcFile,  "BwGroups", &pAcFileBwGroups);
+
+        for (size_t i = 0; i < bwGroups.size(); i++)
+        {
+            Bstr strName;
+            ULONG cMaxMbPerSec;
+            BandwidthGroupType_T enmType;
+
+            hrc = bwGroups[i]->COMGETTER(Name)(strName.asOutParam());                       H();
+            hrc = bwGroups[i]->COMGETTER(Type)(&enmType);                                   H();
+            hrc = bwGroups[i]->COMGETTER(MaxMbPerSec)(&cMaxMbPerSec);                       H();
+
+            if (enmType == BandwidthGroupType_Disk)
+            {
+                PCFGMNODE pBwGroup;
+                InsertConfigNode(pAcFileBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
+                InsertConfigInteger(pBwGroup, "Max", cMaxMbPerSec * _1M);
+                InsertConfigInteger(pBwGroup, "Start", cMaxMbPerSec * _1M);
+                InsertConfigInteger(pBwGroup, "Step", 0);
+            }
+        }
+
+        /*
          * Devices
          */
         PCFGMNODE pDevices = NULL;      /* /Devices */
@@ -2850,6 +2887,16 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
 
         BOOL fPassthrough;
         hrc = pMediumAtt->COMGETTER(Passthrough)(&fPassthrough);                            H();
+
+        ComObjPtr<IBandwidthGroup> pBwGroup;
+        Bstr strBwGroup;
+        hrc = pMediumAtt->COMGETTER(BandwidthGroup)(pBwGroup.asOutParam());                 H();
+
+        if (!pBwGroup.isNull())
+        {
+            hrc = pBwGroup->COMGETTER(Name)(strBwGroup.asOutParam());                       H();
+        }
+
         rc = configMedium(pLunL0,
                         !!fPassthrough,
                         lType,
@@ -2858,6 +2905,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                         fSetupMerge,
                         uMergeSource,
                         uMergeTarget,
+                        strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
                         pMedium,
                         aMachineState,
                         phrc);
@@ -2898,6 +2946,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                           bool fSetupMerge,
                           unsigned uMergeSource,
                           unsigned uMergeTarget,
+                          const char *pcszBwGroup,
                           IMedium *pMedium,
                           MachineState_T aMachineState,
                           HRESULT *phrc)
@@ -3092,6 +3141,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
                     default:
                         InsertConfigString(pCfg, "Type", "HardDisk");
                 }
+
+                if (pcszBwGroup)
+                    InsertConfigString(pCfg, "BwGroup", pcszBwGroup);
 
                 /* Pass all custom parameters. */
                 bool fHostIP = true;

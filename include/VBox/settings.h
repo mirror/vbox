@@ -652,18 +652,45 @@ typedef std::list<Cpu> CpuList;
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
  * your settings might never get saved.
  */
+struct BandwidthGroup
+{
+    BandwidthGroup()
+        : cMaxMbPerSec(0),
+          enmType(BandwidthGroupType_Null)
+    {}
+
+    bool operator==(const BandwidthGroup &i) const
+    {
+        return (   (strName      == i.strName)
+                && (cMaxMbPerSec == i.cMaxMbPerSec)
+                && (enmType      == i.enmType));
+    }
+
+    com::Utf8Str         strName;
+    uint32_t             cMaxMbPerSec;
+    BandwidthGroupType_T enmType;
+};
+typedef std::list<BandwidthGroup> BandwidthGroupList;
+
+/**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
 struct IoSettings
 {
     IoSettings();
 
     bool operator==(const IoSettings &i) const
     {
-        return (   (fIoCacheEnabled  == i.fIoCacheEnabled)
-                && (ulIoCacheSize    == i.ulIoCacheSize));
+        return (   (fIoCacheEnabled   == i.fIoCacheEnabled)
+                && (ulIoCacheSize     == i.ulIoCacheSize)
+                && (llBandwidthGroups == i.llBandwidthGroups));
     }
 
-    bool            fIoCacheEnabled;
-    uint32_t        ulIoCacheSize;
+    bool               fIoCacheEnabled;
+    uint32_t           ulIoCacheSize;
+    BandwidthGroupList llBandwidthGroups;
 };
 
 /**
@@ -753,8 +780,7 @@ struct AttachedDevice
         : deviceType(DeviceType_Null),
           fPassThrough(false),
           lPort(0),
-          lDevice(0),
-          ulBandwidthLimit(0)
+          lDevice(0)
     {}
 
     bool operator==(const AttachedDevice &a) const;
@@ -767,8 +793,6 @@ struct AttachedDevice
     int32_t             lPort;
     int32_t             lDevice;
 
-    uint32_t            ulBandwidthLimit;
-
     // if an image file is attached to the device (ISO, RAW, or hard disk image such as VDI),
     // this is its UUID; it depends on deviceType which media registry this then needs to
     // be looked up in. If no image file (only permitted for DVDs and floppies), then the UUID is NULL
@@ -776,6 +800,9 @@ struct AttachedDevice
 
     // for DVDs and floppies, the attachment can also be a host device:
     com::Utf8Str        strHostDriveSrc;        // if != NULL, value of <HostDrive>/@src
+
+    // Bandwidth group the device is attached to.
+    com::Utf8Str        strBwGroup;
 };
 typedef std::list<AttachedDevice> AttachedDevicesList;
 

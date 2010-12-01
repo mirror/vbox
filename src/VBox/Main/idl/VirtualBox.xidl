@@ -3475,7 +3475,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="711cbb73-75af-463c-af17-8b7860c01fe8"
+    uuid="662c175e-a69d-40b8-a77a-1d719d0ab062"
     wsmap="managed"
     >
     <desc>
@@ -4068,6 +4068,12 @@
       </desc>
     </attribute>
 
+    <attribute name="bandwidthControl" type="IBandwidthControl" readonly="yes">
+      <desc>
+        Bandwidth control manager.
+      </desc>
+    </attribute>
+
     <attribute name="pciDeviceAssignments" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
       <desc>Array of PCI devices assigned to this machine, to get list of all PCI devices
             attached to the machine use IConsole::attachedPciDevices attribute, as
@@ -4518,6 +4524,42 @@
       </param>
       <param name="passthrough" type="boolean" dir="in">
         <desc>New value for the passthrough setting.</desc>
+      </param>
+    </method>
+
+    <method name="setBandwidthGroupForDevice">
+      <desc>
+        Sets the passthrough mode of an existing DVD device. Changing the
+        setting while the VM is running is forbidden. The setting is only used
+        if at VM start the device is configured as a host DVD drive, in all
+        other cases it is ignored. The device must already exist; see
+        <link to="IMachine::attachDevice"/> for how to attach a new device.
+
+        The @a controllerPort and @a device parameters specify the device slot and
+        have have the same meaning as with <link to="IMachine::attachDevice" />.
+
+        <result name="E_INVALIDARG">
+          SATA device, SATA port, IDE port or IDE slot out of range.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Attempt to modify an unregistered virtual machine.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Invalid machine state.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+        <desc>Storage controller port.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given port.</desc>
+      </param>
+      <param name="bandwidthGroup" type="IBandwidthGroup" dir="in">
+        <desc>New value for the bandwidth group or NULL for no group.</desc>
       </param>
     </method>
 
@@ -8828,7 +8870,7 @@
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="c29452cc-ca72-404b-9261-cfc514f1e412"
+    uuid="aa4b4840-934f-454d-9a28-23e8f4235edf"
     wsmap="struct"
     >
     <desc>
@@ -8881,11 +8923,8 @@
       <desc>Pass I/O requests through to a device on the host.</desc>
     </attribute>
 
-    <attribute name="bandwidthLimit" type="unsigned long">
-      <desc>
-        Maximum throughput allowed for this medium attachment, in units of 1 mbps.
-        A zero value means uncapped/unlimited.
-      </desc>
+    <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">
+      <desc>The bandwidth group this medium attachment is assigned to.</desc>
     </attribute>
 
   </interface>
@@ -12834,7 +12873,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="06ef98a7-f7c0-45ba-bf99-9aca7a4d5530"
+    uuid="a2fbf834-149d-41da-ae52-0dc3b0f032b3"
     internal="yes"
     wsmap="suppress"
     >
@@ -13135,6 +13174,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="check" type="boolean" dir="in"/>
       <param name="canShow" type="boolean" dir="out"/>
       <param name="winId" type="long long" dir="out"/>
+    </method>
+
+    <method name="onBandwidthGroupChange">
+      <desc>
+        Notification when one of the bandwidth groups change.
+      </desc>
+      <param name="bandwidthGroup" type="IBandwidthGroup" dir="in">
+        <desc>The bandwidth group which changed.</desc>
+      </param>
     </method>
 
     <method name="accessGuestProperty">
@@ -14418,6 +14466,139 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
+  // BandwidthGroupType
+  /////////////////////////////////////////////////////////////////////////
+  -->
+  <enum
+     name="BandwidthGroupType"
+     uuid="1d92b67d-dc69-4be9-ad4c-93a01e1e0c8e">
+
+    <desc>
+      Type of a bandwidth control group.
+    </desc>
+
+    <const name="Null" value="0">
+      <desc>
+        Null type, must be first.
+      </desc>
+    </const>
+
+    <const name="Disk" value="1">
+      <desc>
+        The bandwidth group controls disk I/O.
+      </desc>
+    </const>
+
+    <const name="Network" value="2">
+      <desc>
+        The bandwidth group controls network I/O.
+      </desc>
+    </const>
+
+  </enum>
+
+  <!--
+  // IBandwidthGroup
+  /////////////////////////////////////////////////////////////////////////
+  -->
+  <interface
+    name="IBandwidthGroup" extends="$unknown"
+    uuid="badea2d7-0261-4146-89f0-6a57cc34833d"
+    wsmap="managed"
+    >
+    <desc>Represents one bandwidth group.</desc>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>Name of the group.</desc>
+    </attribute>
+
+    <attribute name="type" type="BandwidthGroupType" readonly="yes">
+      <desc>Type of the group.</desc>
+    </attribute>
+
+    <attribute name="reference" type="unsigned long" readonly="yes">
+      <desc>How many devices/medium attachements use this group.</desc>
+    </attribute>
+
+    <attribute name="maxMbPerSec" type="unsigned long">
+      <desc>The maximum number of MB which can be transfered by all
+        entities attached to this group during one second.</desc>
+    </attribute>
+
+  </interface>
+
+  <!--
+  // IBandwidthControl
+  /////////////////////////////////////////////////////////////////////////
+  -->
+  <interface
+    name="IBandwidthControl" extends="$unknown"
+    uuid="d0a24db0-f756-11df-98cf-0800200c9a66"
+    wsmap="managed"
+    >
+    <desc>
+      Controls the bandwidth groups of one machine used to cap I/O done by a VM.
+      This includes network and disk I/O.
+    </desc>
+
+    <attribute name="numGroups" type="unsigned long" readonly="yes">
+      <desc>
+        The current number of existing bandwidth groups managed.
+      </desc>
+    </attribute>
+
+    <method name="CreateBandwidthGroup">
+      <desc>
+        Creates a new bandwidth group.
+      </desc>
+
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the bandwidth group.</desc>
+      </param>
+      <param name="type" type="BandwidthGroupType" dir="in">
+        <desc>The type of the bandwidth group (network or disk).</desc>
+      </param>
+      <param name="maxBytesPerSec" type="unsigned long" dir="in">
+        <desc>The maximum number of bytes which can be transfered by all
+          entities attached to this group during one second.</desc>
+      </param>
+    </method>
+
+    <method name="DeleteBandwidthGroup">
+      <desc>
+        Deletes a new bandwidth group.
+      </desc>
+
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the bandwidth group to delete.</desc>
+      </param>
+    </method>
+
+    <method name="GetBandwidthGroup" const="yes">
+      <desc>
+        Get a bandwidth group by name.
+      </desc>
+
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the bandwidth group to get.</desc>
+      </param>
+      <param name="bandwidthGroup" type="IBandwidthGroup" dir="return">
+        <desc>Where to store the bandwidth group on success.</desc>
+      </param>
+    </method>
+
+    <method name="GetAllBandwidthGroups" const="yes">
+      <desc>
+        Get all managed bandwidth groups.
+      </desc>
+
+      <param name="bandwidthGroups" type="IBandwidthGroup" dir="return" safearray="yes">
+        <desc>The array of managed bandwidth groups.</desc>
+      </param>
+    </method>
+  </interface>
+
+  <!--
   // IVirtualBoxClient
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -14462,7 +14643,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="BA0F90B2-3F41-4222-840D-EDD5055476A8"
+    uuid="c9412a17-c1e1-46db-b4b7-18de9c967e85"
     >
 
     <desc>
@@ -14705,9 +14886,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IVBoxSVCUnavailableEvent">IVBoxSVCUnavailableEvent</link>.
       </desc>
     </const>
+    <const name="OnBandwidthGroupChanged" value="69">
+      <desc>
+        See <link to="IBandwidthGroupChangedEvent">IBandwidthGroupChangedEvent</link>.
+      </desc>
+    </const>
 
     <!-- Last event marker -->
-    <const name="Last" value="69">
+    <const name="Last" value="70">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -15997,6 +16183,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when VBoxSVC becomes unavailable (due to a crash or similar
       unexpected circumstances).
     </desc>
+  </interface>
+
+  <interface
+    name="IBandwidthGroupChangedEvent" extends="IEvent"
+    uuid="334df94a-7556-4cbc-8c04-043096b02d82"
+    wsmap="managed" autogen="VBoxEvent" id="OnBandwidthGroupChanged"
+    >
+    <desc>
+      Notification when one of the bandwidth groups changed
+    </desc>
+    <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">
+      <desc>
+        The changed bandwidth group.
+      </desc>
+    </attribute>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">

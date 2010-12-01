@@ -94,6 +94,8 @@
 #ifdef VBOX_WITH_EXTPACK
 # include <ExtPackManagerImpl.h>
 #endif
+#include <BandwidthGroupImpl.h>
+#include <BandwidthControlImpl.h>
 
 /* implement nsISupports parts of our objects with support for nsIClassInfo */
 
@@ -210,6 +212,12 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPack, IExtPack)
 NS_DECL_CLASSINFO(ExtPackManager)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
 #endif
+
+NS_DECL_CLASSINFO(BandwidthGroup)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(BandwidthGroup, IBandwidthGroup)
+
+NS_DECL_CLASSINFO(BandwidthControl)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(BandwidthControl, IBandwidthControl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
