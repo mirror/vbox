@@ -1773,11 +1773,13 @@ typedef struct RTRECT2
      * Unless stated otherwise, this is the top left corner.  */
     int32_t     y;
     /** The width.
-     * Unless stated otherwise, this is to the right of (x,y).  */
-    uint32_t    cx;
+     * Unless stated otherwise, this is to the right of (x,y) and will not
+     * be a negative number. */
+    int32_t     cx;
     /** The height.
-     * Unless stated otherwise, this is down from (x,y).  */
-    uint32_t    cy;
+     * Unless stated otherwise, this is down from (x,y) and will not be a
+     * negative number. */
+    int32_t     cy;
 } RTRECT2;
 /** Pointer to a point + size rectangle. */
 typedef RTRECT2 *PRTRECT2;
