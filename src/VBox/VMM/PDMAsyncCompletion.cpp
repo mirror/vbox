@@ -873,11 +873,11 @@ int pdmR3AsyncCompletionEpClassInit(PVM pVM, PCPDMASYNCCOMPLETIONEPCLASSOPS pEpC
                             AssertRC(rc);
 
                             if (RT_SUCCESS(rc))
-                                rc = CFGMR3QueryU32(pCur, "Start", &cbStart);
-                            if (RT_SUCCESS(rc))
                                 rc = CFGMR3QueryU32(pCur, "Max", &cbMax);
                             if (RT_SUCCESS(rc))
-                                rc = CFGMR3QueryU32(pCur, "Step", &cbStep);
+                                rc = CFGMR3QueryU32Def(pCur, "Start", &cbStart, cbMax);
+                            if (RT_SUCCESS(rc))
+                                rc = CFGMR3QueryU32Def(pCur, "Step", &cbStep, 0);
                             if (RT_SUCCESS(rc))
                                 rc = pdmacAsyncCompletionBwMgrCreate(pEndpointClass, pszBwGrpId, cbMax, cbStart, cbStep);
 
@@ -1580,5 +1580,30 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpSetBwMgr(PPDMASYNCCOMPLETIONENDPOINT pEndpo
 VMMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask)
 {
     return VERR_NOT_IMPLEMENTED;
+}
+
+VMMR3DECL(int) PDMR3AsyncCompletionBwMgrSetMaxForFile(PVM pVM, const char *pcszBwMgr, uint32_t cbMaxNew)
+{
+    int rc = VINF_SUCCESS;
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszBwMgr, VERR_INVALID_POINTER);
+    PPDMACBWMGR pBwMgr;
+
+    PPDMASYNCCOMPLETIONEPCLASS pEpClass = pVM->pUVM->pdm.s.apAsyncCompletionEndpointClass[PDMASYNCCOMPLETIONEPCLASSTYPE_FILE];
+
+    pBwMgr = pdmacBwMgrFindById(pEpClass, pcszBwMgr);
+    if (pBwMgr)
+    {
+        /*
+         * Set the new value for the start and max value to let the manager pick up
+         * the new limit immediately.
+         */
+        ASMAtomicXchgU32(&pBwMgr->cbTransferPerSecMax, cbMaxNew);
+        ASMAtomicXchgU32(&pBwMgr->cbTransferPerSecStart, cbMaxNew);
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    return rc;
 }
 

@@ -350,6 +350,16 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpSetBwMgr(PPDMASYNCCOMPLETIONENDPOINT pEndpo
  */
 VMMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask);
 
+/**
+ * Changes the limit of a bandwidth manager for file endpoints to the given value.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pcszBwMgr       The identifer of the bandwidth manager to change.
+ * @param   cbMaxNew        The new maximum for the bandwidth manager in bytes/sec.
+ */
+VMMR3DECL(int) PDMR3AsyncCompletionBwMgrSetMaxForFile(PVM pVM, const char *pcszBwMgr, uint32_t cbMaxNew);
+
 /** @} */
 
 RT_C_DECLS_END
