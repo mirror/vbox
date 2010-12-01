@@ -23,7 +23,7 @@
 #include "RemoteUSBBackend.h"
 #include <hgcm/HGCM.h>
 
-#include <VBox/VRDPAuth.h>
+#include <VBox/VBoxAuth.h>
 
 #include <VBox/HostServices/VBoxClipboardExt.h>
 

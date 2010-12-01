@@ -7511,7 +7511,7 @@
         A full path can be specified; if not, then the library must reside on the
         system's default library path.
 
-        The default value of this property is <tt>"VRDPAuth"</tt>. There is a library
+        The default value of this property is <tt>"VBoxAuth"</tt>. There is a library
         of that name in one of the default VirtualBox library directories.
 
         For details about VirtualBox authentication libraries and how to implement
@@ -7538,7 +7538,7 @@
         meaning that <link to="IWebsessionManager::logon" /> will always succeed,
         no matter what user name and password are supplied.
 
-        The initial value of this property is <tt>"VRDPAuth"</tt>,
+        The initial value of this property is <tt>"VBoxAuth"</tt>,
         meaning that the webservice will use the same authentication
         library that is used by default for VRDE (again, see
         <link to="ISystemProperties::VRDEAuthLibrary" />).

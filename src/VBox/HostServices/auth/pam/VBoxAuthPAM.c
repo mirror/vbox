@@ -27,7 +27,7 @@
  * specially for VRDP authentication. Note that the name of the
  * service must be lowercase. See PAM documentation for details.
  *
- * The VRDPAuth module takes the PAM service name from the
+ * The Auth module takes the PAM service name from the
  * environment variable VRDP_AUTH_PAM_SERVICE. If the variable
  * is not specified, then the 'login' PAM service is used.
  */
@@ -76,7 +76,7 @@
 
 #include <security/pam_appl.h>
 
-#include <VBox/VRDPAuth.h>
+#include <VBox/VBoxAuth.h>
 
 #ifdef VRDP_PAM_DLLOAD
 #include <dlfcn.h>

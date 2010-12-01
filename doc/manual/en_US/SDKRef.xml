@@ -427,7 +427,7 @@
         uses the same kind of modules as the VirtualBox RDP server.</para>
 
         <para>By default, after installation, the web service uses the
-        VRDPAuth module that ships with VirtualBox. This module uses PAM on
+        VBoxAuth module that ships with VirtualBox. This module uses PAM on
         Linux hosts to authenticate users. Any valid username/password
         combination is accepted, it does not have to be the username and
         password of the user running the webservice daemon. Unless

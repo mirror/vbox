@@ -21,7 +21,7 @@
 #include <iprt/cdefs.h>
 #include <iprt/assert.h>
 
-#include <VBox/VRDPAuth.h>
+#include <VBox/VBoxAuth.h>
 
 #include <DirectoryService/DirectoryService.h>
 

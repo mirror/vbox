@@ -940,7 +940,7 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--vrdpauthtype
+            <para><computeroutput>--vrdeauthtype
             null|external|guest</computeroutput>: This allows you to choose
             whether and how authorization will be performed; see <xref
             linkend="vbox-auth" /> for details.</para>

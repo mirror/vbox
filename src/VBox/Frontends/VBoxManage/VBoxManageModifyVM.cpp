@@ -1928,7 +1928,7 @@ int handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid --vrdpauthtype argument '%s'", ValueUnion.psz);
+                    errorArgument("Invalid --vrdeauthtype argument '%s'", ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 break;

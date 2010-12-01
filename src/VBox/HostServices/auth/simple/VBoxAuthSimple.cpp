@@ -25,7 +25,7 @@
 #include <iprt/uuid.h>
 #include <iprt/sha.h>
 
-#include <VBox/VRDPAuth.h>
+#include <VBox/VBoxAuth.h>
 
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
@@ -35,12 +35,12 @@
 using namespace com;
 
 /* If defined, debug messages will be written to the specified file. */
-//#define VRDPAUTH_DEBUG_FILE_NAME "/tmp/VRDPAuth.log"
+//#define AUTH_DEBUG_FILE_NAME "/tmp/VBoxAuth.log"
 
 
 static void dprintf(const char *fmt, ...)
 {
-#ifdef VRDPAUTH_DEBUG_FILE_NAME
+#ifdef AUTH_DEBUG_FILE_NAME
     va_list va;
 
     va_start(va, fmt);
@@ -49,7 +49,7 @@ static void dprintf(const char *fmt, ...)
 
     vsnprintf(buffer, sizeof(buffer), fmt, va);
 
-    FILE *f = fopen(VRDPAUTH_DEBUG_FILE_NAME, "ab");
+    FILE *f = fopen(AUTH_DEBUG_FILE_NAME, "ab");
     if (f)
     {
         fprintf(f, "%s", buffer);

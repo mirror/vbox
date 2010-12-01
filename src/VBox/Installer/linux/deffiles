@@ -474,7 +474,7 @@ DEFAULT_FILE_NAMES=" \
     sdk/include/ipcIDConnectService.h \
     sdk/include/ipcITransactionObserver.h \
     sdk/include/VirtualBox_XPCOM.h \
-    sdk/include/VRDPAuth.h \
+    sdk/include/VBoxAuth.h \
     sdk/installer/build/lib/vboxapi/VirtualBox_constants.py
     sdk/installer/build/lib/vboxapi/__init__.py
     sdk/idl/ \
@@ -572,8 +572,8 @@ DEFAULT_FILE_NAMES=" \
     sdk/webservice/vboxweb.wsdl \
     sdk/webservice/vboxwebService.wsdl \
     sdk/samples/ \
-    sdk/samples/vrdpauth/ \
-    sdk/samples/vrdpauth/pam.cpp \
+    sdk/samples/auth/ \
+    sdk/samples/auth/pam.cpp \
     sdk/samples/API/ \
     sdk/samples/API/tstVBoxAPILinux.cpp \
     sdk/samples/API/makefile.tstVBoxAPILinux \
