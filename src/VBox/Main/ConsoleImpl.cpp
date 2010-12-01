@@ -742,7 +742,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     if (!autoCaller.isOk())
     {
         /* Console has been already uninitialized, deny request */
-        LogRel(("VRDPAUTH: Access denied (Console uninitialized).\n"));
+        LogRel(("AUTH: Access denied (Console uninitialized).\n"));
         LogFlowFuncLeave();
         return VERR_ACCESS_DENIED;
     }
@@ -761,12 +761,12 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     hrc = mVRDEServer->COMGETTER(AuthTimeout)(&authTimeout);
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
-    VRDPAuthResult result = VRDPAuthAccessDenied;
-    VRDPAuthGuestJudgement guestJudgement = VRDPAuthGuestNotAsked;
+    AuthResult result = AuthResultAccessDenied;
+    AuthGuestJudgement guestJudgement = AuthGuestNotAsked;
 
     LogFlowFunc(("Auth type %d\n", authType));
 
-    LogRel(("VRDPAUTH: User: [%s]. Domain: [%s]. Authentication type: [%s]\n",
+    LogRel(("AUTH: User: [%s]. Domain: [%s]. Authentication type: [%s]\n",
                 pszUser, pszDomain,
                 authType == AuthType_Null?
                     "Null":
@@ -783,7 +783,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     {
         case AuthType_Null:
         {
-            result = VRDPAuthAccessGranted;
+            result = AuthResultAccessGranted;
             break;
         }
 
@@ -792,19 +792,19 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
             /* Call the external library. */
             result = mConsoleVRDPServer->Authenticate(uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
 
-            if (result != VRDPAuthDelegateToGuest)
+            if (result != AuthResultDelegateToGuest)
             {
                 break;
             }
 
-            LogRel(("VRDPAUTH: Delegated to guest.\n"));
+            LogRel(("AUTH: Delegated to guest.\n"));
 
             LogFlowFunc(("External auth asked for guest judgement\n"));
         } /* pass through */
 
         case AuthType_Guest:
         {
-            guestJudgement = VRDPAuthGuestNotReacted;
+            guestJudgement = AuthGuestNotReacted;
 
             // @todo r=dj locking required here for m_pVMMDev?
             PPDMIVMMDEVPORT pDevPort;
@@ -828,9 +828,9 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
                     {
                         switch (u32GuestFlags & (VMMDEV_CREDENTIALS_JUDGE_OK | VMMDEV_CREDENTIALS_JUDGE_DENY | VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT))
                         {
-                            case VMMDEV_CREDENTIALS_JUDGE_DENY:        guestJudgement = VRDPAuthGuestAccessDenied;  break;
-                            case VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT: guestJudgement = VRDPAuthGuestNoJudgement;   break;
-                            case VMMDEV_CREDENTIALS_JUDGE_OK:          guestJudgement = VRDPAuthGuestAccessGranted; break;
+                            case VMMDEV_CREDENTIALS_JUDGE_DENY:        guestJudgement = AuthGuestAccessDenied;  break;
+                            case VMMDEV_CREDENTIALS_JUDGE_NOJUDGEMENT: guestJudgement = AuthGuestNoJudgement;   break;
+                            case VMMDEV_CREDENTIALS_JUDGE_OK:          guestJudgement = AuthGuestAccessGranted; break;
                             default:
                                 LogFlowFunc(("Invalid guest flags %08X!!!\n", u32GuestFlags)); break;
                         }
@@ -850,7 +850,7 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
 
             if (authType == AuthType_External)
             {
-                LogRel(("VRDPAUTH: Guest judgement %d.\n", guestJudgement));
+                LogRel(("AUTH: Guest judgement %d.\n", guestJudgement));
                 LogFlowFunc(("External auth called again with guest judgement = %d\n", guestJudgement));
                 result = mConsoleVRDPServer->Authenticate(uuid, guestJudgement, pszUser, pszPassword, pszDomain, u32ClientId);
             }
@@ -858,11 +858,11 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
             {
                 switch (guestJudgement)
                 {
-                    case VRDPAuthGuestAccessGranted:
-                        result = VRDPAuthAccessGranted;
+                    case AuthGuestAccessGranted:
+                        result = AuthResultAccessGranted;
                         break;
                     default:
-                        result = VRDPAuthAccessDenied;
+                        result = AuthResultAccessDenied;
                         break;
                 }
             }
@@ -875,14 +875,14 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     LogFlowFunc(("Result = %d\n", result));
     LogFlowFuncLeave();
 
-    if (result != VRDPAuthAccessGranted)
+    if (result != AuthResultAccessGranted)
     {
         /* Reject. */
-        LogRel(("VRDPAUTH: Access denied.\n"));
+        LogRel(("AUTH: Access denied.\n"));
         return VERR_ACCESS_DENIED;
     }
 
-    LogRel(("VRDPAUTH: Access granted.\n"));
+    LogRel(("AUTH: Access granted.\n"));
 
     /* Multiconnection check must be made after authentication, so bad clients would not interfere with a good one. */
     BOOL allowMultiConnection = FALSE;
@@ -909,13 +909,13 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
              */
             if (reuseSingleConnection)
             {
-                LogRel(("VRDPAUTH: Multiple connections are not enabled. Disconnecting existing client.\n"));
+                LogRel(("AUTH: Multiple connections are not enabled. Disconnecting existing client.\n"));
                 mConsoleVRDPServer->DisconnectClient(mu32SingleRDPClientId, false);
             }
             else
             {
                 /* Reject. */
-                LogRel(("VRDPAUTH: Multiple connections are not enabled. Access denied.\n"));
+                LogRel(("AUTH: Multiple connections are not enabled. Access denied.\n"));
                 return VERR_ACCESS_DENIED;
             }
         }

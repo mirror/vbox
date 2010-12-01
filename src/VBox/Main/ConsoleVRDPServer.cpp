@@ -1346,6 +1346,7 @@ void ConsoleVRDPServer::Stop(void)
 
     mpfnAuthEntry = NULL;
     mpfnAuthEntry2 = NULL;
+    mpfnAuthEntry3 = NULL;
 
     if (mAuthLibrary)
     {
@@ -1470,11 +1471,11 @@ void ConsoleVRDPServer::remoteUSBThreadStop(void)
 }
 #endif /* VBOX_WITH_USB */
 
-VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJudgement guestJudgement,
+AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement guestJudgement,
                                                 const char *pszUser, const char *pszPassword, const char *pszDomain,
                                                 uint32_t u32ClientId)
 {
-    VRDPAUTHUUID rawuuid;
+    AUTHUUID rawuuid;
 
     memcpy(rawuuid, uuid.raw(), sizeof(rawuuid));
 
@@ -1503,7 +1504,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJu
 
         Utf8Str filename = authLibrary;
 
-        LogRel(("VRDPAUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
+        LogRel(("AUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
 
         int rc;
         if (RTPathHavePath(filename.c_str()))
@@ -1512,38 +1513,46 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJu
             rc = RTLdrLoadAppPriv(filename.c_str(), &mAuthLibrary);
 
         if (RT_FAILURE(rc))
-            LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Rrc\n", rc));
+            LogRel(("AUTH: Failed to load external authentication library. Error code: %Rrc\n", rc));
 
         if (RT_SUCCESS(rc))
         {
-            /* Get the entry point. */
-            mpfnAuthEntry2 = NULL;
-            int rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth2", (void**)&mpfnAuthEntry2);
-            if (RT_FAILURE(rc2))
+            typedef struct AuthEntryInfo
             {
-                if (rc2 != VERR_SYMBOL_NOT_FOUND)
-                {
-                    LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth2", rc2));
-                }
-                rc = rc2;
-            }
+                const char *pszName;
+                void **ppvAddress;
+                
+            } AuthEntryInfo;
+            AuthEntryInfo entries[] =
+            {
+                { AUTHENTRY3_NAME, (void **)&mpfnAuthEntry3 },
+                { AUTHENTRY2_NAME, (void **)&mpfnAuthEntry2 },
+                { AUTHENTRY_NAME,  (void **)&mpfnAuthEntry },
+                { NULL, NULL }
+            };
 
             /* Get the entry point. */
-            mpfnAuthEntry = NULL;
-            rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
-            if (RT_FAILURE(rc2))
+            AuthEntryInfo *pEntryInfo = &entries[0];
+            while (pEntryInfo->pszName)
             {
+                *pEntryInfo->ppvAddress = NULL;
+
+                int rc2 = RTLdrGetSymbol(mAuthLibrary, pEntryInfo->pszName, pEntryInfo->ppvAddress);
+                if (RT_SUCCESS(rc2))
+                {
+                    /* Found an entry point. */
+                    LogRel(("AUTH: Using entry point '%s'.\n", pEntryInfo->pszName));
+                    rc = VINF_SUCCESS;
+                    break;
+                }
+
                 if (rc2 != VERR_SYMBOL_NOT_FOUND)
                 {
-                    LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth", rc2));
+                    LogRel(("AUTH: Could not resolve import '%s'. Error code: %Rrc\n", pEntryInfo->pszName, rc2));
                 }
                 rc = rc2;
-            }
 
-            if (mpfnAuthEntry2 || mpfnAuthEntry)
-            {
-                LogRel(("VRDPAUTH: Using entry point '%s'.\n", mpfnAuthEntry2? "VRDPAuth2": "VRDPAuth"));
-                rc = VINF_SUCCESS;
+                pEntryInfo++;
             }
         }
 
@@ -1556,6 +1565,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJu
 
             mpfnAuthEntry = NULL;
             mpfnAuthEntry2 = NULL;
+            mpfnAuthEntry3 = NULL;
 
             if (mAuthLibrary)
             {
@@ -1563,30 +1573,40 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJu
                 mAuthLibrary = 0;
             }
 
-            return VRDPAuthAccessDenied;
+            return AuthResultAccessDenied;
         }
     }
 
-    Assert(mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2));
+    Assert(mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2 || mpfnAuthEntry3));
 
-    VRDPAuthResult result = mpfnAuthEntry2?
-                                mpfnAuthEntry2(&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId):
-                                mpfnAuthEntry(&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain);
+    AuthResult result; 
+    if (mpfnAuthEntry3)
+    {
+        result = mpfnAuthEntry3("vrde", &rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId);
+    }
+    else if (mpfnAuthEntry2)
+    {
+        result = mpfnAuthEntry2(&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId);
+    }
+    else if (mpfnAuthEntry)
+    {
+        result = mpfnAuthEntry(&rawuuid, guestJudgement, pszUser, pszPassword, pszDomain);
+    }
 
     switch (result)
     {
-        case VRDPAuthAccessDenied:
-            LogRel(("VRDPAUTH: external authentication module returned 'access denied'\n"));
+        case AuthResultAccessDenied:
+            LogRel(("AUTH: external authentication module returned 'access denied'\n"));
             break;
-        case VRDPAuthAccessGranted:
-            LogRel(("VRDPAUTH: external authentication module returned 'access granted'\n"));
+        case AuthResultAccessGranted:
+            LogRel(("AUTH: external authentication module returned 'access granted'\n"));
             break;
-        case VRDPAuthDelegateToGuest:
-            LogRel(("VRDPAUTH: external authentication module returned 'delegate request to guest'\n"));
+        case AuthResultDelegateToGuest:
+            LogRel(("AUTH: external authentication module returned 'delegate request to guest'\n"));
             break;
         default:
-            LogRel(("VRDPAUTH: external authentication module returned incorrect return code %d\n", result));
-            result = VRDPAuthAccessDenied;
+            LogRel(("AUTH: external authentication module returned incorrect return code %d\n", result));
+            result = AuthResultAccessDenied;
     }
 
     LogFlow(("ConsoleVRDPServer::Authenticate: result = %d\n", result));
@@ -1596,17 +1616,19 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, VRDPAuthGuestJu
 
 void ConsoleVRDPServer::AuthDisconnect(const Guid &uuid, uint32_t u32ClientId)
 {
-    VRDPAUTHUUID rawuuid;
+    AUTHUUID rawuuid;
 
     memcpy(rawuuid, uuid.raw(), sizeof(rawuuid));
 
     LogFlow(("ConsoleVRDPServer::AuthDisconnect: uuid = %RTuuid, u32ClientId = %d\n",
              rawuuid, u32ClientId));
 
-    Assert(mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2));
+    Assert(mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2 || mpfnAuthEntry3));
 
-    if (mpfnAuthEntry2)
-        mpfnAuthEntry2(&rawuuid, VRDPAuthGuestNotAsked, NULL, NULL, NULL, false, u32ClientId);
+    if (mpfnAuthEntry3)
+        mpfnAuthEntry3("vrde", &rawuuid, AuthGuestNotAsked, NULL, NULL, NULL, false, u32ClientId);
+    else if (mpfnAuthEntry2)
+        mpfnAuthEntry2(&rawuuid, AuthGuestNotAsked, NULL, NULL, NULL, false, u32ClientId);
 }
 
 int ConsoleVRDPServer::lockConsoleVRDPServer(void)

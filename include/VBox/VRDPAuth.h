@@ -1,10 +1,9 @@
 /** @file
- * VBox Remote Desktop Protocol - External Authentication Library Interface.
- * (VRDP)
+ * VirtualBox External Authentication Library Interface.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2010 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,27 +27,27 @@
 #define ___VBox_vrdpauth_h
 
 /* The following 2 enums are 32 bits values.*/
-typedef enum _VRDPAuthResult
+typedef enum AuthResult
 {
-    VRDPAuthAccessDenied    = 0,
-    VRDPAuthAccessGranted   = 1,
-    VRDPAuthDelegateToGuest = 2,
-    VRDPAuthSizeHack        = 0x7fffffff
-} VRDPAuthResult;
+    AuthResultAccessDenied    = 0,
+    AuthResultAccessGranted   = 1,
+    AuthResultDelegateToGuest = 2,
+    AuthResultSizeHack        = 0x7fffffff
+} AuthResult;
 
-typedef enum _VRDPAuthGuestJudgement
+typedef enum AuthGuestJudgement
 {
-    VRDPAuthGuestNotAsked      = 0,
-    VRDPAuthGuestAccessDenied  = 1,
-    VRDPAuthGuestNoJudgement   = 2,
-    VRDPAuthGuestAccessGranted = 3,
-    VRDPAuthGuestNotReacted    = 4,
-    VRDPAuthGuestSizeHack      = 0x7fffffff
-} VRDPAuthGuestJudgement;
+    AuthGuestNotAsked      = 0,
+    AuthGuestAccessDenied  = 1,
+    AuthGuestNoJudgement   = 2,
+    AuthGuestAccessGranted = 3,
+    AuthGuestNotReacted    = 4,
+    AuthGuestSizeHack      = 0x7fffffff
+} AuthGuestJudgement;
 
 /* UUID memory representation. Array of 16 bytes. */
-typedef unsigned char VRDPAUTHUUID[16];
-typedef VRDPAUTHUUID *PVRDPAUTHUUID;
+typedef unsigned char AUTHUUID[16];
+typedef AUTHUUID *PAUTHUUID;
 /*
 Note: VirtualBox uses a consistent binary representation of UUIDs on all platforms. For this reason
 the integer fields comprising the UUID are stored as little endian values. If you want to pass such
@@ -64,22 +63,20 @@ representation.
 
 /* The library entry point calling convention. */
 #ifdef _MSC_VER
-# define VRDPAUTHCALL __cdecl
+# define AUTHCALL __cdecl
 #elif defined(__GNUC__)
-# define VRDPAUTHCALL
+# define AUTHCALL
 #else
 # error "Unsupported compiler"
 #endif
 
 
 /**
- * Authentication library entry point. Decides whether to allow
- * a client connection.
+ * Authentication library entry point.
  *
  * Parameters:
  *
- *   pUuid            Pointer to the UUID of the virtual machine
- *                    which the client connected to.
+ *   pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
  *   guestJudgement   Result of the guest authentication.
  *   szUser           User name passed in by the client (UTF8).
  *   szPassword       Password passed in by the client (UTF8).
@@ -87,32 +84,32 @@ representation.
  *
  * Return code:
  *
- *   VRDPAuthAccessDenied    Client access has been denied.
- *   VRDPAuthAccessGranted   Client has the right to use the
- *                           virtual machine.
- *   VRDPAuthDelegateToGuest Guest operating system must
- *                           authenticate the client and the
- *                           library must be called again with
- *                           the result of the guest
- *                           authentication.
+ *   AuthAccessDenied    Client access has been denied.
+ *   AuthAccessGranted   Client has the right to use the
+ *                       virtual machine.
+ *   AuthDelegateToGuest Guest operating system must
+ *                       authenticate the client and the
+ *                       library must be called again with
+ *                       the result of the guest
+ *                       authentication.
  */
-typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY(PVRDPAUTHUUID pUuid,
-                                                  VRDPAuthGuestJudgement guestJudgement,
-                                                  const char *szUser,
-                                                  const char *szPassword,
-                                                  const char *szDomain);
+typedef AuthResult AUTHCALL AUTHENTRY(PAUTHUUID pUuid,
+                                      AuthGuestJudgement guestJudgement,
+                                      const char *szUser,
+                                      const char *szPassword,
+                                      const char *szDomain);
 
 
-typedef VRDPAUTHENTRY *PVRDPAUTHENTRY;
+typedef AUTHENTRY *PAUTHENTRY;
+
+#define AUTHENTRY_NAME "VRDPAuth"
 
 /**
- * Authentication library entry point version 2. Decides whether to allow
- * a client connection.
+ * Authentication library entry point version 2.
  *
  * Parameters:
  *
- *   pUuid            Pointer to the UUID of the virtual machine
- *                    which the client connected to.
+ *   pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
  *   guestJudgement   Result of the guest authentication.
  *   szUser           User name passed in by the client (UTF8).
  *   szPassword       Password passed in by the client (UTF8).
@@ -123,27 +120,72 @@ typedef VRDPAUTHENTRY *PVRDPAUTHENTRY;
  *
  * Return code:
  *
- *   VRDPAuthAccessDenied    Client access has been denied.
- *   VRDPAuthAccessGranted   Client has the right to use the
- *                           virtual machine.
- *   VRDPAuthDelegateToGuest Guest operating system must
- *                           authenticate the client and the
- *                           library must be called again with
- *                           the result of the guest
- *                           authentication.
+ *   AuthAccessDenied    Client access has been denied.
+ *   AuthAccessGranted   Client has the right to use the
+ *                       virtual machine.
+ *   AuthDelegateToGuest Guest operating system must
+ *                       authenticate the client and the
+ *                       library must be called again with
+ *                       the result of the guest
+ *                       authentication.
  *
  * Note: When 'fLogon' is 0, only pUuid and clientId are valid and the return
  *       code is ignored.
  */
-typedef VRDPAuthResult VRDPAUTHCALL VRDPAUTHENTRY2(PVRDPAUTHUUID pUuid,
-                                                   VRDPAuthGuestJudgement guestJudgement,
-                                                   const char *szUser,
-                                                   const char *szPassword,
-                                                   const char *szDomain,
-                                                   int fLogon,
-                                                   unsigned clientId);
+typedef AuthResult AUTHCALL AUTHENTRY2(PAUTHUUID pUuid,
+                                       AuthGuestJudgement guestJudgement,
+                                       const char *szUser,
+                                       const char *szPassword,
+                                       const char *szDomain,
+                                       int fLogon,
+                                       unsigned clientId);
 
 
-typedef VRDPAUTHENTRY2 *PVRDPAUTHENTRY2;
+typedef AUTHENTRY2 *PAUTHENTRY2;
+
+#define AUTHENTRY2_NAME "VRDPAuth2"
+
+/**
+ * Authentication library entry point version 3.
+ *
+ * Parameters:
+ *
+ *   szCaller         The name of the component which calls the library (UTF8).
+ *   pUuid            Pointer to the UUID of the accessed virtual machine. Can be NULL.
+ *   guestJudgement   Result of the guest authentication.
+ *   szUser           User name passed in by the client (UTF8).
+ *   szPassword       Password passed in by the client (UTF8).
+ *   szDomain         Domain passed in by the client (UTF8).
+ *   fLogon           Boolean flag. Indicates whether the entry point is called
+ *                    for a client logon or the client disconnect.
+ *   clientId         Server side unique identifier of the client.
+ *
+ * Return code:
+ *
+ *   AuthAccessDenied    Client access has been denied.
+ *   AuthAccessGranted   Client has the right to use the
+ *                       virtual machine.
+ *   AuthDelegateToGuest Guest operating system must
+ *                       authenticate the client and the
+ *                       library must be called again with
+ *                       the result of the guest
+ *                       authentication.
+ *
+ * Note: When 'fLogon' is 0, only pszCaller, pUuid and clientId are valid and the return
+ *       code is ignored.
+ */
+typedef AuthResult AUTHCALL AUTHENTRY3(const char *szCaller,
+                                       PAUTHUUID pUuid,
+                                       AuthGuestJudgement guestJudgement,
+                                       const char *szUser,
+                                       const char *szPassword,
+                                       const char *szDomain,
+                                       int fLogon,
+                                       unsigned clientId);
+
+
+typedef AUTHENTRY3 *PAUTHENTRY3;
+
+#define AUTHENTRY3_NAME "AuthEntry"
 
 #endif

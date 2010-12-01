@@ -50,24 +50,28 @@ static void dprintf(const char *fmt, ...)
     vsnprintf(buffer, sizeof(buffer), fmt, va);
 
     FILE *f = fopen(VRDPAUTH_DEBUG_FILE_NAME, "ab");
-    fprintf(f, "%s", buffer);
-    fclose(f);
+    if (f)
+    {
+        fprintf(f, "%s", buffer);
+        fclose(f);
+    }
 
     va_end (va);
 #endif
 }
 
 RT_C_DECLS_BEGIN
-DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
-                                                  VRDPAuthGuestJudgement guestJudgement,
-                                                  const char *szUser,
-                                                  const char *szPassword,
-                                                  const char *szDomain,
-                                                  int fLogon,
-                                                  unsigned clientId)
+DECLEXPORT(AuthResult) AUTHCALL AuthEntry(const char *szCaller,
+                                          PAUTHUUID pUuid,
+                                          AuthGuestJudgement guestJudgement,
+                                          const char *szUser,
+                                          const char *szPassword,
+                                          const char *szDomain,
+                                          int fLogon,
+                                          unsigned clientId)
 {
     /* default is failed */
-    VRDPAuthResult result = VRDPAuthAccessDenied;
+    AuthResult result = AuthResultAccessDenied;
 
     /* only interested in logon */
     if (!fLogon)
@@ -116,7 +120,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
             RTSha256ToString(abDigest, pszDigest, sizeof(pszDigest));
 
             if (password == pszDigest)
-                result = VRDPAuthAccessGranted;
+                result = AuthResultAccessGranted;
         }
     }
 
@@ -125,4 +129,4 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth2(PVRDPAUTHUUID pUuid,
 RT_C_DECLS_END
 
 /* Verify the function prototype. */
-static PVRDPAUTHENTRY2 gpfnAuthEntry = VRDPAuth2;
+static PAUTHENTRY3 gpfnAuthEntry = AuthEntry;

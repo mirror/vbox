@@ -1130,8 +1130,9 @@ int WebServiceSession::authenticate(const char *pcszUsername,
     util::AutoReadLock lock(g_pAuthLibLockHandle COMMA_LOCKVAL_SRC_POS);
 
     static bool fAuthLibLoaded = false;
-    static PVRDPAUTHENTRY pfnAuthEntry = NULL;
-    static PVRDPAUTHENTRY2 pfnAuthEntry2 = NULL;
+    static PAUTHENTRY pfnAuthEntry = NULL;
+    static PAUTHENTRY2 pfnAuthEntry2 = NULL;
+    static PAUTHENTRY3 pfnAuthEntry3 = NULL;
 
     if (!fAuthLibLoaded)
     {
@@ -1160,13 +1161,16 @@ int WebServiceSession::authenticate(const char *pcszUsername,
                     break;
                 }
 
-                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, "VRDPAuth2", (void**)&pfnAuthEntry2)))
-                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, "VRDPAuth2", rc));
+                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY3_NAME, (void**)&pfnAuthEntry3)))
+                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY3_NAME, rc));
 
-                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, "VRDPAuth", (void**)&pfnAuthEntry)))
-                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, "VRDPAuth", rc));
+                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY2_NAME, (void**)&pfnAuthEntry2)))
+                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY2_NAME, rc));
 
-                if (pfnAuthEntry || pfnAuthEntry2)
+                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY_NAME, (void**)&pfnAuthEntry)))
+                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY_NAME, rc));
+
+                if (pfnAuthEntry || pfnAuthEntry2 || pfnAuthEntry3)
                     fAuthLibLoaded = true;
 
             } while (0);
@@ -1174,19 +1178,26 @@ int WebServiceSession::authenticate(const char *pcszUsername,
     }
 
     rc = VERR_WEB_NOT_AUTHENTICATED;
-    VRDPAuthResult result;
-    if (pfnAuthEntry2)
+    AuthResult result;
+    if (pfnAuthEntry3)
     {
-        result = pfnAuthEntry2(NULL, VRDPAuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
+        result = pfnAuthEntry3("webservice", NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
+        WEBDEBUG(("%s(): result of AuthEntry(): %d\n", __FUNCTION__, result));
+        if (result == AuthResultAccessGranted)
+            rc = 0;
+    }
+    else if (pfnAuthEntry2)
+    {
+        result = pfnAuthEntry2(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL, true, 0);
         WEBDEBUG(("%s(): result of VRDPAuth2(): %d\n", __FUNCTION__, result));
-        if (result == VRDPAuthAccessGranted)
+        if (result == AuthResultAccessGranted)
             rc = 0;
     }
     else if (pfnAuthEntry)
     {
-        result = pfnAuthEntry(NULL, VRDPAuthGuestNotAsked, pcszUsername, pcszPassword, NULL);
+        result = pfnAuthEntry(NULL, AuthGuestNotAsked, pcszUsername, pcszPassword, NULL);
         WEBDEBUG(("%s(): result of VRDPAuth(%s, [%d]): %d\n", __FUNCTION__, pcszUsername, strlen(pcszPassword), result));
-        if (result == VRDPAuthAccessGranted)
+        if (result == AuthResultAccessGranted)
             rc = 0;
     }
     else if (fAuthLibLoaded)
@@ -1195,7 +1206,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         rc = 0;
     else
     {
-        WEBDEBUG(("Could not resolve VRDPAuth2 or VRDPAuth entry point"));
+        WEBDEBUG(("Could not resolve AuthEntry, VRDPAuth2 or VRDPAuth entry point"));
     }
 
     lock.release();

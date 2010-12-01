@@ -257,18 +257,18 @@ tDirStatus authWithNode(tDirReference pDirRef, tDataListPtr pAuthNodeList, const
 }
 
 RT_C_DECLS_BEGIN
-DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth(PVRDPAUTHUUID pUuid,
-                                                 VRDPAuthGuestJudgement guestJudgement,
-                                                 const char *pszUser,
-                                                 const char *pszPassword,
-                                                 const char *pszDomain)
+DECLEXPORT(AuthResult) AUTHCALL VRDPAuth(PAUTHUUID pUuid,
+                                         AuthGuestJudgement guestJudgement,
+                                         const char *pszUser,
+                                         const char *pszPassword,
+                                         const char *pszDomain)
 {
     /* Validate input */
-    AssertPtrReturn(pszUser, VRDPAuthAccessDenied);
-    AssertPtrReturn(pszPassword, VRDPAuthAccessDenied);
+    AssertPtrReturn(pszUser, AuthResultAccessDenied);
+    AssertPtrReturn(pszPassword, AuthResultAccessDenied);
 
     /* Result to a default value */
-    VRDPAuthResult result = VRDPAuthAccessDenied;
+    AuthResult result = AuthResultAccessDenied;
 
     tDirStatus dsErr = eDSNoErr;
     tDirStatus dsCleanErr = eDSNoErr;
@@ -298,7 +298,7 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth(PVRDPAUTHUUID pUuid,
                     /* Open the authentication node and do the authentication. */
                     dsErr = authWithNode(pDirRef, pAuthNodeList, pszUser, pszPassword);
                     if (dsErr == eDSNoErr)
-                        result = VRDPAuthAccessGranted;
+                        result = AuthResultAccessGranted;
                     dsCleanErr = dsDataListDeallocate(pDirRef, pAuthNodeList);
                     if (dsCleanErr == eDSNoErr)
                         free(pAuthNodeList);
@@ -316,5 +316,5 @@ DECLEXPORT(VRDPAuthResult) VRDPAUTHCALL VRDPAuth(PVRDPAUTHUUID pUuid,
 }
 RT_C_DECLS_END
 
-static PVRDPAUTHENTRY gpfnAuthEntry = VRDPAuth;
+static PAUTHENTRY gpfnAuthEntry = VRDPAuth;
 
