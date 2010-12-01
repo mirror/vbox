@@ -308,6 +308,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--vrdeextpack default|<name>\n"
                      "                            [--vrdeproperty <name=[value]>]\n"
                      "                            [--vrdeauthtype null|external|guest]\n"
+                     "                            [--vrdeauthlibrary default|<name>\n"
                      "                            [--vrdemulticon on|off]\n"
                      "                            [--vrdereusecon on|off]\n"
                      "                            [--vrdevideochannel on|off]\n"

@@ -1385,6 +1385,7 @@ bool VRDESettings::operator==(const VRDESettings& v) const
              || (    (fEnabled                  == v.fEnabled)
                   && (authType                  == v.authType)
                   && (ulAuthTimeout             == v.ulAuthTimeout)
+                  && (strAuthLibrary            == v.strAuthLibrary)
                   && (fAllowMultiConnection     == v.fAllowMultiConnection)
                   && (fReuseSingleConnection    == v.fReuseSingleConnection)
                   && (fVideoChannel             == v.fVideoChannel)
@@ -2473,6 +2474,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in RemoteDisplay/@authType attribute"), strAuthType.c_str());
             }
 
+            pelmHwChild->getAttributeValue("authLibrary", hw.vrdeSettings.strAuthLibrary);
             pelmHwChild->getAttributeValue("authTimeout", hw.vrdeSettings.ulAuthTimeout);
             pelmHwChild->getAttributeValue("allowMultiConnection", hw.vrdeSettings.fAllowMultiConnection);
             pelmHwChild->getAttributeValue("reuseSingleConnection", hw.vrdeSettings.fReuseSingleConnection);
@@ -3440,6 +3442,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     }
     if (m->sv >= SettingsVersion_v1_11)
     {
+        if (hw.vrdeSettings.strAuthLibrary.length())
+            pelmVRDE->setAttribute("authLibrary", hw.vrdeSettings.strAuthLibrary);
         if (hw.vrdeSettings.strVrdeExtPack.isNotEmpty())
             pelmVRDE->setAttribute("VRDEExtPack", hw.vrdeSettings.strVrdeExtPack);
         if (hw.vrdeSettings.mapProperties.size() > 0)
@@ -4331,6 +4335,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              || mediaRegistry.llDvdImages.size()
              || mediaRegistry.llFloppyImages.size()
              || !hardwareMachine.vrdeSettings.strVrdeExtPack.isEmpty()
+             || !hardwareMachine.vrdeSettings.strAuthLibrary.isEmpty()
              || machineUserData.strOsType == "JRockitVE"
            )
             m->sv = SettingsVersion_v1_11;

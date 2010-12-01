@@ -34,6 +34,7 @@ public:
     struct Data
     {
         BOOL mEnabled;
+        Bstr mAuthLibrary;
         AuthType_T mAuthType;
         ULONG mAuthTimeout;
         BOOL mAllowMultiConnection;
@@ -84,6 +85,8 @@ public:
     STDMETHOD(COMSETTER(VideoChannelQuality)) (ULONG aVideoChannelQuality);
     STDMETHOD(COMGETTER(VRDEExtPack))(BSTR *aExtPack);
     STDMETHOD(COMSETTER(VRDEExtPack))(IN_BSTR aExtPack);
+    STDMETHOD(COMGETTER(AuthLibrary)) (BSTR *aValue);
+    STDMETHOD(COMSETTER(AuthLibrary)) (IN_BSTR aValue);
 
     // IVRDEServer methods
     STDMETHOD(SetVRDEProperty) (IN_BSTR aKey, IN_BSTR aValue);

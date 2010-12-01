@@ -141,6 +141,7 @@ enum
     MODIFYVM_VRDP,                    /* VRDE: deprecated */
     MODIFYVM_VRDEPROPERTY,
     MODIFYVM_VRDEAUTHTYPE,
+    MODIFYVM_VRDEAUTHLIBRARY,
     MODIFYVM_VRDEMULTICON,
     MODIFYVM_VRDEREUSECON,
     MODIFYVM_VRDEVIDEOCHANNEL,
@@ -264,6 +265,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF }, /* deprecated */
     { "--vrdeproperty",             MODIFYVM_VRDEPROPERTY,              RTGETOPT_REQ_STRING },
     { "--vrdeauthtype",             MODIFYVM_VRDEAUTHTYPE,              RTGETOPT_REQ_STRING },
+    { "--vrdeauthlibrary",          MODIFYVM_VRDEAUTHLIBRARY,           RTGETOPT_REQ_STRING },
     { "--vrdemulticon",             MODIFYVM_VRDEMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdereusecon",             MODIFYVM_VRDEREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdevideochannel",         MODIFYVM_VRDEVIDEOCHANNEL,          RTGETOPT_REQ_BOOL_ONOFF },
@@ -1930,6 +1932,25 @@ int handleModifyVM(HandlerArg *a)
                 {
                     errorArgument("Invalid --vrdeauthtype argument '%s'", ValueUnion.psz);
                     rc = E_FAIL;
+                }
+                break;
+            }
+
+            case MODIFYVM_VRDEAUTHLIBRARY:
+            {
+                ComPtr<IVRDEServer> vrdeServer;
+                machine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                ASSERT(vrdeServer);
+
+                if (vrdeServer)
+                {
+                    if (strcmp(ValueUnion.psz, "default") != 0)
+                    {
+                        Bstr bstr(ValueUnion.psz);
+                        CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)(bstr.raw()));
+                    }
+                    else
+                        CHECK_ERROR(vrdeServer, COMSETTER(AuthLibrary)(NULL));
                 }
                 break;
             }
