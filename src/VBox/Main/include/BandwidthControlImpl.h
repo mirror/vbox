@@ -55,7 +55,7 @@ public:
 
     STDMETHOD(CreateBandwidthGroup) (IN_BSTR aName, BandwidthGroupType_T aType, ULONG aMaxMbPerSec);
     STDMETHOD(DeleteBandwidthGroup) (IN_BSTR aName);
-    STDMETHOD(GetNumGroups) (ULONG *aGroups);
+    STDMETHOD(COMGETTER(NumGroups)) (ULONG *aGroups);
     STDMETHOD(GetBandwidthGroup) (IN_BSTR aName, IBandwidthGroup **aBandwidthGroup);
     STDMETHOD(GetAllBandwidthGroups) (ComSafeArrayOut(IBandwidthGroup *, aBandwidthGroups));
 
