@@ -1064,7 +1064,7 @@ static RTEXITCODE DoInstall(int argc, char **argv)
         { "--cert-dir",     'c',   RTGETOPT_REQ_STRING },
         { "--name",         'n',   RTGETOPT_REQ_STRING },
         { "--tarball",      't',   RTGETOPT_REQ_STRING },
-        { "--tarball-fd",   'f',   RTGETOPT_REQ_UINT64 }
+        { "--tarball-fd",   'd',   RTGETOPT_REQ_UINT64 }
     };
     RTGETOPTSTATE   GetState;
     int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);

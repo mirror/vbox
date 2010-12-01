@@ -1330,7 +1330,8 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
         if (RTFileExists(strTarball.c_str()))
         {
             RTFILE hFile;
-            int vrc = RTFileOpen(&hFile, strTarball.c_str(), RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN);
+            int vrc = RTFileOpen(&hFile, strTarball.c_str(),
+                                 RTFILE_O_READ | RTFILE_O_DENY_WRITE | RTFILE_O_OPEN | RTFILE_O_INHERIT);
             if (RT_SUCCESS(vrc))
             {
                 RTFSOBJINFO ObjInfo;
@@ -1364,11 +1365,11 @@ STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
                                         (uint64_t)RTFileToNative(hFile));
 
                             hrc = runSetUidToRootHelper("install",
-                                                        "--base-dir",        m->strBaseDir.c_str(),
-                                                        "--certificate-dir", m->strCertificatDirPath.c_str(),
-                                                        "--name",            pStrName->c_str(),
-                                                        "--tarball",         strTarball.c_str(),
-                                                        "--tarball-fd",      &szTarballFd[0],
+                                                        "--base-dir",   m->strBaseDir.c_str(),
+                                                        "--cert-dir",   m->strCertificatDirPath.c_str(),
+                                                        "--name",       pStrName->c_str(),
+                                                        "--tarball",    strTarball.c_str(),
+                                                        "--tarball-fd", &szTarballFd[0],
                                                         NULL);
                             if (SUCCEEDED(hrc))
                             {
