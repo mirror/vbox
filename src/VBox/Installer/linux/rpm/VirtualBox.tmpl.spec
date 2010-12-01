@@ -96,7 +96,7 @@ mv VBoxSysInfo.sh $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/share/virtualbox
 cd icons
   for i in *; do
-    install -d -g 0 -o 0 $RPM_BUILD_ROOT/usr/share/icons/hicolor/$i/mimetypes
+    install -d $RPM_BUILD_ROOT/usr/share/icons/hicolor/$i/mimetypes
     mv $i/* $(prefix)/usr/share/icons/hicolor/$i/mimetypes
     rmdir $i
   done
