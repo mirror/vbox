@@ -131,15 +131,27 @@ static int collectNetIfInfo(Bstr &strName, Guid &guid, PNETIFINFO pInfo)
                             case AF_INET:
                                 if (!fIPFound)
                                 {
-                                    fIPFound = true;
-                                    ASMBitSetRange(&pInfo->IPNetMask, 0, pPrefix->PrefixLength);
+                                    if (pPrefix->pPrefixLength <= sizeof(pInfo->IPNetMask) * 8)
+                                    {
+                                        fIPFound = true;
+                                        ASMBitSetRange(&pInfo->IPNetMask, 0, pPrefix->PrefixLength);
+                                    }
+                                    else
+                                        Log(("collectNetIfInfo: Unexpected IPv4 prefix length of %d\n",
+                                             pPrefix->pPrefixLength));
                                 }
                                 break;
                             case AF_INET6:
                                 if (!fIPv6Found)
                                 {
-                                    fIPv6Found = true;
-                                    ASMBitSetRange(&pInfo->IPv6NetMask, 0, pPrefix->PrefixLength);
+                                    if (pPrefix->PrefixLength <= sizeof(pInfo->IPv6NetMask) * 8)
+                                    {
+                                        fIPv6Found = true;
+                                        ASMBitSetRange(&pInfo->IPv6NetMask, 0, pPrefix->PrefixLength);
+                                    }
+                                    else
+                                        Log(("collectNetIfInfo: Unexpected IPv6 prefix length of %d\n",
+                                             pPrefix->PrefixLength));
                                 }
                                 break;
                         }
