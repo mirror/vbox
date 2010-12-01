@@ -116,6 +116,9 @@ if [ -f /etc/udev/rules.d/10-vboxdrv.rules ]; then
     rm -f /etc/udev/rules.d/10-vboxdrv.rules 2> /dev/null
 fi
 
+# Remove our USB device tree
+rm -rf /dev/vboxusb 2> /dev/null
+
 cwd=`pwd`
 if [ -f $PREV_INSTALLATION/src/Makefile ]; then
     cd $PREV_INSTALLATION/src
