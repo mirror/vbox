@@ -66,6 +66,14 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/bin
 install -m 755 -d $RPM_BUILD_ROOT/usr/src
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/applications
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/pixmaps
+install -m 755 -d $RPM_BUILD_ROOT/usr/share/icons/hicolor
+cd icons
+  for i in *; do
+    install -d -g 0 -o 0 $RPM_BUILD_ROOT/usr/share/icons/hicolor/$i/mimetypes
+    mv $i/* $(prefix)/usr/share/icons/hicolor/$i/mimetypes
+    rmdir $i
+  done
+cd -
 install -m 755 -d $RPM_BUILD_ROOT%{_defaultdocdir}/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/lib/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/virtualbox
@@ -91,6 +99,7 @@ mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
 cp -a src $RPM_BUILD_ROOT/usr/share/virtualbox
 mv VBox.sh $RPM_BUILD_ROOT/usr/bin/VBox
 mv VBoxSysInfo.sh $RPM_BUILD_ROOT/usr/share/virtualbox
+mv VBoxCreateUSBNode.sh $RPM_BUILD_ROOT/usr/share/virtualbox
 for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless vboxwebsrv webtest; do
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
@@ -223,17 +232,32 @@ if [ -d /etc/udev/rules.d -a "$INSTALL_NO_UDEV" != "1" ]; then
       udev_fix=""
     fi
   fi
+  usb_createnode="/usr/share/virtualbox/VBoxCreateUSBNode.sh"
   echo "KERNEL=${udev_fix}\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"root\", MODE=\"0600\"" \
     > /etc/udev/rules.d/10-vboxdrv.rules
-  echo "SUBSYSTEM=${udev_fix}\"usb_device\", GROUP=\"vboxusers\", MODE=\"0664\"" \
+  echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"add\", RUN=${usb_createnode} \$major \$minor \$attr{bDeviceClass}\"" \
     >> /etc/udev/rules.d/10-vboxdrv.rules
-  echo "SUBSYSTEM=${udev_fix}\"usb\", ENV{DEVTYPE}==\"usb_device\", GROUP=\"vboxusers\", MODE=\"0664\"" \
+  echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=${usb_createnode} \$major \$minor \$attr{bDeviceClass}\"" \
+    >> /etc/udev/rules.d/10-vboxdrv.rules
+  echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"remove\", RUN=${usb_createnode} --remove \$major \$minor\"" \
+    >> /etc/udev/rules.d/10-vboxdrv.rules
+  echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=${usb_createnode} --remove \$major \$minor\"" \
     >> /etc/udev/rules.d/10-vboxdrv.rules
 fi
 # Remove old udev description file
 if [ -f /etc/udev/rules.d/60-vboxdrv.rules ]; then
   rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
 fi
+# Build our device tree
+for i in /sys/bus/usb/devices/*; do
+  if test -r "$i/dev"; then
+    dev="`cat "$i/dev" 2> /dev/null`"
+    major="`expr "$dev" : '\(.*\):' 2> /dev/null`"
+    minor="`expr "$dev" : '.*:\(.*\)' 2> /dev/null`"
+    class="`cat $i/bDeviceClass 2> /dev/null`"
+    sh ${usb_createnode} "$major" "$minor" "$class" ${usb_group} 2>/dev/null
+  fi
+done
 # Push the permissions to the USB device nodes.  One of these should match.
 # Rather nasty to use udevadm trigger for this, but I don't know of any
 # better way.
@@ -410,3 +434,4 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications
 /usr/share/pixmaps
 /usr/share/virtualbox
+/usr/share/icons

@@ -179,6 +179,7 @@ clean:
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
 	rm -f debian/modules-stamp debian/build-stamp debian/configure-stamp
 	rm -f debian/virtualbox-*.substvars debian/virtualbox*.debhelper
+	rm -f debian/$(verpkg).mime
 	rm -rf $(builddir) $(moddir)
 	rm -rf debian/wine.*
 	dh_clean
@@ -203,6 +204,14 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	$(if $(NOQT),,mv $(archdir)/virtualbox.desktop \
 	   $(prefix)/usr/share/applications/virtualbox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
+	install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor
+	cd $(archdir)/icons; for i in *; do \
+	    install -d -g 0 -o 0 $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
+	    mv $$i/* $(prefix)/usr/share/icons/hicolor/$$i/mimetypes; \
+	    rmdir $$i; \
+	done
+	rmdir $(archdir)/icons
+	mv $(archdir)/virtualbox.xml debian/$(verpkg).sharedmimeinfo
 	install -d -g 0 -o 0 $(prefix)/usr/share/lintian/overrides
 	sed \
 	    -e 's|%VERPKG%|$(verpkg)|g' \
@@ -233,6 +242,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	mv $(archdir)/sdk $(prefix)/usr/lib/$(package)
 	install -D -g 0 -o 0 -m 644 debian/VBox.sh $(prefix)/usr/bin/VBox
 	mv $(archdir)/VBoxSysInfo.sh $(prefix)/usr/share/$(package)
+	mv $(archdir)/VBoxCreateUSBNode.sh $(prefix)/usr/share/$(package)
 	for i in VBoxManage VBoxSVC $(if $(HEADLESS),,VBoxSDL) \
 	    $(if $(NOQT),,VirtualBox) VBoxHeadless \
 	    $(if $(NOWEBSVC),,vboxwebsrv webtest); do \
@@ -308,6 +318,7 @@ endif
 	dh_installdebconf
 	dh_installchangelogs
 	dh_installmenu
+	dh_installmime
 	dh_link
 ifeq ($(DEBUG),)
 	dh_strip --keep-debug --exclude=libQtCoreVBox.so.4 --exclude=libQtGuiVBox.so.4 --exclude=libQtNetworkVBox.so.4 --exclude=libQtOpenGLVBox.so.4 --exclude=libqtaccessiblewidgets.so
