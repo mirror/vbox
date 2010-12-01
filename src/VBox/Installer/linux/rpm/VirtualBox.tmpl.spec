@@ -294,10 +294,10 @@ fi
 /sbin/ldconfig
 %_post_service vboxdrv
 %_post_service vboxweb-service
-%{update_desktop_database}
 %update_menus
 %endif
 update-mime-database /usr/share/mime &> /dev/null || :
+update-desktop-database > /dev/null 2>&1 || :
 touch --no-create /usr/share/icons/hicolor
 gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
 
@@ -408,6 +408,7 @@ fi
 %clean_menus
 %endif
 update-mime-database /usr/share/mime &> /dev/null || :
+update-desktop-database > /dev/null 2>&1 || :
 touch --no-create /usr/share/icons/hicolor
 gtk-update-icon-cache -q /usr/share/icons/hicolor 2> /dev/null || :
 
