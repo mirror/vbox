@@ -1801,6 +1801,7 @@ ifdef VBOX_WITH_ORIGIN
  VBOX_WITH_RELATIVE_RUNPATH = $$(VBOX_ORIGIN)
 endif
 
+
 #
 # The X11 headers.
 #
@@ -1813,9 +1814,6 @@ VBOX_PATH_X11_XORG_1_4  = $(VBOX_PATH_X11_ROOT)/1.4
 VBOX_PATH_X11_XORG_1_5  = $(VBOX_PATH_X11_ROOT)/1.5
 VBOX_PATH_X11_XORG_1_6  = $(VBOX_PATH_X11_ROOT)/1.6
 
-#
-# Various other variables.
-#
 
 #
 # crOpenGL related paths and variables.
@@ -2025,6 +2023,48 @@ ifdef VBOX_WITH_WARNINGS_AS_ERRORS
   VBOX_VCC_LD_WERR ?= ## @todo later also: -WX
  endif
 endif
+
+
+#
+# Edit macros.
+#
+
+##
+# Edits VirtualBox version, vendor and package strings in a text file.
+#
+# The rule using this must list $(VBOX_SVN_REV_KMK) as a prerequisite.
+#
+# @param    1        The input filename.
+# @param    2        The output filename.
+#
+VBOX_EDIT_VERSION_CMD_FN = $(SED) \
+	-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+	-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+	-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+	-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+	-e 's/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g' \
+	-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+	-e 's/@VBOX_VENDOR_SHORT@/$(VBOX_VENDOR_SHORT)/g' \
+	-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+	-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+	-e 's/@VBOX_PACKAGE_STRING@/$(VBOX_PACKAGE_STRING)/g' \
+	--output $(2) $(1)
+
+##
+# Generates a rule for editing a file using VBOX_EDIT_VERSION_CMD_FN.
+#
+# @param    1        The target name.
+# @param    2        The input filename relative to the current sub-makefile.
+# @param    3        The output filename relative to the target output dir.
+#                    Optional, defaults to 2.
+#
+VBOX_EDIT_VERSION_RULE_FN = $(eval $(value VBOX_EDIT_VERSION_RULE_DEF))
+define VBOX_EDIT_VERSION_RULE_DEF
+$$($(1)_0_OUTDIR)/$(if $(3),$(3),$(2)): $(PATH_SUB_CURRENT)/$(2) $(VBOX_SVN_REV_KMK) | $$(dir $$@)
+	$(call MSG_GENERATE,$(1),$@,$<)
+	$(QUIET)$(call VBOX_EDIT_VERSION_CMD_FN,$<,$@)
+endef
+
 
 #
 # Code Signing.
@@ -4465,9 +4505,12 @@ endif
 #
 # Subversion tree revision.
 #
-# The VBOX_SVN_REV contains our best guess. Use svn info on the
-# root of the treeto determin this it if .svn/entries is found,
-# otherwise fall back on the Config.kmk revision.
+# The VBOX_SVN_REV contains our best guess.  Use svn info on the root of the
+# tree to determin this it if .svn/entries is found, otherwise fall back on
+# the Config.kmk revision.
+#
+# Makefile rules using this information shall list $(VBOX_SVN_REV_KMK) as a
+# prerequisite.
 #
 SVN                    ?= svn$(HOSTSUFF_EXE)
 VBOX_SVN_REV_KMK        = $(PATH_OUT)/revision.kmk
