@@ -1579,7 +1579,7 @@ AuthResult ConsoleVRDPServer::Authenticate(const Guid &uuid, AuthGuestJudgement 
 
     Assert(mAuthLibrary && (mpfnAuthEntry || mpfnAuthEntry2 || mpfnAuthEntry3));
 
-    AuthResult result; 
+    AuthResult result = AuthResultAccessDenied;
     if (mpfnAuthEntry3)
     {
         result = mpfnAuthEntry3("vrde", &rawuuid, guestJudgement, pszUser, pszPassword, pszDomain, true, u32ClientId);
