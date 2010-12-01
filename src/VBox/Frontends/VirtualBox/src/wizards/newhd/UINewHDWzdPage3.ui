@@ -53,7 +53,7 @@
        <widget class="QLineEdit" name="m_pLocationEditor"/>
       </item>
       <item>
-       <widget class="QToolButton" name="m_pLocationSelector">
+       <widget class="QIToolButton" name="m_pLocationSelector">
         <property name="autoRaise">
          <bool>true</bool>
         </property>
@@ -153,6 +153,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>QIToolButton</class>
+   <extends>QToolButton</extends>
+   <header>QIToolButton.h</header>
+  </customwidget>
   <customwidget>
    <class>QILabel</class>
    <extends>QLabel</extends>
