@@ -3329,6 +3329,13 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         if (RT_FAILURE(rc))
             goto out;
 
+        /* If the descriptor file is shorter than 50 bytes it can't be valid. */
+        if (cbFileSize < 50)
+        {
+            rc = vmdkError(pImage, VERR_VD_VMDK_INVALID_HEADER, RT_SRC_POS, N_("VMDK: descriptor in '%s' is too short"), pImage->pszFilename);
+            goto out;
+        }
+
         uint64_t cbSize = cbFileSize;
         if (cbSize % VMDK_SECTOR2BYTE(10))
             cbSize += VMDK_SECTOR2BYTE(20) - cbSize % VMDK_SECTOR2BYTE(10);
@@ -3343,15 +3350,21 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
             goto out;
         }
 
+        /* Don't reread the place where the magic would live in a sparse
+         * image if it's a descriptor based one. */
+        memcpy(pImage->pDescData, &u32Magic, sizeof(u32Magic));
         size_t cbRead;
-        rc = vmdkFileReadSync(pImage, pImage->pFile, 0, pImage->pDescData,
-                              RT_MIN(pImage->cbDescAlloc, cbFileSize),
+        rc = vmdkFileReadSync(pImage, pImage->pFile, sizeof(u32Magic),
+                              pImage->pDescData + sizeof(u32Magic),
+                              RT_MIN(pImage->cbDescAlloc - sizeof(u32Magic),
+                                     cbFileSize - sizeof(u32Magic)),
                               &cbRead);
         if (RT_FAILURE(rc))
         {
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pImage->pszFilename);
             goto out;
         }
+        cbRead += sizeof(u32Magic);
         if (cbRead == pImage->cbDescAlloc)
         {
             /* Likely the read is truncated. Better fail a bit too early
