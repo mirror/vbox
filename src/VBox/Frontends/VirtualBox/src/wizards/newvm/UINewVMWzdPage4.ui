@@ -86,7 +86,7 @@
        <widget class="VBoxMediaComboBox" name="m_pDiskSelector"/>
       </item>
       <item row="2" column="2">
-       <widget class="QToolButton" name="m_pVMMButton">
+       <widget class="QIToolButton" name="m_pVMMButton">
         <property name="autoRaise">
          <bool>true</bool>
         </property>
@@ -111,6 +111,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>QIToolButton</class>
+   <extends>QToolButton</extends>
+   <header>QIToolButton.h</header>
+  </customwidget>
   <customwidget>
    <class>QILabel</class>
    <extends>QLabel</extends>
