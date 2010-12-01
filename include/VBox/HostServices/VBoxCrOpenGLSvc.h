@@ -48,6 +48,8 @@
 #define SHCRGL_GUEST_FN_SET_VERSION (6)
 #define SHCRGL_GUEST_FN_INJECT      (9)
 #define SHCRGL_GUEST_FN_SET_PID     (12)
+#define SHCRGL_GUEST_FN_WRITE_BUFFER        (13)
+#define SHCRGL_GUEST_FN_WRITE_READ_BUFFERED (14)
 
 /* Parameters count */
 #define SHCRGL_CPARMS_SET_CONSOLE (1)
@@ -60,6 +62,9 @@
 #define SHCRGL_CPARMS_SCREEN_CHANGED (1)
 #define SHCRGL_CPARMS_INJECT (2)
 #define SHCRGL_CPARMS_SET_PID (1)
+#define SHCRGL_CPARMS_WRITE_BUFFER        (4)
+#define SHCRGL_CPARMS_WRITE_READ_BUFFERED (3)
+
 
 #ifdef VBOX_WITH_CRHGSMI
 #pragma pack(1)
@@ -251,5 +256,54 @@ typedef struct
      */
     HGCMFunctionParameter   u64PID;
 } CRVBOXHGCMSETPID;
+
+/** GUEST_FN_WRITE_BUFFER Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** 32bit, in/out
+     *  Buffer id, 0 means host have to allocate one
+     */
+    HGCMFunctionParameter   iBufferID;
+
+    /** 32bit, in
+     *  Buffer size
+     */
+    HGCMFunctionParameter   cbBufferSize;
+
+    /** 32bit, in
+     *  Write offset in buffer
+     */
+    HGCMFunctionParameter   ui32Offset;
+
+    /** pointer, in
+     *  Data buffer
+     */
+    HGCMFunctionParameter   pBuffer;
+
+} CRVBOXHGCMWRITEBUFFER;
+
+/** GUEST_FN_WRITE_READ_BUFFERED Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** 32bit, in
+     *  Buffer id.
+     */
+    HGCMFunctionParameter   iBufferID;
+
+    /** pointer, out
+     *  Writeback buffer
+     */
+    HGCMFunctionParameter   pWriteback;
+
+    /** 32bit, out
+     * Count of bytes written to writeback buffer
+     */
+    HGCMFunctionParameter   cbWriteback;
+
+} CRVBOXHGCMWRITEREADBUFFERED;
 
 #endif
