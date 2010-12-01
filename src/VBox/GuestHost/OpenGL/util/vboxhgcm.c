@@ -49,6 +49,14 @@
 #include <VBox/VBoxCrHgsmi.h>
 #endif
 
+/*@todo move define somewhere else, and make sure it's less than VBGLR0_MAX_HGCM_KERNEL_PARM*/
+/*If we fail to pass data in one chunk, send it in chunks of this size instead*/
+#define CR_HGCM_SPLIT_BUFFER_SIZE (8*_1M)
+
+#ifndef MIN
+# define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
 #ifdef DEBUG_misha
 #ifdef CRASSERT
 # undef CRASSERT
@@ -656,6 +664,7 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
                 }
             }
         }
+        return -rc;
     }
     else
 #  endif
@@ -935,6 +944,75 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
     parms.cbWriteback.u.value32 = 0;
 
     rc = crVBoxHGCMCall(&parms, sizeof(parms));
+
+#ifdef RT_OS_LINUX
+    if (VERR_OUT_OF_RANGE==rc && CR_VBOXHGCM_USERALLOCATED==bufferKind)
+    {
+        /*Buffer is too big, so send it in split chunks*/
+        CRVBOXHGCMWRITEBUFFER wbParms;
+
+        wbParms.hdr.result = VERR_WRONG_ORDER;
+        wbParms.hdr.u32ClientID = conn->u32ClientID;
+        wbParms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE_BUFFER;
+        wbParms.hdr.cParms = SHCRGL_CPARMS_WRITE_BUFFER;
+
+        wbParms.iBufferID.type = VMMDevHGCMParmType_32bit;
+        wbParms.iBufferID.u.value32 = 0;
+
+        wbParms.cbBufferSize.type = VMMDevHGCMParmType_32bit;
+        wbParms.cbBufferSize.u.value32 = len;
+
+        wbParms.ui32Offset.type = VMMDevHGCMParmType_32bit;
+        wbParms.ui32Offset.u.value32 = 0;
+
+        wbParms.pBuffer.type = VMMDevHGCMParmType_LinAddr_In;
+        wbParms.pBuffer.u.Pointer.size         = MIN(CR_HGCM_SPLIT_BUFFER_SIZE, len);
+        wbParms.pBuffer.u.Pointer.u.linearAddr = (uintptr_t) buf;
+
+        if (len<CR_HGCM_SPLIT_BUFFER_SIZE)
+        {
+            crError("VERR_OUT_OF_RANGE in crVBoxHGCMWriteReadExact for %u bytes write", len);
+            return;
+        }
+
+        while (wbParms.pBuffer.u.Pointer.size)
+        {
+            crDebug("SHCRGL_GUEST_FN_WRITE_BUFFER, offset=%u, size=%u", wbParms.ui32Offset.u.value32, wbParms.pBuffer.u.Pointer.size);
+
+            rc = crVBoxHGCMCall(&wbParms, sizeof(wbParms));
+            if (RT_FAILURE(rc) || RT_FAILURE(wbParms.hdr.result))
+            {
+                crError("SHCRGL_GUEST_FN_WRITE_BUFFER (%i) failed with %x %x\n", wbParms.pBuffer.u.Pointer.size, rc, wbParms.hdr.result);
+                return;
+            }
+
+            wbParms.ui32Offset.u.value32 += wbParms.pBuffer.u.Pointer.size;
+            wbParms.pBuffer.u.Pointer.u.linearAddr += (uintptr_t) wbParms.pBuffer.u.Pointer.size;
+            wbParms.pBuffer.u.Pointer.size = MIN(CR_HGCM_SPLIT_BUFFER_SIZE, len-wbParms.ui32Offset.u.value32);
+        }
+
+        /*now issue GUEST_FN_WRITE_READ_BUFFERED referencing the buffer we'd made*/
+        {
+            CRVBOXHGCMWRITEREADBUFFERED wrbParms;
+
+            wrbParms.hdr.result = VERR_WRONG_ORDER;
+            wrbParms.hdr.u32ClientID = conn->u32ClientID;
+            wrbParms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE_READ_BUFFERED;
+            wrbParms.hdr.cParms = SHCRGL_CPARMS_WRITE_READ_BUFFERED;
+
+            crMemcpy(&wrbParms.iBufferID, &wbParms.iBufferID, sizeof(HGCMFunctionParameter));
+            crMemcpy(&wrbParms.pWriteback, &parms.pWriteback, sizeof(HGCMFunctionParameter));
+            crMemcpy(&wrbParms.cbWriteback, &parms.cbWriteback, sizeof(HGCMFunctionParameter));
+
+            rc = crVBoxHGCMCall(&wrbParms, sizeof(wrbParms));
+
+            /*bit of hack to reuse code below*/
+            parms.hdr.result = wrbParms.hdr.result;
+            crMemcpy(&parms.cbWriteback, &wrbParms.cbWriteback, sizeof(HGCMFunctionParameter));
+            crMemcpy(&parms.pWriteback, &wrbParms.pWriteback, sizeof(HGCMFunctionParameter));
+        }
+    }
+#endif
 
     if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
     {
