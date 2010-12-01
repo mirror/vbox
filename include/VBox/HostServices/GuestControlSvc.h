@@ -80,6 +80,7 @@ enum eProcessStatus
  * used in order to accomplish tasks host<->guest.
  */
 #define VBOXSERVICE_TOOL_CAT        "vbox_cat"
+#define VBOXSERVICE_TOOL_MKDIR      "vbox_mkdir"
 
 /**
  * Input status, reported by the client.
