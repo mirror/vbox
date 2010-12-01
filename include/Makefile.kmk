@@ -24,7 +24,8 @@ LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeRC
 # Omit headers that are using C++ features and upsets gcc.
 cpp_features_hdrs := \
 	VBox/hwaccm.h \
-	VBox/hwacc_vmx.h
+	VBox/hwacc_vmx.h \
+	VBox/HostServices/GuestControlSvc.h
 
 # Omit headers that are C++ and ring-3.
 r3_cpp_hdrs := \
