@@ -2399,7 +2399,7 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
                      * Prepare tool command line.
                      */
                     char szOutput[RTPATH_MAX];
-                    if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", Utf8Dest.c_str()))
+                    if (RTStrPrintf(szOutput, sizeof(szOutput), "--output=%s", Utf8Dest.c_str()) >= sizeof(szOutput) - 1)
                     {
                         /*
                          * Normalize path slashes, based on the detected guest.
@@ -2577,10 +2577,8 @@ HRESULT Guest::createDirectoryInternal(IN_BSTR aDirectory,
             args.push_back(Bstr("--mode").raw());           /* Set the creation mode. */
 
             char szMode[16];
-            if (RTStrPrintf(szMode, sizeof(szMode), "%o", aMode))
-                args.push_back(Bstr(szMode).raw());
-            else
-                rc = setError(VBOX_E_IPRT_ERROR, tr("Error preparing command line"));
+            RTStrPrintf(szMode, sizeof(szMode), "%o", aMode);
+            args.push_back(Bstr(szMode).raw());
         }
         args.push_back(Bstr(Utf8Directory).raw());  /* The directory we want to create. */
 
