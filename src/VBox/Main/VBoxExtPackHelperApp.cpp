@@ -1348,28 +1348,19 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
         }
 
         /*
-         * Only directories which conform with our mangling and temporary
-         * install/uninstall naming scheme are candidates for cleaning.
+         * Only directories which conform with our temporary install/uninstall
+         * naming scheme are candidates for cleaning.
          */
         if (   RTFS_IS_DIRECTORY(Entry.Info.Attr.fMode)
             && strcmp(Entry.szName, ".")  != 0
             && strcmp(Entry.szName, "..") != 0)
         {
-            bool fTemporary = false;
-            bool fCandidate = VBoxExtPackIsValidMangledName(Entry.szName);
-            if (!fCandidate)
-            {
-                char *pszMarker = strstr(Entry.szName, "-_-");
-                if (   pszMarker
-                    && (   !strcmp(pszMarker, "-_-uninst")
-                        || !strncmp(pszMarker, "-_-inst", sizeof("-_-inst") - 1)))
-                {
-                    *pszMarker = '\0';
-                    fCandidate = VBoxExtPackIsValidMangledName(Entry.szName);
-                    *pszMarker = '-';
-                    fTemporary = true;
-                }
-            }
+            bool fCandidate = false;
+            char *pszMarker = strstr(Entry.szName, "-_-");
+            if (   pszMarker
+                && (   !strcmp(pszMarker, "-_-uninst")
+                    || !strncmp(pszMarker, "-_-inst", sizeof("-_-inst") - 1)))
+                fCandidate = VBoxExtPackIsValidMangledName(Entry.szName, pszMarker - &Entry.szName[0]);
             if (fCandidate)
             {
                 /*
@@ -1379,7 +1370,7 @@ static RTEXITCODE DoCleanup(int argc, char **argv)
                 rc = RTPathJoin(szPath, sizeof(szPath), pszBaseDir, Entry.szName);
                 if (RT_SUCCESS(rc))
                 {
-                    RTEXITCODE rcExit2 = RemoveExtPackDir(szPath, fTemporary);
+                    RTEXITCODE rcExit2 = RemoveExtPackDir(szPath, true /*fTemporary*/);
                     if (rcExit2 == RTEXITCODE_SUCCESS)
                         RTMsgInfo("Successfully removed '%s'.", Entry.szName);
                     else if (rcExit == RTEXITCODE_SUCCESS)
