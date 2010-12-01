@@ -42,8 +42,8 @@ public:
     {
         /* Icon: */
         setIcon(0, UIIconPool::iconSet(m_data.m_fIsUsable ?
-                                       ":/shared_folder_16px.png" :
-                                       ":/shared_folder_disabled_16px.png"));
+                                       ":/status_check_16px.png" :
+                                       ":/status_error_16px.png"));
 
         /* Name: */
         setText(1, m_data.m_strName);
