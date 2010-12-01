@@ -192,7 +192,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         if (rc != ERROR_SUCCESS || dwLen <= 0)
             break;
 
-        _stprintf_s(szPath, sizeof(szPath), L"%s\\InstallPath", szRoot);
+        _stprintf_s(szPath, sizeof(szPath) / sizeof(TCHAR), L"%s\\InstallPath", szRoot);
         dwLen = sizeof(szVal);
 
         HKEY hkPythonInstPath = NULL;
@@ -215,8 +215,8 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
     {
         /* Cool, check for installed Win32 extensions. */
         LogString(hModule, TEXT("InstallPythonAPI: Python installed. Checking for Win32 extensions ..."));
-        _stprintf_s(szExec, sizeof(szExec), L"%s\\python.exe", szVal);
-        _stprintf_s(szCmdLine, sizeof(szCmdLine), L"%s\\python.exe -c \"import win32api\"", szVal);
+        _stprintf_s(szExec, sizeof(szExec) / sizeof(TCHAR), L"%s\\python.exe", szVal);
+        _stprintf_s(szCmdLine, sizeof(szCmdLine) / sizeof(TCHAR), L"%s\\python.exe -c \"import win32api\"", szVal);
 
         if (   (0 == Exec(hModule, szExec, szCmdLine, NULL, &dwExitCode))
             && (0 == dwExitCode))
@@ -235,10 +235,10 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         VBoxGetProperty(hModule, L"INSTALLDIR", szVBoxAPISetupPath, sizeof(szVBoxAPISetupPath));
 
         /* Set final path. */
-        _stprintf_s(szPath, sizeof(szPath), L"%s\\sdk\\install", szVBoxAPISetupPath);
+        _stprintf_s(szPath, sizeof(szPath) / sizeof(TCHAR), L"%s\\sdk\\install", szVBoxAPISetupPath);
 
         /* Install our API module. */
-        _stprintf_s(szCmdLine, sizeof(szCmdLine), L"%s\\python.exe vboxapisetup.py install", szVal);
+        _stprintf_s(szCmdLine, sizeof(szCmdLine) / sizeof(TCHAR), L"%s\\python.exe vboxapisetup.py install", szVal);
 
         /* Set required environment variables. */
         if (!SetEnvironmentVariable(L"VBOX_INSTALL_PATH", szVBoxAPISetupPath))
@@ -277,9 +277,9 @@ static LONG InstallBrandingValue(MSIHANDLE hModule,
         TCHAR szKey[_MAX_PATH];
 
         if (wcsicmp(L"General", pszSection) != 0)
-            _stprintf_s(szKey, sizeof(szKey), L"SOFTWARE\\%s\\VirtualBox\\Branding\\", VBOX_VENDOR_SHORT, pszSection);
+            _stprintf_s(szKey, sizeof(szKey) / sizeof(TCHAR), L"SOFTWARE\\%s\\VirtualBox\\Branding\\", VBOX_VENDOR_SHORT, pszSection);
         else
-            _stprintf_s(szKey, sizeof(szKey), L"SOFTWARE\\%s\\VirtualBox\\Branding", VBOX_VENDOR_SHORT);
+            _stprintf_s(szKey, sizeof(szKey) / sizeof(TCHAR), L"SOFTWARE\\%s\\VirtualBox\\Branding", VBOX_VENDOR_SHORT);
 
         rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, szKey,
                           0, KEY_WRITE, &hkBranding);
@@ -307,8 +307,8 @@ UINT CopyDir(MSIHANDLE hModule, const TCHAR *pszDestDir, const TCHAR *pszSourceD
     TCHAR szDest[_MAX_PATH + 1];
     TCHAR szSource[_MAX_PATH + 1];
 
-    _stprintf_s(szDest, sizeof(szDest), L"%s%c", pszDestDir, '\0');
-    _stprintf_s(szSource, sizeof(szSource), L"%s%c", pszSourceDir, '\0');
+    _stprintf_s(szDest, sizeof(szDest) / sizeof(TCHAR), L"%s%c", pszDestDir, '\0');
+    _stprintf_s(szSource, sizeof(szSource) / sizeof(TCHAR), L"%s%c", pszSourceDir, '\0');
 
     SHFILEOPSTRUCT s = {0};
     s.hwnd = NULL;
@@ -338,7 +338,7 @@ UINT RemoveDir(MSIHANDLE hModule, const TCHAR *pszDestDir)
     UINT rc;
     TCHAR szDest[_MAX_PATH + 1];
 
-    _stprintf_s(szDest, sizeof(szDest), L"%s%c", pszDestDir, '\0');
+    _stprintf_s(szDest, sizeof(szDest) / sizeof(TCHAR), L"%s%c", pszDestDir, '\0');
 
     SHFILEOPSTRUCT s = {0};
     s.hwnd = NULL;
@@ -367,8 +367,8 @@ UINT RenameDir(MSIHANDLE hModule, const TCHAR *pszDestDir, const TCHAR *pszSourc
     TCHAR szDest[_MAX_PATH + 1];
     TCHAR szSource[_MAX_PATH + 1];
 
-    _stprintf_s(szDest, sizeof(szDest), L"%s%c", pszDestDir, '\0');
-    _stprintf_s(szSource, sizeof(szSource), L"%s%c", pszSourceDir, '\0');
+    _stprintf_s(szDest, sizeof(szDest) / sizeof(TCHAR), L"%s%c", pszDestDir, '\0');
+    _stprintf_s(szSource, sizeof(szSource) / sizeof(TCHAR), L"%s%c", pszSourceDir, '\0');
 
     SHFILEOPSTRUCT s = {0};
     s.hwnd = NULL;
@@ -405,12 +405,12 @@ UINT __stdcall UninstallBranding(MSIHANDLE hModule)
     if (rc == ERROR_SUCCESS)
     {
         /** @todo Check trailing slash after %s. */
-        _stprintf_s(szPathDest, sizeof(szPathDest), L"%scustom", szPathTargetDir);
+        _stprintf_s(szPathDest, sizeof(szPathDest) / sizeof(TCHAR), L"%scustom", szPathTargetDir);
         rc = RemoveDir(hModule, szPathDest);
         if (rc != ERROR_SUCCESS)
         {
             /* Check for hidden .custom directory and remove it. */
-            _stprintf_s(szPathDest, sizeof(szPathDest), L"%s.custom", szPathTargetDir);
+            _stprintf_s(szPathDest, sizeof(szPathDest) / sizeof(TCHAR), L"%s.custom", szPathTargetDir);
             rc = RemoveDir(hModule, szPathDest);
         }
     }
@@ -435,13 +435,13 @@ UINT __stdcall InstallBranding(MSIHANDLE hModule)
     if (rc == ERROR_SUCCESS)
     {
         /** @todo Check for trailing slash after %s. */
-        _stprintf_s(szPathDest, sizeof(szPathDest), L"%s", szPathTargetDir);
-        _stprintf_s(szPathSource, sizeof(szPathSource), L"%s.custom", szPathMSI);
+        _stprintf_s(szPathDest, sizeof(szPathDest) / sizeof(TCHAR), L"%s", szPathTargetDir);
+        _stprintf_s(szPathSource, sizeof(szPathSource) / sizeof(TCHAR), L"%s.custom", szPathMSI);
         rc = CopyDir(hModule, szPathDest, szPathSource);
         if (rc == ERROR_SUCCESS)
         {
-            _stprintf_s(szPathDest, sizeof(szPathDest), L"%scustom", szPathTargetDir);
-            _stprintf_s(szPathSource, sizeof(szPathSource), L"%s.custom", szPathTargetDir);
+            _stprintf_s(szPathDest, sizeof(szPathDest) / sizeof(TCHAR), L"%scustom", szPathTargetDir);
+            _stprintf_s(szPathSource, sizeof(szPathSource) / sizeof(TCHAR), L"%s.custom", szPathTargetDir);
             rc = RenameDir(hModule, szPathDest, szPathSource);
         }
     }
