@@ -34,6 +34,7 @@ FORMS = \
     src/settings/global/UIGlobalSettingsLanguage.ui \
     src/settings/global/UIGlobalSettingsNetwork.ui \
     src/settings/global/UIGlobalSettingsNetworkDetails.ui \
+    src/settings/global/UIGlobalSettingsExtension.ui \
     src/settings/machine/UIMachineSettingsGeneral.ui \
     src/settings/machine/UIMachineSettingsSystem.ui \
     src/settings/machine/UIMachineSettingsDisplay.ui \

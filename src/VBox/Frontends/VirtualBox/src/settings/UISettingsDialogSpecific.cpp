@@ -36,6 +36,7 @@
 #include "UIGlobalSettingsUpdate.h"
 #include "UIGlobalSettingsLanguage.h"
 #include "UIGlobalSettingsNetwork.h"
+#include "UIGlobalSettingsExtension.h"
 
 #include "UIMachineSettingsGeneral.h"
 #include "UIMachineSettingsSystem.h"
@@ -359,6 +360,16 @@ UIGLSettingsDlg::UIGLSettingsDlg(QWidget *pParent)
                             i, "#language", pSettingsPage);
                     break;
                 }
+                /* Extension page: */
+                case GLSettingsPage_Extension:
+                {
+                    UISettingsPage *pSettingsPage = new UIGlobalSettingsExtension;
+                    pSettingsPage->setId(i);
+                    addItem(":/shared_folder_32px.png", ":/shared_folder_disabled_32px.png",
+                            ":/shared_folder_16px.png", ":/shared_folder_disabled_16px.png",
+                            i, "#extension", pSettingsPage);
+                    break;
+                }
                 default:
                     break;
             }
@@ -439,6 +450,9 @@ void UIGLSettingsDlg::retranslateUi()
 
     /* Network page: */
     m_pSelector->setItemText(GLSettingsPage_Network, tr("Network"));
+
+    /* Extension page: */
+    m_pSelector->setItemText(GLSettingsPage_Extension, tr("Extensions"));
 
     /* Translate the selector: */
     m_pSelector->polish();

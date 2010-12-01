@@ -38,6 +38,7 @@ public:
         GLSettingsPage_Language,
         GLSettingsPage_USB,
         GLSettingsPage_Network,
+        GLSettingsPage_Extension,
         GLSettingsPage_MAX
     };
 
