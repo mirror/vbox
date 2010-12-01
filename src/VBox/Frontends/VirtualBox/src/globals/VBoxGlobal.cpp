@@ -4300,7 +4300,7 @@ quint64 VBoxGlobal::required2DOffscreenVideoMemory()
 quint64 VBoxGlobal::required3DWddmOffscreenVideoMemory(CMachine *aMachine /* = 0 */, int cMonitors /* = 1 */)
 {
     cMonitors = RT_MAX(cMonitors, 1);
-    quint64 cbSize = VBoxGlobal::requiredVideoMemory(aMachine, 1);
+    quint64 cbSize = VBoxGlobal::requiredVideoMemory(aMachine, 1); /* why not cMonitors? */
     cbSize += 64 * _1M;
     return cbSize;
 }
