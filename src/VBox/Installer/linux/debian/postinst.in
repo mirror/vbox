@@ -90,13 +90,6 @@ if [ "$1" = "configure" ]; then
       sh ${usb_createnode} "$major" "$minor" "$class" ${usb_group} 2>/dev/null
     fi
   done
-  # Push the permissions to the USB device nodes.  One of these should match.
-  # Rather nasty to use udevadm trigger for this, but I don't know of any
-  # better way.
-  udevadm trigger --subsystem-match=usb > /dev/null 2>&1
-  udevtrigger --subsystem-match=usb > /dev/null 2>&1
-  udevtrigger --subsystem-match=usb_device > /dev/null 2>&1
-  udevplug -Busb > /dev/null 2>&1
 
   # create users groups (disable with INSTALL_NO_GROUP=1 in /etc/default/virtualbox)
   if [ "$INSTALL_NO_GROUP" != "1" ]; then
