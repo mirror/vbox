@@ -96,12 +96,16 @@ typedef VBOXEXTPACKDESC *PVBOXEXTPACKDESC;
 typedef VBOXEXTPACKDESC const *PCVBOXEXTPACKDESC;
 
 
-iprt::MiniString *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
-iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
-void              VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
-bool    VBoxExtPackIsValidName(const char *pszName);
-bool    VBoxExtPackIsValidVersionString(const char *pszName);
-bool    VBoxExtPackIsValidModuleString(const char *pszModule);
+iprt::MiniString   *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
+iprt::MiniString   *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
+void                VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
+bool                VBoxExtPackIsValidName(const char *pszName);
+bool                VBoxExtPackIsValidMangledName(const char *pszMangledName, size_t cchMax = RTSTR_MAX);
+iprt::MiniString   *VBoxExtPackMangleName(const char *pszName);
+iprt::MiniString   *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cbMax);
+int                 VBoxExtPackCalcDir(char *pszExtPackDir, size_t cbExtPackDir, const char *pszParentDir, const char *pszName);
+bool                VBoxExtPackIsValidVersionString(const char *pszName);
+bool                VBoxExtPackIsValidModuleString(const char *pszModule);
 
 
 #endif

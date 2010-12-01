@@ -243,16 +243,14 @@ iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball)
 {
     /*
      * Skip ahead to the filename part and count the number of characters
-     * that matches the criteria for a extension pack name.
-     *
-     * Trick: '_' == ' ' - filenames with spaces cause trouble.
+     * that matches the criteria for a mangled extension pack name.
      */
     const char *pszSrc = RTPathFilename(pszTarball);
     if (!pszSrc)
         return NULL;
 
     size_t off = 0;
-    while (RT_C_IS_ALNUM(pszSrc[off]) || pszSrc[off] == ' ' || pszSrc[off] == '_')
+    while (RT_C_IS_ALNUM(pszSrc[off]) || pszSrc[off] == '_')
         off++;
 
     /*
@@ -263,21 +261,10 @@ iprt::MiniString *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball)
         return NULL;
 
     /*
-     * Replace underscores, duplicate the string and return it.
-     * (Unforuntately, iprt::ministring does not offer simple search & replace.)
+     * Return the unmangled name.
      */
-    char szTmp[VBOX_EXTPACK_NAME_MAX_LEN + 1];
-    memcpy(szTmp, pszSrc, off);
-    szTmp[off] = '\0';
-    char *psz = szTmp;
-    while ((psz = strchr(psz, '_')) != NULL)
-        *psz++ = ' ';
-    Assert(VBoxExtPackIsValidName(szTmp));
-
-    iprt::MiniString *pStrRet = new iprt::MiniString(szTmp, off);
-    return pStrRet;
+    return VBoxExtPackUnmangleName(pszSrc, off);
 }
-
 
 /**
  * Validates the extension pack name.
@@ -312,6 +299,125 @@ bool VBoxExtPackIsValidName(const char *pszName)
 
     return true;
 }
+
+/**
+ * Checks if an alledged manged extension pack name.
+ *
+ * @returns true if valid, false if not.
+ * @param   pszMangledName      The mangled name to validate.
+ * @param   cchMax              The max number of chars to test.
+ * @sa      VBoxExtPackMangleName
+ */
+bool VBoxExtPackIsValidMangledName(const char *pszMangledName, size_t cchMax /*= RTSTR_MAX*/)
+{
+    if (!pszMangledName)
+        return false;
+
+    /*
+     * Check the characters making up the name, only english alphabet
+     * characters, decimal digits and underscores (=space) are allowed.
+     */
+    size_t off = 0;
+    while (off < cchMax && pszMangledName[off])
+    {
+        if (!RT_C_IS_ALNUM(pszMangledName[off]) && pszMangledName[off] != '_')
+            return false;
+        off++;
+    }
+
+    /*
+     * Check min and max name limits.
+     */
+    if (   off > VBOX_EXTPACK_NAME_MAX_LEN
+        || off < VBOX_EXTPACK_NAME_MIN_LEN)
+        return false;
+
+    return true;
+}
+
+/**
+ * Mangle an extension pack name so it can be used by a directory or file name.
+ *
+ * @returns String containing the mangled name on success, the caller must
+ *          delete it.  NULL on failure.
+ * @param   pszName             The unmangled name.
+ * @sa      VBoxExtPackUnmangleName, VBoxExtPackIsValidMangledName
+ */
+iprt::MiniString *VBoxExtPackMangleName(const char *pszName)
+{
+    AssertReturn(VBoxExtPackIsValidName(pszName), NULL);
+
+    char    szTmp[VBOX_EXTPACK_NAME_MAX_LEN + 1];
+    size_t  off = 0;
+    char    ch;
+    while ((ch = pszName[off]) != '\0')
+    {
+        if (ch == ' ')
+            ch = '_';
+        szTmp[off++] = ch;
+    }
+    szTmp[off] = '\0';
+    Assert(VBoxExtPackIsValidMangledName(szTmp));
+
+    return new iprt::MiniString(szTmp, off);
+}
+
+/**
+ * Unmangle an extension pack name (reverses VBoxExtPackMangleName).
+ *
+ * @returns String containing the mangled name on success, the caller must
+ *          delete it.  NULL on failure.
+ * @param   pszMangledName      The mangled name.
+ * @param   cchMax              The max name length.  RTSTR_MAX is fine.
+ * @sa      VBoxExtPackMangleName, VBoxExtPackIsValidMangledName
+ */
+iprt::MiniString *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cchMax)
+{
+    AssertReturn(VBoxExtPackIsValidMangledName(pszMangledName, cchMax), NULL);
+
+    char    szTmp[VBOX_EXTPACK_NAME_MAX_LEN + 1];
+    size_t  off = 0;
+    char    ch;
+    while (   off < cchMax
+           && (ch = pszMangledName[off]) != '\0')
+    {
+        if (ch == '_')
+            ch = ' ';
+        else
+            AssertReturn(RT_C_IS_ALNUM(ch) || ch == ' ', NULL);
+        szTmp[off++] = ch;
+    }
+    szTmp[off] = '\0';
+    AssertReturn(VBoxExtPackIsValidName(szTmp), NULL);
+
+    return new iprt::MiniString(szTmp, off);
+}
+
+/**
+ * Constructs the extension pack directory path.
+ *
+ * A combination of RTPathJoin and VBoxExtPackMangleName.
+ *
+ * @returns IPRT status code like RTPathJoin.
+ * @param   pszExtPackDir   Where to return the directory path.
+ * @param   cbExtPackDir    The size of the return buffer.
+ * @param   pszParentDir    The parent directory (".../Extensions").
+ * @param   pszName         The extension pack name, unmangled.
+ */
+int VBoxExtPackCalcDir(char *pszExtPackDir, size_t cbExtPackDir, const char *pszParentDir, const char *pszName)
+{
+    AssertReturn(VBoxExtPackIsValidName(pszName), VERR_INTERNAL_ERROR_5);
+
+    iprt::MiniString *pstrMangledName = VBoxExtPackMangleName(pszName);
+    if (!pstrMangledName)
+        return VERR_INTERNAL_ERROR_4;
+
+    int vrc = RTPathJoin(pszExtPackDir, cbExtPackDir, pszParentDir, pstrMangledName->c_str());
+    delete pstrMangledName;
+
+    return vrc;
+}
+
 
 /**
  * Validates the extension pack version string.

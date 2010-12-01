@@ -62,6 +62,9 @@ PROPS_DLLS_ACCUMULATE_L      += INTERMEDIATES
 PROPS_SYSMODS_ACCUMULATE_L   += INTERMEDIATES
 PROPS_MISCBINS_ACCUMULATE_L  += INTERMEDIATES
 
+# Misc names used bye the install paths below.
+VBOX_PUEL_MANGLED_NAME := Oracle_VM_VirtualBox_Extension_Pack
+
 # Install paths.
 PATH_INS              = $(PATH_OUT)
 ifeq ($(KBUILD_TARGET),darwin)
@@ -106,7 +109,7 @@ else
 endif
 INST_EXTPACK          = $(INST_BIN)ExtensionPacks/
 INST_EXTPACK_CERTS    = $(INST_BIN)ExtPackCertificates/
-INST_EXTPACK_PUEL     = $(INST_EXTPACK)Puel/
+INST_EXTPACK_PUEL     = $(INST_EXTPACK)$(VBOX_PUEL_MANGLED_NAME)/
 INST_PACKAGES         = packages/
 
 PATH_BIN              = $(patsubst %/,%,$(PATH_INS)/$(INST_BIN))
