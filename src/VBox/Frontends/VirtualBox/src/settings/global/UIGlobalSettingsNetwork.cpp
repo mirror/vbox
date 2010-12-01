@@ -198,12 +198,6 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsNetwork::setupUi (this);
 
-#ifdef Q_WS_MAC
-    /* Make shifting spacer for MAC as we have fixed-size networks list: */
-    QSpacerItem *pShiftSpacer = new QSpacerItem(0, 1, QSizePolicy::Expanding, QSizePolicy::Preferred);
-    m_pLayout1->addItem(pShiftSpacer);
-#endif /* Q_WS_MAC */
-
     /* Setup tree-widget: */
     m_pInterfacesTree->header()->hide();
     m_pInterfacesTree->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -306,13 +300,6 @@ void UIGlobalSettingsNetwork::getFromCache()
     }
     m_pInterfacesTree->setCurrentItem(m_pInterfacesTree->topLevelItem(0));
     sltUpdateCurrentItem();
-#ifdef Q_WS_MAC
-    int width = qMax(static_cast<QAbstractItemView*>(m_pInterfacesTree)->sizeHintForColumn(0) +
-                     2 * m_pInterfacesTree->frameWidth() + QApplication::style()->pixelMetric(QStyle::PM_ScrollBarExtent),
-                     220);
-    m_pInterfacesTree->setFixedWidth(width);
-    m_pInterfacesTree->resizeColumnToContents(0);
-#endif /* Q_WS_MAC */
 }
 
 /* Save data from corresponding widgets to cache,
@@ -363,7 +350,7 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
             {
                 progress.WaitForCompletion(-1);
                 // TODO: Fix problem reporter!
-                //vboxProblem().showModalProgressDialog(progress, tr("Performing", "creating/removing host-only network"), this);
+                //vboxProblem().showModalProgressDialog(progress, tr("Performing", "creating/removing host-only network"), "", this);
                 if (progress.GetResultCode() != 0)
                     // TODO: Fix problem reporter!
                     //vboxProblem().cannotRemoveHostInterface(progress, iface, this);
@@ -386,7 +373,7 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
         if (host.isOk())
         {
             // TODO: Fix problem reporter!
-            //vboxProblem().showModalProgressDialog(progress, tr("Performing", "creating/removing host-only network"), this);
+            //vboxProblem().showModalProgressDialog(progress, tr("Performing", "creating/removing host-only network"), "", this);
             progress.WaitForCompletion(-1);
             if (progress.GetResultCode() == 0)
             {
