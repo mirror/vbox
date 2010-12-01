@@ -572,7 +572,7 @@ ifdef VBOX_WITH_GUEST_CONTROL
  VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/VBoxGuestControlSvc.dylib
 endif
-ifdef VBOX_WITH_VRDP
+if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
  VBOX_DI_VBAPP_DYLIBS += \
 	MacOS/VBoxVRDP.dylib
 endif
