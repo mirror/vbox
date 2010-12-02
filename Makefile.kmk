@@ -665,7 +665,7 @@ VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 #
 # Common rsync excludes.
 #
-VBOX_RSYNC_IN_EXCLUDES = \
+VBOX_RSYNC_IN_EXCLUDES_FN = \
 	--exclude .svn/ \
 	--exclude doc/Devices/ \
 	--exclude doc/tg/ \
@@ -674,15 +674,8 @@ VBOX_RSYNC_IN_EXCLUDES = \
 	--exclude tinderclient.log \
 	--exclude out/ \
 	--exclude tools/FetchDir/ \
-	--exclude tools/darwin.x86/ \
-	--exclude tools/darwin.amd64/ \
-	--exclude tools/freebsd.x86/ \
-	--exclude tools/freebsd.amd64/ \
-	--exclude tools/linux.x86/ \
-	--exclude tools/linux.amd64/ \
-	--exclude tools/os2.x86/ \
-	--exclude tools/win.amd64/ \
-	--exclude tools/win.x86/ \
+	$(foreach os,darwin freebsd linux solaris os2 win \
+		,$(if-expr "$(1)" != "$(os)",--exclude tools/$(os).x86 $(os).amd64,))
 
 
 #
