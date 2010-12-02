@@ -208,6 +208,19 @@
            accessing raw USB devices (bugs #1093, #5345, #7759)</para>
       </listitem>
 
+      <listitem>
+        <para>Storage: support asynchronous I/O for iSCSI, VMDK, VHD and
+        Parallels images</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: support for resizing VDI and VHD images</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: allow limiting bandwidth for disk images</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
