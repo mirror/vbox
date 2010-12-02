@@ -197,7 +197,6 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		            $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_HTML) \
-			$(VBOX_BRAND_$(f)_LICENSE_RTF) \
 			$(VBOX_BRAND_$(f)_REGISTRATIONPANE_INFOPLIST_STRINGS) \
 			$(VBOX_BRAND_$(f)_REGISTRATIONPANE_LOCALIZABLE_STRINGS)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
@@ -254,7 +253,6 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj/Localizable.strings \
 		$(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/Localizable.strings
-	$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_RTF)                                            $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/English.lproj/License.rtf
 	$(INSTALL) -m 0644 $(VBOX_BRAND_DARWIN_INSTALLER_BG)                                    $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/background.tif
 	$(INSTALL) -m 0766 $(VBOX_PATH_DI_SRC)/VirtualBox_mpkg/checkforrunningvms               $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/checkforrunningvms
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
@@ -267,7 +265,6 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.mpkg: \
 			-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 			--output $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Welcome.html \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_HTML)$(NLTAB) \
-		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_LICENSE_RTF)                               $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/License.rtf$(NLTAB) \
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_VIRTUALBOX_CONCLUSION_HTML)                $(VBOX_PATH_PACK_TMP)/VirtualBox.mpkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Conclusion.html$(NLTAB) \
 		$(SED) \
 			-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
@@ -331,8 +328,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 			$(VBOX_BRAND_$(f)_VBOXKEXTS_DESCRIPTION_PLIST) \
 			$(VBOX_BRAND_$(f)_VBOXKEXTS_README_HTML) \
-			$(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS) \
-			$(VBOX_BRAND_$(f)_LICENSE_RTF)) \
+			$(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,PackageMaker,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -405,7 +401,6 @@ endif
 	@# Copy the resources.
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VBoxKEXTs/InstallationCheck                     $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VBoxKEXTs/postflight                            $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/
-	$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_RTF)                                           $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/English.lproj/License.rtf
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 		$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -426,7 +421,6 @@ endif
 			--output $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/ReadMe.html \
 			$(VBOX_BRAND_$(f)_VBOXKEXTS_README_HTML)$(NLTAB) \
 		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)            $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/InstallationCheck.strings$(NLTAB) \
-		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_LICENSE_RTF)                                    $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/License.rtf$(NLTAB) \
 	)
 	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VBoxKEXTs/English.lproj/InstallationCheck.strings $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/English.lproj/
 	@# Build the package.
@@ -452,8 +446,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
 		$$(wildcard $(VBOX_PATH_DI_SRC)/VBoxStartupItems/* \
 		            $(VBOX_PATH_DI_SRC)/VBoxStartupItems/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VBOXSTARTUPITEMS_DESCRIPTION_PLIST) \
-			$(VBOX_BRAND_$(f)_LICENSE_RTF)) \
+			$(VBOX_BRAND_$(f)_VBOXSTARTUPITEMS_DESCRIPTION_PLIST)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,PackageMaker,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -503,7 +496,6 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc/Description.plist \
 		$(VBOX_PATH_DI_SRC)/VBoxStartupItems/Description.plist
 	@# Copy the resources.
-	$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_RTF)                                           $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res/English.lproj/License.rtf
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 		$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -517,7 +509,6 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
 			-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 			--output $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Description.plist \
 			$(VBOX_BRAND_$(f)_VBOXSTARTUPITEMS_DESCRIPTION_PLIST)$(NLTAB) \
-		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_LICENSE_RTF)                                  $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/License.rtf$(NLTAB) \
 	)
 	@# Build the package.
 	$(VBOX_PACKAGEMAKER) -build -v \
@@ -721,8 +712,7 @@ endif
 # (The dependencies are including way too much here because I'm lazy.)
 $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VIRTUALBOX_DESCRIPTION_PLIST) \
-			$(VBOX_BRAND_$(f)_LICENSE_RTF)) \
+			$(VBOX_BRAND_$(f)_VIRTUALBOX_DESCRIPTION_PLIST)) \
 		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES)\
 			,$(call VBOX_DI_FN_DEP_BOTH,VirtualBox.app/Contents/$(f)) ) \
 		$(foreach f, $(VBOX_DI_VBAPP_DYLIBS.x86) $(VBOX_DI_VBAPP_MISC_FILES.x86)\
@@ -731,6 +721,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
 			,$(call VBOX_DI_FN_DEP_64,VirtualBox.app/Contents/$(f)) ) \
 		\
 		$(if $(VBOX_WITH_DOCS_PACKING),$(VBOX_ADD_MANUALS),) \
+		$(VBOX_BRAND_LICENSE_TXT) \
 		$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox/*) \
 		$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBox/*.lproj/*) \
 		$$(addprefix $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/nls/,$(VBOX_INSTALL_LANG_FILES)) \
@@ -824,6 +815,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(foreach f,$(VBOX_DI_VBAPP_MISC_FILES.amd64) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(f)           $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(f)$(NLTAB) )
 endif
+	$(INSTALL) -m 644 $(VBOX_BRAND_LICENSE_TXT)			                                $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/LICENSE
 ifdef VBOX_WITH_DOCS_PACKING
 	$(foreach f,$(VBOX_ADD_MANUALS) \
 		,$(INSTALL) -m 0644 $(f) $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(NLTAB))
@@ -964,7 +956,6 @@ endif
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/Description.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/Description.plist
 	@# Copy the resources.
-	$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_RTF)                                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/English.lproj/License.rtf
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES) \
 		,$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -978,7 +969,6 @@ endif
 			-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 			--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Description.plist \
 			$(VBOX_BRAND_$(f)_VIRTUALBOX_DESCRIPTION_PLIST)$(NLTAB) \
-		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_LICENSE_RTF)                           $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/License.rtf$(NLTAB) \
 	)
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/postflight                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
 	@# Build the package.
@@ -1001,8 +991,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg: \
 		$$(wildcard $(VBOX_PATH_DI_SRC)/VirtualBoxCLI/* \
 		            $(VBOX_PATH_DI_SRC)/VirtualBoxCLI/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES) \
-			,$(VBOX_BRAND_$(f)_VIRTUALBOXCLI_DESCRIPTION_PLIST) \
-			$(VBOX_BRAND_$(f)_LICENSE_RTF)) \
+			,$(VBOX_BRAND_$(f)_VIRTUALBOXCLI_DESCRIPTION_PLIST)) \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,PackageMaker,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -1059,7 +1048,6 @@ endif
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.desc/Description.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBoxCLI/Description.plist
 	@# Copy the resources.
-	$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_RTF)                    $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res/English.lproj/License.rtf
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES) \
 		,$(MKDIR) -p \
 			$(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj$(NLTAB) \
@@ -1073,7 +1061,6 @@ endif
 			-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 			--output $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/Description.plist \
 			$(VBOX_BRAND_$(f)_VIRTUALBOXCLI_DESCRIPTION_PLIST)$(NLTAB) \
-		$(INSTALL) -m 0644 $(VBOX_BRAND_$(f)_LICENSE_RTF)       $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.res/$(VBOX_INSTALLER_$(f)_DARWIN_TARGET).lproj/License.rtf$(NLTAB) \
 	)
 	@# Build the package.
 	$(VBOX_PACKAGEMAKER) -build -v \
