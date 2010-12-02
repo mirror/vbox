@@ -3583,6 +3583,11 @@ endif
  TEMPLATE_VBoxR0ExtPack_EXTENDS_BY = appending
  TEMPLATE_VBoxR0ExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
  TEMPLATE_VBoxR0ExtPack_DEFS = VBOX_IN_EXTPACK VBOX_IN_EXTPACK_R0
+ if1of ($(VBOX_LDR_FMT), pe lx)
+  TEMPLATE_VBoxR0ExtPack_LIBS = \
+	$(PATH_LIB)/VMMR0Builtin$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
+ endif
 
  TEMPLATE_VBoxRcExtPack = For the raw-mode context extension pack modules.
  TEMPLATE_VBoxRcExtPack_EXTENDS = VBoxRc
@@ -3590,6 +3595,11 @@ endif
  TEMPLATE_VBoxRcExtPack_SYSSUFF = .rc
  TEMPLATE_VBoxRcExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
  TEMPLATE_VBoxRcExtPack_DEFS = VBOX_IN_EXTPACK VBOX_IN_EXTPACK_RC
+ if1of ($(VBOX_LDR_FMT32), pe lx)
+  TEMPLATE_VBoxRcExtPack_LIBS = \
+	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
+	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
+ endif
 
  TEMPLATE_VBoxInsExtPack = For the install targets of an extension pack.
  TEMPLATE_VBoxInsExtPack_MODE = 0644
