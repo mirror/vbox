@@ -243,10 +243,12 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  ifn1of ($(KBUILD_TARGET), win)
   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = -Wno-format
- else
-  ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH).$(KBUILD_TYPE),win.x86.release)
-   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = -O1
-  endif
+ endif
+ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH).$(KBUILD_TYPE),win.x86.release)
+  define def_vboxsoap_sources_cxxflags
+   $(file)_CXXFLAGS += -O1
+  endef
+  $(foreach file,$(vboxsoap_SOURCES),$(eval $(call def_vboxsoap_sources_cxxflags)))
  endif
 
 ifdef VBOX_SOAP_PRECOMPILED_HEADER
