@@ -846,7 +846,7 @@ zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;verify
 zonecfg:vboxzone&gt;exit</screen>
 
-      <para>If you are running VirtualBox 2.2.0 or above on OpenSolaris or
+      <para>If you are running VirtualBox 2.2.0 or above on Solaris 11 or
       Nevada hosts, you should add a device for
       <computeroutput>/dev/vboxusbmon</computeroutput> too, similar to what
       was shown above. This does not apply to Solaris 10 hosts due to lack of
