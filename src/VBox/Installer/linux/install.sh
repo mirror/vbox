@@ -415,6 +415,9 @@ if [ "$ACTION" = "install" ]; then
     # Update the MIME database
     update-mime-database /usr/share/mime 2>/dev/null
 
+    # Update the desktop database
+    update-desktop-database -q 2>/dev/null
+
     # If Python is available, install Python bindings
     if [ -n "$PYTHON" ]; then
       maybe_run_python_bindings_installer $INSTALLATION_DIR
