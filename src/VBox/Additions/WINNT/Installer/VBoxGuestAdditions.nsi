@@ -89,9 +89,11 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 
   ; Welcome page
   !insertmacro MUI_PAGE_WELCOME
+!ifdef VBOX_WITH_LICENSE
   ; License page
   !insertmacro MUI_PAGE_LICENSE "$(VBOX_LICENSE)"
   !define MUI_LICENSEPAGE_RADIOBUTTONS
+!endif
   ; Directory page
   !insertmacro MUI_PAGE_DIRECTORY
   ; Components Page
@@ -119,6 +121,7 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
   BrandingText "VirtualBox Windows Additions $%VBOX_VERSION_STRING%"
 !endif
 
+!ifdef VBOX_WITH_LICENSE
   ; Set license language
   LicenseLangString VBOX_LICENSE ${LANG_ENGLISH} "$%VBOX_BRAND_LICENSE_RTF%"
 
@@ -133,11 +136,14 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
   !else
     LicenseLangString VBOX_LICENSE ${LANG_GERMAN} "$%VBOX_BRAND_LICENSE_RTF%"
   !endif
+!endif
 
   !insertmacro MUI_RESERVEFILE_LANGDLL
 !else ; !USE_MUI
     XPStyle on
+!ifdef VBOX_WITH_LICENSE
     Page license
+!endif
     Page components
     Page directory
     Page instfiles
