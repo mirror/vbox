@@ -277,7 +277,9 @@ typedef const OLECHAR *CBSTR;
 
 #define SUCCEEDED_WARNING(rc)   (NS_SUCCEEDED (rc) && (rc) != NS_OK)
 
-#define FAILED_DEAD_INTERFACE(rc)  ( (rc) == NS_ERROR_ABORT )
+#define FAILED_DEAD_INTERFACE(rc)  (   (rc) == NS_ERROR_ABORT \
+                                    || (rc) == NS_ERROR_CALL_FAILED \
+                                   )
 
 #define IUnknown nsISupports
 
