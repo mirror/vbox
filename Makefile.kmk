@@ -855,17 +855,17 @@ extpacks-fetch:
 
 
 extpacks-build: \
+	extpacks-build-win.amd64 \
+	extpacks-build-win.x86 \
 	extpacks-build-solaris.amd64 \
 	extpacks-build-solaris.x86 \
+	extpacks-build-os2.x86 \
+	extpacks-build-linux.amd64 \
+	extpacks-build-linux.x86 \
 	extpacks-build-darwin.amd64 \
 	extpacks-build-darwin.x86 \
-	extpacks-build-linux.x86 \
-	extpacks-build-linux.amd64 \
-	extpacks-build-win.x86 \
-	extpacks-build-win.amd64
-#	extpacks-build-freebsd.x86
-#	extpacks-build-freebsd.amd64
-#	extpacks-build-os2.x86
+	extpacks-build-freebsd.amd64 \
+	extpacks-build-freebsd.x86
 
 VBOX_EXTPACKS_BUILD.amd64 = VBOX_ONLY_EXTPACKS=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
@@ -958,20 +958,20 @@ else
 endif
 
 extpacks-build-freebsd.amd64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.amd64)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
-else
-	$(call MSG_L1,Building FreeBSD/amd64 extension packs)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.14 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
-endif
+#ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.amd64)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+#else
+#	$(call MSG_L1,Building FreeBSD/amd64 extension packs)
+#	$(VBOX_KMK_TIME) ssh vbox@192.168.27.17 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+#endif
 
 extpacks-build-freebsd.x86: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.x86)
-	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
-else
-	$(call MSG_L1,Building FreeBSD/x86 extension packs)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
-endif
+#ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.x86)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
+#else
+#	$(call MSG_L1,Building FreeBSD/x86 extension packs)
+#	$(VBOX_KMK_TIME) ssh vbox@192.168.27.7 " echo $@ && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+#endif
 
 extpacks-build-darwin.amd64: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
@@ -1019,8 +1019,10 @@ extpacks-packing:
 #
 testsuite-fetch:
 	+ $(KMK) -C tools fetch VBOX_ONLY_TESTSUITE=1
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin    VBOX_ONLY_TESTSUITE=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=amd64 BUILD_TARGET=freebsd   VBOX_ONLY_TESTSUITE=1
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=x86   BUILD_TARGET=freebsd   VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux     VBOX_ONLY_TESTSUITE=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux     VBOX_ONLY_TESTSUITE=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2       VBOX_ONLY_TESTSUITE=1
@@ -1037,7 +1039,11 @@ testsuite-build: \
 	testsuite-build-win.amd64 \
 	testsuite-build-os2.x86 \
 	testsuite-build-linux.amd64 \
-	testsuite-build-linux.x86
+	testsuite-build-linux.x86 \
+	testsuite-build-freebsd.amd64 \
+	testsuite-build-freebsd.x86 \
+	testsuite-build-darwin.amd64 \
+	testsuite-build-darwin.x86
 
 VBOX_TESTSUITE_BUILD.amd64 = VBOX_ONLY_TESTSUITE=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
@@ -1067,7 +1073,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building Windows/amd64 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.amd64) all "
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.6 " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.amd64) all "
 endif
 
 testsuite-build-win.x86:
@@ -1075,7 +1081,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building Windows/x86 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.x86) all"
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.16 " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.x86) all"
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
@@ -1129,11 +1135,43 @@ else
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.2 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all"
 endif
 
+testsuite-build-freebsd.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+#ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.amd64)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+#else
+#	$(call MSG_L1,Building freebsd/amd64 testsuite)
+#	$(VBOX_KMK_TIME) ssh vbox@192.168.27.17 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
+#endif
+
+testsuite-build-freebsd.x86:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+#ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),freebsd.x86)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+#else
+#	$(call MSG_L1,Building freebsd/x86 testsuite)
+#	$(VBOX_KMK_TIME) ssh vbox@192.168.27.7 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all"
+#endif
+
+testsuite-build-darwin.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building darwin/amd64 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.15 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
+endif
+
+testsuite-build-darwin.x86:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+else
+	$(call MSG_L1,Building darwin/x86 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all"
+endif
+
 
 testsuite-packing:
 	+ $(KMK) VBOX_ONLY_TESTSUITE=1 \
-		VBOX_WITH_TESTSUITE_PACKING.darwin.amd64= \
-		VBOX_WITH_TESTSUITE_PACKING.darwin.x86= \
+		VBOX_WITH_TESTSUITE_PACKING.darwin.amd64=1 \
+		VBOX_WITH_TESTSUITE_PACKING.darwin.x86=2 \
 		VBOX_WITH_TESTSUITE_PACKING.freebsd.amd64= \
 		VBOX_WITH_TESTSUITE_PACKING.freebsd.x86= \
 		VBOX_WITH_TESTSUITE_PACKING.linux.amd64=1 \
@@ -1154,6 +1192,10 @@ testsuite-packing:
 	testsuite-build-os2.x86 \
 	testsuite-build-linux.amd64 \
 	testsuite-build-linux.x86 \
+	testsuite-build-freebsd.amd64 \
+	testsuite-build-freebsd.x86 \
+	testsuite-build-darwin.amd64 \
+	testsuite-build-darwin.x86 \
 	testsuite-packing
 
 
