@@ -680,13 +680,14 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 	--exclude doc/vp/ \
 	--exclude doc/L4VM/ \
 	--exclude tinderclient.log \
-	--exclude out/ \
 	--exclude tools/FetchDir/ \
 	--exclude webtools/ \
 	$(foreach os,darwin freebsd linux solaris os2 win,$(if-expr "$(1)" != "$(os)", \
 		--exclude tools/$(os).x86/ \
-		--exclude tools/$(os).amd64/,)) \
-	--include 'out/$(1).$(2)/$(KBUILD_TYPE)/'
+		--exclude tools/$(os).amd64/ \
+		--exclude out/$(os).amd64/ \
+		--exclude out/$(os).x86/ \
+	,$(select "$(2)" == "x86", --exclude out/$(os).amd64/, "$(2)" == "amd64", --exclude out/$(os).x86/)))
 
 #
 # Build the additions, all of them.
