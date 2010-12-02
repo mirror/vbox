@@ -665,6 +665,9 @@ VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 #
 # Common rsync excludes.
 #
+
+##
+# @param    1  	os name.
 VBOX_RSYNC_IN_EXCLUDES_FN = \
 	--exclude .svn/ \
 	--exclude doc/Devices/ \
@@ -930,7 +933,7 @@ extpacks-build-solaris.x86: extpacks-build-solaris.amd64
 else
 # Serialize 32-bit and 64-bit ASSUMING the same VM builds both.
 extpacks-build-solaris.rsync-into-vm: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded $(VBOX_RSYNC_IN_EXCLUDES) . 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded $(call VBOX_RSYNC_IN_EXCLUDES_FN,solaris) . 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
 
 extpacks-build-solaris.build-it: extpacks-build-solaris.rsync-into-vm
 	$(call MSG_L1,Building Solaris/amd64 extension packs)
@@ -993,7 +996,7 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building Darwin/amd64 extension packs)
-	$(VBOX_KMK_TIME) rsync -a -v --delete --delete-excluded $(VBOX_RSYNC_IN_EXCLUDES) . 192.168.27.15:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) rsync -a -v --delete --delete-excluded $(call VBOX_RSYNC_IN_EXCLUDES_FN,darwin) . 192.168.27.15:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.15 " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
 	$(VBOX_KMK_TIME) rsync -a -v --delete 192.168.27.15:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 endif
@@ -1003,7 +1006,7 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building Darwin/x86 extension packs)
-	$(VBOX_KMK_TIME) rsync -a -v --delete --delete-excluded $(VBOX_RSYNC_IN_EXCLUDES) . 192.168.27.5:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) rsync -a -v --delete --delete-excluded $(call VBOX_RSYNC_IN_EXCLUDES_FN,darwin) . 192.168.27.5:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
 	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
 	$(VBOX_KMK_TIME) rsync -a -v --delete 192.168.27.5:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
 endif
