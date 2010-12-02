@@ -38,7 +38,7 @@
 
       <listitem>
         <para>Audio: Intel HD Audio is now available as guest hardware, for better support
-          with modern guest operating systems (e.g. 64-bit Windows).</para>
+          with modern guest operating systems (e.g. 64-bit Windows; bug #2785).</para>
       </listitem>
 
       <listitem>
@@ -62,121 +62,11 @@
       </listitem>
 
       <listitem>
-        <para>Settings: Deleting a machine now automatically deletes all
-        snapshots and saved states as well, it is no longer necessary
-        to manually delete snapshots first; VBoxManage unregistervm --delete
-        can do the same now</para>
-      </listitem>
-
-      <listitem>
-        <para>Snapshots: Implement deleting the last remaining snapshot while
-          the VM is running.</para>
-      </listitem>
-
-      <listitem>
-        <para>Guest Additions: Shared Folders now can be marked as being auto-mounted
-          on Windows, Linux and Solaris guests</para>
-      </listitem>
-
-      <listitem>
-        <para>Windows Additions: automatic logon on Windows Vista/Windows 7 is now able
-          to handle renamed user accounts; added various bugfixes</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: allow use of <emphasis>CR_SYSTEM_GL_PATH</emphasis>
-          again (bug #6864)</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: fix host assertion for some mt guest apps (bug #5236)</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: fixed host crashes with nvidia drivers on wddm startup</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: fixed OpenGL support for 32bit apps under 64bit Windows guests</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: fixed various clipping/visibility issues (bugs #5659,
-          #5794, #5848, #6018, #6187, #6570)</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: guest application stack corruption when using
-          glGetVertexAttrib[ifd]v (bug #7395)</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: fixed broken 3D support when switching to
-          fullscreen/seamless modes (bug #7314)</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: fixed crashes for GLUT based apps (bug #6848)</para>
-      </listitem>
-
-      <listitem>
-        <para>3D support: added missing glx 1.3 functionality (bugs #7652, #7195)</para>
-      </listitem>
-
-      <listitem>
-        <para>VRDP: fixed rare crash in multimonitor configuration</para>
-      </listitem>
-
-      <listitem>
-        <para>Display: fixed occasional guest resize crash</para>
-      </listitem>
-
-      <listitem>
-        <para>SATA: allow to attach CD/DVD-ROM drives including passthrough
-          (bug #7058)</para>
-      </listitem>
-
-      <listitem>
-        <para>Hard disks: fix auto-reset of immutable disk at VM startup
-          (bug #6832)</para>
-      </listitem>
-
-      <listitem>
-        <para>Floppy: support readonly image files, taking this as the
-          criteria for making the medium readonly (bug #5651)</para>
-      </listitem>
-
-      <listitem>
-        <para>Audio: the DirectSound backend now allows VMs to be audible when
-            another DirectSound application is active, including another VM (bug
-            #5578)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>EFI: support for SATA disks and CDROMs</para>
-      </listitem>
-
-      <listitem>
-        <para>OVF/OVA: creation of the manifest file on export is optional
-          now</para>
-      </listitem>
-
-      <listitem>
-        <para>OVF/OVA: allow overwriting the target disk format on
-          import</para>
-      </listitem>
-
-      <listitem>
-        <para>OVF/OVA: fixed export of VMs with iSCSI disks</para>
-      </listitem>
-
-      <listitem>
         <para>GUI: new detail view with guest window preview</para>
       </listitem>
 
       <listitem>
-        <para>GUI: add the possibility to sort the guest VM list</para>
+        <para>GUI: the guest VM list is now sortable</para>
       </listitem>
 
       <listitem>
@@ -199,13 +89,104 @@
       </listitem>
 
       <listitem>
-        <para>Storage: DMG image support for the virtual CD/DVD (bug
-          #6760)</para>
+        <para>GUI: certain GUI warnings don't stop the VM output anymore</para>
       </listitem>
 
       <listitem>
-        <para>Linux host USB support: introduced a less invasive way of
-           accessing raw USB devices (bugs #1093, #5345, #7759)</para>
+        <para>Settings: deleting a machine now automatically deletes all
+        snapshots and saved states as well, it is no longer necessary
+        to manually delete snapshots first; VBoxManage unregistervm --delete
+        can do the same now</para>
+      </listitem>
+
+      <listitem>
+        <para>Snapshots: implemented deleting the last remaining snapshot while
+          the VM is running</para>
+      </listitem>
+
+      <listitem>
+        <para>Snapshots: added screenshots</para>
+      </listitem>
+
+      <listitem>
+        <para>3D support: allow use of <emphasis>CR_SYSTEM_GL_PATH</emphasis>
+          again (bug #6864)</para>
+      </listitem>
+
+      <listitem>
+        <para>3D support: fixed various clipping/visibility issues (bugs #5659,
+          #5794, #5848, #6018, #6187, #6570)</para>
+      </listitem>
+
+      <listitem>
+        <para>3D support: guest application stack corruption when using
+          glGetVertexAttrib[ifd]v (bug #7395)</para>
+      </listitem>
+
+      <listitem>
+        <para>2D Video acceleration: multimonitor support</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: fixed rare crash in multimonitor configuration</para>
+      </listitem>
+
+      <listitem>
+        <para>Display: fixed occasional guest resize crash</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: port forwarding rules can be applied at runtime</para>
+      </listitem>
+
+      <listitem>
+        <para>SATA: allow to attach CD/DVD-ROM drives including passthrough
+          (bug #7058)</para>
+      </listitem>
+
+      <listitem>
+        <para>Floppy: support readonly image files, taking this as the
+          criteria for making the medium readonly (bug #5651)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: the DirectSound backend now allows VMs to be audible when
+            another DirectSound application is active, including another VM (bug
+            #5578)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>EFI: support for SATA disks and CDROMs</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: reduce the stack usage of the VESA BIOS function
+          <emphasis>#4F01</emphasis> (Quake fix)</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF/OVA: creation of the manifest file on export is optional
+          now</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF/OVA: allow overwriting the target disk format on
+          import</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF/OVA: fixed export of VMs with iSCSI disks</para>
+      </listitem>
+
+      <listitem>
+        <para>OVF/OVA: export/import proprietary VirtualBox
+          settings</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: DMG image support for the virtual CD/DVD (bug
+          #6760)</para>
       </listitem>
 
       <listitem>
@@ -219,6 +200,30 @@
 
       <listitem>
         <para>Storage: allow limiting bandwidth for disk images</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux host USB support: introduced a less invasive way of
+           accessing raw USB devices (bugs #1093, #5345, #7759)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: Shared Folders now can be marked as being auto-mounted
+          on Windows, Linux and Solaris guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: support for symbolic links (bug #818)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: combined 32-bit and 64-bit additions into one
+          file</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: automatic logon on Windows Vista/Windows 7 is now able
+          to handle renamed user accounts; added various bugfixes</para>
       </listitem>
 
     </itemizedlist>
