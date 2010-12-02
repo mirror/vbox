@@ -107,7 +107,7 @@ struct PointerShapeChangeData
           width(aWidth), height(aHeight)
     {
         // make a copy of the shape
-        com::SafeArray <BYTE> aShape(ComSafeArrayInArg (pShape));
+        com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
         size_t cbShapeSize = aShape.size();
         if (cbShapeSize > 0)
         {
@@ -191,14 +191,14 @@ static uint32_t gmGuestNormalYRes;
 /** modifier keypress status (scancode as index) */
 static uint8_t gaModifiersState[256];
 
-static ComPtr<IMachine> gMachine;
-static ComPtr<IConsole> gConsole;
-static ComPtr<IMachineDebugger> gMachineDebugger;
-static ComPtr<IKeyboard> gKeyboard;
-static ComPtr<IMouse> gMouse;
-static ComPtr<IDisplay> gDisplay;
-static ComPtr<IVRDEServer> gVRDEServer;
-static ComPtr<IProgress> gProgress;
+static ComPtr<IMachine> gpMachine;
+static ComPtr<IConsole> gpConsole;
+static ComPtr<IMachineDebugger> gpMachineDebugger;
+static ComPtr<IKeyboard> gpKeyboard;
+static ComPtr<IMouse> gpMouse;
+static ComPtr<IDisplay> gpDisplay;
+static ComPtr<IVRDEServer> gpVRDEServer;
+static ComPtr<IProgress> gpProgress;
 
 static ULONG       gcMonitors = 1;
 static VBoxSDLFB  *gpFramebuffer[64];
@@ -231,7 +231,7 @@ static RTSEMEVENT g_EventSemSDLEvents;
 static volatile int32_t g_cNotifyUpdateEventsPending;
 
 /**
- * Event handler for VirtualBox events
+ * Event handler for VirtualBox (server) events
  */
 class VBoxSDLEventListener
 {
@@ -251,22 +251,22 @@ public:
             case VBoxEventType_OnExtraDataChanged:
             {
 #ifdef VBOX_SECURELABEL
-                ComPtr<IExtraDataChangedEvent> edcev = aEvent;
-                Assert(edcev);
-                Bstr key, machineId;
-                edcev->COMGETTER(MachineId)(machineId.asOutParam());
-                if (gMachine)
+                ComPtr<IExtraDataChangedEvent> pEDCEv = aEvent;
+                Assert(pEDCEv);
+                Bstr bstrMachineId;
+                pEDCEv->COMGETTER(MachineId)(bstrMachineId.asOutParam());
+                if (gpMachine)
                 {
                     /*
                      * check if we're interested in the message
                      */
-                    Bstr ourGuid;
-                    gMachine->COMGETTER(Id)(ourGuid.asOutParam());
-                    if (ourGuid == machineId)
+                    Bstr bstrOurId;
+                    gpMachine->COMGETTER(Id)(bstrOurId.asOutParam());
+                    if (bstrOurId == bstrMachineId)
                     {
-                        Bstr keyString;
-                        edcev->COMGETTER(Key)(keyString.asOutParam());
-                        if (keyString == VBOXSDL_SECURELABEL_EXTRADATA)
+                        Bstr bstrKey;
+                        pEDCEv->COMGETTER(Key)(bstrKey.asOutParam());
+                        if (bstrKey == VBOXSDL_SECURELABEL_EXTRADATA)
                         {
                             /*
                              * Notify SDL thread of the string update
@@ -281,6 +281,7 @@ public:
 #endif
                 break;
             }
+
             default:
                 AssertFailed();
         }
@@ -290,7 +291,7 @@ public:
 };
 
 /**
- * Event handler for machine events
+ * Event handler for Console events
  */
 class VBoxSDLConsoleEventListener
 {
@@ -311,20 +312,20 @@ public:
         {
             case VBoxEventType_OnMousePointerShapeChanged:
             {
-                ComPtr<IMousePointerShapeChangedEvent> mpscev = aEvent;
-                Assert(mpscev);
+                ComPtr<IMousePointerShapeChangedEvent> pMPSCEv = aEvent;
+                Assert(pMPSCEv);
                 PointerShapeChangeData *data;
                 BOOL    visible,  alpha;
                 ULONG   xHot, yHot, width, height;
-                com::SafeArray <BYTE> shape;
+                com::SafeArray<BYTE> shape;
 
-                mpscev->COMGETTER(Visible)(&visible);
-                mpscev->COMGETTER(Alpha)(&alpha);
-                mpscev->COMGETTER(Xhot)(&xHot);
-                mpscev->COMGETTER(Yhot)(&yHot);
-                mpscev->COMGETTER(Width)(&width);
-                mpscev->COMGETTER(Height)(&height);
-                mpscev->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
+                pMPSCEv->COMGETTER(Visible)(&visible);
+                pMPSCEv->COMGETTER(Alpha)(&alpha);
+                pMPSCEv->COMGETTER(Xhot)(&xHot);
+                pMPSCEv->COMGETTER(Yhot)(&yHot);
+                pMPSCEv->COMGETTER(Width)(&width);
+                pMPSCEv->COMGETTER(Height)(&height);
+                pMPSCEv->COMGETTER(Shape)(ComSafeArrayAsOutParam(shape));
                 data = new PointerShapeChangeData(visible, alpha, xHot, yHot, width, height,
                                                   ComSafeArrayAsInParam(shape));
                 Assert(data);
@@ -344,11 +345,11 @@ public:
             }
             case VBoxEventType_OnMouseCapabilityChanged:
             {
-                ComPtr<IMouseCapabilityChangedEvent> mccev = aEvent;
-                Assert(mccev);
-                mccev->COMGETTER(SupportsAbsolute)(&gfAbsoluteMouseGuest);
-                mccev->COMGETTER(SupportsRelative)(&gfRelativeMouseGuest);
-                mccev->COMGETTER(NeedsHostCursor)(&gfGuestNeedsHostCursor);
+                ComPtr<IMouseCapabilityChangedEvent> pMCCEv = aEvent;
+                Assert(pMCCEv);
+                pMCCEv->COMGETTER(SupportsAbsolute)(&gfAbsoluteMouseGuest);
+                pMCCEv->COMGETTER(SupportsRelative)(&gfRelativeMouseGuest);
+                pMCCEv->COMGETTER(NeedsHostCursor)(&gfGuestNeedsHostCursor);
                 SDL_Event event = {0};
                 event.type      = SDL_USEREVENT;
                 event.user.type = SDL_USER_EVENT_GUEST_CAP_CHANGED;
@@ -358,12 +359,12 @@ public:
             }
             case VBoxEventType_OnKeyboardLedsChanged:
             {
-                ComPtr<IKeyboardLedsChangedEvent> klcev = aEvent;
-                Assert(klcev);
+                ComPtr<IKeyboardLedsChangedEvent> pCLCEv = aEvent;
+                Assert(pCLCEv);
                 BOOL fNumLock, fCapsLock, fScrollLock;
-                klcev->COMGETTER(NumLock)(&fNumLock);
-                klcev->COMGETTER(CapsLock)(&fCapsLock);
-                klcev->COMGETTER(ScrollLock)(&fScrollLock);
+                pCLCEv->COMGETTER(NumLock)(&fNumLock);
+                pCLCEv->COMGETTER(CapsLock)(&fCapsLock);
+                pCLCEv->COMGETTER(ScrollLock)(&fScrollLock);
                 /* Don't bother the guest with NumLock scancodes if he doesn't set the NumLock LED */
                 if (gfGuestNumLockPressed != fNumLock)
                     gcGuestNumLockAdaptions = 2;
@@ -377,10 +378,10 @@ public:
 
             case VBoxEventType_OnStateChanged:
             {
-                ComPtr<IStateChangedEvent> scev = aEvent;
-                Assert(scev);
+                ComPtr<IStateChangedEvent> pSCEv = aEvent;
+                Assert(pSCEv);
                 MachineState_T machineState;
-                scev->COMGETTER(State)(&machineState);
+                pSCEv->COMGETTER(State)(&machineState);
                 LogFlow(("OnStateChange: machineState = %d (%s)\n", machineState, GetStateName(machineState)));
                 SDL_Event event = {0};
 
@@ -414,14 +415,13 @@ public:
 
             case VBoxEventType_OnRuntimeError:
             {
-                ComPtr<IRuntimeErrorEvent> rteev = aEvent;
-                Assert(rteev);
-                Bstr id, message;
+                ComPtr<IRuntimeErrorEvent> pRTEEv = aEvent;
+                Assert(pRTEEv);
                 BOOL fFatal;
 
-                rteev->COMGETTER(Fatal)(&fFatal);
+                pRTEEv->COMGETTER(Fatal)(&fFatal);
                 MachineState_T machineState;
-                gMachine->COMGETTER(State)(&machineState);
+                gpMachine->COMGETTER(State)(&machineState);
                 const char *pszType;
                 bool fPaused = machineState == MachineState_Paused;
                 if (fFatal)
@@ -430,41 +430,42 @@ public:
                     pszType = "Non-fatal ERROR";
                 else
                     pszType = "WARNING";
-                rteev->COMGETTER(Id)(id.asOutParam());
-                rteev->COMGETTER(Message)(message.asOutParam());
-                RTPrintf("\n%s: ** %lS **\n%lS\n%s\n", pszType, id.raw(), message.raw(),
+                Bstr bstrId, bstrMessage;
+                pRTEEv->COMGETTER(Id)(bstrId.asOutParam());
+                pRTEEv->COMGETTER(Message)(bstrMessage.asOutParam());
+                RTPrintf("\n%s: ** %lS **\n%lS\n%s\n", pszType, bstrId.raw(), bstrMessage.raw(),
                          fPaused ? "The VM was paused. Continue with HostKey + P after you solved the problem.\n" : "");
                 break;
             }
 
             case VBoxEventType_OnCanShowWindow:
             {
-                ComPtr<ICanShowWindowEvent> cswev = aEvent;
-                Assert(cswev);
+                ComPtr<ICanShowWindowEvent> pCSWEv = aEvent;
+                Assert(pCSWEv);
 #ifdef RT_OS_DARWIN
                 /* SDL feature not available on Quartz */
 #else
                 SDL_SysWMinfo info;
                 SDL_VERSION(&info.version);
                 if (!SDL_GetWMInfo(&info))
-                    cswev->AddVeto(NULL);
+                    pCSWEv->AddVeto(NULL);
 #endif
                 break;
             }
 
             case VBoxEventType_OnShowWindow:
             {
-                ComPtr<IShowWindowEvent> swev = aEvent;
-                Assert(swev);
+                ComPtr<IShowWindowEvent> pSWEv = aEvent;
+                Assert(pSWEv);
 #ifndef RT_OS_DARWIN
                 SDL_SysWMinfo info;
                 SDL_VERSION(&info.version);
                 if (SDL_GetWMInfo(&info))
                 {
 #if defined(VBOXSDL_WITH_X11)
-                    swev->COMSETTER(WinId)((LONG64)info.info.x11.wmwindow);
+                    pSWEv->COMSETTER(WinId)((LONG64)info.info.x11.wmwindow);
 #elif defined(RT_OS_WINDOWS)
-                    swev->COMSETTER(WinId)((LONG64)info.window);
+                    pSWEv->COMSETTER(WinId)((LONG64)info.window);
 #else
                     AssertFailed();
 #endif
@@ -724,8 +725,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
     uint32_t vramSize = 0;
-    IEventListener *vboxListener = NULL;
-    VBoxSDLConsoleEventListenerImpl *consoleListener = NULL;
+    IEventListener *pVBoxListener = NULL;
+    VBoxSDLConsoleEventListenerImpl *pConsoleListener = NULL;
 
     bool fFullscreen = false;
     bool fResizable = true;
@@ -1239,7 +1240,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     rc = com::Initialize();
     if (FAILED(rc))
     {
-        RTPrintf("Error: COM initialization failed, rc = 0x%x!\n", rc);
+        RTPrintf("Error: COM initialization failed (rc=%Rhrc)!\n", rc);
         return 1;
     }
 
@@ -1250,15 +1251,15 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
 
-    ComPtr <IVirtualBox> virtualBox;
-    ComPtr <ISession> session;
+    ComPtr<IVirtualBox> pVirtualBox;
+    ComPtr<ISession> pSession;
     bool sessionOpened = false;
     EventQueue* eventQ = com::EventQueue::getMainEventQueue();
     const CLSID sessionID = CLSID_Session;
 
     ComPtr<IMachine> pMachine;
 
-    rc = virtualBox.createLocalObject(CLSID_VirtualBox);
+    rc = pVirtualBox.createLocalObject(CLSID_VirtualBox);
     if (FAILED(rc))
     {
         com::ErrorInfo info;
@@ -1266,13 +1267,13 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             PrintError("Failed to create VirtualBox object",
                        info.getText().raw(), info.getComponent().raw());
         else
-            RTPrintf("Failed to create VirtualBox object! No error information available (rc = 0x%x).\n", rc);
+            RTPrintf("Failed to create VirtualBox object! No error information available (rc=%Rhrc).\n", rc);
         goto leave;
     }
-    rc = session.createInprocObject(sessionID);
+    rc = pSession.createInprocObject(sessionID);
     if (FAILED(rc))
     {
-        RTPrintf("Failed to create session object, rc = 0x%x!\n", rc);
+        RTPrintf("Failed to create session object (rc=%Rhrc)!\n", rc);
         goto leave;
     }
 
@@ -1281,13 +1282,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      */
     if (vmName && uuidVM.isEmpty())
     {
-        Bstr  bstrVMName = vmName;
-        rc = virtualBox->FindMachine(bstrVMName.raw(), pMachine.asOutParam());
+        rc = pVirtualBox->FindMachine(Bstr(vmName).raw(), pMachine.asOutParam());
         if ((rc == S_OK) && pMachine)
         {
-            Bstr id;
-            pMachine->COMGETTER(Id)(id.asOutParam());
-            uuidVM = Guid(id);
+            Bstr bstrId;
+            pMachine->COMGETTER(Id)(bstrId.asOutParam());
+            uuidVM = Guid(bstrId);
         }
         else
         {
@@ -1305,24 +1305,24 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
 
-    rc = pMachine->LockMachine(session, LockType_Write);
+    rc = pMachine->LockMachine(pSession, LockType_Write);
     if (FAILED(rc))
     {
         com::ErrorInfo info;
         if (info.isFullAvailable())
             PrintError("Could not open VirtualBox session",
-                    info.getText().raw(), info.getComponent().raw());
+                       info.getText().raw(), info.getComponent().raw());
         goto leave;
     }
-    if (!session)
+    if (!pSession)
     {
         RTPrintf("Could not open VirtualBox session!\n");
         goto leave;
     }
     sessionOpened = true;
     // get the mutable VM we're dealing with
-    session->COMGETTER(Machine)(gMachine.asOutParam());
-    if (!gMachine)
+    pSession->COMGETTER(Machine)(gpMachine.asOutParam());
+    if (!gpMachine)
     {
         com::ErrorInfo info;
         if (info.isFullAvailable())
@@ -1333,8 +1333,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         goto leave;
     }
     // get the VM console
-    session->COMGETTER(Console)(gConsole.asOutParam());
-    if (!gConsole)
+    pSession->COMGETTER(Console)(gpConsole.asOutParam());
+    if (!gpConsole)
     {
         RTPrintf("Given console not found!\n");
         goto leave;
@@ -1345,38 +1345,33 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      */
     if (hdaFile)
     {
+        ComPtr<IMedium> pMedium;
+
         /*
-         * Strategy: iterate through all registered hard disk
-         * and see if one of them points to the same file. If
-         * so, assign it. If not, register a new image and assign
-         * it to the VM.
+         * Strategy: if any registered hard disk points to the same file,
+         * assign it. If not, register a new image and assign it to the VM.
          */
-        Bstr hdaFileBstr = hdaFile;
-        ComPtr<IMedium> hardDisk;
-        virtualBox->FindMedium(hdaFileBstr.raw(), DeviceType_HardDisk,
-                               hardDisk.asOutParam());
-        if (!hardDisk)
+        Bstr bstrHdaFile(hdaFile);
+        pVirtualBox->FindMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
+                                pMedium.asOutParam());
+        if (!pMedium)
         {
             /* we've not found the image */
-            RTPrintf("Adding hard disk '%S'...\n", hdaFile);
-            virtualBox->OpenMedium(hdaFileBstr.raw(), DeviceType_HardDisk,
-                                   AccessMode_ReadWrite, hardDisk.asOutParam());
+            RTPrintf("Adding hard disk '%s'...\n", hdaFile);
+            pVirtualBox->OpenMedium(bstrHdaFile.raw(), DeviceType_HardDisk,
+                                    AccessMode_ReadWrite, pMedium.asOutParam());
         }
         /* do we have the right image now? */
-        if (hardDisk)
+        if (pMedium)
         {
-            /*
-             * Go and attach it!
-             */
-            Bstr storageCtlName;
+            Bstr bstrSCName;
 
             /* get the first IDE controller to attach the harddisk to
-             * and if there is none, add one temporarily
-             */
+             * and if there is none, add one temporarily */
             {
-                ComPtr<IStorageController> storageCtl;
+                ComPtr<IStorageController> pStorageCtl;
                 com::SafeIfaceArray<IStorageController> aStorageControllers;
-                CHECK_ERROR(gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+                CHECK_ERROR(gpMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
                 for (size_t i = 0; i < aStorageControllers.size(); ++ i)
                 {
                     StorageBus_T storageBus = StorageBus_Null;
@@ -1384,27 +1379,27 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     CHECK_ERROR(aStorageControllers[i], COMGETTER(Bus)(&storageBus));
                     if (storageBus == StorageBus_IDE)
                     {
-                        storageCtl = aStorageControllers[i];
+                        pStorageCtl = aStorageControllers[i];
                         break;
                     }
                 }
 
-                if (storageCtl)
+                if (pStorageCtl)
                 {
-                    CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
-                    gMachine->DetachDevice(storageCtlName.raw(), 0, 0);
+                    CHECK_ERROR(pStorageCtl, COMGETTER(Name)(bstrSCName.asOutParam()));
+                    gpMachine->DetachDevice(bstrSCName.raw(), 0, 0);
                 }
                 else
                 {
-                    storageCtlName = "IDE Controller";
-                    CHECK_ERROR(gMachine, AddStorageController(storageCtlName.raw(),
-                                                               StorageBus_IDE,
-                                                               storageCtl.asOutParam()));
+                    bstrSCName = "IDE Controller";
+                    CHECK_ERROR(gpMachine, AddStorageController(bstrSCName.raw(),
+                                                                StorageBus_IDE,
+                                                                pStorageCtl.asOutParam()));
                 }
             }
 
-            gMachine->AttachDevice(storageCtlName.raw(), 0, 0,
-                                   DeviceType_HardDisk, hardDisk);
+            CHECK_ERROR(gpMachine, AttachDevice(bstrSCName.raw(), 0, 0,
+                                                DeviceType_HardDisk, pMedium));
             /// @todo why is this attachment saved?
         }
         else
@@ -1420,7 +1415,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (fdaFile)
     do
     {
-        ComPtr<IMedium> floppyMedium;
+        ComPtr<IMedium> pMedium;
 
         /* unmount? */
         if (!strcmp(fdaFile, "none"))
@@ -1429,40 +1424,39 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         else
         {
-            Bstr medium = fdaFile;
+            Bstr bstrFdaFile(fdaFile);
 
             /* Assume it's a host drive name */
-            ComPtr <IHost> host;
-            CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
-            rc = host->FindHostFloppyDrive(medium.raw(),
-                                           floppyMedium.asOutParam());
+            ComPtr<IHost> pHost;
+            CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(Host)(pHost.asOutParam()));
+            rc = pHost->FindHostFloppyDrive(bstrFdaFile.raw(),
+                                            pMedium.asOutParam());
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = virtualBox->FindMedium(medium.raw(), DeviceType_Floppy,
-                                            floppyMedium.asOutParam());
+                rc = pVirtualBox->FindMedium(bstrFdaFile.raw(), DeviceType_Floppy,
+                                             pMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
-                    RTPrintf("Adding floppy image '%S'...\n", fdaFile);
-                    CHECK_ERROR_BREAK(virtualBox,
-                                      OpenMedium(medium.raw(),
+                    RTPrintf("Adding floppy image '%s'...\n", fdaFile);
+                    CHECK_ERROR_BREAK(pVirtualBox,
+                                      OpenMedium(bstrFdaFile.raw(),
                                                  DeviceType_Floppy,
                                                  AccessMode_ReadWrite,
-                                                 floppyMedium.asOutParam()));
+                                                 pMedium.asOutParam()));
                 }
             }
         }
 
-        Bstr storageCtlName;
+        Bstr bstrSCName;
 
         /* get the first floppy controller to attach the floppy to
-         * and if there is none, add one temporarily
-         */
+         * and if there is none, add one temporarily */
         {
-            ComPtr<IStorageController> storageCtl;
+            ComPtr<IStorageController> pStorageCtl;
             com::SafeIfaceArray<IStorageController> aStorageControllers;
-            CHECK_ERROR(gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+            CHECK_ERROR(gpMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
             for (size_t i = 0; i < aStorageControllers.size(); ++ i)
             {
                 StorageBus_T storageBus = StorageBus_Null;
@@ -1470,35 +1464,27 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 CHECK_ERROR(aStorageControllers[i], COMGETTER(Bus)(&storageBus));
                 if (storageBus == StorageBus_Floppy)
                 {
-                    storageCtl = aStorageControllers[i];
+                    pStorageCtl = aStorageControllers[i];
                     break;
                 }
             }
 
-            if (storageCtl)
+            if (pStorageCtl)
             {
-                ComPtr<IMediumAttachment> floppyAttachment;
-
-                CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
-                rc = gMachine->GetMediumAttachment(storageCtlName.raw(), 0, 0,
-                                                   floppyAttachment.asOutParam());
-                if (FAILED(rc))
-                    CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 0, 0,
-                                                       DeviceType_Floppy, NULL));
+                CHECK_ERROR(pStorageCtl, COMGETTER(Name)(bstrSCName.asOutParam()));
+                gpMachine->DetachDevice(bstrSCName.raw(), 0, 0);
             }
             else
             {
-                storageCtlName = "Floppy Controller";
-                CHECK_ERROR(gMachine, AddStorageController(storageCtlName.raw(),
-                                                           StorageBus_Floppy,
-                                                           storageCtl.asOutParam()));
-                CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 0, 0,
-                                                   DeviceType_Floppy, NULL));
+                bstrSCName = "Floppy Controller";
+                CHECK_ERROR(gpMachine, AddStorageController(bstrSCName.raw(),
+                                                            StorageBus_Floppy,
+                                                            pStorageCtl.asOutParam()));
             }
         }
 
-        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 0, 0, floppyMedium,
-                                          FALSE /* aForce */));
+        CHECK_ERROR(gpMachine, AttachDevice(bstrSCName.raw(), 0, 0,
+                                            DeviceType_Floppy, pMedium));
     }
     while (0);
     if (FAILED(rc))
@@ -1510,7 +1496,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (cdromFile)
     do
     {
-        ComPtr<IMedium> dvdMedium;
+        ComPtr<IMedium> pMedium;
 
         /* unmount? */
         if (!strcmp(cdromFile, "none"))
@@ -1519,38 +1505,38 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         else
         {
-            Bstr medium = cdromFile;
+            Bstr bstrCdromFile(cdromFile);
 
             /* Assume it's a host drive name */
-            ComPtr <IHost> host;
-            CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
-            rc = host->FindHostDVDDrive(medium.raw(), dvdMedium.asOutParam());
+            ComPtr<IHost> pHost;
+            CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(Host)(pHost.asOutParam()));
+            rc = pHost->FindHostDVDDrive(bstrCdromFile.raw(), pMedium.asOutParam());
             if (FAILED(rc))
             {
                 /* try to find an existing one */
-                rc = virtualBox->FindMedium(medium.raw(), DeviceType_DVD,
-                                            dvdMedium.asOutParam());
+                rc = pVirtualBox->FindMedium(bstrCdromFile.raw(), DeviceType_DVD,
+                                             pMedium.asOutParam());
                 if (FAILED(rc))
                 {
                     /* try to add to the list */
-                    RTPrintf("Adding ISO image '%S'...\n", cdromFile);
-                    CHECK_ERROR_BREAK(virtualBox, OpenMedium(medium.raw(),
-                                                             DeviceType_DVD,
-                                                             AccessMode_ReadWrite,
-                                                             dvdMedium.asOutParam()));
+                    RTPrintf("Adding ISO image '%s'...\n", cdromFile);
+                    CHECK_ERROR_BREAK(pVirtualBox,
+                                      OpenMedium(bstrCdromFile.raw(),
+                                                 DeviceType_DVD,
+                                                 AccessMode_ReadWrite,
+                                                 pMedium.asOutParam()));
                 }
             }
         }
 
-        Bstr storageCtlName;
+        Bstr bstrSCName;
 
-        /* get the first IDE controller to attach the DVD Drive to
-         * and if there is none, add one temporarily
-         */
+        /* get the first IDE controller to attach the DVD drive to
+         * and if there is none, add one temporarily */
         {
-            ComPtr<IStorageController> storageCtl;
+            ComPtr<IStorageController> pStorageCtl;
             com::SafeIfaceArray<IStorageController> aStorageControllers;
-            CHECK_ERROR(gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+            CHECK_ERROR(gpMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
             for (size_t i = 0; i < aStorageControllers.size(); ++ i)
             {
                 StorageBus_T storageBus = StorageBus_Null;
@@ -1558,33 +1544,27 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 CHECK_ERROR(aStorageControllers[i], COMGETTER(Bus)(&storageBus));
                 if (storageBus == StorageBus_IDE)
                 {
-                    storageCtl = aStorageControllers[i];
+                    pStorageCtl = aStorageControllers[i];
                     break;
                 }
             }
 
-            if (storageCtl)
+            if (pStorageCtl)
             {
-                ComPtr<IMediumAttachment> dvdAttachment;
-
-                CHECK_ERROR(storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
-                gMachine->DetachDevice(storageCtlName.raw(), 1, 0);
-                CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 1, 0,
-                                                    DeviceType_DVD, NULL));
+                CHECK_ERROR(pStorageCtl, COMGETTER(Name)(bstrSCName.asOutParam()));
+                gpMachine->DetachDevice(bstrSCName.raw(), 1, 0);
             }
             else
             {
-                storageCtlName = "IDE Controller";
-                CHECK_ERROR(gMachine, AddStorageController(storageCtlName.raw(),
-                                                           StorageBus_IDE,
-                                                           storageCtl.asOutParam()));
-                CHECK_ERROR(gMachine, AttachDevice(storageCtlName.raw(), 1, 0,
-                                                   DeviceType_DVD, NULL));
+                bstrSCName = "IDE Controller";
+                CHECK_ERROR(gpMachine, AddStorageController(bstrSCName.raw(),
+                                                            StorageBus_IDE,
+                                                            pStorageCtl.asOutParam()));
             }
         }
 
-        CHECK_ERROR(gMachine, MountMedium(storageCtlName.raw(), 1, 0, dvdMedium,
-                                          FALSE /*aForce */));
+        CHECK_ERROR(gpMachine, AttachDevice(bstrSCName.raw(), 1, 0,
+                                            DeviceType_DVD, pMedium));
     }
     while (0);
     if (FAILED(rc))
@@ -1597,39 +1577,39 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * discard the saved state first.
          */
         MachineState_T machineState;
-        gMachine->COMGETTER(State)(&machineState);
+        gpMachine->COMGETTER(State)(&machineState);
         if (machineState == MachineState_Saved)
         {
-            CHECK_ERROR(gConsole, DiscardSavedState(true /* fDeleteFile */));
+            CHECK_ERROR(gpConsole, DiscardSavedState(true /* fDeleteFile */));
         }
         /*
          * If there are snapshots, discard the current state,
          * i.e. revert to the last snapshot.
          */
         ULONG cSnapshots;
-        gMachine->COMGETTER(SnapshotCount)(&cSnapshots);
+        gpMachine->COMGETTER(SnapshotCount)(&cSnapshots);
         if (cSnapshots)
         {
-            gProgress = NULL;
+            gpProgress = NULL;
 
             ComPtr<ISnapshot> pCurrentSnapshot;
-            CHECK_ERROR(gMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
+            CHECK_ERROR(gpMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
             if (FAILED(rc))
                 goto leave;
 
-            CHECK_ERROR(gConsole, RestoreSnapshot(pCurrentSnapshot, gProgress.asOutParam()));
-            rc = gProgress->WaitForCompletion(-1);
+            CHECK_ERROR(gpConsole, RestoreSnapshot(pCurrentSnapshot, gpProgress.asOutParam()));
+            rc = gpProgress->WaitForCompletion(-1);
         }
     }
 
     // get the machine debugger (does not have to be there)
-    gConsole->COMGETTER(Debugger)(gMachineDebugger.asOutParam());
-    if (gMachineDebugger)
+    gpConsole->COMGETTER(Debugger)(gpMachineDebugger.asOutParam());
+    if (gpMachineDebugger)
     {
         Log(("Machine debugger available!\n"));
     }
-    gConsole->COMGETTER(Display)(gDisplay.asOutParam());
-    if (!gDisplay)
+    gpConsole->COMGETTER(Display)(gpDisplay.asOutParam());
+    if (!gpDisplay)
     {
         RTPrintf("Error: could not get display object!\n");
         goto leave;
@@ -1638,7 +1618,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     // set the boot drive
     if (bootDevice != DeviceType_Null)
     {
-        rc = gMachine->SetBootOrder(1, bootDevice);
+        rc = gpMachine->SetBootOrder(1, bootDevice);
         if (rc != S_OK)
         {
             RTPrintf("Error: could not set boot device, using default.\n");
@@ -1648,21 +1628,21 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     // set the memory size if not default
     if (memorySize)
     {
-        rc = gMachine->COMSETTER(MemorySize)(memorySize);
+        rc = gpMachine->COMSETTER(MemorySize)(memorySize);
         if (rc != S_OK)
         {
             ULONG ramSize = 0;
-            gMachine->COMGETTER(MemorySize)(&ramSize);
+            gpMachine->COMGETTER(MemorySize)(&ramSize);
             RTPrintf("Error: could not set memory size, using current setting of %d MBytes\n", ramSize);
         }
     }
 
     if (vramSize)
     {
-        rc = gMachine->COMSETTER(VRAMSize)(vramSize);
+        rc = gpMachine->COMSETTER(VRAMSize)(vramSize);
         if (rc != S_OK)
         {
-            gMachine->COMGETTER(VRAMSize)((ULONG*)&vramSize);
+            gpMachine->COMGETTER(VRAMSize)((ULONG*)&vramSize);
             RTPrintf("Error: could not set VRAM size, using current setting of %d MBytes\n", vramSize);
         }
     }
@@ -1683,7 +1663,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (!VBoxSDLFB::init(fShowSDLConfig))
         goto leave;
 
-    gMachine->COMGETTER(MonitorCount)(&gcMonitors);
+    gpMachine->COMGETTER(MonitorCount)(&gcMonitors);
     if (gcMonitors > 64)
         gcMonitors = 64;
 
@@ -1748,10 +1728,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             RTPrintf("Error: could not initialize secure labeling: rc = %Rrc\n", vrc);
             goto leave;
         }
-        Bstr key = VBOXSDL_SECURELABEL_EXTRADATA;
-        Bstr label;
-        gMachine->GetExtraData(key.raw(), label.asOutParam());
-        Utf8Str labelUtf8 = label;
+        Bstr bstrLabel;
+        gpMachine->GetExtraData(Bstr(VBOXSDL_SECURELABEL_EXTRADATA).raw(), bstrLabel.asOutParam());
+        Utf8Str labelUtf8(bstrLabel);
         /*
          * Now update the label
          */
@@ -1772,7 +1751,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     for (ULONG i = 0; i < gcMonitors; i++)
     {
         // register our framebuffer
-        rc = gDisplay->SetFramebuffer(i, gpFramebuffer[i]);
+        rc = gpDisplay->SetFramebuffer(i, gpFramebuffer[i]);
         if (FAILED(rc))
         {
             RTPrintf("Error: could not register framebuffer object!\n");
@@ -1780,26 +1759,26 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         IFramebuffer *dummyFb;
         LONG xOrigin, yOrigin;
-        rc = gDisplay->GetFramebuffer(i, &dummyFb, &xOrigin, &yOrigin);
+        rc = gpDisplay->GetFramebuffer(i, &dummyFb, &xOrigin, &yOrigin);
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
     }
 
     {
-        // register listener for global events
-        ComPtr<IEventSource> es;
-        CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-        vboxListener = new VBoxSDLEventListenerImpl();
-        com::SafeArray <VBoxEventType_T> eventTypes;
+        // register listener for VirtualBox (server) events
+        ComPtr<IEventSource> pES;
+        CHECK_ERROR(pVirtualBox, COMGETTER(EventSource)(pES.asOutParam()));
+        pVBoxListener = new VBoxSDLEventListenerImpl();
+        com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnExtraDataChanged);
-        CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
+        CHECK_ERROR(pES, RegisterListener(pVBoxListener, ComSafeArrayAsInParam(eventTypes), true));
     }
 
     {
-        // register listener for machine events
-        ComPtr<IEventSource> es;
-        CHECK_ERROR(gConsole, COMGETTER(EventSource)(es.asOutParam()));
-        consoleListener = new VBoxSDLConsoleEventListenerImpl();
-        com::SafeArray <VBoxEventType_T> eventTypes;
+        // register listener for Console events
+        ComPtr<IEventSource> pES;
+        CHECK_ERROR(gpConsole, COMGETTER(EventSource)(pES.asOutParam()));
+        pConsoleListener = new VBoxSDLConsoleEventListenerImpl();
+        com::SafeArray<VBoxEventType_T> eventTypes;
         eventTypes.push_back(VBoxEventType_OnMousePointerShapeChanged);
         eventTypes.push_back(VBoxEventType_OnMouseCapabilityChanged);
         eventTypes.push_back(VBoxEventType_OnKeyboardLedsChanged);
@@ -1807,22 +1786,21 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         eventTypes.push_back(VBoxEventType_OnRuntimeError);
         eventTypes.push_back(VBoxEventType_OnCanShowWindow);
         eventTypes.push_back(VBoxEventType_OnShowWindow);
-        CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
+        CHECK_ERROR(pES, RegisterListener(pConsoleListener, ComSafeArrayAsInParam(eventTypes), true));
         // until we've tried to to start the VM, ignore power off events
-        consoleListener->getWrapped()->ignorePowerOffEvents(true);
+        pConsoleListener->getWrapped()->ignorePowerOffEvents(true);
     }
 
     if (portVRDP)
     {
-        rc = gMachine->COMGETTER(VRDEServer)(gVRDEServer.asOutParam());
-        AssertMsg((rc == S_OK) && gVRDEServer, ("Could not get VRDP Server! rc = 0x%x\n", rc));
-        if (gVRDEServer)
+        rc = gpMachine->COMGETTER(VRDEServer)(gpVRDEServer.asOutParam());
+        AssertMsg((rc == S_OK) && gpVRDEServer, ("Could not get VRDP Server! rc = 0x%x\n", rc));
+        if (gpVRDEServer)
         {
             // has a non standard VRDP port been requested?
             if (portVRDP > 0)
             {
-                Bstr bstr = portVRDP;
-                rc = gVRDEServer->SetVRDEProperty(Bstr("TCP/Ports").raw(), bstr.raw());
+                rc = gpVRDEServer->SetVRDEProperty(Bstr("TCP/Ports").raw(), Bstr(portVRDP).raw());
                 if (rc != S_OK)
                 {
                     RTPrintf("Error: could not set VRDP port! rc = 0x%x\n", rc);
@@ -1830,7 +1808,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
             // now enable VRDP
-            rc = gVRDEServer->COMSETTER(Enabled)(TRUE);
+            rc = gpVRDEServer->COMSETTER(Enabled)(TRUE);
             if (rc != S_OK)
             {
                 RTPrintf("Error: could not enable VRDP server! rc = 0x%x\n", rc);
@@ -1843,52 +1821,52 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOXSDL_ADVANCED_OPTIONS
     if (fRawR0 != ~0U)
     {
-        if (!gMachineDebugger)
+        if (!gpMachineDebugger)
         {
             RTPrintf("Error: No debugger object; -%srawr0 cannot be executed!\n", fRawR0 ? "" : "no");
             goto leave;
         }
-        gMachineDebugger->COMSETTER(RecompileSupervisor)(!fRawR0);
+        gpMachineDebugger->COMSETTER(RecompileSupervisor)(!fRawR0);
     }
     if (fRawR3 != ~0U)
     {
-        if (!gMachineDebugger)
+        if (!gpMachineDebugger)
         {
             RTPrintf("Error: No debugger object; -%srawr3 cannot be executed!\n", fRawR0 ? "" : "no");
             goto leave;
         }
-        gMachineDebugger->COMSETTER(RecompileUser)(!fRawR3);
+        gpMachineDebugger->COMSETTER(RecompileUser)(!fRawR3);
     }
     if (fPATM != ~0U)
     {
-        if (!gMachineDebugger)
+        if (!gpMachineDebugger)
         {
             RTPrintf("Error: No debugger object; -%spatm cannot be executed!\n", fRawR0 ? "" : "no");
             goto leave;
         }
-        gMachineDebugger->COMSETTER(PATMEnabled)(fPATM);
+        gpMachineDebugger->COMSETTER(PATMEnabled)(fPATM);
     }
     if (fCSAM != ~0U)
     {
-        if (!gMachineDebugger)
+        if (!gpMachineDebugger)
         {
             RTPrintf("Error: No debugger object; -%scsam cannot be executed!\n", fRawR0 ? "" : "no");
             goto leave;
         }
-        gMachineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
+        gpMachineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
     }
     if (fHWVirt != ~0U)
     {
-        gMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, fHWVirt);
+        gpMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, fHWVirt);
     }
     if (u32WarpDrive != 0)
     {
-        if (!gMachineDebugger)
+        if (!gpMachineDebugger)
         {
             RTPrintf("Error: No debugger object; --warpdrive %d cannot be executed!\n", u32WarpDrive);
             goto leave;
         }
-        gMachineDebugger->COMSETTER(VirtualTimeRate)(u32WarpDrive);
+        gpMachineDebugger->COMSETTER(VirtualTimeRate)(u32WarpDrive);
     }
 #endif /* VBOXSDL_ADVANCED_OPTIONS */
 
@@ -1950,10 +1928,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     SDL_Event event;
 
     LogFlow(("Powering up the VM...\n"));
-    rc = gConsole->PowerUp(gProgress.asOutParam());
+    rc = gpConsole->PowerUp(gpProgress.asOutParam());
     if (rc != S_OK)
     {
-        com::ErrorInfo info(gConsole, COM_IIDOF(IConsole));
+        com::ErrorInfo info(gpConsole, COM_IIDOF(IConsole));
         if (info.isBasicAvailable())
             PrintError("Failed to power up VM", info.getText().raw());
         else
@@ -1978,8 +1956,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     fTerminateDuringStartup = false;
 
     LogRel(("VBoxSDL: NUM lock initially %s, CAPS lock initially %s\n",
-              !!(SDL_GetModState() & KMOD_NUM)  ? "ON" : "OFF",
-              !!(SDL_GetModState() & KMOD_CAPS) ? "ON" : "OFF"));
+            !!(SDL_GetModState() & KMOD_NUM)  ? "ON" : "OFF",
+            !!(SDL_GetModState() & KMOD_CAPS) ? "ON" : "OFF"));
 
     /* start regular timer so we don't starve in the event loop */
     SDL_TimerID sdlTimer;
@@ -1989,7 +1967,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     MachineState_T machineState;
     do
     {
-        rc = gMachine->COMGETTER(State)(&machineState);
+        rc = gpMachine->COMGETTER(State)(&machineState);
         if (    rc == S_OK
             &&  (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring
@@ -2040,10 +2018,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                         LONG xOrigin, yOrigin;
                         gpFramebuffer[event.user.code]->resizeGuest();
                         /* update xOrigin, yOrigin -> mouse */
-                        rc = gDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
+                        rc = gpDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
                         gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
                         /* notify the display that the resize has been completed */
-                        gDisplay->ResizeCompleted(event.user.code);
+                        gpDisplay->ResizeCompleted(event.user.code);
                         break;
                     }
 
@@ -2067,7 +2045,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     {
                         if (event.user.code != VBOXSDL_TERM_NORMAL)
                         {
-                            com::ProgressErrorInfo info(gProgress);
+                            com::ProgressErrorInfo info(gpProgress);
                             if (info.isBasicAvailable())
                                 PrintError("Failed to power up VM", info.getText().raw());
                             else
@@ -2105,7 +2083,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     /* did the power up succeed? */
     if (machineState != MachineState_Running)
     {
-        com::ProgressErrorInfo info(gProgress);
+        com::ProgressErrorInfo info(gpProgress);
         if (info.isBasicAvailable())
             PrintError("Failed to power up VM", info.getText().raw());
         else
@@ -2115,16 +2093,16 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     // accept power off events from now on because we're running
     // note that there's a possible race condition here...
-    consoleListener->getWrapped()->ignorePowerOffEvents(false);
+    pConsoleListener->getWrapped()->ignorePowerOffEvents(false);
 
-    rc = gConsole->COMGETTER(Keyboard)(gKeyboard.asOutParam());
-    if (!gKeyboard)
+    rc = gpConsole->COMGETTER(Keyboard)(gpKeyboard.asOutParam());
+    if (!gpKeyboard)
     {
         RTPrintf("Error: could not get keyboard object!\n");
         goto leave;
     }
-    gConsole->COMGETTER(Mouse)(gMouse.asOutParam());
-    if (!gMouse)
+    gpConsole->COMGETTER(Mouse)(gpMouse.asOutParam());
+    if (!gpMouse)
     {
         RTPrintf("Error: could not get mouse object!\n");
         goto leave;
@@ -2332,8 +2310,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             {
                 if (!gfACPITerm || gSdlQuitTimer)
                     goto leave;
-                if (gConsole)
-                    gConsole->PowerButton();
+                if (gpConsole)
+                    gpConsole->PowerButton();
                 gSdlQuitTimer = SDL_AddTimer(1000, QuitTimer, NULL);
                 break;
             }
@@ -2441,7 +2419,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             case SDL_VIDEORESIZE:
             {
-                if (gDisplay)
+                if (gpDisplay)
                 {
                     if (gfIgnoreNextResize)
                     {
@@ -2483,7 +2461,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 int w = DECODEW(event);
                 int h = DECODEH(event);
                 LogFlow(("SDL_USER_EVENT_UPDATERECT: x = %d, y = %d, w = %d, h = %d\n",
-                        x, y, w, h));
+                         x, y, w, h));
 
                 Assert(gpFramebuffer[event.user.code]);
                 gpFramebuffer[event.user.code]->update(x, y, w, h, true /* fGuestRelative */);
@@ -2508,7 +2486,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  *       when the mouse button was released.
                  */
                 /* communicate the resize event to the guest */
-                gDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0, 0);
+                gpDisplay->SetVideoModeHint(uResizeWidth, uResizeHeight, 0, 0);
                 break;
 
             }
@@ -2523,10 +2501,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 LONG xOrigin, yOrigin;
                 gpFramebuffer[event.user.code]->resizeGuest();
                 /* update xOrigin, yOrigin -> mouse */
-                rc = gDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
+                rc = gpDisplay->GetFramebuffer(event.user.code, &dummyFb, &xOrigin, &yOrigin);
                 gpFramebuffer[event.user.code]->setOrigin(xOrigin, yOrigin);
                 /* notify the display that the resize has been completed */
-                gDisplay->ResizeCompleted(event.user.code);
+                gpDisplay->ResizeCompleted(event.user.code);
                 break;
             }
 
@@ -2571,10 +2549,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 /*
                  * Query the new label text
                  */
-                Bstr key = VBOXSDL_SECURELABEL_EXTRADATA;
-                Bstr label;
-                gMachine->GetExtraData(key.raw(), label.asOutParam());
-                Utf8Str labelUtf8 = label;
+                Bstr bstrLabel;
+                gpMachine->GetExtraData(Bstr(VBOXSDL_SECURELABEL_EXTRADATA).raw(), bstrLabel.asOutParam());
+                Utf8Str labelUtf8(bstrLabel);
                 /*
                  * Now update the label
                  */
@@ -2621,21 +2598,21 @@ leave:
     terminateXPCOMQueueThread();
 #endif /* VBOX_WITH_XPCOM */
 
-    if (gVRDEServer)
-        rc = gVRDEServer->COMSETTER(Enabled)(FALSE);
+    if (gpVRDEServer)
+        rc = gpVRDEServer->COMSETTER(Enabled)(FALSE);
 
     /*
      * Get the machine state.
      */
-    if (gMachine)
-        gMachine->COMGETTER(State)(&machineState);
+    if (gpMachine)
+        gpMachine->COMGETTER(State)(&machineState);
     else
         machineState = MachineState_Aborted;
 
     /*
      * Turn off the VM if it's running
      */
-    if (   gConsole
+    if (   gpConsole
         && (   machineState == MachineState_Running
             || machineState == MachineState_Teleporting
             || machineState == MachineState_LiveSnapshotting
@@ -2644,15 +2621,15 @@ leave:
        )
     do
     {
-        consoleListener->getWrapped()->ignorePowerOffEvents(true);
-        ComPtr<IProgress> progress;
-        CHECK_ERROR_BREAK(gConsole, PowerDown(progress.asOutParam()));
-        CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
+        pConsoleListener->getWrapped()->ignorePowerOffEvents(true);
+        ComPtr<IProgress> pProgress;
+        CHECK_ERROR_BREAK(gpConsole, PowerDown(pProgress.asOutParam()));
+        CHECK_ERROR_BREAK(pProgress, WaitForCompletion(-1));
         BOOL completed;
-        CHECK_ERROR_BREAK(progress, COMGETTER(Completed)(&completed));
+        CHECK_ERROR_BREAK(pProgress, COMGETTER(Completed)(&completed));
         ASSERT(completed);
         LONG hrc;
-        CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&hrc));
+        CHECK_ERROR_BREAK(pProgress, COMGETTER(ResultCode)(&hrc));
         if (FAILED(hrc))
         {
             com::ErrorInfo info;
@@ -2665,31 +2642,32 @@ leave:
         }
     } while (0);
 
-    /* unregister console listener */
-    if (consoleListener)
+    /* unregister Console listener */
+    if (pConsoleListener)
     {
-        ComPtr<IEventSource> es;
-        CHECK_ERROR(gConsole, COMGETTER(EventSource)(es.asOutParam()));
-        CHECK_ERROR(es, UnregisterListener(consoleListener));
-        consoleListener->Release();
-        consoleListener = NULL;
+        ComPtr<IEventSource> pES;
+        CHECK_ERROR(gpConsole, COMGETTER(EventSource)(pES.asOutParam()));
+        if (!pES.isNull())
+            CHECK_ERROR(pES, UnregisterListener(pConsoleListener));
+        pConsoleListener->Release();
+        pConsoleListener = NULL;
     }
 
     /*
      * Now we discard all settings so that our changes will
      * not be flushed to the permanent configuration
      */
-    if (   gMachine
+    if (   gpMachine
         && machineState != MachineState_Saved)
     {
-        rc = gMachine->DiscardSettings();
+        rc = gpMachine->DiscardSettings();
         AssertComRC(rc);
     }
 
     /* close the session */
     if (sessionOpened)
     {
-        rc = session->UnlockMachine();
+        rc = pSession->UnlockMachine();
         AssertComRC(rc);
     }
 
@@ -2731,19 +2709,19 @@ leave:
 #endif
 
     LogFlow(("Releasing mouse, keyboard, remote desktop server, display, console...\n"));
-    if (gDisplay)
+    if (gpDisplay)
     {
         for (unsigned i = 0; i < gcMonitors; i++)
-            gDisplay->SetFramebuffer(i, NULL);
+            gpDisplay->SetFramebuffer(i, NULL);
     }
 
-    gMouse = NULL;
-    gKeyboard = NULL;
-    gVRDEServer = NULL;
-    gDisplay = NULL;
-    gConsole = NULL;
-    gMachineDebugger = NULL;
-    gProgress = NULL;
+    gpMouse = NULL;
+    gpKeyboard = NULL;
+    gpVRDEServer = NULL;
+    gpDisplay = NULL;
+    gpConsole = NULL;
+    gpMachineDebugger = NULL;
+    gpProgress = NULL;
     // we can only uninitialize SDL here because it is not threadsafe
 
     for (unsigned i = 0; i < gcMonitors; i++)
@@ -2764,20 +2742,22 @@ leave:
         RTLdrClose(gLibrarySDL_ttf);
 #endif
 
-    /* global listener unregistration. */
-    if (vboxListener)
+    /* VirtualBox (server) listener unregistration. */
+    if (pVBoxListener)
     {
-        ComPtr<IEventSource> es;
-        CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-        CHECK_ERROR(es, UnregisterListener(vboxListener));
-        vboxListener->Release();
-        vboxListener = NULL;
+        ComPtr<IEventSource> pES;
+        CHECK_ERROR(pVirtualBox, COMGETTER(EventSource)(pES.asOutParam()));
+        if (!pES.isNull())
+            CHECK_ERROR(pES, UnregisterListener(pVBoxListener));
+        pVBoxListener->Release();
+        pVBoxListener = NULL;
     }
+
     LogFlow(("Releasing machine, session...\n"));
-    gMachine = NULL;
-    session = NULL;
+    gpMachine = NULL;
+    pSession = NULL;
     LogFlow(("Releasing VirtualBox object...\n"));
-    virtualBox = NULL;
+    pVirtualBox = NULL;
 
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
@@ -3310,7 +3290,7 @@ static void ResetKeys(void)
 {
     int i;
 
-    if (!gKeyboard)
+    if (!gpKeyboard)
         return;
 
     for(i = 0; i < 256; i++)
@@ -3318,8 +3298,8 @@ static void ResetKeys(void)
         if (gaModifiersState[i])
         {
             if (i & 0x80)
-                gKeyboard->PutScancode(0xe0);
-            gKeyboard->PutScancode(i | 0x80);
+                gpKeyboard->PutScancode(0xe0);
+            gpKeyboard->PutScancode(i | 0x80);
             gaModifiersState[i] = 0;
         }
     }
@@ -3333,7 +3313,7 @@ static void ResetKeys(void)
 static void ProcessKey(SDL_KeyboardEvent *ev)
 {
 #if (defined(DEBUG) || defined(VBOX_WITH_STATISTICS)) && !defined(VBOX_WITH_SDL13)
-    if (gMachineDebugger && ev->type == SDL_KEYDOWN)
+    if (gpMachineDebugger && ev->type == SDL_KEYDOWN)
     {
         // first handle the debugger hotkeys
         uint8_t *keystate = SDL_GetKeyState(NULL);
@@ -3349,11 +3329,11 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
                 // pressing CTRL+ALT+F11 dumps the statistics counter
                 case SDLK_F12:
                     RTPrintf("ResetStats\n"); /* Visual feedback in console window */
-                    gMachineDebugger->ResetStats(NULL);
+                    gpMachineDebugger->ResetStats(NULL);
                     break;
                 // pressing CTRL+ALT+F12 resets all statistics counter
                 case SDLK_F11:
-                    gMachineDebugger->DumpStats(NULL);
+                    gpMachineDebugger->DumpStats(NULL);
                     RTPrintf("DumpStats\n");  /* Vistual feedback in console window */
                     break;
                 default:
@@ -3369,40 +3349,40 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
                 case SDLK_F12:
                     {
                         BOOL recompileSupervisor;
-                        gMachineDebugger->COMGETTER(RecompileSupervisor)(&recompileSupervisor);
-                        gMachineDebugger->COMSETTER(RecompileSupervisor)(!recompileSupervisor);
+                        gpMachineDebugger->COMGETTER(RecompileSupervisor)(&recompileSupervisor);
+                        gpMachineDebugger->COMSETTER(RecompileSupervisor)(!recompileSupervisor);
                         break;
                     }
                     // pressing Alt-F11 toggles the user recompiler
                 case SDLK_F11:
                     {
                         BOOL recompileUser;
-                        gMachineDebugger->COMGETTER(RecompileUser)(&recompileUser);
-                        gMachineDebugger->COMSETTER(RecompileUser)(!recompileUser);
+                        gpMachineDebugger->COMGETTER(RecompileUser)(&recompileUser);
+                        gpMachineDebugger->COMSETTER(RecompileUser)(!recompileUser);
                         break;
                     }
                     // pressing Alt-F10 toggles the patch manager
                 case SDLK_F10:
                     {
                         BOOL patmEnabled;
-                        gMachineDebugger->COMGETTER(PATMEnabled)(&patmEnabled);
-                        gMachineDebugger->COMSETTER(PATMEnabled)(!patmEnabled);
+                        gpMachineDebugger->COMGETTER(PATMEnabled)(&patmEnabled);
+                        gpMachineDebugger->COMSETTER(PATMEnabled)(!patmEnabled);
                         break;
                     }
                     // pressing Alt-F9 toggles CSAM
                 case SDLK_F9:
                     {
                         BOOL csamEnabled;
-                        gMachineDebugger->COMGETTER(CSAMEnabled)(&csamEnabled);
-                        gMachineDebugger->COMSETTER(CSAMEnabled)(!csamEnabled);
+                        gpMachineDebugger->COMGETTER(CSAMEnabled)(&csamEnabled);
+                        gpMachineDebugger->COMSETTER(CSAMEnabled)(!csamEnabled);
                         break;
                     }
                     // pressing Alt-F8 toggles singlestepping mode
                 case SDLK_F8:
                     {
                         BOOL singlestepEnabled;
-                        gMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
-                        gMachineDebugger->COMSETTER(Singlestep)(!singlestepEnabled);
+                        gpMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
+                        gpMachineDebugger->COMSETTER(Singlestep)(!singlestepEnabled);
                         break;
                     }
                 default:
@@ -3414,8 +3394,8 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
         else if ((keystate[SDLK_RCTRL] || keystate[SDLK_LCTRL]) && ev->keysym.sym == SDLK_F12)
         {
             BOOL logEnabled = TRUE;
-            gMachineDebugger->COMGETTER(LogEnabled)(&logEnabled);
-            gMachineDebugger->COMSETTER(LogEnabled)(!logEnabled);
+            gpMachineDebugger->COMGETTER(LogEnabled)(&logEnabled);
+            gpMachineDebugger->COMSETTER(LogEnabled)(!logEnabled);
 #ifdef DEBUG_bird
             return;
 #endif
@@ -3437,9 +3417,9 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
         int v = 0;
         if (ev->type == SDL_KEYUP)
             v |= 0x80;
-        gKeyboard->PutScancode(0xe1);
-        gKeyboard->PutScancode(0x1d | v);
-        gKeyboard->PutScancode(0x45 | v);
+        gpKeyboard->PutScancode(0xe1);
+        gpKeyboard->PutScancode(0x1d | v);
+        gpKeyboard->PutScancode(0x45 | v);
         return;
     }
 
@@ -3480,8 +3460,8 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
              */
             if (ev->type == SDL_KEYDOWN || ev->type == SDL_KEYUP)
             {
-                gKeyboard->PutScancode(keycode);
-                gKeyboard->PutScancode(keycode | 0x80);
+                gpKeyboard->PutScancode(keycode);
+                gpKeyboard->PutScancode(keycode | 0x80);
             }
             return;
         }
@@ -3502,15 +3482,15 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
             && (gfGuestNumLockPressed ^ !!(SDL_GetModState() & KMOD_NUM)))
         {
             gcGuestNumLockAdaptions--;
-            gKeyboard->PutScancode(0x45);
-            gKeyboard->PutScancode(0x45 | 0x80);
+            gpKeyboard->PutScancode(0x45);
+            gpKeyboard->PutScancode(0x45 | 0x80);
         }
         if (   gcGuestCapsLockAdaptions
             && (gfGuestCapsLockPressed ^ !!(SDL_GetModState() & KMOD_CAPS)))
         {
             gcGuestCapsLockAdaptions--;
-            gKeyboard->PutScancode(0x3a);
-            gKeyboard->PutScancode(0x3a | 0x80);
+            gpKeyboard->PutScancode(0x3a);
+            gpKeyboard->PutScancode(0x3a | 0x80);
         }
     }
 
@@ -3518,9 +3498,9 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
      * Now we send the event. Apply extended and release prefixes.
      */
     if (keycode & 0x100)
-        gKeyboard->PutScancode(0xe0);
+        gpKeyboard->PutScancode(0xe0);
 
-    gKeyboard->PutScancode(ev->type == SDL_KEYUP ? (keycode & 0x7f) | 0x80
+    gpKeyboard->PutScancode(ev->type == SDL_KEYUP ? (keycode & 0x7f) | 0x80
                                                  : (keycode & 0x7f));
 }
 
@@ -3776,16 +3756,16 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
              * should we do the increment internally in PutMouseEventAbsolute()
              * or state it in PutMouseEventAbsolute() docs?
              */
-            gMouse->PutMouseEventAbsolute(x + 1 - xMin + xOrigin,
-                                          y + 1 - yMin + yOrigin,
-                                          dz, 0 /* horizontal scroll wheel */,
-                                          buttons | tmp_button);
+            gpMouse->PutMouseEventAbsolute(x + 1 - xMin + xOrigin,
+                                           y + 1 - yMin + yOrigin,
+                                           dz, 0 /* horizontal scroll wheel */,
+                                           buttons | tmp_button);
         }
         else
         {
-            gMouse->PutMouseEvent(0, 0, dz,
-                                  0 /* horizontal scroll wheel */,
-                                  buttons | tmp_button);
+            gpMouse->PutMouseEvent(0, 0, dz,
+                                   0 /* horizontal scroll wheel */,
+                                   buttons | tmp_button);
         }
     }
 
@@ -3798,13 +3778,13 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
          * should we do the increment internally in PutMouseEventAbsolute()
          * or state it in PutMouseEventAbsolute() docs?
          */
-        gMouse->PutMouseEventAbsolute(x + 1 - xMin + xOrigin,
-                                      y + 1 - yMin + yOrigin,
-                                      dz, 0 /* Horizontal wheel */, buttons);
+        gpMouse->PutMouseEventAbsolute(x + 1 - xMin + xOrigin,
+                                       y + 1 - yMin + yOrigin,
+                                       dz, 0 /* Horizontal wheel */, buttons);
     }
     else
     {
-        gMouse->PutMouseEvent(x, y, dz, 0 /* Horizontal wheel */, buttons);
+        gpMouse->PutMouseEvent(x, y, dz, 0 /* Horizontal wheel */, buttons);
     }
 }
 
@@ -3813,8 +3793,8 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
  */
 void ResetVM(void)
 {
-    if (gConsole)
-        gConsole->Reset();
+    if (gpConsole)
+        gpConsole->Reset();
 }
 
 /**
@@ -3828,14 +3808,14 @@ void SaveState(void)
         InputGrabEnd();
     RTThreadYield();
     UpdateTitlebar(TITLEBAR_SAVE);
-    gProgress = NULL;
-    HRESULT rc = gConsole->SaveState(gProgress.asOutParam());
+    gpProgress = NULL;
+    HRESULT rc = gpConsole->SaveState(gpProgress.asOutParam());
     if (FAILED(rc))
     {
         RTPrintf("Error saving state! rc = 0x%x\n", rc);
         return;
     }
-    Assert(gProgress);
+    Assert(gpProgress);
 
     /*
      * Wait for the operation to be completed and work
@@ -3846,11 +3826,11 @@ void SaveState(void)
     for (;;)
     {
         BOOL fCompleted = false;
-        rc = gProgress->COMGETTER(Completed)(&fCompleted);
+        rc = gpProgress->COMGETTER(Completed)(&fCompleted);
         if (FAILED(rc) || fCompleted)
             break;
         ULONG cPercentNow;
-        rc = gProgress->COMGETTER(Percent)(&cPercentNow);
+        rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
         if (FAILED(rc))
             break;
         if (cPercentNow != cPercent)
@@ -3860,7 +3840,7 @@ void SaveState(void)
         }
 
         /* wait */
-        rc = gProgress->WaitForCompletion(100);
+        rc = gpProgress->WaitForCompletion(100);
         if (FAILED(rc))
             break;
         /// @todo process gui events.
@@ -3878,11 +3858,11 @@ void SaveState(void)
          * Check for completion.
          */
         BOOL fCompleted = false;
-        rc = gProgress->COMGETTER(Completed)(&fCompleted);
+        rc = gpProgress->COMGETTER(Completed)(&fCompleted);
         if (FAILED(rc) || fCompleted)
             break;
         ULONG cPercentNow;
-        rc = gProgress->COMGETTER(Percent)(&cPercentNow);
+        rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
         if (FAILED(rc))
             break;
         if (cPercentNow != cPercent)
@@ -3942,7 +3922,7 @@ void SaveState(void)
      * What's the result of the operation?
      */
     LONG lrc;
-    rc = gProgress->COMGETTER(ResultCode)(&lrc);
+    rc = gpProgress->COMGETTER(ResultCode)(&lrc);
     if (FAILED(rc))
         lrc = ~0;
     if (!lrc)
@@ -3966,11 +3946,11 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
     char szPrevTitle[1024];
     strcpy(szPrevTitle, szTitle);
 
-    Bstr name;
-    gMachine->COMGETTER(Name)(name.asOutParam());
+    Bstr bstrName;
+    gpMachine->COMGETTER(Name)(bstrName.asOutParam());
 
     RTStrPrintf(szTitle, sizeof(szTitle), "%s - " VBOX_PRODUCT,
-                !name.isEmpty() ? Utf8Str(name).c_str() : "<noname>");
+                !bstrName.isEmpty() ? Utf8Str(bstrName).c_str() : "<noname>");
 
     /* which mode are we in? */
     switch (mode)
@@ -3978,7 +3958,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
         case TITLEBAR_NORMAL:
         {
             MachineState_T machineState;
-            gMachine->COMGETTER(State)(&machineState);
+            gpMachine->COMGETTER(State)(&machineState);
             if (machineState == MachineState_Paused)
                 RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle), " - [Paused]");
 
@@ -3987,7 +3967,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 
 #if defined(DEBUG) || defined(VBOX_WITH_STATISTICS)
             // do we have a debugger interface
-            if (gMachineDebugger)
+            if (gpMachineDebugger)
             {
                 // query the machine state
                 BOOL recompileSupervisor = FALSE;
@@ -3998,14 +3978,14 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                 BOOL logEnabled = FALSE;
                 BOOL hwVirtEnabled = FALSE;
                 ULONG virtualTimeRate = 100;
-                gMachineDebugger->COMGETTER(RecompileSupervisor)(&recompileSupervisor);
-                gMachineDebugger->COMGETTER(RecompileUser)(&recompileUser);
-                gMachineDebugger->COMGETTER(PATMEnabled)(&patmEnabled);
-                gMachineDebugger->COMGETTER(CSAMEnabled)(&csamEnabled);
-                gMachineDebugger->COMGETTER(LogEnabled)(&logEnabled);
-                gMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
-                gMachineDebugger->COMGETTER(HWVirtExEnabled)(&hwVirtEnabled);
-                gMachineDebugger->COMGETTER(VirtualTimeRate)(&virtualTimeRate);
+                gpMachineDebugger->COMGETTER(RecompileSupervisor)(&recompileSupervisor);
+                gpMachineDebugger->COMGETTER(RecompileUser)(&recompileUser);
+                gpMachineDebugger->COMGETTER(PATMEnabled)(&patmEnabled);
+                gpMachineDebugger->COMGETTER(CSAMEnabled)(&csamEnabled);
+                gpMachineDebugger->COMGETTER(LogEnabled)(&logEnabled);
+                gpMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
+                gpMachineDebugger->COMGETTER(HWVirtExEnabled)(&hwVirtEnabled);
+                gpMachineDebugger->COMGETTER(VirtualTimeRate)(&virtualTimeRate);
                 RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                             " [STEP=%d CS=%d PAT=%d RR0=%d RR3=%d LOG=%d HWVirt=%d",
                             singlestepEnabled == TRUE, csamEnabled == TRUE, patmEnabled == TRUE,
@@ -4027,14 +4007,14 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
              * Format it.
              */
             MachineState_T machineState;
-            gMachine->COMGETTER(State)(&machineState);
+            gpMachine->COMGETTER(State)(&machineState);
             if (machineState == MachineState_Starting)
                 RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                             " - Starting...");
             else if (machineState == MachineState_Restoring)
             {
                 ULONG cPercentNow;
-                HRESULT rc = gProgress->COMGETTER(Percent)(&cPercentNow);
+                HRESULT rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
                 if (SUCCEEDED(rc))
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Restoring %d%%...", (int)cPercentNow);
@@ -4045,7 +4025,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
             else if (machineState == MachineState_TeleportingIn)
             {
                 ULONG cPercentNow;
-                HRESULT rc = gProgress->COMGETTER(Percent)(&cPercentNow);
+                HRESULT rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
                 if (SUCCEEDED(rc))
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Teleporting %d%%...", (int)cPercentNow);
@@ -4095,8 +4075,8 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
 }
 
 #if 0
-static void vbox_show_shape (unsigned short w, unsigned short h,
-                             uint32_t bg, const uint8_t *image)
+static void vbox_show_shape(unsigned short w, unsigned short h,
+                            uint32_t bg, const uint8_t *image)
 {
     size_t x, y;
     unsigned short pitch;
@@ -4427,12 +4407,12 @@ static void HandleGuestCapsChanged(void)
         SDL_ShowCursor(SDL_ENABLE);
         gpOffCursor = NULL;
     }
-    if (gMouse && UseAbsoluteMouse())
+    if (gpMouse && UseAbsoluteMouse())
     {
         // Actually switch to absolute coordinates
         if (gfGrabbed)
             InputGrabEnd();
-        gMouse->PutMouseEventAbsolute(-1, -1, 0, 0, 0);
+        gpMouse->PutMouseEventAbsolute(-1, -1, 0, 0, 0);
     }
 }
 
@@ -4455,7 +4435,7 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
         /* Control-Alt-Delete */
         case SDLK_DELETE:
         {
-            gKeyboard->PutCAD();
+            gpKeyboard->PutCAD();
             break;
         }
 
@@ -4474,21 +4454,21 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
              * without a valid framebuffer
              */
             MachineState_T machineState;
-            gMachine->COMGETTER(State)(&machineState);
+            gpMachine->COMGETTER(State)(&machineState);
             bool fPauseIt = machineState == MachineState_Running
                          || machineState == MachineState_Teleporting
                          || machineState == MachineState_LiveSnapshotting;
             if (fPauseIt)
-                gConsole->Pause();
+                gpConsole->Pause();
             SetFullscreen(!gpFramebuffer[0]->getFullscreen());
             if (fPauseIt)
-                gConsole->Resume();
+                gpConsole->Resume();
 
             /*
              * We have switched from/to fullscreen, so request a full
              * screen repaint, just to be sure.
              */
-            gDisplay->InvalidateAndUpdate();
+            gpDisplay->InvalidateAndUpdate();
             break;
         }
 
@@ -4501,7 +4481,7 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
                 return VERR_NOT_SUPPORTED;
 
             MachineState_T machineState;
-            gMachine->COMGETTER(State)(&machineState);
+            gpMachine->COMGETTER(State)(&machineState);
             if (   machineState == MachineState_Running
                 || machineState == MachineState_Teleporting
                 || machineState == MachineState_LiveSnapshotting
@@ -4509,11 +4489,11 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             {
                 if (gfGrabbed)
                     InputGrabEnd();
-                gConsole->Pause();
+                gpConsole->Pause();
             }
             else if (machineState == MachineState_Paused)
             {
-                gConsole->Resume();
+                gpConsole->Resume();
             }
             UpdateTitlebar(TITLEBAR_NORMAL);
             break;
@@ -4559,8 +4539,8 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             if (strchr(gHostKeyDisabledCombinations, 'h'))
                 return VERR_NOT_SUPPORTED;
 
-            if (gConsole)
-                gConsole->PowerButton();
+            if (gpConsole)
+                gpConsole->PowerButton();
             break;
         }
 
@@ -4574,14 +4554,14 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
 
             RTThreadYield();
             ULONG cSnapshots = 0;
-            gMachine->COMGETTER(SnapshotCount)(&cSnapshots);
+            gpMachine->COMGETTER(SnapshotCount)(&cSnapshots);
             char pszSnapshotName[20];
             RTStrPrintf(pszSnapshotName, sizeof(pszSnapshotName), "Snapshot %d", cSnapshots + 1);
-            gProgress = NULL;
+            gpProgress = NULL;
             HRESULT rc;
-            CHECK_ERROR(gConsole, TakeSnapshot(Bstr(pszSnapshotName).raw(),
-                                               Bstr("Taken by VBoxSDL").raw(),
-                                               gProgress.asOutParam()));
+            CHECK_ERROR(gpConsole, TakeSnapshot(Bstr(pszSnapshotName).raw(),
+                                                Bstr("Taken by VBoxSDL").raw(),
+                                                gpProgress.asOutParam()));
             if (FAILED(rc))
             {
                 RTPrintf("Error taking snapshot! rc = 0x%x\n", rc);
@@ -4596,11 +4576,11 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             for (;;)
             {
                 BOOL fCompleted = false;
-                rc = gProgress->COMGETTER(Completed)(&fCompleted);
+                rc = gpProgress->COMGETTER(Completed)(&fCompleted);
                 if (FAILED(rc) || fCompleted)
                     break;
                 ULONG cPercentNow;
-                rc = gProgress->COMGETTER(Percent)(&cPercentNow);
+                rc = gpProgress->COMGETTER(Percent)(&cPercentNow);
                 if (FAILED(rc))
                     break;
                 if (cPercentNow != cPercent)
@@ -4610,7 +4590,7 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
                 }
 
                 /* wait */
-                rc = gProgress->WaitForCompletion(100);
+                rc = gpProgress->WaitForCompletion(100);
                 if (FAILED(rc))
                     break;
                 /// @todo process gui events.
@@ -4635,7 +4615,7 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             keys[4] = 0xb8; // Alt up
             keys[5] = 0x9d;  // Ctrl up
 
-            gKeyboard->PutScancodes(ComSafeArrayAsInParam(keys), NULL);
+            gpKeyboard->PutScancodes(ComSafeArrayAsInParam(keys), NULL);
             return VINF_SUCCESS;
         }
 
@@ -4686,9 +4666,9 @@ static Uint32 QuitTimer(Uint32 interval, void *param)
     BOOL fHandled = FALSE;
 
     gSdlQuitTimer = NULL;
-    if (gConsole)
+    if (gpConsole)
     {
-        int rc = gConsole->GetPowerButtonHandled(&fHandled);
+        int rc = gpConsole->GetPowerButtonHandled(&fHandled);
         LogRel(("QuitTimer: rc=%d handled=%d\n", rc, fHandled));
         if (RT_FAILURE(rc) || !fHandled)
         {
@@ -4746,7 +4726,7 @@ int PushSDLEventForSure(SDL_Event *event)
         RTThreadSleep(2);
     }
     LogRel(("WARNING: Failed to enqueue SDL event %d.%d!\n",
-           event->type, event->type == SDL_USEREVENT ? event->user.type : 0));
+            event->type, event->type == SDL_USEREVENT ? event->user.type : 0));
     return -1;
 }
 
@@ -4822,7 +4802,7 @@ static void SetFullscreen(bool enable)
         {
             gpFramebuffer[0]->setFullscreen(enable);
             gfIgnoreNextResize = TRUE;
-            gDisplay->SetVideoModeHint(NewWidth, NewHeight, 0, 0);
+            gpDisplay->SetVideoModeHint(NewWidth, NewHeight, 0, 0);
         }
     }
 }
