@@ -677,9 +677,10 @@ VBOX_RSYNC_IN_EXCLUDES_FN = \
 	--exclude tinderclient.log \
 	--exclude out/ \
 	--exclude tools/FetchDir/ \
-	$(foreach os,darwin freebsd linux solaris os2 win \
-		,$(if-expr "$(1)" != "$(os)",--exclude tools/$(os).x86 $(os).amd64,))
-
+	--exclude webtools/ \
+	$(foreach os,darwin freebsd linux solaris os2 win,$(if-expr "$(1)" != "$(os)", \
+		--exclude tools/$(os).x86/ \
+		--exclude tools/$(os).amd64/,))
 
 #
 # Build the additions, all of them.
