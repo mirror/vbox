@@ -30,7 +30,9 @@ else if defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
- include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
+  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+ endif
 
 else if defined(VBOX_ONLY_TESTSUITE)
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
