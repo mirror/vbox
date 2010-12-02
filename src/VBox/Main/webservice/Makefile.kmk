@@ -501,7 +501,7 @@ VBOXWEB_OTHERS += \
 # Update the OTHERS and OTHER_CLEAN lists with VBOXWEB_OTHERS and some more stuff.
 #
 # We can't just built up OTHERS and append it to OTHER_CLEAN because we're sharing
-# OTHERS with all the other VBox makefiles (VBOX_SINGLE_MAKEFILE), thus VBOXWEB_OTHERS.
+# OTHERS with all the other VBox makefiles, thus VBOXWEB_OTHERS.
 #
 OTHERS += $(VBOXWEB_OTHERS)
 OTHER_CLEAN += \

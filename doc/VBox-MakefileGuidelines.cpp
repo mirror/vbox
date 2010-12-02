@@ -77,11 +77,7 @@
  *
  *      - Using bits defined by a sub-makefile is fine, using anything defined
  *        by a parent, sibling, uncle, cousine, or remoter relatives is not
- *        Okay. It may break sub-tree building and possibly also
- *        VBOX_SINGLE_MAKEFILE, both things that has to work all the time.
- *
- *      - The traditional recursive build must always work, i.e. undefine
- *        VBOX_SINGLE_MAKEFILE.
+ *        Okay. It may break sub-tree building which is not acceptable.
  *
  *      - Template names starts with VBOX and are all upper cased, no
  *        underscores or other separators. (TODO: Change this to camel case.)

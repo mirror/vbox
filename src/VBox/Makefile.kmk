@@ -18,7 +18,6 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_SINGLE_MAKEFILE
 
 ifdef VBOX_ONLY_ADDITIONS
  include $(PATH_SUB_CURRENT)/Runtime/Makefile.kmk
@@ -99,79 +98,6 @@ else
  endif
 endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
 
-else # !VBOX_SINGLE_MAKEFILE
-
-ifdef VBOX_ONLY_ADDITIONS
- SUBDIRS = Runtime
- ifdef VBOX_WITH_CROGL
-  SUBDIRS += GuestHost
- endif
- SUBDIRS += Additions
-
-else ifdef VBOX_ONLY_DOCS
- SUBDIRS = \
-	Runtime \
-	Frontends \
-	HostDrivers
-
-else ifdef VBOX_ONLY_SDK
-  SUBDIRS = \
-        Main \
-        RDP \
-        Installer
-
-else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
- SUBDIRS_BLDPROGS = Devices Main
-
- SUBDIRS = \
-	Runtime \
-	HostDrivers \
-	VMM \
-	Devices \
-	Disassembler \
-	Storage
-
- ifdef VBOX_WITH_CROGL
-  SUBDIRS += GuestHost
- endif
-
- SUBDIRS += HostServices
-
- ifdef VBOX_WITH_DEBUGGER
-  SUBDIRS += Debugger
- endif
-
- ifdef VBOX_WITH_MAIN
-  SUBDIRS += Main
- endif
-
- ifdef VBOX_WITH_VRDP
-  SUBDIRS += RDP
- endif
-
- ifdef VBOX_WITH_ADDITIONS
-  SUBDIRS += Additions
- endif
-
- ifdef VBOX_WITH_TESTSUITE
-  SUBDIRS += Testsuite
- endif
-
- SUBDIRS += \
-	Frontends \
-	NetworkServices
-
- ifndef VBOX_OSE
-  SUBDIRS += ExtPacks
- endif
-
- # This must be the last one.
- ifdef VBOX_WITH_INSTALLER
-  SUBDIRS += Installer
- endif
-endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
-
-endif # !VBOX_SINGLE_MAKEFILE
 
 include $(KBUILD_PATH)/subfooter.kmk
 
