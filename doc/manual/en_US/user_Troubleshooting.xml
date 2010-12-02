@@ -882,6 +882,50 @@ VirtualBox</screen>
       writes), it does not affect the performance of other applications
       running on the host.</para>
     </sect2>
+    
+    <sect2>
+      <title>Bridged Networking</title>
+
+      <para>In case no Bridge adapters are listed in bridged networking settings UI, 
+      this typically means that Bridged networking driver was not installed properly on your host.
+      This could be due to any of the following reasons:
+        <itemizedlist>
+          <listitem>
+            <para>The maximum allowed filter count is reached on the host.
+            The MSI log would mention the 0x8004a029 error code returned on NetFlt network component install:
+            "VBoxNetCfgWinInstallComponent: Install failed, hr (0x8004a029)".
+            The solution would typically be to increase the maximum filter count under
+            HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Network\MaxNumFilters (the maximum number allowed is 14),
+            reboot and try to re-install the VirtualBox</para>
+          </listitem>
+
+          <listitem>
+            <para>Inf cache is corrupt. 
+            The %windir%\inf\setupapi.log (for XP) or %windir%\inf\setupapi.dev.log (for Vista+) 
+            would typically mention the failure to find a suitable driver package 
+            for either sun_VBoxNetFlt or sun_VBoxNetFltmp components.
+            The solution is to uninstall VirtualBox, remove the inf cache (%windir%\inf\INFCACHE.1,
+            reboot and try to re-install the VirtualBox</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect2>
+    
+    <sect2>
+      <title>Host-Only Networking</title>
+
+      <para>Host-Only adapter creation (either via GUI or VBoxManage) may fail due to any of the following reasons:
+        <itemizedlist>
+          <listitem>
+            <para>Inf cache is corrupt. 
+            The %windir%\inf\setupapi.log (for XP) or %windir%\inf\setupapi.dev.log (for Vista+) 
+            would typically mention the failure to find a suitable driver package for sun_VBoxNetAdp component.
+            The solution is to uninstall VirtualBox, remove the inf cache (%windir%\inf\INFCACHE.1,
+            reboot and try to re-install the VirtualBox</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect2>
   </sect1>
 
   <sect1>
