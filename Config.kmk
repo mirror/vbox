@@ -2069,15 +2069,16 @@ endef
 #
 # @param    1   The target name of the import library.
 # @param    2   The name of the real library.
-# @param    3   The .def file path relative to the current make file.
+# @param    3   The .def-file paths relative to the current makefile.
 #
 VBOX_GENERATE_IMPORT_TARGET_FN = $(eval $(VBOX_GENERATE_IMPORT_TARGET_DEF))
 define VBOX_GENERATE_IMPORT_TARGET_DEF
+$(1)_TEMPLATE = VBoxR3Dll
 $(1)_INST     = $(INST_LIB)
 if $(KBUILD_TARGET) == "darwin"
- $(1)_LDFLAGS = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(3)$(SUFF_DLL)
+ $(1)_LDFLAGS = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(2)$(SUFF_DLL)
 else ifn1of ($(KBUILD_TARGET), os2 win)
- $(1)_SONAME  = $(3)$(SUFF_DLL)
+ $(1)_SONAME  = $(2)$(SUFF_DLL)
 endif
 if1of ($(KBUILD_TARGET), os2 win)
  $(1)_SOURCES = $$($(1)_0_OUTDIR)/$(1)Imp.def
@@ -2087,7 +2088,7 @@ else
  $(1)_CLEAN   = $$($(1)_0_OUTDIR)/$(1)Imp.c
 endif
 
-$$$$($(1)_SOURCES): $(PATH_SUB_CURRENT)/$(2) $(PATH_ROOT)/src/bldprogs/deftoimp.sed | $$$$(dir $$$$@)
+$$$$($(1)_SOURCES): $(addprefix $(PATH_SUB_CURRENT)/,$(3)) $(PATH_ROOT)/src/bldprogs/deftoimp.sed | $$$$(dir $$$$@)
 	$$(call MSG_GENERATE,,$$@)
 ifeq ($(KBUILD_TARGET),os2)
 	$$(SED) \
@@ -2096,12 +2097,12 @@ ifeq ($(KBUILD_TARGET),os2)
 		-e 's/^LIBRARY[[:space:]][[:space:]]*\(.*\)\.dll/LIBRARY \1 INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
 		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
 		-e 's/[ \t]DATA[ \t]*/ /'  \
-		--output $$@ $$<
+		--output $$@ $(addprefix $(PATH_SUB_CURRENT)/,$(3))
 else ifeq ($(KBUILD_TARGET),win)
 	$$(SED) \
 		-e '/not-$(KBUILD_TARGET)/d' \
 		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
-		--output $$@ $<
+		--output $$@ $(addprefix $(PATH_SUB_CURRENT)/,$(3))
 else
 	$$(QUIET)$$(APPEND) -tn $$@ \
 		'#ifdef VBOX_HAVE_VISIBILITY_HIDDEN' \
@@ -2116,7 +2117,7 @@ else
 		-e '/not-$(KBUILD_TARGET)/d' \
 		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
 		-f $(PATH_ROOT)/src/bldprogs/deftoimp.sed \
-		--append $$@ $$<
+		--append $$@ $(addprefix $(PATH_SUB_CURRENT)/,$(3))
 endif
 endef # VBOX_GENERATE_IMPORT_TARGET_DEF
 
@@ -3623,10 +3624,17 @@ ifdef VBOX_WITH_EXTPACK
   TEMPLATE_VBoxR3ExtPack_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/../../..' $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)', $(TEMPLATE_VBOXR3DLLNOXCPT_LDFLAGS))
  endif
  ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
-  TEMPLATE_VBoxR3ExtPack_LIBS = \
-  	$(TEMPLATE_LIBS_VBOXR3) \
-  	$(PATH_LIB)/VMMR3Imp$(VBOX_SUFF_LIB) \
-  	$(PATH_LIB)/VBoxRT3Imp$(VBOX_SUFF_LIB)
+  if1of ($(KBUILD_TARGET), win os2)
+   TEMPLATE_VBoxR3ExtPack_LIBS = \
+   	$(TEMPLATE_LIBS_VBOXR3) \
+   	$(PATH_LIB)/VMMR3Imp$(VBOX_SUFF_LIB) \
+   	$(PATH_LIB)/VBoxRTImp$(VBOX_SUFF_LIB)
+  else
+   TEMPLATE_VBoxR3ExtPack_LIBS = \
+   	$(TEMPLATE_LIBS_VBOXR3) \
+   	$(PATH_LIB)/VMMR3Imp$(VBOX_SUFF_DLL) \
+   	$(PATH_LIB)/VBoxRTImp$(VBOX_SUFF_DLL)
+  endif
  else
   TEMPLATE_VBoxR3ExtPack_LIBS = \
   	$(TEMPLATE_LIBS_VBOXR3) \

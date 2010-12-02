@@ -19,6 +19,7 @@ EXPORTS
     ; data
 
     ; code
+    CFGMR3GetRoot
     CFGMR3GetFirstChild
     CFGMR3GetNextChild
     CFGMR3GetNameLen
@@ -91,6 +92,9 @@ EXPORTS
     CFGMR3QueryString
     CFGMR3QueryStringAlloc
 
+    MMR3HeapFree
+    MMR3HeapRealloc
+
     PDMCritSectEnter
     PDMCritSectEnterDebug
     PDMCritSectTryEnter
@@ -115,6 +119,13 @@ EXPORTS
     PDMQueueR0Ptr
     PDMQueueRCPtr
 
+    PDMR3ThreadDestroy
+    PDMR3ThreadIAmRunning
+    PDMR3ThreadIAmSuspending
+    PDMR3ThreadResume
+    PDMR3ThreadSleep
+    PDMR3ThreadSuspend
+
     PGMHandlerPhysicalPageTempOff
     PGMPhysReadGCPtr
     PGMPhysSimpleDirtyWriteGCPtr
@@ -123,6 +134,83 @@ EXPORTS
     PGMPhysSimpleWriteGCPtr
     PGMPhysWriteGCPtr
     PGMShwMakePageWritable
+
+    SSMR3Close
+    SSMR3DeregisterExternal
+    SSMR3DeregisterInternal
+    SSMR3GetBool
+    SSMR3GetGCPhys
+    SSMR3GetGCPhys32
+    SSMR3GetGCPhys64
+    SSMR3GetGCPtr
+    SSMR3GetGCUInt
+    SSMR3GetGCUIntPtr
+    SSMR3GetGCUIntReg
+    SSMR3GetIOPort
+    SSMR3GetMem
+    SSMR3GetRCPtr
+    SSMR3GetS128
+    SSMR3GetS16
+    SSMR3GetS32
+    SSMR3GetS64
+    SSMR3GetS8
+    SSMR3GetSInt
+    SSMR3GetSel
+    SSMR3GetStrZ
+    SSMR3GetStrZEx
+    SSMR3GetStruct
+    SSMR3GetStructEx
+    SSMR3GetU128
+    SSMR3GetU16
+    SSMR3GetU32
+    SSMR3GetU64
+    SSMR3GetU8
+    SSMR3GetUInt
+    SSMR3HandleGetAfter
+    SSMR3HandleGetStatus
+    SSMR3HandleHostBits
+    SSMR3HandleHostOSAndArch
+    SSMR3HandleIsLiveSave
+    SSMR3HandleMaxDowntime
+    SSMR3HandleReportLivePercent
+    SSMR3HandleRevision
+    SSMR3HandleSetStatus
+    SSMR3HandleVersion
+    SSMR3Open
+    SSMR3PutBool
+    SSMR3PutGCPhys
+    SSMR3PutGCPhys32
+    SSMR3PutGCPhys64
+    SSMR3PutGCPtr
+    SSMR3PutGCUInt
+    SSMR3PutGCUIntPtr
+    SSMR3PutGCUIntReg
+    SSMR3PutIOPort
+    SSMR3PutMem
+    SSMR3PutRCPtr
+    SSMR3PutS128
+    SSMR3PutS16
+    SSMR3PutS32
+    SSMR3PutS64
+    SSMR3PutS8
+    SSMR3PutSInt
+    SSMR3PutSel
+    SSMR3PutStrZ
+    SSMR3PutStruct
+    SSMR3PutStructEx
+    SSMR3PutU128
+    SSMR3PutU16
+    SSMR3PutU32
+    SSMR3PutU64
+    SSMR3PutU8
+    SSMR3PutUInt
+    SSMR3Seek
+    SSMR3SetCfgError
+    SSMR3SetLoadError
+    SSMR3SetLoadErrorV
+    SSMR3Skip
+    SSMR3SkipToEndOfUnit
+    SSMR3ValidateFile
 
     TMR3TimerSetCritSect
     TMR3TimerLoad
