@@ -21,17 +21,10 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Sub-makefiles / Sub-directories.
 #
-ifdef VBOX_SINGLE_MAKEFILE
- if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_TESTSUITE)
-  include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
- endif
- include $(PATH_SUB_CURRENT)/src/Makefile.kmk
-else
- if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_TESTSUITE)
-  SUBDIRS = doc/manual
- endif
- SUBDIRS += src
+if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_TESTSUITE)
+ include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
 endif
+include $(PATH_SUB_CURRENT)/src/Makefile.kmk
 
 
 #
@@ -261,7 +254,7 @@ $(PATH_TARGET)/VBoxGuestAdditions.iso: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/
  ifneq ($(KBUILD_HOST),win)
 	$(SHELL) $(PATH_DEVTOOLS)/bin/additions.sh --cmd fetch --filename $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
  else
-	$(KMK) --affinity 1 -f $(MAKEFILE) VBOX_SINGLE_MAKEFILE= buildserver-additions-affinity-hack
+	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-additions-affinity-hack
  endif
 	$(CP) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp $(PATH_TARGET)/VBoxGuestAdditions.iso
 	$(RM) -f $(PATH_TARGET)/VBoxGuestAdditions.iso.tmp
@@ -309,7 +302,7 @@ $$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_
  ifneq ($(KBUILD_HOST),win)
 	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $@.tmp
  else
-	$(KMK) --affinity 1 -f $(MAKEFILE) VBOX_SINGLE_MAKEFILE= buildserver-documentation-affinity-hack
+	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-documentation-affinity-hack
  endif
 	$(CP) -f $@.tmp $@
 	$(RM) -f $@.tmp
@@ -361,7 +354,7 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    ifneq ($(KBUILD_HOST),win)
 	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $@.tmp
    else
-	$(KMK) --affinity 1 -f $(MAKEFILE) VBOX_SINGLE_MAKEFILE= buildserver-efifw-affinity-hack
+	$(KMK) --affinity 1 -f $(MAKEFILE) buildserver-efifw-affinity-hack
    endif
 	$(CP) -f $@.tmp $@
 	$(RM) -f $@.tmp
@@ -427,17 +420,9 @@ else  # !VBOX_ONLY_DOCS
 # Generate documentation.
 # (This should be converted into a separate pass or merged with an existing one later.)
 #
- ifdef VBOX_SINGLE_MAKEFILE
-  ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
+ ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
 docs: docs.Core
-  endif
- else  # !VBOX_SINGLE_MAKEFILE
-docs: $(if $(VBOX_WITH_ALL_DOXYGEN_TARGETS),docs.Core)
-	$(KMK) -C src/VBox/Main    docs.Main
-  ifdef VBOX_WITH_ALL_DOXYGEN_TARGETS
-	$(KMK) -C src/VBox/Runtime docs.iprt
-  endif
- endif # !VBOX_SINGLE_MAKEFILE
+ endif
 endif # !VBOX_ONLY_DOCS
 
 docs.Core docs.core: $(PATH_TARGET)/docs.Core
