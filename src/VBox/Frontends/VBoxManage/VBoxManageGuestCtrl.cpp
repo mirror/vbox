@@ -1183,48 +1183,25 @@ static int handleCtrlCopyTo(HandlerArg *a)
         }
         else
         {
-            if (RT_SUCCESS(vrc) && fVerbose)
-            {
-                if (fCopyRecursive)
-                    RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
-                             Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
-                else
-                    RTPrintf("Copying \"%s\" to \"%s\" (%u file(s)) ...\n",
-                             Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
-            }
-
+            PDIRECTORYENTRY pNode;
             if (RT_SUCCESS(vrc))
             {
-                PDIRECTORYENTRY pNode;
+                if (fVerbose)
+                    if (fCopyRecursive)
+                        RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
+                                 Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
+                    else
+                        RTPrintf("Copying \"%s\" to \"%s\" (%u file(s)) ...\n",
+                                 Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
+
                 uint32_t uCurObject = 1;
                 RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
                 {
-                    char *pszDestPath = RTStrDup(pNode->pszDestPath);
-                    AssertPtrBreak(pszDestPath);
-                    RTPathStripFilename(pszDestPath);
-
-                    if (fVerbose)
-                        RTPrintf("Preparing guest directory \"%s\" ...\n", pszDestPath);
-
-                    ComPtr<IProgress> progressDir;
                     if (!fDryRun)
-                        rc = guest->CreateDirectory(Bstr(pszDestPath).raw(),
-                                                    Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
-                                                    0 /* Creation mode */, CreateDirectoryFlag_Parents,
-                                                    progressDir.asOutParam());
-                    RTStrFree(pszDestPath);
-                    if (FAILED(rc))
-                        vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
-                    else
                     {
                         if (fVerbose)
-                    #ifndef DEBUG
-                            RTPrintf("Copying \"%s\" (%u/%u) ...\n",
-                                     pNode->pszSourcePath, uCurObject, cObjects);
-                    #else
                             RTPrintf("Copying \"%s\" to \"%s\" (%u/%u) ...\n",
                                      pNode->pszSourcePath, pNode->pszDestPath, uCurObject, cObjects);
-                    #endif
                         /* Finally copy the desired file (if no dry run selected). */
                         if (!fDryRun)
                             vrc = ctrlCopyFileToGuest(guest, pNode->pszSourcePath, pNode->pszDestPath,
@@ -1365,18 +1342,9 @@ static int handleCtrlCreateDirectory(HandlerArg *a)
                                         Bstr(Utf8UserName).raw(), Bstr(Utf8Password).raw(),
                                         uMode, uFlags, progress.asOutParam());
             if (FAILED(rc))
-                vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
-            else
             {
-                LONG iRc;
-                CHECK_ERROR_RET(progress, COMGETTER(ResultCode)(&iRc), rc);
-                if (FAILED(iRc))
-                {
-                      vrc = ctrlPrintProgressError(progress);
-                      break;
-                }
-                else if (fVerbose)
-                    RTPrintf("Directory created: %s\n", pNode->pszDestPath);
+                vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+                break;
             }
         }
         ctrlUninitVM(a);
