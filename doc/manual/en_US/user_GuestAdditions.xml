@@ -1132,7 +1132,11 @@ $</screen>
             <para>With Windows guests, any auto-mounted shared folder will
             receive its own drive letter (e.g.
             <computeroutput>E:</computeroutput>) depending on the free drive
-            letters remaining in the guest.</para>
+            letters remaining in the guest. </para>
+
+            <para>If there no free drive letters left, auto-mounting will
+            fail; as a result, the number of auto-mounted shared folders is
+            typically limited to 22 or less with Windows guests.</para>
           </listitem>
 
           <listitem>
