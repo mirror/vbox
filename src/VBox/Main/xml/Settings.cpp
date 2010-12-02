@@ -3435,7 +3435,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         /* In VBox 4.0 these attributes are replaced with "Properties". */
         Utf8Str strPort;
         StringsMap::const_iterator it = hw.vrdeSettings.mapProperties.find("TCP/Ports");
-        if (it != hardwareMachine.vrdeSettings.mapProperties.end())
+        if (it != hw.vrdeSettings.mapProperties.end())
             strPort = it->second;
         if (!strPort.length())
             strPort = "3389";
