@@ -231,6 +231,47 @@ static RTSEMEVENT g_EventSemSDLEvents;
 static volatile int32_t g_cNotifyUpdateEventsPending;
 
 /**
+ * Event handler for VirtualBoxClient events
+ */
+class VBoxSDLClientEventListener
+{
+public:
+    VBoxSDLClientEventListener()
+    {
+    }
+
+    virtual ~VBoxSDLClientEventListener()
+    {
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnVBoxSVCUnavailable:
+            {
+                ComPtr<IVBoxSVCUnavailableEvent> pVSUEv = aEvent;
+                Assert(pVSUEv);
+
+                LogRel(("VBoxSDL: VBoxSVC became unavailable, exiting.\n"));
+                RTPrintf("VBoxSVC became unavailable, exiting.\n");
+                /* Send QUIT event to terminate the VM as cleanly as possible
+                 * given that VBoxSVC is no longer present. */
+                SDL_Event event = {0};
+                event.type = SDL_QUIT;
+                PushSDLEventForSure(&event);
+                break;
+            }
+
+            default:
+                AssertFailed();
+        }
+
+        return S_OK;
+    }
+};
+
+/**
  * Event handler for VirtualBox (server) events
  */
 class VBoxSDLEventListener
@@ -516,6 +557,7 @@ private:
     bool m_fIgnorePowerOffEvents;
 };
 
+typedef ListenerImpl<VBoxSDLClientEventListener>  VBoxSDLClientEventListenerImpl;
 typedef ListenerImpl<VBoxSDLEventListener>        VBoxSDLEventListenerImpl;
 typedef ListenerImpl<VBoxSDLConsoleEventListener> VBoxSDLConsoleEventListenerImpl;
 
@@ -725,6 +767,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
     uint32_t vramSize = 0;
+    IEventListener *pVBoxClientListener = NULL;
     IEventListener *pVBoxListener = NULL;
     VBoxSDLConsoleEventListenerImpl *pConsoleListener = NULL;
 
@@ -1251,29 +1294,36 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
 
+    ComPtr<IVirtualBoxClient> pVirtualBoxClient;
     ComPtr<IVirtualBox> pVirtualBox;
     ComPtr<ISession> pSession;
     bool sessionOpened = false;
     EventQueue* eventQ = com::EventQueue::getMainEventQueue();
-    const CLSID sessionID = CLSID_Session;
 
     ComPtr<IMachine> pMachine;
 
-    rc = pVirtualBox.createLocalObject(CLSID_VirtualBox);
+    rc = pVirtualBoxClient.createInprocObject(CLSID_VirtualBoxClient);
     if (FAILED(rc))
     {
         com::ErrorInfo info;
         if (info.isFullAvailable())
-            PrintError("Failed to create VirtualBox object",
+            PrintError("Failed to create VirtualBoxClient object",
                        info.getText().raw(), info.getComponent().raw());
         else
-            RTPrintf("Failed to create VirtualBox object! No error information available (rc=%Rhrc).\n", rc);
+            RTPrintf("Failed to create VirtualBoxClient object! No error information available (rc=%Rhrc).\n", rc);
         goto leave;
     }
-    rc = pSession.createInprocObject(sessionID);
+
+    rc = pVirtualBoxClient->COMGETTER(VirtualBox)(pVirtualBox.asOutParam());
     if (FAILED(rc))
     {
-        RTPrintf("Failed to create session object (rc=%Rhrc)!\n", rc);
+        RTPrintf("Failed to get VirtualBox object (rc=%Rhrc)!\n", rc);
+        goto leave;
+    }
+    rc = pVirtualBoxClient->COMGETTER(Session)(pSession.asOutParam());
+    if (FAILED(rc))
+    {
+        RTPrintf("Failed to get session object (rc=%Rhrc)!\n", rc);
         goto leave;
     }
 
@@ -1761,6 +1811,16 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         LONG xOrigin, yOrigin;
         rc = gpDisplay->GetFramebuffer(i, &dummyFb, &xOrigin, &yOrigin);
         gpFramebuffer[i]->setOrigin(xOrigin, yOrigin);
+    }
+
+    {
+        // register listener for VirtualBoxClient events
+        ComPtr<IEventSource> pES;
+        CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
+        pVBoxClientListener = new VBoxSDLClientEventListenerImpl();
+        com::SafeArray<VBoxEventType_T> eventTypes;
+        eventTypes.push_back(VBoxEventType_OnVBoxSVCUnavailable);
+        CHECK_ERROR(pES, RegisterListener(pVBoxClientListener, ComSafeArrayAsInParam(eventTypes), true));
     }
 
     {
@@ -2753,11 +2813,24 @@ leave:
         pVBoxListener = NULL;
     }
 
+    /* VirtualBoxClient listener unregistration. */
+    if (pVBoxClientListener)
+    {
+        ComPtr<IEventSource> pES;
+        CHECK_ERROR(pVirtualBoxClient, COMGETTER(EventSource)(pES.asOutParam()));
+        if (!pES.isNull())
+            CHECK_ERROR(pES, UnregisterListener(pVBoxClientListener));
+        pVBoxClientListener->Release();
+        pVBoxClientListener = NULL;
+    }
+
     LogFlow(("Releasing machine, session...\n"));
     gpMachine = NULL;
     pSession = NULL;
     LogFlow(("Releasing VirtualBox object...\n"));
     pVirtualBox = NULL;
+    LogFlow(("Releasing VirtualBoxClient object...\n"));
+    pVirtualBoxClient = NULL;
 
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
