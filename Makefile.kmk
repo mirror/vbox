@@ -687,7 +687,10 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 		--exclude tools/$(os).amd64/ \
 		--exclude out/$(os).amd64/ \
 		--exclude out/$(os).x86/ \
-	,$(select "$(2)" == "x86", --exclude out/$(os).amd64/, "$(2)" == "amd64", --exclude out/$(os).x86/)))
+	,$(select \
+		"$(2)" == "x86"  , --exclude out/$(os).amd64/$(KBUILD_TYPE)/, \
+		"$(2)" == "amd64", --exclude out/$(os).x86/$(KBUILD_TYPE)/) \
+	))
 
 #
 # Build the additions, all of them.
