@@ -293,7 +293,6 @@ endif
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	dh_desktop
-	dh_installmenu
 	$(if $(NOMODS),,dh_installmodules)
 	sed \
 	    -e 's|%NOLSB%||g' \

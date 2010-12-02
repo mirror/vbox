@@ -353,6 +353,9 @@ stop)
 restart)
     restart
     ;;
+force-reload)
+    restart
+    ;;
 status)
     status
     ;;

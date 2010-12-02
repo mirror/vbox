@@ -23,6 +23,9 @@ rm -f /etc/udev/rules.d/10-vboxdrv.rules
 rm -f /etc/vbox/license_agreed
 rm -f /etc/vbox/module_not_compiled
 
+# remove our USB device tree
+rm -rf /dev/vboxusb 2> /dev/null
+
 # defaults
 [ -r /etc/default/virtualbox ] && . /etc/default/virtualbox
 
@@ -61,7 +64,7 @@ if [ "$1" = "upgrade" -o "$1" = "remove" -o "$1" = "deconfigure" ]; then
   fi
 fi
 
-# Stop vboxnet/vboxdrv manually as we use our own error handling in postrm
+# stop vboxnet/vboxdrv manually as we use our own error handling in postrm
 if [ -x "/etc/init.d/vboxdrv" ]; then
   if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
     invoke-rc.d vboxdrv stop || exit $?
