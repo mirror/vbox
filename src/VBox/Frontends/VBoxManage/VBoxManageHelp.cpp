@@ -96,15 +96,12 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                  "\n");
 
     if (u64Cmd == USAGE_ALL)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage [-v|--version]    print version number and exit\n"
                      "VBoxManage [-q|--nologo] ... suppress the logo\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_LIST)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage list [--long|-l] vms|runningvms|ostypes|hostdvds|hostfloppies|\n"
 #if defined(VBOX_WITH_NETFLT)
@@ -116,33 +113,25 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            usbhost|usbfilters|systemproperties|\n"
                      "                            extpacks\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_SHOWVMINFO)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage showvminfo       <uuid>|<name> [--details] [--statistics]\n"
                      "                            [--machinereadable]\n"
                      "VBoxManage showvminfo       <uuid>|<name> --log <idx>\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_REGISTERVM)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage registervm       <filename>\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_UNREGISTERVM)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage unregistervm     <uuid>|<name> [--delete]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_CREATEVM)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage createvm         --name <name>\n"
                      "                            [--ostype <ostype>]\n"
@@ -150,7 +139,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--basefolder <path> | --settingsfile <path>]\n"
                      "                            [--uuid <uuid>]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_MODIFYVM)
     {
@@ -336,15 +324,12 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     }
 
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage import           <ovf/ova> [--dry-run|-n] [more options]\n"
                      "                            (run with -n to have options displayed\n"
                      "                             for a particular OVF)\n\n");
-    }
 
     if (u64Cmd & USAGE_EXPORTAPPLIANCE)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage export           <machines> --output|-o <ovf/ova>\n"
                      "                            [--legacy09]\n"
@@ -358,7 +343,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                    [--eula <license text>]\n"
                      "                                    [--eulafile <filename>]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_STARTVM)
     {
@@ -416,21 +400,16 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     }
 
     if (u64Cmd & USAGE_DISCARDSTATE)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage discardstate     <uuid>|<name>\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_ADOPTSTATE)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage adoptstate       <uuid>|<name> <state_file>\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_SNAPSHOT)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage snapshot         <uuid>|<name>\n"
                      "                            take <name> [--description <desc>] [--pause] |\n"
@@ -442,18 +421,14 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                 [--description <desc>] |\n"
                      "                            showvminfo <uuid>|<name>\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_CLOSEMEDIUM)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage closemedium      disk|dvd|floppy <uuid>|<filename>\n"
                      "                            [--delete]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_STORAGEATTACH)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage storageattach    <uuid|vmname>\n"
                      "                            --storagectl <name>\n"
@@ -461,15 +436,22 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            --device <number>\n"
                      "                            [--type dvddrive|hdd|fdd]\n"
                      "                            [--medium none|emptydrive|\n"
-                     "                                      <uuid>|<filename>|host:<drive>]\n"
+                     "                                      <uuid>|<filename>|host:<drive>|iscsi]\n"
+                     "                            [--mtype normal|writethrough|immutable|shareable]\n"
                      "                            [--passthrough on|off]\n"
                      "                            [--bandwidthgroup <name>]\n"
                      "                            [--forceunmount]\n"
+                     "                            [--server <name>|<ip>]\n"
+                     "                            [--target <target>]\n"
+                     "                            [--port <port>]\n"
+                     "                            [--lun <lun>]\n"
+                     "                            [--encodedlun <lun>]\n"
+                     "                            [--username <username>]\n"
+                     "                            [--password <password>]\n"
+                     "                            [--intnet]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_STORAGECONTROLLER)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage storagectl       <uuid|vmname>\n"
                      "                            --name <name>\n"
@@ -482,10 +464,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--bootable on|off]\n"
                      "                            [--remove]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_BANDWIDTHCONTROL)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage bandwidthctl     <uuid|vmname>\n"
                      "                            --name <name>\n"
@@ -493,31 +473,21 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--limit <megabytes per second>\n"
                      "                            [--delete]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_SHOWHDINFO)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage showhdinfo       <uuid>|<filename>\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_CREATEHD)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage createhd         --filename <filename>\n"
                      "                            --size <megabytes>|--sizebyte <bytes>\n"
                      "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
-                     "                            [--type normal|writethrough|\n"
-                     "                                    shareable] (default: normal)\n"
-                     "                            [--comment <comment>]\n"
-                     "                            [--remember]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_MODIFYHD)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage modifyhd         <uuid>|<filename>\n"
                      "                            [--type normal|writethrough|immutable|shareable]\n"
@@ -525,10 +495,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--compact]\n"
                      "                            [--resize <megabytes>]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_CLONEHD)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage clonehd          <uuid>|<filename> <outputfile>\n"
                      "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
@@ -536,10 +504,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--type normal|writethrough|immutable|shareable]\n"
                      "                            [--remember] [--existing]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_CONVERTFROMRAW)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage convertfromraw   <filename> <outputfile>\n"
                      "                            [--format VDI|VMDK|VHD]\n"
@@ -550,42 +516,21 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
 #endif
                      "\n");
-    }
-
-    if (u64Cmd & USAGE_ADDISCSIDISK)
-    {
-        RTStrmPrintf(pStrm,
-                     "VBoxManage addiscsidisk     --server <name>|<ip>\n"
-                     "                            --target <target>\n"
-                     "                            [--port <port>]\n"
-                     "                            [--lun <lun>]\n"
-                     "                            [--encodedlun <lun>]\n"
-                     "                            [--username <username>]\n"
-                     "                            [--password <password>]\n"
-                     "                            [--type normal|writethrough|immutable|shareable]\n"
-                     "                            [--intnet]\n"
-                     "\n");
-    }
 
     if (u64Cmd & USAGE_GETEXTRADATA)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage getextradata     global|<uuid>|<name>\n"
                      "                            <key>|enumerate\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_SETEXTRADATA)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage setextradata     global|<uuid>|<name>\n"
                      "                            <key>\n"
                      "                            [<value>] (no value deletes key)\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_SETPROPERTY)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage setproperty      machinefolder default|<folder> |\n"
                      "                            vrdeauthlibrary default|<library> |\n"
@@ -593,10 +538,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            vrdeextpack null|<library> |\n"
                      "                            loghistorycount <value>\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_USBFILTER_ADD)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage usbfilter        add <index,0-N>\n"
                      "                            --target <uuid>|<name>|global\n"
@@ -612,10 +555,8 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--serialnumber <string>] (null)\n"
                      "                            [--maskedinterfaces <XXXXXXXX>]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_USBFILTER_MODIFY)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage usbfilter        modify <index,0-N>\n"
                      "                            --target <uuid>|<name>|global\n"
@@ -631,40 +572,31 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--serialnumber <string>|\"\"]\n"
                      "                            [--maskedinterfaces <XXXXXXXX>]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_USBFILTER_REMOVE)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage usbfilter        remove <index,0-N>\n"
                      "                            --target <uuid>|<name>|global\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_SHAREDFOLDER_ADD)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage sharedfolder     add <vmname>|<uuid>\n"
                      "                            --name <name> --hostpath <hostpath>\n"
                      "                            [--transient] [--readonly] [--automount]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_SHAREDFOLDER_REMOVE)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage sharedfolder     remove <vmname>|<uuid>\n"
                      "                            --name <name> [--transient]\n"
                      "\n");
-    }
 
     if (u64Cmd & USAGE_VM_STATISTICS)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage vmstatistics     <vmname>|<uuid> [--reset]\n"
                      "                            [--pattern <pattern>] [--descriptions]\n"
                      "\n");
-    }
 
 #ifdef VBOX_WITH_GUEST_PROPS
     if (u64Cmd & USAGE_GUESTPROPERTY)
@@ -677,7 +609,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif /* VBOX_WITH_GUEST_CONTROL defined */
 
     if (u64Cmd & USAGE_METRICS)
-    {
         RTStrmPrintf(pStrm,
                      "VBoxManage metrics          list [*|host|<vmname> [<metric_list>]]\n"
                      "                                                 (comma-separated)\n\n"
@@ -700,7 +631,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--detach]\n"
                      "                            [*|host|<vmname> [<metric_list>]]\n"
                      "\n");
-    }
+
 #if defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {

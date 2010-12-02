@@ -96,7 +96,7 @@ static int parseDiskVariant(const char *psz, MediumVariant_T *pDiskVariant)
     return rc;
 }
 
-static int parseDiskType(const char *psz, MediumType_T *pDiskType)
+int parseDiskType(const char *psz, MediumType_T *pDiskType)
 {
     int rc = VINF_SUCCESS;
     MediumType_T DiskType = MediumType_Normal;
@@ -157,14 +157,6 @@ static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
     { "-static",        'F', RTGETOPT_REQ_NOTHING },    // deprecated
     { "--variant",      'm', RTGETOPT_REQ_STRING },
     { "-variant",       'm', RTGETOPT_REQ_STRING },     // deprecated
-    { "--type",         't', RTGETOPT_REQ_STRING },
-    { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
-    { "--comment",      'c', RTGETOPT_REQ_STRING },
-    { "-comment",       'c', RTGETOPT_REQ_STRING },     // deprecated
-    { "--remember",     'r', RTGETOPT_REQ_NOTHING },
-    { "-remember",      'r', RTGETOPT_REQ_NOTHING },    // deprecated
-    { "--register",     'r', RTGETOPT_REQ_NOTHING },    // deprecated (unofficial)
-    { "-register",      'r', RTGETOPT_REQ_NOTHING },    // deprecated
 };
 
 int handleCreateHardDisk(HandlerArg *a)
@@ -175,9 +167,6 @@ int handleCreateHardDisk(HandlerArg *a)
     uint64_t size = 0;
     Bstr format = "VDI";
     MediumVariant_T DiskVariant = MediumVariant_Standard;
-    Bstr comment;
-    bool fRemember = false;
-    MediumType_T DiskType = MediumType_Normal;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -217,23 +206,6 @@ int handleCreateHardDisk(HandlerArg *a)
                 vrc = parseDiskVariant(ValueUnion.psz, &DiskVariant);
                 if (RT_FAILURE(vrc))
                     return errorArgument("Invalid hard disk variant '%s'", ValueUnion.psz);
-                break;
-
-            case 'c':   // --comment
-                comment = ValueUnion.psz;
-                break;
-
-            case 'r':   // --remember
-                fRemember = true;
-                break;
-
-            case 't':   // --type
-                vrc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (    RT_FAILURE(vrc)
-                    ||  (   DiskType != MediumType_Normal
-                         && DiskType != MediumType_Writethrough
-                         && DiskType != MediumType_Shareable))
-                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -280,15 +252,6 @@ int handleCreateHardDisk(HandlerArg *a)
                                               hardDisk.asOutParam()));
     if (SUCCEEDED(rc) && hardDisk)
     {
-        /* we will close the hard disk after the storage has been successfully
-         * created unless fRemember is set */
-        bool doClose = false;
-
-        if (!comment.isEmpty())
-        {
-            CHECK_ERROR(hardDisk,COMSETTER(Description)(comment.raw()));
-        }
-
         ComPtr<IProgress> progress;
         CHECK_ERROR(hardDisk, CreateBaseStorage(size, DiskVariant, progress.asOutParam()));
         if (SUCCEEDED(rc) && progress)
@@ -304,24 +267,12 @@ int handleCreateHardDisk(HandlerArg *a)
             }
             else
             {
-                doClose = !fRemember;
-
                 Bstr uuid;
                 CHECK_ERROR(hardDisk, COMGETTER(Id)(uuid.asOutParam()));
-
-                if (   DiskType == MediumType_Writethrough
-                    || DiskType == MediumType_Shareable)
-                {
-                    CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
-                }
-
                 RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).c_str());
             }
         }
-        if (doClose)
-        {
-            CHECK_ERROR(hardDisk, Close());
-        }
+        CHECK_ERROR(hardDisk, Close());
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -952,199 +903,6 @@ out:
         RTFileClose(File);
 
     return RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
-}
-
-static const RTGETOPTDEF g_aAddiSCSIDiskOptions[] =
-{
-    { "--server",       's', RTGETOPT_REQ_STRING },
-    { "-server",        's', RTGETOPT_REQ_STRING },     // deprecated
-    { "--target",       'T', RTGETOPT_REQ_STRING },
-    { "-target",        'T', RTGETOPT_REQ_STRING },     // deprecated
-    { "--port",         'p', RTGETOPT_REQ_STRING },
-    { "-port",          'p', RTGETOPT_REQ_STRING },     // deprecated
-    { "--lun",          'l', RTGETOPT_REQ_STRING },
-    { "-lun",           'l', RTGETOPT_REQ_STRING },     // deprecated
-    { "--encodedlun",   'L', RTGETOPT_REQ_STRING },
-    { "-encodedlun",    'L', RTGETOPT_REQ_STRING },     // deprecated
-    { "--username",     'u', RTGETOPT_REQ_STRING },
-    { "-username",      'u', RTGETOPT_REQ_STRING },     // deprecated
-    { "--password",     'P', RTGETOPT_REQ_STRING },
-    { "-password",      'P', RTGETOPT_REQ_STRING },     // deprecated
-    { "--type",         't', RTGETOPT_REQ_STRING },
-    { "-type",          't', RTGETOPT_REQ_STRING },     // deprecated
-    { "--intnet",       'I', RTGETOPT_REQ_NOTHING },
-    { "-intnet",        'I', RTGETOPT_REQ_NOTHING },    // deprecated
-};
-
-int handleAddiSCSIDisk(HandlerArg *a)
-{
-    HRESULT rc;
-    int vrc;
-    Bstr server;
-    Bstr target;
-    Bstr port;
-    Bstr lun;
-    Bstr username;
-    Bstr password;
-    Bstr comment;
-    bool fIntNet = false;
-    MediumType_T DiskType = MediumType_Normal;
-
-    int c;
-    RTGETOPTUNION ValueUnion;
-    RTGETOPTSTATE GetState;
-    // start at 0 because main() has hacked both the argc and argv given to us
-    RTGetOptInit(&GetState, a->argc, a->argv, g_aAddiSCSIDiskOptions, RT_ELEMENTS(g_aAddiSCSIDiskOptions),
-                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    while ((c = RTGetOpt(&GetState, &ValueUnion)))
-    {
-        switch (c)
-        {
-            case 's':   // --server
-                server = ValueUnion.psz;
-                break;
-
-            case 'T':   // --target
-                target = ValueUnion.psz;
-                break;
-
-            case 'p':   // --port
-                port = ValueUnion.psz;
-                break;
-
-            case 'l':   // --lun
-                lun = ValueUnion.psz;
-                break;
-
-            case 'L':   // --encodedlun
-                lun = BstrFmt("enc%s", ValueUnion.psz);
-                break;
-
-            case 'u':   // --username
-                username = ValueUnion.psz;
-                break;
-
-            case 'P':   // --password
-                password = ValueUnion.psz;
-                break;
-
-            case 't':   // --type
-                vrc = parseDiskType(ValueUnion.psz, &DiskType);
-                if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
-                break;
-
-            case 'I':   // --intnet
-                fIntNet = true;
-                break;
-
-            case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_ADDISCSIDISK, "Invalid parameter '%s'", ValueUnion.psz);
-
-            default:
-                if (c > 0)
-                {
-                    if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_ADDISCSIDISK, "Invalid option -%c", c);
-                    else
-                        return errorSyntax(USAGE_ADDISCSIDISK, "Invalid option case %i", c);
-                }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_ADDISCSIDISK, "unknown option: %s\n", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_ADDISCSIDISK, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_ADDISCSIDISK, "error: %Rrs", c);
-        }
-    }
-
-    /* check for required options */
-    if (server.isEmpty() || target.isEmpty())
-        return errorSyntax(USAGE_ADDISCSIDISK, "Parameters --server and --target are required");
-
-    do
-    {
-        ComPtr<IMedium> hardDisk;
-        /** @todo move the location stuff to Main, which can use pfnComposeName
-         * from the disk backends to construct the location properly. Also do
-         * not use slashes to separate the parts, as otherwise only the last
-         * element containing information will be shown. */
-        if (lun.isEmpty() || lun == "0" || lun == "enc0")
-        {
-            CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk(Bstr("iSCSI").raw(),
-                                                            BstrFmt("%ls|%ls",
-                                                                    server.raw(),
-                                                                    target.raw()).raw(),
-                                                            hardDisk.asOutParam()));
-        }
-        else
-        {
-            CHECK_ERROR_BREAK(a->virtualBox, CreateHardDisk(Bstr("iSCSI").raw(),
-                                                            BstrFmt("%ls|%ls|%ls",
-                                                                    server.raw(),
-                                                                    target.raw(),
-                                                                    lun.raw()).raw(),
-                                                            hardDisk.asOutParam()));
-        }
-        if (FAILED(rc)) break;
-
-        if (!port.isEmpty())
-            server = BstrFmt("%ls:%ls", server.raw(), port.raw());
-
-        com::SafeArray <BSTR> names;
-        com::SafeArray <BSTR> values;
-
-        Bstr("TargetAddress").detachTo(names.appendedRaw());
-        server.detachTo(values.appendedRaw());
-        Bstr("TargetName").detachTo(names.appendedRaw());
-        target.detachTo(values.appendedRaw());
-
-        if (!lun.isEmpty())
-        {
-            Bstr("LUN").detachTo(names.appendedRaw());
-            lun.detachTo(values.appendedRaw());
-        }
-        if (!username.isEmpty())
-        {
-            Bstr("InitiatorUsername").detachTo(names.appendedRaw());
-            username.detachTo(values.appendedRaw());
-        }
-        if (!password.isEmpty())
-        {
-            Bstr("InitiatorSecret").detachTo(names.appendedRaw());
-            password.detachTo(values.appendedRaw());
-        }
-
-        /// @todo add --initiator option - until that happens rely on the
-        // defaults of the iSCSI initiator code. Setting it to a constant
-        // value does more harm than good, as the initiator name is supposed
-        // to identify a particular initiator uniquely.
-//        Bstr("InitiatorName").detachTo(names.appendedRaw());
-//        Bstr("iqn.2008-04.com.sun.virtualbox.initiator").detachTo(values.appendedRaw());
-
-        /// @todo add --targetName and --targetPassword options
-
-        if (fIntNet)
-        {
-            Bstr("HostIPStack").detachTo(names.appendedRaw());
-            Bstr("0").detachTo(values.appendedRaw());
-        }
-
-        CHECK_ERROR_BREAK(hardDisk, SetProperties(ComSafeArrayAsInParam(names),
-                                                  ComSafeArrayAsInParam(values)));
-
-        if (DiskType != MediumType_Normal)
-        {
-            CHECK_ERROR(hardDisk, COMSETTER(Type)(DiskType));
-        }
-
-        Bstr guid;
-        CHECK_ERROR(hardDisk, COMGETTER(Id)(guid.asOutParam()));
-        RTPrintf("iSCSI disk created. UUID: %s\n", Utf8Str(guid).c_str());
-    }
-    while (0);
-
-    return SUCCEEDED(rc) ? 0 : 1;
 }
 
 static const RTGETOPTDEF g_aShowHardDiskInfoOptions[] =
