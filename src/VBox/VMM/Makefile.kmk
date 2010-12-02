@@ -47,7 +47,9 @@ endif
 #
 # VMMR3.dll
 #
+ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
 LIBRARIES += VMMR3
+endif
 
 VMMR3_TEMPLATE  = VBoxR3Dll
 
@@ -310,6 +312,15 @@ if1of ($(VBOX_LDR_FMT), pe lx)
 		--output $@ $<
  endif
 endif # R0: pe + lx
+
+
+#
+# VMMR3Imp.lib
+#
+IMPORT_LIBS += VMMR3Imp
+VMMR3Imp_TEMPLATE = VBoxR3Dll
+$(call VBOX_GENERATE_IMPORT_TARGET_FN,VMMR3Imp,VMMR3/VMMR3.def,VBoxVMM)
+$(warning VMMR3Imp_SOURCES=$(VMMR3Imp_SOURCES))
 
 
 if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)

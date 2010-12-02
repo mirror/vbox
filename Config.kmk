@@ -2024,7 +2024,7 @@ endif
 
 
 #
-# Edit macros.
+# Misc macros.
 #
 
 ##
@@ -2062,6 +2062,63 @@ $$($(1)_0_OUTDIR)/$(if $(3),$(3),$(2)): $(PATH_SUB_CURRENT)/$(2) $(VBOX_SVN_REV_
 	$(call MSG_GENERATE,$(1),$@,$<)
 	$(QUIET)$(call VBOX_EDIT_VERSION_CMD_FN,$<,$@)
 endef
+
+
+##
+# Fill in am import library target based on a somewhat special windows .def file.
+#
+# @param    1   The target name of the import library.
+# @param    2   The name of the real library.
+# @param    3   The .def file path relative to the current make file.
+#
+VBOX_GENERATE_IMPORT_TARGET_FN = $(eval $(VBOX_GENERATE_IMPORT_TARGET_DEF))
+define VBOX_GENERATE_IMPORT_TARGET_DEF
+$(1)_INST     = $(INST_LIB)
+if $(KBUILD_TARGET) == "darwin"
+ $(1)_LDFLAGS = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(3)$(SUFF_DLL)
+else ifn1of ($(KBUILD_TARGET), os2 win)
+ $(1)_SONAME  = $(3)$(SUFF_DLL)
+endif
+if1of ($(KBUILD_TARGET), os2 win)
+ $(1)_SOURCES = $$($(1)_0_OUTDIR)/$(1)Imp.def
+ $(1)_CLEAN   = $$($(1)_0_OUTDIR)/$(1)Imp.def
+else
+ $(1)_SOURCES = $$($(1)_0_OUTDIR)/$(1)Imp.c
+ $(1)_CLEAN   = $$($(1)_0_OUTDIR)/$(1)Imp.c
+endif
+
+$$$$($(1)_SOURCES): $(PATH_SUB_CURRENT)/$(2) $(PATH_ROOT)/src/bldprogs/deftoimp.sed | $$$$(dir $$$$@)
+	$$(call MSG_GENERATE,,$$@)
+ifeq ($(KBUILD_TARGET),os2)
+	$$(SED) \
+		-e '/not-$(KBUILD_TARGET)/d' \
+		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
+		-e 's/^LIBRARY[[:space:]][[:space:]]*\(.*\)\.dll/LIBRARY \1 INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
+		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
+		-e 's/[ \t]DATA[ \t]*/ /'  \
+		--output $$@ $$<
+else ifeq ($(KBUILD_TARGET),win)
+	$$(SED) \
+		-e '/not-$(KBUILD_TARGET)/d' \
+		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
+		--output $$@ $<
+else
+	$$(QUIET)$$(APPEND) -tn $$@ \
+		'#ifdef VBOX_HAVE_VISIBILITY_HIDDEN' \
+		'# define EXPORT __attribute__((visibility("default")))' \
+		'# define EXPORT_DATA __attribute__((visibility("default")))' \
+		'#else' \
+		'# define EXPORT' \
+		'# define EXPORT_DATA' \
+		'#endif' \
+		''
+	$$(SED) \
+		-e '/not-$(KBUILD_TARGET)/d' \
+		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
+		-f $(PATH_ROOT)/src/bldprogs/deftoimp.sed \
+		--append $$@ $$<
+endif
+endef # VBOX_GENERATE_IMPORT_TARGET_DEF
 
 
 #
@@ -3562,13 +3619,20 @@ ifdef VBOX_WITH_EXTPACK
   TEMPLATE_VBoxR3ExtPack_CXXFLAGS = $(TEMPLATE_VBOXR3DLLNOXCPT_CXXFLAGS) -fno-rtti
  endif
  TEMPLATE_VBoxR3ExtPack_INST = $(INST_EXTPACK)YouShallOverrideThis/
-if !defined(VBOX_WITH_RUNPATH) && defined(VBOX_WITH_RELATIVE_RUNPATH)
- TEMPLATE_VBoxR3ExtPack_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/../../..' $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)', $(TEMPLATE_VBOXR3DLLNOXCPT_LDFLAGS))
-endif
- TEMPLATE_VBoxR3ExtPack_LIBS = \
- 	$(TEMPLATE_LIBS_VBOXR3) \
- 	$(LIB_RUNTIME) \
- 	$(LIB_VMM)
+ if !defined(VBOX_WITH_RUNPATH) && defined(VBOX_WITH_RELATIVE_RUNPATH)
+  TEMPLATE_VBoxR3ExtPack_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/../../..' $(filter-out '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)', $(TEMPLATE_VBOXR3DLLNOXCPT_LDFLAGS))
+ endif
+ ifdef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
+  TEMPLATE_VBoxR3ExtPack_LIBS = \
+  	$(TEMPLATE_LIBS_VBOXR3) \
+  	$(PATH_LIB)/VMMR3Imp$(VBOX_SUFF_LIB) \
+  	$(PATH_LIB)/VBoxRT3Imp$(VBOX_SUFF_LIB)
+ else
+  TEMPLATE_VBoxR3ExtPack_LIBS = \
+  	$(TEMPLATE_LIBS_VBOXR3) \
+  	$(LIB_RUNTIME) \
+  	$(LIB_VMM)
+ endif
 
  TEMPLATE_VBoxR0ExtPack = For the ring-0 context extension pack modules.
  TEMPLATE_VBoxR0ExtPack_EXTENDS = VBoxR0

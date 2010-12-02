@@ -42,7 +42,9 @@ else ifdef VBOX_ONLY_EXTPACKS
   include $(PATH_SUB_CURRENT)/RDP/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/VMM/Makefile.kmk
- include $(PATH_SUB_CURRENT)/Disassembler/Makefile.kmk
+ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
+  include $(PATH_SUB_CURRENT)/Disassembler/Makefile.kmk
+ endif
 
 else ifdef VBOX_ONLY_SDK
  include $(PATH_SUB_CURRENT)/Main/Makefile.kmk
