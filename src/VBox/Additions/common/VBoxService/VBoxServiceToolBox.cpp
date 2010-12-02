@@ -313,6 +313,7 @@ static int VBoxServiceToolboxMkDir(int argc, char **argv)
                                 pNodeIt->pszName, pMsg->pszMsgFull);
                  else
                      RTMsgError("mkdir: Could not create directory '%s', rc=%Rrc\n", pNodeIt->pszName, rc);
+                 break;
              }
          }
      }
