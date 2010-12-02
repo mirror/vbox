@@ -1588,14 +1588,13 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       Page Fusion can reduce the amount of host memory that is in use. It
       therefore works best if all VMs on a host run identical operating
       systems (e.g. Windows XP Service Pack 2). Instead of having a complete
-      copy of each operating system in each VM, Page Fusion efficiently
-      identifies the identical memory pages in use by these operating systems
-      and eliminates the duplicates ("deduplication"), sharing host memory
-      between several machines.</para>
-
-      <para>If a VM tries to modify a page that is shared with other VMs, a
-      new page is allocated again for that VM with a copy of the shared page.
-      All this is fully transparent to the virtual machine.</para>
+      copy of each operating system in each VM, Page Fusion identifies the
+      identical memory pages in use by these operating systems and eliminates
+      the duplicates, sharing host memory between several machines
+      ("deduplication"). If a VM tries to modify a page that has been shared
+      with other VMs, a new page is allocated again for that VM with a copy of
+      the shared page ("copy on write"). All this is fully transparent to the
+      virtual machine.</para>
 
       <para>You may be familiar with this kind of memory overcommitment from
       other hypervisor products, which call this feature "page sharing" or
