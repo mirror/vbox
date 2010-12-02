@@ -243,8 +243,8 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
     }
     /* Update buffer layout in VBVA context information.  Shouldn't this get
      * zeroed if initialising the HGSMI heap fails? */
-    ppdev->vbvaCtx.offVRAMBuffer = ppdev->layout.offVBVABuffer;
-    ppdev->vbvaCtx.cbBuffer = ppdev->layout.cbVBVABuffer;
+    VBoxVBVASetupBufferContext(&ppdev->vbvaCtx, ppdev->layout.offVBVABuffer,
+                               ppdev->layout.cbVBVABuffer);
 
     DISPDBG((0, "vboxInitVBoxVideo:\n"
                 "    cbVRAM = 0x%X\n"
@@ -411,7 +411,7 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
             VBVABUFFER *pVBVA = (VBVABUFFER *)((uint8_t *)ppdev->pjScreen + ppdev->layout.offVBVABuffer);
             ppdev->bHGSMISupported = VBoxVBVAEnable(&ppdev->vbvaCtx,
                                                     &ppdev->guestCtx,
-                                                    pVBVA);
+                                                    pVBVA, -1);
             LogRel(("VBoxDisp[%d]: VBVA %senabled\n", ppdev->iDevice, ppdev->bHGSMISupported? "": "not "));
         }
     }

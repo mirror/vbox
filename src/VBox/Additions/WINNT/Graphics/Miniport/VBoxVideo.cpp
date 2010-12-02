@@ -3032,15 +3032,15 @@ void vboxVideoInitCustomVideoModes(PDEVICE_EXTENSION pDevExt)
 }
 
 #ifndef VBOX_WITH_WDDM
-DECLCALLBACK(int) vbvaInitInfoDisplay (void *pvData, PVBVAINFOVIEW p)
+DECLCALLBACK(int) vbvaInitInfoDisplay (void *pvData, struct VBVAINFOVIEW *p,
+                                       uint32_t cViews)
 {
     PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION) pvData;
 
-    int i;
+    unsigned i;
     PDEVICE_EXTENSION Extension;
 
-    for (i = 0, Extension = PrimaryExtension;
-         i < commonFromDeviceExt(PrimaryExtension)->cDisplays && Extension;
+    for (i = 0, Extension = PrimaryExtension; i < cViews && Extension;
          i++, Extension = Extension->pNext)
     {
         p[i].u32ViewIndex     = Extension->iDevice;

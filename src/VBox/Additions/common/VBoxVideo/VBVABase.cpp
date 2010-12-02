@@ -48,7 +48,7 @@ static bool vboxHwBufferWrite(PVBVABUFFERCONTEXT pCtx,
 
 static bool vboxVBVAInformHost(PVBVABUFFERCONTEXT pCtx,
                                PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                               bool bEnable)
+                               int32_t cScreen, bool bEnable)
 {
     bool bRc = false;
 
@@ -57,7 +57,7 @@ static bool vboxVBVAInformHost(PVBVABUFFERCONTEXT pCtx,
 #endif
     {
         void *p = VBoxHGSMIBufferAlloc(pHGSMICtx,
-                                       sizeof (VBVAENABLE),
+                                       sizeof (VBVAENABLE_EX),
                                        HGSMI_CH_VBVA,
                                        VBVA_ENABLE);
         if (!p)
@@ -66,17 +66,22 @@ static bool vboxVBVAInformHost(PVBVABUFFERCONTEXT pCtx,
         }
         else
         {
-            VBVAENABLE *pEnable = (VBVAENABLE *)p;
+            VBVAENABLE_EX *pEnable = (VBVAENABLE_EX *)p;
 
-            pEnable->u32Flags  = bEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
-            pEnable->u32Offset = pCtx->offVRAMBuffer;
-            pEnable->i32Result = VERR_NOT_SUPPORTED;
+            pEnable->Base.u32Flags  = bEnable? VBVA_F_ENABLE: VBVA_F_DISABLE;
+            pEnable->Base.u32Offset = pCtx->offVRAMBuffer;
+            pEnable->Base.i32Result = VERR_NOT_SUPPORTED;
+            if (cScreen >= 0)
+            {
+                pEnable->Base.u32Flags |= VBVA_F_EXTENDED | VBVA_F_ABSOFFSET;
+                pEnable->u32ScreenId    = cScreen;
+            }
 
             VBoxHGSMIBufferSubmit(pHGSMICtx, p);
 
             if (bEnable)
             {
-                bRc = RT_SUCCESS(pEnable->i32Result);
+                bRc = RT_SUCCESS(pEnable->Base.i32Result);
             }
             else
             {
@@ -95,7 +100,7 @@ static bool vboxVBVAInformHost(PVBVABUFFERCONTEXT pCtx,
  */
 RTDECL(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                            VBVABUFFER *pVBVA)
+                            VBVABUFFER *pVBVA, int32_t cScreen)
 {
     bool bRc = false;
 
@@ -121,19 +126,20 @@ RTDECL(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
         pCtx->pRecord    = NULL;
         pCtx->pVBVA      = pVBVA;
 
-        bRc = vboxVBVAInformHost(pCtx, pHGSMICtx, true);
+        bRc = vboxVBVAInformHost(pCtx, pHGSMICtx, cScreen, true);
     }
 
     if (!bRc)
     {
-        VBoxVBVADisable(pCtx, pHGSMICtx);
+        VBoxVBVADisable(pCtx, pHGSMICtx, cScreen);
     }
 
     return bRc;
 }
 
 RTDECL(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
-                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx)
+                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+                             int32_t cScreen)
 {
     LogFlowFunc(("\n"));
 
@@ -141,7 +147,7 @@ RTDECL(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
     pCtx->pRecord           = NULL;
     pCtx->pVBVA             = NULL;
 
-    vboxVBVAInformHost(pCtx, pHGSMICtx, false);
+    vboxVBVAInformHost(pCtx, pHGSMICtx, cScreen, false);
 
     return;
 }
@@ -373,6 +379,14 @@ RTDECL(bool) VBoxVBVAOrderSupported(PVBVABUFFERCONTEXT pCtx, unsigned code)
     }
 
     return false;
+}
+
+RTDECL(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
+                                        uint32_t offVRAMBuffer,
+                                        uint32_t cbBuffer)
+{
+    pCtx->offVRAMBuffer = offVRAMBuffer;
+    pCtx->cbBuffer      = cbBuffer;
 }
 
 RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
