@@ -21,6 +21,7 @@
 #include "VBoxEvents.h"
 #include "Logging.h"
 
+#include <iprt/asm.h>
 #include <iprt/thread.h>
 #include <iprt/critsect.h>
 #include <iprt/semaphore.h>
@@ -29,6 +30,10 @@
 
 /** Waiting time between probing whether VBoxSVC is alive. */
 #define VBOXCLIENT_DEFAULT_INTERVAL 30000
+
+
+/** Initialize instance counter class variable */
+uint32_t VirtualBoxClient::g_cInstances = 0;
 
 
 // constructor / destructor
@@ -61,6 +66,12 @@ HRESULT VirtualBoxClient::init()
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
+    mData.m_ThreadWatcher = NIL_RTTHREAD;
+    mData.m_SemEvWatcher = NIL_RTSEMEVENT;
+
+    if (ASMAtomicIncU32(&g_cInstances) != 1)
+        AssertFailedReturn(E_FAIL);
+
     rc = unconst(mData.m_pVirtualBox).createLocalObject(CLSID_VirtualBox);
     AssertComRCReturnRC(rc);
 
@@ -72,7 +83,6 @@ HRESULT VirtualBoxClient::init()
     /* Setting up the VBoxSVC watcher thread. If anything goes wrong here it
      * is not considered important enough to cause any sort of visible
      * failure. The monitoring will not be done, but that's all. */
-    mData.m_ThreadWatcher = NIL_RTTHREAD;
     int vrc = RTSemEventCreate(&mData.m_SemEvWatcher);
     AssertRC(vrc);
     if (RT_SUCCESS(vrc))
@@ -107,8 +117,6 @@ void VirtualBoxClient::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst(mData.m_pVirtualBox).setNull();
-
     if (mData.m_ThreadWatcher != NIL_RTTHREAD)
     {
         /* Signal the event semaphore and wait for the thread to terminate.
@@ -120,6 +128,10 @@ void VirtualBoxClient::uninit()
         RTSemEventDestroy(mData.m_SemEvWatcher);
         mData.m_SemEvWatcher = NIL_RTSEMEVENT;
     }
+
+    unconst(mData.m_pVirtualBox).setNull();
+
+    ASMAtomicDecU32(&g_cInstances);
 }
 
 // IVirtualBoxClient properties
