@@ -84,14 +84,11 @@
         </glossentry>
 
         <glossentry>
-          <glossterm>Solaris 10, Solaris 11</glossterm>
+          <glossterm>Solaris 10, OpenSolaris</glossterm>
 
           <glossdef>
             <para>Fully supported (32 bits and 64 bits). Guest Additions are
-            available. Other operating systems derived from Solaris should
-            work as well. For modern Solaris variants (Solaris 10U8 and later)
-            there is a special OS type which in the "Create VM" wizard selects
-            SATA support for improved performance.</para>
+            available.</para>
           </glossdef>
         </glossentry>
 
@@ -773,10 +770,7 @@
     SATA controller and a SCSI controller to the guest, which gives you 30 or
     16 additional slots to attach devices to, respectively. This, however, may
     require that you run a modern guest operating system. See <xref
-    linkend="harddiskcontrollers" /> for details. For some guest OS types, the
-    "Create VM" wizards automatically configures a SATA controller, as this
-    often results in better I/O performance and lower CPU overhead.</para>
-
+    linkend="harddiskcontrollers" /> for details.</para>
 
     <para>To <emphasis role="bold">add another virtual hard disk or CD/DVD
     drive,</emphasis> select the storage controller to which it should be
@@ -822,7 +816,7 @@
                 <para>If you want to write (burn) CDs or DVDs using the host
                 drive, you need to enable the <emphasis
                 role="bold">"Passthrough"</emphasis> option; see <xref
-                linkend="storage-write-cds" />.</para>
+                linkend="storage-cds" />.</para>
               </listitem>
 
               <listitem>
@@ -992,7 +986,7 @@
                 <para>You can connect the virtual serial port to a physical
                 serial port on your host. (On a Windows host, this will be a
                 name like <computeroutput>COM1</computeroutput>; on Linux or
-                Solaris hosts, it will be a device node like
+                OpenSolaris hosts, it will be a device node like
                 <computeroutput>/dev/ttyS0</computeroutput>). VirtualBox will
                 then simply redirect all data received from and sent to the
                 virtual serial port to the physical device.</para>
@@ -1016,7 +1010,7 @@
                     </listitem>
 
                     <listitem>
-                      <para>On a Mac, Linux or Solaris host, a local
+                      <para>On a Mac, Linux or OpenSolaris host, a local
                       domain socket is used instead. On Linux there are
                       various tools which can connect to a local domain socket
                       or create one in server mode. The most flexible tool is

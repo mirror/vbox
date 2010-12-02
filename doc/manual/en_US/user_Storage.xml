@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="storage">
   <title>Virtual storage</title>
 
@@ -39,13 +39,14 @@
 
     <para>In a real PC, hard disks and CD/DVD drives are connected to a device
     called hard disk controller which drives hard disk operation and data
-    transfers. VirtualBox can emulate the three most common types of hard disk
-    controllers typically found in today's PCs: IDE, SATA (AHCI) and
-    SCSI.<footnote>
+    transfers. VirtualBox can emulate the four most common types of hard disk
+    controllers typically found in today's PCs: IDE, SATA (AHCI), SCSI and
+    SAS.<footnote>
         <para>SATA support was added with VirtualBox 1.6; experimental SCSI
         support was added with 2.1 and fully implemented with 2.2. Generally,
         storage attachments were made much more flexible with VirtualBox 3.1;
-        see below.</para>
+        see below. Support for the LSI Logic SAS controller was added with
+        VirtualBox 3.2.</para>
       </footnote><itemizedlist>
         <listitem>
           <para><emphasis role="bold">IDE (ATA)</emphasis> controllers have
@@ -82,9 +83,9 @@
 
           <para>After you have created a new virtual machine with the "New
           Virtual Machine" wizard of the graphical user interface, you will
-          typically see one IDE controller in the machine's "Storage"
-          settings where the virtual CD/DVD drive will be attached
-          to one of the four ports of this controller.</para>
+          typically see one IDE controller in the machine's "Storage" settings
+          where the virtual CD/DVD drive will be attached to one of the four
+          ports of this controller.</para>
         </listitem>
 
         <listitem>
@@ -125,11 +126,11 @@
               XP (even SP2) will not see such disks unless you install
               additional drivers. It is possible to switch from IDE to SATA
               after installation by installing the SATA drivers and changing
-              the controller type in the VM settings dialog.
-              <footnote><para>VirtualBox recommends the Intel Matrix Storage
-              drivers which can be downloaded from
-              http://downloadcenter.intel.com/Product_Filter.aspx?ProductID=2101
-              </para></footnote></para>
+              the controller type in the VM settings dialog.<footnote>
+                  <para>VirtualBox recommends the Intel Matrix Storage drivers
+                  which can be downloaded from <ulink
+                  url="http://downloadcenter.intel.com/Product_Filter.aspx?ProductID=2101">http://downloadcenter.intel.com/Product_Filter.aspx?ProductID=2101</ulink>.</para>
+                </footnote></para>
             </warning></para>
 
           <para>To add a SATA controller to a machine for which it has not
@@ -166,13 +167,12 @@
           button under the "Storage Tree" box and then select "Add SCSI
           Controller". After this, the additional controller will appear as a
           separate PCI device in the virtual machine.<warning>
-              <para>As with the other controller types, a SCSI controller will 
-            only be seen by operating systems with device support for it. 
-            Windows 2003 and later ships with drivers for the LSI Logic 
-            controller, while Windows NT 4.0 and Windows 2000 ships with drivers 
-            for the BusLogic controller. Windows XP ships with drivers for 
-            neither.
-              </para>
+              <para>As with the other controller types, a SCSI controller will
+              only be seen by operating systems with device support for it.
+              Windows 2003 and later ships with drivers for the LSI Logic
+              controller, while Windows NT 4.0 and Windows 2000 ships with
+              drivers for the BusLogic controller. Windows XP ships with
+              drivers for neither.</para>
             </warning></para>
         </listitem>
 
@@ -182,15 +182,12 @@
           SCSI, however, with physical devices, serial cables are used instead
           of parallel ones, which simplifies physical device connections. In
           some ways, therefore, SAS is to SCSI what SATA is to IDE: it allows
-          for more reliable and faster connections. </para>
+          for more reliable and faster connections.</para>
 
           <para>To support high-end guests which require SAS controllers,
           VirtualBox emulates a LSI Logic SAS controller, which can be enabled
           much the same way as a SCSI controller. At this time, up to eight
-          devices can be connected to the SAS controller.<footnote>
-              <para>Support for the LSI Logic SAS controller was added with
-              VirtualBox 3.2.</para>
-            </footnote></para>
+          devices can be connected to the SAS controller.</para>
 
           <warning>
             <para>As with SATA, the SAS controller will only be seen by
@@ -236,10 +233,12 @@
         </listitem>
       </orderedlist></para>
 
-      <para>Given this large choice of storage controllers, you may ask yourself
-      which one to choose. In general, you should avoid IDE unless it is the only
-      controller supported by your guest. Whether you use SATA, SCSI or SAS does
-      not make any real difference.</para>
+    <para>Given this large choice of storage controllers, you may ask yourself
+    which one to choose. In general, you should avoid IDE unless it is the
+    only controller supported by your guest. Whether you use SATA, SCSI or SAS
+    does not make any real difference. The variety of controllers is only
+    supplied for VirtualBox for compatibility with existing hardware and other
+    hypervisors.</para>
   </sect1>
 
   <sect1 id="vdidetails">
@@ -321,24 +320,38 @@
   <sect1 id="vdis">
     <title>The Virtual Media Manager</title>
 
-    <para>VirtualBox keeps an internal registry of all available hard disk,
-    CD/DVD-ROM and floppy disk images. This registry can be viewed and changed
-    in the <emphasis role="bold">Virtual Media Manager</emphasis>, which you
-    can access from the "File" menu in the VirtualBox main window:</para>
+    <para>VirtualBox keeps track of all the hard disk, CD/DVD-ROM and floppy
+    disk images which are in use by virtual machines. These are often referred
+    to as "known media" and come from two sources:<itemizedlist>
+        <listitem>
+          <para>all media currently attached to virtual machines;</para>
+        </listitem>
+
+        <listitem>
+          <para>"registered" media for compatibility with VirtualBox versions
+          older than version 4.0. For details about how media registration has
+          changed with version 4.0, please refer to <xref
+          linkend="vboxconfigdata" />.</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>The known media can be viewed and changed in the <emphasis
+    role="bold">Virtual Media Manager</emphasis>, which you can access from
+    the "File" menu in the VirtualBox main window:</para>
 
     <para><mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtual-disk-manager.png"
                      width="10cm" />
         </imageobject>
-      </mediaobject>The window shows you all images that are currently
-    registered with VirtualBox, conveniently grouped in three tabs for the
-    three possible formats. These formats are:</para>
+      </mediaobject>The known media are conveniently grouped in three tabs for
+    the three possible formats. These formats are:</para>
 
     <itemizedlist>
       <listitem>
         <para>Hard disk images, either in VirtualBox's own Virtual Disk Image
-        (VDI) format or in the third-party formats listed above;</para>
+        (VDI) format or in the third-party formats listed in the previous
+        chapter;</para>
       </listitem>
 
       <listitem>
@@ -359,18 +372,6 @@
 
     <itemizedlist>
       <listitem>
-        <para>create new hard disk images using the <emphasis
-        role="bold">"New"</emphasis> button; this will bring up the "Create
-        Disk Image" wizard already described in <xref
-        linkend="gui-createvm" />;</para>
-      </listitem>
-
-      <listitem>
-        <para>import existing image files from your hard drive into VirtualBox
-        using the <emphasis role="bold">"Add"</emphasis> button;</para>
-      </listitem>
-
-      <listitem>
         <para><emphasis role="bold">remove</emphasis> an image from the
         registry (and optionally delete the image file when doing so);</para>
       </listitem>
@@ -382,10 +383,10 @@
       </listitem>
     </itemizedlist>
 
-    <para>We recommend that you maintain two special folders on your system
-    for keeping images: one for hard disk image files (which can, in the case
-    of dynamically expanding images, grow to considerable sizes), and one for
-    ISO files (which were probably downloaded from the Internet).</para>
+    <para>Starting with version 4.0, to <emphasis role="bold">create new disk
+    images,</emphasis> please use the "Storage" page in a virtual machine's
+    settings dialog because disk images are now by default stored in each
+    machine's own folder.</para>
 
     <para>Hard disk image files can be copied onto other host systems and
     imported into virtual machines there, although certain guest systems
@@ -406,11 +407,17 @@
     <title>Special image write modes</title>
 
     <para>For each virtual disk image supported by VirtualBox, you can use
-    special commands how write operations from the virtual machine should
-    affect the image and how snapshots should affect it. This applies to all
-    of the aforementioned image formats (VDI, VMDK, VHD or HDD) and
-    irrespective of whether an image is fixed-size or dynamically
-    expanding.</para>
+    determine separately how it should be affected by write operations from a
+    virtual machine and snapshot operations. This applies to all of the
+    aforementioned image formats (VDI, VMDK, VHD or HDD) and irrespective of
+    whether an image is fixed-size or dynamically expanding.</para>
+
+    <para>By default, images are in "normal" mode. To mark an existing image
+    with one of the non-standard modes listed below, use
+    <computeroutput>VBoxManage modifyhd</computeroutput>; see <xref
+    linkend="vboxmanage-modifyvdi" />. Alternatively, use VBoxManage to attach
+    the image to a VM and use the <computeroutput>--mtype</computeroutput>
+    argument; see <xref linkend="vboxmanage-storageattach" />.</para>
 
     <orderedlist>
       <listitem>
@@ -448,14 +455,6 @@
         disks</emphasis> are completely unaffected by snapshots: their state
         is <emphasis>not</emphasis> saved when a snapshot is taken, and not
         restored when a snapshot is restored.</para>
-
-        <para>To <emphasis>create</emphasis> a disk image in VDI format as
-        "write-through", use the <computeroutput>VBoxManage
-        createhd</computeroutput> command; see <xref
-        linkend="vboxmanage-createvdi" />. To mark an
-        <emphasis>existing</emphasis> image as write-through, use
-        <computeroutput>VBoxManage modifyhd</computeroutput>; see <xref
-        linkend="vboxmanage-modifyvdi" />.</para>
       </listitem>
 
       <listitem>
@@ -468,19 +467,11 @@
         concurrently. This makes them suitable for use by cluster filesystems
         between VMs and similar applications which are explicitly prepared to
         access a disk concurrently. Only fixed size images can be used in this
-        way, and dynamically growing images are rejected.</para>
-
-        <para>This is an expert feature, and misuse can lead to data loss --
-        regular filesystems are not prepared to handle simultaneous changes by
-        several parties.</para>
-
-        <para>To <emphasis>create</emphasis> a disk image in VDI format as
-        "shareable", use the <computeroutput>VBoxManage
-        createhd</computeroutput> command; see <xref
-        linkend="vboxmanage-createvdi" />. To mark an
-        <emphasis>existing</emphasis> image as shareable, use
-        <computeroutput>VBoxManage modifyhd</computeroutput>; see <xref
-        linkend="vboxmanage-modifyvdi" />.</para>
+        way, and dynamically growing images are rejected.<warning>
+            <para>This is an expert feature, and misuse can lead to data loss
+            -- regular filesystems are not prepared to handle simultaneous
+            changes by several parties.</para>
+          </warning></para>
       </listitem>
 
       <listitem>
@@ -496,12 +487,7 @@
         every machine restart (unless you really want to have a disk that is
         always unformatted when the machine starts up). As a result, normally,
         you would first create a "normal" image and then, when you deem its
-        contents useful, later mark it immutable using
-        <computeroutput>VBoxManage modifyhd</computeroutput>; again, please
-        see <xref linkend="vboxmanage-modifyvdi" />. Alternatively, open an
-        existing image in "immutable" mode using <computeroutput>VBoxManage
-        openmedium</computeroutput>; see <xref
-        linkend="vboxmanage-registerimage" />.</para>
+        contents useful, later mark it immutable.</para>
 
         <para>If you take a snapshot of a machine with immutable images, then
         on every machine power-up, those images are reset to the state of the
@@ -715,10 +701,11 @@
   </sect1>
 
   <sect1 id="iocaching">
-    <title>Disk images and I/O caching</title>
+    <title>Host I/O caching</title>
 
-    <para>VirtualBox can optionally disable the I/O caching that the host
-    operating system would otherwise perform on disk image files.</para>
+    <para>Starting with version 3.2, VirtualBox can optionally disable the I/O
+    caching that the host operating system would otherwise perform on disk
+    image files.</para>
 
     <para>Traditionally, VirtualBox has opened disk image files as normal
     files, which results in them being cached by the host operating system
@@ -766,10 +753,9 @@
         </listitem>
       </orderedlist></para>
 
-    <para>As a result, starting with version 3.2, VirtualBox allows you to
-    optionally disable host I/O caching of disk image files. In that case,
-    VirtualBox uses its own small cache to buffer writes, but there is no read
-    caching since this is already performed by the guest OS. In addition,
+    <para>If you decide to disable host I/O caching for the above reasons,
+    VirtualBox uses its own small cache to buffer writes, but no read caching
+    since this is typically already performed by the guest OS. In addition,
     VirtualBox fully supports asynchronous I/O for its virtual SATA, SCSI and
     SAS controllers through multiple I/O threads.</para>
 
@@ -787,94 +773,100 @@
 
     <para>For the above reasons also, VirtualBox now uses SATA controllers by
     default for new virtual machines.</para>
+  </sect1>
 
-    <note>
-      <para>Disabling the host I/O caches will currently yield poor
-      performance with VHD and sparse VMDK files. See <xref
-      linkend="KnownIssues" /> for details.</para>
-    </note>
+  <sect1 id="storage-bandwidth-limit">
+    <title>Limiting bandwidth for disk images</title>
+
+    <para>Starting with version 4.0, VirtualBox allows for limiting the
+    maximum bandwidth used for asynchronous I/O. Additionally it supports
+    sharing limits through bandwidth groups for several images. It is possible
+    to have more than one such limit. </para>
+
+    <para>Limits are configured through
+    <computeroutput>VBoxManage</computeroutput>. The example below creates a
+    bandwidth group named "Limit", sets the limit to 20 MB/s and assigns the
+    group to the attached disks of the VM:<screen>VBoxManage bandwidthctl "VM name" --name Limit --add disk --limit 20
+VBoxManage storageattach "VM name" --controller "SATA" --port 0 --device 0 --type hdd
+                                   --medium disk1.vdi --bandwidthgroup Limit
+VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --type hdd
+                                   --medium disk2.vdi --bandwidthgroup Limit</screen></para>
+
+    <para>All disks in a group share the bandwidth limit, meaning that in the
+    example above the bandwidth of both images combined can never exceed 20
+    MB/s. However if one disk doesn't require bandwidth the other can use the
+    remaining bandwidth of its group.</para>
+
+    <para>The limits for each group can be changed while the VM is running,
+    with changes being picked up immediately. The example below changes the
+    limit for the group created in the example above to 10 MB/s:<screen>VBoxManage bandwidthctl "VM name" --name Limit --limit 10</screen></para>
   </sect1>
 
   <sect1 id="storage-cds">
-    <title>CD/DVD drive operation</title>
+    <title>CD/DVD support</title>
 
     <para>The virtual CD/DVD drive(s) by default support only reading. The
     medium configuration is changeable at runtime. You can select between
     three options to provide the medium data:<itemizedlist>
         <listitem>
           <para><emphasis role="bold">Host Drive</emphasis> defines that the
-          guest can read from the medium in the host drive. Medium changes of
-          the host drives are signalled to the guest.</para>
+          guest can read from the medium in the host drive.</para>
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold">Image file</emphasis> gives the guest
-          read-only access to the image data (often referred to as ISO image).
-          A medium change is signalled when switching to a different image or
-          selecting another option.</para>
+          <para><emphasis role="bold">Image file</emphasis> (typically an ISO
+          file) gives the guest read-only access to the data in the
+          image.</para>
         </listitem>
 
         <listitem>
           <para><emphasis role="bold">Empty</emphasis> stands for a drive
-          without an inserted medium. The drive responds as usual to this
-          situation, however no data can be read.</para>
+          without an inserted medium.</para>
         </listitem>
       </itemizedlist></para>
 
-    <para>As mentioned, the medium change signalling depends on the selected
-    option for the medium. Medium changes can be prevented by the guest, and
-    VirtualBox reflects that by locking the host drive if appropriate. You can
-    force a medium removal in such situation via the VirtualBox GUI or the
-    VBoxManage command line tool. Effectively this is the equivalent of the
-    emergency eject which many CD/DVD drives provide, with all associated side
-    effects. The guest OS can issue error messages in this case, just like on
-    real hardware. Use with caution.</para>
+    <para>Changing between the above, or changing a medium in the host drive
+    that is accessed by a machine, or changing an image file will signal a
+    medium change to the guest operating system, which can then react to the
+    change (e.g. by starting an installation program).</para>
 
-    <para>In any case, only data media is supported for CD/DVD drives. This
-    means that all data CD formats and all DVD formats can be used in
-    principle. Since host DVD drives refuse to read encrypted DVD video media,
-    you cannot play such videos with the regular CD/DVD drive emulation. You
-    may be able to get it working with the experimental passthrough support
-    described in <xref linkend="storage-write-cds" />.</para>
+    <para>Medium changes can be prevented by the guest, and VirtualBox
+    reflects that by locking the host drive if appropriate. You can force a
+    medium removal in such situations via the VirtualBox GUI or the VBoxManage
+    command line tool. Effectively this is the equivalent of the emergency
+    eject which many CD/DVD drives provide, with all associated side effects:
+    the guest OS can issue error messages, just like on real hardware, and
+    guest applications may misbehave. Use this with caution.</para>
 
-    <para>Video CD formats are not supported, which means you
-    cannot play such media from a virtual machine.</para>
+    <para>The standard CD/DVD emulation allows for reading standard data CD
+    and DVD formats only. As an experimental feature, for additional
+    capabilities, it is possible to give the guest direct access to the CD/DVD
+    host drive by enabling "passthrough" mode. Depending on the host hardware,
+    this may enable three things to work, potentially:<itemizedlist>
+        <listitem>
+          <para>CD/DVD writing from within the guest, if the host DVD drive is
+          a CD/DVD writer;</para>
+        </listitem>
 
-    <para>To be able to access audio CD formats from a virtual machine
-    the experimental passthrough support needs to be enabled as described in
-    <xref linkend="storage-write-cds" />.</para>
-  </sect1>
+        <listitem>
+          <para>playing audio CDs;</para>
+        </listitem>
 
-  <sect1 id="storage-write-cds">
-    <title>Writing CDs and DVDs using the host drive</title>
+        <listitem>
+          <para>playing encrypted DVDs.</para>
+        </listitem>
+      </itemizedlist></para>
 
-    <para>When you attach your host's CD/DVD drive to a virtual machine (see
-    <xref linkend="settings-storage" />), this normally gives the machine
-    read-only access to the host drive. This prevents the guest from writing
-    to the host drive. In particular, you cannot burn CDs and DVDs from the
-    guest this way.</para>
-
-    <para>As an experimental feature (which currently works for data and audio
-    media only, video CD formats are not supported), it is possible to
-    give the guest access to the CD/DVD writing features of the host drive (if
-    available). There is a "Passthrough" checkbox in the GUI dialog for
-    configuring the media attached to a storage controller, or you can use the
-    command line:</para>
-
-    <screen>VBoxManage storageattach &lt;uuid|vmname&gt;
-                        --storagectl &lt;name&gt;
-                        --port &lt;number&gt;
-                        --device &lt;number&gt;
-                        [--type &lt;dvddrive|hdd|fdd&gt;
-                         --medium &lt;none|emptydrive|uuid|filename|host:&lt;drive&gt;&gt;]
-                        [--passthrough &lt;on|off&gt;]
-                        [--forceunmount]</screen>
-
-    <para>See also <xref linkend="vboxmanage-storage" />.</para>
+    <para>There is a "Passthrough" checkbox in the GUI dialog for configuring
+    the media attached to a storage controller, or you can use the
+    <computeroutput>--passthrough</computeroutput> option with
+    <computeroutput>VBoxManage storageattach</computeroutput>; see <xref
+    linkend="vboxmanage-storageattach" /> for details.</para>
 
     <para>Even if pass-through is enabled, unsafe commands, such as updating
-    the drive firmware, will be blocked. On some host drives the pass-through
-    feature allows playing encrypted DVD video media.</para>
+    the drive firmware, will be blocked. Video CD formats are never supported,
+    not even in passthrough mode, and cannot be played from a virtual
+    machine.</para>
 
     <para>On Solaris hosts, pass-through requires running VirtualBox with real
     root permissions due to security measures enforced by the host.</para>
@@ -899,76 +891,7 @@
 
     <para>VirtualBox's iSCSI support has been developed according to the iSCSI
     standard and should work with all standard-conforming iSCSI targets. To
-    use an iSCSI target with VirtualBox, you must first register it as a
-    virtual hard disk with <computeroutput>VBoxManage</computeroutput>; see
-    <xref linkend="vboxmanage-addiscsidisk" />. The target will show up in the
-    list of disk images, as described in <xref linkend="vdis" />, and can thus
-    be attached to one of the VM's three hard disk slots the usual way.</para>
-
-    <sect2>
-      <title id="iscsi-intnet">Access iSCSI targets via Internal
-      Networking</title>
-
-      <para>As an experimental feature, VirtualBox allows for accessing an
-      iSCSI target running in a virtual machine which is configured for using
-      Internal Networking mode (as described in <xref
-      linkend="network_internal" />). The setup of the virtual machine which
-      uses such an iSCSI target is done as described above. The only
-      difference is that the IP address of the target must be specified as a
-      numeric IP address.</para>
-
-      <para>The IP stack accessing Internal Networking must be configured in
-      the virtual machine which accesses the iSCSI target. A free static IP
-      and a MAC address not used by other virtual machines must be chosen. In
-      the example below, adapt the name of the virtual machine, the MAC
-      address, the IP configuration and the Internal Networking name
-      ("MyIntNet") according to your needs. The following seven commands must
-      be issued:<screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Trusted 1
-VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/MAC 08:00:27:01:02:0f
-VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/IP 10.0.9.1
-VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/Netmask 255.255.255.0
-VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Driver IntNet
-VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Network MyIntNet
-VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/IsService 1</screen></para>
-
-      <para>Finally the iSCSI disk must be registered with the
-      <code>--intnet</code> option to tell the iSCSI initiator to use internal
-      networking:<screen>VBoxManage addiscsidisk --server 10.0.9.30 --target iqn.2008-12.com.sun:sampletarget --intnet</screen></para>
-
-      <para>The target address must be specified as a numeric IP address, as
-      there is no DNS resolver for internal networking.</para>
-
-      <para>The virtual machine with the iSCSI target should be started before
-      the VM using it is powered on. If a virtual machine using an iSCSI disk
-      is started without having the iSCSI target powered up, it can take up to
-      200 seconds to detect this situation. The VM will fail to power
-      up.</para>
-    </sect2>
-  </sect1>
-
-  <sect1 id="storage-bandwidth-limit">
-    <title>Limiting banwidth for disk images</title>
-    <para>VirtualBox allows limiting the maximum bandwidth used for asynchronous
-    I/O. Additionally it supports sharing limits through bandwidth groups for
-    several images. It is possible to have more than limit.
-    The limits can be configured through <computeroutput>VBoxManage</computeroutput>.
-    The example below creates a bandwidth group named "Limit" and sets the limit
-    to 20 MB/s and assigns the group to the attached disks of the VM:
-    <screen>VBoxManage bandwidthctl "VM name" --name Limit --add disk --limit 20
-VBoxManage storageattach "VM name" --controller "SATA" --port 0 --device 0 --type hdd
-                                   --medium disk1.vdi --bandwidthgroup Limit
-VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --type hdd
-                                   --medium disk2.vdi --bandwidthgroup Limit</screen>
-
-    <para>Both disks will share the bandwidth limit meaning that the used bandwidth of
-    both can never exceed 20 MB/s. However if one disk doesn't require bandwidth
-    the other can use everything.</para>
-
-    <para>The limits for each group can be changed while the VM is running.
-    The VM will pick up the new limit immediately in that case.
-    The example below changes the limit for the group created in the example
-    above to 10 MB/s:
-    <screen>VBoxManage bandwidthctl "VM name" --name Limit --limit 10</screen></para>
-    </para>
+    use an iSCSI target with VirtualBox, you must use the command line; see
+    <xref linkend="vboxmanage-storageattach" />.</para>
   </sect1>
 </chapter>

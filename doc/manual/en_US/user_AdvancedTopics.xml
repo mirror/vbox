@@ -55,7 +55,7 @@
       VM", you will find that VirtualBox creates<orderedlist>
           <listitem>
             <para>the folder <computeroutput>$HOME/VirtualBox VMs/Example
-            VM/</computeroutput> and, in that folder, </para>
+            VM/</computeroutput> and, in that folder,</para>
           </listitem>
 
           <listitem>
@@ -114,8 +114,7 @@
             same folder. In addition, the virtual media of all machines were
             registered with a global registry in the central VirtualBox
             settings file
-            (<computeroutput>$HOME/.VirtualBox/VirtualBox.xml</computeroutput>).
-            </para>
+            (<computeroutput>$HOME/.VirtualBox/VirtualBox.xml</computeroutput>).</para>
 
             <para>To move a machine to another host, it was therefore not
             enough to move the XML settings file and the disk images (which
@@ -249,7 +248,7 @@
 
       <para>VirtualBox uses XML for both the machine settings files and the
       global configuration file,
-      <computeroutput>VirtualBox.xml</computeroutput>. </para>
+      <computeroutput>VirtualBox.xml</computeroutput>.</para>
 
       <para>All VirtualBox XML files are versioned. When a new settings file
       is created (e.g. because a new virtual machine is created), VirtualBox
@@ -853,15 +852,14 @@ AuthResult AUTHCALL AuthEntry(
 
       <para>The second arguments contains information about the guest
       authentication status. For the first call, it is always set to
-      <computeroutput>AuthGuestNotAsked</computeroutput>. In case the
-      function returns
-      <computeroutput>AuthResultDelegateToGuest</computeroutput>, a guest
-      authentication will be attempted and another call to the method is made
-      with its result. This can be either granted / denied or no judgement
-      (the guest component chose for whatever reason to not make a decision).
-      In case there is a problem with the guest authentication module (e.g.
-      the Additions are not installed or not running or the guest did not
-      respond within a timeout), the "not reacted" status will be
+      <computeroutput>AuthGuestNotAsked</computeroutput>. In case the function
+      returns <computeroutput>AuthResultDelegateToGuest</computeroutput>, a
+      guest authentication will be attempted and another call to the method is
+      made with its result. This can be either granted / denied or no
+      judgement (the guest component chose for whatever reason to not make a
+      decision). In case there is a problem with the guest authentication
+      module (e.g. the Additions are not installed or not running or the guest
+      did not respond within a timeout), the "not reacted" status will be
       returned.</para>
     </sect2>
   </sect1>
@@ -1062,6 +1060,46 @@ VBoxManage setextradata "VM name"
       16 byte alphanumeric string and the revision a 4 byte alphanumeric
       string. Instead of "Port0" (referring to the first port), specify the
       desired SATA hard disk port.</para>
+    </sect2>
+
+    <sect2>
+      <title id="iscsi-intnet">Access iSCSI targets via Internal
+      Networking</title>
+
+      <para>As an experimental feature, VirtualBox allows for accessing an
+      iSCSI target running in a virtual machine which is configured for using
+      Internal Networking mode. Please see <xref linkend="storage-iscsi" />;
+      <xref linkend="network_internal" />; and <xref
+      linkend="vboxmanage-storageattach" /> for additional information.</para>
+
+      <para>The IP stack accessing Internal Networking must be configured in
+      the virtual machine which accesses the iSCSI target. A free static IP
+      and a MAC address not used by other virtual machines must be chosen. In
+      the example below, adapt the name of the virtual machine, the MAC
+      address, the IP configuration and the Internal Networking name
+      ("MyIntNet") according to your needs. The following seven commands must
+      first be issued:<screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Trusted 1
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/MAC 08:00:27:01:02:0f
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/IP 10.0.9.1
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/Config/Netmask 255.255.255.0
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Driver IntNet
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Network MyIntNet
+VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/IsService 1</screen></para>
+
+      <para>Finally the iSCSI disk must be attached with the
+      <computeroutput>--intnet</computeroutput> option to tell the iSCSI
+      initiator to use internal networking:<screen>VBoxManage storageattach ... --medium iscsi 
+         --server 10.0.9.30 --target iqn.2008-12.com.sun:sampletarget --intnet</screen></para>
+
+      <para>Compared to a "regular" iSCSI setup, IP address of the target
+      <emphasis>must</emphasis> be specified as a numeric IP address, as there
+      is no DNS resolver for internal networking.</para>
+
+      <para>The virtual machine with the iSCSI target should be started before
+      the VM using it is powered on. If a virtual machine using an iSCSI disk
+      is started without having the iSCSI target powered up, it can take up to
+      200 seconds to detect this situation. The VM will fail to power
+      up.</para>
     </sect2>
   </sect1>
 

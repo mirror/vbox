@@ -72,15 +72,6 @@
     </listitem>
 
     <listitem>
-      <para><emphasis role="bold">Disabled host I/O caches.</emphasis>
-      Disabling the host I/O cache (see <xref linkend="iocaching" />) will
-      yield poor performance with VHD and sparse VMDK files as these do not
-      currently support asynchronous I/O. This does not apply to VDI files and
-      raw disk/partition VMDK files, which do support async I/O. This
-      restriction will be lifted in a future maintenance update.</para>
-    </listitem>
-
-    <listitem>
       <para><emphasis role="bold">Compacting virtual disk images is limited to
       VDI files.</emphasis> The <code>VBoxManage modifyhd --compact</code>
       command is currently only implemented for VDI files. At the moment the
