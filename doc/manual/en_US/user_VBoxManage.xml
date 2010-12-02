@@ -1519,7 +1519,8 @@ Virtual system 0:
                             [--type dvddrive|hdd|fdd
                              --medium none|emptydrive|uuid|filename|host:&lt;drive&gt;]
                             [--passthrough on|off]
-                            [--forceunmount]</screen>
+                            [--forceunmount]
+                            [--bandwidthgroup name|none]</screen>
 
       <para>where the parameters mean: <glosslist>
           <glossentry>
@@ -1630,8 +1631,74 @@ Virtual system 0:
               one is locked down by the guest for reading.</para>
             </glossdef>
           </glossentry>
+
+          <glossentry>
+            <glossterm>bandwidthgroup</glossterm>
+
+            <glossdef>
+              <para>Sets the bandwidth group to use for the given device;
+              see see <xref linkend="storage-bandwdith-limit" /></para>
+            </glossdef>
+          </glossentry>
         </glosslist></para>
     </sect2>
+  </sect1>
+
+  <sect1>
+    <title>VBoxManage bandwidthctl</title>
+
+    <para>This command creates/deletes/modifies bandwidth groups of
+    the given virtual machine:</para>
+
+    <screen>VBoxManage bandwidhtctl    &lt;uuid|vmname&gt;
+                          --name &lt;name&gt;
+                          [--add disk
+                          [--delete]
+                          [--limit MB/s]</screen>
+
+    <para>where the parameters mean: <glosslist>
+        <glossentry>
+          <glossterm>uuid|vmname</glossterm>
+
+          <glossdef>
+            <para>The VM UUID or VM Name. Mandatory.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>name</glossterm>
+
+          <glossdef>
+            <para>Name of the bandwidth group. Mandatory.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>add</glossterm>
+
+          <glossdef>
+            <para>Creates a new bandwdith group with the given type.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>delete</glossterm>
+
+          <glossdef>
+            <para>Deletes a bandwdith group if it isn't used anymore.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>limit</glossterm>
+
+          <glossdef>
+            <para>Sets the limit for the given group to the specified amount.
+            Can be changed while the VM is running.</para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist></para>
   </sect1>
 
   <sect1>

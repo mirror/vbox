@@ -945,4 +945,30 @@ VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/I
       up.</para>
     </sect2>
   </sect1>
+
+  <sect1 id="storage-bandwidth-limit">
+    <title>Limiting banwidth for disk images</title>
+    <para>VirtualBox allows limiting the maximum bandwidth used for asynchronous
+    I/O. Additionally it supports sharing limits through bandwidth groups for
+    several images. It is possible to have more than limit.
+    The limits can be configured through <computeroutput>VBoxManage</computeroutput>.
+    The example below creates a bandwidth group named "Limit" and sets the limit
+    to 20 MB/s and assigns the group to the attached disks of the VM:
+    <screen>VBoxManage bandwidthctl "VM name" --name Limit --add disk --limit 20
+VBoxManage storageattach "VM name" --controller "SATA" --port 0 --device 0 --type hdd
+                                   --medium disk1.vdi --bandwidthgroup Limit
+VBoxManage storageattach "VM name" --controller "SATA" --port 1 --device 0 --type hdd
+                                   --medium disk2.vdi --bandwidthgroup Limit</screen>
+
+    <para>Both disks will share the bandwidth limit meaning that the used bandwidth of
+    both can never exceed 20 MB/s. However if one disk doesn't require bandwidth
+    the other can use everything.</para>
+
+    <para>The limits for each group can be changed while the VM is running.
+    The VM will pick up the new limit immediately in that case.
+    The example below changes the limit for the group created in the example
+    above to 10 MB/s:
+    <screen>VBoxManage bandwidthctl "VM name" --name Limit --limit 10</screen></para>
+    </para>
+  </sect1>
 </chapter>
