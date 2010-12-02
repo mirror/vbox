@@ -92,11 +92,11 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     /* Setup tool-bar: */
     m_pPackagesToolbar->setUsesTextLabel(false);
     m_pPackagesToolbar->setIconSize(QSize(16, 16));
-    m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/controller_add_16px.png",
-                                                                     ":/controller_add_disabled_16px.png"),
+    m_pActionAdd = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_install_16px.png",
+                                                                     ":/extension_pack_install_disabled_16px.png"),
                                                  QString(), this, SLOT(sltInstallPackage()));
-    m_pActionRemove = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/controller_remove_16px.png",
-                                                                        ":/controller_remove_disabled_16px.png"),
+    m_pActionRemove = m_pPackagesToolbar->addAction(UIIconPool::iconSet(":/extension_pack_uninstall_16px.png",
+                                                                        ":/extension_pack_uninstall_disabled_16px.png"),
                                                     QString(), this, SLOT(sltRemovePackage()));
 
     /* Apply language settings: */
