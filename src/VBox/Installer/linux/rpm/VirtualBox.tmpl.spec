@@ -384,6 +384,8 @@ if [ "$1" = 0 ]; then
   rm -f /etc/udev/rules.d/10-vboxdrv.rules
   rm -f /etc/vbox/license_agreed
   rm -f /etc/vbox/module_not_compiled
+  # remove our USB device tree
+  rm -rf /dev/vboxusb 2> /dev/null
 fi
 DKMS=`which dkms 2>/dev/null`
 if [ -n "$DKMS" ]; then
