@@ -68,7 +68,6 @@
     </script>
     <background file="background.tif" alignment="topleft" scaling="none"/>
     <welcome file="Welcome.html"/>
-    <license file="License.rtf"/>
     <conclusion file="Conclusion.html"/>
     <choices-outline>
         <line choice="choiceVBoxKEXTs"></line>
