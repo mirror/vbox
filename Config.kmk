@@ -532,13 +532,8 @@ endif
 ## @{
 # Enables the extension pack feature.
 VBOX_WITH_EXTPACK = 1
-# Enables building of the "PUEL" (final name TBD) extension pack.
-if1of ($(KBUILD_TARGET), linux solaris win) ## @todo make this default when the darwin build has been added.
- VBOX_WITH_EXTPACK_PUEL = 1
-endif
-ifdef VBOX_ONLY_EXTPACKS
- VBOX_WITH_EXTPACK_PUEL = 1
-endif
+# Enables building of the Oracle VM VirtualBox Extension Pack, dubbed PUEL.
+VBOX_WITH_EXTPACK_PUEL = 1
 ## @}
 
 ## @name Misc
