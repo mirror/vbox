@@ -2273,7 +2273,7 @@ static int codecLookup(CODECState *pState, uint32_t cmd, PPFNCODECVERBPROCESSOR 
         }
     }
     *pfn = codecUnimplemented;
-    LogRel(("HDAcodec: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
+    Log(("HDAcodec: callback for %x wasn't found\n", CODEC_VERBDATA(cmd)));
     return rc;
 }
 
