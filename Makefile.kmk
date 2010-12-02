@@ -1189,7 +1189,9 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building darwin/amd64 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.15 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,amd64) . 192.168.27.15:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.15 " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
+	$(VBOX_KMK_TIME) rsync -am -v --delete 192.168.27.15:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.amd64 out/
 endif
 
 testsuite-build-darwin.x86:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
@@ -1197,7 +1199,9 @@ ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building darwin/x86 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all"
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,darwin,x86) . 192.168.27.5:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd /Users/vbox/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all"
+	$(VBOX_KMK_TIME) rsync -am -v --delete 192.168.27.5:/Users/vbox/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/darwin.x86 out/
 endif
 
 
