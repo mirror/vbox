@@ -170,6 +170,6 @@ QModelIndex UIBootTable::moveItemTo(const QModelIndex &index, int row)
     QPersistentModelIndex newIndex = model()->index(row, 0);
     delete takeItem(oldIndex.row());
     setCurrentRow(newIndex.row());
-    return newIndex;
+    return QModelIndex(newIndex);
 }
 
