@@ -312,10 +312,6 @@ bool UIMachineSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitl
     }
 #endif
     checkVRAMRequirements();
-
-    /* 3D Acceleration support test */
-    // TODO : W8 for NaN //
-
     return true;
 }
 
