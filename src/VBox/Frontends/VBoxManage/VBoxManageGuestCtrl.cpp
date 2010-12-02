@@ -1187,12 +1187,14 @@ static int handleCtrlCopyTo(HandlerArg *a)
             if (RT_SUCCESS(vrc))
             {
                 if (fVerbose)
+                {
                     if (fCopyRecursive)
                         RTPrintf("Recursively copying \"%s\" to \"%s\" (%u file(s)) ...\n",
                                  Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
                     else
                         RTPrintf("Copying \"%s\" to \"%s\" (%u file(s)) ...\n",
                                  Utf8Source.c_str(), Utf8Dest.c_str(), cObjects);
+                }
 
                 uint32_t uCurObject = 1;
                 RTListForEach(&listToCopy, pNode, DIRECTORYENTRY, Node)
