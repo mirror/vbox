@@ -62,8 +62,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Wi", Qt::CaseInsensitive), "WindowsXP" },
 
     /* Solaris */
-    { QRegExp("((Op.*So)|(os20[01][0-9])).*64", Qt::CaseInsensitive), "OpenSolaris_64" },
-    { QRegExp("(Op.*So)|(os20[01][0-9])", Qt::CaseInsensitive), "OpenSolaris" },
+    { QRegExp("((Op.*So)|(os20[01][0-9])|(So.*1[01])|(India)|(Neva)).*64", Qt::CaseInsensitive), "OpenSolaris_64" },
+    { QRegExp("(Op.*So)|(os20[01][0-9])|(So.*1[01])|(India)|(Neva)", Qt::CaseInsensitive), "OpenSolaris" },
     { QRegExp("So.*64", Qt::CaseInsensitive), "Solaris_64" },
     { QRegExp("So", Qt::CaseInsensitive), "Solaris" },
 
