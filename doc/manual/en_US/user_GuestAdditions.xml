@@ -14,8 +14,8 @@
   <sect1>
     <title>Introduction</title>
 
-    <para>As said in <xref linkend="virtintro" />, the Guest Additions are
-    designed to be installed <emphasis>inside</emphasis> a virtual machine
+    <para>As mentioned in <xref linkend="virtintro" />, the Guest Additions
+    are designed to be installed <emphasis>inside</emphasis> a virtual machine
     after the guest operating system has been installed. They consist of
     device drivers and system applications that optimize the guest operating
     system for better performance and usability. Please see <xref
@@ -46,6 +46,20 @@
         </glossentry>
 
         <glossentry>
+          <glossterm>Shared folders</glossterm>
+
+          <glossdef>
+            <para>These provide an easy way to exchange files between the host
+            and the guest. Much like ordinary Windows network shares, you can
+            tell VirtualBox to treat a certain host directory as a shared
+            folder, and VirtualBox will make it available to the guest
+            operating system as a network share, irrespective of whether guest
+            actually has a network. For details, please refer to <xref
+            linkend="sharedfolders" />.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
           <glossterm>Better video support</glossterm>
 
           <glossdef>
@@ -63,8 +77,36 @@
             settings).</para>
 
             <para>Finally, if the Guest Additions are installed, 3D graphics
-            for guest applications can be accelerated; see <xref
-            linkend="guestadd-3d" />.</para>
+            and 2D video for guest applications can be accelerated; see <xref
+            linkend="guestadd-video" />. </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Seamless windows</glossterm>
+
+          <glossdef>
+            <para>With this feature, the individual windows that are displayed
+            on the desktop of the virtual machine can be mapped on the host's
+            desktop, as if the underlying application was actually running on
+            the host. See <xref linkend="seamlesswindows" /> for
+            details.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Generic host/guest communication channels</glossterm>
+
+          <glossdef>
+            <para>The Guest Additions enable you to control and monitor guest
+            execution in ways other than those mentioned above. The so-called
+            "guest properties" provide a generic string-based mechanism to
+            exchange data bits between a guest and a host, some of which have
+            special meanings for contolling and monitoring the guest; see
+            <xref linkend="guestadd-guestprops" /> for details. </para>
+
+            <para>Additionally, applications can be started in a guest from
+            the host; see <xref linkend="guestadd-guestcontrol" />. </para>
           </glossdef>
         </glossentry>
 
@@ -91,31 +133,6 @@
             <para>The Guest Additions will re-synchronize the time regularly.
             See <xref linkend="changetimesync" /> for how to configure the
             parameters of the time synchronization mechanism.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>Shared folders</glossterm>
-
-          <glossdef>
-            <para>These provide an easy way to exchange files between the host
-            and the guest. Much like ordinary Windows network shares, you can
-            tell VirtualBox to treat a certain host directory as a shared
-            folder, and VirtualBox will make it available to the guest
-            operating system as a network share. For details, please refer to
-            <xref linkend="sharedfolders" />.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>Seamless windows</glossterm>
-
-          <glossdef>
-            <para>With this feature, the individual windows that are displayed
-            on the desktop of the virtual machine can be mapped on the host's
-            desktop, as if the underlying application was actually running on
-            the host. See <xref linkend="seamlesswindows" /> for
-            details.</para>
           </glossdef>
         </glossentry>
 
@@ -952,17 +969,16 @@ EndSection</screen>
     <para>With the "shared folders" feature of VirtualBox, you can access
     files of your host system from within the guest system. This is similar
     how you would use network shares in Windows networks -- except that shared
-    folders do not need require networking, so long as the Guest Additions are
-    installed. Shared Folders are supported with Windows (2000 or newer),
-    Linux and Solaris guests.</para>
+    folders do not need require networking, only the Guest Additions. Shared
+    Folders are supported with Windows (2000 or newer), Linux and Solaris
+    guests.</para>
 
     <para>Shared folders must physically reside on the
-    <emphasis>host</emphasis> and are then shared with the guest; sharing is
-    accomplished using a special service on the host and a file system driver
-    for the guest, both of which are provided by VirtualBox. For Windows
-    guests, shared folders are implemented as a pseudo-network redirector; for
-    Linux and Solaris guests, the Guest Additions provide a virtual filesystem
-    driver which handles communication with the host.</para>
+    <emphasis>host</emphasis> and are then shared with the guest, which uses a
+    special file system driver in the Guest Addition to talk to the host. For
+    Windows guests, shared folders are implemented as a pseudo-network
+    redirector; for Linux and Solaris guests, the Guest Additions provide a
+    virtual file system.</para>
 
     <para>To share a host folder with a virtual machine in VirtualBox, you
     must specify the path of that folder and choose for it a "share name" that
@@ -972,22 +988,22 @@ EndSection</screen>
     <para>There are several ways in which shared folders can be set up for a
     particular virtual machine:<itemizedlist>
         <listitem>
-          <para>In the graphical user interface of a running virtual machine,
-          you can select "Shared folders" from the "Devices" menu, or click on
-          the folder icon on the status bar in the bottom right corner of the
-          virtual machine window.</para>
+          <para>In the window of a running VM, you can select "Shared folders"
+          from the "Devices" menu, or click on the folder icon on the status
+          bar in the bottom right corner.</para>
         </listitem>
 
         <listitem>
-          <para>If a virtual machine is not currently running, you can
-          configure shared folders in each virtual machine's "Settings"
-          dialog.</para>
+          <para>If a VM is not currently running, you can configure shared
+          folders in each virtual machine's "Settings" dialog.</para>
         </listitem>
 
         <listitem>
-          <para>From the command line, you can create shared folders using the
-          VBoxManage command line interface; see <xref
-          linkend="vboxmanage" />. The command is as follows: <screen>VBoxManage sharedfolder add "VM name" --name "sharename" --hostpath "C:\test"</screen></para>
+          <para>From the command line, you can create shared folders using
+          VBoxManage, as follows: <screen>VBoxManage sharedfolder add "VM name" --name "sharename" --hostpath "C:\test"</screen></para>
+
+          <para>See <xref linkend="vboxmanage-sharedfolder" /> for
+          details.</para>
         </listitem>
       </itemizedlist></para>
 
@@ -1021,14 +1037,13 @@ EndSection</screen>
 
       <para><itemizedlist>
           <listitem>
-            <para>In a Windows guest, starting with VirtualBox 1.5.0, shared
-            folders are browseable and are therefore visible in Windows
-            Explorer. So, to attach the host's shared folder to your Windows
-            guest, open Windows Explorer and look for it under "My Networking
-            Places" -&gt; "Entire Network" -&gt; "VirtualBox Shared Folders".
-            By right-clicking on a shared folder and selecting "Map network
-            drive" from the menu that pops up, you can assign a drive letter
-            to that shared folder.</para>
+            <para>In a Windows guest, shared folders are browseable and
+            therefore visible in Windows Explorer. So, to attach the host's
+            shared folder to your Windows guest, open Windows Explorer and
+            look for it under "My Networking Places" -&gt; "Entire Network"
+            -&gt; "VirtualBox Shared Folders". By right-clicking on a shared
+            folder and selecting "Map network drive" from the menu that pops
+            up, you can assign a drive letter to that shared folder.</para>
 
             <para>Alternatively, on the Windows command line, use the
             following:</para>
@@ -1108,90 +1123,60 @@ $</screen>
     <sect2 id="sf_mount_auto">
       <title>Automatic mounting</title>
 
-      <para>Starting with version 3.3.0, VirtualBox supports automatic
-      mounting support for shared folders. The installed Guest Additions will
-      then take care of all shared folders which are marked as being
-      auto-mounted as soon as a user is logged in to the guest OS. This makes
-      it more convenient instead of mounting shared folders manually described
-      in <xref linkend="sf_mount_manual" />.</para>
+      <para>Starting with version 4.0, VirtualBox can mount shared folders
+      automatically, at your option. If automatic mounting is enabled for a
+      specific shared folder, the Guest Additions will automatically mount
+      that folder as soon as a user logs into the guest OS. The details depend
+      on the guest OS type:<itemizedlist>
+          <listitem>
+            <para>With Windows guests, any auto-mounted shared folder will
+            receive its own drive letter (e.g.
+            <computeroutput>E:</computeroutput>) depending on the free drive
+            letters remaining in the guest.</para>
+          </listitem>
 
-      <note>
-        <para>Auto-mounting currently is only supported on Windows, Linux and
-        Solaris guests.</para>
-      </note>
+          <listitem>
+            <para>With Linux and Solaris guests, auto-mounted shared folders
+            are mounted into the <computeroutput>/media</computeroutput>
+            directory, along with the prefix
+            <computeroutput>sf_</computeroutput>. For example, the shared
+            folder <computeroutput>myfiles</computeroutput> would be mounted
+            to <computeroutput>/media/sf_myfiles</computeroutput> on Linux and
+            <computeroutput>/mnt/sf_myfiles</computeroutput> on
+            Solaris.</para>
 
-      <para>On Windows guests an auto-mounted shared folder will be
-      represented by an own drive letter (e.g.
-      <computeroutput>E:</computeroutput>), depending on the remaining free
-      drive letters of the system.</para>
+            <para>The guest property
+            <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
+            determines the prefix that is used. Change that guest property to
+            a value other than "sf" to change that prefix; see <xref
+            linkend="guestadd-guestprops" /> for details.<note>
+                <para>Read/write access to auto-mounted shared folders is only
+                granted to the user group
+                <computeroutput>vboxsf</computeroutput>, which is created by
+                the VirtualBox Guest Additions installer. You must therefore
+                add user accounts to that group for a user to have read/write
+                access. Other users are granted read-only access, even if the
+                shared folder in question has been defined as
+                read/write.</para>
+              </note></para>
+          </listitem>
 
-      <para>On Linux and Solaris guests auto-mounted shared folders get
-      mounted into the <computeroutput>/media</computeroutput> directory,
-      along with the prefix <computeroutput>sf_</computeroutput>, so the
-      shared folder <computeroutput>myfiles</computeroutput> would be mounted
-      to <computeroutput>/media/sf_myfiles</computeroutput> on Linux and
-      <computeroutput>/mnt/sf_myfiles</computeroutput> on Solaris.</para>
+          <listitem>
+            <para>Solaris guests behave like Linux guests except that
+            <computeroutput>/mnt</computeroutput> is used for mounting the
+            shared folders instead of
+            <computeroutput>/media</computeroutput>.</para>
+          </listitem>
+        </itemizedlist></para>
 
-      <para>To change the prefix <computeroutput>sf_</computeroutput> of a
-      given virtual machine, set the value of its
-      <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
-      guest property to another value; see <xref
-      linkend="guestadd-guestprops" /> for details.</para>
-
-      <para>To get a user full access to the auto-mounted shared folders on
-      the guest this user needs to be part of the newly create group "vboxsf",
-      which is created by the VirtualBox Guest Additions installer. Without
-      being in that group read-only access is provided.</para>
-
-      <para>To get changes applied, for example by adding new or deleting
-      auto-mounted shared folders while a VM is running, the guest OS needs to
-      be rebooted. However, this does not affect <xref
-      linkend="sf_mount_manual" />.</para>
+      <para>To have any changes to auto-mounted shared folders applied while a
+      VM is running, the guest OS needs to be rebooted. (This applies only to
+      auto-mounted shared folders, not the ones which are mounted
+      manually.)</para>
     </sect2>
   </sect1>
 
-  <sect1 id="seamlesswindows">
-    <title>Seamless windows</title>
-
-    <para>With the "seamless windows" feature of VirtualBox, you can have the
-    windows that are displayed within a virtual machine appear side by side
-    next to the windows of your host. This feature is supported for the
-    following guest operating systems (provided that the Guest Additions are
-    installed):<itemizedlist>
-        <listitem>
-          <para>Windows guests (support added with VirtualBox 1.5);</para>
-        </listitem>
-
-        <listitem>
-          <para>Linux or Solaris/OpenSolaris guests with an X.org server
-          version 1.3 or higher<footnote>
-              <para>The X server version is not the same as the version of the
-              entire X.org suite. You can type <computeroutput>X
-              -version</computeroutput> in a terminal to find out about the
-              X.org server version level that is currently installed.</para>
-            </footnote> (support added with VirtualBox 1.6). The exception is
-          Fedora 9, due to a bug in its X server.</para>
-        </listitem>
-      </itemizedlist></para>
-
-    <para>After seamless windows are enabled (see below), VirtualBox
-    suppresses the display of the Desktop background of your guest, allowing
-    you to run the windows of your guest operating system seamlessly next to
-    the windows of your host:</para>
-
-    <para><mediaobject>
-        <imageobject>
-          <imagedata align="center" fileref="images/seamless.png" width="10cm" />
-        </imageobject>
-      </mediaobject>To enable seamless mode, after starting the virtual
-    machine, press the Host key (normally the right control key) together with
-    "L". This will enlarge the size of the VM's display to the size of your
-    host screen and mask out the guest operating system's background. To go
-    back to the "normal" VM display (i.e. to disable seamless windows), press
-    the Host key and "L" again.</para>
-  </sect1>
-
-  <sect1>
+  <sect1 id="guestadd-video">
     <title>Hardware-accelerated graphics</title>
 
     <sect2 id="guestadd-3d">
@@ -1315,6 +1300,47 @@ $</screen>
       tunnel implemented by VirtualBox. On the host side, OpenGL is then used
       to implement color space transformation and scaling</para>
     </sect2>
+  </sect1>
+
+  <sect1 id="seamlesswindows">
+    <title>Seamless windows</title>
+
+    <para>With the "seamless windows" feature of VirtualBox, you can have the
+    windows that are displayed within a virtual machine appear side by side
+    next to the windows of your host. This feature is supported for the
+    following guest operating systems (provided that the Guest Additions are
+    installed):<itemizedlist>
+        <listitem>
+          <para>Windows guests (support added with VirtualBox 1.5);</para>
+        </listitem>
+
+        <listitem>
+          <para>Linux or Solaris/OpenSolaris guests with an X.org server
+          version 1.3 or higher<footnote>
+              <para>The X server version is not the same as the version of the
+              entire X.org suite. You can type <computeroutput>X
+              -version</computeroutput> in a terminal to find out about the
+              X.org server version level that is currently installed.</para>
+            </footnote> (support added with VirtualBox 1.6). The exception is
+          Fedora 9, due to a bug in its X server.</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>After seamless windows are enabled (see below), VirtualBox
+    suppresses the display of the Desktop background of your guest, allowing
+    you to run the windows of your guest operating system seamlessly next to
+    the windows of your host:</para>
+
+    <para><mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/seamless.png" width="10cm" />
+        </imageobject>
+      </mediaobject>To enable seamless mode, after starting the virtual
+    machine, press the Host key (normally the right control key) together with
+    "L". This will enlarge the size of the VM's display to the size of your
+    host screen and mask out the guest operating system's background. To go
+    back to the "normal" VM display (i.e. to disable seamless windows), press
+    the Host key and "L" again.</para>
   </sect1>
 
   <sect1 id="guestadd-guestprops">
@@ -1470,121 +1496,146 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     linkend="vboxmanage-guestcontrol" /> for details.</para>
   </sect1>
 
-  <sect1 id="guestadd-balloon">
-    <title>Memory ballooning</title>
+  <sect1>
+    <title>Memory overcommitment</title>
 
-    <para>Starting with version 3.2, the Guest Additions of VirtualBox can
-    change the amount of memory of a virtual machine while the machine is
-    running. Because of how this is implemented, this feature is called
-    "memory ballooning".</para>
+    <para>In server environments with many VMs; the Guest Additions can be
+    used to share physical host memory between several VMs, reducing the total
+    amount of memory in use by the VMs. If memory usage is the limiting factor
+    and CPU resources are still available, this can help with packing more VMs
+    on each host.</para>
 
-    <para>Normally, to change the amount of memory allocated to a virtual
-    machine, one has to shut down the virtual machine entirely and change the
-    virtual machine's settings. With memory ballooning, memory that was
-    allocated for a virtual machine can be given to another virtual machine
-    without having to shut the machine down. This can be useful to temporarily
-    start another virtual machine, or in more complicated environments for
-    sophisticated memory management of many virtual machines that may be
-    running in parallel depending on how memory is used by the guests.</para>
+    <sect2 id="guestadd-balloon">
+      <title>Memory ballooning</title>
 
-    <para>When memory ballooning is requested, the VirtualBox Guest Additions
-    (which run inside the guest) allocate physical memory from the guest
-    operating system on the kernel level and lock this memory down in the
-    guest. This ensures that the guest will not use that memory any longer: no
-    guest applications can allocate it, and the guest operating system will
-    not use it either. VirtualBox can then re-use this memory and give it to a
-    second virtual machine.</para>
+      <para>Starting with version 3.2, the Guest Additions of VirtualBox can
+      change the amount of host memory that a VM uses while the machine is
+      running. Because of how this is implemented, this feature is called
+      "memory ballooning".</para>
 
-    <para>The memory made available through the ballooning mechanism is only
-    available for re-use by VirtualBox. It is <emphasis>not</emphasis>
-    returned as free memory to the host. Requesting balloon memory from a
-    running guest will therefore not increase the amount of free, unallocated
-    memory on the host.</para>
+      <note>
+        <para>VirtualBox supports memory ballooning only on 64-bit hosts, and
+        it is not supported on Mac OS X hosts.</para>
+      </note>
 
-    <para>Effectively, memory ballooning is therefore a memory overcommitment
-    mechanism for multiple virtual machines while they are running.</para>
+      <para>Normally, to change the amount of memory allocated to a virtual
+      machine, one has to shut down the virtual machine entirely and modify
+      its settings. With memory ballooning, memory that was allocated for a
+      virtual machine can be given to another virtual machine without having
+      to shut the machine down.</para>
 
-    <para>At this time, memory ballooning is only supported in VBoxManage, the
-    VirtualBox command-line utility. Use the following command to increase or
-    decrease the size of the memory balloon within a running virtual machine
-    that has Guest Additions installed: <screen>VBoxManage controlvm "VM name" guestmemoryballoon &lt;n&gt;</screen>
-    where <computeroutput>"VM name"</computeroutput> is the name or UUID of
-    the virtual machine in question and
-    <computeroutput>&lt;n&gt;</computeroutput> is the amount of memory to
-    allocate from the guest in megabytes; see <xref
-    linkend="vboxmanage-controlvm" /> for more information.</para>
+      <para>When memory ballooning is requested, the VirtualBox Guest
+      Additions (which run inside the guest) allocate physical memory from the
+      guest operating system on the kernel level and lock this memory down in
+      the guest. This ensures that the guest will not use that memory any
+      longer: no guest applications can allocate it, and the guest kernel will
+      not use it either. VirtualBox can then re-use this memory and give it to
+      another virtual machine.</para>
 
-    <para>You can also set a default balloon that will automatically be
-    requested from the VM every time after it has started up with the
-    following command: <screen>VBoxManage modifyvm "VM name" --guestmemoryballoon &lt;n&gt;</screen></para>
+      <para>The memory made available through the ballooning mechanism is only
+      available for re-use by VirtualBox. It is <emphasis>not</emphasis>
+      returned as free memory to the host. Requesting balloon memory from a
+      running guest will therefore not increase the amount of free,
+      unallocated memory on the host. Effectively, memory ballooning is
+      therefore a memory overcommitment mechanism for multiple virtual
+      machines while they are running. This can be useful to temporarily start
+      another machine, or in more complicated environments, for sophisticated
+      memory management of many virtual machines that may be running in
+      parallel depending on how memory is used by the guests.</para>
 
-    <para>By default, no balloon memory is allocated. This is a VM setting,
-    like other <computeroutput>modifyvm</computeroutput> settings, and
-    therefore can only be set while the machine is shut down; see <xref
-    linkend="vboxmanage-modifyvm" />.</para>
+      <para>At this time, memory ballooning is only supported through
+      VBoxManage. Use the following command to increase or decrease the size
+      of the memory balloon within a running virtual machine that has Guest
+      Additions installed: <screen>VBoxManage controlvm "VM name" guestmemoryballoon &lt;n&gt;</screen>where
+      <computeroutput>"VM name"</computeroutput> is the name or UUID of the
+      virtual machine in question and
+      <computeroutput>&lt;n&gt;</computeroutput> is the amount of memory to
+      allocate from the guest in megabytes. See <xref
+      linkend="vboxmanage-controlvm" /> for more information.</para>
 
-    <para><note>
-        <para>VirtualBox supports memory ballooning only on 64-bit hosts,
-        memory ballooning is <emphasis>not</emphasis> supported on Mac OS X
-        hosts.</para>
-      </note></para>
-  </sect1>
+      <para>You can also set a default balloon that will automatically be
+      requested from the VM every time after it has started up with the
+      following command: <screen>VBoxManage modifyvm "VM name" --guestmemoryballoon &lt;n&gt;</screen></para>
 
-  <sect1 id="guestadd-pagefusion">
-    <title>Page Fusion</title>
+      <para>By default, no balloon memory is allocated. This is a VM setting,
+      like other <computeroutput>modifyvm</computeroutput> settings, and
+      therefore can only be set while the machine is shut down; see <xref
+      linkend="vboxmanage-modifyvm" />.</para>
+    </sect2>
 
-    <para>Page Fusion is a novel technique to further improve VM density on
-    the host, i.e. a way of overcommitting resources. It was first introduced
-    with VirtualBox 3.2 and is currently limited to VMs running Windows 2000
-    and later. In a typical scenario, dozens, up to hundreds of very similar
-    VMs are consolidated on a powerful host computer and the level of
-    consolidation is most often limited by the amount of RAM that can be
-    installed in a system at reasonable cost. Often, due to RAM exhaustion,
-    additional VMs cannot be started even though the host's CPUs still provide
-    capacity. To circumvent this restriction, hypervisors can benefit from the
-    fact that often, VMs are very similar (e.g. multiple VMs running Windows
-    XP Service Pack 2) and therefore contain a number of identical RAM cells.
-    The hypervisor can look for such duplicate data in memory, eliminate the
-    redundancy (deduplication) and thereby free additional memory.</para>
+    <sect2 id="guestadd-pagefusion">
+      <title>Page Fusion</title>
 
-    <para>Traditional hypervisors use a technique often called "page sharing"
-    or "same page merging" where they go through all memory and compute
-    checksums (hashes) for each memory page. Then, they look for pages with
-    identical hashes and compare the content of the pages (if two pages
-    produce the same hash, it is very likely that the pages are identical in
-    content). Identical pages get eliminated so that all VMs point to the same
-    page as long as none of the VMs tries to modify the page. If such a page
-    gets modified, the previously eliminated duplicates get allocated again.
-    All this is fully transparent to the virtual machine. However, the
-    classical algorithm has several drawbacks. First of all, it takes rather
-    long to scan the complete memory (esp. when the system is not idling) so
-    the additional memory only becomes available after some time (this can be
-    hours or even days!). Also, the whole page sharing algorithm generally
-    consumes significant CPU resources and increases the virtualization
-    overhead by 10-20%.</para>
+      <para>Whereas memory ballooning simply reduces the amount of RAM that is
+      available to a VM, Page Fusion works differently: it avoids memory
+      duplication between several similar running VMs.</para>
 
-    <para>Page Fusion in VirtualBox uses the VirtualBox Guest Additions to
-    identify memory cells that are most likely identical across VMs and
-    therefore achieves most of the possible savings of page sharing almost
-    immediately and with almost no overhead. Page Fusion is also much less
-    likely to be tricked by identical memory that it will eliminate just to
-    learn seconds later that the memory will now change and having to perform
-    a highly expensive and often service disrupting reallocation.</para>
+      <para>In a server environment running several similar VMs (e.g. with
+      identical operating systems) on the same host, lots of memory pages are
+      identical. VirtualBox's Page Fusion technology, introduced with
+      VirtualBox 3.2, is a novel technique to efficiently identify these
+      identical memory pages and share them between multiple VMs.<note>
+          <para>VirtualBox supports Page Fusion only on 64-bit hosts, and it
+          is not supported on Mac OS X hosts. Page Fusion currently works only
+          with Windows guests (2000 and later).</para>
+        </note></para>
 
-    <para>Page Fusion can be enabled for a VM using: <screen>VBoxManage modifyvm "VM name" --pagefusion on</screen></para>
+      <para>The more similar the VMs on a given host are, the more efficiently
+      Page Fusion can reduce the amount of host memory that is in use. It
+      therefore works best if all VMs on a host run identical operating
+      systems (e.g. Windows XP Service Pack 2). Instead of having a complete
+      copy of each operating system in each VM, Page Fusion efficiently
+      identifies the identical memory pages in use by these operating systems
+      and eliminates the duplicates ("deduplication"), sharing host memory
+      between several machines.</para>
 
-    <para>You can observe Page Fusion operation using some metrics.
-    <computeroutput>RAM/VMM/Shared</computeroutput> shows the total amount of
-    fused pages whereas the per VM metric
-    <computeroutput>Guest/RAM/Usage/Shared</computeroutput> will return the
-    amount of fused memory for a given VM. Please refer to <xref
-    linkend="metrics" /> for information on how to query metrics.</para>
+      <para>If a VM tries to modify a page that is shared with other VMs, a
+      new page is allocated again for that VM with a copy of the shared page.
+      All this is fully transparent to the virtual machine.</para>
 
-    <para><note>
-        <para>VirtualBox supports Page Fusion only on 64-bit host operating
-        systems. Mac OS X hosts are currently not supported. Page Fusion is
-        only available for Windows 2000 and later guests with current Guest
-        Additions.</para>
-      </note></para>
+      <para>You may be familiar with this kind of memory overcommitment from
+      other hypervisor products, which call this feature "page sharing" or
+      "same page merging". However, Page Fusion differs significantly from
+      those other solutions, whose approaches have several
+      drawbacks:<orderedlist>
+          <listitem>
+            <para>Traditional hypervisors scan <emphasis>all</emphasis> guest
+            memory and compute checksums (hashes) for every single memory
+            page. Then, they look for pages with identical hashes and compare
+            the entire content of those pages; if two pages produce the same
+            hash, it is very likely that the pages are identical in content.
+            This, of course, can take rather long, especially if the system is
+            not idling. As a result, the additional memory only becomes
+            available after a significant amount of time (this can be hours or
+            even days!). Even worse, this kind of page sharing algorithm
+            generally consumes significant CPU resources and increases the
+            virtualization overhead by 10-20%.</para>
+
+            <para>Page Fusion in VirtualBox uses logic in the VirtualBox Guest
+            Additions to quickly identify memory cells that are most likely
+            identical across VMs. It can therefore achieve most of the
+            possible savings of page sharing almost immediately and with
+            almost no overhead.</para>
+          </listitem>
+
+          <listitem>
+            <para>Page Fusion is also much less likely to be confused by
+            identical memory that it will eliminate just to learn seconds
+            later that the memory will now change and having to perform a
+            highly expensive and often service-disrupting reallocation.</para>
+          </listitem>
+        </orderedlist></para>
+
+      <para>At this time, Page Fusion can only be controlled with VBoxManage,
+      and only while a VM is shut down. To enable Page Fusion for a VM, use
+      the following command:<screen>VBoxManage modifyvm "VM name" --pagefusion on</screen></para>
+
+      <para>You can observe Page Fusion operation using some metrics.
+      <computeroutput>RAM/VMM/Shared</computeroutput> shows the total amount
+      of fused pages, whereas the per-VM metric
+      <computeroutput>Guest/RAM/Usage/Shared</computeroutput> will return the
+      amount of fused memory for a given VM. Please refer to <xref
+      linkend="metrics" /> for information on how to query metrics.</para>
+    </sect2>
   </sect1>
 </chapter>

@@ -1819,8 +1819,8 @@ Virtual system 0:
             <para>Perform the clone operation to an already existing
             destination medium. Only the portion of the source medium which
             fits into the destination medium is copied. This means if the
-            destination medium is smaller than the source only a part of it
-            is copied, and if the destination medium is larger than the source
+            destination medium is smaller than the source only a part of it is
+            copied, and if the destination medium is larger than the source
             the remaining part of the destination medium is unchanged.</para>
           </glossdef>
         </glossentry>
@@ -2122,7 +2122,7 @@ Value: 2006.01.01</screen>
     remove</computeroutput> and specify the index and the target.</para>
   </sect1>
 
-  <sect1>
+  <sect1 id="vboxmanage-sharedfolder">
     <title>VBoxManage sharedfolder add/remove</title>
 
     <para>This command allows you to share folders on the host computer with
