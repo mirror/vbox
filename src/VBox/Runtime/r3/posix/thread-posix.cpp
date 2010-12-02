@@ -412,5 +412,12 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread)
 
 RTR3DECL(int) RTThreadGetExecutionTimeMilli(uint64_t *pKernelTime, uint64_t *pUserTime)
 {
-    return VERR_NOT_IMPLEMENTED;
+    struct timespec ts;
+    int rc = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
+    if (rc)
+        return RTErrConvertFromErrno(rc);
+
+    *pKernelTime = 0;
+    *pUserTime = (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    return VINF_SUCCESS;
 }
