@@ -841,8 +841,8 @@ additions-packing:
 #
 extpacks-fetch:
 	+ $(KMK) -C tools fetch VBOX_ONLY_EXTPACKS=1
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin   VBOX_ONLY_EXTPACKS=1
-#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin   VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=amd64 BUILD_TARGET=darwin   VBOX_ONLY_EXTPACKS=1
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=darwin  BUILD_TARGET_ARCH=x86   BUILD_TARGET=darwin   VBOX_ONLY_EXTPACKS=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=amd64 BUILD_TARGET=freebsd  VBOX_ONLY_EXTPACKS=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=freebsd BUILD_TARGET_ARCH=x86   BUILD_TARGET=freebsd  VBOX_ONLY_EXTPACKS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux    VBOX_ONLY_EXTPACKS=1
@@ -857,12 +857,12 @@ extpacks-fetch:
 extpacks-build: \
 	extpacks-build-solaris.amd64 \
 	extpacks-build-solaris.x86 \
+	extpacks-build-darwin.amd64 \
+	extpacks-build-darwin.x86 \
 	extpacks-build-linux.x86 \
 	extpacks-build-linux.amd64 \
 	extpacks-build-win.x86 \
 	extpacks-build-win.amd64
-#	extpacks-build-darwin.x86
-#	extpacks-build-darwin.amd64
 #	extpacks-build-freebsd.x86
 #	extpacks-build-freebsd.amd64
 #	extpacks-build-os2.x86
@@ -894,7 +894,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.amd64) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building Windows/amd64 extension packs)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.6 " echo $@ && cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
 endif
 
 extpacks-build-win.x86:
@@ -902,7 +902,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_EXTPACKS_BUILD.x86) all $(VBOX_EXTPACKS_HOST_BUILD_TWEAK)
 else
 	$(call MSG_L1,Building Windows/x86 extension packs)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.16 " echo $@ && cd e:/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_EXTPACKS_BUILD.x86) all"
 endif
 
 ifeq ($(KBUILD_TARGET),solaris)
