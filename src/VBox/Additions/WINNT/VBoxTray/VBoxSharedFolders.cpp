@@ -26,7 +26,7 @@ int VBoxSharedFoldersAutoMount(void)
 {
     uint32_t u32ClientId;
     int rc = VbglR3SharedFolderConnect(&u32ClientId);
-    if (!RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         Log(("VBoxTray: Failed to connect to the shared folder service, error %Rrc\n", rc));
     else
     {
