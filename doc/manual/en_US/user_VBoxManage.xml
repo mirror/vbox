@@ -1401,25 +1401,17 @@ Virtual system 0:
     snapshot.</para>
   </sect1>
 
-  <sect1 id="vboxmanage-storage">
-    <title>VBoxManage storagectl / storageattach</title>
+  <sect1 id="vboxmanage-storagectl">
+    <title>VBoxManage storagectl</title>
 
-    <para>These commands allow to attach new storage controllers to a VM,
-    modify or remove the existing ones and also allows the user to change the
-    hard disk, DVD or floppy images attached to them. The list of the storage
-    controllers attached to the VM can be found by the command:</para>
+    <para>This command attaches/modifies/removes a storage controller. After
+    this, virtual media can be attached to the controller with the
+    <computeroutput>storageattach</computeroutput> command (see the next
+    section).</para>
 
-    <screen>VBoxManage showvminfo &lt;vmname&gt;</screen>
+    <para>The syntax is as follows:</para>
 
-    <para>See also <xref linkend="vboxmanage-showvminfo" />.</para>
-
-    <sect2 id="vboxmanage-storagectl">
-      <title>VBoxManage storagectl</title>
-
-      <para>This command attaches/modifies/removes a storage controller. The
-      syntax is as follows:</para>
-
-      <screen>VBoxManage storagectl       &lt;uuid|vmname&gt;
+    <screen>VBoxManage storagectl       &lt;uuid|vmname&gt;
                             --name &lt;name&gt;
                             [--add &lt;ide/sata/scsi/floppy&gt;]
                             [--controller &lt;LsiLogic/BusLogic/IntelAhci/PIIX3/
@@ -1429,234 +1421,345 @@ Virtual system 0:
                             [--hostiocache on|off]
                             [--remove]</screen>
 
-      <para>where the parameters mean: <glosslist>
-          <glossentry>
-            <glossterm>uuid|vmname</glossterm>
+    <para>where the parameters mean: <glosslist>
+        <glossentry>
+          <glossterm>uuid|vmname</glossterm>
 
-            <glossdef>
-              <para>The VM UUID or VM Name. Mandatory.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>The VM UUID or VM Name. Mandatory.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>name</glossterm>
+        <glossentry>
+          <glossterm>name</glossterm>
 
-            <glossdef>
-              <para>Name of the storage controller. Mandatory.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>Name of the storage controller. Mandatory.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>add</glossterm>
+        <glossentry>
+          <glossterm>add</glossterm>
 
-            <glossdef>
-              <para>Define the type of the system bus to which the storage
-              controller must be connected.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>Define the type of the system bus to which the storage
+            controller must be connected.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>controller</glossterm>
+        <glossentry>
+          <glossterm>controller</glossterm>
 
-            <glossdef>
-              <para>Allows to choose the type of chipset being emulated for
-              the given storage controller.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>Allows to choose the type of chipset being emulated for the
+            given storage controller.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>sataideemulation</glossterm>
+        <glossentry>
+          <glossterm>sataideemulation</glossterm>
 
-            <glossdef>
-              <para>This specifies which SATA ports should operate in IDE
-              emulation mode. As explained in <xref
-              linkend="harddiskcontrollers" />, by default, this is the case
-              for SATA ports 1-4; with this command, you can map four IDE
-              channels to any of the 30 supported SATA ports.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>This specifies which SATA ports should operate in IDE
+            emulation mode. As explained in <xref
+            linkend="harddiskcontrollers" />, by default, this is the case for
+            SATA ports 1-4; with this command, you can map four IDE channels
+            to any of the 30 supported SATA ports.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>sataportcount</glossterm>
+        <glossentry>
+          <glossterm>sataportcount</glossterm>
 
-            <glossdef>
-              <para>This determines how many ports the SATA controller should
-              support.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>This determines how many ports the SATA controller should
+            support.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>hostiocache</glossterm>
+        <glossentry>
+          <glossterm>hostiocache</glossterm>
 
-            <glossdef>
-              <para>Configures the use of the host I/O cache for all disk
-              images attached to this storage controller. For details, please
-              see <xref linkend="iocaching" />.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>Configures the use of the host I/O cache for all disk images
+            attached to this storage controller. For details, please see <xref
+            linkend="iocaching" />.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>remove</glossterm>
+        <glossentry>
+          <glossterm>remove</glossterm>
 
-            <glossdef>
-              <para>Removes the storage controller from the VM config.</para>
-            </glossdef>
-          </glossentry>
-        </glosslist></para>
-    </sect2>
+          <glossdef>
+            <para>Removes the storage controller from the VM config.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist></para>
+  </sect1>
 
-    <sect2>
-      <title>VBoxManage storageattach</title>
+  <sect1>
+    <title id="vboxmanage-storageattach">VBoxManage storageattach</title>
 
-      <para>This command attaches/modifies/removes a storage medium connected
-      to the storage controller named by --storagectl. The syntax is as
-      follows:</para>
+    <para>This command attaches/modifies/removes a storage medium connected to
+    a storage controller that was previously added with the
+    <computeroutput>storagectl</computeroutput> command (see the previous
+    section). The syntax is as follows:</para>
 
-      <screen>VBoxManage storageattach    &lt;uuid|vmname&gt;
+    <screen>VBoxManage storageattach    &lt;uuid|vmname&gt;
                             --storagectl &lt;name&gt;
                             --port &lt;number&gt;
                             --device &lt;number&gt;
-                            [--type dvddrive|hdd|fdd
-                             --medium none|emptydrive|uuid|filename|host:&lt;drive&gt;]
+                            [--type dvddrive|hdd|fdd]
+                            [--medium none|emptydrive|
+                                      &lt;uuid&gt;|&lt;filename&gt;|host:&lt;drive&gt;|iscsi]
+                            [--mtype normal|writethrough|immutable|shareable]
+                            [--comment &lt;text&gt;]
                             [--passthrough on|off]
+                            [--bandwidthgroup name|none]
                             [--forceunmount]
-                            [--bandwidthgroup name|none]</screen>
+                            [--server &lt;name&gt;|&lt;ip&gt;]
+                            [--target &lt;target&gt;]
+                            [--port &lt;port&gt;]
+                            [--lun &lt;lun&gt;]
+                            [--encodedlun &lt;lun&gt;]
+                            [--username &lt;username&gt;]
+                            [--password &lt;password&gt;]
+                            [--intnet]
+</screen>
 
-      <para>where the parameters mean: <glosslist>
-          <glossentry>
-            <glossterm>uuid|vmname</glossterm>
+    <para>A number of parameters are commonly required; the ones at the end of
+    the list are required only for iSCSI targets (see below).</para>
 
-            <glossdef>
-              <para>The VM UUID or VM Name. Mandatory.</para>
-            </glossdef>
-          </glossentry>
+    <para>The common parameters are:<glosslist>
+        <glossentry>
+          <glossterm>uuid|vmname</glossterm>
 
-          <glossentry>
-            <glossterm>storagectl</glossterm>
+          <glossdef>
+            <para>The VM UUID or VM Name. Mandatory.</para>
+          </glossdef>
+        </glossentry>
 
-            <glossdef>
-              <para>Name of the storage controller. Mandatory.</para>
-            </glossdef>
-          </glossentry>
+        <glossentry>
+          <glossterm>storagectl</glossterm>
 
-          <glossentry>
-            <glossterm>port</glossterm>
+          <glossdef>
+            <para>Name of the storage controller. Mandatory. The list of the
+            storage controllers currently attached to a VM can be obtained
+            with <computeroutput>VBoxManage showvminfo</computeroutput>; see
+            <xref linkend="vboxmanage-showvminfo" />.</para>
+          </glossdef>
+        </glossentry>
 
-            <glossdef>
-              <para>Port number to which the medium has to be
-              attached/detached/modified. Mandatory.</para>
-            </glossdef>
-          </glossentry>
+        <glossentry>
+          <glossterm>port</glossterm>
 
-          <glossentry>
-            <glossterm>device</glossterm>
+          <glossdef>
+            <para>The number of the the storage controller's port which is to
+            be modified. Mandatory.</para>
+          </glossdef>
+        </glossentry>
 
-            <glossdef>
-              <para>Device Number to which the medium has to be
-              attached/detached/modified. Mandatory.</para>
-            </glossdef>
-          </glossentry>
+        <glossentry>
+          <glossterm>device</glossterm>
 
-          <glossentry>
-            <glossterm>type</glossterm>
+          <glossdef>
+            <para>The number of the the port's device which is to be modified.
+            Mandatory.</para>
+          </glossdef>
+        </glossentry>
 
-            <glossdef>
-              <para>Define the type of the drive to which the medium is being
-              attached/detached/modified.</para>
-            </glossdef>
-          </glossentry>
+        <glossentry>
+          <glossterm>type</glossterm>
 
-          <glossentry>
-            <glossterm>medium</glossterm>
+          <glossdef>
+            <para>Define the type of the drive to which the medium is being
+            attached/detached/modified. This argument can only be omitted if
+            the type of medium can be determined from either the medium given
+            with the <computeroutput>--medium</computeroutput> argument or
+            from a previous medium attachment.</para>
+          </glossdef>
+        </glossentry>
 
-            <glossdef>
-              <para>Specifies what is to be attached. The following values are
-              supported:<itemizedlist>
-                  <listitem>
-                    <para>"none": Any existing device should be removed from
-                    the given slot.</para>
+        <glossentry>
+          <glossterm>medium</glossterm>
 
-                    <note>
-                      <para>DVD/floppy drives or harddisks cannot be removed
-                      while the VM is running.</para>
-                    </note>
-                  </listitem>
+          <glossdef>
+            <para>Specifies what is to be attached. The following values are
+            supported:<itemizedlist>
+                <listitem>
+                  <para>"none": Any existing device should be removed from the
+                  given slot.</para>
+                </listitem>
 
-                  <listitem>
-                    <para>"emptydrive": This is only allowed if the given slot
-                    is a DVD or floppy drive. In this case, the slot behaves
-                    like a removeable drive into which no media has been
-                    inserted.</para>
-                  </listitem>
+                <listitem>
+                  <para>"emptydrive": For a virtual DVD or floppy drive only,
+                  this makes the device slot behaves like a removeable drive
+                  into which no media has been inserted.</para>
+                </listitem>
 
-                  <listitem>
-                    <para>If a UUID is specified, it must be the UUID of a
-                    storage medium that is already known to VirtualBox (e.g.
-                    because it has been attached to another virtual machine).
-                    This medium is then attached to the given device
-                    slot.</para>
-                  </listitem>
+                <listitem>
+                  <para>If a UUID is specified, it must be the UUID of a
+                  storage medium that is already known to VirtualBox (e.g.
+                  because it has been attached to another virtual machine).
+                  See <xref linkend="vboxmanage-list" /> for how to list known
+                  media. This medium is then attached to the given device
+                  slot.</para>
+                </listitem>
 
-                  <listitem>
-                    <para>If a filename is specified, it must be the full path
-                    of an existing disk image (ISO, RAW, VDI, VMDK or other),
-                    which is then attached to the given device slot.</para>
-                  </listitem>
+                <listitem>
+                  <para>If a filename is specified, it must be the full path
+                  of an existing disk image (ISO, RAW, VDI, VMDK or other),
+                  which is then attached to the given device slot.</para>
+                </listitem>
 
-                  <listitem>
-                    <para>"host:&lt;drive&gt;: This is only allowed if the
-                    given slot is a DVD or floppy drive, in which case the
-                    device slot is attached to the specified DVD or floppy
-                    drive on the host computer.</para>
-                  </listitem>
-                </itemizedlist></para>
-            </glossdef>
-          </glossentry>
+                <listitem>
+                  <para>"host:&lt;drive&gt;": For a virtual DVD or floppy
+                  drive only, this connects the given device slot to the
+                  specified DVD or floppy drive on the host computer.</para>
+                </listitem>
 
-          <glossentry>
-            <glossterm>passthrough</glossterm>
+                <listitem>
+                  <para>"iscsi": For virtual hard disks only, this allows for
+                  specifying an iSCSI target. In this case, more parameters
+                  must be given; see below.</para>
+                </listitem>
+              </itemizedlist></para>
 
-            <glossdef>
-              <para>With this, you can enable DVD writing support (currently
-              experimental; see <xref linkend="storage-write-cds" />).</para>
-            </glossdef>
-          </glossentry>
+            <para>Some of the above changes, in particular for removeable
+            media (floppies and CDs/DVDs), can be effected while a VM is
+            running. Others (device changes or changes in hard disk device
+            slots) require the VM to be powered off.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>forceunmount</glossterm>
+        <glossentry>
+          <glossterm>mtype</glossterm>
 
-            <glossdef>
-              <para>If this option is specified then you can unmount the
-              DVD/CD/Floppy or mount a new DVD/CD/Floppy even if the previous
-              one is locked down by the guest for reading.</para>
-            </glossdef>
-          </glossentry>
+          <glossdef>
+            <para>Defines how this medium behaves with respect to snapshots
+            and write operations. See <xref linkend="hdimagewrites" /> for
+            details.</para>
+          </glossdef>
+        </glossentry>
 
-          <glossentry>
-            <glossterm>bandwidthgroup</glossterm>
+        <glossentry>
+          <glossterm>comment</glossterm>
 
-            <glossdef>
-              <para>Sets the bandwidth group to use for the given device;
-              see see <xref linkend="storage-bandwdith-limit" /></para>
-            </glossdef>
-          </glossentry>
-        </glosslist></para>
-    </sect2>
+          <glossdef>
+            <para>Any description that you want to have stored with this
+            medium (optional; for example, for an iSCSI target, "Big storage
+            server downstairs"). This is purely descriptive and not needed for
+            the medium to function correctly.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>passthrough</glossterm>
+
+          <glossdef>
+            <para>For a virtual DVD drive only, you can enable DVD writing
+            support (currently experimental; see <xref
+            linkend="storage-cds" />).</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>bandwidthgroup</glossterm>
+
+          <glossdef>
+            <para>Sets the bandwidth group to use for the given device; see
+            <xref linkend="storage-bandwidth-limit" />.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>forceunmount</glossterm>
+
+          <glossdef>
+            <para>For a virtual DVD or floppy drive only, this forcibly
+            unmounts the DVD/CD/Floppy or mounts a new DVD/CD/Floppy even if
+            the previous one is locked down by the guest for reading. Again,
+            see <xref linkend="storage-cds" /> for details.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist></para>
+
+    <para>When "iscsi" is used with the
+    <computeroutput>--medium</computeroutput> parameter, additional parameters
+    must or can be used:<glosslist>
+        <glossentry>
+          <glossterm>server</glossterm>
+
+          <glossdef>
+            <para>The host name or IP address of the iSCSI target;
+            required.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>target</glossterm>
+
+          <glossdef>
+            <para>Target name string. This is determined by the iSCSI target
+            and used to identify the storage resource; required.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>port</glossterm>
+
+          <glossdef>
+            <para>TCP/IP port number of the iSCSI service on the target
+            (optional).</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>lun</glossterm>
+
+          <glossdef>
+            <para>Logical Unit Number of the target resource (optional).
+            Often, this value is zero.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>username, password</glossterm>
+
+          <glossdef>
+            <para>Username and password for target authentication, if required
+            (optional).<note>
+                <para>Currently, username and password are stored without
+                encryption (i.e. in cleartext) in the machine configuration
+                file.</para>
+              </note></para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>intnet</glossterm>
+
+          <glossdef>
+            <para>If specified, connect to the iSCSI target via Internal
+            Networking. This needs further configuration which is described in
+            <xref linkend="iscsi-intnet" />.</para>
+          </glossdef>
+        </glossentry>
+      </glosslist></para>
   </sect1>
 
   <sect1>
     <title>VBoxManage bandwidthctl</title>
 
-    <para>This command creates/deletes/modifies bandwidth groups of
-    the given virtual machine:</para>
-
-    <screen>VBoxManage bandwidhtctl    &lt;uuid|vmname&gt;
+    <para>This command creates/deletes/modifies bandwidth groups of the given
+    virtual machine:<screen>VBoxManage bandwidthctl    &lt;uuid|vmname&gt;
                           --name &lt;name&gt;
                           [--add disk
                           [--delete]
-                          [--limit MB/s]</screen>
+                          [--limit MB/s]</screen></para>
 
-    <para>where the parameters mean: <glosslist>
+    <para>See <xref linkend="storage-bandwidth-limit" /> for an introduction
+    to bandwidth limits. The parameters mean:<glosslist>
         <glossentry>
           <glossterm>uuid|vmname</glossterm>
 
@@ -1697,7 +1800,6 @@ Virtual system 0:
             Can be changed while the VM is running.</para>
           </glossdef>
         </glossentry>
-
       </glosslist></para>
   </sect1>
 
@@ -1705,8 +1807,8 @@ Virtual system 0:
     <title>VBoxManage showhdinfo</title>
 
     <para>This command shows information about a virtual hard disk image,
-    notably its size, its size on disk, its type and the VM it is in use
-    by.<note>
+    notably its size, its size on disk, its type and the virtual machines
+    which use it.<note>
         <para>For compatibility with earlier versions of VirtualBox, the
         "showvdiinfo" command is also supported and mapped internally to the
         "showhdinfo" command.</para>
@@ -1940,104 +2042,6 @@ VBoxManage convertfromraw   stdin &lt;outputfile&gt; &lt;bytes&gt;
         "convertdd" command is also supported and mapped internally to the
         "convertfromraw" command.</para>
       </note></para>
-  </sect1>
-
-  <sect1 id="vboxmanage-addiscsidisk">
-    <title>VBoxManage addiscsidisk</title>
-
-    <para>The <computeroutput>addiscsidisk</computeroutput> command attaches
-    an iSCSI network storage unit to VirtualBox. The iSCSI target can then be
-    made available to and used by a virtual machine as though it were a
-    standard write-through virtual disk image.</para>
-
-    <para>This command has the following syntax:<screen>VBoxManage addiscsidisk --server &lt;name&gt;|&lt;ip&gt;
-                        --target &lt;target&gt;
-                        [--port &lt;port&gt;]
-                        [--lun &lt;lun&gt;]
-                        [--username &lt;username&gt;]
-                        [--password &lt;password&gt;]
-                        [--type normal|writethrough|immutable]
-                        [--comment &lt;comment&gt;]
-                        [--intnet]</screen></para>
-
-    <para>where the parameters mean:<glosslist>
-        <glossentry>
-          <glossterm>server</glossterm>
-
-          <glossdef>
-            <para>The host name or IP address of the iSCSI target.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>target</glossterm>
-
-          <glossdef>
-            <para>Target name string. This is determined by the iSCSI target
-            and used to identify the storage resource.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>port</glossterm>
-
-          <glossdef>
-            <para>TCP/IP port number of the iSCSI service on the target
-            (optional).</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>lun</glossterm>
-
-          <glossdef>
-            <para>Logical Unit Number of the target resource (optional).
-            Often, this value is zero.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>username, password</glossterm>
-
-          <glossdef>
-            <para>Username and password for target authentication, if required
-            (optional).<note>
-                <para>Currently, username and password are stored without
-                encryption (i.e. in cleartext) in the machine configuration
-                file.</para>
-              </note></para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>type</glossterm>
-
-          <glossdef>
-            <para>Defines what kind of hard disk type this image should
-            be.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>comment</glossterm>
-
-          <glossdef>
-            <para>Any description that you want to have stored with this item
-            (optional; e.g. "Big storage server downstairs"). This is stored
-            internally only and not needed for operation.</para>
-          </glossdef>
-        </glossentry>
-
-        <glossentry>
-          <glossterm>intnet</glossterm>
-
-          <glossdef>
-            <para>Connect to the iSCSI target via Internal Networking. This
-            needs further configuration which is described in <xref
-            linkend="iscsi-intnet" />.</para>
-          </glossdef>
-        </glossentry>
-      </glosslist></para>
   </sect1>
 
   <sect1 id="vboxmanage-closemedium">
