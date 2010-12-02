@@ -155,5 +155,17 @@
     <file alias="status_check_32px.png">images/status_check_32px.png</file>
     <file alias="status_error_16px.png">images/status_error_16px.png</file>
     <file alias="status_error_32px.png">images/status_error_32px.png</file>
+    <file alias="extension_pack_16px.png">images/extension_pack_16px.png</file>
+    <file alias="extension_pack_disabled_16px.png">images/extension_pack_disabled_16px.png</file>
+    <file alias="extension_pack_32px.png">images/extension_pack_32px.png</file>
+    <file alias="extension_pack_disabled_32px.png">images/extension_pack_disabled_32px.png</file>
+    <file alias="extension_pack_install_16px.png">images/extension_pack_install_16px.png</file>
+    <file alias="extension_pack_install_disabled_16px.png">images/extension_pack_install_disabled_16px.png</file>
+    <file alias="extension_pack_install_32px.png">images/extension_pack_install_32px.png</file>
+    <file alias="extension_pack_install_disabled_32px.png">images/extension_pack_install_disabled_32px.png</file>
+    <file alias="extension_pack_uninstall_16px.png">images/extension_pack_uninstall_16px.png</file>
+    <file alias="extension_pack_uninstall_disabled_16px.png">images/extension_pack_uninstall_disabled_16px.png</file>
+    <file alias="extension_pack_uninstall_32px.png">images/extension_pack_uninstall_32px.png</file>
+    <file alias="extension_pack_uninstall_disabled_32px.png">images/extension_pack_uninstall_disabled_32px.png</file>
  </qresource>
  </RCC>
