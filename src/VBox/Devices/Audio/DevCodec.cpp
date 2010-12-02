@@ -214,6 +214,16 @@ extern "C" {
 #define CODEC_F05_ACT(value)        (((value) & 0x7) >> 4)
 #define CODEC_F05_SET(value)        (((value) & 0x7))
 
+/* Pin Widged Control (7.3.3.13) */
+#define CODEC_F07_VREF_HIZ      (0)
+#define CODEC_F07_VREF_50       (0x1)
+#define CODEC_F07_VREF_GROUND   (0x2)
+#define CODEC_F07_VREF_80       (0x4)
+#define CODEC_F07_VREF_100      (0x5)
+#define CODEC_F07_IN_ENABLE     RT_BIT(5)
+#define CODEC_F07_OUT_ENABLE    RT_BIT(6)
+#define CODEC_F07_OUT_H_ENABLE  RT_BIT(7)
+
 /* Converter formats (7.3.3.8) and (3.7.1) */
 #define CODEC_MAKE_A(fNonPCM, f44_1BaseRate, mult, div, bits, chan) \
     (  (((fNonPCM) & 0x1) << 15)                                    \
@@ -510,7 +520,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
         case 9:
             pNode->node.name = "Reserved_0";
             pNode->spdifin.u32A_param = CODEC_MAKE_A(0, 1, CODEC_A_MULT_1X, CODEC_A_DIV_1X, CODEC_A_16_BIT, 1);//(0x1<<4) | 0x1;
-            pNode->spdifin.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//RT_BIT(31)|0x7fffffff;
             pNode->spdifin.node.au32F00_param[9] =   CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_AUDIO_INPUT, 0x4, 0)
                                                    | CODEC_F00_09_CAP_DIGITAL
                                                    | CODEC_F00_09_CAP_CONNECTION_LIST
@@ -533,7 +542,8 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x173f;
             pNode->node.au32F02_param[0] = 0x2;
-            pNode->port.u32F07_param = 0xc0;//RT_BIT(6);
+            pNode->port.u32F07_param =   CODEC_F07_IN_ENABLE
+                                       | CODEC_F07_OUT_ENABLE;
             pNode->port.u32F08_param = 0;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
@@ -553,7 +563,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
             pNode->node.au32F02_param[0] = 0x4;
-            pNode->port.u32F07_param = RT_BIT(5);
+            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_INTERNAL|CODEC_F1C_LOCATION_REAR,
@@ -572,7 +582,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_PRESENSE_DETECT
                                              | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
-            pNode->port.u32F07_param = RT_BIT(5);
+            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                           CODEC_F1C_LOCATION_REAR,
@@ -589,7 +599,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                              | CODEC_F00_0C_CAP_PRESENSE_DETECT
                                              | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
                                              | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x1737;
-            pNode->port.u32F07_param = RT_BIT(5);
+            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
             pNode->node.au32F02_param[0] = 0x2;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
@@ -616,7 +626,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xC] =   CODEC_F00_0C_CAP_INPUT
                                              | CODEC_F00_0C_CAP_OUTPUT
                                              | CODEC_F00_0C_CAP_PRESENSE_DETECT;//0x34;
-            pNode->port.u32F07_param = RT_BIT(5);
+            pNode->port.u32F07_param = CODEC_F07_IN_ENABLE;
             pNode->port.u32F09_param = CODEC_MAKE_F09_ANALOG(0, CODEC_F09_ANALOG_NA);//0x7fffffff;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
@@ -636,14 +646,15 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xC] =   CODEC_F00_0C_CAP_INPUT
                                              | CODEC_F00_0C_CAP_OUTPUT
                                              | CODEC_F00_0C_CAP_PRESENSE_DETECT
-                                             | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
-                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE;//0x37;
+                                             /* | CODEC_F00_0C_CAP_TRIGGER_REQUIRED
+                                             | CODEC_F00_0C_CAP_IMPENDANCE_SENSE */;//0x37;
             pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 1);//0x1;
             pNode->port.u32F08_param = 0;
-            pNode->port.u32F07_param = 0x40;
+            pNode->port.u32F07_param =   CODEC_F07_OUT_ENABLE
+                                         | CODEC_F07_IN_ENABLE;
             if (!pState->fInReset)
                 pNode->port.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
-                                                          CODEC_F1C_LOCATION_REAR,
+                                                          CODEC_F1C_LOCATION_INTERNAL,
                                                           CODEC_F1C_DEVICE_SPEAKER,
                                                           CODEC_F1C_CONNECTION_TYPE_1_8INCHES,
                                                           CODEC_F1C_COLOR_ORANGE,
@@ -659,9 +670,7 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
                                            | CODEC_F00_09_CAP_LSB;//(4<<20)|RT_BIT(9)|RT_BIT(8)|RT_BIT(0);
             pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//RT_BIT(4);
             pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 0x3);
-            pNode->digout.u32F01_param = 0;
             pNode->node.au32F02_param[0] = RT_MAKE_U32_FROM_U8(0x08, 0x17, 0x19, 0);
-            pNode->digout.u32F07_param = 0;
             if (!pState->fInReset)
                 pNode->digout.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_COMPLEX,
                                                             CODEC_F1C_LOCATION_REAR,
@@ -723,7 +732,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0x9] =   CODEC_MAKE_F00_09(CODEC_F00_09_TYPE_PIN_COMPLEX, 0, 0)
                                              | CODEC_F00_09_CAP_LSB;//(4 << 20)|RT_BIT(0);
             pNode->node.au32F00_param[0xc] = CODEC_F00_0C_CAP_INPUT;//RT_BIT(5);
-            pNode->cdnode.u32F07_param = 0;
             if (!pState->fInReset)
                 pNode->cdnode.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_FIXED,
                                                             CODEC_F1C_LOCATION_INTERNAL,
@@ -782,7 +790,6 @@ static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECN
             pNode->node.au32F00_param[0xE] = CODEC_MAKE_F00_0E(0, 0x1);
             pNode->node.au32F00_param[0xC] = CODEC_F00_0C_CAP_OUTPUT;//0x10;
             pNode->node.au32F02_param[0] = 0x1a;
-            pNode->reserved.u32F07_param = 0;
             pNode->reserved.u32F1c_param = CODEC_MAKE_F1C(CODEC_F1C_PORT_NO_PHYS,
                                                           CODEC_F1C_LOCATION_NA,
                                                           CODEC_F1C_DEVICE_LINE_OUT,
