@@ -71,14 +71,13 @@
 
             <para>In addition, with Windows and recent Linux and Solaris
             guests you can resize the virtual machine's window if the Guest
-            Additions are installed.  The video resolution in
-            the guest will be automatically adjusted (as if you had manually
-            entered an arbitrary resolution in the guest's display
-            settings).</para>
+            Additions are installed. The video resolution in the guest will be
+            automatically adjusted (as if you had manually entered an
+            arbitrary resolution in the guest's display settings).</para>
 
             <para>Finally, if the Guest Additions are installed, 3D graphics
             and 2D video for guest applications can be accelerated; see <xref
-            linkend="guestadd-video" />. </para>
+            linkend="guestadd-video" />.</para>
           </glossdef>
         </glossentry>
 
@@ -103,10 +102,10 @@
             "guest properties" provide a generic string-based mechanism to
             exchange data bits between a guest and a host, some of which have
             special meanings for contolling and monitoring the guest; see
-            <xref linkend="guestadd-guestprops" /> for details. </para>
+            <xref linkend="guestadd-guestprops" /> for details.</para>
 
             <para>Additionally, applications can be started in a guest from
-            the host; see <xref linkend="guestadd-guestcontrol" />. </para>
+            the host; see <xref linkend="guestadd-guestcontrol" />.</para>
           </glossdef>
         </glossentry>
 
@@ -1033,6 +1032,19 @@ EndSection</screen>
     appending the parameter <computeroutput>--readonly</computeroutput> when
     creating the shared folder with VBoxManage.</para>
 
+    <para>Starting with version 4.0, VirtualBox shared folders also support
+    symbolic links (<emphasis role="bold">symlinks</emphasis>), under the
+    following conditions:<orderedlist>
+        <listitem>
+          <para>The host operating system must support symlinks (i.e. a Mac,
+          Linux or Solaris host is required).</para>
+        </listitem>
+
+        <listitem>
+          <para>Currently only Linux Guest Additions support symlinks.</para>
+        </listitem>
+      </orderedlist></para>
+
     <sect2 id="sf_mount_manual">
       <title>Manual mounting</title>
 
@@ -1136,7 +1148,7 @@ $</screen>
             <para>With Windows guests, any auto-mounted shared folder will
             receive its own drive letter (e.g.
             <computeroutput>E:</computeroutput>) depending on the free drive
-            letters remaining in the guest. </para>
+            letters remaining in the guest.</para>
 
             <para>If there no free drive letters left, auto-mounting will
             fail; as a result, the number of auto-mounted shared folders is
