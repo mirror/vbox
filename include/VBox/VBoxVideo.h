@@ -88,7 +88,7 @@
  * runtime heapsimple API. Use minimum 2 pages here, because the info area also may
  * contain other data (for example HGSMIHOSTFLAGS structure).
  */
-#ifdef VBOX_WITH_WDDM
+#ifndef VBOX_XPDM_MINIPORT
 # define VBVA_ADAPTER_INFORMATION_SIZE (64*_1K)
 #else
 #define VBVA_ADAPTER_INFORMATION_SIZE  (16*_1K)
@@ -983,12 +983,10 @@ typedef struct VBVAINFOSCREEN
 #define VBVA_F_NONE    0x00000000
 #define VBVA_F_ENABLE  0x00000001
 #define VBVA_F_DISABLE 0x00000002
-#ifdef VBOXWDDM_WITH_VBVA
 /* extended VBVA to be used with WDDM */
 #define VBVA_F_EXTENDED 0x00000004
 /* vbva offset is absolute VRAM offset */
 #define VBVA_F_ABSOFFSET 0x00000008
-#endif
 
 typedef struct VBVAENABLE
 {
@@ -997,13 +995,11 @@ typedef struct VBVAENABLE
     int32_t  i32Result;
 } VBVAENABLE;
 
-#ifdef VBOXWDDM_WITH_VBVA
 typedef struct VBVAENABLE_EX
 {
     VBVAENABLE Base;
     uint32_t u32ScreenId;
 } VBVAENABLE_EX;
-#endif
 
 
 typedef struct VBVAMOUSEPOINTERSHAPE

@@ -911,7 +911,7 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
         if (ppdev->bHGSMISupported)
         {
             PPDEV ppdev = (PPDEV) dhpdev;
-            VBoxVBVADisable(&ppdev->vbvaCtx, &ppdev->guestCtx);
+            VBoxVBVADisable(&ppdev->vbvaCtx, &ppdev->guestCtx, -1);
         }
 
         //

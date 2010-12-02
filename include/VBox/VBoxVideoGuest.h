@@ -193,7 +193,7 @@ RTDECL(void)     VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 RTDECL(int)      VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                        void *pvBuffer);
 
-typedef struct VBVAINFOVIEW *PVBVAINFOVIEW;
+struct VBVAINFOVIEW;
 /**
  * Callback funtion called from @a VBoxHGSMISendViewInfo to initialise
  * the @a VBVAINFOVIEW structure for each screen.
@@ -204,8 +204,9 @@ typedef struct VBVAINFOVIEW *PVBVAINFOVIEW;
  * @param  pInfo   array of @a VBVAINFOVIEW structures to be filled in
  * @todo  explicitly pass the array size
  */
-typedef DECLCALLBACK(int) FNHGSMIFILLVIEWINFO (void *pvData,
-                                               PVBVAINFOVIEW pInfo);
+typedef DECLCALLBACK(int) FNHGSMIFILLVIEWINFO(void *pvData,
+                                              struct VBVAINFOVIEW *pInfo,
+                                              uint32_t cViews);
 /** Pointer to a FNHGSMIFILLVIEWINFO callback */
 typedef FNHGSMIFILLVIEWINFO *PFNHGSMIFILLVIEWINFO;
 
@@ -256,9 +257,10 @@ RTDECL(bool)     VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
  * @{ */
 RTDECL(bool) VBoxVBVAEnable(PVBVABUFFERCONTEXT pCtx,
                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
-                            struct VBVABUFFER *pVBVA);
+                            struct VBVABUFFER *pVBVA, int32_t cScreen);
 RTDECL(void) VBoxVBVADisable(PVBVABUFFERCONTEXT pCtx,
-                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
+                             PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
+                             int32_t cScreen);
 RTDECL(bool) VBoxVBVABufferBeginUpdate(PVBVABUFFERCONTEXT pCtx,
                                        PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx);
 RTDECL(void) VBoxVBVABufferEndUpdate(PVBVABUFFERCONTEXT pCtx);
@@ -266,6 +268,9 @@ RTDECL(bool) VBoxVBVAWrite(PVBVABUFFERCONTEXT pCtx,
                            PHGSMIGUESTCOMMANDCONTEXT pHGSMICtx,
                            const void *pv, uint32_t cb);
 RTDECL(bool) VBoxVBVAOrderSupported(PVBVABUFFERCONTEXT pCtx, unsigned code);
+RTDECL(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
+                                        uint32_t offVRAMBuffer,
+                                        uint32_t cbBuffer);
 RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                          uint32_t cDisplay,
                                          int32_t  cOriginX,

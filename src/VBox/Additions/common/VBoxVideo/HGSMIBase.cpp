@@ -323,7 +323,7 @@ RTDECL(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     if (p)
     {
         VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
-        rc = pfnFill(pvData, pInfo);
+        rc = pfnFill(pvData, pInfo, u32Count);
         if (RT_SUCCESS(rc))
             VBoxHGSMIBufferSubmit (pCtx, p);
         VBoxHGSMIBufferFree(pCtx, p);
@@ -336,11 +336,11 @@ RTDECL(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 
 /**
  * Get the information needed to map the basic communication structures in
- * device memory into our address space.
+ * device memory into our address space.  All pointer parameters are optional.
  *
  * @param  cbVRAM               how much video RAM is allocated to the device
  * @param  poffVRAMBaseMapping  where to save the offset from the start of the
- *                              device VRAM of the whole area to map 
+ *                              device VRAM of the whole area to map
  * @param  pcbMapping           where to save the mapping size
  * @param  poffGuestHeapMemory  where to save the offset into the mapped area
  *                              of the guest heap backing memory
@@ -356,16 +356,23 @@ RTDECL(void) VBoxHGSMIGetBaseMappingInfo(uint32_t cbVRAM,
                                          uint32_t *pcbGuestHeapMemory,
                                          uint32_t *poffHostFlags)
 {
-    AssertPtrReturnVoid(poffVRAMBaseMapping);
-    AssertPtrReturnVoid(pcbMapping);
-    AssertPtrReturnVoid(poffGuestHeapMemory);
-    AssertPtrReturnVoid(pcbGuestHeapMemory);
-    AssertPtrReturnVoid(poffHostFlags);
-    *poffVRAMBaseMapping = cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE;
-    *pcbMapping = VBVA_ADAPTER_INFORMATION_SIZE;
-    *poffGuestHeapMemory = 0;
-    *pcbGuestHeapMemory = VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS);
-    *poffHostFlags = VBVA_ADAPTER_INFORMATION_SIZE - sizeof(HGSMIHOSTFLAGS);
+    AssertPtrNullReturnVoid(poffVRAMBaseMapping);
+    AssertPtrNullReturnVoid(pcbMapping);
+    AssertPtrNullReturnVoid(poffGuestHeapMemory);
+    AssertPtrNullReturnVoid(pcbGuestHeapMemory);
+    AssertPtrNullReturnVoid(poffHostFlags);
+    if (poffVRAMBaseMapping)
+        *poffVRAMBaseMapping = cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE;
+    if (pcbMapping)
+        *pcbMapping = VBVA_ADAPTER_INFORMATION_SIZE;
+    if (poffGuestHeapMemory)
+        *poffGuestHeapMemory = 0;
+    if (pcbGuestHeapMemory)
+        *pcbGuestHeapMemory =   VBVA_ADAPTER_INFORMATION_SIZE
+                              - sizeof(HGSMIHOSTFLAGS);
+    if (poffHostFlags)
+        *poffHostFlags =   VBVA_ADAPTER_INFORMATION_SIZE
+                         - sizeof(HGSMIHOSTFLAGS);
 }
 
 
