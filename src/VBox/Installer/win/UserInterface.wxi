@@ -56,9 +56,20 @@
                 <Text>[Version_text] $(var.Property_Version)</Text>
             </Control>
 
-            <!-- Next dialog is the license agreement -->
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="$(loc.ButtonText_Next)">
-                 <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+        <?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
+                <!-- Next dialog is the license agreement -->
+                <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+        <?else ?>
+                <!-- Decide which dialog to show next: The serial number dialog (if this is a branded build)
+                     or directly proceed to the customization dialog (Vbox not installed yet) -->
+                <?if $(env.VBOX_WITH_SERIALNUMBER_INSTALL) = "yes" ?>
+                    <Publish Event="NewDialog" Value="CheckSerialDlg">1</Publish>
+                <?else ?>
+                    <Publish Event="NewDialog" Value="CustomizeDlg"><![CDATA[(PREVIOUSVERSIONSINSTALLED OR NEWERVERSIONDETECTED)]]></Publish>
+                    <Publish Event="NewDialog" Value="CustomizeDlg"><![CDATA[(NOT PREVIOUSVERSIONSINSTALLED) AND (NOT NEWERVERSIONDETECTED)]]></Publish>
+                <?endif ?>
+        <?endif ?>
             </Control>
 
             <!-- Canceling will bring up a confirmation dialog ('SpawnDialog' attribute) -->
@@ -176,7 +187,11 @@
             </Control>
 
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="$(loc.ButtonText_Back)">
-                 <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+        <?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
+                <Publish Event="NewDialog" Value="LicenseAgreementDlg">1</Publish>
+        <?else ?>
+                <Publish Event="NewDialog" Value="WelcomeDlg">1</Publish>
+        <?endif ?>
             </Control>
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="$(loc.ButtonText_Check)">
                 <Publish Event="DoAction" Value="CheckSerial">1</Publish>
@@ -274,8 +289,12 @@
             </Control>
 
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="$(loc.ButtonText_Back)">
+        <?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
                 <Publish Event="NewDialog" Value="LicenseAgreementDlg"><![CDATA[(NOT CHECKSERIAL) AND (InstallMode = "$(loc.InstallModeCustom)")]]></Publish>
                 <Publish Event="NewDialog" Value="CheckSerialDlg"><![CDATA[CHECKSERIAL]]></Publish>
+        <?else ?>
+                <Publish Event="NewDialog" Value="WelcomeDlg">1</Publish>
+        <?endif ?>
             </Control>
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="$(loc.ButtonText_Next)">
                 <Publish Event="NewDialog" Value="Customize2Dlg">1</Publish>
