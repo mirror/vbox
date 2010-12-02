@@ -681,9 +681,9 @@ VBOX_WITH_STRICT_LOCKS = 1
 # Branding
 #
 VBOX_BRAND_BIOS_LOGO                 := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/puel_logo.bmp
-VBOX_BRAND_LICENSE_HTML              := $(PATH_ROOT)/doc/License.html
-VBOX_BRAND_LICENSE_RTF               := $(PATH_ROOT)/doc/License.rtf
-VBOX_BRAND_LICENSE_TXT               := $(PATH_ROOT)/doc/License.txt
+VBOX_BRAND_LICENSE_HTML              := $(PATH_ROOT)/doc/License-gpl-2.0.html
+VBOX_BRAND_LICENSE_RTF               := $(PATH_ROOT)/doc/License-gpl-2.0.rtf
+VBOX_BRAND_LICENSE_TXT               := $(PATH_ROOT)/doc/License-gpl-2.0.txt
 VBOX_BRAND_LICENSE_VER               :=
 VBOX_BRAND_GUI_ABOUT_PNG             := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/about.png
 VBOX_BRAND_GUI_ABOUT_16PX_PNG        := $(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/NonOSE/about_16px.png
