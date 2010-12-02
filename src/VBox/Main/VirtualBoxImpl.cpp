@@ -1549,6 +1549,7 @@ STDMETHODIMP VirtualBox::FindMedium(IN_BSTR   aLocation,
                                     DeviceType_T aDeviceType,
                                     IMedium **aMedium)
 {
+    CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aMedium);
 
     AutoCaller autoCaller(this);

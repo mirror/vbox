@@ -53,7 +53,6 @@
 #define USAGE_CREATEHD              RT_BIT_64(13)
 #define USAGE_MODIFYHD              RT_BIT_64(14)
 #define USAGE_CLONEHD               RT_BIT_64(15)
-#define USAGE_ADDISCSIDISK          RT_BIT_64(16)
 #define USAGE_CREATEHOSTIF          RT_BIT_64(17)
 #define USAGE_REMOVEHOSTIF          RT_BIT_64(18)
 #define USAGE_GETEXTRADATA          RT_BIT_64(19)
@@ -217,9 +216,9 @@ int handleCreateHardDisk(HandlerArg *a);
 int handleModifyHardDisk(HandlerArg *a);
 int handleCloneHardDisk(HandlerArg *a);
 RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
-int handleAddiSCSIDisk(HandlerArg *a);
 int handleShowHardDiskInfo(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);
+int parseDiskType(const char *psz, MediumType_T *pDiskType);
 
 /* VBoxManageStorageController.cpp */
 int handleStorageAttach(HandlerArg *a);
