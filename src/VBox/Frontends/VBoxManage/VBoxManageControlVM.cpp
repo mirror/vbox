@@ -141,7 +141,7 @@ int handleControlVM(HandlerArg *a)
 
             unsigned n = parseNum(a->argv[2], 100, "ExecutionCap");
 
-            CHECK_ERROR_BREAK(machine, COMSETTER(CPUExecutionCap)(n));
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(CPUExecutionCap)(n));
         }
         else if (!strcmp(a->argv[1], "poweroff"))
         {
