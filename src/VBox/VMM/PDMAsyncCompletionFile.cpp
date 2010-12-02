@@ -312,7 +312,7 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
         /* The first error will be returned. */
         if (RT_FAILURE(rc))
             ASMAtomicCmpXchgS32(&pTaskFile->rc, rc, VINF_SUCCESS);
-#ifdef DEBUG
+#ifdef VBOX_WITH_DEBUGGER
         else
         {
             PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pTaskFile->Core.pEndpoint;
