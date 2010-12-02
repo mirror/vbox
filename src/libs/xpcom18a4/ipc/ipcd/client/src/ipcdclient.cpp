@@ -601,8 +601,8 @@ static nsresult nsresult_from_ipcm_result(PRInt32 status)
   {
     case IPCM_ERROR_GENERIC:        rv = NS_ERROR_FAILURE; break;
     case IPCM_ERROR_INVALID_ARG:    rv = NS_ERROR_INVALID_ARG; break;
+    case IPCM_ERROR_NO_CLIENT:      rv = NS_ERROR_CALL_FAILED; break;
     // TODO: select better mapping for the below codes
-    case IPCM_ERROR_NO_CLIENT:
     case IPCM_ERROR_NO_SUCH_DATA:
     case IPCM_ERROR_ALREADY_EXISTS: rv = NS_ERROR_FAILURE; break;
     default:                        NS_ASSERTION(PR_FALSE, "No conversion");
