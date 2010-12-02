@@ -44,6 +44,7 @@
 # include "ExtPackManagerImpl.h"
 #endif
 
+#include "VirtualBoxClientImpl.h"
 #include "SessionImpl.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
@@ -85,6 +86,9 @@ NS_DECL_CLASSINFO(Session)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
 NS_DECL_CLASSINFO(Console)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
+
+NS_DECL_CLASSINFO(VirtualBoxClient)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBoxClient, IVirtualBoxClient)
 
 /**
  *  Singleton class factory that holds a reference to the created instance
@@ -138,7 +142,9 @@ private:
 //    Session, SessionClassFactory::getInstance
 //)
 
-NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC (Session)
+NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC(Session)
+
+NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC(VirtualBoxClient)
 
 /**
  *  Component definition table.
@@ -158,6 +164,17 @@ static const nsModuleComponentInfo components[] =
         NS_CI_INTERFACE_GETTER_NAME(Session), // interfaces function
         NULL, // language helper
         &NS_CLASSINFO_NAME(Session) // global class info & flags
+    },
+    {
+        "VirtualBoxClient component", // description
+        NS_VIRTUALBOXCLIENT_CID, NS_VIRTUALBOXCLIENT_CONTRACTID, // CID/ContractID
+        VirtualBoxClientConstructor, // constructor function
+        NULL, // registration function
+        NULL, // deregistration function
+        NULL, // destructor function
+        NS_CI_INTERFACE_GETTER_NAME(VirtualBoxClient), // interfaces function
+        NULL, // language helper
+        &NS_CLASSINFO_NAME(VirtualBoxClient) // global class info & flags
     },
 };
 
