@@ -69,9 +69,9 @@
             Additions provide you with extra high and non-standard video modes
             as well as accelerated video performance.</para>
 
-            <para>In addition, with Windows and recent Linux, Solaris and
-            OpenSolaris guests, if the Guest Additions are installed, you can
-            resize the virtual machine's window, and the video resolution in
+            <para>In addition, with Windows and recent Linux and Solaris
+            guests you can resize the virtual machine's window if the Guest
+            Additions are installed.  The video resolution in
             the guest will be automatically adjusted (as if you had manually
             entered an arbitrary resolution in the guest's display
             settings).</para>
@@ -868,16 +868,20 @@ EndSection</screen>
 
       <itemizedlist>
         <listitem>
-          <para>OpenSolaris Nevada (Build 82 and higher; this includes
+          <para>Solaris 11 Express;</para>
+        </listitem>
+
+        <listitem>
+          <para>Solaris 10 (u5 and higher);</para>
+        </listitem>
+
+        <listitem>
+          <para>Solaris Nevada/SXDE/SXCE (build 82 and higher);</para>
+        </listitem>
+
+        <listitem>
+          <para>OpenSolaris (Developer Preview 2 and higher; this includes
           OpenSolaris 2008.05, 2008.11 and 2009.06);</para>
-        </listitem>
-
-        <listitem>
-          <para>OpenSolaris Indiana (Developer Preview 2 and higher);</para>
-        </listitem>
-
-        <listitem>
-          <para>Solaris 10 (u5 and higher).</para>
         </listitem>
       </itemizedlist>
 
@@ -1084,7 +1088,7 @@ EndSection</screen>
             exist yet.</para>
 
             <para>Here is an example of mounting the shared folder for the
-            user "jack" on OpenSolaris:</para>
+            user "jack" on Solaris:</para>
 
             <screen>$ id
 uid=5000(jack) gid=1(other)
@@ -1319,8 +1323,8 @@ $</screen>
         </listitem>
 
         <listitem>
-          <para>Linux or Solaris/OpenSolaris guests with an X.org server
-          version 1.3 or higher<footnote>
+          <para>Linux or Solaris guests with an X.org server version 1.3 or
+          higher<footnote>
               <para>The X server version is not the same as the version of the
               entire X.org suite. You can type <computeroutput>X
               -version</computeroutput> in a terminal to find out about the

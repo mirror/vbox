@@ -450,7 +450,7 @@
           support for using wireless interfaces. Filtering guest traffic using
           IPFilter is also not completely supported due to technical
           restrictions of the Solaris networking subsystem. These issues would
-          be addressed in a future release of OpenSolaris.</para>
+          be addressed in a future release of Solaris 11.</para>
 
           <para>With VirtualBox 2.0.4 and above, it is possible to use
           Crossbow Virtual Network Interfaces (VNICs) with bridged networking,

@@ -486,14 +486,11 @@
 
       <listitem>
         <para><emphasis role="bold">Solaris</emphasis> hosts (32-bit and
-        64-bit<footnote>
-            <para>Support for OpenSolaris was added with VirtualBox
-            1.6.</para>
-          </footnote>) are supported with the restrictions listed in <xref
+        64-bit) are supported with the restrictions listed in <xref
         linkend="KnownIssues" />:<itemizedlist>
             <listitem>
-              <para>OpenSolaris (2008.05 and higher, "Nevada" build 86 and
-              higher)</para>
+              <para>Solaris 11 Express (Nevada build 86 and higher,
+              OpenSolaris 2008.05 and higher)</para>
             </listitem>
 
             <listitem>
