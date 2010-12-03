@@ -424,10 +424,7 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint
     if (!s->CTX_SUFF(pTimer))
         return;
     expire_time = pit_get_next_transition_time(s, current_time);
-    irq_level = pit_get_out1(s, current_time);
-
-    /* We just flip-flop the irq level to save that extra timer call, which isn't generally required (we haven't served it for months). */
-    pDevIns = s->CTX_SUFF(pPit)->pDevIns;
+    irq_level = pit_get_out1(s, current_time) ? PDM_IRQ_LEVEL_HIGH : PDM_IRQ_LEVEL_LOW;
 
     /* If PIT disabled by HPET - just disconnect ticks from interrupt controllers, and not modify
      * other moments of device functioning.
@@ -435,9 +432,14 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint
      */
     if (!s->pPitR3->fDisabledByHpet)
     {
-        PDMDevHlpISASetIrq(pDevIns, s->irq, irq_level);
-        if (irq_level)
-            PDMDevHlpISASetIrq(pDevIns, s->irq, 0);
+        pDevIns = s->CTX_SUFF(pPit)->pDevIns;
+
+        if (s->mode == 2)
+        {
+            /* We just flip-flop the irq level to save that extra timer call, which isn't generally required (we haven't served it for years). */
+            PDMDevHlpISASetIrq(pDevIns, s->irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+        } else
+            PDMDevHlpISASetIrq(pDevIns, s->irq, irq_level);
     }
 
     if (irq_level)
