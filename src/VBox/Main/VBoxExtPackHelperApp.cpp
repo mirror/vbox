@@ -1463,7 +1463,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, int cArgs, con
     SHELLEXECUTEINFOW   Info;
 
     Info.cbSize = sizeof(Info);
-    Info.fMask  = SEE_MASK_NOCLOSEPROCESS /*| SEE_MASK_NOASYNC*/;
+    Info.fMask  = SEE_MASK_NOCLOSEPROCESS;
     Info.hwnd   = NULL;
     Info.lpVerb = L"runas";
     int rc = RTStrToUtf16(pszExecPath, (PRTUTF16 *)&Info.lpFile);
@@ -1477,7 +1477,7 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, int cArgs, con
             if (RT_SUCCESS(rc))
             {
                 Info.lpDirectory = NULL;
-                Info.nShow       = SW_SHOWDEFAULT;
+                Info.nShow       = SW_SHOWMAXIMIZED;
                 Info.hInstApp    = NULL;
                 Info.lpIDList    = NULL;
                 Info.lpClass     = NULL;
@@ -1849,4 +1849,13 @@ int main(int argc, char **argv)
     }
     /* not reached */
 }
+
+
+#ifdef RT_OS_WINDOWS
+extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+    NOREF(hPrevInstance); NOREF(nShowCmd); NOREF(lpCmdLine); NOREF(hInstance);
+    return main(__argc, __argv);
+}
+#endif
 
