@@ -22,11 +22,62 @@
 #include <VBox/ExtPack/ExtPack.h>
 #include <iprt/fs.h>
 
+/**
+ * An extension pack file.
+ */
+class ATL_NO_VTABLE ExtPackFile :
+    public VirtualBoxBase,
+    VBOX_SCRIPTABLE_IMPL(IExtPackFile)
+{
+public:
+    /** @name COM and internal init/term/mapping cruft.
+     * @{ */
+    VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(ExtPackFile, IExtPackFile)
+    DECLARE_NOT_AGGREGATABLE(ExtPackFile)
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+    BEGIN_COM_MAP(ExtPackFile)
+        COM_INTERFACE_ENTRY(ISupportErrorInfo)
+        COM_INTERFACE_ENTRY(IExtPackFile)
+        COM_INTERFACE_ENTRY(IExtPackBase)
+        COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
+    DECLARE_EMPTY_CTOR_DTOR(ExtPackFile)
+
+    HRESULT     FinalConstruct();
+    void        FinalRelease();
+    HRESULT     initWithFile(const char *a_pszFile);
+    void        uninit();
+    /** @}  */
+
+    /** @name IExtPackBase interfaces
+     * @{ */
+    STDMETHOD(COMGETTER(Name))(BSTR *a_pbstrName);
+    STDMETHOD(COMGETTER(Description))(BSTR *a_pbstrDescription);
+    STDMETHOD(COMGETTER(Version))(BSTR *a_pbstrVersion);
+    STDMETHOD(COMGETTER(Revision))(ULONG *a_puRevision);
+    STDMETHOD(COMGETTER(VRDEModule))(BSTR *a_pbstrVrdeModule);
+    STDMETHOD(COMGETTER(PlugIns))(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns));
+    STDMETHOD(COMGETTER(Usable))(BOOL *a_pfUsable);
+    STDMETHOD(COMGETTER(WhyUnusable))(BSTR *a_pbstrWhy);
+    /** @}  */
+
+    /** @name IExtPackFile interfaces
+     * @{ */
+    STDMETHOD(COMGETTER(FilePath))(BSTR *a_pbstrPath);
+    STDMETHOD(Install)(void);
+    /** @}  */
+
+private:
+    struct Data;
+    /** Pointer to the private instance. */
+    Data *m;
+
+    friend class ExtPackManager;
+};
+
 
 /**
- * An extension pack.
- *
- * This
+ * An installed extension pack.
  */
 class ATL_NO_VTABLE ExtPack :
     public VirtualBoxBase,
@@ -41,6 +92,7 @@ public:
     BEGIN_COM_MAP(ExtPack)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IExtPack)
+        COM_INTERFACE_ENTRY(IExtPackBase)
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(ExtPack)
@@ -51,7 +103,7 @@ public:
     void        uninit();
     /** @}  */
 
-    /** @name IExtPack interfaces
+    /** @name IExtPackBase interfaces
      * @{ */
     STDMETHOD(COMGETTER(Name))(BSTR *a_pbstrName);
     STDMETHOD(COMGETTER(Description))(BSTR *a_pbstrDescription);
@@ -61,6 +113,10 @@ public:
     STDMETHOD(COMGETTER(PlugIns))(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns));
     STDMETHOD(COMGETTER(Usable))(BOOL *a_pfUsable);
     STDMETHOD(COMGETTER(WhyUnusable))(BSTR *a_pbstrWhy);
+    /** @}  */
+
+    /** @name IExtPack interfaces
+     * @{ */
     STDMETHOD(QueryObject)(IN_BSTR a_bstrObjectId, IUnknown **a_ppUnknown);
     /** @}  */
 
@@ -137,6 +193,7 @@ class ATL_NO_VTABLE ExtPackManager :
      * @{ */
     STDMETHOD(COMGETTER(InstalledExtPacks))(ComSafeArrayOut(IExtPack *, a_paExtPacks));
     STDMETHOD(Find)(IN_BSTR a_bstrName, IExtPack **a_pExtPack);
+    STDMETHOD(OpenExtPackFile)(IN_BSTR a_bstrTarball, IExtPackFile **a_ppExtPackFile);
     STDMETHOD(Install)(IN_BSTR a_bstrTarball, BSTR *a_pbstrName);
     STDMETHOD(Uninstall)(IN_BSTR a_bstrName, BOOL a_fForcedRemoval);
     STDMETHOD(Cleanup)(void);

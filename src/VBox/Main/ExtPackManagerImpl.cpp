@@ -63,10 +63,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/**
- * Private extension pack data.
- */
-struct ExtPack::Data
+struct ExtPackBaseData
 {
 public:
     /** The extension pack descriptor (loaded from the XML, mostly). */
@@ -78,7 +75,26 @@ public:
     bool                fUsable;
     /** Why it is unusable. */
     Utf8Str             strWhyUnusable;
+};
 
+/**
+ * Private extension pack data.
+ */
+struct ExtPackFile::Data : public ExtPackBaseData
+{
+public:
+    /** The path to the tarball. */
+    Utf8Str             strExtPackFile;
+    /** The file handle of the extension pack file. */
+    RTFILE              hExtPackFile;
+};
+
+/**
+ * Private extension pack data.
+ */
+struct ExtPack::Data : public ExtPackBaseData
+{
+public:
     /** Where the extension pack is located. */
     Utf8Str             strExtPackPath;
     /** The file system object info of the extension pack directory.
@@ -127,6 +143,193 @@ struct ExtPackManager::Data
     /** The current context. */
     VBOXEXTPACKCTX      enmContext;
 };
+
+
+DEFINE_EMPTY_CTOR_DTOR(ExtPackFile)
+
+/**
+ * Called by ComObjPtr::createObject when creating the object.
+ *
+ * Just initialize the basic object state, do the rest in initWithDir().
+ *
+ * @returns S_OK.
+ */
+HRESULT ExtPackFile::FinalConstruct()
+{
+    m = NULL;
+    return S_OK;
+}
+
+/**
+ * Initializes the extension pack by reading its file.
+ *
+ * @returns COM status code.
+ * @param   a_pszFile       The path to the extension pack file.
+ */
+HRESULT ExtPackFile::initWithFile(const char *a_pszFile)
+{
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    /*
+     * Allocate + initialize our private data.
+     */
+    m = new ExtPackFile::Data;
+    m->Desc.strName                 = NULL;
+    RT_ZERO(m->ObjInfoDesc);
+    m->fUsable                      = false;
+    m->strWhyUnusable               = tr("ExtPack::init failed");
+    m->strExtPackFile               = a_pszFile;
+
+    /*
+     * Probe the extension pack (this code is shared with refresh()).
+     */
+
+    autoInitSpan.setSucceeded();
+    return S_OK;
+}
+
+/**
+ * COM cruft.
+ */
+void ExtPackFile::FinalRelease()
+{
+    uninit();
+}
+
+/**
+ * Do the actual cleanup.
+ */
+void ExtPackFile::uninit()
+{
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan(this);
+    if (!autoUninitSpan.uninitDone() && m != NULL)
+    {
+        VBoxExtPackFreeDesc(&m->Desc);
+
+        delete m;
+        m = NULL;
+    }
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(Name)(BSTR *a_pbstrName)
+{
+    CheckComArgOutPointerValid(a_pbstrName);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        Bstr str(m->Desc.strName);
+        str.cloneTo(a_pbstrName);
+    }
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(Description)(BSTR *a_pbstrDescription)
+{
+    CheckComArgOutPointerValid(a_pbstrDescription);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        Bstr str(m->Desc.strDescription);
+        str.cloneTo(a_pbstrDescription);
+    }
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(Version)(BSTR *a_pbstrVersion)
+{
+    CheckComArgOutPointerValid(a_pbstrVersion);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        Bstr str(m->Desc.strVersion);
+        str.cloneTo(a_pbstrVersion);
+    }
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(Revision)(ULONG *a_puRevision)
+{
+    CheckComArgOutPointerValid(a_puRevision);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        *a_puRevision = m->Desc.uRevision;
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(VRDEModule)(BSTR *a_pbstrVrdeModule)
+{
+    CheckComArgOutPointerValid(a_pbstrVrdeModule);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        Bstr str(m->Desc.strVrdeModule);
+        str.cloneTo(a_pbstrVrdeModule);
+    }
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(PlugIns)(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns))
+{
+    /** @todo implement plug-ins. */
+#ifdef VBOX_WITH_XPCOM
+    NOREF(a_paPlugIns);
+    NOREF(a_paPlugInsSize);
+#endif
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(Usable)(BOOL *a_pfUsable)
+{
+    CheckComArgOutPointerValid(a_pfUsable);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        *a_pfUsable = m->fUsable;
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(WhyUnusable)(BSTR *a_pbstrWhy)
+{
+    CheckComArgOutPointerValid(a_pbstrWhy);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        m->strWhyUnusable.cloneTo(a_pbstrWhy);
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::COMGETTER(FilePath)(BSTR *a_pbstrPath)
+{
+    CheckComArgOutPointerValid(a_pbstrPath);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        m->strExtPackFile.cloneTo(a_pbstrPath);
+    return hrc;
+}
+
+STDMETHODIMP ExtPackFile::Install(void)
+{
+    return E_NOTIMPL;
+}
+
+
+
 
 
 DEFINE_EMPTY_CTOR_DTOR(ExtPack)
@@ -1323,12 +1526,22 @@ STDMETHODIMP ExtPackManager::Find(IN_BSTR a_bstrName, IExtPack **a_pExtPack)
     return hrc;
 }
 
+STDMETHODIMP ExtPackManager::OpenExtPackFile(IN_BSTR a_bstrTarball, IExtPackFile **a_ppExtPackFile)
+{
+    CheckComArgNotNull(a_bstrTarball);
+    CheckComArgOutPointerValid(a_ppExtPackFile);
+    Utf8Str strTarball(a_bstrTarball);
+    AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
+
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP ExtPackManager::Install(IN_BSTR a_bstrTarball, BSTR *a_pbstrName)
 {
     CheckComArgNotNull(a_bstrTarball);
     CheckComArgOutPointerValid(a_pbstrName);
     Utf8Str strTarball(a_bstrTarball);
-    Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
+    AssertReturn(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON, E_UNEXPECTED);
 
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
