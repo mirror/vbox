@@ -7,24 +7,32 @@
   <sect1>
     <title id="vrdp">Remote display (VRDP support)</title>
 
-    <para>VirtualBox has a built-in server for the VirtualBox Remote Desktop
-    Protocol (VRDP). This allows you to see the output of a virtual machine's
-    window remotely on any other computer and control the virtual machine from
-    there, as if the virtual machine was running locally.</para>
+    <para>VirtualBox can display virtual machines remotely. This allows you to
+    see the output of a virtual machine's window remotely on another computer
+    and control the virtual machine from there, as if the virtual machine was
+    running on that computer.</para>
+
+    <para>For maximum flexibility, starting with VirtualBox 4.0, VirtualBox
+    implements remote machine display through a generic extension interface,
+    the VirtualBox Remote Desktop Extension (VRDE). The base open-source
+    VirtualBox package only provides this interface, while implementations can
+    be supplied by third parties with VirtualBox extension packages, which
+    must be installed separately from the base package. See <xref
+    linkend="intro-installing" /> for more information. </para>
+
+    <para>Oracle provides support for the VirtualBox Remote Display Protocol
+    (VRDP) in such a VirtualBox extension package. When this package is
+    installed, VirtualBox versions 4.0 and later support VRDP the same way as
+    earlier versions.</para>
 
     <para>VRDP is a backwards-compatible extension to Microsoft's Remote
     Desktop Protocol (RDP). Typically graphics updates and audio are sent from
     the remote machine to the client, while keyboard and mouse events are sent
     back. As a result, you can use any standard RDP client to control the
-    remote VM.<note>
-        <para>VRDP support is shipped as as a VirtualBox extension package,
-        the VirtualBox Remote Desktop Extension (VRDE), which must be
-        installed separately. See <xref linkend="intro-installing" /> for more
-        installation.</para>
-      </note></para>
+    remote VM.</para>
 
-    <para>The VRDP server is disabled by default. If the extension pack is
-    installed, it can easily be enabled on a per-VM basis either in the
+    <para>Even when the extension is installed, the VRDP server is disabled by
+    default. It can easily be enabled on a per-VM basis either in the
     VirtualBox Manager in the "Display" settings (see <xref
     linkend="settings-display" />) or with
     <computeroutput>VBoxManage</computeroutput>:<screen>VBoxManage modifyvm "VM name" --vrde on</screen></para>
