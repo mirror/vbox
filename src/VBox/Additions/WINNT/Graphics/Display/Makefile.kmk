@@ -48,6 +48,7 @@ VBoxDisp_SOURCES     = \
 	vbox.c \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
+	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
 	VBoxDisp.def \
 	VBoxDisp.rc
 

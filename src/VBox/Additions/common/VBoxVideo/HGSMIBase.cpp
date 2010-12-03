@@ -175,40 +175,6 @@ RTDECL(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 }
 
 
-/** Query the host for an HGSMI configuration parameter via an HGSMI command.
- */
-static int vboxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx, uint32_t u32Index,
-                              uint32_t *pulValue)
-{
-    int rc = VINF_SUCCESS;
-    VBVACONF32 *p;
-    LogFunc(("u32Index = %d\n", u32Index));
-
-    /* Allocate the IO buffer. */
-    p = (VBVACONF32 *)HGSMIHeapAlloc(&pCtx->heapCtx,
-                                     sizeof(VBVACONF32), HGSMI_CH_VBVA,
-                                     VBVA_QUERY_CONF32);
-    if (p)
-    {
-        /* Prepare data to be sent to the host. */
-        p->u32Index = u32Index;
-        p->u32Value = 0;
-        rc = VBoxHGSMIBufferSubmit(pCtx, p);
-        if (RT_SUCCESS(rc))
-        {
-            *pulValue = p->u32Value;
-            LogFunc(("u32Value = %d\n", p->u32Value));
-        }
-        /* Free the IO buffer. */
-        HGSMIHeapFree(&pCtx->heapCtx, p);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-    LogFunc(("rc = %d\n", rc));
-    return rc;
-}
-
-
 /** Inform the host of the location of the host flags in VRAM via an HGSMI
  * command. */
 static int vboxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
@@ -290,43 +256,6 @@ static int vboxHGSMIReportHostArea(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         rc = VBoxHGSMIBufferSubmit(pCtx, p);
         /* Free the IO buffer. */
         HGSMIHeapFree(&pCtx->heapCtx, p);
-    }
-    else
-        rc = VERR_NO_MEMORY;
-    return rc;
-}
-
-
-/**
- * Tell the host about how VRAM is divided up between each screen via an HGSMI
- * command.  It is acceptable to specifiy identical data for each screen if
- * they share a single framebuffer.
- * @todo confirm that that really is acceptable
- *
- * @returns iprt status code, either VERR_NO_MEMORY or the status returned by
- *          @a pfnFill
- * @param  pCtx      the context containing the heap to use
- * @param  u32Count  the number of screens we are activating
- * @param  pfnFill   a callback which initialises the VBVAINFOVIEW structures
- *                   for all screens
- * @param  pvData    context data for @a pfnFill
- */
-RTDECL(int) VBoxHGSMISendViewInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                                  uint32_t u32Count,
-                                  PFNHGSMIFILLVIEWINFO pfnFill,
-                                  void *pvData)
-{
-    int rc;
-    /* Issue the screen info command. */
-    void *p = VBoxHGSMIBufferAlloc(pCtx, sizeof(VBVAINFOVIEW) * u32Count,
-                                   HGSMI_CH_VBVA, VBVA_INFO_VIEW);
-    if (p)
-    {
-        VBVAINFOVIEW *pInfo = (VBVAINFOVIEW *)p;
-        rc = pfnFill(pvData, pInfo, u32Count);
-        if (RT_SUCCESS(rc))
-            VBoxHGSMIBufferSubmit (pCtx, p);
-        VBoxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -421,7 +350,7 @@ RTDECL(void) VBoxHGSMIGetHostAreaMapping(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 
     AssertPtrReturnVoid(poffVRAMHostArea);
     AssertPtrReturnVoid(pcbHostArea);
-    vboxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbHostArea);
+    VBoxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_HOST_HEAP_SIZE, &cbHostArea);
     if (cbHostArea != 0)
     {
         uint32_t cbHostAreaMaxSize = cbVRAM / 4;
@@ -516,22 +445,42 @@ RTDECL(int) VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 
 
 /**
- * Gets the count of virtual monitors attached to the guest via an HGSMI
- * command
- *
- * @returns the right count on success or 1 on failure.
- * @param  pCtx  the context containing the heap to use
+ * Query the host for an HGSMI configuration parameter via an HGSMI command.
+ * @returns iprt status value
+ * @param  pCtx      the context containing the heap used
+ * @param  u32Index  the index of the parameter to query,
+ *                   @see VBVACONF32::u32Index
+ * @param  pulValue  where to store the value of the parameter on success
  */
-RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx)
+RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                               uint32_t u32Index, uint32_t *pulValue)
 {
-    /* Query the configured number of displays. */
-    uint32_t cDisplays = 0;
-    vboxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_MONITOR_COUNT, &cDisplays);
-    LogFunc(("cDisplays = %d\n", cDisplays));
-    if (cDisplays == 0 || cDisplays > VBOX_VIDEO_MAX_SCREENS)
-        /* Host reported some bad value. Continue in the 1 screen mode. */
-        cDisplays = 1;
-    return cDisplays;
+    int rc = VINF_SUCCESS;
+    VBVACONF32 *p;
+    LogFunc(("u32Index = %d\n", u32Index));
+
+    /* Allocate the IO buffer. */
+    p = (VBVACONF32 *)HGSMIHeapAlloc(&pCtx->heapCtx,
+                                     sizeof(VBVACONF32), HGSMI_CH_VBVA,
+                                     VBVA_QUERY_CONF32);
+    if (p)
+    {
+        /* Prepare data to be sent to the host. */
+        p->u32Index = u32Index;
+        p->u32Value = 0;
+        rc = VBoxHGSMIBufferSubmit(pCtx, p);
+        if (RT_SUCCESS(rc))
+        {
+            *pulValue = p->u32Value;
+            LogFunc(("u32Value = %d\n", p->u32Value));
+        }
+        /* Free the IO buffer. */
+        HGSMIHeapFree(&pCtx->heapCtx, p);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+    LogFunc(("rc = %d\n", rc));
+    return rc;
 }
 
 
