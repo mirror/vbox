@@ -3,7 +3,7 @@
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
   <para>
   <sect1>
-    <title>Version 4.0.0 (2010-12-xx)</title>
+    <title>Version 4.0.0 Beta 1 (2010-12-03)</title>
 
     <para>This version is a major update. The following major new features
       were added:</para>
@@ -11,7 +11,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>New settings/disk file layout; see <xref linkend="vboxconfigdata" />.</para>
+        <para>New settings/disk file layout for VM portability; see <xref linkend="vboxconfigdata" />.</para>
       </listitem>
 
       <listitem>
@@ -23,27 +23,49 @@
       </listitem>
 
       <listitem>
-        <para>Windows Additions: support for automatically updating the Guest Additions
-        (requires installed Windows Guest Additions 4.0 or later)</para>
-      </listitem>
-
-      <listitem>
-        <para>Guest Additions: support for copying files into the guest file system</para>
-      </listitem>
-
-      <listitem>
-        <para>Language bindings: implemented uniform Java bindings for both local
+        <para>Language bindings: uniform Java bindings for both local
           (COM/XPCOM) and remote (SOAP) invocation APIs</para>
+      </listitem>
+      
+      <listitem>
+        <para>Chipset: added support for the Intel ICH9 chipset with 3 PCI buses, PCI express
+        and Message Signaled Interrupts (MSI)</para>
       </listitem>
 
       <listitem>
         <para>Audio: Intel HD Audio is now available as guest hardware, for better support
           with modern guest operating systems (e.g. 64-bit Windows; bug #2785).</para>
       </listitem>
+      
+      <listitem>
+        <para>GUI: redesigned user interface with guest window preview</para>
+      </listitem>
 
       <listitem>
-        <para>GUI: new mode for scaling the VM window content with preserved
-         interactivity</para>
+        <para>GUI: new display mode with downscaled guest display</para>
+      </listitem>
+      
+      <listitem>
+        <para>Resource control: added support for limiting a VM's CPU time and IO
+        bandwidth.</para>
+      </listitem>
+      
+      <listitem>
+        <para>Storage: support asynchronous I/O for iSCSI, VMDK, VHD and
+        Parallels images</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: support for resizing VDI and VHD images</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: support for automatically updating the Guest Additions
+        (requires installed Windows Guest Additions 4.0 or later)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: support for copying files into the guest file system</para>
       </listitem>
 
     </itemizedlist>
@@ -59,10 +81,6 @@
 
       <listitem>
         <para>VMM: fixed guru meditation when running Minix (VT-x only; bug #6557)</para>
-      </listitem>
-
-      <listitem>
-        <para>GUI: new detail view with guest window preview</para>
       </listitem>
 
       <listitem>
@@ -97,11 +115,6 @@
         snapshots and saved states as well, it is no longer necessary
         to manually delete snapshots first; VBoxManage unregistervm --delete
         can do the same now</para>
-      </listitem>
-
-      <listitem>
-        <para>Snapshots: implemented deleting the last remaining snapshot while
-          the VM is running</para>
       </listitem>
 
       <listitem>
@@ -164,6 +177,11 @@
         <para>BIOS: reduce the stack usage of the VESA BIOS function
           <emphasis>#4F01</emphasis> (Quake fix)</para>
       </listitem>
+      
+      <listitem>
+        <para>OVF/OVA: significant performance improvements during export and import
+        </para>
+      </listitem>
 
       <listitem>
         <para>OVF/OVA: creation of the manifest file on export is optional
@@ -180,26 +198,8 @@
       </listitem>
 
       <listitem>
-        <para>OVF/OVA: export/import proprietary VirtualBox
-          settings</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: DMG image support for the virtual CD/DVD (bug
+        <para>Storage: Apple DMG image support for the virtual CD/DVD (bug
           #6760)</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: support asynchronous I/O for iSCSI, VMDK, VHD and
-        Parallels images</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: support for resizing VDI and VHD images</para>
-      </listitem>
-
-      <listitem>
-        <para>Storage: allow limiting bandwidth for disk images</para>
       </listitem>
 
       <listitem>
@@ -213,7 +213,7 @@
       </listitem>
 
       <listitem>
-        <para>Linux Additions: support for symbolic links (bug #818)</para>
+        <para>Linux Additions: Shared Folders now support symbolic links (bug #818)</para>
       </listitem>
 
       <listitem>
