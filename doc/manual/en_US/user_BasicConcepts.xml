@@ -1067,14 +1067,18 @@
 
       <para>In addition to allowing a guest access to your local USB devices,
       VirtualBox even allows your guests to connect to remote USB devices by
-      use of the VRDP protocol. For details about this, see <xref
-      linkend="usb-over-rdp" />.</para>
+      use of the VirtualBox Remote Desktop Extension (VRDE). For details about
+      this, see <xref linkend="usb-over-rdp" />.</para>
 
       <para>In the Settings dialog, you can first configure whether USB is
       available in the guest at all, and in addition also optionally enable
       the USB 2.0 (EHCI) controller for the guest. If so, you can determine in
       detail which devices are available. For this, you must create so-called
-      "filters" by specifying certain properties of the USB device.</para>
+      "filters" by specifying certain properties of the USB device.<note>
+          <para>The EHCI controller is shipped as a VirtualBox extension
+          package, which must be installed separately. See <xref
+          linkend="intro-installing" /> for more installation.</para>
+        </note></para>
 
       <para>Clicking on the "+" button to the right of the "USB Device
       Filters" window creates a <emphasis role="bold">new filter.</emphasis>

@@ -119,7 +119,7 @@
           <para>This is the operating system of the physical computer on which
           VirtualBox was installed. There are versions of VirtualBox for
           Windows, Mac OS X, Linux and Solaris hosts; for details, please see
-          <xref linkend="hostossupport" />. </para>
+          <xref linkend="hostossupport" />.</para>
 
           <para>Most of the time, this User Manual discusses all VirtualBox
           versions together. There may be platform-specific differences which
@@ -345,7 +345,7 @@
         VirtualBox Remote Desktop Extension (VRDE) allows for high-performance
         remote access to any running virtual machine. This extension supports
         the Remote Desktop Protocol (RDP) originally built into Microsoft
-        Windows, with special additions for full client USB support. </para>
+        Windows, with special additions for full client USB support.</para>
 
         <para>The VRDE does not rely on the RDP server that is built into
         Microsoft Windows; instead, it is plugged directly into the
@@ -501,16 +501,50 @@
     </itemizedlist>
   </sect1>
 
-  <sect1>
-    <title>Installing and starting VirtualBox</title>
+  <sect1 id="intro-installing">
+    <title>Installing VirtualBox</title>
 
-    <para>VirtualBox comes in many different packages, and <emphasis
-    role="bold">installation</emphasis> depends on your host platform. If you
-    have installed software before, installation should be straightforward: on
-    each host platform, VirtualBox uses the installation method that is most
-    common and easy to use. If you run into trouble or have special
-    requirements, please refer to <xref linkend="installation" /> for details
-    about the various installation methods.</para>
+    <para>VirtualBox comes in many different packages, and installation
+    depends on your host platform. If you have installed software before,
+    installation should be straightforward: on each host platform, VirtualBox
+    uses the installation method that is most common and easy to use. If you
+    run into trouble or have special requirements, please refer to <xref
+    linkend="installation" /> for details about the various installation
+    methods.</para>
+
+    <para>Starting with version 4.0, VirtualBox is split into several
+    components for licensing reasons.<orderedlist>
+        <listitem>
+          <para>The base package consists of all open source compenents and is
+          entirely licensed under the GNU General Public License V2.</para>
+        </listitem>
+
+        <listitem>
+          <para>Additional extension packs can be downloaded which extend the
+          functionality of the VirtualBox base package. Currently, Oracle
+          provides the following extension packs, which can be found at <ulink
+          url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>:<orderedlist>
+              <listitem>
+                <para>The virtual USB 2.0 (EHCI) device; see <xref
+                linkend="settings-usb" />.</para>
+              </listitem>
+
+              <listitem>
+                <para>The VirtualBox Remote Desktop Extension (VRDE); see
+                <xref linkend="vrde" />.</para>
+              </listitem>
+            </orderedlist></para>
+
+          <para>VirtualBox extension packages have a
+          <computeroutput>.vbox-ext</computeroutput> file name extension. To
+          install an extension, simply double-click on package file, and the
+          VirtualBox Manager will guide you through the required steps.</para>
+        </listitem>
+      </orderedlist></para>
+  </sect1>
+
+  <sect1>
+    <title>Starting VirtualBox</title>
 
     <para>After installation, you can start VirtualBox as
     follows:<itemizedlist>
@@ -669,13 +703,13 @@
 
               <listitem>
                 <para>You can pick an <emphasis
-                role="bold">existing</emphasis> disk image file. </para>
+                role="bold">existing</emphasis> disk image file.</para>
 
                 <para>The <emphasis role="bold">drop-down list</emphasis>
                 presented in the window contains all disk images which are
                 currently remembered by VirtualBox, probably because they are
                 currently attached to a virtual machine (or have been in the
-                past). </para>
+                past).</para>
 
                 <para>Alternatively, you can click on the small <emphasis
                 role="bold">folder button</emphasis> next to the drop-down
@@ -684,7 +718,7 @@
               </listitem>
             </itemizedlist>Most probably, if you are using VirtualBox for the
           first time, you will want to create a new disk image. Hence, press
-          the "New" button. </para>
+          the "New" button.</para>
 
           <para>This brings up another window, the <emphasis
           role="bold">"Create New Virtual Disk Wizard",</emphasis> which helps
@@ -744,9 +778,25 @@
   <sect1>
     <title>Running your virtual machine</title>
 
-    <para>To start a virtual machine, simply double-click on its entry in the
-    list within the Manger window, or select it and press the "Start" button
-    at the top.</para>
+    <para>To start a virtual machine, you have several options:<itemizedlist>
+        <listitem>
+          <para>Double-click on its entry in the list within the Manager
+          window or</para>
+        </listitem>
+
+        <listitem>
+          <para>select its entry in the list in the Manager window it and
+          press the "Start" button at the top or</para>
+        </listitem>
+
+        <listitem>
+          <para>for virtual machines created with VirtualBox 4.0 or later,
+          navigate to the "VirtualBox VMs" folder in your system user's home
+          directory, find the subdirectory of the machine you want to start
+          and double-click on the machine settings file (with a
+          <computeroutput>.vbox</computeroutput> file extension).</para>
+        </listitem>
+      </itemizedlist></para>
 
     <para>This opens up a new window, and the virtual machine which you
     selected will boot up. Everything which would normally be seen on the
@@ -1029,7 +1079,7 @@
         <listitem>
           <para><emphasis role="bold">Save the machine state:</emphasis> With
           this option, VirtualBox "freezes" the virtual machine by completely
-          saving its state to your local disk. </para>
+          saving its state to your local disk.</para>
 
           <para>When you start the VM again later, you will find that the VM
           continues exactly where it was left off. All your programs will
@@ -1352,9 +1402,13 @@
       </orderedlist></para>
 
     <para>To <emphasis role="bold">import</emphasis> an appliance one of the
-    above formats, select "File" -&gt; "Import appliance" from the Manager
-    window. In the file dialog that comes up, navigate to the file with either
-    the <computeroutput>.ovf</computeroutput> or the
+    above formats, simply double-click on the OVF/OVA file.<footnote>
+        <para>Starting with version 4.0, VirtualBox creates file type
+        associations for OVF and OVA files on your host operating
+        system.</para>
+      </footnote> Alternatively, select "File" -&gt; "Import appliance" from
+    the Manager window. In the file dialog that comes up, navigate to the file
+    with either the <computeroutput>.ovf</computeroutput> or the
     <computeroutput>.ova</computeroutput> file extension.</para>
 
     <para>If VirtualBox can handle the file, a dialog similar to the following

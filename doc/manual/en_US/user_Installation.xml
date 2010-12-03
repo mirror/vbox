@@ -259,8 +259,8 @@
         <computeroutput>VirtualBox</computeroutput>, the graphical VirtualBox
         manager, requires both Qt and SDL;
         <computeroutput>VBoxSDL</computeroutput>, our simplified GUI, requires
-        only SDL. By contrast, if you only want to run the headless VRDP
-        server that comes with VirtualBox, neither Qt nor SDL are
+        only SDL. By contrast, if you only want to run
+        <computeroutput>VBoxHeadless</computeroutput>, neither Qt nor SDL are
         required.</para>
       </note>
     </sect2>
