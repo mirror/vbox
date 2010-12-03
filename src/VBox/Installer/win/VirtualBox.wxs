@@ -419,6 +419,10 @@
 
                         <File Id="vboxnetdhcp" Name="VBoxDHCP.exe" LongName="VBoxNetDHCP.exe" DiskId="1" Vital="yes"
                               Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
+<?if $(env.VBOX_WITH_EXTPACK) = "yes" ?>
+                        <File Id="vboxepha" Name="VBoxEPHA.exe" LongName="VBoxExtPackHelperApp.exe" DiskId="1" Vital="yes"
+                              Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>
+<?endif ?>
 
                         <!-- VBox DLL files -->
                         <File Id="vboxdddll" Name="VBoxDD.dll" DiskId="1"  Vital="yes"
