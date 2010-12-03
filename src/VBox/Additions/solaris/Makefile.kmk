@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2008 Oracle Corporation
+# Copyright (C) 2008-2010 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -125,7 +125,8 @@ solaris-addcommon_MODE = a+r,u+w
 solaris-addcommon_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxGuest/VBoxGuest-solaris.conf=>vboxguest.conf \
 	$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop \
-	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml
+	$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
+	$(VBOX_BRAND_LICENSE_TXT)=>LICENSE
 
 #
 # Create full directory tree
@@ -207,7 +208,8 @@ SOLARIS_ADD_USRBIN_LINKS = \
 SOLARIS_ADD_COMMON = \
 	vboxclient.desktop \
 	solaris_xorg.conf \
-	solaris_xorg_modeless.conf
+	solaris_xorg_modeless.conf \
+	LICENSE
 
 SOLARIS_ADD_SERVICES = \
 	vboxservice.xml
@@ -540,6 +542,7 @@ $(PATH_BIN)/additions/VBoxSolarisAdditions.pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                  $(SOLARIS_ADD_INST_DIR)/vboxservice.xml
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.space                  $(SOLARIS_ADD_INST_DIR)/vboxguest.space
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxguest.depend                 $(SOLARIS_ADD_INST_DIR)/vboxguest.depend
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)                                                $(SOLARIS_ADD_INST_DIR)/LICENSE
 	# don't display the license on package install, since 4.0
 	#$(QUIET)$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)                                                $(SOLARIS_ADD_INST_DIR)/vboxguest.copyright
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop                   $(SOLARIS_ADD_INST_DIR)/vboxclient.desktop
