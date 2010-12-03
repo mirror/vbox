@@ -948,7 +948,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SERVICE)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_HIDDEN |RTPROC_FLAGS_SERVICE)), VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
@@ -983,6 +983,14 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     StartupInfo.hStdOutput = _get_osfhandle(1);
     StartupInfo.hStdError  = _get_osfhandle(2);
 #endif
+    /* If we want to have a hidden process (e.g. not visible to
+     * to the user) use the STARTUPINFO flags. */
+    if (fFlags & RTPROC_FLAGS_HIDDEN)
+    {
+        StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
+        StartupInfo.wShowWindow = SW_HIDE;
+    }
+
     PCRTHANDLE  paHandles[3] = { phStdIn, phStdOut, phStdErr };
     HANDLE     *aphStds[3]   = { &StartupInfo.hStdInput, &StartupInfo.hStdOutput, &StartupInfo.hStdError };
     DWORD       afInhStds[3] = { 0xffffffff, 0xffffffff, 0xffffffff };
