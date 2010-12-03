@@ -1284,7 +1284,7 @@ void ExtPackManager::uninit()
 
 STDMETHODIMP ExtPackManager::COMGETTER(InstalledExtPacks)(ComSafeArrayOut(IExtPack *, a_paExtPacks))
 {
-    CheckComArgSafeArrayNotNull(a_paExtPacks);
+    CheckComArgOutSafeArrayPointerValid(a_paExtPacks);
     Assert(m->enmContext == VBOXEXTPACKCTX_PER_USER_DAEMON);
 
     AutoCaller autoCaller(this);
