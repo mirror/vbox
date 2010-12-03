@@ -185,7 +185,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
  * The new process will not be a direct decendent of the parent and it will not
  * be possible to wait for it, i.e. @a phProcess shall be NULL. */
 #define RTPROC_FLAGS_DETACHED               RT_BIT(0)
-
+/** Don't show the started process according to the specific
+ *  OS guidelines. */
+#define RTPROC_FLAGS_HIDDEN                 RT_BIT(1)
 /** Use special code path for starting child processes from
  * a service (daemon). On Windows this is required for services
  * because of the so called "Session 0" isolation which was
